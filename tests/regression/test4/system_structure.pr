@@ -1,0 +1,36 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM orchestrator;
+
+	SIGNAL pulse;
+
+	/* CIF Keep Specific Geode PARAMNAMES cmd */
+	SIGNAL run (MyInteger);
+
+	/* CIF Keep Specific Geode PARAMNAMES hk */
+	SIGNAL housekeeping (MyInteger);
+
+	PROCEDURE computeGNC COMMENT '#c_predef';
+		FPAR
+			IN inp MyInteger,
+			IN/OUT outp MyInteger;
+ 	EXTERNAL;
+
+	CHANNEL c
+		FROM ENV TO orchestrator WITH pulse,run;
+		FROM orchestrator TO ENV WITH housekeeping;
+	ENDCHANNEL;
+
+	BLOCK orchestrator;
+
+		SIGNALROUTE r
+			FROM ENV TO orchestrator WITH pulse,run;
+			FROM orchestrator TO ENV WITH housekeeping;
+
+		CONNECT c and r;
+
+		PROCESS orchestrator REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

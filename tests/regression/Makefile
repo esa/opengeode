@@ -1,0 +1,14 @@
+EXAMPLES=test1 test2 test3 test4 test5 test6 test7 test8
+
+all:
+	for v in $(EXAMPLES) ; do make -C $$v clean all || exit 1 ; done
+
+parse:
+	for v in $(EXAMPLES) ; do make -C $$v parse || exit 1 ; done
+
+
+coverage:
+	for v in $(EXAMPLES) ; do make -C $$v coverage && mv $$v/.coverage* . || exit 1 ; done ; coverage combine 
+
+clean:
+	for v in $(EXAMPLES); do make -C $$v clean ; done

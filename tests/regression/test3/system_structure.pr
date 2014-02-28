@@ -1,0 +1,69 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM fce;
+
+	SIGNAL Cyclic_HK;
+
+	/* CIF Keep Specific Geode PARAMNAMES whatever */
+	SIGNAL Upload_Data (Bool_ty);
+
+	SIGNAL Cyclic_FCE;
+
+	SIGNAL Attitude_msg;
+
+	SIGNAL FDIR;
+
+	SIGNAL Cyclic_Essential;
+
+	PROCEDURE get_fce_sgm_eeprom COMMENT '#c_predef';
+		FPAR
+			IN/OUT fce_sgm_eeprom FCE_SGM_EEPROM;
+ 	EXTERNAL;
+
+	PROCEDURE set_fce_sgm_eeprom COMMENT '#c_predef';
+		FPAR
+			IN fce_sgm_eeprom FCE_SGM_EEPROM;
+ 	EXTERNAL;
+
+	PROCEDURE get_fce_status_register COMMENT '#c_predef';
+		FPAR
+			IN/OUT fce_status_register FCE_RECOVERY_STATUS_REGISTER;
+ 	EXTERNAL;
+
+	PROCEDURE get_fce_ctrl_stat_register COMMENT '#c_predef';
+		FPAR
+			IN/OUT ctrl_stat_reg FCE_CONTROL_FLAGS_STATUS_REGISTER;
+ 	EXTERNAL;
+
+	PROCEDURE get_fce_sgm_ram COMMENT '#c_predef';
+		FPAR
+			IN/OUT sgm_ram FCE_SGM_RAM;
+ 	EXTERNAL;
+
+	PROCEDURE set_fce_sgm_ram COMMENT '#c_predef';
+		FPAR
+			IN sgm_ram FCE_SGM_RAM;
+ 	EXTERNAL;
+
+	SIGNAL Normal_HK_TM;
+
+	SIGNAL Essential_Packets;
+
+	CHANNEL c
+		FROM ENV TO fce WITH Cyclic_HK,Upload_Data,Cyclic_FCE,Attitude_msg,FDIR,Cyclic_Essential;
+		FROM fce TO ENV WITH Normal_HK_TM,Essential_Packets;
+	ENDCHANNEL;
+
+	BLOCK fce;
+
+		SIGNALROUTE r
+			FROM ENV TO fce WITH Cyclic_HK,Upload_Data,Cyclic_FCE,Attitude_msg,FDIR,Cyclic_Essential;
+			FROM fce TO ENV WITH Normal_HK_TM,Essential_Packets;
+
+		CONNECT c and r;
+
+		PROCESS fce REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

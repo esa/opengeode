@@ -1,0 +1,243 @@
+PROCESS orchestrator;
+/* CIF TEXT (-1052, 12), (289, 233) */
+-- GNC Orchestrator for the VEGA simulator
+
+DCL gnc_output T_GNC_LV_SIM_INPUTS;
+
+DCL gnc_input T_GNC_LV_SIM_CONTEXT;
+
+DCL major_cycle T_Int32 := 1;
+DCL sub_cycle T_Int8 := -1;
+
+dcl run_counter T_Int32 := -1;
+
+dcl command Simulation_Param;
+
+timer timeout;
+/* CIF ENDTEXT */
+/* CIF PROCEDURE (-731, 54), (122, 50) */
+PROCEDURE update_cycle
+/* CIF COMMENT (-589, 54), (100, 50) */
+COMMENT 'Checkme';
+/* CIF START (335, 138), (100, 50) */
+START;
+/* CIF DECISION (326, 203), (118, 70) */
+DECISION sub_cycle = 7
+/* CIF COMMENT (464, 213), (199, 50) */
+COMMENT 'Compute next major cycle';
+/* CIF ANSWER (445, 293), (100, 35) */
+(false):
+/* CIF TASK (398, 343), (194, 50) */
+TASK sub_cycle := sub_cycle + 1;
+/* CIF ANSWER (218, 293), (100, 35) */
+(true):
+/* CIF TASK (158, 343), (220, 53) */
+TASK sub_cycle := 0,
+major_cycle := major_cycle + 1;
+/* CIF PROCEDURECALL (168, 411), (200, 50) */
+CALL jump_to_next_major_cycle;
+ENDDECISION;
+/* CIF STOP (360, 476), (50, 50) */
+STOP;
+ENDPROCEDURE;
+/* CIF START (-907, 273), (100, 50) */
+START;
+/* CIF PROCEDURECALL (-951, 338), (189, 50) */
+CALL writeln
+('[Orchestrator] Startup');
+/* CIF NEXTSTATE (-915, 403), (116, 50) */
+NEXTSTATE Stopped;
+/* CIF LABEL (-677, 179), (100, 50) */
+CONNECTION Here:
+/* CIF End Label */
+ENDCONNECTION;
+
+
+
+
+/* CIF STATE (2218, 97), (133, 50) */
+STATE Wait_for_VESAT;
+/* CIF INPUT (1819, 167), (111, 50) */
+INPUT VESAT_Data
+(gnc_input);
+/* CIF PROCEDURECALL (1816, 232), (116, 50) */
+CALL reset_timer
+(timeout);
+/* CIF PROCEDURECALL (1814, 297), (121, 50) */
+CALL update_cycle
+/* CIF COMMENT (1951, 297), (199, 50) */
+COMMENT 'Compute next major cycle';
+/* CIF DECISION (1810, 362), (128, 70) */
+DECISION run_counter;
+/* CIF ANSWER (1762, 452), (100, 35) */
+(>1):
+/* CIF TASK (1747, 502), (129, 50) */
+TASK run_counter :=
+run_counter - 1;
+/* CIF ANSWER (1886, 452), (100, 35) */
+(-1):
+/* CIF ANSWER (2034, 452), (100, 35) */
+ELSE:
+/* CIF PROCEDURECALL (1996, 502), (175, 50) */
+CALL writeln
+('[Orchestrator] Done');
+/* CIF NEXTSTATE (2034, 567), (100, 50) */
+NEXTSTATE Pause;
+ENDDECISION;
+/* CIF NEXTSTATE (1824, 632), (100, 50) */
+NEXTSTATE Running;
+/* CIF INPUT (2234, 167), (100, 50) */
+INPUT pulse;
+/* CIF PROCEDURECALL (2181, 232), (205, 50) */
+CALL writeln
+('[Orchestrator] Cycle loss');
+/* CIF NEXTSTATE (2219, 297), (129, 50) */
+NEXTSTATE Wait_for_vesat;
+/* CIF INPUT (2472, 167), (100, 50) */
+INPUT timeout;
+/* CIF PROCEDURECALL (2397, 232), (250, 50) */
+CALL writeln
+('[Orchestrator] Lost connection?');
+/* CIF NEXTSTATE (2472, 297), (100, 50) */
+NEXTSTATE Pause;
+ENDSTATE;
+
+
+
+
+/* CIF STATE (10, 14), (116, 50) */
+STATE Stopped;
+/* CIF INPUT (16, 84), (105, 50) */
+INPUT simulate
+(command);
+/* CIF PROCEDURECALL (18, 149), (100, 50) */
+CALL gnc_init;
+/* CIF LABEL (20, 214), (96, 50) */
+run_cmd:
+/* CIF TASK (-14, 279), (166, 50) */
+TASK gnc_input :=
+command!gnc_inputs;
+/* CIF DECISION (-42, 344), (221, 70) */
+DECISION present(command!command);
+/* CIF ANSWER (576, 434), (100, 35) */
+(test_gnc):
+/* CIF PROCEDURECALL (567, 484), (117, 53) */
+CALL gnc_onestep
+(gnc_input,
+gnc_output)
+/* CIF COMMENT (705, 486), (170, 50) */
+COMMENT 'Call the GNC function
+(for testing only)';
+/* CIF OUTPUT (511, 552), (230, 68) */
+OUTPUT plot( { major_cycle major_cycle,
+subcycle sub_cycle,
+gnc_inputs gnc_input,
+gnc_outputs gnc_output });
+/* CIF PROCEDURECALL (565, 635), (121, 50) */
+CALL update_cycle;
+/* CIF NEXTSTATE (569, 700), (114, 50) */
+NEXTSTATE test_mode;
+/* CIF ANSWER (-426, 434), (110, 35) */
+(run_n_steps):
+/* CIF TASK (-489, 484), (236, 50) */
+TASK run_counter :=
+command!command!run_n_steps;
+/* CIF PROCEDURECALL (-467, 549), (192, 78) */
+CALL writeln
+('[Orchestrator] Running ',
+run_counter,
+ ' steps');
+/* CIF LABEL (-421, 642), (100, 50) */
+There:
+/* CIF ANSWER (-164, 434), (127, 35) */
+(run_n_seconds):
+/* CIF TASK (-243, 484), (285, 50) */
+TASK run_counter :=
+command!command!run_n_seconds * 25;
+/* CIF PROCEDURECALL (-196, 549), (192, 78) */
+CALL writeln
+('[Orchestrator] Running ',
+run_counter,
+ ' steps');
+/* CIF ANSWER (118, 435), (109, 35) */
+(run_forever):
+/* CIF TASK (103, 485), (139, 50) */
+TASK run_counter := -1;
+/* CIF PROCEDURECALL (51, 550), (242, 78) */
+CALL writeln
+('[Orchestrator] Running forever ');
+/* CIF ANSWER (343, 434), (100, 35) */
+(pause):
+/* CIF PROCEDURECALL (303, 484), (179, 50) */
+CALL writeln
+('[Orchestrator] Pause');
+/* CIF NEXTSTATE (343, 549), (100, 50) */
+NEXTSTATE Pause;
+ENDDECISION;
+/* CIF LABEL (5, 765), (126, 50) */
+AndHereAgain:
+/* CIF DECISION (3, 830), (131, 70) */
+DECISION run_counter = 0;
+/* CIF ANSWER (-42, 920), (100, 35) */
+(true):
+/* CIF NEXTSTATE (-42, 970), (100, 50) */
+NEXTSTATE Pause;
+/* CIF ANSWER (78, 920), (100, 35) */
+(false):
+/* CIF NEXTSTATE (78, 970), (100, 50) */
+NEXTSTATE Running;
+ENDDECISION;
+ENDSTATE;
+
+/* CIF STATE (1290, 105), (100, 50) */
+STATE Running;
+/* CIF INPUT (1071, 175), (100, 50) */
+INPUT pulse
+/* CIF COMMENT (1191, 175), (114, 50) */
+COMMENT 'Periodic call
+(40 ms)';
+/* CIF PROCEDURECALL (1062, 240), (117, 53) */
+CALL gnc_onestep
+(gnc_input,
+gnc_output)
+/* CIF COMMENT (1191, 243), (170, 50) */
+COMMENT 'Call the GNC function';
+/* CIF OUTPUT (1051, 308), (139, 50) */
+OUTPUT VESAT_one_step
+(gnc_output)
+/* CIF COMMENT (1211, 308), (133, 50) */
+COMMENT 'Get VESAT data';
+/* CIF PROCEDURECALL (1056, 373), (129, 50) */
+CALL set_timer
+(1000, timeout)
+/* CIF COMMENT (1205, 373), (209, 50) */
+COMMENT 'Make sure we receive
+an answer within one second';
+/* CIF NEXTSTATE (1056, 438), (129, 50) */
+NEXTSTATE Wait_for_vesat;
+/* CIF INPUT (1424, 175), (136, 50) */
+INPUT simulate
+(command)
+/* CIF COMMENT (1580, 175), (182, 50) */
+COMMENT 'New command from GUI';
+/* CIF JOIN (1467, 240), (50, 50) */
+JOIN run_cmd;
+ENDSTATE;
+/* CIF STATE (327, 30), (100, 50) */
+STATE Pause;
+/* CIF INPUT (324, 100), (105, 50) */
+INPUT simulate
+(command);
+/* CIF JOIN (351, 165), (50, 50) */
+JOIN run_cmd;
+ENDSTATE;
+/* CIF STATE (705, 98), (105, 50) */
+STATE test_mode;
+/* CIF INPUT (690, 168), (136, 50) */
+INPUT simulate
+(command);
+/* CIF JOIN (733, 233), (50, 50) */
+JOIN run_cmd;
+ENDSTATE;
+
+ENDPROCESS orchestrator;

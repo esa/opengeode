@@ -1,0 +1,125 @@
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+END
+
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+IMPORTS T-Int32, T-UInt32, T-Int8, T-UInt8, T-Boolean FROM TASTE-BasicTypes;
+
+
+FCE-SGM-EEPROM ::= SEQUENCE {
+    sit-1   FCE-SIT-1,
+    sit-2   FCE-SIT-2,
+    sit-3   FCE-SIT-3,
+    sit-4   FCE-SIT-4
+}
+
+FCE-SGM-RAM ::= SEQUENCE {
+    llobt INTEGER (0..255), -- In fact much bigger (stored on 80 bits according to section 5.1 of SGM Data Definition document)
+    llatt Quaternion-ty,
+    llare Angular-rate-ty
+}
+
+
+FCE-SIT-1 ::= SEQUENCE { -- completed
+    imu-1 IMU,
+    imu-2 IMU,
+    riup-cnf-n A-or-B,
+    riup-cnf-r A-or-B,
+    
+    riup-cnf-pwr-io-n A-or-B,
+    riup-cnf-pwr-io-r A-or-B,
+    spwr-cnf-n D-or-X,
+    spwr-cnf-r D-or-X,
+    rium-cnf-n A-or-B,
+    rium-cnf-r A-or-B,
+    rium-cnf-pwr-io-n A-or-B,
+    rium-cnf-pwr-io-r A-or-B,
+    cpst CPST-CNF,
+    sadt SADT-CNF,
+    cpsp CPSP-CNF,
+    sadp SADP-CNF
+}
+
+FCE-SIT-2 ::= SEQUENCE {
+    is-sep-phase BOOLEAN,
+    sa-is-edge-on-sun-alwd BOOLEAN,
+    sc-conf ENUMERATED {mcsc, mcsa, mcso, mpo}
+}
+
+FCE-SIT-3 ::= SEQUENCE {
+    nothing BOOLEAN
+}
+
+FCE-SIT-4 ::= SEQUENCE {
+    rc INTEGER (1..5),   -- formally 8 bits
+    ground-cmd-reset BOOLEAN,
+    test-mode-counter Counter-ty DEFAULT 20 -- range OK (2 bytes) 
+}
+
+IMU ::= SEQUENCE {
+    cnf-n A-or-B,
+    cnf-r A-or-B,
+    cnf-g INTEGER(0..100)   -- Unknown range
+}
+
+CPST-CNF ::= SEQUENCE {
+    cpst1-cnf-n A-or-B,
+    cpst2-cnf-n A-or-B,
+    cpst1-cnf-r A-or-B,
+    cpst2-cnf-r A-or-B
+}
+
+SADT-CNF ::= SEQUENCE {
+    cnf-n A-or-B,
+    cnf-r A-or-B
+}
+
+
+CPSP-CNF ::= SEQUENCE {
+    cpsp1-cnf-n A-or-B,
+    cpsp2-cnf-n A-or-B,
+    cpsp1-cnf-r A-or-B,
+    cpsp2-cnf-r A-or-B
+}
+
+SADP-CNF ::= SEQUENCE {
+    cnf-n A-or-B,
+    cnf-r A-or-B
+}
+
+A-or-B ::= ENUMERATED {a, b}
+D-or-X ::= ENUMERATED {d, x}
+
+-- FCE Recovery Status Register (RD13, section 11.5)
+FCE-RECOVERY-STATUS-REGISTER ::= SEQUENCE {
+    l2rec BOOLEAN,
+    l3rec BOOLEAN
+}
+
+-- FCE Control Status Reigster (RD13, section 11.13)
+FCE-CONTROL-FLAGS-STATUS-REGISTER ::= SEQUENCE {
+    arr-dep-flag ENUMERATED {majority, minority},   -- Abstracted (majority = two out of three set to 1)
+    reference-pattern Valid-ty
+}
+
+Counter-ty ::= INTEGER (0..65535)
+Bool-ty ::= BOOLEAN
+Valid-ty ::= ENUMERATED {ok, nok}
+Quaternion-ty ::= BOOLEAN    -- Actual type isn't relevant
+Angular-rate-ty ::= BOOLEAN  -- Actual type isn't relevant
+END
+

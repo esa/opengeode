@@ -1,0 +1,165 @@
+PROCESS behaviour;
+/* CIF TEXT (-1232, 418), (218, 140) */
+-- Local variables
+
+DCL line QLine;
+DCL conn GenericConnection;
+DCL pos, last_pos Position;
+/* CIF ENDTEXT */
+/* CIF START (-1234, 27), (100, 50) */
+START;
+/* CIF NEXTSTATE (-1234, 92), (100, 50) */
+NEXTSTATE idle;
+
+
+/* CIF STATE (-1025, 46), (100, 50) */
+STATE idle;
+/* CIF INPUT (-1053, 116), (155, 50) */
+INPUT click_on_left_menu
+(item_type)
+/* CIF COMMENT (-847, 116), (112, 50) */
+COMMENT 'User chose
+the link icon';
+/* CIF DECISION (-1029, 181), (107, 70) */
+DECISION 'item_type';
+/* CIF ANSWER (-1143, 271), (120, 35) */
+('Connection'):
+/* CIF NEXTSTATE (-1175, 321), (184, 50) */
+NEXTSTATE wait_connection_source;
+/* CIF ANSWER (-933, 271), (100, 35) */
+ELSE:
+/* CIF NEXTSTATE (-951, 321), (135, 50) */
+NEXTSTATE wait_placement;
+ENDDECISION;
+ENDSTATE;
+
+
+/* CIF STATE (-559, 47), (184, 50) */
+STATE wait_connection_source
+/* CIF COMMENT (-351, 48), (154, 50) */
+COMMENT 'Wait until the user
+clicks on the scene';
+/* CIF INPUT (-538, 117), (141, 50) */
+INPUT mousePress(pos);
+/* CIF PROCEDURE (-554, 182), (173, 50) */
+CALL findSymbol(pos, elem)
+/* CIF COMMENT (-368, 181), (241, 51) */
+COMMENT 'Check if there is a symbol at that
+position (or close to it)';
+/* CIF DECISION (-545, 247), (156, 70) */
+DECISION validStartSymbol
+(elem)
+/* CIF COMMENT (-373, 255), (244, 53) */
+COMMENT 'If there is a symbol, check if it can
+have a connection starting from it';
+/* CIF ANSWER (-694, 337), (100, 35) */
+(TRUE):
+/* CIF TASK (-712, 387), (137, 50) */
+TASK parent := elem,
+last_pos := pos;
+/* CIF PROCEDURE (-753, 452), (218, 50) */
+CALL NewConnection(parent, conn)
+/* CIF COMMENT (-515, 452), (189, 50) */
+COMMENT 'Create a new connection';
+/* CIF TASK (-723, 517), (159, 50) */
+TASK line := Line(pos, pos)
+/* CIF COMMENT (-544, 517), (203, 50) */
+COMMENT 'Create a line that will
+update when mouse moves';
+/* CIF NEXTSTATE (-709, 582), (130, 50) */
+NEXTSTATE WaitNextClick;
+/* CIF ANSWER (-316, 337), (100, 35) */
+(FALSE):
+/* CIF NEXTSTATE (-316, 387), (100, 50) */
+NEXTSTATE Wait;
+ENDDECISION;
+ENDSTATE;
+
+
+
+/* CIF STATE (376, 26), (125, 50) */
+STATE WaitNextClick;
+/* CIF INPUT (89, 96), (141, 50) */
+INPUT mousePress(pos);
+/* CIF PROCEDURE (106, 161), (107, 50) */
+CALL updateLine
+(line, pos)
+/* CIF COMMENT (233, 161), (159, 50) */
+COMMENT 'Redraw the line
+to the clicked point';
+/* CIF PROCEDURE (73, 226), (173, 50) */
+CALL findSymbol(pos, elem)
+/* CIF COMMENT (254, 224), (241, 51) */
+COMMENT 'Check if there is a symbol at that
+position (or close to it)';
+/* CIF DECISION (92, 291), (135, 70) */
+DECISION validEndSymbol
+(elem)
+/* CIF COMMENT (247, 301), (245, 50) */
+COMMENT 'If there is a symbol, check if it can
+have a connection ending at it';
+/* CIF ANSWER (-127, 381), (100, 35) */
+(TRUE):
+/* CIF PROCEDURE (-162, 431), (171, 50) */
+CALL updatePos(pos, elem)
+/* CIF COMMENT (28, 431), (290, 50) */
+COMMENT 'If symbol was just CLOSE to the click,
+adjust the end point to touch the symbol';
+/* CIF PROCEDURE (-130, 496), (107, 50) */
+CALL updateLine
+(line, pos)
+/* CIF COMMENT (-11, 496), (139, 50) */
+COMMENT 'Redraw the line
+to the new point';
+/* CIF PROCEDURE (-153, 561), (152, 50) */
+CALL updateConnection
+(conn, line);
+/* CIF NEXTSTATE (-127, 626), (100, 50) */
+NEXTSTATE Wait;
+/* CIF ANSWER (354, 381), (100, 35) */
+(FALSE):
+/* CIF PROCEDURE (328, 431), (152, 50) */
+CALL updateConnection
+(conn, line);
+/* CIF NEXTSTATE (342, 496), (125, 50) */
+NEXTSTATE WaitNextClick;
+ENDDECISION;
+/* CIF INPUT (568, 96), (142, 50) */
+INPUT mouseMove(pos);
+/* CIF DECISION (557, 161), (164, 70) */
+DECISION last_pos!x - pos!x < 2
+/* CIF COMMENT (741, 171), (137, 50) */
+COMMENT 'Block a bit when
+line is vertical';
+/* CIF ANSWER (529, 251), (100, 35) */
+(TRUE):
+/* CIF TASK (504, 301), (149, 50) */
+TASK pos!x := last_pos!x;
+/* CIF ANSWER (664, 251), (100, 35) */
+(FALSE):
+ENDDECISION;
+/* CIF DECISION (553, 366), (171, 70) */
+DECISION last_pos!y - pos!y < 2
+/* CIF COMMENT (743, 376), (138, 50) */
+COMMENT 'Block a bit when
+line is horizontal';
+/* CIF ANSWER (664, 456), (100, 35) */
+(FALSE):
+/* CIF ANSWER (529, 456), (100, 35) */
+(TRUE):
+/* CIF TASK (504, 506), (149, 50) */
+TASK pos!y := last_pos!y;
+ENDDECISION;
+/* CIF PROCEDURE (585, 571), (107, 50) */
+CALL updateLine
+(line, pos)
+/* CIF COMMENT (713, 571), (159, 50) */
+COMMENT 'Redraw the line
+to the clicked point';
+/* CIF TASK (575, 636), (127, 50) */
+TASK last_pos := pos;
+/* CIF NEXTSTATE (577, 701), (125, 50) */
+NEXTSTATE WaitNextClick;
+ENDSTATE;
+
+ENDPROCESS behaviour;

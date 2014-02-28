@@ -1,0 +1,48 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM orchestrator;
+
+	SIGNAL pulse;
+
+	/* CIF Keep Specific Geode PARAMNAMES simulation_choice */
+	SIGNAL simulate (Simulation_Param);
+
+	/* CIF Keep Specific Geode PARAMNAMES gnc_inputs */
+	SIGNAL VESAT_Data (T_GNC_LV_SIM_CONTEXT);
+
+	PROCEDURE jump_to_next_major_cycle COMMENT '#c_predef';
+ 	EXTERNAL;
+
+	/* CIF Keep Specific Geode PARAMNAMES vesat_input */
+	SIGNAL VESAT_one_step (T_GNC_LV_SIM_INPUTS);
+
+	PROCEDURE gnc_onestep COMMENT '#c_predef';
+		FPAR
+			IN gnc_inputs T_GNC_LV_SIM_CONTEXT,
+			IN/OUT gnc_outputs T_GNC_LV_SIM_INPUTS;
+ 	EXTERNAL;
+
+	PROCEDURE gnc_init COMMENT '#c_predef';
+ 	EXTERNAL;
+
+	/* CIF Keep Specific Geode PARAMNAMES gnc_data */
+	SIGNAL plot (T_Plot);
+
+	CHANNEL c
+		FROM ENV TO orchestrator WITH pulse,simulate,VESAT_Data;
+		FROM orchestrator TO ENV WITH VESAT_one_step,plot;
+	ENDCHANNEL;
+
+	BLOCK orchestrator;
+
+		SIGNALROUTE r
+			FROM ENV TO orchestrator WITH pulse,simulate,VESAT_Data;
+			FROM orchestrator TO ENV WITH VESAT_one_step,plot;
+
+		CONNECT c and r;
+
+		PROCESS orchestrator REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

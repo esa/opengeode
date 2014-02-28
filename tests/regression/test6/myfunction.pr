@@ -1,0 +1,46 @@
+PROCESS myfunction;
+/* CIF TEXT (-336, -82), (271, 250) */
+-- Timers defined in the interface view
+-- Use SET_TIMER (value, timer name)
+-- and RESET_TIMER (timer name) in a
+-- PROCEDURE CALL symbol to use them
+
+
+
+DCL toto T_UInt32;
+
+TIMER myTimer;
+
+-- Test default value for a complex type
+DCL def_val MySeq := { a 3, b taste };
+/* CIF ENDTEXT */
+/* CIF START (58, -99), (100, 50) */
+START;
+/* CIF NEXTSTATE (58, -34), (100, 50) */
+NEXTSTATE Wait;
+
+
+/* CIF STATE (58, -34), (100, 50) */
+STATE Wait;
+/* CIF INPUT (-42, 36), (139, 50) */
+INPUT start_something
+(toto);
+/* CIF OUTPUT (-54, 101), (164, 50) */
+OUTPUT result_data(toto + 1);
+/* CIF PROCEDURECALL (-47, 166), (150, 50) */
+CALL writeln
+('Hello Toto', toto);
+/* CIF PROCEDURECALL (-38, 231), (132, 50) */
+CALL set_timer
+(1000, myTimer);
+/* CIF NEXTSTATE (-23, 296), (102, 50) */
+NEXTSTATE wait;
+/* CIF INPUT (137, 36), (100, 50) */
+INPUT mytimer;
+/* CIF PROCEDURECALL (119, 101), (135, 50) */
+CALL writeln
+('timer expired');
+/* CIF NEXTSTATE (137, 166), (100, 50) */
+NEXTSTATE Wait;
+ENDSTATE;
+ENDPROCESS myfunction;

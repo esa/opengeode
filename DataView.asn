@@ -1,0 +1,23 @@
+TASTE-Dataview DEFINITIONS AUTOMATIC TAGS ::=
+BEGIN
+
+
+T-INTEGER ::= INTEGER (0..255)
+
+T-SEQ ::= SEQUENCE {
+	hello INTEGER (0..10),
+	world ENUMERATED { hop, hips },
+        howareyou CHOICE { choice-A T-INTEGER, choice-B T-INTEGER }
+}
+
+T-POS ::= SEQUENCE {
+	x T-INTEGER,
+	y SEQUENCE { a BOOLEAN, b SEQUENCE (SIZE(3)) OF BOOLEAN },
+ 	z T-SEQ
+}
+
+myVar T-SEQ ::= { hello 4, world hop, howareyou choice-B: 42 }
+-- TODO : add test T-A ::= T-B to see how ReferenceTypes are followed
+
+END
+

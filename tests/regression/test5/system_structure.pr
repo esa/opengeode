@@ -1,0 +1,36 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM function0;
+
+	/* CIF Keep Specific Geode PARAMNAMES val */
+	SIGNAL runStep (MyTest);
+
+	PROCEDURE ada COMMENT '#c_predef';
+		FPAR
+			IN/OUT outparam MyTest;
+ 	EXTERNAL;
+
+	/* CIF Keep Specific Geode PARAMNAMES outparam */
+	SIGNAL result (MyTest);
+
+	/* CIF Keep Specific Geode PARAMNAMES c */
+	SIGNAL counter (MyInteger);
+
+	CHANNEL c
+		FROM ENV TO function0 WITH runStep;
+		FROM function0 TO ENV WITH result,counter;
+	ENDCHANNEL;
+
+	BLOCK function0;
+
+		SIGNALROUTE r
+			FROM ENV TO function0 WITH runStep;
+			FROM function0 TO ENV WITH result,counter;
+
+		CONNECT c and r;
+
+		PROCESS function0 REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

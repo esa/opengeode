@@ -1,0 +1,678 @@
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+END
+
+VEGA DEFINITIONS ::=
+BEGIN
+
+
+-- SIMULATOR OUTPUTS / FPS-A INPUTS (cyril's code)
+T-GNC-LV-SIM-CONTEXT ::= SEQUENCE {
+    attitude-quaternion         T-QUAT-FLOAT32,
+    ng-vel-incr-irs             T-VECT3-FLOAT32,
+    ng-vel-incr-accelero        T-VECT3-FLOAT32,
+    filtered-angles-sample-1    T-VECT3-FLOAT32,
+    filtered-angles-sample-2    T-VECT3-FLOAT32
+}
+
+-- SIMULATOR INPUTS / FPS-A OUTPUTS (cyril'scode)
+T-GNC-LV-SIM-INPUTS ::= SEQUENCE {
+    sequ-exec-request-vect   T-HAS-SEQUENCE-EXEC-BEEN-REQUESTED-VECT,
+    tvc-set-point-eng-vect  T-TVC-SET-POINT-ENG-VECT,
+    racs-ev-cmd-vect        T-RACS-EV-CMD-VECT
+}
+
+-- Basic_Types.T_FLOAT32
+-- Temporary: set up as double (64 bits) - not sure what range to put for 32 bits
+T-FLOAT32 ::= T-DOUBLE -- REAL (-3.40282347e+38..3.40282347e+38)
+
+-- MATH_Types.T_QUAT_COMPONENTS
+T-QUAT-COMPONENTS ::= INTEGER (0..3)
+size-T-QUAT-COMPONENTS INTEGER ::= 4
+-- GNC_Types.T_QUAT_FLOAT32
+T-QUAT-FLOAT32 ::= SEQUENCE (SIZE(size-T-QUAT-COMPONENTS)) OF T-FLOAT32
+
+-- GNC_Types.T_VECT3_FLOAT32
+-- Using MATH_Types.T-AXIS-3-ID for the indexing
+-- Using Basic_Types.T_RANGE_3
+T-AXIS-3-ID ::= T-RANGE-3
+axis-x-roll T-AXIS-3-ID ::= 0
+axis-y-yaw T-AXIS-3-ID ::= 1
+axis-z-pitch T-AXIS-3-ID ::= 2
+T-RANGE-3 ::= INTEGER (0..2)
+size-T-AXIS-3-ID INTEGER ::= 3
+T-VECT3-FLOAT32 ::= SEQUENCE (SIZE(size-T-AXIS-3-ID)) OF T-FLOAT32
+
+-- SEQUENCES_LV_ENUMS.T_SEQUENCE_ID
+T-SEQUENCE-ID ::= ENUMERATED {
+      sequence-id-none,
+      command-irs-in-flight-mode,
+      select-uctm-telemetry-format-2,
+      inhibit-bus-repeater-egse-line,
+      ignite-p80-motor,
+      select-uctm-telemetry-format-3,
+      select-uctm-telemetry-format-4,
+      open-mea-valves,
+      close-mea-valves,
+      select-uctm-telemetry-format-5,
+      open-sas-dry-loops,
+      select-uctm-telemetry-format-6,
+      select-uctm-telemetry-format-7,
+      passivate-lps-1-2,
+      pressurize-lps-1-2,
+      pressurize-lps-4-6,
+      pressurize-lps-3-5,
+      pressurize-lps-hppy,
+      passivate-lps-3,
+      passivate-lps-4,
+      passivate-racs,
+      initiate-racs-system-priming,
+      set-racs-to-full-operational-mode,
+      open-lps-evacuation-valves,
+      close-lps-evacuation-valves,
+      separate-multipayload-adapter,
+      select-uctm-telemetry-format-8,
+      select-uctm-telemetry-format-9,
+      select-uctm-telemetry-format-10,
+      select-uctm-telemetry-format-11,
+      select-uctm-telemetry-format-12,
+      select-uctm-telemetry-format-13,
+      select-uctm-telemetry-format-14,
+      select-uctm-telemetry-format-15,
+      separate-func-mc,
+      separate-func-1,
+      separate-func-2,
+      separate-func-3,
+      inhibit-bus-repeater-pl-line,
+      activate-electrical-order-1,
+      activate-electrical-order-2,
+      activate-electrical-order-3,
+      activate-electrical-order-4,
+      activate-electrical-order-5,
+      deactivate-electrical-order-1,
+      deactivate-electrical-order-2,
+      deactivate-electrical-order-3,
+      deactivate-electrical-order-4,
+      deactivate-electrical-order-5,
+      close-pl-dry-loop-1,
+      close-pl-dry-loop-2,
+      close-pl-dry-loop-3,
+      close-pl-dry-loop-4,
+      close-pl-dry-loop-5,
+      close-pl-dry-loop-6,
+      close-pl-dry-loop-7,
+      close-pl-dry-loop-8,
+      open-pl-dry-loop-1,
+      open-pl-dry-loop-2,
+      open-pl-dry-loop-3,
+      open-pl-dry-loop-4,
+      open-pl-dry-loop-5,
+      open-pl-dry-loop-6,
+      open-pl-dry-loop-7,
+      open-pl-dry-loop-8,
+      reactivate-payload-supply-breaker,
+      rearm-eo-breaker,
+      close-spare-dry-loop-14,
+      close-spare-dry-loop-15,
+      close-spare-dry-loop-16,
+      open-spare-dry-loop-14,
+      open-spare-dry-loop-15,
+      open-spare-dry-loop-16,
+      open-spare-dry-loop-17,
+      close-spare-dry-loop-17,
+      open-spare-dry-loop-18,
+      close-spare-dry-loop-18,
+      p80-separation,
+      z23-ignition,
+      z23-separation,
+      z9-ignition,
+      z9-separation,
+      fairing-separation,
+      sequence-unused-83,
+      sequence-unused-84,
+      sequence-unused-85,
+      sequence-unused-86,
+      sequence-unused-87,
+      sequence-unused-88,
+      sequence-unused-89,
+      sequence-unused-90,
+      sequence-unused-91,
+      sequence-unused-92,
+      sequence-unused-93,
+      sequence-unused-94,
+      sequence-unused-95,
+      sequence-unused-96,
+      sequence-unused-97,
+      sequence-unused-98,
+      sequence-unused-99,
+      sequence-unused-100
+}
+--size-T-SEQUENCE-ID INTEGER ::= 101
+--T-HAS-SEQUENCE-EXEC-BEEN-REQUESTED-VECT ::= SEQUENCE (SIZE(size-T-SEQUENCE-ID)) OF BOOLEAN 
+
+size-T-SEQUENCE-ID INTEGER ::= 20
+T-HAS-SEQUENCE-EXEC-BEEN-REQUESTED-VECT ::= SEQUENCE (SIZE(size-T-SEQUENCE-ID)) OF T-FLOAT32 
+
+
+T-TVC-SET-POINT-ENG-VECT-IDX ::= ENUMERATED {
+    p80-x,
+    p80-y,
+    z23-x,
+    z23-y,
+    z09-x,
+    z09-y,
+    avum-x,
+    avum-y
+}
+size-T-TVC-SET-POINT-ENG-VECT-IDX INTEGER ::= 8
+T-TVC-SET-POINT-ENG-VECT ::= SEQUENCE (SIZE(size-T-TVC-SET-POINT-ENG-VECT-IDX)) OF T-FLOAT32
+
+-- GNC_Types.T_ACS_EQPT_ID
+T-ACS-EQPT-ID ::= ENUMERATED {
+    acs-eqpt-1,
+    acs-eqpt-2,
+    acs-eqpt-3,
+    acs-eqpt-4,
+    acs-eqpt-5,
+    acs-eqpt-6
+}
+size-T-ACS-EQPT-ID INTEGER ::= 6 
+T-RACS-EV-CMD-VECT ::= SEQUENCE (SIZE(size-T-ACS-EQPT-ID)) OF T-FLOAT32 
+
+
+
+-- Following was used in David's code
+
+
+
+-- GNC_Types.T_IRS_FUNCTIONAL_DATA (old: used in David's code)
+--T-IRS-FUNCTIONAL-DATA ::= SEQUENCE {
+--    quat-irs-to-basic     T-QUAT-INT16,
+--    ng-vel-incr-irs       T-VECT3-INT16,
+--    ng-vel-incr-accelero  T-VECT3-INT16,
+--    ticks-incr-irs        T-UINT16
+--}
+
+-- GNC_Types.T_QUAT_INT16
+--T-QUAT-INT16 ::= SEQUENCE (SIZE(size-quat-components)) OF T-INT16
+
+-- GNC_Types.T_VECT3_INT16
+--T-VECT3-INT16 ::= SEQUENCE (SIZE(size-axis-3-id)) OF T-INT16
+
+
+-- GNC_Types.T_ACQ_CYCLE_50HZ_ID
+--T-ACQ-CYCLE-50HZ-ID ::= ENUMERATED {acq-cycle-50hz-1, acq-cycle-50hz-2}
+
+-- GNC_Types.T_IRS_FILTERED_ANGLES_SAMPLE
+--T-IRS-FILTERED-ANGLES-SAMPLE ::= SEQUENCE {
+--    euler-angles-irs-to-basic T-VECT3-INT16,
+--    ticks-incr-irs            T-UINT16
+--}
+
+-- LN1_Types.T_INTR
+T-INTR ::= ENUMERATED {
+    hwe,            --Masked hardware errors
+    asg-al3,        --The WatchdogExpired alarm has been asserted
+    asg-al1,        --The PI Bus Master Address Error/Bus Timeout alarm has been asserted 
+    ic-obtpulse4,   --ObtPulse4_N Interrupt from OBT module in COCOS
+    ic-rtc,         --Real Time Clock Interrupt from ERC32SC
+    ic-utca,        --user test connector active
+    m5-recerr,      --received message error detected
+    m5-lberr,       --looped back error detected
+    m5-dnc,         --dynamic bus control accepted
+    m5-slend,       --send list end interrupt
+    m5-slimed,      --send list intermediate interrupt
+    m5-slloop,      --send list loop-around interrupt
+    m5-slchok,      --send list is choked
+    m5-rtrec,       --remote terminal has handled a data receive message
+    m5-rttrn,       --remote terminal has handled a data transmit message
+    m5-rtbct,       --remote terminal has handled a data broadcast message
+    m5-rtmode,      --remote terminal has received a mode code command
+    m5-rtsync,      --remote terminal has received a synchronize command
+    m5-rtrst,       --remote terminal has received a reset command
+    obt-1hz,        --obt counter bit 23 has toggled from '0' to '1'
+    obt-syncsw,     --a obt counter synchronisation has been performed from sw.
+    obt-sample1,    --obt counter has been sampled in obt sample 1 coarse & fine register
+    pim-et,         --error trapped in first failing registers
+    wd-wde,         --the cocos watchdog has expired
+    obt-pulse1,     --obt pulse 1 has been detected
+    uart-a,         --data word sent or received on uart a
+    uart-b,         --data word sent or received on uart b
+    memerr,         --correctable memory error
+    uart-err,       --uart error
+    dma-err,        --dma access error
+    dma-tmo,        --dma time-out
+    obt-pulse2,     --obt pulse 2 has been detected
+    obt-pulse3,     --obt pulse 3 has been detected
+    gpt,            --general purpose timer
+    rtc,            --real time clock timer
+    obt-pulse4,     -- obt pulse 4 has been detected
+    wdtmo            -- watchdog time-out.  ic-utca,
+}
+
+-- IPDU_LV_ENUM.T_IPDU_ID
+--T-IPDU-ID ::= ENUMERATED {
+--    ipdu-id-none (0),
+--    ipdu-avum (8),
+--    ipdu-p80 (26),
+--    ipdu-z23 (20),
+--    ipdu-z9 (11),
+--    ipdu-id-unused-5 (5)
+--}
+
+-- GNC_Types.T_POINT
+--T-POINT ::= SEQUENCE {
+--    x T-DOUBLE,
+--    y T-DOUBLE
+--}
+
+
+
+-- DM_EVENTS_LV_ENUM.T_DM_EVENT_ID
+--T-DM-EVENT-ID ::= ENUMERATED {
+--    dm-event-id-none,
+--    evt-fc0-irs-liberation,
+--    evt-fc1-end-of-vertical-flight,
+--    evt-fc2-p80-atd1,
+--    evt-fc3-p80-atd2,
+--    evt-fc4-z23-atd1,
+--    evt-fc5-z23-atd2,
+--    evt-fc6-z9-ignition,
+--    evt-fc7-fairing-separation-cdt,
+--    evt-fc8-z9-atd1,
+--    evt-fc9-z9-atd2,
+--    evt-fc10-av1-ignition,
+--    evt-fc11-av1-cutoff,
+--    evt-fc12-av2-ignition,
+--    evt-fc13-av2-cutoff,
+--    evt-fc14-pl1-release,
+--    evt-fc15-av3-ignition,
+--    evt-fc16-av3-cutoff,
+--    evt-fc17-av4-ignition,
+--    evt-fc18-av4-cutoff,
+--    evt-fc19-pl2-release,
+--    evt-fc20-av5-ignition,
+--    evt-fc21-av5-cutoff,
+--    evt-k-11-ignition-p80,
+--    evt-k-12-separation-p80,
+--    evt-k-22-ignition-z23,
+--    evt-k-25-separation-z23,
+--    evt-k-32-ignition-z9,
+--    evt-k-35-separation-fairing,
+--    evt-k-37-separation-z9,
+--    evt-k-43-open-mea-1,
+--    evt-k-44-close-mea-1,
+--    evt-k-47-open-mea-2,
+--    evt-k-48-close-mea-2,
+--    evt-k-49-separation-pl1,
+--    evt-k-50-open-mea-3,
+--    evt-k-51-close-mea-3,
+--    evt-k-52-open-mea-4,
+--    evt-k-53-close-mea-4,
+--    evt-k-54-separation-pl2,
+--    evt-k-55-separation-pl-adapt,
+--    evt-k-56-open-mea-5,
+--    evt-k-57-close-mea-5,
+--    evt-k-59-passivation-racs,
+--    evt-k-60-passivation-fuel,
+--    evt-k-61-passivation-oxidant,
+--    evt-k-62-passivation-gas,
+--    evt-k-63-mission-end,
+--    evt-k-67-activate-order-1,
+--    evt-k-68-activate-order-2,
+--    evt-k-69-activate-order-3,
+--    evt-k-70-activate-order-4,
+--    evt-k-71-activate-order-5,
+--    evt-k-72-deactivate-order-1,
+--    evt-k-73-deactivate-order-2,
+--    evt-k-74-deactivate-order-3,
+--    evt-k-75-deactivate-order-4,
+--    evt-k-76-deactivate-order-5,
+--    evt-k-77-close-pl-dry-loop-1,
+--    evt-k-78-close-pl-dry-loop-2,
+--    evt-k-79-close-pl-dry-loop-3,
+--    evt-k-80-close-pl-dry-loop-4,
+--    evt-k-81-close-pl-dry-loop-5,
+--    evt-k-82-close-pl-dry-loop-6,
+--    evt-k-83-close-pl-dry-loop-7,
+--    evt-k-84-close-pl-dry-loop-8,
+--    evt-k-85-open-pl-dry-loop-1,
+--    evt-k-86-open-pl-dry-loop-2,
+--    evt-k-87-open-pl-dry-loop-3,
+--    evt-k-88-open-pl-dry-loop-4,
+--    evt-k-89-open-pl-dry-loop-5,
+--    evt-k-90-open-pl-dry-loop-6,
+--    evt-k-91-open-pl-dry-loop-7,
+--    evt-k-92-open-pl-dry-loop-8,
+--    evt-k-93-close-spare-dry-loop-14,
+--    evt-k-94-close-spare-dry-loop-15,
+--    evt-k-95-close-spare-dry-loop-16,
+--    evt-k-96-close-spare-dry-loop-17,
+--    evt-k-97-close-spare-dry-loop-18,
+--    evt-k-98-open-spare-dry-loop-14,
+--    evt-k-99-open-spare-dry-loop-15,
+--    evt-k-100-open-spare-dry-loop-16,
+--    evt-k-101-open-spare-dry-loop-17,
+--    evt-k-102-open-spare-dry-loop-18,
+--    evt-k-110-separation-pl1-micro-1-2,
+--    evt-k-111-separation-pl1-micro-3-4,
+--    evt-k-112-separation-pl1-micro-5-6,
+--    evt-k-114-separation-pl2-micro-1-2,
+--    evt-k-115-separation-pl2-micro-3-4,
+--    evt-k-116-separation-pl2-micro-5-6,
+--    evt-fdir-avum3,
+--    evt-fdir-avum5,
+--    evt-uctm-p80-begin,
+--    evt-uctm-p80-separation,
+--    evt-uctm-z23-begin,
+--    evt-uctm-z23-main,
+--    evt-uctm-z23-separation,
+--    evt-uctm-z9-begin,
+--    evt-uctm-z9-main,
+--    evt-uctm-aft-fairing-jettison,
+--    evt-uctm-z9-separation,
+--    evt-uctm-avum-main-1,
+--    evt-uctm-link-loss-1,
+--    evt-uctm-download-1,
+--    evt-uctm-avum-restore-1,
+--    evt-uctm-pl1-separation,
+--    evt-uctm-avum-main-2,
+--    evt-uctm-pl2-separation,
+--    evt-uctm-avum-main-3,
+--    evt-uctm-bef-fairing-jettison,
+--    evt-uctm-link-loss-2,
+--    evt-uctm-download-2,
+--    evt-uctm-avum-restore-2,
+--    evt-uctm-link-loss-3,
+--    evt-uctm-download-3,
+--    evt-uctm-link-loss-4,
+--    evt-uctm-download-4,
+--    evt-uctm-link-loss-5,
+--    evt-uctm-download-5,
+--    evt-uctm-avum-restore-5,
+--    evt-stab-0-start-p80,
+--    evt-stab-1-stop-p80,
+--    evt-stab-2-start-z23,
+--    evt-stab-3-stop-z23,
+--    evt-stab-4-start-z9,
+--    evt-stab-5-stop-z9,
+--    evt-stab-6-start-av1,
+--    evt-stab-7-stop-av1,
+--    evt-stab-8-start-av2,
+--    evt-stab-9-stop-av2,
+--    evt-stab-10-start-av3,
+--    evt-stab-11-stop-av3,
+--    evt-stab-12-start-av4,
+--    evt-stab-13-stop-av4,
+--    evt-stab-14-start-av5,
+--    evt-stab-15-stop-av5,
+--    evt-acs-stop-z23-roll-before-sep,
+--    evt-acs-start-3-axes-after-z23-sep,
+--    evt-acs-start-z9-roll,
+--    evt-acs-stop-z9-roll,
+--    evt-acs-start-3-axes-after-z9-sep,
+--    evt-acs-start-av1-roll,
+--    evt-acs-start-3-axes-after-av1,
+--    evt-acs-start-av2-roll,
+--    evt-acs-start-3-axes-after-av2,
+--    evt-acs-suspend-before-pl1-sep,
+--    evt-acs-resume-after-pl1-sep,
+--    evt-acs-start-av3-roll,
+--    evt-acs-start-3-axes-after-av3,
+--    evt-acs-start-av4-roll,
+--    evt-acs-start-3-axes-after-av4,
+--    evt-acs-suspend-before-pl2-sep,
+--    evt-acs-resume-after-pl2-sep,
+--    evt-acs-start-av5-roll,
+--    evt-acs-stop-av5-roll,
+--    evt-acs-start-p80-roll,
+--    evt-acs-stop-p80-roll-before-sep,
+--    evt-acs-start-z23-roll,
+--    evt-acs-stop-3-axes-before-z9-ign,
+--    evt-acs-suspend-z9-roll-before-fairing-sep,
+--    evt-acs-resume-z9-roll-after-fairing-sep,
+--    evt-teta-0-start-p80-pitch-interp,
+--    evt-psi-0-start-z23-yaw-fast-rot,
+--    evt-psi-1-stop-z23-yaw-fast-rot,
+--    evt-sb-1-stop-p80-pitch-interp,
+--    evt-sb-2-stop-z23-pitch-interp,
+--    evt-se-1-start-z23-pitch-interp,
+--    evt-teta-1-start-z9-clg-fast-rot,
+--    evt-teta-2-stop-z9-clg-fast-rot,
+--    evt-teta-3-start-av1-clg-fast-rot,
+--    evt-teta-4-stop-av1-clg-fast-rot,
+--    evt-teta-6-start-av2-clg-fast-rot,
+--    evt-teta-7-stop-av2-clg-fast-rot,
+--    evt-clg-start-before-z9-ign,
+--    evt-clg-start-before-av1-ign,
+--    evt-clg-switch-on-after-av1-ign,
+--    evt-clg-stop-before-av1-cutoff,
+--    evt-clg-switch-on-after-fairing-sep,
+--    evt-clg-stop-before-z9-atd1,
+--    evt-clg-start-before-av2-ign,
+--    evt-clg-switch-on-after-av2-ign,
+--    evt-clg-stop-before-av2-cutoff,
+--    evt-start-slew-pl1,
+--    evt-middle-slew-pl1,
+--    evt-stop-slew-pl1,
+--    evt-start-slew-pl2,
+--    evt-middle-slew-pl2,
+--    evt-stop-slew-pl2,
+--    evt-start-slew-av3,
+--    evt-middle-slew-av3,
+--    evt-stop-slew-av3,
+--    evt-start-slew-av4,
+--    evt-middle-slew-av4,
+--    evt-stop-slew-av4,
+--    evt-start-slew-av5,
+--    evt-middle-slew-av5,
+--    evt-stop-slew-av5,
+--    evt-start-slew-ca1,
+--    evt-middle-slew-ca1,
+--    evt-stop-slew-ca1,
+--    evt-start-slew-ca2,
+--    evt-middle-slew-ca2,
+--    evt-stop-slew-ca2,
+--    evt-start-spin-pl1,
+--    evt-stop-despin-pl1,
+--    evt-stop-spin-pl1,
+--    evt-start-spin-pl2,
+--    evt-stop-despin-pl2,
+--    evt-stop-spin-pl2,
+--    evt-start-ca-pl1,
+--    evt-stop-ca-pl1,
+--    evt-start-ca-pl2,
+--    evt-stop-ca-pl2,
+--    evt-start-lcp1,
+--    evt-stop-lcp1,
+--    evt-start-lcp2,
+--    evt-stop-lcp2,
+--    evt-start-slew-lcp1,
+--    evt-middle-slew-lcp1,
+--    evt-stop-slew-lcp1,
+--    evt-start-slew-av2,
+--    evt-middle-slew-av2,
+--    evt-stop-slew-av2,
+--    evt-start-slew-lcp2,
+--    evt-middle-slew-lcp2,
+--    evt-stop-slew-lcp2,
+--    dm-event-id-unused-226,
+--    dm-event-id-unused-227,
+--    dm-event-id-unused-228,
+--    dm-event-id-unused-229,
+--    dm-event-id-unused-230,
+--    dm-event-id-unused-231,
+--    dm-event-id-unused-232,
+--    dm-event-id-unused-233,
+--    dm-event-id-unused-234,
+--    dm-event-id-unused-235,
+--    dm-event-id-unused-236,
+--    dm-event-id-unused-237,
+--    dm-event-id-unused-238,
+--    dm-event-id-unused-239,
+--    dm-event-id-unused-240,
+--    dm-event-id-unused-241,
+--    dm-event-id-unused-242,
+--    dm-event-id-unused-243,
+--    dm-event-id-unused-244,
+--    dm-event-id-unused-245,
+--    dm-event-id-unused-246,
+--    dm-event-id-unused-247,
+--    dm-event-id-unused-248,
+--    dm-event-id-unused-249,
+--    dm-event-id-unused-250,
+--    dm-event-id-unused-251,
+--    dm-event-id-unused-252,
+--    dm-event-id-unused-253,
+--    dm-event-id-unused-254,
+--    dm-event-id-unused-255,
+--    dm-event-id-unused-256,
+--    dm-event-id-unused-257,
+--    dm-event-id-unused-258,
+--    dm-event-id-unused-259,
+--    dm-event-id-unused-260,
+--    dm-event-id-unused-261,
+--    dm-event-id-unused-262,
+--    dm-event-id-unused-263,
+--    dm-event-id-unused-264,
+--    dm-event-id-unused-265,
+--    dm-event-id-unused-266,
+--    dm-event-id-unused-267,
+--    dm-event-id-unused-268,
+--    dm-event-id-unused-269,
+ --   dm-event-id-unused-270,
+ --   dm-event-id-unused-271,
+--    dm-event-id-unused-272,
+--    dm-event-id-unused-273,
+--    dm-event-id-unused-274,
+--    dm-event-id-unused-275,
+--    dm-event-id-unused-276,
+--    dm-event-id-unused-277,
+--    dm-event-id-unused-278,
+--    dm-event-id-unused-279,
+--    dm-event-id-unused-280,
+--    dm-event-id-unused-281,
+--    dm-event-id-unused-282,
+--    dm-event-id-unused-283,
+--    dm-event-id-unused-284,
+--    dm-event-id-unused-285,
+--    dm-event-id-unused-286,
+--    dm-event-id-unused-287,
+--    dm-event-id-unused-288,
+--    dm-event-id-unused-289,
+ --   dm-event-id-unused-290,
+ --   dm-event-id-unused-291,
+ --   dm-event-id-unused-292,
+ --   dm-event-id-unused-293,
+--    dm-event-id-unused-294,
+--    dm-event-id-unused-295,
+--    dm-event-id-unused-296,
+--    dm-event-id-unused-297,
+--    dm-event-id-unused-298,
+--    dm-event-id-unused-299,
+--    dm-event-id-unused-300
+--}
+
+-- MATH_Types.T_AXIS_3_ID
+--T-AXIS-3-ID ::= INTEGER (0..2)
+--size-axis-3-id INTEGER ::= 3
+
+-- Basic types
+
+-- Basic_Types.T_MAJOR_CYCLE
+--T-MAJOR-CYCLE ::= INTEGER (0.. 4294967295)
+
+-- Basic_Types.T_ACS_OPEN_DURATION
+-- T-ACS-OPEN-DURATION ::= SEQUENCE (SIZE(size-T-ACS-EQPT-ID)) OF T-UINT16
+
+-- Basic_Types.T_INT16
+-- T-INT16 ::= INTEGER (-32768..32767)
+
+-- Basic_Types.T_UINT16
+-- T-UINT16 ::= INTEGER (0..65535)
+
+-- Basic_Types.T_BOOL
+--T-BOOL ::= BOOLEAN
+
+-- Basic_Types.T_DOUBLE (use double precision - 64 bits)
+T-DOUBLE ::= REAL (-100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0 .. 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0)
+
+-- Types used for the plotting: structure grouping the values to monitor
+T-Plot ::= SEQUENCE {
+    major-cycle INTEGER (0..9999999999),
+    subcycle INTEGER (0..7),
+    gnc-inputs T-GNC-LV-SIM-CONTEXT,
+    gnc-outputs T-GNC-LV-SIM-INPUTS
+}
+
+
+--T-Event-Plot ::= SEQUENCE {
+--    event-id   T-DM-EVENT-ID,
+--    event-time T-MAJOR-CYCLE
+--}
+
+--T-GncToSim ::= SEQUENCE {
+--    xemavalidity            T-BOOL,
+--    local-xemaindex         T-IPDU-ID,
+--    local-xema              T-POINT,
+--    local-acs-open-duration T-ACS-OPEN-DURATION
+--}
+
+END
+TASTE-MONITORING DEFINITIONS AUTOMATIC TAGS ::=
+BEGIN
+
+TASTE-Peek ::= SEQUENCE {
+	base-address	INTEGER (0..4294967295),  	-- 32bits type
+	offset		INTEGER (-2147483648..2147483647),
+	base-type	ENUMERATED { int-32, int-64, real-single, real-double, octet-string },
+	nb-of-elements	INTEGER (1..10),		-- nb-of-elements EXCEPT for octet-string (1 element)
+	sample-time	INTEGER (0..15)			-- in seconds
+}
+
+TASTE-Peek-list ::= SEQUENCE (SIZE (0..5)) OF TASTE-Peek
+
+TASTE-Peek-id ::= INTEGER (0..4294967295)
+
+TASTE-Peek-id-list ::= SEQUENCE (SIZE (1..10)) OF TASTE-Peek-id
+
+TASTE-Monitoring-value ::= CHOICE {
+	int-32		INTEGER (-2147483648 .. 2147483647) ,
+	int-64		INTEGER (-9223372036854775807 .. 9223372036854775807),
+	real-single	REAL (-100000000000000000000000000000000000000.0 .. 100000000000000000000000000000000000000.0),
+	real-double 	REAL (-100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0 .. 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0),
+	octet-string	OCTET STRING (SIZE (0..10))
+}
+
+-- Result: memory value
+TASTE-Monitoring ::= SEQUENCE {
+	id	TASTE-Peek-id,
+	values	SEQUENCE (SIZE (1..10)) OF TASTE-Monitoring-value
+}
+
+TASTE-Monitoring-list ::= SEQUENCE (SIZE (0..5)) OF TASTE-Monitoring
+
+TASTE-Poke-list ::= TASTE-Monitoring-list
+
+empty-peek-list TASTE-Peek-list ::= {}
+empty-poke-list TASTE-Poke-list ::= {}
+
+-- Type to hold a maximum number of peek values (defined in a context parameter, thus patchable)
+TASTE-Peek-limit ::= INTEGER (0..1000)
+END
+ 
+
+

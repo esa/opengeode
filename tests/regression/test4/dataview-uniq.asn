@@ -1,0 +1,54 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+DeepSeq ::= SEQUENCE {
+	a SEQUENCE {
+		b SEQUENCE {
+			c MyInteger,
+			d CHOICE {
+				e BOOLEAN
+			}
+		}
+	}
+}
+
+
+
+MyComplexType ::= SEQUENCE {
+	a SEQUENCE { x INTEGER(0..255), y MyInteger }
+}
+
+MyComplexSeqOf ::= SEQUENCE(SIZE(2)) OF SEQUENCE { x INTEGER (0..255) }
+
+MyComplexChoice ::= CHOICE { a SEQUENCE { x INTEGER (0..255) } }
+
+MyRefSeqOf ::= SEQUENCE { seqof MySeqOf }
+
+-- A few simple types to start with ASN.1
+MyInteger   ::= INTEGER (0..255)
+
+MyReal	    ::= REAL (0.0 .. 1000.0)
+
+MyEnum	    ::= ENUMERATED { hello, world, howareyou }
+
+MySeq	    ::= SEQUENCE {
+		    a MyInteger,
+		    b ENUMERATED { taste(1), welcomes(2), you(3)}
+}
+
+MyChoice    ::= CHOICE {
+		    a BOOLEAN,
+		    b MySeq
+}
+
+MySeqOf	    ::= SEQUENCE (SIZE (2)) OF MyEnum
+MyPossiblyEmptySeqOf ::= SEQUENCE(SIZE(0..2)) OF INTEGER (1..2)
+
+MySeqWithEmbeddedSeqOf ::= SEQUENCE {
+    a SEQUENCE(SIZE(0..2)) OF BOOLEAN
+}
+
+MyOctStr    ::= OCTET STRING (SIZE (3))
+
+END
+

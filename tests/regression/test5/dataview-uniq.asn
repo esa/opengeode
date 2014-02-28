@@ -1,0 +1,9 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+MyInteger ::= INTEGER (0..255)
+
+MyTest ::= SEQUENCE (SIZE(2)) OF BOOLEAN
+
+END
+

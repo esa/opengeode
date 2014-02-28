@@ -1,0 +1,40 @@
+PROCESS orchestrator;
+/* CIF TEXT (-957, 11), (297, 233) */
+-- Test case covering FOR loops
+
+dcl foo t_quAT_FLOAT32 := {1.0, 2.0, 3.0, 4.0};
+
+dcl gnc_out T_GNC_LV_SIM_INPUTS;
+
+dcl toto T_UInt8 := 2;
+/* CIF ENDTEXT */
+/* CIF START (-564, 36), (81, 37) */
+START;
+/* CIF PROCEDURECALL (-590, 88), (133, 44) */
+CALL writeln
+('[SDL] Startup');
+/* CIF TASK (-630, 147), (214, 68) */
+TASK for x in range(1,3,2):
+    call writeln('Hello ',foo(x));
+    call writeln(x, foo(1));
+endfor;
+/* CIF TASK (-650, 230), (254, 68) */
+TASK for x in range(length(foo)):
+    call writeln(foo(x));
+    output vesat_one_step(gnc_out);
+endfor;
+/* CIF TASK (-593, 313), (140, 53) */
+TASK for x in foo:
+    call writeln(x);
+endfor;
+/* CIF TASK (-593, 381), (140, 53) */
+TASK for x in foo(1,2):
+    call writeln(x);
+endfor;
+/* CIF NEXTSTATE (-569, 449), (91, 39) */
+NEXTSTATE Stopped;
+/* CIF STATE (-340, 38), (91, 35) */
+STATE Stopped;
+ENDSTATE;
+
+ENDPROCESS orchestrator;

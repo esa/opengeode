@@ -1,0 +1,236 @@
+PROCESS orchestrator;
+/* CIF TEXT (-925, -483), (276, 283) */
+-- You can manually declare an
+-- external procedure:
+
+-- procedure tototo;
+-- fpar titi MyInteger;
+-- external;
+
+-- In that case you are responsible for
+-- providing the body code.
+
+-- toto is used to check that
+-- the FPAR in myproc that also
+-- has a param called toto does
+-- not conflict.
+dcl toto MySeqOf;
+/* CIF ENDTEXT */
+/* CIF TEXT (-939, -690), (366, 195) */
+-- This demo shows the main features
+-- and syntax currently supported by
+-- OpenGEODE
+
+-- The description of the signal and
+-- external procedures is in the file called
+-- "system_structure.pr".
+
+-- To open this model you must load both
+-- files from the command line:
+-- $ opengeode system_structure.pr orchestrator.pr
+/* CIF ENDTEXT */
+/* CIF TEXT (1110, -703), (319, 392) */
+-- Some test data
+DCL  a MyInteger;
+
+DCL b MySeqOf;
+
+DCL c MySeq;
+
+DCL e, g MyChoice;
+
+DCL f MyEnum;
+
+DCL h MyReal;
+
+DCL i MyPossiblyEmptySeqOf;
+
+DCL j MyComplexType;
+
+DCL k MyComplexSeqOf;
+
+DCL l MyComplexChoice;
+
+DCL myCmd MyInteger;
+
+dcl deep DeepSeq;
+/* CIF ENDTEXT */
+/* CIF PROCEDURE (-849, -181), (91, 50) */
+PROCEDURE myproc;
+/* CIF TEXT (339, -68), (197, 140) */
+-- A Local variable
+DCL foo MyInteger;
+
+-- Procedure interface
+fpar 
+   in toto MyInteger,
+   in/out tutu MyInteger;
+/* CIF ENDTEXT */
+/* CIF START (617, -49), (100, 50) */
+START;
+/* CIF TASK (617, 16), (100, 50) */
+TASK a := 42;
+/* CIF DECISION (617, 81), (100, 70) */
+DECISION toto;
+/* CIF ANSWER (557, 171), (100, 35) */
+(<10):
+/* CIF TASK (544, 221), (126, 50) */
+TASK tutu := 128;
+/* CIF ANSWER (683, 171), (100, 35) */
+ELSE:
+/* CIF TASK (678, 221), (110, 50) */
+TASK tutu := 254;
+ENDDECISION;
+/* CIF TASK (617, 286), (100, 50) */
+TASK foo := a;
+/* CIF STOP (642, 351), (50, 50) */
+STOP;
+ENDPROCEDURE;
+/* CIF START (612, -699), (100, 50) */
+START;
+/* CIF TASK (467, -629), (389, 458) */
+TASK a := 42 + 5 * 3 - 1,
+b := { hello, world },
+a := length(b),
+c := {a 5, b taste},
+f := hello,
+g := b:{a 33, b you},
+e:=g,
+e := a:TRUE,
+b(0) := hello,
+--h := {mantissa 1, base 2, exponent 5},
+h := 42.5,
+i := {},
+i := { 1 },
+a := length(i),
+a := if e!a then 8 else  if b(0) = hello then a  else 9 fi fi,
+j := { a { x 5, y 6 } },
+k := { {x 4}, {x 5} },
+l := a:{ x 5 },
+a:= if present(e)=b then 42 else 43 fi,
+deep!a!b!c := 3,
+deep!a := { b { c 4, d e:TRUE } },
+-- Following would correctly report errors:
+--deep!a!b!c!d := e:FALSE, 
+--deep!a!b!u!d := e:FALSE, 
+-- The following is incorrect to set a CHOICE value:
+-- deep!a!b!d!e := FALSE
+-- Use the following syntax instead:
+deep!a!b!d := e:FALSE
+
+/* CIF COMMENT (882, -409), (190, 68) */
+COMMENT 'This is a multiline
+comment - should
+we reflected as so
+in the generated code';
+/* CIF DECISION (606, -156), (112, 70) */
+DECISION present(e);
+/* CIF ANSWER (639, -65), (46, 35) */
+(b):
+/* CIF TASK (624, -15), (75, 50) */
+TASK a := 38;
+/* CIF ANSWER (543, -66), (45, 35) */
+(a):
+/* CIF TASK (528, -16), (75, 50) */
+TASK a := 37;
+/* CIF ANSWER (704, -66), (69, 35) */
+ELSE:
+ENDDECISION;
+/* CIF DECISION (612, 50), (100, 70) */
+DECISION e;
+/* CIF ANSWER (492, 140), (100, 35) */
+(g):
+/* CIF TASK (492, 195), (100, 50) */
+TASK a := 40;
+/* CIF ANSWER (612, 140), (100, 35) */
+(a:TRUE):
+/* CIF TASK (612, 195), (100, 50) */
+TASK a := 41;
+/* CIF ANSWER (732, 140), (100, 35) */
+ELSE:
+/* CIF TASK (732, 195), (100, 50) */
+TASK a := 42;
+ENDDECISION;
+/* CIF NEXTSTATE (615, 260), (94, 38) */
+NEXTSTATE Stopped;
+/* CIF LABEL (-454, -215), (153, 73) */
+CONNECTION Transition_to_Stop:
+/* CIF PROCEDURE (-560, -127), (365, 50) */
+CALL writeln
+('Floating label: Transition to stop (Sending HK 31)');
+/* CIF OUTPUT (-454, -62), (153, 50) */
+OUTPUT housekeeping(31);
+/* CIF NEXTSTATE (-428, 3), (100, 50) */
+NEXTSTATE Stopped;
+/* CIF End Label */
+ENDCONNECTION;
+
+/* CIF STATE (-8, -89), (100, 50) */
+STATE Running;
+/* CIF INPUT (-19, -19), (120, 50) */
+INPUT run(myCmd);
+/* CIF PROCEDURE (-79, 46), (240, 50) */
+CALL writeln
+('Already running! So stopping');
+/* CIF JOIN (16, 111), (50, 50) */
+JOIN Transition_to_Stop;
+ENDSTATE;
+/* CIF STATE (-236, -686), (100, 50) */
+STATE Stopped;
+/* CIF INPUT (-8, -616), (100, 50) */
+INPUT run(a)
+/* CIF COMMENT (-36, -685), (167, 50) */
+/* CIF Keep Specific Geode HyperLink 'http://www.esa.int' */
+COMMENT 'My comment is rich';
+/* CIF LABEL (-8, -551), (100, 50) */
+Here:
+/* CIF DECISION (-8, -486), (100, 70) */
+DECISION a>10;
+/* CIF ANSWER (110, -395), (100, 35) */
+(FALSE):
+/* CIF ANSWER (-94, -396), (100, 35) */
+(TRUE):
+/* CIF PROCEDURE (-189, -346), (290, 47) */
+CALL writeln
+('a is too big! - decrementing :', a, a - 1);
+/* CIF TASK (-100, -284), (112, 50) */
+TASK a := a - 1;
+/* CIF PROCEDURE (-102, -219), (116, 50) */
+CALL myproc(5,a);
+/* CIF JOIN (-69, -154), (50, 50) */
+JOIN Here;
+ENDDECISION;
+/* CIF NEXTSTATE (-8, -89), (100, 50) */
+NEXTSTATE Running;
+/* CIF INPUT (-537, -616), (100, 50) */
+INPUT *
+/* CIF COMMENT (-417, -616), (218, 50) */
+COMMENT 'All signals not explicitely
+processed. Must be "pulse"';
+/* CIF OUTPUT (-567, -551), (161, 50) */
+OUTPUT housekeeping (1);
+/* CIF NEXTSTATE (-532, -486), (91, 46) */
+NEXTSTATE -
+/* CIF COMMENT (-421, -488), (185, 50) */
+COMMENT 'Stay in the same state';
+ENDSTATE;
+
+/* CIF STATE (272, -613), (100, 50) */
+STATE Running;
+/* CIF INPUT (272, -543), (100, 50) */
+INPUT pulse;
+/* CIF TASK (225, -478), (193, 50) */
+TASK a := (a+1) mod 10;
+/* CIF PROCEDURE (256, -413), (132, 50) */
+CALL writeln
+('Calling GNC');
+/* CIF PROCEDURE (243, -348), (158, 50) */
+CALL computeGNC(a, a);
+/* CIF OUTPUT (248, -283), (148, 50) */
+OUTPUT housekeeping(a);
+/* CIF NEXTSTATE (272, -218), (100, 50) */
+NEXTSTATE Running;
+ENDSTATE;
+
+
+ENDPROCESS orchestrator;

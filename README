@@ -1,0 +1,25 @@
+OpenGEODE is a tiny, free SDL editor done in the scope of the TASTE project.
+
+SDL is the Specification and Description Language (Z100 standard from ITU-T)
+
+Author: Maxime Perrotin
+(maxime.perrotin@esa.int)
+
+The background pattern was downloaded from www.subtlepatterns.com
+
+Developer documentation is provided in docstrings in the Python modules.
+
+License is LGPL (see file LICENSE)
+
+You need Pyside and ANTLR 3.1.3 runtimes to be able to use this Python module
+On Debian, Ubuntu: 
+$ apt-get install python-pyside pip
+$ pip install antlr_python_runtime
+
+Also tested on Windows and FreeBSD - use pip to install antlr-python-runtime.
+Install Pyside from the Windows binary or from FreeBSD ports.
+
+On Windows, you also need to install Python 2.7 manually.
+
+To make a static binary on Linux with pyinstaller 2.0:
+ python pyinstaller.py ../../opengeode.py --onefile

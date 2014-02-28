@@ -1,0 +1,27 @@
+<!DOCTYPE RCC><RCC version="1.0">
+ <qresource>
+     <file>icons/comment.png</file>
+     <file>icons/decision.png</file>
+     <file>icons/decisionanswer.png</file>
+     <file>icons/input.png</file>
+     <file>icons/join.png</file>
+     <file>icons/label.png</file>
+     <file>icons/output.png</file>
+     <file>icons/procedurecall.png</file>
+     <file>icons/procedurestart.png</file>
+     <file>icons/procedurestop.png</file>
+     <file>icons/procedure.png</file>
+     <file>icons/start.png</file>
+     <file>icons/state.png</file>
+     <file>icons/task.png</file>
+     <file>icons/textsymbol.png</file>
+     <file>icons/texture.png</file>
+     <file>opengeode.ui</file>
+     <file>hyperlink.ui</file>
+     <file>fonts/Ubuntu-B.ttf</file>
+     <file>fonts/Ubuntu-BI.ttf</file>
+     <file>fonts/Ubuntu-R.ttf</file>
+     <file>fonts/Ubuntu-RI.ttf</file>
+     <file>misc/lander.mp3</file>
+ </qresource>
+ </RCC>

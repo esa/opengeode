@@ -1,0 +1,58 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM orchestrator;
+
+	SIGNAL pulse;
+
+	/* CIF Keep Specific Geode PARAMNAMES gnc_input */
+	SIGNAL start_simulation (T_GNC_LV_SIM_CONTEXT);
+
+	PROCEDURE Scheduler COMMENT '#c_predef';
+		FPAR
+			IN intr T_INTR;
+ 	EXTERNAL;
+
+	/* CIF Keep Specific Geode PARAMNAMES gnc_data */
+	SIGNAL plot (T_Plot);
+
+	PROCEDURE S_SET_GNC_LV_SIM_CONTEXT_FOR_NEXT_MAJOR_CYCLE COMMENT '#c_predef';
+		FPAR
+			IN gnc_lv_sim_context T_GNC_LV_SIM_CONTEXT;
+ 	EXTERNAL;
+
+	PROCEDURE S_GET_GNC_LV_SIM_INPUTS_FOR_NEXT_MAJOR_CYCLE COMMENT '#c_predef';
+		FPAR
+			IN/OUT gnc_lv_sim_inputs T_GNC_LV_SIM_INPUTS;
+ 	EXTERNAL;
+
+	PROCEDURE S_JUMP_TO_NEXT_MAJOR_CYCLE COMMENT '#c_predef';
+ 	EXTERNAL;
+
+	PROCEDURE VESAT_Simulation_Step COMMENT '#c_predef';
+		FPAR
+			IN gnc_output T_GNC_LV_SIM_INPUTS,
+			IN/OUT gnc_input T_GNC_LV_SIM_CONTEXT;
+ 	EXTERNAL;
+
+	SIGNAL telemetry;
+
+	SIGNAL Get_telemetry;
+
+	CHANNEL c
+		FROM ENV TO orchestrator WITH pulse,start_simulation;
+		FROM orchestrator TO ENV WITH plot,telemetry,Get_telemetry;
+	ENDCHANNEL;
+
+	BLOCK orchestrator;
+
+		SIGNALROUTE r
+			FROM ENV TO orchestrator WITH pulse,start_simulation;
+			FROM orchestrator TO ENV WITH plot,telemetry,Get_telemetry;
+
+		CONNECT c and r;
+
+		PROCESS orchestrator REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

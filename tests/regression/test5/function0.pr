@@ -1,0 +1,42 @@
+PROCESS function0;
+/* CIF TEXT (176, -127), (198, 140) */
+-- Declare your variables
+
+DCL inP, outP MyTest;
+
+DCL count MyInteger;
+/* CIF ENDTEXT */
+/* CIF START (-86, -394), (100, 50) */
+START;
+/* CIF TASK (-125, -322), (178, 49) */
+TASK outP := {true, false};
+/* CIF TASK (-102, -258), (133, 50) */
+TASK count := 42;
+/* CIF NEXTSTATE (-86, -193), (100, 50) */
+NEXTSTATE Wait;
+
+/* CIF STATE (-86, -193), (100, 50) */
+STATE Wait;
+/* CIF INPUT (-85, -123), (100, 50) */
+INPUT runStep
+(inP);
+/* CIF DECISION (-85, -58), (100, 70) */
+DECISION count;
+/* CIF ANSWER (-143, 32), (100, 35) */
+(42):
+/* CIF PROCEDURE (-143, 82), (101, 50) */
+CALL ada(outP);
+/* CIF OUTPUT (-149, 147), (113, 50) */
+OUTPUT result(outP);
+/* CIF ANSWER (18, 33), (100, 35) */
+ELSE:
+/* CIF OUTPUT (1, 83), (133, 50) */
+OUTPUT counter(count);
+ENDDECISION;
+/* CIF TASK (-117, 212), (164, 50) */
+TASK count := 
+(count + 1) mod 50;
+/* CIF NEXTSTATE (-85, 277), (100, 50) */
+NEXTSTATE Wait;
+ENDSTATE;
+ENDPROCESS function0;
