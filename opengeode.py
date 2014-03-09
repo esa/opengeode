@@ -1496,8 +1496,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 if types:
                     self.asn1_area.text.setPlainText('\n'.join(types))
                     self.asn1_area.text.try_resize()
-            except IOError:
-                LOG.warning('ASN.1 file(s) could not be loaded')
+            except IOError as err:
+                LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
+            except AttributeError:
+                LOG.warning('No AST, check input files')
 
     def vi_command(self):
         '''

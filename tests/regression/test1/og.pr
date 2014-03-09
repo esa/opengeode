@@ -12,54 +12,56 @@ DCL test Some_Thing;
 /* CIF ENDTEXT */
 /* CIF START (-252, -114), (100, 50) */
 START;
-/* CIF TASK (-257, -49), (110, 50) */
-TASK test := 5;
-/* CIF TASK (-304, 16), (204, 50) */
+/* CIF TASK (-284, -49), (164, 53) */
+TASK test := 5,
+test := abs(-4+1),
+test := abs(test);
+/* CIF TASK (-304, 19), (204, 50) */
 TASK first_msg := 'Say hello first!'
-/* CIF COMMENT (-80, 16), (148, 50) */
+/* CIF COMMENT (-80, 19), (148, 50) */
 COMMENT 'String assignment';
-/* CIF TASK (-284, 81), (165, 50) */
+/* CIF TASK (-284, 84), (165, 50) */
 TASK seq := default_seqof,
 seq := {1,2,3}
-/* CIF COMMENT (-100, 81), (204, 50) */
+/* CIF COMMENT (-100, 84), (204, 50) */
 COMMENT 'default_seqof is a constant
 defined in the ASN.1 model';
-/* CIF TASK (-333, 146), (263, 50) */
+/* CIF TASK (-333, 149), (263, 50) */
 TASK seq := seq // {4, test} // default_seqof
-/* CIF COMMENT (-50, 146), (156, 50) */
+/* CIF COMMENT (-50, 149), (156, 50) */
 COMMENT 'Concatenate
 two SEQUENCE OF';
-/* CIF TASK (-270, 211), (137, 50) */
+/* CIF TASK (-270, 214), (137, 50) */
 TASK 'seq(1) := seq(2)';
-/* CIF TASK (-298, 276), (193, 50) */
+/* CIF TASK (-298, 279), (193, 50) */
 TASK seq := seq(1,2) // seq(4,5)
-/* CIF COMMENT (-86, 276), (166, 50) */
+/* CIF COMMENT (-86, 279), (166, 50) */
 COMMENT 'Remove 3rd element';
-/* CIF DECISION (-254, 341), (104, 70) */
+/* CIF DECISION (-254, 344), (104, 70) */
 DECISION test in seq
-/* CIF COMMENT (-130, 356), (170, 39) */
+/* CIF COMMENT (-130, 359), (170, 39) */
 COMMENT 'Test the "in" operator';
-/* CIF ANSWER (-344, 431), (100, 35) */
+/* CIF ANSWER (-344, 434), (100, 35) */
 (TRUE):
-/* CIF PROCEDURECALL (-371, 481), (154, 50) */
+/* CIF PROCEDURECALL (-371, 484), (154, 50) */
 CALL writeln('All OK (1)');
-/* CIF ANSWER (-181, 431), (100, 35) */
+/* CIF ANSWER (-181, 434), (100, 35) */
 (FALSE):
-/* CIF PROCEDURECALL (-213, 481), (164, 50) */
+/* CIF PROCEDURECALL (-213, 484), (164, 50) */
 CALL writeln('NOT OK (1)');
 ENDDECISION;
-/* CIF DECISION (-252, 546), (100, 70) */
+/* CIF DECISION (-252, 549), (100, 70) */
 DECISION 3 in seq;
-/* CIF ANSWER (-338, 636), (100, 35) */
+/* CIF ANSWER (-338, 639), (100, 35) */
 (TRUE):
-/* CIF PROCEDURECALL (-370, 686), (164, 50) */
+/* CIF PROCEDURECALL (-370, 689), (164, 50) */
 CALL writeln('NOT OK (2)');
-/* CIF ANSWER (-166, 636), (100, 35) */
+/* CIF ANSWER (-166, 639), (100, 35) */
 (FALSE):
-/* CIF PROCEDURECALL (-196, 686), (161, 50) */
+/* CIF PROCEDURECALL (-196, 689), (161, 50) */
 CALL writeln('All OK (2)');
 ENDDECISION;
-/* CIF NEXTSTATE (-252, 751), (100, 50) */
+/* CIF NEXTSTATE (-252, 754), (100, 50) */
 NEXTSTATE Wait;
 
 
@@ -122,29 +124,29 @@ ENDDECISION;
 ENDSTATE;
 
 
-/* CIF STATE (-252, 751), (100, 50) */
+/* CIF STATE (-252, 754), (100, 50) */
 STATE Wait;
-/* CIF INPUT (-252, 821), (100, 50) */
+/* CIF INPUT (-252, 824), (100, 50) */
 INPUT go(msg);
-/* CIF DECISION (-259, 886), (114, 70) */
+/* CIF DECISION (-259, 889), (114, 70) */
 DECISION msg = 'hello'
-/* CIF COMMENT (-125, 896), (128, 50) */
+/* CIF COMMENT (-125, 899), (128, 50) */
 COMMENT 'Boolean test
 on string value';
-/* CIF ANSWER (-41, 976), (100, 35) */
+/* CIF ANSWER (-41, 979), (100, 35) */
 (FALSE):
-/* CIF OUTPUT (-60, 1026), (139, 50) */
+/* CIF OUTPUT (-60, 1029), (139, 50) */
 OUTPUT rezult(first_msg);
-/* CIF NEXTSTATE (-41, 1091), (100, 50) */
+/* CIF NEXTSTATE (-41, 1094), (100, 50) */
 NEXTSTATE Wait;
-/* CIF ANSWER (-312, 976), (100, 35) */
+/* CIF ANSWER (-312, 979), (100, 35) */
 (TRUE):
-/* CIF OUTPUT (-334, 1026), (145, 50) */
+/* CIF OUTPUT (-334, 1029), (145, 50) */
 OUTPUT rezult('Welcome')
-/* CIF COMMENT (-170, 1026), (95, 50) */
+/* CIF COMMENT (-170, 1029), (95, 50) */
 COMMENT 'Send raw
 string';
-/* CIF NEXTSTATE (-312, 1091), (100, 50) */
+/* CIF NEXTSTATE (-312, 1094), (100, 50) */
 NEXTSTATE Running;
 ENDDECISION;
 ENDSTATE;

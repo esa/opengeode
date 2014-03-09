@@ -31,7 +31,9 @@ endfor;
 TASK for x in foo(1,2):
     call writeln(x);
 endfor;
-/* CIF NEXTSTATE (-569, 449), (91, 39) */
+/* CIF TASK (-582, 449), (118, 35) */
+TASK toto := (toto);
+/* CIF NEXTSTATE (-569, 499), (91, 39) */
 NEXTSTATE Stopped;
 /* CIF STATE (-340, 38), (91, 35) */
 STATE Stopped;

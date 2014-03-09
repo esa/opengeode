@@ -14,23 +14,45 @@ DCL major_cycle, sub_cycle T_UInt32;
 /* CIF ENDTEXT */
 /* CIF START (-209, 208), (100, 50) */
 START;
-/* CIF PROCEDURECALL (-254, 273), (189, 50) */
+/* CIF PROCEDURECALL (-253, 273), (189, 50) */
 CALL writeln
 ('[Orchestrator] Startup');
-/* CIF TASK (-231, 338), (143, 50) */
+/* CIF TASK (-230, 338), (143, 50) */
 TASK intr := obt_pulse4;
-/* CIF TASK (-231, 403), (144, 50) */
+/* CIF OUTPUT (-224, 403), (130, 35) */
+OUTPUT telemetry;
+/* CIF TASK (-231, 453), (144, 50) */
 TASK major_cycle := 1,
 sub_cycle := 0;
-/* CIF NEXTSTATE (-217, 468), (116, 50) */
+/* CIF NEXTSTATE (-217, 518), (116, 50) */
 NEXTSTATE Wait_for_GUI;
+
+/* CIF STATE (-18, 53), (116, 50) */
+STATE Wait_for_GUI;
+/* CIF INPUT (-28, 123), (136, 50) */
+INPUT start_simulation
+(gnc_input);
+/* CIF PROCEDURECALL (-55, 188), (190, 50) */
+CALL writeln
+('[Orchestrator] Running');
+/* CIF NEXTSTATE (-10, 253), (100, 50) */
+NEXTSTATE Running;
+ENDSTATE;
 
 
 /* CIF STATE (502, 32), (100, 50) */
 STATE Running;
-/* CIF INPUT (314, 102), (100, 50) */
+/* CIF INPUT (757, 102), (136, 50) */
+INPUT start_simulation
+(gnc_input)
+/* CIF COMMENT (913, 102), (169, 50) */
+COMMENT 'Input from gui
+stops the simulation';
+/* CIF NEXTSTATE (767, 167), (116, 50) */
+NEXTSTATE Wait_for_GUI;
+/* CIF INPUT (311, 102), (105, 50) */
 INPUT pulse
-/* CIF COMMENT (434, 102), (114, 50) */
+/* CIF COMMENT (436, 102), (114, 50) */
 COMMENT 'Periodic call';
 /* CIF PROCEDURECALL (175, 167), (377, 50) */
 CALL S_SET_GNC_LV_SIM_CONTEXT_FOR_NEXT_MAJOR_CYCLE
@@ -63,8 +85,6 @@ sub_cycle = 0
 /* CIF COMMENT (477, 459), (250, 50) */
 COMMENT 'Plot only every 50 major cycles
 (otherwise performance is too low)';
-/* CIF ANSWER (449, 562), (100, 35) */
-(false):
 /* CIF ANSWER (254, 562), (100, 35) */
 (true):
 /* CIF TASK (169, 612), (270, 68) */
@@ -72,17 +92,15 @@ TASK plot_data!major_cycle := major_cycle,
 plot_data!subcycle := sub_cycle,
 plot_data!gnc_inputs := gnc_input,
 plot_data!gnc_outputs := gnc_output;
-/* CIF OUTPUT (238, 695), (132, 50) */
+/* CIF OUTPUT (224, 695), (159, 50) */
 OUTPUT plot(plot_data);
+/* CIF ANSWER (449, 562), (100, 35) */
+(false):
 ENDDECISION;
 /* CIF DECISION (305, 760), (118, 70) */
 DECISION sub_cycle = 7
 /* CIF COMMENT (443, 770), (199, 50) */
 COMMENT 'Compute next major cycle';
-/* CIF ANSWER (424, 850), (100, 35) */
-(false):
-/* CIF TASK (377, 900), (194, 50) */
-TASK sub_cycle := sub_cycle + 1;
 /* CIF ANSWER (197, 850), (100, 35) */
 (true):
 /* CIF TASK (137, 900), (220, 53) */
@@ -90,28 +108,12 @@ TASK sub_cycle := 0,
 major_cycle := major_cycle + 1;
 /* CIF PROCEDURECALL (127, 968), (240, 50) */
 CALL S_JUMP_TO_NEXT_MAJOR_CYCLE;
+/* CIF ANSWER (424, 850), (100, 35) */
+(false):
+/* CIF TASK (377, 900), (194, 50) */
+TASK sub_cycle := sub_cycle + 1;
 ENDDECISION;
 /* CIF NEXTSTATE (314, 1033), (100, 50) */
-NEXTSTATE Running;
-/* CIF INPUT (757, 102), (136, 50) */
-INPUT start_simulation
-(gnc_input)
-/* CIF COMMENT (913, 102), (169, 50) */
-COMMENT 'Input from gui
-stops the simulation';
-/* CIF NEXTSTATE (767, 167), (116, 50) */
-NEXTSTATE Wait_for_GUI;
-ENDSTATE;
-
-/* CIF STATE (-18, 53), (116, 50) */
-STATE Wait_for_GUI;
-/* CIF INPUT (-28, 123), (136, 50) */
-INPUT start_simulation
-(gnc_input);
-/* CIF PROCEDURECALL (-55, 188), (190, 50) */
-CALL writeln
-('[Orchestrator] Running');
-/* CIF NEXTSTATE (-10, 253), (100, 50) */
 NEXTSTATE Running;
 ENDSTATE;
 

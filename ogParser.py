@@ -295,13 +295,14 @@ def is_constant(var):
 
 def fix_special_operators(op_name, expr_list, context):
     ''' Verify/fix type of special operators parameters '''
-    if op_name.lower() in ('length', 'present'):
+    if op_name.lower() in ('length', 'present', 'abs'):
         if len(expr_list) != 1:
             raise AttributeError('Only one parameter for the {} operator'
                                  .format(op_name))
         expr = expr_list[0]
         if expr.exprType is UNKNOWN_TYPE:
             expr.exprType = find_variable(expr.inputString, context)
+            # XXX don't use inputString, there can be brackets
             # XXX should change type to PrimVariable
         basic = find_basic_type(expr.exprType)
         if op_name.lower() == 'length' and basic.kind != 'SequenceOfType' \
@@ -634,13 +635,10 @@ def find_type(path, context):
         it is context-dependent (the name of a variable may conflict with the
         name of a enumeration item or a choice determinant)
     '''
-    errors = []
-    warnings = []
     result = UNKNOWN_TYPE
     assert len(path) > 1, str(path)
     if not DV:
-        errors.append('Dataview is required to process types')
-        return result, errors, warnings
+        raise AttributeError('Dataview is required to process types')
     LOG.debug('[find_type] ' + str(path))
     # First, find the type of the main element
     main = path[0]
@@ -665,18 +663,15 @@ def find_type(path, context):
                     # with elements being the choice options
                     param, = path[1].get('procParams') or [None]
                     if not param:
-                        errors.append('Missing parameter in PRESENT clause')
+                        raise TypeError('Missing parameter in PRESENT clause')
                     else:
                         check_type = find_variable(param.inputString, context)\
                                 if param.exprType == UNKNOWN_TYPE else \
                                 param.exprType
-                        try:
-                            param_type = find_basic_type(check_type)
-                        except TypeError as err:
-                            errors.append('[find_type]' + str(err))
+                        param_type = find_basic_type(check_type)
                         if param_type.kind != 'ChoiceType':
-                            errors.append('PRESENT parameter'
-                                    ' must be a CHOICE type:' + str(path))
+                            raise TypeError('PRESENT parameter'
+                                         ' must be a CHOICE type:' + str(path))
                         else:
                             result.EnumValues = param_type.Children
                 elif main.lower() in ('length', 'abs'):
@@ -689,28 +684,24 @@ def find_type(path, context):
         # We have more than one element and the first one is of type 'result'
         # Iterate over the path to get the type of the last element
         for elem in path[1:]:
-            try:
-                basic = find_basic_type(result)
-            except TypeError as err:
-                errors.append(str(err))
-                return result, errors, warnings
+            basic = find_basic_type(result)
             if 'procParams' in elem:
                 # Discard operator parameters: they do not change the type
                 continue
             # Sequence, Choice (case insensitive)
             if basic.kind in ('SequenceType', 'ChoiceType'):
                 if 'index' in elem:
-                    errors.append('Element {} cannot have an index'.format(
-                        path[0]))
-                    return result, errors, warnings
+                    raise TypeError('Element {} cannot have an index'
+                                    .format(path[0]))
                 elem_asn1 = elem.replace('_', '-').lower()
                 type_idx = [c for c in basic.Children
                             if c.lower() == elem_asn1]
                 if type_idx:
                     result = basic.Children[type_idx[0]].type
                 else:
-                    errors.append('Field ' + elem + ' not found in expression '
-                              + '!'.join(path))
+                    raise TypeError('Field ' + elem
+                                     + ' not found in expression '
+                                     + '!'.join(path))
                     result = UNKNOWN_TYPE
                     break
             # Sequence of
@@ -728,18 +719,14 @@ def find_type(path, context):
             elif basic.kind.endswith('StringType'):
                 # Can be an index or a substring
                 if 'index' in elem:
-                    errors.append('Index on a string is not supported')
+                    raise TypeError('Index on a string is not supported')
                 elif 'substring' in elem:
                     # don't change type, returns a string
                     # XXX Size may differ
                     pass
             else:
-                errors.append('Expression ' + '!'.join(path) +
-                              ' does not resolve - check field "' +
-                              str(elem) + '"')
-                result = UNKNOWN_TYPE
-                break
-    return result, errors, warnings
+                raise TypeError('Incorrect field or index')
+    return result
 
 
 def expression_list(root, context):
@@ -899,14 +886,20 @@ def primary_value(root, context=None):
     # If there were parameters or index, try to determine the type of
     # the expression
     if isinstance(prim, ogAST.PrimPath) and len(prim.value)>1:
-        prim.exprType, err, warn = find_type(prim.value, context)
-        errors.extend(err)
-        warnings.extend(warn)
+        try:
+            prim.exprType = find_type(prim.value, context)
+        except TypeError as err:
+            errors.append('Type of expression "'
+                           + get_input_string(root)
+                           + '" not found: ' +str(err))
+        except AttributeError as err:
+            LOG.debug('[find_types] ' + str(err))
     if prim:
         prim.inputString = get_input_string(root)
     else:
         prim = ogAST.PrimPath()
     return prim, errors, warnings
+
 
 def primary(root, context):
     ''' Process a primary (-/NOT value) '''
@@ -1020,13 +1013,14 @@ def expression(root, context):
                      lexer.AND,
                      lexer.IN):
         expr.exprType = BOOLEAN
-    elif root.type == lexer.PLUS:
+#    elif root.type == lexer.PLUS:
         # Adjust type constraint upper range with sum of expressions
         # Create a new type to store the new constraint
-        expr.exprType = type('Plus_Type',
-                            (find_basic_type(expr.left.exprType),), {})
-        expr.exprType.Max = str(int(expr.exprType.Max) +
-                         int(find_basic_type(expr.right.exprType).Max))
+        # INCORRECT TO DO IT HERE - we must check right and left types FIRST
+#       expr.exprType = type('Plus_Type',
+#                           (find_basic_type(expr.left.exprType),), {})
+#       expr.exprType.Max = str(int(find_basic_type(expr.left.exprType).Max) +
+#                        int(find_basic_type(expr.right.exprType).Max))
     elif root.type in (lexer.PLUS,
                        lexer.ASTERISK,
                        lexer.DASH,
@@ -1827,7 +1821,7 @@ def procedure_call(root, parent, context):
     ''' Parse a PROCEDURE CALL (synchronous required interface) '''
     # Same as OUTPUT for external procedures
     out_ast = ogAST.ProcedureCall()
-    err, warn = output(root, parent, out_ast, context)
+    _, err, warn = output(root, parent, out_ast, context)
     return out_ast, err, warn
 
 
@@ -1871,11 +1865,12 @@ def outputbody(root, context):
     return body, errors, warnings
 
 
-def output(root, parent, out_ast, context):
+def output(root, parent, out_ast=None, context=None):
     ''' Parse an OUTPUT :  set of asynchronous required interface(s) '''
     errors = []
     warnings = []
     coord = False
+    out_ast = out_ast or ogAST.Output() # syntax checker passes no ast
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -1901,7 +1896,7 @@ def output(root, parent, out_ast, context):
     if coord:
         errors = [[e, [out_ast.pos_x, out_ast.pos_y]] for e in errors]
         warnings = [[w, [out_ast.pos_x, out_ast.pos_y]] for w in warnings]
-    return errors, warnings
+    return out_ast, errors, warnings
 
 
 def alternative_part(root, parent, context):
@@ -2134,7 +2129,7 @@ def transition(root, parent, context):
             parent = t
         elif child.type == lexer.OUTPUT:
             out_ast = ogAST.Output()
-            err, warn = output(child,
+            _, err, warn = output(child,
                                parent=parent,
                                out_ast=out_ast,
                                context=context)
@@ -2176,9 +2171,12 @@ def fix_expression_types(expr, context):
     for side in ('left', 'right'):
         # Determine if the expression is a variable
         uk_expr = getattr(expr, side)
-        if uk_expr.exprType == UNKNOWN_TYPE and not uk_expr.is_raw:
+        if uk_expr.exprType == UNKNOWN_TYPE \
+                and isinstance(uk_expr, ogAST.PrimPath) \
+                and len(uk_expr.value) == 1:
             try:
-                exprType = find_variable(uk_expr.inputString, context)
+                #exprType = find_variable(uk_expr.inputString, context)
+                exprType = find_variable(uk_expr.value[0], context)
                 setattr(expr, side, ogAST.PrimVariable(primary=uk_expr))
                 getattr(expr, side).exprType = exprType
             except AttributeError:
@@ -2260,11 +2258,14 @@ def fix_expression_types(expr, context):
         asn_type = find_basic_type(expr.left.exprType)
         field = expr.right.value['choice'].replace('_', '-')
         if asn_type.kind != 'ChoiceType' \
-                or field not in asn_type.Children.keys():
-            raise TypeError('left side must be a valid CHOICE type')
+                or field.lower() not in [key.lower()
+                                  for key in asn_type.Children.viewkeys()]:
+                raise TypeError('Field is not valid in CHOICE:' + field)
+        key, = [key for key in asn_type.Children.viewkeys()
+                if key.lower() == field.lower()]
         if expr.right.value['value'].exprType == UNKNOWN_TYPE:
             try:
-                expected_type = asn_type.Children.get(field).type
+                expected_type = asn_type.Children.get(key).type
             except AttributeError:
                 raise TypeError('Field not found in CHOICE: ' + field)
             check_expr = ogAST.ExprAssign()
@@ -2613,8 +2614,13 @@ def parseSingleElement(elem='', string=''):
         backend_ptr = eval(elem)
         # Create a dummy process, needed to place context data
         context = ogAST.Process()
-        t, semantic_errors, warnings = backend_ptr(
+        try:
+            t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
+        except AttributeError:
+            # Syntax checker has no visibility on variables and types
+            # so we have to discard exceptions sent by e.g. find_variable
+            pass
     return(t, syntax_errors, semantic_errors, warnings,
             context.terminators)
 
