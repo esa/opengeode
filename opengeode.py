@@ -243,7 +243,7 @@ class Sdl_toolbar(QtGui.QToolBar, object):
             selection, = selection
             for action in self.actions.viewkeys():
                 self.actions[action].setEnabled(False)
-            for action in selection.allowed_followers:
+            for action in getattr(selection, 'allowed_followers', []):
                 try:
                     self.actions[action].setEnabled(True)
                 except KeyError:

@@ -1001,16 +1001,12 @@ def expression(root, context):
                 expr.right.inputString + ', type= ' +
                 type_name(expr.right.exprType) + ') ' + str(err))
 
-    if root.type in (lexer.AND,
-                     lexer.EQ,
+    if root.type in (lexer.EQ,
                      lexer.NEQ,
                      lexer.GT,
                      lexer.GE,
                      lexer.LT,
                      lexer.LE,
-                     lexer.OR,
-                     lexer.XOR,
-                     lexer.AND,
                      lexer.IN):
         expr.exprType = BOOLEAN
 #    elif root.type == lexer.PLUS:
@@ -1021,6 +1017,16 @@ def expression(root, context):
 #                           (find_basic_type(expr.left.exprType),), {})
 #       expr.exprType.Max = str(int(find_basic_type(expr.left.exprType).Max) +
 #                        int(find_basic_type(expr.right.exprType).Max))
+    elif root.type in (lexer.OR, lexer.AND, lexer.XOR):
+        # in the case of bitwise operators, if both sides are arrays,
+        # then the result is an array too
+        basic_left = find_basic_type(expr.left.exprType)
+        basic_right = find_basic_type(expr.right.exprType)
+        if basic_left.kind == basic_right.kind == 'BooleanType':
+            expr.exprType = BOOLEAN
+        else:
+            expr.exprType = expr.left.exprType
+
     elif root.type in (lexer.PLUS,
                        lexer.ASTERISK,
                        lexer.DASH,
@@ -1839,23 +1845,21 @@ def outputbody(root, context):
         elif child.type == lexer.PARAMS:
             body['params'], err, warn = expression_list(
                                                     child, context)
-            # here we must check/set the type of each param
-            try:
-                check_and_fix_op_params(
-                    body.get('outputName') or '',
-                    body['params'],
-                    context)
-            except (AttributeError, TypeError) as op_err:
-                errors.append('[output] ' + str(op_err)
-                              + ' - ' + get_input_string(root))
-                LOG.debug('[outputbody] call check_and_fix_op_params : '
-                            + get_input_string(root) + str(op_err))
-                LOG.debug(str(traceback.format_exc()))
             errors.extend(err)
             warnings.extend(warn)
         else:
             warnings.append('Unsupported output body type:' +
                     str(child.type))
+    # Check/set the type of each param
+    try:
+        check_and_fix_op_params(body.get('outputName', ''),
+                                body.get('params', []),
+                                context)
+    except (AttributeError, TypeError) as op_err:
+        errors.append(str(op_err) + ' - ' + get_input_string(root))
+        LOG.debug('[outputbody] call check_and_fix_op_params : '
+                    + get_input_string(root) + str(op_err))
+        LOG.debug(str(traceback.format_exc()))
     if body.get('params'):
         body['tmpVars'] = []
         global TMPVAR
@@ -2286,7 +2290,6 @@ def fix_expression_types(expr, context):
             fix_expression_types(check_expr, context)
             expr.right.value[det] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimSequenceOf):
-        # tired, check this XXX
         asn_type = find_basic_type(expr.left.exprType).type
         for idx, elem in enumerate(expr.right.value):
             check_expr = ogAST.ExprAssign()
@@ -2295,7 +2298,21 @@ def fix_expression_types(expr, context):
             check_expr.right = elem
             fix_expression_types(check_expr, context)
             expr.right.value[idx] = check_expr.right
+        # the type of the raw PrimSequenceOf can be set now
+        expr.right.exprType.type = asn_type
 
+    if isinstance(expr, (ogAST.ExprAnd, ogAST.ExprOr, ogAST.ExprXor)):
+        # Bitwise operators: check that both sides are booleans
+        for side in expr.left, expr.right:
+            basic_type = find_basic_type(side.exprType)
+            if basic_type.kind in ('BooleanType', 'BitStringType'):
+                continue
+            elif basic_type.kind == 'SequenceOfType':
+                if find_basic_type(side.exprType).type.kind == 'BooleanType':
+                    continue
+            else:
+                raise TypeError('Bitwise operators only work with '
+                                'booleans and arrays of booleans')
     if expr.right.is_raw != expr.left.is_raw:
         check_type_compatibility(raw_expr, ref_type, context)
         raw_expr.exprType = ref_type

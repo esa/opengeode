@@ -638,13 +638,14 @@ def _task_forloop(task):
 @generate.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
-    return [], 'l_{}'.format(prim.value[0]), []
+    sep = 'l_' if find_var(prim.value[0]) else ''
+    return [], '{sep}{name}'.format(sep=sep, name=prim.value[0]), []
 
 
 @generate.register(ogAST.PrimPath)
 def _prim_path(primaryId):
     '''
-        Return the Ada string of a PrimaryId element list (path)
+        Return the Ada string of an element list (path)
         cases: a => 'l_a' (reference to a variable)
         a_timer => 'a_timer'  (reference to a timer)
         a!b => a.b (field of a structure)
@@ -718,7 +719,7 @@ def _prim_path(primaryId):
                 if unicode.isnumeric(idx_string):
                     idx_string = int(idx_string) + 1
                 else:
-                    idx_string = '1+({idx})'.format(idx=idx_string)
+                    idx_string = '1+Integer({idx})'.format(idx=idx_string)
                 ada_string += '.Data({idx})'.format(idx=idx_string)
                 stmts.extend(idx_stmts)
                 local_decl.extend(local_var)
@@ -796,9 +797,6 @@ def _prim_path(primaryId):
 @generate.register(ogAST.ExprPlus)
 @generate.register(ogAST.ExprMul)
 @generate.register(ogAST.ExprMinus)
-@generate.register(ogAST.ExprOr)
-@generate.register(ogAST.ExprAnd)
-@generate.register(ogAST.ExprXor)
 @generate.register(ogAST.ExprEq)
 @generate.register(ogAST.ExprNeq)
 @generate.register(ogAST.ExprGt)
@@ -810,11 +808,47 @@ def _prim_path(primaryId):
 @generate.register(ogAST.ExprRem)
 @generate.register(ogAST.ExprAssign)
 def _basic_operators(expr):
+    ''' Expressions with two sides '''
     code, local_decl = [], []
     left_stmts, left_str, left_local = generate(expr.left)
     right_stmts, right_str, right_local = generate(expr.right)
     ada_string = '({left} {op} {right})'.format(
             left=left_str, op=expr.operand, right=right_str)
+    code.extend(left_stmts)
+    code.extend(right_stmts)
+    local_decl.extend(left_local)
+    local_decl.extend(right_local)
+    return code, ada_string, local_decl
+
+@generate.register(ogAST.ExprOr)
+@generate.register(ogAST.ExprAnd)
+@generate.register(ogAST.ExprXor)
+def _bitwise_operators(expr):
+    ''' Logical operators '''
+    code, local_decl = [], []
+    left_stmts, left_str, left_local = generate(expr.left)
+    right_stmts, right_str, right_local = generate(expr.right)
+    basic_type = find_basic_type(expr.exprType)
+    if basic_type.kind != 'BooleanType':
+        # Sequence of boolean or bit string
+        if expr.right.is_raw:
+            # Declare a temporary variable to store the raw value
+            tmp_string = 'tmp{}'.format(expr.right.tmpVar)
+            local_decl.append('{tmp} : aliased asn1Scc{eType};'.format(
+                        tmp=tmp_string,
+                        eType=expr.right.exprType.ReferencedTypeName
+                        .replace('-', '_')))
+            code.append('{tmp} := {right};'.format(tmp=tmp_string,
+                                                  right=right_str))
+            right_str = tmp_string
+        ada_string = '(Data => ({left}.Data {op} {right}.Data)'.format(
+                left=left_str, op=expr.operand, right=right_str)
+        if basic_type.Min != basic_type.Max:
+            ada_string += ", Length => {left}.Length".format(left=left_str)
+        ada_string += ')'
+    else:
+        ada_string = '({left} {op} {right})'.format(
+                               left=left_str, op=expr.operand, right=right_str)
     code.extend(left_stmts)
     code.extend(right_stmts)
     local_decl.extend(left_local)
