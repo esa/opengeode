@@ -371,7 +371,6 @@ def check_and_fix_op_params(op_name, expr_list, context):
         param_type = type_name(signature[idx].get('type'))
         # Retrieve the type (or None if it is a sepecial operator)
         dataview_entry = types().get(param_type) or UNKNOWN_TYPE
-        #dataview_type = dataview_entry.type # XXX
         if dataview_entry is not UNKNOWN_TYPE:
             dataview_type = new_ref_type(param_type)
         else:
@@ -383,6 +382,10 @@ def check_and_fix_op_params(op_name, expr_list, context):
         expr.right = param
         fix_expression_types(expr, context)
         expr_list[idx] = expr.right
+        if signature[idx].get('direction') != 'in' \
+                and not isinstance(expr.right, ogAST.PrimVariable):
+            raise TypeError('OUT parameter "{}" is not a variable'
+                            .format(expr.right.inputString))
 
 
 def check_type_compatibility(primary, typeRef, context):

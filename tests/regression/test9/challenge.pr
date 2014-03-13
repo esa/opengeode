@@ -1,5 +1,5 @@
 PROCESS challenge;
-/* CIF TEXT (243, 91), (298, 113) */
+/* CIF TEXT (587, 91), (298, 120) */
 dcl count, actual_count CountTab;
 dcl pow_value T_UInt32 := 0;
 dcl check T_UInt8;
@@ -8,39 +8,48 @@ dcl bitwise SeqBit;
 dcl bitwise2 SeqBit2;
 dcl boolwise t_Boolean;
 /* CIF ENDTEXT */
-/* CIF START (94, 14), (68, 37) */
+/* CIF TEXT (-187, 64), (254, 104) */
+procedure test;
+fpar  in first t_UInt8,
+           in/out second t_boolean;
+external;
+
+dcl testvalue t_boolean := true;
+/* CIF ENDTEXT */
+/* CIF START (337, 14), (68, 37) */
 START;
-/* CIF TASK (37, 66), (182, 68) */
+/* CIF TASK (278, 66), (184, 72) */
 TASK for x in count:
     count(x) := count_max
     actual_count(x) := 0
 endfor;
-/* CIF NEXTSTATE (93, 149), (70, 35) */
+/* CIF NEXTSTATE (336, 153), (70, 35) */
 NEXTSTATE Wait;
-/* CIF STATE (290, 11), (65, 35) */
+/* CIF STATE (585, 11), (68, 35) */
 STATE Wait;
 ENDSTATE;
 
-/* CIF STATE (93, 149), (70, 35) */
+/* CIF STATE (336, 153), (70, 35) */
 STATE Wait;
-/* CIF INPUT (93, 204), (70, 35) */
+/* CIF INPUT (336, 208), (70, 35) */
 INPUT run;
-/* CIF PROCEDURECALL (45, 254), (166, 35) */
+/* CIF PROCEDURECALL (287, 258), (166, 35) */
 CALL writeln('Computing');
-/* CIF TASK (-76, 304), (409, 188) */
+/* CIF TASK (164, 308), (412, 216) */
 TASK for x in range(exceed_nb):
     for n in range(nb_bit):
         call pow(2, n, pow_value);
         check := if val_max - x>0 and pow_value>0 then 1 else 0 fi
         bitwise := bitwise and bitwise
-        bitwise2 := bitwise2 and {true, false}
+        bitwise2 := bitwise2 xor {true, false}
         bitwise2 := bitwise2 and bitwise2
         boolwise := boolwise and boolwise
         check := if (check=0) and pow_value>1  then 1 else 0 fi
         count(n) := count(n) - check
+        call test(n+1, testvalue);
     endfor
 endfor;
-/* CIF NEXTSTATE (93, 507), (70, 35) */
+/* CIF NEXTSTATE (336, 539), (70, 35) */
 NEXTSTATE wait;
 ENDSTATE;
 ENDPROCESS challenge;

@@ -1300,9 +1300,11 @@ def _inner_procedure(proc):
 
     local_decl.append(pi_header + ';')
 
-    # Generate the code for the procedure itself (unless it's external):
-    # local variables and code of the START transition
-    if not proc.external:
+    if proc.external:
+        local_decl.append('pragma import(C, {});'.format(proc.inputString))
+    else:
+        # Generate the code for the procedure itself
+        # local variables and code of the START transition
         # Recursively generate the code for inner-defined procedures
         for inner_proc in proc.content.inner_procedures:
             inner_code, inner_local = generate(inner_proc)
