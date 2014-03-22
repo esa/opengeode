@@ -1,0 +1,66 @@
+PROCESS challenge;
+state on;
+    substructure
+        in (via_toto);
+        start;
+            return;
+        start via_toto;
+            return;
+endsubstructure;
+
+/* CIF TEXT (-159, 1), (298, 140) */
+-- This system tests nested states
+/* CIF ENDTEXT */
+/* CIF PROCEDURE (-70, 264), (70, 35) */
+PROCEDURE toto;
+/* CIF TEXT (371, 134), (298, 140) */
+-- Declare your variables
+
+-- Syntax: DCL <variable name> <type name>;
+
+dcl i T_Int8  := 1;
+/* CIF ENDTEXT */
+/* CIF START (178, 86), (70, 35) */
+START;
+/* CIF DECISION (178, 136), (70, 50) */
+DECISION i;
+/* CIF ANSWER (131, 206), (73, 23) */
+(1):
+/* CIF TASK (127, 244), (80, 35) */
+TASK i := i + 1;
+/* CIF RETURN (150, 294), (35, 35) */
+RETURN ;
+/* CIF ANSWER (223, 206), (70, 23) */
+ELSE:
+/* CIF RETURN (240, 244), (35, 35) */
+RETURN ;
+ENDDECISION;
+ENDPROCEDURE;
+/* CIF START (227, -15), (68, 37) */
+START;
+/* CIF NEXTSTATE (226, 37), (70, 35) */
+NEXTSTATE OFF;
+
+
+/* CIF STATE (407, -3), (65, 35) */
+STATE ON;
+/* CIF INPUT (351, 52), (88, 35) */
+INPUT any_one;
+/* CIF NEXTSTATE (338, 102), (113, 35) */
+NEXTSTATE ON;
+/* CIF INPUT (455, 52), (78, 35) */
+INPUT go_off;
+/* CIF NEXTSTATE (459, 102), (70, 35) */
+NEXTSTATE OFF;
+ENDSTATE;
+
+/* CIF STATE (226, 37), (70, 35) */
+STATE OFF;
+/* CIF INPUT (226, 92), (70, 35) */
+INPUT run;
+/* CIF PROCEDURECALL (178, 142), (166, 35) */
+CALL writeln('Going ON');
+/* CIF NEXTSTATE (226, 192), (70, 35) */
+NEXTSTATE ON;
+ENDSTATE;
+ENDPROCESS challenge;
