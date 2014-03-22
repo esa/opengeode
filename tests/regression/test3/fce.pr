@@ -33,7 +33,7 @@ DCL fce_selected_counter Counter_ty;
 
 -- Fig 6-7, FCE Stop control asserted
 
-DCL FCE_Stop_Control Bool_ty;
+DCL FCE_Stop_Control Bool_ty := false;
 
 -- As defined in Figure 6-6
 TIMER mmo_sep_check_delay;
@@ -315,8 +315,8 @@ TASK fce_selected_counter := 0
 COMMENT 'Used to count 2 consecutive checks
 of FCE Selected and Arr_Dep=true
 (cf. Fig 6-5)';
-/* CIF NEXTSTATE (-739, -6), (100, 50) */
-NEXTSTATE Ready;
+/* CIF NEXTSTATE (-752, -6), (127, 50) */
+NEXTSTATE Ready via toto;
 /* CIF ANSWER (-1021, -286), (76, 35) */
 (FALSE):
 /* CIF NEXTSTATE (-1060, -231), (155, 50) */

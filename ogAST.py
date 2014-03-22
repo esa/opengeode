@@ -371,7 +371,7 @@ class ProcedureCall(Output):
 
 class Terminator(object):
     ''' Terminator elements (join, nextstate, stop) '''
-    def __init__(self, defName='Wait'):
+    def __init__(self, defName=''):
         ''' Initialize terminator attributes '''
         self.inputString = defName
         self.pos_x = None
@@ -380,7 +380,7 @@ class Terminator(object):
         self.height = 35
         self.line = None
         self.charPositionInLine = None
-        # one of 'next_state' 'join' 'stop'
+        # one of 'next_state' 'join' 'stop', 'return'
         self.kind = None
         # optional comment symbol
         self.comment = None
@@ -388,6 +388,10 @@ class Terminator(object):
         self.hyperlink = None
         # optional Label instance (to be placed just before the terminator)
         self.label = None
+        # Return expression
+        self.return_expr = None
+        # via clause, used for entering nested state with an entry point
+        self.via = None
 
     def __repr__(self):
         ''' Debug output for terminators '''
@@ -635,7 +639,9 @@ class Procedure(object):
         # Formal parameters - list of dict:
         # [{'name': str, 'direction': 'in'/'out', 'type': str}]
         self.fpar = []
-        # start, states, terminators, text areas, floating_labels (see Process)
+        # return type (ASN.1)
+        self.return_type = None
+        # start, terminators, text areas, floating_labels (see Process)
         #self.start = None
         #self.states = []
         self.terminators = []
@@ -643,9 +649,9 @@ class Procedure(object):
         # Keep a list of labels and floating labels - useful for backends
         self.labels = []
         #self.floating_labels = []
-        # Inherited procedures and operators XXX should be lists no?
-        self.procedures = {}
-        self.operators = {}
+        # Inherited procedures and operators
+        self.procedures = []
+        self.operators = []
         # inner procedures and operators (see Process for format)
         #self.inner_procedures = []
         self.inner_operators = []

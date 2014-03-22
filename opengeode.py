@@ -1307,7 +1307,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             if type(error[0]) == list:
                 # should be fixed now, CHECKME - NO, NOT FULLY FIXED
                 # problem is in decision answers branches
-                error[0] = 'Internal error - ' + error[0][0]
+                error[0] = 'Internal error - ' + str(error[0])
             LOG.error(error[0])
             item = QtGui.QListWidgetItem(u'[ERROR] ' + error[0])
             if len(error) == 2:
@@ -1316,7 +1316,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                 self.messages_window.addItem(item)
         for warning in warnings:
             LOG.warning(warning[0])
-            item = QtGui.QListWidgetItem(u'[WARNING] ' + warning[0])
+            item = QtGui.QListWidgetItem(u'[WARNING] ' + str(warning[0]))
             if len(warning) == 2:
                 item.setData(Qt.UserRole, warning[1])
             if self.messages_window:

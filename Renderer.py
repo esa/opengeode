@@ -287,7 +287,7 @@ def _terminator(ast, scene, parent, states):
                                   scene=scene, parent=symbol, states=states)
     elif ast.kind == 'join':
         symbol = sdlSymbols.Join(parent, ast)
-    elif ast.kind == 'stop':
+    elif ast.kind in ('return', 'stop'):
         symbol = sdlSymbols.ProcedureStop(parent, ast)
     else:
         raise TypeError('Unsupported terminator: ' + repr(ast))

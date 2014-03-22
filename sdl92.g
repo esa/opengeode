@@ -1,6 +1,9 @@
 /* 
     OpenGEODE
     ANTLR 3.1.3 grammar for the SDL92 langage
+    Includes the following features from SDL2000+:
+    - FOR loops in TASKs
+    - Composite states
 
     author: Maxime Perrotin
 */
@@ -109,6 +112,7 @@ tokens {
         PARAMNAMES;
         ASN1;
         FLOATING_LABEL; 
+        COMPOSITE_STATE;
 }
 
 
@@ -199,14 +203,15 @@ process_definition
         :       PROCESS process_id number_of_instances? REFERENCED end
         ->      ^(PROCESS process_id number_of_instances? REFERENCED)
                 | PROCESS process_id number_of_instances? end
-                (text_area | procedure)*
+                (text_area | procedure | composite_state)*
                 processBody? ENDPROCESS process_id?
                 end
         ->      ^(PROCESS process_id number_of_instances?
-                text_area* procedure* processBody?);
+                text_area* procedure* composite_state* processBody?);
 
 
-// procedure: missing the RETURNS statement (TODO)
+// procedure: missing the RETURNS statement
+// (TODO - but check new SDL2000 syntax that has no RETURNS token)
 procedure
         :       cif?
                 PROCEDURE procedure_id end
@@ -286,9 +291,9 @@ processBody
 start
         :       cif?
                 hyperlink?
-                START end
+                START name=state_entry_point_name? end
                 transition?
-        ->      ^(START cif? hyperlink? end? transition?);
+        ->      ^(START cif? hyperlink? $name? end? transition?);
 
 
 floating_label
@@ -318,9 +323,34 @@ statelist
 
 
 exception_state
-        :
-                '(' statename (',' statename)* ')'
+        :       '(' statename (',' statename)* ')'
         ->      statename+;
+
+
+composite_state
+        :       STATE statename e=end
+                SUBSTRUCTURE
+                cnx=connection_points*
+                body=composite_state_body
+                ENDSUBSTRUCTURE statename? f=end
+        ->      ^(COMPOSITE_STATE statename $cnx* $body $e?);
+
+
+connection_points
+        :       IN state_entry_exit_points e=end
+        ->      ^(IN state_entry_exit_points $e?)
+                | OUT state_entry_exit_points f=end
+        ->      ^(OUT state_entry_exit_points $f?);
+
+
+state_entry_exit_points
+        :       '(' statename (',' statename)* ')'
+        ->      statename+;
+
+
+composite_state_body
+        :       (text_area | procedure | composite_state)*
+                start+ (state | floating_label)*;
 
 
 state_part
@@ -347,7 +377,7 @@ enabling_condition
 
 continuous_signal
         :       PROVIDED expression end 
-                (PRIORITY integer_literal_name=INT end)? 
+                (PRIORITY integer_literal_name=INT end)?
                 transition
         ->      ^(PROVIDED expression $integer_literal_name? transition);
 
@@ -900,7 +930,7 @@ label
 
 
 terminator
-        :       nextstate | join | stop | return_stmt; 
+        :       nextstate | join | stop | return_stmt;
 
 
 join
@@ -922,8 +952,12 @@ nextstate
 
 
 nextstatebody
-        :       statename
+        :       statename via?
                 | dash_nextstate;
+
+
+via     :       VIA state_entry_point_name
+        ->      ^(VIA state_entry_point_name);
 
 
 end
@@ -974,6 +1008,7 @@ symbolname
                 | PROCEDURE
                 | PROCEDURE_CALL
                 | STOP
+                | RETURN
                 | DECISION
                 | TEXT
                 | TASK
@@ -1005,6 +1040,8 @@ dash_nextstate  :       DASH;
 connector_name  :       ID;
 signal_id       :       ID;
 statename       :       ID;
+state_entry_point_name
+                :       ID;
 variable_id     :       ID;
 literal_id      :       ID | INT;
 process_id      :       ID;
@@ -1035,7 +1072,7 @@ view_id         :       ID;
 sort_id         :       ID;
 syntype_id      :       ID;
 stimulus_id     :       ID;
-ASSIG_OP        :        ':=';
+ASSIG_OP        :       ':=';
 L_BRACKET       :       '{';
 R_BRACKET       :       '}';
 L_PAREN         :       '(';
@@ -1113,7 +1150,10 @@ PLUS            :       '+';
 DOT             :       '.';
 APPEND          :       '//';
 IN              :       I N;
+OUT             :       O U T;
 INOUT           :       I N '/' O U T;
+SUBSTRUCTURE    :       S U B S T R U C T U R E;
+ENDSUBSTRUCTURE :       E N D S U B S T R U C T U R E;
 FPAR            :       F P A R;
 PARAM           :       P A R A M;
 EQ              :       '=';

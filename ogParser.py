@@ -1225,6 +1225,27 @@ def procedure(root, parent=None, context=None):
                     'Unsupported construct in procedure, type: ' +
                     str(child.type) + ' - line ' + str(child.getLine()) +
                     ' - string: ' + str(proc.inputString))
+    for each in proc.terminators:
+        # check that RETURN statements type is correct
+        if not proc.return_type and each.return_expr:
+            errors.append('No return value expected in procedure '
+                          + proc.inputString)
+        elif proc.return_type and each.return_expr:
+            check_expr = ogAST.ExprAssign()
+            check_expr.left = ogAST.PrimPath()
+            check_expr.left.exprType = proc.return_type
+            check_expr.right = each.return_expr
+            try:
+                fix_expression_types(check_expr, context)
+            except (TypeError, AttributeError) as err:
+                errors.append(str(err))
+            # Id of fd_expr may have changed (enumerated, choice)
+            each.return_expr = check_expr.right
+        elif proc.return_type and not each.return_expr:
+            errors.append('Missing return value in procedure '
+                          + proc.inputString)
+        else:
+            continue
     return proc, errors, warnings
 
 
@@ -1585,6 +1606,8 @@ def process_definition(root, parent=None):
             errors.extend(err)
             warnings.extend(warn)
             process.content.floating_labels.append(lab)
+        elif child.type == lexer.COMPOSITE_STATE:
+            warnings.append('Composite state detected but not supported yet')
         elif child.type == lexer.REFERENCED:
             process.referenced = True
         else:
@@ -2045,6 +2068,27 @@ def decision(root, parent, context):
     return dec, errors, warnings
 
 
+def nextstate(root):
+    ''' Parse a NEXTSTATE [VIA State_Entry_Point] '''
+    # TODO = check that the via clause leads to a defined nested state
+    #        and entry point
+    next_state_id, via = '', None
+    for child in root.getChildren():
+        if child.type == lexer.ID:
+            next_state_id = child.text
+        elif child.type == lexer.DASH:
+            next_state_id = '-'
+        elif child.type == lexer.VIA:
+            if next_state_id.strip() != '-':
+                via = child.getChild(0).text
+            else:
+                raise TypeError('"History" NEXTSTATE'
+                                 ' cannot have a "via" clause')
+        else:
+            raise TypeError('NEXTSTATE undefined construct')
+    return next_state_id, via
+
+
 def terminator_statement(root, parent, context):
     ''' Parse a terminator (NEXTSTATE, JOIN, STOP) '''
     errors = []
@@ -2064,7 +2108,11 @@ def terminator_statement(root, parent, context):
             lab.terminators = [t]
         elif term.type == lexer.NEXTSTATE:
             t.kind = 'next_state'
-            t.inputString = term.getChild(0).toString()
+            try:
+                t.inputString, t.via = nextstate(term)
+            except TypeError as err:
+                errors.append(str(err))
+            #t.inputString = term.getChild(0).toString()
             t.line = term.getChild(0).getLine()
             t.charPositionInLine = term.getChild(0).getCharPositionInLine()
             # Add next state infos at process level
@@ -2078,6 +2126,15 @@ def terminator_statement(root, parent, context):
             context.terminators.append(t)
         elif term.type == lexer.STOP:
             t.kind = 'stop'
+            context.terminators.append(t)
+        elif term.type == lexer.RETURN:
+            t.kind = 'return'
+            if term.children:
+                t.return_expr, err, warn = expression(
+                                                     term.getChild(0), context)
+                t.inputString = t.return_expr.inputString
+                errors.extend(err)
+                warnings.extend(warn)
             context.terminators.append(t)
         elif term.type == lexer.COMMENT:
             t.comment, _, _ = end(term)

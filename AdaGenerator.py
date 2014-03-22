@@ -1245,6 +1245,13 @@ def _transition(tr):
             elif tr.terminator.kind == 'stop':
                 pass
                 # TODO
+            elif tr.terminator.kind == 'return':
+                string = ''
+                if tr.terminator.return_expr:
+                    stmts, string, local = generate(tr.terminator.return_expr)
+                    code.extend(stmts)
+                    local_decl.extend(local)
+                code.append('return{};'.format(' ' + string if string else ''))
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
         code.append('null;')

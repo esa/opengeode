@@ -498,7 +498,7 @@ class ProcedureStop(Join, object):
     redbold = SDL_REDBOLD
     def __init__(self, parent=None, ast=None):
         if not ast:
-            ast = ogAST.Terminator(defName='ret')
+            ast = ogAST.Terminator(defName='')
             ast.pos_y = 0
             ast.width = 35
             ast.height = 35
@@ -517,7 +517,7 @@ class ProcedureStop(Join, object):
         path.moveTo(point1)
         path.lineTo(point2)
         path.moveTo(point3)
-        path.lineTo(point4)        
+        path.lineTo(point4)
         self.setPath(path)
         # call Join superclass, otherwise symbol will take Join shape
         super(Join, self).set_shape(circ, circ)
@@ -525,9 +525,10 @@ class ProcedureStop(Join, object):
     def __repr__(self):
         ''' Return the PR string for this symbol '''
         pos = self.scenePos()
-        return('/* CIF STOP ({x}, {y}), ({w}, {h}) */\n'
+        return('/* CIF RETURN ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
-                'STOP;'.format(hlink=repr(self.text),
+                'RETURN {val};'.format(
+                    val=str(self.text), hlink=repr(self.text),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height())))
