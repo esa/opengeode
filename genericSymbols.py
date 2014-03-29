@@ -561,6 +561,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     redbold = ()
     # Specify if the symbol can be drawn with anti-aliasing
     _antialiasing = True
+    # Specify if the symbol text can be edited
+    editable = True
 
     def __init__(self, parent=None):
         '''
@@ -1342,7 +1344,7 @@ class HorizontalSymbol(Symbol, object):
         super(HorizontalSymbol, self).__init__(parent)
         self.minDistanceToSymbolAbove = 20
         self.connection = None
-        if text:
+        if self.editable:
             self.text = EditableText(parent=self, text=text,
                     hyperlink=hyperlink)
         if parent:
@@ -1506,7 +1508,10 @@ class VerticalSymbol(Symbol, object):
             x=None, y=None, hyperlink=None):
         super(VerticalSymbol, self).__init__(parent)
         self.connection = None
-        self.text = EditableText(parent=self, text=text, hyperlink=hyperlink)
+        if self.editable:
+            self.text = EditableText(parent=self,
+                                     text=text,
+                                     hyperlink=hyperlink)
         self.minDistanceToSymbolAbove = 15
         if parent:
             local_pos = self.mapFromScene(0, y or 0)

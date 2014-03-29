@@ -91,6 +91,10 @@ def _automaton(ast, scene):
     if ast.start:
         top_level_symbols.append(render(ast.start, scene, ast.states))
 
+    # Render named start symbols in nested states
+    for each in ast.named_start:
+        top_level_symbols.append(render(each, scene, ast.states))
+
     # Render floating labels
     for label in ast.floating_labels:
         top_level_symbols.append(render(label, scene, ast.states))
@@ -128,6 +132,9 @@ def _state(ast, scene, states, terminators, parent=None):
 
     for inp in ast.inputs:
         render(inp, scene=scene, parent=new_state, states=states)
+
+    new_state.nested_scene = ast.composite or ogAST.CompositeState()
+
     return new_state
 
 
@@ -154,6 +161,18 @@ def _start(ast, scene, states, parent=None):
     ''' Add the start symbol to a scene '''
     _ = parent
     start_symbol = sdlSymbols.Start(ast)
+    scene.addItem(start_symbol)
+    if ast.transition:
+        render(ast.transition,
+                      scene=scene, parent=start_symbol, states=states)
+    return start_symbol
+
+
+@render.register(ogAST.CompositeState_start)
+def _start(ast, scene, states, parent=None):
+    ''' Add an editable start symbol to a scene (in composite states) '''
+    _ = parent
+    start_symbol = sdlSymbols.StateStart(ast)
     scene.addItem(start_symbol)
     if ast.transition:
         render(ast.transition,

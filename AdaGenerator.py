@@ -124,6 +124,54 @@ def _process(process):
                         t=var_type.ReferencedTypeName.replace('-','_'),
                         default=' := ' + dstr if def_value else ''))
 
+    # Flatten the nested states, add states to the process state list
+    # Requires renaming of nested states and setting chaining of transitions
+    def update_terminator(context, term, process):
+        '''Set next_id, identifying the next transition to run '''
+        if term.inputString.lower() in (st.statename.lower()
+                                for st in context.composite_states):
+            if not term.via:
+                term.next_id = context.mapping \
+                                          [term.inputString.lower() + '_START']
+            else:
+                term.next_id = context.mapping[term.inputString.lower()
+                                               + '_'
+                                               + term.via.lower()
+                                               + '_START']
+
+    def update_composite_state(state, process):
+        ''' Rename inner states, recursively, and add inner transitions
+            to process, updating indexes, and update terminators
+        '''
+        trans_idx = len(process.transitions)
+        state.mapping = {state.statename + '_' + key:state.mapping.pop(key)
+                         for key in state.mapping.keys()}
+        process.transitions.extend(state.transitions)
+        for key, value in state.mapping.viewitems():
+            # Update transition indices
+            if isinstance(value, int):
+                state.mapping[key] = value + trans_idx
+            else:
+                for inp in value:
+                    inp.transition_id += trans_idx
+        process.mapping.update(state.mapping)
+        for inner in state.composite_states:
+            inner.statename = state.statename + '_' + inner.statename
+            update_composite_state(inner, process)
+        for each in state.terminators:
+            # Update state names in terminators and set next transition id
+            if each.kind == 'next_state':
+                each.inputString = state.statename + '_' + each.inputString
+                update_terminator(state, each, process)
+    for each in process.composite_states:
+        update_composite_state(each, process)
+
+    # Update terminators at process level
+    for each in process.terminators:
+        if each.kind == 'next_state':
+            update_terminator(process, each, process)
+
+
     # Add the process states list to the process-level variables
     states_decl = 'type states is ('
     states_decl += ', '.join(process.mapping.iterkeys()) + ');'
@@ -136,11 +184,12 @@ def _process(process):
                                                          .format(process_name))
 
     # Add the declaration of the runTransition procedure
-    process_level_decl.append('procedure runTransition(trId: Integer);')
+    process_level_decl.append('procedure runTransition(Id: Integer);')
 
     # Generate the code of the start transition:
     start_transition = ['begin']
     start_transition.append('runTransition(0);')
+
 
     mapping = {}
     # Generate the code for the transitions in a mapping input-state
@@ -150,7 +199,8 @@ def _process(process):
     for input_signal in input_signals:
         mapping[input_signal] = {}
         for state_name, input_symbols in process.mapping.viewitems():
-            if state_name != 'START':
+            if isinstance(input_symbols, list):
+                # Start symbols have no list of inputs
                 for i in input_symbols:
                     if input_signal.lower() in (inp.lower() for
                                                inp in i.inputlist):
@@ -224,7 +274,7 @@ package {process_name} is'''.format(process_name=process_name,
         taste_template.append('begin')
         taste_template.append('case state is')
         for state in process.mapping.viewkeys():
-            if state == 'START':
+            if state.endswith('START'):
                 continue
             taste_template.append('when {state} =>'.format(state=state))
             input_def = mapping[signal['name']].get(state)
@@ -293,7 +343,9 @@ package {process_name} is'''.format(process_name=process_name,
                 'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
                 .format(timer=timer, proc=process_name))
 
-    taste_template.append('procedure runTransition(trId: Integer) is')
+    taste_template.append('procedure runTransition(Id: Integer) is')
+    taste_template.append('trId : Integer := Id;')
+
 
     # Generate the code for all transitions
     code_transitions = []
@@ -327,6 +379,10 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.extend(decl)
     taste_template.append('begin')
 
+    # Generate a loop that ends when a next state is reached
+    # (there can be chained transition when entering a nested state)
+    taste_template.append('while (trId /= -1) loop')
+
     # Generate the switch-case on the transition id
     taste_template.append('case trId is')
 
@@ -342,10 +398,18 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.append('null;')
 
     taste_template.append('end case;')
+    if code_labels:
+        # Due to nested states (chained transitions) jump over label code
+        # (NEXTSTATEs do not return from runTransition)
+        taste_template.append('goto next_transition;')
 
     # Add the code for the floating labels
     taste_template.extend(code_labels)
 
+    if code_labels:
+        taste_template.append('<<next_transition>>')
+        taste_template.append('null;')
+    taste_template.append('end loop;')
     taste_template.append('end runTransition;')
     taste_template.append('\n')
 
@@ -1233,12 +1297,12 @@ def _transition(tr):
                 code.append('<<{label}>>'.format(
                     label=tr.terminator.label.inputString))
             if tr.terminator.kind == 'next_state':
+                code.append('trId := ' + str(tr.terminator.next_id) + ';')
                 if tr.terminator.inputString.strip() != '-':
                     # discard the dash state (remain in the same state)
-                    code.append('state := {nextState};'.format(
+                    if tr.terminator.next_id == -1:
+                        code.append('state := {nextState};'.format(
                                  nextState=tr.terminator.inputString))
-                # In any case, return to avoid code of floating labels
-                code.append('return;')
             elif tr.terminator.kind == 'join':
                 code.append('goto {label};'.format(
                     label=tr.terminator.inputString))
@@ -1247,11 +1311,15 @@ def _transition(tr):
                 # TODO
             elif tr.terminator.kind == 'return':
                 string = ''
-                if tr.terminator.return_expr:
-                    stmts, string, local = generate(tr.terminator.return_expr)
-                    code.extend(stmts)
-                    local_decl.extend(local)
-                code.append('return{};'.format(' ' + string if string else ''))
+                if tr.terminator.next_id == -1:
+                    if tr.terminator.return_expr:
+                        stmts, string, local = generate\
+                                                    (tr.terminator.return_expr)
+                        code.extend(stmts)
+                        local_decl.extend(local)
+                    code.append('return{};'.format(' ' + string if string else ''))
+                else:
+                    code.append('trId := ' + str(tr.terminator.next_id) + ';')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
         code.append('null;')
@@ -1329,6 +1397,15 @@ def _inner_procedure(proc):
                 name=var_name,
                 sort=typename,
                 default=' := ' + dstr if def_value else ''))
+
+        # Look for labels in the diagram and transform them in floating labels
+        for idx in xrange(len(proc.content.floating_labels)):
+            for new_floating in find_labels(
+                          proc.content.floating_labels[idx].transition):
+                proc.content.floating_labels.append(new_floating)
+        for new_floating in find_labels(proc.content.start.transition):
+            proc.content.floating_labels.append(new_floating)
+
         tr_code, tr_decl = generate(proc.content.start.transition)
         # Generate code for the floating labels
         code_labels = []

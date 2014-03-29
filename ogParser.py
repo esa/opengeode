@@ -732,6 +732,159 @@ def find_type(path, context):
     return result
 
 
+def fix_expression_types(expr, context):
+    ''' Check/ensure type consistency in expressions having two sides '''
+    if isinstance(expr, ogAST.Primary):
+        return
+
+    for side in ('left', 'right'):
+        # Determine if the expression is a variable
+        uk_expr = getattr(expr, side)
+        if uk_expr.exprType == UNKNOWN_TYPE \
+                and isinstance(uk_expr, ogAST.PrimPath) \
+                and len(uk_expr.value) == 1:
+            try:
+                #exprType = find_variable(uk_expr.inputString, context)
+                exprType = find_variable(uk_expr.value[0], context)
+                setattr(expr, side, ogAST.PrimVariable(primary=uk_expr))
+                getattr(expr, side).exprType = exprType
+            except AttributeError:
+                pass
+
+    # If a side of the expression is of Enumerated of Choice type, check if
+    # the other side is a literal of that sort, and change type accordingly
+    for side in (('left', 'right'), ('right', 'left')):
+        side_type = find_basic_type(getattr(expr, side[0]).exprType).kind
+        if side_type == 'EnumeratedType':
+            prim = ogAST.PrimEnumeratedValue(primary=getattr(expr, side[1]))
+        elif side_type == 'ChoiceEnumeratedType':
+            prim = ogAST.PrimChoiceDeterminant(primary=getattr(expr, side[1]))
+        try:
+            check_type_compatibility(prim, getattr(expr, side[0]).exprType,
+                                     context)
+            setattr(expr, side[1], prim)
+            getattr(expr, side[1]).exprType = getattr(expr, side[0]).exprType
+        except (UnboundLocalError, AttributeError, TypeError):
+            pass
+
+    # If a side type remains unknown, check if it is an ASN.1 constant
+    for side in (('left', 'right'), ('right', 'left')):
+        value = getattr(expr, side[0])
+        if value.exprType == UNKNOWN_TYPE and is_constant(value):
+            setattr(expr, side[0], ogAST.PrimConstant(primary=value))
+            getattr(expr, side[0]).exprType = getattr(expr, side[1]).exprType
+
+    for side in (expr.right, expr.left):
+        if side.is_raw:
+            raw_expr = side
+        else:
+            typed_expr = side
+            ref_type = typed_expr.exprType
+
+    # Type check that is specific to IN expressions
+    if isinstance(expr, ogAST.ExprIn):
+        # check that left part is a SEQUENCE OF or a string
+        container_basic_type = find_basic_type(expr.left.exprType)
+        if container_basic_type.kind == 'SequenceOfType':
+            ref_type = container_basic_type.type
+        elif container_basic_type.kind.endswith('StringType'):
+            ref_type = container_basic_type
+        else:
+            raise TypeError('IN expression: right part must be a list')
+        compare_types(expr.right.exprType, ref_type)
+        return
+
+    if expr.right.is_raw == expr.left.is_raw == False:
+        unknown = [uk_expr for uk_expr in expr.right, expr.left
+                   if uk_expr.exprType == UNKNOWN_TYPE]
+        if unknown:
+            raise TypeError('Cannot resolve type of "{}"'
+                            .format(unknown[0].inputString))
+
+    # In Sequence, Choice, SEQUENCE OF, and IfThenElse expressions,
+    # we must fix missing inner types
+    # (due to similarities, the following should be refactored FIXME)
+    if isinstance(expr.right, ogAST.PrimSequence):
+        # left side must have a known type
+        asn_type = find_basic_type(expr.left.exprType)
+        if asn_type.kind != 'SequenceType':
+            raise TypeError('left side must be a SEQUENCE type')
+        for field, fd_expr in expr.right.value.viewitems():
+            if fd_expr.exprType == UNKNOWN_TYPE:
+                try:
+                    expected_type = asn_type.Children.get(
+                                                 field.replace('_', '-')).type
+                except AttributeError:
+                    raise TypeError('Field not found: ' + field)
+                check_expr = ogAST.ExprAssign()
+                check_expr.left = ogAST.PrimPath()
+                check_expr.left.exprType = expected_type
+                check_expr.right = fd_expr
+                fix_expression_types(check_expr, context)
+                # Id of fd_expr may have changed (enumerated, choice)
+                expr.right.value[field] = check_expr.right
+    elif isinstance(expr.right, ogAST.PrimChoiceItem):
+        asn_type = find_basic_type(expr.left.exprType)
+        field = expr.right.value['choice'].replace('_', '-')
+        if asn_type.kind != 'ChoiceType' \
+                or field.lower() not in [key.lower()
+                                  for key in asn_type.Children.viewkeys()]:
+                raise TypeError('Field is not valid in CHOICE:' + field)
+        key, = [key for key in asn_type.Children.viewkeys()
+                if key.lower() == field.lower()]
+        if expr.right.value['value'].exprType == UNKNOWN_TYPE:
+            try:
+                expected_type = asn_type.Children.get(key).type
+            except AttributeError:
+                raise TypeError('Field not found in CHOICE: ' + field)
+            check_expr = ogAST.ExprAssign()
+            check_expr.left = ogAST.PrimPath()
+            check_expr.left.exprType = expected_type
+            check_expr.right = expr.right.value['value']
+            fix_expression_types(check_expr, context)
+            expr.right.value['value'] = check_expr.right
+    elif isinstance(expr.right, ogAST.PrimIfThenElse):
+        for det in ('then', 'else'):
+            if expr.right.value[det].exprType == UNKNOWN_TYPE:
+                expr.right.value[det].exprType = expr.left.exprType
+            # Recursively fix possibly missing types in the expression
+            check_expr = ogAST.ExprAssign()
+            check_expr.left = ogAST.PrimPath()
+            check_expr.left.exprType = expr.left.exprType
+            check_expr.right = expr.right.value[det]
+            fix_expression_types(check_expr, context)
+            expr.right.value[det] = check_expr.right
+    elif isinstance(expr.right, ogAST.PrimSequenceOf):
+        asn_type = find_basic_type(expr.left.exprType).type
+        for idx, elem in enumerate(expr.right.value):
+            check_expr = ogAST.ExprAssign()
+            check_expr.left = ogAST.PrimPath()
+            check_expr.left.exprType = asn_type
+            check_expr.right = elem
+            fix_expression_types(check_expr, context)
+            expr.right.value[idx] = check_expr.right
+        # the type of the raw PrimSequenceOf can be set now
+        expr.right.exprType.type = asn_type
+
+    if isinstance(expr, (ogAST.ExprAnd, ogAST.ExprOr, ogAST.ExprXor)):
+        # Bitwise operators: check that both sides are booleans
+        for side in expr.left, expr.right:
+            basic_type = find_basic_type(side.exprType)
+            if basic_type.kind in ('BooleanType', 'BitStringType'):
+                continue
+            elif basic_type.kind == 'SequenceOfType':
+                if find_basic_type(side.exprType).type.kind == 'BooleanType':
+                    continue
+            else:
+                raise TypeError('Bitwise operators only work with '
+                                'booleans and arrays of booleans')
+    if expr.right.is_raw != expr.left.is_raw:
+        check_type_compatibility(raw_expr, ref_type, context)
+        raw_expr.exprType = ref_type
+    else:
+        compare_types(expr.left.exprType, expr.right.exprType)
+
+
 def expression_list(root, context):
     ''' Parse a list of expression parameters '''
     errors = []
@@ -1157,9 +1310,96 @@ def fpar(root):
                         str(child.type))
     return params, errors, warnings
 
+
+def composite_state(root, parent=None, context=None):
+    ''' Parse a composite state definition '''
+    comp = ogAST.CompositeState()
+    errors, warnings = [], []
+    # Create a list of all inherited data
+    try:
+        comp.global_variables = dict(context.variables)
+        comp.global_variables.update(context.global_variables)
+        comp.input_signals = context.input_signals
+        comp.output_signals = context.output_signals
+        comp.procedures = context.procedures
+        comp.operators = dict(context.operators)
+    except AttributeError:
+        LOG.debug('Procedure context is undefined')
+    # Gather the list of states defined in the composite state
+    # and map a list of transitions to each state
+    comp.mapping = {name: [] for name in get_state_list(root)}
+    for child in root.getChildren():
+        if child.type == lexer.ID:
+            comp.line = child.getLine()
+            comp.charPositionInLine = child.getCharPositionInLine()
+            comp.statename = child.toString().lower()
+        elif child.type == lexer.COMMENT:
+            comp.comment, _, _ = end(child)
+        elif child.type == lexer.IN:
+            # state entry point
+            for point in child.getChildren():
+                comp.state_entrypoints.append(point.toString().lower())
+        elif child.type == lexer.OUT:
+            # state exit point
+            for point in child.getChildren():
+                comp.state_exitpoints.append(point.toString().lower())
+        elif child.type == lexer.TEXTAREA:
+            textarea, err, warn = text_area(child, context=comp)
+            errors.extend(err)
+            warnings.extend(warn)
+            comp.content.textAreas.append(textarea)
+        elif child.type == lexer.PROCEDURE:
+            new_proc, err, warn = procedure(child, context=proc)
+            errors.extend(err)
+            warnings.extend(warn)
+            if new_proc.inputString.strip().lower() == 'entry':
+                comp.entry_procedure = new_proc
+            elif new_proc.inputString.strip().lower() == 'exit':
+                comp.exit_procedure = new_proc
+            comp.content.inner_procedures.append(new_proc)
+        elif child.type == lexer.COMPOSITE_STATE:
+            inner_comp, err, warn = composite_state(child,
+                                                    parent=None,
+                                                    context=comp)
+            errors.extend(err)
+            warnings.extend(warn)
+            comp.composite_states.append(comp)
+            warnings.append('Inner Composite state detected')
+        elif child.type == lexer.STATE:
+            # STATE - fills up the 'mapping' structure.
+            newstate, err, warn = state(child, parent=None, context=comp)
+            errors.extend(err)
+            warnings.extend(warn)
+            comp.content.states.append(newstate)
+        elif child.type == lexer.FLOATING_LABEL:
+            lab, err, warn = floating_label(child, parent=None, context=comp)
+            errors.extend(err)
+            warnings.extend(warn)
+            comp.content.floating_labels.append(lab)
+        elif child.type == lexer.START:
+            # START transition (fills the mapping structure)
+            st, err, warn = start(child, context=comp)
+            errors.extend(err)
+            warnings.extend(warn)
+            if st.inputString:
+                comp.content.named_start.append(st)
+            elif not comp.content.start:
+                comp.content.start = st
+            else:
+                errors.append('Only one unnamed START transition is allowed')
+        else:
+            warnings.append(
+                    'Unsupported construct in nested state, type: ' +
+                    str(child.type) + ' - line ' + str(child.getLine()) +
+                    ' - state name: ' + str(comp.statename))
+    return comp, errors, warnings
+
+
 def procedure(root, parent=None, context=None):
     ''' Parse a procedure definition '''
     proc = ogAST.Procedure()
+    errors = []
+    warnings = []
     # Create a list of all inherited data
     try:
         proc.global_variables = dict(context.variables)
@@ -1171,12 +1411,9 @@ def procedure(root, parent=None, context=None):
     except AttributeError:
         LOG.debug('Procedure context is undefined')
     # Gather the list of states defined in the procedure
-    states = get_state_list(root)
-    for statename in states:
-        # map a list of transitions to each state
-        proc.mapping[statename] = []
-    errors = []
-    warnings = []
+    # and create a mapping of transitions to each state
+    # (Note, procedures in OG currently do NOT support states)
+    proc.mapping = {name: [] for name in get_state_list(root)}
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -1471,78 +1708,6 @@ def system_definition(root, parent):
                     str(child.type))
     return system, errors, warnings
 
-def pr_file(root):
-    ''' Complete PR model - can be made up from several files/strings '''
-    errors = []
-    warnings = []
-    ast = ogAST.AST()
-    # Re-order the children of the AST to make sure system and use clauses
-    # are parsed before process definition - to get signal definitions
-    # and data typess references.
-    processes, uses, systems = [], [], []
-    for child in root.getChildren():
-        ast.pr_files.add(node_filename(child))
-        if child.type == lexer.PROCESS:
-            processes.append(child)
-        elif child.type == lexer.USE:
-            uses.append(child)
-        elif child.type == lexer.SYSTEM:
-            systems.append(child)
-        else:
-            LOG.error('Unsupported construct in PR:' + str(child.type))
-    for child in uses:
-        LOG.debug('USE clause')
-        # USE clauses can contain a CIF comment with the ASN.1 filename
-        use_clause_subs = child.getChildren()
-        for clause in use_clause_subs:
-            if clause.type == lexer.ASN1:
-                asn1_filename = clause.getChild(0).text[1:-1]
-                ast.asn1_filenames.append(asn1_filename)
-            else:
-                ast.use_clauses.append(clause.text)
-        try:
-            global DV
-            if not DV:
-                # Here XXX call asn1.exe to create DataView.py
-                # (Currently done in buildsupport)
-                DV = importlib.import_module('DataView')
-            else:
-                reload(DV)
-            ast.dataview = types()
-            ast.asn1Modules = DV.asn1Modules
-            # Add constants defined in the ASN.1 modules (for visibility)
-            for mod in ast.asn1Modules:
-                ast.asn1_constants.extend(DV.exportedVariables[mod])
-        except (ImportError, NameError):
-            LOG.info('USE Clause did not contain ASN.1 filename')
-    for child in systems:
-        LOG.debug('found SYSTEM')
-        system, err, warn = system_definition(child, parent=ast)
-        errors.extend(err)
-        warnings.extend(warn)
-        ast.systems.append(system)
-        def find_processes(block):
-            ''' Recursively find processes in a system '''
-            try:
-                result = [proc for proc in block.processes 
-                          if not proc.referenced]
-            except AttributeError:
-                result = []
-            for nested in block.blocks:
-                result.extend(find_processes(nested))
-            return result
-        ast.processes.extend(find_processes(system))
-    for child in processes:
-        # process definition at root level (must be referenced in a system)
-        LOG.debug('found PROCESS')
-        process, err, warn = process_definition(child, parent=ast)
-        process.dataview = ast.dataview
-        process.asn1Modules = ast.asn1Modules
-        errors.extend(err)
-        warnings.extend(warn)
-    LOG.debug('all files: ' + str(ast.pr_files))
-    return ast, errors, warnings
-
 def process_definition(root, parent=None):
     ''' Process definition analysis '''
     errors = []
@@ -1552,8 +1717,7 @@ def process_definition(root, parent=None):
     process.parent = parent
     parent.processes.append(process)
     # Prepare the transition/state mapping
-    for state_id in get_state_list(root):
-        process.mapping[state_id] = []
+    process.mapping = {name: [] for name in get_state_list(root)}
     for child in root.getChildren():
         if child.type == lexer.ID:
             # Get process (taste function) name
@@ -1607,6 +1771,12 @@ def process_definition(root, parent=None):
             warnings.extend(warn)
             process.content.floating_labels.append(lab)
         elif child.type == lexer.COMPOSITE_STATE:
+            comp, err, warn = composite_state(child,
+                                              parent=None,
+                                              context=process)
+            errors.extend(err)
+            warnings.extend(warn)
+            process.composite_states.append(comp)
             warnings.append('Composite state detected but not supported yet')
         elif child.type == lexer.REFERENCED:
             process.referenced = True
@@ -1727,6 +1897,7 @@ def state(root, parent, context):
     errors = []
     warnings = []
     state_def = ogAST.State()
+    asterisk_state = False
     asterisk_input = None
     for child in root.getChildren():
         if child.type == lexer.CIF:
@@ -1741,6 +1912,7 @@ def state(root, parent, context):
             for statename in child.getChildren():
                 state_def.statelist.append(statename.toString())
         elif child.type == lexer.ASTERISK:
+            asterisk_state = True
             state_def.inputString = get_input_string(child)
             state_def.line = child.getLine()
             state_def.charPositionInLine = child.getCharPositionInLine()
@@ -1750,8 +1922,8 @@ def state(root, parent, context):
                     state_def.statelist.append(st)
         elif child.type == lexer.INPUT:
             # A transition triggered by an INPUT
-            inp, err, warn = input_part(
-                                     child, parent=state_def, context=context)
+            inp, err, warn = \
+                           input_part(child, parent=state_def, context=context)
             errors.extend(err)
             warnings.extend(warn)
             try:
@@ -1766,6 +1938,17 @@ def state(root, parent, context):
                             str(state_def.inputString))
                 else:
                     asterisk_input = inp
+        elif child.type == lexer.CONNECT:
+            if asterisk_state or len(state_def.statelist) != 1 \
+                 or (state_def.statelist[0].lower()
+                 not in (comp.statename for comp in context.composite_states)):
+                errors.append('State {} is not a composite state and cannot '
+                              'be followed by a connect statement'
+                              .format(state_def.statelist[0]))
+            else:
+                err, warn = connect_part(child, state_def, context)
+                warnings.extend(warn)
+                errors.extend(err)
         elif child.type == lexer.COMMENT:
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
@@ -1783,8 +1966,55 @@ def state(root, parent, context):
         input_signals = (sig['name'] for sig in context.input_signals)
         remaining_inputs = set(input_signals) - explicit_inputs
         asterisk_input.inputlist = list(remaining_inputs)
+    # post-processing: if state is composite, add link to the content
+    if len(state_def.statelist) == 1 and not asterisk_state:
+        for each in context.composite_states:
+            if each.statename.lower() == state_def.statelist[0].lower():
+                state_def.composite = each
 
     return state_def, errors, warnings
+
+
+def connect_part(root, parent, context):
+    ''' Connection of a nested state exit point with a transition '''
+    errors, warnings = [], []
+    connect_list = []
+    statename = parent.statelist[0].lower()
+    # Retrieve composite state
+    nested, = (comp for comp in context.composite_states
+               if comp.statename == statename)
+
+    for child in root.getChildren():
+        if child.type == lexer.ID:
+            connect_list.append(child.toString().lower())
+        elif child.type == lexer.ASTERISK:
+            connect_list = nested.state_exitpoints
+        elif child.type == lexer.TRANSITION:
+            trans, err, warn = transition(child, parent, context=context)
+            errors.extend(err)
+            warnings.extend(warn)
+            context.transitions.append(trans)
+            trans_id = len(context.transitions) - 1
+        else:
+            warnings.append('Unsupported CONNECT PART child type: ' +
+                            str(child.type))
+    if not connect_list:
+        connect_list.append('')
+    for exitp in connect_list:
+        if exitp != '' and not exitp in nested.state_exitpoints:
+            errors.append('Exit point {ep} not defined in state {st}'
+                          .format(ep=exitp, st=statename))
+        terminators = [term for term in nested.terminators
+                       if term.kind == 'return'
+                       and term.inputString.lower() == exitp]
+        if not terminators:
+            errors.append('No {rs} return statement in nested state {st}'
+                          .format(rs=exitp, st=statename))
+        for each in terminators:
+            # Set transition ID, referencing process.transitions
+            each.next_id = trans_id
+    return errors, warnings
+
 
 def cif(root):
     ''' Return the CIF coordinates '''
@@ -1803,6 +2033,8 @@ def start(root, parent=None, context=None):
     warnings = []
     if isinstance(context, ogAST.Procedure):
         s = ogAST.Procedure_start()
+    elif isinstance(context, ogAST.CompositeState):
+        s = ogAST.CompositeState_start()
     else:
         s = ogAST.Start()
     # Keep track of the number of terminator statements following the start
@@ -1812,14 +2044,17 @@ def start(root, parent=None, context=None):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             s.pos_x, s.pos_y, s.width, s.height = cif(child)
+        elif child.type == lexer.ID:
+            # in nested states, START can be followed by the entry point name
+            s.inputString = child.toString().lower() + '_START'
         elif child.type == lexer.TRANSITION:
             s.transition, err, warn = transition(
                                         child, parent=s, context=context)
             errors.extend(err)
             warnings.extend(warn)
             context.transitions.append(s.transition)
-            context.mapping['START'] = len(
-                                      context.transitions) - 1
+            context.mapping[s.inputString or 'START'] = \
+                                                   len(context.transitions) - 1
         elif child.type == lexer.COMMENT:
             s.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
@@ -2063,24 +2298,37 @@ def decision(root, parent, context):
                         type_name(expr.left.exprType) + '), answer (' +
                         expr.right.inputString + ', type= ' +
                         type_name(expr.right.exprType) + ') ' + str(err))
-                #else:
-                #    ans.constant.exprType = dec.question.exprType
     return dec, errors, warnings
 
 
-def nextstate(root):
+def nextstate(root, context):
     ''' Parse a NEXTSTATE [VIA State_Entry_Point] '''
-    # TODO = check that the via clause leads to a defined nested state
-    #        and entry point
     next_state_id, via = '', None
     for child in root.getChildren():
         if child.type == lexer.ID:
-            next_state_id = child.text
+            next_state_id = child.text.lower()
         elif child.type == lexer.DASH:
             next_state_id = '-'
         elif child.type == lexer.VIA:
             if next_state_id.strip() != '-':
-                via = child.getChild(0).text
+                via = child.getChild(0).text.lower()
+                try:
+                    composite, = (comp for comp in context.composite_states
+                                  if comp.statename == next_state_id)
+                except ValueError:
+                    raise TypeError('State {} is not a composite state'
+                                    .format(next_state_id))
+                else:
+                    if via not in composite.state_entrypoints:
+                        raise TypeError('State {s} has no "{p}" entrypoint'
+                                        .format(s=next_state_id, p=via))
+                    for each in composite.content.named_start:
+                        if each.inputString == via + '_START':
+                            break
+                    else:
+                        raise TypeError('Entrypoint {p} in state {s} is '
+                                        'declared but not defined'.format
+                                        (s=next_state_id, p=via))
             else:
                 raise TypeError('"History" NEXTSTATE'
                                  ' cannot have a "via" clause')
@@ -2109,10 +2357,9 @@ def terminator_statement(root, parent, context):
         elif term.type == lexer.NEXTSTATE:
             t.kind = 'next_state'
             try:
-                t.inputString, t.via = nextstate(term)
+                t.inputString, t.via = nextstate(term, context)
             except TypeError as err:
                 errors.append(str(err))
-            #t.inputString = term.getChild(0).toString()
             t.line = term.getChild(0).getLine()
             t.charPositionInLine = term.getChild(0).getCharPositionInLine()
             # Add next state infos at process level
@@ -2225,159 +2472,6 @@ def transition(root, parent, context):
     for lab, term_count in terminators.viewitems():
         lab.terminators = list(context.terminators[term_count:])
     return trans, errors, warnings
-
-
-def fix_expression_types(expr, context):
-    ''' Check/ensure type consistency in expressions having two sides '''
-    if isinstance(expr, ogAST.Primary):
-        return
-
-    for side in ('left', 'right'):
-        # Determine if the expression is a variable
-        uk_expr = getattr(expr, side)
-        if uk_expr.exprType == UNKNOWN_TYPE \
-                and isinstance(uk_expr, ogAST.PrimPath) \
-                and len(uk_expr.value) == 1:
-            try:
-                #exprType = find_variable(uk_expr.inputString, context)
-                exprType = find_variable(uk_expr.value[0], context)
-                setattr(expr, side, ogAST.PrimVariable(primary=uk_expr))
-                getattr(expr, side).exprType = exprType
-            except AttributeError:
-                pass
-
-    # If a side of the expression is of Enumerated of Choice type, check if
-    # the other side is a literal of that sort, and change type accordingly
-    for side in (('left', 'right'), ('right', 'left')):
-        side_type = find_basic_type(getattr(expr, side[0]).exprType).kind
-        if side_type == 'EnumeratedType':
-            prim = ogAST.PrimEnumeratedValue(primary=getattr(expr, side[1]))
-        elif side_type == 'ChoiceEnumeratedType':
-            prim = ogAST.PrimChoiceDeterminant(primary=getattr(expr, side[1]))
-        try:
-            check_type_compatibility(prim, getattr(expr, side[0]).exprType,
-                                     context)
-            setattr(expr, side[1], prim)
-            getattr(expr, side[1]).exprType = getattr(expr, side[0]).exprType
-        except (UnboundLocalError, AttributeError, TypeError):
-            pass
-
-    # If a side type remains unknown, check if it is an ASN.1 constant
-    for side in (('left', 'right'), ('right', 'left')):
-        value = getattr(expr, side[0])
-        if value.exprType == UNKNOWN_TYPE and is_constant(value):
-            setattr(expr, side[0], ogAST.PrimConstant(primary=value))
-            getattr(expr, side[0]).exprType = getattr(expr, side[1]).exprType
-
-    for side in (expr.right, expr.left):
-        if side.is_raw:
-            raw_expr = side
-        else:
-            typed_expr = side
-            ref_type = typed_expr.exprType
-
-    # Type check that is specific to IN expressions
-    if isinstance(expr, ogAST.ExprIn):
-        # check that left part is a SEQUENCE OF or a string
-        container_basic_type = find_basic_type(expr.left.exprType)
-        if container_basic_type.kind == 'SequenceOfType':
-            ref_type = container_basic_type.type
-        elif container_basic_type.kind.endswith('StringType'):
-            ref_type = container_basic_type
-        else:
-            raise TypeError('IN expression: right part must be a list')
-        compare_types(expr.right.exprType, ref_type)
-        return
-
-    if expr.right.is_raw == expr.left.is_raw == False:
-        unknown = [uk_expr for uk_expr in expr.right, expr.left
-                   if uk_expr.exprType == UNKNOWN_TYPE]
-        if unknown:
-            raise TypeError('Cannot resolve type of "{}"'
-                            .format(unknown[0].inputString))
-
-    # In Sequence, Choice, SEQUENCE OF, and IfThenElse expressions,
-    # we must fix missing inner types
-    # (due to similarities, the following should be refactored FIXME)
-    if isinstance(expr.right, ogAST.PrimSequence):
-        # left side must have a known type
-        asn_type = find_basic_type(expr.left.exprType)
-        if asn_type.kind != 'SequenceType':
-            raise TypeError('left side must be a SEQUENCE type')
-        for field, fd_expr in expr.right.value.viewitems():
-            if fd_expr.exprType == UNKNOWN_TYPE:
-                try:
-                    expected_type = asn_type.Children.get(
-                                                 field.replace('_', '-')).type
-                except AttributeError:
-                    raise TypeError('Field not found: ' + field)
-                check_expr = ogAST.ExprAssign()
-                check_expr.left = ogAST.PrimPath()
-                check_expr.left.exprType = expected_type
-                check_expr.right = fd_expr
-                fix_expression_types(check_expr, context)
-                # Id of fd_expr may have changed (enumerated, choice)
-                expr.right.value[field] = check_expr.right
-    elif isinstance(expr.right, ogAST.PrimChoiceItem):
-        asn_type = find_basic_type(expr.left.exprType)
-        field = expr.right.value['choice'].replace('_', '-')
-        if asn_type.kind != 'ChoiceType' \
-                or field.lower() not in [key.lower()
-                                  for key in asn_type.Children.viewkeys()]:
-                raise TypeError('Field is not valid in CHOICE:' + field)
-        key, = [key for key in asn_type.Children.viewkeys()
-                if key.lower() == field.lower()]
-        if expr.right.value['value'].exprType == UNKNOWN_TYPE:
-            try:
-                expected_type = asn_type.Children.get(key).type
-            except AttributeError:
-                raise TypeError('Field not found in CHOICE: ' + field)
-            check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimPath()
-            check_expr.left.exprType = expected_type
-            check_expr.right = expr.right.value['value']
-            fix_expression_types(check_expr, context)
-            expr.right.value['value'] = check_expr.right
-    elif isinstance(expr.right, ogAST.PrimIfThenElse):
-        for det in ('then', 'else'):
-            if expr.right.value[det].exprType == UNKNOWN_TYPE:
-                expr.right.value[det].exprType = expr.left.exprType
-            # Recursively fix possibly missing types in the expression
-            check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimPath()
-            check_expr.left.exprType = expr.left.exprType
-            check_expr.right = expr.right.value[det]
-            fix_expression_types(check_expr, context)
-            expr.right.value[det] = check_expr.right
-    elif isinstance(expr.right, ogAST.PrimSequenceOf):
-        asn_type = find_basic_type(expr.left.exprType).type
-        for idx, elem in enumerate(expr.right.value):
-            check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimPath()
-            check_expr.left.exprType = asn_type
-            check_expr.right = elem
-            fix_expression_types(check_expr, context)
-            expr.right.value[idx] = check_expr.right
-        # the type of the raw PrimSequenceOf can be set now
-        expr.right.exprType.type = asn_type
-
-    if isinstance(expr, (ogAST.ExprAnd, ogAST.ExprOr, ogAST.ExprXor)):
-        # Bitwise operators: check that both sides are booleans
-        for side in expr.left, expr.right:
-            basic_type = find_basic_type(side.exprType)
-            if basic_type.kind in ('BooleanType', 'BitStringType'):
-                continue
-            elif basic_type.kind == 'SequenceOfType':
-                if find_basic_type(side.exprType).type.kind == 'BooleanType':
-                    continue
-            else:
-                raise TypeError('Bitwise operators only work with '
-                                'booleans and arrays of booleans')
-    if expr.right.is_raw != expr.left.is_raw:
-        check_type_compatibility(raw_expr, ref_type, context)
-        raw_expr.exprType = ref_type
-    else:
-        compare_types(expr.left.exprType, expr.right.exprType)
 
 
 def assign(root, context):
@@ -2503,6 +2597,7 @@ def for_loop(root, context):
     context.variables = context_scope
     return forloop, errors, warnings
 
+
 def task_body(root, context):
     ''' Parse the body of a task (excluding CIF and TASK tokens) '''
     errors = []
@@ -2596,6 +2691,79 @@ def label(root, parent, context=None):
     return lab, errors, warnings
 
 
+def pr_file(root):
+    ''' Complete PR model - can be made up from several files/strings '''
+    errors = []
+    warnings = []
+    ast = ogAST.AST()
+    # Re-order the children of the AST to make sure system and use clauses
+    # are parsed before process definition - to get signal definitions
+    # and data typess references.
+    processes, uses, systems = [], [], []
+    for child in root.getChildren():
+        ast.pr_files.add(node_filename(child))
+        if child.type == lexer.PROCESS:
+            processes.append(child)
+        elif child.type == lexer.USE:
+            uses.append(child)
+        elif child.type == lexer.SYSTEM:
+            systems.append(child)
+        else:
+            LOG.error('Unsupported construct in PR:' + str(child.type))
+    for child in uses:
+        LOG.debug('USE clause')
+        # USE clauses can contain a CIF comment with the ASN.1 filename
+        use_clause_subs = child.getChildren()
+        for clause in use_clause_subs:
+            if clause.type == lexer.ASN1:
+                asn1_filename = clause.getChild(0).text[1:-1]
+                ast.asn1_filenames.append(asn1_filename)
+            else:
+                ast.use_clauses.append(clause.text)
+        try:
+            global DV
+            if not DV:
+                # Here XXX call asn1.exe to create DataView.py
+                # (Currently done in buildsupport)
+                DV = importlib.import_module('DataView')
+            else:
+                reload(DV)
+            ast.dataview = types()
+            ast.asn1Modules = DV.asn1Modules
+            # Add constants defined in the ASN.1 modules (for visibility)
+            for mod in ast.asn1Modules:
+                ast.asn1_constants.extend(DV.exportedVariables[mod])
+        except (ImportError, NameError):
+            LOG.info('USE Clause did not contain ASN.1 filename')
+    for child in systems:
+        LOG.debug('found SYSTEM')
+        system, err, warn = system_definition(child, parent=ast)
+        errors.extend(err)
+        warnings.extend(warn)
+        ast.systems.append(system)
+        def find_processes(block):
+            ''' Recursively find processes in a system '''
+            try:
+                result = [proc for proc in block.processes 
+                          if not proc.referenced]
+            except AttributeError:
+                result = []
+            for nested in block.blocks:
+                result.extend(find_processes(nested))
+            return result
+        ast.processes.extend(find_processes(system))
+    for child in processes:
+        # process definition at root level (must be referenced in a system)
+        LOG.debug('found PROCESS')
+        process, err, warn = process_definition(child, parent=ast)
+        process.dataview = ast.dataview
+        process.asn1Modules = ast.asn1Modules
+        errors.extend(err)
+        warnings.extend(warn)
+    LOG.debug('all files: ' + str(ast.pr_files))
+    return ast, errors, warnings
+
+
 def add_to_ast(ast, filename=None, string=None):
     ''' Parse a file or string and add it to an AST '''
     errors, warnings = [], []
@@ -2669,7 +2837,8 @@ def parseSingleElement(elem='', string=''):
     '''
     assert(elem in ('input_part', 'output', 'decision', 'alternative_part',
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
-            'text_area', 'state', 'start', 'procedure', 'floating_label'))
+            'text_area', 'state', 'start', 'procedure', 'floating_label',
+            'connect_part'))
     LOG.debug('Parsing string: ' + string)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)

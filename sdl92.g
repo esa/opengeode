@@ -111,8 +111,9 @@ tokens {
         BLOCK;
         PARAMNAMES;
         ASN1;
-        FLOATING_LABEL; 
+        FLOATING_LABEL;
         COMPOSITE_STATE;
+        CONNECT;
 }
 
 
@@ -307,7 +308,7 @@ floating_label
 
 
 state
-        :       cif? 
+        :       cif?
                 hyperlink?
                 STATE statelist e=end
                 (state_part)*
@@ -317,7 +318,7 @@ state
 
 statelist
         :       ((statename)(',' statename)*)
-        ->      ^(STATELIST statename+) 
+        ->      ^(STATELIST statename+)
                 | ASTERISK exception_state?
         ->      ^(ASTERISK exception_state?);
 
@@ -330,17 +331,17 @@ exception_state
 composite_state
         :       STATE statename e=end
                 SUBSTRUCTURE
-                cnx=connection_points*
+                connection_points*
                 body=composite_state_body
                 ENDSUBSTRUCTURE statename? f=end
-        ->      ^(COMPOSITE_STATE statename $cnx* $body $e?);
+        ->      ^(COMPOSITE_STATE statename connection_points* $body $e?);
 
 
 connection_points
-        :       IN state_entry_exit_points e=end
-        ->      ^(IN state_entry_exit_points $e?)
-                | OUT state_entry_exit_points f=end
-        ->      ^(OUT state_entry_exit_points $f?);
+        :       IN state_entry_exit_points end
+        ->      ^(IN state_entry_exit_points end?)
+                | OUT state_entry_exit_points end
+        ->      ^(OUT state_entry_exit_points end?);
 
 
 state_entry_exit_points
@@ -358,7 +359,21 @@ state_part
                 //| priority_input        // Not supported
                 | save_part               // Not supported in openGEODE
                 | spontaneous_transition
-                | continuous_signal;      // Not supoorted in openGEODE
+                | continuous_signal       // Not supoorted in openGEODE
+                | connect_part;
+
+
+// connect part is used to connect nested state exit points to a transition
+connect_part
+        :       CONNECT connect_list? end
+                transition
+        ->      ^(CONNECT connect_list? end? transition);
+
+
+connect_list
+        :       state_exit_point_name (',' state_exit_point_name)*
+                -> state_exit_point_name+
+                | ASTERISK;
 
 
 spontaneous_transition
@@ -1040,6 +1055,8 @@ dash_nextstate  :       DASH;
 connector_name  :       ID;
 signal_id       :       ID;
 statename       :       ID;
+state_exit_point_name
+                :       ID;
 state_entry_point_name
                 :       ID;
 variable_id     :       ID;

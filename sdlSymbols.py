@@ -19,7 +19,8 @@
 
 __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
-           'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer']
+           'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
+           'StateStart']
 
 from genericSymbols import(
         HorizontalSymbol, VerticalSymbol, Connection, Comment)
@@ -52,7 +53,7 @@ SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
 
 
 # pylint: disable=R0904
-class Input(HorizontalSymbol, object):
+class Input(HorizontalSymbol):
     ''' SDL INPUT Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = ['Task', 'ProcedureCall', 'Output', 'Decision',
@@ -86,7 +87,6 @@ class Input(HorizontalSymbol, object):
         _, syntax_errors, ___, ____, _____ = self.parser.parseSingleElement(
                 self.common_name, self.pr())
         try:
-            # LOG.error('\n'.join(syntax_errors))
             self.scene().raise_syntax_errors(syntax_errors)
         except AttributeError:
             LOG.debug('raise_syntax_error raised an exception')
@@ -133,8 +133,14 @@ class Input(HorizontalSymbol, object):
         return '\n'.join(result)
 
 
+class Connect(Input):
+    ''' Connect point below a nested state '''
+    common_name = 'connect_part'
+    # TODO
+
+
 # pylint: disable=R0904
-class Output(VerticalSymbol, object):
+class Output(VerticalSymbol):
     ''' SDL OUTPUT Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = [
@@ -184,7 +190,7 @@ class Output(VerticalSymbol, object):
 
 
 # pylint: disable=R0904
-class Decision(VerticalSymbol, object):
+class Decision(VerticalSymbol):
     ''' SDL DECISION Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = ['DecisionAnswer', 'Task', 'ProcedureCall', 'Output',
@@ -220,7 +226,7 @@ class Decision(VerticalSymbol, object):
         for branch in self.branches():
             if not branch.last_branch_item.terminal_symbol:
                 return False
-        else:        
+        else:
             return True
 
     def branches(self):
@@ -351,7 +357,7 @@ class Decision(VerticalSymbol, object):
 
 
 # pylint: disable=R0904
-class DecisionAnswer(HorizontalSymbol, object):
+class DecisionAnswer(HorizontalSymbol):
     ''' If Decision is a "switch", DecisionAnswer is a "case" '''
     _insertable_followers = ['DecisionAnswer', 'Task', 'ProcedureCall',
                         'Output', 'Decision', 'Label']
@@ -441,7 +447,7 @@ class DecisionAnswer(HorizontalSymbol, object):
 
 
 # pylint: disable=R0904
-class Join(VerticalSymbol, object):
+class Join(VerticalSymbol):
     ''' JOIN symbol (GOTO) '''
     auto_expand = False
     arrow_head = True
@@ -453,7 +459,7 @@ class Join(VerticalSymbol, object):
 
     def __init__(self, parent=None, ast=None):
         if not ast:
-            ast = ogAST.Terminator(defName='Go')
+            ast = ogAST.Terminator(defName='')
             ast.pos_y = 0
             ast.width = 35
             ast.height = 35
@@ -491,7 +497,7 @@ class Join(VerticalSymbol, object):
                     h=int(self.boundingRect().height())))
 
 
-class ProcedureStop(Join, object):
+class ProcedureStop(Join):
     ''' Procedure STOP symbol - very similar to JOIN '''
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -535,7 +541,7 @@ class ProcedureStop(Join, object):
 
 
 # pylint: disable=R0904
-class Label(VerticalSymbol, object):
+class Label(VerticalSymbol):
     ''' LABEL symbol '''
     _insertable_followers = [
             'Task', 'ProcedureCall', 'Output', 'Decision', 'Label']
@@ -619,7 +625,7 @@ class Label(VerticalSymbol, object):
 
 
 # pylint: disable=R0904
-class Task(VerticalSymbol, object):
+class Task(VerticalSymbol):
     ''' TASK symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = [
@@ -668,7 +674,7 @@ class Task(VerticalSymbol, object):
 
 
 # pylint: disable=R0904
-class ProcedureCall(VerticalSymbol, object):
+class ProcedureCall(VerticalSymbol):
     ''' PROCEDURE CALL symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = [
@@ -682,7 +688,7 @@ class ProcedureCall(VerticalSymbol, object):
     completion_list = {'set_timer', 'reset_timer', 'write', 'writeln'}
 
     def __init__(self, parent=None, ast=None):
-        ast = ast or ogAST.Output(defName='callMe')
+        ast = ast or ogAST.Output(defName='')
         super(ProcedureCall, self).__init__(parent,
                 text=ast.inputString, x=ast.pos_x, y=ast.pos_y,
                 hyperlink=ast.hyperlink)
@@ -718,7 +724,7 @@ class ProcedureCall(VerticalSymbol, object):
 
 
 # pylint: disable=R0904
-class TextSymbol(HorizontalSymbol, object):
+class TextSymbol(HorizontalSymbol):
     ''' Text symbol - used to declare variables, etc. '''
     common_name = 'text_area'
     needs_parent = False
@@ -793,7 +799,7 @@ class ASN1Viewer(TextSymbol):
 
 
 # pylint: disable=R0904
-class State(VerticalSymbol, object):
+class State(VerticalSymbol):
     ''' SDL STATE Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = ['Input']
@@ -906,7 +912,7 @@ class State(VerticalSymbol, object):
         return '\n'.join(result)
 
 
-class Procedure(HorizontalSymbol, object):
+class Procedure(HorizontalSymbol):
     ''' Procedure declaration symbol '''
     _unique_followers = ['Comment']
     common_name = 'procedure'
@@ -974,7 +980,7 @@ class Procedure(HorizontalSymbol, object):
 
 
 # pylint: disable=R0904
-class Start(HorizontalSymbol, object):
+class Start(HorizontalSymbol):
     ''' SDL START Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = [
@@ -987,14 +993,16 @@ class Start(HorizontalSymbol, object):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
+    editable = False
 
     def __init__(self, ast=None):
         ''' Create the START symbol '''
         ast = ast or ogAST.Start()
         self.terminal_symbol = False
-        super(Start, self).__init__(parent=None, text='',
-                x=ast.pos_x, y=ast.pos_y,
-                hyperlink=ast.hyperlink)
+        super(Start, self).__init__(parent=None,
+                                    text=ast.inputString[slice(0,-6)],
+                                    x=ast.pos_x, y=ast.pos_y,
+                                    hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
         self.setBrush(QBrush(QColor(255, 228, 213)))
         # No hyperlink for START symbol because it has no text
@@ -1031,7 +1039,7 @@ class Start(HorizontalSymbol, object):
         return '\n'.join(result)
 
 
-class ProcedureStart(Start, object):
+class ProcedureStart(Start):
     ''' Start symbol of a procedure - only shape differs from Start '''
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -1047,3 +1055,8 @@ class ProcedureStart(Start, object):
         path.lineTo(max(width / 2, width - height / 2), height)
         self.setPath(path)
         super(Start, self).set_shape(width, height)
+
+
+class StateStart(Start):
+    ''' Composite states can have several named START symbols '''
+    editable = True

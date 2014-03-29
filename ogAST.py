@@ -268,7 +268,7 @@ class Answer(object):
     ''' AST Entry for a decision answer '''
     def __init__(self):
         ''' One ANSWER of a DECISION '''
-        self.inputString = 'case'
+        self.inputString = ''
         self.line = None
         self.charPositionInLine = None
         self.pos_x = 0
@@ -303,7 +303,7 @@ class Task(object):
     ''' AST Entry for TASKS '''
     def __init__(self):
         ''' Initialize TASK attributes (set of ASSIGN statements) '''
-        self.inputString = 'x := 1'
+        self.inputString = ''
         self.line = None
         self.charPositionInLine = None
         self.pos_x = 0
@@ -342,7 +342,7 @@ class TaskForLoop(Task):
 
 class Output(object):
     ''' AST Entry for OUTPUT statements '''
-    def __init__(self, defName='RI'):
+    def __init__(self, defName=''):
         ''' Set of OUTPUT statements '''
         self.inputString = defName
         self.pos_x = 0
@@ -392,6 +392,8 @@ class Terminator(object):
         self.return_expr = None
         # via clause, used for entering nested state with an entry point
         self.via = None
+        # some transitions can be chained, when entering/leaving nested states
+        self.next_id = -1
 
     def __repr__(self):
         ''' Debug output for terminators '''
@@ -406,7 +408,7 @@ class Label(object):
     def __init__(self):
         ''' Initialize the label attributes '''
         # inputString holds the label name
-        self.inputString = 'Here'
+        self.inputString = ''
         self.pos_x = 0
         self.pos_y = 0
         self.width = 70
@@ -475,7 +477,7 @@ class Input(object):
     def __init__(self):
         ''' Initialize the Input attributes '''
         # inputString is the user text, it can contain several inputs
-        self.inputString = 'PI'
+        self.inputString = ''
         self.pos_x = 0
         self.pos_y = 0
         self.width = 70
@@ -526,11 +528,16 @@ class Start(object):
 
     def __repr__(self):
         ''' Debug output for a START symbol '''
-        return 'START'
+        return 'START {}'.format(self.inputString)
 
 
 class Procedure_start(Start):
     ''' Procedure start symbol - inherits from Start '''
+    pass
+
+
+class CompositeState_start(Start):
+    ''' Composite state start symbol - inherits from Start, can have a name '''
     pass
 
 
@@ -575,6 +582,8 @@ class State(object):
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # optional composite state content (type CompositeState)
+        self.composite = None
 
     def __repr__(self):
         ''' Debug output for a STATE symbol '''
@@ -588,7 +597,7 @@ class TextArea(object):
     def __init__(self):
         ''' Text area (raw content for rendering only) '''
         self.inputString = '-- Declare your variables\n\n' \
-                           '-- Syntax: DCL <variable name> <type name>;'
+                           '-- Syntax: DCL <variable name> <type name>;\n\n'
         # DCL variables in the text area {name: (sort, default_value), ...}
         self.variables = {}
         self.line = None
@@ -617,13 +626,14 @@ class Automaton(object):
         self.start = None
         self.floating_labels = []
         self.states = []
+        self.named_start = []
 
 
 class Procedure(object):
     ''' Internal procedure definition '''
     def __init__(self):
         ''' Procedure AST default value '''
-        self.inputString = 'Proc'
+        self.inputString = ''
         self.line = None
         self.charPositionInLine = None
         # Set default coordinates and width/height
@@ -712,12 +722,36 @@ class Process(object):
         # list of type Transition - use 'mapping' to map index to inputs/states
         self.transitions = []
 
+        # list of type CompositeState
+        self.composite_states = []
+
         # Set of symbols contained in the process (type Automaton)
         # (Includes inner procedures)
         self.content = Automaton(parent=self)
 
         # List of timers (strings) declared in the process
         self.timers = []
+
+
+class CompositeState(Process):
+    '''
+        Composite states: the difference with Process is that they can have:
+        - several START elements, that correspond to state entry points,
+        - state exit points (with RETURN terminators)
+        - entry and exit procedures
+    '''
+    def __init__(self):
+        super(CompositeState, self).__init__()
+        self.statename = ''
+        self.state_entrypoints = []
+        self.state_exitpoints = []
+        # Special entry and exit procedures (named "entry" and "exit")
+        self.entry_procedure = None
+        self.exit_procedure = None
+        # Body can contain text areas, procedures, composite states,
+        # one nameless START, named START (one per entrypoint), states,
+        # and floating labels.
+        # XXX check what to do with local DCL and timers
 
 
 class Block(object):

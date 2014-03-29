@@ -1,11 +1,19 @@
 PROCESS challenge;
 state on;
     substructure
-        in (via_toto);
+        in (via_totO);
+        out (reT0);
         start;
-            return;
-        start via_toto;
-            return;
+            call writeln('start without via');
+            nextstate hello;
+        start via_Toto;
+            call writeln('start via toto, returning ret0');
+            return ret0;
+        state hello;
+            input run;
+                call writeln('hello substate');
+                return;
+        endstate;
 endsubstructure;
 
 /* CIF TEXT (-159, 1), (298, 140) */
@@ -52,6 +60,9 @@ NEXTSTATE ON;
 INPUT go_off;
 /* CIF NEXTSTATE (459, 102), (70, 35) */
 NEXTSTATE OFF;
+connect ret0;
+call writeln('Connect and going to OFF');
+nextstate off;
 ENDSTATE;
 
 /* CIF STATE (226, 37), (70, 35) */
@@ -59,8 +70,8 @@ STATE OFF;
 /* CIF INPUT (226, 92), (70, 35) */
 INPUT run;
 /* CIF PROCEDURECALL (178, 142), (166, 35) */
-CALL writeln('Going ON');
+CALL writeln('Going ON VIA TOTO');
 /* CIF NEXTSTATE (226, 192), (70, 35) */
-NEXTSTATE ON;
+NEXTSTATE ON VIA via_TOTO;
 ENDSTATE;
 ENDPROCESS challenge;

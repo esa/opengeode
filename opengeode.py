@@ -53,7 +53,7 @@ from PySide import QtSvg
 from genericSymbols import Symbol, Comment, EditableText, Cornergrabber
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
-        ProcedureStart, ProcedureStop)
+        ProcedureStart, ProcedureStop, StateStart)
 
 # Icons and png files generated from the resource file:
 import icons  # NOQA
@@ -128,7 +128,9 @@ ACTIONS = {
     'procedure': [ProcedureStart, Task, Decision,
                   DecisionAnswer, Output, ProcedureCall, TextSymbol,
                   Comment, Label, Join, ProcedureStop],
-    'statechart': []
+    'statechart': [],
+    'state': [StateStart, State, Input, Task, Decision, DecisionAnswer, Output,
+              ProcedureCall, TextSymbol, Comment, Label, Join, ProcedureStop]
 }
 
 
@@ -256,7 +258,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     scene_left = QtCore.Signal()
 
     def __init__(self, context='process'):
-        ''' Create an SDL Scene for a given context (process or procedure) '''
+        '''
+            Create an SDL Scene for a given context:
+            process, procedure or composite state
+        '''
         super(SDL_Scene, self).__init__()
         self.mode = 'idle'
         self.context = context
@@ -273,7 +278,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # buttonSelected is used to set which symbol to draw
         # on next scene click (see mousePressEvent)
         self.button_selected = None
-        self.setBackgroundBrush(QtGui.QBrush(QtGui.QImage(':icons/texture.png')))
+        self.setBackgroundBrush(QtGui.QBrush(
+                                           QtGui.QImage(':icons/texture.png')))
         self.messages_window = None
         self.click_coordinates = None
         self.process_name = 'opengeode'
@@ -922,9 +928,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # When creating a new decision, add two default answers
             self.place_symbol(item_type=DecisionAnswer, parent=item)
             self.place_symbol(item_type=DecisionAnswer, parent=item)
-        elif item_type == Procedure:
-            # Create a sub-scene for the procedure
-            subscene = SDL_Scene(context='procedure')
+        elif item_type in (Procedure, State):
+            # Create a sub-scene for the procedure or nested state
+            subscene = SDL_Scene(context=item_type.__name__.lower())
             subscene.messages_window = self.messages_window
             item.nested_scene = subscene
 
