@@ -45,7 +45,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'EXPONENT', 'TRUE', 'FALSE', 'MOD', 'FI', 'WRITE', 'WRITELN',
                 'LENGTH', 'PRESENT', 'FPAR', 'TODO', 'FIXME', 'XXX',
                 'CHECKME', 'PROCEDURE', 'EXTERNAL', 'IN', 'OUT', 'TIMER',
-                'SET_TIMER', 'RESET_TIMER')]
+                'SET_TIMER', 'RESET_TIMER', 'VIA')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE',
@@ -57,7 +57,7 @@ class Input(HorizontalSymbol):
     ''' SDL INPUT Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = ['Task', 'ProcedureCall', 'Output', 'Decision',
-                        'Input',  'Label']
+                        'Input',  'Label', 'Connect']
     _terminal_followers = ['Join', 'State', 'ProcedureStop']
     completion_list = set()
 
@@ -70,6 +70,9 @@ class Input(HorizontalSymbol):
         ''' Create the INPUT symbol '''
         ast = ast or ogAST.Input()
         self.branch_entrypoint = None
+        if not ast.pos_y and parent:
+            # Make sure the item is placed below its parent
+            ast.pos_y = parent.y() + parent.boundingRect().height() + 10
         super(Input, self).__init__(parent, text=ast.inputString,
                 x=ast.pos_x, y=ast.pos_y, hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
@@ -136,7 +139,38 @@ class Input(HorizontalSymbol):
 class Connect(Input):
     ''' Connect point below a nested state '''
     common_name = 'connect_part'
-    # TODO
+    auto_expand = False
+    resizeable = False
+    # Symbol must not use antialiasing, otherwise the middle line is too thick
+    _antialiasing = False
+    def set_shape(self, width, height):
+        ''' Compute the polygon to fit in width, height '''
+        self.setPen(QPen(Qt.blue))
+        self.textbox_alignment = Qt.AlignLeft | Qt.AlignTop
+        path = QPainterPath()
+        path.moveTo(0, 0)
+        path.lineTo(0, height)
+        #path.moveTo(0, height / 2)
+        #path.lineTo(width, height / 2)
+        self.setPath(path)
+        super(Input, self).set_shape(width, height)
+
+    def resize_item(self, rect):
+        ''' Symbol cannot be resized '''
+        return
+
+    def pr(self):
+        ''' Return the PR notation of the single CONNECT symbol '''
+        comment = repr(self.comment) if self.comment else ';'
+        pos = self.scenePos()
+        pr_string =('/* CIF CONNECT ({x}, {y}), ({w}, {h}) */\n'
+                '{hlink}'
+                'CONNECT {i}{comment}'.format(
+                    hlink=repr(self.text), i=str(self.text),
+                    x=int(pos.x()), y=int(pos.y()),
+                    w=int(self.boundingRect().width()),
+                    h=int(self.boundingRect().height()), comment=comment))
+        return pr_string
 
 
 # pylint: disable=R0904
@@ -802,7 +836,7 @@ class ASN1Viewer(TextSymbol):
 class State(VerticalSymbol):
     ''' SDL STATE Symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = ['Input']
+    _insertable_followers = ['Input', 'Connect']
     arrow_head = True
     common_name = 'terminator_statement'
     needs_parent = False
@@ -813,6 +847,7 @@ class State(VerticalSymbol):
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.State()
+        ast.inputString = getattr(ast, 'via', None) or ast.inputString
         # Note: ast coordinates are in scene coordinates
         super(State, self).__init__(parent=parent,
                 text=ast.inputString, x=ast.pos_x, y=ast.pos_y,
@@ -857,6 +892,16 @@ class State(VerticalSymbol):
         ''' Compute the polygon to fit in width, height '''
         path = QPainterPath()
         path.addRoundedRect(0, 0, width, height, height / 4, height)
+        if self.is_composite():
+            path.addRoundedRect(5,5, width-10, height-10, height/4, height)
+            textattr = Qt.TextBrowserInteraction
+        else:
+            textattr = Qt.TextEditorInteraction
+        try:
+            # Set text of state to readonly when it is composite
+            self.text.setTextInteractionFlags(textattr)
+        except AttributeError:
+            pass
         self.setPath(path)
         super(State, self).set_shape(width, height)
 
@@ -871,6 +916,28 @@ class State(VerticalSymbol):
             ast, _, ___, ____, terminators = self.parser.parseSingleElement(
                 'state', self.parse_gr(recursive=True))
             return ast, terminators
+
+
+    def parse_composite_state(self):
+        ''' Return PR string corresponding to the nested part of the state '''
+        # TODO: add CIF comment for merging at parsing
+        entry_points, exit_points = [], []
+        result = ['STATE {};'.format(str(self)),
+                  'SUBSTRUCTURE']
+        for each in self.nested_scene.start:
+            if str(each):
+                entry_points.append(str(each))
+        for each in self.nested_scene.returns:
+            if str(each) != 'no_name':
+                exit_points.append(str(each))
+        if entry_points:
+            result.append('in ({});'.format(','.join(entry_points)))
+        if exit_points:
+            result.append('out ({});'.format(','.join(exit_points)))
+        result.extend(self.nested_scene.get_pr_string()[1:-1])
+        result.append('ENDSUBSTRUCTURE;')
+        return '\n'.join(result)
+
 
     def parse_gr(self, recursive=True):
         ''' Parse state '''
@@ -993,7 +1060,7 @@ class Start(HorizontalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    editable = False
+    has_text_area = False
 
     def __init__(self, ast=None):
         ''' Create the START symbol '''
@@ -1028,7 +1095,9 @@ class Start(HorizontalSymbol):
         comment = repr(self.comment) if self.comment else ';'
         pos = self.scenePos()
         result.append('/* CIF START ({x}, {y}), ({w}, {h}) */\n'
-                'START{comment}'.format(x=int(pos.x()), y=int(pos.y()),
+                'START{via}{comment}'.format(x=int(pos.x()), y=int(pos.y()),
+                    via = (' ' + str(self) + ' ')
+                    if str(self).replace('START', '') else '',
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment))
         # Recursively return the complete branch below the start symbol
@@ -1059,4 +1128,9 @@ class ProcedureStart(Start):
 
 class StateStart(Start):
     ''' Composite states can have several named START symbols '''
-    editable = True
+    has_text_area = True
+    is_singleton = False
+
+    def __str__(self):
+        ''' Return the state entry point '''
+        return str(self.text)

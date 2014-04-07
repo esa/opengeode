@@ -365,9 +365,11 @@ state_part
 
 // connect part is used to connect nested state exit points to a transition
 connect_part
-        :       CONNECT connect_list? end
-                transition
-        ->      ^(CONNECT connect_list? end? transition);
+        :       cif?
+                hyperlink?
+                CONNECT connect_list? end
+                transition?
+        ->      ^(CONNECT cif? hyperlink? connect_list? end? transition?);
 
 
 connect_list
@@ -444,8 +446,8 @@ priority_stimulus
 input_part
         :       cif?
                 hyperlink?
-                INPUT inputlist end 
-                enabling_condition? 
+                INPUT inputlist end
+                enabling_condition?
                 transition?
         ->      ^(INPUT cif? hyperlink? end?
                 inputlist enabling_condition? transition?);
@@ -1032,7 +1034,8 @@ symbolname
                 | PROVIDED
                 | COMMENT
                 | LABEL
-                | JOIN;
+                | JOIN
+                | CONNECT;
 
 
 cif_decl

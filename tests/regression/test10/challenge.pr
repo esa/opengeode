@@ -1,25 +1,35 @@
 PROCESS challenge;
-state on;
-    substructure
-        in (via_totO);
-        out (reT0);
-        start;
-            call writeln('start without via');
-            nextstate hello;
-        start via_Toto;
-            call writeln('start via toto, returning ret0');
-            return ret0;
-        state hello;
-            input run;
-                call writeln('hello substate');
-                return;
-        endstate;
-endsubstructure;
+STATE ON;
+SUBSTRUCTURE
+in (via_toto);
+out (ret0);
+/* CIF START (304, -22), (89, 35) */
+START via_toto ;
+/* CIF PROCEDURECALL (213, 28), (271, 35) */
+CALL writeln('start via toto, returning ret0');
+/* CIF RETURN (331, 78), (35, 35) */
+RETURN ret0;
+/* CIF START (54, -21), (70, 35) */
+START;
+/* CIF PROCEDURECALL (-10, 29), (199, 35) */
+CALL writeln('start without via');
+/* CIF NEXTSTATE (54, 79), (70, 35) */
+NEXTSTATE hello;
+/* CIF STATE (-208, -29), (70, 35) */
+STATE hello;
+/* CIF INPUT (-208, 32), (70, 35) */
+INPUT run;
+/* CIF PROCEDURECALL (-349, 82), (353, 35) */
+CALL writeln('Bye substate, leaving with no return value');
+/* CIF RETURN (-190, 132), (35, 35) */
+RETURN ;
+ENDSTATE;
 
-/* CIF TEXT (-159, 1), (298, 140) */
+ENDSUBSTRUCTURE;
+/* CIF TEXT (-486, -40), (298, 56) */
 -- This system tests nested states
 /* CIF ENDTEXT */
-/* CIF PROCEDURE (-70, 264), (70, 35) */
+/* CIF PROCEDURE (-992, 214), (66, 35) */
 PROCEDURE toto;
 /* CIF TEXT (371, 134), (298, 140) */
 -- Declare your variables
@@ -44,34 +54,60 @@ ELSE:
 RETURN ;
 ENDDECISION;
 ENDPROCEDURE;
-/* CIF START (227, -15), (68, 37) */
+/* CIF START (-842, 59), (68, 37) */
 START;
-/* CIF NEXTSTATE (226, 37), (70, 35) */
+/* CIF NEXTSTATE (-843, 111), (70, 35) */
 NEXTSTATE OFF;
 
 
-/* CIF STATE (407, -3), (65, 35) */
+
+
+/* CIF STATE (-176, 32), (65, 35) */
 STATE ON;
-/* CIF INPUT (351, 52), (88, 35) */
+/* CIF INPUT (16, 87), (88, 35) */
 INPUT any_one;
-/* CIF NEXTSTATE (338, 102), (113, 35) */
+/* CIF NEXTSTATE (3, 137), (113, 35) */
 NEXTSTATE ON;
-/* CIF INPUT (455, 52), (78, 35) */
+/* CIF INPUT (126, 87), (78, 35) */
 INPUT go_off;
-/* CIF NEXTSTATE (459, 102), (70, 35) */
+/* CIF NEXTSTATE (130, 137), (70, 35) */
 NEXTSTATE OFF;
-connect ret0;
-call writeln('Connect and going to OFF');
-nextstate off;
+/* CIF CONNECT (-143, 87), (0, 35) */
+CONNECT ret0;
+/* CIF PROCEDURECALL (-279, 137), (272, 35) */
+CALL writeln('Received ret0, going to Safe');
+/* CIF NEXTSTATE (-176, 187), (67, 35) */
+NEXTSTATE Safe;
+/* CIF CONNECT (-459, 87), (0, 35) */
+CONNECT ;
+/* CIF PROCEDURECALL (-629, 137), (340, 35) */
+CALL writeln('Exit from nested state (no return value)');
+/* CIF NEXTSTATE (-494, 187), (70, 35) */
+NEXTSTATE off;
 ENDSTATE;
 
-/* CIF STATE (226, 37), (70, 35) */
+
+/* CIF STATE (-443, 238), (73, 35) */
+STATE Safe;
+/* CIF INPUT (-487, 293), (70, 35) */
+INPUT *;
+/* CIF NEXTSTATE (-487, 343), (70, 35) */
+NEXTSTATE Off;
+/* CIF INPUT (-406, 293), (88, 35) */
+INPUT any_one;
+/* CIF NEXTSTATE (-397, 343), (70, 35) */
+NEXTSTATE on;
+ENDSTATE;
+
+/* CIF STATE (-843, 111), (70, 35) */
 STATE OFF;
-/* CIF INPUT (226, 92), (70, 35) */
+/* CIF INPUT (-843, 166), (70, 35) */
 INPUT run;
-/* CIF PROCEDURECALL (178, 142), (166, 35) */
+/* CIF PROCEDURECALL (-916, 216), (217, 35) */
 CALL writeln('Going ON VIA TOTO');
-/* CIF NEXTSTATE (226, 192), (70, 35) */
-NEXTSTATE ON VIA via_TOTO;
+/* CIF NEXTSTATE (-875, 267), (132, 35) */
+NEXTSTATE ON via via_toto
+/* CIF COMMENT (-723, 267), (219, 35) */
+COMMENT 'Enter substate via entry point';
 ENDSTATE;
 ENDPROCESS challenge;

@@ -391,7 +391,10 @@ class Terminator(object):
         # Return expression
         self.return_expr = None
         # via clause, used for entering nested state with an entry point
+        # 'via' is the string for the renderer (e.g. "via foo")
         self.via = None
+        # 'entrypoint' is the string of the entry point (e.g. "foo")
+        self.entrypoint = None
         # some transitions can be chained, when entering/leaving nested states
         self.next_id = -1
 
@@ -508,6 +511,21 @@ class Input(object):
                 l=self.line, c=self.charPositionInLine)
 
 
+class Connect(Input):
+    ''' AST Entry for the CONNECT part (transition below a nested state) '''
+    def __init__(self):
+        ''' Only one difference with INPUT: the connect_list attribute '''
+        super(Connect, self).__init__()
+        # List of strings
+        self.connect_list = []
+        self.width = 1
+
+    def __repr__(self):
+        ''' Debug output for a CONNECT symbol '''
+        return 'CONNECT {exp} ({l},{c})'.format(exp=self.inputString,
+                l=self.line, c=self.charPositionInLine)
+
+
 class Start(object):
     ''' AST Entry for the START symbol '''
     def __init__(self):
@@ -578,6 +596,8 @@ class State(object):
         self.height = 35
         # list of type Input
         self.inputs = []
+        # list of type Connect (connection below a nested state)
+        self.connects = []
         # optional comment symbol
         self.comment = None
         # optional hyperlink

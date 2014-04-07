@@ -24,6 +24,8 @@ import re
 import code
 import pprint
 from functools import partial
+from collections import deque
+from itertools import chain
 
 # Added to please py2exe - NOQA makes flake8 ignore the following lines:
 # pylint: disable=W0611
@@ -50,10 +52,11 @@ from PySide.QtCore import Qt, QSize, QFile, QIODevice, QRectF, QTimer
 from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
 
-from genericSymbols import Symbol, Comment, EditableText, Cornergrabber
+from genericSymbols import(Symbol, Comment, EditableText, Cornergrabber,
+                           Connection)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
-        ProcedureStart, ProcedureStop, StateStart)
+        ProcedureStart, ProcedureStop, StateStart, Connect)
 
 # Icons and png files generated from the resource file:
 import icons  # NOQA
@@ -122,14 +125,15 @@ G_SYMBOLS = set()
 
 # Lookup table used to configure the context-dependent toolbars
 ACTIONS = {
-    'process': [Start, State, Input, Task, Decision, DecisionAnswer,
+    'process': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
                 Output, ProcedureCall, TextSymbol, Comment, Label,
                 Join, Procedure],
     'procedure': [ProcedureStart, Task, Decision,
                   DecisionAnswer, Output, ProcedureCall, TextSymbol,
                   Comment, Label, Join, ProcedureStop],
     'statechart': [],
-    'state': [StateStart, State, Input, Task, Decision, DecisionAnswer, Output,
+    'state': [StateStart, State, Input, Connect, Task, Decision,
+              DecisionAnswer, Output,
               ProcedureCall, TextSymbol, Comment, Label, Join, ProcedureStop]
 }
 
@@ -231,9 +235,9 @@ class Sdl_toolbar(QtGui.QToolBar, object):
 
             # Check for singletons (e.g. START symbol)
             try:
-                for item in scene.items():
+                for item in scene.visible_symb:
                     try:
-                        if item.is_singleton and item.isVisible():
+                        if item.is_singleton: # and item.isVisible():
                             self.actions[
                                     item.__class__.__name__].setEnabled(False)
                     except (AttributeError, KeyError) as error:
@@ -289,9 +293,62 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # Selection rectangle when user clicks on the scene and moves mouse
         self.select_rect = None
 
+
+    @property
+    def visible_symb(self):
+        ''' Return the visible items of a scene '''
+        return (it for it in self.items() if it.isVisible() and not
+                isinstance(it, (Cornergrabber, Connection, EditableText)))
+
+
+    @property
+    def states(self):
+        ''' Return visible state components of the scene '''
+        return (it for it in self.visible_symb if isinstance(it, State))
+
+
+    @property
+    def texts(self):
+        ''' Return visible text areas components of the scene '''
+        return (it for it in self.visible_symb if isinstance(it, TextSymbol))
+
+
+    @property
+    def procs(self):
+        ''' Return visible procedure declaration components of the scene '''
+        return (it for it in self.visible_symb if isinstance(it, Procedure))
+
+
+    @property
+    def start(self):
+        ''' Return visible start components of the scene '''
+        return (it for it in self.visible_symb if isinstance(it, Start))
+
+
+    @property
+    def floating_labels(self):
+        ''' Return visible floating label components of the scene '''
+        return (it for it in self.visible_symb if isinstance(it, Label) and
+                not it.hasParent)
+
+
+    @property
+    def returns(self):
+        ''' Return visible return components of the scene '''
+        return (it for it in self.visible_symb if isinstance(it,
+                                                              ProcedureStop))
+
+
+    @property
+    def composite_states(self):
+        ''' Return states that contain a composite part '''
+        return (it for it in self.states if it.is_composite())
+
+
     def quit_scene(self):
         ''' Called in case of scene switch (e.g. UP button) '''
         pass
+
 
     def render_process(self, process):
         ''' Render a process and its inner procedures in the scene '''
@@ -308,6 +365,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                        scene=subscene):
                     G_SYMBOLS.add(sub_top_level)
                 top_level.nested_scene = subscene
+
 
     def refresh(self):
         ''' Refresh the symbols and connections in the scene '''
@@ -544,34 +602,23 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.undo_stack.endMacro()
                 self.refresh()
 
+
     def get_pr_string(self):
         ''' Parse the graphical items and returns a PR string '''
-        pr_data = ['PROCESS ' + self.process_name + ';']
-        # Separate the text boxes and START symbol from the states
-        # (They need to be placed at the top of the .pr file
-        items = [item for item in self.items() if item.isVisible()]
-        states = (item for item in items if isinstance(item, State))
-        texts = (item for item in items if isinstance(item, TextSymbol))
-        procs = (item for item in items if isinstance(item, Procedure))
-        start = [item for item in items if isinstance(item, Start)]
-        labels = (item for item in items if isinstance(item, Label) and
-                not item.hasParent)
+        pr_data = deque()
 
-        for item in texts:
+        for item in chain(self.texts, self.procs, self.start):
             pr_data.append(repr(item))
-        for item in procs:
-            pr_data.append(repr(item))
-        try:
-            start, = start
-            pr_data.append(repr(start))
-        except ValueError:
-            LOG.debug('START Symbol missing')
-        for item in labels:
+        for item in self.floating_labels:
             pr_data.append(item.parse_gr())
-        for item in states:
+        for item in self.states:
+            if item.is_composite():
+                pr_data.appendleft(item.parse_composite_state())
             pr_data.append(item.parse_gr())
-        pr_data.append('ENDPROCESS ' + self.process_name + ';')
-        return pr_data
+
+        pr_data.appendleft('PROCESS {};'.format(self.process_name))
+        pr_data.append('ENDPROCESS {};'.format(self.process_name))
+        return list(pr_data)
 
     def sdl_to_statechart(self):
         ''' Create a graphviz representation of the SDL model '''
@@ -778,7 +825,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             nearby_connection = self.symbol_near(event.scenePos(),
                                                  selectable_only=False)
             connection_selected = False
-            if isinstance(nearby_connection, genericSymbols.Connection):
+            if isinstance(nearby_connection, Connection):
                 # Click near a connection - forward the event to it
                 # (some connections like statechart Edges can react)
                 nearby_connection.mousePressEvent(event)
@@ -962,7 +1009,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             self.messages_window.addItem(
                     'Click on the scene to place the symbol')
             self.button_selected = item_type
-            if item_type == genericSymbols.Connection:
+            if item_type == Connection:
                 self.mode = 'wait_connection_source'
             else:
                 self.mode = 'wait_placement'

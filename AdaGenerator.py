@@ -136,7 +136,7 @@ def _process(process):
             else:
                 term.next_id = context.mapping[term.inputString.lower()
                                                + '_'
-                                               + term.via.lower()
+                                               + term.entrypoint.lower()
                                                + '_START']
 
     def update_composite_state(state, process):
@@ -163,20 +163,39 @@ def _process(process):
             if each.kind == 'next_state':
                 each.inputString = state.statename + '_' + each.inputString
                 update_terminator(state, each, process)
+
+    def propagate_inputs(nested_state, inputlist):
+        ''' Nested states: Inputs at level N but be handled at level N-1
+            that is, all inputs of a composite states (the ones that allow
+            to exit the composite state from the outer scope) must be
+            processed by each of the substates.
+        '''
+        for _, val in nested_state.mapping.viewitems():
+            try:
+                val.extend(inputlist)
+            except AttributeError:
+                pass
+        for each in nested_state.composite_states:
+            # do the same recursively
+            propagate_inputs(each, nested_state.mapping[nested.statename])
+            del nested_state.mapping[nested.statename]
+
     for each in process.composite_states:
         update_composite_state(each, process)
+        propagate_inputs(each, process.mapping[each.statename])
+        del process.mapping[each.statename]
 
     # Update terminators at process level
     for each in process.terminators:
         if each.kind == 'next_state':
             update_terminator(process, each, process)
 
-
     # Add the process states list to the process-level variables
     states_decl = 'type states is ('
-    states_decl += ', '.join(process.mapping.iterkeys()) + ');'
+    states_decl += ', '.join(name for name in process.mapping.iterkeys()
+                             if not name.endswith('START')) + ');'
     process_level_decl.append(states_decl)
-    process_level_decl.append('state : states := START;')
+    process_level_decl.append('state : states;')
 
     # Add function allowing to trace current state as a string
     process_level_decl.append('function get_state return String;')

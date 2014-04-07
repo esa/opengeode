@@ -1777,7 +1777,6 @@ def process_definition(root, parent=None):
             errors.extend(err)
             warnings.extend(warn)
             process.composite_states.append(comp)
-            warnings.append('Composite state detected but not supported yet')
         elif child.type == lexer.REFERENCED:
             process.referenced = True
         else:
@@ -1788,8 +1787,7 @@ def process_definition(root, parent=None):
 def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
     i = ogAST.Input()
-    warnings = []
-    errors = []
+    warnings, errors = [], []
     coord = False
     # Keep track of the number of terminator statements follow the input
     # useful if we want to render graphs from the SDL model
@@ -1946,7 +1944,8 @@ def state(root, parent, context):
                               'be followed by a connect statement'
                               .format(state_def.statelist[0]))
             else:
-                err, warn = connect_part(child, state_def, context)
+                conn_part, err, warn = connect_part(child, state_def, context)
+                state_def.connects.append(conn_part)
                 warnings.extend(warn)
                 errors.extend(err)
         elif child.type == lexer.COMMENT:
@@ -1976,31 +1975,59 @@ def state(root, parent, context):
 
 
 def connect_part(root, parent, context):
-    ''' Connection of a nested state exit point with a transition '''
+    ''' Connection of a nested state exit point with a transition
+        Very similar to INPUT '''
     errors, warnings = [], []
-    connect_list = []
+    coord = False
+    conn = ogAST.Connect()
     statename = parent.statelist[0].lower()
+    id_token = []
+    # Keep track of the number of terminator statements follow the input
+    # useful if we want to render graphs from the SDL model
+    terms = len(context.terminators)
     # Retrieve composite state
     nested, = (comp for comp in context.composite_states
                if comp.statename == statename)
 
     for child in root.getChildren():
-        if child.type == lexer.ID:
-            connect_list.append(child.toString().lower())
+        if child.type == lexer.CIF:
+            # Get symbol coordinates
+            conn.pos_x, conn.pos_y, conn.width, conn.height = cif(child)
+            coord = True
+        elif child.type == lexer.ID:
+            id_token.append(child)
+            conn.connect_list.append(child.toString().lower())
         elif child.type == lexer.ASTERISK:
-            connect_list = nested.state_exitpoints
+            id_token.append(child)
+            conn.connect_list = nested.state_exitpoints
         elif child.type == lexer.TRANSITION:
-            trans, err, warn = transition(child, parent, context=context)
+            trans, err, warn = transition(child, parent=conn, context=context)
             errors.extend(err)
             warnings.extend(warn)
             context.transitions.append(trans)
             trans_id = len(context.transitions) - 1
+            conn.transition_id = trans_id
+            conn.transition = trans
+        elif child.type == lexer.HYPERLINK:
+            conn.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.COMMENT:
+            conn.comment, _, ___ = end(child)
         else:
             warnings.append('Unsupported CONNECT PART child type: ' +
-                            str(child.type))
-    if not connect_list:
-        connect_list.append('')
-    for exitp in connect_list:
+                            sdl92Parser.tokenNames[child.type])
+    if not conn.connect_list:
+        conn.connect_list.append('')
+    if not id_token:
+        conn.inputString = ''
+        conn.line = root.getLine()
+        conn.charPositionInLine = root.getCharPositionInLine()
+    else:
+        conn.line = id_token[0].getLine()
+        conn.charPositionInLine = id_token[0].getCharPositionInLine()
+        conn.inputString = token_stream(id_token[0]).toString(
+                                        id_token[0].getTokenStartIndex(),
+                                        id_token[-1].getTokenStopIndex())
+    for exitp in conn.connect_list:
         if exitp != '' and not exitp in nested.state_exitpoints:
             errors.append('Exit point {ep} not defined in state {st}'
                           .format(ep=exitp, st=statename))
@@ -2013,7 +2040,13 @@ def connect_part(root, parent, context):
         for each in terminators:
             # Set transition ID, referencing process.transitions
             each.next_id = trans_id
-    return errors, warnings
+    # Set list of terminators
+    conn.terminators = list(context.terminators[terms:])
+    # Report errors with symbol coordinates
+    if coord:
+        errors = [[e, [conn.pos_x, conn.pos_y]] for e in errors]
+        warnings = [[w, [conn.pos_x, conn.pos_y]] for w in warnings]
+    return conn, errors, warnings
 
 
 def cif(root):
@@ -2303,38 +2336,41 @@ def decision(root, parent, context):
 
 def nextstate(root, context):
     ''' Parse a NEXTSTATE [VIA State_Entry_Point] '''
-    next_state_id, via = '', None
+    next_state_id, via, entrypoint = '', None, None
     for child in root.getChildren():
         if child.type == lexer.ID:
-            next_state_id = child.text.lower()
+            next_state_id = child.text
         elif child.type == lexer.DASH:
             next_state_id = '-'
         elif child.type == lexer.VIA:
             if next_state_id.strip() != '-':
-                via = child.getChild(0).text.lower()
+                via = get_input_string(root).replace(
+                                                'NEXTSTATE', '', 1).strip()
+                entrypoint = child.getChild(0).text
                 try:
                     composite, = (comp for comp in context.composite_states
-                                  if comp.statename == next_state_id)
+                                  if comp.statename.lower()
+                                                == next_state_id.lower())
                 except ValueError:
                     raise TypeError('State {} is not a composite state'
                                     .format(next_state_id))
                 else:
-                    if via not in composite.state_entrypoints:
+                    if entrypoint.lower() not in composite.state_entrypoints:
                         raise TypeError('State {s} has no "{p}" entrypoint'
-                                        .format(s=next_state_id, p=via))
+                                        .format(s=next_state_id, p=entrypoint))
                     for each in composite.content.named_start:
-                        if each.inputString == via + '_START':
+                        if each.inputString == entrypoint.lower() + '_START':
                             break
                     else:
                         raise TypeError('Entrypoint {p} in state {s} is '
                                         'declared but not defined'.format
-                                        (s=next_state_id, p=via))
+                                        (s=next_state_id, p=entrypoint))
             else:
                 raise TypeError('"History" NEXTSTATE'
                                  ' cannot have a "via" clause')
         else:
             raise TypeError('NEXTSTATE undefined construct')
-    return next_state_id, via
+    return next_state_id, via, entrypoint
 
 
 def terminator_statement(root, parent, context):
@@ -2357,7 +2393,7 @@ def terminator_statement(root, parent, context):
         elif term.type == lexer.NEXTSTATE:
             t.kind = 'next_state'
             try:
-                t.inputString, t.via = nextstate(term, context)
+                t.inputString, t.via, t.entrypoint = nextstate(term, context)
             except TypeError as err:
                 errors.append(str(err))
             t.line = term.getChild(0).getLine()
@@ -2839,7 +2875,7 @@ def parseSingleElement(elem='', string=''):
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
             'connect_part'))
-    LOG.debug('Parsing string: ' + string)
+    LOG.debug('Parsing string: ' + string + 'with elem ' + elem)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)
     assert(parser_ptr is not None)

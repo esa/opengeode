@@ -34,6 +34,7 @@ import ogAST
 import sdlSymbols
 import genericSymbols
 import logging
+from itertools import chain
 from singledispatch import singledispatch
 
 LOG = logging.getLogger(__name__)
@@ -130,8 +131,8 @@ def _state(ast, scene, states, terminators, parent=None):
     if new_state not in scene.items():
         scene.addItem(new_state)
 
-    for inp in ast.inputs:
-        render(inp, scene=scene, parent=new_state, states=states)
+    for exit in chain(ast.inputs, ast.connects):
+        render(exit, scene=scene, parent=new_state, states=states)
 
     new_state.nested_scene = ast.composite or ogAST.CompositeState()
 
@@ -328,3 +329,19 @@ def _input(ast, scene, parent, states):
                parent=inp,
                states=states)
     return inp
+
+@render.register(ogAST.Connect)
+def _input(ast, scene, parent, states):
+    ''' Add connect symbol from the AST to the scene '''
+    # Note: PROVIDED clause is not supported
+    conn = sdlSymbols.Connect(parent, ast=ast)
+    if conn not in scene.items():
+        scene.addItem(inp)
+    if not parent:
+        conn.setPos(ast.pos_x, ast.pos_y)
+    if ast.transition:
+        render(ast.transition,
+               scene=scene,
+               parent=conn,
+               states=states)
+    return conn

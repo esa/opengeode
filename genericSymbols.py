@@ -286,6 +286,9 @@ class EditableText(QGraphicsTextItem, object):
             Slot connected to the autocompletion popup,
             invoked when selection is made
         '''
+        if not(self.textInteractionFlags() & Qt.TextEditable):
+            self.completer.hide()
+            return
         text_cursor = self.textCursor()
         # Go back to the previously saved cursor position
         text_cursor.setPosition(self.cursor_position)
@@ -537,6 +540,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     _unique_followers = []  # unique : e.g. comment symbol
     _insertable_followers = []  # no limit to insert below current symbol
     _terminal_followers = []  # cannot be inserted between two symbols
+    # By default a symbol is resizeable
+    resizeable = True
     # By default symbol size may expand when inner text exceeds border
     auto_expand = True
     # By default connections between symbols are lines, not arrows
@@ -561,8 +566,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     redbold = ()
     # Specify if the symbol can be drawn with anti-aliasing
     _antialiasing = True
-    # Specify if the symbol text can be edited
-    editable = True
+    # Specify if the symbol has a text area
+    has_text_area = True
 
     def __init__(self, parent=None):
         '''
@@ -614,6 +619,13 @@ class Symbol(QObject, QGraphicsPathItem, object):
         self.setPos(value)
 
     position = Property(QPointF, _pos, _set_pos)
+
+    def is_composite(self):
+        ''' Return True if nested scene has something in it '''
+        try:
+            return any(item.isVisible() for item in self.nested_scene.items())
+        except AttributeError:
+            return False
 
     @property
     def allowed_followers(self):
@@ -714,7 +726,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
             _, syntax_errors, ___, ____, _____ = (
                                 self.parser.parseSingleElement(
                                                 self.common_name, repr(self)))
-        except AssertionError:
+        except (AssertionError, AttributeError):
             LOG.error('Checker failed - no parser for this construct?')
         else:
             try:
@@ -885,6 +897,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
 
     def resize_item(self, rect):
         ''' resize item, e.g. when editing text - move children accordingly '''
+        if not self.resizeable:
+            return
         pos = self.pos()
         delta_x = (self.boundingRect().width() - rect.width()) / 2.0
         delta_y = self.boundingRect().height() - rect.height()
@@ -1170,7 +1184,7 @@ class Comment(Symbol, object):
             Redefinition of the Resize function
             (Comment symbol only resizes in one direction)
         '''
-        if self.grabber.resize_mode.endswith('left'):
+        if not self.resizeable or self.grabber.resize_mode.endswith('left'):
             return
         self.set_shape(rect.width(), rect.height())
         self.update_connections()
@@ -1298,6 +1312,9 @@ class Cornergrabber(QGraphicsPolygonItem, object):
             # Parent item may have changed its cursor (e.g. when inserting
             # items). In that case, don't override the cursor for that area
             cursor = self.parent.cursor()
+        elif not self.parent.resizeable:
+            cursor = self.parent.default_cursor
+            self.resize_mode = ''
         # Left side
         elif 0.0 <= pos.x() <= 10.0:
             # Top-left corner: disabled
@@ -1311,7 +1328,6 @@ class Cornergrabber(QGraphicsPolygonItem, object):
                 self.resize_mode = 'left'
         # Middle of item
         elif 5.0 < pos.x() < self.boundingRect().width() - 10.0 and (
-                     # pos.y() <= 10.0 or
                      pos.y() > self.boundingRect().height() - 10.0):
             cursor = Qt.SizeVerCursor
             self.resize_mode = 'bottom'
@@ -1344,7 +1360,7 @@ class HorizontalSymbol(Symbol, object):
         super(HorizontalSymbol, self).__init__(parent)
         self.minDistanceToSymbolAbove = 20
         self.connection = None
-        if self.editable:
+        if self.has_text_area:
             self.text = EditableText(parent=self, text=text,
                     hyperlink=hyperlink)
         if parent:
@@ -1412,7 +1428,8 @@ class HorizontalSymbol(Symbol, object):
         ''' Return all the items's sibling symbols '''
         try:
             return (item for item in self.parent.childItems()
-                    if item is not self and type(item) is type(self))
+                    if item is not self and (isinstance(self, type(item)) or
+                        isinstance(item, type(self)))) # is type(self))
         except:
             return ()
 
@@ -1508,7 +1525,7 @@ class VerticalSymbol(Symbol, object):
             x=None, y=None, hyperlink=None):
         super(VerticalSymbol, self).__init__(parent)
         self.connection = None
-        if self.editable:
+        if self.has_text_area:
             self.text = EditableText(parent=self,
                                      text=text,
                                      hyperlink=hyperlink)

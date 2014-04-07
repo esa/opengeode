@@ -60,6 +60,8 @@ class Record(genericSymbols.HorizontalSymbol, object):
             property_box = QtGui.QGraphicsTextItem(self)
             property_box.setPos(5, 30)
             property_box.setPlainText(node['properties'])
+        # Text in statecharts is read-only:
+        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
