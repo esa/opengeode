@@ -869,6 +869,31 @@ class State(VerticalSymbol):
         if ast.comment:
             Comment(parent=self, ast=ast.comment)
 
+    @property
+    def allow_nesting(self):
+        ''' Redefinition - must be checked according to context '''
+        result = not any(elem in str(self).lower().strip()
+                       for elem in ('-', ',', '*', ' '))
+        return result
+
+    @property
+    def nested_scene(self):
+        ''' Redefined - nested scene per state must be unique '''
+        if not self._nested_scene:
+            # Check that the nested scene is not already rendered
+            try:
+                for each in self.scene().composite_states:
+                    if str(each).lower().strip() == str(self).lower().strip():
+                        return each._nested_scene
+            except AttributeError:
+                pass
+        return self._nested_scene
+
+    @nested_scene.setter
+    def nested_scene(self, value):
+        ''' Set the value of the nested scene '''
+        self._nested_scene = value
+
     def update_completion_list(self):
         ''' When text was entered, update state completion list '''
         # Get AST for the symbol
@@ -982,6 +1007,7 @@ class State(VerticalSymbol):
 class Procedure(HorizontalSymbol):
     ''' Procedure declaration symbol '''
     _unique_followers = ['Comment']
+    _allow_nesting = True
     common_name = 'procedure'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter

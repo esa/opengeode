@@ -101,11 +101,18 @@ def _automaton(ast, scene):
         top_level_symbols.append(render(label, scene, ast.states))
 
     # Render floating states
+    nested_states = {}
     for state in ast.states:
         # Create only floating states
         try:
             new_state = render(state, scene=scene, states=ast.states,
                                terminators=ast.parent.terminators)
+            if new_state.nested_scene:
+                if str(new_state).lower() in nested_states.viewkeys():
+                    new_state.nested_scene = None
+                else:
+                    nested_states[str(new_state).lower()] = \
+                                                         new_state.nested_scene
         except TypeError:
             # Discard terminators (see _state function for explanation)
             pass

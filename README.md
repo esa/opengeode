@@ -11,6 +11,29 @@ SDL is the Specification and Description Language (Z100 standard from ITU-T).
 This is NOT related to the graphical Simple DirectMedia Layer libraries!
 
 Visit http://sdl-forum.org for more information about SDL.
+Visit http://www.pragmadev.com to get a full-featured commercial SDL tool and support
+
+
+![alt tag](icons/opengeode-screenshot.png)
+
+
+Features
+--------
+
+- Graphical editor of SDL processes and procedures.
+- SDL2010 features: FOR loops in task symbols, hierarchical states 
+- Works on pure PR+CIF files (textual SDL notation) - no fancy proprietary save format
+- Supports ASN.1 data types, including the Value notation - check this page to know more about our ASN.1 compiler and tools 
+- Generates Ada code with ASN.1 types using TASTE ASN.1 "space-certified" (SPARK) compiler 
+- Extensive syntax and semantic checks 
+- Automatic conversion to Statechart diagrams 
+- Save the complete or parts of the model to PNG/SVG/PDF files
+- Hyperlinks (link a symbol content to any external document or web page) 
+- Zoom in, zoom-out 
+- Context-dependent text auto-completion 
+- Syntax highlighting 
+- Undo/Redo, Copy-Paste 
+- (Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern
 
 Installation
 ============
@@ -18,11 +41,11 @@ Installation
 Pre-requisites
 --------------
 
-There are three majors dependencies for OpenGEODE:
+There are three major dependencies for OpenGEODE:
 
-- Pyside (the Qt bindings for Python) and the ANTLR runtime to be
+- Pyside (the Qt bindings for Python)
 - Python ANTLR Runtime
-- PyGraphviz
+- PyGraphviz (Linux only - not available on Windows)
 
 If you use pip to install OpenGEODE, these dependencies should be installed
 automatically. However, note that installing PySide from pip requires some
@@ -32,16 +55,16 @@ If you are using a Linux Debian-based distribution (including Ubuntu),
 I would recommended to install PySide using your package manager:
 You should also install pygraphviz using the same method, for convenience.
 
-$ sudo apt-get install python-pyside pyside-tools python-pygraphviz
-
-And to install pip:
-
-$ sudo apt-get install pip
+```bash
+$ sudo apt-get install python-pyside pyside-tools python-pygraphviz pip
+```
 
 The Python 2.7 ANTLR 3.1.3 runtime is not part of Debian packages. Install
 it with pip (or download and install manually the package):
 
-$ pip install antlr_python_runtime
+```bash
+$ pip install antlr_python_runtime singledispatch
+```
 
 On Windows:
 
@@ -57,8 +80,11 @@ Use pip to install the ANTLR runtime (see above)
 Automatic installation (recommended)
 ------------------------------------
 
-$ pip install singledispatch
-$ pip install opengeode
+To install the application on your machine:
+
+```bash
+$ pip install --upgrade opengeode
+```
 
 This is sufficient to get opengeode running
 
@@ -79,11 +105,20 @@ Installation from source
 
 You can get the source from the TASTE repositories or from GitHub
 
+```bash
 $ svn co https://tecsw.estec.esa.int/svn/taste/trunk/misc/opengeode opengeode
+```
 
-Then as root, type:
+Or
+```bash
+$ git clone https://github.com/maxime-esa/opengeode.git opengeode
+``` 
 
+Then enter the opengeode directory and as root, type:
+
+```bash
 $ make install
+```
 
 Information and contact
 =======================
@@ -110,17 +145,21 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
-0.99 (28/02/2014)
+0.99 (04/2014)
      - Refactoring of the backend engine, now using singledispatch
+     - Support of hierachical states
      - Minor bugfixes
 
-0.98 (08/07/2014)
+
+0.98
      - Added support for FOR loops
        In a task, use "for x in range([start], stop, [range]): ... endfor"
        or "for x in sequenceOfvariable: ... endfor"
      - Default symbol size is smaller
      - Various minor bugfixes
-0.97 (07/12/2013)
+
+
+0.97
      - added support for default value when declaring a variable
        e.g. DCL myVar myType ::= { x 5, y 2 };
        default value must be a ground expression

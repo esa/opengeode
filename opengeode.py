@@ -356,7 +356,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         for top_level in Renderer.render(process, scene=self):
             G_SYMBOLS.add(top_level)
             # Render optional sub-scenes (procedures)
-            if top_level.nested_scene:
+            if top_level.nested_scene and not isinstance(
+                                    top_level.nested_scene, SDL_Scene):
                 subscene = SDL_Scene(
                         context=top_level.__class__.__name__.lower())
                 subscene.messages_window = self.messages_window
@@ -1162,8 +1163,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def go_up(self):
         '''
-            When Up button is clicked, go up one scene level
-            For example to get out of a procedure definition
+            When Up button is clicked, go up one nested scene level
         '''
         LOG.debug('GO_UP')
         self.scene().clear_focus()
@@ -1175,6 +1175,16 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.up_button.setEnabled(False)
         self.refresh()
 
+    def go_down(self, scene):
+        ''' Enter a nested diagram (procedure, composite state) '''
+        self.parent_scene.append(self.scene())
+        self.scene().clear_focus()
+        self.setScene(scene)
+        self.up_button.setEnabled(True)
+        self.set_toolbar()
+        self.scene().scene_left.emit()
+        self.refresh()
+
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
         ''' Catch a double click - possibly change the scene '''
@@ -1182,22 +1192,17 @@ class SDL_View(QtGui.QGraphicsView, object):
         if evt.button() == Qt.LeftButton:
             item = self.scene().symbol_near(self.mapToScene(evt.pos()))
             try:
-                if item.nested_scene:
+                if item.allow_nesting:
                     if not isinstance(item.nested_scene, SDL_Scene):
                         subscene = SDL_Scene(
                                 context=item.__class__.__name__.lower())
                         subscene.messages_window = self.messages_window
-                        for top_level in Renderer.render_process(
+                        if item.nested_scene:
+                            for top_level in Renderer.render_process(
                                                 subscene, item.nested_scene):
-                            G_SYMBOLS.add(top_level)
+                                G_SYMBOLS.add(top_level)
                         item.nested_scene = subscene
-                    self.parent_scene.append(self.scene())
-                    self.scene().clear_focus()
-                    self.setScene(item.nested_scene)
-                    self.up_button.setEnabled(True)
-                    self.set_toolbar()
-                    # Refresh to make sure the resizeEvent is emitted
-                    self.refresh()
+                    self.go_down(item.nested_scene)
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))

@@ -104,6 +104,8 @@ class Point(genericSymbols.HorizontalSymbol, object):
         self.set_shape(node['width'], node['height'])
         self.setBrush(QtGui.QBrush(QtCore.Qt.black))
         self.graph = graph
+        # Text is read only
+        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''

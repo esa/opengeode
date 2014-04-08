@@ -1,5 +1,5 @@
 PROCESS challenge;
-STATE ON;
+STATE on;
 SUBSTRUCTURE
 in (via_toto);
 out (ret0);
@@ -60,33 +60,6 @@ START;
 NEXTSTATE OFF;
 
 
-
-
-/* CIF STATE (-176, 32), (65, 35) */
-STATE ON;
-/* CIF INPUT (16, 87), (88, 35) */
-INPUT any_one;
-/* CIF NEXTSTATE (3, 137), (113, 35) */
-NEXTSTATE ON;
-/* CIF INPUT (126, 87), (78, 35) */
-INPUT go_off;
-/* CIF NEXTSTATE (130, 137), (70, 35) */
-NEXTSTATE OFF;
-/* CIF CONNECT (-143, 87), (0, 35) */
-CONNECT ret0;
-/* CIF PROCEDURECALL (-279, 137), (272, 35) */
-CALL writeln('Received ret0, going to Safe');
-/* CIF NEXTSTATE (-176, 187), (67, 35) */
-NEXTSTATE Safe;
-/* CIF CONNECT (-459, 87), (0, 35) */
-CONNECT ;
-/* CIF PROCEDURECALL (-629, 137), (340, 35) */
-CALL writeln('Exit from nested state (no return value)');
-/* CIF NEXTSTATE (-494, 187), (70, 35) */
-NEXTSTATE off;
-ENDSTATE;
-
-
 /* CIF STATE (-443, 238), (73, 35) */
 STATE Safe;
 /* CIF INPUT (-487, 293), (70, 35) */
@@ -97,6 +70,41 @@ NEXTSTATE Off;
 INPUT any_one;
 /* CIF NEXTSTATE (-397, 343), (70, 35) */
 NEXTSTATE on;
+ENDSTATE;
+
+
+
+
+/* CIF STATE (-141, 32), (65, 35) */
+STATE ON;
+/* CIF INPUT (51, 87), (88, 35) */
+INPUT any_one;
+/* CIF NEXTSTATE (38, 137), (113, 35) */
+NEXTSTATE -;
+/* CIF INPUT (161, 87), (78, 35) */
+INPUT go_off;
+/* CIF NEXTSTATE (169, 137), (62, 35) */
+NEXTSTATE OFF;
+/* CIF CONNECT (-108, 87), (0, 35) */
+CONNECT ret0;
+/* CIF PROCEDURECALL (-244, 137), (272, 35) */
+CALL writeln('Received ret0, going to Safe');
+/* CIF NEXTSTATE (-141, 187), (67, 35) */
+NEXTSTATE Safe;
+/* CIF CONNECT (-424, 87), (0, 35) */
+CONNECT ;
+/* CIF PROCEDURECALL (-594, 137), (340, 35) */
+CALL writeln('Exit from nested state (no return value)');
+/* CIF NEXTSTATE (-459, 187), (70, 35) */
+NEXTSTATE off;
+ENDSTATE;
+
+/* CIF STATE (-674, 38), (70, 35) */
+STATE on;
+/* CIF INPUT (-674, 93), (70, 35) */
+INPUT *;
+/* CIF NEXTSTATE (-674, 143), (70, 35) */
+NEXTSTATE -;
 ENDSTATE;
 
 /* CIF STATE (-843, 111), (70, 35) */

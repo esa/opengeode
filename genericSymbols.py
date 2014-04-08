@@ -560,7 +560,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     needs_parent = True
     # nested_scene : a symbol may have content that can be visible on demand
     # (e.g. a subscene that appears when double-clicking on the item)
-    nested_scene = None
+    _allow_nesting = False
+    _nested_scene = None
     # keywords for the syntax highlighter
     blackbold = ()
     redbold = ()
@@ -623,7 +624,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def is_composite(self):
         ''' Return True if nested scene has something in it '''
         try:
-            return any(item.isVisible() for item in self.nested_scene.items())
+            return self.allow_nesting and any(item.isVisible()
+                                        for item in self._nested_scene.items())
         except AttributeError:
             return False
 
@@ -643,6 +645,23 @@ class Symbol(QObject, QGraphicsPathItem, object):
             followers.extend(self._terminal_followers)
         #LOG.debug(str(followers))
         return followers
+
+    @property
+    def allow_nesting(self):
+        ''' Dynamically check if the scene can have a nested subscene
+            May be redefined in subclasses and checked on double-click
+        '''
+        return self._allow_nesting
+
+    @property
+    def nested_scene(self):
+        ''' Return the nested scene. Can be redefined '''
+        return self._nested_scene
+
+    @nested_scene.setter
+    def nested_scene(self, value):
+        ''' Set the value of the nested scene '''
+        self._nested_scene = value
 
     def closest_connection_point(self, coord):
         '''
