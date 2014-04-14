@@ -2669,7 +2669,7 @@ def task(root, parent=None, context=None):
     errors = []
     warnings = []
     coord = False
-    comment = None
+    comment, body = None, None
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -2690,12 +2690,16 @@ def task(root, parent=None, context=None):
             warnings.append('Unsupported child type in task definition: ' +
                     str(child.type))
     # Report errors with symbol coordinates
-    if coord:
+    if coord and body:
         body.pos_x, body.pos_y, body.width, body.height = \
                 pos_x, pos_y, width, height
         errors = [[e, [pos_x, pos_y]] for e in errors]
         warnings = [[w, [pos_x, pos_y]] for w in warnings]
-    body.comment = comment
+    if body:
+        body.comment = comment
+    else:
+        warnings.append('TASK missing content')
+        body = ogAST.TaskAssign()
     return body, errors, warnings
 
 

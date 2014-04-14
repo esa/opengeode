@@ -204,10 +204,13 @@ def _process(process):
 
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
+    process_level_decl.append('procedure start;')
+    process_level_decl.append('pragma export(C, start, "{}_start");'
+                              .format(process_name))
 
     # Generate the code of the start transition:
     start_transition = ['begin']
-    start_transition.append('runTransition(0);')
+    start_transition.append('start;')
 
 
     mapping = {}
@@ -268,6 +271,13 @@ package {process_name} is'''.format(process_name=process_name,
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
 
+    # Generate the code for the start procedure
+    taste_template.extend([
+        'procedure start is',
+        'begin',
+            'runTransition(0);',
+        'end start;', ''])
+
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
 
@@ -287,6 +297,8 @@ package {process_name} is'''.format(process_name=process_name,
         # Add declaration of the provided interface in the .ads file
         ads_template.append('--  Provided interface "' + signal['name'] + '"')
         ads_template.append(pi_header + ';')
+        ads_template.append('pragma export(C, {name}, "{proc}_{name}");'
+                            .format(name=signal['name'], proc=process_name))
 
         pi_header += ' is'
         taste_template.append(pi_header)

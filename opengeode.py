@@ -990,7 +990,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         item.edit_text()
 
         for view in self.views():
-            view.viewport().update()
+            view.refresh()
             view.ensureVisible(item)
         return item
 
@@ -1083,7 +1083,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.lander_scene.setSceneRect(0, 0, self.width(), self.height())
             if not self.lander:
                 self.lander = Lander.Lander(self.lander_scene)
-            self.parent_scene.append(self.scene())
+            horpos = self.horizontalScrollBar().value()
+            verpos = self.verticalScrollBar().value()
+            self.parent_scene.append((self.scene(), horpos, verpos))
             self.scene().clear_focus()
             self.setScene(self.lander_scene)
             self.up_button.setEnabled(True)
@@ -1169,15 +1171,22 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.scene().clear_focus()
         # Scene may need to be informed when it is left:
         self.scene().scene_left.emit()
-        self.setScene(self.parent_scene.pop())
+        scene, horpos, verpos = self.parent_scene.pop()
+        self.setScene(scene)
+        self.horizontalScrollBar().setSliderPosition(horpos)
+        self.verticalScrollBar().setSliderPosition(verpos)
         self.set_toolbar()
         if not self.parent_scene:
             self.up_button.setEnabled(False)
         self.refresh()
+        self.horizontalScrollBar().setSliderPosition(horpos)
+        self.verticalScrollBar().setSliderPosition(verpos)
 
     def go_down(self, scene):
         ''' Enter a nested diagram (procedure, composite state) '''
-        self.parent_scene.append(self.scene())
+        horpos = self.horizontalScrollBar().value()
+        verpos = self.verticalScrollBar().value()
+        self.parent_scene.append((self.scene(), horpos, verpos))
         self.scene().clear_focus()
         self.setScene(scene)
         self.up_button.setEnabled(True)
@@ -1229,6 +1238,10 @@ class SDL_View(QtGui.QGraphicsView, object):
     # pylint: disable=C0103
     def mouseReleaseEvent(self, evt):
         self.mode = ''
+        # Adjust scrollbars if diagram got bigger due to a move
+        if self.scene().context != 'statechart':
+            # Make sure scene size remains OK when adding/moving symbols
+            self.refresh()
         super(SDL_View, self).mouseReleaseEvent(evt)
 
     def save_as(self):
@@ -1257,7 +1270,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                         'process ' + self.scene().process_name + '[*]')
         # If the current scene is a nested one, save the top parent
         if self.parent_scene:
-            scene = self.parent_scene[0]
+            scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
         pr_raw = scene.get_pr_string()
@@ -1386,7 +1399,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         ''' Parse the model and check for warnings and errors '''
         # If the current scene is a nested one, save the top parent
         if self.parent_scene:
-            scene = self.parent_scene[0]
+            scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
         pr_raw = scene.get_pr_string()
@@ -1400,7 +1413,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         ''' Generate Ada code '''
         # If the current scene is a nested one, save the top parent
         if self.parent_scene:
-            scene = self.parent_scene[0]
+            scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
         pr_raw = scene.get_pr_string()

@@ -42,8 +42,8 @@ def copy(selection):
         # When several items are selected, take the first of each subbranch
         if item.hasParent and not item.parentItem().grabber.isSelected():
             branch_top_level.append(item)
-        elif not item.hasParent:# and not item.is_singleton:
-            # Take also floating items //, if they allow for copy (e.g. not START)
+        elif not item.hasParent:
+            # Take also floating items
             floating_items.append(item)
     # Check if selected items would allow a paste - reject copy otherwise
     # e.g. floating and non-floating items cannot be pasted together
@@ -102,10 +102,7 @@ def paste(parent, scene):
     '''
     CLIPBOARD.clear()
     if not parent:
-        try:
-            new_symbols = paste_floating_objects(scene)
-        except TypeError:
-            raise
+        new_symbols = paste_floating_objects(scene)
     else:
         new_symbols = paste_below_item(parent, scene)
     return new_symbols
@@ -127,7 +124,8 @@ def paste_floating_objects(scene):
             try:
                 new_item = Renderer.render(state, scene=CLIPBOARD,
                            terminators=terminators, states=states)
-            except TypeError:
+            except TypeError as err:
+                LOG.debug('No paste "'+ state.inputString + '" -' + str(err))
                 # Discard terminators (explanation given in Renderer._state)
                 pass
             else:
