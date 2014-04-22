@@ -338,12 +338,11 @@ def _input(ast, scene, parent, states):
     return inp
 
 @render.register(ogAST.Connect)
-def _input(ast, scene, parent, states):
+def _connect(ast, scene, parent, states):
     ''' Add connect symbol from the AST to the scene '''
-    # Note: PROVIDED clause is not supported
     conn = sdlSymbols.Connect(parent, ast=ast)
     if conn not in scene.items():
-        scene.addItem(inp)
+        scene.addItem(conn)
     if not parent:
         conn.setPos(ast.pos_x, ast.pos_y)
     if ast.transition:

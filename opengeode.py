@@ -300,6 +300,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         return (it for it in self.items() if it.isVisible() and not
                 isinstance(it, (Cornergrabber, Connection, EditableText)))
 
+    @property
+    def floating_symb(self):
+        ''' Return the top level floating items of a scene '''
+        return (it for it in self.visible_symb if not it.hasParent)
 
     @property
     def states(self):
@@ -328,8 +332,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     @property
     def floating_labels(self):
         ''' Return visible floating label components of the scene '''
-        return (it for it in self.visible_symb if isinstance(it, Label) and
-                not it.hasParent)
+        return (it for it in self.floating_symb if isinstance(it, Label))
 
 
     @property
@@ -343,6 +346,16 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def composite_states(self):
         ''' Return states that contain a composite part '''
         return (it for it in self.states if it.is_composite())
+
+
+    @property
+    def all_nested_scenes(self):
+        ''' Return all nested scenes, recursively '''
+        for each in self.visible_symb:
+            if each.nested_scene:
+                yield each.nested_scene
+                for sub in each.nested_scene.all_nested_scenes:
+                    yield sub
 
 
     def quit_scene(self):
@@ -423,6 +436,24 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 item.setCursor(item.default_cursor)
             except AttributeError:
                 pass
+
+
+    def translate_to_origin(self):
+        '''
+            Translate all items to coordinate system starting at (0,0),
+            in order to avoid negative coordinates
+        '''
+        try:
+            min_x = min(item.x() for item in self.floating_symb)
+            min_y = min(item.y() for item in self.floating_symb)
+        except ValueError:
+            # No item in the scene
+            return
+        delta_x = -min_x if min_x < 0 else 0
+        delta_y = -min_y if min_y < 0 else 0
+        for item in self.floating_symb:
+            item.moveBy(delta_x, delta_y)
+        return delta_x, delta_y
 
     def selected_symbols(self):
         ''' Generate the list of selected symbols (excluding grabbers) '''
@@ -582,7 +613,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.undo_stack.beginMacro('Paste')
                 for item in new_items:
                     # Allow pasting inputs when input is selected
-                    # Same for decision answers.
+                    # Same for decision answers and connections
                     if(isinstance(parent_item, genericSymbols.HorizontalSymbol)
                             and type(parent_item) == type(item)):
                         parent_item = parent_item.parentItem()
@@ -699,6 +730,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def export_branch_to_picture(self, symbol, filename, doc_format):
         ''' Save a symbol and its followers to a file '''
         temp_scene = SDL_Scene()
+        temp_scene.messages_window = self.messages_window
         self.clearSelection()
         symbol.select()
         try:
@@ -720,12 +752,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if split:
             # Save in multiple files
             index = 0
-            items = (item for item in self.items()
-                    if item.isVisible() and not item.hasParent and
-                isinstance(item, (State, TextSymbol, Procedure, Start, Label)))
-            for item in items:
-                self.export_branch_to_picture(item,
-                                              filename + str(index),
+            for item in self.floating_symb:
+                self.export_branch_to_picture(item, filename + str(index),
                                               doc_format)
                 index += 1
 
@@ -734,14 +762,22 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
         self.clearSelection()
         self.clear_focus()
-        old_brush = self.backgroundBrush()
-        self.setBackgroundBrush(QtGui.QBrush())
-        rect = self.itemsBoundingRect()
+        # Copy in a different scene to get the smallest rectangle
+        other_scene = SDL_Scene()
+        other_scene.messages_window = self.messages_window
+        other_scene.setBackgroundBrush(QtGui.QBrush())
+        for each in self.floating_symb:
+            each.select()
+            self.copy_selected_symbols()
+            other_scene.paste_symbols()
+            each.select(False)
+        rect = other_scene.sceneRect()
+
         # enlarge the rect to fit extra pixels due to antialiasing
         rect.adjust(-5, -5, 5, 5)
         if doc_format == 'png':
             device = QtGui.QImage(rect.size().toSize(),
-                    QtGui.QImage.Format_ARGB32)
+                                  QtGui.QImage.Format_ARGB32)
             device.fill(Qt.transparent)
         elif doc_format == 'svg':
             device = QtSvg.QSvgGenerator()
@@ -758,7 +794,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         else:
             LOG.error('Output format not supported: ' + doc_format)
         painter = QtGui.QPainter(device)
-        self.render(painter, source=rect)
+        other_scene.render(painter, source=rect)
         try:
             device.save(filename)
         except AttributeError:
@@ -766,7 +802,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             pass
         if painter.isActive():
             painter.end()
-        self.setBackgroundBrush(old_brush)
 
     def clear_focus(self):
         ''' Clear focus from any item on the scene '''
@@ -1272,9 +1307,18 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
+        # Translate scenes to avoid negative coordinates
+        for each in scene.all_nested_scenes:
+            each.translate_to_origin()
+        # XXX don't translate current scene to avoid a jump of scrollbars
+        #center = self.viewport().rect().center()
+        #delta_x, delta_y = scene.translate_to_origin()
+        #center.setX(center.x() + delta_x)
+        #center.setY(center.y() + delta_y)
+        #self.centerOn(center)
+
         pr_raw = scene.get_pr_string()
         pr_data = str('\n'.join(pr_raw))
-        #LOG.debug(str(pr_data))
         try:
             pr_file.write(pr_data)
             pr_file.close()

@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-04-10 09:59:43
+# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-04-22 15:38:12
 
 import sys
 from antlr3 import *
@@ -974,10 +974,10 @@ class sdl92Parser(Parser):
                 if LA5 == 210:
                     LA5_1 = self.input.LA(2)
 
-                    if (LA5_1 == KEEP) :
-                        alt5 = 1
-                    elif (LA5_1 == LABEL or LA5_1 == COMMENT or LA5_1 == STATE or LA5_1 == PROVIDED or LA5_1 == INPUT or (PROCEDURE_CALL <= LA5_1 <= PROCEDURE) or LA5_1 == DECISION or LA5_1 == ANSWER or LA5_1 == OUTPUT or (TEXT <= LA5_1 <= JOIN) or LA5_1 == RETURN or LA5_1 == TASK or LA5_1 == STOP or LA5_1 == CONNECT or LA5_1 == START) :
+                    if (LA5_1 == LABEL or LA5_1 == COMMENT or LA5_1 == STATE or LA5_1 == PROVIDED or LA5_1 == INPUT or (PROCEDURE_CALL <= LA5_1 <= PROCEDURE) or LA5_1 == DECISION or LA5_1 == ANSWER or LA5_1 == OUTPUT or (TEXT <= LA5_1 <= JOIN) or LA5_1 == RETURN or LA5_1 == TASK or LA5_1 == STOP or LA5_1 == CONNECT or LA5_1 == START) :
                         alt5 = 2
+                    elif (LA5_1 == KEEP) :
+                        alt5 = 1
                     else:
                         if self._state.backtracking > 0:
                             raise BacktrackingFailed
@@ -5692,7 +5692,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "composite_state_body"
-    # sdl92.g:352:1: composite_state_body : ( text_area | procedure | composite_state )* ( start )+ ( state | floating_label )* ;
+    # sdl92.g:352:1: composite_state_body : ( text_area | procedure | composite_state )* ( start )* ( state | floating_label )* ;
     def composite_state_body(self, ):
 
         retval = self.composite_state_body_return()
@@ -5716,8 +5716,8 @@ class sdl92Parser(Parser):
 
         try:
             try:
-                # sdl92.g:353:9: ( ( text_area | procedure | composite_state )* ( start )+ ( state | floating_label )* )
-                # sdl92.g:353:17: ( text_area | procedure | composite_state )* ( start )+ ( state | floating_label )*
+                # sdl92.g:353:9: ( ( text_area | procedure | composite_state )* ( start )* ( state | floating_label )* )
+                # sdl92.g:353:17: ( text_area | procedure | composite_state )* ( start )* ( state | floating_label )*
                 pass 
                 root_0 = self._adaptor.nil()
 
@@ -5734,10 +5734,15 @@ class sdl92Parser(Parser):
                             alt56 = 2
 
 
+                    elif LA56 == STATE:
+                        LA56_3 = self.input.LA(2)
+
+                        if (self.synpred73_sdl92()) :
+                            alt56 = 3
+
+
                     elif LA56 == PROCEDURE:
                         alt56 = 2
-                    elif LA56 == STATE:
-                        alt56 = 3
 
                     if alt56 == 1:
                         # sdl92.g:353:18: text_area
@@ -5774,8 +5779,7 @@ class sdl92Parser(Parser):
 
                     else:
                         break #loop56
-                # sdl92.g:354:17: ( start )+
-                cnt57 = 0
+                # sdl92.g:354:17: ( start )*
                 while True: #loop57
                     alt57 = 2
                     alt57 = self.dfa57.predict(self.input)
@@ -5791,16 +5795,7 @@ class sdl92Parser(Parser):
 
 
                     else:
-                        if cnt57 >= 1:
-                            break #loop57
-
-                        if self._state.backtracking > 0:
-                            raise BacktrackingFailed
-
-                        eee = EarlyExitException(57, self.input)
-                        raise eee
-
-                    cnt57 += 1
+                        break #loop57
                 # sdl92.g:354:24: ( state | floating_label )*
                 while True: #loop58
                     alt58 = 3
@@ -22011,6 +22006,21 @@ class sdl92Parser(Parser):
 
 
 
+    # $ANTLR start "synpred73_sdl92"
+    def synpred73_sdl92_fragment(self, ):
+        # sdl92.g:353:42: ( composite_state )
+        # sdl92.g:353:42: composite_state
+        pass 
+        self._state.following.append(self.FOLLOW_composite_state_in_synpred73_sdl924068)
+        self.composite_state()
+
+        self._state.following.pop()
+
+
+    # $ANTLR end "synpred73_sdl92"
+
+
+
     # $ANTLR start "synpred95_sdl92"
     def synpred95_sdl92_fragment(self, ):
         # sdl92.g:450:17: ( enabling_condition )
@@ -22420,6 +22430,19 @@ class sdl92Parser(Parser):
         self._state.backtracking -= 1
         return success
 
+    def synpred73_sdl92(self):
+        self._state.backtracking += 1
+        start = self.input.mark()
+        try:
+            self.synpred73_sdl92_fragment()
+        except BacktrackingFailed:
+            success = False
+        else:
+            success = True
+        self.input.rewind(start)
+        self._state.backtracking -= 1
+        return success
+
     def synpred72_sdl92(self):
         self._state.backtracking += 1
         start = self.input.mark()
@@ -22675,14 +22698,14 @@ class sdl92Parser(Parser):
         )
 
     DFA34_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103\1\156"
-        u"\1\u0097\1\172\1\u00d3\1\173\1\32\1\171\1\156\1\173\1\156\1\172"
-        u"\1\u00d3\1\32\1\u00a2"
+        u"\1\32\1\7\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173\1\u0097"
+        u"\1\156\1\u00d3\1\172\1\32\1\173\1\171\1\156\1\173\1\156\1\172\1"
+        u"\u00d3\1\32\1\u00a2"
         )
 
     DFA34_max = DFA.unpack(
-        u"\1\u00d2\1\u00a2\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103"
-        u"\1\156\1\u0097\1\172\1\u00d3\1\173\1\157\1\171\1\156\1\173\1\156"
+        u"\1\u00d2\1\u00a2\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173"
+        u"\1\u0097\1\156\1\u00d3\1\172\1\157\1\173\1\171\1\156\1\173\1\156"
         u"\1\172\1\u00d3\1\u00d2\1\u00a2"
         )
 
@@ -22698,10 +22721,10 @@ class sdl92Parser(Parser):
     DFA34_transition = [
         DFA.unpack(u"\1\3\101\uffff\1\3\17\uffff\2\3\1\uffff\1\2\142\uffff"
         u"\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\20\uffff\1\4\2\uffff\1\4\1\uffff\1"
-        u"\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4\2\uffff\3\4"
-        u"\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4\13\uffff\1\4"
-        u"\62\uffff\1\5"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\20\uffff\1\5\2\uffff\1\5\1\uffff\1"
+        u"\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5\2\uffff\3\5"
+        u"\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5\13\uffff\1\5"
+        u"\62\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -22714,8 +22737,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\3\101\uffff\1\3\22\uffff\1\2"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
@@ -22723,7 +22746,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\3\101\uffff\1\3\22\uffff\1\2\142\uffff\1\27"),
-        DFA.unpack(u"\1\5")
+        DFA.unpack(u"\1\4")
     ]
 
     # class definition for DFA #34
@@ -22811,14 +22834,14 @@ class sdl92Parser(Parser):
         )
 
     DFA39_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103\1\156"
-        u"\1\u0097\1\172\1\u00d3\1\173\1\32\1\171\1\156\1\173\1\156\1\172"
-        u"\1\u00d3\1\32\1\u00a2"
+        u"\1\4\1\7\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173\1\u0097"
+        u"\1\156\1\u00d3\1\172\1\32\1\173\1\171\1\156\1\173\1\156\1\172\1"
+        u"\u00d3\1\32\1\u00a2"
         )
 
     DFA39_max = DFA.unpack(
-        u"\1\u00d2\1\u00a2\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103"
-        u"\1\156\1\u0097\1\172\1\u00d3\1\173\1\174\1\171\1\156\1\173\1\156"
+        u"\1\u00d2\1\u00a2\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173"
+        u"\1\u0097\1\156\1\u00d3\1\172\1\174\1\173\1\171\1\156\1\173\1\156"
         u"\1\172\1\u00d3\1\u00d2\1\u00a2"
         )
 
@@ -22836,10 +22859,10 @@ class sdl92Parser(Parser):
         u"\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\4\uffff\1\3\17\uffff"
         u"\2\3\1\uffff\1\3\5\uffff\1\3\6\uffff\1\2\11\uffff\1\2\1\uffff\1"
         u"\2\16\uffff\1\2\72\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\20\uffff\1\4\2\uffff\1\4\1\uffff\1"
-        u"\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4\2\uffff\3\4"
-        u"\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4\13\uffff\1\4"
-        u"\62\uffff\1\5"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\20\uffff\1\5\2\uffff\1\5\1\uffff\1"
+        u"\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5\2\uffff\3\5"
+        u"\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5\13\uffff\1\5"
+        u"\62\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -22852,10 +22875,10 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\3\14\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
         u"\1\2\25\uffff\1\2\7\uffff\1\2\4\uffff\1\3\22\uffff\1\3\14\uffff"
         u"\1\2"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
@@ -22865,7 +22888,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\3\14\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
         u"\1\2\25\uffff\1\2\7\uffff\1\2\4\uffff\1\3\22\uffff\1\3\14\uffff"
         u"\1\2\13\uffff\1\2\111\uffff\1\27"),
-        DFA.unpack(u"\1\5")
+        DFA.unpack(u"\1\4")
     ]
 
     # class definition for DFA #39
@@ -22885,14 +22908,14 @@ class sdl92Parser(Parser):
         )
 
     DFA57_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103\1\156"
-        u"\1\u0097\1\172\1\u00d3\1\173\1\32\1\171\1\156\1\173\1\156\1\172"
-        u"\1\u00d3\1\32\1\u00a2"
+        u"\1\32\1\7\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173\1\u0097"
+        u"\1\156\1\u00d3\1\172\1\32\1\173\1\171\1\156\1\173\1\156\1\172\1"
+        u"\u00d3\1\32\1\u00a2"
         )
 
     DFA57_max = DFA.unpack(
-        u"\1\u00d2\1\u00a2\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103"
-        u"\1\156\1\u0097\1\172\1\u00d3\1\173\1\157\1\171\1\156\1\173\1\156"
+        u"\1\u00d2\1\u00a2\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173"
+        u"\1\u0097\1\156\1\u00d3\1\172\1\157\1\173\1\171\1\156\1\173\1\156"
         u"\1\172\1\u00d3\1\u00d2\1\u00a2"
         )
 
@@ -22908,10 +22931,10 @@ class sdl92Parser(Parser):
     DFA57_transition = [
         DFA.unpack(u"\1\2\101\uffff\1\2\22\uffff\1\3\5\uffff\1\2\134\uffff"
         u"\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\20\uffff\1\4\2\uffff\1\4\1\uffff\1"
-        u"\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4\2\uffff\3\4"
-        u"\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4\13\uffff\1\4"
-        u"\62\uffff\1\5"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\20\uffff\1\5\2\uffff\1\5\1\uffff\1"
+        u"\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5\2\uffff\3\5"
+        u"\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5\13\uffff\1\5"
+        u"\62\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -22924,8 +22947,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\2\101\uffff\1\2\22\uffff\1\3"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
@@ -22933,7 +22956,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\2\101\uffff\1\2\22\uffff\1\3\142\uffff\1\27"),
-        DFA.unpack(u"\1\5")
+        DFA.unpack(u"\1\4")
     ]
 
     # class definition for DFA #57
@@ -22953,14 +22976,14 @@ class sdl92Parser(Parser):
         )
 
     DFA58_min = DFA.unpack(
-        u"\1\32\1\uffff\1\7\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103"
-        u"\1\156\1\u0097\1\172\1\u00d3\1\173\1\32\1\171\1\156\1\173\1\156"
+        u"\1\32\1\uffff\1\7\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173"
+        u"\1\u0097\1\156\1\u00d3\1\172\1\32\1\173\1\171\1\156\1\173\1\156"
         u"\1\172\1\u00d3\1\32\1\u00a2"
         )
 
     DFA58_max = DFA.unpack(
-        u"\1\u00d2\1\uffff\1\u00a2\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1"
-        u"\173\1\103\1\156\1\u0097\1\172\1\u00d3\1\173\1\134\1\171\1\156"
+        u"\1\u00d2\1\uffff\1\u00a2\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1"
+        u"\103\1\173\1\u0097\1\156\1\u00d3\1\172\1\134\1\173\1\171\1\156"
         u"\1\173\1\156\1\172\1\u00d3\1\u00d2\1\u00a2"
         )
 
@@ -22976,10 +22999,10 @@ class sdl92Parser(Parser):
     DFA58_transition = [
         DFA.unpack(u"\1\3\101\uffff\1\4\30\uffff\1\1\134\uffff\1\2"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\5\1\uffff\1\5\20\uffff\1\5\2\uffff\1\5\1\uffff\1"
-        u"\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5\2\uffff\3\5"
-        u"\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5\13\uffff\1\5"
-        u"\62\uffff\1\6"),
+        DFA.unpack(u"\1\6\1\uffff\1\6\20\uffff\1\6\2\uffff\1\6\1\uffff\1"
+        u"\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1\6\2\uffff\3\6"
+        u"\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1\6\13\uffff\1\6"
+        u"\62\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\7"),
@@ -22992,8 +23015,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
         DFA.unpack(u"\1\20"),
-        DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\3\101\uffff\1\4"),
+        DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
         DFA.unpack(u"\1\24"),
@@ -23001,7 +23024,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\27"),
         DFA.unpack(u"\1\3\101\uffff\1\4\165\uffff\1\30"),
-        DFA.unpack(u"\1\6")
+        DFA.unpack(u"\1\5")
     ]
 
     # class definition for DFA #58
@@ -23092,14 +23115,14 @@ class sdl92Parser(Parser):
         )
 
     DFA63_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173\1\u0097"
-        u"\1\156\1\u00d3\1\172\1\37\1\173\1\171\1\156\1\173\1\156\1\172\1"
-        u"\u00d3\1\37\1\u00a2"
+        u"\1\4\1\7\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103\1\156"
+        u"\1\u0097\1\172\1\u00d3\1\173\1\37\1\171\1\156\1\173\1\156\1\172"
+        u"\1\u00d3\1\37\1\u00a2"
         )
 
     DFA63_max = DFA.unpack(
-        u"\1\u00d2\1\u00a2\2\uffff\1\u00a3\1\171\1\u00a4\1\156\1\103\1\173"
-        u"\1\u0097\1\156\1\u00d3\1\172\1\174\1\173\1\171\1\156\1\173\1\156"
+        u"\1\u00d2\1\u00a2\2\uffff\1\171\1\u00a3\1\156\1\u00a4\1\173\1\103"
+        u"\1\156\1\u0097\1\172\1\u00d3\1\173\1\174\1\171\1\156\1\173\1\156"
         u"\1\172\1\u00d3\1\u00d2\1\u00a2"
         )
 
@@ -23117,10 +23140,10 @@ class sdl92Parser(Parser):
         u"\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1"
         u"\3\16\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
         u"\1\2\72\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\20\uffff\1\5\2\uffff\1\5\1\uffff\1"
-        u"\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5\2\uffff\3\5"
-        u"\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5\13\uffff\1\5"
-        u"\62\uffff\1\4"),
+        DFA.unpack(u"\1\4\1\uffff\1\4\20\uffff\1\4\2\uffff\1\4\1\uffff\1"
+        u"\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4\2\uffff\3\4"
+        u"\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4\13\uffff\1\4"
+        u"\62\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -23133,9 +23156,9 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
         u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\30\uffff\1\2"),
-        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
@@ -23145,7 +23168,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
         u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\30\uffff\1\2\13\uffff"
         u"\1\2\111\uffff\1\27"),
-        DFA.unpack(u"\1\4")
+        DFA.unpack(u"\1\5")
     ]
 
     # class definition for DFA #63
@@ -23338,14 +23361,14 @@ class sdl92Parser(Parser):
         u"\1\4\1\7\1\171\2\uffff\1\171\1\u00a3\1\4\1\156\1\u00a4\1\7\1\173"
         u"\1\103\1\171\1\156\1\u0097\1\156\1\172\1\u00d3\2\173\1\47\1\156"
         u"\1\171\1\172\1\156\2\173\1\171\2\156\1\172\1\173\1\u00d3\1\156"
-        u"\1\47\1\172\1\u00c8\1\u00a2\1\u00d3\1\47"
+        u"\1\47\1\172\1\u00a2\1\u00c8\1\u00d3\1\47"
         )
 
     DFA83_max = DFA.unpack(
         u"\1\u00d2\1\u00a2\1\u00ca\2\uffff\1\171\1\u00a3\1\u00d2\1\156\1"
         u"\u00a4\1\u00a2\1\173\1\103\1\171\1\156\1\u0097\1\156\1\172\1\u00d3"
         u"\2\173\1\174\1\156\1\171\1\172\1\156\2\173\1\171\2\156\1\172\1"
-        u"\173\1\u00d3\1\156\1\u00d2\1\172\1\u00c8\1\u00a2\1\u00d3\1\u00d2"
+        u"\173\1\u00d3\1\156\1\u00d2\1\172\1\u00a2\1\u00c8\1\u00d3\1\u00d2"
         )
 
     DFA83_accept = DFA.unpack(
@@ -23405,13 +23428,13 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\43"),
         DFA.unpack(u"\1\44"),
         DFA.unpack(u"\1\3\12\uffff\1\3\3\uffff\2\4\1\uffff\1\4\25\uffff"
-        u"\1\3\7\uffff\1\4\44\uffff\1\3\13\uffff\1\45\111\uffff\1\46"),
+        u"\1\3\7\uffff\1\4\44\uffff\1\3\13\uffff\1\46\111\uffff\1\45"),
         DFA.unpack(u"\1\47"),
-        DFA.unpack(u"\1\7"),
         DFA.unpack(u"\1\6"),
+        DFA.unpack(u"\1\7"),
         DFA.unpack(u"\1\50"),
         DFA.unpack(u"\1\3\12\uffff\1\3\3\uffff\2\4\1\uffff\1\4\25\uffff"
-        u"\1\3\7\uffff\1\4\44\uffff\1\3\125\uffff\1\46")
+        u"\1\3\7\uffff\1\4\44\uffff\1\3\125\uffff\1\45")
     ]
 
     # class definition for DFA #83
@@ -24067,7 +24090,7 @@ class sdl92Parser(Parser):
         )
 
     DFA140_special = DFA.unpack(
-        u"\2\uffff\1\5\1\2\1\4\1\1\1\3\1\0\1\6\1\uffff"
+        u"\2\uffff\1\3\1\0\1\4\1\1\1\6\1\2\1\5\1\uffff"
         )
 
             
@@ -24106,10 +24129,10 @@ class sdl92Parser(Parser):
             _s = s
 
             if s == 0: 
-                LA140_7 = input.LA(1)
+                LA140_3 = input.LA(1)
 
                  
-                index140_7 = input.index()
+                index140_3 = input.index()
                 input.rewind()
                 s = -1
                 if (self.synpred182_sdl92()):
@@ -24119,7 +24142,7 @@ class sdl92Parser(Parser):
                     s = 1
 
                  
-                input.seek(index140_7)
+                input.seek(index140_3)
                 if s >= 0:
                     return s
             elif s == 1: 
@@ -24140,10 +24163,10 @@ class sdl92Parser(Parser):
                 if s >= 0:
                     return s
             elif s == 2: 
-                LA140_3 = input.LA(1)
+                LA140_7 = input.LA(1)
 
                  
-                index140_3 = input.index()
+                index140_7 = input.index()
                 input.rewind()
                 s = -1
                 if (self.synpred182_sdl92()):
@@ -24153,14 +24176,14 @@ class sdl92Parser(Parser):
                     s = 1
 
                  
-                input.seek(index140_3)
+                input.seek(index140_7)
                 if s >= 0:
                     return s
             elif s == 3: 
-                LA140_6 = input.LA(1)
+                LA140_2 = input.LA(1)
 
                  
-                index140_6 = input.index()
+                index140_2 = input.index()
                 input.rewind()
                 s = -1
                 if (self.synpred182_sdl92()):
@@ -24170,7 +24193,7 @@ class sdl92Parser(Parser):
                     s = 1
 
                  
-                input.seek(index140_6)
+                input.seek(index140_2)
                 if s >= 0:
                     return s
             elif s == 4: 
@@ -24191,23 +24214,6 @@ class sdl92Parser(Parser):
                 if s >= 0:
                     return s
             elif s == 5: 
-                LA140_2 = input.LA(1)
-
-                 
-                index140_2 = input.index()
-                input.rewind()
-                s = -1
-                if (self.synpred182_sdl92()):
-                    s = 9
-
-                elif (True):
-                    s = 1
-
-                 
-                input.seek(index140_2)
-                if s >= 0:
-                    return s
-            elif s == 6: 
                 LA140_8 = input.LA(1)
 
                  
@@ -24222,6 +24228,23 @@ class sdl92Parser(Parser):
 
                  
                 input.seek(index140_8)
+                if s >= 0:
+                    return s
+            elif s == 6: 
+                LA140_6 = input.LA(1)
+
+                 
+                index140_6 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred182_sdl92()):
+                    s = 9
+
+                elif (True):
+                    s = 1
+
+                 
+                input.seek(index140_6)
                 if s >= 0:
                     return s
 
@@ -24520,8 +24543,8 @@ class sdl92Parser(Parser):
     FOLLOW_STATE_in_composite_state3766 = frozenset([136])
     FOLLOW_statename_in_composite_state3768 = frozenset([9, 113, 210])
     FOLLOW_end_in_composite_state3772 = frozenset([116])
-    FOLLOW_SUBSTRUCTURE_in_composite_state3790 = frozenset([26, 35, 86, 111, 118, 210])
-    FOLLOW_connection_points_in_composite_state3808 = frozenset([26, 35, 86, 111, 118, 210])
+    FOLLOW_SUBSTRUCTURE_in_composite_state3790 = frozenset([26, 35, 86, 92, 111, 117, 118, 210])
+    FOLLOW_connection_points_in_composite_state3808 = frozenset([26, 35, 86, 92, 111, 117, 118, 210])
     FOLLOW_composite_state_body_in_composite_state3829 = frozenset([117])
     FOLLOW_ENDSUBSTRUCTURE_in_composite_state3847 = frozenset([9, 113, 136, 210])
     FOLLOW_statename_in_composite_state3849 = frozenset([9, 113, 210])
@@ -24537,9 +24560,9 @@ class sdl92Parser(Parser):
     FOLLOW_COMMA_in_state_entry_exit_points4012 = frozenset([136])
     FOLLOW_statename_in_state_entry_exit_points4014 = frozenset([122, 123])
     FOLLOW_R_PAREN_in_state_entry_exit_points4018 = frozenset([1])
-    FOLLOW_text_area_in_composite_state_body4060 = frozenset([26, 35, 111, 210])
-    FOLLOW_procedure_in_composite_state_body4064 = frozenset([26, 35, 111, 210])
-    FOLLOW_composite_state_in_composite_state_body4068 = frozenset([26, 35, 111, 210])
+    FOLLOW_text_area_in_composite_state_body4060 = frozenset([1, 26, 35, 92, 111, 210])
+    FOLLOW_procedure_in_composite_state_body4064 = frozenset([1, 26, 35, 92, 111, 210])
+    FOLLOW_composite_state_in_composite_state_body4068 = frozenset([1, 26, 35, 92, 111, 210])
     FOLLOW_start_in_composite_state_body4088 = frozenset([1, 26, 92, 111, 210])
     FOLLOW_state_in_composite_state_body4092 = frozenset([1, 26, 92, 210])
     FOLLOW_floating_label_in_composite_state_body4096 = frozenset([1, 26, 92, 210])
@@ -25075,6 +25098,7 @@ class sdl92Parser(Parser):
     FOLLOW_content_in_synpred39_sdl922601 = frozenset([1])
     FOLLOW_text_area_in_synpred71_sdl924060 = frozenset([1])
     FOLLOW_procedure_in_synpred72_sdl924064 = frozenset([1])
+    FOLLOW_composite_state_in_synpred73_sdl924068 = frozenset([1])
     FOLLOW_enabling_condition_in_synpred95_sdl925005 = frozenset([1])
     FOLLOW_label_in_synpred102_sdl925261 = frozenset([1])
     FOLLOW_expression_in_synpred126_sdl926284 = frozenset([1])

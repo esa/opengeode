@@ -1363,8 +1363,7 @@ def composite_state(root, parent=None, context=None):
                                                     context=comp)
             errors.extend(err)
             warnings.extend(warn)
-            comp.composite_states.append(comp)
-            warnings.append('Inner Composite state detected')
+            comp.composite_states.append(inner_comp)
         elif child.type == lexer.STATE:
             # STATE - fills up the 'mapping' structure.
             newstate, err, warn = state(child, parent=None, context=comp)
@@ -1943,11 +1942,10 @@ def state(root, parent, context):
                 errors.append('State {} is not a composite state and cannot '
                               'be followed by a connect statement'
                               .format(state_def.statelist[0]))
-            else:
-                conn_part, err, warn = connect_part(child, state_def, context)
-                state_def.connects.append(conn_part)
-                warnings.extend(warn)
-                errors.extend(err)
+            conn_part, err, warn = connect_part(child, state_def, context)
+            state_def.connects.append(conn_part)
+            warnings.extend(warn)
+            errors.extend(err)
         elif child.type == lexer.COMMENT:
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
@@ -1980,14 +1978,22 @@ def connect_part(root, parent, context):
     errors, warnings = [], []
     coord = False
     conn = ogAST.Connect()
-    statename = parent.statelist[0].lower()
+    try:
+        statename = parent.statelist[0].lower()
+    except AttributeError:
+        # Ignore missing parent/statelist to allow local syntax check
+        statename = ''
     id_token = []
     # Keep track of the number of terminator statements follow the input
     # useful if we want to render graphs from the SDL model
     terms = len(context.terminators)
     # Retrieve composite state
-    nested, = (comp for comp in context.composite_states
-               if comp.statename == statename)
+    try:
+        nested, = (comp for comp in context.composite_states
+                   if comp.statename == statename)
+    except ValueError:
+        # Ignore unexisting state - to allow local syntax check
+        nested = ogAST.CompositeState()
 
     for child in root.getChildren():
         if child.type == lexer.CIF:
@@ -2879,7 +2885,7 @@ def parseSingleElement(elem='', string=''):
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
             'connect_part'))
-    LOG.debug('Parsing string: ' + string + 'with elem ' + elem)
+    LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)
     assert(parser_ptr is not None)
@@ -2903,7 +2909,7 @@ def parseSingleElement(elem='', string=''):
         try:
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
-        except AttributeError:
+        except AttributeError as err:
             # Syntax checker has no visibility on variables and types
             # so we have to discard exceptions sent by e.g. find_variable
             pass
