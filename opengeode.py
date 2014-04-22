@@ -133,8 +133,8 @@ ACTIONS = {
                   Comment, Label, Join, ProcedureStop],
     'statechart': [],
     'state': [StateStart, State, Input, Connect, Task, Decision,
-              DecisionAnswer, Output,
-              ProcedureCall, TextSymbol, Comment, Label, Join, ProcedureStop]
+              DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
+              Label, Join, ProcedureStop, Procedure]
 }
 
 
@@ -351,21 +351,18 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
 
     def render_process(self, process):
-        ''' Render a process and its inner procedures in the scene '''
+        ''' Render a process and its children scenes, recursively '''
         self.process_name = process.processName or 'opengeode'
-        for top_level in Renderer.render(process, scene=self):
-            G_SYMBOLS.add(top_level)
-            # Render optional sub-scenes (procedures)
-            if top_level.nested_scene and not isinstance(
-                                    top_level.nested_scene, SDL_Scene):
-                subscene = SDL_Scene(
-                        context=top_level.__class__.__name__.lower())
-                subscene.messages_window = self.messages_window
-                for sub_top_level in Renderer.render(
-                                       top_level.nested_scene.content,
-                                       scene=subscene):
-                    G_SYMBOLS.add(sub_top_level)
-                top_level.nested_scene = subscene
+        def recursive_render(content, dest_scene):
+            for item in Renderer.render(content, dest_scene):
+                G_SYMBOLS.add(item)
+                if item.nested_scene:
+                    subscene = SDL_Scene(
+                                       context=item.__class__.__name__.lower())
+                    subscene.messages_window = self.messages_window
+                    recursive_render(item.nested_scene.content, subscene)
+                    item.nested_scene = subscene
+        recursive_render(process, self)
 
 
     def refresh(self):
@@ -1124,6 +1121,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                 pen=QtGui.QPen(QtGui.QColor(0, 0, 0, 0)))
         # Hide the rectangle so that it does not collide with the symbols
         self.phantom_rect.hide()
+        self.refresh()
         super(SDL_View, self).resizeEvent(event)
 
     def about_og(self):
@@ -1206,10 +1204,11 @@ class SDL_View(QtGui.QGraphicsView, object):
                         subscene = SDL_Scene(
                                 context=item.__class__.__name__.lower())
                         subscene.messages_window = self.messages_window
-                        if item.nested_scene:
-                            for top_level in Renderer.render_process(
-                                                subscene, item.nested_scene):
-                                G_SYMBOLS.add(top_level)
+#                       if item.nested_scene:
+# Removed - cannot happen, scenes are created by SDL_Scene.render_process
+#                           for top_level in Renderer.render(
+#                                   item.nested_scene.content, subscene):
+#                               G_SYMBOLS.add(top_level)
                         item.nested_scene = subscene
                     self.go_down(item.nested_scene)
                 else:

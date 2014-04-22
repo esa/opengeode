@@ -69,6 +69,8 @@
 
 
 import logging
+from itertools import chain
+
 from singledispatch import singledispatch
 
 import ogAST
@@ -98,7 +100,6 @@ def generate(ast):
 def _process(process):
     ''' Generate the code for a complete process (AST Top level) '''
     process_name = process.processName
-    VARIABLES.update(process.variables)
     global TYPES
     TYPES = process.dataview
     del OUT_SIGNALS[:]
@@ -106,23 +107,8 @@ def _process(process):
     del INNER_PROCEDURES[:]
     OUT_SIGNALS.extend(process.output_signals)
     PROCEDURES.extend(process.procedures)
-    INNER_PROCEDURES.extend(process.content.inner_procedures)
 
     LOG.info('Generating Ada code for process ' + str(process_name))
-
-    # Generate the code to declare process-level variables
-    process_level_decl = []
-    for var_name, (var_type, def_value) in process.variables.viewitems():
-        if def_value:
-            # Expression must be a ground expression, i.e. must not
-            # require temporary variable to store computed result
-            dst, dstr, dlocal = generate(def_value)
-            assert not dst and not dlocal, 'DCL: Expecting a ground expression'
-        process_level_decl.append(
-                'l_{n} : aliased asn1Scc{t}{default};'.format(
-                        n=var_name,
-                        t=var_type.ReferencedTypeName.replace('-','_'),
-                        default=' := ' + dstr if def_value else ''))
 
     # Flatten the nested states, add states to the process state list
     # Requires renaming of nested states and setting chaining of transitions
@@ -144,9 +130,18 @@ def _process(process):
             to process, updating indexes, and update terminators
         '''
         trans_idx = len(process.transitions)
-        state.mapping = {state.statename + '_' + key:state.mapping.pop(key)
+        prefix = state.statename + '_'
+        state.mapping = {prefix + key:state.mapping.pop(key)
                          for key in state.mapping.keys()}
         process.transitions.extend(state.transitions)
+
+        # Add prefix to local variable names and push them at process level
+        for dcl in state.variables.viewkeys():
+            rename_everything(state.content, dcl, prefix + dcl)
+        state.variables = {prefix + key: state.variables.pop(key)
+                           for key in state.variables.keys()}
+        process.variables.update(state.variables)
+
         for key, value in state.mapping.viewitems():
             # Update transition indices
             if isinstance(value, int):
@@ -155,17 +150,60 @@ def _process(process):
                 for inp in value:
                     inp.transition_id += trans_idx
         process.mapping.update(state.mapping)
+
+        # If composite state has entry procedures, add the call
+        if state.entry_procedure:
+            for each in (trans for trans in state.mapping.viewvalues()
+                         if isinstance(trans, int)):
+                call_entry = ogAST.ProcedureCall()
+                call_entry.inputString = 'entry'
+                call_entry.output = [{'outputName': prefix + 'entry',
+                                     'params': [], 'tmpVars': []}]
+                process.transitions[each].actions.insert(0, call_entry)
+
+        # If composite state has exit procedure, add the call
+        if state.exit_procedure:
+            for each in chain(state.transitions, (lab.transition for lab in
+                                              state.content.floating_labels)):
+                if each.terminator.kind == 'return':
+                    call_exit = ogAST.ProcedureCall()
+                    call_exit.inputString = 'exit'
+                    call_exit.output = [{'outputName': prefix + 'exit',
+                                     'params': [], 'tmpVars': []}]
+                    each.actions.append(call_exit)
+
         for inner in state.composite_states:
-            inner.statename = state.statename + '_' + inner.statename
+            # Go recursively in inner composite states
+            inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
         for each in state.terminators:
-            # Update state names in terminators and set next transition id
+            # Give prefix to terminators
+            if each.label:
+                each.label.inputString = prefix + each.label.inputString
             if each.kind == 'next_state':
-                each.inputString = state.statename + '_' + each.inputString
+                each.inputString = prefix + each.inputString
+                # Set next transition id
                 update_terminator(state, each, process)
+            elif each.kind == 'join':
+                rename_everything(state.content,
+                                  each.inputString,
+                                  prefix + each.inputString)
+        for each in state.labels:
+            # Give prefix to labels in transitions
+            rename_everything(state.content,
+                              each.inputString,
+                              prefix + each.inputString)
+        # Add prefixed floating labels of the composite state to the process
+        process.content.floating_labels.extend(state.content.floating_labels)
+        # Rename inner procedures
+        for each in state.content.inner_procedures:
+            rename_everything(state.content, each.inputString,
+                              prefix + each.inputString)
+            each.inputString = prefix + each.inputString
+        process.content.inner_procedures.extend(state.content.inner_procedures)
 
     def propagate_inputs(nested_state, inputlist):
-        ''' Nested states: Inputs at level N but be handled at level N-1
+        ''' Nested states: Inputs at level N must be handled at level N-1
             that is, all inputs of a composite states (the ones that allow
             to exit the composite state from the outer scope) must be
             processed by each of the substates.
@@ -189,6 +227,24 @@ def _process(process):
     for each in process.terminators:
         if each.kind == 'next_state':
             update_terminator(process, each, process)
+
+    VARIABLES.update(process.variables)
+    INNER_PROCEDURES.extend(process.content.inner_procedures)
+
+    # Generate the code to declare process-level variables
+    process_level_decl = []
+    for var_name, (var_type, def_value) in process.variables.viewitems():
+        if def_value:
+            # Expression must be a ground expression, i.e. must not
+            # require temporary variable to store computed result
+            dst, dstr, dlocal = generate(def_value)
+            assert not dst and not dlocal, 'DCL: Expecting a ground expression'
+        process_level_decl.append(
+                'l_{n} : aliased asn1Scc{t}{default};'.format(
+                        n=var_name,
+                        t=var_type.ReferencedTypeName.replace('-','_'),
+                        default=' := ' + dstr if def_value else ''))
+
 
     # Add the process states list to the process-level variables
     states_decl = 'type states is ('
@@ -437,9 +493,9 @@ package {process_name} is'''.format(process_name=process_name,
     # Add the code for the floating labels
     taste_template.extend(code_labels)
 
-    if code_labels:
-        taste_template.append('<<next_transition>>')
-        taste_template.append('null;')
+    #if code_labels:
+    taste_template.append('<<next_transition>>')
+    taste_template.append('null;')
     taste_template.append('end loop;')
     taste_template.append('end runTransition;')
     taste_template.append('\n')
@@ -1334,6 +1390,7 @@ def _transition(tr):
                     if tr.terminator.next_id == -1:
                         code.append('state := {nextState};'.format(
                                  nextState=tr.terminator.inputString))
+                code.append('goto next_transition;')
             elif tr.terminator.kind == 'join':
                 code.append('goto {label};'.format(
                     label=tr.terminator.inputString))
@@ -1348,9 +1405,11 @@ def _transition(tr):
                                                     (tr.terminator.return_expr)
                         code.extend(stmts)
                         local_decl.extend(local)
-                    code.append('return{};'.format(' ' + string if string else ''))
+                    code.append('return{};'
+                                .format(' ' + string if string else ''))
                 else:
                     code.append('trId := ' + str(tr.terminator.next_id) + ';')
+                    code.append('goto next_transition;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
         code.append('null;')
@@ -1577,6 +1636,144 @@ def find_labels(trans):
                         new_fl.transition.terminator = trans.terminator
                     yield new_fl
 
+
+@singledispatch
+def rename_everything(ast, from_name, to_name):
+    '''
+        Rename in all symbols all occurences of name_ref into new_name.
+        This is used to avoid name clashes in nested diagrams when they get
+        flattened. For example rename all accesses to a variable declared
+        in the scope of a composite state, so that they do not overwrite
+        a variable with the same name declared at a higher scope.
+    '''
+    pass
+
+@rename_everything.register(ogAST.Automaton)
+def _rename_automaton(ast, from_name, to_name):
+    ''' Renaming at Automaton top level (content of digragrams) '''
+    transitions = []
+    if ast.start:
+        rename_everything(ast.start.transition, from_name, to_name)
+    for each in ast.named_start:
+        rename_everything(each.transition, from_name, to_name)
+    for each in ast.floating_labels:
+        rename_everything(each, from_name, to_name)
+    for each in ast.states:
+        for inp in each.inputs:
+            rename_everything(inp.transition, from_name, to_name)
+            for idx, param in enumerate(inp.parameters):
+                if param.lower() == from_name.lower():
+                    inp.parameter[idx] = to_name
+        if each.composite:
+            rename_everything(each.composite.content, from_name, to_name)
+    for each in ast.inner_procedures:
+        # Check that from_name is not a redefined variable in the procedure
+        for varname in each.variables.viewkeys():
+            if varname.lower() == from_name:
+                break
+        else:
+            rename_everything(each.content, from_name, to_name)
+
+
+@rename_everything.register(ogAST.Output)
+@rename_everything.register(ogAST.ProcedureCall)
+def _rename_output(ast, from_name, to_name):
+    ''' Rename actual parameter names in output/procedure calls 
+        and possibly the procedure name '''
+    for each in ast.output:
+        if each['outputName'].lower() == from_name.lower():
+            each['outputName'] = to_name
+        for param in each['params']:
+            rename_everything(param, from_name, to_name)
+
+
+@rename_everything.register(ogAST.Label)
+def _rename_label(ast, from_name, to_name):
+    ''' Rename elements in the transition following a label '''
+    if ast.inputString.lower() == from_name.lower():
+        ast.inputString = to_name
+    rename_everything(ast.transition, from_name, to_name)
+
+@rename_everything.register(ogAST.Decision)
+def _rename_decision(ast, from_name, to_name):
+    ''' Rename elements in decision '''
+    if ast.kind == 'question':
+        rename_everything(ast.question)
+    for each in ast.answers:
+        rename_everything(each, from_name, to_name)
+
+
+@rename_everything.register(ogAST.Answer)
+def _rename_answer(ast, from_name, to_name):
+    ''' Rename elements in an answer branch '''
+    if ast.kind in ('constant', 'open_range'):
+        rename_everything(ast.constant, from_name, to_name)
+    elif ast.kind == 'closed_range':
+        pass # TODO when supported
+    rename_everything(ast.transition, from_name, to_name)
+
+
+@rename_everything.register(ogAST.Transition)
+def _rename_transition(ast, from_name, to_name):
+    ''' Rename in all symbols of a transition '''
+    for each in chain(ast.actions, ast.terminators):
+        # Label, output, task, decision, terminators
+        rename_everything(each, from_name, to_name)
+
+@rename_everything.register(ogAST.Terminator)
+def _rename_terminator(ast, from_name, to_name):
+    ''' Rename terminators: join/labels, next_state '''
+    if ast.inputString.lower() == from_name.lower():
+        ast.inputString = to_name
+    rename_everything(ast.label, from_name, to_name)
+    rename_everything(ast.return_expr, from_name, to_name)
+
+
+@rename_everything.register(ogAST.TaskAssign)
+def _rename_task_assign(ast, from_name, to_name):
+    ''' List of assignments '''
+    for each in ast.elems:
+        rename_everything(each, from_name, to_name)
+
+@rename_everything.register(ogAST.TaskForLoop)
+def _rename_forloop(ast, from_name, to_name):
+    ''' List of FOR loops '''
+    for each in ast.elems:
+        rename_everything(each['list'], from_name, to_name)
+        rename_everything(each['range']['start'], from_name, to_name)
+        rename_everything(each['range']['stop'], from_name, to_name)
+        rename_everything(each['transition'], from_name, to_name)
+
+@rename_everything.register(ogAST.ExprPlus)
+@rename_everything.register(ogAST.ExprMul)
+@rename_everything.register(ogAST.ExprMinus)
+@rename_everything.register(ogAST.ExprEq)
+@rename_everything.register(ogAST.ExprNeq)
+@rename_everything.register(ogAST.ExprGt)
+@rename_everything.register(ogAST.ExprGe)
+@rename_everything.register(ogAST.ExprLt)
+@rename_everything.register(ogAST.ExprLe)
+@rename_everything.register(ogAST.ExprDiv)
+@rename_everything.register(ogAST.ExprMod)
+@rename_everything.register(ogAST.ExprRem)
+@rename_everything.register(ogAST.ExprAssign)
+@rename_everything.register(ogAST.ExprOr)
+@rename_everything.register(ogAST.ExprIn)
+@rename_everything.register(ogAST.ExprAnd)
+@rename_everything.register(ogAST.ExprXor)
+@rename_everything.register(ogAST.ExprAppend)
+@rename_everything.register(ogAST.ExprAssign)
+def _rename_expr(ast, from_name, to_name):
+    ''' Two-sided expressions '''
+    rename_everything(ast.left, from_name, to_name)
+    rename_everything(ast.right, from_name, to_name)
+
+@rename_everything.register(ogAST.PrimPath)
+@rename_everything.register(ogAST.PrimVariable)
+def _rename_path(ast, from_name, to_name):
+    ''' Ultimate seek point for the renaming: primary path/variables '''
+    if ast.value[0].lower() == from_name.lower():
+        ast.value[0] = to_name
 
 def format_ada_code(stmts):
     ''' Indent properly the Ada code '''

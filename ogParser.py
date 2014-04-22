@@ -603,8 +603,8 @@ def find_variable(var, context):
     result = UNKNOWN_TYPE
     LOG.debug('[find_variable] checking if ' + str(var) + ' is defined')
     # all DCL-variables
-    all_visible_variables = dict(context.variables)
-    all_visible_variables.update(context.global_variables)
+    all_visible_variables = dict(context.global_variables)
+    all_visible_variables.update(context.variables)
     # First check locally, i.e. in FPAR
     try:
         for variable in context.fpar:
@@ -1349,7 +1349,7 @@ def composite_state(root, parent=None, context=None):
             warnings.extend(warn)
             comp.content.textAreas.append(textarea)
         elif child.type == lexer.PROCEDURE:
-            new_proc, err, warn = procedure(child, context=proc)
+            new_proc, err, warn = procedure(child, context=comp)
             errors.extend(err)
             warnings.extend(warn)
             if new_proc.inputString.strip().lower() == 'entry':
