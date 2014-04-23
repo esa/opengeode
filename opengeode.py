@@ -292,6 +292,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.search_pattern = None
         # Selection rectangle when user clicks on the scene and moves mouse
         self.select_rect = None
+        # Keep a list of composite states: {'stateName': SDL_Scene}
+        self._composite_states = {}
 
 
     @property
@@ -345,8 +347,16 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     @property
     def composite_states(self):
         ''' Return states that contain a composite part '''
-        return (it for it in self.states if it.is_composite())
+        # Update the list first
+        for each in self.states:
+            if each.is_composite() and \
+                  each.nested_scene not in self._composite_states.viewvalues():
+                self._composite_states[str(each).lower()] = each.nested_scene
+        return self._composite_states
 
+    @composite_states.setter
+    def composite_states(self, value):
+        self._composite_states = value
 
     @property
     def all_nested_scenes(self):
@@ -375,6 +385,18 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     subscene.messages_window = self.messages_window
                     recursive_render(item.nested_scene.content, subscene)
                     item.nested_scene = subscene
+            for each in dest_scene.states:
+                # Update the list of composite states at scene level
+                if each.is_composite():
+                    dest_scene.composite_states[str(each).lower()] =\
+                                                              each.nested_scene
+            for each in dest_scene.states:
+                # Make sure all composite states are initially up to date
+                # (Needed for the symbol shape)
+                if str(each).lower() in dest_scene.composite_states.viewkeys()\
+                        and not each.nested_scene:
+                    each.nested_scene = dest_scene.composite_states[
+                            str(each).lower()]
         recursive_render(process, self)
 
 
@@ -640,9 +662,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             pr_data.append(repr(item))
         for item in self.floating_labels:
             pr_data.append(item.parse_gr())
+        composite = set(self.composite_states.keys())
         for item in self.states:
             if item.is_composite():
-                pr_data.appendleft(item.parse_composite_state())
+                try:
+                    composite.remove(str(item).lower())
+                    pr_data.appendleft(item.parse_composite_state())
+                except KeyError:
+                    pass
             pr_data.append(item.parse_gr())
 
         pr_data.appendleft('PROCESS {};'.format(self.process_name))
@@ -1235,15 +1262,11 @@ class SDL_View(QtGui.QGraphicsView, object):
             item = self.scene().symbol_near(self.mapToScene(evt.pos()))
             try:
                 if item.allow_nesting:
+                    item.double_click()
                     if not isinstance(item.nested_scene, SDL_Scene):
                         subscene = SDL_Scene(
                                 context=item.__class__.__name__.lower())
                         subscene.messages_window = self.messages_window
-#                       if item.nested_scene:
-# Removed - cannot happen, scenes are created by SDL_Scene.render_process
-#                           for top_level in Renderer.render(
-#                                   item.nested_scene.content, subscene):
-#                               G_SYMBOLS.add(top_level)
                         item.nested_scene = subscene
                     self.go_down(item.nested_scene)
                 else:
@@ -1310,14 +1333,14 @@ class SDL_View(QtGui.QGraphicsView, object):
         # Translate scenes to avoid negative coordinates
         for each in scene.all_nested_scenes:
             each.translate_to_origin()
-        # XXX don't translate current scene to avoid a jump of scrollbars
-        #center = self.viewport().rect().center()
-        #delta_x, delta_y = scene.translate_to_origin()
-        #center.setX(center.x() + delta_x)
-        #center.setY(center.y() + delta_y)
-        #self.centerOn(center)
+        delta_x, delta_y = scene.translate_to_origin()
 
         pr_raw = scene.get_pr_string()
+
+        # Move items back to original place to avoid scrollbar jumps
+        for item in scene.floating_symb:
+            item.moveBy(-delta_x, -delta_y)
+
         pr_data = str('\n'.join(pr_raw))
         try:
             pr_file.write(pr_data)

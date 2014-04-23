@@ -624,8 +624,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def is_composite(self):
         ''' Return True if nested scene has something in it '''
         try:
-            return self.allow_nesting and any(item.isVisible()
-                                        for item in self._nested_scene.items())
+            return any(self._nested_scene.visible_symb)
         except AttributeError:
             return False
 
@@ -978,6 +977,10 @@ class Symbol(QObject, QGraphicsPathItem, object):
             self.old_rect = self.boundingRect()
         else:
             self.mode = 'Move'
+
+    def double_click(self):
+        ''' Handle double click on symbol - redefined at symbol level '''
+        pass
 
     def mouse_move(self, event):
         ''' Handle resizing of items - moving is handled in subclass '''
