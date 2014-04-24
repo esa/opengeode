@@ -509,7 +509,7 @@ class Join(VerticalSymbol):
         size = min(rect.width(), rect.height())
         rect.setWidth(size)
         rect.setHeight(size)
-        super(Join, self).resize_item(rect) 
+        super(Join, self).resize_item(rect)
 
     def set_shape(self, width, height):
         ''' Define the bouding rectangle of the JOIN symbol '''
@@ -858,8 +858,8 @@ class State(VerticalSymbol):
         if parent:
             try:
                 # Map AST scene coordinates to get actual position
-                self.setPos(self.pos() 
-                        + self.mapFromScene(ast.pos_x, ast.pos_y))
+                self.setPos(self.pos()
+                            + self.mapFromScene(ast.pos_x, ast.pos_y))
             except TypeError:
                 self.update_position()
         else:
@@ -922,6 +922,8 @@ class State(VerticalSymbol):
         if self.nested_scene and self.is_composite():
             # Distinguish composite states with dash line
             self.setPen(QPen(Qt.DashLine))
+        else:
+            self.setPen(QPen(Qt.SolidLine))
         self.setPath(path)
         super(State, self).set_shape(width, height)
 

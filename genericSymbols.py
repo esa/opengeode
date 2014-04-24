@@ -375,7 +375,7 @@ class EditableText(QGraphicsTextItem, object):
                 text_cursor.clearSelection()
                 self.setTextCursor(text_cursor)
             # If something has changed, check syntax and create undo command
-            if(self.oldSize != self.parentItem().boundingRect() or 
+            if(self.oldSize != self.parentItem().boundingRect() or
                                                     self.oldText != str(self)):
                 # Call syntax checker from item containing the text (if any)
                 self.parentItem().check_syntax()

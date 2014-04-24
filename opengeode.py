@@ -53,7 +53,7 @@ from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
 
 from genericSymbols import(Symbol, Comment, EditableText, Cornergrabber,
-                           Connection)
+                           Connection, Completer)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
         ProcedureStart, ProcedureStop, StateStart, Connect)
@@ -287,6 +287,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.messages_window = None
         self.click_coordinates = None
         self.process_name = 'opengeode'
+        # Scene name is used to update the tab window name when scene changes
+        self.name = ''
         # search_item/search_pattern are used for search/replace function
         self.search_item = None
         self.search_pattern = None
@@ -300,7 +302,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def visible_symb(self):
         ''' Return the visible items of a scene '''
         return (it for it in self.items() if it.isVisible() and not
-                isinstance(it, (Cornergrabber, Connection, EditableText)))
+                isinstance(it, (Cornergrabber, Connection,
+                                Completer, EditableText)))
 
     @property
     def floating_symb(self):
@@ -377,26 +380,28 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         ''' Render a process and its children scenes, recursively '''
         self.process_name = process.processName or 'opengeode'
         def recursive_render(content, dest_scene):
-            for item in Renderer.render(content, dest_scene):
-                G_SYMBOLS.add(item)
-                if item.nested_scene:
-                    subscene = SDL_Scene(
-                                       context=item.__class__.__name__.lower())
-                    subscene.messages_window = self.messages_window
-                    recursive_render(item.nested_scene.content, subscene)
-                    item.nested_scene = subscene
+            items_with_nested_scene = []
+
+            # Render top-level items and their children:
+            for each in Renderer.render(content, dest_scene):
+                G_SYMBOLS.add(each)
+
+            # Render nested scenes, recursively:
+            for each in (item for item in dest_scene.visible_symb
+                         if item.nested_scene):
+                subscene = SDL_Scene(context=each.__class__.__name__.lower())
+                subscene.messages_window = self.messages_window
+                recursive_render(each.nested_scene.content, subscene)
+                each.nested_scene = subscene
+
+            # Make sure all composite states are initially up to date
+            # (Needed for the symbol shape to have dashed lines)
             for each in dest_scene.states:
-                # Update the list of composite states at scene level
-                if each.is_composite():
-                    dest_scene.composite_states[str(each).lower()] =\
-                                                              each.nested_scene
-            for each in dest_scene.states:
-                # Make sure all composite states are initially up to date
-                # (Needed for the symbol shape)
                 if str(each).lower() in dest_scene.composite_states.viewkeys()\
-                        and not each.nested_scene:
+                and not each.nested_scene:
                     each.nested_scene = dest_scene.composite_states[
-                            str(each).lower()]
+                                                             str(each).lower()]
+
         recursive_render(process, self)
 
 
@@ -1233,6 +1238,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.scene().scene_left.emit()
         scene, horpos, verpos = self.parent_scene.pop()
         self.setScene(scene)
+        self.wrapping_window.setWindowTitle(self.scene().name)
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
         self.set_toolbar()
@@ -1242,13 +1248,16 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
 
-    def go_down(self, scene):
+    def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
         horpos = self.horizontalScrollBar().value()
         verpos = self.verticalScrollBar().value()
+        self.scene().name = self.wrapping_window.windowTitle()
         self.parent_scene.append((self.scene(), horpos, verpos))
         self.scene().clear_focus()
         self.setScene(scene)
+        self.scene().name = name + '[*]'
+        self.wrapping_window.setWindowTitle(self.scene().name)
         self.up_button.setEnabled(True)
         self.set_toolbar()
         self.scene().scene_left.emit()
@@ -1263,12 +1272,12 @@ class SDL_View(QtGui.QGraphicsView, object):
             try:
                 if item.allow_nesting:
                     item.double_click()
+                    ctx = item.__class__.__name__.lower()
                     if not isinstance(item.nested_scene, SDL_Scene):
-                        subscene = SDL_Scene(
-                                context=item.__class__.__name__.lower())
+                        subscene = SDL_Scene(context=ctx)
                         subscene.messages_window = self.messages_window
                         item.nested_scene = subscene
-                    self.go_down(item.nested_scene)
+                    self.go_down(item.nested_scene, name=ctx + ' ' + str(item))
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))
