@@ -320,6 +320,27 @@ def fix_special_operators(op_name, expr_list, context):
                                 and not basic.kind.endswith('StringType'):
                 # Currently supported printable types
                 raise TypeError('Write operator does not support type')
+    elif op_name.lower() == 'set_timer':
+        if len(expr_list) != 2:
+            raise TypeError('SET_TIMER has 2 parameters: (int, timer_name)')
+        basic = find_basic_type(expr_list[0].exprType)
+        if not basic.kind.startswith('Integer'):
+            raise TypeError('SET_TIMER first parameter is not an integer')
+        timer = expr_list[1].inputString
+        for each in context.timers:
+            if each.lower() == timer.lower():
+                break
+        else:
+            raise TypeError('Timer {} is not defined'.format(timer))
+    elif op_name.lower == 'reset_timer':
+        if len(expr_list) != 1:
+            raise TypeError('RESET_TIMER has 1 parameter: timer_name')
+        timer = expr_list[0].inputString
+        for each in context.timers:
+            if each.lower() == timer.lower():
+                break
+        else:
+            raise TypeError('Timer {} is not defined'.format(timer))
     else:
         # TODO: other operators
         return
@@ -2233,7 +2254,8 @@ def alternative_part(root, parent, context):
                             c.getChild(0), context)
                     errors.extend(err)
                     warnings.extend(warn)
-                    ans.openRangeOp = ogAST.ExprEq
+                    if not ans.openRangeOp:
+                        ans.openRangeOp = ogAST.ExprEq
                 else:
                     ans.openRangeOp = OPKIND[c.type]
         elif child.type == lexer.INFORMAL_TEXT:

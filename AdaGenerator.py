@@ -1302,6 +1302,7 @@ def _decision(dec):
         code.append('tmp{idx} := {q};'.format(idx=dec.tmpVar, q=q_str))
     sep = 'if '
     for a in dec.answers:
+        code.extend(traceability(a))
         if a.kind in ('open_range', 'constant'):
             # Note: removed and a.transition here because empty transitions
             # have a different meaning, and a "null;" statement has to be
@@ -1317,7 +1318,7 @@ def _decision(dec):
                         exp = 'not ' + exp
                 else:
                     exp = 'tmp{idx} {op} {ans}'.format(idx=dec.tmpVar,
-                            op=OPERANDS[a.openRangeOp], ans=ans_str)
+                            op=a.openRangeOp.operand, ans=ans_str)
             else:
                 exp = '{q} {op} {ans}'.format(q=q_str,
                                               op=a.openRangeOp.operand,

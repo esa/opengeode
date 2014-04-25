@@ -6,7 +6,7 @@ generate-code:
 
 compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatgcc -c orchestrator.adb && echo 'All OK!'
+	gnatmake -c orchestrator.adb && echo 'All OK!'
 
 parse:
 	../../../opengeode.py orchestrator.pr system_structure.pr --check

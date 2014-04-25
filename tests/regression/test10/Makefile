@@ -6,8 +6,8 @@ generate-code:
 
 compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatgcc -c *.adb
-	gcc -c test.c
+	gnatmake -c *.adb
+	gcc -c	test.c
 	gcc -o test test.o challenge.o taste_dataview.o taste_basictypes.o -lgnat -lm
 	./test && echo 'All OK!'
 

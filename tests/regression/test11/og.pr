@@ -1,0 +1,83 @@
+PROCESS og;
+/* CIF TEXT (0, 0), (229, 98) */
+
+-- Testing decisions
+
+dcl test myInteger := 3;
+/* CIF ENDTEXT */
+/* CIF START (482, 35), (70, 35) */
+START;
+/* CIF LABEL (474, 85), (85, 35) */
+again:
+/* CIF DECISION (482, 135), (70, 50) */
+DECISION test;
+/* CIF ANSWER (85, 205), (70, 23) */
+(3):
+/* CIF PROCEDURECALL (67, 243), (106, 35) */
+CALL writeln('1');
+/* CIF TASK (77, 293), (87, 35) */
+TASK test := 5;
+/* CIF JOIN (103, 343), (35, 35) */
+JOIN again;
+/* CIF ANSWER (582, 205), (70, 23) */
+(>5):
+/* CIF PROCEDURECALL (561, 243), (113, 35) */
+CALL writeln('4');
+/* CIF TASK (574, 293), (87, 35) */
+TASK test := 7;
+/* CIF LABEL (568, 343), (98, 35) */
+and_again:
+/* CIF DECISION (582, 393), (70, 50) */
+DECISION test;
+/* CIF ANSWER (681, 463), (70, 23) */
+(<=5):
+/* CIF DECISION (681, 501), (70, 50) */
+DECISION test;
+/* CIF ANSWER (576, 571), (70, 23) */
+(>=5):
+/* CIF PROCEDURECALL (545, 609), (132, 35) */
+CALL writeln('6');
+/* CIF ANSWER (746, 571), (70, 23) */
+else:
+/* CIF PROCEDURECALL (707, 609), (148, 35) */
+CALL writeln('[ERROR]');
+ENDDECISION;
+/* CIF ANSWER (444, 463), (70, 23) */
+(/=5):
+/* CIF PROCEDURECALL (422, 501), (113, 35) */
+CALL writeln('5');
+/* CIF TASK (435, 551), (87, 35) */
+TASK test := 5;
+/* CIF JOIN (461, 601), (35, 35) */
+JOIN and_again;
+ENDDECISION;
+/* CIF ANSWER (321, 205), (70, 23) */
+(<5):
+/* CIF PROCEDURECALL (299, 243), (113, 35) */
+CALL writeln('3');
+/* CIF TASK (309, 293), (94, 35) */
+TASK test := 6;
+/* CIF JOIN (338, 343), (35, 35) */
+JOIN again;
+/* CIF ANSWER (201, 205), (70, 23) */
+(=5):
+/* CIF PROCEDURECALL (183, 243), (106, 35) */
+CALL writeln('2');
+/* CIF TASK (189, 293), (94, 35) */
+TASK test := 4;
+/* CIF JOIN (219, 343), (35, 35) */
+JOIN again;
+/* CIF ANSWER (904, 205), (70, 23) */
+else:
+/* CIF PROCEDURECALL (865, 243), (148, 35) */
+CALL writeln('[ERROR]');
+ENDDECISION;
+/* CIF PROCEDURECALL (433, 689), (167, 35) */
+CALL writeln('end of test');
+/* CIF NEXTSTATE (472, 739), (90, 35) */
+NEXTSTATE all_done;
+/* CIF STATE (1078, 167), (90, 35) */
+STATE all_done;
+ENDSTATE;
+
+ENDPROCESS og;
