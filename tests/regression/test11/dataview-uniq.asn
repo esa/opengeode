@@ -1,0 +1,17 @@
+TASTE-Dataview DEFINITIONS ::=
+
+
+BEGIN
+
+Some-Thing ::= MyInteger
+
+MyInteger   ::= INTEGER (0..255)
+
+My-OctStr    ::= OCTET STRING (SIZE (0..20))
+
+SeqOf ::= SEQUENCE (SIZE(0..100)) OF MyInteger
+
+default-seqof SeqOf ::= {4,7,9}
+default-str My-OctStr ::= 'DEADBEEF'H
+
+END

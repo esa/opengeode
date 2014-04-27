@@ -693,8 +693,8 @@ actual_parameters
 task
         :       cif?
                 hyperlink?
-                TASK task_body end
-        ->      ^(TASK cif? hyperlink? end? task_body);
+                TASK task_body? end
+        ->      ^(TASK cif? hyperlink? end? task_body?);
 
 
 task_body
