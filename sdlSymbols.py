@@ -45,7 +45,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'EXPONENT', 'TRUE', 'FALSE', 'MOD', 'FI', 'WRITE', 'WRITELN',
                 'LENGTH', 'PRESENT', 'FPAR', 'TODO', 'FIXME', 'XXX',
                 'CHECKME', 'PROCEDURE', 'EXTERNAL', 'IN', 'OUT', 'TIMER',
-                'SET_TIMER', 'RESET_TIMER', 'VIA')]
+                'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE',
@@ -509,7 +509,7 @@ class Join(VerticalSymbol):
         size = min(rect.width(), rect.height())
         rect.setWidth(size)
         rect.setHeight(size)
-        super(Join, self).resize_item(rect) 
+        super(Join, self).resize_item(rect)
 
     def set_shape(self, width, height):
         ''' Define the bouding rectangle of the JOIN symbol '''
@@ -858,8 +858,8 @@ class State(VerticalSymbol):
         if parent:
             try:
                 # Map AST scene coordinates to get actual position
-                self.setPos(self.pos() 
-                        + self.mapFromScene(ast.pos_x, ast.pos_y))
+                self.setPos(self.pos()
+                            + self.mapFromScene(ast.pos_x, ast.pos_y))
             except TypeError:
                 self.update_position()
         else:
@@ -879,15 +879,16 @@ class State(VerticalSymbol):
     @property
     def nested_scene(self):
         ''' Redefined - nested scene per state must be unique '''
-        if not self._nested_scene:
-            # Check that the nested scene is not already rendered
-            try:
-                for each in self.scene().composite_states:
-                    if str(each).lower().strip() == str(self).lower().strip():
-                        return each._nested_scene
-            except AttributeError:
-                pass
         return self._nested_scene
+
+    def double_click(self):
+        ''' Catch a double click - Set nested scene '''
+        for each, value in self.scene().composite_states.viewitems():
+            if str(self).lower() == str(each):
+                self.nested_scene = value
+                break
+        else:
+            self.nested_scene = None
 
     @nested_scene.setter
     def nested_scene(self, value):
@@ -917,16 +918,12 @@ class State(VerticalSymbol):
         ''' Compute the polygon to fit in width, height '''
         path = QPainterPath()
         path.addRoundedRect(0, 0, width, height, height / 4, height)
-        if self.is_composite():
-            path.addRoundedRect(5,5, width-10, height-10, height/4, height)
-            textattr = Qt.TextBrowserInteraction
+
+        if self.nested_scene and self.is_composite():
+            # Distinguish composite states with dash line
+            self.setPen(QPen(Qt.DashLine))
         else:
-            textattr = Qt.TextEditorInteraction
-        try:
-            # Set text of state to readonly when it is composite
-            self.text.setTextInteractionFlags(textattr)
-        except AttributeError:
-            pass
+            self.setPen(QPen(Qt.SolidLine))
         self.setPath(path)
         super(State, self).set_shape(width, height)
 
@@ -945,7 +942,6 @@ class State(VerticalSymbol):
 
     def parse_composite_state(self):
         ''' Return PR string corresponding to the nested part of the state '''
-        # TODO: add CIF comment for merging at parsing
         entry_points, exit_points = [], []
         result = ['STATE {};'.format(str(self)),
                   'SUBSTRUCTURE']

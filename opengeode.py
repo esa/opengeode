@@ -53,7 +53,7 @@ from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
 
 from genericSymbols import(Symbol, Comment, EditableText, Cornergrabber,
-                           Connection)
+                           Connection, Completer)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
         ProcedureStart, ProcedureStop, StateStart, Connect)
@@ -133,8 +133,8 @@ ACTIONS = {
                   Comment, Label, Join, ProcedureStop],
     'statechart': [],
     'state': [StateStart, State, Input, Connect, Task, Decision,
-              DecisionAnswer, Output,
-              ProcedureCall, TextSymbol, Comment, Label, Join, ProcedureStop]
+              DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
+              Label, Join, ProcedureStop, Procedure]
 }
 
 
@@ -287,19 +287,28 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.messages_window = None
         self.click_coordinates = None
         self.process_name = 'opengeode'
+        # Scene name is used to update the tab window name when scene changes
+        self.name = ''
         # search_item/search_pattern are used for search/replace function
         self.search_item = None
         self.search_pattern = None
         # Selection rectangle when user clicks on the scene and moves mouse
         self.select_rect = None
+        # Keep a list of composite states: {'stateName': SDL_Scene}
+        self._composite_states = {}
 
 
     @property
     def visible_symb(self):
         ''' Return the visible items of a scene '''
         return (it for it in self.items() if it.isVisible() and not
-                isinstance(it, (Cornergrabber, Connection, EditableText)))
+                isinstance(it, (Cornergrabber, Connection,
+                                Completer, EditableText)))
 
+    @property
+    def floating_symb(self):
+        ''' Return the top level floating items of a scene '''
+        return (it for it in self.visible_symb if not it.hasParent)
 
     @property
     def states(self):
@@ -328,8 +337,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     @property
     def floating_labels(self):
         ''' Return visible floating label components of the scene '''
-        return (it for it in self.visible_symb if isinstance(it, Label) and
-                not it.hasParent)
+        return (it for it in self.floating_symb if isinstance(it, Label))
 
 
     @property
@@ -342,7 +350,25 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     @property
     def composite_states(self):
         ''' Return states that contain a composite part '''
-        return (it for it in self.states if it.is_composite())
+        # Update the list first
+        for each in self.states:
+            if each.is_composite() and \
+                  each.nested_scene not in self._composite_states.viewvalues():
+                self._composite_states[str(each).lower()] = each.nested_scene
+        return self._composite_states
+
+    @composite_states.setter
+    def composite_states(self, value):
+        self._composite_states = value
+
+    @property
+    def all_nested_scenes(self):
+        ''' Return all nested scenes, recursively '''
+        for each in self.visible_symb:
+            if each.nested_scene:
+                yield each.nested_scene
+                for sub in each.nested_scene.all_nested_scenes:
+                    yield sub
 
 
     def quit_scene(self):
@@ -351,21 +377,32 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
 
     def render_process(self, process):
-        ''' Render a process and its inner procedures in the scene '''
+        ''' Render a process and its children scenes, recursively '''
         self.process_name = process.processName or 'opengeode'
-        for top_level in Renderer.render(process, scene=self):
-            G_SYMBOLS.add(top_level)
-            # Render optional sub-scenes (procedures)
-            if top_level.nested_scene and not isinstance(
-                                    top_level.nested_scene, SDL_Scene):
-                subscene = SDL_Scene(
-                        context=top_level.__class__.__name__.lower())
+        def recursive_render(content, dest_scene):
+            items_with_nested_scene = []
+
+            # Render top-level items and their children:
+            for each in Renderer.render(content, dest_scene):
+                G_SYMBOLS.add(each)
+
+            # Render nested scenes, recursively:
+            for each in (item for item in dest_scene.visible_symb
+                         if item.nested_scene):
+                subscene = SDL_Scene(context=each.__class__.__name__.lower())
                 subscene.messages_window = self.messages_window
-                for sub_top_level in Renderer.render(
-                                       top_level.nested_scene.content,
-                                       scene=subscene):
-                    G_SYMBOLS.add(sub_top_level)
-                top_level.nested_scene = subscene
+                recursive_render(each.nested_scene.content, subscene)
+                each.nested_scene = subscene
+
+            # Make sure all composite states are initially up to date
+            # (Needed for the symbol shape to have dashed lines)
+            for each in dest_scene.states:
+                if str(each).lower() in dest_scene.composite_states.viewkeys()\
+                and not each.nested_scene:
+                    each.nested_scene = dest_scene.composite_states[
+                                                             str(each).lower()]
+
+        recursive_render(process, self)
 
 
     def refresh(self):
@@ -426,6 +463,24 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 item.setCursor(item.default_cursor)
             except AttributeError:
                 pass
+
+
+    def translate_to_origin(self):
+        '''
+            Translate all items to coordinate system starting at (0,0),
+            in order to avoid negative coordinates
+        '''
+        try:
+            min_x = min(item.x() for item in self.floating_symb)
+            min_y = min(item.y() for item in self.floating_symb)
+        except ValueError:
+            # No item in the scene
+            return
+        delta_x = -min_x if min_x < 0 else 0
+        delta_y = -min_y if min_y < 0 else 0
+        for item in self.floating_symb:
+            item.moveBy(delta_x, delta_y)
+        return delta_x, delta_y
 
     def selected_symbols(self):
         ''' Generate the list of selected symbols (excluding grabbers) '''
@@ -585,7 +640,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.undo_stack.beginMacro('Paste')
                 for item in new_items:
                     # Allow pasting inputs when input is selected
-                    # Same for decision answers.
+                    # Same for decision answers and connections
                     if(isinstance(parent_item, genericSymbols.HorizontalSymbol)
                             and type(parent_item) == type(item)):
                         parent_item = parent_item.parentItem()
@@ -612,9 +667,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             pr_data.append(repr(item))
         for item in self.floating_labels:
             pr_data.append(item.parse_gr())
+        composite = set(self.composite_states.keys())
         for item in self.states:
             if item.is_composite():
-                pr_data.appendleft(item.parse_composite_state())
+                try:
+                    composite.remove(str(item).lower())
+                    pr_data.appendleft(item.parse_composite_state())
+                except KeyError:
+                    pass
             pr_data.append(item.parse_gr())
 
         pr_data.appendleft('PROCESS {};'.format(self.process_name))
@@ -702,6 +762,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def export_branch_to_picture(self, symbol, filename, doc_format):
         ''' Save a symbol and its followers to a file '''
         temp_scene = SDL_Scene()
+        temp_scene.messages_window = self.messages_window
         self.clearSelection()
         symbol.select()
         try:
@@ -723,12 +784,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if split:
             # Save in multiple files
             index = 0
-            items = (item for item in self.items()
-                    if item.isVisible() and not item.hasParent and
-                isinstance(item, (State, TextSymbol, Procedure, Start, Label)))
-            for item in items:
-                self.export_branch_to_picture(item,
-                                              filename + str(index),
+            for item in self.floating_symb:
+                self.export_branch_to_picture(item, filename + str(index),
                                               doc_format)
                 index += 1
 
@@ -737,14 +794,22 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
         self.clearSelection()
         self.clear_focus()
-        old_brush = self.backgroundBrush()
-        self.setBackgroundBrush(QtGui.QBrush())
-        rect = self.itemsBoundingRect()
+        # Copy in a different scene to get the smallest rectangle
+        other_scene = SDL_Scene()
+        other_scene.messages_window = self.messages_window
+        other_scene.setBackgroundBrush(QtGui.QBrush())
+        for each in self.floating_symb:
+            each.select()
+            self.copy_selected_symbols()
+            other_scene.paste_symbols()
+            each.select(False)
+        rect = other_scene.sceneRect()
+
         # enlarge the rect to fit extra pixels due to antialiasing
         rect.adjust(-5, -5, 5, 5)
         if doc_format == 'png':
             device = QtGui.QImage(rect.size().toSize(),
-                    QtGui.QImage.Format_ARGB32)
+                                  QtGui.QImage.Format_ARGB32)
             device.fill(Qt.transparent)
         elif doc_format == 'svg':
             device = QtSvg.QSvgGenerator()
@@ -761,7 +826,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         else:
             LOG.error('Output format not supported: ' + doc_format)
         painter = QtGui.QPainter(device)
-        self.render(painter, source=rect)
+        other_scene.render(painter, source=rect)
         try:
             device.save(filename)
         except AttributeError:
@@ -769,7 +834,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             pass
         if painter.isActive():
             painter.end()
-        self.setBackgroundBrush(old_brush)
 
     def clear_focus(self):
         ''' Clear focus from any item on the scene '''
@@ -1124,6 +1188,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                 pen=QtGui.QPen(QtGui.QColor(0, 0, 0, 0)))
         # Hide the rectangle so that it does not collide with the symbols
         self.phantom_rect.hide()
+        self.refresh()
         super(SDL_View, self).resizeEvent(event)
 
     def about_og(self):
@@ -1173,6 +1238,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.scene().scene_left.emit()
         scene, horpos, verpos = self.parent_scene.pop()
         self.setScene(scene)
+        self.wrapping_window.setWindowTitle(self.scene().name)
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
         self.set_toolbar()
@@ -1182,13 +1248,16 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
 
-    def go_down(self, scene):
+    def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
         horpos = self.horizontalScrollBar().value()
         verpos = self.verticalScrollBar().value()
+        self.scene().name = self.wrapping_window.windowTitle()
         self.parent_scene.append((self.scene(), horpos, verpos))
         self.scene().clear_focus()
         self.setScene(scene)
+        self.scene().name = name + '[*]'
+        self.wrapping_window.setWindowTitle(self.scene().name)
         self.up_button.setEnabled(True)
         self.set_toolbar()
         self.scene().scene_left.emit()
@@ -1202,16 +1271,13 @@ class SDL_View(QtGui.QGraphicsView, object):
             item = self.scene().symbol_near(self.mapToScene(evt.pos()))
             try:
                 if item.allow_nesting:
+                    item.double_click()
+                    ctx = item.__class__.__name__.lower()
                     if not isinstance(item.nested_scene, SDL_Scene):
-                        subscene = SDL_Scene(
-                                context=item.__class__.__name__.lower())
+                        subscene = SDL_Scene(context=ctx)
                         subscene.messages_window = self.messages_window
-                        if item.nested_scene:
-                            for top_level in Renderer.render_process(
-                                                subscene, item.nested_scene):
-                                G_SYMBOLS.add(top_level)
                         item.nested_scene = subscene
-                    self.go_down(item.nested_scene)
+                    self.go_down(item.nested_scene, name=ctx + ' ' + str(item))
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))
@@ -1273,9 +1339,18 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
+        # Translate scenes to avoid negative coordinates
+        for each in scene.all_nested_scenes:
+            each.translate_to_origin()
+        delta_x, delta_y = scene.translate_to_origin()
+
         pr_raw = scene.get_pr_string()
+
+        # Move items back to original place to avoid scrollbar jumps
+        for item in scene.floating_symb:
+            item.moveBy(-delta_x, -delta_y)
+
         pr_data = str('\n'.join(pr_raw))
-        #LOG.debug(str(pr_data))
         try:
             pr_file.write(pr_data)
             pr_file.close()

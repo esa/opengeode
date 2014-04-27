@@ -90,7 +90,8 @@ def copy_branch(top_level_item):
                 (term.pos_x, term.pos_y, term.width, term.height).center())
         for symbol in symbols:
             if (isinstance(symbol, sdlSymbols.State) and [c for c in
-                symbol.childSymbols() if isinstance(c, sdlSymbols.Input)]):
+                symbol.childSymbols() if isinstance(c, (sdlSymbols.Input,
+                    sdlSymbols.Connect))]):
                 term_branch, term_inators = copy_branch(symbol)
                 branch.extend(term_branch)
                 res_terminators.extend(term_inators)

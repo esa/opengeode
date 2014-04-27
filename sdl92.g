@@ -351,7 +351,7 @@ state_entry_exit_points
 
 composite_state_body
         :       (text_area | procedure | composite_state)*
-                start+ (state | floating_label)*;
+                start* (state | floating_label)*;
 
 
 state_part

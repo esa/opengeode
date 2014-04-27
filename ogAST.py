@@ -173,6 +173,7 @@ class PrimPath(Primary):
     is_raw = False
 
 class PrimVariable(PrimPath): pass # XXX should not be raw for codegen
+class PrimFPAR(PrimVariable): pass
 class PrimEnumeratedValue(Primary): pass
 class PrimInteger(Primary): pass
 class PrimReal(Primary): pass
@@ -770,8 +771,12 @@ class CompositeState(Process):
         self.exit_procedure = None
         # Body can contain text areas, procedures, composite states,
         # one nameless START, named START (one per entrypoint), states,
-        # and floating labels.
-        # XXX check what to do with local DCL and timers
+        # amd floating labels
+
+    def __repr__(self):
+        ''' Debug output for composite state '''
+        return 'COMPOSITE STATE {exp} ({l},{c})'.format(exp=self.statename,
+                l=self.line, c=self.charPositionInLine)
 
 
 class Block(object):

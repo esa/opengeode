@@ -101,18 +101,19 @@ def _automaton(ast, scene):
         top_level_symbols.append(render(label, scene, ast.states))
 
     # Render floating states
-    nested_states = {}
+    nested_states = []
     for state in ast.states:
         # Create only floating states
         try:
             new_state = render(state, scene=scene, states=ast.states,
                                terminators=ast.parent.terminators)
             if new_state.nested_scene:
-                if str(new_state).lower() in nested_states.viewkeys():
+                if str(new_state).lower() in nested_states: #.viewkeys():
                     new_state.nested_scene = None
                 else:
-                    nested_states[str(new_state).lower()] = \
-                                                         new_state.nested_scene
+                    nested_states.append(str(new_state).lower())
+                    #nested_states[str(new_state).lower()] = \
+                    #                                    new_state.nested_scene
         except TypeError:
             # Discard terminators (see _state function for explanation)
             pass
@@ -171,8 +172,7 @@ def _start(ast, scene, states, parent=None):
     start_symbol = sdlSymbols.Start(ast)
     scene.addItem(start_symbol)
     if ast.transition:
-        render(ast.transition,
-                      scene=scene, parent=start_symbol, states=states)
+        render(ast.transition, scene=scene, parent=start_symbol, states=states)
     return start_symbol
 
 
@@ -195,8 +195,7 @@ def _procedure_start(ast, scene, states, parent=None):
     start_symbol = sdlSymbols.ProcedureStart(ast)
     scene.addItem(start_symbol)
     if ast.transition:
-        render(ast.transition,
-                      scene=scene, parent=start_symbol, states=states)
+        render(ast.transition, scene=scene, parent=start_symbol, states=states)
     return start_symbol
 
 
@@ -209,24 +208,19 @@ def _floating_label(ast, scene, states, parent=None):
         scene.addItem(lab)
     lab.setPos(ast.pos_x, ast.pos_y)
     if ast.transition:
-        render(ast.transition,
-                      scene=scene,
-                      parent=lab,
-                      states=states)
+        render(ast.transition, scene=scene, parent=lab, states=states)
     return lab
 
 
 @render.register(ogAST.Transition)
 def _transition(ast, scene, parent, states):
     ''' Add a transition to a scene '''
-    for action_symbol in ast.actions:
+    for each in ast.actions:
         # pylint: disable=E1111
-        parent = render(action_symbol,
-                               scene=scene, parent=parent, states=states)
+        parent = render(each, scene=scene, parent=parent, states=states)
 
     if ast.terminator:
-        render(ast.terminator,
-                      scene=scene, parent=parent, states=states)
+        render(ast.terminator, scene=scene, parent=parent, states=states)
 
 
 @render.register(ogAST.Comment)
@@ -296,8 +290,7 @@ def _terminator(ast, scene, parent, states):
     ''' Create a TERMINATOR symbol '''
     if ast.label:
         # pylint: disable=E1111
-        parent = render(ast.label,
-                               scene=scene, parent=parent, states=states)
+        parent = render(ast.label,scene=scene, parent=parent, states=states)
     if ast.kind == 'next_state':
         LOG.debug('ADDING NEXT_STATE ' + ast.inputString)
         # Create a new state symbol
@@ -309,9 +302,11 @@ def _terminator(ast, scene, parent, states):
                     state_ast.pos_x == ast.pos_x and
                     state_ast.pos_y == ast.pos_y):
                 LOG.debug('MERGING TERMINATOR "' + ast.inputString + '"')
-                for input_ast in state_ast.inputs:
-                    render(input_ast,
-                                  scene=scene, parent=symbol, states=states)
+                symbol.nested_scene = state_ast.composite or \
+                                      ogAST.CompositeState()
+                for each in chain(state_ast.inputs, state_ast.connects):
+                    render(each, scene=scene, parent=symbol, states=states)
+                break
     elif ast.kind == 'join':
         symbol = sdlSymbols.Join(parent, ast)
     elif ast.kind in ('return', 'stop'):
@@ -338,12 +333,11 @@ def _input(ast, scene, parent, states):
     return inp
 
 @render.register(ogAST.Connect)
-def _input(ast, scene, parent, states):
+def _connect(ast, scene, parent, states):
     ''' Add connect symbol from the AST to the scene '''
-    # Note: PROVIDED clause is not supported
     conn = sdlSymbols.Connect(parent, ast=ast)
     if conn not in scene.items():
-        scene.addItem(inp)
+        scene.addItem(conn)
     if not parent:
         conn.setPos(ast.pos_x, ast.pos_y)
     if ast.transition:

@@ -320,6 +320,27 @@ def fix_special_operators(op_name, expr_list, context):
                                 and not basic.kind.endswith('StringType'):
                 # Currently supported printable types
                 raise TypeError('Write operator does not support type')
+    elif op_name.lower() == 'set_timer':
+        if len(expr_list) != 2:
+            raise TypeError('SET_TIMER has 2 parameters: (int, timer_name)')
+        basic = find_basic_type(expr_list[0].exprType)
+        if not basic.kind.startswith('Integer'):
+            raise TypeError('SET_TIMER first parameter is not an integer')
+        timer = expr_list[1].inputString
+        for each in context.timers:
+            if each.lower() == timer.lower():
+                break
+        else:
+            raise TypeError('Timer {} is not defined'.format(timer))
+    elif op_name.lower == 'reset_timer':
+        if len(expr_list) != 1:
+            raise TypeError('RESET_TIMER has 1 parameter: timer_name')
+        timer = expr_list[0].inputString
+        for each in context.timers:
+            if each.lower() == timer.lower():
+                break
+        else:
+            raise TypeError('Timer {} is not defined'.format(timer))
     else:
         # TODO: other operators
         return
@@ -603,8 +624,8 @@ def find_variable(var, context):
     result = UNKNOWN_TYPE
     LOG.debug('[find_variable] checking if ' + str(var) + ' is defined')
     # all DCL-variables
-    all_visible_variables = dict(context.variables)
-    all_visible_variables.update(context.global_variables)
+    all_visible_variables = dict(context.global_variables)
+    all_visible_variables.update(context.variables)
     # First check locally, i.e. in FPAR
     try:
         for variable in context.fpar:
@@ -746,7 +767,14 @@ def fix_expression_types(expr, context):
             try:
                 #exprType = find_variable(uk_expr.inputString, context)
                 exprType = find_variable(uk_expr.value[0], context)
-                setattr(expr, side, ogAST.PrimVariable(primary=uk_expr))
+                # Differentiate DCL and FPAR variables
+                use_type = ogAST.PrimVariable
+                if isinstance(context, ogAST.Procedure):
+                    for each in context.fpar:
+                        if each['name'].lower() == uk_expr.value[0].lower():
+                            use_type = ogAST.PrimFPAR
+                            break
+                setattr(expr, side, use_type(primary=uk_expr))
                 getattr(expr, side).exprType = exprType
             except AttributeError:
                 pass
@@ -1349,7 +1377,7 @@ def composite_state(root, parent=None, context=None):
             warnings.extend(warn)
             comp.content.textAreas.append(textarea)
         elif child.type == lexer.PROCEDURE:
-            new_proc, err, warn = procedure(child, context=proc)
+            new_proc, err, warn = procedure(child, context=comp)
             errors.extend(err)
             warnings.extend(warn)
             if new_proc.inputString.strip().lower() == 'entry':
@@ -1363,8 +1391,7 @@ def composite_state(root, parent=None, context=None):
                                                     context=comp)
             errors.extend(err)
             warnings.extend(warn)
-            comp.composite_states.append(comp)
-            warnings.append('Inner Composite state detected')
+            comp.composite_states.append(inner_comp)
         elif child.type == lexer.STATE:
             # STATE - fills up the 'mapping' structure.
             newstate, err, warn = state(child, parent=None, context=comp)
@@ -1943,11 +1970,10 @@ def state(root, parent, context):
                 errors.append('State {} is not a composite state and cannot '
                               'be followed by a connect statement'
                               .format(state_def.statelist[0]))
-            else:
-                conn_part, err, warn = connect_part(child, state_def, context)
-                state_def.connects.append(conn_part)
-                warnings.extend(warn)
-                errors.extend(err)
+            conn_part, err, warn = connect_part(child, state_def, context)
+            state_def.connects.append(conn_part)
+            warnings.extend(warn)
+            errors.extend(err)
         elif child.type == lexer.COMMENT:
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
@@ -1980,14 +2006,22 @@ def connect_part(root, parent, context):
     errors, warnings = [], []
     coord = False
     conn = ogAST.Connect()
-    statename = parent.statelist[0].lower()
+    try:
+        statename = parent.statelist[0].lower()
+    except AttributeError:
+        # Ignore missing parent/statelist to allow local syntax check
+        statename = ''
     id_token = []
     # Keep track of the number of terminator statements follow the input
     # useful if we want to render graphs from the SDL model
     terms = len(context.terminators)
     # Retrieve composite state
-    nested, = (comp for comp in context.composite_states
-               if comp.statename == statename)
+    try:
+        nested, = (comp for comp in context.composite_states
+                   if comp.statename == statename)
+    except ValueError:
+        # Ignore unexisting state - to allow local syntax check
+        nested = ogAST.CompositeState()
 
     for child in root.getChildren():
         if child.type == lexer.CIF:
@@ -2227,7 +2261,8 @@ def alternative_part(root, parent, context):
                             c.getChild(0), context)
                     errors.extend(err)
                     warnings.extend(warn)
-                    ans.openRangeOp = ogAST.ExprEq
+                    if not ans.openRangeOp:
+                        ans.openRangeOp = ogAST.ExprEq
                 else:
                     ans.openRangeOp = OPKIND[c.type]
         elif child.type == lexer.INFORMAL_TEXT:
@@ -2879,7 +2914,7 @@ def parseSingleElement(elem='', string=''):
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
             'connect_part'))
-    LOG.debug('Parsing string: ' + string + 'with elem ' + elem)
+    LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)
     assert(parser_ptr is not None)
@@ -2903,7 +2938,7 @@ def parseSingleElement(elem='', string=''):
         try:
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
-        except AttributeError:
+        except AttributeError as err:
             # Syntax checker has no visibility on variables and types
             # so we have to discard exceptions sent by e.g. find_variable
             pass

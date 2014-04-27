@@ -6,7 +6,7 @@ generate-code:
 
 compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatgcc -c fce.adb && echo 'All OK!'
+	gnatmake -c fce.adb && echo 'All OK!'
 
 parse:
 	../../../opengeode.py fce.pr system_structure.pr --check
