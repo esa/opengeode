@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:osb="http://www.openswatchbook.org/uri/2009/osb"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="48px"
+   height="48px"
+   id="svg3021"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="process.png"
+   inkscape:export-filename="/home/maxime/taste/tool-src/misc/opengeode/procedure.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <defs
+     id="defs3023">
+    <linearGradient
+       id="linearGradient3816"
+       osb:paint="solid">
+      <stop
+         style="stop-color:#fffcc5;stop-opacity:1;"
+         offset="0"
+         id="stop3818" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3810"
+       osb:paint="solid">
+      <stop
+         style="stop-color:#fffcc5;stop-opacity:1;"
+         offset="0"
+         id="stop3812" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3788"
+       osb:paint="solid">
+      <stop
+         style="stop-color:#ffffca;stop-opacity:1;"
+         offset="0"
+         id="stop3790" />
+    </linearGradient>
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="-3.3870489 : 23.541286 : 1"
+       inkscape:vp_y="-82.859071 : 600.97062 : 0"
+       inkscape:vp_z="63.902198 : 22.144734 : 1"
+       inkscape:persp3d-origin="30.920448 : 18.035246 : 1"
+       id="perspective4009" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3788"
+       id="radialGradient3794"
+       cx="50"
+       cy="25"
+       fx="50"
+       fy="25"
+       r="51"
+       gradientTransform="matrix(1,0,0,0.50980392,0,12.254902)"
+       gradientUnits="userSpaceOnUse" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3788"
+       id="radialGradient3798"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.50980392,0,12.254902)"
+       cx="50"
+       cy="25"
+       fx="50"
+       fy="25"
+       r="51" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3788"
+       id="linearGradient3808"
+       x1="-0.4999996"
+       y1="20.5"
+       x2="50.5"
+       y2="20.5"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3810"
+       id="linearGradient3814"
+       x1="4.5"
+       y1="33"
+       x2="45.5"
+       y2="33"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3816"
+       id="linearGradient3820"
+       x1="4.5"
+       y1="8"
+       x2="45.5"
+       y2="8"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3788"
+       id="linearGradient3822"
+       x1="-0.4999996"
+       y1="20.5"
+       x2="50.5"
+       y2="20.5"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="7"
+     inkscape:cx="-18.151922"
+     inkscape:cy="25.946714"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:grid-bbox="true"
+     inkscape:document-units="px"
+     inkscape:window-width="1242"
+     inkscape:window-height="693"
+     inkscape:window-x="170"
+     inkscape:window-y="104"
+     inkscape:window-maximized="0"
+     showguides="true"
+     inkscape:guide-bbox="true">
+    <inkscape:grid
+       type="xygrid"
+       id="grid4049" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata3026">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer">
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="20.285713"
+       y="23.857143"
+       id="text3878"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3880"
+         x="20.285713"
+         y="23.857143" /></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16.8021698px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="2.1795537"
+       y="22.940475"
+       id="text3882"
+       sodipodi:linespacing="125%"
+       transform="scale(0.91761901,1.0897769)"><tspan
+         sodipodi:role="line"
+         id="tspan3884"
+         x="2.1795537"
+         y="22.940475"
+         style="font-size:12px" /></text>
+    <path
+       sodipodi:nodetypes="cccccccc"
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/maxime/taste/tool-src/misc/opengeode/icons-src/procedure.png"
+       id="path18"
+       d="M 5,8 4e-7,13 l 0,15 5,5 M 45,8 l 5,5 0,15 -5,5"
+       vector-effect="non-scaling-stroke"
+       inkscape:connector-curvature="0"
+       style="font-size:9px;font-style:normal;font-weight:400;fill:url(#linearGradient3822);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Sans Serif" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path3008"
+       d="m 5,8 40,0 0,0"
+       style="font-size:9px;font-style:normal;font-weight:400;fill:url(#linearGradient3820);stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans Serif;fill-opacity:1" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path3010"
+       d="m 5,33 40,0"
+       style="font-size:9px;font-style:normal;font-weight:400;fill:url(#linearGradient3814);stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans Serif;fill-opacity:1" />
+    <path
+       style="font-size:9px;font-style:normal;font-weight:400;fill:url(#linearGradient3808);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Sans Serif"
+       inkscape:connector-curvature="0"
+       vector-effect="non-scaling-stroke"
+       d="M 5,8 4e-7,13 l 0,15 5,5 M 45,8 l 5,5 0,15 -5,5"
+       id="path3796"
+       inkscape:export-filename="/home/maxime/taste/tool-src/misc/opengeode/icons-src/procedure.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       sodipodi:nodetypes="cccccccc" />
+    <path
+       style="opacity:0.98000003999999996;fill:#fffcc5;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.13795987000000001;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:12.38999944000000042"
+       d="m 4.9426766,32.246022 c -0.037606,-0.09821 -0.051711,-5.449944 -0.031343,-11.892734 l 0.037032,-11.7141649 19.9282354,0 19.928236,0 0.03666,11.8927339 0.03667,11.892735 -19.933558,0 c -15.8148019,0 -19.947687,-0.0369 -20.001934,-0.17857 z"
+       id="path3824"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>
