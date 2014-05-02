@@ -8,6 +8,7 @@
 
         flatten(ast) : transform a model with nested states to a flat model
         rename_everything(ast, from_name, to_name) : rename symbols
+        inner_labels_to_floating(process) : remove labels from transitions
 
     Copyright (c) 2012-2014 European Space Agency
 
@@ -43,7 +44,7 @@ def inner_labels_to_floating(process):
         for new_floating in find_labels(proc_tr):
             process.content.floating_labels.append(new_floating)
     for new_floating in find_labels(process.content.start.transition):
-            process.content.floating_labels.append(new_floating)
+        process.content.floating_labels.append(new_floating)
     for each in process.content.named_start:
         for new_floating in find_labels(each.transition):
             process.content.floating_labels.append(new_floating)
@@ -53,7 +54,7 @@ def flatten(process):
     ''' Flatten the nested states:
         Rename inner states, procedures, etc. and move them to process level
     '''
-    def update_terminator(context, term, process):
+    def update_terminator(context, term):
         '''Set next_id, identifying the next transition to run '''
         if term.inputString.lower() in (st.statename.lower()
                                 for st in context.composite_states):
@@ -124,7 +125,7 @@ def flatten(process):
             if each.kind == 'next_state':
                 each.inputString = prefix + each.inputString
                 # Set next transition id
-                update_terminator(state, each, process)
+                update_terminator(state, each)
             elif each.kind == 'join':
                 rename_everything(state.content,
                                   each.inputString,
@@ -167,7 +168,7 @@ def flatten(process):
     # Update terminators at process level
     for each in process.terminators:
         if each.kind == 'next_state':
-            update_terminator(process, each, process)
+            update_terminator(process, each)
 
 
 @singledispatch

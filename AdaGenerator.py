@@ -9,8 +9,7 @@
     using the ASN.1 "Space-Certified" compiler for data type definition.
     (See TASTE documentation for more information)
 
-    The design is very flexible and can be used as basis for
-    generating other backends.
+    The design is flexible and can be used as basis for other backends.
 
     Entry point:
     The AST of the model that is parsed is described in ogAST.py
@@ -22,13 +21,15 @@
     singledispatch mechanism, that needs to be called to generate the code
     of any AST element.
 
-    Most functions return two values: "code" and "local_decl", containing
-    a set of statements and a set of local variables (that can be later
-    placed anywhere in the code).
+    The generate function returns two values: "code" and "local_decl",
+    containing a set of statements and a set of local variables
+    (that can be later placed anywhere in the code).
 
-    Functions corresponding to the AST entries that are related to
-    expressions return three values: "code", "ada_string" and "local_decl".
-    The additional "ada_string" value is the usable string that corresponds
+    Expressions (all classes derived from ogAST.Expression) are generated
+    using the "expression" visitor (singledispatch set of function).
+
+    Expressions return three values: "code", "ada_string" and "local_decl".
+    The "ada_string" value is the usable string that corresponds
     to the result of the expression evaluation.
 
     For example, take the SDL statement "OUTPUT hello(a+5)"
@@ -69,8 +70,6 @@
 
 
 import logging
-from itertools import chain
-
 from singledispatch import singledispatch
 
 import ogAST
@@ -125,7 +124,7 @@ def _process(process):
         if def_value:
             # Expression must be a ground expression, i.e. must not
             # require temporary variable to store computed result
-            dst, dstr, dlocal = generate(def_value)
+            dst, dstr, dlocal = expression(def_value)
             assert not dst and not dlocal, 'DCL: Expecting a ground expression'
         process_level_decl.append(
                 'l_{n} : aliased asn1Scc{t}{default};'.format(
@@ -415,10 +414,10 @@ def write_statement(param, newline):
             string = '"' + param.value[1:-1].replace('"', "'") + '"'
         else:
             # XXX Cannot print an octet string like that...
-            code, string, local = generate(param)
+            code, string, local = expression(param)
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
-        code, string, local = generate(param)
+        code, string, local = expression(param)
         if type_kind == 'IntegerType':
             cast = "Interfaces.Integer_64"
         elif type_kind == 'RealType':
@@ -470,7 +469,7 @@ def _call_external_function(output):
         elif signal_name.lower() == 'reset_timer':
             # built-in operator for resetting timers. param = timer name
             param, = out['params']
-            p_code, p_id, p_local = generate(param)
+            p_code, p_id, p_local = expression(param)
             code.extend(p_code)
             local_decl.extend(p_local)
             code.append('RESET_{};'.format(p_id))
@@ -478,8 +477,8 @@ def _call_external_function(output):
         elif signal_name.lower() == 'set_timer':
             # built-in operator for setting a timer: SET(1000, timer_name)
             timer_value, timer_id = out['params']
-            t_code, t_val, t_local = generate(timer_value)
-            p_code, p_id, p_local = generate(timer_id)
+            t_code, t_val, t_local = expression(timer_value)
+            p_code, p_id, p_local = expression(timer_id)
             code.extend(t_code)
             code.extend(p_code)
             local_decl.extend(t_local)
@@ -518,7 +517,7 @@ def _call_external_function(output):
                     param_direction = out_sig.fpar[idx]['direction']
 
                 typename = param_type.ReferencedTypeName.replace('-', '_')
-                p_code, p_id, p_local = generate(param)
+                p_code, p_id, p_local = expression(param)
                 code.extend(p_code)
                 local_decl.extend(p_local)
                 # Create a temporary variable for input parameters only
@@ -545,7 +544,7 @@ def _call_external_function(output):
             # inner procedure call
             list_of_params = []
             for param in out.get('params', []):
-                p_code, p_id, p_local = generate(param)
+                p_code, p_id, p_local = expression(param)
                 code.extend(p_code)
                 local_decl.extend(p_local)
                 # no need to use temporary variables, we are in pure Ada
@@ -568,7 +567,7 @@ def _task_assign(task):
         code.extend(traceability(task.comment))
     for expr in task.elems:
         code.extend(traceability(expr))
-        code_assign, ada_string, decl_assign = generate(expr)
+        code_assign, ada_string, decl_assign = expression(expr)
         code.extend(code_assign)
         code.append(ada_string[1:-1] + ';')
         local_decl.extend(decl_assign)
@@ -600,7 +599,7 @@ def _task_forloop(task):
         if loop['range']:
             start_str, stop_str = '0', ''
             if loop['range']['start']:
-                start_stmt, start_str, start_local = generate\
+                start_stmt, start_str, start_local = expression\
                                                        (loop['range']['start'])
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
@@ -609,7 +608,7 @@ def _task_forloop(task):
                     start_str = 'Integer({})'.format(start_str)
             if loop['range']['step'] == 1:
                 start_str += '..'
-            stop_stmt, stop_str, stop_local = generate(loop['range']['stop'])
+            stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
             if isinstance(loop['range']['stop'], ogAST.PrimInteger):
@@ -631,7 +630,7 @@ def _task_forloop(task):
         else:
             # case of form: FOR x in SEQUENCE OF
             elem_type = loop['type'].ReferencedTypeName.replace('-', '_')
-            list_stmt, list_str, list_local = generate(loop['list'])
+            list_stmt, list_str, list_local = expression(loop['list'])
             basic_type = find_basic_type(loop['list'].exprType)
             range_cond = "{}.Data'Range".format(list_str)\
                     if basic_type.Min == basic_type.Max\
@@ -668,15 +667,26 @@ def _task_forloop(task):
     return stmt, local_decl
 
 
-@generate.register(ogAST.PrimVariable)
+@singledispatch
+def expression(expr):
+    ''' Generate the code for Expression-classes, returning 3 things:
+        - list of statements
+        - useable string corresponding to the evaluation of the expression,
+        - list of local declarations
+    '''
+    _ = expr
+    raise TypeError('Unsupported expression: ' + str(expr))
+    return [], '', []
+
+@expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
     sep = 'l_' if find_var(prim.value[0]) else ''
     return [], '{sep}{name}'.format(sep=sep, name=prim.value[0]), []
 
 
-@generate.register(ogAST.PrimPath)
-def _prim_path(primaryId):
+@expression.register(ogAST.PrimPath)
+def _prim_path(primary_id):
     '''
         Return the Ada string of an element list (path)
         cases: a => 'l_a' (reference to a variable)
@@ -690,10 +700,10 @@ def _prim_path(primaryId):
     stmts, local_decl = [], []
 
     # If first element is not a variable (can be a timer) do not add prefix
-    sep = 'l_' if find_var(primaryId.value[0]) else ''
+    sep = 'l_' if find_var(primary_id.value[0]) else ''
 
     sub_id = []
-    for pr_id in primaryId.value:
+    for pr_id in primary_id.value:
         if type(pr_id) is not dict:
             if pr_id.lower() == 'length':
                 special_op = 'Length'
@@ -716,10 +726,10 @@ def _prim_path(primaryId):
         else:
             if 'substring' in pr_id:
                 # substring: two parameters (range)
-                r1_stmts, r1_string, r1_local = generate(
-                        pr_id['substring'][0])
-                r2_stmts, r2_string, r2_local = generate(
-                        pr_id['substring'][1])
+                r1_stmts, r1_string, r1_local = \
+                        expression(pr_id['substring'][0])
+                r2_stmts, r2_string, r2_local = \
+                        expression(pr_id['substring'][1])
                 # should we add 1 in case of numerical values? (see index)
                 ada_string += '.Data({r1}..{r2})'.format(
                                                 r1=r1_string, r2=r2_string)
@@ -747,7 +757,7 @@ def _prim_path(primaryId):
                 ada_string = 'tmp{idx}'.format(idx=pr_id['tmpVar'])
             elif 'index' in pr_id:
                 # index is a list but it can have only one element
-                idx_stmts, idx_string, local_var = generate(
+                idx_stmts, idx_string, local_var = expression(
                         pr_id['index'][0])
                 if unicode.isnumeric(idx_string):
                     idx_string = int(idx_string) + 1
@@ -766,7 +776,7 @@ def _prim_path(primaryId):
                                 .format(exp.inputString))
                         LOG.error(error)
                         raise TypeError(error)
-                    param_stmts, param_str, local_var = generate(exp)
+                    param_stmts, param_str, local_var = expression(exp)
                     stmts.extend(param_stmts)
                     local_decl.extend(local_var)
                     ada_string += 'abs(' + param_str + ')'
@@ -782,7 +792,7 @@ def _prim_path(primaryId):
                                 exp.inputString)
                         LOG.error(error)
                         raise TypeError(error)
-                    param_stmts, param_str, local_var = generate(
+                    param_stmts, param_str, local_var = expression(
                             exp)
                     stmts.extend(param_stmts)
                     local_decl.extend(local_var)
@@ -805,7 +815,7 @@ def _prim_path(primaryId):
                         error = '{} is not a CHOICE'.format(exp.inputString)
                         LOG.error(error)
                         raise TypeError(error)
-                    param_stmts, param_str, local_var = generate(
+                    param_stmts, param_str, local_var = expression(
                             exp)
                     stmts.extend(param_stmts)
                     local_decl.extend(local_var)
@@ -817,7 +827,7 @@ def _prim_path(primaryId):
                     list_of_params = []
                     for param in pr_id['procParams']:
                         param_stmt, param_str, local_var = (
-                                generate(param))
+                                expression(param))
                         list_of_params.append(param_str)
                         stmts.extend(param_stmt)
                         local_decl.extend(local_var)
@@ -827,24 +837,24 @@ def _prim_path(primaryId):
     return stmts, ada_string, local_decl
 
 
-@generate.register(ogAST.ExprPlus)
-@generate.register(ogAST.ExprMul)
-@generate.register(ogAST.ExprMinus)
-@generate.register(ogAST.ExprEq)
-@generate.register(ogAST.ExprNeq)
-@generate.register(ogAST.ExprGt)
-@generate.register(ogAST.ExprGe)
-@generate.register(ogAST.ExprLt)
-@generate.register(ogAST.ExprLe)
-@generate.register(ogAST.ExprDiv)
-@generate.register(ogAST.ExprMod)
-@generate.register(ogAST.ExprRem)
-@generate.register(ogAST.ExprAssign)
+@expression.register(ogAST.ExprPlus)
+@expression.register(ogAST.ExprMul)
+@expression.register(ogAST.ExprMinus)
+@expression.register(ogAST.ExprEq)
+@expression.register(ogAST.ExprNeq)
+@expression.register(ogAST.ExprGt)
+@expression.register(ogAST.ExprGe)
+@expression.register(ogAST.ExprLt)
+@expression.register(ogAST.ExprLe)
+@expression.register(ogAST.ExprDiv)
+@expression.register(ogAST.ExprMod)
+@expression.register(ogAST.ExprRem)
+@expression.register(ogAST.ExprAssign)
 def _basic_operators(expr):
     ''' Expressions with two sides '''
     code, local_decl = [], []
-    left_stmts, left_str, left_local = generate(expr.left)
-    right_stmts, right_str, right_local = generate(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left)
+    right_stmts, right_str, right_local = expression(expr.right)
     ada_string = '({left} {op} {right})'.format(
             left=left_str, op=expr.operand, right=right_str)
     code.extend(left_stmts)
@@ -853,14 +863,14 @@ def _basic_operators(expr):
     local_decl.extend(right_local)
     return code, ada_string, local_decl
 
-@generate.register(ogAST.ExprOr)
-@generate.register(ogAST.ExprAnd)
-@generate.register(ogAST.ExprXor)
+@expression.register(ogAST.ExprOr)
+@expression.register(ogAST.ExprAnd)
+@expression.register(ogAST.ExprXor)
 def _bitwise_operators(expr):
     ''' Logical operators '''
     code, local_decl = [], []
-    left_stmts, left_str, left_local = generate(expr.left)
-    right_stmts, right_str, right_local = generate(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left)
+    right_stmts, right_str, right_local = expression(expr.right)
     basic_type = find_basic_type(expr.exprType)
     if basic_type.kind != 'BooleanType':
         # Sequence of boolean or bit string
@@ -889,7 +899,7 @@ def _bitwise_operators(expr):
     return code, ada_string, local_decl
 
 
-@generate.register(ogAST.ExprAppend)
+@expression.register(ogAST.ExprAppend)
 def _append(expr):
     ''' Generate code for the APPEND construct: a // b '''
     stmts, ada_string, local_decl = [], '', []
@@ -907,8 +917,8 @@ def _append(expr):
 #               expr.right.var.stringLiteral[1:-1] + ') > ' +
 #               str(basic_type_expr.Max))
 
-    left_stmts, left_str, left_local = generate(expr.left)
-    right_stmts, right_str, right_local = generate(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left)
+    right_stmts, right_str, right_local = expression(expr.right)
     stmts.extend(left_stmts)
     stmts.extend(right_stmts)
     local_decl.extend(left_local)
@@ -958,7 +968,7 @@ def _append(expr):
     return stmts, ada_string, local_decl
 
 
-@generate.register(ogAST.ExprIn)
+@expression.register(ogAST.ExprIn)
 def _expr_in(expr):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
     # Check if item is in a SEQUENCE OF
@@ -966,8 +976,8 @@ def _expr_in(expr):
     ada_string = 'tmp{}'.format(expr.tmpVar)
     stmts = []
     local_decl = ['{} : BOOLEAN := False;'.format(ada_string)]
-    left_stmts, left_str, left_local = generate(expr.left)
-    right_stmts, right_str, right_local = generate(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left)
+    right_stmts, right_str, right_local = expression(expr.right)
     stmts.extend(left_stmts)
     stmts.extend(right_stmts)
     local_decl.extend(left_local)
@@ -989,7 +999,7 @@ def _expr_in(expr):
     return stmts, ada_string, local_decl
 
 
-@generate.register(ogAST.PrimEnumeratedValue)
+@expression.register(ogAST.PrimEnumeratedValue)
 def _enumerated_value(primary):
     ''' Generate code for an enumerated value '''
     enumerant = primary.value[0].replace('_', '-')
@@ -998,7 +1008,7 @@ def _enumerated_value(primary):
     return [], ada_string, []
 
 
-@generate.register(ogAST.PrimChoiceDeterminant)
+@expression.register(ogAST.PrimChoiceDeterminant)
 def _choice_determinant(primary):
     ''' Generate code for a choice determinant (enumerated) '''
     enumerant = primary.value[0].replace('_', '-')
@@ -1006,15 +1016,15 @@ def _choice_determinant(primary):
     return [], ada_string, []
 
 
-@generate.register(ogAST.PrimInteger)
-@generate.register(ogAST.PrimReal)
-@generate.register(ogAST.PrimBoolean)
+@expression.register(ogAST.PrimInteger)
+@expression.register(ogAST.PrimReal)
+@expression.register(ogAST.PrimBoolean)
 def _integer(primary):
     ''' Generate code for a raw integer/real/boolean value  '''
     return [], primary.value[0], []
 
 
-@generate.register(ogAST.PrimEmptyString)
+@expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''
     ada_string = 'asn1Scc{typeRef}_Init'.format(
@@ -1022,7 +1032,7 @@ def _empty_string(primary):
     return [], ada_string, []
 
 
-@generate.register(ogAST.PrimStringLiteral)
+@expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary):
     ''' Generate code for a string (Octet String) '''
     basic_type = find_basic_type(primary.exprType)
@@ -1040,20 +1050,20 @@ def _string_literal(primary):
     return [], ada_string, []
 
 
-@generate.register(ogAST.PrimConstant)
+@expression.register(ogAST.PrimConstant)
 def _constant(primary):
     ''' Generate code for a reference to an ASN.1 constant '''
     return [], primary.value[0], []
 
 
-@generate.register(ogAST.PrimMantissaBaseExp)
+@expression.register(ogAST.PrimMantissaBaseExp)
 def _mantissa_base_exp(primary):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
     # TODO
     _ = primary
     return [], '', []
 
-@generate.register(ogAST.PrimIfThenElse)
+@expression.register(ogAST.PrimIfThenElse)
 def _if_then_else(ifThenElse):
     ''' Return string and statements for ternary operator '''
     resType = ifThenElse.exprType
@@ -1061,9 +1071,9 @@ def _if_then_else(ifThenElse):
     local_decl = ['tmp{idx} : asn1Scc{resType};'.format(
         idx=ifThenElse.value['tmpVar'],
         resType=resType.ReferencedTypeName.replace('-', '_'))]
-    if_stmts, if_str, if_local = generate(ifThenElse.value['if'])
-    then_stmts, then_str, then_local = generate(ifThenElse.value['then'])
-    else_stmts, else_str, else_local = generate(ifThenElse.value['else'])
+    if_stmts, if_str, if_local = expression(ifThenElse.value['if'])
+    then_stmts, then_str, then_local = expression(ifThenElse.value['then'])
+    else_stmts, else_str, else_local = expression(ifThenElse.value['else'])
     stmts.extend(if_stmts)
     stmts.extend(then_stmts)
     stmts.extend(else_stmts)
@@ -1082,7 +1092,7 @@ def _if_then_else(ifThenElse):
     return stmts, ada_string, local_decl
 
 
-@generate.register(ogAST.PrimSequence)
+@expression.register(ogAST.PrimSequence)
 def _sequence(seq):
     ''' Return Ada string for an ASN.1 SEQUENCE '''
     stmts, local_decl = [], []
@@ -1097,7 +1107,7 @@ def _sequence(seq):
         delem = elem.replace('_', '-')
         value.exprType = (TYPES
                     [seqType.ReferencedTypeName].type.Children[delem].type)
-        value_stmts, value_str, local_var = generate(value)
+        value_stmts, value_str, local_var = expression(value)
         ada_string += sep + elem + ' => ' + value_str
         sep = ', '
         stmts.extend(value_stmts)
@@ -1106,7 +1116,7 @@ def _sequence(seq):
     return stmts, ada_string, local_decl
 
 
-@generate.register(ogAST.PrimSequenceOf)
+@expression.register(ogAST.PrimSequenceOf)
 def _sequence_of(seqof):
     ''' Return Ada string for an ASN.1 SEQUENCE OF '''
     stmts, local_decl = [], []
@@ -1131,7 +1141,7 @@ def _sequence_of(seqof):
     for i in xrange(len(seqof.value)):
         # Set the type of the element (should not be useful anymore)
         #seqof.value[i].exprType = TYPES[typename].type.type
-        item_stmts, item_str, local_var = generate(seqof.value[i])
+        item_stmts, item_str, local_var = expression(seqof.value[i])
         stmts.extend(item_stmts)
         local_decl.extend(local_var)
         ada_string += '{i} => {value}, '.format(i=i + 1, value=item_str)
@@ -1139,10 +1149,10 @@ def _sequence_of(seqof):
     return stmts, ada_string, local_decl
 
 
-@generate.register(ogAST.PrimChoiceItem)
+@expression.register(ogAST.PrimChoiceItem)
 def _choiceitem(choice):
     ''' Return the Ada code for a CHOICE expression '''
-    stmts, choice_str, local_decl = generate(choice.value['value'])
+    stmts, choice_str, local_decl = expression(choice.value['value'])
     choiceType = choice.exprType
     actual_type = getattr(
                      choiceType, 'ReferencedTypeName', None) or choiceType.kind
@@ -1171,7 +1181,7 @@ def _decision(dec):
     if not basic:
         local_decl.append('tmp{idx} : aliased asn1Scc{actType};'.format(
                           idx=dec.tmpVar, actType=actual_type))
-    q_stmts, q_str, q_decl = generate(dec.question)
+    q_stmts, q_str, q_decl = expression(dec.question)
     # Add code-to-model traceability
     code.extend(traceability(dec))
     local_decl.extend(q_decl)
@@ -1185,7 +1195,7 @@ def _decision(dec):
             # Note: removed and a.transition here because empty transitions
             # have a different meaning, and a "null;" statement has to be
             # generated, to go into the branch
-            ans_stmts, ans_str, ans_decl = generate(a.constant)
+            ans_stmts, ans_str, ans_decl = expression(a.constant)
             code.extend(ans_stmts)
             local_decl.extend(ans_decl)
             if not basic:
@@ -1280,7 +1290,7 @@ def _transition(tr):
                 string = ''
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
-                        stmts, string, local = generate\
+                        stmts, string, local = expression\
                                                     (tr.terminator.return_expr)
                         code.extend(stmts)
                         local_decl.extend(local)
@@ -1360,7 +1370,7 @@ def _inner_procedure(proc):
             if def_value:
                 # Expression must be a ground expression, i.e. must not
                 # require temporary variable to store computed result
-                dst, dstr, dlocal = generate(def_value)
+                dst, dstr, dlocal = expression(def_value)
                 assert not dst and not dlocal, 'Ground expression error'
             code.append('l_{name} : asn1Scc{sort}{default};'.format(
                 name=var_name,

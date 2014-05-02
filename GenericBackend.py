@@ -12,9 +12,14 @@
     A Visitor Pattern using Python's "singledispatch" mechanism is used
     to go through the AST and generate code for each SDL construct.
 
-    There is a single function called "generate", decorated with the
+    At top-level there is a function called "generate", decorated with the
     singledispatch mechanism, that needs to be called to generate the code
-    of any AST element.
+    of an AST construct.
+
+    Expressions have to be generated from the "expression" function.
+
+    Optionnaly use the Helper module functions to flatten the model,
+    rename symbols, etc. (see AdaGenerator.py).
 
     Copyright (c) 2012-2014 European Space Agency
 
@@ -36,8 +41,25 @@ __all__ = ['generate']
 
 @singledispatch
 def generate(ast):
-    ''' Generate the code for an item of the AST '''
+    ''' Generate the code for an item of the AST
+        Should typically return:
+            - a list of statements
+            - a list of needed local variables
+    '''
     raise TypeError('[Backend] Unsupported AST construct')
+    # return [], []
+
+
+@singledispatch
+def expression(expr):
+    ''' Generate the code for Expression-classes, returning 3 things:
+            - list of statements
+            - useable string corresponding to the evaluation of the expression,
+            - list of local declarations
+    '''
+    _ = expr
+    raise TypeError('Unsupported expression: ' + str(expr))
+    # return [], '', []
 
 # Processing of the AST
 
@@ -78,14 +100,45 @@ def _task_forloop(task):
     '''
     pass
 
+@generate.register(ogAST.Decision)
+def _decision(dec):
+    ''' generate the code for a decision '''
+    pass
 
-@generate.register(ogAST.PrimVariable)
+
+@generate.register(ogAST.Label)
+def _label(tr):
+    ''' Transition following labels should be generated in a separate section
+        for visibility reasons
+    '''
+    pass
+
+
+@generate.register(ogAST.Transition)
+def _transition(tr):
+    ''' generate the code for a transition '''
+    pass
+
+
+@generate.register(ogAST.Floating_label)
+def _floating_label(label):
+    ''' Generate the code for a floating label (label + transition) '''
+    pass
+
+
+@generate.register(ogAST.Procedure)
+def _inner_procedure(proc):
+    ''' Generate the code for a procedure '''
+    pass
+@expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
     pass
 
 
-@generate.register(ogAST.PrimPath)
+# Expressions
+
+@expression.register(ogAST.PrimPath)
 def _prim_path(primaryId):
     '''
         Return the string of an element list (path)
@@ -99,139 +152,109 @@ def _prim_path(primaryId):
     pass
 
 
-@generate.register(ogAST.ExprPlus)
-@generate.register(ogAST.ExprMul)
-@generate.register(ogAST.ExprMinus)
-@generate.register(ogAST.ExprEq)
-@generate.register(ogAST.ExprNeq)
-@generate.register(ogAST.ExprGt)
-@generate.register(ogAST.ExprGe)
-@generate.register(ogAST.ExprLt)
-@generate.register(ogAST.ExprLe)
-@generate.register(ogAST.ExprDiv)
-@generate.register(ogAST.ExprMod)
-@generate.register(ogAST.ExprRem)
-@generate.register(ogAST.ExprAssign)
+@expression.register(ogAST.ExprPlus)
+@expression.register(ogAST.ExprMul)
+@expression.register(ogAST.ExprMinus)
+@expression.register(ogAST.ExprEq)
+@expression.register(ogAST.ExprNeq)
+@expression.register(ogAST.ExprGt)
+@expression.register(ogAST.ExprGe)
+@expression.register(ogAST.ExprLt)
+@expression.register(ogAST.ExprLe)
+@expression.register(ogAST.ExprDiv)
+@expression.register(ogAST.ExprMod)
+@expression.register(ogAST.ExprRem)
+@expression.register(ogAST.ExprAssign)
 def _basic_operators(expr):
     ''' Expressions with two sides '''
     pass
 
 
-@generate.register(ogAST.ExprOr)
-@generate.register(ogAST.ExprAnd)
-@generate.register(ogAST.ExprXor)
+@expression.register(ogAST.ExprOr)
+@expression.register(ogAST.ExprAnd)
+@expression.register(ogAST.ExprXor)
 def _bitwise_operators(expr):
     ''' Logical operators '''
     pass
 
 
-@generate.register(ogAST.ExprAppend)
+@expression.register(ogAST.ExprAppend)
 def _append(expr):
     ''' Generate code for the APPEND construct: a // b '''
     pass
 
 
-@generate.register(ogAST.ExprIn)
+@expression.register(ogAST.ExprIn)
 def _expr_in(expr):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
     pass
 
 
-@generate.register(ogAST.PrimEnumeratedValue)
+@expression.register(ogAST.PrimEnumeratedValue)
 def _enumerated_value(primary):
     ''' Generate code for an enumerated value '''
     pass
 
 
-@generate.register(ogAST.PrimChoiceDeterminant)
+@expression.register(ogAST.PrimChoiceDeterminant)
 def _choice_determinant(primary):
     ''' Generate code for a choice determinant (enumerated) '''
     pass
 
 
-@generate.register(ogAST.PrimInteger)
-@generate.register(ogAST.PrimReal)
-@generate.register(ogAST.PrimBoolean)
+@expression.register(ogAST.PrimInteger)
+@expression.register(ogAST.PrimReal)
+@expression.register(ogAST.PrimBoolean)
 def _integer(primary):
     ''' Generate code for a raw integer/real/boolean value  '''
     pass
 
 
-@generate.register(ogAST.PrimEmptyString)
+@expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''
     pass
 
 
-@generate.register(ogAST.PrimStringLiteral)
+@expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary):
     ''' Generate code for a string (Octet String) '''
     pass
 
 
-@generate.register(ogAST.PrimConstant)
+@expression.register(ogAST.PrimConstant)
 def _constant(primary):
     ''' Generate code for a reference to an ASN.1 constant '''
     pass
 
 
-@generate.register(ogAST.PrimMantissaBaseExp)
+@expression.register(ogAST.PrimMantissaBaseExp)
 def _mantissa_base_exp(primary):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
     pass
 
 
-@generate.register(ogAST.PrimIfThenElse)
+@expression.register(ogAST.PrimIfThenElse)
 def _if_then_else(ifThenElse):
     ''' Return string and statements for ternary operator '''
     pass
 
 
-@generate.register(ogAST.PrimSequence)
+@expression.register(ogAST.PrimSequence)
 def _sequence(seq):
-    ''' Return Ada string for an ASN.1 SEQUENCE '''
+    ''' Return string for an ASN.1 SEQUENCE '''
     pass
 
 
-@generate.register(ogAST.PrimSequenceOf)
+@expression.register(ogAST.PrimSequenceOf)
 def _sequence_of(seqof):
-    ''' Return Ada string for an ASN.1 SEQUENCE OF '''
+    ''' Return string for an ASN.1 SEQUENCE OF '''
     pass
 
 
-@generate.register(ogAST.PrimChoiceItem)
+@expression.register(ogAST.PrimChoiceItem)
 def _choiceitem(choice):
-    ''' Return the Ada code for a CHOICE expression '''
+    ''' Return the code for a CHOICE expression '''
     pass
 
 
-@generate.register(ogAST.Decision)
-def _decision(dec):
-    ''' generate the code for a decision '''
-    pass
-
-
-@generate.register(ogAST.Label)
-def _label(tr):
-    ''' Transition following labels are generated in a separate section
-        for visibility reasons (see Ada scope)
-    '''
-    pass
-
-
-@generate.register(ogAST.Transition)
-def _transition(tr):
-    ''' generate the code for a transition '''
-    pass
-
-
-@generate.register(ogAST.Floating_label)
-def _floating_label(label):
-    ''' Generate the code for a floating label (Ada label + transition) '''
-    pass
-
-
-@generate.register(ogAST.Procedure)
-def _inner_procedure(proc):
-    ''' Generate the code for a procedure '''
-    pass
