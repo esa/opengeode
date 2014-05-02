@@ -20,20 +20,23 @@
 __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
            'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
-           'StateStart']
+           'StateStart', 'Process']
 
-from genericSymbols import(
-        HorizontalSymbol, VerticalSymbol, Connection, Comment)
+import traceback
+import logging
+from itertools import chain
+from collections import deque
 
 from PySide.QtCore import Qt, QPoint, QRect, QRectF
 from PySide.QtGui import(QPainterPath, QBrush, QColor, QPolygon,
         QRadialGradient, QPainter, QPolygonF, QPen)
 
+from genericSymbols import(
+        HorizontalSymbol, VerticalSymbol, Connection, Comment)
+
 import ogParser
 import ogAST
 
-import traceback
-import logging
 
 LOG = logging.getLogger('sdlSymbols')
 
@@ -955,7 +958,7 @@ class State(VerticalSymbol):
             result.append('in ({});'.format(','.join(entry_points)))
         if exit_points:
             result.append('out ({});'.format(','.join(exit_points)))
-        result.extend(self.nested_scene.get_pr_string()[1:-1])
+        result.extend(self.nested_scene.get_pr_string())
         result.append('ENDSUBSTRUCTURE;')
         return '\n'.join(result)
 
@@ -1000,8 +1003,93 @@ class State(VerticalSymbol):
         return '\n'.join(result)
 
 
-class Procedure(HorizontalSymbol):
-    ''' Procedure declaration symbol '''
+class Process(HorizontalSymbol):
+    ''' Process symbol '''
+    _unique_followers = ['Comment']
+    _allow_nesting = True
+    common_name = 'process_definition'
+    needs_parent = False
+    # Define reserved keywords for the syntax highlighter
+    blackbold = SDL_BLACKBOLD
+    redbold = SDL_REDBOLD
+    completion_list = set()
+    is_singleton = True
+
+    def __init__(self, ast=None, subscene=None):
+        ast = ast or ogAST.Process()
+        super(Process, self).__init__(parent=None,
+                                      text=ast.processName,
+                                      x=ast.pos_x,
+                                      y=ast.pos_y,
+                                      hyperlink=ast.hyperlink)
+        self.set_shape(ast.width, ast.height)
+        self.setBrush(QBrush(QColor(255, 255, 202)))
+        self.parser = ogParser
+        if ast.comment:
+            Comment(parent=self, ast=ast.comment)
+        self.nested_scene = subscene
+
+    def set_shape(self, width, height):
+        ''' Compute the polygon to fit in width, height '''
+        path = QPainterPath()
+        path.moveTo(7, 0)
+        path.lineTo(0, 7)
+        path.lineTo(0, height - 7)
+        path.lineTo(7, height)
+        path.lineTo(width - 7, height)
+        path.lineTo(width, height - 7)
+        path.lineTo(width, 7)
+        path.lineTo(width - 7, 0)
+        path.lineTo(7, 0)
+        self.setPath(path)
+        super(Process, self).set_shape(width, height)
+
+    def recursive_parser(self):
+        ''' Return the full content of the process as PR string '''
+        pr_data = deque()
+        scene = self.nested_scene
+        if not scene:
+            return []
+
+        for item in chain(scene.texts, scene.procs, scene.start):
+            pr_data.append(repr(item))
+        for item in scene.floating_labels:
+            pr_data.append(item.parse_gr())
+        composite = set(scene.composite_states.keys())
+        for item in scene.states:
+            if item.is_composite():
+                try:
+                    composite.remove(str(item).lower())
+                    pr_data.appendleft(item.parse_composite_state())
+                except KeyError:
+                    pass
+            pr_data.append(item.parse_gr())
+        return list(pr_data)
+
+    def parse_gr(self, recursive=True):
+        ''' Generate PR for a process '''
+        comment = repr(self.comment) if self.comment else ';'
+        pos = self.scenePos()
+        result =['/* CIF PROCESS ({x}, {y}), ({w}, {h}) */\n'
+                 '{hlink}'
+                 'PROCESS {process}{comment}'.format(
+                        process=str(self),
+                        hlink=repr(self.text),
+                        x=int(pos.x()), y=int(pos.y()),
+                        w=int(self.boundingRect().width()),
+                        h=int(self.boundingRect().height()), comment=comment)]
+        if recursive:
+            result.append('\n'.join(self.recursive_parser()))
+        result.append('ENDPROCESS {};'.format(str(self)))
+        return '\n'.join(result)
+
+    def __repr__(self):
+        ''' Return the complete process content '''
+        return self.parse_gr(recursive=True)
+
+
+class Procedure(Process):
+    ''' Procedure declaration symbol - Very similar to Process '''
     _unique_followers = ['Comment']
     _allow_nesting = True
     common_name = 'procedure'
@@ -1010,10 +1098,11 @@ class Procedure(HorizontalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
     completion_list = set()
+    is_singleton = False
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Procedure()
-        super(Procedure, self).__init__(parent=None,
+        super(Process, self).__init__(parent=None,
                 text=ast.inputString,
                 x=ast.pos_x, y=ast.pos_y, hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
@@ -1048,24 +1137,20 @@ class Procedure(HorizontalSymbol):
         pos = self.scenePos()
         result = ['/* CIF PROCEDURE ({x}, {y}), ({w}, {h}) */\n'
                     '{hlink}'
-                    'PROCEDURE {state}{comment}'.format(
-                        state=str(self),
+                    'PROCEDURE {proc}{comment}'.format(
+                        proc=str(self),
                         hlink=repr(self.text),
                         x=int(pos.x()), y=int(pos.y()),
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height()), comment=comment)]
         if recursive:
-            pr_raw = self.nested_scene.get_pr_string()
-            # Keep only the body - it is not a PROCESS
-            pr_data = pr_raw[1:-1]
-            result.extend(pr_data)
+            result.append('\n'.join(self.recursive_parser()))
         result.append('ENDPROCEDURE;')
         return '\n'.join(result)
 
     def __repr__(self):
         ''' Return the complete procedure branch in PR format '''
         return self.parse_gr(recursive=True)
-
 
 
 # pylint: disable=R0904

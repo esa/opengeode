@@ -1,5 +1,6 @@
+/* CIF PROCESS (150, 150), (150, 75) */
 PROCESS challenge;
-STATE ON;
+STATE on;
 SUBSTRUCTURE
 in (via_toto);
 out (ret0);
@@ -10,19 +11,19 @@ dcl myresult T_UInt8 := 4;
 -- use the proper one
 dcl result T_UInt32 := 9;
 /* CIF ENDTEXT */
-/* CIF PROCEDURE (554, 54), (73, 35) */
-PROCEDURE entry
-/* CIF COMMENT (643, 31), (190, 83) */
-COMMENT 'Special Entry
+/* CIF PROCEDURE (558, 143), (70, 35) */
+PROCEDURE exit
+/* CIF COMMENT (648, 119), (157, 93) */
+COMMENT 'Special exit
 procedure - called
-automatically upon
-entrance to the nested
+automatically when
+leaving the nested
 state';
-/* CIF START (191, 78), (70, 35) */
+/* CIF START (163, 119), (70, 35) */
 START;
-/* CIF PROCEDURECALL (100, 128), (251, 35) */
-CALL writeln('ENTERING NESTED STATE');
-/* CIF RETURN (208, 178), (35, 35) */
+/* CIF PROCEDURECALL (68, 169), (259, 35) */
+CALL writeln('LEAVING the nested state');
+/* CIF RETURN (180, 219), (35, 35) */
 RETURN ;
 ENDPROCEDURE;
 /* CIF PROCEDURE (239, 522), (102, 35) */
@@ -46,19 +47,19 @@ leaving:
 /* CIF RETURN (496, 347), (35, 35) */
 RETURN ;
 ENDPROCEDURE;
-/* CIF PROCEDURE (558, 143), (70, 35) */
-PROCEDURE exit
-/* CIF COMMENT (648, 119), (157, 93) */
-COMMENT 'Special exit
+/* CIF PROCEDURE (554, 54), (73, 35) */
+PROCEDURE entry
+/* CIF COMMENT (643, 31), (190, 83) */
+COMMENT 'Special Entry
 procedure - called
-automatically when
-leaving the nested
+automatically upon
+entrance to the nested
 state';
-/* CIF START (163, 119), (70, 35) */
+/* CIF START (191, 78), (70, 35) */
 START;
-/* CIF PROCEDURECALL (68, 169), (259, 35) */
-CALL writeln('LEAVING the nested state');
-/* CIF RETURN (180, 219), (35, 35) */
+/* CIF PROCEDURECALL (100, 128), (251, 35) */
+CALL writeln('ENTERING NESTED STATE');
+/* CIF RETURN (208, 178), (35, 35) */
 RETURN ;
 ENDPROCEDURE;
 /* CIF START (1188, 7), (89, 35) */
@@ -90,6 +91,12 @@ CALL writeln('going to internal hello state');
 nslabel:
 /* CIF NEXTSTATE (938, 466), (70, 35) */
 NEXTSTATE hello;
+/* CIF LABEL (132, 324), (90, 35) */
+CONNECTION to_label:
+/* CIF JOIN (159, 374), (35, 35) */
+JOIN another_floating;
+/* CIF End Label */
+ENDCONNECTION;
 /* CIF LABEL (512, 472), (141, 35) */
 CONNECTION another_floating:
 /* CIF TASK (525, 522), (115, 35) */
@@ -98,12 +105,6 @@ TASK myresult := 1;
 CALL inner_proc(myresult);
 /* CIF RETURN (565, 622), (35, 35) */
 RETURN ;
-/* CIF End Label */
-ENDCONNECTION;
-/* CIF LABEL (132, 324), (90, 35) */
-CONNECTION to_label:
-/* CIF JOIN (159, 374), (35, 35) */
-JOIN another_floating;
 /* CIF End Label */
 ENDCONNECTION;
 /* CIF STATE (0, 0), (70, 35) */
@@ -158,6 +159,23 @@ CALL writeln('[STARTUP] Going OFF');
 NEXTSTATE OFF;
 
 
+/* CIF STATE (549, 278), (73, 35) */
+STATE Safe;
+/* CIF INPUT (505, 333), (70, 35) */
+INPUT *;
+/* CIF PROCEDURECALL (475, 383), (130, 35) */
+CALL pow(2,2, result);
+/* CIF PROCEDURECALL (409, 433), (262, 35) */
+CALL writeln('Result of pow(2,2) = ', result);
+/* CIF NEXTSTATE (505, 483), (70, 35) */
+NEXTSTATE -;
+/* CIF INPUT (679, 333), (88, 35) */
+INPUT any_one;
+/* CIF NEXTSTATE (688, 383), (70, 35) */
+NEXTSTATE on;
+ENDSTATE;
+
+
 
 
 /* CIF STATE (851, 72), (65, 35) */
@@ -182,23 +200,6 @@ CONNECT ;
 CALL writeln('Exit from nested state (no return value)');
 /* CIF NEXTSTATE (533, 227), (70, 35) */
 NEXTSTATE off;
-ENDSTATE;
-
-
-/* CIF STATE (549, 278), (73, 35) */
-STATE Safe;
-/* CIF INPUT (505, 333), (70, 35) */
-INPUT *;
-/* CIF PROCEDURECALL (475, 383), (130, 35) */
-CALL pow(2,2, result);
-/* CIF PROCEDURECALL (409, 433), (262, 35) */
-CALL writeln('Result of pow(2,2) = ', result);
-/* CIF NEXTSTATE (505, 483), (70, 35) */
-NEXTSTATE -;
-/* CIF INPUT (679, 333), (88, 35) */
-INPUT any_one;
-/* CIF NEXTSTATE (688, 383), (70, 35) */
-NEXTSTATE on;
 ENDSTATE;
 
 /* CIF STATE (134, 201), (70, 35) */

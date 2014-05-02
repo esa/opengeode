@@ -2,10 +2,9 @@
 #include <stdio.h>
 
 /* Ada code external interface */
-extern void challenge_start();
 extern void challenge_run();
 extern void challenge_any_one();
-
+extern int adainit();
 
 //extern long long l_result;
 
@@ -17,8 +16,7 @@ void challenge_RI_pow(long long *a, long long *b, long long *res)
 
 int main()
 {
-    printf("[C Code] Calling START\n");
-    challenge_start();
+    adainit();
     printf("[C Code] Calling RUN\n");
     challenge_run();
     printf("[C Code] Calling RUN AGAIN....\n");

@@ -100,7 +100,7 @@ SPECIAL_OPERATORS = {'length': [LIST],
 # Container to keep a list of types mapped from ANTLR Tokens
 # (Used with singledispatch/visitor pattern)
 ANTLR_TOKEN_TYPES = {a: type(a, (antlr3.tree.CommonTree,), {})
-                    for a,b in lexer.__dict__.viewitems() if type(b)==int}
+                    for a, b in lexer.__dict__.viewitems() if type(b) == int}
 
 
 # Shortcut to create a new referenced ASN.1 type
@@ -726,7 +726,6 @@ def find_type(path, context):
                     raise TypeError('Field ' + elem
                                      + ' not found in expression '
                                      + '!'.join(path))
-                    result = UNKNOWN_TYPE
                     break
             # Sequence of
             elif basic.kind == 'SequenceOfType':
@@ -857,7 +856,7 @@ def fix_expression_types(expr, context):
         if asn_type.kind != 'ChoiceType' \
                 or field.lower() not in [key.lower()
                                   for key in asn_type.Children.viewkeys()]:
-                raise TypeError('Field is not valid in CHOICE:' + field)
+            raise TypeError('Field is not valid in CHOICE:' + field)
         key, = [key for key in asn_type.Children.viewkeys()
                 if key.lower() == field.lower()]
         if expr.right.value['value'].exprType == UNKNOWN_TYPE:
@@ -1069,7 +1068,7 @@ def primary_value(root, context=None):
 
     # If there were parameters or index, try to determine the type of
     # the expression
-    if isinstance(prim, ogAST.PrimPath) and len(prim.value)>1:
+    if isinstance(prim, ogAST.PrimPath) and len(prim.value) > 1:
         try:
             prim.exprType = find_type(prim.value, context)
         except TypeError as err:
@@ -1313,7 +1312,7 @@ def fpar(root):
         param_names = []
         sort = ''
         direction = 'in'
-        assert(param.type == lexer.PARAM)
+        assert param.type == lexer.PARAM
         for child in param.getChildren():
             if child.type == lexer.INOUT:
                 direction = 'out'
@@ -1743,10 +1742,16 @@ def process_definition(root, parent=None):
     process.filename = node_filename(root)
     process.parent = parent
     parent.processes.append(process)
+    coord = False
     # Prepare the transition/state mapping
     process.mapping = {name: [] for name in get_state_list(root)}
     for child in root.getChildren():
-        if child.type == lexer.ID:
+        if child.type == lexer.CIF:
+            # Get symbol coordinates
+            process.pos_x, process.pos_y, process.width, process.height =\
+                    cif(child)
+            coord = True
+        elif child.type == lexer.ID:
             # Get process (taste function) name
             process.processName = child.text
             try:
@@ -1763,6 +1768,10 @@ def process_definition(root, parent=None):
             except TypeError as error:
                 LOG.debug(str(error))
                 errors.append(str(error))
+            if coord:
+                errors = [[e, [process.pos_x, process.pos_y]] for e in errors]
+                warnings = [[w, [process.pos_x, process.pos_y]]
+                             for w in warnings]
         elif child.type == lexer.TEXTAREA:
             # Text zone where variables and operators are declared
             textarea, err, warn = text_area(child, context=process)
@@ -1807,8 +1816,9 @@ def process_definition(root, parent=None):
         elif child.type == lexer.REFERENCED:
             process.referenced = True
         else:
-            warnings.append('Unsupported process definition child type: ' +
-                    str(child.type) + '- line ' + str(child.getLine()))
+            warnings.append('Unsupported process definition child: ' +
+                             sdl92Parser.tokenNames[child.type] +
+                            ' - line ' + str(child.getLine()))
     return process, errors, warnings
 
 def input_part(root, parent, context):
@@ -1901,7 +1911,7 @@ def input_part(root, parent, context):
             context.transitions.append(trans)
             i.transition_id = len(context.transitions) - 1
         elif child.type == lexer.COMMENT:
-            i.comment, _, ___ = end(child)
+            i.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             i.hyperlink = child.getChild(0).toString()[1:-1]
         else:
@@ -2045,7 +2055,7 @@ def connect_part(root, parent, context):
         elif child.type == lexer.HYPERLINK:
             conn.hyperlink = child.getChild(0).toString()[1:-1]
         elif child.type == lexer.COMMENT:
-            conn.comment, _, ___ = end(child)
+            conn.comment, _, _ = end(child)
         else:
             warnings.append('Unsupported CONNECT PART child type: ' +
                             sdl92Parser.tokenNames[child.type])
@@ -2819,7 +2829,7 @@ def pr_file(root):
         def find_processes(block):
             ''' Recursively find processes in a system '''
             try:
-                result = [proc for proc in block.processes 
+                result = [proc for proc in block.processes
                           if not proc.referenced]
             except AttributeError:
                 result = []
@@ -2857,14 +2867,14 @@ def add_to_ast(ast, filename=None, string=None):
     # Root of the AST is of type antlr3.tree.CommonTree
     # Add it as a child of the common tree
     subtree = tree_rule_return_scope.tree
-    token_stream = parser.getTokenStream()
+    token_str = parser.getTokenStream()
     children_before = set(ast.children)
     # addChild does not simply add the subtree - it flattens it if necessary
     # this means that possibly SEVERAL subtrees can be added. We must set
     # the token_stream reference to all of them.
     ast.addChild(subtree)
     for tree in set(ast.children) - children_before:
-        tree.token_stream = token_stream
+        tree.token_stream = token_str
     return errors, warnings
 
 
@@ -2879,11 +2889,12 @@ def parse_pr(files=None, string=None):
         sys.path.insert(0, os.path.dirname(filename))
     for filename in files:
         err, warn = add_to_ast(common_tree, filename=filename)
+        errors.extend(err)
+        warnings.extend(warn)
     if string:
         err, warn = add_to_ast(common_tree, string=string)
-
-    errors.extend(err)
-    warnings.extend(warn)
+        errors.extend(err)
+        warnings.extend(warn)
 
     # At the end when common tree is complete, perform the parsing
     og_ast, err, warn = pr_file(common_tree)
@@ -2917,7 +2928,7 @@ def parseSingleElement(elem='', string=''):
     LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)
-    assert(parser_ptr is not None)
+    assert parser_ptr is not None
     syntax_errors = []
     semantic_errors = []
     warnings = []

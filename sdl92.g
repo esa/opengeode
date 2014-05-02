@@ -203,11 +203,11 @@ connection
 process_definition
         :       PROCESS process_id number_of_instances? REFERENCED end
         ->      ^(PROCESS process_id number_of_instances? REFERENCED)
-                | PROCESS process_id number_of_instances? end
+                | cif? PROCESS process_id number_of_instances? end
                 (text_area | procedure | composite_state)*
                 processBody? ENDPROCESS process_id?
                 end
-        ->      ^(PROCESS process_id number_of_instances?
+        ->      ^(PROCESS cif? process_id number_of_instances?
                 text_area* procedure* composite_state* processBody?);
 
 
@@ -1023,6 +1023,7 @@ symbolname
                 | OUTPUT
                 | STATE
                 | PROCEDURE
+                | PROCESS
                 | PROCEDURE_CALL
                 | STOP
                 | RETURN

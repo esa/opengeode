@@ -56,7 +56,7 @@ from genericSymbols import(Symbol, Comment, EditableText, Cornergrabber,
                            Connection, Completer)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
-        ProcedureStart, ProcedureStop, StateStart, Connect)
+        ProcedureStart, ProcedureStop, StateStart, Connect, Process)
 
 # Icons and png files generated from the resource file:
 import icons  # NOQA
@@ -125,6 +125,7 @@ G_SYMBOLS = set()
 
 # Lookup table used to configure the context-dependent toolbars
 ACTIONS = {
+    'block': [Process],
     'process': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
                 Output, ProcedureCall, TextSymbol, Comment, Label,
                 Join, Procedure],
@@ -237,7 +238,7 @@ class Sdl_toolbar(QtGui.QToolBar, object):
             try:
                 for item in scene.visible_symb:
                     try:
-                        if item.is_singleton: # and item.isVisible():
+                        if item.is_singleton:
                             self.actions[
                                     item.__class__.__name__].setEnabled(False)
                     except (AttributeError, KeyError) as error:
@@ -286,6 +287,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                            QtGui.QImage(':icons/texture.png')))
         self.messages_window = None
         self.click_coordinates = None
+        self.orig_pos = None
         self.process_name = 'opengeode'
         # Scene name is used to update the tab window name when scene changes
         self.name = ''
@@ -309,6 +311,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def floating_symb(self):
         ''' Return the top level floating items of a scene '''
         return (it for it in self.visible_symb if not it.hasParent)
+
+    @property
+    def processes(self):
+        ''' Return visible processes components of the scene '''
+        return (it for it in self.visible_symb if isinstance(it, Process) and
+                not isinstance(it, Procedure))
 
     @property
     def states(self):
@@ -359,6 +367,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     @composite_states.setter
     def composite_states(self, value):
+        ''' Attribute setter '''
         self._composite_states = value
 
     @property
@@ -376,11 +385,13 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         pass
 
 
-    def render_process(self, process):
+    def render_everything(self, ast):
         ''' Render a process and its children scenes, recursively '''
-        self.process_name = process.processName or 'opengeode'
         def recursive_render(content, dest_scene):
-            items_with_nested_scene = []
+            ''' Process the rendering in scenes and nested scenes '''
+            if isinstance(content, ogAST.Process):
+                # XXX - should be set when entering the process
+                self.process_name = ast.processName
 
             # Render top-level items and their children:
             for each in Renderer.render(content, dest_scene):
@@ -402,7 +413,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     each.nested_scene = dest_scene.composite_states[
                                                              str(each).lower()]
 
-        recursive_render(process, self)
+        recursive_render(ast, self)
 
 
     def refresh(self):
@@ -662,6 +673,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def get_pr_string(self):
         ''' Parse the graphical items and returns a PR string '''
         pr_data = deque()
+        for each in self.processes:
+            pr_data.append(each.parse_gr())
 
         for item in chain(self.texts, self.procs, self.start):
             pr_data.append(repr(item))
@@ -677,8 +690,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     pass
             pr_data.append(item.parse_gr())
 
-        pr_data.appendleft('PROCESS {};'.format(self.process_name))
-        pr_data.append('ENDPROCESS {};'.format(self.process_name))
         return list(pr_data)
 
     def sdl_to_statechart(self):
@@ -686,8 +697,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         graph = dot.AGraph(strict=False, directed=True)
         pr_raw = self.get_pr_string()
         pr_data = str('\n'.join(pr_raw))
-        ast, _, ___ = ogParser.parse_pr(string=pr_data)
-        process_ast, = ast.processes
+        ast, _, _ = ogParser.parse_pr(string=pr_data)
+        try:
+            process_ast, = ast.processes
+        except ValueError:
+            LOG.error('No statechart to render')
+            return
         diamond = 0
         for state, inputs in process_ast.mapping.viewitems():
             # create a new node for each state
@@ -1214,7 +1229,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                 self.scale(1.1, 1.1)
             self.setTransformationAnchor(QtGui.QGraphicsView.AnchorViewCenter)
         else:
-            return(super(SDL_View, self).wheelEvent(wheelEvent))
+            return super(SDL_View, self).wheelEvent(wheelEvent)
 
     # pylint: disable=C0103
     def mousePressEvent(self, evt):
@@ -1384,12 +1399,23 @@ class SDL_View(QtGui.QGraphicsView, object):
         except ValueError:
             LOG.error('Cannot load more than one process at a time')
             return
+        try:
+            syst, = ast.systems
+            block, = syst.blocks
+            if block.processes[0].referenced:
+                LOG.debug('Process is referenced, fixing')
+                block.processes = [process]
+        except ValueError:
+            # No System/Block hierarchy, creating single block
+            block = ogAST.Block()
+            block.processes = [process]
         LOG.debug('Parsing complete. Summary, found ' + str(len(warnings)) +
                 ' warnings and ' + str(len(errors)) + ' errors')
         self.log_errors(errors, warnings)
-        self.scene().render_process(process)
-        self.wrapping_window.setWindowTitle('process ' +
-                                            self.scene().process_name + '[*]')
+        self.scene().render_everything(block)
+        self.toolbar.update_menu(self.scene())
+        self.wrapping_window.setWindowTitle('block ' +
+                                            process.processName + '[*]')
         self.refresh()
         self.centerOn(self.sceneRect().topLeft())
         self.scene().undo_stack.clear()
@@ -1522,11 +1548,15 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_view = None
         self.statechart_scene = None
         self.vi_bar = Vi_bar()
+        # Docking areas
+        self.datatypes_view = None
+        self.datatypes_scene = None
+        self.asn1_area = None
 
     def start(self, file_name):
         ''' Initializes all objects to start the application '''
         # Create a graphic scene: the main canvas
-        self.scene = SDL_Scene(context='process')
+        self.scene = SDL_Scene(context='block')
         # Find SDL_View widget
         self.view = self.findChild(SDL_View, 'graphicsView')
         self.view.setScene(self.scene)
@@ -1605,7 +1635,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             statechart_dock.hide()
 
         # Set up the dock area to display the ASN.1 Data model
-        asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock' )
+        #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
         self.datatypes_view = self.findChild(SDL_View, 'datatypes_view')
         self.datatypes_scene = SDL_Scene(context='process')
         self.datatypes_view.setScene(self.datatypes_scene)
@@ -1659,7 +1689,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # Match vi-like search and replace pattern (e.g. :%s,a,b,g)
         search = re.compile(r':%s(.)(.*)\1(.*)\1(.)')
         try:
-            _, pattern, new, ___ = search.match(command).groups()
+            _, pattern, new, _ = search.match(command).groups()
             LOG.debug('Replacing {this} with {that}'
                           .format(this=pattern, that=new))
             self.scene.search(pattern, replace_with=new)
@@ -1786,12 +1816,12 @@ def opengeode():
             ast, warnings, errors = ogParser.parse_pr(files=options.files)
         except IOError:
             LOG.error('Aborting due to parsing error (check input file)')
-            return(-1)
+            return -1
         try:
             process, = ast.processes
         except ValueError:
             LOG.error('Only one process at a time is supported')
-            return(-1)
+            return -1
         LOG.info('Parsing complete. Summary, found ' +
                 str(len(warnings)) +
                 ' warnings and ' +
@@ -1815,7 +1845,7 @@ def opengeode():
                         LlvmGenerator.generate(process)
                 except (TypeError, ValueError, NameError) as err:
                     LOG.error(str(err))
-                    print(str(traceback.format_exc()))
+                    #print(str(traceback.format_exc()))
                     LOG.error('Code generation failed')
         export_fmt = []
         if options.png:
@@ -1826,7 +1856,7 @@ def opengeode():
             export_fmt.append('svg')
         if export_fmt:
             scene = SDL_Scene(context='process')
-            scene.render_process(process)
+            scene.render_everything(process)
             # Update connections, placements:
             scene.refresh()
             for doc_fmt in export_fmt:
@@ -1848,7 +1878,7 @@ def opengeode():
         ui_file.close()
         my_widget.start(options.files)
         ret = app.exec_()
-    return(ret)
+    return ret
 
 if __name__ == '__main__':
     sys.exit(opengeode())

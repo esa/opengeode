@@ -51,9 +51,19 @@ def render(ast, scene, parent, states, terminators=None):
     raise TypeError('[Renderer] Unsupported symbol in branch: ' + repr(ast))
 
 
+@render.register(ogAST.Block)
+def _block(ast, scene):
+    ''' Render a block, containing a set of process symbols '''
+    # TODO = Add text areas with signal lists, external procedures defs...
+    top_level = []
+    for each in ast.processes:
+        top_level.append(render(each, scene))
+    return top_level
+
+
 @render.register(ogAST.Process)
 def _process(ast, scene):
-    ''' Render the symbols inside a process or procedure '''
+    ''' Render a Process symbol (in a BLOCK diagram) '''
     # Set autocompletion lists for input, output, state, types, variables:
     try:
         sdlSymbols.TextSymbol.completion_list = {
@@ -71,7 +81,9 @@ def _process(ast, scene):
     sdlSymbols.ProcedureCall.completion_list = {
             proc.inputString for proc in ast.procedures}
 
-    return render(ast.content, scene)
+    symbol = sdlSymbols.Process(ast, ast)
+    scene.addItem(symbol)
+    return symbol
 
 
 @render.register(ogAST.Automaton)

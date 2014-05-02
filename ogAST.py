@@ -712,6 +712,15 @@ class Process(object):
         self.variables = {}
         # global variables can be used to inherit variables
         self.global_variables = {}
+        
+        # Set default coordinates and width/height
+        self.pos_x = self.pos_y = 150
+        self.width = 150
+        self.height = 75
+        # Optional hyperlink
+        self.hyperlink = None
+        # Optional comment
+        self.comment = None
 
         # dataview: complete AST of the ASN.1 types
         self.asn1Modules = None
@@ -733,7 +742,6 @@ class Process(object):
         self.operators = {}
         # list of Procedure (external procedures)
         self.procedures = []
-
 
         # The Mapping structure should be used for code generation backends
         # dictionnary: {'stateName': [class Input1, Input2,...], ...}

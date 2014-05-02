@@ -63,16 +63,16 @@ def _process(process):
     # Set up the optimizer pipeline.
     # Start with registering info about how the
     # target lays out data structures.
-    LLVM['pass_manager'].add(LLVM['executor'].target_data)
-    # Do simple "peephole" optimizations and bit-twiddling optzns.
-    LLVM['pass_manager'].add(passes.PASS_INSTRUCTION_COMBINING)
-    # Reassociate expressions.
-    LLVM['pass_manager'].add(passes.PASS_REASSOCIATE)
-    # Eliminate Common SubExpressions.
-    LLVM['pass_manager'].add(passes.PASS_GVN)
-    # Simplify the control flow graph (deleting unreachable blocks, etc).
-    LLVM['pass_manager'].add(passes.PASS_CFG_SIMPLIFICATION)
-    LLVM['pass_manager'].initialize()
+#   LLVM['pass_manager'].add(LLVM['executor'].target_data)
+#   # Do simple "peephole" optimizations and bit-twiddling optzns.
+#   LLVM['pass_manager'].add(passes.PASS_INSTRUCTION_COMBINING)
+#   # Reassociate expressions.
+#   LLVM['pass_manager'].add(passes.PASS_REASSOCIATE)
+#   # Eliminate Common SubExpressions.
+#   LLVM['pass_manager'].add(passes.PASS_GVN)
+#   # Simplify the control flow graph (deleting unreachable blocks, etc).
+#   LLVM['pass_manager'].add(passes.PASS_CFG_SIMPLIFICATION)
+#   LLVM['pass_manager'].initialize()
 
     # Create the runTransition function
     run_funct_name = 'run_transition'
