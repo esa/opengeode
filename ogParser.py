@@ -1734,7 +1734,7 @@ def system_definition(root, parent):
                     str(child.type))
     return system, errors, warnings
 
-def process_definition(root, parent=None):
+def process_definition(root, parent=None, context=None):
     ''' Process definition analysis '''
     errors = []
     warnings = []
@@ -2924,7 +2924,7 @@ def parseSingleElement(elem='', string=''):
     assert(elem in ('input_part', 'output', 'decision', 'alternative_part',
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
-            'connect_part'))
+            'connect_part', 'process_definition'))
     LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)

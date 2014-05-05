@@ -31,8 +31,8 @@ from PySide.QtCore import Qt, QPoint, QRect, QRectF
 from PySide.QtGui import(QPainterPath, QBrush, QColor, QPolygon,
         QRadialGradient, QPainter, QPolygonF, QPen)
 
-from genericSymbols import(
-        HorizontalSymbol, VerticalSymbol, Connection, Comment)
+from genericSymbols import HorizontalSymbol, VerticalSymbol, Comment
+from Connectors import Connection, JoinConnection
 
 import ogParser
 import ogAST
@@ -328,8 +328,11 @@ class Decision(VerticalSymbol):
             try:
                 # Disconnect the comment of the last item so that
                 # it's size is not taken into account
-                last.comment.setParentItem(None)
-                last.comment.connection.setParentItem(None)
+                pass
+                # Bad idea (MP 05/05/14) Due to Pyside bugs, better avoid
+                # the setParentItem(None) calls
+                #last.comment.setParentItem(None)
+                #last.comment.connection.setParentItem(None)
             except AttributeError:
                 pass
             branch_len = branch.y() + (
@@ -438,8 +441,8 @@ class DecisionAnswer(HorizontalSymbol):
         item_parent = (parent if not isinstance(parent, DecisionAnswer)
                        else parent.parentItem())
         super(DecisionAnswer, self).insert_symbol(item_parent, x, y)
-        self.last_branch_item.connectionBelow = Connection(
-                self.last_branch_item, item_parent, connectionPoint=True)
+        self.last_branch_item.connectionBelow = \
+                JoinConnection(self.last_branch_item, item_parent)
 
     def boundingRect(self):
         return QRectF(0, 0, self.width, self.height)

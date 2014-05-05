@@ -125,7 +125,7 @@ G_SYMBOLS = set()
 
 # Lookup table used to configure the context-dependent toolbars
 ACTIONS = {
-    'block': [Process],
+    'block': [Process, Comment],
     'process': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
                 Output, ProcedureCall, TextSymbol, Comment, Label,
                 Join, Procedure],
@@ -303,9 +303,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     @property
     def visible_symb(self):
         ''' Return the visible items of a scene '''
-        return (it for it in self.items() if it.isVisible() and not
-                isinstance(it, (Cornergrabber, Connection,
-                                Completer, EditableText)))
+        return (it for it in self.items() if it.isVisible() and
+                isinstance(it, Symbol))
+
+    @property
+    def editable_texts(self):
+        ''' Return all EditableText areas of a scene '''
+        return (it for it in self.items() if it.isVisible() and
+                isinstance(it, EditableText))
 
     @property
     def floating_symb(self):
@@ -418,42 +423,33 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def refresh(self):
         ''' Refresh the symbols and connections in the scene '''
-        for symbol in self.items():
-            try:
-                symbol.updateConnectionPointPosition()
-                symbol.updateConnectionPoints()
-            except AttributeError:
-                # Applies only to Symbol instances
-                pass
-            try:
-                # EditableText refreshing - design explanation:
-                # The first one is tricky: at symbol initialization,
-                # the bounding rect of the text is computed from the raw
-                # text value, without any formatting. However, it can
-                # happen that text (especially when a model is loaded)
-                # contains highlighted data (bold), which has the effect
-                # of making the width of the text in fact wider than
-                # the bounding rect. The set_text_alignment function,
-                # that is applying the aligment of the text within its
-                # bounding rect, can work only if the text width is fixed.
-                # It has to set it according to the bounding rect, which,
-                # therefore can be too small, and this has the effect of
-                # pushing the exceeding character to the next line.
-                # The only way to avoid this is to call setTextWidth
-                # with the value -1 before the aligment is computed.
-                # This has the effect of re-computing the bounding rect
-                # and fixing the width issue.
-                symbol.setTextWidth(-1)
-                symbol.set_textbox_position()
-                symbol.try_resize()
-                symbol.set_text_alignment()
-            except AttributeError:
-                pass
-        for symbol in self.items():
-            try:
-                symbol.update_connections()
-            except AttributeError:
-                pass
+        for symbol in self.visible_symb:
+            symbol.updateConnectionPointPosition()
+            symbol.updateConnectionPoints()
+        for symbol in self.editable_texts:
+            # EditableText refreshing - design explanation:
+            # The first one is tricky: at symbol initialization,
+            # the bounding rect of the text is computed from the raw
+            # text value, without any formatting. However, it can
+            # happen that text (especially when a model is loaded)
+            # contains highlighted data (bold), which has the effect
+            # of making the width of the text in fact wider than
+            # the bounding rect. The set_text_alignment function,
+            # that is applying the aligment of the text within its
+            # bounding rect, can work only if the text width is fixed.
+            # It has to set it according to the bounding rect, which,
+            # therefore can be too small, and this has the effect of
+            # pushing the exceeding character to the next line.
+            # The only way to avoid this is to call setTextWidth
+            # with the value -1 before the aligment is computed.
+            # This has the effect of re-computing the bounding rect
+            # and fixing the width issue.
+            symbol.setTextWidth(-1)
+            symbol.set_textbox_position()
+            symbol.try_resize()
+            symbol.set_text_alignment()
+        for symbol in self.visible_symb:
+            symbol.update_connections()
 
     def set_cursor(self, follower):
         ''' Set the cursor shape depending on the selected menu item '''

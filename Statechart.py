@@ -31,6 +31,7 @@ except ImportError:
           'the official repos: sudo apt-get install python-pygraphviz')
 
 import genericSymbols
+from Connectors import Edge
 
 RENDER_DPI = {'X': 93.0, 'Y': 95.0}
 G_SYMBOLS = set()
@@ -95,17 +96,17 @@ class Point(genericSymbols.HorizontalSymbol, object):
     _terminal_followers = []
     textbox_alignment = (QtCore.Qt.AlignTop
                          | QtCore.Qt.AlignHCenter)
+    has_text_area = False
 
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
         self.name = node['name']
-        super(Point, self).__init__(x=node['pos'][0],
-                y=node['pos'][1], text='')
+        super(Point, self).__init__(x=node['pos'][0], y=node['pos'][1])
         self.set_shape(node['width'], node['height'])
         self.setBrush(QtGui.QBrush(QtCore.Qt.black))
         self.graph = graph
         # Text is read only
-        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        #self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
@@ -137,12 +138,12 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
     _terminal_followers = []
     textbox_alignment = (QtCore.Qt.AlignTop
                          | QtCore.Qt.AlignHCenter)
+    has_text_area = False
 
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
         self.name = node['name']
-        super(Diamond, self).__init__(x=node['pos'][0],
-                y=node['pos'][1], text='')
+        super(Diamond, self).__init__(x=node['pos'][0], y=node['pos'][1])
         self.set_shape(node['width'], node['height'])
         self.graph = graph
 
@@ -170,215 +171,6 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
         ''' After moving item, ask dot to recompute the edges '''
         #update(self.scene())
         pass
-
-
-class Controlpoint(QtGui.QGraphicsPathItem, object):
-    ''' Class handling one edge control point (to change bezier curves) '''
-    def __init__(self, pos, edge):
-        ''' Set the original control point - with color, shape '''
-        path = QtGui.QPainterPath()
-        path.addEllipse(pos.x() - 5, pos.y() - 5, 10, 10)
-        super(Controlpoint, self).__init__(path, parent=edge)
-        self.setPen(QtGui.QColor(50, 100, 120, 200))
-        self.setBrush(QtGui.QColor(200, 200, 210, 120))
-        self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable |
-                      QtGui.QGraphicsItem.ItemIsMovable)
-        self.edge = edge
-        self.hide()
-
-    @property
-    def center(self):
-        ''' Return the position of the center of the shape '''
-        return self.pos() + self.boundingRect().center()
-
-    def mouseMoveEvent(self, event):
-        ''' When user moves a control point, update the connection shape '''
-        super(Controlpoint, self).mouseMoveEvent(event)
-        self.edge.reshape()
-
-
-class Connectionpoint(Controlpoint, object):
-    '''
-        Class handling an end connection point - similar to Controlpoint,
-        except the shape and the behaviour when moved. Connection point
-        must check with its owning symbol if the move is valid.
-    '''
-    def __init__(self, pos, edge, symbol):
-        ''' Create the point - as a small, lightblue box '''
-        super(Connectionpoint, self).__init__(pos, edge=edge)
-        path = QtGui.QPainterPath()
-        path.addRect(0, 0, 10, 10)
-        self.setPath(path)
-        self.setPos(pos.x() - 5, pos.y() - 5)
-        # Symbol actually owning the connection point
-        self.symbol = symbol
-
-
-    def update_position(self):
-        '''
-            Update the position of the end point so that it is always
-            placed correctly on the symbol that contains it (but that may
-            not be the parent of the point if is the end point)
-            After the position update, reshape the edge so that the lines
-            are properly drawn to the new position
-        '''
-        # Transform position to owning symbol coordinates:
-        center_pos = self.scenePos() + self.boundingRect().center()
-        pos_symb = self.symbol.mapFromScene(center_pos)
-
-        # Ask to symbol the nearest valid position on its shape
-        # to place the connection point, and adjust position
-        nearest_x, nearest_y = self.symbol.closest_connection_point(pos_symb)
-
-        self.moveBy(-nearest_x, -nearest_y)
-
-        self.edge.reshape()
-
-    def mouseMoveEvent(self, event):
-        '''
-            When user moves the point, check with the connected symbol
-            where the actual connection point should be placed
-        '''
-        # calling super function moves to the new point
-        super(Connectionpoint, self).mouseMoveEvent(event)
-        # Then compute a valid position, based on the owning symbol
-        self.update_position()
-
-
-class Edge(genericSymbols.Connection, object):
-    ''' B-spline/Bezier connection shape '''
-    def __init__(self, edge, graph):
-        ''' Set generic parameters from Connection class '''
-        self.text_label = None
-        super(Edge, self).__init__(edge['source'], edge['target'])
-        self.edge = edge
-        self.graph = graph
-
-        # Initialize control point coordinates
-        # Start and End points are optional - graphviz decision
-        self.start_point = (self.mapFromScene(*self.edge['start']) if
-                 self.edge.get('start') else None)
-        self.end_point = (self.mapFromScene(*self.edge['end']) if
-                 self.edge.get('end') else None)
-        self.bezier = [self.mapFromScene(*self.edge['spline'][0])]
-        # Bezier control points (groups of three points):
-        assert(len(self.edge['spline']) % 3 == 1)
-        for i in xrange(1, len(self.edge['spline']), 3):
-            self.bezier.append([Controlpoint(
-                          self.mapFromScene(*self.edge['spline'][i + j]), self)
-                          for j in range(3)])
-        # Set connection points as not visible, by default
-        self.bezier_visible = False
-        
-        # Create connection points at start and end of the edge
-        self.source_connection = Connectionpoint(
-                self.start_point or self.bezier[0], self, self.parent)
-        self.parent.movable_points.append(self.source_connection)
-        self.end_connection = Connectionpoint(
-                self.end_point or self.bezier[-1], self, self.child)
-        self.child.movable_points.append(self.end_connection)
-        self.reshape()
-
-    def bezier_set_visible(self, visible=True):
-        ''' Display or hide the edge control points '''
-        self.bezier_visible = visible
-        for group in self.bezier[1:]:
-            for ctrl_point in group:
-                if visible:
-                    ctrl_point.show()
-                else:
-                    ctrl_point.hide()
-        if visible:
-            self.end_connection.show()
-            self.source_connection.show()
-        else:
-            self.end_connection.hide()
-            self.source_connection.hide()
-        self.update()
-
-    def mousePressEvent(self, event):
-        ''' On a mouse click, display the control points '''
-        self.bezier_set_visible(True)
-
-   # pylint: disable=R0914
-    def reshape(self):
-        ''' Update the shape of the edge (redefined function) '''
-        path = QtGui.QPainterPath()
-        # If there is a starting point, draw a line to the first curve point
-        if self.start_point:
-            path.moveTo(self.source_connection.center) #start_point)
-            path.lineTo(self.bezier[0])
-        else:
-            path.moveTo(self.source_connection.center)#bezier[0])
-        # Loop over the curve points:
-        for group in self.bezier[1:]:
-            path.cubicTo(*[point.center for point in group])
-
-        # If there is an ending point, draw a line to it
-        if self.end_point:
-            path.lineTo(self.end_connection.center) #end_point)
-
-        # Draw the arrow head
-        length = path.length()
-        percent = path.percentAtLength(length - 10.0)
-        src = path.pointAtPercent(percent)
-        #angle = path.angleAtPercent(percent)
-        #print angle
-        end_point = path.currentPosition()
-        line = QtCore.QLineF(src, end_point)
-        angle = math.acos(line.dx() / line.length())
-        if line.dy() >= 0:
-            angle = math.pi * 2 - angle
-        arrow_size = 10.0
-        arrow_p1 = end_point + QtCore.QPointF(
-                math.sin(angle - math.pi/3) * arrow_size,
-                math.cos(angle - math.pi/3) * arrow_size)
-        arrow_p2 = end_point + QtCore.QPointF(
-                math.sin(angle - math.pi + math.pi/3) * arrow_size,
-                math.cos(angle - math.pi + math.pi/3) * arrow_size)
-        path.lineTo(arrow_p1)
-        path.lineTo(end_point)
-        path.lineTo(arrow_p2)
-        path.moveTo(end_point)
-        try:
-            # Add the transition label, if any (none for the START edge)
-            font = QtGui.QFont('arial', pointSize=8)
-            width = QtGui.QFontMetrics(font).width(
-                    self.edge.get('label', 0))
-            pos = self.mapFromScene(*self.edge['lp'])
-            #path.addText(pos.x() - width/2, pos.y(),
-            #        font, self.edge['label'])
-            if not self.text_label:
-                self.text_label = QtGui.QGraphicsTextItem(
-                                 self.edge.get('label', ''), parent=self)
-            self.text_label.setX(pos.x() - width / 2)
-            self.text_label.setY(pos.y())
-            self.text_label.setFont(font)
-            self.text_label.show()
-        except KeyError:
-            # no label
-            pass
-        self.setPath(path)
-
-
-    def __str__(self):
-        ''' user-friendly information about the edge coordinates '''
-        return('Edge between ' + self.edge['source'].name + ' and ' +
-                self.edge['target'].name + str(self.edge['spline'][0]))
-
-    def paint(self, painter, option, widget):
-        ''' Apply anti-aliasing to Edge Connections '''
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
-        super(Edge, self).paint(painter, option, widget)
-        # Draw lines between connection points, if visible
-        if self.bezier_visible:
-            painter.setPen(
-                    QtGui.QPen(QtCore.Qt.lightGray, 0, QtCore.Qt.SolidLine))
-            painter.setBrush(QtCore.Qt.NoBrush)
-            points_flat = [point.center
-                           for sub1 in self.bezier[1:] for point in sub1]
-            painter.drawPolyline([self.source_connection.center]
-                                  + points_flat + [self.end_connection.center])
 
 def edges(scene, node):
     ''' Return all edges of a given node '''

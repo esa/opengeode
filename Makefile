@@ -1,10 +1,10 @@
 all: compile-all
 
-regression: compile-all
-	    make -C tests/regression all
+regression:
+	make -C tests/regression all
 
-coverage: compile-all
-	  make -C tests/regression coverage
+coverage: 
+	make -C tests/regression coverage
 
 compile-all:
 	pyside-rcc opengeode.qrc -o icons.py
@@ -13,7 +13,7 @@ compile-all:
 
 install: compile-all
 	mkdir -p opengeode
-	for f in AdaGenerator.py __init__.py genericSymbols.py icons.py ogAST.py ogParser.py opengeode.py Renderer.py samnmax.py sdl92Lexer.py sdl92Parser.py sdlSymbols.py undoCommands.py Clipboard.py Statechart.py LlvmGenerator.py Lander.py; do echo Installing $$f && cp $$f opengeode; done
+	for f in AdaGenerator.py __init__.py genericSymbols.py icons.py ogAST.py ogParser.py opengeode.py Renderer.py samnmax.py sdl92Lexer.py sdl92Parser.py sdlSymbols.py undoCommands.py Clipboard.py Statechart.py LlvmGenerator.py Lander.py Helper.py Connectors.py; do echo Installing $$f && cp $$f opengeode; done
 	python setup.py install
 
 publish: install

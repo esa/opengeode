@@ -69,17 +69,8 @@ from PySide.QtUiTools import QUiLoader
 import undoCommands
 import ogAST
 import ogParser
-
-if hasattr(sys, 'frozen'):
-    # Detect py2exe distribution (that does not support the __file__ construct)
-    try:
-        CUR_DIR = os.path.dirname(unicode
-            (sys.executable, sys.getfilesystemencoding()))
-    except TypeError:
-        # On Linux with pyinstaller the above will not work
-        CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-else:
-    CUR_DIR = os.path.dirname(os.path.realpath(__file__))
+from Connectors import Connection, VerticalConnection, CommentConnection, \
+                       RakeConnection, JoinConnection
 
 LOG = logging.getLogger(__name__)
 
@@ -426,108 +417,6 @@ class EditableText(QGraphicsTextItem, object):
             return ''
 
 
-# pylint: disable=R0904
-class Connection(QGraphicsPathItem, object):
-    ''' Connection between two symbols (arrow) '''
-    # Default connections are not selectable
-    default_cursor = Qt.ArrowCursor
-    hasParent = False
-
-    def __init__(self, parent, child, connectionPoint=False):
-        super(Connection, self).__init__(parent)
-        self.parent = parent
-        self.child = child
-        self.child_is_a_connection_point = connectionPoint
-        self.start_point = QPointF(0, 0)
-        self.end_point = QPointF(0, 0)
-        pen = QPen()
-        pen.setColor(Qt.blue)
-        pen.setCosmetic(False)
-        self.setPen(pen)
-        self.parent_rect = parent.sceneBoundingRect()
-        self.childRect = child.sceneBoundingRect()
-        # Activate cache mode to boost rendering by calling paint less often
-        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
-
-    def __str__(self):
-        ''' Print connection information for debug purpose'''
-        return 'Connection: parent = {p}, child = {c}'.format(
-                p=str(self.parentItem()), c=str(self.child))
-
-    def reshape(self):
-        ''' Update the connection or arrow shape '''
-        new_shape = QPainterPath()
-        if(self.parentItem().terminal_symbol
-                and self.child_is_a_connection_point):
-            self.setPath(new_shape)
-            return
-        parent_rect = self.parentItem().boundingRect()
-        # Define connection start point
-        if hasattr(self.parentItem(), 'connectionPoint') and not isinstance(
-                self.child, (HorizontalSymbol, Comment)):
-            self.start_point = self.parentItem().connectionPoint
-        elif isinstance(self.child, Comment):
-            self.start_point = QPointF(
-                    parent_rect.width(), parent_rect.height() / 2)
-        else:
-            self.start_point = QPointF(
-                    parent_rect.width() / 2, parent_rect.height())
-        # Defined connection end point
-        if self.child_is_a_connection_point:
-            connection_point_scene = self.child.mapToScene(
-                    self.child.connectionPoint)
-            connection_point_local = self.mapFromScene(
-                    connection_point_scene)
-            self.end_point = connection_point_local
-        elif isinstance(self.child, Comment):
-            if self.child.on_the_right:
-                self.end_point = QPointF(self.child.x(),
-                        self.child.y() +
-                        self.child.boundingRect().height() / 2)
-            else:
-                self.end_point = QPointF(self.child.x() +
-                        self.child.boundingRect().width(),
-                        self.child.y() +
-                        self.child.boundingRect().height() / 2)
-        else:
-            self.end_point = QPointF()
-            self.end_point.setY(self.child.pos().y())
-        # Move to start point and draw the connection
-        new_shape.moveTo(self.start_point)
-        if not self.child_is_a_connection_point and not isinstance(
-                self.child, Comment):
-            if isinstance(self.child, HorizontalSymbol):
-                self.end_point.setX(self.child.pos().x() +
-                        self.child.boundingRect().width() / 2)
-                new_shape.lineTo(self.start_point.x(),
-                        self.start_point.y() + 10)
-                new_shape.lineTo(self.end_point.x(), self.start_point.y() + 10)
-            else:
-                self.end_point.setX(self.start_point.x())
-        elif isinstance(self.child, Comment):
-            # Make sure the connection does not overlap the comment item
-            if (self.child.on_the_right or
-                    (not self.child.on_the_right and
-                        self.child.x() + self.child.boundingRect().width()
-                        < self.parentItem().boundingRect().width())):
-                go_to_point = self.start_point.x() + 5
-            else:
-                go_to_point = self.end_point.x() + 5
-            new_shape.lineTo(go_to_point, self.start_point.y())
-            new_shape.lineTo(go_to_point, self.end_point.y())
-            new_shape.lineTo(self.end_point.x(), self.end_point.y())
-        else:
-            new_shape.lineTo(self.start_point.x(), self.end_point.y() - 10)
-            new_shape.lineTo(self.end_point.x(), self.end_point.y() - 10)
-        new_shape.lineTo(self.end_point)
-        # If required draw an arrow head (e.g. in SDL NEXTSTATE and JOIN)
-        if self.child.arrow_head:
-            new_shape.lineTo(self.end_point.x() - 5, self.end_point.y() - 5)
-            new_shape.moveTo(self.end_point)
-            new_shape.lineTo(self.end_point.x() + 5, self.end_point.y() - 5)
-        self.setPath(new_shape)
-
-
 # pylint: disable=R0904, R0902
 class Symbol(QObject, QGraphicsPathItem, object):
     '''
@@ -744,7 +633,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
             _, syntax_errors, ___, ____, _____ = (
                                 self.parser.parseSingleElement(
                                                 self.common_name, repr(self)))
-        except (AssertionError, AttributeError):
+        except (AssertionError, AttributeError) as err:
             LOG.error('Checker failed - no parser for this construct?')
         else:
             try:
@@ -790,15 +679,14 @@ class Symbol(QObject, QGraphicsPathItem, object):
                 # to the connection point
                 for child in self.childItems():
                     # Find the connection point below
-                    if(isinstance(child, Connection) and
-                            child.child_is_a_connection_point):
+                    if isinstance(child, JoinConnection):
                         connection_below = child
                         break
                 if bep is not self:
                     # Item is not the branch entry point itself
                     bep.last_branch_item = self.parentItem()
                     connection_below.setParentItem(self.parentItem())
-                    self.parentItem().connectionBelow = connection_below
+                    #self.parentItem().connectionBelow = connection_below
                 else:
                     # delete the link to the connection point
                     connection_below.setParentItem(None)
@@ -829,7 +717,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
             self.parentItem().cam(self.parentItem().pos(),
                                   self.parentItem().pos())
             self.setParentItem(None)
-        # Following line cause segfault on exit:
+        # Following line causes segfault on exit:
         #scene().removeItem(self)
         try:
             entrypoint_parent.updateConnectionPointPosition()
@@ -845,7 +733,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         ''' Return the connection above the symbol '''
         try:
             connection, = [cnx for cnx in self.parent.connections()
-                    if cnx.child == self]
+                           if cnx.child == self]
             return connection
         except ValueError:
             return None
@@ -924,7 +812,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # Align children properly when resizing
         try:
             self.text.set_textbox_position()
-        except AttributeError:
+        except AttributeError as err:
             # if called before text is initialized - or if no textbox
             pass
         for child in self.childSymbols():
@@ -1146,7 +1034,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
             self.setPos(old_pos)
 
 
-class Comment(Symbol, object):
+class Comment(Symbol):
     '''
         Class used to handle right connected comments
     '''
@@ -1162,8 +1050,9 @@ class Comment(Symbol, object):
             local_pos = parent.mapFromScene(ast.pos_x, ast.pos_y)
             self.insert_symbol(parent, local_pos.x(), local_pos.y())
         self.set_shape(ast.width, ast.height)
-        self.text = EditableText(parent=self, text=ast.inputString,
-                hyperlink=ast.hyperlink)
+        self.text = EditableText(parent=self,
+                                 text=ast.inputString,
+                                 hyperlink=ast.hyperlink)
         self.common_name = 'end'
         self.parser = ogParser
 
@@ -1192,6 +1081,10 @@ class Comment(Symbol, object):
                 self.boundingRect().height()) / 2)
         self.connection = self.connect_to_parent()
         parent.cam(parent.pos(), parent.pos())
+
+    def connect_to_parent(self):
+        ''' Redefinition of the function to use a comment connector '''
+        return CommentConnection(self.parent, self)
 
     def delete_symbol(self):
         '''
@@ -1391,6 +1284,10 @@ class HorizontalSymbol(Symbol, object):
         else:
             self.setPos(x or 0, y or 0)
 
+    def connect_to_parent(self):
+        ''' Redefined: connect to parent item '''
+        return RakeConnection(self.parent, self)
+
     def insert_symbol(self, parent, pos_x, pos_y):
         ''' Insert the symbol in the scene - Align below the parent '''
         if not parent:
@@ -1564,6 +1461,10 @@ class VerticalSymbol(Symbol, object):
             if isinstance(symbol, VerticalSymbol):
                 return symbol
         return None
+
+    def connect_to_parent(self):
+        ''' Redefined: connect to parent item with a straight line '''
+        return VerticalConnection(self.parent, self)
 
     def insert_symbol(self, parent, x, y):
         '''
