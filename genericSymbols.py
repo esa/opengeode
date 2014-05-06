@@ -857,7 +857,6 @@ class Symbol(QObject, QGraphicsPathItem, object):
         '''
         # Save current position to be able to revert move
         self.coord = self.pos()
-        #event_pos = event.pos()
         rect = self.boundingRect()
         self.height = rect.height()
         if self.grabber.resize_mode != '':
@@ -873,7 +872,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def mouse_move(self, event):
         ''' Handle resizing of items - moving is handled in subclass '''
         self.updateConnectionPoints()
-        # If any, update movable end points of connections 
+        # If any, update movable end points of connections
         for point in self.movable_points:
             point.edge.end_connection.update_position()
         if self.mode == 'Resize':

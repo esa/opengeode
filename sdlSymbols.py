@@ -322,30 +322,15 @@ class Decision(VerticalSymbol):
                 last_cnx, = (c for c in last.childItems() if
                     isinstance(c, Connection) and not
                     isinstance(c.child, (Comment, HorizontalSymbol)))
-                last_cnx.setParentItem(None)
+                # Don't set parent item to None to avoid Qt segfault
+                last_cnx.setParentItem(self)
             except ValueError:
-                pass
-            try:
-                # Disconnect the comment of the last item so that
-                # it's size is not taken into account
-                pass
-                # Bad idea (MP 05/05/14) Due to Pyside bugs, better avoid
-                # the setParentItem(None) calls
-                #last.comment.setParentItem(None)
-                #last.comment.connection.setParentItem(None)
-            except AttributeError:
                 pass
             branch_len = branch.y() + (
                     branch.boundingRect() |
                     branch.childrenBoundingRect()).height()
             try:
                 last_cnx.setParentItem(last)
-            except AttributeError:
-                pass
-            try:
-                # Reconnect the comment of the last item
-                last.comment.setParentItem(last)
-                last.comment.connection.setParentItem(last)
             except AttributeError:
                 pass
             # If last item was a decision, use its connection point

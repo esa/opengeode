@@ -86,7 +86,7 @@ except ImportError:
     pass
 
 __all__ = ['opengeode']
-__version__ = '0.99'
+__version__ = '0.991'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -961,7 +961,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     item.select()
                 except AttributeError:
                     pass
-            self.removeItem(self.select_rect)
+            #self.removeItem(self.select_rect)
+            # XXX stop with removeItem, it provokes segfault
+            self.select_rect.hide()
         self.mode = 'idle'
         super(SDL_Scene, self).mouseReleaseEvent(event)
 
@@ -1095,6 +1097,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
 class SDL_View(QtGui.QGraphicsView, object):
     ''' Main graphic view used to display the SDL scene and handle zoom '''
+    # signal to ask the main application that a new scene is needed
+    need_new_scene = QtCore.Signal()
     def __init__(self, scene):
         ''' Create the SDL view holding the scene '''
         super(SDL_View, self).__init__(scene)
@@ -1194,7 +1198,9 @@ class SDL_View(QtGui.QGraphicsView, object):
         scene_rect.setWidth(max(scene_rect.width(), view_size.width()))
         scene_rect.setHeight(max(scene_rect.height(), view_size.height()))
         if self.phantom_rect and self.phantom_rect in self.scene().items():
-            self.scene().removeItem(self.phantom_rect)
+            #self.scene().removeItem(self.phantom_rect)
+            # XXX stop with removeItem, it provokes segfault
+            self.phantom_rect.hide()
         self.phantom_rect = self.scene().addRect(scene_rect,
                 pen=QtGui.QPen(QtGui.QColor(0, 0, 0, 0)))
         # Hide the rectangle so that it does not collide with the symbols
@@ -1318,7 +1324,10 @@ class SDL_View(QtGui.QGraphicsView, object):
         # Adjust scrollbars if diagram got bigger due to a move
         if self.scene().context != 'statechart':
             # Make sure scene size remains OK when adding/moving symbols
-            self.refresh()
+            # Avoid doing it when editing texts - it would prevent text
+            # selection or cursor move
+            if not isinstance(self.scene().focusItem(), EditableText):
+                self.refresh()
         super(SDL_View, self).mouseReleaseEvent(evt)
 
     def save_as(self):
@@ -1419,46 +1428,54 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
-        if self.new_diagram():
-            filenames, _ = QtGui.QFileDialog.getOpenFileNames(self,
-                    "Open model(s)", ".", "SDL model (*.pr)")
-            if not filenames:
-                return
-            else:
-                self.load_file(filenames)
+        if not self.new_diagram():
+            return
+        filenames, _ = QtGui.QFileDialog.getOpenFileNames(self,
+                "Open model(s)", ".", "SDL model (*.pr)")
+        if not filenames:
+            return
+        else:
+            self.load_file(filenames)
+
+    def isModelClean(self):
+        ''' Check recursively if anything has changed in any scene '''
+        if self.parent_scene:
+            scene = self.parent_scene[0][0]
+        else:
+            scene = self.scene()
+        for each in chain([scene], scene.all_nested_scenes):
+            if not each.undo_stack.isClean():
+                return False
+        return True
+
+    def propose_to_save(self):
+        ''' Display a dialog to let the user save his diagram '''
+        msg_box = QtGui.QMessageBox(self)
+        msg_box.setWindowTitle('OpenGEODE')
+        msg_box.setText("The model has been modified.")
+        msg_box.setInformativeText("Do you want to save your changes?")
+        msg_box.setStandardButtons(QtGui.QMessageBox.Save |
+                QtGui.QMessageBox.Discard |
+                QtGui.QMessageBox.Cancel)
+        msg_box.setDefaultButton(QtGui.QMessageBox.Save)
+        ret = msg_box.exec_()
+        if ret == QtGui.QMessageBox.Save:
+            if not self.save_diagram():
+                return False
+        elif ret == QtGui.QMessageBox.Cancel:
+            return False
+        return True
 
     def new_diagram(self):
         ''' If model state is clean, reset current diagram '''
-        # FIXME: incomplete check of the cleanliness of the model
-        # - must check all subscenes
-        if self.scene().undo_stack.isClean():
-            is_clean = True
-            while self.parent_scene:
-                self.go_up()
-                if not self.scene().undo_stack.isClean():
-                    is_clean = False
-        else:
-            is_clean = False
-        if not is_clean:
+        if not self.isModelClean():
             # If changes occured since last save, pop up a window
-            msg_box = QtGui.QMessageBox(self)
-            msg_box.setWindowTitle('OpenGEODE')
-            msg_box.setText("The model has been modified.")
-            msg_box.setInformativeText("Do you want to save your changes?")
-            msg_box.setStandardButtons(QtGui.QMessageBox.Save |
-                    QtGui.QMessageBox.Discard |
-                    QtGui.QMessageBox.Cancel)
-            msg_box.setDefaultButton(QtGui.QMessageBox.Save)
-            ret = msg_box.exec_()
-            if ret == QtGui.QMessageBox.Save:
-                if not self.save_diagram():
-                    return False
-            elif ret == QtGui.QMessageBox.Discard:
-                pass
-            elif ret == QtGui.QMessageBox.Cancel:
+            if not self.propose_to_save():
                 return False
-        self.scene().undo_stack.clear()
-        self.scene().clear()
+        self.need_new_scene.emit()
+        self.parent_scene = []
+        #self.scene().undo_stack.clear()
+        #self.scene().clear()
         G_SYMBOLS.clear()
         self.scene().process_name = ''
         self.filename = None
@@ -1549,10 +1566,21 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.datatypes_scene = None
         self.asn1_area = None
 
+    def new_scene(self):
+        ''' Create a new, clean SDL scene. This function is necessary because
+        it is not possible to use QGraphicsScene.clear(), because of Pyside
+        bugs with deletion of items on application exit '''
+        self.scene = SDL_Scene(context='block')
+        if self.view:
+            self.scene.messages_window = self.view.messages_window
+            self.view.setScene(self.scene)
+            self.view.refresh()
+
+
     def start(self, file_name):
         ''' Initializes all objects to start the application '''
         # Create a graphic scene: the main canvas
-        self.scene = SDL_Scene(context='block')
+        self.new_scene()
         # Find SDL_View widget
         self.view = self.findChild(SDL_View, 'graphicsView')
         self.view.setScene(self.scene)
@@ -1578,6 +1606,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         about_action.activated.connect(self.view.about_og)
         ada_action.activated.connect(self.view.generate_ada)
         png_action.activated.connect(self.view.save_png)
+
+        # Connect signal to let the view request a new scene
+        self.view.need_new_scene.connect(self.new_scene)
 
         # Add a toolbar widget (not in .ui file due to pyside bugs)
         toolbar = Sdl_toolbar(self)
@@ -1688,11 +1719,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             _, pattern, new, _ = search.match(command).groups()
             LOG.debug('Replacing {this} with {that}'
                           .format(this=pattern, that=new))
-            self.scene.search(pattern, replace_with=new)
+            self.view.scene().search(pattern, replace_with=new)
         except AttributeError:
             if command.startswith('/') and len(command) > 1:
                 LOG.debug('Searching for ' + command[1:])
-                self.scene.search(command[1:])
+                self.view.scene().search(command[1:])
             else:
                 saveclose = re.compile(r':(w)?(q)?(!)?')
                 try:
@@ -1702,7 +1733,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                         if not saved and not force and close_app:
                             return
                     if force and close_app:
-                        self.scene.undo_stack.clear()
+                        self.view.scene().undo_stack.clear()
                     if close_app:
                         self.close()
                 except AttributeError:
@@ -1712,7 +1743,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     def keyPressEvent(self, key_event):
         ''' Handle keyboard: Statechart rendering '''
         if key_event.key() == Qt.Key_F4 and graphviz:
-            graph = self.scene.sdl_to_statechart()
+            if self.view.parent_scene:
+                scene = self.view.parent_scene[0][0]
+            else:
+                scene = self.view.scene()
+            graph = scene.sdl_to_statechart()
             try:
                 Statechart.render_statechart(self.statechart_scene, graph)
             except (IOError, TypeError) as err:
@@ -1730,16 +1765,17 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     # pylint: disable=C0103
     def closeEvent(self, event):
         ''' Close main application '''
-        if self.view.new_diagram():
-            # Clear the list of top-level symbols to avoid possible exit-crash
-            # due to pyside badly handling items that are not part of any scene
-            G_SYMBOLS.clear()
-            # Also clear undo stack that may keep reference to items
-            self.scene.undo_stack.clear()
-            LOG.debug('Bye bye!')
-            super(OG_MainWindow, self).closeEvent(event)
-        else:
-            event.ignore()
+        if not self.view.isModelClean():
+            if not self.view.propose_to_save():
+                event.ignore()
+                return
+        # Clear the list of top-level symbols to avoid possible exit-crash
+        # due to pyside badly handling items that are not part of any scene
+        G_SYMBOLS.clear()
+        # Also clear undo stack that may keep reference to items
+        self.scene.undo_stack.clear()
+        LOG.debug('Bye bye!')
+        super(OG_MainWindow, self).closeEvent(event)
 
 
 def opengeode():
