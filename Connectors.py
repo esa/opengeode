@@ -27,7 +27,6 @@ from PySide.QtGui import QGraphicsPathItem, QPainterPath, QGraphicsItem, QPen,\
                          QPainter, QFont, QGraphicsTextItem, QColor, \
                          QFontMetrics
 
-
 # pylint: disable=R0904
 class Connection(QGraphicsPathItem, object):
     ''' Connection between two symbols (top-level class) '''
@@ -67,17 +66,47 @@ class Connection(QGraphicsPathItem, object):
         ''' Compute connection intermediate points - redefine in subclasses '''
         return self._middle_points
 
-    def arrow(self, path=None):
-        ''' Compute the two points of an arrow head - vertical by default '''
-        endp = self.end_point
+    def simple_arrow(self, origin='head', path=None):
+        ''' Compute the two points of an vertical arrow head '''
+        if origin == 'head':
+            endp = self.end_point
+        else:
+            endp = self.start_point
         return (QPointF(endp.x() - 5, endp.y() - 5),
                 QPointF(endp.x() + 5, endp.y() - 5))
 
-    def draw_arrow_head(self, shape):
-        ''' Generic function to draw any arrow head - don't redefine '''
-        arrowhead = self.arrow(shape)
+    def angle_arrow(self, path, origin='head'):
+        ''' Compute the two points of the arrow head with the right angle '''
+        if origin == 'tail':
+            path = path.toReversed()
+        length = path.length()
+        percent = path.percentAtLength(length - 10.0)
+        src = path.pointAtPercent(percent)
+        #path.moveTo(path.pointAtPercent(1))
+        end_point = path.pointAtPercent(1)
+        #end_point = path.currentPosition()
+        line = QLineF(src, end_point)
+        angle = math.acos(line.dx() / (line.length() or 1))
+        if line.dy() >= 0:
+            angle = math.pi * 2 - angle
+        arrow_size = 10.0
+        arrow_p1 = end_point + QPointF(
+                math.sin(angle - math.pi/3) * arrow_size,
+                math.cos(angle - math.pi/3) * arrow_size)
+        arrow_p2 = end_point + QPointF(
+                math.sin(angle - math.pi + math.pi/3) * arrow_size,
+                math.cos(angle - math.pi + math.pi/3) * arrow_size)
+        return (arrow_p1, arrow_p2)
+
+
+    def draw_arrow_head(self, shape, origin='head', kind='simple'):
+        ''' Generic function to draw a simple arrow '''
+        if kind == 'simple':
+            arrowhead = self.simple_arrow(path=shape)
+        else:
+            arrowhead = self.angle_arrow(shape, origin)
         shape.lineTo(arrowhead[0])
-        shape.moveTo(self.end_point)
+        shape.moveTo(self.end_point if origin == 'head' else self.start_point)
         shape.lineTo(arrowhead[1])
 
     def __str__(self):
@@ -94,7 +123,12 @@ class Connection(QGraphicsPathItem, object):
         shape.lineTo(self.end_point)
         # If required draw an arrow head (e.g. in SDL NEXTSTATE and JOIN)
         if self.child.arrow_head:
-            self.draw_arrow_head(shape)
+            self.draw_arrow_head(shape, origin='head',
+                                 kind=self.child.arrow_head)
+        if self.child.arrow_tail:
+            shape.moveTo(shape.pointAtPercent(0))
+            self.draw_arrow_head(shape, origin='tail',
+                                 kind=self.child.arrow_head)
         self.setPath(shape)
 
 
@@ -203,21 +237,27 @@ class CommentConnection(Connection):
 
 class Channel(Connection):
     ''' Subclass of Connection used to draw channels between processes '''
-    def __init__(self, elem1, elem2):
+    def __init__(self, process):
         ''' Set generic parameters from Connection class '''
-        super(Channel, self).__init__(elem1, elem2)
+        super(Channel, self).__init__(process, process)
         self.text_label = None
-        self.elem1 = elem1
-        self.elem2 = elem2
+        self.process = process
 
-    def reshape(self):
-        ''' Update the shape of the connection line '''
-        super(Channel, self).reshape()
+    @property
+    def start_point(self):
+        ''' Compute connection origin - redefined function '''
+        parent_rect = self.process.boundingRect()
+        return QPointF(parent_rect.x(), parent_rect.height() / 2)
 
-    def paint(self, painter, option, widget):
-        ''' Apply antialiasing '''
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        super(Channel, self).paint(painter, option, widget)
+    @property
+    def end_point(self):
+        ''' Compute connection end point - redefined function '''
+        # Arrow always bumps at the screen edge
+        view = self.scene().views()[0]
+        view_pos = view.mapToScene(
+                           view.viewport().geometry()).boundingRect().topLeft()
+        scene_pos_x = self.mapFromScene(view_pos).x()
+        return QPointF(scene_pos_x, self.start_point.y())
 
 
 class Controlpoint(QGraphicsPathItem, object):
@@ -356,26 +396,7 @@ class Edge(Connection):
         ''' On a mouse click, display the control points '''
         self.bezier_set_visible(True)
 
-    def arrow(self, path):
-        ''' Compute the two points of the arrow head with the right angle '''
-        length = path.length()
-        percent = path.percentAtLength(length - 10.0)
-        src = path.pointAtPercent(percent)
-        end_point = path.currentPosition()
-        line = QLineF(src, end_point)
-        angle = math.acos(line.dx() / line.length())
-        if line.dy() >= 0:
-            angle = math.pi * 2 - angle
-        arrow_size = 10.0
-        arrow_p1 = end_point + QPointF(
-                math.sin(angle - math.pi/3) * arrow_size,
-                math.cos(angle - math.pi/3) * arrow_size)
-        arrow_p2 = end_point + QPointF(
-                math.sin(angle - math.pi + math.pi/3) * arrow_size,
-                math.cos(angle - math.pi + math.pi/3) * arrow_size)
-        return (arrow_p1, arrow_p2)
-
-   # pylint: disable=R0914
+  # pylint: disable=R0914
     def reshape(self):
         ''' Update the shape of the edge (redefined function) '''
         path = QPainterPath()
@@ -394,7 +415,7 @@ class Edge(Connection):
             path.lineTo(self.end_connection.center)
 
         end_point = path.currentPosition()
-        arrowhead = self.arrow(path)
+        arrowhead = self.angle_arrow(path)
         path.lineTo(arrowhead[0])
         path.moveTo(end_point)
         path.lineTo(arrowhead[1])

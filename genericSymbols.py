@@ -48,6 +48,7 @@
     Contact: maxime.perrotin@esa.int
 """
 
+__all__ = ['Symbol', 'VerticalSymbol', 'HorizontalSymbol', 'Comment']
 import os
 import sys
 import logging
@@ -434,7 +435,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     # By default symbol size may expand when inner text exceeds border
     auto_expand = True
     # By default connections between symbols are lines, not arrows
-    arrow_head = False
+    arrow_head = None
+    arrow_tail = None
     # Default mouse cursor
     default_cursor = Qt.SizeAllCursor
     # Decide if a symbol can be copy-pasted several times

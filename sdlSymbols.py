@@ -32,7 +32,7 @@ from PySide.QtGui import(QPainterPath, QBrush, QColor, QPolygon,
         QRadialGradient, QPainter, QPolygonF, QPen)
 
 from genericSymbols import HorizontalSymbol, VerticalSymbol, Comment
-from Connectors import Connection, JoinConnection
+from Connectors import Connection, JoinConnection, Channel
 
 import ogParser
 import ogAST
@@ -475,7 +475,7 @@ class DecisionAnswer(HorizontalSymbol):
 class Join(VerticalSymbol):
     ''' JOIN symbol (GOTO) '''
     auto_expand = False
-    arrow_head = True
+    arrow_head = 'simple'
     common_name = 'terminator_statement'
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -828,7 +828,7 @@ class State(VerticalSymbol):
     ''' SDL STATE Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = ['Input', 'Connect']
-    arrow_head = True
+    arrow_head = 'simple'
     common_name = 'terminator_statement'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
@@ -1002,6 +1002,8 @@ class Process(HorizontalSymbol):
     redbold = SDL_REDBOLD
     completion_list = set()
     is_singleton = True
+    arrow_head = 'angle'
+    arrow_tail = 'angle'
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()
@@ -1016,6 +1018,15 @@ class Process(HorizontalSymbol):
         if ast.comment:
             Comment(parent=self, ast=ast.comment)
         self.nested_scene = subscene
+
+    def insert_symbol(self, parent, x, y):
+        ''' Redefinition - adds connection line to env '''
+        super(Process, self).insert_symbol(parent, x, y)
+        self.connection = self.connect_to_parent()
+
+    def connect_to_parent(self):
+        ''' Redefinition: creates connection to env with a channel '''
+        return Channel(self)
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
@@ -1099,6 +1110,10 @@ class Procedure(Process):
         if ast.comment:
             Comment(parent=self, ast=ast.comment)
         self.nested_scene = subscene
+    
+    def insert_symbol(self, parent, x, y):
+        ''' Redefinition - no connection line to env '''
+        super(Process, self).insert_symbol(parent, x, y)
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
@@ -1113,7 +1128,7 @@ class Procedure(Process):
         path.lineTo(width, height - 7)
         path.lineTo(width - 7, height)
         self.setPath(path)
-        super(Procedure, self).set_shape(width, height)
+        super(Process, self).set_shape(width, height)
 
     def update_completion_list(self):
         ''' When text was entered, update completion list of ProcedureCall '''

@@ -39,7 +39,15 @@ from singledispatch import singledispatch
 
 LOG = logging.getLogger(__name__)
 
-__all__ = ['render']
+__all__ = ['render', 'add_to_scene']
+
+
+def add_to_scene(item, scene):
+    ''' Add item to a scene after verifying that the scene allows it '''
+    if type(item) in scene.allowed_symbols:
+        scene.addItem(item)
+    else:
+        raise TypeError('This symbol does not fit the current scene')
 
 @singledispatch
 def render(ast, scene, parent, states, terminators=None):
@@ -62,7 +70,7 @@ def _block(ast, scene):
 
 
 @render.register(ogAST.Process)
-def _process(ast, scene):
+def _process(ast, scene, **_):
     ''' Render a Process symbol (in a BLOCK diagram) '''
     # Set autocompletion lists for input, output, state, types, variables:
     try:
@@ -82,7 +90,7 @@ def _process(ast, scene):
             proc.inputString for proc in ast.procedures}
 
     symbol = sdlSymbols.Process(ast, ast)
-    scene.addItem(symbol)
+    add_to_scene(symbol, scene)
     return symbol
 
 
@@ -149,7 +157,7 @@ def _state(ast, scene, states, terminators, parent=None):
             raise TypeError('This state is a terminator')
     new_state = sdlSymbols.State(parent=None, ast=ast)
     if new_state not in scene.items():
-        scene.addItem(new_state)
+        add_to_scene(new_state, scene)
 
     for exit in chain(ast.inputs, ast.connects):
         render(exit, scene=scene, parent=new_state, states=states)
@@ -164,7 +172,7 @@ def _procedure(ast, scene, parent=None, states=None):
     ''' Add a procedure symbol to the scene '''
     _, _ = parent, states
     proc_symbol = sdlSymbols.Procedure(ast, ast)
-    scene.addItem(proc_symbol)
+    add_to_scene(proc_symbol, scene)
     return proc_symbol
 
 
@@ -173,7 +181,7 @@ def _text_area(ast, scene, parent=None, states=None):
     ''' Render a text area from the AST '''
     _, _ = parent, states
     text = sdlSymbols.TextSymbol(ast)
-    scene.addItem(text)
+    add_to_scene(text, scene)
     return text
 
 
@@ -182,7 +190,7 @@ def _start(ast, scene, states, parent=None):
     ''' Add the start symbol to a scene '''
     _ = parent
     start_symbol = sdlSymbols.Start(ast)
-    scene.addItem(start_symbol)
+    add_to_scene(start_symbol, scene)
     if ast.transition:
         render(ast.transition, scene=scene, parent=start_symbol, states=states)
     return start_symbol
@@ -193,7 +201,7 @@ def _start(ast, scene, states, parent=None):
     ''' Add an editable start symbol to a scene (in composite states) '''
     _ = parent
     start_symbol = sdlSymbols.StateStart(ast)
-    scene.addItem(start_symbol)
+    add_to_scene(start_symbol, scene)
     if ast.transition:
         render(ast.transition,
                       scene=scene, parent=start_symbol, states=states)
@@ -205,7 +213,7 @@ def _procedure_start(ast, scene, states, parent=None):
     ''' Add the procedure start symbol to a scene '''
     _ = parent
     start_symbol = sdlSymbols.ProcedureStart(ast)
-    scene.addItem(start_symbol)
+    add_to_scene(start_symbol, scene)
     if ast.transition:
         render(ast.transition, scene=scene, parent=start_symbol, states=states)
     return start_symbol
@@ -217,7 +225,7 @@ def _floating_label(ast, scene, states, parent=None):
     _ = parent
     lab = sdlSymbols.Label(parent=None, ast=ast)
     if lab not in scene.items():
-        scene.addItem(lab)
+        add_to_scene(lab, scene)
     lab.setPos(ast.pos_x, ast.pos_y)
     if ast.transition:
         render(ast.transition, scene=scene, parent=lab, states=states)
@@ -334,7 +342,7 @@ def _input(ast, scene, parent, states):
     # Note: PROVIDED clause is not supported
     inp = sdlSymbols.Input(parent, ast=ast)
     if inp not in scene.items():
-        scene.addItem(inp)
+        add_to_scene(inp, scene)
     if not parent:
         inp.setPos(ast.pos_x, ast.pos_y)
     if ast.transition:
@@ -349,7 +357,7 @@ def _connect(ast, scene, parent, states):
     ''' Add connect symbol from the AST to the scene '''
     conn = sdlSymbols.Connect(parent, ast=ast)
     if conn not in scene.items():
-        scene.addItem(conn)
+        add_to_scene(conn, scene)
     if not parent:
         conn.setPos(ast.pos_x, ast.pos_y)
     if ast.transition:

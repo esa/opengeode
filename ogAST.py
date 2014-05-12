@@ -665,8 +665,10 @@ class Procedure(object):
         self.hyperlink = None
         # Local variables dictionnary (see Process)
         self.variables = {}
-        # Inherited variables from all levels above
+        self.timers = []
+        # Inherited variables and timers from all levels above
         self.global_variables = {}
+        self.global_timers = []
         # Formal parameters - list of dict:
         # [{'name': str, 'direction': 'in'/'out', 'type': str}]
         self.fpar = []
@@ -710,9 +712,9 @@ class Process(object):
         self.referenced = False
         # variables: dictionnary: {variable1Name: (asn1SccType, default value)}
         self.variables = {}
-        # global variables can be used to inherit variables
+        # global variables and timers can be used to inherit from a level above
         self.global_variables = {}
-        
+        self.global_timers = []
         # Set default coordinates and width/height
         self.pos_x = self.pos_y = 150
         self.width = 150

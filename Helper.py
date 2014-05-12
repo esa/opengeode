@@ -54,15 +54,15 @@ def flatten(process):
     ''' Flatten the nested states:
         Rename inner states, procedures, etc. and move them to process level
     '''
-    def update_terminator(context, term):
+    def update_terminator(context, term, process):
         '''Set next_id, identifying the next transition to run '''
         if term.inputString.lower() in (st.statename.lower()
                                 for st in context.composite_states):
             if not term.via:
-                term.next_id = context.mapping \
+                term.next_id = process.mapping \
                                           [term.inputString.lower() + '_START']
             else:
-                term.next_id = context.mapping[term.inputString.lower()
+                term.next_id = process.mapping[term.inputString.lower()
                                                + '_'
                                                + term.entrypoint.lower()
                                                + '_START']
@@ -118,6 +118,8 @@ def flatten(process):
             # Go recursively in inner composite states
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
+            propagate_inputs(inner, process.mapping[inner.statename]) # TESTME
+            del process.mapping[inner.statename]
         for each in state.terminators:
             # Give prefix to terminators
             if each.label:
@@ -125,7 +127,7 @@ def flatten(process):
             if each.kind == 'next_state':
                 each.inputString = prefix + each.inputString
                 # Set next transition id
-                update_terminator(state, each)
+                update_terminator(context=state, term=each, process=process)
             elif each.kind == 'join':
                 rename_everything(state.content,
                                   each.inputString,
@@ -158,7 +160,7 @@ def flatten(process):
         for each in nested_state.composite_states:
             # do the same recursively
             propagate_inputs(each, nested_state.mapping[each.statename])
-            del nested_state.mapping[each.statename]
+            #del nested_state.mapping[each.statename]
 
     for each in process.composite_states:
         update_composite_state(each, process)
@@ -168,7 +170,7 @@ def flatten(process):
     # Update terminators at process level
     for each in process.terminators:
         if each.kind == 'next_state':
-            update_terminator(process, each)
+            update_terminator(process, each, process)
 
 
 @singledispatch

@@ -15,12 +15,14 @@
     This module is managing the Copy and Paste functions.
 """
 
+import logging
+from itertools import chain
+import PySide
+
 import ogAST
 import sdlSymbols
 import genericSymbols
-import logging
 import Renderer
-import PySide
 
 __all__ = ['copy', 'paste']
 
@@ -120,6 +122,8 @@ def paste_floating_objects(scene):
         states = [i for i in item_list if isinstance(i, ogAST.State)]
         text_areas = (i for i in item_list if isinstance(i, ogAST.TextArea))
         labels = (i for i in item_list if isinstance(i, ogAST.Floating_label))
+        procedures = (i for i in item_list if isinstance(i, ogAST.Procedure))
+        processes = (i for i in item_list if isinstance(i, ogAST.Process))
         for state in states:
             # First check if state has already been pasted
             try:
@@ -133,20 +137,16 @@ def paste_floating_objects(scene):
                 LOG.debug('PASTE STATE "' + state.inputString + '"')
                 symbols.append(new_item)
                 # Insert the new state at click coordinates
-                scene.addItem(new_item)
-        for text_area in text_areas:
-            LOG.debug('PASTE TEXT AREA')
-            new_item = Renderer.render(text_area, scene)
-            symbols.append(new_item)
-        for label in labels:
-            LOG.debug('PASTE LABEL')
-            new_item = Renderer.render(label, scene, states=states)
+                Renderer.add_to_scene(new_item, scene)
+        for each in chain(text_areas, labels, procedures, processes):
+            LOG.debug('PASTE TA/LAB/PROC')
+            new_item = Renderer.render(each, scene, states=states)
             symbols.append(new_item)
         if start:
             start, = start
             LOG.debug('PASTE START')
-            for item in scene.items():
-                if isinstance(item, sdlSymbols.Start) and item.isVisible():
+            for item in scene.visible_symb:
+                if isinstance(item, sdlSymbols.Start):
                     raise TypeError('Only one START symbol is possible')
             new_item = Renderer.render(start, scene, states=states)
             symbols.append(new_item)
@@ -168,7 +168,7 @@ def paste_below_item(parent, scene):
             # Check that item is compatible with parent
             if (type(new_item).__name__ in parent.allowed_followers):
                 # Move the item from the clipboard to the scene
-                scene.addItem(new_item)
+                Renderer.add_to_scene(new_item, scene)
                 new_item.setPos(0, 0)
                 symbols.append(new_item)
             else:

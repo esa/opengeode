@@ -9,8 +9,9 @@ compile: generate-code
 	gnatmake -c *.adb
 	gcc -c	test.c
 	gnatbind -n challenge.ali
-	gnatlink -o test  test.o challenge.ali -lgnat -lm
-	./test && echo 'All OK!'
+	gnatlink -o testcase  test.o challenge.ali -lgnat -lm
+	./testcase > result
+	diff result expected && echo 'All OK!'
 
 
 parse:

@@ -31,6 +31,7 @@ import os
 import importlib
 import logging
 import traceback
+from itertools import chain
 import antlr3
 import antlr3.tree
 
@@ -327,7 +328,7 @@ def fix_special_operators(op_name, expr_list, context):
         if not basic.kind.startswith('Integer'):
             raise TypeError('SET_TIMER first parameter is not an integer')
         timer = expr_list[1].inputString
-        for each in context.timers:
+        for each in chain(context.timers, context.global_timers):
             if each.lower() == timer.lower():
                 break
         else:
@@ -641,7 +642,7 @@ def find_variable(var, context):
             result = vartype
             LOG.debug(str(var) + ' is defined')
             return result
-    for timer in context.timers:
+    for timer in chain(context.timers, context.global_timers):
         if var.lower() == timer.lower():
             LOG.debug(str(var) + ' is defined')
             return result
@@ -1346,6 +1347,8 @@ def composite_state(root, parent=None, context=None):
     try:
         comp.global_variables = dict(context.variables)
         comp.global_variables.update(context.global_variables)
+        comp.global_timers = list(context.timers)
+        comp.global_timers.extend(list(context.global_timers))
         comp.input_signals = context.input_signals
         comp.output_signals = context.output_signals
         comp.procedures = context.procedures
@@ -1430,6 +1433,8 @@ def procedure(root, parent=None, context=None):
     try:
         proc.global_variables = dict(context.variables)
         proc.global_variables.update(context.global_variables)
+        proc.global_timers = list(context.timers)
+        proc.global_timers.extend(list(context.global_timers))
         proc.input_signals = context.input_signals
         proc.output_signals = context.output_signals
         proc.procedures = context.procedures
@@ -1685,6 +1690,7 @@ def block_definition(root, parent):
             warnings.extend(warn)
         elif child.type == lexer.PROCESS:
             proc, err, warn = process_definition(child, parent=block)
+            block.processes.append(proc)
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.SIGNALROUTE:
@@ -1741,7 +1747,6 @@ def process_definition(root, parent=None, context=None):
     process = ogAST.Process()
     process.filename = node_filename(root)
     process.parent = parent
-    parent.processes.append(process)
     coord = False
     # Prepare the transition/state mapping
     process.mapping = {name: [] for name in get_state_list(root)}
@@ -1764,7 +1769,8 @@ def process_definition(root, parent=None, context=None):
                     if sig['direction'] == 'out'])
                 process.procedures.extend(procedures)
             except AttributeError as err:
-                LOG.error('Discarding process ' + child.text + ' ' + str(err))
+                # No interface because process is defined standalone
+                LOG.debug('Discarding process ' + child.text + ' ' + str(err))
             except TypeError as error:
                 LOG.debug(str(error))
                 errors.append(str(error))
@@ -1849,7 +1855,7 @@ def input_part(root, parent, context):
                         sig_param_type = inp_sig.get('type')
                         break
                 else:
-                    for timer in context.timers:
+                    for timer in chain(context.timers, context.global_timers):
                         if timer.lower() == inputname.text.lower():
                             i.inputlist.append(timer.lower())
                             break
@@ -2841,6 +2847,7 @@ def pr_file(root):
         # process definition at root level (must be referenced in a system)
         LOG.debug('found PROCESS')
         process, err, warn = process_definition(child, parent=ast)
+        ast.processes.append(process)
         process.dataview = ast.dataview
         process.asn1Modules = ast.asn1Modules
         errors.extend(err)

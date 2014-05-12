@@ -135,7 +135,11 @@ ACTIONS = {
     'statechart': [],
     'state': [StateStart, State, Input, Connect, Task, Decision,
               DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
-              Label, Join, ProcedureStop, Procedure]
+              Label, Join, ProcedureStop, Procedure],
+    'clipboard': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
+                  Output, ProcedureCall, TextSymbol, Comment, Label,
+                  Join, Procedure, Process, StateStart, ProcedureStop],
+    'lander': []
 }
 
 
@@ -270,6 +274,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         super(SDL_Scene, self).__init__()
         self.mode = 'idle'
         self.context = context
+        self.allowed_symbols = ACTIONS[context]
         # Configure the action menu
         all_possible_actions = set()
         for action in ACTIONS.viewvalues():
@@ -379,7 +384,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def all_nested_scenes(self):
         ''' Return all nested scenes, recursively '''
         for each in self.visible_symb:
-            if each.nested_scene:
+            if each.nested_scene and isinstance(each, SDL_Scene):
                 yield each.nested_scene
                 for sub in each.nested_scene.all_nested_scenes:
                     yield sub
@@ -1837,7 +1842,7 @@ def opengeode():
         module.LOG.setLevel(level)
 
     # Initialize the clipboard
-    Clipboard.CLIPBOARD = QtGui.QGraphicsScene()
+    Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
 
     LOG.debug('Starting OpenGEODE version ' + __version__)
 
