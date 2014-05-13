@@ -9,6 +9,8 @@
         flatten(ast) : transform a model with nested states to a flat model
         rename_everything(ast, from_name, to_name) : rename symbols
         inner_labels_to_floating(process) : remove labels from transitions
+        map_input_state(process) -> mapping: create a mapping
+                                    input-state-transition
 
     Copyright (c) 2012-2014 European Space Agency
 
@@ -27,7 +29,25 @@ import ogAST
 
 LOG = logging.getLogger(__name__)
 
-__all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating']
+__all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
+           'map_input_state']
+
+
+def map_input_state(process):
+    ''' Create a mapping dict {input1: {state1: transition, ...}, ...} '''
+    mapping = defaultdict(dict)
+    input_signals = [sig['name'] for sig in process.input_signals]
+    # Add timers to the mapping
+    input_signals.extend(process.timers)
+    for input_signal in input_signals:
+        for state_name, input_symbols in process.mapping.viewitems():
+            if isinstance(input_symbols, list):
+                # Start symbols have no list of inputs
+                for i in input_symbols:
+                    if input_signal.lower() in (inp.lower() for
+                                               inp in i.inputlist):
+                        mapping[input_signal][state_name] = i
+    return mapping
 
 
 def inner_labels_to_floating(process):

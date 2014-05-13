@@ -115,6 +115,10 @@ def _process(process):
     # In case model has nested states, flatten everything
     Helper.flatten(process)
 
+    # Make an maping {input: {state: transition...}} in order to easily
+    # generate the lookup tables for the state machine runtime
+    mapping = Helper.map_input_state(process)
+
     VARIABLES.update(process.variables)
     INNER_PROCEDURES.extend(process.content.inner_procedures)
 
@@ -160,20 +164,6 @@ def _process(process):
     start_transition = ['begin',
                         'runTransition(0);']
 
-    mapping = {}
-    # Generate the code for the transitions in a mapping input-state
-    input_signals = [sig['name'] for sig in process.input_signals]
-    # Add timers to the mapping
-    input_signals.extend(process.timers)
-    for input_signal in input_signals:
-        mapping[input_signal] = {}
-        for state_name, input_symbols in process.mapping.viewitems():
-            if isinstance(input_symbols, list):
-                # Start symbols have no list of inputs
-                for i in input_symbols:
-                    if input_signal.lower() in (inp.lower() for
-                                               inp in i.inputlist):
-                        mapping[input_signal][state_name] = i
 
     # Generate the TASTE template
     try:

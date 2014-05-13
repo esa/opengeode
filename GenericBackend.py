@@ -33,6 +33,7 @@ import logging
 from singledispatch import singledispatch
 
 import ogAST
+import Helper
 
 LOG = logging.getLogger(__name__)
 
@@ -66,7 +67,12 @@ def expression(expr):
 @generate.register(ogAST.Process)
 def _process(process):
     ''' Generate the code for a complete process (AST Top level) '''
-    pass
+    # In case model has nested states, flatten everything
+    Helper.flatten(process)
+
+    # Make an maping {input: {state: transition...}} in order to easily
+    # generate the lookup tables for the state machine runtime
+    mapping = Helper.map_input_state(process)
 
 def write_statement(param, newline):
     ''' Generate the code for the special "write" operator '''
