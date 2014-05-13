@@ -1,0 +1,6 @@
+adaasn1rtl    specification is in adaasn1rtl.ads
+adaasn1rtl    body          is in adaasn1rtl.adb
+taste_basictypes    specification is in taste_basictypes.ads
+taste_basictypes    body          is in taste_basictypes.adb
+taste_dataview    specification is in taste_dataview.ads
+taste_dataview    body          is in taste_dataview.adb

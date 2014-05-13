@@ -4,19 +4,20 @@ SYSTEM og;
 
 	/* CIF Keep Specific Geode PARAMNAMES ze_param */
 	SIGNAL go (My_OctStr);
+	SIGNAL bye;
 
 	/* CIF Keep Specific Geode PARAMNAMES ze_rezult */
 	SIGNAL rezult (My_OctStr);
 
 	CHANNEL c
-		FROM ENV TO og WITH go;
+		FROM ENV TO og WITH go, bye;
 		FROM og TO ENV WITH rezult;
 	ENDCHANNEL;
 
 	BLOCK og;
 
 		SIGNALROUTE r
-			FROM ENV TO og WITH go;
+			FROM ENV TO og WITH go, bye;
 			FROM og TO ENV WITH rezult;
 
 		CONNECT c and r;

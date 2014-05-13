@@ -31,7 +31,7 @@ import os
 import importlib
 import logging
 import traceback
-from itertools import chain
+from itertools import chain, permutations
 import antlr3
 import antlr3.tree
 
@@ -437,7 +437,7 @@ def check_type_compatibility(primary, typeRef, context):
         if corr_type:
             return
         else:
-            err = ('Value "' + primary.value[0] +
+            err = ('Value "' + primary.inputString +
                    '" not in this enumeration: ' +
                    str(actual_type.EnumValues.keys()))
             raise TypeError(err)
@@ -781,7 +781,7 @@ def fix_expression_types(expr, context):
 
     # If a side of the expression is of Enumerated of Choice type, check if
     # the other side is a literal of that sort, and change type accordingly
-    for side in (('left', 'right'), ('right', 'left')):
+    for side in permutations(('left', 'right')):
         side_type = find_basic_type(getattr(expr, side[0]).exprType).kind
         if side_type == 'EnumeratedType':
             prim = ogAST.PrimEnumeratedValue(primary=getattr(expr, side[1]))
@@ -796,7 +796,7 @@ def fix_expression_types(expr, context):
             pass
 
     # If a side type remains unknown, check if it is an ASN.1 constant
-    for side in (('left', 'right'), ('right', 'left')):
+    for side in permutations(('left', 'right')):
         value = getattr(expr, side[0])
         if value.exprType == UNKNOWN_TYPE and is_constant(value):
             setattr(expr, side[0], ogAST.PrimConstant(primary=value))
@@ -873,8 +873,8 @@ def fix_expression_types(expr, context):
             expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimIfThenElse):
         for det in ('then', 'else'):
-            if expr.right.value[det].exprType == UNKNOWN_TYPE:
-                expr.right.value[det].exprType = expr.left.exprType
+            #if expr.right.value[det].exprType == UNKNOWN_TYPE:
+            #    expr.right.value[det].exprType = expr.left.exprType
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
             check_expr.left = ogAST.PrimPath()
@@ -1356,8 +1356,10 @@ def composite_state(root, parent=None, context=None):
     except AttributeError:
         LOG.debug('Procedure context is undefined')
     # Gather the list of states defined in the composite state
-    # and map a list of transitions to each state
+    # and map a list of transitionsi to each state
     comp.mapping = {name: [] for name in get_state_list(root)}
+    inner_composite = []
+    states = []
     for child in root.getChildren():
         if child.type == lexer.ID:
             comp.line = child.getLine()
@@ -1388,18 +1390,9 @@ def composite_state(root, parent=None, context=None):
                 comp.exit_procedure = new_proc
             comp.content.inner_procedures.append(new_proc)
         elif child.type == lexer.COMPOSITE_STATE:
-            inner_comp, err, warn = composite_state(child,
-                                                    parent=None,
-                                                    context=comp)
-            errors.extend(err)
-            warnings.extend(warn)
-            comp.composite_states.append(inner_comp)
+            inner_composite.append(child)
         elif child.type == lexer.STATE:
-            # STATE - fills up the 'mapping' structure.
-            newstate, err, warn = state(child, parent=None, context=comp)
-            errors.extend(err)
-            warnings.extend(warn)
-            comp.content.states.append(newstate)
+            states.append(child)
         elif child.type == lexer.FLOATING_LABEL:
             lab, err, warn = floating_label(child, parent=None, context=comp)
             errors.extend(err)
@@ -1421,6 +1414,22 @@ def composite_state(root, parent=None, context=None):
                     'Unsupported construct in nested state, type: ' +
                     str(child.type) + ' - line ' + str(child.getLine()) +
                     ' - state name: ' + str(comp.statename))
+    for each in inner_composite:
+        # Parse inner composite states after the text areas to make sure
+        # that all variables are propagated to the the inner scope
+        inner, err, warn = composite_state(each, parent=None,
+                                           context=comp)
+        errors.extend(err)
+        warnings.extend(warn)
+        comp.composite_states.append(inner)
+    for each in states:
+        # And parse the states after inner states to make sure all CONNECTS
+        # are properly defined.
+        # Fill up the 'mapping' structure.
+        newstate, err, warn = state(each, parent=None, context=comp)
+        errors.extend(err)
+        warnings.extend(warn)
+        comp.content.states.append(newstate)
     return comp, errors, warnings
 
 
@@ -2347,9 +2356,8 @@ def decision(root, parent, context):
             warnings.extend(warn)
             dec.answers.append(ans)
         elif child.type == lexer.ELSE:
-            dec.kind = child.toString()
             a = ogAST.Answer()
-            a.inputString = 'ELSE'
+            a.inputString = child.toString()
             for c in child.getChildren():
                 if c.type == lexer.CIF:
                     a.pos_x, a.pos_y, a.width, a.height = cif(c)

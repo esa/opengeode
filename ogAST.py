@@ -398,6 +398,9 @@ class Terminator(object):
         self.entrypoint = None
         # some transitions can be chained, when entering/leaving nested states
         self.next_id = -1
+        # List of State that can contain the current state
+        # There can be several if terminator follows a floating label
+        self.possible_states = []
 
     def __repr__(self):
         ''' Debug output for terminators '''
@@ -466,7 +469,6 @@ class Transition(object):
         self.terminator = None
         # All Terminators of this transition
         self.terminators = []
-
 
     def __repr__(self):
         ''' Debug output: display all actions '''

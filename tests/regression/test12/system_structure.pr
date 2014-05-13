@@ -1,0 +1,34 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM trafficlight;
+
+	/* CIF Keep Specific Geode PARAMNAMES buttonpress */
+	SIGNAL pedestrianRequest (T_Boolean);
+
+	/* CIF Keep Specific Geode PARAMNAMES color */
+	SIGNAL onOff (Light);
+
+	/* CIF Keep Specific Geode PARAMNAMES trafficlight_state */
+	SIGNAL SetTrafficLightColor (Light);
+
+	/* CIF Keep Specific Geode PARAMNAMES pedlight */
+	SIGNAL SetPedestrianColor (Light);
+
+	CHANNEL c
+		FROM ENV TO trafficlight WITH pedestrianRequest,onOff;
+		FROM trafficlight TO ENV WITH SetTrafficLightColor,SetPedestrianColor;
+	ENDCHANNEL;
+
+	BLOCK trafficlight;
+
+		SIGNALROUTE r
+			FROM ENV TO trafficlight WITH pedestrianRequest,onOff;
+			FROM trafficlight TO ENV WITH SetTrafficLightColor,SetPedestrianColor;
+
+		CONNECT c and r;
+
+		PROCESS trafficlight REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

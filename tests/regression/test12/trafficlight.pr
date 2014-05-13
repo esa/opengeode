@@ -1,0 +1,240 @@
+/* CIF PROCESS (150, 150), (150, 75) */
+PROCESS trafficlight;
+STATE on;
+SUBSTRUCTURE
+STATE PedWaiting;
+SUBSTRUCTURE
+out (counter_expired);
+STATE waitOn;
+SUBSTRUCTURE
+/* CIF PROCEDURE (292, 375), (70, 35) */
+PROCEDURE exit;
+/* CIF START (280, 159), (70, 35) */
+START;
+/* CIF TASK (230, 209), (170, 35) */
+TASK counter := counter + 1;
+/* CIF RETURN (297, 259), (35, 35) */
+RETURN ;
+ENDPROCEDURE;
+/* CIF START (371, 56), (70, 35) */
+START;
+/* CIF NEXTSTATE (347, 106), (117, 35) */
+NEXTSTATE wait_counter;
+/* CIF STATE (510, 120), (117, 35) */
+STATE wait_counter;
+ENDSTATE;
+
+ENDSUBSTRUCTURE;
+/* CIF TEXT (93, 69), (184, 53) */
+-- 7 sec counter
+dcl counter t_uint8 := 0;
+dcl color Light;
+/* CIF ENDTEXT */
+/* CIF PROCEDURE (129, 166), (73, 35) */
+PROCEDURE entry;
+/* CIF START (383, 113), (70, 35) */
+START;
+/* CIF PROCEDURECALL (323, 163), (189, 35) */
+CALL set_timer(500, timeout);
+/* CIF TASK (359, 213), (117, 35) */
+TASK counter := 0;
+/* CIF RETURN (400, 263), (35, 35) */
+RETURN ;
+ENDPROCEDURE;
+/* CIF START (348, 130), (81, 35) */
+START;
+/* CIF NEXTSTATE (348, 180), (80, 35) */
+NEXTSTATE waitOn;
+
+/* CIF STATE (348, 180), (80, 35) */
+STATE waitOn;
+/* CIF INPUT (345, 235), (87, 35) */
+INPUT timeout;
+/* CIF DECISION (345, 285), (86, 50) */
+DECISION counter;
+/* CIF ANSWER (161, 355), (70, 23) */
+(14):
+/* CIF RETURN (178, 393), (35, 35) */
+RETURN counter_expired;
+/* CIF ANSWER (410, 355), (70, 23) */
+ELSE:
+/* CIF TASK (260, 393), (370, 35) */
+TASK color := if counter mod 2 = 0 then red else all_off fi;
+/* CIF OUTPUT (345, 443), (199, 35) */
+OUTPUT SetPedestrianColor(color);
+/* CIF NEXTSTATE (410, 493), (70, 35) */
+NEXTSTATE -;
+ENDDECISION;
+ENDSTATE;
+ENDSUBSTRUCTURE;
+/* CIF START (721, 150), (70, 35) */
+START;
+/* CIF NEXTSTATE (698, 200), (115, 35) */
+NEXTSTATE StreetGreen;
+
+/* CIF STATE (1013, 492), (141, 35) */
+STATE StreetPrepare;
+/* CIF INPUT (1040, 547), (87, 35) */
+INPUT timeout;
+/* CIF NEXTSTATE (1013, 597), (141, 35) */
+NEXTSTATE StreetGreen;
+ENDSTATE;
+/* CIF STATE (1013, 337), (141, 35) */
+STATE PedestrianRed;
+/* CIF INPUT (1040, 392), (87, 35) */
+INPUT timeout;
+/* CIF PROCEDURECALL (987, 442), (193, 35) */
+CALL set_timer(2000, timeout);
+/* CIF NEXTSTATE (1013, 492), (141, 35) */
+NEXTSTATE StreetPrepare;
+ENDSTATE;
+/* CIF STATE (1013, 182), (141, 35) */
+STATE PedestrianGreen;
+/* CIF INPUT (1040, 237), (87, 35) */
+INPUT timeout;
+/* CIF PROCEDURECALL (987, 287), (193, 35) */
+CALL set_timer(5000, timeout);
+/* CIF NEXTSTATE (1013, 337), (141, 35) */
+NEXTSTATE PedestrianRed;
+ENDSTATE;
+
+/* CIF STATE (704, 623), (102, 35) */
+STATE StreetRed;
+/* CIF INPUT (712, 678), (87, 35) */
+INPUT timeout;
+/* CIF PROCEDURECALL (659, 728), (193, 35) */
+CALL set_timer(7000, timeout);
+/* CIF NEXTSTATE (684, 778), (141, 35) */
+NEXTSTATE PedestrianGreen;
+ENDSTATE;
+/* CIF STATE (680, 468), (151, 35) */
+STATE StreetAttention;
+/* CIF INPUT (712, 523), (87, 35) */
+INPUT timeout;
+/* CIF PROCEDURECALL (648, 573), (214, 35) */
+CALL set_timer(2000, timeout);
+/* CIF NEXTSTATE (704, 623), (102, 35) */
+NEXTSTATE StreetRed;
+ENDSTATE;
+/* CIF STATE (702, 313), (107, 35) */
+STATE PedWaiting;
+/* CIF CONNECT (755, 368), (0, 35) */
+CONNECT counter_expired;
+/* CIF PROCEDURECALL (658, 418), (193, 35) */
+CALL set_timer(2000, timeout);
+/* CIF NEXTSTATE (680, 468), (151, 35) */
+NEXTSTATE StreetAttention;
+ENDSTATE;
+/* CIF STATE (698, 200), (115, 35) */
+STATE StreetGreen;
+/* CIF INPUT (678, 255), (155, 38) */
+INPUT PedestrianRequest
+(request);
+/* CIF NEXTSTATE (702, 313), (107, 35) */
+NEXTSTATE PedWaiting;
+ENDSTATE;
+ENDSUBSTRUCTURE;
+STATE Maintenance;
+SUBSTRUCTURE
+STATE YellowOff;
+SUBSTRUCTURE
+/* CIF PROCEDURE (239, 367), (73, 35) */
+PROCEDURE entry;
+/* CIF START (180, 35), (70, 35) */
+START;
+/* CIF PROCEDURECALL (122, 85), (186, 35) */
+CALL set_timer(500, timeout);
+/* CIF OUTPUT (109, 135), (211, 35) */
+OUTPUT SetTrafficLightColor(all_off);
+/* CIF RETURN (197, 185), (35, 35) */
+RETURN ;
+ENDPROCEDURE;
+/* CIF START (348, 437), (70, 35) */
+START;
+/* CIF NEXTSTATE (348, 487), (70, 35) */
+NEXTSTATE idle;
+/* CIF STATE (558, 458), (70, 35) */
+STATE idle;
+ENDSTATE;
+
+ENDSUBSTRUCTURE;
+STATE YellowOn;
+SUBSTRUCTURE
+/* CIF PROCEDURE (291, 312), (73, 35) */
+PROCEDURE entry;
+/* CIF START (292, 124), (70, 35) */
+START;
+/* CIF PROCEDURECALL (234, 174), (186, 35) */
+CALL set_timer(500, timeout);
+/* CIF OUTPUT (221, 224), (211, 35) */
+OUTPUT SetTrafficLightColor(yellow);
+/* CIF RETURN (309, 274), (35, 35) */
+RETURN ;
+ENDPROCEDURE;
+/* CIF START (495, 331), (70, 35) */
+START;
+/* CIF NEXTSTATE (489, 381), (81, 35) */
+NEXTSTATE idle;
+/* CIF STATE (696, 342), (67, 35) */
+STATE idle;
+ENDSTATE;
+
+ENDSUBSTRUCTURE;
+/* CIF START (534, 196), (70, 35) */
+START;
+/* CIF NEXTSTATE (522, 251), (94, 35) */
+NEXTSTATE YellowOn;
+
+/* CIF STATE (520, 356), (97, 35) */
+STATE YellowOff;
+/* CIF INPUT (525, 411), (87, 35) */
+INPUT timeout;
+/* CIF NEXTSTATE (518, 461), (102, 35) */
+NEXTSTATE YellowOn;
+ENDSTATE;
+/* CIF STATE (522, 251), (94, 35) */
+STATE YellowOn;
+/* CIF INPUT (525, 306), (87, 35) */
+INPUT timeout;
+/* CIF NEXTSTATE (520, 356), (97, 35) */
+NEXTSTATE YellowOff;
+ENDSTATE;
+ENDSUBSTRUCTURE;
+/* CIF TEXT (-2, 10), (271, 250) */
+TIMER timeout;
+
+dcl init_state light;
+
+dcl request T_Boolean;
+/* CIF ENDTEXT */
+/* CIF START (298, 50), (70, 35) */
+START;
+/* CIF NEXTSTATE (298, 100), (70, 35) */
+NEXTSTATE Off;
+
+
+/* CIF STATE (380, 54), (160, 35) */
+STATE off, maintenance, on;
+/* CIF INPUT (408, 109), (104, 48) */
+INPUT OnOff
+(init_state);
+/* CIF DECISION (412, 172), (96, 50) */
+DECISION init_state;
+/* CIF ANSWER (377, 242), (74, 33) */
+(green):
+/* CIF NEXTSTATE (379, 290), (70, 35) */
+NEXTSTATE on;
+/* CIF ANSWER (484, 242), (78, 33) */
+ELSE:
+/* CIF NEXTSTATE (465, 290), (116, 35) */
+NEXTSTATE Maintenance;
+ENDDECISION;
+ENDSTATE;
+/* CIF STATE (554, 53), (116, 35) */
+STATE Maintenance;
+ENDSTATE;
+/* CIF STATE (694, 56), (70, 35) */
+STATE on;
+ENDSTATE;
+
+ENDPROCESS trafficlight;

@@ -1,0 +1,26 @@
+Datamodel DEFINITIONS ::= BEGIN
+
+-- ./dataview-uniq.asn
+T_Int32 ::= INTEGER (-2147483648 .. 2147483647)
+
+-- ./dataview-uniq.asn
+T_UInt32 ::= INTEGER (0 .. 4294967295)
+
+-- ./dataview-uniq.asn
+T_Int8 ::= INTEGER (-128 .. 127)
+
+-- ./dataview-uniq.asn
+T_UInt8 ::= INTEGER (0 .. 255)
+
+-- ./dataview-uniq.asn
+T_Boolean ::= BOOLEAN
+
+-- ./dataview-uniq.asn
+Light ::= ENUMERATED {
+    red(0),
+    yellow(1),
+    green(2),
+    all_off(3)
+}
+
+END

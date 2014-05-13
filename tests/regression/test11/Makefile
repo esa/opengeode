@@ -8,8 +8,9 @@ compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
 	gnatmake -c *.adb
 	gcc -c test.c
-	gcc -o test test.o og.o taste_dataview.o -lgnat
-	./test > result
+	gnatbind -n og.ali
+	gnatlink -o testcase test.o og.ali -lgnat
+	./testcase > result
 	diff result expected && echo 'All OK!'
 	
 

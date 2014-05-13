@@ -19,6 +19,7 @@
 
 import logging
 from itertools import chain
+from collections import defaultdict
 
 from singledispatch import singledispatch
 
@@ -59,13 +60,26 @@ def flatten(process):
         if term.inputString.lower() in (st.statename.lower()
                                 for st in context.composite_states):
             if not term.via:
-                term.next_id = process.mapping \
-                                          [term.inputString.lower() + '_START']
+                term.next_id = term.inputString.lower() + '_START'
+                #process.mapping \
+                #                          [term.inputString.lower() + '_START']
             else:
-                term.next_id = process.mapping[term.inputString.lower()
-                                               + '_'
-                                               + term.entrypoint.lower()
-                                               + '_START']
+                term.next_id = '{term}_{entry}_START'.format(
+                        term=term.inputString, entry=term.entrypoint)
+                #process.mapping[term.inputString.lower()
+                #                               + '_'
+                #                               + term.entrypoint.lower()
+                #                               + '_START']
+        elif term.inputString.strip() == '-':
+            term.candidate_id = defaultdict(list)
+            for each in term.possible_states:
+                if each in (st.statename.lower()
+                            for st in context.composite_states):
+                    term.candidate_id[each + '_START'] = \
+                          [st for st in process.mapping.viewkeys()
+                          if st.startswith(each) and not st.endswith('_START')]
+                else:
+                    term.candidate_id[-1].append(each)
 
     def update_composite_state(state, process):
         ''' Rename inner states, recursively, and add inner transitions
@@ -73,6 +87,7 @@ def flatten(process):
         '''
         trans_idx = len(process.transitions)
         prefix = state.statename + '_'
+        set_terminator_states(state, prefix)
         state.mapping = {prefix + key:state.mapping.pop(key)
                          for key in state.mapping.keys()}
         process.transitions.extend(state.transitions)
@@ -118,14 +133,15 @@ def flatten(process):
             # Go recursively in inner composite states
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
-            propagate_inputs(inner, process.mapping[inner.statename]) # TESTME
+            propagate_inputs(inner, process.mapping[inner.statename])
             del process.mapping[inner.statename]
         for each in state.terminators:
             # Give prefix to terminators
             if each.label:
                 each.label.inputString = prefix + each.label.inputString
             if each.kind == 'next_state':
-                each.inputString = prefix + each.inputString
+                if each.inputString.strip() != '-':
+                    each.inputString = prefix + each.inputString
                 # Set next transition id
                 update_terminator(context=state, term=each, process=process)
             elif each.kind == 'join':
@@ -161,6 +177,17 @@ def flatten(process):
             # do the same recursively
             propagate_inputs(each, nested_state.mapping[each.statename])
             #del nested_state.mapping[each.statename]
+
+    def set_terminator_states(context, prefix=''):
+        ''' Associate state to terminators, needed to process properly
+            a history nextstates (dash nextstate) in code generators '''
+        for each in context.content.states:
+            for inp in each.inputs:
+                for term in inp.terminators:
+                    term.possible_states.extend(prefix + name.lower()
+                                                for name in each.statelist)
+
+    set_terminator_states(process)
 
     for each in process.composite_states:
         update_composite_state(each, process)
@@ -198,7 +225,7 @@ def _rename_automaton(ast, from_name, to_name):
             rename_everything(inp.transition, from_name, to_name)
             for idx, param in enumerate(inp.parameters):
                 if param.lower() == from_name.lower():
-                    inp.parameter[idx] = to_name
+                    inp.parameters[idx] = to_name
         if each.composite:
             rename_everything(each.composite.content, from_name, to_name)
     for each in ast.inner_procedures:
@@ -310,6 +337,11 @@ def _rename_path(ast, from_name, to_name):
     if ast.value[0].lower() == from_name.lower():
         ast.value[0] = to_name
 
+@rename_everything.register(ogAST.PrimIfThenElse)
+def _rename_ifhthenelse(ast, from_name, to_name):
+    ''' Rename expressions in If-Then-Else-Fi construct '''
+    for expr in ('if', 'then', 'else'):
+        rename_everything(ast.value[expr], from_name, to_name)
 
 def find_labels(trans):
     '''

@@ -1,0 +1,129 @@
+V "GNAT Lib v4.8"
+P ZX
+
+RN
+RV NO_STANDARD_STORAGE_POOLS
+RV NO_ELABORATION_CODE
+RV SPARK
+
+U trafficlight%b	trafficlight.adb	218f1c55 OO PK IL
+W adaasn1rtl%s		adaasn1rtl.adb		adaasn1rtl.ali
+W interfaces%s		interfac.ads		interfac.ali
+W system%s		system.ads		system.ali
+W system.io%s		s-io.adb		s-io.ali
+W taste_basictypes%s	taste_basictypes.adb	taste_basictypes.ali
+W taste_dataview%s	taste_dataview.adb	taste_dataview.ali
+
+U trafficlight%s	trafficlight.ads	a037fda2 EE NE OO PK IL
+W taste_basictypes%s	taste_basictypes.adb	taste_basictypes.ali
+W taste_dataview%s	taste_dataview.adb	taste_dataview.ali
+
+D ada.ads		20070406091342 3ffc8e18
+D a-charac.ads		20070912115821 2d3ec45b
+D a-chlat1.ads		20070912115821 2825df20
+D adaasn1rtl.ads	20140513071215 989f6c09
+D interfac.ads		20110906094621 129923ea
+D system.ads		20140212114732 bd760655
+D s-io.ads		20090409150019 9e42f74f
+D s-unstyp.ads		20090409150019 6ae15c76
+D taste_basictypes.ads	20140513071215 72ec04b4
+D taste_dataview.ads	20140513071215 a40837cf
+D trafficlight.ads	20140513071214 76d3ced9
+D trafficlight.adb	20140513071214 95fc595b
+X 4 adaasn1rtl.ads
+7K9*adaasn1rtl 908e15 12|11w6 12r5
+28I13*Asn1Int{5|52I9}
+69B13*Asn1Boolean{boolean}
+X 5 interfac.ads
+36K9*Interfaces 175e15 12|14w6 15r5
+52I9*Integer_64<long_long_integer>
+X 6 system.ads
+37K9*System 152e11 12|3r6 4r5
+X 7 s-io.ads
+37K16*IO 64e14 12|3w13 4r12
+X 9 taste_basictypes.ads
+6K9*TASTE_BasicTypes 104e21 11|3w6 4r5 12|6w6 7r5
+29I9*asn1SccT_UInt32{4|28I13} 11|25r39 12|50r24 63r25 78r25 192r25 193r25
+. 194r25 195r25 196r25
+65I9*asn1SccT_UInt8{4|28I13} 12|21r39
+83B9*asn1SccT_Boolean{4|69E13} 11|10r53 12|20r25 92r53
+X 10 taste_dataview.ads
+7K9*TASTE_Dataview 38e19 11|5w6 6r5 12|8w6 9r5
+13E6*asn1SccLight 13e79 11|13r35 19r63 22r51 12|18r37 19r28 64r25 79r25 122r35
+. 197r17
+13n23*asn1Sccred{13E6} 12|290r42
+13n35*asn1Sccyellow{13E6} 12|85r22
+13n50*asn1Sccgreen{13E6} 12|209r43
+13n64*asn1Sccall_off{13E6} 12|70r22 292r42
+X 11 trafficlight.ads
+8K9*trafficlight 29l5 29e17 12|17b14 348l5 348t17
+10U15*pedestrianRequest 10^33 11i<c,trafficlight_pedestrianRequest>22 12|92b15
+. 119l13 119t30
+10p33 buttonpress(9|83E9) 12|92b33 100r34
+13U15*onOff 13^21 14i<c,trafficlight_onOff>22 12|122b15 158l13 158t18
+13p21 color(10|13E6) 12|122b21 126r37 129r37 132r37 135r37 138r37 141r37
+. 144r37 147r37 150r37 153r37
+16U15*timeout 17i<c,trafficlight_timeout>22 12|161b15 187l13 187t20
+19U15*SetTrafficLightColor 19^36 20b<c,trafficlight_RI_SetTrafficLightColor>22
+. 12|71s13 86s13
+19p36 trafficlight_state(10|13E6)
+22U15*SetPedestrianColor 22^34 23b<c,trafficlight_RI_SetPedestrianColor>22
+. 12|296s29
+22p34 pedlight(10|13E6)
+25U15*SET_timeout 25^27 26b<c,trafficlight_RI_set_timeout>22 12|54s13 68s13
+. 83s13 232s25 240s25 248s25 256s25 264s25
+25p27 val(9|29I9)
+27U15*RESET_timeout 28b<c,trafficlight_RI_reset_timeout>22
+X 12 trafficlight.adb
+18e5 l_on_pedwaiting_color{10|13E6} 294m29 296m48 296r48
+19e5 l_init_state{10|13E6} 126m21 129m21 132m21 135m21 138m21 141m21 144m21
+. 147m21 150m21 153m21 209r28
+20b5 l_request{9|83E9} 100m21
+21i5 l_on_pedwaiting_counter{9|65I9} 43m13 43r41 56m13 282r28 289r34
+22E10 states 22e221 23r13
+22n21 maintenance_yellowon_idle{22E10} 95r22 125r22 164r22 335r34
+22n48 on_pedestriangreen{22E10} 97r22 128r22 166r22 251r34
+22n68 on_streetgreen{22E10} 99r22 131r22 168r22 222r34 227r34
+22n84 on_streetprepare{22E10} 102r22 134r22 170r22 235r34
+22n102 maintenance_yellowoff_idle{22E10} 104r22 137r22 172r22 328r34
+22n130 off{22E10} 106r22 140r22 174r22 204r34
+22n135 on_streetattention{22E10} 108r22 143r22 176r22 267r34
+22n155 on_pedwaiting_waiton_wait_counter{22E10} 110r22 146r22 178r22 299r38
+. 309r34
+22n190 on_pedestrianred{22E10} 112r22 149r22 180r22 243r34
+22n208 on_streetred{22E10} 114r22 152r22 182r22 259r34
+23e5 state{22E10} 94r18 124r18 163r18 204m25 222m25 227m25 235m25 243m25
+. 251m25 259m25 267m25 298r34 309m25 328m25 335m25
+24N5 on_pedwaiting_START 271r33
+25N5 maintenance_yellowoff_START 321r33
+26N5 maintenance_yellowon_START 313r33 317r33
+27N5 on_START 211r37
+28N5 on_pedwaiting_waiton_START 277r33 300r45
+29N5 maintenance_START 216r37
+30U15 runTransition 30>29 101s21 127s21 130s21 133s21 136s21 139s21 142s21
+. 145s21 148s21 151s21 154s21 165s21 167s21 171s21 173s21 177s21 179s21 181s21
+. 183s21 190b15 343l13 343t26 347s9
+30i29 Id{integer} 190b29 191r27
+31U15 state_start 36b15 39l13 39t24
+32U15 on_pedwaiting_waiton_exit 40b15 46l13 46t38
+33U15 on_pedwaiting_entry 49b15 59l13 59t32 275s25
+34U15 maintenance_yellowoff_entry 62b15 74l13 74t40 325s25
+35U15 maintenance_yellowon_entry 77b15 89l13 89t39 332s25
+50i9 tmp3{9|29I9} 53m13 54m25 54r25
+63i9 tmp46{9|29I9} 67m13 68m25 68r25
+64e9 tmp49{10|13E6} 70m13 71m34 71r34
+78i9 tmp52{9|29I9} 82m13 83m25 83r25
+79e9 tmp55{10|13E6} 85m13 86m34 86r34
+191i9 trId{integer} 199r20 200r22 203m25 211m29 216m29 221m25 226m25 234m25
+. 242m25 250m25 258m25 266m25 271m25 277m25 284m29 300m37 302m37 308m25 313m25
+. 317m25 321m25 327m25 334m25
+192i9 tmp26{9|29I9} 231m25 232m37 232r37
+193i9 tmp30{9|29I9} 239m25 240m37 240r37
+194i9 tmp34{9|29I9} 247m25 248m37 248r37
+195i9 tmp38{9|29I9} 255m25 256m37 256r37
+196i9 tmp42{9|29I9} 263m25 264m37 264r37
+197e9 tmp20{10|13E6} 290m33 292m33 294r54
+340L19 next_transition 205r30 212r34 217r34 223r30 228r30 236r30 244r30 252r30
+. 260r30 268r30 272r30 278r30 285r34 304r34 310r30 314r30 318r30 322r30 329r30
+. 336r30
+

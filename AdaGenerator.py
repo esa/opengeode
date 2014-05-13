@@ -140,21 +140,25 @@ def _process(process):
     process_level_decl.append(states_decl)
     process_level_decl.append('state : states;')
 
+    for name, val in process.mapping.viewitems():
+        if name.endswith('START') and name != 'START':
+            process_level_decl.append('{name} : constant := {val};'
+                                      .format(name=name, val=str(val)))
+
     # Add function allowing to trace current state as a string
-    process_level_decl.append('function get_state return String;')
-    process_level_decl.append('pragma export(C, get_state, "{}_state");'
-                                                         .format(process_name))
+    #process_level_decl.append('function get_state return String;')
+    #process_level_decl.append('pragma export(C, get_state, "{}_state");'
+    #                                                     .format(process_name))
 
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
-    process_level_decl.append('procedure start;')
-    process_level_decl.append('pragma export(C, start, "{}_start");'
-                              .format(process_name))
+    process_level_decl.append('procedure state_start;')
+    #process_level_decl.append('pragma export(C, start, "{}_start");'
+    #                          .format(process_name))
 
     # Generate the code of the start transition:
-    start_transition = ['begin']
-    start_transition.append('start;')
-
+    start_transition = ['begin',
+                        'runTransition(0);']
 
     mapping = {}
     # Generate the code for the transitions in a mapping input-state
@@ -216,10 +220,10 @@ package {process_name} is'''.format(process_name=process_name,
 
     # Generate the code for the start procedure
     taste_template.extend([
-        'procedure start is',
+        'procedure state_start is',
         'begin',
-            'runTransition(0);',
-        'end start;', ''])
+            'null;',
+        'end state_start;', ''])
 
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
@@ -380,11 +384,11 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.append('\n')
 
     # Code of the function allowing to trace current state
-    taste_template.append('function get_state return String is')
-    taste_template.append('begin')
-    taste_template.append("return states'Image(state);")
-    taste_template.append('end get_state;')
-    taste_template.append('\n')
+    #taste_template.append('function get_state return String is')
+    #taste_template.append('begin')
+    #taste_template.append("return states'Image(state);")
+    #taste_template.append('end get_state;')
+    #taste_template.append('\n')
 
 
     taste_template.extend(start_transition)
@@ -1273,12 +1277,27 @@ def _transition(tr):
                 code.append('<<{label}>>'.format(
                     label=tr.terminator.label.inputString))
             if tr.terminator.kind == 'next_state':
-                code.append('trId := ' + str(tr.terminator.next_id) + ';')
                 if tr.terminator.inputString.strip() != '-':
-                    # discard the dash state (remain in the same state)
+                    code.append('trId := ' + str(tr.terminator.next_id) + ';')
                     if tr.terminator.next_id == -1:
                         code.append('state := {nextState};'.format(
                                  nextState=tr.terminator.inputString))
+                else:
+                    if any(next_id
+                           for next_id in tr.terminator.candidate_id.viewkeys()
+                           if next_id != -1):
+                        code.append('case state is')
+                        for nid, sta in tr.terminator.candidate_id.viewitems():
+                            if nid != -1:
+                                for each in sta:
+                                    code.extend(['when {} =>'.format(each),
+                                                 'trId := {};'.format(nid)])
+
+                        code.extend(['when others =>',
+                                        'trId := -1;',
+                                     'end case;'])
+                    else:
+                        code.append('trId := -1;')
                 code.append('goto next_transition;')
             elif tr.terminator.kind == 'join':
                 code.append('goto {label};'.format(

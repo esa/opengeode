@@ -1,0 +1,52 @@
+V "GNAT Lib v4.8"
+P ZX
+
+RN
+
+U taste_dataview%b	taste_dataview.adb	4b642254 NE OO PK KU
+W adaasn1rtl%s		adaasn1rtl.adb		adaasn1rtl.ali
+W taste_basictypes%s	taste_basictypes.adb	taste_basictypes.ali
+
+U taste_dataview%s	taste_dataview.ads	4e7b5f72 EE NE OO PK KU
+W adaasn1rtl%s		adaasn1rtl.adb		adaasn1rtl.ali
+W taste_basictypes%s	taste_basictypes.adb	taste_basictypes.ali
+
+D ada.ads		20070406091342 3ffc8e18
+D a-charac.ads		20070912115821 2d3ec45b
+D a-chlat1.ads		20070912115821 2825df20
+D adaasn1rtl.ads	20140513071215 989f6c09
+D interfac.ads		20110906094621 129923ea
+D system.ads		20140212114732 bd760655
+D s-unstyp.ads		20090409150019 6ae15c76
+D taste_basictypes.ads	20140513071215 72ec04b4
+D taste_dataview.ads	20140513071215 a40837cf
+D taste_dataview.adb	20140513071215 051f7d26
+X 4 adaasn1rtl.ads
+7K9*adaasn1rtl 908e15 9|2w6 2r27 2r57 2r85 10|2w6 4r10 5r10 6r10
+20M10*BIT 9|2r96 10|6r21
+28I13*Asn1Int{5|52I9} 9|2r68 10|5r21
+29M13*Asn1UInt{5|64M9} 9|2r38 10|4r21
+X 5 interfac.ads
+52I9*Integer_64<long_long_integer>
+64M9*Unsigned_64
+X 8 taste_basictypes.ads
+6K9*TASTE_BasicTypes 104e21 9|3w6 10|3w6
+X 9 taste_dataview.ads
+7K9*TASTE_Dataview 38l5 38e19 10|9b14 27l5 27t19
+12I9*asn1SccLight_index_range{integer}
+13E6*asn1SccLight 13e79 14r5 16r5 24r35 26r44 10|13r35 19r44
+13n23*asn1Sccred{13E6} 15r6 10|16r12
+13n35*asn1Sccyellow{13E6} 15r23
+13n50*asn1Sccgreen{13E6} 15r43
+13n64*asn1Sccall_off{13E6} 15r62
+18i1*asn1SccLight_REQUIRED_BYTES_FOR_ENCODING{integer}
+19i1*asn1SccLight_REQUIRED_BITS_FOR_ENCODING{integer}
+20i1*asn1SccLight_REQUIRED_BYTES_FOR_ACN_ENCODING{integer}
+21i1*asn1SccLight_REQUIRED_BITS_FOR_ACN_ENCODING{integer}
+22i1*asn1SccLight_REQUIRED_BYTES_FOR_XER_ENCODING{integer}
+24V10*asn1SccLight_Init{13E6} 10|13b10 17l5 17t22
+26V10*asn1SccLight_Equal{boolean} 26>29 26>35 10|19b10 23l5 23t23
+26e29 val1{13E6} 10|19b29 22r12
+26e35 val2{13E6} 10|19b35 22r19
+29i1*ERR_asn1SccLight_unknown_enumeration_value{integer}
+
