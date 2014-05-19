@@ -113,7 +113,7 @@ def _process(process):
     LOG.info('Generating Ada code for process ' + str(process_name))
 
     # In case model has nested states, flatten everything
-    Helper.flatten(process)
+    Helper.flatten(process, sep='_')
 
     # Make an maping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
@@ -246,6 +246,27 @@ package {process_name} is'''.format(process_name=process_name,
                 continue
             taste_template.append('when {state} =>'.format(state=state))
             input_def = mapping[signal['name']].get(state)
+            # Check for nested states to call optional exit procedure
+            sep = '_'
+            state_tree = state.split(sep)
+            context=process
+            exitlist = []
+            current = ''
+            trans = input_def and process.transitions[input_def.transition_id]
+            while state_tree:
+                current = current + state_tree.pop(0)
+                for comp in context.composite_states:
+                    if current == comp.statename.lower():
+                        if comp.exit_procedure:
+                            exitlist.append(current)
+                        context = comp
+                        current = current + sep
+                        break
+            for each in reversed(exitlist):
+                if trans and all(each.startswith(trans_st)
+                                 for trans_st in trans.possible_states):
+                    taste_template.append(each + '_' + 'exit;')
+
             if input_def:
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter

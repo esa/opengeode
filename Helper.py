@@ -71,7 +71,7 @@ def inner_labels_to_floating(process):
             process.content.floating_labels.append(new_floating)
 
 
-def flatten(process):
+def flatten(process, sep='_'):
     ''' Flatten the nested states:
         Rename inner states, procedures, etc. and move them to process level
     '''
@@ -80,24 +80,19 @@ def flatten(process):
         if term.inputString.lower() in (st.statename.lower()
                                 for st in context.composite_states):
             if not term.via:
-                term.next_id = term.inputString.lower() + '_START'
-                #process.mapping \
-                #                          [term.inputString.lower() + '_START']
+                term.next_id = term.inputString.lower() + sep + 'START'
             else:
-                term.next_id = '{term}_{entry}_START'.format(
-                        term=term.inputString, entry=term.entrypoint)
-                #process.mapping[term.inputString.lower()
-                #                               + '_'
-                #                               + term.entrypoint.lower()
-                #                               + '_START']
+                term.next_id = '{term}{sep}{entry}{sep}START'.format(
+                        term=term.inputString, entry=term.entrypoint, sep=sep)
         elif term.inputString.strip() == '-':
             term.candidate_id = defaultdict(list)
             for each in term.possible_states:
                 if each in (st.statename.lower()
                             for st in context.composite_states):
-                    term.candidate_id[each + '_START'] = \
-                          [st for st in process.mapping.viewkeys()
-                          if st.startswith(each) and not st.endswith('_START')]
+                    term.candidate_id[each + sep + 'START'] = \
+                                       [st for st in process.mapping.viewkeys()
+                                        if st.startswith(each)
+                                        and not st.endswith(sep + 'START')]
                 else:
                     term.candidate_id[-1].append(each)
 
@@ -106,8 +101,10 @@ def flatten(process):
             to process, updating indexes, and update terminators
         '''
         trans_idx = len(process.transitions)
-        prefix = state.statename + '_'
+        prefix = state.statename + sep
         set_terminator_states(state, prefix)
+        set_transition_states(state, prefix)
+
         state.mapping = {prefix + key:state.mapping.pop(key)
                          for key in state.mapping.keys()}
         process.transitions.extend(state.transitions)
@@ -119,13 +116,28 @@ def flatten(process):
                            for key in state.variables.keys()}
         process.variables.update(state.variables)
 
+        # Update return transition indices
+        for each in state.terminators:
+            if each.kind == 'return':
+                for idx, trans in enumerate(process.transitions):
+                    if trans == each.next_trans:
+                        each.next_id = idx
+                        break
+
+        values = []
         for key, value in state.mapping.viewitems():
             # Update transition indices
             if isinstance(value, int):
                 state.mapping[key] = value + trans_idx
             else:
-                for inp in value:
-                    inp.transition_id += trans_idx
+                values.extend(value)
+
+        for inp in set(values):
+            # values may contain duplicate entries if an input corresponds
+            # to multiple states. In that case we must update the index of the
+            # input only once, thus the set().
+            inp.transition_id += trans_idx
+
         process.mapping.update(state.mapping)
 
         # If composite state has entry procedures, add the call
@@ -207,7 +219,16 @@ def flatten(process):
                     term.possible_states.extend(prefix + name.lower()
                                                 for name in each.statelist)
 
+    def set_transition_states(context, prefix=''):
+        ''' Associate state to transitions, needed to process properly
+            the call to the exit procedure of a nested state '''
+        for each in context.content.states:
+            for inp in each.inputs:
+                inp.transition.possible_states.extend(prefix + name.lower()
+                                                for name in each.statelist)
+
     set_terminator_states(process)
+    set_transition_states(process)
 
     for each in process.composite_states:
         update_composite_state(each, process)

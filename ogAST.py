@@ -398,8 +398,11 @@ class Terminator(object):
         self.entrypoint = None
         # some transitions can be chained, when entering/leaving nested states
         self.next_id = -1
-        # List of State that can contain the current state
+        # Pointer to the next transition, when using return/connect
+        self.next_trans = None
+        # List of State that can lead to this terminator
         # There can be several if terminator follows a floating label
+        # Note, this field is updated by the Helper.flatten function
         self.possible_states = []
 
     def __repr__(self):
@@ -469,6 +472,12 @@ class Transition(object):
         self.terminator = None
         # All Terminators of this transition
         self.terminators = []
+        # List of State that can lead to this transition
+        # There can be several if state has multiple names (e.g. STATE a, b)
+        # Note, this field is updated by the Helper.flatten function
+        # and is needed to properly know when to call a nested state exit
+        # procedure when the model is flattened.
+        self.possible_states = []
 
     def __repr__(self):
         ''' Debug output: display all actions '''

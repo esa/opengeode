@@ -2043,7 +2043,7 @@ def connect_part(root, parent, context):
     # Retrieve composite state
     try:
         nested, = (comp for comp in context.composite_states
-                   if comp.statename == statename)
+                   if comp.statename.lower() == statename.lower())
     except ValueError:
         # Ignore unexisting state - to allow local syntax check
         nested = ogAST.CompositeState()
@@ -2097,8 +2097,8 @@ def connect_part(root, parent, context):
             errors.append('No {rs} return statement in nested state {st}'
                           .format(rs=exitp, st=statename))
         for each in terminators:
-            # Set transition ID, referencing process.transitions
-            each.next_id = trans_id
+            # Set next transition, exact id to be found in postprocessing
+            each.next_trans = trans
     # Set list of terminators
     conn.terminators = list(context.terminators[terms:])
     # Report errors with symbol coordinates
