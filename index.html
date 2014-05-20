@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Opengeode by maxime-esa</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Opengeode</h1>
+          <h2>OpenGEODE - A tiny free SDL [Specification and Description Language] editor</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/maxime-esa/opengeode/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/maxime-esa/opengeode/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/maxime-esa/opengeode" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a name="opengeode" class="anchor" href="#opengeode"><span class="octicon octicon-link"></span></a>OpenGEODE</h1>
+
+<p>OpenGEODE is a tiny open-source SDL editor that is developed for
+the purpose of providing an easy to use and free state machine editor and
+Ada code generator to the TASTE toolchain from the European Space Agency,
+running in combination with ESA's ASN.1 "Space Certifiable" ASN.1 compiler.</p>
+
+<p>SDL is the Specification and Description Language (Z100 standard from ITU-T).</p>
+
+<p>This is NOT related to the graphical Simple DirectMedia Layer libraries!</p>
+
+<p>Visit <a href="http://sdl-forum.org">http://sdl-forum.org</a> for more information about SDL.
+Visit <a href="http://www.pragmadev.com">http://www.pragmadev.com</a> to get a full-featured commercial SDL tool and support</p>
+
+<p><img src="icons/opengeode-screenshot.png" alt="alt tag"></p>
+
+<h2>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>Graphical editor of SDL processes and procedures.</li>
+<li>SDL2010 features: FOR loops in task symbols, hierarchical states </li>
+<li>Works on pure PR+CIF files (textual SDL notation) - no fancy proprietary save format</li>
+<li>Supports ASN.1 data types, including the Value notation - check this page to know more about our ASN.1 compiler and tools </li>
+<li>Generates Ada code with ASN.1 types using TASTE ASN.1 "space-certified" (SPARK) compiler </li>
+<li>Extensive syntax and semantic checks </li>
+<li>Automatic conversion to Statechart diagrams </li>
+<li>Save the complete or parts of the model to PNG/SVG/PDF files</li>
+<li>Hyperlinks (link a symbol content to any external document or web page) </li>
+<li>Zoom in, zoom-out </li>
+<li>Context-dependent text auto-completion </li>
+<li>Syntax highlighting </li>
+<li>Undo/Redo, Copy-Paste </li>
+<li>(Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern</li>
+</ul><h1>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h1>
+
+<h2>
+<a name="pre-requisites" class="anchor" href="#pre-requisites"><span class="octicon octicon-link"></span></a>Pre-requisites</h2>
+
+<p>There are three major dependencies for OpenGEODE:</p>
+
+<ul>
+<li>Pyside (the Qt bindings for Python)</li>
+<li>Python ANTLR Runtime</li>
+<li>PyGraphviz (Linux only - not available on Windows)</li>
+</ul><p>If you use pip to install OpenGEODE, these dependencies should be installed
+automatically. However, note that installing PySide from pip requires some
+work and is not straightforward.</p>
+
+<p>If you are using a Linux Debian-based distribution (including Ubuntu),
+I would recommended to install PySide using your package manager:
+You should also install pygraphviz using the same method, for convenience.</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>sudo apt-get install python-pyside pyside-tools python-pygraphviz pip
+</pre></div>
+
+<p>The Python 2.7 ANTLR 3.1.3 runtime is not part of Debian packages. Install
+it with pip (or download and install manually the package):</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>pip install antlr_python_runtime singledispatch
+</pre></div>
+
+<p>On Windows:</p>
+
+<p>You need to download and install Python, Pyside, and pip (binaries are
+available on respective websites)</p>
+
+<p>On FreeBSD:</p>
+
+<p>PySide is available through the ports.
+You can also use easy_install to install it.
+Use pip to install the ANTLR runtime (see above)</p>
+
+<h2>
+<a name="automatic-installation-recommended" class="anchor" href="#automatic-installation-recommended"><span class="octicon octicon-link"></span></a>Automatic installation (recommended)</h2>
+
+<p>To install the application on your machine:</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>pip install --upgrade opengeode
+</pre></div>
+
+<p>This is sufficient to get opengeode running</p>
+
+<p>In addition OpenGEODE is capable of generating code for embedded, real-
+time systems in the Ada programming language, with compact and efficient
+data manipulation and binary encoding using the ASN.1 notation.</p>
+
+<p>To get the full benefits of SDL and OpenGEODE, consider installing
+TASTE, that is a complete development environment dedicated to
+real-time, embedded systems from the European Space Agency.</p>
+
+<p>TASTE also allows the transparent integration and communication between
+models developed by commercial tools such as Matlab-Simulink and 
+Real-Time Developer Studio.</p>
+
+<h2>
+<a name="installation-from-source" class="anchor" href="#installation-from-source"><span class="octicon octicon-link"></span></a>Installation from source</h2>
+
+<p>You can get the source from the TASTE repositories or from GitHub</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>svn co https://tecsw.estec.esa.int/svn/taste/trunk/misc/opengeode opengeode
+</pre></div>
+
+<p>Or</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>git clone https://github.com/maxime-esa/opengeode.git opengeode
+</pre></div>
+
+<p>Then enter the opengeode directory and as root, type:</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>make install
+</pre></div>
+
+<h1>
+<a name="information-and-contact" class="anchor" href="#information-and-contact"><span class="octicon octicon-link"></span></a>Information and contact</h1>
+
+<p>OpenGEODE is part of the TASTE project.</p>
+
+<p>Find more information and download at <a href="http://taste.tuxfamily.org">http://taste.tuxfamily.org</a></p>
+
+<p>OpenGEODE is developed and maintained by Maxime Perrotin
+maxime (dot) perrotin (at) esa (dot) int</p>
+
+<p>The background pattern was downloaded from <a href="http://www.subtlepatterns.com">www.subtlepatterns.com</a></p>
+
+<p>The ASN.1 compiler (ASN1Scc) that OpenGEODE is based on was
+developed by George Mamais and Thanassis Tsiodras for the European
+Space Agency. Information at <a href="http://www.semantix.gr/asn1scc">http://www.semantix.gr/asn1scc</a></p>
+
+<h1>
+<a name="licence" class="anchor" href="#licence"><span class="octicon octicon-link"></span></a>Licence</h1>
+
+<p>License is LGPL (see file LICENSE)
+The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT</p>
+
+<h1>
+<a name="changelog" class="anchor" href="#changelog"><span class="octicon octicon-link"></span></a>Changelog</h1>
+
+<p>0.99 (04/2014)
+     - Refactoring of the backend engine, now using singledispatch
+     - Support of hierachical states
+     - Minor bugfixes</p>
+
+<p>0.98
+     - Added support for FOR loops
+       In a task, use "for x in range([start], stop, [range]): ... endfor"
+       or "for x in sequenceOfvariable: ... endfor"
+     - Default symbol size is smaller
+     - Various minor bugfixes</p>
+
+<p>0.97
+     - added support for default value when declaring a variable
+       e.g. DCL myVar myType ::= { x 5, y 2 };
+       default value must be a ground expression</p>
+        </section>
+
+        <footer>
+          Opengeode is maintained by <a href="https://github.com/maxime-esa">maxime-esa</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
