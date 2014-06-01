@@ -1,0 +1,6 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+Number ::= INTEGER (0..255)
+
+END

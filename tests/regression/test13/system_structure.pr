@@ -1,0 +1,21 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM adder;
+
+	SIGNAL run;
+
+	CHANNEL c
+		FROM ENV TO adder WITH run;
+	ENDCHANNEL;
+
+	BLOCK adder;
+
+		SIGNALROUTE r
+			FROM ENV TO adder WITH run;
+		CONNECT c and r;
+
+		PROCESS adder REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

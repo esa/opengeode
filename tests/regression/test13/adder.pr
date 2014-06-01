@@ -1,0 +1,26 @@
+/* CIF PROCESS (150, 150), (150, 75) */
+PROCESS adder;
+/* CIF TEXT (176, -127), (198, 140) */
+-- Declare your variables
+DCL n Number;
+
+/* CIF ENDTEXT */
+/* CIF START (-86, -394), (100, 50) */
+START;
+/* CIF TASK (-102, -323), (133, 50) */
+TASK n := 1;
+/* CIF NEXTSTATE (-86, -258), (100, 50) */
+NEXTSTATE Wait;
+
+/* CIF STATE (-86, -258), (100, 50) */
+STATE Wait;
+/* CIF INPUT (-85, -188), (100, 50) */
+INPUT run;
+/* CIF TASK (-117, -123), (164, 49) */
+TASK n := n + 1;
+/* CIF PROCEDURECALL (-85, -59), (100, 35) */
+CALL writeln(n);
+/* CIF NEXTSTATE (-85, -9), (100, 50) */
+NEXTSTATE Wait;
+ENDSTATE;
+ENDPROCESS adder;
