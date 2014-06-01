@@ -1,0 +1,14 @@
+*.pyc
+
+tests/**/*.ads
+tests/**/*.adb
+tests/**/*.ali
+tests/**/*.o
+tests/**/*.idx
+tests/**/*.wrn
+tests/**/*.gpr
+tests/**/*.sh
+tests/**/*.cfg
+tests/**/result
+tests/**/testcase
+tests/**/result
