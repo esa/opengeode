@@ -156,7 +156,7 @@ def _process(process):
 
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
-    process_level_decl.append('procedure state_start;')
+    #process_level_decl.append('procedure state_start;')
     #process_level_decl.append('pragma export(C, start, "{}_start");'
     #                          .format(process_name))
 
@@ -170,6 +170,7 @@ def _process(process):
         asn1_modules = '\n'.join(['with {dv};\nuse {dv};'.format(
             dv=dv.replace('-', '_'))
             for dv in process.asn1Modules])
+        asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
     except TypeError:
         asn1_modules = '--  No ASN.1 data types are used in this model'
     taste_template = ['''\
@@ -179,9 +180,6 @@ with System.IO;
 use System.IO;
 
 {dataview}
-
-with adaasn1rtl;
-use adaasn1rtl;
 
 with Interfaces;
 use Interfaces;
@@ -196,7 +194,7 @@ package body {process_name} is'''.format(process_name=process_name,
 {dataview}
 
 package {process_name} is'''.format(process_name=process_name,
-    dataview=asn1_modules)]
+                                    dataview=asn1_modules)]
 
     # Generate the the code of the procedures
     inner_procedures_code = []
@@ -209,11 +207,11 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.extend(process_level_decl)
 
     # Generate the code for the start procedure
-    taste_template.extend([
-        'procedure state_start is',
-        'begin',
-            'null;',
-        'end state_start;', ''])
+    #taste_template.extend([
+    #    'procedure state_start is',
+    #    'begin',
+    #        'null;',
+    #    'end state_start;', ''])
 
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
@@ -334,6 +332,12 @@ package {process_name} is'''.format(process_name=process_name,
 
     taste_template.append('procedure runTransition(Id: Integer) is')
     taste_template.append('trId : Integer := Id;')
+
+    # If the process has no input, output, procedures, or timers, then Ada
+    # will not compile the body - generate a pragma to fix this
+    if not process.timers and not process.procedures \
+            and not process.input_signals and not process.output_signals:
+        ads_template.append('pragma elaborate_body;')
 
     # Transform inner labels to floating labels
     Helper.inner_labels_to_floating(process)

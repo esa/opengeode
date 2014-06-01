@@ -7,6 +7,6 @@
     defined language, and generate Ada code from the models.
 """
  
-__version__ = "0.991"
+__version__ = "0.992"
 
 from opengeode import opengeode

@@ -68,13 +68,14 @@ import Renderer
 import Clipboard
 import Statechart
 import Lander
+import Helper
 
 
 # Try importing graphviz for the SDL to Statechart converter
 # This is optional, as graphviz installation can not be easily
 # automated on some platforms by opengeode installation scripts.
 try:
-    import pygraphviz as dot
+    import pygraphviz
     graphviz = True
 except ImportError:
     graphviz = False
@@ -86,7 +87,7 @@ except ImportError:
     pass
 
 __all__ = ['opengeode']
-__version__ = '0.991'
+__version__ = '0.992'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -695,7 +696,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def sdl_to_statechart(self):
         ''' Create a graphviz representation of the SDL model '''
-        graph = dot.AGraph(strict=False, directed=True)
         pr_raw = self.get_pr_string()
         pr_data = str('\n'.join(pr_raw))
         ast, _, _ = ogParser.parse_pr(string=pr_data)
@@ -703,76 +703,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             process_ast, = ast.processes
         except ValueError:
             LOG.error('No statechart to render')
-            return
-        diamond = 0
-        for state, inputs in process_ast.mapping.viewitems():
-            # create a new node for each state
-            if state == 'START':
-                graph.add_node(state, shape='point',
-                        fixedsize='true', width=10.0 / 72.0)
-            else:
-                graph.add_node(state, shape='record', style='rounded')
-            # Add edges
-            transitions = inputs if state != 'START' else [
-                                                    process_ast.content.start]
-            for trans in transitions:
-                source = state
-                # transition label - there can be several inputs
-                try:
-                    # Keep only message name, remove params and newlines
-                    # (newlines are not supported by graphviz)
-                    label, = re.match(r'([^(]+)',
-                                      trans.inputString).groups()
-                    label = label.strip().replace('\n', ' ')
-                except AttributeError:
-                    # START transition has no inputString
-                    label = ''
-
-                def find_terminators(trans):
-                    ''' Recursively find all NEXTSTATES '''
-                    next_states = [term for term in trans.terminators
-                            if term.kind == 'next_state']
-                    joins = [term for term in trans.terminators
-                            if term.kind == 'join']
-                    for join in joins:
-                        # JOIN - Find corresponding label
-                        try:
-                            corr_label, = [lab for lab in
-                                process_ast.content.floating_labels +
-                                process_ast.labels if
-                                lab.inputString.lower() ==
-                                join.inputString.lower()]
-                        except ValueError:
-                            LOG.error('Missing label: ' + join.inputString)
-                        else:
-                            # Don't recurse forever in case of livelock
-                            if corr_label.inputString != trans.inputString:
-                                next_states.extend(
-                                        find_terminators(corr_label))
-                    return set(next_states)
-
-                # Determine the list of terminators in this transition
-                next_states = find_terminators(trans)
-
-                if len(next_states) > 1:
-                    # more than one terminator - add intermediate node
-                    graph.add_node(str(diamond), shape='diamond',
-                            fixedsize='true',
-                            width=15.0 / 72.0, height=15.0 / 72.0, label='')
-                    graph.add_edge(source, str(diamond), label=label)
-                    source = str(diamond)
-                    label = ''
-                    diamond += 1
-                for term in next_states:
-                    if term.inputString.strip() == '-':
-                        target = state
-                    else:
-                        target = term.inputString.lower()
-                    LOG.debug('Edge from ' + source + ' to ' +
-                            term.inputString + ' label: ' + label)
-                    graph.add_edge(source, target, label=label)
-        #print graph.to_string()
-        return graph
+            return None
+        # Flatten nested states
+        Helper.flatten(process_ast)
+        return Statechart.create_dot_graph(process_ast)
 
 
     def export_branch_to_picture(self, symbol, filename, doc_format):
@@ -927,8 +861,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
         elif self.mode == 'wait_placement':
             try:
-                parent = self.can_insert(
-                        event.scenePos(), self.button_selected)
+                parent = \
+                        self.can_insert(event.scenePos(), self.button_selected)
             except TypeError as err:
                 self.messages_window.addItem(str(err))
             else:
@@ -1157,6 +1091,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.check_model()
         elif event.key() == Qt.Key_F5:
             self.refresh()
+            # Refresh statechart
+            if graphviz:
+                Statechart.update(self.scene())
         elif event.matches(QtGui.QKeySequence.Open):
             self.open_diagram()
         elif event.matches(QtGui.QKeySequence.New):
@@ -1180,9 +1117,6 @@ class SDL_View(QtGui.QGraphicsView, object):
     def refresh(self):
         ''' Refresh the complete view '''
         self.scene().refresh()
-        # Refresh statechart
-        if graphviz:
-            Statechart.update(self.scene())
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
 
@@ -1755,6 +1689,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             graph = scene.sdl_to_statechart()
             try:
                 Statechart.render_statechart(self.statechart_scene, graph)
+                self.statechart_view.refresh()
             except (IOError, TypeError) as err:
                 LOG.debug(str(err))
         elif key_event.key() == Qt.Key_Colon:

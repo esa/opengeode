@@ -72,7 +72,7 @@ def inner_labels_to_floating(process):
 
 
 def flatten(process, sep='_'):
-    ''' Flatten the nested states:
+    ''' In-place update of the AST: flatten a model with nested states
         Rename inner states, procedures, etc. and move them to process level
     '''
     def update_terminator(context, term, process):

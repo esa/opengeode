@@ -216,15 +216,15 @@ def get_interfaces(ast, process_name):
         all_signals.extend(signals_in_system(system))
         process_ref = find_process_declaration(system, process_name)
         if process_ref:
+            # Go to the block where the process is defined
+            process_parent = process_ref.parent
             break
     else:
         if isinstance(ast, ogAST.Block):
-            process_ref = ast
+            process_parent = ast
         else:
             raise TypeError('Process ' + process_name +
                         ' is defined but not not declared in a system')
-    # Go to the block where the process is defined
-    process_parent = process_ref.parent
     # Find in and out signals names using the signalroutes
     for signalroute in process_parent.signalroutes:
         for route in signalroute['routes']:
@@ -1770,12 +1770,11 @@ def process_definition(root, parent=None, context=None):
             process.processName = child.text
             try:
                 # Retrieve process interface (PI/RI)
-                async_signals, procedures = get_interfaces(
-                        parent, child.text)
+                async_signals, procedures = get_interfaces(parent, child.text)
                 process.input_signals.extend([sig for sig in async_signals
-                    if sig['direction'] == 'in'])
+                                             if sig['direction'] == 'in'])
                 process.output_signals.extend([sig for sig in async_signals
-                    if sig['direction'] == 'out'])
+                                              if sig['direction'] == 'out'])
                 process.procedures.extend(procedures)
             except AttributeError as err:
                 # No interface because process is defined standalone
@@ -2833,6 +2832,7 @@ def pr_file(root):
             for mod in ast.asn1Modules:
                 ast.asn1_constants.extend(DV.exportedVariables[mod])
         except (ImportError, NameError):
+            # Can happen if DataView.py is not there
             LOG.info('USE Clause did not contain ASN.1 filename')
     for child in systems:
         LOG.debug('found SYSTEM')

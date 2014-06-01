@@ -21,6 +21,8 @@
 
 import logging
 import math
+import re
+from itertools import chain
 from PySide import QtGui, QtCore
 
 try:
@@ -241,31 +243,54 @@ def preprocess_nodes(my_graph, bounding_rect, dpi):
     # while Qt uses the top-left corner, so we must translate all y-coord.
     bb_height = bounding_rect[3]
     nodes = []
+    attrs = []
+    for each in my_graph.subgraphs():
+        # Transform cluster nodes into nodes (attributes differ)
+        llx, lly, urx, ury = each.graph_attr['bb'].split(',')
+        wid = float(urx) - float(llx)
+        hei = float(ury) - float(lly)
+        attr = {}
+        attr.update(pos='{0},{1}'.format(llx, lly),
+                         width=wid,
+                         height=hei,
+                         shape=each.graph_attr['shape'],
+                         label=each.graph_attr['label'],
+                         style=each.graph_attr['style'],
+                         name='cluster_'+each.graph_attr['label'],
+                         kind='cluster')
+        attrs.append(attr)
     for node in my_graph.nodes_iter():
+        if not node.attr:
+            continue
+        node.attr.update(name=node.name)
+        attrs.append(node.attr)
+    for node in attrs:
         new_node = {}
         # Get the node shape attribute - default is record
-        new_node['shape'] = node.attr.get('shape') or 'record'
+        new_node['shape'] = node.get('shape') or 'record'
         # node main name
-        new_node['name'] = str(node)
+        new_node['name'] = node['name']
         try:
             # node complete label (can contain several compartments)
             properties = (
-                    node.attr['label'][1:-2].split('|')[1].replace('\\', '\n'))
-            new_node['properties'] = properties  # node.attr.get('label')
+                    node['label'][1:-2].split('|')[1].replace('\\', '\n'))
+            new_node['properties'] = properties
         except IndexError:
             pass
         # transform width and height from inches to pixels
-        new_node['width'] = float(node.attr.get('width')) * RENDER_DPI['X']
-        new_node['height'] = float(node.attr.get('height')) * RENDER_DPI['Y']
+        if node.get('kind', '') == 'cluster':
+            new_node['width'] = node['width']
+            new_node['height'] = node['height']
+        else:
+            new_node['width'] = float(node['width']) * RENDER_DPI['X']
+            new_node['height'] = float(node['height']) * RENDER_DPI['Y']
         # get the position of the CENTER of the node
-        center_pos = [float(val)
-                for val in node.attr.get('pos').split(',')]
+        center_pos = [float(val) for val in node['pos'].split(',')]
         # apply dpi-conversion from 72 to 96
         center_pos[0] *= (RENDER_DPI['X'] / dpi)
 
         # translate y-coord from bottom-left to top-left corner
-        center_pos[1] = (
-                bb_height - center_pos[1]) * (RENDER_DPI['Y'] / dpi)
+        center_pos[1] = (bb_height - center_pos[1]) * (RENDER_DPI['Y'] / dpi)
         new_node['pos'] = [center_pos[0] - (new_node['width'] / 2.0),
                            center_pos[1] - (new_node['height'] / 2.0)]
         nodes.append(new_node)
@@ -297,31 +322,34 @@ def update(scene):
         center_x = center_pos.x() * (dpi / RENDER_DPI['X'])
         center_y = (bb_height - center_pos.y()) * (dpi / RENDER_DPI['Y'])
 
-        pos = unicode('{x},{y}'.format(x=int(center_x), y=int(center_y)))
-
-        #print node['name'], node['height'], node['height'] / RENDER_DPI['Y']
+        #pos = unicode('{x},{y}'.format(x=int(center_x), y=int(center_y)))
+        pos = unicode('{x},{y}'.format(x=float(center_x), y=float(center_y)))
 
         if node['shape'] in (Point, Diamond):
             graph.add_node(node['name'], pos=pos, shape=lookup[node['shape']],
                 fixedsize='true', width=node['width'] / RENDER_DPI['X'],
-                height=node['height'] / RENDER_DPI['Y'])
+                height=node['height'] / RENDER_DPI['Y'], pin=True)
         else:
-            graph.add_node(node['name'], pos=pos, shape=lookup[node['shape']])
+            graph.add_node(node['name'], pos=pos, pin=True,
+                           shape=lookup[node['shape']])
 
     # Keep edges from the previous graph
     for edge in EDGES:
         graph.add_edge(edge, label=edge.attr.get('label') or '')
 
+
     #print graph.to_string()
     if nodes:
-        #before = scene.itemsBoundingRect().center()
+        before = scene.itemsBoundingRect().center()
+        before_pos = graph.get_node(nodes[0]['name']).attr['pos']
         render_statechart(scene, graph, keep_pos=True)
-        #delta = scene.itemsBoundingRect().center() - before
+        after_pos = graph.get_node(nodes[0]['name']).attr['pos']
+        #print before_pos,after_pos
+        delta = scene.itemsBoundingRect().center() - before
         # graphviz translates the graph to pos (0, 0) -> move it back
         # to the exact graphical position where the user clicked
-        #for item in scene.items():
-        #    if isinstance(item, genericSymbols.Symbol):
-        #        item.setPos(item.pos() - delta)
+        for item in scene.visible_symb:
+            item.setPos(item.pos() - delta)
 
 
 def render_statechart(scene, graph=None, keep_pos=False):
@@ -337,8 +365,10 @@ def render_statechart(scene, graph=None, keep_pos=False):
     graph.graph_attr.update(dpi='72.0')
     EDGES[:] = graph.edges()
 
-    scene.clear()
-    G_SYMBOLS.clear()
+    for each in scene.visible_symb:
+        each.setVisible(False)
+    #scene.clear()
+    #G_SYMBOLS.clear()
 
     # Compute all the coordinates (self-modifying function)
     # Force the fontsize of the nodes to be 12, as in OpenGEODE
@@ -364,18 +394,109 @@ def render_statechart(scene, graph=None, keep_pos=False):
     nodes = preprocess_nodes(graph, bounding_rect, dot_dpi)
     node_symbols = []
     for node in nodes:
+        #print node
         shape = node.get('shape')
         try:
             node_symbol = lookup[shape](node, graph)
+            G_SYMBOLS.add(node_symbol)
+            node_symbols.append(node_symbol)
+            scene.addItem(node_symbol)
         except KeyError:
             raise TypeError('Statechart - unsupported shape: ' + shape)
-        G_SYMBOLS.add(node_symbol)
-        node_symbols.append(node_symbol)
-        scene.addItem(node_symbol)
     edges = preprocess_edges(graph, node_symbols, bounding_rect, dot_dpi)
 
     for edge in edges:
         Edge(edge, graph)
+
+
+def create_dot_graph(root_ast):
+    ''' Return a dot.AGraph item, from an ogAST.Process or child entry '''
+    graph = dotgraph.AGraph(strict=False, directed=True)
+    diamond = 0
+    for state in root_ast.mapping.viewkeys():
+        # create a new node for each state (including nested states)
+        if state.endswith('START'):
+            graph.add_node(state, label='', shape='point',
+                           fixedsize='true', width=10.0 / 72.0)
+        else:
+            #print 'adding', state
+            graph.add_node(state, label=state, shape='record', style='rounded')
+    for each in root_ast.composite_states:
+        # this will have to be recursive
+        subnodes = (name for name in graph.iternodes()
+                    if name.startswith(each.statename.lower() + '_'))
+        graph.add_subgraph(subnodes, name='cluster_'+each.statename.lower(),
+                           label=each.statename.lower(),
+                           style='rounded', shape='record')
+    for state, inputs in root_ast.mapping.viewitems():
+        # Add edges
+        transitions = \
+            inputs if not state.endswith('START') \
+                   else [root_ast.transitions[inputs]]
+                   #[root_ast.content.start]
+        for trans in transitions:
+            source = state
+            # transition label - there can be several inputs
+            try:
+                # Keep only message name, remove params and newlines
+                # (newlines are not supported by graphviz)
+                label, = re.match(r'([^(]+)', trans.inputString).groups()
+                label = label.strip().replace('\n', ' ')
+            except AttributeError:
+                # START transition may have no inputString
+                label = ''
+
+            def find_terminators(trans):
+                ''' Recursively find all NEXTSTATES '''
+                next_states = [term for term in trans.terminators
+                               if term.kind == 'next_state']
+                joins = [term for term in trans.terminators
+                         if term.kind == 'join']
+                for join in joins:
+                    # JOIN - Find corresponding label
+                    try:
+                        corr_label, = [lab for lab in
+                                       root_ast.content.floating_labels +
+                                       root_ast.labels if
+                                       lab.inputString.lower() ==
+                                       join.inputString.lower()]
+                    except ValueError:
+                        LOG.error('Missing label: ' + join.inputString)
+                    else:
+                        # Don't recurse forever in case of livelock
+                        if corr_label.inputString != trans.inputString:
+                            next_states.extend(find_terminators(corr_label))
+                return set(next_states)
+
+            # Determine the list of terminators in this transition
+            next_states = find_terminators(trans)
+
+            if len(next_states) > 1:
+                # more than one terminator - add intermediate node
+                graph.add_node(str(diamond),
+                               shape='diamond',
+                               fixedsize='true',
+                               width=15.0 / 72.0,
+                               height=15.0 / 72.0, label='')
+                graph.add_edge(source, str(diamond), label=label)
+                source = str(diamond)
+                label = ''
+                diamond += 1
+            for term in next_states:
+                if term.inputString.strip() == '-':
+                    target = state
+                else:
+                    target = term.inputString.lower()
+                LOG.debug('Edge from ' + source + ' to ' +
+                           term.inputString + ' label: ' + label)
+                for each in root_ast.composite_states:
+                    # check with deeper nesting
+                    if each.statename.lower() == target.lower():
+                        target = 'cluster_' + target
+                        break
+                graph.add_edge(source, target, label=label)
+    #print graph.to_string()
+    return graph
 
 
 if __name__ == '__main__':
