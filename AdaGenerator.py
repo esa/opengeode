@@ -138,11 +138,12 @@ def _process(process):
 
 
     # Add the process states list to the process-level variables
-    states_decl = 'type states is ('
-    states_decl += ', '.join(name for name in process.mapping.iterkeys()
-                             if not name.endswith('START')) + ');'
-    process_level_decl.append(states_decl)
-    process_level_decl.append('state : states;')
+    statelist = ', '.join(name for name in process.mapping.iterkeys()
+                             if not name.endswith('START')) or 'No_State'
+    if statelist:
+        states_decl = 'type states is ({});'.format(statelist)
+        process_level_decl.append(states_decl)
+        process_level_decl.append('state : states;')
 
     for name, val in process.mapping.viewitems():
         if name.endswith('START') and name != 'START':
