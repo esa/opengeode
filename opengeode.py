@@ -1764,15 +1764,13 @@ def opengeode():
                    help='SDL file(s)')
     options = parser.parse_args()
     ret = 0
-    if options.debug:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
+    level = logging.DEBUG if options.debug else logging.INFO
 
     # Set log level for all libraries
     LOG.setLevel(level)
     for module in (sdlSymbols, genericSymbols, ogAST, ogParser, Lander,
-            AdaGenerator, undoCommands, Renderer, Clipboard, Statechart):
+            AdaGenerator, undoCommands, Renderer, Clipboard, Statechart,
+            Helper, LlvmGenerator):
         module.LOG.addHandler(handler_console)
         module.LOG.setLevel(level)
 
@@ -1803,22 +1801,26 @@ def opengeode():
             LOG.warning(warning[0])
         for error in errors:
             LOG.error(error[0])
-        if len(errors) > 0:
+        if errors:
             ret = -1
-        if options.toAda:
-            if len(errors) > 0:
-                LOG.error('Too many errors, cannot generate Ada code')
-            else:
-                LOG.info('Generating Ada code')
-                try:
-                    AdaGenerator.generate(process)
-                    if options.llvm:
-                        # Experimental: generate LLVM IR code
-                        LlvmGenerator.generate(process)
-                except (TypeError, ValueError, NameError) as err:
-                    LOG.error(str(err))
-                    #print(str(traceback.format_exc()))
-                    LOG.error('Code generation failed')
+            if options.toAda or options.llvm:
+                LOG.error('Too many errors, cannot generate code')
+        if options.toAda and not errors:
+            LOG.info('Generating Ada code')
+            try:
+                AdaGenerator.generate(process)
+            except (TypeError, ValueError, NameError) as err:
+                LOG.error(str(err))
+                LOG.debug(str(traceback.format_exc()))
+                LOG.error('Code generation failed')
+        if options.llvm and not errors:
+            LOG.info('Generating LLVM code')
+            try:
+                LlvmGenerator.generate(process)
+            except (TypeError, ValueError, NameError) as err:
+                LOG.error(str(err))
+                LOG.debug(str(traceback.format_exc()))
+                LOG.error('LLVM Code generation failed')
         export_fmt = []
         if options.png:
             export_fmt.append('png')
