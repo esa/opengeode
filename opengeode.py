@@ -1780,7 +1780,7 @@ def opengeode():
     LOG.debug('Starting OpenGEODE version ' + __version__)
 
     if(options.check or options.toAda or options.png or
-            options.pdf or options.svg):
+            options.pdf or options.svg or options.llvm):
         LOG.info('Checking ' + str(options.files))
         try:
             ast, warnings, errors = ogParser.parse_pr(files=options.files)
