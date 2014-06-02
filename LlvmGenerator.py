@@ -36,6 +36,8 @@ LLVM = {
     # Dictionary that keeps track of which values are defined in the current
     # scope and what their LLVM representation is.
     'named_values': {},
+    # The builder used for the current function generation.
+    'builder': None,
     # The function optimization passes manager.
     'pass_manager': None,
     # The LLVM execution engine.
@@ -54,7 +56,7 @@ def generate(ast):
 @generate.register(ogAST.Process)
 def _process(process):
     ''' Generate LLVM IR code (incomplete) '''
-    process_name = process.processName
+    process_name = str(process.processName)
     LOG.info('Generating LLVM IR code for process ' + str(process_name))
 
     # In case model has nested states, flatten everything
@@ -65,7 +67,7 @@ def _process(process):
     mapping = Helper.map_input_state(process)
 
     # Initialise LLVM global structure
-    LLVM['module'] = core.Module.new(str(process_name))
+    LLVM['module'] = core.Module.new(process_name)
     LLVM['pass_manager'] = passes.FunctionPassManager.new(LLVM['module'])
     LLVM['executor'] = ee.ExecutionEngine.new(LLVM['module'])
     # Set up the optimizer pipeline.
@@ -82,34 +84,77 @@ def _process(process):
 #   LLVM['pass_manager'].add(passes.PASS_CFG_SIMPLIFICATION)
 #   LLVM['pass_manager'].initialize()
 
-    # Create the runTransition function
-    run_funct_name = 'run_transition'
-    run_funct_type = core.Type.function(core.Type.void(), [
-        core.Type.int()])
-    run_funct = core.Function.new(
-            LLVM['module'], run_funct_type, run_funct_name)
-    # Generate the code of the start transition:
-    # Clear scope
-    LLVM['named_values'].clear()
-    # Create the function name and type
-    funct_name = str(process_name) + '_startup' 
-    funct_type = core.Type.function(core.Type.void(), [])
-    # Create a function object
-    function = core.Function.new(LLVM['module'], funct_type, funct_name)
-    # Create a new basic block to start insertion into.
-    block = function.append_basic_block('entry')
-    builder = core.Builder.new(block)
-    # Add the body of the function
-    builder.call(run_funct, (core.Constant.int(
-                                     core.Type.int(), 0),))
-    # Add terminator (mandatory)
-    builder.ret_void()
-    # Validate the generated code, checking for consistency.
-    function.verify()
-    # Optimize the function (not yet).
-    # LLVM['pass_manager'].run(function)
-    print function
+    runtr_func = _generate_runtr_func(process)
+    _generate_startup_func(process, process_name, runtr_func)
 
+    print LLVM['module']
+
+
+def _generate_runtr_func(process):
+    '''Generate code for the run_transition function'''
+    func_name = 'run_transition'
+    func_type = core.Type.function(core.Type.void(), [core.Type.int()])
+    func = core.Function.new(LLVM['module'], func_type, func_name)
+
+    entry_block = func.append_basic_block('entry')
+    cond_block = func.append_basic_block('cond')
+    body_block = func.append_basic_block('body')
+    exit_block = func.append_basic_block('exit')
+
+    builder = core.Builder.new(entry_block)
+    LLVM['builder'] = builder
+
+    # entry
+    id_ptr = builder.alloca(core.Type.int(), None, 'id')
+    LLVM['named_values']['id'] = id_ptr
+    builder.store(func.args[0], id_ptr)
+    builder.branch(cond_block)
+
+    # cond
+    builder.position_at_end(cond_block)
+    id_ptr = func.args[0]
+    no_tr_cons = core.Constant.int(core.Type.int(), -1)
+    cond_val = builder.icmp(core.ICMP_NE, id_ptr, no_tr_cons, 'cond')
+    builder.cbranch(cond_val, body_block, exit_block)
+
+    # body
+    builder.position_at_end(body_block)
+    switch = builder.switch(func.args[0], exit_block)
+
+    # transitions
+    for idx, tr in enumerate(process.transitions):
+        tr_block = func.append_basic_block('tr%d' % idx)
+        const = core.Constant.int(core.Type.int(), idx)
+        switch.add_case(const, tr_block)
+        builder.position_at_end(tr_block)
+        generate(tr)
+        builder.branch(cond_block)
+
+    # exit
+    builder.position_at_end(exit_block)
+    builder.ret_void()
+
+    func.verify()
+    LLVM['named_values'].clear()
+    return func
+
+
+def _generate_startup_func(process, process_name, runtr_func):
+    '''Generate code for the startup function'''
+    func_name = process_name + '_startup'
+    func_type = core.Type.function(core.Type.void(), [])
+    func = core.Function.new(LLVM['module'], func_type, func_name)
+
+    entry_block = func.append_basic_block('entry')
+    builder = core.Builder.new(entry_block)
+    LLVM['builder'] = builder
+
+    # entry
+    builder.call(runtr_func, [core.Constant.int(core.Type.int(), 0)])
+    builder.ret_void()
+
+    func.verify()
+    return func
 
 
 def write_statement(param, newline):
@@ -303,7 +348,15 @@ def _label(tr):
 @generate.register(ogAST.Transition)
 def _transition(tr):
     ''' generate the code for a transition '''
-    pass
+    builder = LLVM['builder']
+    runtr_func = builder.basic_block.function
+
+    id_ptr = LLVM['named_values']['id']
+
+    # TODO: Hardcoded no_tr id. Generate correct transition id
+    no_tr_cons = core.Constant.int(core.Type.int(), -1)
+    builder.store(no_tr_cons, id_ptr)
+
 
 
 @generate.register(ogAST.Floating_label)
