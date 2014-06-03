@@ -36,6 +36,9 @@ LLVM = {
     # Dictionary that keeps track of which values are defined in the current
     # scope and what their LLVM representation is.
     'named_values': {},
+    # Dictionary that keeps track of the defined states and its integer
+    # constant representation
+    'states': {},
     # The builder used for the current function generation.
     'builder': None,
     # The function optimization passes manager.
@@ -84,6 +87,16 @@ def _process(process):
 #   LLVM['pass_manager'].add(passes.PASS_CFG_SIMPLIFICATION)
 #   LLVM['pass_manager'].initialize()
 
+    # Initialize states enum
+    for name in process.mapping.iterkeys():
+        if not name.endswith('START'):
+            cons = core.Constant.int(core.Type.int(), len(LLVM['states']))
+            LLVM['states'][name] = cons
+
+    # Declare global state var
+    LLVM['module'].add_global_variable(core.Type.int(), 'state')
+
+    # Generate process functions
     runtr_func = _generate_runtr_func(process)
     _generate_startup_func(process, process_name, runtr_func)
 
@@ -348,15 +361,36 @@ def _label(tr):
 @generate.register(ogAST.Transition)
 def _transition(tr):
     ''' generate the code for a transition '''
+    for action in tr.actions:
+        generate(action)
+        if isinstance(action, ogAST.Label):
+            return
+    if tr.terminator:
+        _generate_terminator(tr.terminator)
+
+
+def _generate_terminator(term):
     builder = LLVM['builder']
-    runtr_func = builder.basic_block.function
-
     id_ptr = LLVM['named_values']['id']
-
-    # TODO: Hardcoded no_tr id. Generate correct transition id
-    no_tr_cons = core.Constant.int(core.Type.int(), -1)
-    builder.store(no_tr_cons, id_ptr)
-
+    if term.label:
+        pass
+    if term.kind == 'next_state':
+        state = term.inputString.lower()
+        if state.strip() != '-':
+            next_id_cons = core.Constant.int(core.Type.int(), term.next_id)
+            builder.store(next_id_cons, id_ptr)
+            if term.next_id == -1:
+                state_ptr = LLVM['module'].get_global_variable_named('state')
+                state_id_cons = LLVM['states'][state]
+                builder.store(state_id_cons, state_ptr)
+        else:
+            pass
+    elif term.kind == 'join':
+        pass
+    elif term.kind == 'stop':
+        pass
+    elif term.kind == 'return':
+        pass
 
 
 @generate.register(ogAST.Floating_label)
