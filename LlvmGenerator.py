@@ -191,7 +191,8 @@ def _call_external_function(output):
 @generate.register(ogAST.TaskAssign)
 def _task_assign(task):
     ''' A list of assignments in a task symbol '''
-    pass
+    for expr in task.elems:
+        expression(expr)
 
 
 @generate.register(ogAST.TaskInformalText)
@@ -228,7 +229,7 @@ def expression(expr):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
-    pass
+    return LLVM['module'].get_global_variable_named(str(prim.value[0]))
 
 
 @expression.register(ogAST.PrimPath)
@@ -260,7 +261,34 @@ def _prim_path(primaryId):
 @expression.register(ogAST.ExprAssign)
 def _basic_operators(expr):
     ''' Expressions with two sides '''
-    pass
+    builder = LLVM['builder']
+
+    left = expression(expr.left)
+    right = expression(expr.right)
+
+    if expr.operand == ':=':
+        builder.store(right, left)
+        return left
+
+    # load the value of the expression if it is a pointer
+    if left.type.kind == core.TYPE_POINTER:
+        left = builder.load(left, 'lefttmp')
+    if right.type.kind == core.TYPE_POINTER:
+        right = builder.load(right, 'lefttmp')
+
+    if expr.operand == '+':
+        return builder.add(left, right, 'addtmp')
+    elif expr.operand == '-':
+        return builder.sub(left, right, 'subtmp')
+    elif expr.operand == '*':
+        return builder.sub(left, right, 'multmp')
+    elif expr.operand == '/':
+        pass
+    elif expr.operand == 'mod':
+        return builder.srem(left, right, 'modtmp')
+    else:
+        pass
+
 
 
 @expression.register(ogAST.ExprOr)
@@ -296,10 +324,20 @@ def _choice_determinant(primary):
 
 
 @expression.register(ogAST.PrimInteger)
-@expression.register(ogAST.PrimReal)
-@expression.register(ogAST.PrimBoolean)
 def _integer(primary):
-    ''' Generate code for a raw integer/real/boolean value  '''
+    ''' Generate code for a raw integer value  '''
+    return core.Constant.int(core.Type.int(), primary.value[0])
+
+
+@expression.register(ogAST.PrimReal)
+def _real(primary):
+    ''' Generate code for a raw real value  '''
+    pass
+
+
+@expression.register(ogAST.PrimBoolean)
+def _boolean(primary):
+    ''' Generate code for a raw boolean value  '''
     pass
 
 
