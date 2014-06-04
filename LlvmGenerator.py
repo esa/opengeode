@@ -93,8 +93,15 @@ def _process(process):
             cons = core.Constant.int(core.Type.int(), len(LLVM['states']))
             LLVM['states'][name] = cons
 
-    # Declare global state var
+    # Generate state var
     LLVM['module'].add_global_variable(core.Type.int(), 'state')
+
+    # Generare process-level vars
+    for var_name, (var_type, def_value) in process.variables.viewitems():
+        #TODO: Use ASN.1 type instead of hardcoded int type
+        var_ptr = LLVM['module'].add_global_variable(core.Type.int(), str(var_name))
+        if def_value:
+            pass
 
     # Generate process functions
     runtr_func = _generate_runtr_func(process)
