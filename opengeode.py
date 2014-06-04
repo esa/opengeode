@@ -373,7 +373,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         for each in self.states:
             if each.is_composite() and \
                   each.nested_scene not in self._composite_states.viewvalues():
-                self._composite_states[str(each).lower()] = each.nested_scene
+                self._composite_states[unicode(each).lower()] = \
+                                                            each.nested_scene
         return self._composite_states
 
     @composite_states.setter
@@ -419,10 +420,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # Make sure all composite states are initially up to date
             # (Needed for the symbol shape to have dashed lines)
             for each in dest_scene.states:
-                if str(each).lower() in dest_scene.composite_states.viewkeys()\
-                and not each.nested_scene:
+                if unicode(each).lower() in \
+                        dest_scene.composite_states.viewkeys() and not \
+                        each.nested_scene:
                     each.nested_scene = dest_scene.composite_states[
-                                                             str(each).lower()]
+                                                         unicode(each).lower()]
 
         recursive_render(ast, self)
 
@@ -542,7 +544,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         for item in (symbol for symbol in self.items()
                      if isinstance(symbol, EditableText)
                      and symbol.isVisible()):
-            if re.search(pattern, str(item), flags=re.IGNORECASE):
+            if re.search(pattern, unicode(item), flags=re.IGNORECASE):
                 yield item.parentItem()
 
     def search(self, pattern, replace_with=None):
@@ -559,10 +561,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 for item in self.search_item:
                     new_string = re.sub(pattern,
                                         replace_with,
-                                        str(item.text),
+                                        unicode(item.text),
                                         flags=re.IGNORECASE)
                     undo_cmd = undoCommands.ReplaceText(
-                                         item.text, str(item.text), new_string)
+                                     item.text, unicode(item.text), new_string)
                     self.undo_stack.push(undo_cmd)
                     item.select()
             self.refresh()
@@ -679,14 +681,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             pr_data.append(each.parse_gr())
 
         for item in chain(self.texts, self.procs, self.start):
-            pr_data.append(repr(item))
+            pr_data.append(item.PR())
         for item in self.floating_labels:
             pr_data.append(item.parse_gr())
         composite = set(self.composite_states.keys())
         for item in self.states:
             if item.is_composite():
                 try:
-                    composite.remove(str(item).lower())
+                    composite.remove(unicode(item).lower())
                     pr_data.appendleft(item.parse_composite_state())
                 except KeyError:
                     pass
@@ -697,7 +699,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def sdl_to_statechart(self):
         ''' Create a graphviz representation of the SDL model '''
         pr_raw = self.get_pr_string()
-        pr_data = str('\n'.join(pr_raw))
+        pr_data = unicode('\n'.join(pr_raw))
         ast, _, _ = ogParser.parse_pr(string=pr_data)
         try:
             process_ast, = ast.processes
@@ -965,7 +967,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 event.modifiers() == Qt.ControlModifier):
             # Debug mode
             for selection in self.selected_symbols():
-                LOG.info(str(selection))
+                LOG.info(unicode(selection))
                 LOG.info('Position: ' + str(selection.pos()))
                 LOG.info('ScenePos: ' + str(selection.scenePos()))
                 LOG.info('BoundingRect: ' + str(selection.boundingRect()))
@@ -1228,12 +1230,13 @@ class SDL_View(QtGui.QGraphicsView, object):
             try:
                 if item.allow_nesting:
                     item.double_click()
-                    ctx = item.__class__.__name__.lower()
+                    ctx = unicode(item.__class__.__name__.lower())
                     if not isinstance(item.nested_scene, SDL_Scene):
                         subscene = SDL_Scene(context=ctx)
                         subscene.messages_window = self.messages_window
                         item.nested_scene = subscene
-                    self.go_down(item.nested_scene, name=ctx + ' ' + str(item))
+                    self.go_down(item.nested_scene,
+                                 name=ctx + u' ' + unicode(item))
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))
@@ -1309,9 +1312,9 @@ class SDL_View(QtGui.QGraphicsView, object):
         for item in scene.floating_symb:
             item.moveBy(-delta_x, -delta_y)
 
-        pr_data = str('\n'.join(pr_raw))
+        pr_data = unicode('\n'.join(pr_raw))
         try:
-            pr_file.write(pr_data)
+            pr_file.write(pr_data.encode('utf-8'))
             pr_file.close()
             if not autosave:
                 self.scene().clear_focus()
@@ -1456,7 +1459,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         else:
             scene = self.scene()
         pr_raw = scene.get_pr_string()
-        pr_data = str('\n'.join(pr_raw))
+        pr_data = unicode('\n'.join(pr_raw))
         if pr_data:
             _, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                     string=pr_data)
@@ -1470,7 +1473,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         else:
             scene = self.scene()
         pr_raw = scene.get_pr_string()
-        pr_data = str('\n'.join(pr_raw))
+        pr_data = unicode('\n'.join(pr_raw))
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
@@ -1733,6 +1736,10 @@ def opengeode():
     app = QtGui.QApplication(sys.argv)
     app.setApplicationName('OpenGEODE')
     app.setWindowIcon(QtGui.QIcon(':icons/input.png'))
+
+    # Set all encodings to utf-8 in Qt
+    QtCore.QTextCodec.setCodecForCStrings \
+                    (QtCore.QTextCodec.codecForName('UTF-8'))
 
     # Bypass system-default font, to harmonize size on all platforms
     font_database = QtGui.QFontDatabase()

@@ -219,10 +219,6 @@ class EditableText(QGraphicsTextItem, object):
         # Removed - does not render text properly (eats up the right part)
         # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
 
-    def __str__(self):
-        ''' Print the text inside the symbol '''
-        return self.toPlainText()
-
     def set_text_alignment(self):
         ''' Apply the required text alignment within the text box '''
         alignment = self.parentItem().text_alignment
@@ -368,7 +364,7 @@ class EditableText(QGraphicsTextItem, object):
                 self.setTextCursor(text_cursor)
             # If something has changed, check syntax and create undo command
             if(self.oldSize != self.parentItem().boundingRect() or
-                                                    self.oldText != str(self)):
+                                                self.oldText != unicode(self)):
                 # Call syntax checker from item containing the text (if any)
                 self.parentItem().check_syntax()
                 # Update class completion list
@@ -382,8 +378,8 @@ class EditableText(QGraphicsTextItem, object):
                     self.parentItem().cam(self.parentItem().pos(),
                         self.parentItem().pos())
 
-                    undo_cmd = undoCommands.ReplaceText(
-                                               self, self.oldText, str(self))
+                    undo_cmd = undoCommands.ReplaceText(self, self.oldText,
+                                                        unicode(self))
                     self.scene().undo_stack.push(undo_cmd)
         self.set_text_alignment()
         super(EditableText, self).focusOutEvent(event)
@@ -401,21 +397,29 @@ class EditableText(QGraphicsTextItem, object):
         # Set width to auto-expand, and disables alignment, while editing:
         self.setTextWidth(-1)
         if not self.editing:
-            self.oldText = str(self)
+            self.oldText = unicode(self) #str(self)
             self.oldSize = self.parentItem().boundingRect()
             self.editing = True
 
-    def __repr__(self):
+    def PR(self):
         '''
             Return the PR notation for the hyperlink
             TODO: remove from here, put in SDL symbols
         '''
         if self.hyperlink:
             return(
-                "/* CIF Keep Specific Geode HyperLink '{hlink}' */\n".format(
+                u"/* CIF Keep Specific Geode HyperLink '{hlink}' */\n".format(
                     hlink=self.hyperlink))
         else:
-            return ''
+            return u''
+
+    def __str__(self):
+        ''' Print the text inside the symbol '''
+        raise TypeError('Use UNICODE, not string!')
+        #return unicode(self).encode('utf-8')
+
+    def __unicode__(self):
+        return self.toPlainText()
 
 
 # pylint: disable=R0904, R0902
@@ -595,16 +599,21 @@ class Symbol(QObject, QGraphicsPathItem, object):
 
     def __str__(self):
         ''' Print the text inside the symbol '''
-        return str(self.text) or 'no_name'
+        raise TypeError('Use unicode() not str()')
+        #return str(self.text) or 'no_name'
+
+    def __unicode__(self):
+        ''' Return the text inside the symbol '''
+        return unicode(self.text) or u'no_name'
 
     def parse_gr(self, recursive=True):
         ''' Parse the graphical representation, return PR form '''
-        return repr(self)
+        return self.PR()
 
     def get_ast(self):
         ''' Return the symbol in the AST form, as returned by the parser '''
         ast, _, ___, ____, terminators = self.parser.parseSingleElement(
-            self.common_name, repr(self))
+            self.common_name, self.PR())
         return ast, terminators
 
     def edit_text(self, pos=None):
@@ -634,7 +643,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         try:
             _, syntax_errors, ___, ____, _____ = (
                                 self.parser.parseSingleElement(
-                                                self.common_name, repr(self)))
+                                                self.common_name, self.PR()))
         except (AssertionError, AttributeError) as err:
             LOG.error('Checker failed - no parser for this construct?')
         else:
@@ -765,11 +774,11 @@ class Symbol(QObject, QGraphicsPathItem, object):
         hlink = self.hlink_field.text()
         if hlink:
             self.text.setHtml('<a href="{hlink}">{text}</a>'.format
-                    (hlink=hlink, text=str(self.text).replace('\n', '<br>')))
+                  (hlink=hlink, text=unicode(self.text).replace('\n', '<br>')))
             self.text.hyperlink = hlink
         else:
             self.text.hyperlink = None
-            self.text.setPlainText(str(self.text))
+            self.text.setPlainText(unicode(self.text))
 
     def contextMenuEvent(self, event):
         ''' When user right-clicks: display context menu '''
@@ -1159,16 +1168,16 @@ class Comment(Symbol):
         '''
         pass
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the text corresponding to the SDL PR notation '''
         pos = self.scenePos()
-        return ('\n/* CIF COMMENT ({x}, {y}), ({w}, {h}) */\n'
+        return (u'\n/* CIF COMMENT ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
-                'COMMENT \'{comment}\';'.format(hlink=repr(self.text),
+                'COMMENT \'{comment}\';'.format(hlink=self.text.PR(),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()),
-                    comment=str(self.text)))
+                    comment=unicode(self.text)))
 
 
 class Cornergrabber(QGraphicsPolygonItem, object):
@@ -1198,7 +1207,7 @@ class Cornergrabber(QGraphicsPolygonItem, object):
 
     def __repr__(self):
         ''' Pretty string for the print function '''
-        return 'Cornergrabber of ' + str(self.parentItem())
+        return u'Cornergrabber of ' + unicode(self.parentItem())
 
     def display(self):
         ''' Polygon is a rectangle of the size of the parent item '''
@@ -1473,8 +1482,8 @@ class VerticalSymbol(Symbol, object):
             Determine the coordinates based on the position
             and size of the parent item, and make proper connections
         '''
-        LOG.debug('insert_symbol: ' + str(self) + ' at ' + str(x) +
-                  ', ' + str(y))
+        LOG.debug('insert_symbol: ' + unicode(self) + ' at ' + unicode(x) +
+                  ', ' + unicode(y))
         if not parent:
             # Place standalone item on the scene at given coordinates
             # (e.g. floating state)
@@ -1536,7 +1545,7 @@ class VerticalSymbol(Symbol, object):
         # Create the connection with the parent symbol
         self.connection = self.connect_to_parent()
         self.update_position()
-        LOG.debug(str(self) + ' positionned at ' + str(self.pos()))
+        LOG.debug(unicode(self) + ' positionned at ' + unicode(self.pos()))
         self.updateConnectionPoints()
         if y is not None:
             self.setY(y)

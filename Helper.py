@@ -71,7 +71,7 @@ def inner_labels_to_floating(process):
             process.content.floating_labels.append(new_floating)
 
 
-def flatten(process, sep='_'):
+def flatten(process, sep=u'_'):
     ''' In-place update of the AST: flatten a model with nested states
         Rename inner states, procedures, etc. and move them to process level
     '''
@@ -80,19 +80,19 @@ def flatten(process, sep='_'):
         if term.inputString.lower() in (st.statename.lower()
                                 for st in context.composite_states):
             if not term.via:
-                term.next_id = term.inputString.lower() + sep + 'START'
+                term.next_id = term.inputString.lower() + sep + u'START'
             else:
-                term.next_id = '{term}{sep}{entry}{sep}START'.format(
+                term.next_id = u'{term}{sep}{entry}_START'.format(
                         term=term.inputString, entry=term.entrypoint, sep=sep)
         elif term.inputString.strip() == '-':
             term.candidate_id = defaultdict(list)
             for each in term.possible_states:
                 if each in (st.statename.lower()
                             for st in context.composite_states):
-                    term.candidate_id[each + sep + 'START'] = \
+                    term.candidate_id[each + sep + u'START'] = \
                                        [st for st in process.mapping.viewkeys()
                                         if st.startswith(each)
-                                        and not st.endswith(sep + 'START')]
+                                        and not st.endswith(u'START')]
                 else:
                     term.candidate_id[-1].append(each)
 
@@ -146,7 +146,7 @@ def flatten(process, sep='_'):
                          if isinstance(trans, int)):
                 call_entry = ogAST.ProcedureCall()
                 call_entry.inputString = 'entry'
-                call_entry.output = [{'outputName': prefix + 'entry',
+                call_entry.output = [{'outputName': prefix + u'entry',
                                      'params': [], 'tmpVars': []}]
                 process.transitions[each].actions.insert(0, call_entry)
 
@@ -157,7 +157,7 @@ def flatten(process, sep='_'):
                 if each.terminator.kind == 'return':
                     call_exit = ogAST.ProcedureCall()
                     call_exit.inputString = 'exit'
-                    call_exit.output = [{'outputName': prefix + 'exit',
+                    call_exit.output = [{'outputName': prefix + u'exit',
                                      'params': [], 'tmpVars': []}]
                     each.actions.append(call_exit)
 

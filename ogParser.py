@@ -2975,12 +2975,12 @@ def parseSingleElement(elem='', string=''):
 def parser_init(filename=None, string=None):
     ''' Initialize the parser (to be called first) '''
     try:
-        char_stream = antlr3.ANTLRFileStream(filename)
+        char_stream = antlr3.ANTLRFileStream(filename, encoding='utf-8')
     except (IOError, TypeError):
         try:
             char_stream = antlr3.ANTLRStringStream(string)
-        except TypeError:
-            raise IOError('Could not parse input')
+        except TypeError as err:
+            raise IOError('Could not parse input' + str(err))
     lex = lexer.sdl92Lexer(char_stream)
     tokens = antlr3.CommonTokenStream(lex)
     parser = sdl92Parser(tokens)

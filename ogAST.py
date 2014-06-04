@@ -54,9 +54,9 @@ class Expression(object):
         # Hint for code generators: intermediate storage identifier
         self.tmpVar = -1
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for an expression '''
-        return '{exp} ({l},{c})'.format(exp=self.inputString,
+        return u'{exp} ({l},{c})'.format(exp=self.inputString,
                                         l=self.line,
                                         c=self.charPositionInLine)
 
@@ -155,9 +155,9 @@ class Primary(Expression):
             self.value = None
             self.exprType = None
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a primary '''
-        return 'PRIMARY : {exp} ({l},{c})'.format(exp=self.inputString,
+        return u'PRIMARY : {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 # Subclasses of Primary - never use Primary directly
@@ -259,9 +259,9 @@ class Decision(object):
         # hint for backends needing a temporary variable to hold the question
         self.tmpVar = -1
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a decision '''
-        return 'DECISION {exp} ({l},{c})'.format(exp=self.inputString,
+        return u'DECISION {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -294,9 +294,9 @@ class Answer(object):
         # optional hyperlink
         self.hyperlink = None
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for an answer '''
-        return 'ANSWER {exp} ({l},{c})'.format(exp=self.inputString,
+        return u'ANSWER {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -317,9 +317,9 @@ class Task(object):
         self.hyperlink = None
         self.elems = []
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a task '''
-        return 'TASK {exp} ({l},{c})'.format(exp=self.inputString,
+        return u'TASK {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -359,9 +359,9 @@ class Output(object):
         # optional hyperlink
         self.hyperlink = None
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for an Output symbol '''
-        return '{exp} ({l},{c})'.format(exp=self.inputString,
+        return u'{exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -405,9 +405,9 @@ class Terminator(object):
         # Note, this field is updated by the Helper.flatten function
         self.possible_states = []
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for terminators '''
-        return '{kind} {exp} ({l},{c}) at {x}, {y}'.format(
+        return u'{kind} {exp} ({l},{c}) at {x}, {y}'.format(
                 exp=self.inputString,
                 kind=self.kind.upper(), l=self.line, c=self.charPositionInLine,
                 x=self.pos_x, y=self.pos_y)
@@ -434,9 +434,9 @@ class Label(object):
         # Transition is used for floating labels (see AST entry)
         self.transition = None
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a label '''
-        return 'LABEL {label} ({l},{c})'.format(label=self.inputString,
+        return u'LABEL {label} ({l},{c})'.format(label=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -456,9 +456,9 @@ class Floating_label(Label, object):
             self.terminators = label.terminators
             self.transition = label.transition
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a label (used by code generator) '''
-        return 'CONNECTION {label} ({l},{c})'.format(label=self.inputString,
+        return u'CONNECTION {label} ({l},{c})'.format(label=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -479,12 +479,12 @@ class Transition(object):
         # procedure when the model is flattened.
         self.possible_states = []
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output: display all actions '''
-        data = [repr(action) for action in self.actions]
+        data = [trace(action) for action in self.actions]
         if self.terminator:
-            data.append(repr(self.terminator))
-        return '\n'.join(data)
+            data.append(trace(self.terminator))
+        return u'\n'.join(data)
 
 
 class Input(object):
@@ -517,9 +517,9 @@ class Input(object):
         # list of terminators following the input symbol
         self.terminators = []
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for an INPUT symbol '''
-        return 'INPUT {exp} ({l},{c})'.format(exp=self.inputString,
+        return u'INPUT {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -532,9 +532,9 @@ class Connect(Input):
         self.connect_list = []
         self.width = 1
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a CONNECT symbol '''
-        return 'CONNECT {exp} ({l},{c})'.format(exp=self.inputString,
+        return u'CONNECT {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -556,9 +556,9 @@ class Start(object):
         # list of terminators following the start symbol
         self.terminators = []
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a START symbol '''
-        return 'START {}'.format(self.inputString)
+        return u'START {}'.format(self.inputString)
 
 
 class Procedure_start(Start):
@@ -586,9 +586,10 @@ class Comment(object):
         # optional hyperlink
         self.hyperlink = None
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a COMMENT symbol '''
-        return 'COMMENT {exp} ({l},{c})'.format(exp=self.inputString,
+        return u'COMMENT {exp} ({l},{c})'.format(
+                exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -617,9 +618,9 @@ class State(object):
         # optional composite state content (type CompositeState)
         self.composite = None
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a STATE symbol '''
-        return 'STATE {exp} ({l},{c}) at {x},{y}'.format(exp=self.inputString,
+        return u'STATE {exp} ({l},{c}) at {x},{y}'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine,
                 x=self.pos_x, y=self.pos_y)
 
@@ -642,9 +643,9 @@ class TextArea(object):
         # optional hyperlink
         self.hyperlink = None
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for a text area '''
-        return 'TEXTAREA {exp} ({l},{c})'.format(exp=self.inputString,
+        return u'TEXTAREA {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -794,9 +795,9 @@ class CompositeState(Process):
         # one nameless START, named START (one per entrypoint), states,
         # amd floating labels
 
-    def __repr__(self):
+    def trace(self):
         ''' Debug output for composite state '''
-        return 'COMPOSITE STATE {exp} ({l},{c})'.format(exp=self.statename,
+        return u'COMPOSITE STATE {exp} ({l},{c})'.format(exp=self.statename,
                 l=self.line, c=self.charPositionInLine)
 
 

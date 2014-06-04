@@ -91,7 +91,7 @@ class Input(HorizontalSymbol):
     def check_syntax(self):
         ''' Redefined function, to check only the symbol, not recursively '''
         _, syntax_errors, ___, ____, _____ = self.parser.parseSingleElement(
-                self.common_name, self.pr())
+                self.common_name, self.PR())
         try:
             self.scene().raise_syntax_errors(syntax_errors)
         except AttributeError:
@@ -116,27 +116,27 @@ class Input(HorizontalSymbol):
         self.setPath(path)
         super(Input, self).set_shape(width, height)
 
-    def pr(self):
+    def PR_SINGLE(self):
         ''' Return the PR notation of the single INPUT symbol '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        return('/* CIF INPUT ({x}, {y}), ({w}, {h}) */\n'
+        return(u'/* CIF INPUT ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
                 'INPUT {i}{comment}'.format(
-                    hlink=repr(self.text), i=str(self),
+                    hlink=self.text.PR(), i=unicode(self),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment))
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the complete Input branch in PR format '''
-        result = [self.pr()]
+        result = [self.PR_SINGLE()]
         # Recursively return the complete branch below the INPUT
         next_symbol = self.next_aligned_symbol()
         while next_symbol:
-            result.append(repr(next_symbol))
+            result.append(next_symbol.PR())
             next_symbol = next_symbol.next_aligned_symbol()
-        return '\n'.join(result)
+        return u'\n'.join(result)
 
 
 class Connect(Input):
@@ -162,14 +162,14 @@ class Connect(Input):
         ''' Symbol cannot be resized '''
         return
 
-    def pr(self):
+    def PR_SINGLE(self):
         ''' Return the PR notation of the single CONNECT symbol '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        pr_string =('/* CIF CONNECT ({x}, {y}), ({w}, {h}) */\n'
+        pr_string =(u'/* CIF CONNECT ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
                 'CONNECT {i}{comment}'.format(
-                    hlink=repr(self.text), i=str(self.text),
+                    hlink=self.text.PR(), i=unicode(self.text),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment))
@@ -213,14 +213,14 @@ class Output(VerticalSymbol):
         self.setPath(path)
         super(Output, self).set_shape(width, height)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the text corresponding to the SDL PR notation '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        return ('/* CIF OUTPUT ({x}, {y}), ({w}, {h}) */\n'
+        return (u'/* CIF OUTPUT ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
                 'OUTPUT {o}{comment}'.format(
-                    hlink=repr(self.text), o=str(self),
+                    hlink=self.text.PR(), o=unicode(self),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment))
@@ -230,8 +230,8 @@ class Output(VerticalSymbol):
 class Decision(VerticalSymbol):
     ''' SDL DECISION Symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = ['DecisionAnswer', 'Task', 'ProcedureCall', 'Output',
-                        'Decision', 'Label']
+    _insertable_followers = ['DecisionAnswer', 'Task', 'ProcedureCall',
+                             'Output', 'Decision', 'Label']
     _terminal_followers = ['Join', 'State', 'ProcedureStop']
     common_name = 'decision'
     # Define reserved keywords for the syntax highlighter
@@ -274,7 +274,7 @@ class Decision(VerticalSymbol):
     def check_syntax(self):
         ''' Redefined function, to check only the symbol, not recursively '''
         _, syntax_errors, ___, ____, _____ = self.parser.parseSingleElement(
-                self.common_name, self.pr(recursive=False))
+                self.common_name, self.PR(recursive=False))
         try:
             # LOG.error('\n'.join(syntax_errors))
             self.scene().raise_syntax_errors(syntax_errors)
@@ -356,29 +356,25 @@ class Decision(VerticalSymbol):
                 pass
         self.update_connections()
 
-    def pr(self, recursive=True):
+    def PR(self, recursive=True):
         ''' Get PR notation of a decision (possibly recursively) '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        result = ['/* CIF DECISION ({x}, {y}), ({w}, {h}) */\n'
+        result = [u'/* CIF DECISION ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
                 'DECISION {d}{comment}'.format(
-                    hlink=repr(self.text), d=str(self),
+                    hlink=self.text.PR(), d=unicode(self),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment)]
         if recursive:
             for answer in self.branches():
-                if str(answer).lower().strip() == 'else':
-                    result.append(repr(answer))
+                if unicode(answer).lower().strip() == 'else':
+                    result.append(answer.PR())
                 else:
-                    result.insert(1, repr(answer))
+                    result.insert(1, answer.PR())
         result.append('ENDDECISION;')
-        return '\n'.join(result)
-
-    def __repr__(self):
-        ''' Return the PR notation for the decision and all answers '''
-        return self.pr(recursive=True)
+        return u'\n'.join(result)
 
 
 # pylint: disable=R0904
@@ -412,7 +408,7 @@ class DecisionAnswer(HorizontalSymbol):
     def check_syntax(self):
         ''' Redefined function, to check only the symbol, not recursively '''
         _, syntax_errors, ___, ____, _____ = self.parser.parseSingleElement(
-                self.common_name, self.pr(recursive=False))
+                self.common_name, self.PR(recursive=False))
         try:
             self.scene().raise_syntax_errors(syntax_errors)
         except:
@@ -447,28 +443,24 @@ class DecisionAnswer(HorizontalSymbol):
         self.setPath(path)
         super(DecisionAnswer, self).set_shape(width, height)
 
-    def pr(self, recursive=True):
+    def PR(self, recursive=True):
         ''' Return the PR string for the symbol, possibly recursively '''
-        ans = str(self)
-        if ans.lower().strip() != 'else':
-            ans = '({ans})'.format(ans=ans)
+        ans = unicode(self)
+        if ans.lower().strip() != u'else':
+            ans = u'({ans})'.format(ans=ans)
         pos = self.scenePos()
-        result = ['/* CIF ANSWER ({x}, {y}), ({w}, {h}) */\n'
+        result = [u'/* CIF ANSWER ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
-                '{a}:'.format(a=ans, hlink=repr(self.text),
+                '{a}:'.format(a=ans, hlink=self.text.PR(),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()))]
         if recursive:
             next_symbol = self.next_aligned_symbol()
             while next_symbol:
-                result.append(repr(next_symbol))
+                result.append(next_symbol.PR())
                 next_symbol = next_symbol.next_aligned_symbol()
-        return '\n'.join(result)
-
-    def __repr__(self):
-        ''' Return the text corresponding to the SDL PR notation '''
-        return self.pr()
+        return u'\n'.join(result)
 
 
 # pylint: disable=R0904
@@ -510,13 +502,13 @@ class Join(VerticalSymbol):
         self.setPath(path)
         super(Join, self).set_shape(width, height)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the PR string for the join '''
         pos = self.scenePos()
-        return('/* CIF JOIN ({x}, {y}), ({w}, {h}) */\n'
+        return(u'/* CIF JOIN ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
-                'JOIN {label};'.format(label=str(self),
-                    hlink=repr(self.text),
+                'JOIN {label};'.format(label=unicode(self),
+                    hlink=self.text.PR(),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height())))
@@ -553,13 +545,13 @@ class ProcedureStop(Join):
         # call Join superclass, otherwise symbol will take Join shape
         super(Join, self).set_shape(circ, circ)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the PR string for this symbol '''
         pos = self.scenePos()
-        return('/* CIF RETURN ({x}, {y}), ({w}, {h}) */\n'
+        return(u'/* CIF RETURN ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
                 'RETURN {val};'.format(
-                    val=str(self.text), hlink=repr(self.text),
+                    val=unicode(self.text), hlink=self.text.PR(),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height())))
@@ -617,33 +609,34 @@ class Label(VerticalSymbol):
         ''' Return the PR string for a floating label (incl. transition) '''
         pos = self.scenePos()
         assert (not self.hasParent)
-        result = ['/* CIF LABEL ({x}, {y}), ({w}, {h}) */\n'
+        result = [u'/* CIF LABEL ({x}, {y}), ({w}, {h}) */\n'
                     '{hlink}'
                     'CONNECTION {label}:'.format(
-                        label=str(self),
-                        hlink=repr(self.text),
+                        label=unicode(self),
+                        hlink=self.text.PR(),
                         x=int(pos.x()), y=int(pos.y()),
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height()))]
         # Recursively parse the branch
         next_symbol = self.next_aligned_symbol()
         while next_symbol:
-            result.append(repr(next_symbol))
+            result.append(next_symbol.PR())
             next_symbol = next_symbol.next_aligned_symbol()
         result.append('/* CIF End Label */')
         result.append('ENDCONNECTION;')
-        return '\n'.join(result)
+        return u'\n'.join(result)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the PR string for a label '''
         if self.common_name == 'floating_label':
             return self.parse_gr()
         else:
             # Standard label
             pos = self.scenePos()
-            return ('/* CIF LABEL ({x}, {y}), ({w}, {h}) */\n'
+            return (u'/* CIF LABEL ({x}, {y}), ({w}, {h}) */\n'
                     '{hlink}'
-                    '{label}:'.format(label=str(self), hlink=repr(self.text),
+                    '{label}:'.format(label=unicode(self),
+                        hlink=self.text.PR(),
                         x=int(pos.x()), y=int(pos.y()),
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height())))
@@ -685,14 +678,14 @@ class Task(VerticalSymbol):
         self.setPath(path)
         super(Task, self).set_shape(width, height)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the text corresponding to the SDL PR notation '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        return ('/* CIF TASK ({x}, {y}), ({w}, {h}) */\n'
+        return (u'/* CIF TASK ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
-                'TASK {t}{comment}'.format(t=str(self.text),
-                    hlink=repr(self.text),
+                'TASK {t}{comment}'.format(t=unicode(self.text),
+                    hlink=self.text.PR(),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment))
@@ -735,14 +728,14 @@ class ProcedureCall(VerticalSymbol):
         self.setPath(path)
         super(ProcedureCall, self).set_shape(width, height)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the text corresponding to the SDL PR notation '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        return ('/* CIF PROCEDURECALL ({x}, {y}), ({w}, {h}) */\n'
+        return (u'/* CIF PROCEDURECALL ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
-                'CALL {p}{comment}'.format(p=str(self.text),
-                    hlink=repr(self.text),
+                'CALL {p}{comment}'.format(p=unicode(self.text),
+                    hlink=self.text.PR(),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment))
@@ -777,8 +770,8 @@ class TextSymbol(HorizontalSymbol):
     def update_completion_list(self):
         ''' When text was entered, update TASK completion list '''
         # Get AST for the symbol
-        ast, _, ___, ____, _____ = self.parser.parseSingleElement(
-                    'text_area', repr(self))
+        ast, _, ___, ____, _____ = self.parser.parseSingleElement('text_area',
+                                                                  self.PR())
         Task.completion_list |= {dcl for dcl in ast.variables.keys()}
 
     def set_shape(self, width, height):
@@ -802,14 +795,14 @@ class TextSymbol(HorizontalSymbol):
         self.prepareGeometryChange()
         self.set_shape(rect.width(), rect.height())
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the text corresponding to the SDL PR notation '''
         pos = self.scenePos()
-        return ('/* CIF TEXT ({x}, {y}), ({w}, {h}) */\n'
+        return (u'/* CIF TEXT ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
                 '{text}\n'
-                '/* CIF ENDTEXT */'.format(text=str(self.text),
-                    hlink=repr(self.text),
+                '/* CIF ENDTEXT */'.format(text=unicode(self.text),
+                    hlink=self.text.PR(),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height())))
@@ -863,7 +856,7 @@ class State(VerticalSymbol):
     @property
     def allow_nesting(self):
         ''' Redefinition - must be checked according to context '''
-        result = not any(elem in str(self).lower().strip()
+        result = not any(elem in unicode(self).lower().strip()
                        for elem in ('-', ',', '*', ' '))
         return result
 
@@ -875,7 +868,7 @@ class State(VerticalSymbol):
     def double_click(self):
         ''' Catch a double click - Set nested scene '''
         for each, value in self.scene().composite_states.viewitems():
-            if str(self).lower() == str(each):
+            if unicode(self).lower() == unicode(each):
                 self.nested_scene = value
                 break
         else:
@@ -934,37 +927,37 @@ class State(VerticalSymbol):
     def parse_composite_state(self):
         ''' Return PR string corresponding to the nested part of the state '''
         entry_points, exit_points = [], []
-        result = ['STATE {};'.format(str(self)),
+        result = [u'STATE {};'.format(unicode(self)),
                   'SUBSTRUCTURE']
         for each in self.nested_scene.start:
-            if str(each):
-                entry_points.append(str(each))
+            if unicode(each):
+                entry_points.append(unicode(each))
         for each in self.nested_scene.returns:
-            if str(each) != 'no_name':
-                exit_points.append(str(each))
+            if unicode(each) != u'no_name':
+                exit_points.append(unicode(each))
         if entry_points:
             result.append('in ({});'.format(','.join(entry_points)))
         if exit_points:
             result.append('out ({});'.format(','.join(exit_points)))
         result.extend(self.nested_scene.get_pr_string())
         result.append('ENDSUBSTRUCTURE;')
-        return '\n'.join(result)
+        return u'\n'.join(result)
 
 
     def parse_gr(self, recursive=True):
         ''' Parse state '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
         if self.hasParent and not [s for s in self.childSymbols() if
                                    not isinstance(s, Comment)]:
             # Do not generate a new STATE when there is no need
             # FIXME: check if childSymbol is a commment
-            return ''
-        result = ['/* CIF STATE ({x}, {y}), ({w}, {h}) */\n'
+            return u''
+        result = [u'/* CIF STATE ({x}, {y}), ({w}, {h}) */\n'
                     '{hlink}'
                     'STATE {state}{comment}'.format(
-                        state=str(self),
-                        hlink=repr(self.text),
+                        state=unicode(self),
+                        hlink=self.text.PR(),
                         x=int(pos.x()), y=int(pos.y()),
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height()), comment=comment)]
@@ -972,23 +965,24 @@ class State(VerticalSymbol):
             for i in self.childSymbols():
                 # Recursively return next symbols (inputs)
                 if isinstance(i, Input):
-                    result.append(repr(i))
+                    result.append(i.PR())
         result.append('ENDSTATE;')
-        return '\n'.join(result)
+        return u'\n'.join(result)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the text corresponding to the SDL PR notation '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        result = ['/* CIF NEXTSTATE ({x}, {y}), ({w}, {h}) */\n'
+        result = [u'/* CIF NEXTSTATE ({x}, {y}), ({w}, {h}) */\n'
                 '{hlink}'
                 'NEXTSTATE {state}{comment}'.format(
-                    state=str(self),
-                    hlink=repr(self.text),
+                    state=unicode(self),
+                    hlink=self.text.PR(),
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
-                    h=int(self.boundingRect().height()), comment=comment)]
-        return '\n'.join(result)
+                    h=int(self.boundingRect().height()),
+                    comment=comment)]
+        return u'\n'.join(result)
 
 
 class Process(HorizontalSymbol):
@@ -1051,14 +1045,14 @@ class Process(HorizontalSymbol):
             return []
 
         for item in chain(scene.texts, scene.procs, scene.start):
-            pr_data.append(repr(item))
+            pr_data.append(item.PR())
         for item in scene.floating_labels:
             pr_data.append(item.parse_gr())
         composite = set(scene.composite_states.keys())
         for item in scene.states:
             if item.is_composite():
                 try:
-                    composite.remove(str(item).lower())
+                    composite.remove(unicode(item).lower())
                     pr_data.appendleft(item.parse_composite_state())
                 except KeyError:
                     pass
@@ -1067,22 +1061,22 @@ class Process(HorizontalSymbol):
 
     def parse_gr(self, recursive=True):
         ''' Generate PR for a process '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else ';'
         pos = self.scenePos()
-        result =['/* CIF PROCESS ({x}, {y}), ({w}, {h}) */\n'
+        result =[u'/* CIF PROCESS ({x}, {y}), ({w}, {h}) */\n'
                  '{hlink}'
                  'PROCESS {process}{comment}'.format(
-                        process=str(self),
-                        hlink=repr(self.text),
+                        process=unicode(self),
+                        hlink=self.text.PR(),
                         x=int(pos.x()), y=int(pos.y()),
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height()), comment=comment)]
         if recursive:
             result.append('\n'.join(self.recursive_parser()))
-        result.append('ENDPROCESS {};'.format(str(self)))
-        return '\n'.join(result)
+        result.append('ENDPROCESS {};'.format(unicode(self)))
+        return u'\n'.join(result)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the complete process content '''
         return self.parse_gr(recursive=True)
 
@@ -1110,7 +1104,7 @@ class Procedure(Process):
         if ast.comment:
             Comment(parent=self, ast=ast.comment)
         self.nested_scene = subscene
-    
+
     def insert_symbol(self, parent, x, y):
         ''' Redefinition - no connection line to env '''
         super(Process, self).insert_symbol(parent, x, y)
@@ -1132,26 +1126,26 @@ class Procedure(Process):
 
     def update_completion_list(self):
         ''' When text was entered, update completion list of ProcedureCall '''
-        ProcedureCall.completion_list |= {str(self.text)}
+        ProcedureCall.completion_list |= {unicode(self.text)}
 
     def parse_gr(self, recursive=True):
         ''' Generate PR for a procedure '''
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        result = ['/* CIF PROCEDURE ({x}, {y}), ({w}, {h}) */\n'
+        result = [u'/* CIF PROCEDURE ({x}, {y}), ({w}, {h}) */\n'
                     '{hlink}'
                     'PROCEDURE {proc}{comment}'.format(
-                        proc=str(self),
-                        hlink=repr(self.text),
+                        proc=unicode(self),
+                        hlink=self.text.PR(),
                         x=int(pos.x()), y=int(pos.y()),
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height()), comment=comment)]
         if recursive:
             result.append('\n'.join(self.recursive_parser()))
         result.append('ENDPROCEDURE;')
-        return '\n'.join(result)
+        return u'\n'.join(result)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the complete procedure branch in PR format '''
         return self.parse_gr(recursive=True)
 
@@ -1188,9 +1182,9 @@ class Start(HorizontalSymbol):
         if ast.comment:
             Comment(parent=self, ast=ast.comment)
 
-    def __str__(self):
+    def __unicode__(self):
         ''' User cannot enter text in the START symbol - Return dummy text '''
-        return 'START'
+        return u'START'
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
@@ -1199,23 +1193,23 @@ class Start(HorizontalSymbol):
         self.setPath(path)
         super(Start, self).set_shape(width, height)
 
-    def __repr__(self):
+    def PR(self):
         ''' Return the text corresponding to the SDL PR notation '''
         result = []
-        comment = repr(self.comment) if self.comment else ';'
+        comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
-        result.append('/* CIF START ({x}, {y}), ({w}, {h}) */\n'
+        result.append(u'/* CIF START ({x}, {y}), ({w}, {h}) */\n'
                 'START{via}{comment}'.format(x=int(pos.x()), y=int(pos.y()),
-                    via = (' ' + str(self) + ' ')
-                    if str(self).replace('START', '') else '',
+                    via = (' ' + unicode(self) + ' ')
+                    if unicode(self).replace('START', '') else '',
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment))
         # Recursively return the complete branch below the start symbol
         next_symbol = self.next_aligned_symbol()
         while next_symbol:
-            result.append(repr(next_symbol))
+            result.append(next_symbol.PR())
             next_symbol = next_symbol.next_aligned_symbol()
-        return '\n'.join(result)
+        return u'\n'.join(result)
 
 
 class ProcedureStart(Start):
@@ -1241,6 +1235,6 @@ class StateStart(Start):
     has_text_area = True
     is_singleton = False
 
-    def __str__(self):
+    def __unicode__(self):
         ''' Return the state entry point '''
-        return str(self.text)
+        return unicode(self.text)
