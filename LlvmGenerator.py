@@ -258,17 +258,11 @@ def _prim_path(primaryId):
 @expression.register(ogAST.ExprDiv)
 @expression.register(ogAST.ExprMod)
 @expression.register(ogAST.ExprRem)
-@expression.register(ogAST.ExprAssign)
 def _basic_operators(expr):
     ''' Expressions with two sides '''
     builder = LLVM['builder']
-
     left = expression(expr.left)
     right = expression(expr.right)
-
-    if expr.operand == ':=':
-        builder.store(right, left)
-        return left
 
     # load the value of the expression if it is a pointer
     if left.type.kind == core.TYPE_POINTER:
@@ -289,6 +283,16 @@ def _basic_operators(expr):
     else:
         pass
 
+
+@expression.register(ogAST.ExprAssign)
+def _assign(expr):
+    '''Assign expression'''
+    builder = LLVM['builder']
+    left = expression(expr.left)
+    right = expression(expr.right)
+
+    builder.store(right, left)
+    return left
 
 
 @expression.register(ogAST.ExprOr)
