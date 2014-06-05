@@ -1215,6 +1215,7 @@ def expression(root, context):
                        lexer.ASTERISK,
                        lexer.DASH,
                        lexer.APPEND,
+                       lexer.DIV,
                        lexer.REM,
                        lexer.MOD):
         expr.exprType = expr.left.exprType
