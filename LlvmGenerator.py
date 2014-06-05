@@ -335,7 +335,7 @@ def _integer(primary):
 @expression.register(ogAST.PrimReal)
 def _real(primary):
     ''' Generate code for a raw real value  '''
-    raise NotImplementedError
+    return core.Constant.real(core.Type.double(), primary.value[0])
 
 
 @expression.register(ogAST.PrimBoolean)
