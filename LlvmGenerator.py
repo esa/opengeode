@@ -276,7 +276,7 @@ def _basic_operators(expr):
     elif expr.operand == '*':
         return builder.sub(left, right, 'multmp')
     elif expr.operand == '/':
-        raise NotImplementedError
+        return builder.sdiv(left, right, 'divtmp')
     elif expr.operand == 'mod':
         return builder.srem(left, right, 'modtmp')
     else:
