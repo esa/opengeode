@@ -299,7 +299,29 @@ def _assign(expr):
 @expression.register(ogAST.ExprXor)
 def _bitwise_operators(expr):
     ''' Logical operators '''
-    raise NotImplementedError
+    builder = LLVM['builder']
+    func = builder.basic_block.function
+
+    lefttmp = expression(expr.left)
+    righttmp = expression(expr.right)
+
+    ty = find_basic_type(expr.exprType)
+    if ty.kind != 'BooleanType':
+        raise NotImplementedError
+
+    # load the value of the expression if it is a pointer
+    if lefttmp.type.kind == core.TYPE_POINTER:
+        lefttmp = builder.load(lefttmp, 'lefttmp')
+    if righttmp.type.kind == core.TYPE_POINTER:
+        righttmp = builder.load(righttmp, 'lefttmp')
+
+    if expr.operand == '&&':
+        return builder.and_(lefttmp, righttmp, 'ortmp')
+    elif expr.operand == '||':
+        return builder.or_(lefttmp, righttmp, 'ortmp')
+    else:
+        return builder.xor(lefttmp, righttmp, 'xortmp')
+
 
 
 @expression.register(ogAST.ExprAppend)
