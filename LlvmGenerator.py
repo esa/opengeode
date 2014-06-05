@@ -180,13 +180,13 @@ def _generate_startup_func(process, process_name, runtr_func):
 
 def write_statement(param, newline):
     ''' Generate the code for the special "write" operator '''
-    pass
+    raise NotImplementedError
 
 @generate.register(ogAST.Output)
 @generate.register(ogAST.ProcedureCall)
 def _call_external_function(output):
     ''' Generate the code of a set of output or procedure call statement '''
-    pass
+    raise NotImplementedError
 
 
 @generate.register(ogAST.TaskAssign)
@@ -199,7 +199,7 @@ def _task_assign(task):
 @generate.register(ogAST.TaskInformalText)
 def _task_informal_text(task):
     ''' Generate comments for informal text '''
-    pass
+    raise NotImplementedError
 
 
 @generate.register(ogAST.TaskForLoop)
@@ -209,7 +209,7 @@ def _task_forloop(task):
         for x in range ([start], stop [, step])
         for x in iterable (a SEQUENCE OF)
     '''
-    pass
+    raise NotImplementedError
 
 # ------ expressions --------
 
@@ -221,9 +221,7 @@ def expression(expr):
         - list of local declarations
         (API can differ depending on the backend)
     '''
-    _ = expr
     raise TypeError('Unsupported expression: ' + str(expr))
-    #return [], '', []
 
 
 
@@ -244,7 +242,7 @@ def _prim_path(primaryId):
         a(Expression) => a(ExpressionSolver) (array index)
         Expression can be complex (if-then-else-fi..)
     '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.ExprPlus)
@@ -278,11 +276,11 @@ def _basic_operators(expr):
     elif expr.operand == '*':
         return builder.sub(left, right, 'multmp')
     elif expr.operand == '/':
-        pass
+        raise NotImplementedError
     elif expr.operand == 'mod':
         return builder.srem(left, right, 'modtmp')
     else:
-        pass
+        raise NotImplementedError
 
 
 @expression.register(ogAST.ExprAssign)
@@ -301,31 +299,31 @@ def _assign(expr):
 @expression.register(ogAST.ExprXor)
 def _bitwise_operators(expr):
     ''' Logical operators '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.ExprAppend)
 def _append(expr):
     ''' Generate code for the APPEND construct: a // b '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.ExprIn)
 def _expr_in(expr):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
 def _enumerated_value(primary):
     ''' Generate code for an enumerated value '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
 def _choice_determinant(primary):
     ''' Generate code for a choice determinant (enumerated) '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimInteger)
@@ -337,67 +335,67 @@ def _integer(primary):
 @expression.register(ogAST.PrimReal)
 def _real(primary):
     ''' Generate code for a raw real value  '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimBoolean)
 def _boolean(primary):
     ''' Generate code for a raw boolean value  '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary):
     ''' Generate code for a string (Octet String) '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary):
     ''' Generate code for a reference to an ASN.1 constant '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
 def _mantissa_base_exp(primary):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimIfThenElse)
 def _if_then_else(ifThenElse):
     ''' Return string and statements for ternary operator '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimSequence)
 def _sequence(seq):
     ''' Return Ada string for an ASN.1 SEQUENCE '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimSequenceOf)
 def _sequence_of(seqof):
     ''' Return Ada string for an ASN.1 SEQUENCE OF '''
-    pass
+    raise NotImplementedError
 
 
 @expression.register(ogAST.PrimChoiceItem)
 def _choiceitem(choice):
     ''' Return the Ada code for a CHOICE expression '''
-    pass
+    raise NotImplementedError
 
 
 @generate.register(ogAST.Decision)
 def _decision(dec):
     ''' generate the code for a decision '''
-    pass
+    raise NotImplementedError
 
 
 @generate.register(ogAST.Label)
@@ -405,7 +403,7 @@ def _label(tr):
     ''' Transition following labels are generated in a separate section
         for visibility reasons (see Ada scope)
     '''
-    pass
+    raise NotImplementedError
 
 
 @generate.register(ogAST.Transition)
@@ -423,7 +421,7 @@ def _generate_terminator(term):
     builder = LLVM['builder']
     id_ptr = LLVM['named_values']['id']
     if term.label:
-        pass
+        raise NotImplementedError
     if term.kind == 'next_state':
         state = term.inputString.lower()
         if state.strip() != '-':
@@ -434,28 +432,29 @@ def _generate_terminator(term):
                 state_id_cons = LLVM['states'][state]
                 builder.store(state_id_cons, state_ptr)
         else:
-            pass
+            raise NotImplementedError
     elif term.kind == 'join':
-        pass
+        raise NotImplementedError
     elif term.kind == 'stop':
-        pass
+        raise NotImplementedError
     elif term.kind == 'return':
-        pass
+        raise NotImplementedError
 
 
 @generate.register(ogAST.Floating_label)
 def _floating_label(label):
     ''' Generate the code for a floating label (Ada label + transition) '''
-    pass
+    raise NotImplementedError
 
 
 @generate.register(ogAST.Procedure)
 def _inner_procedure(proc):
     ''' Generate the code for a procedure '''
-    pass
+    raise NotImplementedError
 
 
 def _generate_type(ty):
+    '''Generate the equivalent LLVM type of a ASN.1 type'''
     basic_ty = find_basic_type(ty)
     if basic_ty.kind == 'IntegerType':
         return core.Type.int()
