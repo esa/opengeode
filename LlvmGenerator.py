@@ -461,7 +461,7 @@ def _generate_type(ty):
     elif basic_ty.kind == 'BooleanType':
         return core.Type.int(1)
     elif basic_ty.kind == 'RealType':
-        return core.type.real()
+        return core.Type.double()
     else:
         raise NotImplementedError
 
