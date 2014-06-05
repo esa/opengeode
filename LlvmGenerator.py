@@ -73,6 +73,7 @@ def _process(process):
     LLVM['module'] = core.Module.new(process_name)
     LLVM['pass_manager'] = passes.FunctionPassManager.new(LLVM['module'])
     LLVM['executor'] = ee.ExecutionEngine.new(LLVM['module'])
+    LLVM['types'] = process.dataview
     # Set up the optimizer pipeline.
     # Start with registering info about how the
     # target lays out data structures.
@@ -97,11 +98,11 @@ def _process(process):
     LLVM['module'].add_global_variable(core.Type.int(), 'state')
 
     # Generare process-level vars
-    for var_name, (var_type, def_value) in process.variables.viewitems():
-        #TODO: Use ASN.1 type instead of hardcoded int type
-        var_ptr = LLVM['module'].add_global_variable(core.Type.int(), str(var_name))
+    for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
+        var_type = _generate_type(find_basic_type(var_asn1_type))
+        var_ptr = LLVM['module'].add_global_variable(var_type, str(var_name))
         if def_value:
-            pass
+            raise NotImplementedError
 
     # Generate process functions
     runtr_func = _generate_runtr_func(process)
@@ -452,3 +453,28 @@ def _floating_label(label):
 def _inner_procedure(proc):
     ''' Generate the code for a procedure '''
     pass
+
+
+def _generate_type(ty):
+    basic_ty = find_basic_type(ty)
+    if basic_ty.kind == 'IntegerType':
+        return core.Type.int()
+    elif basic_ty.kind == 'BooleanType':
+        return core.Type.int(1)
+    elif basic_ty.kind == 'RealType':
+        return core.type.real()
+    else:
+        raise NotImplementedError
+
+
+# TODO: Refactor this into the helper module
+def find_basic_type(a_type):
+    ''' Return the ASN.1 basic type of a_type '''
+    basic_type = a_type
+    while basic_type.kind == 'ReferenceType':
+        # Find type with proper case in the data view
+        for typename in LLVM['types'].viewkeys():
+            if typename.lower() == basic_type.ReferencedTypeName.lower():
+                basic_type = LLVM['types'][typename].type
+                break
+    return basic_type
