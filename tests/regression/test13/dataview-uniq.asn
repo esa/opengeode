@@ -1,6 +1,8 @@
 TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
-Number ::= INTEGER (0..255)
+Int ::= INTEGER
+Bool ::= BOOLEAN
+Float ::= REAL
 
 END

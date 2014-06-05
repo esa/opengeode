@@ -1,0 +1,33 @@
+/* CIF PROCESS (150, 150), (150, 75) */
+PROCESS basic;
+/* CIF TEXT (176, -127), (198, 140) */
+-- Declare your variables
+DCL i Int;
+DCL f Float;
+DCL b Bool;
+/* CIF ENDTEXT */
+/* CIF START (-86, -394), (100, 50) */
+START;
+/* CIF TASK (-102, -323), (133, 50) */
+TASK i := 1;
+/* CIF TASK (-84, -258), (97, 35) */
+TASK b := false;
+/* CIF TASK (-75, -208), (78, 35) */
+TASK f := 1.0;
+/* CIF NEXTSTATE (-86, -158), (100, 50) */
+NEXTSTATE Wait;
+
+/* CIF STATE (-86, -158), (100, 50) */
+STATE Wait;
+/* CIF INPUT (-85, -88), (100, 50) */
+INPUT run;
+/* CIF TASK (-124, -23), (179, 35) */
+TASK i := ((i + 1) - 1) * 1 / 1 mod 1;
+/* CIF TASK (-128, 27), (186, 35) */
+TASK b := (b or false) and true xor false;
+/* CIF TASK (-118, 77), (166, 35) */
+TASK f := (f + 3.0) * 0.5 / 2.0;
+/* CIF NEXTSTATE (-85, 127), (100, 50) */
+NEXTSTATE Wait;
+ENDSTATE;
+ENDPROCESS basic;

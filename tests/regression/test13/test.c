@@ -1,6 +1,6 @@
-extern void adder_run();
+extern void basic_run();
 
 int main() {
-    math_run();
+    basic_run();
     return 0;
 }

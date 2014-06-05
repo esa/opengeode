@@ -1,20 +1,20 @@
 /* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
 USE Datamodel;
-SYSTEM math;
+SYSTEM basic;
 
 	SIGNAL run;
 
 	CHANNEL c
-		FROM ENV TO math WITH run;
+		FROM ENV TO basic WITH run;
 	ENDCHANNEL;
 
-	BLOCK math;
+	BLOCK basic;
 
 		SIGNALROUTE r
-			FROM ENV TO math WITH run;
+			FROM ENV TO basic WITH run;
 		CONNECT c and r;
 
-		PROCESS math REFERENCED;
+		PROCESS basic REFERENCED;
 
 	ENDBLOCK;
 
