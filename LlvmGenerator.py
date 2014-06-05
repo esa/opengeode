@@ -341,7 +341,10 @@ def _real(primary):
 @expression.register(ogAST.PrimBoolean)
 def _boolean(primary):
     ''' Generate code for a raw boolean value  '''
-    raise NotImplementedError
+    if primary.value[0].lower() == 'true':
+        return core.Constant.int(core.Type.int(1), 1)
+    else:
+        return core.Constant.int(core.Type.int(1), 0)
 
 
 @expression.register(ogAST.PrimEmptyString)
