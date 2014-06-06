@@ -47,8 +47,6 @@ LLVM = {
     'executor': None
 }
 
-
-
 @singledispatch
 def generate(ast):
     ''' Generate the code for an item of the AST '''
@@ -59,6 +57,7 @@ def generate(ast):
 @generate.register(ogAST.Process)
 def _process(process):
     ''' Generate LLVM IR code (incomplete) '''
+
     process_name = str(process.processName)
     LOG.info('Generating LLVM IR code for process ' + str(process_name))
 
@@ -260,25 +259,44 @@ def _prim_path(primaryId):
 def _basic_operators(expr):
     ''' Expressions with two sides '''
     builder = LLVM['builder']
-    left = expression(expr.left)
-    right = expression(expr.right)
+    lefttmp = expression(expr.left)
+    righttmp = expression(expr.right)
 
     # load the value of the expression if it is a pointer
-    if left.type.kind == core.TYPE_POINTER:
-        left = builder.load(left, 'lefttmp')
-    if right.type.kind == core.TYPE_POINTER:
-        right = builder.load(right, 'lefttmp')
+    if lefttmp.type.kind == core.TYPE_POINTER:
+        lefttmp = builder.load(lefttmp, 'lefttmp')
+    if righttmp.type.kind == core.TYPE_POINTER:
+        righttmp = builder.load(righttmp, 'lefttmp')
 
-    if expr.operand == '+':
-        return builder.add(left, right, 'addtmp')
-    elif expr.operand == '-':
-        return builder.sub(left, right, 'subtmp')
-    elif expr.operand == '*':
-        return builder.sub(left, right, 'multmp')
-    elif expr.operand == '/':
-        return builder.sdiv(left, right, 'divtmp')
-    elif expr.operand == 'mod':
-        return builder.srem(left, right, 'modtmp')
+    if lefttmp.type.kind != righttmp.type.kind:
+        raise NotImplementedError
+
+    if lefttmp.type.kind == core.TYPE_INTEGER:
+        if expr.operand == '+':
+            return builder.add(lefttmp, righttmp, 'addtmp')
+        elif expr.operand == '-':
+            return builder.sub(lefttmp, righttmp, 'subtmp')
+        elif expr.operand == '*':
+            return builder.mul(lefttmp, righttmp, 'multmp')
+        elif expr.operand == '/':
+            return builder.sdiv(lefttmp, righttmp, 'divtmp')
+        elif expr.operand == 'mod':
+            return builder.srem(lefttmp, righttmp, 'modtmp')
+        else:
+            raise NotImplementedError
+    elif lefttmp.type.kind == core.TYPE_DOUBLE:
+        if expr.operand == '+':
+            return builder.fadd(lefttmp, righttmp, 'addtmp')
+        elif expr.operand == '-':
+            return builder.fsub(lefttmp, righttmp, 'subtmp')
+        elif expr.operand == '*':
+            return builder.fmul(lefttmp, righttmp, 'multmp')
+        elif expr.operand == '/':
+            return builder.fdiv(lefttmp, righttmp, 'divtmp')
+        elif expr.operand == 'mod':
+            return builder.frem(lefttmp, righttmp, 'modtmp')
+        else:
+            raise NotImplementedError
     else:
         raise NotImplementedError
 
