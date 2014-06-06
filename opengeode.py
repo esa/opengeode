@@ -23,6 +23,7 @@ import traceback
 import re
 import code
 import pprint
+import locale
 from functools import partial
 from collections import deque
 from itertools import chain
@@ -1728,6 +1729,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
 def opengeode():
     ''' Tool entry point '''
+
     # Catch Ctrl-C to stop the app from the console
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -1739,6 +1741,9 @@ def opengeode():
     LOG.addHandler(handler_console)
 
     app = QtGui.QApplication(sys.argv)
+    # Override Qt seted locale for avoiding conflicts with llvm. Using a locale
+    # with commas instead of points for decimal numbers causes a failure in llvm.
+    locale.setlocale(locale.LC_ALL, 'C')
     app.setApplicationName('OpenGEODE')
     app.setWindowIcon(QtGui.QIcon(':icons/input.png'))
 
