@@ -24,12 +24,9 @@ __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
 
 import traceback
 import logging
-from itertools import chain
-from collections import deque
 
 from PySide.QtCore import Qt, QPoint, QRect, QRectF
-from PySide.QtGui import(QPainterPath, QBrush, QColor, QPolygon,
-        QRadialGradient, QPainter, QPolygonF, QPen)
+from PySide.QtGui import(QPainterPath, QBrush, QColor, QRadialGradient, QPen)
 
 from genericSymbols import HorizontalSymbol, VerticalSymbol, Comment
 from Connectors import Connection, JoinConnection, Channel
@@ -60,7 +57,7 @@ class Input(HorizontalSymbol):
     ''' SDL INPUT Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = ['Task', 'ProcedureCall', 'Output', 'Decision',
-                        'Input',  'Label', 'Connect']
+                             'Input', 'Label', 'Connect']
     _terminal_followers = ['Join', 'State', 'ProcedureStop']
     completion_list = set()
 
@@ -90,8 +87,8 @@ class Input(HorizontalSymbol):
 
     def check_syntax(self):
         ''' Redefined function, to check only the symbol, not recursively '''
-        _, syntax_errors, ___, ____, _____ = self.parser.parseSingleElement(
-                self.common_name, self.PR())
+        _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
+                self.common_name, '\n'.join(self.PR_SINGLE()))
         try:
             self.scene().raise_syntax_errors(syntax_errors)
         except AttributeError:
@@ -119,18 +116,20 @@ class Input(HorizontalSymbol):
     def PR_SINGLE(self):
         ''' Return the PR notation of the single INPUT symbol '''
         comment = self.comment.PR() if self.comment else u';'
+        hlink = self.text.PR()
         pos = self.scenePos()
-        return(u'/* CIF INPUT ({x}, {y}), ({w}, {h}) */\n'
-                '{hlink}'
-                'INPUT {i}{comment}'.format(
-                    hlink=self.text.PR(), i=unicode(self),
+        result = ['/* CIF INPUT ({x}, {y}), ({w}, {h}) */'.format(
                     x=int(pos.x()), y=int(pos.y()),
                     w=int(self.boundingRect().width()),
-                    h=int(self.boundingRect().height()), comment=comment))
+                    h=int(self.boundingRect().height()))]
+        if hlink:
+            result.append(hlink)
+        result.append(u'INPUT {}{}'.format(unicode(self.text), comment))
+        return result
 
     def PR(self):
         ''' Return the complete Input branch in PR format '''
-        result = [self.PR_SINGLE()]
+        result = self.PR_SINGLE()
         # Recursively return the complete branch below the INPUT
         next_symbol = self.next_aligned_symbol()
         while next_symbol:
@@ -165,15 +164,16 @@ class Connect(Input):
     def PR_SINGLE(self):
         ''' Return the PR notation of the single CONNECT symbol '''
         comment = self.comment.PR() if self.comment else u';'
+        hlink = self.text.PR()
         pos = self.scenePos()
-        pr_string =(u'/* CIF CONNECT ({x}, {y}), ({w}, {h}) */\n'
-                '{hlink}'
-                'CONNECT {i}{comment}'.format(
-                    hlink=self.text.PR(), i=unicode(self.text),
-                    x=int(pos.x()), y=int(pos.y()),
-                    w=int(self.boundingRect().width()),
-                    h=int(self.boundingRect().height()), comment=comment))
-        return pr_string
+        result = [u'/* CIF CONNECT ({x}, {y}), ({w}, {h}) */'.format(
+                     x=int(pos.x()), y=int(pos.y()),
+                     w=int(self.boundingRect().width()),
+                     h=int(self.boundingRect().height()))]
+        if hlink:
+            result.append(hlink)
+        result.append(u'CONNECT {}{}'.format(unicode(self.text), comment))
+        return result
 
 
 # pylint: disable=R0904
@@ -263,8 +263,7 @@ class Decision(VerticalSymbol):
         for branch in self.branches():
             if not branch.last_branch_item.terminal_symbol:
                 return False
-        else:
-            return True
+        return True
 
     def branches(self):
         ''' Return the list of decision answers (as a generator) '''
@@ -273,7 +272,7 @@ class Decision(VerticalSymbol):
 
     def check_syntax(self):
         ''' Redefined function, to check only the symbol, not recursively '''
-        _, syntax_errors, ___, ____, _____ = self.parser.parseSingleElement(
+        _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
                 self.common_name, self.PR(recursive=False))
         try:
             # LOG.error('\n'.join(syntax_errors))
@@ -407,7 +406,7 @@ class DecisionAnswer(HorizontalSymbol):
 
     def check_syntax(self):
         ''' Redefined function, to check only the symbol, not recursively '''
-        _, syntax_errors, ___, ____, _____ = self.parser.parseSingleElement(
+        _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
                 self.common_name, self.PR(recursive=False))
         try:
             self.scene().raise_syntax_errors(syntax_errors)
@@ -563,7 +562,6 @@ class Label(VerticalSymbol):
     _insertable_followers = [
             'Task', 'ProcedureCall', 'Output', 'Decision', 'Label']
     _terminal_followers = ['Join', 'State', 'ProcedureStop']
-    common_name = 'label'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -605,10 +603,9 @@ class Label(VerticalSymbol):
         self.setPath(path)
         super(Label, self).set_shape(width, height)
 
-    def parse_gr(self):
+    def PR_floating(self):
         ''' Return the PR string for a floating label (incl. transition) '''
         pos = self.scenePos()
-        assert (not self.hasParent)
         result = [u'/* CIF LABEL ({x}, {y}), ({w}, {h}) */\n'
                     '{hlink}'
                     'CONNECTION {label}:'.format(
@@ -629,7 +626,7 @@ class Label(VerticalSymbol):
     def PR(self):
         ''' Return the PR string for a label '''
         if self.common_name == 'floating_label':
-            return self.parse_gr()
+            return self.PR_floating()
         else:
             # Standard label
             pos = self.scenePos()
@@ -770,7 +767,7 @@ class TextSymbol(HorizontalSymbol):
     def update_completion_list(self):
         ''' When text was entered, update TASK completion list '''
         # Get AST for the symbol
-        ast, _, ___, ____, _____ = self.parser.parseSingleElement('text_area',
+        ast, _, _, _, _ = self.parser.parseSingleElement('text_area',
                                                                   self.PR())
         Task.completion_list |= {dcl for dcl in ast.variables.keys()}
 
@@ -882,8 +879,8 @@ class State(VerticalSymbol):
     def update_completion_list(self):
         ''' When text was entered, update state completion list '''
         # Get AST for the symbol
-        ast, _, ___, ____, _____ = self.parser.parseSingleElement(
-                    'state', self.parse_gr(recursive=False))
+        ast, _, _, _, _ = self.parser.parseSingleElement(
+                    'state', self.PR_state(recursive=False))
         State.completion_list |= set(ast.statelist)
 
     def check_syntax(self):
@@ -891,8 +888,8 @@ class State(VerticalSymbol):
         if self.hasParent:
             super(State, self).check_syntax()
         else:
-            _, syntax_err, ___, ____, _____ = self.parser.parseSingleElement(
-                    'state', self.parse_gr(recursive=False))
+            _, syntax_err, _, _, _ = self.parser.parseSingleElement(
+                    'state', self.PR_state(recursive=False))
             try:
                 self.scene().raise_syntax_errors(syntax_err)
             except:
@@ -919,8 +916,8 @@ class State(VerticalSymbol):
             return super(State, self).get_ast()
         else:
             # State case
-            ast, _, ___, ____, terminators = self.parser.parseSingleElement(
-                'state', self.parse_gr(recursive=True))
+            ast, _, _, _, terminators = self.parser.parseSingleElement(
+                'state', self.PR_state())
             return ast, terminators
 
 
@@ -944,7 +941,7 @@ class State(VerticalSymbol):
         return u'\n'.join(result)
 
 
-    def parse_gr(self, recursive=True):
+    def PR_state(self, recursive=True):
         ''' Parse state '''
         comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
@@ -962,10 +959,10 @@ class State(VerticalSymbol):
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height()), comment=comment)]
         if recursive:
-            for i in self.childSymbols():
-                # Recursively return next symbols (inputs)
-                if isinstance(i, Input):
-                    result.append(i.PR())
+            for each in self.childSymbols():
+                # Recursively return next symbols (inputs, connect)
+                if isinstance(each, Input):
+                    result.append(each.PR())
         result.append('ENDSTATE;')
         return u'\n'.join(result)
 
@@ -1037,48 +1034,22 @@ class Process(HorizontalSymbol):
         self.setPath(path)
         super(Process, self).set_shape(width, height)
 
-    def recursive_parser(self):
-        ''' Return the full content of the process as PR string '''
-        pr_data = deque()
-        scene = self.nested_scene
-        if not scene:
-            return []
-
-        for item in chain(scene.texts, scene.procs, scene.start):
-            pr_data.append(item.PR())
-        for item in scene.floating_labels:
-            pr_data.append(item.parse_gr())
-        composite = set(scene.composite_states.keys())
-        for item in scene.states:
-            if item.is_composite():
-                try:
-                    composite.remove(unicode(item).lower())
-                    pr_data.appendleft(item.parse_composite_state())
-                except KeyError:
-                    pass
-            pr_data.append(item.parse_gr())
-        return list(pr_data)
-
-    def parse_gr(self, recursive=True):
+    def PR(self, recursive=True):
         ''' Generate PR for a process '''
         comment = self.comment.PR() if self.comment else ';'
         pos = self.scenePos()
-        result =[u'/* CIF PROCESS ({x}, {y}), ({w}, {h}) */\n'
-                 '{hlink}'
-                 'PROCESS {process}{comment}'.format(
+        result = [u'/* CIF PROCESS ({x}, {y}), ({w}, {h}) */\n'
+                  '{hlink}'
+                  'PROCESS {process}{comment}'.format(
                         process=unicode(self),
                         hlink=self.text.PR(),
                         x=int(pos.x()), y=int(pos.y()),
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height()), comment=comment)]
-        if recursive:
-            result.append('\n'.join(self.recursive_parser()))
+        if recursive and self.nested_scene:
+            result.extend(self.nested_scene.get_pr_string())
         result.append('ENDPROCESS {};'.format(unicode(self)))
         return u'\n'.join(result)
-
-    def PR(self):
-        ''' Return the complete process content '''
-        return self.parse_gr(recursive=True)
 
 
 class Procedure(Process):
@@ -1128,7 +1099,7 @@ class Procedure(Process):
         ''' When text was entered, update completion list of ProcedureCall '''
         ProcedureCall.completion_list |= {unicode(self.text)}
 
-    def parse_gr(self, recursive=True):
+    def PR(self, recursive=True):
         ''' Generate PR for a procedure '''
         comment = self.comment.PR() if self.comment else u';'
         pos = self.scenePos()
@@ -1140,14 +1111,10 @@ class Procedure(Process):
                         x=int(pos.x()), y=int(pos.y()),
                         w=int(self.boundingRect().width()),
                         h=int(self.boundingRect().height()), comment=comment)]
-        if recursive:
-            result.append('\n'.join(self.recursive_parser()))
+        if recursive and self.nested_scene:
+            result.extend(self.nested_scene.get_pr_string())
         result.append('ENDPROCEDURE;')
         return u'\n'.join(result)
-
-    def PR(self):
-        ''' Return the complete procedure branch in PR format '''
-        return self.parse_gr(recursive=True)
 
 
 # pylint: disable=R0904
@@ -1171,7 +1138,7 @@ class Start(HorizontalSymbol):
         ast = ast or ogAST.Start()
         self.terminal_symbol = False
         super(Start, self).__init__(parent=None,
-                                    text=ast.inputString[slice(0,-6)],
+                                    text=ast.inputString[slice(0, -6)],
                                     x=ast.pos_x, y=ast.pos_y,
                                     hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
@@ -1200,7 +1167,7 @@ class Start(HorizontalSymbol):
         pos = self.scenePos()
         result.append(u'/* CIF START ({x}, {y}), ({w}, {h}) */\n'
                 'START{via}{comment}'.format(x=int(pos.x()), y=int(pos.y()),
-                    via = (' ' + unicode(self) + ' ')
+                    via=(' ' + unicode(self) + ' ')
                     if unicode(self).replace('START', '') else '',
                     w=int(self.boundingRect().width()),
                     h=int(self.boundingRect().height()), comment=comment))

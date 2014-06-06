@@ -42,6 +42,7 @@ from sdl92Parser import sdl92Parser
 
 import samnmax
 import ogAST
+from Asn1scc import parse_asn1, ASN1
 
 LOG = logging.getLogger(__name__)
 
@@ -1214,8 +1215,8 @@ def expression(root, context):
     elif root.type in (lexer.PLUS,
                        lexer.ASTERISK,
                        lexer.DASH,
-                       lexer.APPEND,
                        lexer.DIV,
+                       lexer.APPEND,
                        lexer.REM,
                        lexer.MOD):
         expr.exprType = expr.left.exprType
@@ -2821,20 +2822,18 @@ def pr_file(root):
                 ast.use_clauses.append(clause.text)
         try:
             global DV
-            if not DV:
-                # Here XXX call asn1.exe to create DataView.py
-                # (Currently done in buildsupport)
-                DV = importlib.import_module('DataView')
-            else:
-                reload(DV)
+            DV = parse_asn1(tuple(ast.asn1_filenames),
+                            ast_version=ASN1.UniqueEnumeratedNames,
+                            flags=[ASN1.AstOnly])
             ast.dataview = types()
             ast.asn1Modules = DV.asn1Modules
             # Add constants defined in the ASN.1 modules (for visibility)
             for mod in ast.asn1Modules:
                 ast.asn1_constants.extend(DV.exportedVariables[mod])
-        except (ImportError, NameError):
+        except (ImportError, NameError) as err:
             # Can happen if DataView.py is not there
             LOG.info('USE Clause did not contain ASN.1 filename')
+            LOG.debug(str(err))
     for child in systems:
         LOG.debug('found SYSTEM')
         system, err, warn = system_definition(child, parent=ast)

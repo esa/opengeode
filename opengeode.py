@@ -29,6 +29,10 @@ from itertools import chain
 
 # Added to please py2exe - NOQA makes flake8 ignore the following lines:
 # pylint: disable=W0611
+import subprocess  # NOQA
+import tempfile  # NOQA
+import uuid  # NOQA
+import importlib  # NOQA
 import antlr3  # NOQA
 import antlr3.tree  # NOQA
 import importlib  # NOQA
@@ -42,7 +46,8 @@ import sdl92Parser  # NOQA
 import genericSymbols  # NOQA
 import sdlSymbols
 import PySide.QtXml  # NOQA
-import singledispatch # NOQA
+import singledispatch  # NOQA
+import Asn1scc  # NOQA
 
 #from PySide import phonon
 
@@ -678,12 +683,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         ''' Parse the graphical items and returns a PR string '''
         pr_data = deque()
         for each in self.processes:
-            pr_data.append(each.parse_gr())
+            pr_data.append(each.PR())
 
         for item in chain(self.texts, self.procs, self.start):
             pr_data.append(item.PR())
         for item in self.floating_labels:
-            pr_data.append(item.parse_gr())
+            pr_data.append(item.PR_floating())
         composite = set(self.composite_states.keys())
         for item in self.states:
             if item.is_composite():
@@ -692,7 +697,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     pr_data.appendleft(item.parse_composite_state())
                 except KeyError:
                     pass
-            pr_data.append(item.parse_gr())
+            pr_data.append(item.PR_state())
 
         return list(pr_data)
 
@@ -1777,7 +1782,7 @@ def opengeode():
     LOG.setLevel(level)
     for module in (sdlSymbols, genericSymbols, ogAST, ogParser, Lander,
             AdaGenerator, undoCommands, Renderer, Clipboard, Statechart,
-            Helper, LlvmGenerator):
+            Helper, LlvmGenerator, Asn1scc):
         module.LOG.addHandler(handler_console)
         module.LOG.setLevel(level)
 
