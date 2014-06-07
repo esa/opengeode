@@ -287,6 +287,18 @@ def _basic_operators(expr):
             return builder.srem(addtmp, righttmp, 'modtmp')
         elif expr.operand == 'rem':
             return builder.srem(lefttmp, righttmp, 'remtmp')
+        elif expr.operand == '<':
+            return builder.icmp(core.ICMP_SLT, lefttmp, righttmp, 'lttmp')
+        elif expr.operand == '<=':
+            return builder.icmp(core.ICMP_SLE, lefttmp, righttmp, 'letmp')
+        elif expr.operand == '=':
+            return builder.icmp(core.ICMP_EQ, lefttmp, righttmp, 'eqtmp')
+        elif expr.operand == '/=':
+            return builder.icmp(core.ICMP_NE, lefttmp, righttmp, 'netmp')
+        elif expr.operand == '>=':
+            return builder.icmp(core.ICMP_SGE, lefttmp, righttmp, 'getmp')
+        elif expr.operand == '>':
+            return builder.icmp(core.ICMP_SGT, lefttmp, righttmp, 'gttmp')
         else:
             raise NotImplementedError
     elif lefttmp.type.kind == core.TYPE_DOUBLE:
@@ -305,6 +317,18 @@ def _basic_operators(expr):
             return builder.frem(addtmp, righttmp, 'modtmp')
         elif expr.operand == 'rem':
             return builder.frem(lefttmp, righttmp, 'remtmp')
+        elif expr.operand == '<':
+            return builder.icmp(core.FCMP_OLT, lefttmp, righttmp, 'lttmp')
+        elif expr.operand == '<=':
+            return builder.icmp(core.FCMP_OLE, lefttmp, righttmp, 'letmp')
+        elif expr.operand == '=':
+            return builder.icmp(core.FCMP_OEQ, lefttmp, righttmp, 'eqtmp')
+        elif expr.operand == '/=':
+            return builder.icmp(core.FCMP_ONE, lefttmp, righttmp, 'netmp')
+        elif expr.operand == '>=':
+            return builder.icmp(core.FCMP_OGE, lefttmp, righttmp, 'getmp')
+        elif expr.operand == '>':
+            return builder.icmp(core.FCMP_OGT, lefttmp, righttmp, 'gttmp')
         else:
             raise NotImplementedError
     else:
