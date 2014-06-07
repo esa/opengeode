@@ -281,7 +281,12 @@ def _basic_operators(expr):
         elif expr.operand == '/':
             return builder.sdiv(lefttmp, righttmp, 'divtmp')
         elif expr.operand == 'mod':
-            return builder.srem(lefttmp, righttmp, 'modtmp')
+            # l mod r == (((l rem r) + r) rem r)
+            remtmp = builder.srem(lefttmp, righttmp)
+            addtmp = builder.add(remtmp, righttmp)
+            return builder.srem(addtmp, righttmp, 'modtmp')
+        elif expr.operand == 'rem':
+            return builder.srem(lefttmp, righttmp, 'remtmp')
         else:
             raise NotImplementedError
     elif lefttmp.type.kind == core.TYPE_DOUBLE:
@@ -294,7 +299,12 @@ def _basic_operators(expr):
         elif expr.operand == '/':
             return builder.fdiv(lefttmp, righttmp, 'divtmp')
         elif expr.operand == 'mod':
-            return builder.frem(lefttmp, righttmp, 'modtmp')
+            # l mod r == (((l rem r) + r) rem r)
+            remtmp = builder.frem(lefttmp, righttmp)
+            addtmp = builder.fadd(remtmp, righttmp)
+            return builder.frem(addtmp, righttmp, 'modtmp')
+        elif expr.operand == 'rem':
+            return builder.frem(lefttmp, righttmp, 'remtmp')
         else:
             raise NotImplementedError
     else:
