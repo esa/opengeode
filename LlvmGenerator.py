@@ -337,7 +337,7 @@ def _basic_operators(expr):
 
 @expression.register(ogAST.ExprAssign)
 def _assign(expr):
-    '''Assign expression'''
+    ''' Assign expression '''
     builder = LLVM['builder']
     left = expression(expr.left)
     right = expression(expr.right)
