@@ -21,13 +21,17 @@ NEXTSTATE Wait;
 STATE Wait;
 /* CIF INPUT (-85, -88), (100, 50) */
 INPUT run;
-/* CIF TASK (-124, -23), (179, 35) */
-TASK i := ((i + 1) - 1) * 1 / 1 mod 1;
-/* CIF TASK (-128, 27), (186, 35) */
+/* CIF TASK (-170, -23), (271, 35) */
+TASK i := ((i + 1) -  (1 mod 1)) * 1 / 1 + 1 rem 1;
+/* CIF TASK (-202, 27), (335, 35) */
+TASK f := (f + 3.0 - (2.0 mod 1.0)) * 2.0 / 2.0 + 1.0 rem 1.0;
+/* CIF TASK (-156, 77), (243, 35) */
 TASK b := (b or false) and true xor false;
-/* CIF TASK (-118, 77), (166, 35) */
-TASK f := (f + 3.0) * 0.5 / 2.0;
-/* CIF NEXTSTATE (-85, 127), (100, 50) */
+/* CIF TASK (-242, 127), (414, 35) */
+TASK b := 1 < 2 and 2 <= 2 and 2 >= 1 and 2 >= 2 and 1 = 1 and 1 /= 1;
+/* CIF TASK (-302, 177), (535, 35) */
+TASK b := 1.0 < 2.0 and 2.0 <= 2.0 and 2.0 >= 1.0 and 2.0 >= 2.0 and 1.0 = 1.0 and 1.0 /= 1.0;
+/* CIF NEXTSTATE (-85, 227), (100, 50) */
 NEXTSTATE Wait;
 ENDSTATE;
 ENDPROCESS basic;
