@@ -86,7 +86,6 @@ LOCAL_VAR = {}
 # List of output signals and procedures
 OUT_SIGNALS = []
 PROCEDURES = []
-INNER_PROCEDURES = []
 
 
 @singledispatch
@@ -106,7 +105,6 @@ def _process(process):
     TYPES = process.dataview
     del OUT_SIGNALS[:]
     del PROCEDURES[:]
-    del INNER_PROCEDURES[:]
     OUT_SIGNALS.extend(process.output_signals)
     PROCEDURES.extend(process.procedures)
 
@@ -120,7 +118,6 @@ def _process(process):
     mapping = Helper.map_input_state(process)
 
     VARIABLES.update(process.variables)
-    INNER_PROCEDURES.extend(process.content.inner_procedures)
 
     # Generate the code to declare process-level variables
     process_level_decl = []
@@ -303,8 +300,8 @@ package {process_name} is'''.format(process_name=process_name,
                 .format(sig=signal['name'], proc=process_name))
 
     # for the .ads file, generate the declaration of the external procedures
-    for proc in process.procedures:
-        ri_header = 'procedure {sig_name}'.format(sig_name=proc.inputString)
+    for proc in (proc for proc in process.procedures if proc.external):
+        ri_header = u'procedure {sig_name}'.format(sig_name=proc.inputString)
         params = []
         for param in proc.fpar:
             typename = param['type'].ReferencedTypeName.replace('-', '_')
@@ -517,15 +514,15 @@ def _call_external_function(output):
             out_sig, = [sig for sig in OUT_SIGNALS
                         if sig['name'].lower() == signal_name.lower()]
         except ValueError:
-            # Not an output, try if it is an external procedure
+            # Not an output, try if it is an external or inner procedure
             try:
-                out_sig, = [sig for sig in PROCEDURES
+                proc, = [sig for sig in PROCEDURES
                             if sig.inputString.lower() == signal_name.lower()]
+                if proc.external:
+                    out_sig = proc
             except ValueError:
-                # Not external? Must be an inner procedure then.
-                # otherwise the parser would have barked
-                proc, = [sig for sig in INNER_PROCEDURES
-                     if sig.inputString.lower() == signal_name.lower()]
+                # Not there? Impossible, the parser would have barked
+                raise ValueError('Probably a bug - please report')
         if out_sig:
             list_of_params = []
             for idx, param in enumerate(out.get('params') or []):

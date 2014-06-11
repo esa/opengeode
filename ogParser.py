@@ -191,8 +191,6 @@ def valid_output(scope):
         yield proc.inputString.lower()
     for special_op in SPECIAL_OPERATORS:
         yield special_op.lower()
-    for inner_proc in scope.content.inner_procedures:
-        yield inner_proc.inputString.lower()
 
 
 def get_interfaces(ast, process_name):
@@ -369,8 +367,7 @@ def check_and_fix_op_params(op_name, expr_list, context):
             break
     else:
         # Procedures (inner and external)
-        for inner_proc in (context.content.inner_procedures
-                           + context.procedures):
+        for inner_proc in context.procedures:
             key = inner_proc.inputString
             if key.lower() == op_name.lower():
                 signature = inner_proc.fpar
@@ -1391,6 +1388,8 @@ def composite_state(root, parent=None, context=None):
             elif new_proc.inputString.strip().lower() == 'exit':
                 comp.exit_procedure = new_proc
             comp.content.inner_procedures.append(new_proc)
+            # Add procedure to the context, to make it visible at scope level
+            context.procedures.append(new_proc)
         elif child.type == lexer.COMPOSITE_STATE:
             inner_composite.append(child)
         elif child.type == lexer.STATE:
@@ -1476,6 +1475,8 @@ def procedure(root, parent=None, context=None):
             errors.extend(err)
             warnings.extend(warn)
             proc.content.inner_procedures.append(new_proc)
+            # Add procedure to the context, to make it visible at scope level
+            context.procedures.append(new_proc)
         elif child.type == lexer.EXTERNAL:
             proc.external = True
         elif child.type == lexer.FPAR:
@@ -1582,6 +1583,8 @@ def text_area_content(root, ta_ast, context):
             warnings.extend(warn)
             # Add procedure to the container (process or procedure)
             context.content.inner_procedures.append(proc)
+            # Add to context to make it visible at scope level
+            context.procedures.append(proc)
         elif child.type == lexer.FPAR:
             params, err, warn = fpar(child)
             errors.extend(err)
@@ -1816,6 +1819,8 @@ def process_definition(root, parent=None, context=None):
             errors.extend(err)
             warnings.extend(warn)
             process.content.inner_procedures.append(proc)
+            # Add it at process level so that it is in the scope
+            process.procedures.append(proc)
         elif child.type == lexer.FLOATING_LABEL:
             lab, err, warn = floating_label(
                     child, parent=None, context=process)
@@ -2189,7 +2194,7 @@ def outputbody(root, context):
     ''' Parse an output body (the content excluding the CIF statement) '''
     errors = []
     warnings = []
-    body = {}
+    body = {'outputName': '', 'params':[]}
     for child in root.getChildren():
         if child.type == lexer.ID:
             body['outputName'] = child.text
@@ -2214,10 +2219,10 @@ def outputbody(root, context):
         LOG.debug('[outputbody] call check_and_fix_op_params : '
                     + get_input_string(root) + str(op_err))
         LOG.debug(str(traceback.format_exc()))
-    if body.get('params'):
+    if body['params']:
         body['tmpVars'] = []
         global TMPVAR
-        for _ in range(len(body['params'])):
+        for _ in body['params']:
             body['tmpVars'].append(TMPVAR)
             TMPVAR += 1
     return body, errors, warnings

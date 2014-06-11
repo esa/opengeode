@@ -754,7 +754,7 @@ class Process(object):
 
         # list of operators (not supported) and procedures
         self.operators = {}
-        # list of Procedure (external procedures)
+        # list of Procedure (external and inner procedures)
         self.procedures = []
 
         # The Mapping structure should be used for code generation backends

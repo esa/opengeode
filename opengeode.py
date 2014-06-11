@@ -29,6 +29,7 @@ from itertools import chain
 
 # Added to please py2exe - NOQA makes flake8 ignore the following lines:
 # pylint: disable=W0611
+import enum  # NOQA
 import subprocess  # NOQA
 import tempfile  # NOQA
 import uuid  # NOQA
