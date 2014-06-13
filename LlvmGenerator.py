@@ -107,6 +107,10 @@ def _process(process):
     runtr_func = _generate_runtr_func(process)
     _generate_startup_func(process, process_name, runtr_func)
 
+    # Generate input signals
+    for signal in process.input_signals:
+        _generate_input_signal(signal, mapping[signal['name']])
+
     print LLVM['module']
 
 
@@ -177,9 +181,47 @@ def _generate_startup_func(process, process_name, runtr_func):
     return func
 
 
+def _generate_input_signal(signal, inputs):
+    func_name = str(signal['name'])
+    func_type = core.Type.function(core.Type.void(), [])
+    func = core.Function.new(LLVM['module'], func_type, func_name)
+
+    entry_block = func.append_basic_block('entry')
+    exit_block = func.append_basic_block('exit')
+    builder = core.Builder.new(entry_block)
+
+    runtr_func = LLVM['module'].get_function_named('run_transition')
+
+    g_state_val = builder.load(LLVM['module'].get_global_variable_named('state'))
+    switch = builder.switch(g_state_val, exit_block)
+
+    for state_name, state_id in LLVM['states'].iteritems():
+        state_block = func.append_basic_block('state_%s' % str(state_name))
+        switch.add_case(state_id, state_block)
+        builder.position_at_end(state_block)
+
+        # TODO: Nested states
+
+        inputdef = inputs.get(state_name)
+        if inputdef:
+            for param in inputdef.parameters:
+                raise NotImplementedError
+            if inputdef.transition:
+                id_val = core.Constant.int(core.Type.int(), inputdef.transition_id)
+                builder.call(runtr_func, [id_val])
+
+        builder.ret_void()
+
+    builder.position_at_end(exit_block)
+    builder.ret_void()
+
+    func.verify()
+
+
 def write_statement(param, newline):
     ''' Generate the code for the special "write" operator '''
     raise NotImplementedError
+
 
 @generate.register(ogAST.Output)
 @generate.register(ogAST.ProcedureCall)
