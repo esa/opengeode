@@ -3,6 +3,9 @@ all: compile
 generate-code:
 	../../../opengeode.py --toAda orchestrator.pr system_structure.pr
 
+generate-llvm:
+	../../../opengeode.py --llvm orchestrator.pr system_structure.pr
+
 compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
 	gnatmake -c orchestrator.adb && echo 'All OK!'

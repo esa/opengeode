@@ -3,6 +3,8 @@ all: compile
 generate-code:
 	../../../opengeode.py --toAda fce.pr system_structure.pr
 
+generate-llvm:
+	../../../opengeode.py --llvm fce.pr system_structure.pr
 
 compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal

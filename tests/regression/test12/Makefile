@@ -3,6 +3,8 @@ all: compile
 generate-code:
 	../../../opengeode.py --toAda trafficlight.pr system_structure.pr
 
+generate-llvm:
+	../../../opengeode.py --llvm trafficlight.pr system_structure.pr
 
 compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
@@ -10,7 +12,6 @@ compile: generate-code
 	#gcc -c test.c
 	gnatbind -n trafficlight.ali
 	#gnatlink -o testcase test.o trafficlight.ali -lgnat -lm
-
 
 parse:
 	../../../opengeode.py trafficlight.pr system_structure.pr --check

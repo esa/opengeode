@@ -3,6 +3,8 @@ all: compile
 generate-code:
 	../../../opengeode.py --toAda challenge.pr system_structure.pr
 
+generate-llvm:
+	../../../opengeode.py --llvm challenge.pr system_structure.pr
 
 compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
@@ -12,7 +14,6 @@ compile: generate-code
 	gnatlink -o testcase  test.o challenge.ali -lgnat -lm
 	./testcase > result
 	diff result expected && echo 'All OK!'
-
 
 parse:
 	../../../opengeode.py challenge.pr system_structure.pr --check
