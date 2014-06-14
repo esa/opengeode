@@ -44,7 +44,11 @@ LLVM = {
     # The function optimization passes manager.
     'pass_manager': None,
     # The LLVM execution engine.
-    'executor': None
+    'executor': None,
+    # ASN.1 data view
+    'dataview': None,
+    # Generated types
+    'types': {}
 }
 
 @singledispatch
@@ -72,7 +76,7 @@ def _process(process):
     LLVM['module'] = core.Module.new(process_name)
     LLVM['pass_manager'] = passes.FunctionPassManager.new(LLVM['module'])
     LLVM['executor'] = ee.ExecutionEngine.new(LLVM['module'])
-    LLVM['types'] = process.dataview
+    LLVM['dataview'] = process.dataview
     # Set up the optimizer pipeline.
     # Start with registering info about how the
     # target lays out data structures.
@@ -98,7 +102,7 @@ def _process(process):
 
     # Generare process-level vars
     for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
-        var_type = _generate_type(find_basic_type(var_asn1_type))
+        var_type = _generate_type(var_asn1_type)
         var_ptr = LLVM['module'].add_global_variable(var_type, str(var_name))
         if def_value:
             raise NotImplementedError
@@ -381,10 +385,24 @@ def _basic_operators(expr):
 def _assign(expr):
     ''' Assign expression '''
     builder = LLVM['builder']
+
     left = expression(expr.left)
     right = expression(expr.right)
 
-    builder.store(right, left)
+    if left.type.kind == core.TYPE_POINTER and left.type.pointee.kind == core.TYPE_STRUCT:
+        memcpy = _get_memcpy_intrinsic()
+
+        size = core.Constant.int(core.Type.int(64), 2)
+        align = core.Constant.int(core.Type.int(32), 1)
+        volatile = core.Constant.int(core.Type.int(1), 0)
+
+        right_ptr = builder.bitcast(right, core.Type.pointer(core.Type.int(8)))
+        left_ptr = builder.bitcast(left, core.Type.pointer(core.Type.int(8)))
+
+        builder.call(memcpy, [left_ptr, right_ptr, size, align, volatile])
+    else:
+        builder.store(right, left)
+        
     return left
 
 
@@ -502,7 +520,20 @@ def _sequence(seq):
 @expression.register(ogAST.PrimSequenceOf)
 def _sequence_of(seqof):
     ''' Return Ada string for an ASN.1 SEQUENCE OF '''
-    raise NotImplementedError
+    builder = LLVM['builder']
+
+    ty = _generate_type(seqof.exprType)
+    struct_ptr = builder.alloca(ty)
+    zero_cons = core.Constant.int(core.Type.int(), 0)
+    array_ptr = builder.gep(struct_ptr, [zero_cons, zero_cons])
+
+    for idx, expr in enumerate(seqof.value):
+        idx_cons = core.Constant.int(core.Type.int(), idx)
+        expr_val = expression(expr)
+        pos_ptr = builder.gep(array_ptr, [zero_cons, idx_cons])
+        builder.store(expr_val, pos_ptr)
+
+    return struct_ptr
 
 
 @expression.register(ogAST.PrimChoiceItem)
@@ -573,7 +604,7 @@ def _inner_procedure(proc):
 
 
 def _generate_type(ty):
-    '''Generate the equivalent LLVM type of a ASN.1 type'''
+    ''' Generate the equivalent LLVM type of a ASN.1 type '''
     basic_ty = find_basic_type(ty)
     if basic_ty.kind == 'IntegerType':
         return core.Type.int()
@@ -581,8 +612,31 @@ def _generate_type(ty):
         return core.Type.int(1)
     elif basic_ty.kind == 'RealType':
         return core.Type.double()
+    elif basic_ty.kind == 'SequenceOfType':
+        if ty.ReferencedTypeName in LLVM['types']:
+            return LLVM['types'][ty.ReferencedTypeName]
+
+        min_size = int(basic_ty.Max)
+        max_size = int(basic_ty.Min)
+        if min_size != max_size:
+            raise NotImplementedError
+
+        elem_ty = _generate_type(basic_ty.type)
+        array_ty = core.Type.array(elem_ty, max_size)
+        struct_ty = core.Type.struct([array_ty], ty.ReferencedTypeName)
+        LLVM['types'][ty.ReferencedTypeName] = struct_ty
+        return struct_ty
     else:
         raise NotImplementedError
+
+
+def _get_memcpy_intrinsic():
+    arg_tys = [
+        core.Type.pointer(core.Type.int(8)),
+        core.Type.pointer(core.Type.int(8)),
+        core.Type.int(64)
+    ]
+    return core.Function.intrinsic(LLVM['module'], core.INTR_MEMCPY, arg_tys)
 
 
 # TODO: Refactor this into the helper module
@@ -591,8 +645,8 @@ def find_basic_type(a_type):
     basic_type = a_type
     while basic_type.kind == 'ReferenceType':
         # Find type with proper case in the data view
-        for typename in LLVM['types'].viewkeys():
+        for typename in LLVM['dataview'].viewkeys():
             if typename.lower() == basic_type.ReferencedTypeName.lower():
-                basic_type = LLVM['types'][typename].type
+                basic_type = LLVM['dataview'][typename].type
                 break
     return basic_type
