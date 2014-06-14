@@ -135,10 +135,12 @@ STATE hello;
 INPUT run;
 /* CIF PROCEDURECALL (-52, 111), (175, 35) */
 CALL writeln('27 == ', result);
-/* CIF TASK (-27, 161), (125, 53) */
+/* CIF PROCEDURECALL (0, 161), (70, 35) */
+CALL toto;
+/* CIF TASK (-27, 211), (125, 53) */
 TASK myresult := 88,
 result := 33;
-/* CIF JOIN (17, 229), (35, 35) */
+/* CIF JOIN (17, 279), (35, 35) */
 JOIN to_label;
 ENDSTATE;
 
@@ -148,6 +150,13 @@ ENDSUBSTRUCTURE;
 
 dcl result T_uint32 :=0;
 /* CIF ENDTEXT */
+/* CIF PROCEDURE (17, 198), (70, 35) */
+PROCEDURE foo;
+/* CIF START (190, 53), (70, 35) */
+START;
+/* CIF RETURN (207, 103), (35, 35) */
+RETURN ;
+ENDPROCEDURE;
 /* CIF PROCEDURE (0, 254), (66, 35) */
 PROCEDURE toto;
 /* CIF TEXT (371, 134), (298, 140) */
@@ -169,7 +178,9 @@ TASK i := i + 1;
 RETURN ;
 /* CIF ANSWER (223, 206), (70, 23) */
 ELSE:
-/* CIF RETURN (240, 244), (35, 35) */
+/* CIF PROCEDURECALL (223, 244), (70, 35) */
+CALL foo;
+/* CIF RETURN (240, 294), (35, 35) */
 RETURN ;
 ENDDECISION;
 ENDPROCEDURE;
@@ -195,7 +206,7 @@ CALL writeln('4 == ', result);
 NEXTSTATE -;
 /* CIF INPUT (297, 333), (88, 35) */
 INPUT any_one;
-/* CIF PROCEDURECALL (285, 383), (113, 35) */
+/* CIF PROCEDURECALL (284, 383), (113, 35) */
 CALL writeln('6');
 /* CIF NEXTSTATE (306, 433), (70, 35) */
 NEXTSTATE on;
@@ -224,7 +235,9 @@ NEXTSTATE Safe;
 CONNECT ;
 /* CIF PROCEDURECALL (494, 177), (147, 35) */
 CALL writeln('11 (end)');
-/* CIF NEXTSTATE (533, 227), (70, 35) */
+/* CIF PROCEDURECALL (533, 227), (70, 35) */
+CALL toto;
+/* CIF NEXTSTATE (533, 277), (70, 35) */
 NEXTSTATE off;
 ENDSTATE;
 
