@@ -402,7 +402,7 @@ def _assign(expr):
         builder.call(memcpy, [left_ptr, right_ptr, size, align, volatile])
     else:
         builder.store(right, left)
-        
+
     return left
 
 
@@ -412,7 +412,6 @@ def _assign(expr):
 def _bitwise_operators(expr):
     ''' Logical operators '''
     builder = LLVM['builder']
-    func = builder.basic_block.function
 
     lefttmp = expression(expr.left)
     righttmp = expression(expr.right)
@@ -544,8 +543,46 @@ def _choiceitem(choice):
 
 @generate.register(ogAST.Decision)
 def _decision(dec):
-    ''' generate the code for a decision '''
-    raise NotImplementedError
+    ''' Generate the code for a decision '''
+    builder = LLVM['builder']
+    func = builder.basic_block.function
+
+    ans_cond_blocks = [func.append_basic_block('ans_cond') for ans in dec.answers]
+    end_block = func.append_basic_block('end')
+
+    builder.branch(ans_cond_blocks[0])
+
+    for idx, ans in enumerate(dec.answers):
+        ans_cond_block = ans_cond_blocks[idx]
+        if ans.transition:
+            ans_tr_block = func.append_basic_block('ans_tr')
+        builder.position_at_end(ans_cond_block)
+
+        if ans.kind == 'constant':
+            next_block = ans_cond_blocks[idx+1] if idx < len(ans_cond_blocks) else end_block
+
+            expr = ans.openRangeOp()
+            expr.left = dec.question
+            expr.right = ans.constant
+            expr_val = expression(expr)
+
+            true_cons = core.Constant.int(core.Type.int(1), 1)
+            cond_val = builder.icmp(core.ICMP_EQ, expr_val, true_cons)
+            builder.cbranch(cond_val, ans_tr_block if ans.transition else end_block, next_block)
+        elif ans.kind == 'else':
+            if ans.transition:
+                builder.branch(ans_tr_block)
+            else:
+                builder.branch(end_block)
+        else:
+            raise NotImplementedError
+
+        if ans.transition:
+            builder.position_at_end(ans_tr_block)
+            generate(ans.transition)
+            builder.branch(end_block)
+
+    builder.position_at_end(end_block)
 
 
 @generate.register(ogAST.Label)
