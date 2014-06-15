@@ -117,7 +117,7 @@ def _process(process):
     # Generare process-level vars
     for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
         var_type = _generate_type(var_asn1_type)
-        LLVM['module'].add_global_variable(var_type, str(var_name))
+        LLVM['module'].add_global_variable(var_type, str(var_name).lower())
         if def_value:
             raise NotImplementedError
 
@@ -202,12 +202,16 @@ def _generate_startup_func(process, process_name, runtr_func):
 def _generate_input_signal(signal, inputs):
     ''' Generate code for an input signal '''
     func_name = str(signal['name'])
-    func_type = core.Type.function(core.Type.void(), [])
+    param_tys = []
+    if 'type' in signal:
+        param_tys.append(core.Type.pointer(_generate_type(signal['type'])))
+    func_type = core.Type.function(core.Type.void(), param_tys)
     func = core.Function.new(LLVM['module'], func_type, func_name)
 
     entry_block = func.append_basic_block('entry')
     exit_block = func.append_basic_block('exit')
     builder = core.Builder.new(entry_block)
+    LLVM['builder'] = builder
 
     runtr_func = LLVM['module'].get_function_named('run_transition')
 
@@ -221,12 +225,13 @@ def _generate_input_signal(signal, inputs):
 
         # TODO: Nested states
 
-        inputdef = inputs.get(state_name)
-        if inputdef:
-            for param in inputdef.parameters:
-                raise NotImplementedError
-            if inputdef.transition:
-                id_val = core.Constant.int(core.Type.int(), inputdef.transition_id)
+        input = inputs.get(state_name)
+        if input:
+            for var_name in input.parameters:
+                var_val = LLVM['module'].get_global_variable_named(str(var_name).lower())
+                _generate_assign(var_val, func.args[0])
+            if input.transition:
+                id_val = core.Constant.int(core.Type.int(), input.transition_id)
                 builder.call(runtr_func, [id_val])
 
         builder.ret_void()
@@ -304,7 +309,7 @@ def expression(expr):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Generate the code for a single variable reference '''
-    return LLVM['module'].get_global_variable_named(str(prim.value[0]))
+    return LLVM['module'].get_global_variable_named(str(prim.value[0]).lower())
 
 
 @expression.register(ogAST.PrimPath)
@@ -407,11 +412,17 @@ def _basic(expr):
 @expression.register(ogAST.ExprAssign)
 def _assign(expr):
     ''' Generate the code for an assign expression '''
-    builder = LLVM['builder']
-
     left = expression(expr.left)
     right = expression(expr.right)
+    _generate_assign(left, right)
+    return left
 
+
+def _generate_assign(left, right):
+    ''' Generate code for an assign from two LLVM values'''
+    # This is extracted as an standalone function because is used by
+    # multiple generation rules
+    builder = LLVM['builder']
     if left.type.kind == core.TYPE_POINTER and left.type.pointee.kind == core.TYPE_STRUCT:
         memcpy = _get_memcpy_intrinsic()
 
@@ -425,8 +436,6 @@ def _assign(expr):
         builder.call(memcpy, [left_ptr, right_ptr, size, align, volatile])
     else:
         builder.store(right, left)
-
-    return left
 
 
 @expression.register(ogAST.ExprOr)
