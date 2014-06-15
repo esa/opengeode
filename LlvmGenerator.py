@@ -51,10 +51,12 @@ LLVM = {
     'types': {}
 }
 
+
 @singledispatch
 def generate(ast):
     ''' Generate the code for an item of the AST '''
     raise TypeError('[Backend] Unsupported AST construct')
+
 
 # Processing of the AST
 
@@ -103,7 +105,7 @@ def _process(process):
     # Generare process-level vars
     for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
         var_type = _generate_type(var_asn1_type)
-        var_ptr = LLVM['module'].add_global_variable(var_type, str(var_name))
+        LLVM['module'].add_global_variable(var_type, str(var_name))
         if def_value:
             raise NotImplementedError
 
@@ -168,7 +170,7 @@ def _generate_runtr_func(process):
 
 
 def _generate_startup_func(process, process_name, runtr_func):
-    '''Generate code for the startup function'''
+    ''' Generate code for the startup function '''
     func_name = process_name + '_startup'
     func_type = core.Type.function(core.Type.void(), [])
     func = core.Function.new(LLVM['module'], func_type, func_name)
@@ -186,6 +188,7 @@ def _generate_startup_func(process, process_name, runtr_func):
 
 
 def _generate_input_signal(signal, inputs):
+    ''' Generate code for an input signal '''
     func_name = str(signal['name'])
     func_type = core.Type.function(core.Type.void(), [])
     func = core.Function.new(LLVM['module'], func_type, func_name)
@@ -256,6 +259,7 @@ def _task_forloop(task):
     '''
     raise NotImplementedError
 
+
 # ------ expressions --------
 
 @singledispatch
@@ -269,7 +273,6 @@ def expression(expr):
     raise TypeError('Unsupported expression: ' + str(expr))
 
 
-
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
@@ -277,7 +280,7 @@ def _primary_variable(prim):
 
 
 @expression.register(ogAST.PrimPath)
-def _prim_path(primaryId):
+def _prim_path(primary_id):
     '''
         Return the string of an element list (path)
         cases: a => 'l_a' (reference to a variable)
@@ -434,7 +437,6 @@ def _bitwise_operators(expr):
         return builder.xor(lefttmp, righttmp, 'xortmp')
 
 
-
 @expression.register(ogAST.ExprAppend)
 def _append(expr):
     ''' Generate code for the APPEND construct: a // b '''
@@ -505,7 +507,7 @@ def _mantissa_base_exp(primary):
 
 
 @expression.register(ogAST.PrimIfThenElse)
-def _if_then_else(ifThenElse):
+def _if_then_else(ifthen):
     ''' Return string and statements for ternary operator '''
     raise NotImplementedError
 
@@ -595,7 +597,7 @@ def _label(tr):
 
 @generate.register(ogAST.Transition)
 def _transition(tr):
-    ''' generate the code for a transition '''
+    ''' Generate the code for a transition '''
     for action in tr.actions:
         generate(action)
         if isinstance(action, ogAST.Label):
@@ -668,6 +670,7 @@ def _generate_type(ty):
 
 
 def _get_memcpy_intrinsic():
+    ''' Return the LLVM Memcpy Intrinsic '''
     arg_tys = [
         core.Type.pointer(core.Type.int(8)),
         core.Type.pointer(core.Type.int(8)),
