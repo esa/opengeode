@@ -105,7 +105,7 @@ def flatten(process, sep=u'_'):
         set_terminator_states(state, prefix)
         set_transition_states(state, prefix)
 
-        state.mapping = {prefix + key:state.mapping.pop(key)
+        state.mapping = {prefix + key: state.mapping.pop(key)
                          for key in state.mapping.keys()}
         process.transitions.extend(state.transitions)
 
@@ -252,6 +252,7 @@ def rename_everything(ast, from_name, to_name):
     '''
     _, _, _ = ast, from_name, to_name
 
+
 @rename_everything.register(ogAST.Automaton)
 def _rename_automaton(ast, from_name, to_name):
     ''' Renaming at Automaton top level (content of digragrams) '''
@@ -297,6 +298,7 @@ def _rename_label(ast, from_name, to_name):
         ast.inputString = to_name
     rename_everything(ast.transition, from_name, to_name)
 
+
 @rename_everything.register(ogAST.Decision)
 def _rename_decision(ast, from_name, to_name):
     ''' Rename elements in decision '''
@@ -312,7 +314,7 @@ def _rename_answer(ast, from_name, to_name):
     if ast.kind in ('constant', 'open_range'):
         rename_everything(ast.constant, from_name, to_name)
     elif ast.kind == 'closed_range':
-        pass # TODO when supported
+        pass  # TODO when supported
     rename_everything(ast.transition, from_name, to_name)
 
 
@@ -322,6 +324,7 @@ def _rename_transition(ast, from_name, to_name):
     for each in chain(ast.actions, ast.terminators):
         # Label, output, task, decision, terminators
         rename_everything(each, from_name, to_name)
+
 
 @rename_everything.register(ogAST.Terminator)
 def _rename_terminator(ast, from_name, to_name):
@@ -338,6 +341,7 @@ def _rename_task_assign(ast, from_name, to_name):
     for each in ast.elems:
         rename_everything(each, from_name, to_name)
 
+
 @rename_everything.register(ogAST.TaskForLoop)
 def _rename_forloop(ast, from_name, to_name):
     ''' List of FOR loops '''
@@ -346,6 +350,7 @@ def _rename_forloop(ast, from_name, to_name):
         rename_everything(each['range']['start'], from_name, to_name)
         rename_everything(each['range']['stop'], from_name, to_name)
         rename_everything(each['transition'], from_name, to_name)
+
 
 @rename_everything.register(ogAST.ExprPlus)
 @rename_everything.register(ogAST.ExprMul)
@@ -371,6 +376,7 @@ def _rename_expr(ast, from_name, to_name):
     rename_everything(ast.left, from_name, to_name)
     rename_everything(ast.right, from_name, to_name)
 
+
 @rename_everything.register(ogAST.PrimPath)
 @rename_everything.register(ogAST.PrimVariable)
 def _rename_path(ast, from_name, to_name):
@@ -378,11 +384,13 @@ def _rename_path(ast, from_name, to_name):
     if ast.value[0].lower() == from_name.lower():
         ast.value[0] = to_name
 
+
 @rename_everything.register(ogAST.PrimIfThenElse)
 def _rename_ifhthenelse(ast, from_name, to_name):
     ''' Rename expressions in If-Then-Else-Fi construct '''
     for expr in ('if', 'then', 'else'):
         rename_everything(ast.value[expr], from_name, to_name)
+
 
 def find_labels(trans):
     '''
@@ -404,7 +412,8 @@ def find_labels(trans):
             new_trans = ogAST.Transition()
             # Create a floating label
             flab = ogAST.Floating_label(label=action)
-            new_trans.actions = trans.actions[slice(idx+1, len(trans.actions))]
+            new_trans.actions = \
+                    trans.actions[slice(idx + 1, len(trans.actions))]
             new_trans.terminator = trans.terminator
             new_trans.terminators = trans.terminators
             flab.transition = new_trans
@@ -423,8 +432,7 @@ def find_labels(trans):
                 for new_fl in find_labels(answer.transition):
                     # Append the remaining actions of the transition
                     if not new_fl.transition.terminator:
-                        new_fl.transition.actions.extend(
-                               trans.actions[slice(idx+1, len(trans.actions))])
+                        new_fl.transition.actions.extend(trans.actions
+                                          [slice(idx + 1, len(trans.actions))])
                         new_fl.transition.terminator = trans.terminator
                     yield new_fl
-

@@ -20,9 +20,7 @@
 """
 
 import logging
-import math
 import re
-from itertools import chain
 from PySide import QtGui, QtCore
 
 try:
@@ -174,6 +172,7 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
         #update(self.scene())
         pass
 
+
 def edges(scene, node):
     ''' Return all edges of a given node '''
     for item in scene.items():
@@ -256,7 +255,7 @@ def preprocess_nodes(my_graph, bounding_rect, dpi):
                          shape=each.graph_attr['shape'],
                          label=each.graph_attr['label'],
                          style=each.graph_attr['style'],
-                         name='cluster_'+each.graph_attr['label'],
+                         name='cluster_' + each.graph_attr['label'],
                          kind='cluster')
         attrs.append(attr)
     for node in my_graph.nodes_iter():
@@ -337,13 +336,12 @@ def update(scene):
     for edge in EDGES:
         graph.add_edge(edge, label=edge.attr.get('label') or '')
 
-
     #print graph.to_string()
     if nodes:
         before = scene.itemsBoundingRect().center()
-        before_pos = graph.get_node(nodes[0]['name']).attr['pos']
+        #before_pos = graph.get_node(nodes[0]['name']).attr['pos']
         render_statechart(scene, graph, keep_pos=True)
-        after_pos = graph.get_node(nodes[0]['name']).attr['pos']
+        #after_pos = graph.get_node(nodes[0]['name']).attr['pos']
         #print before_pos,after_pos
         delta = scene.itemsBoundingRect().center() - before
         # graphviz translates the graph to pos (0, 0) -> move it back
@@ -425,7 +423,7 @@ def create_dot_graph(root_ast):
         # this will have to be recursive
         subnodes = (name for name in graph.iternodes()
                     if name.startswith(each.statename.lower() + '_'))
-        graph.add_subgraph(subnodes, name='cluster_'+each.statename.lower(),
+        graph.add_subgraph(subnodes, name='cluster_' + each.statename.lower(),
                            label=each.statename.lower(),
                            style='rounded', shape='record')
     for state, inputs in root_ast.mapping.viewitems():

@@ -22,7 +22,7 @@ __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
            'StateStart', 'Process']
 
-import traceback
+#import traceback
 import logging
 
 from PySide.QtCore import Qt, QPoint, QRect, QRectF
@@ -145,6 +145,7 @@ class Connect(Input):
     resizeable = False
     # Symbol must not use antialiasing, otherwise the middle line is too thick
     _antialiasing = False
+
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
         self.setPen(QPen(Qt.blue))
@@ -518,6 +519,7 @@ class ProcedureStop(Join):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
+
     def __init__(self, parent=None, ast=None):
         if not ast:
             ast = ogAST.Terminator(defName='')
@@ -920,7 +922,6 @@ class State(VerticalSymbol):
                 'state', self.PR_state())
             return ast, terminators
 
-
     def parse_composite_state(self):
         ''' Return PR string corresponding to the nested part of the state '''
         entry_points, exit_points = [], []
@@ -939,7 +940,6 @@ class State(VerticalSymbol):
         result.extend(self.nested_scene.get_pr_string())
         result.append('ENDSUBSTRUCTURE;')
         return u'\n'.join(result)
-
 
     def PR_state(self, recursive=True):
         ''' Parse state '''

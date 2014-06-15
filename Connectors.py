@@ -15,17 +15,17 @@
     Contact: maxime.perrotin@esa.int
 """
 
-import os
-import sys
 import math
 import logging
-from collections import namedtuple
 
 from PySide.QtCore import Qt, QPointF, QLineF
 
 from PySide.QtGui import QGraphicsPathItem, QPainterPath, QGraphicsItem, QPen,\
                          QPainter, QFont, QGraphicsTextItem, QColor, \
                          QFontMetrics
+
+LOG = logging.getLogger(__name__)
+
 
 # pylint: disable=R0904
 class Connection(QGraphicsPathItem, object):
@@ -39,7 +39,7 @@ class Connection(QGraphicsPathItem, object):
         super(Connection, self).__init__(parent)
         self.parent = parent
         self.child = child
-        self._start_point =  None
+        self._start_point = None
         self._end_point = None
         self._middle_points = []
         pen = QPen()
@@ -91,13 +91,12 @@ class Connection(QGraphicsPathItem, object):
             angle = math.pi * 2 - angle
         arrow_size = 10.0
         arrow_p1 = end_point + QPointF(
-                math.sin(angle - math.pi/3) * arrow_size,
-                math.cos(angle - math.pi/3) * arrow_size)
+                math.sin(angle - math.pi / 3) * arrow_size,
+                math.cos(angle - math.pi / 3) * arrow_size)
         arrow_p2 = end_point + QPointF(
-                math.sin(angle - math.pi + math.pi/3) * arrow_size,
-                math.cos(angle - math.pi + math.pi/3) * arrow_size)
+                math.sin(angle - math.pi + math.pi / 3) * arrow_size,
+                math.cos(angle - math.pi + math.pi / 3) * arrow_size)
         return (arrow_p1, arrow_p2)
-
 
     def draw_arrow_head(self, shape, origin='head', kind='simple'):
         ''' Generic function to draw a simple arrow '''
@@ -300,7 +299,6 @@ class Connectionpoint(Controlpoint):
         self.setPos(pos.x() - 5, pos.y() - 5)
         # Symbol actually owning the connection point
         self.symbol = symbol
-
 
     def update_position(self):
         '''

@@ -95,8 +95,8 @@ def generate(ast):
     raise TypeError('[AdaGenerator] Unsupported AST construct')
     return [], []
 
-# Processing of the AST
 
+# Processing of the AST
 @generate.register(ogAST.Process)
 def _process(process):
     ''' Generate the code for a complete process (AST Top level) '''
@@ -133,7 +133,6 @@ def _process(process):
                         t=var_type.ReferencedTypeName.replace('-', '_'),
                         default=u' := ' + dstr if def_value else u''))
 
-
     # Add the process states list to the process-level variables
     statelist = ', '.join(name for name in process.mapping.iterkeys()
                              if not name.endswith(u'START')) or 'No_State'
@@ -150,7 +149,7 @@ def _process(process):
     # Add function allowing to trace current state as a string
     #process_level_decl.append('function get_state return String;')
     #process_level_decl.append('pragma export(C, get_state, "{}_state");'
-    #                                                     .format(process_name))
+    #                                                    .format(process_name))
 
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
@@ -161,7 +160,6 @@ def _process(process):
     # Generate the code of the start transition:
     start_transition = ['begin',
                         'runTransition(0);']
-
 
     # Generate the TASTE template
     try:
@@ -245,7 +243,7 @@ package {process_name} is'''.format(process_name=process_name,
             # Check for nested states to call optional exit procedure
             sep = u'\u00dc'
             state_tree = state.split(sep)
-            context=process
+            context = process
             exitlist = []
             current = ''
             trans = input_def and process.transitions[input_def.transition_id]
@@ -309,7 +307,8 @@ package {process_name} is'''.format(process_name=process_name,
                 par=param, partype=typename))
         if params:
             ri_header += u'(' + u';'.join(params) + ')'
-        ads_template.append(u'--  Sync required interface "' + proc.inputString)
+        ads_template.append(
+                           u'--  Sync required interface "' + proc.inputString)
         ads_template.append(ri_header + u';')
         ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
                 .format(sig=proc.inputString, proc=process_name))
@@ -347,7 +346,6 @@ package {process_name} is'''.format(process_name=process_name,
         code_tr, tr_local_decl = generate(proc_tr)
         code_transitions.append(code_tr)
         local_decl_transitions.extend(tr_local_decl)
-
 
     # Generate code for the floating labels
     code_labels = []
@@ -403,7 +401,6 @@ package {process_name} is'''.format(process_name=process_name,
     #taste_template.append('end get_state;')
     #taste_template.append('\n')
 
-
     taste_template.extend(start_transition)
     taste_template.append('end {process_name};'
             .format(process_name=process_name))
@@ -412,12 +409,12 @@ package {process_name} is'''.format(process_name=process_name,
             .format(process_name=process_name))
 
     with open(process_name + '.adb', 'w') as ada_file:
-        ada_file.write \
-                (u'\n'.join(format_ada_code(taste_template)).encode('latin1'))
+        ada_file.write(
+                u'\n'.join(format_ada_code(taste_template)).encode('latin1'))
 
     with open(process_name + '.ads', 'w') as ada_file:
-        ada_file.write \
-                (u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
+        ada_file.write(
+                u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
 
 
 def write_statement(param, newline):
@@ -618,8 +615,8 @@ def _task_forloop(task):
         if loop['range']:
             start_str, stop_str = '0', ''
             if loop['range']['start']:
-                start_stmt, start_str, start_local = expression\
-                                                       (loop['range']['start'])
+                start_stmt, start_str, start_local = expression(
+                                                       loop['range']['start'])
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
                 # ASN.1 Integers are 64 bits - we need to convert to 32 bits
@@ -696,6 +693,7 @@ def expression(expr):
     _ = expr
     raise TypeError('Unsupported expression: ' + str(expr))
     return [], '', []
+
 
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
@@ -881,6 +879,7 @@ def _basic_operators(expr):
     local_decl.extend(left_local)
     local_decl.extend(right_local)
     return code, ada_string, local_decl
+
 
 @expression.register(ogAST.ExprOr)
 @expression.register(ogAST.ExprAnd)
@@ -1082,6 +1081,7 @@ def _mantissa_base_exp(primary):
     _ = primary
     return [], '', []
 
+
 @expression.register(ogAST.PrimIfThenElse)
 def _if_then_else(ifThenElse):
     ''' Return string and statements for ternary operator '''
@@ -1264,6 +1264,7 @@ def _decision(dec):
         code.append('end if;')
     return code, local_decl
 
+
 @generate.register(ogAST.Label)
 def _label(lab):
     ''' Transition following labels are generated in a separate section
@@ -1325,8 +1326,8 @@ def _transition(tr):
                 string = ''
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
-                        stmts, string, local = expression\
-                                                    (tr.terminator.return_expr)
+                        stmts, string, local = expression(
+                                                    tr.terminator.return_expr)
                         code.extend(stmts)
                         local_decl.extend(local)
                     code.append('return{};'
@@ -1509,6 +1510,7 @@ def traceability(symbol):
         trace.extend(traceability(symbol.comment))
     return trace
 
+
 def format_ada_code(stmts):
     ''' Indent properly the Ada code '''
     indent = 0
@@ -1517,7 +1519,7 @@ def format_ada_code(stmts):
         elems = line.strip().split()
         if elems and elems[0].startswith(('when', 'end', 'elsif', 'else')):
             indent = max(indent - 1, 0)
-        if elems and elems[-1] == 'case;': # Corresponds to end case;
+        if elems and elems[-1] == 'case;':  # Corresponds to end case;
             indent = max(indent - 1, 0)
         if line:
             yield indent_pattern * indent + line

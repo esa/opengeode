@@ -28,14 +28,11 @@ __author__ = 'Maxime Perrotin'
 
 import sys
 import os
-import importlib
 import logging
 import traceback
 from itertools import chain, permutations
 import antlr3
 import antlr3.tree
-
-from singledispatch import singledispatch
 
 import sdl92Lexer as lexer
 from sdl92Parser import sdl92Parser
@@ -513,8 +510,8 @@ def check_type_compatibility(primary, typeRef, context):
                     else:
                         # Compare the types for semantic equivalence
                         try:
-                            compare_types\
-                              (primary.value[ufield].exprType, fd_data.type)
+                            compare_types(
+                                  primary.value[ufield].exprType, fd_data.type)
                         except TypeError as err:
                             raise TypeError('Field ' + ufield +
                                         ' is not of the proper type, i.e. ' +
@@ -542,8 +539,8 @@ def check_type_compatibility(primary, typeRef, context):
             try:
                 compare_types(value.exprType, choice_field_type)
             except TypeError as err:
-                raise TypeError\
-                           ('Field {field} in CHOICE is not of type {t1} - {e}'
+                raise TypeError(
+                            'Field {field} in CHOICE is not of type {t1} - {e}'
                             .format(field=primary.value['choice'],
                                     t1=type_name(choice_field_type),
                                     e=str(err)))
@@ -580,6 +577,7 @@ def check_type_compatibility(primary, typeRef, context):
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
                                 t1=type_name(typeRef)))
+
 
 def compare_types(type_a, type_b):
     '''
@@ -701,7 +699,7 @@ def find_type(path, context):
                     # XXX length et abs: we must set Min and Max
                     # and abs may return a RealType, not always integer
                     result = type('lenabs', (object,), {'kind': 'IntegerType'})
-                else: # write and writeln return void
+                else:  # write and writeln return void
                     pass
     if result.kind == 'ReferenceType':
         # We have more than one element and the first one is of type 'result'
@@ -923,6 +921,7 @@ def expression_list(root, context):
         result.append(exp)
     return result, errors, warnings
 
+
 def primary_value(root, context=None):
     '''
         Process a primary expression such as a!b(4)!c(hello)
@@ -938,6 +937,7 @@ def primary_value(root, context=None):
     errors = []
     prim = None
     global TMPVAR
+
     def primary_elem(child):
         ''' Process a single token '''
         prim = None
@@ -964,8 +964,9 @@ def primary_value(root, context=None):
             prim = ogAST.PrimStringLiteral()
             prim.value = child.getChild(0).text
             prim.exprType = type('PrStr', (object,),
-                          {'kind': 'StringType', 'Min': str(len(prim.value)-2),
-                           'Max': str(len(prim.value)-2)})
+                          {'kind': 'StringType',
+                           'Min': str(len(prim.value) - 2),
+                           'Max': str(len(prim.value) - 2)})
         elif child.type == lexer.FLOAT2:
             prim = ogAST.PrimMantissaBaseExp()
             mant = float(child.getChild(0).toString())
@@ -1073,7 +1074,7 @@ def primary_value(root, context=None):
         except TypeError as err:
             errors.append('Type of expression "'
                            + get_input_string(root)
-                           + '" not found: ' +str(err))
+                           + '" not found: ' + str(err))
         except AttributeError as err:
             LOG.debug('[find_types] ' + str(err))
     if prim:
@@ -1130,7 +1131,9 @@ def primary(root, context):
         prim.inputString = get_input_string(root)
         prim.line = root.getLine()
         prim.charPositionInLine = root.getCharPositionInLine()
+        prim.op_not, prim.op_minus = op_not, op_minus
     return prim, errors, warnings
+
 
 def expression(root, context):
     ''' Expression analysis (e.g. 5+5*hello(world)!foo) '''
@@ -1231,6 +1234,7 @@ def expression(root, context):
     TMPVAR += 1
     return expr, errors, warnings
 
+
 def variables(root, ta_ast, context):
     ''' Process declarations of variables (dcl a,b Type := 5) '''
     var = []
@@ -1252,8 +1256,6 @@ def variables(root, ta_ast, context):
             def_value, err, warn = expression(child.getChild(0), context)
             errors.extend(err)
             warnings.extend(warn)
-            ground_error = False
-
             expr = ogAST.ExprAssign()
             expr.left = ogAST.PrimPath()
             expr.left.inputString = var[-1]
@@ -1288,6 +1290,7 @@ def variables(root, ta_ast, context):
         errors.append('Cannot do semantic checks on variable declarations')
     return errors, warnings
 
+
 def dcl(root, ta_ast, context):
     ''' Process a set of variable declarations '''
     errors = []
@@ -1301,6 +1304,7 @@ def dcl(root, ta_ast, context):
             warnings.append(
                     'Unsupported dcl construct, type: ' + str(child.type))
     return errors, warnings
+
 
 def fpar(root):
     ''' Process a formal parameter declaration '''
@@ -1605,6 +1609,7 @@ def text_area_content(root, ta_ast, context):
                     str(child.type))
     return errors, warnings
 
+
 def text_area(root, parent=None, context=None):
     ''' Process a text area (DCL, procedure, operators declarations '''
     errors = []
@@ -1639,6 +1644,7 @@ def text_area(root, parent=None, context=None):
         warnings = [[w, [ta.pos_x, ta.pos_y]] for w in warnings]
     return ta, errors, warnings
 
+
 def signal(root):
     ''' SIGNAL definition: name and optional list of types '''
     errors, warnings = [], []
@@ -1662,12 +1668,14 @@ def signal(root):
                   ' than one parameter. Check signal declaration.')
     return new_signal, errors, warnings
 
+
 def single_route(root):
     ''' Route (from id to id with [signal id] '''
     route = {'source': root.getChild(0).text,
              'dest': root.getChild(1).text,
              'signals': [sig.text for sig in root.getChildren()[2:]]}
     return route
+
 
 def channel_signalroute(root):
     ''' Channel/signalroute definition (connections) '''
@@ -1680,6 +1688,7 @@ def channel_signalroute(root):
         elif child.type == lexer.ROUTE:
             edge['routes'].append(single_route(child))
     return edge
+
 
 def block_definition(root, parent):
     ''' BLOCK entity definition '''
@@ -1714,6 +1723,7 @@ def block_definition(root, parent):
             warnings.append('Unsupported block child type: ' +
                 str(child.type))
     return block, errors, warnings
+
 
 def system_definition(root, parent):
     ''' SYSTEM part - contains blocks, procedures and channels '''
@@ -1753,6 +1763,7 @@ def system_definition(root, parent):
             warnings.append('Unsupported construct in system: ' +
                     str(child.type))
     return system, errors, warnings
+
 
 def process_definition(root, parent=None, context=None):
     ''' Process definition analysis '''
@@ -1841,6 +1852,7 @@ def process_definition(root, parent=None, context=None):
                              sdl92Parser.tokenNames[child.type] +
                             ' - line ' + str(child.getLine()))
     return process, errors, warnings
+
 
 def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
@@ -1943,6 +1955,7 @@ def input_part(root, parent, context):
     # level (we counted the number of terminators before parsing the input)
     i.terminators = list(context.terminators[terminators:])
     return i, errors, warnings
+
 
 def state(root, parent, context):
     '''
@@ -2125,6 +2138,7 @@ def cif(root):
         result.append(val)
     return result
 
+
 def start(root, parent=None, context=None):
     ''' Parse the START transition '''
     errors = []
@@ -2166,6 +2180,7 @@ def start(root, parent=None, context=None):
     s.terminators = list(context.terminators[terminators:])
     return s, errors, warnings
 
+
 def end(root, parent=None, context=None):
     ''' Parse a comment symbol '''
     c = ogAST.Comment()
@@ -2194,7 +2209,7 @@ def outputbody(root, context):
     ''' Parse an output body (the content excluding the CIF statement) '''
     errors = []
     warnings = []
-    body = {'outputName': '', 'params':[]}
+    body = {'outputName': '', 'params': []}
     for child in root.getChildren():
         if child.type == lexer.ID:
             body['outputName'] = child.text
@@ -2233,7 +2248,7 @@ def output(root, parent, out_ast=None, context=None):
     errors = []
     warnings = []
     coord = False
-    out_ast = out_ast or ogAST.Output() # syntax checker passes no ast
+    out_ast = out_ast or ogAST.Output()  # syntax checker passes no ast
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -2670,8 +2685,8 @@ def for_loop(root, context):
             if forloop['list']:
                 if forloop['list'].exprType == UNKNOWN_TYPE:
                     try:
-                        forloop['list'].exprType = find_variable\
-                                    (forloop['list'].inputString, context)
+                        forloop['list'].exprType = find_variable(
+                                          forloop['list'].inputString, context)
                     except AttributeError:
                         errors.append('In FOR loop: variable {} is undefined'
                                   .format(forloop['list'].inputString))
@@ -2845,6 +2860,7 @@ def pr_file(root):
         errors.extend(err)
         warnings.extend(warn)
         ast.systems.append(system)
+
         def find_processes(block):
             ''' Recursively find processes in a system '''
             try:
@@ -2969,7 +2985,7 @@ def parseSingleElement(elem='', string=''):
         try:
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
-        except AttributeError as err:
+        except AttributeError:
             # Syntax checker has no visibility on variables and types
             # so we have to discard exceptions sent by e.g. find_variable
             pass
