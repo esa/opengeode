@@ -67,13 +67,6 @@ def _process(process):
     process_name = str(process.processName)
     LOG.info('Generating LLVM IR code for process ' + str(process_name))
 
-    # In case model has nested states, flatten everything
-    Helper.flatten(process)
-
-    # Make an maping {input: {state: transition...}} in order to easily
-    # generate the lookup tables for the state machine runtime
-    mapping = Helper.map_input_state(process)
-
     # Initialise LLVM global structure
     LLVM['module'] = core.Module.new(process_name)
     LLVM['pass_manager'] = passes.FunctionPassManager.new(LLVM['module'])
@@ -82,16 +75,23 @@ def _process(process):
     # Set up the optimizer pipeline.
     # Start with registering info about how the
     # target lays out data structures.
-#   LLVM['pass_manager'].add(LLVM['executor'].target_data)
-#   # Do simple "peephole" optimizations and bit-twiddling optzns.
-#   LLVM['pass_manager'].add(passes.PASS_INSTRUCTION_COMBINING)
-#   # Reassociate expressions.
-#   LLVM['pass_manager'].add(passes.PASS_REASSOCIATE)
-#   # Eliminate Common SubExpressions.
-#   LLVM['pass_manager'].add(passes.PASS_GVN)
-#   # Simplify the control flow graph (deleting unreachable blocks, etc).
-#   LLVM['pass_manager'].add(passes.PASS_CFG_SIMPLIFICATION)
-#   LLVM['pass_manager'].initialize()
+    #   LLVM['pass_manager'].add(LLVM['executor'].target_data)
+    #   # Do simple "peephole" optimizations and bit-twiddling optzns.
+    #   LLVM['pass_manager'].add(passes.PASS_INSTRUCTION_COMBINING)
+    #   # Reassociate expressions.
+    #   LLVM['pass_manager'].add(passes.PASS_REASSOCIATE)
+    #   # Eliminate Common SubExpressions.
+    #   LLVM['pass_manager'].add(passes.PASS_GVN)
+    #   # Simplify the control flow graph (deleting unreachable blocks, etc).
+    #   LLVM['pass_manager'].add(passes.PASS_CFG_SIMPLIFICATION)
+    #   LLVM['pass_manager'].initialize()
+
+    # In case model has nested states, flatten everything
+    Helper.flatten(process)
+
+    # Make an maping {input: {state: transition...}} in order to easily
+    # generate the lookup tables for the state machine runtime
+    mapping = Helper.map_input_state(process)
 
     # Initialize states enum
     for name in process.mapping.iterkeys():
@@ -101,6 +101,18 @@ def _process(process):
 
     # Generate state var
     LLVM['module'].add_global_variable(core.Type.int(), 'state')
+
+    # Initialize output signals
+    for signal in process.output_signals:
+        param_tys = [core.Type.pointer(_generate_type(signal['type']))]
+        func_ty = core.Type.function(core.Type.void(), param_tys)
+        core.Function.new(LLVM['module'], func_ty, str(signal['name']))
+
+    # Initialize external procedures
+    for proc in [proc for proc in process.procedures if proc.external]:
+        param_tys = [core.Type.pointer(_generate_type(p['type'])) for p in proc.fpar]
+        func_ty = core.Type.function(core.Type.void(), param_tys)
+        core.Function.new(LLVM['module'], func_ty, str(proc.inputString))
 
     # Generare process-level vars
     for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
@@ -225,15 +237,40 @@ def _generate_input_signal(signal, inputs):
     func.verify()
 
 
-def write_statement(param, newline):
-    ''' Generate the code for the special "write" operator '''
-    raise NotImplementedError
-
-
 @generate.register(ogAST.Output)
 @generate.register(ogAST.ProcedureCall)
 def _call_external_function(output):
     ''' Generate the code of a set of output or procedure call statement '''
+
+    for out in output.output:
+        name = out['outputName'].lower()
+
+        if name in ('write', 'writeln'):
+            _generate_write(out['params'])
+            continue
+        elif name == 'reset_timer':
+            _generate_reset_timer(out['params'])
+            continue
+        elif name == 'set_timer':
+            _generate_set_timer(out['params'])
+            continue
+
+        func = LLVM['module'].get_function_named(str(name))
+        LLVM['builder'].call(func, [expression(p) for p in out.get('params', [])])
+
+
+def _generate_write(params):
+    ''' Generate the code for the write operator '''
+    raise NotImplementedError
+
+
+def _generate_reset_timer(params):
+    ''' Generate the code for the reset timer operator '''
+    raise NotImplementedError
+
+
+def _generate_set_timer(params):
+    ''' Generate the code for the set timer operator '''
     raise NotImplementedError
 
 
