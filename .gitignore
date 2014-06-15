@@ -12,3 +12,4 @@ tests/**/*.cfg
 tests/**/result
 tests/**/testcase
 tests/**/result
+tests/**/python.stg
