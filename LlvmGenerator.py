@@ -62,7 +62,7 @@ def generate(ast):
 
 @generate.register(ogAST.Process)
 def _process(process):
-    ''' Generate LLVM IR code (incomplete) '''
+    ''' Generate LLVM IR code '''
 
     process_name = str(process.processName)
     LOG.info('Generating LLVM IR code for process ' + str(process_name))
@@ -121,7 +121,7 @@ def _process(process):
 
 
 def _generate_runtr_func(process):
-    '''Generate code for the run_transition function'''
+    ''' Generate code for the run_transition function '''
     func_name = 'run_transition'
     func_type = core.Type.function(core.Type.void(), [core.Type.int()])
     func = core.Function.new(LLVM['module'], func_type, func_name)
@@ -239,7 +239,7 @@ def _call_external_function(output):
 
 @generate.register(ogAST.TaskAssign)
 def _task_assign(task):
-    ''' A list of assignments in a task symbol '''
+    ''' Generate the code of a list of assignments '''
     for expr in task.elems:
         expression(expr)
 
@@ -252,11 +252,7 @@ def _task_informal_text(task):
 
 @generate.register(ogAST.TaskForLoop)
 def _task_forloop(task):
-    '''
-        Return the code corresponding to a for loop. Two forms are possible:
-        for x in range ([start], stop [, step])
-        for x in iterable (a SEQUENCE OF)
-    '''
+    ''' Generate the code for a for loop '''
     raise NotImplementedError
 
 
@@ -264,32 +260,19 @@ def _task_forloop(task):
 
 @singledispatch
 def expression(expr):
-    ''' Generate the code for Expression-classes, returning 3 things:
-        - list of statements
-        - useable string corresponding to the evaluation of the expression,
-        - list of local declarations
-        (API can differ depending on the backend)
-    '''
+    ''' Generate the code for Expression-classes '''
     raise TypeError('Unsupported expression: ' + str(expr))
 
 
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
-    ''' Single variable reference '''
+    ''' Generate the code for a single variable reference '''
     return LLVM['module'].get_global_variable_named(str(prim.value[0]))
 
 
 @expression.register(ogAST.PrimPath)
 def _prim_path(primary_id):
-    '''
-        Return the string of an element list (path)
-        cases: a => 'l_a' (reference to a variable)
-        a_timer => 'a_timer'  (reference to a timer)
-        a!b => a.b (field of a structure)
-        a!b if a is a CHOICE => TypeOfa_b_get(a)
-        a(Expression) => a(ExpressionSolver) (array index)
-        Expression can be complex (if-then-else-fi..)
-    '''
+    ''' Generate the code for an of an element list (path) '''
     raise NotImplementedError
 
 
@@ -305,8 +288,8 @@ def _prim_path(primary_id):
 @expression.register(ogAST.ExprDiv)
 @expression.register(ogAST.ExprMod)
 @expression.register(ogAST.ExprRem)
-def _basic_operators(expr):
-    ''' Expressions with two sides '''
+def _basic(expr):
+    ''' Generate the code for an arithmetic of relational expression '''
     builder = LLVM['builder']
     lefttmp = expression(expr.left)
     righttmp = expression(expr.right)
@@ -386,7 +369,7 @@ def _basic_operators(expr):
 
 @expression.register(ogAST.ExprAssign)
 def _assign(expr):
-    ''' Assign expression '''
+    ''' Generate the code for an assign expression '''
     builder = LLVM['builder']
 
     left = expression(expr.left)
@@ -412,8 +395,8 @@ def _assign(expr):
 @expression.register(ogAST.ExprOr)
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
-def _bitwise_operators(expr):
-    ''' Logical operators '''
+def _logical(expr):
+    ''' Generate the code for a logical expression '''
     builder = LLVM['builder']
 
     lefttmp = expression(expr.left)
@@ -445,7 +428,7 @@ def _append(expr):
 
 @expression.register(ogAST.ExprIn)
 def _expr_in(expr):
-    ''' IN expressions: check if item is in a SEQUENCE OF '''
+    ''' Generate the code for an in expression '''
     raise NotImplementedError
 
 
@@ -508,19 +491,19 @@ def _mantissa_base_exp(primary):
 
 @expression.register(ogAST.PrimIfThenElse)
 def _if_then_else(ifthen):
-    ''' Return string and statements for ternary operator '''
+    ''' Generate the code for ternary operator '''
     raise NotImplementedError
 
 
 @expression.register(ogAST.PrimSequence)
 def _sequence(seq):
-    ''' Return Ada string for an ASN.1 SEQUENCE '''
+    ''' Generate the code for an ASN.1 SEQUENCE '''
     raise NotImplementedError
 
 
 @expression.register(ogAST.PrimSequenceOf)
 def _sequence_of(seqof):
-    ''' Return Ada string for an ASN.1 SEQUENCE OF '''
+    ''' Generate the code for an ASN.1 SEQUENCE OF '''
     builder = LLVM['builder']
 
     ty = _generate_type(seqof.exprType)
@@ -539,7 +522,7 @@ def _sequence_of(seqof):
 
 @expression.register(ogAST.PrimChoiceItem)
 def _choiceitem(choice):
-    ''' Return the Ada code for a CHOICE expression '''
+    ''' Generate the code for a CHOICE expression '''
     raise NotImplementedError
 
 
@@ -589,9 +572,7 @@ def _decision(dec):
 
 @generate.register(ogAST.Label)
 def _label(tr):
-    ''' Transition following labels are generated in a separate section
-        for visibility reasons (see Ada scope)
-    '''
+    ''' TGenerate the code for a Label '''
     raise NotImplementedError
 
 
@@ -607,6 +588,7 @@ def _transition(tr):
 
 
 def _generate_terminator(term):
+    ''' Generate the code for a transition termiantor '''
     builder = LLVM['builder']
     id_ptr = LLVM['named_values']['id']
     if term.label:
@@ -632,7 +614,7 @@ def _generate_terminator(term):
 
 @generate.register(ogAST.Floating_label)
 def _floating_label(label):
-    ''' Generate the code for a floating label (Ada label + transition) '''
+    ''' Generate the code for a floating label '''
     raise NotImplementedError
 
 
