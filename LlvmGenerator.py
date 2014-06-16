@@ -138,38 +138,37 @@ def _generate_runtr_func(process):
     body_block = func.append_basic_block('body')
     exit_block = func.append_basic_block('exit')
 
-    builder = core.Builder.new(entry_block)
-    g.builder = builder
+    g.builder = core.Builder.new(entry_block)
 
     # entry
-    id_ptr = builder.alloca(g.i32, None, 'id')
+    id_ptr = g.builder.alloca(g.i32, None, 'id')
     g.scope['id'] = id_ptr
-    builder.store(func.args[0], id_ptr)
-    builder.branch(cond_block)
+    g.builder.store(func.args[0], id_ptr)
+    g.builder.branch(cond_block)
 
     # cond
-    builder.position_at_end(cond_block)
+    g.builder.position_at_end(cond_block)
     id_ptr = func.args[0]
     no_tr_cons = core.Constant.int(g.i32, -1)
-    cond_val = builder.icmp(core.ICMP_NE, id_ptr, no_tr_cons, 'cond')
-    builder.cbranch(cond_val, body_block, exit_block)
+    cond_val = g.builder.icmp(core.ICMP_NE, id_ptr, no_tr_cons, 'cond')
+    g.builder.cbranch(cond_val, body_block, exit_block)
 
     # body
-    builder.position_at_end(body_block)
-    switch = builder.switch(func.args[0], exit_block)
+    g.builder.position_at_end(body_block)
+    switch = g.builder.switch(func.args[0], exit_block)
 
     # transitions
     for idx, tr in enumerate(process.transitions):
         tr_block = func.append_basic_block('tr%d' % idx)
         const = core.Constant.int(g.i32, idx)
         switch.add_case(const, tr_block)
-        builder.position_at_end(tr_block)
+        g.builder.position_at_end(tr_block)
         generate(tr)
-        builder.branch(cond_block)
+        g.builder.branch(cond_block)
 
     # exit
-    builder.position_at_end(exit_block)
-    builder.ret_void()
+    g.builder.position_at_end(exit_block)
+    g.builder.ret_void()
 
     func.verify()
     g.scope.clear()
