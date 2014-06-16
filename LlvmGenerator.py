@@ -48,7 +48,9 @@ LLVM = {
     # ASN.1 data view
     'dataview': None,
     # Generated types
-    'types': {}
+    'types': {},
+    # Global strings
+    'strings': {}
 }
 
 
@@ -67,7 +69,7 @@ def _process(process):
     process_name = str(process.processName)
     LOG.info('Generating LLVM IR code for process ' + str(process_name))
 
-    # Initialise LLVM global structure
+    # Initialize LLVM global structure
     LLVM['module'] = core.Module.new(process_name)
     LLVM['pass_manager'] = passes.FunctionPassManager.new(LLVM['module'])
     LLVM['executor'] = ee.ExecutionEngine.new(LLVM['module'])
@@ -85,6 +87,13 @@ def _process(process):
     #   # Simplify the control flow graph (deleting unreachable blocks, etc).
     #   LLVM['pass_manager'].add(passes.PASS_CFG_SIMPLIFICATION)
     #   LLVM['pass_manager'].initialize()
+
+    # Initialize built-in functions
+    printf_type = core.Type.function(
+        core.Type.void(),
+        [core.Type.pointer(core.Type.int(8))], True
+    )
+    LLVM['module'].add_function(printf_type, 'printf')
 
     # In case model has nested states, flatten everything
     Helper.flatten(process)
@@ -266,7 +275,36 @@ def _call_external_function(output):
 
 def _generate_write(params):
     ''' Generate the code for the write operator '''
-    raise NotImplementedError
+    zero = core.Constant.int(core.Type.int(), 0)
+    for param in params:
+        basic_ty = find_basic_type(param.exprType)
+        expr_val = expression(param)
+        printf_func = LLVM['module'].get_function_named('printf')
+        if basic_ty.kind == 'IntegerType':
+            fmt_val = _get_string_cons('%d')
+            fmt_ptr = LLVM['builder'].gep(fmt_val, [zero, zero])
+            LLVM['builder'].call(printf_func, [fmt_ptr, expr_val])
+        elif basic_ty.kind == 'RealType':
+            fmt_val = _get_string_cons('%.14E')
+            fmt_ptr = LLVM['builder'].gep(fmt_val, [zero, zero])
+            LLVM['builder'].call(printf_func, [fmt_ptr, expr_val])
+        elif basic_ty.kind == 'BooleanType':
+            true_str_val = _get_string_cons('true')
+            true_str_ptr = LLVM['builder'].gep(true_str_val, [zero, zero])
+            false_str_val = _get_string_cons('false')
+            false_str_ptr = LLVM['builder'].gep(false_str_val, [zero, zero])
+            str_ptr = LLVM['builder'].select(expr_val, true_str_ptr, false_str_ptr)
+            LLVM['builder'].call(printf_func, [str_ptr])
+        else:
+            raise NotImplementedError
+
+
+def _generate_writeln(params):
+    ''' Generate the code for the writeln operator '''
+    _generate_write(params)
+    str_cons = _get_string_cons('\n')
+    str_ptr = LLVM['builder'].gep(str_cons, [zero, zero])
+    LLVM['builder'].call(printf_func, [str_ptr])
 
 
 def _generate_reset_timer(params):
@@ -695,6 +733,20 @@ def _generate_type(ty):
         return struct_ty
     else:
         raise NotImplementedError
+
+
+def _get_string_cons(str):
+    ''' Returns a reference to a global string constant with the given value '''
+    if str in LLVM['strings']:
+        return LLVM['strings'][str]
+
+    str_val = core.Constant.stringz(str)
+    # TODO: This names can cause conflicts with user defined variables
+    gvar_name = 'str_%s' % len(LLVM['strings'])
+    gvar_val = LLVM['module'].add_global_variable(str_val.type, gvar_name)
+    gvar_val.initializer = str_val
+    LLVM['strings'][str] = gvar_val
+    return gvar_val
 
 
 def _get_memcpy_intrinsic():
