@@ -731,6 +731,15 @@ def _prim_path(primary_id):
             elif pr_id.lower() == 'abs':
                 special_op = 'Abs'
                 continue
+            elif pr_id.lower() == 'fix':
+                special_op = 'CastInt'
+                continue
+            elif pr_id.lower() == 'float':
+                special_op = 'CastReal'
+                continue
+            elif pr_id.lower() == 'power':
+                special_op = 'Power'
+                continue
             special_op = ''
             parent_kind, parent_typename = path_type(sub_id)
             sub_id.append(pr_id)
@@ -784,20 +793,26 @@ def _prim_path(primary_id):
                 stmts.extend(idx_stmts)
                 local_decl.extend(local_var)
             elif 'procParams' in pr_id:
-                if special_op == 'Abs':
+                if special_op in ('Abs', 'CastInt', 'CastReal'):
                     # Return absolute value of a number
                     exp, = pr_id['procParams']
-                    exp_type = find_basic_type(exp.exprType)
-                    if exp_type.kind not in ('IntegerType', 'RealType'):
-                        error = ('{} must be a number to return absolute value'
-                                .format(exp.inputString))
-                        LOG.error(error)
-                        raise TypeError(error)
                     param_stmts, param_str, local_var = expression(exp)
                     stmts.extend(param_stmts)
                     local_decl.extend(local_var)
-                    ada_string += 'abs(' + param_str + ')'
-
+                    ada_string += '{op}({param})'.format(
+                            param=param_str,
+                            op='abs' if special_op == 'Abs' else
+                            'Interfaces.Integer_64' if special_op == 'CastInt'
+                            else 'adaasn1rtl.Asn1Real'
+                            if special_op == 'CastReal' else 'ERROR')
+                elif special_op == 'Power':
+                    operands = [None, None]
+                    for idx, param in enumerate(pr_id['procParams']):
+                        stmt, operands[idx], local = expression(param)
+                        stmts.extend(stmt)
+                        local_decl.extend(local)
+                    ada_string += '{op[0]} ** Natural({op[1]})'.format(
+                                    op=operands)
                 elif special_op == 'Length':
                     # Length of sequence of: take only the first parameter
                     exp, = pr_id['procParams']

@@ -94,7 +94,10 @@ SPECIAL_OPERATORS = {'length': [LIST],
                      'present': [CHOICE],
                      'set_timer': [INTEGER, TIMER],
                      'reset_timer': [TIMER],
-                     'abs': [NUMERICAL]}
+                     'abs': [NUMERICAL],
+                     'float': [NUMERICAL],
+                     'fix': [NUMERICAL],
+                     'power': [NUMERICAL, INTEGER]}
 
 # Container to keep a list of types mapped from ANTLR Tokens
 # (Used with singledispatch/visitor pattern)
@@ -292,7 +295,7 @@ def is_constant(var):
 
 def fix_special_operators(op_name, expr_list, context):
     ''' Verify/fix type of special operators parameters '''
-    if op_name.lower() in ('length', 'present', 'abs'):
+    if op_name.lower() in ('length', 'present', 'abs', 'float', 'fix'):
         if len(expr_list) != 1:
             raise AttributeError('Only one parameter for the {} operator'
                                  .format(op_name))
@@ -307,6 +310,25 @@ def fix_special_operators(op_name, expr_list, context):
             raise TypeError('Length operator works only on strings/lists')
         elif op_name.lower() == 'present' and basic.kind != 'ChoiceType':
             raise TypeError('Present operator works only on CHOICE types')
+        elif op_name.lower() in ('abs', 'float', 'fix') and not basic.kind in (
+                'IntegerType', 'Integer32Type', 'RealType', 'NumericalType'):
+            raise TypeError('"{}" operator needs a numerical parameter'.format(
+                op_name))
+    elif op_name.lower() == 'power':
+        if len(expr_list) != 2:
+            raise AttributeError('The "power" operator takes two parameters')
+        types = {}
+        for idx, expr in enumerate(expr_list):
+            if expr.exprType is UNKNOWN_TYPE:
+                expr.exprType = find_variable(expr.inputString, context)
+                # XXX don't use inputString, there can be brackets
+                # XXX should change type to PrimVariable
+            if idx == 0 and not find_basic_type(expr.exprType).kind in (
+                    'IntegerType', 'Integer32Type', 'Numerical', 'RealType'):
+                raise TypeError('First parameter of power must be numerical')
+            elif idx == 1 and not find_basic_type(expr.exprType).kind in (
+                    'IntegerType', 'Integer32Type'):
+                raise TypeError('Second parameter of power must be integer')
     elif op_name.lower() in ('write', 'writeln'):
         for param in expr_list:
             if param.exprType is UNKNOWN_TYPE:
@@ -695,10 +717,20 @@ def find_type(path, context):
                                          ' must be a CHOICE type:' + str(path))
                         else:
                             result.EnumValues = param_type.Children
-                elif main.lower() in ('length', 'abs'):
+                elif main.lower() in ('length', 'abs', 'fix'):
                     # XXX length et abs: we must set Min and Max
                     # and abs may return a RealType, not always integer
-                    result = type('lenabs', (object,), {'kind': 'IntegerType'})
+                    result = INTEGER
+                    # type('lenabs', (object,), {'kind': 'IntegerType'})
+                elif main.lower() == 'float':
+                    result = REAL
+                elif main.lower() == 'power':
+                    # Result can be int or real, depending on first param
+                    param = path[1].get('procParams')[0]
+                    check_type = find_variable(param.inputString, context) \
+                            if param.exprType == UNKNOWN_TYPE else \
+                            param.exprType
+                    result = find_basic_type(check_type)
                 else:  # write and writeln return void
                     pass
     if result.kind == 'ReferenceType':

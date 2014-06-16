@@ -3,6 +3,10 @@ all: compile-all
 regression:
 	make -C tests/regression all
 
+flake8:
+	@echo Generating flake8_report file
+	flake8 opengeode.py sdlSymbols.py genericSymbols.py ogParser.py AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py undoCommands.py  Connectors.py Asn1scc.py Helper.py Statechart.py >flake8_report
+
 coverage: 
 	make -C tests/regression coverage
 

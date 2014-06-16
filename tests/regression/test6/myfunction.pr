@@ -1,5 +1,6 @@
+/* CIF PROCESS (150, 150), (150, 75) */
 PROCESS myfunction;
-/* CIF TEXT (-336, -82), (271, 250) */
+/* CIF TEXT (-336, -82), (271, 263) */
 -- Timers defined in the interface view
 -- Use SET_TIMER (value, timer name)
 -- and RESET_TIMER (timer name) in a
@@ -13,6 +14,10 @@ TIMER myTimer;
 
 -- Test default value for a complex type
 DCL def_val MySeq := { a 3, b taste };
+
+-- To test power, fix, float
+dcl someReal MyReal := 1.5;
+dcl someInt MyInteger := 2;
 /* CIF ENDTEXT */
 /* CIF START (58, -99), (100, 50) */
 START;
@@ -33,14 +38,24 @@ CALL writeln
 /* CIF PROCEDURECALL (-38, 231), (132, 50) */
 CALL set_timer
 (1000, myTimer);
-/* CIF NEXTSTATE (-23, 296), (102, 50) */
+/* CIF TASK (-113, 296), (282, 35) */
+TASK someReal := power(someReal, someInt);
+/* CIF PROCEDURECALL (-142, 346), (340, 35) */
+CALL writeln('1.5 ** 2 == ', someReal, ' (should be 2.25 )');
+/* CIF TASK (-65, 396), (186, 35) */
+TASK someInt := fix(someReal);
+/* CIF TASK (-73, 446), (201, 35) */
+TASK someReal := float(someInt);
+/* CIF TASK (-86, 496), (227, 35) */
+TASK someInt := fix(someReal) mod 5;
+/* CIF NEXTSTATE (-23, 546), (102, 50) */
 NEXTSTATE wait;
-/* CIF INPUT (137, 36), (100, 50) */
+/* CIF INPUT (225, 36), (100, 50) */
 INPUT mytimer;
-/* CIF PROCEDURECALL (119, 101), (135, 50) */
+/* CIF PROCEDURECALL (207, 101), (135, 50) */
 CALL writeln
 ('timer expired');
-/* CIF NEXTSTATE (137, 166), (100, 50) */
+/* CIF NEXTSTATE (225, 166), (100, 50) */
 NEXTSTATE Wait;
 ENDSTATE;
 ENDPROCESS myfunction;
