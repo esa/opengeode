@@ -244,8 +244,11 @@ def _call_external_function(output):
     for out in output.output:
         name = out['outputName'].lower()
 
-        if name in ('write', 'writeln'):
+        if name == 'write':
             _generate_write(out['params'])
+            continue
+        elif name == 'writeln':
+            _generate_writeln(out['params'])
             continue
         elif name == 'reset_timer':
             _generate_reset_timer(out['params'])
