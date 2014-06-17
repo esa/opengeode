@@ -420,13 +420,6 @@ def _basic(expr):
             return g.builder.fmul(lefttmp, righttmp, 'multmp')
         elif expr.operand == '/':
             return g.builder.fdiv(lefttmp, righttmp, 'divtmp')
-        elif expr.operand == 'mod':
-            # l mod r == (((l rem r) + r) rem r)
-            remtmp = g.builder.frem(lefttmp, righttmp)
-            addtmp = g.builder.fadd(remtmp, righttmp)
-            return g.builder.frem(addtmp, righttmp, 'modtmp')
-        elif expr.operand == 'rem':
-            return g.builder.frem(lefttmp, righttmp, 'remtmp')
         elif expr.operand == '<':
             return g.builder.icmp(core.FCMP_OLT, lefttmp, righttmp, 'lttmp')
         elif expr.operand == '<=':
