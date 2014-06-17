@@ -126,6 +126,8 @@ def _process(process):
     for signal in process.input_signals:
         _generate_input_signal(signal, mapping[signal['name']])
 
+    g.module.verify()
+
     with open(g.name  + '.ll', 'w') as ll_file:
         ll_file.write(str(g.module))
 
