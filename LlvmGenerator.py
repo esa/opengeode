@@ -421,17 +421,17 @@ def _basic(expr):
         elif expr.operand == '/':
             return g.builder.fdiv(lefttmp, righttmp, 'divtmp')
         elif expr.operand == '<':
-            return g.builder.icmp(core.FCMP_OLT, lefttmp, righttmp, 'lttmp')
+            return g.builder.fcmp(core.FCMP_OLT, lefttmp, righttmp, 'lttmp')
         elif expr.operand == '<=':
-            return g.builder.icmp(core.FCMP_OLE, lefttmp, righttmp, 'letmp')
+            return g.builder.fcmp(core.FCMP_OLE, lefttmp, righttmp, 'letmp')
         elif expr.operand == '=':
-            return g.builder.icmp(core.FCMP_OEQ, lefttmp, righttmp, 'eqtmp')
+            return g.builder.fcmp(core.FCMP_OEQ, lefttmp, righttmp, 'eqtmp')
         elif expr.operand == '/=':
-            return g.builder.icmp(core.FCMP_ONE, lefttmp, righttmp, 'netmp')
+            return g.builder.fcmp(core.FCMP_ONE, lefttmp, righttmp, 'netmp')
         elif expr.operand == '>=':
-            return g.builder.icmp(core.FCMP_OGE, lefttmp, righttmp, 'getmp')
+            return g.builder.fcmp(core.FCMP_OGE, lefttmp, righttmp, 'getmp')
         elif expr.operand == '>':
-            return g.builder.icmp(core.FCMP_OGT, lefttmp, righttmp, 'gttmp')
+            return g.builder.fcmp(core.FCMP_OGT, lefttmp, righttmp, 'gttmp')
         else:
             raise NotImplementedError
     else:
