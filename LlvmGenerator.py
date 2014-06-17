@@ -153,9 +153,9 @@ def _generate_runtr_func(process):
 
     # cond
     g.builder.position_at_end(cond_block)
-    id_ptr = func.args[0]
     no_tr_cons = core.Constant.int(g.i32, -1)
-    cond_val = g.builder.icmp(core.ICMP_NE, id_ptr, no_tr_cons, 'cond')
+    id_val = g.builder.load(id_ptr)
+    cond_val = g.builder.icmp(core.ICMP_NE, id_val, no_tr_cons, 'cond')
     g.builder.cbranch(cond_val, body_block, exit_block)
 
     # body
