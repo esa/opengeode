@@ -96,7 +96,8 @@ def _process(process):
             g.states[name] = cons
 
     # Generate state var
-    g.module.add_global_variable(g.i32, 'state')
+    state_cons = g.module.add_global_variable(g.i32, 'state')
+    state_cons.initializer = core.Constant.int(g.i32, -1)
 
     # Initialize output signals
     for signal in process.output_signals:
