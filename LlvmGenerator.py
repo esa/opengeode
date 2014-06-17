@@ -35,7 +35,8 @@ g = None
 
 class GlobalState():
     def __init__(self, process):
-        self.module = core.Module.new(str(process.processName))
+        self.name = str(process.processName)
+        self.module = core.Module.new(self.name)
         self.dataview = process.dataview
 
         self.scope = {}
@@ -118,13 +119,13 @@ def _process(process):
 
     # Generate process functions
     runtr_func = _generate_runtr_func(process)
-    _generate_startup_func(process, str(process.processName), runtr_func)
+    _generate_startup_func(process, runtr_func)
 
     # Generate input signals
     for signal in process.input_signals:
         _generate_input_signal(signal, mapping[signal['name']])
 
-    with open(str(process.processName) + '.ll', 'w') as ll_file:
+    with open(g.name  + '.ll', 'w') as ll_file:
         ll_file.write(str(g.module))
 
 
@@ -176,9 +177,9 @@ def _generate_runtr_func(process):
     return func
 
 
-def _generate_startup_func(process, process_name, runtr_func):
+def _generate_startup_func(process, runtr_func):
     ''' Generate code for the startup function '''
-    func_name = process_name + '_startup'
+    func_name = g.name + '_startup'
     func_type = core.Type.function(g.void, [])
     func = core.Function.new(g.module, func_type, func_name)
 
@@ -196,7 +197,7 @@ def _generate_startup_func(process, process_name, runtr_func):
 
 def _generate_input_signal(signal, inputs):
     ''' Generate code for an input signal '''
-    func_name = str(signal['name'])
+    func_name = g.name + "_" + str(signal['name'])
     param_tys = []
     if 'type' in signal:
         param_tys.append(core.Type.pointer(_generate_type(signal['type'])))
