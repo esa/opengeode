@@ -114,7 +114,13 @@ def _process(process):
     # Generare process-level vars
     for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
         var_type = _generate_type(var_asn1_type)
-        g.module.add_global_variable(var_type, str(var_name).lower())
+        global_var = g.module.add_global_variable(var_type, str(var_name).lower())
+
+        if var_type.kind == core.TYPE_INTEGER:
+            global_var.initializer = core.Constant.int(var_type, 0)
+        elif var_type.kind == core.TYPE_DOUBLE:
+            global_var.initializer = core.Constant.real(var_type, 0.0)
+
         if def_value:
             raise NotImplementedError
 
