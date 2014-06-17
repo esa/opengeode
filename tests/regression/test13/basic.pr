@@ -1,185 +1,142 @@
 /* CIF PROCESS (150, 150), (150, 75) */
 PROCESS basic;
-/* CIF TEXT (176, -127), (198, 140) */
--- Declare your variables
+/* CIF TEXT (272, -226), (303, 140) */
 DCL i Int;
 DCL f Float;
 DCL b Bool;
 /* CIF ENDTEXT */
 /* CIF START (-86, -394), (100, 50) */
 START;
-/* CIF TASK (-102, -324), (133, 50) */
-TASK i := 1;
-/* CIF PROCEDURECALL (-84, -259), (96, 35) */
-CALL writeln(i)
-/* CIF COMMENT (32, -259), (70, 35) */
-COMMENT '1';
-/* CIF TASK (-71, -209), (70, 35) */
-TASK i := -1;
-/* CIF PROCEDURECALL (-85, -159), (99, 35) */
-CALL writeln(i)
-/* CIF COMMENT (33, -159), (70, 35) */
-COMMENT '-1';
-/* CIF TASK (-84, -109), (97, 35) */
+/* CIF TASK (-71, -329), (70, 35) */
+TASK i := 3;
+/* CIF TASK (-75, -279), (78, 35) */
+TASK f := 3.0;
+/* CIF TASK (-81, -229), (90, 35) */
 TASK b := true;
-/* CIF PROCEDURECALL (-86, -59), (101, 35) */
-CALL writeln(b)
-/* CIF COMMENT (34, -59), (70, 35) */
-COMMENT 'true';
-/* CIF TASK (-83, -9), (95, 35) */
-TASK b := false;
-/* CIF PROCEDURECALL (-86, 41), (101, 35) */
-CALL writeln(b)
-/* CIF COMMENT (34, 41), (70, 35) */
-COMMENT 'false';
-/* CIF TASK (-75, 91), (78, 35) */
-TASK f := 1.0;
-/* CIF PROCEDURECALL (-85, 141), (99, 35) */
-CALL writeln(f)
-/* CIF COMMENT (33, 141), (70, 35) */
-COMMENT '1.0';
-/* CIF TASK (-77, 191), (82, 35) */
-TASK f := -1.0;
-/* CIF PROCEDURECALL (-85, 241), (99, 35) */
-CALL writeln(f)
-/* CIF COMMENT (33, 241), (70, 35) */
-COMMENT '-1.0';
-/* CIF NEXTSTATE (-86, 291), (100, 50) */
+/* CIF NEXTSTATE (-86, -179), (100, 50) */
 NEXTSTATE Wait;
 
-/* CIF STATE (-86, 291), (100, 50) */
+/* CIF STATE (-86, -179), (100, 50) */
 STATE Wait;
-/* CIF INPUT (-85, 361), (100, 50) */
+/* CIF INPUT (-85, -109), (100, 50) */
 INPUT run;
-/* CIF PROCEDURECALL (-95, 426), (121, 35) */
-CALL writeln(1 + 1)
-/* CIF COMMENT (45, 426), (70, 35) */
-COMMENT '2';
-/* CIF PROCEDURECALL (-94, 476), (118, 35) */
-CALL writeln(6 - 3)
-/* CIF COMMENT (44, 476), (70, 35) */
-COMMENT '2';
-/* CIF PROCEDURECALL (-95, 526), (120, 35) */
-CALL writeln(2 * 2)
-/* CIF COMMENT (45, 526), (70, 35) */
+/* CIF PROCEDURECALL (-102, -44), (134, 35) */
+CALL writeln(1 + i)
+/* CIF COMMENT (51, -44), (70, 35) */
 COMMENT '4';
-/* CIF PROCEDURECALL (-98, 577), (127, 35) */
-CALL writeln(6 / 3)
-/* CIF COMMENT (48, 577), (70, 35) */
+/* CIF PROCEDURECALL (-94, 6), (118, 35) */
+CALL writeln(6 - i)
+/* CIF COMMENT (44, 6), (70, 35) */
+COMMENT '3';
+/* CIF PROCEDURECALL (-95, 56), (120, 35) */
+CALL writeln(2 * i)
+/* CIF COMMENT (45, 56), (70, 35) */
+COMMENT '6';
+/* CIF PROCEDURECALL (-98, 107), (127, 35) */
+CALL writeln(6 / i)
+/* CIF COMMENT (48, 107), (70, 35) */
 COMMENT '2';
-/* CIF PROCEDURECALL (-94, 627), (119, 35) */
-CALL writeln(7 / 3)
-/* CIF COMMENT (44, 627), (70, 35) */
+/* CIF PROCEDURECALL (-94, 157), (119, 35) */
+CALL writeln(7 / i)
+/* CIF COMMENT (44, 157), (70, 35) */
 COMMENT '2';
-/* CIF PROCEDURECALL (-108, 677), (146, 35) */
-CALL writeln(8 mod 2)
-/* CIF COMMENT (58, 677), (70, 35) */
-COMMENT '0';
-/* CIF PROCEDURECALL (-105, 727), (141, 35) */
-CALL writeln(8 rem 2)
-/* CIF COMMENT (55, 727), (70, 35) */
-COMMENT '0';
-/* CIF PROCEDURECALL (-107, 777), (145, 35) */
-CALL writeln(-8 mod 2);
-/* CIF PROCEDURECALL (-106, 827), (142, 35) */
-CALL writeln(-8 rem 2);
-/* CIF PROCEDURECALL (-107, 877), (145, 34) */
-CALL writeln(1.0 + 1.0)
-/* CIF COMMENT (57, 876), (70, 35) */
-COMMENT '2.0';
-/* CIF PROCEDURECALL (-108, 926), (147, 35) */
-CALL writeln(6.0 - 3.0)
-/* CIF COMMENT (58, 926), (70, 35) */
-COMMENT '2.0';
-/* CIF PROCEDURECALL (-106, 976), (142, 35) */
-CALL writeln(2.0 * 2.0)
-/* CIF COMMENT (56, 976), (70, 35) */
+/* CIF PROCEDURECALL (-108, 207), (146, 35) */
+CALL writeln(8 mod i)
+/* CIF COMMENT (58, 207), (70, 35) */
+COMMENT '2';
+/* CIF PROCEDURECALL (-105, 257), (141, 35) */
+CALL writeln(8 rem i)
+/* CIF COMMENT (55, 257), (70, 35) */
+COMMENT '2';
+/* CIF PROCEDURECALL (-119, 307), (169, 35) */
+CALL writeln((-8) mod i)
+/* CIF COMMENT (69, 307), (70, 35) */
+COMMENT '1';
+/* CIF PROCEDURECALL (-112, 357), (154, 35) */
+CALL writeln((-8) rem i)
+/* CIF COMMENT (62, 357), (70, 35) */
+COMMENT '-2';
+/* CIF PROCEDURECALL (-107, 408), (145, 34) */
+CALL writeln(1.0 + f)
+/* CIF COMMENT (57, 407), (70, 35) */
 COMMENT '4.0';
-/* CIF PROCEDURECALL (-105, 1026), (141, 35) */
-CALL writeln(6.0 / 3.0)
-/* CIF COMMENT (55, 1026), (70, 35) */
+/* CIF PROCEDURECALL (-108, 457), (147, 35) */
+CALL writeln(6.0 - f)
+/* CIF COMMENT (58, 457), (70, 35) */
+COMMENT '3.0';
+/* CIF PROCEDURECALL (-106, 507), (142, 35) */
+CALL writeln(2.0 * f)
+/* CIF COMMENT (56, 507), (70, 35) */
+COMMENT '6.0';
+/* CIF PROCEDURECALL (-105, 557), (141, 35) */
+CALL writeln(6.0 / f)
+/* CIF COMMENT (55, 557), (70, 35) */
 COMMENT '2.0';
-/* CIF PROCEDURECALL (-108, 1076), (146, 35) */
-CALL writeln(6.0 / 4.0)
-/* CIF COMMENT (58, 1076), (78, 35) */
-COMMENT '1.5';
-/* CIF PROCEDURECALL (-115, 1126), (160, 35) */
-CALL writeln(8.0 rem 2.0);
-/* CIF PROCEDURECALL (-116, 1176), (163, 35) */
-CALL writeln(8.0 mod 2.0);
-/* CIF PROCEDURECALL (-119, 1226), (169, 35) */
-CALL writeln(-8.0 rem 2.0);
-/* CIF PROCEDURECALL (-118, 1276), (167, 35) */
-CALL writeln(-8.0 mod 2.0);
-/* CIF PROCEDURECALL (-121, 1326), (172, 35) */
-CALL writeln(true and true)
-/* CIF COMMENT (71, 1326), (70, 35) */
+/* CIF PROCEDURECALL (-108, 607), (146, 35) */
+CALL writeln(6.0 / f)
+/* CIF COMMENT (58, 607), (78, 35) */
+COMMENT '2.0';
+/* CIF PROCEDURECALL (-94, 657), (118, 35) */
+CALL writeln(true)
+/* CIF COMMENT (44, 657), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-120, 1376), (170, 35) */
-CALL writeln(true or false)
-/* CIF COMMENT (70, 1376), (70, 35) */
-COMMENT 'true';
-/* CIF PROCEDURECALL (-121, 1426), (173, 35) */
-CALL writeln(true xor false)
-/* CIF COMMENT (71, 1426), (70, 35) */
-COMMENT 'true';
-/* CIF PROCEDURECALL (-106, 1476), (142, 35) */
-CALL writeln(not true)
-/* CIF COMMENT (56, 1476), (70, 35) */
+/* CIF PROCEDURECALL (-96, 707), (122, 35) */
+CALL writeln(false)
+/* CIF COMMENT (46, 707), (70, 35) */
 COMMENT 'false';
-/* CIF PROCEDURECALL (-108, 1526), (146, 35) */
-CALL writeln(not false)
-/* CIF COMMENT (58, 1526), (70, 35) */
+/* CIF PROCEDURECALL (-123, 757), (176, 35) */
+CALL writeln(true and b)
+/* CIF COMMENT (73, 757), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-95, 1576), (121, 35) */
-CALL writeln(1 < 2)
-/* CIF COMMENT (45, 1576), (71, 35) */
+/* CIF PROCEDURECALL (-120, 807), (170, 35) */
+CALL writeln(false or b)
+/* CIF COMMENT (70, 807), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-99, 1626), (129, 35) */
-CALL writeln(1 <= 2)
-/* CIF COMMENT (49, 1626), (70, 35) */
+/* CIF PROCEDURECALL (-123, 857), (177, 35) */
+CALL writeln(false xor b)
+/* CIF COMMENT (73, 857), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-95, 1676), (121, 35) */
-CALL writeln(2 > 1)
-/* CIF COMMENT (45, 1676), (70, 35) */
+/* CIF PROCEDURECALL (-95, 907), (121, 35) */
+CALL writeln(1 < i)
+/* CIF COMMENT (45, 907), (71, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-99, 1727), (129, 35) */
-CALL writeln(2 >= 1)
-/* CIF COMMENT (49, 1727), (70, 35) */
+/* CIF PROCEDURECALL (-99, 957), (129, 35) */
+CALL writeln(1 <= i)
+/* CIF COMMENT (49, 957), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-95, 1777), (121, 35) */
-CALL writeln(1 = 1)
-/* CIF COMMENT (45, 1777), (70, 35) */
+/* CIF PROCEDURECALL (-95, 1007), (121, 35) */
+CALL writeln(i > 1)
+/* CIF COMMENT (45, 1007), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-106, 1827), (143, 35) */
-CALL writeln(1.0 < 2.0)
-/* CIF COMMENT (56, 1827), (70, 35) */
+/* CIF PROCEDURECALL (-99, 1058), (129, 35) */
+CALL writeln(i >= 1)
+/* CIF COMMENT (49, 1058), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-112, 1877), (155, 35) */
-CALL writeln(1.0 <= 2.0)
-/* CIF COMMENT (62, 1877), (70, 35) */
+/* CIF PROCEDURECALL (-95, 1108), (121, 35) */
+CALL writeln(3 = i)
+/* CIF COMMENT (45, 1108), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-106, 1927), (143, 35) */
-CALL writeln(2.0 > 1.0)
-/* CIF COMMENT (56, 1927), (70, 35) */
+/* CIF PROCEDURECALL (-106, 1158), (143, 35) */
+CALL writeln(1.0 < f)
+/* CIF COMMENT (56, 1158), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-110, 1977), (151, 35) */
-CALL writeln(2.0 >= 1.0)
-/* CIF COMMENT (60, 1977), (70, 35) */
+/* CIF PROCEDURECALL (-112, 1208), (155, 35) */
+CALL writeln(1.0 <= f)
+/* CIF COMMENT (62, 1208), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-110, 2027), (151, 35) */
-CALL writeln(1.0 = 1.0)
-/* CIF COMMENT (60, 2027), (70, 35) */
+/* CIF PROCEDURECALL (-106, 1258), (143, 35) */
+CALL writeln(f > 1.0)
+/* CIF COMMENT (56, 1258), (70, 35) */
 COMMENT 'true';
-/* CIF PROCEDURECALL (-101, 2077), (132, 35) */
-CALL writeln(1 + 0.5)
-/* CIF COMMENT (51, 2077), (70, 35) */
-COMMENT '1.5';
-/* CIF PROCEDURECALL (-101, 2127), (132, 35) */
-CALL writeln(1.0 < 2)
-/* CIF COMMENT (51, 2127), (70, 35) */
+/* CIF PROCEDURECALL (-110, 1308), (151, 35) */
+CALL writeln(f >= 1.0)
+/* CIF COMMENT (60, 1308), (70, 35) */
 COMMENT 'true';
-/* CIF NEXTSTATE (-85, 2177), (100, 50) */
+/* CIF PROCEDURECALL (-110, 1358), (151, 35) */
+CALL writeln(3.0 = f)
+/* CIF COMMENT (60, 1358), (70, 35) */
+COMMENT 'true';
+/* CIF NEXTSTATE (-85, 1408), (100, 50) */
 NEXTSTATE Wait;
 ENDSTATE;
 ENDPROCESS basic;
