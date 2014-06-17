@@ -118,8 +118,8 @@ def _process(process):
             raise NotImplementedError
 
     # Generate process functions
-    runtr_func = _generate_runtr_func(process)
-    _generate_startup_func(process, runtr_func)
+    g.runtr = _generate_runtr_func(process)
+    _generate_startup_func(process)
 
     # Generate input signals
     for signal in process.input_signals:
@@ -177,7 +177,7 @@ def _generate_runtr_func(process):
     return func
 
 
-def _generate_startup_func(process, runtr_func):
+def _generate_startup_func(process):
     ''' Generate code for the startup function '''
     func_name = g.name + '_startup'
     func_type = core.Type.function(g.void, [])
@@ -188,7 +188,7 @@ def _generate_startup_func(process, runtr_func):
     g.builder = builder
 
     # entry
-    builder.call(runtr_func, [core.Constant.int(core.Type.int(), 0)])
+    builder.call(g.runtr, [core.Constant.int(core.Type.int(), 0)])
     builder.ret_void()
 
     func.verify()
