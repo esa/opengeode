@@ -483,9 +483,9 @@ def _logical(expr):
     if righttmp.type.kind == core.TYPE_POINTER:
         righttmp = g.builder.load(righttmp, 'lefttmp')
 
-    if expr.operand == '&&':
-        return g.builder.and_(lefttmp, righttmp, 'ortmp')
-    elif expr.operand == '||':
+    if expr.operand == 'and':
+        return g.builder.and_(lefttmp, righttmp, 'andtmp')
+    elif expr.operand == 'or':
         return g.builder.or_(lefttmp, righttmp, 'ortmp')
     else:
         return g.builder.xor(lefttmp, righttmp, 'xortmp')
