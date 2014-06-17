@@ -272,17 +272,17 @@ def _generate_write(params):
         basic_ty = find_basic_type(param.exprType)
         expr_val = expression(param)
         if basic_ty.kind == 'IntegerType':
-            fmt_val = _get_string_cons('%d')
+            fmt_val = _get_string_cons('% d')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
             g.builder.call(g.printf, [fmt_ptr, expr_val])
         elif basic_ty.kind == 'RealType':
-            fmt_val = _get_string_cons('%.14E')
+            fmt_val = _get_string_cons('% .14E')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
             g.builder.call(g.printf, [fmt_ptr, expr_val])
         elif basic_ty.kind == 'BooleanType':
-            true_str_val = _get_string_cons('true')
+            true_str_val = _get_string_cons('TRUE')
             true_str_ptr = g.builder.gep(true_str_val, [zero, zero])
-            false_str_val = _get_string_cons('false')
+            false_str_val = _get_string_cons('FALSE')
             false_str_ptr = g.builder.gep(false_str_val, [zero, zero])
             str_ptr = g.builder.select(expr_val, true_str_ptr, false_str_ptr)
             g.builder.call(g.printf, [str_ptr])
