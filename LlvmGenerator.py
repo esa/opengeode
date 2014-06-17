@@ -124,7 +124,8 @@ def _process(process):
     for signal in process.input_signals:
         _generate_input_signal(signal, mapping[signal['name']])
 
-    print g.module
+    with open(str(process.processName) + '.ll', 'w') as ll_file:
+        ll_file.write(str(g.module))
 
 
 def _generate_runtr_func(process):
