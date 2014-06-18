@@ -620,15 +620,15 @@ def _task_forloop(task):
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
                 # ASN.1 Integers are 64 bits - we need to convert to 32 bits
-                if isinstance(loop['range']['start'], ogAST.PrimInteger):
-                    start_str = 'Integer({})'.format(start_str)
+                #if isinstance(loop['range']['start'], ogAST.PrimInteger):
+                #    start_str = 'Integer({})'.format(start_str)
             if loop['range']['step'] == 1:
                 start_str += '..'
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
-            if isinstance(loop['range']['stop'], ogAST.PrimInteger):
-                stop_str = 'Integer({})'.format(stop_str)
+            #if isinstance(loop['range']['stop'], ogAST.PrimInteger):
+            #    stop_str = 'Integer({})'.format(stop_str)
             if loop['range']['step'] == 1:
                 stmt.append(
                        'for {it} in {start}{stop} loop'

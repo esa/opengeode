@@ -1,5 +1,16 @@
 /* CIF PROCESS (150, 150), (150, 75) */
 PROCESS myfunction;
+/* CIF TEXT (389, 45), (298, 158) */
+procedure my_factorial;
+fpar in n myInteger,
+          in/out result myInteger;
+start;
+    task result := 1;
+    task for x in range(1, n+1):
+                  result := result * x
+              endfor;
+endprocedure;
+/* CIF ENDTEXT */
 /* CIF TEXT (-336, -82), (271, 323) */
 -- Timers defined in the interface view
 -- Use SET_TIMER (value, timer name)
@@ -22,6 +33,23 @@ dcl someInt MyInteger := 2;
 -- To test 'op_not'
 dcl opnot T_boolean := not true;
 /* CIF ENDTEXT */
+/* CIF PROCEDURE (358, 391), (91, 35) */
+PROCEDURE factorial;
+/* CIF TEXT (29, 42), (215, 48) */
+fpar in N MyInteger, 
+          in/out result MyInteger;
+/* CIF ENDTEXT */
+/* CIF START (298, 33), (70, 35) */
+START;
+/* CIF TASK (284, 83), (97, 35) */
+TASK result := 1;
+/* CIF TASK (249, 133), (167, 53) */
+TASK for x in range(1, n+1):
+    result := result * x
+endfor;
+/* CIF RETURN (315, 201), (35, 35) */
+RETURN ;
+ENDPROCEDURE;
 /* CIF START (58, -99), (100, 50) */
 START;
 /* CIF NEXTSTATE (58, -34), (100, 50) */
