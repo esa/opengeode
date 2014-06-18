@@ -45,7 +45,9 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'EXPONENT', 'TRUE', 'FALSE', 'MOD', 'FI', 'WRITE', 'WRITELN',
                 'LENGTH', 'PRESENT', 'FPAR', 'TODO', 'FIXME', 'XXX',
                 'CHECKME', 'PROCEDURE', 'EXTERNAL', 'IN', 'OUT', 'TIMER',
-                'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT')]
+                'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT',
+                'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS',
+				'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE',

@@ -2258,6 +2258,9 @@ def outputbody(root, context):
                                                     child, context)
             errors.extend(err)
             warnings.extend(warn)
+        elif child.type == lexer.TO:
+            pass
+			# TODO: better support of TO primitive
         else:
             warnings.append('Unsupported output body type:' +
                     str(child.type))
