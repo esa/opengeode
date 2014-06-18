@@ -6,9 +6,9 @@ generate-code:
 
 compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatmake -c -gnat2012 *.adb
+	gnatmake -c -gnat2012 *.adb && echo 'All OK!'
 	#gcc -c test.c
-	gnatbind -n trafficlight.ali
+	#gnatbind -n trafficlight.ali
 	#gnatlink -o testcase test.o trafficlight.ali -lgnat -lm
 
 
