@@ -1164,6 +1164,11 @@ def primary(root, context):
         prim.line = root.getLine()
         prim.charPositionInLine = root.getCharPositionInLine()
         prim.op_not, prim.op_minus = op_not, op_minus
+        if op_not:
+            prim.op_not = True
+        if op_minus:
+            prim.op_minus = True
+
     return prim, errors, warnings
 
 

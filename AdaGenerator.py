@@ -699,7 +699,12 @@ def expression(expr):
 def _primary_variable(prim):
     ''' Single variable reference '''
     sep = u'l_' if find_var(prim.value[0]) else u''
-    return [], u'{sep}{name}'.format(sep=sep, name=prim.value[0]), []
+    ada_string = u'{opnot}{sep}{name}'.format(
+            opnot='not ' if prim.op_not else '',
+            sep=sep, name=prim.value[0])
+    if prim.op_minus:
+        ada_string = '(-{})'.format(ada_string)
+    return [], ada_string, []
 
 
 @expression.register(ogAST.PrimPath)
@@ -1051,6 +1056,18 @@ def _choice_determinant(primary):
 
 @expression.register(ogAST.PrimInteger)
 @expression.register(ogAST.PrimReal)
+def _integer(primary):
+    ''' Generate code for a raw numerical value  '''
+    ada_string = primary.value[0]
+    if primary.op_minus and float(ada_string) >= 0:
+        ada_string = '(-{})'.format(ada_string)
+    elif float(ada_string) < 0:
+        ada_string = '({})'.format(ada_string)
+    if primary.op_not:
+        ada_string = 'not {}'.format(ada_string)
+    return [], ada_string, []
+
+
 @expression.register(ogAST.PrimBoolean)
 def _integer(primary):
     ''' Generate code for a raw integer/real/boolean value  '''

@@ -1,6 +1,6 @@
 /* CIF PROCESS (150, 150), (150, 75) */
 PROCESS myfunction;
-/* CIF TEXT (-336, -82), (271, 263) */
+/* CIF TEXT (-336, -82), (271, 323) */
 -- Timers defined in the interface view
 -- Use SET_TIMER (value, timer name)
 -- and RESET_TIMER (timer name) in a
@@ -18,6 +18,9 @@ DCL def_val MySeq := { a 3, b taste };
 -- To test power, fix, float
 dcl someReal MyReal := 1.5;
 dcl someInt MyInteger := 2;
+
+-- To test 'op_not'
+dcl opnot T_boolean := not true;
 /* CIF ENDTEXT */
 /* CIF START (58, -99), (100, 50) */
 START;
@@ -48,7 +51,13 @@ TASK someInt := fix(someReal);
 TASK someReal := float(someInt);
 /* CIF TASK (-86, 496), (227, 35) */
 TASK someInt := fix(someReal) mod 5;
-/* CIF NEXTSTATE (-23, 546), (102, 50) */
+/* CIF TASK (-48, 546), (152, 35) */
+TASK opnot := not opnot;
+/* CIF TASK (-51, 596), (157, 35) */
+TASK someint := -someint;
+/* CIF TASK (-54, 646), (164, 35) */
+TASK someint := (-8) mod 5;
+/* CIF NEXTSTATE (-23, 696), (102, 50) */
 NEXTSTATE wait;
 /* CIF INPUT (225, 36), (100, 50) */
 INPUT mytimer;

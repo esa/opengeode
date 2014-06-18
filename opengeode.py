@@ -26,7 +26,6 @@ import pprint
 from functools import partial
 from collections import deque
 from itertools import chain
-import stringtemplate3
 
 # Added to please py2exe - NOQA makes flake8 ignore the following lines:
 # pylint: disable=W0611
