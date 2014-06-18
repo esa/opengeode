@@ -1770,12 +1770,15 @@ def opengeode():
 
     # Set log level for all libraries
     LOG.setLevel(level)
-    for module in (sdlSymbols, genericSymbols, ogAST, ogParser, Lander,
-            AdaGenerator, undoCommands, Renderer, Clipboard, Statechart,
-            Helper, LlvmGenerator, Asn1scc, Connectors):
-        module.LOG.addHandler(handler_console)
-        module.LOG.setLevel(level)
-
+    try:
+        for module in (sdlSymbols, genericSymbols, ogAST, ogParser, Lander,
+                AdaGenerator, undoCommands, Renderer, Clipboard, Statechart,
+                Helper, LlvmGenerator, Asn1scc, Connectors):
+            module.LOG.addHandler(handler_console)
+            module.LOG.setLevel(level)
+    except NameError:
+	    # Some modules may not be loaded (like llvm on Windows)
+	    pass;
     # Initialize the clipboard
     Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
 
