@@ -22,7 +22,7 @@ import math
 import random
 
 from PySide import QtGui, QtCore
-from PySide.QtCore import QPointF, QLineF
+from PySide.QtCore import QPointF
 from PySide.QtGui import QPainterPath
 
 try:
@@ -35,6 +35,7 @@ import genericSymbols
 import icons
 
 LOG = logging.getLogger(__name__)
+
 
 # pylint: disable=R0904
 class Rocket(genericSymbols.Symbol, object):
@@ -54,24 +55,24 @@ class Rocket(genericSymbols.Symbol, object):
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
         path = QtGui.QPainterPath()
-        path.moveTo(width/2, 0)
-        path.lineTo(width/3, height/6)
-        path.lineTo(width/3, height-height/6)
-        path.lineTo(width-width/3, height-height/6)
-        path.lineTo(width-width/3, height/6)
-        path.lineTo(width/2, 0)
-        path.moveTo(width/3, height/2)
-        path.lineTo(0, height/2)
+        path.moveTo(width / 2, 0)
+        path.lineTo(width / 3, height / 6)
+        path.lineTo(width / 3, height - height / 6)
+        path.lineTo(width - width / 3, height - height / 6)
+        path.lineTo(width - width / 3, height / 6)
+        path.lineTo(width / 2, 0)
+        path.moveTo(width / 3, height / 2)
+        path.lineTo(0, height / 2)
         path.lineTo(0, height)
-        path.lineTo(width/6, height-height/6)
-        path.lineTo(width/3, height)
-        path.lineTo(width/3, height-height/6)
-        path.moveTo(width-width/3, height/2)
-        path.lineTo(width, height/2)
+        path.lineTo(width / 6, height - height / 6)
+        path.lineTo(width / 3, height)
+        path.lineTo(width / 3, height - height / 6)
+        path.moveTo(width - width / 3, height / 2)
+        path.lineTo(width, height / 2)
         path.lineTo(width, height)
-        path.lineTo(width-width/6, height-height/6)
-        path.lineTo(width-width/3, height)
-        path.lineTo(width-width/3, height-height/6)
+        path.lineTo(width - width / 6, height - height / 6)
+        path.lineTo(width - width / 3, height)
+        path.lineTo(width - width / 3, height - height / 6)
         self.setPath(path)
         super(Rocket, self).set_shape(width, height)
 
@@ -95,12 +96,13 @@ class Rocket(genericSymbols.Symbol, object):
                 ' bounding rect = ' + str(self.boundingRect()))
 
     def mouse_move(self, event):
-        ''' Discard mouse move ''' 
+        ''' Discard mouse move '''
         pass
 
     def mouse_release(self, _):
         ''' Mouse has no effect on the rocket '''
         pass
+
 
 class Lander(object):
     ''' Rocket Lander '''
@@ -126,7 +128,7 @@ class Lander(object):
         path = QPainterPath(p1)
         slope = (p2.y() - p1.y()) / (p2.x() - p1.x())
         sign = 3
-        for point in range(int((p2.x() - p1.x())/5)):
+        for point in range(int((p2.x() - p1.x()) / 5)):
             sign = -sign
             x = p1.x() + point * 5
             path.lineTo(x, slope * x + sign)
@@ -186,7 +188,7 @@ class Lander(object):
             # Up key action depends on current speed and angle
             self.animation.stop()
             end_value = self.animation.endValue()
-            remaining_time =(self.animation.totalDuration() -
+            remaining_time = (self.animation.totalDuration() -
                              self.animation.currentTime())
             if 90 < abs(self.rocket.angle) < 270:
                 # If the rocket nose is towards Earth
@@ -220,7 +222,7 @@ class Lander(object):
 
         elif evt.key() == QtCore.Qt.Key_Down:
             # Down key has no effect
-            pass 
+            pass
         else:
             pass
 
@@ -252,7 +254,6 @@ class Lander(object):
         else:
             print 'GAME OVER'
 
-
     def quit_scene(self):
         ''' Redefinition of the quit_scene: Stop the game and the music '''
         try:
@@ -262,4 +263,4 @@ class Lander(object):
 
 
 if __name__ == '__main__':
-    print 'What do you expect?' 
+    print('What do you expect?')

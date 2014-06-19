@@ -28,14 +28,11 @@ __author__ = 'Maxime Perrotin'
 
 import sys
 import os
-import importlib
 import logging
 import traceback
 from itertools import chain, permutations
 import antlr3
 import antlr3.tree
-
-from singledispatch import singledispatch
 
 import sdl92Lexer as lexer
 from sdl92Parser import sdl92Parser
@@ -97,7 +94,10 @@ SPECIAL_OPERATORS = {'length': [LIST],
                      'present': [CHOICE],
                      'set_timer': [INTEGER, TIMER],
                      'reset_timer': [TIMER],
-                     'abs': [NUMERICAL]}
+                     'abs': [NUMERICAL],
+                     'float': [NUMERICAL],
+                     'fix': [NUMERICAL],
+                     'power': [NUMERICAL, INTEGER]}
 
 # Container to keep a list of types mapped from ANTLR Tokens
 # (Used with singledispatch/visitor pattern)
@@ -295,7 +295,7 @@ def is_constant(var):
 
 def fix_special_operators(op_name, expr_list, context):
     ''' Verify/fix type of special operators parameters '''
-    if op_name.lower() in ('length', 'present', 'abs'):
+    if op_name.lower() in ('length', 'present', 'abs', 'float', 'fix'):
         if len(expr_list) != 1:
             raise AttributeError('Only one parameter for the {} operator'
                                  .format(op_name))
@@ -310,6 +310,25 @@ def fix_special_operators(op_name, expr_list, context):
             raise TypeError('Length operator works only on strings/lists')
         elif op_name.lower() == 'present' and basic.kind != 'ChoiceType':
             raise TypeError('Present operator works only on CHOICE types')
+        elif op_name.lower() in ('abs', 'float', 'fix') and not basic.kind in (
+                'IntegerType', 'Integer32Type', 'RealType', 'NumericalType'):
+            raise TypeError('"{}" operator needs a numerical parameter'.format(
+                op_name))
+    elif op_name.lower() == 'power':
+        if len(expr_list) != 2:
+            raise AttributeError('The "power" operator takes two parameters')
+        types = {}
+        for idx, expr in enumerate(expr_list):
+            if expr.exprType is UNKNOWN_TYPE:
+                expr.exprType = find_variable(expr.inputString, context)
+                # XXX don't use inputString, there can be brackets
+                # XXX should change type to PrimVariable
+            if idx == 0 and not find_basic_type(expr.exprType).kind in (
+                    'IntegerType', 'Integer32Type', 'Numerical', 'RealType'):
+                raise TypeError('First parameter of power must be numerical')
+            elif idx == 1 and not find_basic_type(expr.exprType).kind in (
+                    'IntegerType', 'Integer32Type'):
+                raise TypeError('Second parameter of power must be integer')
     elif op_name.lower() in ('write', 'writeln'):
         for param in expr_list:
             if param.exprType is UNKNOWN_TYPE:
@@ -513,8 +532,8 @@ def check_type_compatibility(primary, typeRef, context):
                     else:
                         # Compare the types for semantic equivalence
                         try:
-                            compare_types\
-                              (primary.value[ufield].exprType, fd_data.type)
+                            compare_types(
+                                  primary.value[ufield].exprType, fd_data.type)
                         except TypeError as err:
                             raise TypeError('Field ' + ufield +
                                         ' is not of the proper type, i.e. ' +
@@ -542,8 +561,8 @@ def check_type_compatibility(primary, typeRef, context):
             try:
                 compare_types(value.exprType, choice_field_type)
             except TypeError as err:
-                raise TypeError\
-                           ('Field {field} in CHOICE is not of type {t1} - {e}'
+                raise TypeError(
+                            'Field {field} in CHOICE is not of type {t1} - {e}'
                             .format(field=primary.value['choice'],
                                     t1=type_name(choice_field_type),
                                     e=str(err)))
@@ -580,6 +599,7 @@ def check_type_compatibility(primary, typeRef, context):
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
                                 t1=type_name(typeRef)))
+
 
 def compare_types(type_a, type_b):
     '''
@@ -697,11 +717,21 @@ def find_type(path, context):
                                          ' must be a CHOICE type:' + str(path))
                         else:
                             result.EnumValues = param_type.Children
-                elif main.lower() in ('length', 'abs'):
+                elif main.lower() in ('length', 'abs', 'fix'):
                     # XXX length et abs: we must set Min and Max
                     # and abs may return a RealType, not always integer
-                    result = type('lenabs', (object,), {'kind': 'IntegerType'})
-                else: # write and writeln return void
+                    result = INTEGER
+                    # type('lenabs', (object,), {'kind': 'IntegerType'})
+                elif main.lower() == 'float':
+                    result = REAL
+                elif main.lower() == 'power':
+                    # Result can be int or real, depending on first param
+                    param = path[1].get('procParams')[0]
+                    check_type = find_variable(param.inputString, context) \
+                            if param.exprType == UNKNOWN_TYPE else \
+                            param.exprType
+                    result = find_basic_type(check_type)
+                else:  # write and writeln return void
                     pass
     if result.kind == 'ReferenceType':
         # We have more than one element and the first one is of type 'result'
@@ -923,6 +953,7 @@ def expression_list(root, context):
         result.append(exp)
     return result, errors, warnings
 
+
 def primary_value(root, context=None):
     '''
         Process a primary expression such as a!b(4)!c(hello)
@@ -938,6 +969,7 @@ def primary_value(root, context=None):
     errors = []
     prim = None
     global TMPVAR
+
     def primary_elem(child):
         ''' Process a single token '''
         prim = None
@@ -964,8 +996,9 @@ def primary_value(root, context=None):
             prim = ogAST.PrimStringLiteral()
             prim.value = child.getChild(0).text
             prim.exprType = type('PrStr', (object,),
-                          {'kind': 'StringType', 'Min': str(len(prim.value)-2),
-                           'Max': str(len(prim.value)-2)})
+                          {'kind': 'StringType',
+                           'Min': str(len(prim.value) - 2),
+                           'Max': str(len(prim.value) - 2)})
         elif child.type == lexer.FLOAT2:
             prim = ogAST.PrimMantissaBaseExp()
             mant = float(child.getChild(0).toString())
@@ -1073,7 +1106,7 @@ def primary_value(root, context=None):
         except TypeError as err:
             errors.append('Type of expression "'
                            + get_input_string(root)
-                           + '" not found: ' +str(err))
+                           + '" not found: ' + str(err))
         except AttributeError as err:
             LOG.debug('[find_types] ' + str(err))
     if prim:
@@ -1130,7 +1163,14 @@ def primary(root, context):
         prim.inputString = get_input_string(root)
         prim.line = root.getLine()
         prim.charPositionInLine = root.getCharPositionInLine()
+        prim.op_not, prim.op_minus = op_not, op_minus
+        if op_not:
+            prim.op_not = True
+        if op_minus:
+            prim.op_minus = True
+
     return prim, errors, warnings
+
 
 def expression(root, context):
     ''' Expression analysis (e.g. 5+5*hello(world)!foo) '''
@@ -1231,6 +1271,7 @@ def expression(root, context):
     TMPVAR += 1
     return expr, errors, warnings
 
+
 def variables(root, ta_ast, context):
     ''' Process declarations of variables (dcl a,b Type := 5) '''
     var = []
@@ -1252,8 +1293,6 @@ def variables(root, ta_ast, context):
             def_value, err, warn = expression(child.getChild(0), context)
             errors.extend(err)
             warnings.extend(warn)
-            ground_error = False
-
             expr = ogAST.ExprAssign()
             expr.left = ogAST.PrimPath()
             expr.left.inputString = var[-1]
@@ -1288,6 +1327,7 @@ def variables(root, ta_ast, context):
         errors.append('Cannot do semantic checks on variable declarations')
     return errors, warnings
 
+
 def dcl(root, ta_ast, context):
     ''' Process a set of variable declarations '''
     errors = []
@@ -1301,6 +1341,7 @@ def dcl(root, ta_ast, context):
             warnings.append(
                     'Unsupported dcl construct, type: ' + str(child.type))
     return errors, warnings
+
 
 def fpar(root):
     ''' Process a formal parameter declaration '''
@@ -1605,6 +1646,7 @@ def text_area_content(root, ta_ast, context):
                     str(child.type))
     return errors, warnings
 
+
 def text_area(root, parent=None, context=None):
     ''' Process a text area (DCL, procedure, operators declarations '''
     errors = []
@@ -1639,6 +1681,7 @@ def text_area(root, parent=None, context=None):
         warnings = [[w, [ta.pos_x, ta.pos_y]] for w in warnings]
     return ta, errors, warnings
 
+
 def signal(root):
     ''' SIGNAL definition: name and optional list of types '''
     errors, warnings = [], []
@@ -1662,12 +1705,14 @@ def signal(root):
                   ' than one parameter. Check signal declaration.')
     return new_signal, errors, warnings
 
+
 def single_route(root):
     ''' Route (from id to id with [signal id] '''
     route = {'source': root.getChild(0).text,
              'dest': root.getChild(1).text,
              'signals': [sig.text for sig in root.getChildren()[2:]]}
     return route
+
 
 def channel_signalroute(root):
     ''' Channel/signalroute definition (connections) '''
@@ -1680,6 +1725,7 @@ def channel_signalroute(root):
         elif child.type == lexer.ROUTE:
             edge['routes'].append(single_route(child))
     return edge
+
 
 def block_definition(root, parent):
     ''' BLOCK entity definition '''
@@ -1714,6 +1760,7 @@ def block_definition(root, parent):
             warnings.append('Unsupported block child type: ' +
                 str(child.type))
     return block, errors, warnings
+
 
 def system_definition(root, parent):
     ''' SYSTEM part - contains blocks, procedures and channels '''
@@ -1753,6 +1800,7 @@ def system_definition(root, parent):
             warnings.append('Unsupported construct in system: ' +
                     str(child.type))
     return system, errors, warnings
+
 
 def process_definition(root, parent=None, context=None):
     ''' Process definition analysis '''
@@ -1841,6 +1889,7 @@ def process_definition(root, parent=None, context=None):
                              sdl92Parser.tokenNames[child.type] +
                             ' - line ' + str(child.getLine()))
     return process, errors, warnings
+
 
 def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
@@ -1943,6 +1992,7 @@ def input_part(root, parent, context):
     # level (we counted the number of terminators before parsing the input)
     i.terminators = list(context.terminators[terminators:])
     return i, errors, warnings
+
 
 def state(root, parent, context):
     '''
@@ -2125,6 +2175,7 @@ def cif(root):
         result.append(val)
     return result
 
+
 def start(root, parent=None, context=None):
     ''' Parse the START transition '''
     errors = []
@@ -2166,6 +2217,7 @@ def start(root, parent=None, context=None):
     s.terminators = list(context.terminators[terminators:])
     return s, errors, warnings
 
+
 def end(root, parent=None, context=None):
     ''' Parse a comment symbol '''
     c = ogAST.Comment()
@@ -2194,7 +2246,7 @@ def outputbody(root, context):
     ''' Parse an output body (the content excluding the CIF statement) '''
     errors = []
     warnings = []
-    body = {'outputName': '', 'params':[]}
+    body = {'outputName': '', 'params': []}
     for child in root.getChildren():
         if child.type == lexer.ID:
             body['outputName'] = child.text
@@ -2206,6 +2258,9 @@ def outputbody(root, context):
                                                     child, context)
             errors.extend(err)
             warnings.extend(warn)
+        elif child.type == lexer.TO:
+            pass
+			# TODO: better support of TO primitive
         else:
             warnings.append('Unsupported output body type:' +
                     str(child.type))
@@ -2233,7 +2288,7 @@ def output(root, parent, out_ast=None, context=None):
     errors = []
     warnings = []
     coord = False
-    out_ast = out_ast or ogAST.Output() # syntax checker passes no ast
+    out_ast = out_ast or ogAST.Output()  # syntax checker passes no ast
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -2670,8 +2725,8 @@ def for_loop(root, context):
             if forloop['list']:
                 if forloop['list'].exprType == UNKNOWN_TYPE:
                     try:
-                        forloop['list'].exprType = find_variable\
-                                    (forloop['list'].inputString, context)
+                        forloop['list'].exprType = find_variable(
+                                          forloop['list'].inputString, context)
                     except AttributeError:
                         errors.append('In FOR loop: variable {} is undefined'
                                   .format(forloop['list'].inputString))
@@ -2845,6 +2900,7 @@ def pr_file(root):
         errors.extend(err)
         warnings.extend(warn)
         ast.systems.append(system)
+
         def find_processes(block):
             ''' Recursively find processes in a system '''
             try:
@@ -2969,7 +3025,7 @@ def parseSingleElement(elem='', string=''):
         try:
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
-        except AttributeError as err:
+        except AttributeError:
             # Syntax checker has no visibility on variables and types
             # so we have to discard exceptions sent by e.g. find_variable
             pass

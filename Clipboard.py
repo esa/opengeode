@@ -34,6 +34,7 @@ COPY_PASTE = []
 # Actual scene clipboard
 CLIPBOARD = None
 
+
 def copy(selection):
     ''' Create a copy (duplicate) of the selected symbols in AST form '''
     # Clear the copy paste buffer
@@ -99,6 +100,7 @@ def copy_branch(top_level_item):
                 res_terminators.extend(term_inators)
     return branch, res_terminators
 
+
 def paste(parent, scene):
     '''
         Paste previously copied symbols at selection point
@@ -130,7 +132,7 @@ def paste_floating_objects(scene):
                 new_item = Renderer.render(state, scene=CLIPBOARD,
                            terminators=terminators, states=states)
             except TypeError as err:
-                LOG.debug('No paste "'+ state.inputString + '" -' + str(err))
+                LOG.debug('No paste "' + state.inputString + '" -' + str(err))
                 # Discard terminators (explanation given in Renderer._state)
                 pass
             else:
@@ -155,7 +157,7 @@ def paste_floating_objects(scene):
 
 def paste_below_item(parent, scene):
     ''' Paste items under a selected symbol '''
-    LOG.debug('Pasting below item ' + repr(parent)[slice(0,20)])
+    LOG.debug('Pasting below item ' + repr(parent)[slice(0, 20)])
     symbols = []
     for item_list, _ in COPY_PASTE:
         states = [i for i in item_list if isinstance(i, ogAST.State)]

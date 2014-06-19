@@ -50,6 +50,7 @@ import sdlSymbols
 import PySide.QtXml  # NOQA
 import singledispatch  # NOQA
 import Asn1scc  # NOQA
+import Connectors  # NOQA
 
 #from PySide import phonon
 
@@ -60,7 +61,7 @@ from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
 
 from genericSymbols import(Symbol, Comment, EditableText, Cornergrabber,
-                           Connection, Completer)
+                           Connection)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
         ProcedureStart, ProcedureStop, StateStart, Connect, Process)
@@ -82,7 +83,7 @@ import Helper
 # This is optional, as graphviz installation can not be easily
 # automated on some platforms by opengeode installation scripts.
 try:
-    import pygraphviz
+    import pygraphviz  # NOQA
     graphviz = True
 except ImportError:
     graphviz = False
@@ -312,7 +313,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # Keep a list of composite states: {'stateName': SDL_Scene}
         self._composite_states = {}
 
-
     @property
     def visible_symb(self):
         ''' Return the visible items of a scene '''
@@ -341,37 +341,31 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         ''' Return visible state components of the scene '''
         return (it for it in self.visible_symb if isinstance(it, State))
 
-
     @property
     def texts(self):
         ''' Return visible text areas components of the scene '''
         return (it for it in self.visible_symb if isinstance(it, TextSymbol))
-
 
     @property
     def procs(self):
         ''' Return visible procedure declaration components of the scene '''
         return (it for it in self.visible_symb if isinstance(it, Procedure))
 
-
     @property
     def start(self):
         ''' Return visible start components of the scene '''
         return (it for it in self.visible_symb if isinstance(it, Start))
-
 
     @property
     def floating_labels(self):
         ''' Return visible floating label components of the scene '''
         return (it for it in self.floating_symb if isinstance(it, Label))
 
-
     @property
     def returns(self):
         ''' Return visible return components of the scene '''
         return (it for it in self.visible_symb if isinstance(it,
                                                               ProcedureStop))
-
 
     @property
     def composite_states(self):
@@ -398,11 +392,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 for sub in each.nested_scene.all_nested_scenes:
                     yield sub
 
-
     def quit_scene(self):
         ''' Called in case of scene switch (e.g. UP button) '''
         pass
-
 
     def render_everything(self, ast):
         ''' Render a process and its children scenes, recursively '''
@@ -434,7 +426,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                                          unicode(each).lower()]
 
         recursive_render(ast, self)
-
 
     def refresh(self):
         ''' Refresh the symbols and connections in the scene '''
@@ -485,7 +476,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 item.setCursor(item.default_cursor)
             except AttributeError:
                 pass
-
 
     def translate_to_origin(self):
         '''
@@ -680,7 +670,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.undo_stack.endMacro()
                 self.refresh()
 
-
     def get_pr_string(self):
         ''' Parse the graphical items and returns a PR string '''
         pr_data = deque()
@@ -717,7 +706,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         Helper.flatten(process_ast)
         return Statechart.create_dot_graph(process_ast)
 
-
     def export_branch_to_picture(self, symbol, filename, doc_format):
         ''' Save a symbol and its followers to a file '''
         temp_scene = SDL_Scene()
@@ -730,7 +718,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             temp_scene.export_img(filename, doc_format)
         except AttributeError:
             pass
-
 
     def export_img(self, filename=None, doc_format='png', split=False):
         ''' Save the scene as a PNG/SVG or PDF document
@@ -1047,6 +1034,7 @@ class SDL_View(QtGui.QGraphicsView, object):
     ''' Main graphic view used to display the SDL scene and handle zoom '''
     # signal to ask the main application that a new scene is needed
     need_new_scene = QtCore.Signal()
+
     def __init__(self, scene):
         ''' Create the SDL view holding the scene '''
         super(SDL_View, self).__init__(scene)
@@ -1525,7 +1513,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             self.view.setScene(self.scene)
             self.view.refresh()
 
-
     def start(self, file_name):
         ''' Initializes all objects to start the application '''
         # Create a graphic scene: the main canvas
@@ -1749,8 +1736,8 @@ def opengeode():
     app.setWindowIcon(QtGui.QIcon(':icons/input.png'))
 
     # Set all encodings to utf-8 in Qt
-    QtCore.QTextCodec.setCodecForCStrings \
-                    (QtCore.QTextCodec.codecForName('UTF-8'))
+    QtCore.QTextCodec.setCodecForCStrings(
+                                       QtCore.QTextCodec.codecForName('UTF-8'))
 
     # Bypass system-default font, to harmonize size on all platforms
     font_database = QtGui.QFontDatabase()
@@ -1786,12 +1773,15 @@ def opengeode():
 
     # Set log level for all libraries
     LOG.setLevel(level)
-    for module in (sdlSymbols, genericSymbols, ogAST, ogParser, Lander,
-            AdaGenerator, undoCommands, Renderer, Clipboard, Statechart,
-            Helper, LlvmGenerator, Asn1scc):
-        module.LOG.addHandler(handler_console)
-        module.LOG.setLevel(level)
-
+    try:
+        for module in (sdlSymbols, genericSymbols, ogAST, ogParser, Lander,
+                AdaGenerator, undoCommands, Renderer, Clipboard, Statechart,
+                Helper, LlvmGenerator, Asn1scc, Connectors):
+            module.LOG.addHandler(handler_console)
+            module.LOG.setLevel(level)
+    except NameError:
+	    # Some modules may not be loaded (like llvm on Windows)
+	    pass;
     # Initialize the clipboard
     Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
 

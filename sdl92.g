@@ -114,6 +114,15 @@ tokens {
         FLOATING_LABEL;
         COMPOSITE_STATE;
         CONNECT;
+        SYNTYPE;
+        ENDSYNTYPE;
+        NEWTYPE;
+        ENDNEWTYPE;
+        ARRAY;
+        CONSTANTS;
+        STRUCT;
+        FIELDS;
+        FIELD;
 }
 
 
@@ -252,9 +261,11 @@ content
         :        (procedure
                  | fpar
                  | timer_declaration
+                 | syntype_definition
+                 | newtype_definition
                  | variable_definition)*
         ->       ^(TEXTAREA_CONTENT
-                     fpar* procedure* variable_definition* timer_declaration*);
+                     fpar* procedure* variable_definition* syntype_definition* newtype_definition* timer_declaration*);
 
 
 timer_declaration
@@ -262,6 +273,41 @@ timer_declaration
                 (',' timer_id)*
                 end
         ->      ^(TIMER timer_id+);
+
+syntype_definition
+	:	SYNTYPE syntype_name '=' parent_sort (CONSTANTS (range_condition (',' range_condition)* ))?
+	        ENDSYNTYPE syntype_name? end
+	->      ^(SYNTYPE syntype_name parent_sort range_condition*);
+	
+syntype_name 
+	:	sort;
+
+parent_sort
+	:	sort;
+
+newtype_definition
+	:	NEWTYPE type_name (array_definition|structure_definition)? ENDNEWTYPE type_name? end
+	->	^(NEWTYPE type_name array_definition* structure_definition*);
+
+
+type_name
+	:	sort;
+	
+array_definition
+	:	ARRAY '(' sort ',' sort ')'
+	->	^(ARRAY sort sort);
+
+structure_definition
+	:	STRUCT field_list end
+	->	^(STRUCT field_list);
+
+field_list
+	:	field_definition (end field_definition)*
+	->      ^(FIELDS field_definition+);
+
+field_definition
+	:	field_name (',' field_name)* sort
+	->	^(FIELD field_name+ sort);
 
 variable_definition
         :       DCL variables_of_sort
@@ -642,24 +688,23 @@ output
 
 
 outputbody
-        :       outputstmt (',' outputstmt)*
-        ->      ^(OUTPUT_BODY outputstmt+);
-//                to_part?
-//                via_part?
-//      -> (signal_id actual_parameters?)+ to_part? via_part?;
+        :       outputstmt (',' outputstmt)* to_part?
+        ->      ^(OUTPUT_BODY outputstmt+ to_part?);
+ //               via_part?
+ //     -> (signal_id actual_parameters?)+ to_part? via_part?;
 
 
 outputstmt
         :       signal_id 
                 actual_parameters?;
 
-//to_part
-//        :       ('TO' destination)
-//        -> ^(TO destination);
+to_part
+        :       ('TO' destination)
+        -> ^(TO destination);
 
-//via_part
-//        :       'VIA' viabody
-//        -> ^(VIA viabody);
+via_part
+        :       'VIA' viabody
+        -> ^(VIA viabody);
 
 
 // ambiguous in SDL92, added OR between ALL and via_path
@@ -1210,7 +1255,13 @@ BLOCK           :       B L O C K;
 ENDBLOCK        :       E N D B L O C K;
 SIGNALROUTE     :       S I G N A L R O U T E;
 CONNECT         :       C O N N E C T;
-
+SYNTYPE         :       S Y N T Y P E;
+ENDSYNTYPE      :       E N D S Y N T Y P E;		
+NEWTYPE         :       N E W T Y P E;
+ENDNEWTYPE      :       E N D N E W T Y P E;
+ARRAY           :       A R R A Y;	
+CONSTANTS       :	C O N S T A N T S;
+STRUCT          :	S T R U C T;
 StringLiteral   :       STR+ ;
 
 fragment

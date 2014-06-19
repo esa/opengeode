@@ -37,6 +37,7 @@ except ImportError:
 __all__ = ['ASN1', 'parse_asn1']
 __version__ = '0.1'
 
+
 class ASN1(Enum):
     ''' Flags used to control the compiler options '''
     NoParameterizedTypes = 1
@@ -52,7 +53,7 @@ def parse_asn1(*files, **options):
     global AST
 
     ast_version = options.get('ast_version', ASN1.UniqueEnumeratedNames)
-    flags = options.get('flags' , [ASN1.AstOnly])
+    flags = options.get('flags', [ASN1.AstOnly])
     assert isinstance(ast_version, ASN1)
     assert isinstance(flags, list)
 
@@ -72,7 +73,11 @@ def parse_asn1(*files, **options):
             '-customStg', tmp_stg + ':' + filepath] + list(*files)
 
     LOG.debug('Calling: ' + ' '.join(args))
-    ret = subprocess.check_call(args)
+    try:
+        ret = subprocess.check_call(args)
+    except subprocess.CalledProcessError as err:
+        LOG.debug(str(err))
+        raise TypeError('asn1.exe execution failed')
     sys.path.append(tempdir)
     if ret == 0:
         if filename in AST.viewkeys():
@@ -97,9 +102,3 @@ if __name__ == '__main__':
     except TypeError as err:
         print(str(err))
         sys.exit(1)
-
-
-
-
-
-

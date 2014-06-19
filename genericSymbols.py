@@ -50,20 +50,17 @@
 
 __all__ = ['Symbol', 'VerticalSymbol', 'HorizontalSymbol', 'Comment']
 import os
-import sys
 import logging
 
 from PySide.QtCore import(Qt, QPoint, QPointF, QRect, Slot, QRegExp, QFile,
                           QObject, Property)
 
-from PySide import QtSvg
-
 from PySide.QtGui import(QGraphicsTextItem, QGraphicsPathItem,
         QGraphicsPolygonItem, QPainterPath, QGraphicsItem,
         QCompleter, QGraphicsProxyWidget, QListWidget,
         QListWidgetItem, QTextCursor, QSyntaxHighlighter, QTextCharFormat,
-        QFont, QPen, QColor, QMenu, QFileDialog, QImage, QPainter,
-        QLineEdit, QBrush, QTextBlockFormat, QPrinter, QStringListModel)
+        QFont, QPen, QColor, QMenu, QFileDialog, QPainter,
+        QLineEdit, QTextBlockFormat, QStringListModel)
 
 from PySide.QtUiTools import QUiLoader
 
@@ -87,7 +84,6 @@ class Completer(QGraphicsProxyWidget, object):
         self.string_list = QStringListModel()
         self._completer = QCompleter()
         self.completion_list = parent.parentItem().completion_list
-        #self._completer = QCompleter(list(parent.parentItem().completion_list))
         self._completer.setCaseSensitivity(Qt.CaseInsensitive)
         # For some reason the default minimum size is (61,61)
         # Set it to 0 so that the size of the box is not taken
@@ -397,7 +393,7 @@ class EditableText(QGraphicsTextItem, object):
         # Set width to auto-expand, and disables alignment, while editing:
         self.setTextWidth(-1)
         if not self.editing:
-            self.oldText = unicode(self) #str(self)
+            self.oldText = unicode(self)
             self.oldSize = self.parentItem().boundingRect()
             self.editing = True
 
@@ -416,7 +412,6 @@ class EditableText(QGraphicsTextItem, object):
     def __str__(self):
         ''' Print the text inside the symbol '''
         raise TypeError('Use UNICODE, not string!')
-        #return unicode(self).encode('utf-8')
 
     def __unicode__(self):
         return self.toPlainText()
@@ -637,14 +632,12 @@ class Symbol(QObject, QGraphicsPathItem, object):
         '''
         pass
 
-
     def check_syntax(self):
         ''' Check the syntax of the text inside the symbol (if any) '''
         try:
-            _, syntax_errors, ___, ____, _____ = (
-                                self.parser.parseSingleElement(
+            _, syntax_errors, _, _, _ = (self.parser.parseSingleElement(
                                                 self.common_name, self.PR()))
-        except (AssertionError, AttributeError) as err:
+        except (AssertionError, AttributeError):
             LOG.error('Checker failed - no parser for this construct?')
         else:
             try:
@@ -823,7 +816,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # Align children properly when resizing
         try:
             self.text.set_textbox_position()
-        except AttributeError as err:
+        except AttributeError:
             # if called before text is initialized - or if no textbox
             pass
         for child in self.childSymbols():
@@ -1190,6 +1183,7 @@ class Cornergrabber(QGraphicsPolygonItem, object):
         to resize it from any border/corner.
     '''
     hasParent = False
+
     def __init__(self, parent):
         ''' Create the grabber '''
         super(Cornergrabber, self).__init__(parent)
@@ -1358,7 +1352,7 @@ class HorizontalSymbol(Symbol, object):
         try:
             return (item for item in self.parent.childItems()
                     if item is not self and (isinstance(self, type(item)) or
-                        isinstance(item, type(self)))) # is type(self))
+                        isinstance(item, type(self))))
         except:
             return ()
 

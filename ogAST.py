@@ -41,6 +41,7 @@ LOG = logging.getLogger(__name__)
 class Expression(object):
     ''' AST Entry for expressions - Always use subtype '''
     is_raw = False
+
     def __init__(self, inputString='', line=-1, charPositionInLine=-1):
         ''' Initialize Expression attributes '''
         self.inputString = inputString
@@ -118,16 +119,24 @@ class ExprMod(Expression):
 
 
 class ExprRem(Expression):
-    operand = 'mod'
+    operand = 'rem'
 
 
 class ExprAssign(Expression):
     operand = ':='
 
 
-class ExprAppend(Expression): pass
-class ExprIn(Expression): pass
-class ExprImplies(Expression): pass
+class ExprAppend(Expression):
+    pass
+
+
+class ExprIn(Expression):
+    pass
+
+
+class ExprImplies(Expression):
+    pass
+
 
 class Primary(Expression):
     '''
@@ -135,6 +144,7 @@ class Primary(Expression):
         Abstract class, never used directly, see subtypes below
     '''
     is_raw = True
+
     def __init__(self, inputString='', line=-1, charPositionInLine=-1,
                  primary=None):
         ''' Initialize common primary attributes '''
@@ -160,6 +170,7 @@ class Primary(Expression):
         return u'PRIMARY : {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
+
 # Subclasses of Primary - never use Primary directly
 class PrimPath(Primary):
     ''' PrimPath is a list of elements needed to identify a value
@@ -172,15 +183,43 @@ class PrimPath(Primary):
     '''
     is_raw = False
 
-class PrimVariable(PrimPath): pass # XXX should not be raw for codegen
-class PrimFPAR(PrimVariable): pass
-class PrimEnumeratedValue(Primary): pass
-class PrimInteger(Primary): pass
-class PrimReal(Primary): pass
-class PrimBoolean(Primary): pass
-class PrimConstant(Primary): is_raw = False #pass
-class PrimBitStringLiteral(Primary): pass   # Not supported yet
-class PrimOctetStringLiteral(Primary): pass # Not supported yet
+
+class PrimVariable(PrimPath):
+    pass
+
+
+class PrimFPAR(PrimVariable):
+    pass
+
+
+class PrimEnumeratedValue(Primary):
+    pass
+
+
+class PrimInteger(Primary):
+    pass
+
+
+class PrimReal(Primary):
+    pass
+
+
+class PrimBoolean(Primary):
+    pass
+
+
+class PrimConstant(Primary):
+    is_raw = False
+
+
+class PrimBitStringLiteral(Primary):
+    ''' Not supported yet '''
+    pass
+
+
+class PrimOctetStringLiteral(Primary):
+    ''' Not supported yet '''
+    pass
 
 
 class PrimIfThenElse(Primary):
@@ -213,7 +252,8 @@ class PrimMantissaBaseExp(Primary):
     pass
 
 
-class PrimEmptyString(Primary): pass
+class PrimEmptyString(Primary):
+    pass
 
 
 class PrimChoiceItem(Primary):
@@ -221,7 +261,8 @@ class PrimChoiceItem(Primary):
     pass
 
 
-class PrimChoiceDeterminant(Primary): pass
+class PrimChoiceDeterminant(Primary):
+    pass
 
 
 class PrimSequenceOf(Primary):
@@ -340,6 +381,7 @@ class TaskForLoop(Task):
         'step' : int}, 'transition': Transition }
     '''
     pass
+
 
 class Output(object):
     ''' AST Entry for OUTPUT statements '''
@@ -481,9 +523,9 @@ class Transition(object):
 
     def trace(self):
         ''' Debug output: display all actions '''
-        data = [trace(action) for action in self.actions]
+        data = [action.trace() for action in self.actions]
         if self.terminator:
-            data.append(trace(self.terminator))
+            data.append(self.terminator.trace())
         return u'\n'.join(data)
 
 
@@ -844,7 +886,7 @@ class System(object):
         self.signals = []
         # list of ogAST.Procedure
         self.procedures = []
-        # channels: [{'name':str, 'routes':[{'source': str, 'dest': str, 
+        # channels: [{'name':str, 'routes':[{'source': str, 'dest': str,
         # 'signals': ['sig1', .. ]}]
         self.channels = []
         self.blocks = []

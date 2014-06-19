@@ -49,6 +49,7 @@ def add_to_scene(item, scene):
     else:
         raise TypeError('This symbol does not fit the current scene')
 
+
 @singledispatch
 def render(ast, scene, parent, states, terminators=None):
     ''' Render a transition action symbol on the scene '''
@@ -128,12 +129,10 @@ def _automaton(ast, scene):
             new_state = render(state, scene=scene, states=ast.states,
                                terminators=ast.parent.terminators)
             if new_state.nested_scene:
-                if str(new_state).lower() in nested_states: #.viewkeys():
+                if str(new_state).lower() in nested_states:
                     new_state.nested_scene = None
                 else:
                     nested_states.append(str(new_state).lower())
-                    #nested_states[str(new_state).lower()] = \
-                    #                                    new_state.nested_scene
         except TypeError:
             # Discard terminators (see _state function for explanation)
             pass
@@ -197,7 +196,7 @@ def _start(ast, scene, states, parent=None):
 
 
 @render.register(ogAST.CompositeState_start)
-def _start(ast, scene, states, parent=None):
+def _composite_start(ast, scene, states, parent=None):
     ''' Add an editable start symbol to a scene (in composite states) '''
     _ = parent
     start_symbol = sdlSymbols.StateStart(ast)
@@ -265,7 +264,7 @@ def _output(ast, scene, parent, states):
 
 
 @render.register(ogAST.ProcedureCall)
-def _output(ast, scene, parent, states):
+def _procedure_call(ast, scene, parent, states):
     ''' Create an OUTPUT or PROCEDURE CALL symbol '''
     _, _ = scene, states
     return sdlSymbols.ProcedureCall(parent, ast=ast)
@@ -310,7 +309,7 @@ def _terminator(ast, scene, parent, states):
     ''' Create a TERMINATOR symbol '''
     if ast.label:
         # pylint: disable=E1111
-        parent = render(ast.label,scene=scene, parent=parent, states=states)
+        parent = render(ast.label, scene=scene, parent=parent, states=states)
     if ast.kind == 'next_state':
         LOG.debug('ADDING NEXT_STATE ' + ast.inputString)
         # Create a new state symbol
@@ -351,6 +350,7 @@ def _input(ast, scene, parent, states):
                parent=inp,
                states=states)
     return inp
+
 
 @render.register(ogAST.Connect)
 def _connect(ast, scene, parent, states):
