@@ -699,8 +699,8 @@ outputstmt
                 actual_parameters?;
 
 to_part
-        :       ('TO' destination)
-        -> ^(TO destination);
+        :       (TO destination)
+        ->      ^(TO destination);
 
 via_part
         :       'VIA' viabody

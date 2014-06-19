@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 18, 2009 10:09:25 sdl92.g 2014-06-18 17:34:17
+# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-06-18 19:48:07
 
 import sys
 from antlr3 import *
@@ -234,8 +234,8 @@ LE=141
 class sdl92Lexer(Lexer):
 
     grammarFileName = "sdl92.g"
-    antlr_version = version_str_to_tuple("3.1.3 Mar 18, 2009 10:09:25")
-    antlr_version_str = "3.1.3 Mar 18, 2009 10:09:25"
+    antlr_version = version_str_to_tuple("3.1.3 Mar 17, 2009 19:23:44")
+    antlr_version_str = "3.1.3 Mar 17, 2009 19:23:44"
 
     def __init__(self, input=None, state=None):
         if state is None:
@@ -6478,35 +6478,35 @@ class sdl92Lexer(Lexer):
         )
 
     DFA20_max = DFA.unpack(
-        u"\1\175\1\75\1\162\1\151\1\163\1\uffff\1\56\1\51\1\170\1\156\1"
-        u"\75\1\57\1\146\5\uffff\1\71\1\163\1\145\1\170\1\145\1\162\1\171"
-        u"\1\145\1\171\1\145\1\162\1\156\1\165\2\162\1\141\1\165\2\151\1"
-        u"\157\1\uffff\1\76\2\75\2\157\1\154\1\163\1\uffff\2\145\1\162\1"
-        u"\171\1\145\1\171\1\145\1\165\2\162\1\141\1\165\1\151\3\157\1\154"
-        u"\1\163\1\uffff\1\56\1\71\3\uffff\1\172\1\165\1\163\1\155\1\170"
-        u"\1\172\1\165\1\163\1\155\1\170\2\151\2\141\1\164\1\124\1\171\1"
-        u"\156\1\164\1\156\1\171\2\162\4\uffff\1\122\1\144\1\164\1\144\1"
-        u"\164\2\163\1\120\4\172\6\uffff\1\146\1\110\3\uffff\1\164\1\171"
-        u"\2\143\2\154\2\145\1\162\1\157\1\162\1\157\2\165\1\145\1\164\1"
-        u"\162\1\142\1\163\1\145\1\164\1\162\1\142\1\163\2\147\2\166\2\157"
-        u"\2\160\2\164\2\156\1\172\2\170\2\164\2\154\1\157\1\154\1\157\1"
-        u"\154\2\141\2\162\2\172\1\154\1\145\1\156\1\154\1\145\1\156\2\141"
-        u"\2\142\1\172\1\164\1\172\3\164\1\141\2\151\6\uffff\2\162\4\156"
-        u"\2\144\2\157\2\163\2\145\2\uffff\1\71\1\uffff\2\145\2\153\2\145"
-        u"\2\164\1\uffff\2\156\2\163\1\172\1\127\4\172\2\145\1\111\2\172"
-        u"\1\167\1\172\1\167\1\172\2\146\2\172\2\141\1\117\2\172\1\157\1"
-        u"\145\1\157\3\145\1\117\2\uffff\2\165\2\uffff\2\151\2\172\2\160"
-        u"\2\141\1\157\1\166\1\157\1\166\2\163\2\143\2\172\1\164\1\160\1"
-        u"\164\1\160\2\165\2\163\4\164\2\156\2\145\2\144\6\145\2\172\2\165"
-        u"\2\147\4\164\2\172\2\145\2\154\2\155\2\163\2\162\2\172\1\uffff"
-        u"\2\154\2\141\2\163\2\155\2\156\2\145\1\uffff\2\172\2\150\2\156"
-        u"\2\172\2\165\2\164\2\172\2\143\2\145\6\172\2\162\6\172\1\uffff"
-        u"\1\172\3\uffff\2\162\1\126\2\uffff\2\145\1\uffff\2\151\2\171\1"
-        u"\122\1\uffff\1\157\1\154\1\162\1\171\1\157\1\154\1\157\1\154\1"
-        u"\162\1\171\1\157\1\154\6\145\4\162\2\172\1\122\2\164\2\163\1\uffff"
-        u"\2\172\2\155\2\162\2\145\2\151\2\55\2\151\1\uffff\1\145\1\164\1"
-        u"\145\1\164\2\172\2\143\2\164\2\145\2\171\2\141\2\172\2\145\2\162"
-        u"\2\164\2\162\1\uffff\2\162\2\145\2\163\2\171\1\uffff\6\172\2\145"
+        u"\1\175\1\75\1\162\1\151\1\163\1\uffff\1\56\1\51\1\170\1\156\1\75"
+        u"\1\57\1\146\5\uffff\1\71\1\163\1\145\1\170\1\145\1\162\1\171\1"
+        u"\145\1\171\1\145\1\162\1\156\1\165\2\162\1\141\1\165\2\151\1\157"
+        u"\1\uffff\1\76\2\75\2\157\1\154\1\163\1\uffff\2\145\1\162\1\171"
+        u"\1\145\1\171\1\145\1\165\2\162\1\141\1\165\1\151\3\157\1\154\1"
+        u"\163\1\uffff\1\56\1\71\3\uffff\1\172\1\165\1\163\1\155\1\170\1"
+        u"\172\1\165\1\163\1\155\1\170\2\151\2\141\1\164\1\124\1\171\1\156"
+        u"\1\164\1\156\1\171\2\162\4\uffff\1\122\1\144\1\164\1\144\1\164"
+        u"\2\163\1\120\4\172\6\uffff\1\146\1\110\3\uffff\1\164\1\171\2\143"
+        u"\2\154\2\145\1\162\1\157\1\162\1\157\2\165\1\145\1\164\1\162\1"
+        u"\142\1\163\1\145\1\164\1\162\1\142\1\163\2\147\2\166\2\157\2\160"
+        u"\2\164\2\156\1\172\2\170\2\164\2\154\1\157\1\154\1\157\1\154\2"
+        u"\141\2\162\2\172\1\154\1\145\1\156\1\154\1\145\1\156\2\141\2\142"
+        u"\1\172\1\164\1\172\3\164\1\141\2\151\6\uffff\2\162\4\156\2\144"
+        u"\2\157\2\163\2\145\2\uffff\1\71\1\uffff\2\145\2\153\2\145\2\164"
+        u"\1\uffff\2\156\2\163\1\172\1\127\4\172\2\145\1\111\2\172\1\167"
+        u"\1\172\1\167\1\172\2\146\2\172\2\141\1\117\2\172\1\157\1\145\1"
+        u"\157\3\145\1\117\2\uffff\2\165\2\uffff\2\151\2\172\2\160\2\141"
+        u"\1\157\1\166\1\157\1\166\2\163\2\143\2\172\1\164\1\160\1\164\1"
+        u"\160\2\165\2\163\4\164\2\156\2\145\2\144\6\145\2\172\2\165\2\147"
+        u"\4\164\2\172\2\145\2\154\2\155\2\163\2\162\2\172\1\uffff\2\154"
+        u"\2\141\2\163\2\155\2\156\2\145\1\uffff\2\172\2\150\2\156\2\172"
+        u"\2\165\2\164\2\172\2\143\2\145\6\172\2\162\6\172\1\uffff\1\172"
+        u"\3\uffff\2\162\1\126\2\uffff\2\145\1\uffff\2\151\2\171\1\122\1"
+        u"\uffff\1\157\1\154\1\162\1\171\1\157\1\154\1\157\1\154\1\162\1"
+        u"\171\1\157\1\154\6\145\4\162\2\172\1\122\2\164\2\163\1\uffff\2"
+        u"\172\2\155\2\162\2\145\2\151\2\55\2\151\1\uffff\1\145\1\164\1\145"
+        u"\1\164\2\172\2\143\2\164\2\145\2\171\2\141\2\172\2\145\2\162\2"
+        u"\164\2\162\1\uffff\2\162\2\145\2\163\2\171\1\uffff\6\172\2\145"
         u"\2\172\1\uffff\2\172\2\164\2\145\2\164\2\145\2\156\2\154\1\uffff"
         u"\2\165\4\172\1\uffff\2\163\2\151\1\uffff\2\153\2\172\3\uffff\2"
         u"\172\4\uffff\2\156\1\105\2\162\2\154\3\172\2\162\4\157\1\163\1"
@@ -6585,27 +6585,27 @@ class sdl92Lexer(Lexer):
         u"\107\2\uffff\1\115\16\uffff\1\111\3\uffff\1\113\2\uffff\1\121\1"
         u"\112\5\uffff\1\114\2\uffff\1\110"),
         DFA.unpack(u"\1\123\37\uffff\1\124"),
-        DFA.unpack(u"\1\126\10\uffff\1\125\1\uffff\1\127\3\uffff\1\134"
-        u"\1\132\30\uffff\1\131\1\uffff\1\133\3\uffff\1\135\1\130"),
+        DFA.unpack(u"\1\126\10\uffff\1\125\1\uffff\1\127\3\uffff\1\134\1"
+        u"\132\30\uffff\1\131\1\uffff\1\133\3\uffff\1\135\1\130"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\136"),
         DFA.unpack(u"\1\140"),
         DFA.unpack(u"\1\150\1\uffff\1\145\3\uffff\1\142\5\uffff\1\146\23"
         u"\uffff\1\147\1\uffff\1\143\11\uffff\1\144"),
-        DFA.unpack(u"\1\155\6\uffff\1\151\1\154\27\uffff\1\153\7\uffff"
-        u"\1\152"),
+        DFA.unpack(u"\1\155\6\uffff\1\151\1\154\27\uffff\1\153\7\uffff\1"
+        u"\152"),
         DFA.unpack(u"\1\156\4\uffff\1\157\15\uffff\1\160"),
         DFA.unpack(u"\1\162"),
-        DFA.unpack(u"\2\164\2\uffff\1\164\22\uffff\1\164\1\uffff\1\165"
-        u"\15\uffff\2\164\10\166\7\uffff\6\166\32\uffff\6\166"),
+        DFA.unpack(u"\2\164\2\uffff\1\164\22\uffff\1\164\1\uffff\1\165\15"
+        u"\uffff\2\164\10\166\7\uffff\6\166\32\uffff\6\166"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\167\2\uffff\1\102\11\103"),
-        DFA.unpack(u"\1\171\1\uffff\1\172\3\uffff\1\134\1\132\30\uffff"
-        u"\1\131\1\uffff\1\133\3\uffff\1\135\1\130"),
+        DFA.unpack(u"\1\171\1\uffff\1\172\3\uffff\1\134\1\132\30\uffff\1"
+        u"\131\1\uffff\1\133\3\uffff\1\135\1\130"),
         DFA.unpack(u"\1\176\1\uffff\1\174\35\uffff\1\175\1\uffff\1\173"),
         DFA.unpack(u"\1\150\1\uffff\1\145\11\uffff\1\146\23\uffff\1\147"
         u"\1\uffff\1\143\11\uffff\1\144"),
@@ -6618,8 +6618,8 @@ class sdl92Lexer(Lexer):
         u"\1\u008a\3\uffff\1\u008b"),
         DFA.unpack(u"\1\u0096\37\uffff\1\u0095"),
         DFA.unpack(u"\1\u0098\37\uffff\1\u0097"),
-        DFA.unpack(u"\1\u009c\3\uffff\1\u009a\33\uffff\1\u009b\3\uffff"
-        u"\1\u0099"),
+        DFA.unpack(u"\1\u009c\3\uffff\1\u009a\33\uffff\1\u009b\3\uffff\1"
+        u"\u0099"),
         DFA.unpack(u"\1\116\3\uffff\1\120\2\uffff\1\122\1\117\5\uffff\1"
         u"\u009d\2\uffff\1\115\16\uffff\1\111\3\uffff\1\113\2\uffff\1\121"
         u"\1\112\5\uffff\1\114\2\uffff\1\110"),
@@ -6633,8 +6633,8 @@ class sdl92Lexer(Lexer):
         u"\u00b2\16\uffff\1\u00ae\6\uffff\1\u00b4\6\uffff\1\u00b0\2\uffff"
         u"\1\u00af"),
         DFA.unpack(u"\1\u00b7\37\uffff\1\u00b6"),
-        DFA.unpack(u"\1\u00ba\2\uffff\1\u00bb\34\uffff\1\u00b8\2\uffff"
-        u"\1\u00b9"),
+        DFA.unpack(u"\1\u00ba\2\uffff\1\u00bb\34\uffff\1\u00b8\2\uffff\1"
+        u"\u00b9"),
         DFA.unpack(u"\1\u00bd\37\uffff\1\u00bc"),
         DFA.unpack(u"\1\u00be\37\uffff\1\124"),
         DFA.unpack(u"\1\u00c0\37\uffff\1\u00bf"),
@@ -6643,8 +6643,8 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u00c3"),
         DFA.unpack(u"\1\u00c5"),
         DFA.unpack(u"\1\u00c8\37\uffff\1\u00c7"),
-        DFA.unpack(u"\1\u00cc\7\uffff\1\u00cb\5\uffff\1\u00ce\21\uffff"
-        u"\1\u00ca\7\uffff\1\u00c9\5\uffff\1\u00cd"),
+        DFA.unpack(u"\1\u00cc\7\uffff\1\u00cb\5\uffff\1\u00ce\21\uffff\1"
+        u"\u00ca\7\uffff\1\u00c9\5\uffff\1\u00cd"),
         DFA.unpack(u"\1\u00d2\12\uffff\1\u00d0\24\uffff\1\u00d1\12\uffff"
         u"\1\u00cf"),
         DFA.unpack(u"\1\u00d4\37\uffff\1\u00d3"),
@@ -6659,8 +6659,8 @@ class sdl92Lexer(Lexer):
         u"\1\u008a\3\uffff\1\u008b"),
         DFA.unpack(u"\1\u0096\37\uffff\1\u0095"),
         DFA.unpack(u"\1\u0098\37\uffff\1\u0097"),
-        DFA.unpack(u"\1\u009c\3\uffff\1\u009a\33\uffff\1\u009b\3\uffff"
-        u"\1\u0099"),
+        DFA.unpack(u"\1\u009c\3\uffff\1\u009a\33\uffff\1\u009b\3\uffff\1"
+        u"\u0099"),
         DFA.unpack(u"\1\u009f\11\uffff\1\u00a1\5\uffff\1\u00a3\17\uffff"
         u"\1\u009e\11\uffff\1\u00a0\5\uffff\1\u00a2"),
         DFA.unpack(u"\1\u00a7\7\uffff\1\u00ad\5\uffff\1\u00ab\1\u00a9\1"
@@ -6670,13 +6670,13 @@ class sdl92Lexer(Lexer):
         u"\u00b2\16\uffff\1\u00ae\6\uffff\1\u00b4\6\uffff\1\u00b0\2\uffff"
         u"\1\u00af"),
         DFA.unpack(u"\1\u00b7\37\uffff\1\u00b6"),
-        DFA.unpack(u"\1\u00ba\2\uffff\1\u00bb\34\uffff\1\u00b8\2\uffff"
-        u"\1\u00b9"),
+        DFA.unpack(u"\1\u00ba\2\uffff\1\u00bb\34\uffff\1\u00b8\2\uffff\1"
+        u"\u00b9"),
         DFA.unpack(u"\1\u00bd\37\uffff\1\u00bc"),
         DFA.unpack(u"\1\u00c0\37\uffff\1\u00bf"),
         DFA.unpack(u"\1\u00c8\37\uffff\1\u00c7"),
-        DFA.unpack(u"\1\u00cc\7\uffff\1\u00cb\5\uffff\1\u00ce\21\uffff"
-        u"\1\u00ca\7\uffff\1\u00c9\5\uffff\1\u00cd"),
+        DFA.unpack(u"\1\u00cc\7\uffff\1\u00cb\5\uffff\1\u00ce\21\uffff\1"
+        u"\u00ca\7\uffff\1\u00c9\5\uffff\1\u00cd"),
         DFA.unpack(u"\1\u00d2\12\uffff\1\u00d0\24\uffff\1\u00d1\12\uffff"
         u"\1\u00cf"),
         DFA.unpack(u"\1\u00d4\37\uffff\1\u00d3"),
@@ -6696,20 +6696,20 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u00dc\37\uffff\1\u00db"),
         DFA.unpack(u"\1\u00de\37\uffff\1\u00dd"),
         DFA.unpack(u"\1\u00e0\37\uffff\1\u00df"),
-        DFA.unpack(u"\1\u00e3\3\uffff\1\u00e5\33\uffff\1\u00e2\3\uffff"
-        u"\1\u00e4"),
-        DFA.unpack(u"\1\u00e3\3\uffff\1\u00e5\33\uffff\1\u00e2\3\uffff"
-        u"\1\u00e4"),
+        DFA.unpack(u"\1\u00e3\3\uffff\1\u00e5\33\uffff\1\u00e2\3\uffff\1"
+        u"\u00e4"),
+        DFA.unpack(u"\1\u00e3\3\uffff\1\u00e5\33\uffff\1\u00e2\3\uffff\1"
+        u"\u00e4"),
         DFA.unpack(u"\1\u00e6\3\uffff\1\u00e7\33\uffff\1\u00e8"),
         DFA.unpack(u"\1\u00e9\37\uffff\1\u00e8"),
-        DFA.unpack(u"\1\u00ea\7\uffff\1\u00ec\27\uffff\1\u00eb\7\uffff"
-        u"\1\u00ed"),
+        DFA.unpack(u"\1\u00ea\7\uffff\1\u00ec\27\uffff\1\u00eb\7\uffff\1"
+        u"\u00ed"),
         DFA.unpack(u"\1\u00ee"),
         DFA.unpack(u"\1\u00f2\16\uffff\1\u00f3\5\uffff\1\u00ef\12\uffff"
         u"\1\u00f0\16\uffff\1\u00f1\5\uffff\1\u00f4"),
         DFA.unpack(u"\1\u00f6\37\uffff\1\u00f5"),
-        DFA.unpack(u"\1\u00f7\7\uffff\1\u00ec\27\uffff\1\u00eb\7\uffff"
-        u"\1\u00ed"),
+        DFA.unpack(u"\1\u00f7\7\uffff\1\u00ec\27\uffff\1\u00eb\7\uffff\1"
+        u"\u00ed"),
         DFA.unpack(u"\1\u00f6\37\uffff\1\u00f5"),
         DFA.unpack(u"\1\u00f2\16\uffff\1\u00f3\5\uffff\1\u00f8\12\uffff"
         u"\1\u00f0\16\uffff\1\u00f1\5\uffff\1\u00f4"),
@@ -6721,11 +6721,11 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u"\1\u00fb"),
         DFA.unpack(u"\1\u00fd\37\uffff\1\u00fc"),
-        DFA.unpack(u"\1\u0100\3\uffff\1\u0101\33\uffff\1\u00fe\3\uffff"
-        u"\1\u00ff"),
+        DFA.unpack(u"\1\u0100\3\uffff\1\u0101\33\uffff\1\u00fe\3\uffff\1"
+        u"\u00ff"),
         DFA.unpack(u"\1\u00fd\37\uffff\1\u00fc"),
-        DFA.unpack(u"\1\u0100\3\uffff\1\u0101\33\uffff\1\u00fe\3\uffff"
-        u"\1\u00ff"),
+        DFA.unpack(u"\1\u0100\3\uffff\1\u0101\33\uffff\1\u00fe\3\uffff\1"
+        u"\u00ff"),
         DFA.unpack(u"\1\u0103\37\uffff\1\u0102"),
         DFA.unpack(u"\1\u0103\37\uffff\1\u0102"),
         DFA.unpack(u"\1\u0104"),
@@ -6741,14 +6741,14 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\2\164\2\uffff\1\164\22\uffff\1\164\1\uffff\1\165"
-        u"\15\uffff\2\164\10\166\7\uffff\6\166\32\uffff\6\166"),
+        DFA.unpack(u"\2\164\2\uffff\1\164\22\uffff\1\164\1\uffff\1\165\15"
+        u"\uffff\2\164\10\166\7\uffff\6\166\32\uffff\6\166"),
         DFA.unpack(u"\1\u010a\5\uffff\1\166"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u00f7\7\uffff\1\u00ec\27\uffff\1\u00eb\7\uffff"
-        u"\1\u00ed"),
+        DFA.unpack(u"\1\u00f7\7\uffff\1\u00ec\27\uffff\1\u00eb\7\uffff\1"
+        u"\u00ed"),
         DFA.unpack(u"\1\u00f2\16\uffff\1\u00f3\5\uffff\1\u00f8\12\uffff"
         u"\1\u00f0\16\uffff\1\u00f1\5\uffff\1\u00f4"),
         DFA.unpack(u"\1\u010c\37\uffff\1\u010b"),
@@ -6758,11 +6758,11 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0110\37\uffff\1\u010f"),
         DFA.unpack(u"\1\u0110\37\uffff\1\u010f"),
         DFA.unpack(u"\1\u0112\37\uffff\1\u0111"),
-        DFA.unpack(u"\1\u0115\5\uffff\1\u0116\31\uffff\1\u0113\5\uffff"
-        u"\1\u0114"),
+        DFA.unpack(u"\1\u0115\5\uffff\1\u0116\31\uffff\1\u0113\5\uffff\1"
+        u"\u0114"),
         DFA.unpack(u"\1\u0112\37\uffff\1\u0111"),
-        DFA.unpack(u"\1\u0115\5\uffff\1\u0116\31\uffff\1\u0113\5\uffff"
-        u"\1\u0114"),
+        DFA.unpack(u"\1\u0115\5\uffff\1\u0116\31\uffff\1\u0113\5\uffff\1"
+        u"\u0114"),
         DFA.unpack(u"\1\u0118\37\uffff\1\u0117"),
         DFA.unpack(u"\1\u0118\37\uffff\1\u0117"),
         DFA.unpack(u"\1\u011a\37\uffff\1\u0119"),
@@ -6770,15 +6770,15 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u011f\15\uffff\1\u0120\2\uffff\1\u0122\16\uffff"
         u"\1\u011d\15\uffff\1\u011e\2\uffff\1\u0121"),
         DFA.unpack(u"\1\u0124\37\uffff\1\u0123"),
-        DFA.unpack(u"\1\u0128\4\uffff\1\u0127\32\uffff\1\u0126\4\uffff"
-        u"\1\u0125"),
+        DFA.unpack(u"\1\u0128\4\uffff\1\u0127\32\uffff\1\u0126\4\uffff\1"
+        u"\u0125"),
         DFA.unpack(u"\1\u011a\37\uffff\1\u0119"),
         DFA.unpack(u"\1\u011c\37\uffff\1\u011b"),
         DFA.unpack(u"\1\u011f\15\uffff\1\u0120\2\uffff\1\u0122\16\uffff"
         u"\1\u011d\15\uffff\1\u011e\2\uffff\1\u0121"),
         DFA.unpack(u"\1\u0124\37\uffff\1\u0123"),
-        DFA.unpack(u"\1\u0128\4\uffff\1\u0127\32\uffff\1\u0126\4\uffff"
-        u"\1\u0125"),
+        DFA.unpack(u"\1\u0128\4\uffff\1\u0127\32\uffff\1\u0126\4\uffff\1"
+        u"\u0125"),
         DFA.unpack(u"\1\u012a\37\uffff\1\u0129"),
         DFA.unpack(u"\1\u012a\37\uffff\1\u0129"),
         DFA.unpack(u"\1\u012c\37\uffff\1\u012b"),
@@ -6796,10 +6796,10 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u013e\1\u013c\36\uffff\1\u013d\1\u013b"),
         DFA.unpack(u"\1\u013e\1\u013c\36\uffff\1\u013d\1\u013b"),
-        DFA.unpack(u"\1\u0142\5\uffff\1\u0140\31\uffff\1\u0141\5\uffff"
-        u"\1\u013f"),
-        DFA.unpack(u"\1\u0142\5\uffff\1\u0140\31\uffff\1\u0141\5\uffff"
-        u"\1\u013f"),
+        DFA.unpack(u"\1\u0142\5\uffff\1\u0140\31\uffff\1\u0141\5\uffff\1"
+        u"\u013f"),
+        DFA.unpack(u"\1\u0142\5\uffff\1\u0140\31\uffff\1\u0141\5\uffff\1"
+        u"\u013f"),
         DFA.unpack(u"\1\u0144\37\uffff\1\u0143"),
         DFA.unpack(u"\1\u0144\37\uffff\1\u0143"),
         DFA.unpack(u"\1\u0146\37\uffff\1\u0145"),
@@ -6890,16 +6890,14 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u018b\37\uffff\1\u018a"),
         DFA.unpack(u"\1\u018b\37\uffff\1\u018a"),
         DFA.unpack(u"\1\u018c"),
-        DFA.unpack(u"\12\101\7\uffff\1\u0199\1\u0195\1\u0198\1\u019b\1"
-        u"\101\1\u0194\7\101\1\u019d\1\101\1\u0196\2\101\1\u0197\1\u019f"
-        u"\6\101\4\uffff\1\101\1\uffff\1\u0193\1\u018f\1\u0192\1\u019a\1"
-        u"\101\1\u018e\7\101\1\u019c\1\101\1\u0190\2\101\1\u0191\1\u019e"
-        u"\6\101"),
-        DFA.unpack(u"\12\101\7\uffff\1\u0199\1\u0195\1\u0198\1\u019b\1"
-        u"\101\1\u0194\7\101\1\u019d\1\101\1\u0196\2\101\1\u0197\1\u019f"
-        u"\6\101\4\uffff\1\101\1\uffff\1\u0193\1\u018f\1\u0192\1\u019a\1"
-        u"\101\1\u018e\7\101\1\u019c\1\101\1\u0190\2\101\1\u0191\1\u019e"
-        u"\6\101"),
+        DFA.unpack(u"\12\101\7\uffff\1\u0199\1\u0195\1\u0198\1\u019b\1\101"
+        u"\1\u0194\7\101\1\u019d\1\101\1\u0196\2\101\1\u0197\1\u019f\6\101"
+        u"\4\uffff\1\101\1\uffff\1\u0193\1\u018f\1\u0192\1\u019a\1\101\1"
+        u"\u018e\7\101\1\u019c\1\101\1\u0190\2\101\1\u0191\1\u019e\6\101"),
+        DFA.unpack(u"\12\101\7\uffff\1\u0199\1\u0195\1\u0198\1\u019b\1\101"
+        u"\1\u0194\7\101\1\u019d\1\101\1\u0196\2\101\1\u0197\1\u019f\6\101"
+        u"\4\uffff\1\101\1\uffff\1\u0193\1\u018f\1\u0192\1\u019a\1\101\1"
+        u"\u018e\7\101\1\u019c\1\101\1\u0190\2\101\1\u0191\1\u019e\6\101"),
         DFA.unpack(u"\1\u01a1\37\uffff\1\u01a0"),
         DFA.unpack(u"\1\u01a3\37\uffff\1\u01a2"),
         DFA.unpack(u"\1\u01a1\37\uffff\1\u01a0"),
@@ -6933,11 +6931,11 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u01b9\37\uffff\1\u01b8"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u01be\1\uffff\1\u01bd\35\uffff\1\u01bc\1\uffff"
-        u"\1\u01bb"),
+        DFA.unpack(u"\1\u01be\1\uffff\1\u01bd\35\uffff\1\u01bc\1\uffff\1"
+        u"\u01bb"),
         DFA.unpack(u"\1\u01c0\37\uffff\1\u01bf"),
-        DFA.unpack(u"\1\u01be\1\uffff\1\u01bd\35\uffff\1\u01bc\1\uffff"
-        u"\1\u01bb"),
+        DFA.unpack(u"\1\u01be\1\uffff\1\u01bd\35\uffff\1\u01bc\1\uffff\1"
+        u"\u01bb"),
         DFA.unpack(u"\1\u01c0\37\uffff\1\u01bf"),
         DFA.unpack(u"\1\u01c2\37\uffff\1\u01c1"),
         DFA.unpack(u"\1\u01c2\37\uffff\1\u01c1"),
@@ -6988,10 +6986,10 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u01eb\37\uffff\1\u01ea"),
         DFA.unpack(u"\1\u01ed\37\uffff\1\u01ec"),
         DFA.unpack(u"\1\u01ed\37\uffff\1\u01ec"),
-        DFA.unpack(u"\1\u01ef\4\uffff\1\u01f1\32\uffff\1\u01ee\4\uffff"
-        u"\1\u01f0"),
-        DFA.unpack(u"\1\u01ef\4\uffff\1\u01f1\32\uffff\1\u01ee\4\uffff"
-        u"\1\u01f0"),
+        DFA.unpack(u"\1\u01ef\4\uffff\1\u01f1\32\uffff\1\u01ee\4\uffff\1"
+        u"\u01f0"),
+        DFA.unpack(u"\1\u01ef\4\uffff\1\u01f1\32\uffff\1\u01ee\4\uffff\1"
+        u"\u01f0"),
         DFA.unpack(u"\1\u01f3\37\uffff\1\u01f2"),
         DFA.unpack(u"\1\u01f3\37\uffff\1\u01f2"),
         DFA.unpack(u"\1\u01f5\37\uffff\1\u01f4"),
@@ -7055,18 +7053,18 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u021d\37\uffff\1\u021c"),
         DFA.unpack(u"\1\u021f\37\uffff\1\u021e"),
         DFA.unpack(u"\1\u0221\37\uffff\1\u0220"),
-        DFA.unpack(u"\1\u0227\1\u0225\3\uffff\1\u0224\32\uffff\1\u0226"
-        u"\1\u0223\3\uffff\1\u0222"),
-        DFA.unpack(u"\1\u0229\6\uffff\1\u022b\30\uffff\1\u0228\6\uffff"
-        u"\1\u022a"),
+        DFA.unpack(u"\1\u0227\1\u0225\3\uffff\1\u0224\32\uffff\1\u0226\1"
+        u"\u0223\3\uffff\1\u0222"),
+        DFA.unpack(u"\1\u0229\6\uffff\1\u022b\30\uffff\1\u0228\6\uffff\1"
+        u"\u022a"),
         DFA.unpack(u"\1\u022d\37\uffff\1\u022c"),
         DFA.unpack(u"\1\u021d\37\uffff\1\u021c"),
         DFA.unpack(u"\1\u021f\37\uffff\1\u021e"),
         DFA.unpack(u"\1\u0221\37\uffff\1\u0220"),
-        DFA.unpack(u"\1\u0227\1\u0225\3\uffff\1\u0224\32\uffff\1\u0226"
-        u"\1\u0223\3\uffff\1\u0222"),
-        DFA.unpack(u"\1\u0229\6\uffff\1\u022b\30\uffff\1\u0228\6\uffff"
-        u"\1\u022a"),
+        DFA.unpack(u"\1\u0227\1\u0225\3\uffff\1\u0224\32\uffff\1\u0226\1"
+        u"\u0223\3\uffff\1\u0222"),
+        DFA.unpack(u"\1\u0229\6\uffff\1\u022b\30\uffff\1\u0228\6\uffff\1"
+        u"\u022a"),
         DFA.unpack(u"\1\u022d\37\uffff\1\u022c"),
         DFA.unpack(u"\1\u022f\37\uffff\1\u022e"),
         DFA.unpack(u"\1\u022f\37\uffff\1\u022e"),
@@ -7074,10 +7072,10 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0231\37\uffff\1\u0230"),
         DFA.unpack(u"\1\u0233\37\uffff\1\u0232"),
         DFA.unpack(u"\1\u0233\37\uffff\1\u0232"),
-        DFA.unpack(u"\1\u0236\3\uffff\1\u0237\33\uffff\1\u0234\3\uffff"
-        u"\1\u0235"),
-        DFA.unpack(u"\1\u0236\3\uffff\1\u0237\33\uffff\1\u0234\3\uffff"
-        u"\1\u0235"),
+        DFA.unpack(u"\1\u0236\3\uffff\1\u0237\33\uffff\1\u0234\3\uffff\1"
+        u"\u0235"),
+        DFA.unpack(u"\1\u0236\3\uffff\1\u0237\33\uffff\1\u0234\3\uffff\1"
+        u"\u0235"),
         DFA.unpack(u"\1\u0239\37\uffff\1\u0238"),
         DFA.unpack(u"\1\u0239\37\uffff\1\u0238"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
@@ -7206,11 +7204,11 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0297\37\uffff\1\u0296"),
         DFA.unpack(u"\1\u0299\37\uffff\1\u0298"),
         DFA.unpack(u"\1\u0299\37\uffff\1\u0298"),
-        DFA.unpack(u"\1\u029d\4\uffff\1\u029b\32\uffff\1\u029c\4\uffff"
-        u"\1\u029a"),
+        DFA.unpack(u"\1\u029d\4\uffff\1\u029b\32\uffff\1\u029c\4\uffff\1"
+        u"\u029a"),
         DFA.unpack(u"\1\u029f\37\uffff\1\u029e"),
-        DFA.unpack(u"\1\u029d\4\uffff\1\u029b\32\uffff\1\u029c\4\uffff"
-        u"\1\u029a"),
+        DFA.unpack(u"\1\u029d\4\uffff\1\u029b\32\uffff\1\u029c\4\uffff\1"
+        u"\u029a"),
         DFA.unpack(u"\1\u029f\37\uffff\1\u029e"),
         DFA.unpack(u"\1\u02a1\37\uffff\1\u02a0"),
         DFA.unpack(u"\1\u02a1\37\uffff\1\u02a0"),

@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 18, 2009 10:09:25 sdl92.g 2014-06-18 17:34:16
+# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-06-18 19:48:05
 
 import sys
 from antlr3 import *
@@ -273,8 +273,8 @@ tokenNames = [
 
 class sdl92Parser(Parser):
     grammarFileName = "sdl92.g"
-    antlr_version = version_str_to_tuple("3.1.3 Mar 18, 2009 10:09:25")
-    antlr_version_str = "3.1.3 Mar 18, 2009 10:09:25"
+    antlr_version = version_str_to_tuple("3.1.3 Mar 17, 2009 19:23:44")
+    antlr_version_str = "3.1.3 Mar 17, 2009 19:23:44"
     tokenNames = tokenNames
 
     def __init__(self, input, state=None, *args, **kwargs):
@@ -785,7 +785,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end10.tree)
 
                 # AST Rewrite
-                # elements: entity_in_system, SYSTEM, system_name
+                # elements: system_name, entity_in_system, SYSTEM
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -913,7 +913,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end14.tree)
 
                 # AST Rewrite
-                # elements: use_asn1, USE, package_name
+                # elements: USE, package_name, use_asn1
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1197,7 +1197,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end23.tree)
 
                 # AST Rewrite
-                # elements: input_params, signal_id, paramnames, SIGNAL
+                # elements: paramnames, SIGNAL, signal_id, input_params
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1351,7 +1351,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end28.tree)
 
                 # AST Rewrite
-                # elements: CHANNEL, route, channel_id
+                # elements: channel_id, route, CHANNEL
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1956,7 +1956,7 @@ class sdl92Parser(Parser):
                     cnt12 += 1
 
                 # AST Rewrite
-                # elements: route_id, route, SIGNALROUTE
+                # elements: route_id, SIGNALROUTE, route
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -2243,7 +2243,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end61.tree)
 
                     # AST Rewrite
-                    # elements: number_of_instances, REFERENCED, PROCESS, process_id
+                    # elements: REFERENCED, number_of_instances, process_id, PROCESS
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2445,7 +2445,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end73.tree)
 
                     # AST Rewrite
-                    # elements: processBody, process_id, procedure, composite_state, number_of_instances, text_area, cif, PROCESS
+                    # elements: PROCESS, process_id, cif, processBody, text_area, number_of_instances, procedure, composite_state
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2770,7 +2770,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end85.tree)
 
                 # AST Rewrite
-                # elements: text_area, EXTERNAL, procedure, cif, procedure_id, PROCEDURE, processBody, fpar, end
+                # elements: procedure, cif, end, PROCEDURE, EXTERNAL, processBody, text_area, fpar, procedure_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -2943,7 +2943,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end90.tree)
 
                 # AST Rewrite
-                # elements: FPAR, formal_variable_param
+                # elements: formal_variable_param, FPAR
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3107,7 +3107,7 @@ class sdl92Parser(Parser):
                     stream_sort.add(sort96.tree)
 
                 # AST Rewrite
-                # elements: IN, variable_id, INOUT, sort
+                # elements: sort, variable_id, IN, INOUT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3249,7 +3249,7 @@ class sdl92Parser(Parser):
                     stream_cif_end_text.add(cif_end_text99.tree)
 
                 # AST Rewrite
-                # elements: content, cif_end_text, cif
+                # elements: cif_end_text, content, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3443,7 +3443,7 @@ class sdl92Parser(Parser):
                         break #loop30
 
                 # AST Rewrite
-                # elements: newtype_definition, variable_definition, fpar, timer_declaration, syntype_definition, procedure
+                # elements: newtype_definition, syntype_definition, procedure, timer_declaration, fpar, variable_definition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3609,7 +3609,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end110.tree)
 
                 # AST Rewrite
-                # elements: timer_id, TIMER
+                # elements: TIMER, timer_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3822,7 +3822,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end121.tree)
 
                 # AST Rewrite
-                # elements: SYNTYPE, parent_sort, syntype_name, range_condition
+                # elements: syntype_name, SYNTYPE, parent_sort, range_condition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4107,7 +4107,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end130.tree)
 
                 # AST Rewrite
-                # elements: structure_definition, NEWTYPE, array_definition, type_name
+                # elements: array_definition, type_name, structure_definition, NEWTYPE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4294,7 +4294,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(char_literal137)
 
                 # AST Rewrite
-                # elements: sort, ARRAY, sort
+                # elements: ARRAY, sort, sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4396,7 +4396,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end140.tree)
 
                 # AST Rewrite
-                # elements: field_list, STRUCT
+                # elements: STRUCT, field_list
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4643,7 +4643,7 @@ class sdl92Parser(Parser):
                     stream_sort.add(sort147.tree)
 
                 # AST Rewrite
-                # elements: sort, field_name
+                # elements: field_name, sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4943,7 +4943,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: ground_expression, variable_id, sort
+                # elements: sort, ground_expression, variable_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5428,7 +5428,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: hyperlink, transition, end, cif, name, START
+                # elements: hyperlink, end, cif, START, transition, name
                 # token labels: 
                 # rule labels: retval, name
                 # token list labels: 
@@ -5665,7 +5665,7 @@ class sdl92Parser(Parser):
                     stream_SEMI.add(SEMI179)
 
                 # AST Rewrite
-                # elements: hyperlink, transition, connector_name, cif
+                # elements: connector_name, cif, hyperlink, transition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5889,7 +5889,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: state_part, hyperlink, STATE, statelist, e, cif
+                # elements: STATE, state_part, statelist, hyperlink, e, cif
                 # token labels: 
                 # rule labels: retval, e
                 # token list labels: 
@@ -6134,7 +6134,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: ASTERISK, exception_state
+                    # elements: exception_state, ASTERISK
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -6443,7 +6443,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: connection_points, body, e, statename
+                # elements: connection_points, statename, e, body
                 # token labels: 
                 # rule labels: body, retval, e
                 # token list labels: 
@@ -6592,7 +6592,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end205.tree)
 
                     # AST Rewrite
-                    # elements: IN, end, state_entry_exit_points
+                    # elements: state_entry_exit_points, IN, end
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -6649,7 +6649,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end208.tree)
 
                     # AST Rewrite
-                    # elements: end, state_entry_exit_points, OUT
+                    # elements: state_entry_exit_points, OUT, end
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -7243,7 +7243,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: transition, CONNECT, end, connect_list, hyperlink, cif
+                # elements: connect_list, transition, cif, end, CONNECT, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -7593,7 +7593,7 @@ class sdl92Parser(Parser):
                     stream_transition.add(transition241.tree)
 
                 # AST Rewrite
-                # elements: cif, hyperlink, transition
+                # elements: cif, transition, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -7848,7 +7848,7 @@ class sdl92Parser(Parser):
                     stream_transition.add(transition250.tree)
 
                 # AST Rewrite
-                # elements: expression, integer_literal_name, transition, PROVIDED
+                # elements: integer_literal_name, expression, PROVIDED, transition
                 # token labels: integer_literal_name
                 # rule labels: retval
                 # token list labels: 
@@ -8464,7 +8464,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: enabling_condition, cif, hyperlink, transition, inputlist, end, INPUT
+                # elements: INPUT, enabling_condition, hyperlink, cif, transition, inputlist, end
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -9015,7 +9015,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: terminator_statement, label, action
+                    # elements: action, label, terminator_statement
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -9419,7 +9419,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end300.tree)
 
                 # AST Rewrite
-                # elements: EXPORT, variable_id
+                # elements: variable_id, EXPORT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -9573,7 +9573,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end305.tree)
 
                 # AST Rewrite
-                # elements: end, procedure_call_body, cif, hyperlink
+                # elements: end, hyperlink, procedure_call_body, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -9698,7 +9698,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: actual_parameters, procedure_id
+                # elements: procedure_id, actual_parameters
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10364,7 +10364,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: alternative_part, answer_part, ALTERNATIVE
+                # elements: answer_part, alternative_part, ALTERNATIVE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10857,7 +10857,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: e, DECISION, answer_part, hyperlink, cif, alternative_part, question
+                # elements: DECISION, alternative_part, hyperlink, answer_part, question, e, cif
                 # token labels: 
                 # rule labels: retval, e
                 # token list labels: 
@@ -11060,7 +11060,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: hyperlink, cif, answer, transition
+                # elements: cif, answer, hyperlink, transition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -11333,7 +11333,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: cif, transition, ELSE, hyperlink
+                # elements: hyperlink, cif, transition, ELSE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -11983,7 +11983,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: GT, constant, GE, EQ, LE, NEQ, LT
+                    # elements: GT, GE, NEQ, LE, LT, constant, EQ
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -12226,7 +12226,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end376.tree)
 
                 # AST Rewrite
-                # elements: actual_parameters, CREATE, createbody
+                # elements: CREATE, createbody, actual_parameters
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -12465,7 +12465,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end383.tree)
 
                 # AST Rewrite
-                # elements: outputbody, end, OUTPUT, hyperlink, cif
+                # elements: end, cif, OUTPUT, outputbody, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13614,7 +13614,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end412.tree)
 
                 # AST Rewrite
-                # elements: cif, TASK, task_body, hyperlink, end
+                # elements: hyperlink, cif, end, TASK, task_body
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -14135,7 +14135,7 @@ class sdl92Parser(Parser):
                     stream_ENDFOR.add(ENDFOR429)
 
                 # AST Rewrite
-                # elements: range, variable, transition, variable_id, FOR
+                # elements: variable_id, FOR, range, transition, variable
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -14314,7 +14314,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(R_PAREN434)
 
                 # AST Rewrite
-                # elements: RANGE, b, a, step
+                # elements: b, a, step, RANGE
                 # token labels: step
                 # rule labels: retval, b, a
                 # token list labels: 
@@ -14440,7 +14440,7 @@ class sdl92Parser(Parser):
                     stream_expression.add(expression437.tree)
 
                 # AST Rewrite
-                # elements: expression, variable
+                # elements: variable, expression
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -14552,7 +14552,7 @@ class sdl92Parser(Parser):
                         break #loop143
 
                 # AST Rewrite
-                # elements: primary_params, variable_id
+                # elements: variable_id, primary_params
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -16295,7 +16295,7 @@ class sdl92Parser(Parser):
                         stream_R_BRACKET.add(R_BRACKET498)
 
                     # AST Rewrite
-                    # elements: bas, exp, mant
+                    # elements: exp, bas, mant
                     # token labels: exp, mant, bas
                     # rule labels: retval
                     # token list labels: 
@@ -18737,7 +18737,7 @@ class sdl92Parser(Parser):
                     stream_FI.add(FI591)
 
                 # AST Rewrite
-                # elements: elseexpr, thenexpr, ifexpr
+                # elements: thenexpr, elseexpr, ifexpr
                 # token labels: 
                 # rule labels: elseexpr, retval, ifexpr, thenexpr
                 # token list labels: 
@@ -19033,7 +19033,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end599.tree)
 
                 # AST Rewrite
-                # elements: terminator, end, label, hyperlink, cif
+                # elements: end, terminator, cif, hyperlink, label
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -19388,7 +19388,7 @@ class sdl92Parser(Parser):
                     stream_connector_name.add(connector_name608.tree)
 
                 # AST Rewrite
-                # elements: connector_name, JOIN
+                # elements: JOIN, connector_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -19549,7 +19549,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: expression, RETURN
+                # elements: RETURN, expression
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -19646,7 +19646,7 @@ class sdl92Parser(Parser):
                     stream_nextstatebody.add(nextstatebody613.tree)
 
                 # AST Rewrite
-                # elements: NEXTSTATE, nextstatebody
+                # elements: nextstatebody, NEXTSTATE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -19845,7 +19845,7 @@ class sdl92Parser(Parser):
                     stream_state_entry_point_name.add(state_entry_point_name618.tree)
 
                 # AST Rewrite
-                # elements: state_entry_point_name, VIA
+                # elements: VIA, state_entry_point_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -19997,7 +19997,7 @@ class sdl92Parser(Parser):
                     stream_SEMI.add(SEMI623)
 
                 # AST Rewrite
-                # elements: hyperlink, COMMENT, StringLiteral, cif
+                # elements: hyperlink, StringLiteral, cif, COMMENT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -20016,7 +20016,7 @@ class sdl92Parser(Parser):
                     root_0 = self._adaptor.nil()
                     # 1027:9: -> ( ^( COMMENT ( cif )? ( hyperlink )? StringLiteral ) )?
                     # sdl92.g:1027:12: ( ^( COMMENT ( cif )? ( hyperlink )? StringLiteral ) )?
-                    if stream_hyperlink.hasNext() or stream_COMMENT.hasNext() or stream_StringLiteral.hasNext() or stream_cif.hasNext():
+                    if stream_hyperlink.hasNext() or stream_StringLiteral.hasNext() or stream_cif.hasNext() or stream_COMMENT.hasNext():
                         # sdl92.g:1027:12: ^( COMMENT ( cif )? ( hyperlink )? StringLiteral )
                         root_1 = self._adaptor.nil()
                         root_1 = self._adaptor.becomeRoot(stream_COMMENT.nextNode(), root_1)
@@ -20039,9 +20039,9 @@ class sdl92Parser(Parser):
 
 
                     stream_hyperlink.reset();
-                    stream_COMMENT.reset();
                     stream_StringLiteral.reset();
                     stream_cif.reset();
+                    stream_COMMENT.reset();
 
 
 
@@ -20180,7 +20180,7 @@ class sdl92Parser(Parser):
                     stream_cif_end.add(cif_end633.tree)
 
                 # AST Rewrite
-                # elements: x, width, height, y
+                # elements: y, x, width, height
                 # token labels: height, width, y, x
                 # rule labels: retval
                 # token list labels: 
@@ -20466,7 +20466,7 @@ class sdl92Parser(Parser):
                     stream_cif_end.add(cif_end647.tree)
 
                 # AST Rewrite
-                # elements: field_name, PARAMNAMES
+                # elements: PARAMNAMES, field_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -24070,9 +24070,9 @@ class sdl92Parser(Parser):
         )
 
     DFA37_min = DFA.unpack(
-        u"\1\11\1\7\1\u00a0\1\147\1\u0082\1\u00ac\1\172\2\uffff\1\167\1"
-        u"\u00ad\1\u0084\1\103\1\167\1\u00a0\1\u0083\1\u00de\1\u0084\1\11"
-        u"\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00de\1\11\1\u00ab"
+        u"\1\11\1\7\1\u00a0\1\147\1\u0082\1\u00ac\1\172\2\uffff\1\167\1\u00ad"
+        u"\1\u0084\1\103\1\167\1\u00a0\1\u0083\1\u00de\1\u0084\1\11\1\u0082"
+        u"\1\167\1\u0084\1\167\1\u0083\1\u00de\1\11\1\u00ab"
         )
 
     DFA37_max = DFA.unpack(
@@ -24092,10 +24092,10 @@ class sdl92Parser(Parser):
             
     DFA37_transition = [
         DFA.unpack(u"\1\2\160\uffff\1\3\142\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
-        u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
-        u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\24\uffff\1\4\62\uffff\1\5"),
+        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
+        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
+        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
+        u"\24\uffff\1\4\62\uffff\1\5"),
         DFA.unpack(u"\1\6"),
         DFA.unpack(u"\1\10\51\uffff\1\7"),
         DFA.unpack(u"\1\11"),
@@ -24140,8 +24140,8 @@ class sdl92Parser(Parser):
         )
 
     DFA42_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1\u0084"
-        u"\1\u00a0\1\167\1\u00de\1\u0083\1\32\1\u0084\1\u0082\1\167\1\u0084"
+        u"\1\32\1\7\2\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1\u0084\1"
+        u"\u00a0\1\167\1\u00de\1\u0083\1\32\1\u0084\1\u0082\1\167\1\u0084"
         u"\1\167\1\u0083\1\u00de\1\32\1\u00ab"
         )
 
@@ -24163,10 +24163,10 @@ class sdl92Parser(Parser):
     DFA42_transition = [
         DFA.unpack(u"\1\3\101\uffff\1\3\30\uffff\2\3\1\uffff\1\2\144\uffff"
         u"\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
-        u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
-        u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\24\uffff\1\5\62\uffff\1\4"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
+        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
+        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
+        u"\24\uffff\1\5\62\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -24231,10 +24231,10 @@ class sdl92Parser(Parser):
     DFA43_transition = [
         DFA.unpack(u"\1\3\101\uffff\1\4\30\uffff\2\1\146\uffff\1\2"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
-        u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
-        u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\24\uffff\1\5\62\uffff\1\6"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
+        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
+        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
+        u"\24\uffff\1\5\62\uffff\1\6"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\7"),
@@ -24301,10 +24301,10 @@ class sdl92Parser(Parser):
         u"\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\4\uffff\1\3\30\uffff"
         u"\2\3\1\uffff\1\3\5\uffff\1\3\6\uffff\1\2\11\uffff\1\2\1\uffff\1"
         u"\2\16\uffff\1\2\74\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
-        u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
-        u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\24\uffff\1\4\62\uffff\1\5"),
+        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
+        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
+        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
+        u"\24\uffff\1\4\62\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -24350,8 +24350,8 @@ class sdl92Parser(Parser):
         )
 
     DFA65_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u0082\1\u00ac\1\167\1\u00ad\1\u0084\1\103"
-        u"\1\167\1\u00a0\1\u0083\1\u00de\1\u0084\1\32\1\u0082\1\167\1\u0084"
+        u"\1\32\1\7\2\uffff\1\u0082\1\u00ac\1\167\1\u00ad\1\u0084\1\103\1"
+        u"\167\1\u00a0\1\u0083\1\u00de\1\u0084\1\32\1\u0082\1\167\1\u0084"
         u"\1\167\1\u0083\1\u00de\1\32\1\u00ab"
         )
 
@@ -24373,10 +24373,10 @@ class sdl92Parser(Parser):
     DFA65_transition = [
         DFA.unpack(u"\1\2\101\uffff\1\2\33\uffff\1\3\5\uffff\1\2\136\uffff"
         u"\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
-        u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
-        u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\24\uffff\1\4\62\uffff\1\5"),
+        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
+        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
+        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
+        u"\24\uffff\1\4\62\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -24418,8 +24418,8 @@ class sdl92Parser(Parser):
         )
 
     DFA66_min = DFA.unpack(
-        u"\1\32\1\uffff\1\7\2\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103"
-        u"\1\u0084\1\u00a0\1\167\1\u00de\1\u0083\1\32\1\u0084\1\u0082\1\167"
+        u"\1\32\1\uffff\1\7\2\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1"
+        u"\u0084\1\u00a0\1\167\1\u00de\1\u0083\1\32\1\u0084\1\u0082\1\167"
         u"\1\u0084\1\167\1\u0083\1\u00de\1\32\1\u00ab"
         )
 
@@ -24441,10 +24441,10 @@ class sdl92Parser(Parser):
     DFA66_transition = [
         DFA.unpack(u"\1\3\101\uffff\1\4\41\uffff\1\1\136\uffff\1\2"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff"
-        u"\1\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1"
-        u"\6\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1"
-        u"\6\24\uffff\1\6\62\uffff\1\5"),
+        DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff\1"
+        u"\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1\6"
+        u"\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1\6"
+        u"\24\uffff\1\6\62\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\7"),
@@ -24486,8 +24486,8 @@ class sdl92Parser(Parser):
         )
 
     DFA67_min = DFA.unpack(
-        u"\1\34\1\7\1\174\3\uffff\1\u00ac\1\u0082\2\uffff\1\u00ad\1\167"
-        u"\1\103\1\u0084\1\u00a0\1\167\1\u00de\1\u0083\1\37\1\u0084\1\u0082"
+        u"\1\34\1\7\1\174\3\uffff\1\u00ac\1\u0082\2\uffff\1\u00ad\1\167\1"
+        u"\103\1\u0084\1\u00a0\1\167\1\u00de\1\u0083\1\37\1\u0084\1\u0082"
         u"\1\167\1\u0084\1\167\1\u0083\1\u00de\1\37\1\u00ab"
         )
 
@@ -24508,10 +24508,10 @@ class sdl92Parser(Parser):
             
     DFA67_transition = [
         DFA.unpack(u"\1\3\1\4\1\uffff\1\2\103\uffff\1\5\171\uffff\1\1"),
-        DFA.unpack(u"\1\7\1\uffff\1\7\15\uffff\1\7\2\uffff\1\7\2\uffff"
-        u"\1\7\1\uffff\1\7\2\uffff\2\7\3\uffff\1\7\1\uffff\1\7\10\uffff\1"
-        u"\7\2\uffff\3\7\1\uffff\1\7\25\uffff\1\7\7\uffff\1\7\13\uffff\1"
-        u"\7\24\uffff\1\7\62\uffff\1\6"),
+        DFA.unpack(u"\1\7\1\uffff\1\7\15\uffff\1\7\2\uffff\1\7\2\uffff\1"
+        u"\7\1\uffff\1\7\2\uffff\2\7\3\uffff\1\7\1\uffff\1\7\10\uffff\1\7"
+        u"\2\uffff\3\7\1\uffff\1\7\25\uffff\1\7\7\uffff\1\7\13\uffff\1\7"
+        u"\24\uffff\1\7\62\uffff\1\6"),
         DFA.unpack(u"\1\11\3\uffff\1\10\20\uffff\1\11"),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -24578,14 +24578,14 @@ class sdl92Parser(Parser):
 
             
     DFA71_transition = [
-        DFA.unpack(u"\1\2\27\uffff\2\3\1\uffff\1\3\4\uffff\5\2\11\uffff"
-        u"\1\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff"
-        u"\1\3\27\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
+        DFA.unpack(u"\1\2\27\uffff\2\3\1\uffff\1\3\4\uffff\5\2\11\uffff\1"
+        u"\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1"
+        u"\3\27\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
         u"\1\2\74\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
-        u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
-        u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\24\uffff\1\5\62\uffff\1\4"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
+        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
+        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
+        u"\24\uffff\1\5\62\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -24598,8 +24598,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
-        u"\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2"),
+        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
+        u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2"),
         DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
@@ -24607,8 +24607,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
-        u"\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2\13\uffff"
+        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
+        u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2\13\uffff"
         u"\1\2\113\uffff\1\27"),
         DFA.unpack(u"\1\4")
     ]
@@ -24748,14 +24748,14 @@ class sdl92Parser(Parser):
 
             
     DFA83_transition = [
-        DFA.unpack(u"\1\2\27\uffff\2\3\1\uffff\1\3\4\uffff\5\2\11\uffff"
-        u"\1\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff"
-        u"\1\3\27\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
+        DFA.unpack(u"\1\2\27\uffff\2\3\1\uffff\1\3\4\uffff\5\2\11\uffff\1"
+        u"\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1"
+        u"\3\27\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
         u"\1\2\74\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
-        u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
-        u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\24\uffff\1\5\62\uffff\1\4"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
+        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
+        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
+        u"\24\uffff\1\5\62\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -24768,8 +24768,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
-        u"\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2"),
+        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
+        u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2"),
         DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
@@ -24777,8 +24777,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
-        u"\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2\13\uffff"
+        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
+        u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2\13\uffff"
         u"\1\2\113\uffff\1\27"),
         DFA.unpack(u"\1\4")
     ]
@@ -24824,13 +24824,13 @@ class sdl92Parser(Parser):
 
             
     DFA91_transition = [
-        DFA.unpack(u"\1\3\37\uffff\5\3\11\uffff\1\3\3\uffff\2\4\1\uffff"
-        u"\1\4\25\uffff\1\3\7\uffff\1\4\55\uffff\1\3\11\uffff\1\3\1\uffff"
-        u"\1\2\16\uffff\1\3\74\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
-        u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
-        u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\24\uffff\1\5\62\uffff\1\6"),
+        DFA.unpack(u"\1\3\37\uffff\5\3\11\uffff\1\3\3\uffff\2\4\1\uffff\1"
+        u"\4\25\uffff\1\3\7\uffff\1\4\55\uffff\1\3\11\uffff\1\3\1\uffff\1"
+        u"\2\16\uffff\1\3\74\uffff\1\1"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
+        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
+        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
+        u"\24\uffff\1\5\62\uffff\1\6"),
         DFA.unpack(u"\1\3\55\uffff\1\3\40\uffff\1\7\3\uffff\1\3"),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -24927,20 +24927,20 @@ class sdl92Parser(Parser):
         u"\7\uffff\1\3\4\uffff\1\3\6\uffff\1\3\21\uffff\2\3\1\uffff\2\3\1"
         u"\uffff\1\3\2\uffff\1\3\3\uffff\1\3\2\uffff\1\4\2\3\7\uffff\1\4"
         u"\1\uffff\1\2\1\3\15\uffff\1\4\74\uffff\1\1"),
-        DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff"
-        u"\1\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1"
-        u"\6\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1"
-        u"\6\24\uffff\1\6\62\uffff\1\5\3\uffff\1\3"),
+        DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff\1"
+        u"\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1\6"
+        u"\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1\6"
+        u"\24\uffff\1\6\62\uffff\1\5\3\uffff\1\3"),
         DFA.unpack(u"\1\4\55\uffff\1\4\40\uffff\1\7\3\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\10"),
         DFA.unpack(u"\1\11"),
-        DFA.unpack(u"\1\4\25\uffff\1\3\1\uffff\2\3\1\uffff\1\3\4\uffff"
-        u"\5\4\4\uffff\1\3\4\uffff\1\4\3\uffff\2\3\1\uffff\1\3\25\uffff\1"
-        u"\4\7\uffff\1\3\4\uffff\1\3\6\uffff\1\3\21\uffff\2\3\1\uffff\2\3"
-        u"\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\2\uffff\1\4\2\3\7\uffff\1"
-        u"\4\1\uffff\1\13\1\3\15\uffff\1\4\74\uffff\1\12"),
+        DFA.unpack(u"\1\4\25\uffff\1\3\1\uffff\2\3\1\uffff\1\3\4\uffff\5"
+        u"\4\4\uffff\1\3\4\uffff\1\4\3\uffff\2\3\1\uffff\1\3\25\uffff\1\4"
+        u"\7\uffff\1\3\4\uffff\1\3\6\uffff\1\3\21\uffff\2\3\1\uffff\2\3\1"
+        u"\uffff\1\3\2\uffff\1\3\3\uffff\1\3\2\uffff\1\4\2\3\7\uffff\1\4"
+        u"\1\uffff\1\13\1\3\15\uffff\1\4\74\uffff\1\12"),
         DFA.unpack(u"\1\14"),
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16\1\uffff\1\16\15\uffff\1\16\2\uffff\1\16\2\uffff"
@@ -25005,9 +25005,9 @@ class sdl92Parser(Parser):
         )
 
     DFA89_min = DFA.unpack(
-        u"\1\32\1\7\1\u00d1\1\uffff\1\u0082\1\0\1\167\1\uffff\1\u0084\1"
-        u"\167\1\u0083\1\u0084\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00de"
-        u"\1\32"
+        u"\1\32\1\7\1\u00d1\1\uffff\1\u0082\1\0\1\167\1\uffff\1\u0084\1\167"
+        u"\1\u0083\1\u0084\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00de\1"
+        u"\32"
         )
 
     DFA89_max = DFA.unpack(
@@ -25026,14 +25026,14 @@ class sdl92Parser(Parser):
 
             
     DFA89_transition = [
-        DFA.unpack(u"\1\3\1\uffff\2\3\1\uffff\1\3\15\uffff\1\3\10\uffff"
-        u"\2\3\1\uffff\1\3\35\uffff\1\3\4\uffff\1\3\6\uffff\1\3\21\uffff"
-        u"\2\3\1\uffff\2\3\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\3\uffff\2"
-        u"\3\11\uffff\1\2\1\3\112\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
-        u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
-        u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\24\uffff\1\4\62\uffff\1\3\3\uffff\1\3"),
+        DFA.unpack(u"\1\3\1\uffff\2\3\1\uffff\1\3\15\uffff\1\3\10\uffff\2"
+        u"\3\1\uffff\1\3\35\uffff\1\3\4\uffff\1\3\6\uffff\1\3\21\uffff\2"
+        u"\3\1\uffff\2\3\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\3\uffff\2\3"
+        u"\11\uffff\1\2\1\3\112\uffff\1\1"),
+        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
+        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
+        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
+        u"\24\uffff\1\4\62\uffff\1\3\3\uffff\1\3"),
         DFA.unpack(u"\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -25105,8 +25105,8 @@ class sdl92Parser(Parser):
         )
 
     DFA90_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1\u0084"
-        u"\1\u00a0\1\167\1\u00de\1\u0083\1\32\1\u0084\1\u0082\1\167\1\u0084"
+        u"\1\32\1\7\2\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1\u0084\1"
+        u"\u00a0\1\167\1\u00de\1\u0083\1\32\1\u0084\1\u0082\1\167\1\u0084"
         u"\1\167\1\u0083\1\u00de\1\32\1\u00ab"
         )
 
@@ -25126,14 +25126,14 @@ class sdl92Parser(Parser):
 
             
     DFA90_transition = [
-        DFA.unpack(u"\1\3\1\uffff\2\3\1\uffff\1\3\15\uffff\1\3\10\uffff"
-        u"\2\2\1\uffff\1\2\35\uffff\1\2\4\uffff\1\3\6\uffff\1\3\21\uffff"
-        u"\2\3\1\uffff\2\3\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\3\uffff\2"
-        u"\3\11\uffff\1\2\1\3\112\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
-        u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
-        u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\24\uffff\1\5\62\uffff\1\4\3\uffff\1\3"),
+        DFA.unpack(u"\1\3\1\uffff\2\3\1\uffff\1\3\15\uffff\1\3\10\uffff\2"
+        u"\2\1\uffff\1\2\35\uffff\1\2\4\uffff\1\3\6\uffff\1\3\21\uffff\2"
+        u"\3\1\uffff\2\3\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\3\uffff\2\3"
+        u"\11\uffff\1\2\1\3\112\uffff\1\1"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
+        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
+        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
+        u"\24\uffff\1\5\62\uffff\1\4\3\uffff\1\3"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -25201,10 +25201,10 @@ class sdl92Parser(Parser):
     DFA92_transition = [
         DFA.unpack(u"\1\3\37\uffff\5\3\11\uffff\1\3\34\uffff\1\3\65\uffff"
         u"\1\3\11\uffff\1\3\1\uffff\1\2\16\uffff\1\3\74\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
-        u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
-        u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\24\uffff\1\4\62\uffff\1\3"),
+        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
+        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
+        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
+        u"\24\uffff\1\4\62\uffff\1\3"),
         DFA.unpack(u"\1\3\55\uffff\1\3\40\uffff\1\5\3\uffff\1\3"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -25241,15 +25241,15 @@ class sdl92Parser(Parser):
         )
 
     DFA93_min = DFA.unpack(
-        u"\1\4\1\7\12\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1\u0084"
-        u"\1\u00a0\1\167\1\u00de\1\u0083\1\47\1\u0084\1\u0082\1\167\1\u0084"
+        u"\1\4\1\7\12\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1\u0084\1"
+        u"\u00a0\1\167\1\u00de\1\u0083\1\47\1\u0084\1\u0082\1\167\1\u0084"
         u"\1\167\1\u0083\1\u00de\1\47\1\u00ab"
         )
 
     DFA93_max = DFA.unpack(
-        u"\1\u00dd\1\u00ab\12\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103"
-        u"\1\u0084\1\u00a0\1\167\1\u00de\1\u0083\1\u0085\1\u0084\1\u0082"
-        u"\1\167\1\u0084\1\167\1\u0083\1\u00de\1\u00dd\1\u00ab"
+        u"\1\u00dd\1\u00ab\12\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1"
+        u"\u0084\1\u00a0\1\167\1\u00de\1\u0083\1\u0085\1\u0084\1\u0082\1"
+        u"\167\1\u0084\1\167\1\u0083\1\u00de\1\u00dd\1\u00ab"
         )
 
     DFA93_accept = DFA.unpack(
@@ -25319,8 +25319,8 @@ class sdl92Parser(Parser):
         )
 
     DFA104_min = DFA.unpack(
-        u"\1\55\1\7\2\uffff\1\u0082\1\u00ac\1\167\1\u00ad\1\u0084\1\103"
-        u"\1\167\1\u00a0\1\u0083\1\u00de\1\u0084\1\55\1\u0082\1\167\1\u0084"
+        u"\1\55\1\7\2\uffff\1\u0082\1\u00ac\1\167\1\u00ad\1\u0084\1\103\1"
+        u"\167\1\u00a0\1\u0083\1\u00de\1\u0084\1\55\1\u0082\1\167\1\u0084"
         u"\1\167\1\u0083\1\u00de\1\55\1\u00ab"
         )
 
@@ -25341,10 +25341,10 @@ class sdl92Parser(Parser):
             
     DFA104_transition = [
         DFA.unpack(u"\1\3\124\uffff\1\2\132\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
-        u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
-        u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\24\uffff\1\4\62\uffff\1\5"),
+        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
+        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
+        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
+        u"\24\uffff\1\4\62\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -25386,8 +25386,8 @@ class sdl92Parser(Parser):
         )
 
     DFA102_min = DFA.unpack(
-        u"\1\55\1\7\2\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1\u0084"
-        u"\1\u00a0\1\167\1\u00de\1\u0083\1\55\1\u0084\1\u0082\1\167\1\u0084"
+        u"\1\55\1\7\2\uffff\1\u00ac\1\u0082\1\u00ad\1\167\1\103\1\u0084\1"
+        u"\u00a0\1\167\1\u00de\1\u0083\1\55\1\u0084\1\u0082\1\167\1\u0084"
         u"\1\167\1\u0083\1\u00de\1\55\1\u00ab"
         )
 
@@ -25408,10 +25408,10 @@ class sdl92Parser(Parser):
             
     DFA102_transition = [
         DFA.unpack(u"\1\2\124\uffff\1\3\3\uffff\2\2\125\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
-        u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
-        u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\24\uffff\1\5\62\uffff\1\4"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
+        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
+        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
+        u"\24\uffff\1\5\62\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -25477,10 +25477,10 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\2\37\uffff\5\2\4\uffff\1\3\4\uffff\1\2\3\uffff\2"
         u"\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\52\uffff\1\3\2\uffff\1"
         u"\2\2\3\7\uffff\1\2\1\uffff\1\2\16\uffff\1\2\74\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
-        u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
-        u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\24\uffff\1\5\62\uffff\1\4"),
+        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
+        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
+        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
+        u"\24\uffff\1\5\62\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -25720,8 +25720,8 @@ class sdl92Parser(Parser):
         )
 
     DFA159_accept = DFA.unpack(
-        u"\1\uffff\1\1\1\2\1\3\1\4\1\5\1\6\1\7\1\10\1\uffff\1\12\1\13\1"
-        u"\uffff\1\16\1\11\1\14\1\15\1\uffff\1\20\1\17"
+        u"\1\uffff\1\1\1\2\1\3\1\4\1\5\1\6\1\7\1\10\1\uffff\1\12\1\13\1\uffff"
+        u"\1\16\1\11\1\14\1\15\1\uffff\1\20\1\17"
         )
 
     DFA159_special = DFA.unpack(
@@ -25730,8 +25730,8 @@ class sdl92Parser(Parser):
 
             
     DFA159_transition = [
-        DFA.unpack(u"\1\12\31\uffff\1\11\12\uffff\1\1\1\2\1\3\1\4\1\5\1"
-        u"\6\1\7\1\10\1\13\1\14"),
+        DFA.unpack(u"\1\12\31\uffff\1\11\12\uffff\1\1\1\2\1\3\1\4\1\5\1\6"
+        u"\1\7\1\10\1\13\1\14"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -25754,9 +25754,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\23\67\uffff\1\23\12\uffff\1\23\1\uffff\1\22\14"
-        u"\uffff\1\23\5\uffff\1\23\4\uffff\12\23\1\22\3\uffff\1\23\46\uffff"
-        u"\1\22"),
+        DFA.unpack(u"\1\23\67\uffff\1\23\12\uffff\1\23\1\uffff\1\22\14\uffff"
+        u"\1\23\5\uffff\1\23\4\uffff\12\23\1\22\3\uffff\1\23\46\uffff\1\22"),
         DFA.unpack(u""),
         DFA.unpack(u"")
     ]
@@ -25778,8 +25777,8 @@ class sdl92Parser(Parser):
         )
 
     DFA169_min = DFA.unpack(
-        u"\1\66\1\7\2\uffff\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u0084"
-        u"\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00de\1\66"
+        u"\1\66\1\7\2\uffff\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u0084\1"
+        u"\u0082\1\167\1\u0084\1\167\1\u0083\1\u00de\1\66"
         )
 
     DFA169_max = DFA.unpack(
@@ -25799,10 +25798,10 @@ class sdl92Parser(Parser):
     DFA169_transition = [
         DFA.unpack(u"\2\3\1\uffff\1\3\35\uffff\1\3\71\uffff\1\2\113\uffff"
         u"\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
-        u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
-        u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\24\uffff\1\4\62\uffff\1\3"),
+        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
+        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
+        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
+        u"\24\uffff\1\4\62\uffff\1\3"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\5"),
