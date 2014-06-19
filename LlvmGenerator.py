@@ -376,7 +376,7 @@ def _basic(expr):
     if lefttmp.type.kind == core.TYPE_POINTER:
         lefttmp = g.builder.load(lefttmp, 'lefttmp')
     if righttmp.type.kind == core.TYPE_POINTER:
-        righttmp = g.builder.load(righttmp, 'lefttmp')
+        righttmp = g.builder.load(righttmp, 'righttmp')
 
     if lefttmp.type.kind != righttmp.type.kind:
         raise NotImplementedError
@@ -480,7 +480,7 @@ def _logical(expr):
     if lefttmp.type.kind == core.TYPE_POINTER:
         lefttmp = g.builder.load(lefttmp, 'lefttmp')
     if righttmp.type.kind == core.TYPE_POINTER:
-        righttmp = g.builder.load(righttmp, 'lefttmp')
+        righttmp = g.builder.load(righttmp, 'righttmp')
 
     if expr.operand == 'and':
         return g.builder.and_(lefttmp, righttmp, 'andtmp')
