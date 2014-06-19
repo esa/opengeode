@@ -477,7 +477,7 @@ signal_item
 /*   Not considered for the moment 
      (irrelevant in the scope of the generation of code for a single process)
 priority_input
-        :       'PRIORITY INPUT' priority_input_list end transition;
+        :       PRIORITY INPUT priority_input_list end transition;
 
 
 priority_input_list
@@ -544,10 +544,10 @@ export
 
 /*
 remote_procedure_call
-        :       'CALL' remote_procedure_call_body;
+        :       CALL remote_procedure_call_body;
 
 remote_procedure_call_body
-        :       remote_procedure_id actual_parameters? ('TO' destination)?;
+        :       remote_procedure_id actual_parameters? (TO destination)?;
 */
 
 
@@ -703,13 +703,13 @@ to_part
         ->      ^(TO destination);
 
 via_part
-        :       'VIA' viabody
-        -> ^(VIA viabody);
+        :       VIA viabody
+        ->      ^(VIA viabody);
 
 
 // ambiguous in SDL92, added OR between ALL and via_path
 viabody
-        :       'ALL'
+        :       ALL
         ->      ^(ALL)
                 | via_path
         ->      ^(VIAPATH via_path);
@@ -913,11 +913,11 @@ imperative_operator
 
 
 timer_active_expression
-        :       'ACTIVE' '(' timer_id ('(' expression_list ')')? ')';
+        :       ACTIVE '(' timer_id ('(' expression_list ')')? ')';
 
 
 anyvalue_expression
-        :       'ANY' '(' sort ')';
+        :       ANY '(' sort ')';
 
 
 sort    :       sort_id
@@ -928,11 +928,11 @@ syntype :       syntype_id;
 
 
 import_expression
-        :       'IMPORT' '(' remote_variable_id (',' destination)? ')';
+        :       IMPORT '(' remote_variable_id (',' destination)? ')';
 
 
 view_expression
-        :       'VIEW' '(' view_id (',' pid_expression)? ')';
+        :       VIEW '(' view_id (',' pid_expression)? ')';
 
 
 variable_access
@@ -1262,6 +1262,9 @@ ENDNEWTYPE      :       E N D N E W T Y P E;
 ARRAY           :       A R R A Y;	
 CONSTANTS       :	C O N S T A N T S;
 STRUCT          :	S T R U C T;
+IMPORT          :       I M P O R T;
+VIEW            :       V I E W;
+ACTIVE          :       A C T I V E;
 StringLiteral   :       STR+ ;
 
 fragment
