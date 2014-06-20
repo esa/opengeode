@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 18, 2009 10:09:25 sdl92.g 2014-06-20 18:10:34
+# $ANTLR 3.1.3 Mar 18, 2009 10:09:25 sdl92.g 2014-06-20 18:24:01
 
 import sys
 from antlr3 import *
@@ -3964,7 +3964,7 @@ class sdl92Lexer(Lexer):
             _channel = DEFAULT_CHANNEL
 
             # sdl92.g:1276:17: ( C O N S T A N T S )
-            # sdl92.g:1276:19: C O N S T A N T S
+            # sdl92.g:1276:23: C O N S T A N T S
             pass 
             self.mC()
             self.mO()
@@ -3997,7 +3997,7 @@ class sdl92Lexer(Lexer):
             _channel = DEFAULT_CHANNEL
 
             # sdl92.g:1277:17: ( S T R U C T )
-            # sdl92.g:1277:19: S T R U C T
+            # sdl92.g:1277:23: S T R U C T
             pass 
             self.mS()
             self.mT()
