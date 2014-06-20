@@ -1,3 +1,4 @@
+/* CIF PROCESS (150, 150), (150, 75) */
 PROCESS orchestrator;
 /* CIF TEXT (-354, 12), (289, 173) */
 -- GNC Orchestrator for the VEGA simulator
@@ -62,12 +63,12 @@ COMMENT 'Set data computed
 by the Simulink model
 (Simulator) in the GNC
 input vector';
-/* CIF PROCEDURECALL (314, 232), (100, 50) */
+/* CIF PROCEDURECALL (313, 232), (100, 50) */
 CALL Scheduler
 (intr)
 /* CIF COMMENT (434, 232), (170, 50) */
 COMMENT 'Call the GNC function';
-/* CIF PROCEDURECALL (181, 297), (366, 50) */
+/* CIF PROCEDURECALL (180, 297), (366, 50) */
 CALL S_GET_GNC_LV_SIM_INPUTS_FOR_NEXT_MAJOR_CYCLE
 (gnc_output)
 /* CIF COMMENT (567, 297), (175, 50) */
@@ -87,9 +88,9 @@ COMMENT 'Plot only every 50 major cycles
 (otherwise performance is too low)';
 /* CIF ANSWER (254, 562), (100, 35) */
 (true):
-/* CIF TASK (169, 612), (270, 68) */
+/* CIF TASK (166, 612), (276, 68) */
 TASK plot_data!major_cycle := major_cycle,
-plot_data!subcycle := sub_cycle,
+plot_data!subcycle := sub_cycle mod 7,
 plot_data!gnc_inputs := gnc_input,
 plot_data!gnc_outputs := gnc_output;
 /* CIF OUTPUT (224, 695), (159, 50) */
@@ -97,21 +98,21 @@ OUTPUT plot(plot_data);
 /* CIF ANSWER (449, 562), (100, 35) */
 (false):
 ENDDECISION;
-/* CIF DECISION (305, 760), (118, 70) */
+/* CIF DECISION (304, 760), (118, 70) */
 DECISION sub_cycle = 7
 /* CIF COMMENT (443, 770), (199, 50) */
 COMMENT 'Compute next major cycle';
-/* CIF ANSWER (197, 850), (100, 35) */
+/* CIF ANSWER (165, 850), (100, 35) */
 (true):
-/* CIF TASK (137, 900), (220, 53) */
+/* CIF TASK (74, 900), (283, 53) */
 TASK sub_cycle := 0,
-major_cycle := major_cycle + 1;
-/* CIF PROCEDURECALL (127, 968), (240, 50) */
+major_cycle := (major_cycle + 1) mod 100;
+/* CIF PROCEDURECALL (95, 968), (240, 50) */
 CALL S_JUMP_TO_NEXT_MAJOR_CYCLE;
-/* CIF ANSWER (424, 850), (100, 35) */
+/* CIF ANSWER (445, 850), (100, 35) */
 (false):
-/* CIF TASK (377, 900), (194, 50) */
-TASK sub_cycle := sub_cycle + 1;
+/* CIF TASK (367, 900), (257, 50) */
+TASK sub_cycle := (sub_cycle + 1) mod 100;
 ENDDECISION;
 /* CIF NEXTSTATE (314, 1033), (100, 50) */
 NEXTSTATE Running;

@@ -1,17 +1,6 @@
-/* CIF PROCESS (150, 150), (150, 75) */
+/* CIF PROCESS (148, 150), (150, 75) */
 PROCESS myfunction;
-/* CIF TEXT (389, 45), (298, 158) */
-procedure my_factorial;
-fpar in n myInteger,
-          in/out result myInteger;
-start;
-    task result := 1;
-    task for x in range(1, n+1):
-                  result := result * x
-              endfor;
-endprocedure;
-/* CIF ENDTEXT */
-/* CIF TEXT (-336, -82), (271, 323) */
+/* CIF TEXT (-533, -82), (271, 323) */
 -- Timers defined in the interface view
 -- Use SET_TIMER (value, timer name)
 -- and RESET_TIMER (timer name) in a
@@ -19,7 +8,7 @@ endprocedure;
 
 
 
-DCL toto T_UInt32;
+DCL toto T_Int32;
 
 TIMER myTimer;
 
@@ -28,7 +17,7 @@ DCL def_val MySeq := { a 3, b taste };
 
 -- To test power, fix, float
 dcl someReal MyReal := 1.5;
-dcl someInt MyInteger := 2;
+dcl someInt t_uInt8 := 2;
 
 -- To test 'op_not'
 dcl opnot T_boolean := not true;
@@ -43,9 +32,9 @@ fpar in N MyInteger,
 START;
 /* CIF TASK (284, 83), (97, 35) */
 TASK result := 1;
-/* CIF TASK (249, 133), (167, 53) */
+/* CIF TASK (223, 133), (220, 53) */
 TASK for x in range(1, n+1):
-    result := result * x
+    result := (result * x) mod 255
 endfor;
 /* CIF RETURN (315, 201), (35, 35) */
 RETURN ;
@@ -58,41 +47,40 @@ NEXTSTATE Wait;
 
 /* CIF STATE (58, -34), (100, 50) */
 STATE Wait;
-/* CIF INPUT (-42, 36), (139, 50) */
-INPUT start_something
-(toto);
-/* CIF OUTPUT (-54, 101), (164, 50) */
-OUTPUT result_data(toto + 1);
-/* CIF PROCEDURECALL (-47, 166), (150, 50) */
-CALL writeln
-('Hello Toto', toto);
-/* CIF PROCEDURECALL (-38, 231), (132, 50) */
-CALL set_timer
-(1000, myTimer);
-/* CIF TASK (-113, 296), (282, 35) */
-TASK someReal := power(someReal, someInt);
-/* CIF PROCEDURECALL (-142, 346), (340, 35) */
-CALL writeln('1.5 ** 2 == ', someReal, ' (should be 2.25 )');
-/* CIF TASK (-65, 396), (186, 35) */
-TASK someInt := fix(someReal);
-/* CIF TASK (-73, 446), (201, 35) */
-TASK someReal := float(someInt);
-/* CIF TASK (-86, 496), (227, 35) */
-TASK someInt := fix(someReal) mod 5;
-/* CIF TASK (-48, 546), (152, 35) */
-TASK opnot := not opnot;
-/* CIF TASK (-51, 596), (157, 35) */
-TASK someint := -someint;
-/* CIF TASK (-54, 646), (164, 35) */
-TASK someint := (-8) mod 5;
-/* CIF NEXTSTATE (-23, 696), (102, 50) */
-NEXTSTATE wait;
-/* CIF INPUT (225, 36), (100, 50) */
+/* CIF INPUT (277, 36), (100, 50) */
 INPUT mytimer;
-/* CIF PROCEDURECALL (207, 101), (135, 50) */
+/* CIF PROCEDURECALL (259, 101), (135, 50) */
 CALL writeln
 ('timer expired');
-/* CIF NEXTSTATE (225, 166), (100, 50) */
+/* CIF PROCEDURECALL (247, 166), (160, 35) */
+CALL factorial(3, someint);
+/* CIF NEXTSTATE (277, 216), (100, 50) */
 NEXTSTATE Wait;
+/* CIF INPUT (-83, 36), (198, 50) */
+INPUT start_something (toto);
+/* CIF OUTPUT (-119, 101), (270, 50) */
+OUTPUT result_data((toto+1) mod 2147483647);
+/* CIF PROCEDURECALL (-59, 166), (150, 50) */
+CALL writeln
+('Hello Toto', toto);
+/* CIF PROCEDURECALL (-50, 231), (132, 50) */
+CALL set_timer
+(1000, myTimer);
+/* CIF TASK (-142, 296), (316, 35) */
+TASK someReal := power(someReal, someInt mod 1);
+/* CIF PROCEDURECALL (-154, 346), (340, 35) */
+CALL writeln('1.5 ** 2 == ', someReal, ' (should be 2.25 )');
+/* CIF TASK (-84, 396), (201, 35) */
+TASK someReal := float(someInt);
+/* CIF TASK (-104, 446), (241, 35) */
+TASK someInt := fix(someReal) mod 255;
+/* CIF TASK (-60, 496), (152, 35) */
+TASK opnot := not opnot;
+/* CIF TASK (-62, 546), (157, 35) */
+TASK someint := -someint;
+/* CIF TASK (-66, 596), (164, 35) */
+TASK someint := (-8) mod 5;
+/* CIF NEXTSTATE (-35, 646), (102, 50) */
+NEXTSTATE wait;
 ENDSTATE;
 ENDPROCESS myfunction;
