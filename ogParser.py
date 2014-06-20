@@ -441,7 +441,7 @@ def check_range(typeref, type_to_check):
                             'outside expected range [{}..{}]'
                     .format(type_to_check.Min, type_to_check.Max,
                             typeref.Min, typeref.Max))
-    except AttributeError:
+    except (AttributeError, ValueError):
         raise TypeError('Missing range')
 
 
@@ -1299,25 +1299,29 @@ def expression(root, context):
         basic = find_basic_type(expr.left.exprType)
         left = find_basic_type(expr.left.exprType)
         right = find_basic_type(expr.right.exprType)
-        if isinstance(expr, ogAST.ExprPlus):
-            attrs = {'Min': str(float(left.Min) + float(right.Min)),
-                     'Max': str(float(left.Max) + float(right.Max))}
-            expr.exprType = type('Plus', (basic,), attrs)
-        elif isinstance(expr, ogAST.ExprMul):
-            attrs = {'Min': str(float(left.Min) * float(right.Min)),
-                     'Max': str(float(left.Max) * float(right.Max))}
-            expr.exprType = type('Mul', (basic,), attrs)
-        elif isinstance(expr, ogAST.ExprMinus):
-            attrs = {'Min': str(float(left.Min) - float(right.Min)),
-                     'Max': str(float(left.Max) - float(right.Max))}
-            expr.exprType = type('Minus', (basic,), attrs)
-        elif isinstance(expr, ogAST.ExprDiv):
-            attrs = {'Min': str(float(left.Min) / float(right.Min)),
-                     'Max': str(float(left.Max) / float(right.Max))}
-            expr.exprType = type('Div', (basic,), attrs)
-        elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
-            attrs = {'Min': right.Min, 'Max': right.Max}
-            expr.exprType = type('Mod', (basic,), attrs)
+        try:
+            if isinstance(expr, ogAST.ExprPlus):
+                attrs = {'Min': str(float(left.Min) + float(right.Min)),
+                         'Max': str(float(left.Max) + float(right.Max))}
+                expr.exprType = type('Plus', (basic,), attrs)
+            elif isinstance(expr, ogAST.ExprMul):
+                attrs = {'Min': str(float(left.Min) * float(right.Min)),
+                         'Max': str(float(left.Max) * float(right.Max))}
+                expr.exprType = type('Mul', (basic,), attrs)
+            elif isinstance(expr, ogAST.ExprMinus):
+                attrs = {'Min': str(float(left.Min) - float(right.Min)),
+                         'Max': str(float(left.Max) - float(right.Max))}
+                expr.exprType = type('Minus', (basic,), attrs)
+            elif isinstance(expr, ogAST.ExprDiv):
+                attrs = {'Min': str(float(left.Min) / float(right.Min)),
+                         'Max': str(float(left.Max) / float(right.Max))}
+                expr.exprType = type('Div', (basic,), attrs)
+            elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
+                attrs = {'Min': right.Min, 'Max': right.Max}
+                expr.exprType = type('Mod', (basic,), attrs)
+        except ValueError:
+            errors.append('Check that all your numerical data types have '
+                          'a range constraint')
 
 
     elif root.type in (lexer.OR, lexer.AND, lexer.XOR):

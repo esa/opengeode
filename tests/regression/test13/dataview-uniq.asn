@@ -1,8 +1,8 @@
 TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
-Int ::= INTEGER
+Int ::= INTEGER(-1000..1000)
 Bool ::= BOOLEAN
-Float ::= REAL
+Float ::= REAL (-10000.0..10000.0)
 
 END
