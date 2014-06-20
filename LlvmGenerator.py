@@ -357,9 +357,27 @@ def _primary_variable(prim):
 
 
 @expression.register(ogAST.PrimPath)
-def _prim_path(primary_id):
+def _prim_path(prim):
     ''' Generate the code for an of an element list (path) '''
-    raise NotImplementedError
+
+    var_ptr = g.module.get_global_variable_named(str(prim.value.pop(0)).lower())
+
+    if not prim.value:
+        return var_ptr
+
+    zero_cons = core.Constant.int(g.i32, 0)
+
+    for field_name in prim.value:
+        var_ty = var_ptr.type
+        if var_ty.kind == core.TYPE_POINTER and var_ty.pointee.kind == core.TYPE_STRUCT:
+            struct = g.structs[var_ty.pointee.name]
+            field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name))
+            field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
+            var_ptr = field_ptr
+        else:
+            raise NotImplementedError
+
+    return var_ptr
 
 
 @expression.register(ogAST.ExprPlus)
