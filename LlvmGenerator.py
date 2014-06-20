@@ -41,7 +41,7 @@ class GlobalState():
 
         self.scope = {}
         self.states = {}
-        self.types = {}
+        self.structs = {}
         self.strings = {}
 
         # Initialize built-in types
@@ -65,6 +65,17 @@ class GlobalState():
             self.module, core.INTR_MEMCPY,
             [self.i8_ptr, self.i8_ptr, self.i64]
         )
+
+
+class Struct():
+    def __init__(self, name, fields):
+        self.name = name
+        self.fields = fields
+        self.field_names = [n for n, _ in self.fields]
+        self.ty = core.Type.struct([ty for _, ty in self.fields], self.name)
+
+    def idx(self, name):
+        return self.field_names.index(name)
 
 
 @singledispatch
@@ -115,11 +126,7 @@ def _process(process):
     for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
         var_type = _generate_type(var_asn1_type)
         global_var = g.module.add_global_variable(var_type, str(var_name).lower())
-
-        if var_type.kind == core.TYPE_INTEGER:
-            global_var.initializer = core.Constant.int(var_type, 0)
-        elif var_type.kind == core.TYPE_DOUBLE:
-            global_var.initializer = core.Constant.real(var_type, 0.0)
+        global_var.initializer = core.Constant.null(var_type)
 
         if def_value:
             raise NotImplementedError
@@ -568,7 +575,17 @@ def _if_then_else(ifthen):
 @expression.register(ogAST.PrimSequence)
 def _sequence(seq):
     ''' Generate the code for an ASN.1 SEQUENCE '''
-    raise NotImplementedError
+    struct = g.structs[seq.exprType.ReferencedTypeName]
+    struct_ptr = g.builder.alloca(struct.ty)
+    zero_cons = core.Constant.int(g.i32, 0)
+
+    for field_name, field_expr in seq.value.viewitems():
+        field_val = expression(field_expr)
+        field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name))
+        field_ptr = g.builder.gep(struct_ptr, [zero_cons, field_idx_cons])
+        g.builder.store(field_val, field_ptr)
+
+    return struct_ptr
 
 
 @expression.register(ogAST.PrimSequenceOf)
@@ -700,8 +717,8 @@ def _generate_type(ty):
     elif basic_ty.kind == 'RealType':
         return g.double
     elif basic_ty.kind == 'SequenceOfType':
-        if ty.ReferencedTypeName in g.types:
-            return g.types[ty.ReferencedTypeName]
+        if ty.ReferencedTypeName in g.structs:
+            return g.structs[ty.ReferencedTypeName].ty
 
         min_size = int(basic_ty.Max)
         max_size = int(basic_ty.Min)
@@ -710,9 +727,17 @@ def _generate_type(ty):
 
         elem_ty = _generate_type(basic_ty.type)
         array_ty = core.Type.array(elem_ty, max_size)
-        struct_ty = core.Type.struct([array_ty], ty.ReferencedTypeName)
-        g.types[ty.ReferencedTypeName] = struct_ty
-        return struct_ty
+        struct = Struct(ty.ReferencedTypeName, ['_', array_ty])
+        g.structs[ty.ReferencedTypeName] = struct
+        return struct.ty
+    elif basic_ty.kind == 'SequenceType':
+        if ty.ReferencedTypeName in g.structs:
+            return g.structs[ty.ReferencedTypeName].ty
+        # TODO: Fields should be iterated in the same order as defined in the type
+        fields = [[n, _generate_type(f.type)] for n, f in basic_ty.Children.viewitems()]
+        struct = Struct(ty.ReferencedTypeName, fields)
+        g.structs[ty.ReferencedTypeName] = struct
+        return struct.ty
     else:
         raise NotImplementedError
 
