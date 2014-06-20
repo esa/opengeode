@@ -26,6 +26,5 @@
      <file>fonts/Ubuntu-R.ttf</file>
      <file>fonts/Ubuntu-RI.ttf</file>
      <file>misc/lander.mp3</file>
-     <file>misc/python.stg</file>
  </qresource>
  </RCC>

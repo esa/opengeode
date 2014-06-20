@@ -17,11 +17,11 @@ import subprocess
 import tempfile
 import uuid
 import os
+import distutils.spawn as spawn
 import sys
 import importlib
 import logging
 import PySide.QtCore as Qt
-import icons
 
 LOG = logging.getLogger(__name__)
 
@@ -57,20 +57,21 @@ def parse_asn1(*files, **options):
     assert isinstance(ast_version, ASN1)
     assert isinstance(flags, list)
 
+    asn1scc_root = os.path.dirname(spawn.find_executable('asn1.exe'))
     tempdir = tempfile.mkdtemp()
     filename = str(uuid.uuid4()).replace('-', '_')
     filepath = tempdir + os.sep + filename + '.py'
 
     # dump python.stg in the temp directory
-    stg = Qt.QFile(':misc/python.stg')
-    stg_data = stg.readData(stg.size())
-    tmp_stg = tempdir + os.sep + 'python.stg'
-    with open(tmp_stg, 'w') as fd:
-        fd.write(stg_data)
+    #stg = Qt.QFile(':misc/python.stg')
+    #stg_data = stg.readData(stg.size())
+    stg = asn1scc_root + os.sep + 'python.stg'
+    #with open(tmp_stg, 'w') as fd:
+    #    fd.write(stg_data)
 
     args = ['asn1.exe',
             '-customStgAstVerion', str(ast_version.value),
-            '-customStg', tmp_stg + ':' + filepath] + list(*files)
+            '-customStg', stg + ':' + filepath] + list(*files)
 
     LOG.debug('Calling: ' + ' '.join(args))
     try:
