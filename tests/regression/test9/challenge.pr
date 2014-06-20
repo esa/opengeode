@@ -1,4 +1,13 @@
+/* CIF PROCESS (150, 150), (150, 75) */
 PROCESS challenge;
+/* CIF TEXT (-187, 64), (254, 104) */
+procedure test;
+fpar  in first t_UInt8,
+           in/out second t_boolean;
+external;
+
+dcl testvalue t_boolean := true;
+/* CIF ENDTEXT */
 /* CIF TEXT (587, 91), (298, 120) */
 dcl count, actual_count CountTab;
 dcl pow_value T_UInt32 := 0;
@@ -8,17 +17,9 @@ dcl bitwise SeqBit;
 dcl bitwise2 SeqBit2;
 dcl boolwise t_Boolean;
 /* CIF ENDTEXT */
-/* CIF TEXT (-187, 64), (254, 104) */
-procedure test;
-fpar  in first t_UInt8,
-           in/out second t_boolean;
-external;
-
-dcl testvalue t_boolean := true;
-/* CIF ENDTEXT */
 /* CIF START (337, 14), (68, 37) */
 START;
-/* CIF TASK (278, 66), (184, 72) */
+/* CIF TASK (279, 66), (184, 72) */
 TASK for x in count:
     count(x) := count_max
     actual_count(x) := 0
@@ -33,9 +34,9 @@ ENDSTATE;
 STATE Wait;
 /* CIF INPUT (336, 208), (70, 35) */
 INPUT run;
-/* CIF PROCEDURECALL (287, 258), (166, 35) */
+/* CIF PROCEDURECALL (288, 258), (166, 35) */
 CALL writeln('Computing');
-/* CIF TASK (164, 308), (412, 216) */
+/* CIF TASK (165, 308), (412, 216) */
 TASK for x in range(exceed_nb):
     for n in range(nb_bit):
         call pow(2, n, pow_value);
@@ -46,7 +47,7 @@ TASK for x in range(exceed_nb):
         boolwise := boolwise and boolwise
         check := if (check=0) and pow_value>1  then 1 else 0 fi
         count(n) := count(n) - check
-        call test(n+1, testvalue);
+        call test((n+1) mod 255, testvalue);
     endfor
 endfor;
 /* CIF NEXTSTATE (336, 539), (70, 35) */
