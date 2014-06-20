@@ -31,6 +31,7 @@ from itertools import chain
 # pylint: disable=W0611
 import enum  # NOQA
 import subprocess  # NOQA
+import distutils  # NOQA
 import tempfile  # NOQA
 import uuid  # NOQA
 import importlib  # NOQA
