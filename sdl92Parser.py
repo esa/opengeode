@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# $ANTLR 3.1.3 Mar 18, 2009 10:09:25 sdl92.g 2014-06-19 11:20:29
-=======
-# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-06-20 15:21:40
->>>>>>> remotes/upstream/master
+# $ANTLR 3.1.3 Mar 18, 2009 10:09:25 sdl92.g 2014-06-20 18:10:33
 
 import sys
 from antlr3 import *
@@ -17,13 +13,8 @@ HIDDEN = BaseRecognizer.HIDDEN
 
 # token types
 NUMBER_OF_INSTANCES=24
-<<<<<<< HEAD
-COMMENT2=208
+COMMENT2=211
 MANTISSA=169
-=======
-COMMENT2=209
-MANTISSA=167
->>>>>>> remotes/upstream/master
 ROUTE=93
 MOD=156
 GROUND=76
@@ -33,12 +24,8 @@ SEQOF=13
 TEXTAREA_CONTENT=78
 EOF=-1
 ACTION=33
-<<<<<<< HEAD
 CREATE=145
-=======
-CREATE=143
-IMPORT=172
->>>>>>> remotes/upstream/master
+IMPORT=174
 FPAR=82
 NEXTSTATE=54
 RETURN=57
@@ -47,46 +34,45 @@ VIAPATH=49
 CHANNEL=91
 ENDCONNECTION=123
 EXPORT=38
-<<<<<<< HEAD
 EQ=139
-GEODE=175
 INFORMAL_TEXT=70
-D=182
-E=185
-F=192
+GEODE=178
+D=185
+E=188
+F=195
 GE=144
-G=193
-A=179
+G=196
+A=182
 IMPLIES=149
-B=201
-C=183
-L=184
-M=189
-N=180
-O=194
+B=204
+C=186
+L=187
+M=192
+N=183
+O=197
 TERMINATOR=56
-H=195
-I=191
-J=202
+H=198
+I=194
+J=205
 ELSE=45
-K=186
-U=198
-T=196
-W=200
-V=199
+K=189
+U=201
+T=199
+W=203
+V=202
 STOP=87
-Q=209
+Q=212
 INT=121
-P=187
-S=190
-R=188
+P=190
+S=193
+R=191
 VALUE=10
-Y=181
-X=197
+Y=184
+X=200
 FI=65
-Z=210
+Z=213
 MINUS_INFINITY=165
-WS=207
+WS=210
 OUT=129
 NONE=130
 FloatingPointLiteral=166
@@ -94,76 +80,23 @@ INPUT_NONE=27
 CONSTANT=44
 GT=141
 CALL=135
-END=177
-=======
-EQ=137
-INFORMAL_TEXT=70
-GEODE=176
-D=183
-E=186
-F=193
-GE=142
-G=194
-A=180
-IMPLIES=147
-B=202
-C=184
-L=185
-M=190
-N=181
-O=195
-TERMINATOR=56
-H=196
-I=192
-J=203
-ELSE=45
-K=187
-U=199
-T=197
-W=201
-V=200
-STOP=87
-Q=210
-INT=119
-P=188
-S=191
-R=189
-VALUE=10
-Y=182
-X=198
-FI=65
-Z=211
-MINUS_INFINITY=163
-WS=208
-OUT=127
-NONE=128
-FloatingPointLiteral=164
-INPUT_NONE=27
-CONSTANT=44
-GT=139
-CALL=133
-END=178
->>>>>>> remotes/upstream/master
+END=180
 FLOATING_LABEL=97
 IFTHENELSE=8
 T__215=215
 T__216=216
-T__213=213
 T__214=214
+T__219=219
 T__217=217
 T__218=218
 INPUT=31
 ENDSUBSTRUCTURE=128
 FLOAT=15
-<<<<<<< HEAD
 SUBSTRUCTURE=127
-T__223=223
-T__222=222
 ASTERISK=126
-T__221=221
 T__220=220
 INOUT=84
-STR=204
+STR=207
 STIMULUS=32
 THEN=64
 ENDDECISION=137
@@ -171,34 +104,15 @@ OPEN_RANGE=43
 SIGNAL=90
 ENDSYSTEM=111
 PLUS=152
-=======
-SUBSTRUCTURE=125
-ASTERISK=124
-INOUT=84
-STR=205
-STIMULUS=32
-THEN=64
-ENDDECISION=135
-OPEN_RANGE=43
-SIGNAL=90
-ENDSYSTEM=109
-PLUS=150
->>>>>>> remotes/upstream/master
 CHOICE=11
 TASK_BODY=80
-T__212=212
 PARAMS=59
 CLOSED_RANGE=42
 STATE=26
 STATELIST=68
 TO=47
-<<<<<<< HEAD
-ASSIG_OP=178
+ASSIG_OP=181
 SIGNALROUTE=116
-=======
-ASSIG_OP=179
-SIGNALROUTE=114
->>>>>>> remotes/upstream/master
 ENDSYNTYPE=101
 SORT=73
 SET=36
@@ -207,7 +121,6 @@ TEXT=53
 SEMI=124
 TEXTAREA=77
 StringLiteral=162
-T__224=224
 BLOCK=94
 CIF=66
 START=122
@@ -236,38 +149,24 @@ COMMENT=9
 SYNONYM=109
 ENDALTERNATIVE=136
 ARRAY=104
-<<<<<<< HEAD
+ACTIVE=173
 ENDFOR=148
-=======
-ACTIVE=171
-ENDFOR=146
->>>>>>> remotes/upstream/master
 FIELD_NAME=60
 OCTSTR=18
-VIEW=173
+VIEW=175
 EMPTYSTR=14
 ENDCHANNEL=112
 NULL=163
 ANSWER=41
 PRIMARY=61
 TASK=79
-<<<<<<< HEAD
 REFERENCED=118
-ALPHA=205
+ALPHA=208
 SEQUENCE=12
 VARIABLE=71
 PRIORITY=131
-SPECIFIC=174
+SPECIFIC=177
 OR=150
-=======
-REFERENCED=116
-ALPHA=206
-SEQUENCE=12
-VARIABLE=71
-PRIORITY=129
-SPECIFIC=175
-OR=148
->>>>>>> remotes/upstream/master
 COMPOSITE_STATE=98
 OctetStringLiteral=159
 FIELD=108
@@ -283,11 +182,7 @@ PRIMARY_ID=62
 DIGITS=21
 HYPERLINK=67
 NEWTYPE=102
-<<<<<<< HEAD
-Exponent=206
-=======
-Exponent=207
->>>>>>> remotes/upstream/master
+Exponent=209
 FOR=4
 ENDSTATE=125
 PROCEDURE_NAME=58
@@ -300,13 +195,8 @@ IN=86
 PROVIDED=29
 COMMA=134
 ALL=46
-<<<<<<< HEAD
-ASNFILENAME=176
-DOT=203
-=======
-ASNFILENAME=177
-DOT=204
->>>>>>> remotes/upstream/master
+ASNFILENAME=179
+DOT=206
 EXPRESSION=20
 WITH=114
 BITSTR=17
@@ -333,11 +223,7 @@ LABEL=7
 PARAMNAMES=95
 PLUS_INFINITY=164
 ASN1=96
-<<<<<<< HEAD
-KEEP=173
-=======
-KEEP=174
->>>>>>> remotes/upstream/master
+KEEP=176
 VARIABLES=72
 ASSIGN=52
 ALTERNATIVE=40
@@ -363,7 +249,6 @@ tokenNames = [
     "INOUT", "EXTERNAL", "IN", "STOP", "SYSTEM", "USE", "SIGNAL", "CHANNEL", 
     "CONNECTION", "ROUTE", "BLOCK", "PARAMNAMES", "ASN1", "FLOATING_LABEL", 
     "COMPOSITE_STATE", "CONNECT", "SYNTYPE", "ENDSYNTYPE", "NEWTYPE", "ENDNEWTYPE", 
-<<<<<<< HEAD
     "ARRAY", "CONSTANTS", "STRUCT", "FIELDS", "FIELD", "SYNONYM", "SYNONYM_LIST", 
     "ENDSYSTEM", "ENDCHANNEL", "FROM", "WITH", "ENDBLOCK", "SIGNALROUTE", 
     "AND", "REFERENCED", "ENDPROCESS", "ENDPROCEDURE", "INT", "START", "ENDCONNECTION", 
@@ -374,29 +259,11 @@ tokenNames = [
     "DIV", "MOD", "REM", "BitStringLiteral", "OctetStringLiteral", "TRUE", 
     "FALSE", "StringLiteral", "NULL", "PLUS_INFINITY", "MINUS_INFINITY", 
     "FloatingPointLiteral", "L_BRACKET", "R_BRACKET", "MANTISSA", "BASE", 
-    "EXPONENT", "NOT", "KEEP", "SPECIFIC", "GEODE", "ASNFILENAME", "END", 
-    "ASSIG_OP", "A", "N", "Y", "D", "C", "L", "E", "K", "P", "R", "M", "S", 
-    "I", "F", "G", "O", "H", "T", "X", "U", "V", "W", "B", "J", "DOT", "STR", 
-    "ALPHA", "Exponent", "WS", "COMMENT2", "Q", "Z", "':'", "'TO'", "'VIA'", 
-    "'ALL'", "'!'", "'(.'", "'.)'", "'ERROR'", "'ACTIVE'", "'ANY'", "'IMPORT'", 
-    "'VIEW'", "'/* CIF'", "'*/'"
-=======
-    "ARRAY", "CONSTANTS", "STRUCT", "FIELDS", "FIELD", "ENDSYSTEM", "ENDCHANNEL", 
-    "FROM", "WITH", "ENDBLOCK", "SIGNALROUTE", "AND", "REFERENCED", "ENDPROCESS", 
-    "ENDPROCEDURE", "INT", "START", "ENDCONNECTION", "SEMI", "ENDSTATE", 
-    "ASTERISK", "SUBSTRUCTURE", "ENDSUBSTRUCTURE", "OUT", "NONE", "PRIORITY", 
-    "L_PAREN", "R_PAREN", "COMMA", "CALL", "ENDALTERNATIVE", "ENDDECISION", 
-    "ANY", "EQ", "NEQ", "GT", "LT", "LE", "GE", "CREATE", "THIS", "ID", 
-    "ENDFOR", "IMPLIES", "OR", "XOR", "PLUS", "DASH", "APPEND", "DIV", "MOD", 
-    "REM", "BitStringLiteral", "OctetStringLiteral", "TRUE", "FALSE", "StringLiteral", 
-    "NULL", "PLUS_INFINITY", "MINUS_INFINITY", "FloatingPointLiteral", "L_BRACKET", 
-    "R_BRACKET", "MANTISSA", "BASE", "EXPONENT", "NOT", "ACTIVE", "IMPORT", 
-    "VIEW", "KEEP", "SPECIFIC", "GEODE", "ASNFILENAME", "END", "ASSIG_OP", 
-    "A", "N", "Y", "D", "C", "L", "E", "K", "P", "R", "M", "S", "I", "F", 
-    "G", "O", "H", "T", "X", "U", "V", "W", "B", "J", "DOT", "STR", "ALPHA", 
-    "Exponent", "WS", "COMMENT2", "Q", "Z", "':'", "'!'", "'(.'", "'.)'", 
-    "'ERROR'", "'/* CIF'", "'*/'"
->>>>>>> remotes/upstream/master
+    "EXPONENT", "NOT", "ACTIVE", "IMPORT", "VIEW", "KEEP", "SPECIFIC", "GEODE", 
+    "ASNFILENAME", "END", "ASSIG_OP", "A", "N", "Y", "D", "C", "L", "E", 
+    "K", "P", "R", "M", "S", "I", "F", "G", "O", "H", "T", "X", "U", "V", 
+    "W", "B", "J", "DOT", "STR", "ALPHA", "Exponent", "WS", "COMMENT2", 
+    "Q", "Z", "':'", "'!'", "'(.'", "'.)'", "'ERROR'", "'/* CIF'", "'*/'"
 ]
 
 
@@ -404,8 +271,8 @@ tokenNames = [
 
 class sdl92Parser(Parser):
     grammarFileName = "sdl92.g"
-    antlr_version = version_str_to_tuple("3.1.3 Mar 17, 2009 19:23:44")
-    antlr_version_str = "3.1.3 Mar 17, 2009 19:23:44"
+    antlr_version = version_str_to_tuple("3.1.3 Mar 18, 2009 10:09:25")
+    antlr_version_str = "3.1.3 Mar 18, 2009 10:09:25"
     tokenNames = tokenNames
 
     def __init__(self, input, state=None, *args, **kwargs):
@@ -736,11 +603,7 @@ class sdl92Parser(Parser):
                 while True: #loop1
                     alt1 = 4
                     LA1 = self.input.LA(1)
-<<<<<<< HEAD
-                    if LA1 == 223:
-=======
-                    if LA1 == 217:
->>>>>>> remotes/upstream/master
+                    if LA1 == 219:
                         LA1_2 = self.input.LA(2)
 
                         if (LA1_2 == KEEP) :
@@ -885,11 +748,7 @@ class sdl92Parser(Parser):
                     alt2 = 2
                     LA2_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA2_0 == PROCEDURE or (SIGNAL <= LA2_0 <= CHANNEL) or LA2_0 == BLOCK or LA2_0 == 223) :
-=======
-                    if (LA2_0 == PROCEDURE or (SIGNAL <= LA2_0 <= CHANNEL) or LA2_0 == BLOCK or LA2_0 == 217) :
->>>>>>> remotes/upstream/master
+                    if (LA2_0 == PROCEDURE or (SIGNAL <= LA2_0 <= CHANNEL) or LA2_0 == BLOCK or LA2_0 == 219) :
                         alt2 = 1
 
 
@@ -935,11 +794,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end10.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
                 # elements: SYSTEM, system_name, entity_in_system
-=======
-                # elements: system_name, entity_in_system, SYSTEM
->>>>>>> remotes/upstream/master
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1036,11 +891,7 @@ class sdl92Parser(Parser):
                 alt4 = 2
                 LA4_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA4_0 == 223) :
-=======
-                if (LA4_0 == 217) :
->>>>>>> remotes/upstream/master
+                if (LA4_0 == 219) :
                     alt4 = 1
                 if alt4 == 1:
                     # sdl92.g:0:0: use_asn1
@@ -1071,11 +922,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end14.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: package_name, USE, use_asn1
-=======
-                # elements: package_name, use_asn1, USE
->>>>>>> remotes/upstream/master
+                # elements: use_asn1, package_name, USE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1165,11 +1012,7 @@ class sdl92Parser(Parser):
                 # sdl92.g:158:9: ( signal_declaration | procedure | channel | block_definition )
                 alt5 = 4
                 LA5 = self.input.LA(1)
-<<<<<<< HEAD
-                if LA5 == 223:
-=======
-                if LA5 == 217:
->>>>>>> remotes/upstream/master
+                if LA5 == 219:
                     LA5_1 = self.input.LA(2)
 
                     if (LA5_1 == KEEP) :
@@ -1314,11 +1157,7 @@ class sdl92Parser(Parser):
                 alt6 = 2
                 LA6_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA6_0 == 223) :
-=======
-                if (LA6_0 == 217) :
->>>>>>> remotes/upstream/master
+                if (LA6_0 == 219) :
                     alt6 = 1
                 if alt6 == 1:
                     # sdl92.g:0:0: paramnames
@@ -1367,7 +1206,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end23.tree)
 
                 # AST Rewrite
-                # elements: SIGNAL, input_params, signal_id, paramnames
+                # elements: input_params, signal_id, paramnames, SIGNAL
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1521,11 +1360,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end28.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: channel_id, CHANNEL, route
-=======
-                # elements: route, CHANNEL, channel_id
->>>>>>> remotes/upstream/master
+                # elements: CHANNEL, route, channel_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1695,11 +1530,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end37.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: dest_id, source_id, signal_id
-=======
-                # elements: dest_id, signal_id, source_id
->>>>>>> remotes/upstream/master
+                # elements: source_id, signal_id, dest_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1821,11 +1652,7 @@ class sdl92Parser(Parser):
                     alt10 = 2
                     LA10_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA10_0 == PROCESS or LA10_0 == SIGNAL or LA10_0 == BLOCK or LA10_0 == CONNECT or LA10_0 == SIGNALROUTE or LA10_0 == 223) :
-=======
-                    if (LA10_0 == PROCESS or LA10_0 == SIGNAL or LA10_0 == BLOCK or LA10_0 == CONNECT or LA10_0 == SIGNALROUTE or LA10_0 == 217) :
->>>>>>> remotes/upstream/master
+                    if (LA10_0 == PROCESS or LA10_0 == SIGNAL or LA10_0 == BLOCK or LA10_0 == CONNECT or LA10_0 == SIGNALROUTE or LA10_0 == 219) :
                         alt10 = 1
 
 
@@ -1853,7 +1680,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end43.tree)
 
                 # AST Rewrite
-                # elements: block_id, BLOCK, entity_in_block
+                # elements: entity_in_block, block_id, BLOCK
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1945,11 +1772,7 @@ class sdl92Parser(Parser):
                 # sdl92.g:196:9: ( signal_declaration | signalroute | connection | block_definition | process_definition )
                 alt11 = 5
                 LA11 = self.input.LA(1)
-<<<<<<< HEAD
-                if LA11 == 223:
-=======
-                if LA11 == 217:
->>>>>>> remotes/upstream/master
+                if LA11 == 219:
                     LA11_1 = self.input.LA(2)
 
                     if (LA11_1 == KEEP) :
@@ -2142,11 +1965,7 @@ class sdl92Parser(Parser):
                     cnt12 += 1
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: SIGNALROUTE, route, route_id
-=======
-                # elements: route, SIGNALROUTE, route_id
->>>>>>> remotes/upstream/master
+                # elements: SIGNALROUTE, route_id, route
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -2433,11 +2252,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end61.tree)
 
                     # AST Rewrite
-<<<<<<< HEAD
-                    # elements: REFERENCED, PROCESS, process_id, number_of_instances
-=======
-                    # elements: process_id, number_of_instances, PROCESS, REFERENCED
->>>>>>> remotes/upstream/master
+                    # elements: process_id, PROCESS, number_of_instances, REFERENCED
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2482,11 +2297,7 @@ class sdl92Parser(Parser):
                     alt14 = 2
                     LA14_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA14_0 == 223) :
-=======
-                    if (LA14_0 == 217) :
->>>>>>> remotes/upstream/master
+                    if (LA14_0 == 219) :
                         alt14 = 1
                     if alt14 == 1:
                         # sdl92.g:0:0: cif
@@ -2537,11 +2348,7 @@ class sdl92Parser(Parser):
                     while True: #loop16
                         alt16 = 4
                         LA16 = self.input.LA(1)
-<<<<<<< HEAD
-                        if LA16 == 223:
-=======
-                        if LA16 == 217:
->>>>>>> remotes/upstream/master
+                        if LA16 == 219:
                             LA16_1 = self.input.LA(2)
 
                             if (self.synpred24_sdl92()) :
@@ -2599,11 +2406,7 @@ class sdl92Parser(Parser):
                     alt17 = 2
                     LA17_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA17_0 == STATE or LA17_0 == CONNECTION or LA17_0 == START or LA17_0 == 223) :
-=======
-                    if (LA17_0 == STATE or LA17_0 == CONNECTION or LA17_0 == START or LA17_0 == 217) :
->>>>>>> remotes/upstream/master
+                    if (LA17_0 == STATE or LA17_0 == CONNECTION or LA17_0 == START or LA17_0 == 219) :
                         alt17 = 1
                     elif (LA17_0 == ENDPROCESS) :
                         LA17_2 = self.input.LA(2)
@@ -2651,11 +2454,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end73.tree)
 
                     # AST Rewrite
-<<<<<<< HEAD
-                    # elements: number_of_instances, composite_state, processBody, text_area, procedure, PROCESS, process_id, cif
-=======
-                    # elements: PROCESS, procedure, process_id, cif, processBody, number_of_instances, text_area, composite_state
->>>>>>> remotes/upstream/master
+                    # elements: PROCESS, text_area, processBody, procedure, composite_state, cif, number_of_instances, process_id
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2803,11 +2602,7 @@ class sdl92Parser(Parser):
                 alt20 = 2
                 LA20_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA20_0 == 223) :
-=======
-                if (LA20_0 == 217) :
->>>>>>> remotes/upstream/master
+                if (LA20_0 == 219) :
                     alt20 = 1
                 if alt20 == 1:
                     # sdl92.g:0:0: cif
@@ -2859,11 +2654,7 @@ class sdl92Parser(Parser):
                     alt22 = 3
                     LA22_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA22_0 == 223) :
-=======
-                    if (LA22_0 == 217) :
->>>>>>> remotes/upstream/master
+                    if (LA22_0 == 219) :
                         LA22_1 = self.input.LA(2)
 
                         if (self.synpred31_sdl92()) :
@@ -2904,11 +2695,7 @@ class sdl92Parser(Parser):
                 alt25 = 2
                 LA25_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA25_0 == EOF or LA25_0 == STATE or LA25_0 == CONNECTION or (ENDPROCESS <= LA25_0 <= ENDPROCEDURE) or LA25_0 == START or LA25_0 == 223) :
-=======
-                if (LA25_0 == EOF or LA25_0 == STATE or LA25_0 == CONNECTION or (ENDPROCESS <= LA25_0 <= ENDPROCEDURE) or LA25_0 == START or LA25_0 == 217) :
->>>>>>> remotes/upstream/master
+                if (LA25_0 == EOF or LA25_0 == STATE or LA25_0 == CONNECTION or (ENDPROCESS <= LA25_0 <= ENDPROCEDURE) or LA25_0 == START or LA25_0 == 219) :
                     alt25 = 1
                 elif (LA25_0 == EXTERNAL) :
                     alt25 = 2
@@ -2930,11 +2717,7 @@ class sdl92Parser(Parser):
                     alt23 = 2
                     LA23_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA23_0 == STATE or LA23_0 == CONNECTION or LA23_0 == START or LA23_0 == 223) :
-=======
-                    if (LA23_0 == STATE or LA23_0 == CONNECTION or LA23_0 == START or LA23_0 == 217) :
->>>>>>> remotes/upstream/master
+                    if (LA23_0 == STATE or LA23_0 == CONNECTION or LA23_0 == START or LA23_0 == 219) :
                         alt23 = 1
                     elif (LA23_0 == ENDPROCEDURE) :
                         LA23_2 = self.input.LA(2)
@@ -2996,11 +2779,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end85.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: procedure, processBody, procedure_id, PROCEDURE, end, cif, EXTERNAL, text_area, fpar
-=======
-                # elements: fpar, cif, processBody, procedure, EXTERNAL, text_area, end, procedure_id, PROCEDURE
->>>>>>> remotes/upstream/master
+                # elements: PROCEDURE, processBody, EXTERNAL, end, cif, fpar, procedure_id, procedure, text_area
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3337,11 +3116,7 @@ class sdl92Parser(Parser):
                     stream_sort.add(sort96.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: INOUT, variable_id, sort, IN
-=======
-                # elements: sort, IN, variable_id, INOUT
->>>>>>> remotes/upstream/master
+                # elements: IN, sort, INOUT, variable_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3456,11 +3231,7 @@ class sdl92Parser(Parser):
                 alt29 = 2
                 LA29_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA29_0 == 223) :
-=======
-                if (LA29_0 == 217) :
->>>>>>> remotes/upstream/master
+                if (LA29_0 == 219) :
                     LA29_1 = self.input.LA(2)
 
                     if (self.synpred40_sdl92()) :
@@ -3487,7 +3258,7 @@ class sdl92Parser(Parser):
                     stream_cif_end_text.add(cif_end_text99.tree)
 
                 # AST Rewrite
-                # elements: cif_end_text, content, cif
+                # elements: cif, cif_end_text, content
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3592,33 +3363,8 @@ class sdl92Parser(Parser):
                 pass 
                 # sdl92.g:263:18: ( procedure | fpar | timer_declaration | syntype_definition | newtype_definition | variable_definition | synonym_definition )*
                 while True: #loop30
-<<<<<<< HEAD
                     alt30 = 8
                     alt30 = self.dfa30.predict(self.input)
-=======
-                    alt30 = 7
-                    LA30 = self.input.LA(1)
-                    if LA30 == 217:
-                        LA30_1 = self.input.LA(2)
-
-                        if (LA30_1 == LABEL or LA30_1 == COMMENT or LA30_1 == PROCESS or LA30_1 == STATE or LA30_1 == PROVIDED or LA30_1 == INPUT or (PROCEDURE_CALL <= LA30_1 <= PROCEDURE) or LA30_1 == DECISION or LA30_1 == ANSWER or LA30_1 == OUTPUT or (TEXT <= LA30_1 <= JOIN) or LA30_1 == RETURN or LA30_1 == TASK or LA30_1 == STOP or LA30_1 == CONNECT or LA30_1 == START) :
-                            alt30 = 1
-
-
-                    elif LA30 == PROCEDURE:
-                        alt30 = 1
-                    elif LA30 == FPAR:
-                        alt30 = 2
-                    elif LA30 == TIMER:
-                        alt30 = 3
-                    elif LA30 == SYNTYPE:
-                        alt30 = 4
-                    elif LA30 == NEWTYPE:
-                        alt30 = 5
-                    elif LA30 == DCL:
-                        alt30 = 6
-
->>>>>>> remotes/upstream/master
                     if alt30 == 1:
                         # sdl92.g:263:19: procedure
                         pass 
@@ -3700,11 +3446,7 @@ class sdl92Parser(Parser):
                         break #loop30
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: newtype_definition, variable_definition, fpar, timer_declaration, syntype_definition, synonym_definition, procedure
-=======
-                # elements: variable_definition, procedure, newtype_definition, syntype_definition, timer_declaration, fpar
->>>>>>> remotes/upstream/master
+                # elements: timer_declaration, syntype_definition, procedure, synonym_definition, newtype_definition, fpar, variable_definition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3876,7 +3618,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end111.tree)
 
                 # AST Rewrite
-                # elements: TIMER, timer_id
+                # elements: timer_id, TIMER
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4089,11 +3831,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end122.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: syntype_name, range_condition, SYNTYPE, parent_sort
-=======
-                # elements: range_condition, parent_sort, SYNTYPE, syntype_name
->>>>>>> remotes/upstream/master
+                # elements: SYNTYPE, parent_sort, syntype_name, range_condition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4378,11 +4116,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end131.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: array_definition, type_name, NEWTYPE, structure_definition
-=======
-                # elements: structure_definition, NEWTYPE, type_name, array_definition
->>>>>>> remotes/upstream/master
+                # elements: structure_definition, NEWTYPE, array_definition, type_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4569,7 +4303,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(char_literal138)
 
                 # AST Rewrite
-                # elements: ARRAY, sort, sort
+                # elements: sort, ARRAY, sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4671,7 +4405,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end141.tree)
 
                 # AST Rewrite
-                # elements: STRUCT, field_list
+                # elements: field_list, STRUCT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4918,7 +4652,7 @@ class sdl92Parser(Parser):
                     stream_sort.add(sort148.tree)
 
                 # AST Rewrite
-                # elements: field_name, sort
+                # elements: sort, field_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5058,7 +4792,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end153.tree)
 
                 # AST Rewrite
-                # elements: DCL, variables_of_sort
+                # elements: variables_of_sort, DCL
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5254,11 +4988,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end159.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
                 # elements: synonym_definition_item
-=======
-                # elements: sort, ground_expression, variable_id
->>>>>>> remotes/upstream/master
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5375,7 +5105,7 @@ class sdl92Parser(Parser):
                     stream_ground_expression.add(ground_expression163.tree)
 
                 # AST Rewrite
-                # elements: ground_expression, sort, sort
+                # elements: sort, ground_expression, sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5529,13 +5259,8 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: ground_expression, variable_id, sort
+                # elements: sort, ground_expression, variable_id
                 # token labels: 
-=======
-                # elements: initial_number, maximum_number
-                # token labels: maximum_number, initial_number
->>>>>>> remotes/upstream/master
                 # rule labels: retval
                 # token list labels: 
                 # rule list labels: 
@@ -5742,7 +5467,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(char_literal173)
 
                 # AST Rewrite
-                # elements: initial_number, maximum_number
+                # elements: maximum_number, initial_number
                 # token labels: maximum_number, initial_number
                 # rule labels: retval
                 # token list labels: 
@@ -5940,13 +5665,8 @@ class sdl92Parser(Parser):
                 alt45 = 2
                 LA45_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA45_0 == 223) :
+                if (LA45_0 == 219) :
                     LA45_1 = self.input.LA(2)
-=======
-                if (LA44_0 == 217) :
-                    LA44_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA45_1 == LABEL or LA45_1 == COMMENT or LA45_1 == PROCESS or LA45_1 == STATE or LA45_1 == PROVIDED or LA45_1 == INPUT or (PROCEDURE_CALL <= LA45_1 <= PROCEDURE) or LA45_1 == DECISION or LA45_1 == ANSWER or LA45_1 == OUTPUT or (TEXT <= LA45_1 <= JOIN) or LA45_1 == RETURN or LA45_1 == TASK or LA45_1 == STOP or LA45_1 == CONNECT or LA45_1 == START) :
                         alt45 = 1
@@ -5966,15 +5686,9 @@ class sdl92Parser(Parser):
                 alt46 = 2
                 LA46_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA46_0 == 223) :
+                if (LA46_0 == 219) :
                     alt46 = 1
                 if alt46 == 1:
-=======
-                if (LA45_0 == 217) :
-                    alt45 = 1
-                if alt45 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_start3735)
@@ -6030,11 +5744,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: START, hyperlink, end, name, cif, transition
-=======
-                # elements: transition, end, START, hyperlink, name, cif
->>>>>>> remotes/upstream/master
+                # elements: cif, name, transition, end, hyperlink, START
                 # token labels: 
                 # rule labels: retval, name
                 # token list labels: 
@@ -6153,21 +5863,13 @@ class sdl92Parser(Parser):
         cif_end_label188 = None
 
 
-<<<<<<< HEAD
         CONNECTION184_tree = None
         char_literal186_tree = None
         ENDCONNECTION189_tree = None
         SEMI190_tree = None
-        stream_211 = RewriteRuleTokenStream(self._adaptor, "token 211")
-=======
-        CONNECTION173_tree = None
-        char_literal175_tree = None
-        ENDCONNECTION178_tree = None
-        SEMI179_tree = None
-        stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
->>>>>>> remotes/upstream/master
         stream_ENDCONNECTION = RewriteRuleTokenStream(self._adaptor, "token ENDCONNECTION")
         stream_CONNECTION = RewriteRuleTokenStream(self._adaptor, "token CONNECTION")
+        stream_214 = RewriteRuleTokenStream(self._adaptor, "token 214")
         stream_SEMI = RewriteRuleTokenStream(self._adaptor, "token SEMI")
         stream_cif = RewriteRuleSubtreeStream(self._adaptor, "rule cif")
         stream_cif_end_label = RewriteRuleSubtreeStream(self._adaptor, "rule cif_end_label")
@@ -6183,13 +5885,8 @@ class sdl92Parser(Parser):
                 alt49 = 2
                 LA49_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA49_0 == 223) :
+                if (LA49_0 == 219) :
                     LA49_1 = self.input.LA(2)
-=======
-                if (LA48_0 == 217) :
-                    LA48_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA49_1 == LABEL or LA49_1 == COMMENT or LA49_1 == PROCESS or LA49_1 == STATE or LA49_1 == PROVIDED or LA49_1 == INPUT or (PROCEDURE_CALL <= LA49_1 <= PROCEDURE) or LA49_1 == DECISION or LA49_1 == ANSWER or LA49_1 == OUTPUT or (TEXT <= LA49_1 <= JOIN) or LA49_1 == RETURN or LA49_1 == TASK or LA49_1 == STOP or LA49_1 == CONNECT or LA49_1 == START) :
                         alt49 = 1
@@ -6209,15 +5906,9 @@ class sdl92Parser(Parser):
                 alt50 = 2
                 LA50_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA50_0 == 223) :
+                if (LA50_0 == 219) :
                     alt50 = 1
                 if alt50 == 1:
-=======
-                if (LA49_0 == 217) :
-                    alt49 = 1
-                if alt49 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_floating_label3857)
@@ -6237,29 +5928,16 @@ class sdl92Parser(Parser):
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
-<<<<<<< HEAD
                     stream_connector_name.add(connector_name185.tree)
-                char_literal186=self.match(self.input, 211, self.FOLLOW_211_in_floating_label3880) 
+                char_literal186=self.match(self.input, 214, self.FOLLOW_214_in_floating_label3880) 
                 if self._state.backtracking == 0:
-                    stream_211.add(char_literal186)
+                    stream_214.add(char_literal186)
                 # sdl92.g:363:17: ( transition )?
                 alt51 = 2
                 LA51_0 = self.input.LA(1)
 
-                if (LA51_0 == 223) :
+                if (LA51_0 == 219) :
                     LA51_1 = self.input.LA(2)
-=======
-                    stream_connector_name.add(connector_name174.tree)
-                char_literal175=self.match(self.input, 212, self.FOLLOW_212_in_floating_label3760) 
-                if self._state.backtracking == 0:
-                    stream_212.add(char_literal175)
-                # sdl92.g:350:17: ( transition )?
-                alt50 = 2
-                LA50_0 = self.input.LA(1)
-
-                if (LA50_0 == 217) :
-                    LA50_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA51_1 == LABEL or LA51_1 == COMMENT or LA51_1 == PROCESS or LA51_1 == STATE or LA51_1 == PROVIDED or LA51_1 == INPUT or (PROCEDURE_CALL <= LA51_1 <= PROCEDURE) or LA51_1 == DECISION or LA51_1 == ANSWER or LA51_1 == OUTPUT or (TEXT <= LA51_1 <= JOIN) or LA51_1 == RETURN or LA51_1 == TASK or LA51_1 == STOP or LA51_1 == CONNECT or LA51_1 == START or LA51_1 == KEEP) :
                         alt51 = 1
@@ -6281,15 +5959,9 @@ class sdl92Parser(Parser):
                 alt52 = 2
                 LA52_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA52_0 == 223) :
+                if (LA52_0 == 219) :
                     alt52 = 1
                 if alt52 == 1:
-=======
-                if (LA51_0 == 217) :
-                    alt51 = 1
-                if alt51 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: cif_end_label
                     pass 
                     self._state.following.append(self.FOLLOW_cif_end_label_in_floating_label3917)
@@ -6309,7 +5981,7 @@ class sdl92Parser(Parser):
                     stream_SEMI.add(SEMI190)
 
                 # AST Rewrite
-                # elements: connector_name, cif, transition, hyperlink
+                # elements: transition, hyperlink, connector_name, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -6432,13 +6104,8 @@ class sdl92Parser(Parser):
                 alt53 = 2
                 LA53_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA53_0 == 223) :
+                if (LA53_0 == 219) :
                     LA53_1 = self.input.LA(2)
-=======
-                if (LA52_0 == 217) :
-                    LA52_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA53_1 == LABEL or LA53_1 == COMMENT or LA53_1 == PROCESS or LA53_1 == STATE or LA53_1 == PROVIDED or LA53_1 == INPUT or (PROCEDURE_CALL <= LA53_1 <= PROCEDURE) or LA53_1 == DECISION or LA53_1 == ANSWER or LA53_1 == OUTPUT or (TEXT <= LA53_1 <= JOIN) or LA53_1 == RETURN or LA53_1 == TASK or LA53_1 == STOP or LA53_1 == CONNECT or LA53_1 == START) :
                         alt53 = 1
@@ -6458,15 +6125,9 @@ class sdl92Parser(Parser):
                 alt54 = 2
                 LA54_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA54_0 == 223) :
+                if (LA54_0 == 219) :
                     alt54 = 1
                 if alt54 == 1:
-=======
-                if (LA53_0 == 217) :
-                    alt53 = 1
-                if alt53 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_state4010)
@@ -6498,13 +6159,8 @@ class sdl92Parser(Parser):
                     alt55 = 2
                     LA55_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if ((SAVE <= LA55_0 <= PROVIDED) or LA55_0 == INPUT or LA55_0 == CONNECT or LA55_0 == 223) :
+                    if ((SAVE <= LA55_0 <= PROVIDED) or LA55_0 == INPUT or LA55_0 == CONNECT or LA55_0 == 219) :
                         alt55 = 1
-=======
-                    if ((SAVE <= LA54_0 <= PROVIDED) or LA54_0 == INPUT or LA54_0 == CONNECT or LA54_0 == 217) :
-                        alt54 = 1
->>>>>>> remotes/upstream/master
 
 
                     if alt55 == 1:
@@ -6549,11 +6205,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: state_part, cif, e, statelist, STATE, hyperlink
-=======
-                # elements: state_part, e, hyperlink, STATE, cif, statelist
->>>>>>> remotes/upstream/master
+                # elements: hyperlink, statelist, state_part, cif, STATE, e
                 # token labels: 
                 # rule labels: retval, e
                 # token list labels: 
@@ -7107,11 +6759,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: body, e, connection_points, statename
-=======
                 # elements: e, body, connection_points, statename
->>>>>>> remotes/upstream/master
                 # token labels: 
                 # rule labels: body, retval, e
                 # token list labels: 
@@ -7260,11 +6908,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end216.tree)
 
                     # AST Rewrite
-<<<<<<< HEAD
                     # elements: end, state_entry_exit_points, IN
-=======
-                    # elements: state_entry_exit_points, end, IN
->>>>>>> remotes/upstream/master
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -7321,11 +6965,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end219.tree)
 
                     # AST Rewrite
-<<<<<<< HEAD
-                    # elements: OUT, end, state_entry_exit_points
-=======
-                    # elements: end, OUT, state_entry_exit_points
->>>>>>> remotes/upstream/master
+                    # elements: state_entry_exit_points, end, OUT
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -7550,21 +7190,12 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
                 # sdl92.g:412:17: ( text_area | procedure | composite_state )*
                 while True: #loop65
                     alt65 = 4
                     LA65 = self.input.LA(1)
-                    if LA65 == 223:
+                    if LA65 == 219:
                         LA65_1 = self.input.LA(2)
-=======
-                # sdl92.g:399:17: ( text_area | procedure | composite_state )*
-                while True: #loop64
-                    alt64 = 4
-                    LA64 = self.input.LA(1)
-                    if LA64 == 217:
-                        LA64_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                         if (self.synpred84_sdl92()) :
                             alt65 = 1
@@ -7849,13 +7480,8 @@ class sdl92Parser(Parser):
                 alt69 = 2
                 LA69_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA69_0 == 223) :
+                if (LA69_0 == 219) :
                     LA69_1 = self.input.LA(2)
-=======
-                if (LA68_0 == 217) :
-                    LA68_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA69_1 == LABEL or LA69_1 == COMMENT or LA69_1 == PROCESS or LA69_1 == STATE or LA69_1 == PROVIDED or LA69_1 == INPUT or (PROCEDURE_CALL <= LA69_1 <= PROCEDURE) or LA69_1 == DECISION or LA69_1 == ANSWER or LA69_1 == OUTPUT or (TEXT <= LA69_1 <= JOIN) or LA69_1 == RETURN or LA69_1 == TASK or LA69_1 == STOP or LA69_1 == CONNECT or LA69_1 == START) :
                         alt69 = 1
@@ -7875,15 +7501,9 @@ class sdl92Parser(Parser):
                 alt70 = 2
                 LA70_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA70_0 == 223) :
+                if (LA70_0 == 219) :
                     alt70 = 1
                 if alt70 == 1:
-=======
-                if (LA69_0 == 217) :
-                    alt69 = 1
-                if alt69 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_connect_part4807)
@@ -7939,11 +7559,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: connect_list, hyperlink, end, cif, transition, CONNECT
-=======
-                # elements: cif, connect_list, transition, hyperlink, end, CONNECT
->>>>>>> remotes/upstream/master
+                # elements: end, connect_list, CONNECT, transition, hyperlink, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -8220,13 +7836,8 @@ class sdl92Parser(Parser):
                 alt75 = 2
                 LA75_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA75_0 == 223) :
+                if (LA75_0 == 219) :
                     LA75_1 = self.input.LA(2)
-=======
-                if (LA74_0 == 217) :
-                    LA74_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA75_1 == LABEL or LA75_1 == COMMENT or LA75_1 == PROCESS or LA75_1 == STATE or LA75_1 == PROVIDED or LA75_1 == INPUT or (PROCEDURE_CALL <= LA75_1 <= PROCEDURE) or LA75_1 == DECISION or LA75_1 == ANSWER or LA75_1 == OUTPUT or (TEXT <= LA75_1 <= JOIN) or LA75_1 == RETURN or LA75_1 == TASK or LA75_1 == STOP or LA75_1 == CONNECT or LA75_1 == START) :
                         alt75 = 1
@@ -8246,15 +7857,9 @@ class sdl92Parser(Parser):
                 alt76 = 2
                 LA76_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA76_0 == 223) :
+                if (LA76_0 == 219) :
                     alt76 = 1
                 if alt76 == 1:
-=======
-                if (LA75_0 == 217) :
-                    alt75 = 1
-                if alt75 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_spontaneous_transition4997)
@@ -8304,7 +7909,7 @@ class sdl92Parser(Parser):
                     stream_transition.add(transition252.tree)
 
                 # AST Rewrite
-                # elements: transition, cif, hyperlink
+                # elements: hyperlink, transition, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -8417,7 +8022,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end255.tree)
 
                 # AST Rewrite
-                # elements: PROVIDED, expression
+                # elements: expression, PROVIDED
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -8559,11 +8164,7 @@ class sdl92Parser(Parser):
                     stream_transition.add(transition261.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: expression, PROVIDED, integer_literal_name, transition
-=======
-                # elements: integer_literal_name, PROVIDED, transition, expression
->>>>>>> remotes/upstream/master
+                # elements: integer_literal_name, expression, PROVIDED, transition
                 # token labels: integer_literal_name
                 # rule labels: retval
                 # token list labels: 
@@ -8672,7 +8273,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end264.tree)
 
                 # AST Rewrite
-                # elements: save_list, SAVE
+                # elements: SAVE, save_list
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -9097,13 +8698,8 @@ class sdl92Parser(Parser):
                 alt81 = 2
                 LA81_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA81_0 == 223) :
+                if (LA81_0 == 219) :
                     LA81_1 = self.input.LA(2)
-=======
-                if (LA80_0 == 217) :
-                    LA80_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA81_1 == LABEL or LA81_1 == COMMENT or LA81_1 == PROCESS or LA81_1 == STATE or LA81_1 == PROVIDED or LA81_1 == INPUT or (PROCEDURE_CALL <= LA81_1 <= PROCEDURE) or LA81_1 == DECISION or LA81_1 == ANSWER or LA81_1 == OUTPUT or (TEXT <= LA81_1 <= JOIN) or LA81_1 == RETURN or LA81_1 == TASK or LA81_1 == STOP or LA81_1 == CONNECT or LA81_1 == START) :
                         alt81 = 1
@@ -9123,15 +8719,9 @@ class sdl92Parser(Parser):
                 alt82 = 2
                 LA82_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA82_0 == 223) :
+                if (LA82_0 == 219) :
                     alt82 = 1
                 if alt82 == 1:
-=======
-                if (LA81_0 == 217) :
-                    alt81 = 1
-                if alt81 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_input_part5488)
@@ -9190,11 +8780,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: enabling_condition, INPUT, inputlist, end, hyperlink, transition, cif
-=======
-                # elements: enabling_condition, end, INPUT, inputlist, hyperlink, transition, cif
->>>>>>> remotes/upstream/master
+                # elements: transition, cif, enabling_condition, INPUT, inputlist, end, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -9745,7 +9331,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: terminator_statement, label, action
+                    # elements: action, terminator_statement, label
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -10149,7 +9735,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end311.tree)
 
                 # AST Rewrite
-                # elements: variable_id, EXPORT
+                # elements: EXPORT, variable_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10251,13 +9837,8 @@ class sdl92Parser(Parser):
                 alt96 = 2
                 LA96_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA96_0 == 223) :
+                if (LA96_0 == 219) :
                     LA96_1 = self.input.LA(2)
-=======
-                if (LA95_0 == 217) :
-                    LA95_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA96_1 == LABEL or LA96_1 == COMMENT or LA96_1 == PROCESS or LA96_1 == STATE or LA96_1 == PROVIDED or LA96_1 == INPUT or (PROCEDURE_CALL <= LA96_1 <= PROCEDURE) or LA96_1 == DECISION or LA96_1 == ANSWER or LA96_1 == OUTPUT or (TEXT <= LA96_1 <= JOIN) or LA96_1 == RETURN or LA96_1 == TASK or LA96_1 == STOP or LA96_1 == CONNECT or LA96_1 == START) :
                         alt96 = 1
@@ -10277,15 +9858,9 @@ class sdl92Parser(Parser):
                 alt97 = 2
                 LA97_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA97_0 == 223) :
+                if (LA97_0 == 219) :
                     alt97 = 1
                 if alt97 == 1:
-=======
-                if (LA96_0 == 217) :
-                    alt96 = 1
-                if alt96 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_procedure_call6223)
@@ -10314,11 +9889,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end316.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: hyperlink, procedure_call_body, end, cif
-=======
-                # elements: cif, procedure_call_body, end, hyperlink
->>>>>>> remotes/upstream/master
+                # elements: cif, end, procedure_call_body, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10443,7 +10014,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: procedure_id, actual_parameters
+                # elements: actual_parameters, procedure_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10684,17 +10255,10 @@ class sdl92Parser(Parser):
                 elif (LA100_0 == ID) :
                     LA100_2 = self.input.LA(2)
 
-<<<<<<< HEAD
-                    if (LA100_2 == IN or LA100_2 == AND or LA100_2 == ASTERISK or LA100_2 == L_PAREN or LA100_2 == COMMA or (EQ <= LA100_2 <= GE) or (IMPLIES <= LA100_2 <= REM) or LA100_2 == 211 or LA100_2 == 215) :
+                    if (LA100_2 == IN or LA100_2 == AND or LA100_2 == ASTERISK or LA100_2 == L_PAREN or LA100_2 == COMMA or (EQ <= LA100_2 <= GE) or (IMPLIES <= LA100_2 <= REM) or (214 <= LA100_2 <= 215)) :
                         alt100 = 1
                 if alt100 == 1:
                     # sdl92.g:586:26: expression COMMA
-=======
-                    if (LA99_2 == IN or LA99_2 == AND or LA99_2 == ASTERISK or LA99_2 == L_PAREN or LA99_2 == COMMA or (EQ <= LA99_2 <= GE) or (IMPLIES <= LA99_2 <= REM) or (212 <= LA99_2 <= 213)) :
-                        alt99 = 1
-                if alt99 == 1:
-                    # sdl92.g:573:26: expression COMMA
->>>>>>> remotes/upstream/master
                     pass 
                     self._state.following.append(self.FOLLOW_expression_in_set_statement6423)
                     expression325 = self.expression()
@@ -10719,7 +10283,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(R_PAREN328)
 
                 # AST Rewrite
-                # elements: timer_id, expression
+                # elements: expression, timer_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10977,7 +10541,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: expression_list, timer_id
+                # elements: timer_id, expression_list
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -11116,11 +10680,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: ALTERNATIVE, alternative_part, answer_part
-=======
-                # elements: answer_part, alternative_part, ALTERNATIVE
->>>>>>> remotes/upstream/master
+                # elements: ALTERNATIVE, answer_part, alternative_part
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -11241,15 +10801,9 @@ class sdl92Parser(Parser):
                     alt104 = 2
                     LA104_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA104_0 == ELSE or LA104_0 == 223) :
+                    if (LA104_0 == ELSE or LA104_0 == 219) :
                         alt104 = 1
                     if alt104 == 1:
-=======
-                    if (LA103_0 == ELSE or LA103_0 == 217) :
-                        alt103 = 1
-                    if alt103 == 1:
->>>>>>> remotes/upstream/master
                         # sdl92.g:0:0: else_part
                         pass 
                         self._state.following.append(self.FOLLOW_else_part_in_alternative_part6725)
@@ -11514,13 +11068,8 @@ class sdl92Parser(Parser):
                 alt107 = 2
                 LA107_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA107_0 == 223) :
+                if (LA107_0 == 219) :
                     LA107_1 = self.input.LA(2)
-=======
-                if (LA106_0 == 217) :
-                    LA106_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA107_1 == LABEL or LA107_1 == COMMENT or LA107_1 == PROCESS or LA107_1 == STATE or LA107_1 == PROVIDED or LA107_1 == INPUT or (PROCEDURE_CALL <= LA107_1 <= PROCEDURE) or LA107_1 == DECISION or LA107_1 == ANSWER or LA107_1 == OUTPUT or (TEXT <= LA107_1 <= JOIN) or LA107_1 == RETURN or LA107_1 == TASK or LA107_1 == STOP or LA107_1 == CONNECT or LA107_1 == START) :
                         alt107 = 1
@@ -11540,15 +11089,9 @@ class sdl92Parser(Parser):
                 alt108 = 2
                 LA108_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA108_0 == 223) :
+                if (LA108_0 == 219) :
                     alt108 = 1
                 if alt108 == 1:
-=======
-                if (LA107_0 == 217) :
-                    alt107 = 1
-                if alt107 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_decision6870)
@@ -11579,13 +11122,8 @@ class sdl92Parser(Parser):
                 alt109 = 2
                 LA109_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA109_0 == 223) :
+                if (LA109_0 == 219) :
                     LA109_1 = self.input.LA(2)
-=======
-                if (LA108_0 == 217) :
-                    LA108_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (self.synpred142_sdl92()) :
                         alt109 = 1
@@ -11610,15 +11148,9 @@ class sdl92Parser(Parser):
                 alt110 = 2
                 LA110_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA110_0 == ELSE or LA110_0 == L_PAREN or LA110_0 == 223) :
+                if (LA110_0 == ELSE or LA110_0 == L_PAREN or LA110_0 == 219) :
                     alt110 = 1
                 if alt110 == 1:
-=======
-                if (LA109_0 == ELSE or LA109_0 == L_PAREN or LA109_0 == 217) :
-                    alt109 = 1
-                if alt109 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: alternative_part
                     pass 
                     self._state.following.append(self.FOLLOW_alternative_part_in_decision6932)
@@ -11641,11 +11173,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: cif, question, DECISION, alternative_part, hyperlink, answer_part, e
-=======
-                # elements: question, DECISION, alternative_part, e, answer_part, hyperlink, cif
->>>>>>> remotes/upstream/master
+                # elements: hyperlink, answer_part, cif, DECISION, e, alternative_part, question
                 # token labels: 
                 # rule labels: retval, e
                 # token list labels: 
@@ -11762,17 +11290,10 @@ class sdl92Parser(Parser):
         transition361 = None
 
 
-<<<<<<< HEAD
         L_PAREN357_tree = None
         R_PAREN359_tree = None
         char_literal360_tree = None
-        stream_211 = RewriteRuleTokenStream(self._adaptor, "token 211")
-=======
-        L_PAREN346_tree = None
-        R_PAREN348_tree = None
-        char_literal349_tree = None
-        stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
->>>>>>> remotes/upstream/master
+        stream_214 = RewriteRuleTokenStream(self._adaptor, "token 214")
         stream_R_PAREN = RewriteRuleTokenStream(self._adaptor, "token R_PAREN")
         stream_L_PAREN = RewriteRuleTokenStream(self._adaptor, "token L_PAREN")
         stream_cif = RewriteRuleSubtreeStream(self._adaptor, "rule cif")
@@ -11788,13 +11309,8 @@ class sdl92Parser(Parser):
                 alt111 = 2
                 LA111_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA111_0 == 223) :
+                if (LA111_0 == 219) :
                     LA111_1 = self.input.LA(2)
-=======
-                if (LA110_0 == 217) :
-                    LA110_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA111_1 == LABEL or LA111_1 == COMMENT or LA111_1 == PROCESS or LA111_1 == STATE or LA111_1 == PROVIDED or LA111_1 == INPUT or (PROCEDURE_CALL <= LA111_1 <= PROCEDURE) or LA111_1 == DECISION or LA111_1 == ANSWER or LA111_1 == OUTPUT or (TEXT <= LA111_1 <= JOIN) or LA111_1 == RETURN or LA111_1 == TASK or LA111_1 == STOP or LA111_1 == CONNECT or LA111_1 == START) :
                         alt111 = 1
@@ -11814,15 +11330,9 @@ class sdl92Parser(Parser):
                 alt112 = 2
                 LA112_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA112_0 == 223) :
+                if (LA112_0 == 219) :
                     alt112 = 1
                 if alt112 == 1:
-=======
-                if (LA111_0 == 217) :
-                    alt111 = 1
-                if alt111 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_answer_part7050)
@@ -11845,25 +11355,14 @@ class sdl92Parser(Parser):
                     stream_answer.add(answer358.tree)
                 R_PAREN359=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_answer_part7073) 
                 if self._state.backtracking == 0:
-<<<<<<< HEAD
                     stream_R_PAREN.add(R_PAREN359)
-                char_literal360=self.match(self.input, 211, self.FOLLOW_211_in_answer_part7075) 
+                char_literal360=self.match(self.input, 214, self.FOLLOW_214_in_answer_part7075) 
                 if self._state.backtracking == 0:
-                    stream_211.add(char_literal360)
+                    stream_214.add(char_literal360)
                 # sdl92.g:636:44: ( transition )?
                 alt113 = 2
                 alt113 = self.dfa113.predict(self.input)
                 if alt113 == 1:
-=======
-                    stream_R_PAREN.add(R_PAREN348)
-                char_literal349=self.match(self.input, 212, self.FOLLOW_212_in_answer_part6955) 
-                if self._state.backtracking == 0:
-                    stream_212.add(char_literal349)
-                # sdl92.g:623:44: ( transition )?
-                alt112 = 2
-                alt112 = self.dfa112.predict(self.input)
-                if alt112 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: transition
                     pass 
                     self._state.following.append(self.FOLLOW_transition_in_answer_part7077)
@@ -11877,11 +11376,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: hyperlink, cif, transition, answer
-=======
-                # elements: transition, cif, answer, hyperlink
->>>>>>> remotes/upstream/master
+                # elements: answer, hyperlink, transition, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -12077,15 +11572,9 @@ class sdl92Parser(Parser):
         transition368 = None
 
 
-<<<<<<< HEAD
         ELSE366_tree = None
         char_literal367_tree = None
-        stream_211 = RewriteRuleTokenStream(self._adaptor, "token 211")
-=======
-        ELSE355_tree = None
-        char_literal356_tree = None
-        stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
->>>>>>> remotes/upstream/master
+        stream_214 = RewriteRuleTokenStream(self._adaptor, "token 214")
         stream_ELSE = RewriteRuleTokenStream(self._adaptor, "token ELSE")
         stream_cif = RewriteRuleSubtreeStream(self._adaptor, "rule cif")
         stream_hyperlink = RewriteRuleSubtreeStream(self._adaptor, "rule hyperlink")
@@ -12099,13 +11588,8 @@ class sdl92Parser(Parser):
                 alt115 = 2
                 LA115_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA115_0 == 223) :
+                if (LA115_0 == 219) :
                     LA115_1 = self.input.LA(2)
-=======
-                if (LA114_0 == 217) :
-                    LA114_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA115_1 == LABEL or LA115_1 == COMMENT or LA115_1 == PROCESS or LA115_1 == STATE or LA115_1 == PROVIDED or LA115_1 == INPUT or (PROCEDURE_CALL <= LA115_1 <= PROCEDURE) or LA115_1 == DECISION or LA115_1 == ANSWER or LA115_1 == OUTPUT or (TEXT <= LA115_1 <= JOIN) or LA115_1 == RETURN or LA115_1 == TASK or LA115_1 == STOP or LA115_1 == CONNECT or LA115_1 == START) :
                         alt115 = 1
@@ -12125,15 +11609,9 @@ class sdl92Parser(Parser):
                 alt116 = 2
                 LA116_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA116_0 == 223) :
+                if (LA116_0 == 219) :
                     alt116 = 1
                 if alt116 == 1:
-=======
-                if (LA115_0 == 217) :
-                    alt115 = 1
-                if alt115 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_else_part7193)
@@ -12147,31 +11625,17 @@ class sdl92Parser(Parser):
 
                 ELSE366=self.match(self.input, ELSE, self.FOLLOW_ELSE_in_else_part7212) 
                 if self._state.backtracking == 0:
-<<<<<<< HEAD
                     stream_ELSE.add(ELSE366)
-                char_literal367=self.match(self.input, 211, self.FOLLOW_211_in_else_part7214) 
+                char_literal367=self.match(self.input, 214, self.FOLLOW_214_in_else_part7214) 
                 if self._state.backtracking == 0:
-                    stream_211.add(char_literal367)
+                    stream_214.add(char_literal367)
                 # sdl92.g:648:26: ( transition )?
                 alt117 = 2
                 LA117_0 = self.input.LA(1)
 
-                if (LA117_0 == FOR or (SET <= LA117_0 <= ALTERNATIVE) or LA117_0 == OUTPUT or (NEXTSTATE <= LA117_0 <= JOIN) or LA117_0 == RETURN or LA117_0 == TASK or LA117_0 == STOP or LA117_0 == CALL or LA117_0 == CREATE or LA117_0 == ID or LA117_0 == StringLiteral or LA117_0 == 223) :
+                if (LA117_0 == FOR or (SET <= LA117_0 <= ALTERNATIVE) or LA117_0 == OUTPUT or (NEXTSTATE <= LA117_0 <= JOIN) or LA117_0 == RETURN or LA117_0 == TASK or LA117_0 == STOP or LA117_0 == CALL or LA117_0 == CREATE or LA117_0 == ID or LA117_0 == StringLiteral or LA117_0 == 219) :
                     alt117 = 1
                 if alt117 == 1:
-=======
-                    stream_ELSE.add(ELSE355)
-                char_literal356=self.match(self.input, 212, self.FOLLOW_212_in_else_part7094) 
-                if self._state.backtracking == 0:
-                    stream_212.add(char_literal356)
-                # sdl92.g:635:26: ( transition )?
-                alt116 = 2
-                LA116_0 = self.input.LA(1)
-
-                if (LA116_0 == FOR or (SET <= LA116_0 <= ALTERNATIVE) or LA116_0 == OUTPUT or (NEXTSTATE <= LA116_0 <= JOIN) or LA116_0 == RETURN or LA116_0 == TASK or LA116_0 == STOP or LA116_0 == CALL or LA116_0 == CREATE or LA116_0 == ID or LA116_0 == StringLiteral or LA116_0 == 217) :
-                    alt116 = 1
-                if alt116 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: transition
                     pass 
                     self._state.following.append(self.FOLLOW_transition_in_else_part7216)
@@ -12185,11 +11649,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: transition, cif, hyperlink, ELSE
-=======
-                # elements: ELSE, cif, hyperlink, transition
->>>>>>> remotes/upstream/master
+                # elements: hyperlink, transition, cif, ELSE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -12489,17 +11949,10 @@ class sdl92Parser(Parser):
                 if (LA119_0 == INT) :
                     LA119_1 = self.input.LA(2)
 
-<<<<<<< HEAD
-                    if (LA119_1 == 211) :
+                    if (LA119_1 == 214) :
                         alt119 = 1
                     elif (LA119_1 == EOF or LA119_1 == IN or LA119_1 == ENDSYNTYPE or LA119_1 == AND or LA119_1 == ASTERISK or (L_PAREN <= LA119_1 <= COMMA) or (EQ <= LA119_1 <= GE) or (IMPLIES <= LA119_1 <= REM) or LA119_1 == 215) :
                         alt119 = 2
-=======
-                    if (LA118_1 == 212) :
-                        alt118 = 1
-                    elif (LA118_1 == EOF or LA118_1 == IN or LA118_1 == ENDSYNTYPE or LA118_1 == AND or LA118_1 == ASTERISK or (L_PAREN <= LA118_1 <= COMMA) or (EQ <= LA118_1 <= GE) or (IMPLIES <= LA118_1 <= REM) or LA118_1 == 213) :
-                        alt118 = 2
->>>>>>> remotes/upstream/master
                     else:
                         if self._state.backtracking > 0:
                             raise BacktrackingFailed
@@ -12587,14 +12040,9 @@ class sdl92Parser(Parser):
 
         a_tree = None
         b_tree = None
-<<<<<<< HEAD
         char_literal374_tree = None
-        stream_211 = RewriteRuleTokenStream(self._adaptor, "token 211")
-=======
-        char_literal363_tree = None
-        stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
->>>>>>> remotes/upstream/master
         stream_INT = RewriteRuleTokenStream(self._adaptor, "token INT")
+        stream_214 = RewriteRuleTokenStream(self._adaptor, "token 214")
 
         try:
             try:
@@ -12604,17 +12052,10 @@ class sdl92Parser(Parser):
                 a=self.match(self.input, INT, self.FOLLOW_INT_in_closed_range7436) 
                 if self._state.backtracking == 0:
                     stream_INT.add(a)
-<<<<<<< HEAD
-                char_literal374=self.match(self.input, 211, self.FOLLOW_211_in_closed_range7438) 
+                char_literal374=self.match(self.input, 214, self.FOLLOW_214_in_closed_range7438) 
                 if self._state.backtracking == 0:
-                    stream_211.add(char_literal374)
+                    stream_214.add(char_literal374)
                 b=self.match(self.input, INT, self.FOLLOW_INT_in_closed_range7442) 
-=======
-                char_literal363=self.match(self.input, 212, self.FOLLOW_212_in_closed_range7318) 
-                if self._state.backtracking == 0:
-                    stream_212.add(char_literal363)
-                b=self.match(self.input, INT, self.FOLLOW_INT_in_closed_range7322) 
->>>>>>> remotes/upstream/master
                 if self._state.backtracking == 0:
                     stream_INT.add(b)
 
@@ -12858,11 +12299,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-<<<<<<< HEAD
-                    # elements: constant, GT, GE, LT, EQ, LE, NEQ
-=======
-                    # elements: EQ, LT, GE, GT, NEQ, constant, LE
->>>>>>> remotes/upstream/master
+                    # elements: LT, constant, LE, EQ, NEQ, GE, GT
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -13105,7 +12542,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end387.tree)
 
                 # AST Rewrite
-                # elements: createbody, CREATE, actual_parameters
+                # elements: actual_parameters, createbody, CREATE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13292,13 +12729,8 @@ class sdl92Parser(Parser):
                 alt124 = 2
                 LA124_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA124_0 == 223) :
+                if (LA124_0 == 219) :
                     LA124_1 = self.input.LA(2)
-=======
-                if (LA123_0 == 217) :
-                    LA123_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA124_1 == LABEL or LA124_1 == COMMENT or LA124_1 == PROCESS or LA124_1 == STATE or LA124_1 == PROVIDED or LA124_1 == INPUT or (PROCEDURE_CALL <= LA124_1 <= PROCEDURE) or LA124_1 == DECISION or LA124_1 == ANSWER or LA124_1 == OUTPUT or (TEXT <= LA124_1 <= JOIN) or LA124_1 == RETURN or LA124_1 == TASK or LA124_1 == STOP or LA124_1 == CONNECT or LA124_1 == START) :
                         alt124 = 1
@@ -13318,15 +12750,9 @@ class sdl92Parser(Parser):
                 alt125 = 2
                 LA125_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA125_0 == 223) :
+                if (LA125_0 == 219) :
                     alt125 = 1
                 if alt125 == 1:
-=======
-                if (LA124_0 == 217) :
-                    alt124 = 1
-                if alt124 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: hyperlink
                     pass 
                     self._state.following.append(self.FOLLOW_hyperlink_in_output7815)
@@ -13355,11 +12781,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end394.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: OUTPUT, hyperlink, cif, outputbody, end
-=======
-                # elements: end, cif, outputbody, hyperlink, OUTPUT
->>>>>>> remotes/upstream/master
+                # elements: cif, OUTPUT, end, hyperlink, outputbody
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13493,25 +12915,14 @@ class sdl92Parser(Parser):
 
 
                     else:
-<<<<<<< HEAD
                         break #loop126
                 # sdl92.g:704:46: ( to_part )?
                 alt127 = 2
                 LA127_0 = self.input.LA(1)
 
-                if (LA127_0 == 212) :
+                if (LA127_0 == TO) :
                     alt127 = 1
                 if alt127 == 1:
-=======
-                        break #loop125
-                # sdl92.g:691:46: ( to_part )?
-                alt126 = 2
-                LA126_0 = self.input.LA(1)
-
-                if (LA126_0 == TO) :
-                    alt126 = 1
-                if alt126 == 1:
->>>>>>> remotes/upstream/master
                     # sdl92.g:0:0: to_part
                     pass 
                     self._state.following.append(self.FOLLOW_to_part_in_outputbody7900)
@@ -13677,11 +13088,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "to_part"
-<<<<<<< HEAD
-    # sdl92.g:714:1: to_part : ( 'TO' destination ) -> ^( TO destination ) ;
-=======
-    # sdl92.g:701:1: to_part : ( TO destination ) -> ^( TO destination ) ;
->>>>>>> remotes/upstream/master
+    # sdl92.g:714:1: to_part : ( TO destination ) -> ^( TO destination ) ;
     def to_part(self, ):
 
         retval = self.to_part_return()
@@ -13689,49 +13096,26 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-<<<<<<< HEAD
-        string_literal401 = None
+        TO401 = None
         destination402 = None
 
 
-        string_literal401_tree = None
-        stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
-        stream_destination = RewriteRuleSubtreeStream(self._adaptor, "rule destination")
-        try:
-            try:
-                # sdl92.g:715:9: ( ( 'TO' destination ) -> ^( TO destination ) )
-                # sdl92.g:715:17: ( 'TO' destination )
-                pass 
-                # sdl92.g:715:17: ( 'TO' destination )
-                # sdl92.g:715:18: 'TO' destination
-                pass 
-                string_literal401=self.match(self.input, 212, self.FOLLOW_212_in_to_part7996) 
-                if self._state.backtracking == 0:
-                    stream_212.add(string_literal401)
-                self._state.following.append(self.FOLLOW_destination_in_to_part7998)
-                destination402 = self.destination()
-=======
-        TO390 = None
-        destination391 = None
-
-
-        TO390_tree = None
+        TO401_tree = None
         stream_TO = RewriteRuleTokenStream(self._adaptor, "token TO")
         stream_destination = RewriteRuleSubtreeStream(self._adaptor, "rule destination")
         try:
             try:
-                # sdl92.g:702:9: ( ( TO destination ) -> ^( TO destination ) )
-                # sdl92.g:702:17: ( TO destination )
+                # sdl92.g:715:9: ( ( TO destination ) -> ^( TO destination ) )
+                # sdl92.g:715:17: ( TO destination )
                 pass 
-                # sdl92.g:702:17: ( TO destination )
-                # sdl92.g:702:18: TO destination
+                # sdl92.g:715:17: ( TO destination )
+                # sdl92.g:715:18: TO destination
                 pass 
-                TO390=self.match(self.input, TO, self.FOLLOW_TO_in_to_part7876) 
+                TO401=self.match(self.input, TO, self.FOLLOW_TO_in_to_part7996) 
                 if self._state.backtracking == 0:
-                    stream_TO.add(TO390)
-                self._state.following.append(self.FOLLOW_destination_in_to_part7878)
-                destination391 = self.destination()
->>>>>>> remotes/upstream/master
+                    stream_TO.add(TO401)
+                self._state.following.append(self.FOLLOW_destination_in_to_part7998)
+                destination402 = self.destination()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -13741,7 +13125,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: destination, TO
+                # elements: TO, destination
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13758,13 +13142,8 @@ class sdl92Parser(Parser):
 
 
                     root_0 = self._adaptor.nil()
-<<<<<<< HEAD
                     # 716:9: -> ^( TO destination )
-                    # sdl92.g:716:12: ^( TO destination )
-=======
-                    # 703:9: -> ^( TO destination )
-                    # sdl92.g:703:17: ^( TO destination )
->>>>>>> remotes/upstream/master
+                    # sdl92.g:716:17: ^( TO destination )
                     root_1 = self._adaptor.nil()
                     root_1 = self._adaptor.becomeRoot(stream_TO.nextNode(), root_1)
 
@@ -13807,11 +13186,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "via_part"
-<<<<<<< HEAD
-    # sdl92.g:718:1: via_part : 'VIA' viabody -> ^( VIA viabody ) ;
-=======
-    # sdl92.g:705:1: via_part : VIA viabody -> ^( VIA viabody ) ;
->>>>>>> remotes/upstream/master
+    # sdl92.g:718:1: via_part : VIA viabody -> ^( VIA viabody ) ;
     def via_part(self, ):
 
         retval = self.via_part_return()
@@ -13819,50 +13194,30 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-<<<<<<< HEAD
-        string_literal403 = None
+        VIA403 = None
         viabody404 = None
 
 
-        string_literal403_tree = None
-        stream_213 = RewriteRuleTokenStream(self._adaptor, "token 213")
-        stream_viabody = RewriteRuleSubtreeStream(self._adaptor, "rule viabody")
-        try:
-            try:
-                # sdl92.g:719:9: ( 'VIA' viabody -> ^( VIA viabody ) )
-                # sdl92.g:719:17: 'VIA' viabody
-                pass 
-                string_literal403=self.match(self.input, 213, self.FOLLOW_213_in_via_part8037) 
-                if self._state.backtracking == 0:
-                    stream_213.add(string_literal403)
-                self._state.following.append(self.FOLLOW_viabody_in_via_part8039)
-                viabody404 = self.viabody()
-=======
-        VIA392 = None
-        viabody393 = None
-
-
-        VIA392_tree = None
+        VIA403_tree = None
         stream_VIA = RewriteRuleTokenStream(self._adaptor, "token VIA")
         stream_viabody = RewriteRuleSubtreeStream(self._adaptor, "rule viabody")
         try:
             try:
-                # sdl92.g:706:9: ( VIA viabody -> ^( VIA viabody ) )
-                # sdl92.g:706:17: VIA viabody
+                # sdl92.g:719:9: ( VIA viabody -> ^( VIA viabody ) )
+                # sdl92.g:719:17: VIA viabody
                 pass 
-                VIA392=self.match(self.input, VIA, self.FOLLOW_VIA_in_via_part7922) 
+                VIA403=self.match(self.input, VIA, self.FOLLOW_VIA_in_via_part8042) 
                 if self._state.backtracking == 0:
-                    stream_VIA.add(VIA392)
-                self._state.following.append(self.FOLLOW_viabody_in_via_part7924)
-                viabody393 = self.viabody()
->>>>>>> remotes/upstream/master
+                    stream_VIA.add(VIA403)
+                self._state.following.append(self.FOLLOW_viabody_in_via_part8044)
+                viabody404 = self.viabody()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_viabody.add(viabody404.tree)
 
                 # AST Rewrite
-                # elements: VIA, viabody
+                # elements: viabody, VIA
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13879,13 +13234,8 @@ class sdl92Parser(Parser):
 
 
                     root_0 = self._adaptor.nil()
-<<<<<<< HEAD
                     # 720:9: -> ^( VIA viabody )
-                    # sdl92.g:720:12: ^( VIA viabody )
-=======
-                    # 707:9: -> ^( VIA viabody )
-                    # sdl92.g:707:17: ^( VIA viabody )
->>>>>>> remotes/upstream/master
+                    # sdl92.g:720:17: ^( VIA viabody )
                     root_1 = self._adaptor.nil()
                     root_1 = self._adaptor.becomeRoot(stream_VIA.nextNode(), root_1)
 
@@ -13928,11 +13278,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "viabody"
-<<<<<<< HEAD
-    # sdl92.g:724:1: viabody : ( 'ALL' -> ^( ALL ) | via_path -> ^( VIAPATH via_path ) );
-=======
-    # sdl92.g:711:1: viabody : ( ALL -> ^( ALL ) | via_path -> ^( VIAPATH via_path ) );
->>>>>>> remotes/upstream/master
+    # sdl92.g:724:1: viabody : ( ALL -> ^( ALL ) | via_path -> ^( VIAPATH via_path ) );
     def viabody(self, ):
 
         retval = self.viabody_return()
@@ -13940,43 +13286,23 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-<<<<<<< HEAD
-        string_literal405 = None
+        ALL405 = None
         via_path406 = None
 
 
-        string_literal405_tree = None
-        stream_214 = RewriteRuleTokenStream(self._adaptor, "token 214")
-        stream_via_path = RewriteRuleSubtreeStream(self._adaptor, "rule via_path")
-        try:
-            try:
-                # sdl92.g:725:9: ( 'ALL' -> ^( ALL ) | via_path -> ^( VIAPATH via_path ) )
-                alt129 = 2
-                LA129_0 = self.input.LA(1)
-
-                if (LA129_0 == 214) :
-                    alt129 = 1
-                elif (LA129_0 == ID) :
-                    alt129 = 2
-=======
-        ALL394 = None
-        via_path395 = None
-
-
-        ALL394_tree = None
+        ALL405_tree = None
         stream_ALL = RewriteRuleTokenStream(self._adaptor, "token ALL")
         stream_via_path = RewriteRuleSubtreeStream(self._adaptor, "rule via_path")
         try:
             try:
-                # sdl92.g:712:9: ( ALL -> ^( ALL ) | via_path -> ^( VIAPATH via_path ) )
-                alt128 = 2
-                LA128_0 = self.input.LA(1)
+                # sdl92.g:725:9: ( ALL -> ^( ALL ) | via_path -> ^( VIAPATH via_path ) )
+                alt129 = 2
+                LA129_0 = self.input.LA(1)
 
-                if (LA128_0 == ALL) :
-                    alt128 = 1
-                elif (LA128_0 == ID) :
-                    alt128 = 2
->>>>>>> remotes/upstream/master
+                if (LA129_0 == ALL) :
+                    alt129 = 1
+                elif (LA129_0 == ID) :
+                    alt129 = 2
                 else:
                     if self._state.backtracking > 0:
                         raise BacktrackingFailed
@@ -13985,21 +13311,12 @@ class sdl92Parser(Parser):
 
                     raise nvae
 
-<<<<<<< HEAD
                 if alt129 == 1:
-                    # sdl92.g:725:17: 'ALL'
+                    # sdl92.g:725:17: ALL
                     pass 
-                    string_literal405=self.match(self.input, 214, self.FOLLOW_214_in_viabody8079) 
+                    ALL405=self.match(self.input, ALL, self.FOLLOW_ALL_in_viabody8089) 
                     if self._state.backtracking == 0:
-                        stream_214.add(string_literal405)
-=======
-                if alt128 == 1:
-                    # sdl92.g:712:17: ALL
-                    pass 
-                    ALL394=self.match(self.input, ALL, self.FOLLOW_ALL_in_viabody7969) 
-                    if self._state.backtracking == 0:
-                        stream_ALL.add(ALL394)
->>>>>>> remotes/upstream/master
+                        stream_ALL.add(ALL405)
 
                     # AST Rewrite
                     # elements: ALL
@@ -14034,13 +13351,8 @@ class sdl92Parser(Parser):
                 elif alt129 == 2:
                     # sdl92.g:727:19: via_path
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_via_path_in_viabody8118)
+                    self._state.following.append(self.FOLLOW_via_path_in_viabody8128)
                     via_path406 = self.via_path()
-=======
-                    self._state.following.append(self.FOLLOW_via_path_in_viabody8008)
-                    via_path395 = self.via_path()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -14147,13 +13459,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_pid_expression_in_destination8162)
+                    self._state.following.append(self.FOLLOW_pid_expression_in_destination8172)
                     pid_expression407 = self.pid_expression()
-=======
-                    self._state.following.append(self.FOLLOW_pid_expression_in_destination8052)
-                    pid_expression396 = self.pid_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -14165,13 +13472,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_process_id_in_destination8182)
+                    self._state.following.append(self.FOLLOW_process_id_in_destination8192)
                     process_id408 = self.process_id()
-=======
-                    self._state.following.append(self.FOLLOW_process_id_in_destination8072)
-                    process_id397 = self.process_id()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -14183,11 +13485,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    THIS409=self.match(self.input, THIS, self.FOLLOW_THIS_in_destination8202)
-=======
-                    THIS398=self.match(self.input, THIS, self.FOLLOW_THIS_in_destination8092)
->>>>>>> remotes/upstream/master
+                    THIS409=self.match(self.input, THIS, self.FOLLOW_THIS_in_destination8212)
                     if self._state.backtracking == 0:
 
                         THIS409_tree = self._adaptor.createWithPayload(THIS409)
@@ -14246,13 +13544,8 @@ class sdl92Parser(Parser):
                 # sdl92.g:738:9: ( via_path_element ( ',' via_path_element )* -> ( via_path_element )+ )
                 # sdl92.g:738:17: via_path_element ( ',' via_path_element )*
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_via_path_element_in_via_path8225)
+                self._state.following.append(self.FOLLOW_via_path_element_in_via_path8235)
                 via_path_element410 = self.via_path_element()
-=======
-                self._state.following.append(self.FOLLOW_via_path_element_in_via_path8115)
-                via_path_element399 = self.via_path_element()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -14269,19 +13562,11 @@ class sdl92Parser(Parser):
                     if alt131 == 1:
                         # sdl92.g:738:35: ',' via_path_element
                         pass 
-<<<<<<< HEAD
-                        char_literal411=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_via_path8228) 
+                        char_literal411=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_via_path8238) 
                         if self._state.backtracking == 0:
                             stream_COMMA.add(char_literal411)
-                        self._state.following.append(self.FOLLOW_via_path_element_in_via_path8230)
+                        self._state.following.append(self.FOLLOW_via_path_element_in_via_path8240)
                         via_path_element412 = self.via_path_element()
-=======
-                        char_literal400=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_via_path8118) 
-                        if self._state.backtracking == 0:
-                            stream_COMMA.add(char_literal400)
-                        self._state.following.append(self.FOLLOW_via_path_element_in_via_path8120)
-                        via_path_element401 = self.via_path_element()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -14374,11 +13659,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID413=self.match(self.input, ID, self.FOLLOW_ID_in_via_path_element8273)
-=======
-                ID402=self.match(self.input, ID, self.FOLLOW_ID_in_via_path_element8163)
->>>>>>> remotes/upstream/master
+                ID413=self.match(self.input, ID, self.FOLLOW_ID_in_via_path_element8283)
                 if self._state.backtracking == 0:
 
                     ID413_tree = self._adaptor.createWithPayload(ID413)
@@ -14444,19 +13725,11 @@ class sdl92Parser(Parser):
                 # sdl92.g:747:9: ( '(' expression ( ',' expression )* ')' -> ^( PARAMS ( expression )+ ) )
                 # sdl92.g:747:16: '(' expression ( ',' expression )* ')'
                 pass 
-<<<<<<< HEAD
-                char_literal414=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_actual_parameters8296) 
+                char_literal414=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_actual_parameters8306) 
                 if self._state.backtracking == 0:
                     stream_L_PAREN.add(char_literal414)
-                self._state.following.append(self.FOLLOW_expression_in_actual_parameters8298)
+                self._state.following.append(self.FOLLOW_expression_in_actual_parameters8308)
                 expression415 = self.expression()
-=======
-                char_literal403=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_actual_parameters8186) 
-                if self._state.backtracking == 0:
-                    stream_L_PAREN.add(char_literal403)
-                self._state.following.append(self.FOLLOW_expression_in_actual_parameters8188)
-                expression404 = self.expression()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -14473,19 +13746,11 @@ class sdl92Parser(Parser):
                     if alt132 == 1:
                         # sdl92.g:747:32: ',' expression
                         pass 
-<<<<<<< HEAD
-                        char_literal416=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_actual_parameters8301) 
+                        char_literal416=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_actual_parameters8311) 
                         if self._state.backtracking == 0:
                             stream_COMMA.add(char_literal416)
-                        self._state.following.append(self.FOLLOW_expression_in_actual_parameters8303)
+                        self._state.following.append(self.FOLLOW_expression_in_actual_parameters8313)
                         expression417 = self.expression()
-=======
-                        char_literal405=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_actual_parameters8191) 
-                        if self._state.backtracking == 0:
-                            stream_COMMA.add(char_literal405)
-                        self._state.following.append(self.FOLLOW_expression_in_actual_parameters8193)
-                        expression406 = self.expression()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -14493,13 +13758,8 @@ class sdl92Parser(Parser):
 
 
                     else:
-<<<<<<< HEAD
                         break #loop132
-                char_literal418=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_actual_parameters8307) 
-=======
-                        break #loop131
-                char_literal407=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_actual_parameters8197) 
->>>>>>> remotes/upstream/master
+                char_literal418=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_actual_parameters8317) 
                 if self._state.backtracking == 0:
                     stream_R_PAREN.add(char_literal418)
 
@@ -14606,26 +13866,16 @@ class sdl92Parser(Parser):
                 alt133 = 2
                 LA133_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA133_0 == 223) :
+                if (LA133_0 == 219) :
                     LA133_1 = self.input.LA(2)
-=======
-                if (LA132_0 == 217) :
-                    LA132_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA133_1 == LABEL or LA133_1 == COMMENT or LA133_1 == PROCESS or LA133_1 == STATE or LA133_1 == PROVIDED or LA133_1 == INPUT or (PROCEDURE_CALL <= LA133_1 <= PROCEDURE) or LA133_1 == DECISION or LA133_1 == ANSWER or LA133_1 == OUTPUT or (TEXT <= LA133_1 <= JOIN) or LA133_1 == RETURN or LA133_1 == TASK or LA133_1 == STOP or LA133_1 == CONNECT or LA133_1 == START) :
                         alt133 = 1
                 if alt133 == 1:
                     # sdl92.g:0:0: cif
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_cif_in_task8351)
+                    self._state.following.append(self.FOLLOW_cif_in_task8361)
                     cif419 = self.cif()
-=======
-                    self._state.following.append(self.FOLLOW_cif_in_task8241)
-                    cif408 = self.cif()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -14637,23 +13887,13 @@ class sdl92Parser(Parser):
                 alt134 = 2
                 LA134_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA134_0 == 223) :
+                if (LA134_0 == 219) :
                     alt134 = 1
                 if alt134 == 1:
                     # sdl92.g:0:0: hyperlink
                     pass 
-                    self._state.following.append(self.FOLLOW_hyperlink_in_task8370)
+                    self._state.following.append(self.FOLLOW_hyperlink_in_task8380)
                     hyperlink420 = self.hyperlink()
-=======
-                if (LA133_0 == 217) :
-                    alt133 = 1
-                if alt133 == 1:
-                    # sdl92.g:0:0: hyperlink
-                    pass 
-                    self._state.following.append(self.FOLLOW_hyperlink_in_task8260)
-                    hyperlink409 = self.hyperlink()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -14661,11 +13901,7 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                TASK421=self.match(self.input, TASK, self.FOLLOW_TASK_in_task8389) 
-=======
-                TASK410=self.match(self.input, TASK, self.FOLLOW_TASK_in_task8279) 
->>>>>>> remotes/upstream/master
+                TASK421=self.match(self.input, TASK, self.FOLLOW_TASK_in_task8399) 
                 if self._state.backtracking == 0:
                     stream_TASK.add(TASK421)
                 # sdl92.g:754:22: ( task_body )?
@@ -14677,13 +13913,8 @@ class sdl92Parser(Parser):
                 if alt135 == 1:
                     # sdl92.g:0:0: task_body
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_task_body_in_task8391)
+                    self._state.following.append(self.FOLLOW_task_body_in_task8401)
                     task_body422 = self.task_body()
-=======
-                    self._state.following.append(self.FOLLOW_task_body_in_task8281)
-                    task_body411 = self.task_body()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -14691,24 +13922,15 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_end_in_task8394)
+                self._state.following.append(self.FOLLOW_end_in_task8404)
                 end423 = self.end()
-=======
-                self._state.following.append(self.FOLLOW_end_in_task8284)
-                end412 = self.end()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_end.add(end423.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: task_body, TASK, hyperlink, end, cif
-=======
-                # elements: hyperlink, task_body, TASK, cif, end
->>>>>>> remotes/upstream/master
+                # elements: TASK, task_body, end, hyperlink, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -14848,13 +14070,8 @@ class sdl92Parser(Parser):
                     # sdl92.g:759:17: ( assignement_statement ( ',' assignement_statement )* )
                     # sdl92.g:759:18: assignement_statement ( ',' assignement_statement )*
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_assignement_statement_in_task_body8449)
+                    self._state.following.append(self.FOLLOW_assignement_statement_in_task_body8459)
                     assignement_statement424 = self.assignement_statement()
-=======
-                    self._state.following.append(self.FOLLOW_assignement_statement_in_task_body8339)
-                    assignement_statement413 = self.assignement_statement()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -14871,19 +14088,11 @@ class sdl92Parser(Parser):
                         if alt136 == 1:
                             # sdl92.g:759:41: ',' assignement_statement
                             pass 
-<<<<<<< HEAD
-                            char_literal425=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8452) 
+                            char_literal425=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8462) 
                             if self._state.backtracking == 0:
                                 stream_COMMA.add(char_literal425)
-                            self._state.following.append(self.FOLLOW_assignement_statement_in_task_body8454)
+                            self._state.following.append(self.FOLLOW_assignement_statement_in_task_body8464)
                             assignement_statement426 = self.assignement_statement()
-=======
-                            char_literal414=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8342) 
-                            if self._state.backtracking == 0:
-                                stream_COMMA.add(char_literal414)
-                            self._state.following.append(self.FOLLOW_assignement_statement_in_task_body8344)
-                            assignement_statement415 = self.assignement_statement()
->>>>>>> remotes/upstream/master
 
                             self._state.following.pop()
                             if self._state.backtracking == 0:
@@ -14942,13 +14151,8 @@ class sdl92Parser(Parser):
                     # sdl92.g:761:19: ( informal_text ( ',' informal_text )* )
                     # sdl92.g:761:20: informal_text ( ',' informal_text )*
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_informal_text_in_task_body8500)
+                    self._state.following.append(self.FOLLOW_informal_text_in_task_body8510)
                     informal_text427 = self.informal_text()
-=======
-                    self._state.following.append(self.FOLLOW_informal_text_in_task_body8390)
-                    informal_text416 = self.informal_text()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -14965,19 +14169,11 @@ class sdl92Parser(Parser):
                         if alt137 == 1:
                             # sdl92.g:761:35: ',' informal_text
                             pass 
-<<<<<<< HEAD
-                            char_literal428=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8503) 
+                            char_literal428=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8513) 
                             if self._state.backtracking == 0:
                                 stream_COMMA.add(char_literal428)
-                            self._state.following.append(self.FOLLOW_informal_text_in_task_body8505)
+                            self._state.following.append(self.FOLLOW_informal_text_in_task_body8515)
                             informal_text429 = self.informal_text()
-=======
-                            char_literal417=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8393) 
-                            if self._state.backtracking == 0:
-                                stream_COMMA.add(char_literal417)
-                            self._state.following.append(self.FOLLOW_informal_text_in_task_body8395)
-                            informal_text418 = self.informal_text()
->>>>>>> remotes/upstream/master
 
                             self._state.following.pop()
                             if self._state.backtracking == 0:
@@ -15036,13 +14232,8 @@ class sdl92Parser(Parser):
                     # sdl92.g:763:19: ( forloop ( ',' forloop )* )
                     # sdl92.g:763:20: forloop ( ',' forloop )*
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_forloop_in_task_body8551)
+                    self._state.following.append(self.FOLLOW_forloop_in_task_body8561)
                     forloop430 = self.forloop()
-=======
-                    self._state.following.append(self.FOLLOW_forloop_in_task_body8441)
-                    forloop419 = self.forloop()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -15059,19 +14250,11 @@ class sdl92Parser(Parser):
                         if alt138 == 1:
                             # sdl92.g:763:29: ',' forloop
                             pass 
-<<<<<<< HEAD
-                            char_literal431=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8554) 
+                            char_literal431=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8564) 
                             if self._state.backtracking == 0:
                                 stream_COMMA.add(char_literal431)
-                            self._state.following.append(self.FOLLOW_forloop_in_task_body8556)
+                            self._state.following.append(self.FOLLOW_forloop_in_task_body8566)
                             forloop432 = self.forloop()
-=======
-                            char_literal420=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_task_body8444) 
-                            if self._state.backtracking == 0:
-                                stream_COMMA.add(char_literal420)
-                            self._state.following.append(self.FOLLOW_forloop_in_task_body8446)
-                            forloop421 = self.forloop()
->>>>>>> remotes/upstream/master
 
                             self._state.following.pop()
                             if self._state.backtracking == 0:
@@ -15174,22 +14357,14 @@ class sdl92Parser(Parser):
         transition439 = None
 
 
-<<<<<<< HEAD
         FOR433_tree = None
         IN435_tree = None
         char_literal438_tree = None
         ENDFOR440_tree = None
-        stream_211 = RewriteRuleTokenStream(self._adaptor, "token 211")
-=======
-        FOR422_tree = None
-        IN424_tree = None
-        char_literal427_tree = None
-        ENDFOR429_tree = None
-        stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
->>>>>>> remotes/upstream/master
         stream_ENDFOR = RewriteRuleTokenStream(self._adaptor, "token ENDFOR")
         stream_FOR = RewriteRuleTokenStream(self._adaptor, "token FOR")
         stream_IN = RewriteRuleTokenStream(self._adaptor, "token IN")
+        stream_214 = RewriteRuleTokenStream(self._adaptor, "token 214")
         stream_range = RewriteRuleSubtreeStream(self._adaptor, "rule range")
         stream_transition = RewriteRuleSubtreeStream(self._adaptor, "rule transition")
         stream_variable_id = RewriteRuleSubtreeStream(self._adaptor, "rule variable_id")
@@ -15199,29 +14374,16 @@ class sdl92Parser(Parser):
                 # sdl92.g:769:9: ( FOR variable_id IN ( variable | range ) ':' ( transition )? ENDFOR -> ^( FOR variable_id ( variable )? ( range )? ( transition )? ) )
                 # sdl92.g:769:17: FOR variable_id IN ( variable | range ) ':' ( transition )? ENDFOR
                 pass 
-<<<<<<< HEAD
-                FOR433=self.match(self.input, FOR, self.FOLLOW_FOR_in_forloop8613) 
+                FOR433=self.match(self.input, FOR, self.FOLLOW_FOR_in_forloop8623) 
                 if self._state.backtracking == 0:
                     stream_FOR.add(FOR433)
-                self._state.following.append(self.FOLLOW_variable_id_in_forloop8615)
+                self._state.following.append(self.FOLLOW_variable_id_in_forloop8625)
                 variable_id434 = self.variable_id()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_variable_id.add(variable_id434.tree)
-                IN435=self.match(self.input, IN, self.FOLLOW_IN_in_forloop8617) 
-=======
-                FOR422=self.match(self.input, FOR, self.FOLLOW_FOR_in_forloop8503) 
-                if self._state.backtracking == 0:
-                    stream_FOR.add(FOR422)
-                self._state.following.append(self.FOLLOW_variable_id_in_forloop8505)
-                variable_id423 = self.variable_id()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_variable_id.add(variable_id423.tree)
-                IN424=self.match(self.input, IN, self.FOLLOW_IN_in_forloop8507) 
->>>>>>> remotes/upstream/master
+                IN435=self.match(self.input, IN, self.FOLLOW_IN_in_forloop8627) 
                 if self._state.backtracking == 0:
                     stream_IN.add(IN435)
                 # sdl92.g:769:36: ( variable | range )
@@ -15243,13 +14405,8 @@ class sdl92Parser(Parser):
                 if alt140 == 1:
                     # sdl92.g:769:37: variable
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_variable_in_forloop8620)
+                    self._state.following.append(self.FOLLOW_variable_in_forloop8630)
                     variable436 = self.variable()
-=======
-                    self._state.following.append(self.FOLLOW_variable_in_forloop8510)
-                    variable425 = self.variable()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -15259,13 +14416,8 @@ class sdl92Parser(Parser):
                 elif alt140 == 2:
                     # sdl92.g:769:48: range
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_range_in_forloop8624)
+                    self._state.following.append(self.FOLLOW_range_in_forloop8634)
                     range437 = self.range()
-=======
-                    self._state.following.append(self.FOLLOW_range_in_forloop8514)
-                    range426 = self.range()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -15273,37 +14425,20 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                char_literal438=self.match(self.input, 211, self.FOLLOW_211_in_forloop8627) 
+                char_literal438=self.match(self.input, 214, self.FOLLOW_214_in_forloop8637) 
                 if self._state.backtracking == 0:
-                    stream_211.add(char_literal438)
+                    stream_214.add(char_literal438)
                 # sdl92.g:770:17: ( transition )?
                 alt141 = 2
                 LA141_0 = self.input.LA(1)
 
-                if (LA141_0 == FOR or (SET <= LA141_0 <= ALTERNATIVE) or LA141_0 == OUTPUT or (NEXTSTATE <= LA141_0 <= JOIN) or LA141_0 == RETURN or LA141_0 == TASK or LA141_0 == STOP or LA141_0 == CALL or LA141_0 == CREATE or LA141_0 == ID or LA141_0 == StringLiteral or LA141_0 == 223) :
+                if (LA141_0 == FOR or (SET <= LA141_0 <= ALTERNATIVE) or LA141_0 == OUTPUT or (NEXTSTATE <= LA141_0 <= JOIN) or LA141_0 == RETURN or LA141_0 == TASK or LA141_0 == STOP or LA141_0 == CALL or LA141_0 == CREATE or LA141_0 == ID or LA141_0 == StringLiteral or LA141_0 == 219) :
                     alt141 = 1
                 if alt141 == 1:
                     # sdl92.g:0:0: transition
                     pass 
-                    self._state.following.append(self.FOLLOW_transition_in_forloop8645)
+                    self._state.following.append(self.FOLLOW_transition_in_forloop8655)
                     transition439 = self.transition()
-=======
-                char_literal427=self.match(self.input, 212, self.FOLLOW_212_in_forloop8517) 
-                if self._state.backtracking == 0:
-                    stream_212.add(char_literal427)
-                # sdl92.g:757:17: ( transition )?
-                alt140 = 2
-                LA140_0 = self.input.LA(1)
-
-                if (LA140_0 == FOR or (SET <= LA140_0 <= ALTERNATIVE) or LA140_0 == OUTPUT or (NEXTSTATE <= LA140_0 <= JOIN) or LA140_0 == RETURN or LA140_0 == TASK or LA140_0 == STOP or LA140_0 == CALL or LA140_0 == CREATE or LA140_0 == ID or LA140_0 == StringLiteral or LA140_0 == 217) :
-                    alt140 = 1
-                if alt140 == 1:
-                    # sdl92.g:0:0: transition
-                    pass 
-                    self._state.following.append(self.FOLLOW_transition_in_forloop8535)
-                    transition428 = self.transition()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -15311,20 +14446,12 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                ENDFOR440=self.match(self.input, ENDFOR, self.FOLLOW_ENDFOR_in_forloop8664) 
-=======
-                ENDFOR429=self.match(self.input, ENDFOR, self.FOLLOW_ENDFOR_in_forloop8554) 
->>>>>>> remotes/upstream/master
+                ENDFOR440=self.match(self.input, ENDFOR, self.FOLLOW_ENDFOR_in_forloop8674) 
                 if self._state.backtracking == 0:
                     stream_ENDFOR.add(ENDFOR440)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: FOR, transition, variable, variable_id, range
-=======
-                # elements: FOR, variable, variable_id, range, transition
->>>>>>> remotes/upstream/master
+                # elements: range, variable, transition, variable_id, FOR
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -15439,23 +14566,13 @@ class sdl92Parser(Parser):
                 # sdl92.g:775:9: ( RANGE L_PAREN a= ground_expression ( COMMA b= ground_expression )? ( COMMA step= INT )? R_PAREN -> ^( RANGE $a ( $b)? ( $step)? ) )
                 # sdl92.g:775:17: RANGE L_PAREN a= ground_expression ( COMMA b= ground_expression )? ( COMMA step= INT )? R_PAREN
                 pass 
-<<<<<<< HEAD
-                RANGE441=self.match(self.input, RANGE, self.FOLLOW_RANGE_in_range8716) 
+                RANGE441=self.match(self.input, RANGE, self.FOLLOW_RANGE_in_range8726) 
                 if self._state.backtracking == 0:
                     stream_RANGE.add(RANGE441)
-                L_PAREN442=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_range8734) 
+                L_PAREN442=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_range8744) 
                 if self._state.backtracking == 0:
                     stream_L_PAREN.add(L_PAREN442)
-                self._state.following.append(self.FOLLOW_ground_expression_in_range8738)
-=======
-                RANGE430=self.match(self.input, RANGE, self.FOLLOW_RANGE_in_range8606) 
-                if self._state.backtracking == 0:
-                    stream_RANGE.add(RANGE430)
-                L_PAREN431=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_range8624) 
-                if self._state.backtracking == 0:
-                    stream_L_PAREN.add(L_PAREN431)
-                self._state.following.append(self.FOLLOW_ground_expression_in_range8628)
->>>>>>> remotes/upstream/master
+                self._state.following.append(self.FOLLOW_ground_expression_in_range8748)
                 a = self.ground_expression()
 
                 self._state.following.pop()
@@ -15478,17 +14595,10 @@ class sdl92Parser(Parser):
                 if alt142 == 1:
                     # sdl92.g:777:18: COMMA b= ground_expression
                     pass 
-<<<<<<< HEAD
-                    COMMA443=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_range8757) 
+                    COMMA443=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_range8767) 
                     if self._state.backtracking == 0:
                         stream_COMMA.add(COMMA443)
-                    self._state.following.append(self.FOLLOW_ground_expression_in_range8761)
-=======
-                    COMMA432=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_range8647) 
-                    if self._state.backtracking == 0:
-                        stream_COMMA.add(COMMA432)
-                    self._state.following.append(self.FOLLOW_ground_expression_in_range8651)
->>>>>>> remotes/upstream/master
+                    self._state.following.append(self.FOLLOW_ground_expression_in_range8771)
                     b = self.ground_expression()
 
                     self._state.following.pop()
@@ -15506,36 +14616,21 @@ class sdl92Parser(Parser):
                 if alt143 == 1:
                     # sdl92.g:777:47: COMMA step= INT
                     pass 
-<<<<<<< HEAD
-                    COMMA444=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_range8766) 
+                    COMMA444=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_range8776) 
                     if self._state.backtracking == 0:
                         stream_COMMA.add(COMMA444)
-                    step=self.match(self.input, INT, self.FOLLOW_INT_in_range8770) 
-=======
-                    COMMA433=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_range8656) 
-                    if self._state.backtracking == 0:
-                        stream_COMMA.add(COMMA433)
-                    step=self.match(self.input, INT, self.FOLLOW_INT_in_range8660) 
->>>>>>> remotes/upstream/master
+                    step=self.match(self.input, INT, self.FOLLOW_INT_in_range8780) 
                     if self._state.backtracking == 0:
                         stream_INT.add(step)
 
 
 
-<<<<<<< HEAD
-                R_PAREN445=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_range8790) 
-=======
-                R_PAREN434=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_range8680) 
->>>>>>> remotes/upstream/master
+                R_PAREN445=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_range8800) 
                 if self._state.backtracking == 0:
                     stream_R_PAREN.add(R_PAREN445)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: b, step, RANGE, a
-=======
-                # elements: a, RANGE, b, step
->>>>>>> remotes/upstream/master
+                # elements: RANGE, b, step, a
                 # token labels: step
                 # rule labels: retval, b, a
                 # token list labels: 
@@ -15644,38 +14739,24 @@ class sdl92Parser(Parser):
                 # sdl92.g:782:9: ( variable ':=' expression -> ^( ASSIGN variable expression ) )
                 # sdl92.g:782:17: variable ':=' expression
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_variable_in_assignement_statement8842)
+                self._state.following.append(self.FOLLOW_variable_in_assignement_statement8852)
                 variable446 = self.variable()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_variable.add(variable446.tree)
-                string_literal447=self.match(self.input, ASSIG_OP, self.FOLLOW_ASSIG_OP_in_assignement_statement8844) 
+                string_literal447=self.match(self.input, ASSIG_OP, self.FOLLOW_ASSIG_OP_in_assignement_statement8854) 
                 if self._state.backtracking == 0:
                     stream_ASSIG_OP.add(string_literal447)
-                self._state.following.append(self.FOLLOW_expression_in_assignement_statement8846)
+                self._state.following.append(self.FOLLOW_expression_in_assignement_statement8856)
                 expression448 = self.expression()
-=======
-                self._state.following.append(self.FOLLOW_variable_in_assignement_statement8732)
-                variable435 = self.variable()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_variable.add(variable435.tree)
-                string_literal436=self.match(self.input, ASSIG_OP, self.FOLLOW_ASSIG_OP_in_assignement_statement8734) 
-                if self._state.backtracking == 0:
-                    stream_ASSIG_OP.add(string_literal436)
-                self._state.following.append(self.FOLLOW_expression_in_assignement_statement8736)
-                expression437 = self.expression()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_expression.add(expression448.tree)
 
                 # AST Rewrite
-                # elements: expression, variable
+                # elements: variable, expression
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -15757,13 +14838,8 @@ class sdl92Parser(Parser):
                 # sdl92.g:788:9: ( variable_id ( primary_params )* -> ^( VARIABLE variable_id ( primary_params )* ) )
                 # sdl92.g:788:17: variable_id ( primary_params )*
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_variable_id_in_variable8893)
+                self._state.following.append(self.FOLLOW_variable_id_in_variable8903)
                 variable_id449 = self.variable_id()
-=======
-                self._state.following.append(self.FOLLOW_variable_id_in_variable8783)
-                variable_id438 = self.variable_id()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -15780,13 +14856,8 @@ class sdl92Parser(Parser):
                     if alt144 == 1:
                         # sdl92.g:0:0: primary_params
                         pass 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_primary_params_in_variable8895)
+                        self._state.following.append(self.FOLLOW_primary_params_in_variable8905)
                         primary_params450 = self.primary_params()
-=======
-                        self._state.following.append(self.FOLLOW_primary_params_in_variable8785)
-                        primary_params439 = self.primary_params()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -15797,7 +14868,7 @@ class sdl92Parser(Parser):
                         break #loop144
 
                 # AST Rewrite
-                # elements: variable_id, primary_params
+                # elements: primary_params, variable_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -15903,13 +14974,8 @@ class sdl92Parser(Parser):
                     raise mse
 
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_field_name_in_field_selection8949)
+                self._state.following.append(self.FOLLOW_field_name_in_field_selection8959)
                 field_name452 = self.field_name()
-=======
-                self._state.following.append(self.FOLLOW_field_name_in_field_selection8839)
-                field_name441 = self.field_name()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -15972,13 +15038,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_operand0_in_expression8969)
+                self._state.following.append(self.FOLLOW_operand0_in_expression8979)
                 operand0453 = self.operand0()
-=======
-                self._state.following.append(self.FOLLOW_operand0_in_expression8859)
-                operand0442 = self.operand0()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -16000,23 +15061,14 @@ class sdl92Parser(Parser):
                     if alt145 == 1:
                         # sdl92.g:794:36: IMPLIES operand0
                         pass 
-<<<<<<< HEAD
-                        IMPLIES454=self.match(self.input, IMPLIES, self.FOLLOW_IMPLIES_in_expression8973)
-=======
-                        IMPLIES443=self.match(self.input, IMPLIES, self.FOLLOW_IMPLIES_in_expression8863)
->>>>>>> remotes/upstream/master
+                        IMPLIES454=self.match(self.input, IMPLIES, self.FOLLOW_IMPLIES_in_expression8983)
                         if self._state.backtracking == 0:
 
                             IMPLIES454_tree = self._adaptor.createWithPayload(IMPLIES454)
                             root_0 = self._adaptor.becomeRoot(IMPLIES454_tree, root_0)
 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_operand0_in_expression8976)
+                        self._state.following.append(self.FOLLOW_operand0_in_expression8986)
                         operand0455 = self.operand0()
-=======
-                        self._state.following.append(self.FOLLOW_operand0_in_expression8866)
-                        operand0444 = self.operand0()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -16082,13 +15134,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_operand1_in_operand08999)
+                self._state.following.append(self.FOLLOW_operand1_in_operand09009)
                 operand1456 = self.operand1()
-=======
-                self._state.following.append(self.FOLLOW_operand1_in_operand08889)
-                operand1445 = self.operand1()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -16136,11 +15183,7 @@ class sdl92Parser(Parser):
                         if alt146 == 1:
                             # sdl92.g:795:37: OR
                             pass 
-<<<<<<< HEAD
-                            OR457=self.match(self.input, OR, self.FOLLOW_OR_in_operand09004)
-=======
-                            OR446=self.match(self.input, OR, self.FOLLOW_OR_in_operand08894)
->>>>>>> remotes/upstream/master
+                            OR457=self.match(self.input, OR, self.FOLLOW_OR_in_operand09014)
                             if self._state.backtracking == 0:
 
                                 OR457_tree = self._adaptor.createWithPayload(OR457)
@@ -16151,11 +15194,7 @@ class sdl92Parser(Parser):
                         elif alt146 == 2:
                             # sdl92.g:795:43: XOR
                             pass 
-<<<<<<< HEAD
-                            XOR458=self.match(self.input, XOR, self.FOLLOW_XOR_in_operand09009)
-=======
-                            XOR447=self.match(self.input, XOR, self.FOLLOW_XOR_in_operand08899)
->>>>>>> remotes/upstream/master
+                            XOR458=self.match(self.input, XOR, self.FOLLOW_XOR_in_operand09019)
                             if self._state.backtracking == 0:
 
                                 XOR458_tree = self._adaptor.createWithPayload(XOR458)
@@ -16164,13 +15203,8 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_operand1_in_operand09014)
+                        self._state.following.append(self.FOLLOW_operand1_in_operand09024)
                         operand1459 = self.operand1()
-=======
-                        self._state.following.append(self.FOLLOW_operand1_in_operand08904)
-                        operand1448 = self.operand1()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -16234,13 +15268,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_operand2_in_operand19036)
+                self._state.following.append(self.FOLLOW_operand2_in_operand19046)
                 operand2460 = self.operand2()
-=======
-                self._state.following.append(self.FOLLOW_operand2_in_operand18926)
-                operand2449 = self.operand2()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -16262,23 +15291,14 @@ class sdl92Parser(Parser):
                     if alt148 == 1:
                         # sdl92.g:796:36: AND operand2
                         pass 
-<<<<<<< HEAD
-                        AND461=self.match(self.input, AND, self.FOLLOW_AND_in_operand19040)
-=======
-                        AND450=self.match(self.input, AND, self.FOLLOW_AND_in_operand18930)
->>>>>>> remotes/upstream/master
+                        AND461=self.match(self.input, AND, self.FOLLOW_AND_in_operand19050)
                         if self._state.backtracking == 0:
 
                             AND461_tree = self._adaptor.createWithPayload(AND461)
                             root_0 = self._adaptor.becomeRoot(AND461_tree, root_0)
 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_operand2_in_operand19043)
+                        self._state.following.append(self.FOLLOW_operand2_in_operand19053)
                         operand2462 = self.operand2()
-=======
-                        self._state.following.append(self.FOLLOW_operand2_in_operand18933)
-                        operand2451 = self.operand2()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -16354,13 +15374,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_operand3_in_operand29065)
+                self._state.following.append(self.FOLLOW_operand3_in_operand29075)
                 operand3463 = self.operand3()
-=======
-                self._state.following.append(self.FOLLOW_operand3_in_operand28955)
-                operand3452 = self.operand3()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -16400,11 +15415,7 @@ class sdl92Parser(Parser):
                         if alt149 == 1:
                             # sdl92.g:798:28: EQ
                             pass 
-<<<<<<< HEAD
-                            EQ464=self.match(self.input, EQ, self.FOLLOW_EQ_in_operand29094)
-=======
-                            EQ453=self.match(self.input, EQ, self.FOLLOW_EQ_in_operand28984)
->>>>>>> remotes/upstream/master
+                            EQ464=self.match(self.input, EQ, self.FOLLOW_EQ_in_operand29104)
                             if self._state.backtracking == 0:
 
                                 EQ464_tree = self._adaptor.createWithPayload(EQ464)
@@ -16415,11 +15426,7 @@ class sdl92Parser(Parser):
                         elif alt149 == 2:
                             # sdl92.g:798:34: NEQ
                             pass 
-<<<<<<< HEAD
-                            NEQ465=self.match(self.input, NEQ, self.FOLLOW_NEQ_in_operand29099)
-=======
-                            NEQ454=self.match(self.input, NEQ, self.FOLLOW_NEQ_in_operand28989)
->>>>>>> remotes/upstream/master
+                            NEQ465=self.match(self.input, NEQ, self.FOLLOW_NEQ_in_operand29109)
                             if self._state.backtracking == 0:
 
                                 NEQ465_tree = self._adaptor.createWithPayload(NEQ465)
@@ -16430,11 +15437,7 @@ class sdl92Parser(Parser):
                         elif alt149 == 3:
                             # sdl92.g:798:41: GT
                             pass 
-<<<<<<< HEAD
-                            GT466=self.match(self.input, GT, self.FOLLOW_GT_in_operand29104)
-=======
-                            GT455=self.match(self.input, GT, self.FOLLOW_GT_in_operand28994)
->>>>>>> remotes/upstream/master
+                            GT466=self.match(self.input, GT, self.FOLLOW_GT_in_operand29114)
                             if self._state.backtracking == 0:
 
                                 GT466_tree = self._adaptor.createWithPayload(GT466)
@@ -16445,11 +15448,7 @@ class sdl92Parser(Parser):
                         elif alt149 == 4:
                             # sdl92.g:798:47: GE
                             pass 
-<<<<<<< HEAD
-                            GE467=self.match(self.input, GE, self.FOLLOW_GE_in_operand29109)
-=======
-                            GE456=self.match(self.input, GE, self.FOLLOW_GE_in_operand28999)
->>>>>>> remotes/upstream/master
+                            GE467=self.match(self.input, GE, self.FOLLOW_GE_in_operand29119)
                             if self._state.backtracking == 0:
 
                                 GE467_tree = self._adaptor.createWithPayload(GE467)
@@ -16460,11 +15459,7 @@ class sdl92Parser(Parser):
                         elif alt149 == 5:
                             # sdl92.g:798:53: LT
                             pass 
-<<<<<<< HEAD
-                            LT468=self.match(self.input, LT, self.FOLLOW_LT_in_operand29114)
-=======
-                            LT457=self.match(self.input, LT, self.FOLLOW_LT_in_operand29004)
->>>>>>> remotes/upstream/master
+                            LT468=self.match(self.input, LT, self.FOLLOW_LT_in_operand29124)
                             if self._state.backtracking == 0:
 
                                 LT468_tree = self._adaptor.createWithPayload(LT468)
@@ -16475,11 +15470,7 @@ class sdl92Parser(Parser):
                         elif alt149 == 6:
                             # sdl92.g:798:59: LE
                             pass 
-<<<<<<< HEAD
-                            LE469=self.match(self.input, LE, self.FOLLOW_LE_in_operand29119)
-=======
-                            LE458=self.match(self.input, LE, self.FOLLOW_LE_in_operand29009)
->>>>>>> remotes/upstream/master
+                            LE469=self.match(self.input, LE, self.FOLLOW_LE_in_operand29129)
                             if self._state.backtracking == 0:
 
                                 LE469_tree = self._adaptor.createWithPayload(LE469)
@@ -16490,11 +15481,7 @@ class sdl92Parser(Parser):
                         elif alt149 == 7:
                             # sdl92.g:798:65: IN
                             pass 
-<<<<<<< HEAD
-                            IN470=self.match(self.input, IN, self.FOLLOW_IN_in_operand29124)
-=======
-                            IN459=self.match(self.input, IN, self.FOLLOW_IN_in_operand29014)
->>>>>>> remotes/upstream/master
+                            IN470=self.match(self.input, IN, self.FOLLOW_IN_in_operand29134)
                             if self._state.backtracking == 0:
 
                                 IN470_tree = self._adaptor.createWithPayload(IN470)
@@ -16503,13 +15490,8 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_operand3_in_operand29153)
+                        self._state.following.append(self.FOLLOW_operand3_in_operand29163)
                         operand3471 = self.operand3()
-=======
-                        self._state.following.append(self.FOLLOW_operand3_in_operand29043)
-                        operand3460 = self.operand3()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -16577,13 +15559,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_operand4_in_operand39175)
+                self._state.following.append(self.FOLLOW_operand4_in_operand39185)
                 operand4472 = self.operand4()
-=======
-                self._state.following.append(self.FOLLOW_operand4_in_operand39065)
-                operand4461 = self.operand4()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -16637,11 +15614,7 @@ class sdl92Parser(Parser):
                         if alt151 == 1:
                             # sdl92.g:800:37: PLUS
                             pass 
-<<<<<<< HEAD
-                            PLUS473=self.match(self.input, PLUS, self.FOLLOW_PLUS_in_operand39180)
-=======
-                            PLUS462=self.match(self.input, PLUS, self.FOLLOW_PLUS_in_operand39070)
->>>>>>> remotes/upstream/master
+                            PLUS473=self.match(self.input, PLUS, self.FOLLOW_PLUS_in_operand39190)
                             if self._state.backtracking == 0:
 
                                 PLUS473_tree = self._adaptor.createWithPayload(PLUS473)
@@ -16652,11 +15625,7 @@ class sdl92Parser(Parser):
                         elif alt151 == 2:
                             # sdl92.g:800:45: DASH
                             pass 
-<<<<<<< HEAD
-                            DASH474=self.match(self.input, DASH, self.FOLLOW_DASH_in_operand39185)
-=======
-                            DASH463=self.match(self.input, DASH, self.FOLLOW_DASH_in_operand39075)
->>>>>>> remotes/upstream/master
+                            DASH474=self.match(self.input, DASH, self.FOLLOW_DASH_in_operand39195)
                             if self._state.backtracking == 0:
 
                                 DASH474_tree = self._adaptor.createWithPayload(DASH474)
@@ -16667,11 +15636,7 @@ class sdl92Parser(Parser):
                         elif alt151 == 3:
                             # sdl92.g:800:53: APPEND
                             pass 
-<<<<<<< HEAD
-                            APPEND475=self.match(self.input, APPEND, self.FOLLOW_APPEND_in_operand39190)
-=======
-                            APPEND464=self.match(self.input, APPEND, self.FOLLOW_APPEND_in_operand39080)
->>>>>>> remotes/upstream/master
+                            APPEND475=self.match(self.input, APPEND, self.FOLLOW_APPEND_in_operand39200)
                             if self._state.backtracking == 0:
 
                                 APPEND475_tree = self._adaptor.createWithPayload(APPEND475)
@@ -16680,13 +15645,8 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_operand4_in_operand39195)
+                        self._state.following.append(self.FOLLOW_operand4_in_operand39205)
                         operand4476 = self.operand4()
-=======
-                        self._state.following.append(self.FOLLOW_operand4_in_operand39085)
-                        operand4465 = self.operand4()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -16756,13 +15716,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_operand5_in_operand49217)
+                self._state.following.append(self.FOLLOW_operand5_in_operand49227)
                 operand5477 = self.operand5()
-=======
-                self._state.following.append(self.FOLLOW_operand5_in_operand49107)
-                operand5466 = self.operand5()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -16825,11 +15780,7 @@ class sdl92Parser(Parser):
                         if alt153 == 1:
                             # sdl92.g:802:28: ASTERISK
                             pass 
-<<<<<<< HEAD
-                            ASTERISK478=self.match(self.input, ASTERISK, self.FOLLOW_ASTERISK_in_operand49246)
-=======
-                            ASTERISK467=self.match(self.input, ASTERISK, self.FOLLOW_ASTERISK_in_operand49136)
->>>>>>> remotes/upstream/master
+                            ASTERISK478=self.match(self.input, ASTERISK, self.FOLLOW_ASTERISK_in_operand49256)
                             if self._state.backtracking == 0:
 
                                 ASTERISK478_tree = self._adaptor.createWithPayload(ASTERISK478)
@@ -16840,11 +15791,7 @@ class sdl92Parser(Parser):
                         elif alt153 == 2:
                             # sdl92.g:802:40: DIV
                             pass 
-<<<<<<< HEAD
-                            DIV479=self.match(self.input, DIV, self.FOLLOW_DIV_in_operand49251)
-=======
-                            DIV468=self.match(self.input, DIV, self.FOLLOW_DIV_in_operand49141)
->>>>>>> remotes/upstream/master
+                            DIV479=self.match(self.input, DIV, self.FOLLOW_DIV_in_operand49261)
                             if self._state.backtracking == 0:
 
                                 DIV479_tree = self._adaptor.createWithPayload(DIV479)
@@ -16855,11 +15802,7 @@ class sdl92Parser(Parser):
                         elif alt153 == 3:
                             # sdl92.g:802:47: MOD
                             pass 
-<<<<<<< HEAD
-                            MOD480=self.match(self.input, MOD, self.FOLLOW_MOD_in_operand49256)
-=======
-                            MOD469=self.match(self.input, MOD, self.FOLLOW_MOD_in_operand49146)
->>>>>>> remotes/upstream/master
+                            MOD480=self.match(self.input, MOD, self.FOLLOW_MOD_in_operand49266)
                             if self._state.backtracking == 0:
 
                                 MOD480_tree = self._adaptor.createWithPayload(MOD480)
@@ -16870,11 +15813,7 @@ class sdl92Parser(Parser):
                         elif alt153 == 4:
                             # sdl92.g:802:54: REM
                             pass 
-<<<<<<< HEAD
-                            REM481=self.match(self.input, REM, self.FOLLOW_REM_in_operand49261)
-=======
-                            REM470=self.match(self.input, REM, self.FOLLOW_REM_in_operand49151)
->>>>>>> remotes/upstream/master
+                            REM481=self.match(self.input, REM, self.FOLLOW_REM_in_operand49271)
                             if self._state.backtracking == 0:
 
                                 REM481_tree = self._adaptor.createWithPayload(REM481)
@@ -16883,13 +15822,8 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_operand5_in_operand49266)
+                        self._state.following.append(self.FOLLOW_operand5_in_operand49276)
                         operand5482 = self.operand5()
-=======
-                        self._state.following.append(self.FOLLOW_operand5_in_operand49156)
-                        operand5471 = self.operand5()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -16959,13 +15893,8 @@ class sdl92Parser(Parser):
                 if alt155 == 1:
                     # sdl92.g:0:0: primary_qualifier
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_primary_qualifier_in_operand59288)
+                    self._state.following.append(self.FOLLOW_primary_qualifier_in_operand59298)
                     primary_qualifier483 = self.primary_qualifier()
-=======
-                    self._state.following.append(self.FOLLOW_primary_qualifier_in_operand59178)
-                    primary_qualifier472 = self.primary_qualifier()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -16973,20 +15902,15 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_primary_in_operand59291)
+                self._state.following.append(self.FOLLOW_primary_in_operand59301)
                 primary484 = self.primary()
-=======
-                self._state.following.append(self.FOLLOW_primary_in_operand59181)
-                primary473 = self.primary()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_primary.add(primary484.tree)
 
                 # AST Rewrite
-                # elements: primary, primary_qualifier
+                # elements: primary_qualifier, primary
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -17101,11 +16025,7 @@ class sdl92Parser(Parser):
                 if alt157 == 1:
                     # sdl92.g:809:17: a= asn1Value ( primary_params )*
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_asn1Value_in_primary9349)
-=======
-                    self._state.following.append(self.FOLLOW_asn1Value_in_primary9239)
->>>>>>> remotes/upstream/master
+                    self._state.following.append(self.FOLLOW_asn1Value_in_primary9359)
                     a = self.asn1Value()
 
                     self._state.following.pop()
@@ -17135,13 +16055,8 @@ class sdl92Parser(Parser):
                         if alt156 == 1:
                             # sdl92.g:0:0: primary_params
                             pass 
-<<<<<<< HEAD
-                            self._state.following.append(self.FOLLOW_primary_params_in_primary9351)
+                            self._state.following.append(self.FOLLOW_primary_params_in_primary9361)
                             primary_params485 = self.primary_params()
-=======
-                            self._state.following.append(self.FOLLOW_primary_params_in_primary9241)
-                            primary_params474 = self.primary_params()
->>>>>>> remotes/upstream/master
 
                             self._state.following.pop()
                             if self._state.backtracking == 0:
@@ -17152,7 +16067,7 @@ class sdl92Parser(Parser):
                             break #loop156
 
                     # AST Rewrite
-                    # elements: primary_params, asn1Value
+                    # elements: asn1Value, primary_params
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -17192,29 +16107,16 @@ class sdl92Parser(Parser):
                 elif alt157 == 2:
                     # sdl92.g:811:19: L_PAREN expression R_PAREN
                     pass 
-<<<<<<< HEAD
-                    L_PAREN486=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_primary9396) 
+                    L_PAREN486=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_primary9406) 
                     if self._state.backtracking == 0:
                         stream_L_PAREN.add(L_PAREN486)
-                    self._state.following.append(self.FOLLOW_expression_in_primary9398)
+                    self._state.following.append(self.FOLLOW_expression_in_primary9408)
                     expression487 = self.expression()
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
                         stream_expression.add(expression487.tree)
-                    R_PAREN488=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_primary9400) 
-=======
-                    L_PAREN475=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_primary9286) 
-                    if self._state.backtracking == 0:
-                        stream_L_PAREN.add(L_PAREN475)
-                    self._state.following.append(self.FOLLOW_expression_in_primary9288)
-                    expression476 = self.expression()
-
-                    self._state.following.pop()
-                    if self._state.backtracking == 0:
-                        stream_expression.add(expression476.tree)
-                    R_PAREN477=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_primary9290) 
->>>>>>> remotes/upstream/master
+                    R_PAREN488=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_primary9410) 
                     if self._state.backtracking == 0:
                         stream_R_PAREN.add(R_PAREN488)
 
@@ -17255,13 +16157,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_conditional_ground_expression_in_primary9441)
+                    self._state.following.append(self.FOLLOW_conditional_ground_expression_in_primary9451)
                     conditional_ground_expression489 = self.conditional_ground_expression()
-=======
-                    self._state.following.append(self.FOLLOW_conditional_ground_expression_in_primary9331)
-                    conditional_ground_expression478 = self.conditional_ground_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -17395,11 +16292,7 @@ class sdl92Parser(Parser):
                 if alt160 == 1:
                     # sdl92.g:817:17: BitStringLiteral
                     pass 
-<<<<<<< HEAD
-                    BitStringLiteral490=self.match(self.input, BitStringLiteral, self.FOLLOW_BitStringLiteral_in_asn1Value9464) 
-=======
-                    BitStringLiteral479=self.match(self.input, BitStringLiteral, self.FOLLOW_BitStringLiteral_in_asn1Value9354) 
->>>>>>> remotes/upstream/master
+                    BitStringLiteral490=self.match(self.input, BitStringLiteral, self.FOLLOW_BitStringLiteral_in_asn1Value9474) 
                     if self._state.backtracking == 0:
                         stream_BitStringLiteral.add(BitStringLiteral490)
 
@@ -17438,11 +16331,7 @@ class sdl92Parser(Parser):
                 elif alt160 == 2:
                     # sdl92.g:818:17: OctetStringLiteral
                     pass 
-<<<<<<< HEAD
-                    OctetStringLiteral491=self.match(self.input, OctetStringLiteral, self.FOLLOW_OctetStringLiteral_in_asn1Value9501) 
-=======
-                    OctetStringLiteral480=self.match(self.input, OctetStringLiteral, self.FOLLOW_OctetStringLiteral_in_asn1Value9391) 
->>>>>>> remotes/upstream/master
+                    OctetStringLiteral491=self.match(self.input, OctetStringLiteral, self.FOLLOW_OctetStringLiteral_in_asn1Value9511) 
                     if self._state.backtracking == 0:
                         stream_OctetStringLiteral.add(OctetStringLiteral491)
 
@@ -17483,11 +16372,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    TRUE492=self.match(self.input, TRUE, self.FOLLOW_TRUE_in_asn1Value9536)
-=======
-                    TRUE481=self.match(self.input, TRUE, self.FOLLOW_TRUE_in_asn1Value9426)
->>>>>>> remotes/upstream/master
+                    TRUE492=self.match(self.input, TRUE, self.FOLLOW_TRUE_in_asn1Value9546)
                     if self._state.backtracking == 0:
 
                         TRUE492_tree = self._adaptor.createWithPayload(TRUE492)
@@ -17500,11 +16385,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    FALSE493=self.match(self.input, FALSE, self.FOLLOW_FALSE_in_asn1Value9555)
-=======
-                    FALSE482=self.match(self.input, FALSE, self.FOLLOW_FALSE_in_asn1Value9445)
->>>>>>> remotes/upstream/master
+                    FALSE493=self.match(self.input, FALSE, self.FOLLOW_FALSE_in_asn1Value9565)
                     if self._state.backtracking == 0:
 
                         FALSE493_tree = self._adaptor.createWithPayload(FALSE493)
@@ -17515,11 +16396,7 @@ class sdl92Parser(Parser):
                 elif alt160 == 5:
                     # sdl92.g:821:17: StringLiteral
                     pass 
-<<<<<<< HEAD
-                    StringLiteral494=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_asn1Value9574) 
-=======
-                    StringLiteral483=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_asn1Value9464) 
->>>>>>> remotes/upstream/master
+                    StringLiteral494=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_asn1Value9584) 
                     if self._state.backtracking == 0:
                         stream_StringLiteral.add(StringLiteral494)
 
@@ -17560,11 +16437,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    NULL495=self.match(self.input, NULL, self.FOLLOW_NULL_in_asn1Value9614)
-=======
-                    NULL484=self.match(self.input, NULL, self.FOLLOW_NULL_in_asn1Value9504)
->>>>>>> remotes/upstream/master
+                    NULL495=self.match(self.input, NULL, self.FOLLOW_NULL_in_asn1Value9624)
                     if self._state.backtracking == 0:
 
                         NULL495_tree = self._adaptor.createWithPayload(NULL495)
@@ -17577,11 +16450,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    PLUS_INFINITY496=self.match(self.input, PLUS_INFINITY, self.FOLLOW_PLUS_INFINITY_in_asn1Value9633)
-=======
-                    PLUS_INFINITY485=self.match(self.input, PLUS_INFINITY, self.FOLLOW_PLUS_INFINITY_in_asn1Value9523)
->>>>>>> remotes/upstream/master
+                    PLUS_INFINITY496=self.match(self.input, PLUS_INFINITY, self.FOLLOW_PLUS_INFINITY_in_asn1Value9643)
                     if self._state.backtracking == 0:
 
                         PLUS_INFINITY496_tree = self._adaptor.createWithPayload(PLUS_INFINITY496)
@@ -17594,11 +16463,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    MINUS_INFINITY497=self.match(self.input, MINUS_INFINITY, self.FOLLOW_MINUS_INFINITY_in_asn1Value9652)
-=======
-                    MINUS_INFINITY486=self.match(self.input, MINUS_INFINITY, self.FOLLOW_MINUS_INFINITY_in_asn1Value9542)
->>>>>>> remotes/upstream/master
+                    MINUS_INFINITY497=self.match(self.input, MINUS_INFINITY, self.FOLLOW_MINUS_INFINITY_in_asn1Value9662)
                     if self._state.backtracking == 0:
 
                         MINUS_INFINITY497_tree = self._adaptor.createWithPayload(MINUS_INFINITY497)
@@ -17611,11 +16476,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    ID498=self.match(self.input, ID, self.FOLLOW_ID_in_asn1Value9671)
-=======
-                    ID487=self.match(self.input, ID, self.FOLLOW_ID_in_asn1Value9561)
->>>>>>> remotes/upstream/master
+                    ID498=self.match(self.input, ID, self.FOLLOW_ID_in_asn1Value9681)
                     if self._state.backtracking == 0:
 
                         ID498_tree = self._adaptor.createWithPayload(ID498)
@@ -17628,11 +16489,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    INT499=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9689)
-=======
-                    INT488=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9579)
->>>>>>> remotes/upstream/master
+                    INT499=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9699)
                     if self._state.backtracking == 0:
 
                         INT499_tree = self._adaptor.createWithPayload(INT499)
@@ -17643,11 +16500,7 @@ class sdl92Parser(Parser):
                 elif alt160 == 11:
                     # sdl92.g:827:17: FloatingPointLiteral
                     pass 
-<<<<<<< HEAD
-                    FloatingPointLiteral500=self.match(self.input, FloatingPointLiteral, self.FOLLOW_FloatingPointLiteral_in_asn1Value9707) 
-=======
-                    FloatingPointLiteral489=self.match(self.input, FloatingPointLiteral, self.FOLLOW_FloatingPointLiteral_in_asn1Value9597) 
->>>>>>> remotes/upstream/master
+                    FloatingPointLiteral500=self.match(self.input, FloatingPointLiteral, self.FOLLOW_FloatingPointLiteral_in_asn1Value9717) 
                     if self._state.backtracking == 0:
                         stream_FloatingPointLiteral.add(FloatingPointLiteral500)
 
@@ -17686,17 +16539,10 @@ class sdl92Parser(Parser):
                 elif alt160 == 12:
                     # sdl92.g:828:17: L_BRACKET R_BRACKET
                     pass 
-<<<<<<< HEAD
-                    L_BRACKET501=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9740) 
+                    L_BRACKET501=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9750) 
                     if self._state.backtracking == 0:
                         stream_L_BRACKET.add(L_BRACKET501)
-                    R_BRACKET502=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9742) 
-=======
-                    L_BRACKET490=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9630) 
-                    if self._state.backtracking == 0:
-                        stream_L_BRACKET.add(L_BRACKET490)
-                    R_BRACKET491=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9632) 
->>>>>>> remotes/upstream/master
+                    R_BRACKET502=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9752) 
                     if self._state.backtracking == 0:
                         stream_R_BRACKET.add(R_BRACKET502)
 
@@ -17733,74 +16579,39 @@ class sdl92Parser(Parser):
                 elif alt160 == 13:
                     # sdl92.g:829:17: L_BRACKET MANTISSA mant= INT COMMA BASE bas= INT COMMA EXPONENT exp= INT R_BRACKET
                     pass 
-<<<<<<< HEAD
-                    L_BRACKET503=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9774) 
+                    L_BRACKET503=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9784) 
                     if self._state.backtracking == 0:
                         stream_L_BRACKET.add(L_BRACKET503)
-                    MANTISSA504=self.match(self.input, MANTISSA, self.FOLLOW_MANTISSA_in_asn1Value9792) 
+                    MANTISSA504=self.match(self.input, MANTISSA, self.FOLLOW_MANTISSA_in_asn1Value9802) 
                     if self._state.backtracking == 0:
                         stream_MANTISSA.add(MANTISSA504)
-                    mant=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9796) 
+                    mant=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9806) 
                     if self._state.backtracking == 0:
                         stream_INT.add(mant)
-                    COMMA505=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9798) 
+                    COMMA505=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9808) 
                     if self._state.backtracking == 0:
                         stream_COMMA.add(COMMA505)
-                    BASE506=self.match(self.input, BASE, self.FOLLOW_BASE_in_asn1Value9816) 
+                    BASE506=self.match(self.input, BASE, self.FOLLOW_BASE_in_asn1Value9826) 
                     if self._state.backtracking == 0:
                         stream_BASE.add(BASE506)
-                    bas=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9820) 
+                    bas=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9830) 
                     if self._state.backtracking == 0:
                         stream_INT.add(bas)
-                    COMMA507=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9822) 
+                    COMMA507=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9832) 
                     if self._state.backtracking == 0:
                         stream_COMMA.add(COMMA507)
-                    EXPONENT508=self.match(self.input, EXPONENT, self.FOLLOW_EXPONENT_in_asn1Value9840) 
+                    EXPONENT508=self.match(self.input, EXPONENT, self.FOLLOW_EXPONENT_in_asn1Value9850) 
                     if self._state.backtracking == 0:
                         stream_EXPONENT.add(EXPONENT508)
-                    exp=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9844) 
+                    exp=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9854) 
                     if self._state.backtracking == 0:
                         stream_INT.add(exp)
-                    R_BRACKET509=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9863) 
-=======
-                    L_BRACKET492=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9664) 
-                    if self._state.backtracking == 0:
-                        stream_L_BRACKET.add(L_BRACKET492)
-                    MANTISSA493=self.match(self.input, MANTISSA, self.FOLLOW_MANTISSA_in_asn1Value9682) 
-                    if self._state.backtracking == 0:
-                        stream_MANTISSA.add(MANTISSA493)
-                    mant=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9686) 
-                    if self._state.backtracking == 0:
-                        stream_INT.add(mant)
-                    COMMA494=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9688) 
-                    if self._state.backtracking == 0:
-                        stream_COMMA.add(COMMA494)
-                    BASE495=self.match(self.input, BASE, self.FOLLOW_BASE_in_asn1Value9706) 
-                    if self._state.backtracking == 0:
-                        stream_BASE.add(BASE495)
-                    bas=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9710) 
-                    if self._state.backtracking == 0:
-                        stream_INT.add(bas)
-                    COMMA496=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9712) 
-                    if self._state.backtracking == 0:
-                        stream_COMMA.add(COMMA496)
-                    EXPONENT497=self.match(self.input, EXPONENT, self.FOLLOW_EXPONENT_in_asn1Value9730) 
-                    if self._state.backtracking == 0:
-                        stream_EXPONENT.add(EXPONENT497)
-                    exp=self.match(self.input, INT, self.FOLLOW_INT_in_asn1Value9734) 
-                    if self._state.backtracking == 0:
-                        stream_INT.add(exp)
-                    R_BRACKET498=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9753) 
->>>>>>> remotes/upstream/master
+                    R_BRACKET509=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9873) 
                     if self._state.backtracking == 0:
                         stream_R_BRACKET.add(R_BRACKET509)
 
                     # AST Rewrite
-<<<<<<< HEAD
-                    # elements: exp, bas, mant
-=======
-                    # elements: exp, mant, bas
->>>>>>> remotes/upstream/master
+                    # elements: mant, exp, bas
                     # token labels: exp, mant, bas
                     # rule labels: retval
                     # token list labels: 
@@ -17841,13 +16652,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_choiceValue_in_asn1Value9914)
+                    self._state.following.append(self.FOLLOW_choiceValue_in_asn1Value9924)
                     choiceValue510 = self.choiceValue()
-=======
-                    self._state.following.append(self.FOLLOW_choiceValue_in_asn1Value9804)
-                    choiceValue499 = self.choiceValue()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -17857,19 +16663,11 @@ class sdl92Parser(Parser):
                 elif alt160 == 15:
                     # sdl92.g:835:17: L_BRACKET namedValue ( COMMA namedValue )* R_BRACKET
                     pass 
-<<<<<<< HEAD
-                    L_BRACKET511=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9932) 
+                    L_BRACKET511=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9942) 
                     if self._state.backtracking == 0:
                         stream_L_BRACKET.add(L_BRACKET511)
-                    self._state.following.append(self.FOLLOW_namedValue_in_asn1Value9950)
+                    self._state.following.append(self.FOLLOW_namedValue_in_asn1Value9960)
                     namedValue512 = self.namedValue()
-=======
-                    L_BRACKET500=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9822) 
-                    if self._state.backtracking == 0:
-                        stream_L_BRACKET.add(L_BRACKET500)
-                    self._state.following.append(self.FOLLOW_namedValue_in_asn1Value9840)
-                    namedValue501 = self.namedValue()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -17886,19 +16684,11 @@ class sdl92Parser(Parser):
                         if alt158 == 1:
                             # sdl92.g:836:29: COMMA namedValue
                             pass 
-<<<<<<< HEAD
-                            COMMA513=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9953) 
+                            COMMA513=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9963) 
                             if self._state.backtracking == 0:
                                 stream_COMMA.add(COMMA513)
-                            self._state.following.append(self.FOLLOW_namedValue_in_asn1Value9955)
+                            self._state.following.append(self.FOLLOW_namedValue_in_asn1Value9965)
                             namedValue514 = self.namedValue()
-=======
-                            COMMA502=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9843) 
-                            if self._state.backtracking == 0:
-                                stream_COMMA.add(COMMA502)
-                            self._state.following.append(self.FOLLOW_namedValue_in_asn1Value9845)
-                            namedValue503 = self.namedValue()
->>>>>>> remotes/upstream/master
 
                             self._state.following.pop()
                             if self._state.backtracking == 0:
@@ -17906,13 +16696,8 @@ class sdl92Parser(Parser):
 
 
                         else:
-<<<<<<< HEAD
                             break #loop158
-                    R_BRACKET515=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9975) 
-=======
-                            break #loop157
-                    R_BRACKET504=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9865) 
->>>>>>> remotes/upstream/master
+                    R_BRACKET515=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9985) 
                     if self._state.backtracking == 0:
                         stream_R_BRACKET.add(R_BRACKET515)
 
@@ -17959,19 +16744,11 @@ class sdl92Parser(Parser):
                 elif alt160 == 16:
                     # sdl92.g:838:17: L_BRACKET asn1Value ( COMMA asn1Value )* R_BRACKET
                     pass 
-<<<<<<< HEAD
-                    L_BRACKET516=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value10020) 
+                    L_BRACKET516=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value10030) 
                     if self._state.backtracking == 0:
                         stream_L_BRACKET.add(L_BRACKET516)
-                    self._state.following.append(self.FOLLOW_asn1Value_in_asn1Value10038)
+                    self._state.following.append(self.FOLLOW_asn1Value_in_asn1Value10048)
                     asn1Value517 = self.asn1Value()
-=======
-                    L_BRACKET505=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_asn1Value9910) 
-                    if self._state.backtracking == 0:
-                        stream_L_BRACKET.add(L_BRACKET505)
-                    self._state.following.append(self.FOLLOW_asn1Value_in_asn1Value9928)
-                    asn1Value506 = self.asn1Value()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -17988,19 +16765,11 @@ class sdl92Parser(Parser):
                         if alt159 == 1:
                             # sdl92.g:839:28: COMMA asn1Value
                             pass 
-<<<<<<< HEAD
-                            COMMA518=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value10041) 
+                            COMMA518=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value10051) 
                             if self._state.backtracking == 0:
                                 stream_COMMA.add(COMMA518)
-                            self._state.following.append(self.FOLLOW_asn1Value_in_asn1Value10043)
+                            self._state.following.append(self.FOLLOW_asn1Value_in_asn1Value10053)
                             asn1Value519 = self.asn1Value()
-=======
-                            COMMA507=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_asn1Value9931) 
-                            if self._state.backtracking == 0:
-                                stream_COMMA.add(COMMA507)
-                            self._state.following.append(self.FOLLOW_asn1Value_in_asn1Value9933)
-                            asn1Value508 = self.asn1Value()
->>>>>>> remotes/upstream/master
 
                             self._state.following.pop()
                             if self._state.backtracking == 0:
@@ -18008,13 +16777,8 @@ class sdl92Parser(Parser):
 
 
                         else:
-<<<<<<< HEAD
                             break #loop159
-                    R_BRACKET520=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value10063) 
-=======
-                            break #loop158
-                    R_BRACKET509=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value9953) 
->>>>>>> remotes/upstream/master
+                    R_BRACKET520=self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_asn1Value10073) 
                     if self._state.backtracking == 0:
                         stream_R_BRACKET.add(R_BRACKET520)
 
@@ -18105,11 +16869,7 @@ class sdl92Parser(Parser):
                 # sdl92.g:853:9: ( StringLiteral -> ^( INFORMAL_TEXT StringLiteral ) )
                 # sdl92.g:853:18: StringLiteral
                 pass 
-<<<<<<< HEAD
-                StringLiteral521=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_informal_text10238) 
-=======
-                StringLiteral510=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_informal_text10128) 
->>>>>>> remotes/upstream/master
+                StringLiteral521=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_informal_text10248) 
                 if self._state.backtracking == 0:
                     stream_StringLiteral.add(StringLiteral521)
 
@@ -18189,13 +16949,8 @@ class sdl92Parser(Parser):
 
 
         choice_tree = None
-<<<<<<< HEAD
         char_literal522_tree = None
-        stream_211 = RewriteRuleTokenStream(self._adaptor, "token 211")
-=======
-        char_literal511_tree = None
-        stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
->>>>>>> remotes/upstream/master
+        stream_214 = RewriteRuleTokenStream(self._adaptor, "token 214")
         stream_ID = RewriteRuleTokenStream(self._adaptor, "token ID")
         stream_expression = RewriteRuleSubtreeStream(self._adaptor, "rule expression")
         try:
@@ -18203,25 +16958,14 @@ class sdl92Parser(Parser):
                 # sdl92.g:859:9: (choice= ID ':' expression -> ^( CHOICE $choice expression ) )
                 # sdl92.g:859:18: choice= ID ':' expression
                 pass 
-<<<<<<< HEAD
-                choice=self.match(self.input, ID, self.FOLLOW_ID_in_choiceValue10288) 
+                choice=self.match(self.input, ID, self.FOLLOW_ID_in_choiceValue10298) 
                 if self._state.backtracking == 0:
                     stream_ID.add(choice)
-                char_literal522=self.match(self.input, 211, self.FOLLOW_211_in_choiceValue10290) 
+                char_literal522=self.match(self.input, 214, self.FOLLOW_214_in_choiceValue10300) 
                 if self._state.backtracking == 0:
-                    stream_211.add(char_literal522)
-                self._state.following.append(self.FOLLOW_expression_in_choiceValue10292)
+                    stream_214.add(char_literal522)
+                self._state.following.append(self.FOLLOW_expression_in_choiceValue10302)
                 expression523 = self.expression()
-=======
-                choice=self.match(self.input, ID, self.FOLLOW_ID_in_choiceValue10178) 
-                if self._state.backtracking == 0:
-                    stream_ID.add(choice)
-                char_literal511=self.match(self.input, 212, self.FOLLOW_212_in_choiceValue10180) 
-                if self._state.backtracking == 0:
-                    stream_212.add(char_literal511)
-                self._state.following.append(self.FOLLOW_expression_in_choiceValue10182)
-                expression512 = self.expression()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -18312,23 +17056,14 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID524=self.match(self.input, ID, self.FOLLOW_ID_in_namedValue10341)
-=======
-                ID513=self.match(self.input, ID, self.FOLLOW_ID_in_namedValue10231)
->>>>>>> remotes/upstream/master
+                ID524=self.match(self.input, ID, self.FOLLOW_ID_in_namedValue10351)
                 if self._state.backtracking == 0:
 
                     ID524_tree = self._adaptor.createWithPayload(ID524)
                     self._adaptor.addChild(root_0, ID524_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_expression_in_namedValue10343)
+                self._state.following.append(self.FOLLOW_expression_in_namedValue10353)
                 expression525 = self.expression()
-=======
-                self._state.following.append(self.FOLLOW_expression_in_namedValue10233)
-                expression514 = self.expression()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -18401,11 +17136,7 @@ class sdl92Parser(Parser):
                 if alt161 == 1:
                     # sdl92.g:869:17: DASH
                     pass 
-<<<<<<< HEAD
-                    DASH526=self.match(self.input, DASH, self.FOLLOW_DASH_in_primary_qualifier10366) 
-=======
-                    DASH515=self.match(self.input, DASH, self.FOLLOW_DASH_in_primary_qualifier10256) 
->>>>>>> remotes/upstream/master
+                    DASH526=self.match(self.input, DASH, self.FOLLOW_DASH_in_primary_qualifier10376) 
                     if self._state.backtracking == 0:
                         stream_DASH.add(DASH526)
 
@@ -18444,11 +17175,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    NOT527=self.match(self.input, NOT, self.FOLLOW_NOT_in_primary_qualifier10405)
-=======
-                    NOT516=self.match(self.input, NOT, self.FOLLOW_NOT_in_primary_qualifier10295)
->>>>>>> remotes/upstream/master
+                    NOT527=self.match(self.input, NOT, self.FOLLOW_NOT_in_primary_qualifier10415)
                     if self._state.backtracking == 0:
 
                         NOT527_tree = self._adaptor.createWithPayload(NOT527)
@@ -18530,29 +17257,16 @@ class sdl92Parser(Parser):
                 if alt162 == 1:
                     # sdl92.g:875:16: '(' expression_list ')'
                     pass 
-<<<<<<< HEAD
-                    char_literal528=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_primary_params10427) 
+                    char_literal528=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_primary_params10437) 
                     if self._state.backtracking == 0:
                         stream_L_PAREN.add(char_literal528)
-                    self._state.following.append(self.FOLLOW_expression_list_in_primary_params10429)
+                    self._state.following.append(self.FOLLOW_expression_list_in_primary_params10439)
                     expression_list529 = self.expression_list()
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
                         stream_expression_list.add(expression_list529.tree)
-                    char_literal530=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_primary_params10431) 
-=======
-                    char_literal517=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_primary_params10317) 
-                    if self._state.backtracking == 0:
-                        stream_L_PAREN.add(char_literal517)
-                    self._state.following.append(self.FOLLOW_expression_list_in_primary_params10319)
-                    expression_list518 = self.expression_list()
-
-                    self._state.following.pop()
-                    if self._state.backtracking == 0:
-                        stream_expression_list.add(expression_list518.tree)
-                    char_literal519=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_primary_params10321) 
->>>>>>> remotes/upstream/master
+                    char_literal530=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_primary_params10441) 
                     if self._state.backtracking == 0:
                         stream_R_PAREN.add(char_literal530)
 
@@ -18591,19 +17305,11 @@ class sdl92Parser(Parser):
                 elif alt162 == 2:
                     # sdl92.g:877:18: '!' literal_id
                     pass 
-<<<<<<< HEAD
-                    char_literal531=self.match(self.input, 215, self.FOLLOW_215_in_primary_params10470) 
+                    char_literal531=self.match(self.input, 215, self.FOLLOW_215_in_primary_params10480) 
                     if self._state.backtracking == 0:
                         stream_215.add(char_literal531)
-                    self._state.following.append(self.FOLLOW_literal_id_in_primary_params10472)
+                    self._state.following.append(self.FOLLOW_literal_id_in_primary_params10482)
                     literal_id532 = self.literal_id()
-=======
-                    char_literal520=self.match(self.input, 213, self.FOLLOW_213_in_primary_params10360) 
-                    if self._state.backtracking == 0:
-                        stream_213.add(char_literal520)
-                    self._state.following.append(self.FOLLOW_literal_id_in_primary_params10362)
-                    literal_id521 = self.literal_id()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -18695,45 +17401,25 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_primary_in_indexed_primary10519)
+                self._state.following.append(self.FOLLOW_primary_in_indexed_primary10529)
                 primary533 = self.primary()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, primary533.tree)
-                char_literal534=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_indexed_primary10521)
-=======
-                self._state.following.append(self.FOLLOW_primary_in_indexed_primary10409)
-                primary522 = self.primary()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, primary522.tree)
-                char_literal523=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_indexed_primary10411)
->>>>>>> remotes/upstream/master
+                char_literal534=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_indexed_primary10531)
                 if self._state.backtracking == 0:
 
                     char_literal534_tree = self._adaptor.createWithPayload(char_literal534)
                     self._adaptor.addChild(root_0, char_literal534_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_expression_list_in_indexed_primary10523)
+                self._state.following.append(self.FOLLOW_expression_list_in_indexed_primary10533)
                 expression_list535 = self.expression_list()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, expression_list535.tree)
-                char_literal536=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_indexed_primary10525)
-=======
-                self._state.following.append(self.FOLLOW_expression_list_in_indexed_primary10413)
-                expression_list524 = self.expression_list()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, expression_list524.tree)
-                char_literal525=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_indexed_primary10415)
->>>>>>> remotes/upstream/master
+                char_literal536=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_indexed_primary10535)
                 if self._state.backtracking == 0:
 
                     char_literal536_tree = self._adaptor.createWithPayload(char_literal536)
@@ -18792,25 +17478,14 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_primary_in_field_primary10548)
+                self._state.following.append(self.FOLLOW_primary_in_field_primary10558)
                 primary537 = self.primary()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, primary537.tree)
-                self._state.following.append(self.FOLLOW_field_selection_in_field_primary10550)
+                self._state.following.append(self.FOLLOW_field_selection_in_field_primary10560)
                 field_selection538 = self.field_selection()
-=======
-                self._state.following.append(self.FOLLOW_primary_in_field_primary10438)
-                primary526 = self.primary()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, primary526.tree)
-                self._state.following.append(self.FOLLOW_field_selection_in_field_primary10440)
-                field_selection527 = self.field_selection()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -18870,33 +17545,19 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                string_literal539=self.match(self.input, 216, self.FOLLOW_216_in_structure_primary10573)
-=======
-                string_literal528=self.match(self.input, 214, self.FOLLOW_214_in_structure_primary10463)
->>>>>>> remotes/upstream/master
+                string_literal539=self.match(self.input, 216, self.FOLLOW_216_in_structure_primary10583)
                 if self._state.backtracking == 0:
 
                     string_literal539_tree = self._adaptor.createWithPayload(string_literal539)
                     self._adaptor.addChild(root_0, string_literal539_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_expression_list_in_structure_primary10575)
+                self._state.following.append(self.FOLLOW_expression_list_in_structure_primary10585)
                 expression_list540 = self.expression_list()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, expression_list540.tree)
-                string_literal541=self.match(self.input, 217, self.FOLLOW_217_in_structure_primary10577)
-=======
-                self._state.following.append(self.FOLLOW_expression_list_in_structure_primary10465)
-                expression_list529 = self.expression_list()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, expression_list529.tree)
-                string_literal530=self.match(self.input, 215, self.FOLLOW_215_in_structure_primary10467)
->>>>>>> remotes/upstream/master
+                string_literal541=self.match(self.input, 217, self.FOLLOW_217_in_structure_primary10587)
                 if self._state.backtracking == 0:
 
                     string_literal541_tree = self._adaptor.createWithPayload(string_literal541)
@@ -18953,13 +17614,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_active_primary_in_active_expression10602)
+                self._state.following.append(self.FOLLOW_active_primary_in_active_expression10612)
                 active_primary542 = self.active_primary()
-=======
-                self._state.following.append(self.FOLLOW_active_primary_in_active_expression10492)
-                active_primary531 = self.active_primary()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -19042,25 +17698,14 @@ class sdl92Parser(Parser):
 
                         raise nvae
 
-<<<<<<< HEAD
                 elif LA163 == IF:
                     alt163 = 3
-                elif LA163 == N or LA163 == P or LA163 == S or LA163 == O or LA163 == 219 or LA163 == 220 or LA163 == 221 or LA163 == 222:
+                elif LA163 == ANY or LA163 == ACTIVE or LA163 == IMPORT or LA163 == VIEW or LA163 == N or LA163 == P or LA163 == S or LA163 == O:
                     alt163 = 4
                 elif LA163 == L_PAREN:
                     alt163 = 5
                 elif LA163 == 218:
                     alt163 = 6
-=======
-                elif LA162 == IF:
-                    alt162 = 3
-                elif LA162 == ANY or LA162 == ACTIVE or LA162 == IMPORT or LA162 == VIEW or LA162 == N or LA162 == P or LA162 == S or LA162 == O:
-                    alt162 = 4
-                elif LA162 == L_PAREN:
-                    alt162 = 5
-                elif LA162 == 216:
-                    alt162 = 6
->>>>>>> remotes/upstream/master
                 else:
                     if self._state.backtracking > 0:
                         raise BacktrackingFailed
@@ -19074,13 +17719,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_variable_access_in_active_primary10625)
+                    self._state.following.append(self.FOLLOW_variable_access_in_active_primary10635)
                     variable_access543 = self.variable_access()
-=======
-                    self._state.following.append(self.FOLLOW_variable_access_in_active_primary10515)
-                    variable_access532 = self.variable_access()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19092,13 +17732,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_operator_application_in_active_primary10645)
+                    self._state.following.append(self.FOLLOW_operator_application_in_active_primary10655)
                     operator_application544 = self.operator_application()
-=======
-                    self._state.following.append(self.FOLLOW_operator_application_in_active_primary10535)
-                    operator_application533 = self.operator_application()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19110,13 +17745,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_conditional_expression_in_active_primary10665)
+                    self._state.following.append(self.FOLLOW_conditional_expression_in_active_primary10675)
                     conditional_expression545 = self.conditional_expression()
-=======
-                    self._state.following.append(self.FOLLOW_conditional_expression_in_active_primary10555)
-                    conditional_expression534 = self.conditional_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19128,13 +17758,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_imperative_operator_in_active_primary10685)
+                    self._state.following.append(self.FOLLOW_imperative_operator_in_active_primary10695)
                     imperative_operator546 = self.imperative_operator()
-=======
-                    self._state.following.append(self.FOLLOW_imperative_operator_in_active_primary10575)
-                    imperative_operator535 = self.imperative_operator()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19146,33 +17771,19 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    char_literal547=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_active_primary10705)
-=======
-                    char_literal536=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_active_primary10595)
->>>>>>> remotes/upstream/master
+                    char_literal547=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_active_primary10715)
                     if self._state.backtracking == 0:
 
                         char_literal547_tree = self._adaptor.createWithPayload(char_literal547)
                         self._adaptor.addChild(root_0, char_literal547_tree)
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_active_expression_in_active_primary10707)
+                    self._state.following.append(self.FOLLOW_active_expression_in_active_primary10717)
                     active_expression548 = self.active_expression()
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
                         self._adaptor.addChild(root_0, active_expression548.tree)
-                    char_literal549=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_active_primary10709)
-=======
-                    self._state.following.append(self.FOLLOW_active_expression_in_active_primary10597)
-                    active_expression537 = self.active_expression()
-
-                    self._state.following.pop()
-                    if self._state.backtracking == 0:
-                        self._adaptor.addChild(root_0, active_expression537.tree)
-                    char_literal538=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_active_primary10599)
->>>>>>> remotes/upstream/master
+                    char_literal549=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_active_primary10719)
                     if self._state.backtracking == 0:
 
                         char_literal549_tree = self._adaptor.createWithPayload(char_literal549)
@@ -19185,11 +17796,7 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    string_literal550=self.match(self.input, 218, self.FOLLOW_218_in_active_primary10729)
-=======
-                    string_literal539=self.match(self.input, 216, self.FOLLOW_216_in_active_primary10619)
->>>>>>> remotes/upstream/master
+                    string_literal550=self.match(self.input, 218, self.FOLLOW_218_in_active_primary10739)
                     if self._state.backtracking == 0:
 
                         string_literal550_tree = self._adaptor.createWithPayload(string_literal550)
@@ -19250,39 +17857,21 @@ class sdl92Parser(Parser):
 
         try:
             try:
-<<<<<<< HEAD
                 # sdl92.g:920:9: ( now_expression | import_expression | pid_expression | view_expression | timer_active_expression | anyvalue_expression )
                 alt164 = 6
                 LA164 = self.input.LA(1)
                 if LA164 == N:
                     alt164 = 1
-                elif LA164 == 221:
+                elif LA164 == IMPORT:
                     alt164 = 2
                 elif LA164 == P or LA164 == S or LA164 == O:
                     alt164 = 3
-                elif LA164 == 222:
+                elif LA164 == VIEW:
                     alt164 = 4
-                elif LA164 == 219:
+                elif LA164 == ACTIVE:
                     alt164 = 5
-                elif LA164 == 220:
+                elif LA164 == ANY:
                     alt164 = 6
-=======
-                # sdl92.g:907:9: ( now_expression | import_expression | pid_expression | view_expression | timer_active_expression | anyvalue_expression )
-                alt163 = 6
-                LA163 = self.input.LA(1)
-                if LA163 == N:
-                    alt163 = 1
-                elif LA163 == IMPORT:
-                    alt163 = 2
-                elif LA163 == P or LA163 == S or LA163 == O:
-                    alt163 = 3
-                elif LA163 == VIEW:
-                    alt163 = 4
-                elif LA163 == ACTIVE:
-                    alt163 = 5
-                elif LA163 == ANY:
-                    alt163 = 6
->>>>>>> remotes/upstream/master
                 else:
                     if self._state.backtracking > 0:
                         raise BacktrackingFailed
@@ -19296,13 +17885,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_now_expression_in_imperative_operator10756)
+                    self._state.following.append(self.FOLLOW_now_expression_in_imperative_operator10766)
                     now_expression551 = self.now_expression()
-=======
-                    self._state.following.append(self.FOLLOW_now_expression_in_imperative_operator10646)
-                    now_expression540 = self.now_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19314,13 +17898,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_import_expression_in_imperative_operator10776)
+                    self._state.following.append(self.FOLLOW_import_expression_in_imperative_operator10786)
                     import_expression552 = self.import_expression()
-=======
-                    self._state.following.append(self.FOLLOW_import_expression_in_imperative_operator10666)
-                    import_expression541 = self.import_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19332,13 +17911,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_pid_expression_in_imperative_operator10796)
+                    self._state.following.append(self.FOLLOW_pid_expression_in_imperative_operator10806)
                     pid_expression553 = self.pid_expression()
-=======
-                    self._state.following.append(self.FOLLOW_pid_expression_in_imperative_operator10686)
-                    pid_expression542 = self.pid_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19350,13 +17924,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_view_expression_in_imperative_operator10816)
+                    self._state.following.append(self.FOLLOW_view_expression_in_imperative_operator10826)
                     view_expression554 = self.view_expression()
-=======
-                    self._state.following.append(self.FOLLOW_view_expression_in_imperative_operator10706)
-                    view_expression543 = self.view_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19368,13 +17937,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_timer_active_expression_in_imperative_operator10836)
+                    self._state.following.append(self.FOLLOW_timer_active_expression_in_imperative_operator10846)
                     timer_active_expression555 = self.timer_active_expression()
-=======
-                    self._state.following.append(self.FOLLOW_timer_active_expression_in_imperative_operator10726)
-                    timer_active_expression544 = self.timer_active_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19386,13 +17950,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_anyvalue_expression_in_imperative_operator10856)
+                    self._state.following.append(self.FOLLOW_anyvalue_expression_in_imperative_operator10866)
                     anyvalue_expression556 = self.anyvalue_expression()
-=======
-                    self._state.following.append(self.FOLLOW_anyvalue_expression_in_imperative_operator10746)
-                    anyvalue_expression545 = self.anyvalue_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -19428,11 +17987,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "timer_active_expression"
-<<<<<<< HEAD
-    # sdl92.g:928:1: timer_active_expression : 'ACTIVE' '(' timer_id ( '(' expression_list ')' )? ')' ;
-=======
-    # sdl92.g:915:1: timer_active_expression : ACTIVE '(' timer_id ( '(' expression_list ')' )? ')' ;
->>>>>>> remotes/upstream/master
+    # sdl92.g:928:1: timer_active_expression : ACTIVE '(' timer_id ( '(' expression_list ')' )? ')' ;
     def timer_active_expression(self, ):
 
         retval = self.timer_active_expression_return()
@@ -19440,27 +17995,17 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-<<<<<<< HEAD
-        string_literal557 = None
+        ACTIVE557 = None
         char_literal558 = None
         char_literal560 = None
         char_literal562 = None
         char_literal563 = None
         timer_id559 = None
-=======
-        ACTIVE546 = None
-        char_literal547 = None
-        char_literal549 = None
-        char_literal551 = None
-        char_literal552 = None
-        timer_id548 = None
->>>>>>> remotes/upstream/master
 
         expression_list561 = None
 
 
-<<<<<<< HEAD
-        string_literal557_tree = None
+        ACTIVE557_tree = None
         char_literal558_tree = None
         char_literal560_tree = None
         char_literal562_tree = None
@@ -19468,102 +18013,51 @@ class sdl92Parser(Parser):
 
         try:
             try:
-                # sdl92.g:929:9: ( 'ACTIVE' '(' timer_id ( '(' expression_list ')' )? ')' )
-                # sdl92.g:929:17: 'ACTIVE' '(' timer_id ( '(' expression_list ')' )? ')'
+                # sdl92.g:929:9: ( ACTIVE '(' timer_id ( '(' expression_list ')' )? ')' )
+                # sdl92.g:929:17: ACTIVE '(' timer_id ( '(' expression_list ')' )? ')'
                 pass 
                 root_0 = self._adaptor.nil()
 
-                string_literal557=self.match(self.input, 219, self.FOLLOW_219_in_timer_active_expression10879)
+                ACTIVE557=self.match(self.input, ACTIVE, self.FOLLOW_ACTIVE_in_timer_active_expression10889)
                 if self._state.backtracking == 0:
 
-                    string_literal557_tree = self._adaptor.createWithPayload(string_literal557)
-                    self._adaptor.addChild(root_0, string_literal557_tree)
+                    ACTIVE557_tree = self._adaptor.createWithPayload(ACTIVE557)
+                    self._adaptor.addChild(root_0, ACTIVE557_tree)
 
-                char_literal558=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_timer_active_expression10881)
-=======
-        ACTIVE546_tree = None
-        char_literal547_tree = None
-        char_literal549_tree = None
-        char_literal551_tree = None
-        char_literal552_tree = None
-
-        try:
-            try:
-                # sdl92.g:916:9: ( ACTIVE '(' timer_id ( '(' expression_list ')' )? ')' )
-                # sdl92.g:916:17: ACTIVE '(' timer_id ( '(' expression_list ')' )? ')'
-                pass 
-                root_0 = self._adaptor.nil()
-
-                ACTIVE546=self.match(self.input, ACTIVE, self.FOLLOW_ACTIVE_in_timer_active_expression10769)
-                if self._state.backtracking == 0:
-
-                    ACTIVE546_tree = self._adaptor.createWithPayload(ACTIVE546)
-                    self._adaptor.addChild(root_0, ACTIVE546_tree)
-
-                char_literal547=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_timer_active_expression10771)
->>>>>>> remotes/upstream/master
+                char_literal558=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_timer_active_expression10891)
                 if self._state.backtracking == 0:
 
                     char_literal558_tree = self._adaptor.createWithPayload(char_literal558)
                     self._adaptor.addChild(root_0, char_literal558_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_timer_id_in_timer_active_expression10883)
+                self._state.following.append(self.FOLLOW_timer_id_in_timer_active_expression10893)
                 timer_id559 = self.timer_id()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, timer_id559.tree)
-                # sdl92.g:929:39: ( '(' expression_list ')' )?
+                # sdl92.g:929:37: ( '(' expression_list ')' )?
                 alt165 = 2
                 LA165_0 = self.input.LA(1)
 
                 if (LA165_0 == L_PAREN) :
                     alt165 = 1
                 if alt165 == 1:
-                    # sdl92.g:929:40: '(' expression_list ')'
+                    # sdl92.g:929:38: '(' expression_list ')'
                     pass 
-                    char_literal560=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_timer_active_expression10886)
-=======
-                self._state.following.append(self.FOLLOW_timer_id_in_timer_active_expression10773)
-                timer_id548 = self.timer_id()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, timer_id548.tree)
-                # sdl92.g:916:37: ( '(' expression_list ')' )?
-                alt164 = 2
-                LA164_0 = self.input.LA(1)
-
-                if (LA164_0 == L_PAREN) :
-                    alt164 = 1
-                if alt164 == 1:
-                    # sdl92.g:916:38: '(' expression_list ')'
-                    pass 
-                    char_literal549=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_timer_active_expression10776)
->>>>>>> remotes/upstream/master
+                    char_literal560=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_timer_active_expression10896)
                     if self._state.backtracking == 0:
 
                         char_literal560_tree = self._adaptor.createWithPayload(char_literal560)
                         self._adaptor.addChild(root_0, char_literal560_tree)
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_expression_list_in_timer_active_expression10888)
+                    self._state.following.append(self.FOLLOW_expression_list_in_timer_active_expression10898)
                     expression_list561 = self.expression_list()
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
                         self._adaptor.addChild(root_0, expression_list561.tree)
-                    char_literal562=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_timer_active_expression10890)
-=======
-                    self._state.following.append(self.FOLLOW_expression_list_in_timer_active_expression10778)
-                    expression_list550 = self.expression_list()
-
-                    self._state.following.pop()
-                    if self._state.backtracking == 0:
-                        self._adaptor.addChild(root_0, expression_list550.tree)
-                    char_literal551=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_timer_active_expression10780)
->>>>>>> remotes/upstream/master
+                    char_literal562=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_timer_active_expression10900)
                     if self._state.backtracking == 0:
 
                         char_literal562_tree = self._adaptor.createWithPayload(char_literal562)
@@ -19572,11 +18066,7 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                char_literal563=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_timer_active_expression10894)
-=======
-                char_literal552=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_timer_active_expression10784)
->>>>>>> remotes/upstream/master
+                char_literal563=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_timer_active_expression10904)
                 if self._state.backtracking == 0:
 
                     char_literal563_tree = self._adaptor.createWithPayload(char_literal563)
@@ -19614,11 +18104,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "anyvalue_expression"
-<<<<<<< HEAD
-    # sdl92.g:932:1: anyvalue_expression : 'ANY' '(' sort ')' ;
-=======
-    # sdl92.g:919:1: anyvalue_expression : ANY '(' sort ')' ;
->>>>>>> remotes/upstream/master
+    # sdl92.g:932:1: anyvalue_expression : ANY '(' sort ')' ;
     def anyvalue_expression(self, ):
 
         retval = self.anyvalue_expression_return()
@@ -19626,79 +18112,42 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-<<<<<<< HEAD
-        string_literal564 = None
+        ANY564 = None
         char_literal565 = None
         char_literal567 = None
         sort566 = None
 
 
-        string_literal564_tree = None
+        ANY564_tree = None
         char_literal565_tree = None
         char_literal567_tree = None
 
         try:
             try:
-                # sdl92.g:933:9: ( 'ANY' '(' sort ')' )
-                # sdl92.g:933:17: 'ANY' '(' sort ')'
+                # sdl92.g:933:9: ( ANY '(' sort ')' )
+                # sdl92.g:933:17: ANY '(' sort ')'
                 pass 
                 root_0 = self._adaptor.nil()
 
-                string_literal564=self.match(self.input, 220, self.FOLLOW_220_in_anyvalue_expression10917)
+                ANY564=self.match(self.input, ANY, self.FOLLOW_ANY_in_anyvalue_expression10927)
                 if self._state.backtracking == 0:
 
-                    string_literal564_tree = self._adaptor.createWithPayload(string_literal564)
-                    self._adaptor.addChild(root_0, string_literal564_tree)
+                    ANY564_tree = self._adaptor.createWithPayload(ANY564)
+                    self._adaptor.addChild(root_0, ANY564_tree)
 
-                char_literal565=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_anyvalue_expression10919)
-=======
-        ANY553 = None
-        char_literal554 = None
-        char_literal556 = None
-        sort555 = None
-
-
-        ANY553_tree = None
-        char_literal554_tree = None
-        char_literal556_tree = None
-
-        try:
-            try:
-                # sdl92.g:920:9: ( ANY '(' sort ')' )
-                # sdl92.g:920:17: ANY '(' sort ')'
-                pass 
-                root_0 = self._adaptor.nil()
-
-                ANY553=self.match(self.input, ANY, self.FOLLOW_ANY_in_anyvalue_expression10807)
-                if self._state.backtracking == 0:
-
-                    ANY553_tree = self._adaptor.createWithPayload(ANY553)
-                    self._adaptor.addChild(root_0, ANY553_tree)
-
-                char_literal554=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_anyvalue_expression10809)
->>>>>>> remotes/upstream/master
+                char_literal565=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_anyvalue_expression10929)
                 if self._state.backtracking == 0:
 
                     char_literal565_tree = self._adaptor.createWithPayload(char_literal565)
                     self._adaptor.addChild(root_0, char_literal565_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_sort_in_anyvalue_expression10921)
+                self._state.following.append(self.FOLLOW_sort_in_anyvalue_expression10931)
                 sort566 = self.sort()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, sort566.tree)
-                char_literal567=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_anyvalue_expression10923)
-=======
-                self._state.following.append(self.FOLLOW_sort_in_anyvalue_expression10811)
-                sort555 = self.sort()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, sort555.tree)
-                char_literal556=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_anyvalue_expression10813)
->>>>>>> remotes/upstream/master
+                char_literal567=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_anyvalue_expression10933)
                 if self._state.backtracking == 0:
 
                     char_literal567_tree = self._adaptor.createWithPayload(char_literal567)
@@ -19753,13 +18202,8 @@ class sdl92Parser(Parser):
                 # sdl92.g:936:9: ( sort_id -> ^( SORT sort_id ) )
                 # sdl92.g:936:17: sort_id
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_sort_id_in_sort10941)
+                self._state.following.append(self.FOLLOW_sort_id_in_sort10951)
                 sort_id568 = self.sort_id()
-=======
-                self._state.following.append(self.FOLLOW_sort_id_in_sort10831)
-                sort_id557 = self.sort_id()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -19846,13 +18290,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_syntype_id_in_syntype10977)
+                self._state.following.append(self.FOLLOW_syntype_id_in_syntype10987)
                 syntype_id569 = self.syntype_id()
-=======
-                self._state.following.append(self.FOLLOW_syntype_id_in_syntype10867)
-                syntype_id558 = self.syntype_id()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -19889,11 +18328,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "import_expression"
-<<<<<<< HEAD
-    # sdl92.g:943:1: import_expression : 'IMPORT' '(' remote_variable_id ( ',' destination )? ')' ;
-=======
-    # sdl92.g:930:1: import_expression : IMPORT '(' remote_variable_id ( ',' destination )? ')' ;
->>>>>>> remotes/upstream/master
+    # sdl92.g:943:1: import_expression : IMPORT '(' remote_variable_id ( ',' destination )? ')' ;
     def import_expression(self, ):
 
         retval = self.import_expression_return()
@@ -19901,116 +18336,62 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-<<<<<<< HEAD
-        string_literal570 = None
+        IMPORT570 = None
         char_literal571 = None
         char_literal573 = None
         char_literal575 = None
         remote_variable_id572 = None
-=======
-        IMPORT559 = None
-        char_literal560 = None
-        char_literal562 = None
-        char_literal564 = None
-        remote_variable_id561 = None
->>>>>>> remotes/upstream/master
 
         destination574 = None
 
 
-<<<<<<< HEAD
-        string_literal570_tree = None
+        IMPORT570_tree = None
         char_literal571_tree = None
         char_literal573_tree = None
         char_literal575_tree = None
 
         try:
             try:
-                # sdl92.g:944:9: ( 'IMPORT' '(' remote_variable_id ( ',' destination )? ')' )
-                # sdl92.g:944:17: 'IMPORT' '(' remote_variable_id ( ',' destination )? ')'
+                # sdl92.g:944:9: ( IMPORT '(' remote_variable_id ( ',' destination )? ')' )
+                # sdl92.g:944:17: IMPORT '(' remote_variable_id ( ',' destination )? ')'
                 pass 
                 root_0 = self._adaptor.nil()
 
-                string_literal570=self.match(self.input, 221, self.FOLLOW_221_in_import_expression11000)
+                IMPORT570=self.match(self.input, IMPORT, self.FOLLOW_IMPORT_in_import_expression11010)
                 if self._state.backtracking == 0:
 
-                    string_literal570_tree = self._adaptor.createWithPayload(string_literal570)
-                    self._adaptor.addChild(root_0, string_literal570_tree)
+                    IMPORT570_tree = self._adaptor.createWithPayload(IMPORT570)
+                    self._adaptor.addChild(root_0, IMPORT570_tree)
 
-                char_literal571=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_import_expression11002)
-=======
-        IMPORT559_tree = None
-        char_literal560_tree = None
-        char_literal562_tree = None
-        char_literal564_tree = None
-
-        try:
-            try:
-                # sdl92.g:931:9: ( IMPORT '(' remote_variable_id ( ',' destination )? ')' )
-                # sdl92.g:931:17: IMPORT '(' remote_variable_id ( ',' destination )? ')'
-                pass 
-                root_0 = self._adaptor.nil()
-
-                IMPORT559=self.match(self.input, IMPORT, self.FOLLOW_IMPORT_in_import_expression10890)
-                if self._state.backtracking == 0:
-
-                    IMPORT559_tree = self._adaptor.createWithPayload(IMPORT559)
-                    self._adaptor.addChild(root_0, IMPORT559_tree)
-
-                char_literal560=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_import_expression10892)
->>>>>>> remotes/upstream/master
+                char_literal571=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_import_expression11012)
                 if self._state.backtracking == 0:
 
                     char_literal571_tree = self._adaptor.createWithPayload(char_literal571)
                     self._adaptor.addChild(root_0, char_literal571_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_remote_variable_id_in_import_expression11004)
+                self._state.following.append(self.FOLLOW_remote_variable_id_in_import_expression11014)
                 remote_variable_id572 = self.remote_variable_id()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, remote_variable_id572.tree)
-                # sdl92.g:944:49: ( ',' destination )?
+                # sdl92.g:944:47: ( ',' destination )?
                 alt166 = 2
                 LA166_0 = self.input.LA(1)
 
                 if (LA166_0 == COMMA) :
                     alt166 = 1
                 if alt166 == 1:
-                    # sdl92.g:944:50: ',' destination
+                    # sdl92.g:944:48: ',' destination
                     pass 
-                    char_literal573=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_import_expression11007)
-=======
-                self._state.following.append(self.FOLLOW_remote_variable_id_in_import_expression10894)
-                remote_variable_id561 = self.remote_variable_id()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, remote_variable_id561.tree)
-                # sdl92.g:931:47: ( ',' destination )?
-                alt165 = 2
-                LA165_0 = self.input.LA(1)
-
-                if (LA165_0 == COMMA) :
-                    alt165 = 1
-                if alt165 == 1:
-                    # sdl92.g:931:48: ',' destination
-                    pass 
-                    char_literal562=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_import_expression10897)
->>>>>>> remotes/upstream/master
+                    char_literal573=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_import_expression11017)
                     if self._state.backtracking == 0:
 
                         char_literal573_tree = self._adaptor.createWithPayload(char_literal573)
                         self._adaptor.addChild(root_0, char_literal573_tree)
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_destination_in_import_expression11009)
+                    self._state.following.append(self.FOLLOW_destination_in_import_expression11019)
                     destination574 = self.destination()
-=======
-                    self._state.following.append(self.FOLLOW_destination_in_import_expression10899)
-                    destination563 = self.destination()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -20018,11 +18399,7 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                char_literal575=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_import_expression11013)
-=======
-                char_literal564=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_import_expression10903)
->>>>>>> remotes/upstream/master
+                char_literal575=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_import_expression11023)
                 if self._state.backtracking == 0:
 
                     char_literal575_tree = self._adaptor.createWithPayload(char_literal575)
@@ -20060,11 +18437,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "view_expression"
-<<<<<<< HEAD
-    # sdl92.g:947:1: view_expression : 'VIEW' '(' view_id ( ',' pid_expression )? ')' ;
-=======
-    # sdl92.g:934:1: view_expression : VIEW '(' view_id ( ',' pid_expression )? ')' ;
->>>>>>> remotes/upstream/master
+    # sdl92.g:947:1: view_expression : VIEW '(' view_id ( ',' pid_expression )? ')' ;
     def view_expression(self, ):
 
         retval = self.view_expression_return()
@@ -20072,116 +18445,62 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-<<<<<<< HEAD
-        string_literal576 = None
+        VIEW576 = None
         char_literal577 = None
         char_literal579 = None
         char_literal581 = None
         view_id578 = None
-=======
-        VIEW565 = None
-        char_literal566 = None
-        char_literal568 = None
-        char_literal570 = None
-        view_id567 = None
->>>>>>> remotes/upstream/master
 
         pid_expression580 = None
 
 
-<<<<<<< HEAD
-        string_literal576_tree = None
+        VIEW576_tree = None
         char_literal577_tree = None
         char_literal579_tree = None
         char_literal581_tree = None
 
         try:
             try:
-                # sdl92.g:948:9: ( 'VIEW' '(' view_id ( ',' pid_expression )? ')' )
-                # sdl92.g:948:17: 'VIEW' '(' view_id ( ',' pid_expression )? ')'
+                # sdl92.g:948:9: ( VIEW '(' view_id ( ',' pid_expression )? ')' )
+                # sdl92.g:948:17: VIEW '(' view_id ( ',' pid_expression )? ')'
                 pass 
                 root_0 = self._adaptor.nil()
 
-                string_literal576=self.match(self.input, 222, self.FOLLOW_222_in_view_expression11036)
+                VIEW576=self.match(self.input, VIEW, self.FOLLOW_VIEW_in_view_expression11046)
                 if self._state.backtracking == 0:
 
-                    string_literal576_tree = self._adaptor.createWithPayload(string_literal576)
-                    self._adaptor.addChild(root_0, string_literal576_tree)
+                    VIEW576_tree = self._adaptor.createWithPayload(VIEW576)
+                    self._adaptor.addChild(root_0, VIEW576_tree)
 
-                char_literal577=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_view_expression11038)
-=======
-        VIEW565_tree = None
-        char_literal566_tree = None
-        char_literal568_tree = None
-        char_literal570_tree = None
-
-        try:
-            try:
-                # sdl92.g:935:9: ( VIEW '(' view_id ( ',' pid_expression )? ')' )
-                # sdl92.g:935:17: VIEW '(' view_id ( ',' pid_expression )? ')'
-                pass 
-                root_0 = self._adaptor.nil()
-
-                VIEW565=self.match(self.input, VIEW, self.FOLLOW_VIEW_in_view_expression10926)
-                if self._state.backtracking == 0:
-
-                    VIEW565_tree = self._adaptor.createWithPayload(VIEW565)
-                    self._adaptor.addChild(root_0, VIEW565_tree)
-
-                char_literal566=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_view_expression10928)
->>>>>>> remotes/upstream/master
+                char_literal577=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_view_expression11048)
                 if self._state.backtracking == 0:
 
                     char_literal577_tree = self._adaptor.createWithPayload(char_literal577)
                     self._adaptor.addChild(root_0, char_literal577_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_view_id_in_view_expression11040)
+                self._state.following.append(self.FOLLOW_view_id_in_view_expression11050)
                 view_id578 = self.view_id()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, view_id578.tree)
-                # sdl92.g:948:36: ( ',' pid_expression )?
+                # sdl92.g:948:34: ( ',' pid_expression )?
                 alt167 = 2
                 LA167_0 = self.input.LA(1)
 
                 if (LA167_0 == COMMA) :
                     alt167 = 1
                 if alt167 == 1:
-                    # sdl92.g:948:37: ',' pid_expression
+                    # sdl92.g:948:35: ',' pid_expression
                     pass 
-                    char_literal579=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_view_expression11043)
-=======
-                self._state.following.append(self.FOLLOW_view_id_in_view_expression10930)
-                view_id567 = self.view_id()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, view_id567.tree)
-                # sdl92.g:935:34: ( ',' pid_expression )?
-                alt166 = 2
-                LA166_0 = self.input.LA(1)
-
-                if (LA166_0 == COMMA) :
-                    alt166 = 1
-                if alt166 == 1:
-                    # sdl92.g:935:35: ',' pid_expression
-                    pass 
-                    char_literal568=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_view_expression10933)
->>>>>>> remotes/upstream/master
+                    char_literal579=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_view_expression11053)
                     if self._state.backtracking == 0:
 
                         char_literal579_tree = self._adaptor.createWithPayload(char_literal579)
                         self._adaptor.addChild(root_0, char_literal579_tree)
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_pid_expression_in_view_expression11045)
+                    self._state.following.append(self.FOLLOW_pid_expression_in_view_expression11055)
                     pid_expression580 = self.pid_expression()
-=======
-                    self._state.following.append(self.FOLLOW_pid_expression_in_view_expression10935)
-                    pid_expression569 = self.pid_expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -20189,11 +18508,7 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                char_literal581=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_view_expression11049)
-=======
-                char_literal570=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_view_expression10939)
->>>>>>> remotes/upstream/master
+                char_literal581=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_view_expression11059)
                 if self._state.backtracking == 0:
 
                     char_literal581_tree = self._adaptor.createWithPayload(char_literal581)
@@ -20250,13 +18565,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_variable_id_in_variable_access11072)
+                self._state.following.append(self.FOLLOW_variable_id_in_variable_access11082)
                 variable_id582 = self.variable_id()
-=======
-                self._state.following.append(self.FOLLOW_variable_id_in_variable_access10962)
-                variable_id571 = self.variable_id()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -20318,45 +18628,25 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_operator_id_in_operator_application11095)
+                self._state.following.append(self.FOLLOW_operator_id_in_operator_application11105)
                 operator_id583 = self.operator_id()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, operator_id583.tree)
-                char_literal584=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_operator_application11097)
-=======
-                self._state.following.append(self.FOLLOW_operator_id_in_operator_application10985)
-                operator_id572 = self.operator_id()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, operator_id572.tree)
-                char_literal573=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_operator_application10987)
->>>>>>> remotes/upstream/master
+                char_literal584=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_operator_application11107)
                 if self._state.backtracking == 0:
 
                     char_literal584_tree = self._adaptor.createWithPayload(char_literal584)
                     self._adaptor.addChild(root_0, char_literal584_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_active_expression_list_in_operator_application11098)
+                self._state.following.append(self.FOLLOW_active_expression_list_in_operator_application11108)
                 active_expression_list585 = self.active_expression_list()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, active_expression_list585.tree)
-                char_literal586=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_operator_application11100)
-=======
-                self._state.following.append(self.FOLLOW_active_expression_list_in_operator_application10988)
-                active_expression_list574 = self.active_expression_list()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, active_expression_list574.tree)
-                char_literal575=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_operator_application10990)
->>>>>>> remotes/upstream/master
+                char_literal586=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_operator_application11110)
                 if self._state.backtracking == 0:
 
                     char_literal586_tree = self._adaptor.createWithPayload(char_literal586)
@@ -20417,13 +18707,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_active_expression_in_active_expression_list11124)
+                self._state.following.append(self.FOLLOW_active_expression_in_active_expression_list11134)
                 active_expression587 = self.active_expression()
-=======
-                self._state.following.append(self.FOLLOW_active_expression_in_active_expression_list11014)
-                active_expression576 = self.active_expression()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -20437,23 +18722,14 @@ class sdl92Parser(Parser):
                 if alt168 == 1:
                     # sdl92.g:960:36: ',' expression_list
                     pass 
-<<<<<<< HEAD
-                    char_literal588=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_active_expression_list11127)
-=======
-                    char_literal577=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_active_expression_list11017)
->>>>>>> remotes/upstream/master
+                    char_literal588=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_active_expression_list11137)
                     if self._state.backtracking == 0:
 
                         char_literal588_tree = self._adaptor.createWithPayload(char_literal588)
                         self._adaptor.addChild(root_0, char_literal588_tree)
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_expression_list_in_active_expression_list11129)
+                    self._state.following.append(self.FOLLOW_expression_list_in_active_expression_list11139)
                     expression_list589 = self.expression_list()
-=======
-                    self._state.following.append(self.FOLLOW_expression_list_in_active_expression_list11019)
-                    expression_list578 = self.expression_list()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -20524,77 +18800,43 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                IF590=self.match(self.input, IF, self.FOLLOW_IF_in_conditional_expression11161)
-=======
-                IF579=self.match(self.input, IF, self.FOLLOW_IF_in_conditional_expression11051)
->>>>>>> remotes/upstream/master
+                IF590=self.match(self.input, IF, self.FOLLOW_IF_in_conditional_expression11171)
                 if self._state.backtracking == 0:
 
                     IF590_tree = self._adaptor.createWithPayload(IF590)
                     self._adaptor.addChild(root_0, IF590_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11163)
+                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11173)
                 expression591 = self.expression()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, expression591.tree)
-                THEN592=self.match(self.input, THEN, self.FOLLOW_THEN_in_conditional_expression11165)
-=======
-                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11053)
-                expression580 = self.expression()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, expression580.tree)
-                THEN581=self.match(self.input, THEN, self.FOLLOW_THEN_in_conditional_expression11055)
->>>>>>> remotes/upstream/master
+                THEN592=self.match(self.input, THEN, self.FOLLOW_THEN_in_conditional_expression11175)
                 if self._state.backtracking == 0:
 
                     THEN592_tree = self._adaptor.createWithPayload(THEN592)
                     self._adaptor.addChild(root_0, THEN592_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11167)
+                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11177)
                 expression593 = self.expression()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, expression593.tree)
-                ELSE594=self.match(self.input, ELSE, self.FOLLOW_ELSE_in_conditional_expression11169)
-=======
-                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11057)
-                expression582 = self.expression()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, expression582.tree)
-                ELSE583=self.match(self.input, ELSE, self.FOLLOW_ELSE_in_conditional_expression11059)
->>>>>>> remotes/upstream/master
+                ELSE594=self.match(self.input, ELSE, self.FOLLOW_ELSE_in_conditional_expression11179)
                 if self._state.backtracking == 0:
 
                     ELSE594_tree = self._adaptor.createWithPayload(ELSE594)
                     self._adaptor.addChild(root_0, ELSE594_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11171)
+                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11181)
                 expression595 = self.expression()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, expression595.tree)
-                FI596=self.match(self.input, FI, self.FOLLOW_FI_in_conditional_expression11173)
-=======
-                self._state.following.append(self.FOLLOW_expression_in_conditional_expression11061)
-                expression584 = self.expression()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, expression584.tree)
-                FI585=self.match(self.input, FI, self.FOLLOW_FI_in_conditional_expression11063)
->>>>>>> remotes/upstream/master
+                FI596=self.match(self.input, FI, self.FOLLOW_FI_in_conditional_expression11183)
                 if self._state.backtracking == 0:
 
                     FI596_tree = self._adaptor.createWithPayload(FI596)
@@ -20622,66 +18864,6 @@ class sdl92Parser(Parser):
 
     # $ANTLR end "conditional_expression"
 
-<<<<<<< HEAD
-=======
-    class synonym_return(ParserRuleReturnScope):
-        def __init__(self):
-            super(sdl92Parser.synonym_return, self).__init__()
-
-            self.tree = None
-
-
-
-
-    # $ANTLR start "synonym"
-    # sdl92.g:962:1: synonym : ID ;
-    def synonym(self, ):
-
-        retval = self.synonym_return()
-        retval.start = self.input.LT(1)
-
-        root_0 = None
-
-        ID586 = None
-
-        ID586_tree = None
-
-        try:
-            try:
-                # sdl92.g:962:9: ( ID )
-                # sdl92.g:962:17: ID
-                pass 
-                root_0 = self._adaptor.nil()
-
-                ID586=self.match(self.input, ID, self.FOLLOW_ID_in_synonym11078)
-                if self._state.backtracking == 0:
-
-                    ID586_tree = self._adaptor.createWithPayload(ID586)
-                    self._adaptor.addChild(root_0, ID586_tree)
-
-
-
-
-                retval.stop = self.input.LT(-1)
-
-                if self._state.backtracking == 0:
-
-                    retval.tree = self._adaptor.rulePostProcessing(root_0)
-                    self._adaptor.setTokenBoundaries(retval.tree, retval.start, retval.stop)
-
-
-            except RecognitionException, re:
-                self.reportError(re)
-                self.recover(self.input, re)
-                retval.tree = self._adaptor.errorNode(self.input, retval.start, self.input.LT(-1), re)
-        finally:
-
-            pass
-        return retval
-
-    # $ANTLR end "synonym"
-
->>>>>>> remotes/upstream/master
     class external_synonym_return(ParserRuleReturnScope):
         def __init__(self):
             super(sdl92Parser.external_synonym_return, self).__init__()
@@ -20711,13 +18893,8 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_external_synonym_id_in_external_synonym11199)
+                self._state.following.append(self.FOLLOW_external_synonym_id_in_external_synonym11209)
                 external_synonym_id597 = self.external_synonym_id()
-=======
-                self._state.following.append(self.FOLLOW_external_synonym_id_in_external_synonym11102)
-                external_synonym_id587 = self.external_synonym_id()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -20787,64 +18964,39 @@ class sdl92Parser(Parser):
                 # sdl92.g:983:9: ( IF ifexpr= expression THEN thenexpr= expression ELSE elseexpr= expression FI -> ^( IFTHENELSE $ifexpr $thenexpr $elseexpr) )
                 # sdl92.g:983:17: IF ifexpr= expression THEN thenexpr= expression ELSE elseexpr= expression FI
                 pass 
-<<<<<<< HEAD
-                IF598=self.match(self.input, IF, self.FOLLOW_IF_in_conditional_ground_expression11222) 
+                IF598=self.match(self.input, IF, self.FOLLOW_IF_in_conditional_ground_expression11232) 
                 if self._state.backtracking == 0:
                     stream_IF.add(IF598)
-                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11226)
-=======
-                IF588=self.match(self.input, IF, self.FOLLOW_IF_in_conditional_ground_expression11125) 
-                if self._state.backtracking == 0:
-                    stream_IF.add(IF588)
-                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11129)
->>>>>>> remotes/upstream/master
+                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11236)
                 ifexpr = self.expression()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_expression.add(ifexpr.tree)
-<<<<<<< HEAD
-                THEN599=self.match(self.input, THEN, self.FOLLOW_THEN_in_conditional_ground_expression11244) 
+                THEN599=self.match(self.input, THEN, self.FOLLOW_THEN_in_conditional_ground_expression11254) 
                 if self._state.backtracking == 0:
                     stream_THEN.add(THEN599)
-                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11248)
-=======
-                THEN589=self.match(self.input, THEN, self.FOLLOW_THEN_in_conditional_ground_expression11147) 
-                if self._state.backtracking == 0:
-                    stream_THEN.add(THEN589)
-                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11151)
->>>>>>> remotes/upstream/master
+                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11258)
                 thenexpr = self.expression()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_expression.add(thenexpr.tree)
-<<<<<<< HEAD
-                ELSE600=self.match(self.input, ELSE, self.FOLLOW_ELSE_in_conditional_ground_expression11266) 
+                ELSE600=self.match(self.input, ELSE, self.FOLLOW_ELSE_in_conditional_ground_expression11276) 
                 if self._state.backtracking == 0:
                     stream_ELSE.add(ELSE600)
-                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11270)
-=======
-                ELSE590=self.match(self.input, ELSE, self.FOLLOW_ELSE_in_conditional_ground_expression11169) 
-                if self._state.backtracking == 0:
-                    stream_ELSE.add(ELSE590)
-                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11173)
->>>>>>> remotes/upstream/master
+                self._state.following.append(self.FOLLOW_expression_in_conditional_ground_expression11280)
                 elseexpr = self.expression()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_expression.add(elseexpr.tree)
-<<<<<<< HEAD
-                FI601=self.match(self.input, FI, self.FOLLOW_FI_in_conditional_ground_expression11272) 
-=======
-                FI591=self.match(self.input, FI, self.FOLLOW_FI_in_conditional_ground_expression11175) 
->>>>>>> remotes/upstream/master
+                FI601=self.match(self.input, FI, self.FOLLOW_FI_in_conditional_ground_expression11282) 
                 if self._state.backtracking == 0:
                     stream_FI.add(FI601)
 
                 # AST Rewrite
-                # elements: elseexpr, ifexpr, thenexpr
+                # elements: thenexpr, elseexpr, ifexpr
                 # token labels: 
                 # rule labels: elseexpr, retval, ifexpr, thenexpr
                 # token list labels: 
@@ -20947,13 +19099,8 @@ class sdl92Parser(Parser):
                 # sdl92.g:990:9: ( expression ( ',' expression )* -> ( expression )+ )
                 # sdl92.g:990:17: expression ( ',' expression )*
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_expression_in_expression_list11324)
+                self._state.following.append(self.FOLLOW_expression_in_expression_list11334)
                 expression602 = self.expression()
-=======
-                self._state.following.append(self.FOLLOW_expression_in_expression_list11227)
-                expression592 = self.expression()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -20970,19 +19117,11 @@ class sdl92Parser(Parser):
                     if alt169 == 1:
                         # sdl92.g:990:29: ',' expression
                         pass 
-<<<<<<< HEAD
-                        char_literal603=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_expression_list11327) 
+                        char_literal603=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_expression_list11337) 
                         if self._state.backtracking == 0:
                             stream_COMMA.add(char_literal603)
-                        self._state.following.append(self.FOLLOW_expression_in_expression_list11329)
+                        self._state.following.append(self.FOLLOW_expression_in_expression_list11339)
                         expression604 = self.expression()
-=======
-                        char_literal593=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_expression_list11230) 
-                        if self._state.backtracking == 0:
-                            stream_COMMA.add(char_literal593)
-                        self._state.following.append(self.FOLLOW_expression_in_expression_list11232)
-                        expression594 = self.expression()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -21091,13 +19230,8 @@ class sdl92Parser(Parser):
                 if alt170 == 1:
                     # sdl92.g:0:0: label
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_label_in_terminator_statement11372)
+                    self._state.following.append(self.FOLLOW_label_in_terminator_statement11382)
                     label605 = self.label()
-=======
-                    self._state.following.append(self.FOLLOW_label_in_terminator_statement11275)
-                    label595 = self.label()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21109,26 +19243,16 @@ class sdl92Parser(Parser):
                 alt171 = 2
                 LA171_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA171_0 == 223) :
+                if (LA171_0 == 219) :
                     LA171_1 = self.input.LA(2)
-=======
-                if (LA170_0 == 217) :
-                    LA170_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                     if (LA171_1 == LABEL or LA171_1 == COMMENT or LA171_1 == PROCESS or LA171_1 == STATE or LA171_1 == PROVIDED or LA171_1 == INPUT or (PROCEDURE_CALL <= LA171_1 <= PROCEDURE) or LA171_1 == DECISION or LA171_1 == ANSWER or LA171_1 == OUTPUT or (TEXT <= LA171_1 <= JOIN) or LA171_1 == RETURN or LA171_1 == TASK or LA171_1 == STOP or LA171_1 == CONNECT or LA171_1 == START) :
                         alt171 = 1
                 if alt171 == 1:
                     # sdl92.g:0:0: cif
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_cif_in_terminator_statement11391)
+                    self._state.following.append(self.FOLLOW_cif_in_terminator_statement11401)
                     cif606 = self.cif()
-=======
-                    self._state.following.append(self.FOLLOW_cif_in_terminator_statement11294)
-                    cif596 = self.cif()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21140,23 +19264,13 @@ class sdl92Parser(Parser):
                 alt172 = 2
                 LA172_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA172_0 == 223) :
+                if (LA172_0 == 219) :
                     alt172 = 1
                 if alt172 == 1:
                     # sdl92.g:0:0: hyperlink
                     pass 
-                    self._state.following.append(self.FOLLOW_hyperlink_in_terminator_statement11410)
+                    self._state.following.append(self.FOLLOW_hyperlink_in_terminator_statement11420)
                     hyperlink607 = self.hyperlink()
-=======
-                if (LA171_0 == 217) :
-                    alt171 = 1
-                if alt171 == 1:
-                    # sdl92.g:0:0: hyperlink
-                    pass 
-                    self._state.following.append(self.FOLLOW_hyperlink_in_terminator_statement11313)
-                    hyperlink597 = self.hyperlink()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21164,36 +19278,21 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_terminator_in_terminator_statement11429)
+                self._state.following.append(self.FOLLOW_terminator_in_terminator_statement11439)
                 terminator608 = self.terminator()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_terminator.add(terminator608.tree)
-                self._state.following.append(self.FOLLOW_end_in_terminator_statement11447)
+                self._state.following.append(self.FOLLOW_end_in_terminator_statement11457)
                 end609 = self.end()
-=======
-                self._state.following.append(self.FOLLOW_terminator_in_terminator_statement11332)
-                terminator598 = self.terminator()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_terminator.add(terminator598.tree)
-                self._state.following.append(self.FOLLOW_end_in_terminator_statement11350)
-                end599 = self.end()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_end.add(end609.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: cif, hyperlink, terminator, label, end
-=======
-                # elements: end, hyperlink, label, terminator, cif
->>>>>>> remotes/upstream/master
+                # elements: label, end, terminator, cif, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -21292,13 +19391,8 @@ class sdl92Parser(Parser):
         connector_name611 = None
 
 
-<<<<<<< HEAD
         char_literal612_tree = None
-        stream_211 = RewriteRuleTokenStream(self._adaptor, "token 211")
-=======
-        char_literal602_tree = None
-        stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
->>>>>>> remotes/upstream/master
+        stream_214 = RewriteRuleTokenStream(self._adaptor, "token 214")
         stream_cif = RewriteRuleSubtreeStream(self._adaptor, "rule cif")
         stream_connector_name = RewriteRuleSubtreeStream(self._adaptor, "rule connector_name")
         try:
@@ -21310,23 +19404,13 @@ class sdl92Parser(Parser):
                 alt173 = 2
                 LA173_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                if (LA173_0 == 223) :
+                if (LA173_0 == 219) :
                     alt173 = 1
                 if alt173 == 1:
                     # sdl92.g:0:0: cif
                     pass 
-                    self._state.following.append(self.FOLLOW_cif_in_label11502)
+                    self._state.following.append(self.FOLLOW_cif_in_label11512)
                     cif610 = self.cif()
-=======
-                if (LA172_0 == 217) :
-                    alt172 = 1
-                if alt172 == 1:
-                    # sdl92.g:0:0: cif
-                    pass 
-                    self._state.following.append(self.FOLLOW_cif_in_label11405)
-                    cif600 = self.cif()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21334,30 +19418,18 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_connector_name_in_label11505)
+                self._state.following.append(self.FOLLOW_connector_name_in_label11515)
                 connector_name611 = self.connector_name()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_connector_name.add(connector_name611.tree)
-                char_literal612=self.match(self.input, 211, self.FOLLOW_211_in_label11507) 
+                char_literal612=self.match(self.input, 214, self.FOLLOW_214_in_label11517) 
                 if self._state.backtracking == 0:
-                    stream_211.add(char_literal612)
-=======
-                self._state.following.append(self.FOLLOW_connector_name_in_label11408)
-                connector_name601 = self.connector_name()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_connector_name.add(connector_name601.tree)
-                char_literal602=self.match(self.input, 212, self.FOLLOW_212_in_label11410) 
-                if self._state.backtracking == 0:
-                    stream_212.add(char_literal602)
->>>>>>> remotes/upstream/master
+                    stream_214.add(char_literal612)
 
                 # AST Rewrite
-                # elements: cif, connector_name
+                # elements: connector_name, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -21468,13 +19540,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_nextstate_in_terminator11554)
+                    self._state.following.append(self.FOLLOW_nextstate_in_terminator11564)
                     nextstate613 = self.nextstate()
-=======
-                    self._state.following.append(self.FOLLOW_nextstate_in_terminator11457)
-                    nextstate603 = self.nextstate()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21486,13 +19553,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_join_in_terminator11558)
+                    self._state.following.append(self.FOLLOW_join_in_terminator11568)
                     join614 = self.join()
-=======
-                    self._state.following.append(self.FOLLOW_join_in_terminator11461)
-                    join604 = self.join()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21504,13 +19566,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_stop_in_terminator11562)
+                    self._state.following.append(self.FOLLOW_stop_in_terminator11572)
                     stop615 = self.stop()
-=======
-                    self._state.following.append(self.FOLLOW_stop_in_terminator11465)
-                    stop605 = self.stop()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21522,13 +19579,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_return_stmt_in_terminator11566)
+                    self._state.following.append(self.FOLLOW_return_stmt_in_terminator11576)
                     return_stmt616 = self.return_stmt()
-=======
-                    self._state.following.append(self.FOLLOW_return_stmt_in_terminator11469)
-                    return_stmt606 = self.return_stmt()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21584,19 +19636,11 @@ class sdl92Parser(Parser):
                 # sdl92.g:1012:9: ( JOIN connector_name -> ^( JOIN connector_name ) )
                 # sdl92.g:1012:18: JOIN connector_name
                 pass 
-<<<<<<< HEAD
-                JOIN617=self.match(self.input, JOIN, self.FOLLOW_JOIN_in_join11590) 
+                JOIN617=self.match(self.input, JOIN, self.FOLLOW_JOIN_in_join11600) 
                 if self._state.backtracking == 0:
                     stream_JOIN.add(JOIN617)
-                self._state.following.append(self.FOLLOW_connector_name_in_join11592)
+                self._state.following.append(self.FOLLOW_connector_name_in_join11602)
                 connector_name618 = self.connector_name()
-=======
-                JOIN607=self.match(self.input, JOIN, self.FOLLOW_JOIN_in_join11493) 
-                if self._state.backtracking == 0:
-                    stream_JOIN.add(JOIN607)
-                self._state.following.append(self.FOLLOW_connector_name_in_join11495)
-                connector_name608 = self.connector_name()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -21683,11 +19727,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                STOP619=self.match(self.input, STOP, self.FOLLOW_STOP_in_stop11632)
-=======
-                STOP609=self.match(self.input, STOP, self.FOLLOW_STOP_in_stop11535)
->>>>>>> remotes/upstream/master
+                STOP619=self.match(self.input, STOP, self.FOLLOW_STOP_in_stop11642)
                 if self._state.backtracking == 0:
 
                     STOP619_tree = self._adaptor.createWithPayload(STOP619)
@@ -21745,11 +19785,7 @@ class sdl92Parser(Parser):
                 # sdl92.g:1020:9: ( RETURN ( expression )? -> ^( RETURN ( expression )? ) )
                 # sdl92.g:1020:17: RETURN ( expression )?
                 pass 
-<<<<<<< HEAD
-                RETURN620=self.match(self.input, RETURN, self.FOLLOW_RETURN_in_return_stmt11655) 
-=======
-                RETURN610=self.match(self.input, RETURN, self.FOLLOW_RETURN_in_return_stmt11558) 
->>>>>>> remotes/upstream/master
+                RETURN620=self.match(self.input, RETURN, self.FOLLOW_RETURN_in_return_stmt11665) 
                 if self._state.backtracking == 0:
                     stream_RETURN.add(RETURN620)
                 # sdl92.g:1020:24: ( expression )?
@@ -21761,13 +19797,8 @@ class sdl92Parser(Parser):
                 if alt175 == 1:
                     # sdl92.g:0:0: expression
                     pass 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_expression_in_return_stmt11657)
+                    self._state.following.append(self.FOLLOW_expression_in_return_stmt11667)
                     expression621 = self.expression()
-=======
-                    self._state.following.append(self.FOLLOW_expression_in_return_stmt11560)
-                    expression611 = self.expression()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -21863,26 +19894,18 @@ class sdl92Parser(Parser):
                 # sdl92.g:1025:9: ( NEXTSTATE nextstatebody -> ^( NEXTSTATE nextstatebody ) )
                 # sdl92.g:1025:17: NEXTSTATE nextstatebody
                 pass 
-<<<<<<< HEAD
-                NEXTSTATE622=self.match(self.input, NEXTSTATE, self.FOLLOW_NEXTSTATE_in_nextstate11703) 
+                NEXTSTATE622=self.match(self.input, NEXTSTATE, self.FOLLOW_NEXTSTATE_in_nextstate11713) 
                 if self._state.backtracking == 0:
                     stream_NEXTSTATE.add(NEXTSTATE622)
-                self._state.following.append(self.FOLLOW_nextstatebody_in_nextstate11705)
+                self._state.following.append(self.FOLLOW_nextstatebody_in_nextstate11715)
                 nextstatebody623 = self.nextstatebody()
-=======
-                NEXTSTATE612=self.match(self.input, NEXTSTATE, self.FOLLOW_NEXTSTATE_in_nextstate11606) 
-                if self._state.backtracking == 0:
-                    stream_NEXTSTATE.add(NEXTSTATE612)
-                self._state.following.append(self.FOLLOW_nextstatebody_in_nextstate11608)
-                nextstatebody613 = self.nextstatebody()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_nextstatebody.add(nextstatebody623.tree)
 
                 # AST Rewrite
-                # elements: nextstatebody, NEXTSTATE
+                # elements: NEXTSTATE, nextstatebody
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -21982,13 +20005,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_statename_in_nextstatebody11749)
+                    self._state.following.append(self.FOLLOW_statename_in_nextstatebody11759)
                     statename624 = self.statename()
-=======
-                    self._state.following.append(self.FOLLOW_statename_in_nextstatebody11652)
-                    statename614 = self.statename()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -22002,13 +20020,8 @@ class sdl92Parser(Parser):
                     if alt176 == 1:
                         # sdl92.g:0:0: via
                         pass 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_via_in_nextstatebody11751)
+                        self._state.following.append(self.FOLLOW_via_in_nextstatebody11761)
                         via625 = self.via()
-=======
-                        self._state.following.append(self.FOLLOW_via_in_nextstatebody11654)
-                        via615 = self.via()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -22023,13 +20036,8 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    self._state.following.append(self.FOLLOW_dash_nextstate_in_nextstatebody11772)
+                    self._state.following.append(self.FOLLOW_dash_nextstate_in_nextstatebody11782)
                     dash_nextstate626 = self.dash_nextstate()
-=======
-                    self._state.following.append(self.FOLLOW_dash_nextstate_in_nextstatebody11675)
-                    dash_nextstate616 = self.dash_nextstate()
->>>>>>> remotes/upstream/master
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
@@ -22085,26 +20093,18 @@ class sdl92Parser(Parser):
                 # sdl92.g:1034:9: ( VIA state_entry_point_name -> ^( VIA state_entry_point_name ) )
                 # sdl92.g:1034:17: VIA state_entry_point_name
                 pass 
-<<<<<<< HEAD
-                VIA627=self.match(self.input, VIA, self.FOLLOW_VIA_in_via11791) 
+                VIA627=self.match(self.input, VIA, self.FOLLOW_VIA_in_via11801) 
                 if self._state.backtracking == 0:
                     stream_VIA.add(VIA627)
-                self._state.following.append(self.FOLLOW_state_entry_point_name_in_via11793)
+                self._state.following.append(self.FOLLOW_state_entry_point_name_in_via11803)
                 state_entry_point_name628 = self.state_entry_point_name()
-=======
-                VIA617=self.match(self.input, VIA, self.FOLLOW_VIA_in_via11694) 
-                if self._state.backtracking == 0:
-                    stream_VIA.add(VIA617)
-                self._state.following.append(self.FOLLOW_state_entry_point_name_in_via11696)
-                state_entry_point_name618 = self.state_entry_point_name()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_state_entry_point_name.add(state_entry_point_name628.tree)
 
                 # AST Rewrite
-                # elements: VIA, state_entry_point_name
+                # elements: state_entry_point_name, VIA
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -22194,50 +20194,29 @@ class sdl92Parser(Parser):
                 # sdl92.g:1039:9: ( ( ( cif )? ( hyperlink )? COMMENT StringLiteral )? SEMI -> ( ^( COMMENT ( cif )? ( hyperlink )? StringLiteral ) )? )
                 # sdl92.g:1039:13: ( ( cif )? ( hyperlink )? COMMENT StringLiteral )? SEMI
                 pass 
-<<<<<<< HEAD
                 # sdl92.g:1039:13: ( ( cif )? ( hyperlink )? COMMENT StringLiteral )?
                 alt180 = 2
                 LA180_0 = self.input.LA(1)
 
-                if (LA180_0 == COMMENT or LA180_0 == 223) :
+                if (LA180_0 == COMMENT or LA180_0 == 219) :
                     alt180 = 1
                 if alt180 == 1:
                     # sdl92.g:1039:14: ( cif )? ( hyperlink )? COMMENT StringLiteral
-=======
-                # sdl92.g:1026:13: ( ( cif )? ( hyperlink )? COMMENT StringLiteral )?
-                alt179 = 2
-                LA179_0 = self.input.LA(1)
-
-                if (LA179_0 == COMMENT or LA179_0 == 217) :
-                    alt179 = 1
-                if alt179 == 1:
-                    # sdl92.g:1026:14: ( cif )? ( hyperlink )? COMMENT StringLiteral
->>>>>>> remotes/upstream/master
                     pass 
                     # sdl92.g:1039:14: ( cif )?
                     alt178 = 2
                     LA178_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA178_0 == 223) :
+                    if (LA178_0 == 219) :
                         LA178_1 = self.input.LA(2)
-=======
-                    if (LA177_0 == 217) :
-                        LA177_1 = self.input.LA(2)
->>>>>>> remotes/upstream/master
 
                         if (LA178_1 == LABEL or LA178_1 == COMMENT or LA178_1 == PROCESS or LA178_1 == STATE or LA178_1 == PROVIDED or LA178_1 == INPUT or (PROCEDURE_CALL <= LA178_1 <= PROCEDURE) or LA178_1 == DECISION or LA178_1 == ANSWER or LA178_1 == OUTPUT or (TEXT <= LA178_1 <= JOIN) or LA178_1 == RETURN or LA178_1 == TASK or LA178_1 == STOP or LA178_1 == CONNECT or LA178_1 == START) :
                             alt178 = 1
                     if alt178 == 1:
                         # sdl92.g:0:0: cif
                         pass 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_cif_in_end11834)
+                        self._state.following.append(self.FOLLOW_cif_in_end11844)
                         cif629 = self.cif()
-=======
-                        self._state.following.append(self.FOLLOW_cif_in_end11737)
-                        cif619 = self.cif()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -22249,23 +20228,13 @@ class sdl92Parser(Parser):
                     alt179 = 2
                     LA179_0 = self.input.LA(1)
 
-<<<<<<< HEAD
-                    if (LA179_0 == 223) :
+                    if (LA179_0 == 219) :
                         alt179 = 1
                     if alt179 == 1:
                         # sdl92.g:0:0: hyperlink
                         pass 
-                        self._state.following.append(self.FOLLOW_hyperlink_in_end11837)
+                        self._state.following.append(self.FOLLOW_hyperlink_in_end11847)
                         hyperlink630 = self.hyperlink()
-=======
-                    if (LA178_0 == 217) :
-                        alt178 = 1
-                    if alt178 == 1:
-                        # sdl92.g:0:0: hyperlink
-                        pass 
-                        self._state.following.append(self.FOLLOW_hyperlink_in_end11740)
-                        hyperlink620 = self.hyperlink()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -22273,36 +20242,21 @@ class sdl92Parser(Parser):
 
 
 
-<<<<<<< HEAD
-                    COMMENT631=self.match(self.input, COMMENT, self.FOLLOW_COMMENT_in_end11840) 
+                    COMMENT631=self.match(self.input, COMMENT, self.FOLLOW_COMMENT_in_end11850) 
                     if self._state.backtracking == 0:
                         stream_COMMENT.add(COMMENT631)
-                    StringLiteral632=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_end11842) 
-=======
-                    COMMENT621=self.match(self.input, COMMENT, self.FOLLOW_COMMENT_in_end11743) 
-                    if self._state.backtracking == 0:
-                        stream_COMMENT.add(COMMENT621)
-                    StringLiteral622=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_end11745) 
->>>>>>> remotes/upstream/master
+                    StringLiteral632=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_end11852) 
                     if self._state.backtracking == 0:
                         stream_StringLiteral.add(StringLiteral632)
 
 
 
-<<<<<<< HEAD
-                SEMI633=self.match(self.input, SEMI, self.FOLLOW_SEMI_in_end11846) 
-=======
-                SEMI623=self.match(self.input, SEMI, self.FOLLOW_SEMI_in_end11749) 
->>>>>>> remotes/upstream/master
+                SEMI633=self.match(self.input, SEMI, self.FOLLOW_SEMI_in_end11856) 
                 if self._state.backtracking == 0:
                     stream_SEMI.add(SEMI633)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: StringLiteral, hyperlink, COMMENT, cif
-=======
-                # elements: StringLiteral, COMMENT, cif, hyperlink
->>>>>>> remotes/upstream/master
+                # elements: hyperlink, COMMENT, StringLiteral, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -22319,17 +20273,10 @@ class sdl92Parser(Parser):
 
 
                     root_0 = self._adaptor.nil()
-<<<<<<< HEAD
                     # 1040:9: -> ( ^( COMMENT ( cif )? ( hyperlink )? StringLiteral ) )?
                     # sdl92.g:1040:12: ( ^( COMMENT ( cif )? ( hyperlink )? StringLiteral ) )?
-                    if stream_StringLiteral.hasNext() or stream_hyperlink.hasNext() or stream_COMMENT.hasNext() or stream_cif.hasNext():
+                    if stream_hyperlink.hasNext() or stream_COMMENT.hasNext() or stream_StringLiteral.hasNext() or stream_cif.hasNext():
                         # sdl92.g:1040:12: ^( COMMENT ( cif )? ( hyperlink )? StringLiteral )
-=======
-                    # 1027:9: -> ( ^( COMMENT ( cif )? ( hyperlink )? StringLiteral ) )?
-                    # sdl92.g:1027:12: ( ^( COMMENT ( cif )? ( hyperlink )? StringLiteral ) )?
-                    if stream_StringLiteral.hasNext() or stream_COMMENT.hasNext() or stream_cif.hasNext() or stream_hyperlink.hasNext():
-                        # sdl92.g:1027:12: ^( COMMENT ( cif )? ( hyperlink )? StringLiteral )
->>>>>>> remotes/upstream/master
                         root_1 = self._adaptor.nil()
                         root_1 = self._adaptor.becomeRoot(stream_COMMENT.nextNode(), root_1)
 
@@ -22350,14 +20297,10 @@ class sdl92Parser(Parser):
                         self._adaptor.addChild(root_0, root_1)
 
 
-                    stream_StringLiteral.reset();
-<<<<<<< HEAD
                     stream_hyperlink.reset();
-=======
->>>>>>> remotes/upstream/master
                     stream_COMMENT.reset();
+                    stream_StringLiteral.reset();
                     stream_cif.reset();
-                    stream_hyperlink.reset();
 
 
 
@@ -22443,114 +20386,60 @@ class sdl92Parser(Parser):
                 # sdl92.g:1044:9: ( cif_decl symbolname L_PAREN x= INT COMMA y= INT R_PAREN COMMA L_PAREN width= INT COMMA height= INT R_PAREN cif_end -> ^( CIF $x $y $width $height) )
                 # sdl92.g:1044:17: cif_decl symbolname L_PAREN x= INT COMMA y= INT R_PAREN COMMA L_PAREN width= INT COMMA height= INT R_PAREN cif_end
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_cif_decl_in_cif11892)
+                self._state.following.append(self.FOLLOW_cif_decl_in_cif11902)
                 cif_decl634 = self.cif_decl()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_cif_decl.add(cif_decl634.tree)
-                self._state.following.append(self.FOLLOW_symbolname_in_cif11894)
+                self._state.following.append(self.FOLLOW_symbolname_in_cif11904)
                 symbolname635 = self.symbolname()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_symbolname.add(symbolname635.tree)
-                L_PAREN636=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_cif11912) 
+                L_PAREN636=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_cif11922) 
                 if self._state.backtracking == 0:
                     stream_L_PAREN.add(L_PAREN636)
-                x=self.match(self.input, INT, self.FOLLOW_INT_in_cif11916) 
+                x=self.match(self.input, INT, self.FOLLOW_INT_in_cif11926) 
                 if self._state.backtracking == 0:
                     stream_INT.add(x)
-                COMMA637=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11918) 
+                COMMA637=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11928) 
                 if self._state.backtracking == 0:
                     stream_COMMA.add(COMMA637)
-                y=self.match(self.input, INT, self.FOLLOW_INT_in_cif11922) 
+                y=self.match(self.input, INT, self.FOLLOW_INT_in_cif11932) 
                 if self._state.backtracking == 0:
                     stream_INT.add(y)
-                R_PAREN638=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_cif11924) 
+                R_PAREN638=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_cif11934) 
                 if self._state.backtracking == 0:
                     stream_R_PAREN.add(R_PAREN638)
-                COMMA639=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11942) 
+                COMMA639=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11952) 
                 if self._state.backtracking == 0:
                     stream_COMMA.add(COMMA639)
-                L_PAREN640=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_cif11960) 
+                L_PAREN640=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_cif11970) 
                 if self._state.backtracking == 0:
                     stream_L_PAREN.add(L_PAREN640)
-                width=self.match(self.input, INT, self.FOLLOW_INT_in_cif11964) 
+                width=self.match(self.input, INT, self.FOLLOW_INT_in_cif11974) 
                 if self._state.backtracking == 0:
                     stream_INT.add(width)
-                COMMA641=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11966) 
+                COMMA641=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11976) 
                 if self._state.backtracking == 0:
                     stream_COMMA.add(COMMA641)
-                height=self.match(self.input, INT, self.FOLLOW_INT_in_cif11970) 
+                height=self.match(self.input, INT, self.FOLLOW_INT_in_cif11980) 
                 if self._state.backtracking == 0:
                     stream_INT.add(height)
-                R_PAREN642=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_cif11972) 
+                R_PAREN642=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_cif11982) 
                 if self._state.backtracking == 0:
                     stream_R_PAREN.add(R_PAREN642)
-                self._state.following.append(self.FOLLOW_cif_end_in_cif11991)
+                self._state.following.append(self.FOLLOW_cif_end_in_cif12001)
                 cif_end643 = self.cif_end()
-=======
-                self._state.following.append(self.FOLLOW_cif_decl_in_cif11795)
-                cif_decl624 = self.cif_decl()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_cif_decl.add(cif_decl624.tree)
-                self._state.following.append(self.FOLLOW_symbolname_in_cif11797)
-                symbolname625 = self.symbolname()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_symbolname.add(symbolname625.tree)
-                L_PAREN626=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_cif11815) 
-                if self._state.backtracking == 0:
-                    stream_L_PAREN.add(L_PAREN626)
-                x=self.match(self.input, INT, self.FOLLOW_INT_in_cif11819) 
-                if self._state.backtracking == 0:
-                    stream_INT.add(x)
-                COMMA627=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11821) 
-                if self._state.backtracking == 0:
-                    stream_COMMA.add(COMMA627)
-                y=self.match(self.input, INT, self.FOLLOW_INT_in_cif11825) 
-                if self._state.backtracking == 0:
-                    stream_INT.add(y)
-                R_PAREN628=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_cif11827) 
-                if self._state.backtracking == 0:
-                    stream_R_PAREN.add(R_PAREN628)
-                COMMA629=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11845) 
-                if self._state.backtracking == 0:
-                    stream_COMMA.add(COMMA629)
-                L_PAREN630=self.match(self.input, L_PAREN, self.FOLLOW_L_PAREN_in_cif11863) 
-                if self._state.backtracking == 0:
-                    stream_L_PAREN.add(L_PAREN630)
-                width=self.match(self.input, INT, self.FOLLOW_INT_in_cif11867) 
-                if self._state.backtracking == 0:
-                    stream_INT.add(width)
-                COMMA631=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_cif11869) 
-                if self._state.backtracking == 0:
-                    stream_COMMA.add(COMMA631)
-                height=self.match(self.input, INT, self.FOLLOW_INT_in_cif11873) 
-                if self._state.backtracking == 0:
-                    stream_INT.add(height)
-                R_PAREN632=self.match(self.input, R_PAREN, self.FOLLOW_R_PAREN_in_cif11875) 
-                if self._state.backtracking == 0:
-                    stream_R_PAREN.add(R_PAREN632)
-                self._state.following.append(self.FOLLOW_cif_end_in_cif11894)
-                cif_end633 = self.cif_end()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_cif_end.add(cif_end643.tree)
 
                 # AST Rewrite
-<<<<<<< HEAD
-                # elements: y, height, width, x
-=======
-                # elements: x, width, y, height
->>>>>>> remotes/upstream/master
+                # elements: width, x, y, height
                 # token labels: height, width, y, x
                 # rule labels: retval
                 # token list labels: 
@@ -22653,55 +20542,29 @@ class sdl92Parser(Parser):
                 # sdl92.g:1053:9: ( cif_decl KEEP SPECIFIC GEODE HYPERLINK StringLiteral cif_end -> ^( HYPERLINK StringLiteral ) )
                 # sdl92.g:1053:17: cif_decl KEEP SPECIFIC GEODE HYPERLINK StringLiteral cif_end
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_cif_decl_in_hyperlink12045)
+                self._state.following.append(self.FOLLOW_cif_decl_in_hyperlink12055)
                 cif_decl644 = self.cif_decl()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_cif_decl.add(cif_decl644.tree)
-                KEEP645=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_hyperlink12047) 
+                KEEP645=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_hyperlink12057) 
                 if self._state.backtracking == 0:
                     stream_KEEP.add(KEEP645)
-                SPECIFIC646=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_hyperlink12049) 
+                SPECIFIC646=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_hyperlink12059) 
                 if self._state.backtracking == 0:
                     stream_SPECIFIC.add(SPECIFIC646)
-                GEODE647=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_hyperlink12051) 
+                GEODE647=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_hyperlink12061) 
                 if self._state.backtracking == 0:
                     stream_GEODE.add(GEODE647)
-                HYPERLINK648=self.match(self.input, HYPERLINK, self.FOLLOW_HYPERLINK_in_hyperlink12053) 
+                HYPERLINK648=self.match(self.input, HYPERLINK, self.FOLLOW_HYPERLINK_in_hyperlink12063) 
                 if self._state.backtracking == 0:
                     stream_HYPERLINK.add(HYPERLINK648)
-                StringLiteral649=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_hyperlink12055) 
+                StringLiteral649=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_hyperlink12065) 
                 if self._state.backtracking == 0:
                     stream_StringLiteral.add(StringLiteral649)
-                self._state.following.append(self.FOLLOW_cif_end_in_hyperlink12073)
+                self._state.following.append(self.FOLLOW_cif_end_in_hyperlink12083)
                 cif_end650 = self.cif_end()
-=======
-                self._state.following.append(self.FOLLOW_cif_decl_in_hyperlink11948)
-                cif_decl634 = self.cif_decl()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_cif_decl.add(cif_decl634.tree)
-                KEEP635=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_hyperlink11950) 
-                if self._state.backtracking == 0:
-                    stream_KEEP.add(KEEP635)
-                SPECIFIC636=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_hyperlink11952) 
-                if self._state.backtracking == 0:
-                    stream_SPECIFIC.add(SPECIFIC636)
-                GEODE637=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_hyperlink11954) 
-                if self._state.backtracking == 0:
-                    stream_GEODE.add(GEODE637)
-                HYPERLINK638=self.match(self.input, HYPERLINK, self.FOLLOW_HYPERLINK_in_hyperlink11956) 
-                if self._state.backtracking == 0:
-                    stream_HYPERLINK.add(HYPERLINK638)
-                StringLiteral639=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_hyperlink11958) 
-                if self._state.backtracking == 0:
-                    stream_StringLiteral.add(StringLiteral639)
-                self._state.following.append(self.FOLLOW_cif_end_in_hyperlink11976)
-                cif_end640 = self.cif_end()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -22804,41 +20667,22 @@ class sdl92Parser(Parser):
                 # sdl92.g:1065:9: ( cif_decl KEEP SPECIFIC GEODE PARAMNAMES ( field_name )+ cif_end -> ^( PARAMNAMES ( field_name )+ ) )
                 # sdl92.g:1065:17: cif_decl KEEP SPECIFIC GEODE PARAMNAMES ( field_name )+ cif_end
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_cif_decl_in_paramnames12118)
+                self._state.following.append(self.FOLLOW_cif_decl_in_paramnames12128)
                 cif_decl651 = self.cif_decl()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_cif_decl.add(cif_decl651.tree)
-                KEEP652=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_paramnames12120) 
+                KEEP652=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_paramnames12130) 
                 if self._state.backtracking == 0:
                     stream_KEEP.add(KEEP652)
-                SPECIFIC653=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_paramnames12122) 
+                SPECIFIC653=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_paramnames12132) 
                 if self._state.backtracking == 0:
                     stream_SPECIFIC.add(SPECIFIC653)
-                GEODE654=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_paramnames12124) 
+                GEODE654=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_paramnames12134) 
                 if self._state.backtracking == 0:
                     stream_GEODE.add(GEODE654)
-                PARAMNAMES655=self.match(self.input, PARAMNAMES, self.FOLLOW_PARAMNAMES_in_paramnames12126) 
-=======
-                self._state.following.append(self.FOLLOW_cif_decl_in_paramnames12021)
-                cif_decl641 = self.cif_decl()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_cif_decl.add(cif_decl641.tree)
-                KEEP642=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_paramnames12023) 
-                if self._state.backtracking == 0:
-                    stream_KEEP.add(KEEP642)
-                SPECIFIC643=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_paramnames12025) 
-                if self._state.backtracking == 0:
-                    stream_SPECIFIC.add(SPECIFIC643)
-                GEODE644=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_paramnames12027) 
-                if self._state.backtracking == 0:
-                    stream_GEODE.add(GEODE644)
-                PARAMNAMES645=self.match(self.input, PARAMNAMES, self.FOLLOW_PARAMNAMES_in_paramnames12029) 
->>>>>>> remotes/upstream/master
+                PARAMNAMES655=self.match(self.input, PARAMNAMES, self.FOLLOW_PARAMNAMES_in_paramnames12136) 
                 if self._state.backtracking == 0:
                     stream_PARAMNAMES.add(PARAMNAMES655)
                 # sdl92.g:1065:57: ( field_name )+
@@ -22854,13 +20698,8 @@ class sdl92Parser(Parser):
                     if alt181 == 1:
                         # sdl92.g:0:0: field_name
                         pass 
-<<<<<<< HEAD
-                        self._state.following.append(self.FOLLOW_field_name_in_paramnames12128)
+                        self._state.following.append(self.FOLLOW_field_name_in_paramnames12138)
                         field_name656 = self.field_name()
-=======
-                        self._state.following.append(self.FOLLOW_field_name_in_paramnames12031)
-                        field_name646 = self.field_name()
->>>>>>> remotes/upstream/master
 
                         self._state.following.pop()
                         if self._state.backtracking == 0:
@@ -22877,15 +20716,9 @@ class sdl92Parser(Parser):
                         eee = EarlyExitException(181, self.input)
                         raise eee
 
-<<<<<<< HEAD
                     cnt181 += 1
-                self._state.following.append(self.FOLLOW_cif_end_in_paramnames12131)
+                self._state.following.append(self.FOLLOW_cif_end_in_paramnames12141)
                 cif_end657 = self.cif_end()
-=======
-                    cnt180 += 1
-                self._state.following.append(self.FOLLOW_cif_end_in_paramnames12034)
-                cif_end647 = self.cif_end()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -22996,55 +20829,29 @@ class sdl92Parser(Parser):
                 # sdl92.g:1074:9: ( cif_decl KEEP SPECIFIC GEODE ASNFILENAME StringLiteral cif_end -> ^( ASN1 StringLiteral ) )
                 # sdl92.g:1074:17: cif_decl KEEP SPECIFIC GEODE ASNFILENAME StringLiteral cif_end
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_cif_decl_in_use_asn112178)
+                self._state.following.append(self.FOLLOW_cif_decl_in_use_asn112188)
                 cif_decl658 = self.cif_decl()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_cif_decl.add(cif_decl658.tree)
-                KEEP659=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_use_asn112180) 
+                KEEP659=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_use_asn112190) 
                 if self._state.backtracking == 0:
                     stream_KEEP.add(KEEP659)
-                SPECIFIC660=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_use_asn112182) 
+                SPECIFIC660=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_use_asn112192) 
                 if self._state.backtracking == 0:
                     stream_SPECIFIC.add(SPECIFIC660)
-                GEODE661=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_use_asn112184) 
+                GEODE661=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_use_asn112194) 
                 if self._state.backtracking == 0:
                     stream_GEODE.add(GEODE661)
-                ASNFILENAME662=self.match(self.input, ASNFILENAME, self.FOLLOW_ASNFILENAME_in_use_asn112186) 
+                ASNFILENAME662=self.match(self.input, ASNFILENAME, self.FOLLOW_ASNFILENAME_in_use_asn112196) 
                 if self._state.backtracking == 0:
                     stream_ASNFILENAME.add(ASNFILENAME662)
-                StringLiteral663=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_use_asn112188) 
+                StringLiteral663=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_use_asn112198) 
                 if self._state.backtracking == 0:
                     stream_StringLiteral.add(StringLiteral663)
-                self._state.following.append(self.FOLLOW_cif_end_in_use_asn112190)
+                self._state.following.append(self.FOLLOW_cif_end_in_use_asn112200)
                 cif_end664 = self.cif_end()
-=======
-                self._state.following.append(self.FOLLOW_cif_decl_in_use_asn112081)
-                cif_decl648 = self.cif_decl()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_cif_decl.add(cif_decl648.tree)
-                KEEP649=self.match(self.input, KEEP, self.FOLLOW_KEEP_in_use_asn112083) 
-                if self._state.backtracking == 0:
-                    stream_KEEP.add(KEEP649)
-                SPECIFIC650=self.match(self.input, SPECIFIC, self.FOLLOW_SPECIFIC_in_use_asn112085) 
-                if self._state.backtracking == 0:
-                    stream_SPECIFIC.add(SPECIFIC650)
-                GEODE651=self.match(self.input, GEODE, self.FOLLOW_GEODE_in_use_asn112087) 
-                if self._state.backtracking == 0:
-                    stream_GEODE.add(GEODE651)
-                ASNFILENAME652=self.match(self.input, ASNFILENAME, self.FOLLOW_ASNFILENAME_in_use_asn112089) 
-                if self._state.backtracking == 0:
-                    stream_ASNFILENAME.add(ASNFILENAME652)
-                StringLiteral653=self.match(self.input, StringLiteral, self.FOLLOW_StringLiteral_in_use_asn112091) 
-                if self._state.backtracking == 0:
-                    stream_StringLiteral.add(StringLiteral653)
-                self._state.following.append(self.FOLLOW_cif_end_in_use_asn112093)
-                cif_end654 = self.cif_end()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -23197,11 +21004,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                string_literal666=self.match(self.input, 223, self.FOLLOW_223_in_cif_decl12617)
-=======
-                string_literal656=self.match(self.input, 217, self.FOLLOW_217_in_cif_decl12520)
->>>>>>> remotes/upstream/master
+                string_literal666=self.match(self.input, 219, self.FOLLOW_219_in_cif_decl12627)
                 if self._state.backtracking == 0:
 
                     string_literal666_tree = self._adaptor.createWithPayload(string_literal666)
@@ -23258,11 +21061,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                string_literal667=self.match(self.input, 224, self.FOLLOW_224_in_cif_end12640)
-=======
-                string_literal657=self.match(self.input, 218, self.FOLLOW_218_in_cif_end12543)
->>>>>>> remotes/upstream/master
+                string_literal667=self.match(self.input, 220, self.FOLLOW_220_in_cif_end12650)
                 if self._state.backtracking == 0:
 
                     string_literal667_tree = self._adaptor.createWithPayload(string_literal667)
@@ -23323,31 +21122,17 @@ class sdl92Parser(Parser):
                 # sdl92.g:1109:9: ( cif_decl ENDTEXT cif_end -> ^( ENDTEXT ) )
                 # sdl92.g:1109:17: cif_decl ENDTEXT cif_end
                 pass 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_cif_decl_in_cif_end_text12663)
+                self._state.following.append(self.FOLLOW_cif_decl_in_cif_end_text12673)
                 cif_decl668 = self.cif_decl()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     stream_cif_decl.add(cif_decl668.tree)
-                ENDTEXT669=self.match(self.input, ENDTEXT, self.FOLLOW_ENDTEXT_in_cif_end_text12665) 
+                ENDTEXT669=self.match(self.input, ENDTEXT, self.FOLLOW_ENDTEXT_in_cif_end_text12675) 
                 if self._state.backtracking == 0:
                     stream_ENDTEXT.add(ENDTEXT669)
-                self._state.following.append(self.FOLLOW_cif_end_in_cif_end_text12667)
+                self._state.following.append(self.FOLLOW_cif_end_in_cif_end_text12677)
                 cif_end670 = self.cif_end()
-=======
-                self._state.following.append(self.FOLLOW_cif_decl_in_cif_end_text12566)
-                cif_decl658 = self.cif_decl()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    stream_cif_decl.add(cif_decl658.tree)
-                ENDTEXT659=self.match(self.input, ENDTEXT, self.FOLLOW_ENDTEXT_in_cif_end_text12568) 
-                if self._state.backtracking == 0:
-                    stream_ENDTEXT.add(ENDTEXT659)
-                self._state.following.append(self.FOLLOW_cif_end_in_cif_end_text12570)
-                cif_end660 = self.cif_end()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -23438,45 +21223,26 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_cif_decl_in_cif_end_label12708)
+                self._state.following.append(self.FOLLOW_cif_decl_in_cif_end_label12718)
                 cif_decl671 = self.cif_decl()
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
                     self._adaptor.addChild(root_0, cif_decl671.tree)
-                END672=self.match(self.input, END, self.FOLLOW_END_in_cif_end_label12710)
-=======
-                self._state.following.append(self.FOLLOW_cif_decl_in_cif_end_label12611)
-                cif_decl661 = self.cif_decl()
-
-                self._state.following.pop()
-                if self._state.backtracking == 0:
-                    self._adaptor.addChild(root_0, cif_decl661.tree)
-                END662=self.match(self.input, END, self.FOLLOW_END_in_cif_end_label12613)
->>>>>>> remotes/upstream/master
+                END672=self.match(self.input, END, self.FOLLOW_END_in_cif_end_label12720)
                 if self._state.backtracking == 0:
 
                     END672_tree = self._adaptor.createWithPayload(END672)
                     self._adaptor.addChild(root_0, END672_tree)
 
-<<<<<<< HEAD
-                LABEL673=self.match(self.input, LABEL, self.FOLLOW_LABEL_in_cif_end_label12712)
-=======
-                LABEL663=self.match(self.input, LABEL, self.FOLLOW_LABEL_in_cif_end_label12615)
->>>>>>> remotes/upstream/master
+                LABEL673=self.match(self.input, LABEL, self.FOLLOW_LABEL_in_cif_end_label12722)
                 if self._state.backtracking == 0:
 
                     LABEL673_tree = self._adaptor.createWithPayload(LABEL673)
                     self._adaptor.addChild(root_0, LABEL673_tree)
 
-<<<<<<< HEAD
-                self._state.following.append(self.FOLLOW_cif_end_in_cif_end_label12714)
+                self._state.following.append(self.FOLLOW_cif_end_in_cif_end_label12724)
                 cif_end674 = self.cif_end()
-=======
-                self._state.following.append(self.FOLLOW_cif_end_in_cif_end_label12617)
-                cif_end664 = self.cif_end()
->>>>>>> remotes/upstream/master
 
                 self._state.following.pop()
                 if self._state.backtracking == 0:
@@ -23532,11 +21298,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                DASH675=self.match(self.input, DASH, self.FOLLOW_DASH_in_dash_nextstate12730)
-=======
-                DASH665=self.match(self.input, DASH, self.FOLLOW_DASH_in_dash_nextstate12633)
->>>>>>> remotes/upstream/master
+                DASH675=self.match(self.input, DASH, self.FOLLOW_DASH_in_dash_nextstate12740)
                 if self._state.backtracking == 0:
 
                     DASH675_tree = self._adaptor.createWithPayload(DASH675)
@@ -23593,11 +21355,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID676=self.match(self.input, ID, self.FOLLOW_ID_in_connector_name12744)
-=======
-                ID666=self.match(self.input, ID, self.FOLLOW_ID_in_connector_name12647)
->>>>>>> remotes/upstream/master
+                ID676=self.match(self.input, ID, self.FOLLOW_ID_in_connector_name12754)
                 if self._state.backtracking == 0:
 
                     ID676_tree = self._adaptor.createWithPayload(ID676)
@@ -23654,11 +21412,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID677=self.match(self.input, ID, self.FOLLOW_ID_in_signal_id12763)
-=======
-                ID667=self.match(self.input, ID, self.FOLLOW_ID_in_signal_id12666)
->>>>>>> remotes/upstream/master
+                ID677=self.match(self.input, ID, self.FOLLOW_ID_in_signal_id12773)
                 if self._state.backtracking == 0:
 
                     ID677_tree = self._adaptor.createWithPayload(ID677)
@@ -23715,11 +21469,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID678=self.match(self.input, ID, self.FOLLOW_ID_in_statename12782)
-=======
-                ID668=self.match(self.input, ID, self.FOLLOW_ID_in_statename12685)
->>>>>>> remotes/upstream/master
+                ID678=self.match(self.input, ID, self.FOLLOW_ID_in_statename12792)
                 if self._state.backtracking == 0:
 
                     ID678_tree = self._adaptor.createWithPayload(ID678)
@@ -23776,11 +21526,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID679=self.match(self.input, ID, self.FOLLOW_ID_in_state_exit_point_name12811)
-=======
-                ID669=self.match(self.input, ID, self.FOLLOW_ID_in_state_exit_point_name12714)
->>>>>>> remotes/upstream/master
+                ID679=self.match(self.input, ID, self.FOLLOW_ID_in_state_exit_point_name12821)
                 if self._state.backtracking == 0:
 
                     ID679_tree = self._adaptor.createWithPayload(ID679)
@@ -23837,11 +21583,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID680=self.match(self.input, ID, self.FOLLOW_ID_in_state_entry_point_name12840)
-=======
-                ID670=self.match(self.input, ID, self.FOLLOW_ID_in_state_entry_point_name12743)
->>>>>>> remotes/upstream/master
+                ID680=self.match(self.input, ID, self.FOLLOW_ID_in_state_entry_point_name12850)
                 if self._state.backtracking == 0:
 
                     ID680_tree = self._adaptor.createWithPayload(ID680)
@@ -23898,11 +21640,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID681=self.match(self.input, ID, self.FOLLOW_ID_in_variable_id12857)
-=======
-                ID671=self.match(self.input, ID, self.FOLLOW_ID_in_variable_id12760)
->>>>>>> remotes/upstream/master
+                ID681=self.match(self.input, ID, self.FOLLOW_ID_in_variable_id12867)
                 if self._state.backtracking == 0:
 
                     ID681_tree = self._adaptor.createWithPayload(ID681)
@@ -24025,11 +21763,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID683=self.match(self.input, ID, self.FOLLOW_ID_in_process_id12897)
-=======
-                ID673=self.match(self.input, ID, self.FOLLOW_ID_in_process_id12800)
->>>>>>> remotes/upstream/master
+                ID683=self.match(self.input, ID, self.FOLLOW_ID_in_process_id12907)
                 if self._state.backtracking == 0:
 
                     ID683_tree = self._adaptor.createWithPayload(ID683)
@@ -24086,11 +21820,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID684=self.match(self.input, ID, self.FOLLOW_ID_in_system_name12914)
-=======
-                ID674=self.match(self.input, ID, self.FOLLOW_ID_in_system_name12817)
->>>>>>> remotes/upstream/master
+                ID684=self.match(self.input, ID, self.FOLLOW_ID_in_system_name12924)
                 if self._state.backtracking == 0:
 
                     ID684_tree = self._adaptor.createWithPayload(ID684)
@@ -24147,11 +21877,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID685=self.match(self.input, ID, self.FOLLOW_ID_in_package_name12930)
-=======
-                ID675=self.match(self.input, ID, self.FOLLOW_ID_in_package_name12833)
->>>>>>> remotes/upstream/master
+                ID685=self.match(self.input, ID, self.FOLLOW_ID_in_package_name12940)
                 if self._state.backtracking == 0:
 
                     ID685_tree = self._adaptor.createWithPayload(ID685)
@@ -24208,11 +21934,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID686=self.match(self.input, ID, self.FOLLOW_ID_in_priority_signal_id12959)
-=======
-                ID676=self.match(self.input, ID, self.FOLLOW_ID_in_priority_signal_id12862)
->>>>>>> remotes/upstream/master
+                ID686=self.match(self.input, ID, self.FOLLOW_ID_in_priority_signal_id12969)
                 if self._state.backtracking == 0:
 
                     ID686_tree = self._adaptor.createWithPayload(ID686)
@@ -24269,11 +21991,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID687=self.match(self.input, ID, self.FOLLOW_ID_in_signal_list_id12973)
-=======
-                ID677=self.match(self.input, ID, self.FOLLOW_ID_in_signal_list_id12876)
->>>>>>> remotes/upstream/master
+                ID687=self.match(self.input, ID, self.FOLLOW_ID_in_signal_list_id12983)
                 if self._state.backtracking == 0:
 
                     ID687_tree = self._adaptor.createWithPayload(ID687)
@@ -24330,11 +22048,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID688=self.match(self.input, ID, self.FOLLOW_ID_in_timer_id12993)
-=======
-                ID678=self.match(self.input, ID, self.FOLLOW_ID_in_timer_id12896)
->>>>>>> remotes/upstream/master
+                ID688=self.match(self.input, ID, self.FOLLOW_ID_in_timer_id13003)
                 if self._state.backtracking == 0:
 
                     ID688_tree = self._adaptor.createWithPayload(ID688)
@@ -24391,11 +22105,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID689=self.match(self.input, ID, self.FOLLOW_ID_in_field_name13011)
-=======
-                ID679=self.match(self.input, ID, self.FOLLOW_ID_in_field_name12914)
->>>>>>> remotes/upstream/master
+                ID689=self.match(self.input, ID, self.FOLLOW_ID_in_field_name13021)
                 if self._state.backtracking == 0:
 
                     ID689_tree = self._adaptor.createWithPayload(ID689)
@@ -24452,11 +22162,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID690=self.match(self.input, ID, self.FOLLOW_ID_in_signal_route_id13024)
-=======
-                ID680=self.match(self.input, ID, self.FOLLOW_ID_in_signal_route_id12927)
->>>>>>> remotes/upstream/master
+                ID690=self.match(self.input, ID, self.FOLLOW_ID_in_signal_route_id13034)
                 if self._state.backtracking == 0:
 
                     ID690_tree = self._adaptor.createWithPayload(ID690)
@@ -24513,11 +22219,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID691=self.match(self.input, ID, self.FOLLOW_ID_in_channel_id13042)
-=======
-                ID681=self.match(self.input, ID, self.FOLLOW_ID_in_channel_id12945)
->>>>>>> remotes/upstream/master
+                ID691=self.match(self.input, ID, self.FOLLOW_ID_in_channel_id13052)
                 if self._state.backtracking == 0:
 
                     ID691_tree = self._adaptor.createWithPayload(ID691)
@@ -24574,11 +22276,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID692=self.match(self.input, ID, self.FOLLOW_ID_in_route_id13062)
-=======
-                ID682=self.match(self.input, ID, self.FOLLOW_ID_in_route_id12965)
->>>>>>> remotes/upstream/master
+                ID692=self.match(self.input, ID, self.FOLLOW_ID_in_route_id13072)
                 if self._state.backtracking == 0:
 
                     ID692_tree = self._adaptor.createWithPayload(ID692)
@@ -24635,11 +22333,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID693=self.match(self.input, ID, self.FOLLOW_ID_in_block_id13082)
-=======
-                ID683=self.match(self.input, ID, self.FOLLOW_ID_in_block_id12985)
->>>>>>> remotes/upstream/master
+                ID693=self.match(self.input, ID, self.FOLLOW_ID_in_block_id13092)
                 if self._state.backtracking == 0:
 
                     ID693_tree = self._adaptor.createWithPayload(ID693)
@@ -24696,11 +22390,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID694=self.match(self.input, ID, self.FOLLOW_ID_in_source_id13101)
-=======
-                ID684=self.match(self.input, ID, self.FOLLOW_ID_in_source_id13004)
->>>>>>> remotes/upstream/master
+                ID694=self.match(self.input, ID, self.FOLLOW_ID_in_source_id13111)
                 if self._state.backtracking == 0:
 
                     ID694_tree = self._adaptor.createWithPayload(ID694)
@@ -24757,11 +22447,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID695=self.match(self.input, ID, self.FOLLOW_ID_in_dest_id13122)
-=======
-                ID685=self.match(self.input, ID, self.FOLLOW_ID_in_dest_id13025)
->>>>>>> remotes/upstream/master
+                ID695=self.match(self.input, ID, self.FOLLOW_ID_in_dest_id13132)
                 if self._state.backtracking == 0:
 
                     ID695_tree = self._adaptor.createWithPayload(ID695)
@@ -24818,11 +22504,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID696=self.match(self.input, ID, self.FOLLOW_ID_in_gate_id13143)
-=======
-                ID686=self.match(self.input, ID, self.FOLLOW_ID_in_gate_id13046)
->>>>>>> remotes/upstream/master
+                ID696=self.match(self.input, ID, self.FOLLOW_ID_in_gate_id13153)
                 if self._state.backtracking == 0:
 
                     ID696_tree = self._adaptor.createWithPayload(ID696)
@@ -24879,11 +22561,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID697=self.match(self.input, ID, self.FOLLOW_ID_in_procedure_id13159)
-=======
-                ID687=self.match(self.input, ID, self.FOLLOW_ID_in_procedure_id13062)
->>>>>>> remotes/upstream/master
+                ID697=self.match(self.input, ID, self.FOLLOW_ID_in_procedure_id13169)
                 if self._state.backtracking == 0:
 
                     ID697_tree = self._adaptor.createWithPayload(ID697)
@@ -24940,11 +22618,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID698=self.match(self.input, ID, self.FOLLOW_ID_in_remote_procedure_id13188)
-=======
-                ID688=self.match(self.input, ID, self.FOLLOW_ID_in_remote_procedure_id13091)
->>>>>>> remotes/upstream/master
+                ID698=self.match(self.input, ID, self.FOLLOW_ID_in_remote_procedure_id13198)
                 if self._state.backtracking == 0:
 
                     ID698_tree = self._adaptor.createWithPayload(ID698)
@@ -25001,11 +22675,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID699=self.match(self.input, ID, self.FOLLOW_ID_in_operator_id13205)
-=======
-                ID689=self.match(self.input, ID, self.FOLLOW_ID_in_operator_id13108)
->>>>>>> remotes/upstream/master
+                ID699=self.match(self.input, ID, self.FOLLOW_ID_in_operator_id13215)
                 if self._state.backtracking == 0:
 
                     ID699_tree = self._adaptor.createWithPayload(ID699)
@@ -25062,11 +22732,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID700=self.match(self.input, ID, self.FOLLOW_ID_in_synonym_id13223)
-=======
-                ID690=self.match(self.input, ID, self.FOLLOW_ID_in_synonym_id13126)
->>>>>>> remotes/upstream/master
+                ID700=self.match(self.input, ID, self.FOLLOW_ID_in_synonym_id13233)
                 if self._state.backtracking == 0:
 
                     ID700_tree = self._adaptor.createWithPayload(ID700)
@@ -25123,11 +22789,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID701=self.match(self.input, ID, self.FOLLOW_ID_in_external_synonym_id13252)
-=======
-                ID691=self.match(self.input, ID, self.FOLLOW_ID_in_external_synonym_id13155)
->>>>>>> remotes/upstream/master
+                ID701=self.match(self.input, ID, self.FOLLOW_ID_in_external_synonym_id13262)
                 if self._state.backtracking == 0:
 
                     ID701_tree = self._adaptor.createWithPayload(ID701)
@@ -25184,11 +22846,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID702=self.match(self.input, ID, self.FOLLOW_ID_in_remote_variable_id13281)
-=======
-                ID692=self.match(self.input, ID, self.FOLLOW_ID_in_remote_variable_id13184)
->>>>>>> remotes/upstream/master
+                ID702=self.match(self.input, ID, self.FOLLOW_ID_in_remote_variable_id13291)
                 if self._state.backtracking == 0:
 
                     ID702_tree = self._adaptor.createWithPayload(ID702)
@@ -25245,11 +22903,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID703=self.match(self.input, ID, self.FOLLOW_ID_in_view_id13302)
-=======
-                ID693=self.match(self.input, ID, self.FOLLOW_ID_in_view_id13205)
->>>>>>> remotes/upstream/master
+                ID703=self.match(self.input, ID, self.FOLLOW_ID_in_view_id13312)
                 if self._state.backtracking == 0:
 
                     ID703_tree = self._adaptor.createWithPayload(ID703)
@@ -25306,11 +22960,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID704=self.match(self.input, ID, self.FOLLOW_ID_in_sort_id13323)
-=======
-                ID694=self.match(self.input, ID, self.FOLLOW_ID_in_sort_id13226)
->>>>>>> remotes/upstream/master
+                ID704=self.match(self.input, ID, self.FOLLOW_ID_in_sort_id13333)
                 if self._state.backtracking == 0:
 
                     ID704_tree = self._adaptor.createWithPayload(ID704)
@@ -25367,11 +23017,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID705=self.match(self.input, ID, self.FOLLOW_ID_in_syntype_id13341)
-=======
-                ID695=self.match(self.input, ID, self.FOLLOW_ID_in_syntype_id13244)
->>>>>>> remotes/upstream/master
+                ID705=self.match(self.input, ID, self.FOLLOW_ID_in_syntype_id13351)
                 if self._state.backtracking == 0:
 
                     ID705_tree = self._adaptor.createWithPayload(ID705)
@@ -25428,11 +23074,7 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                ID706=self.match(self.input, ID, self.FOLLOW_ID_in_stimulus_id13358)
-=======
-                ID696=self.match(self.input, ID, self.FOLLOW_ID_in_stimulus_id13261)
->>>>>>> remotes/upstream/master
+                ID706=self.match(self.input, ID, self.FOLLOW_ID_in_stimulus_id13368)
                 if self._state.backtracking == 0:
 
                     ID706_tree = self._adaptor.createWithPayload(ID706)
@@ -25578,41 +23220,25 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    S707=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14392)
-=======
-                    S697=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14295)
->>>>>>> remotes/upstream/master
+                    S707=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14402)
                     if self._state.backtracking == 0:
 
                         S707_tree = self._adaptor.createWithPayload(S707)
                         self._adaptor.addChild(root_0, S707_tree)
 
-<<<<<<< HEAD
-                    E708=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14394)
-=======
-                    E698=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14297)
->>>>>>> remotes/upstream/master
+                    E708=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14404)
                     if self._state.backtracking == 0:
 
                         E708_tree = self._adaptor.createWithPayload(E708)
                         self._adaptor.addChild(root_0, E708_tree)
 
-<<<<<<< HEAD
-                    L709=self.match(self.input, L, self.FOLLOW_L_in_pid_expression14396)
-=======
-                    L699=self.match(self.input, L, self.FOLLOW_L_in_pid_expression14299)
->>>>>>> remotes/upstream/master
+                    L709=self.match(self.input, L, self.FOLLOW_L_in_pid_expression14406)
                     if self._state.backtracking == 0:
 
                         L709_tree = self._adaptor.createWithPayload(L709)
                         self._adaptor.addChild(root_0, L709_tree)
 
-<<<<<<< HEAD
-                    F710=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14398)
-=======
-                    F700=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14301)
->>>>>>> remotes/upstream/master
+                    F710=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14408)
                     if self._state.backtracking == 0:
 
                         F710_tree = self._adaptor.createWithPayload(F710)
@@ -25625,61 +23251,37 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    P711=self.match(self.input, P, self.FOLLOW_P_in_pid_expression14424)
-=======
-                    P701=self.match(self.input, P, self.FOLLOW_P_in_pid_expression14327)
->>>>>>> remotes/upstream/master
+                    P711=self.match(self.input, P, self.FOLLOW_P_in_pid_expression14434)
                     if self._state.backtracking == 0:
 
                         P711_tree = self._adaptor.createWithPayload(P711)
                         self._adaptor.addChild(root_0, P711_tree)
 
-<<<<<<< HEAD
-                    A712=self.match(self.input, A, self.FOLLOW_A_in_pid_expression14426)
-=======
-                    A702=self.match(self.input, A, self.FOLLOW_A_in_pid_expression14329)
->>>>>>> remotes/upstream/master
+                    A712=self.match(self.input, A, self.FOLLOW_A_in_pid_expression14436)
                     if self._state.backtracking == 0:
 
                         A712_tree = self._adaptor.createWithPayload(A712)
                         self._adaptor.addChild(root_0, A712_tree)
 
-<<<<<<< HEAD
-                    R713=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14428)
-=======
-                    R703=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14331)
->>>>>>> remotes/upstream/master
+                    R713=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14438)
                     if self._state.backtracking == 0:
 
                         R713_tree = self._adaptor.createWithPayload(R713)
                         self._adaptor.addChild(root_0, R713_tree)
 
-<<<<<<< HEAD
-                    E714=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14430)
-=======
-                    E704=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14333)
->>>>>>> remotes/upstream/master
+                    E714=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14440)
                     if self._state.backtracking == 0:
 
                         E714_tree = self._adaptor.createWithPayload(E714)
                         self._adaptor.addChild(root_0, E714_tree)
 
-<<<<<<< HEAD
-                    N715=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14432)
-=======
-                    N705=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14335)
->>>>>>> remotes/upstream/master
+                    N715=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14442)
                     if self._state.backtracking == 0:
 
                         N715_tree = self._adaptor.createWithPayload(N715)
                         self._adaptor.addChild(root_0, N715_tree)
 
-<<<<<<< HEAD
-                    T716=self.match(self.input, T, self.FOLLOW_T_in_pid_expression14434)
-=======
-                    T706=self.match(self.input, T, self.FOLLOW_T_in_pid_expression14337)
->>>>>>> remotes/upstream/master
+                    T716=self.match(self.input, T, self.FOLLOW_T_in_pid_expression14444)
                     if self._state.backtracking == 0:
 
                         T716_tree = self._adaptor.createWithPayload(T716)
@@ -25692,91 +23294,55 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    O717=self.match(self.input, O, self.FOLLOW_O_in_pid_expression14460)
-=======
-                    O707=self.match(self.input, O, self.FOLLOW_O_in_pid_expression14363)
->>>>>>> remotes/upstream/master
+                    O717=self.match(self.input, O, self.FOLLOW_O_in_pid_expression14470)
                     if self._state.backtracking == 0:
 
                         O717_tree = self._adaptor.createWithPayload(O717)
                         self._adaptor.addChild(root_0, O717_tree)
 
-<<<<<<< HEAD
-                    F718=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14462)
-=======
-                    F708=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14365)
->>>>>>> remotes/upstream/master
+                    F718=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14472)
                     if self._state.backtracking == 0:
 
                         F718_tree = self._adaptor.createWithPayload(F718)
                         self._adaptor.addChild(root_0, F718_tree)
 
-<<<<<<< HEAD
-                    F719=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14464)
-=======
-                    F709=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14367)
->>>>>>> remotes/upstream/master
+                    F719=self.match(self.input, F, self.FOLLOW_F_in_pid_expression14474)
                     if self._state.backtracking == 0:
 
                         F719_tree = self._adaptor.createWithPayload(F719)
                         self._adaptor.addChild(root_0, F719_tree)
 
-<<<<<<< HEAD
-                    S720=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14466)
-=======
-                    S710=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14369)
->>>>>>> remotes/upstream/master
+                    S720=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14476)
                     if self._state.backtracking == 0:
 
                         S720_tree = self._adaptor.createWithPayload(S720)
                         self._adaptor.addChild(root_0, S720_tree)
 
-<<<<<<< HEAD
-                    P721=self.match(self.input, P, self.FOLLOW_P_in_pid_expression14468)
-=======
-                    P711=self.match(self.input, P, self.FOLLOW_P_in_pid_expression14371)
->>>>>>> remotes/upstream/master
+                    P721=self.match(self.input, P, self.FOLLOW_P_in_pid_expression14478)
                     if self._state.backtracking == 0:
 
                         P721_tree = self._adaptor.createWithPayload(P721)
                         self._adaptor.addChild(root_0, P721_tree)
 
-<<<<<<< HEAD
-                    R722=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14470)
-=======
-                    R712=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14373)
->>>>>>> remotes/upstream/master
+                    R722=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14480)
                     if self._state.backtracking == 0:
 
                         R722_tree = self._adaptor.createWithPayload(R722)
                         self._adaptor.addChild(root_0, R722_tree)
 
-<<<<<<< HEAD
-                    I723=self.match(self.input, I, self.FOLLOW_I_in_pid_expression14472)
-=======
-                    I713=self.match(self.input, I, self.FOLLOW_I_in_pid_expression14375)
->>>>>>> remotes/upstream/master
+                    I723=self.match(self.input, I, self.FOLLOW_I_in_pid_expression14482)
                     if self._state.backtracking == 0:
 
                         I723_tree = self._adaptor.createWithPayload(I723)
                         self._adaptor.addChild(root_0, I723_tree)
 
-<<<<<<< HEAD
-                    N724=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14474)
-=======
-                    N714=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14377)
->>>>>>> remotes/upstream/master
+                    N724=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14484)
                     if self._state.backtracking == 0:
 
                         N724_tree = self._adaptor.createWithPayload(N724)
                         self._adaptor.addChild(root_0, N724_tree)
 
-<<<<<<< HEAD
-                    G725=self.match(self.input, G, self.FOLLOW_G_in_pid_expression14476)
-=======
-                    G715=self.match(self.input, G, self.FOLLOW_G_in_pid_expression14379)
->>>>>>> remotes/upstream/master
+                    G725=self.match(self.input, G, self.FOLLOW_G_in_pid_expression14486)
                     if self._state.backtracking == 0:
 
                         G725_tree = self._adaptor.createWithPayload(G725)
@@ -25789,61 +23355,37 @@ class sdl92Parser(Parser):
                     pass 
                     root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                    S726=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14502)
-=======
-                    S716=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14405)
->>>>>>> remotes/upstream/master
+                    S726=self.match(self.input, S, self.FOLLOW_S_in_pid_expression14512)
                     if self._state.backtracking == 0:
 
                         S726_tree = self._adaptor.createWithPayload(S726)
                         self._adaptor.addChild(root_0, S726_tree)
 
-<<<<<<< HEAD
-                    E727=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14504)
-=======
-                    E717=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14407)
->>>>>>> remotes/upstream/master
+                    E727=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14514)
                     if self._state.backtracking == 0:
 
                         E727_tree = self._adaptor.createWithPayload(E727)
                         self._adaptor.addChild(root_0, E727_tree)
 
-<<<<<<< HEAD
-                    N728=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14506)
-=======
-                    N718=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14409)
->>>>>>> remotes/upstream/master
+                    N728=self.match(self.input, N, self.FOLLOW_N_in_pid_expression14516)
                     if self._state.backtracking == 0:
 
                         N728_tree = self._adaptor.createWithPayload(N728)
                         self._adaptor.addChild(root_0, N728_tree)
 
-<<<<<<< HEAD
-                    D729=self.match(self.input, D, self.FOLLOW_D_in_pid_expression14508)
-=======
-                    D719=self.match(self.input, D, self.FOLLOW_D_in_pid_expression14411)
->>>>>>> remotes/upstream/master
+                    D729=self.match(self.input, D, self.FOLLOW_D_in_pid_expression14518)
                     if self._state.backtracking == 0:
 
                         D729_tree = self._adaptor.createWithPayload(D729)
                         self._adaptor.addChild(root_0, D729_tree)
 
-<<<<<<< HEAD
-                    E730=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14510)
-=======
-                    E720=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14413)
->>>>>>> remotes/upstream/master
+                    E730=self.match(self.input, E, self.FOLLOW_E_in_pid_expression14520)
                     if self._state.backtracking == 0:
 
                         E730_tree = self._adaptor.createWithPayload(E730)
                         self._adaptor.addChild(root_0, E730_tree)
 
-<<<<<<< HEAD
-                    R731=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14512)
-=======
-                    R721=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14415)
->>>>>>> remotes/upstream/master
+                    R731=self.match(self.input, R, self.FOLLOW_R_in_pid_expression14522)
                     if self._state.backtracking == 0:
 
                         R731_tree = self._adaptor.createWithPayload(R731)
@@ -25903,31 +23445,19 @@ class sdl92Parser(Parser):
                 pass 
                 root_0 = self._adaptor.nil()
 
-<<<<<<< HEAD
-                N732=self.match(self.input, N, self.FOLLOW_N_in_now_expression14526)
-=======
-                N722=self.match(self.input, N, self.FOLLOW_N_in_now_expression14429)
->>>>>>> remotes/upstream/master
+                N732=self.match(self.input, N, self.FOLLOW_N_in_now_expression14536)
                 if self._state.backtracking == 0:
 
                     N732_tree = self._adaptor.createWithPayload(N732)
                     self._adaptor.addChild(root_0, N732_tree)
 
-<<<<<<< HEAD
-                O733=self.match(self.input, O, self.FOLLOW_O_in_now_expression14528)
-=======
-                O723=self.match(self.input, O, self.FOLLOW_O_in_now_expression14431)
->>>>>>> remotes/upstream/master
+                O733=self.match(self.input, O, self.FOLLOW_O_in_now_expression14538)
                 if self._state.backtracking == 0:
 
                     O733_tree = self._adaptor.createWithPayload(O733)
                     self._adaptor.addChild(root_0, O733_tree)
 
-<<<<<<< HEAD
-                W734=self.match(self.input, W, self.FOLLOW_W_in_now_expression14530)
-=======
-                W724=self.match(self.input, W, self.FOLLOW_W_in_now_expression14433)
->>>>>>> remotes/upstream/master
+                W734=self.match(self.input, W, self.FOLLOW_W_in_now_expression14540)
                 if self._state.backtracking == 0:
 
                     W734_tree = self._adaptor.createWithPayload(W734)
@@ -26230,13 +23760,8 @@ class sdl92Parser(Parser):
         # sdl92.g:777:18: ( COMMA b= ground_expression )
         # sdl92.g:777:18: COMMA b= ground_expression
         pass 
-<<<<<<< HEAD
-        self.match(self.input, COMMA, self.FOLLOW_COMMA_in_synpred182_sdl928757)
-        self._state.following.append(self.FOLLOW_ground_expression_in_synpred182_sdl928761)
-=======
-        self.match(self.input, COMMA, self.FOLLOW_COMMA_in_synpred180_sdl928647)
-        self._state.following.append(self.FOLLOW_ground_expression_in_synpred180_sdl928651)
->>>>>>> remotes/upstream/master
+        self.match(self.input, COMMA, self.FOLLOW_COMMA_in_synpred182_sdl928767)
+        self._state.following.append(self.FOLLOW_ground_expression_in_synpred182_sdl928771)
         b = self.ground_expression()
 
         self._state.following.pop()
@@ -26251,13 +23776,8 @@ class sdl92Parser(Parser):
         # sdl92.g:794:36: ( IMPLIES operand0 )
         # sdl92.g:794:36: IMPLIES operand0
         pass 
-<<<<<<< HEAD
-        self.match(self.input, IMPLIES, self.FOLLOW_IMPLIES_in_synpred186_sdl928973)
-        self._state.following.append(self.FOLLOW_operand0_in_synpred186_sdl928976)
-=======
-        self.match(self.input, IMPLIES, self.FOLLOW_IMPLIES_in_synpred184_sdl928863)
-        self._state.following.append(self.FOLLOW_operand0_in_synpred184_sdl928866)
->>>>>>> remotes/upstream/master
+        self.match(self.input, IMPLIES, self.FOLLOW_IMPLIES_in_synpred186_sdl928983)
+        self._state.following.append(self.FOLLOW_operand0_in_synpred186_sdl928986)
         self.operand0()
 
         self._state.following.pop()
@@ -26284,11 +23804,7 @@ class sdl92Parser(Parser):
             raise mse
 
 
-<<<<<<< HEAD
-        self._state.following.append(self.FOLLOW_operand1_in_synpred188_sdl929014)
-=======
-        self._state.following.append(self.FOLLOW_operand1_in_synpred186_sdl928904)
->>>>>>> remotes/upstream/master
+        self._state.following.append(self.FOLLOW_operand1_in_synpred188_sdl929024)
         self.operand1()
 
         self._state.following.pop()
@@ -26303,13 +23819,8 @@ class sdl92Parser(Parser):
         # sdl92.g:796:36: ( AND operand2 )
         # sdl92.g:796:36: AND operand2
         pass 
-<<<<<<< HEAD
-        self.match(self.input, AND, self.FOLLOW_AND_in_synpred189_sdl929040)
-        self._state.following.append(self.FOLLOW_operand2_in_synpred189_sdl929043)
-=======
-        self.match(self.input, AND, self.FOLLOW_AND_in_synpred187_sdl928930)
-        self._state.following.append(self.FOLLOW_operand2_in_synpred187_sdl928933)
->>>>>>> remotes/upstream/master
+        self.match(self.input, AND, self.FOLLOW_AND_in_synpred189_sdl929050)
+        self._state.following.append(self.FOLLOW_operand2_in_synpred189_sdl929053)
         self.operand2()
 
         self._state.following.pop()
@@ -26336,11 +23847,7 @@ class sdl92Parser(Parser):
             raise mse
 
 
-<<<<<<< HEAD
-        self._state.following.append(self.FOLLOW_operand3_in_synpred196_sdl929153)
-=======
-        self._state.following.append(self.FOLLOW_operand3_in_synpred194_sdl929043)
->>>>>>> remotes/upstream/master
+        self._state.following.append(self.FOLLOW_operand3_in_synpred196_sdl929163)
         self.operand3()
 
         self._state.following.pop()
@@ -26367,11 +23874,7 @@ class sdl92Parser(Parser):
             raise mse
 
 
-<<<<<<< HEAD
-        self._state.following.append(self.FOLLOW_operand4_in_synpred199_sdl929195)
-=======
-        self._state.following.append(self.FOLLOW_operand4_in_synpred197_sdl929085)
->>>>>>> remotes/upstream/master
+        self._state.following.append(self.FOLLOW_operand4_in_synpred199_sdl929205)
         self.operand4()
 
         self._state.following.pop()
@@ -26398,11 +23901,7 @@ class sdl92Parser(Parser):
             raise mse
 
 
-<<<<<<< HEAD
-        self._state.following.append(self.FOLLOW_operand5_in_synpred203_sdl929266)
-=======
-        self._state.following.append(self.FOLLOW_operand5_in_synpred201_sdl929156)
->>>>>>> remotes/upstream/master
+        self._state.following.append(self.FOLLOW_operand5_in_synpred203_sdl929276)
         self.operand5()
 
         self._state.following.pop()
@@ -26417,11 +23916,7 @@ class sdl92Parser(Parser):
         # sdl92.g:809:29: ( primary_params )
         # sdl92.g:809:29: primary_params
         pass 
-<<<<<<< HEAD
-        self._state.following.append(self.FOLLOW_primary_params_in_synpred205_sdl929351)
-=======
-        self._state.following.append(self.FOLLOW_primary_params_in_synpred203_sdl929241)
->>>>>>> remotes/upstream/master
+        self._state.following.append(self.FOLLOW_primary_params_in_synpred205_sdl929361)
         self.primary_params()
 
         self._state.following.pop()
@@ -26790,13 +24285,8 @@ class sdl92Parser(Parser):
         )
 
     DFA19_max = DFA.unpack(
-<<<<<<< HEAD
-        u"\1\u00df\1\u0093\1\uffff\1\u00df\1\171\1\uffff\1\u0086\1\171\1"
-        u"\u0085\1\u00df"
-=======
-        u"\1\u00d9\1\u0091\1\uffff\1\u00d9\1\167\1\uffff\1\u0084\1\167\1"
-        u"\u0083\1\u00d9"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u0093\1\uffff\1\u00db\1\171\1\uffff\1\u0086\1\171\1"
+        u"\u0085\1\u00db"
         )
 
     DFA19_accept = DFA.unpack(
@@ -26809,28 +24299,17 @@ class sdl92Parser(Parser):
 
             
     DFA19_transition = [
-<<<<<<< HEAD
-        DFA.unpack(u"\1\1\u00c7\uffff\1\2"),
+        DFA.unpack(u"\1\1\u00c3\uffff\1\2"),
         DFA.unpack(u"\1\3"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\2\154\uffff\1\5\5\uffff\1\2\7\uffff\1\4\132\uffff"
-=======
-        DFA.unpack(u"\1\1\u00c1\uffff\1\2"),
-        DFA.unpack(u"\1\3"),
-        DFA.unpack(u""),
-        DFA.unpack(u"\1\2\152\uffff\1\5\5\uffff\1\2\7\uffff\1\4\126\uffff"
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\2\154\uffff\1\5\5\uffff\1\2\7\uffff\1\4\126\uffff"
         u"\1\2"),
         DFA.unpack(u"\1\6"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\7"),
         DFA.unpack(u"\1\10"),
         DFA.unpack(u"\1\11"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\2\154\uffff\1\5\5\uffff\1\2\142\uffff\1\2")
-=======
-        DFA.unpack(u"\1\2\152\uffff\1\5\5\uffff\1\2\136\uffff\1\2")
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\2\154\uffff\1\5\5\uffff\1\2\136\uffff\1\2")
     ]
 
     # class definition for DFA #19
@@ -26849,25 +24328,12 @@ class sdl92Parser(Parser):
         u"\1\2\11\uffff"
         )
 
-<<<<<<< HEAD
     DFA30_min = DFA.unpack(
         u"\1\6\1\7\10\uffff"
         )
 
     DFA30_max = DFA.unpack(
-        u"\1\u00df\1\172\10\uffff"
-=======
-    DFA37_min = DFA.unpack(
-        u"\1\11\1\7\1\u00a0\1\147\1\u0082\1\u00af\1\172\2\uffff\1\167\1\u00b0"
-        u"\1\u0084\1\103\1\167\1\u00a0\1\u0083\1\u00da\1\u0084\1\11\1\u0082"
-        u"\1\167\1\u0084\1\167\1\u0083\1\u00da\1\11\1\u00ae"
-        )
-
-    DFA37_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\1\u00a0\1\u0091\1\u0082\1\u00af\1\172\2\uffff"
-        u"\1\167\1\u00b0\1\u0084\1\103\1\167\1\u00a0\1\u0083\1\u00da\1\u0084"
-        u"\1\11\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\172\10\uffff"
         )
 
     DFA30_accept = DFA.unpack(
@@ -26879,10 +24345,9 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA30_transition = [
         DFA.unpack(u"\1\5\34\uffff\1\3\46\uffff\1\10\7\uffff\1\4\21\uffff"
-        u"\1\6\1\uffff\1\7\6\uffff\1\11\161\uffff\1\1"),
+        u"\1\6\1\uffff\1\7\6\uffff\1\11\155\uffff\1\1"),
         DFA.unpack(u"\1\3\1\uffff\1\3\14\uffff\1\2\1\3\2\uffff\1\3\2\uffff"
         u"\1\3\1\uffff\1\3\2\uffff\2\3\3\uffff\1\3\1\uffff\1\3\10\uffff\1"
         u"\3\2\uffff\3\3\1\uffff\1\3\25\uffff\1\3\7\uffff\1\3\13\uffff\1"
@@ -26914,16 +24379,16 @@ class sdl92Parser(Parser):
         )
 
     DFA37_min = DFA.unpack(
-        u"\1\11\1\7\1\u00a2\1\147\1\u00ae\1\u0084\1\174\2\uffff\1\u00af"
-        u"\1\171\1\103\1\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\11\1\u0086"
-        u"\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\11\1\u00ad"
+        u"\1\11\1\7\1\u00a2\1\147\1\u00b1\1\u0084\1\174\2\uffff\1\u00b2"
+        u"\1\171\1\103\1\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\11\1\u0086"
+        u"\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\11\1\u00b0"
         )
 
     DFA37_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\1\u00a2\1\u0093\1\u00ae\1\u0084\1\174\2\uffff"
-        u"\1\u00af\1\171\1\103\1\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\11"
-        u"\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1"
-        u"\u00ad"
+        u"\1\u00db\1\u00b0\1\u00a2\1\u0093\1\u00b1\1\u0084\1\174\2\uffff"
+        u"\1\u00b2\1\171\1\103\1\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\11"
+        u"\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1"
+        u"\u00b0"
         )
 
     DFA37_accept = DFA.unpack(
@@ -26936,19 +24401,11 @@ class sdl92Parser(Parser):
 
             
     DFA37_transition = [
-        DFA.unpack(u"\1\2\162\uffff\1\3\142\uffff\1\1"),
+        DFA.unpack(u"\1\2\162\uffff\1\3\136\uffff\1\1"),
         DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
         u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
         u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\26\uffff\1\5\62\uffff\1\4"),
-=======
-    DFA37_transition = [
-        DFA.unpack(u"\1\2\160\uffff\1\3\136\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
-        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
-        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
-        u"\24\uffff\1\4\65\uffff\1\5"),
->>>>>>> remotes/upstream/master
+        u"\5\26\uffff\1\5\65\uffff\1\4"),
         DFA.unpack(u"\1\6"),
         DFA.unpack(u"\1\7\53\uffff\1\10"),
         DFA.unpack(u"\1\11"),
@@ -26972,13 +24429,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\27"),
         DFA.unpack(u"\1\30"),
         DFA.unpack(u"\1\31"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\2\u00d5\uffff\1\32"),
+        DFA.unpack(u"\1\2\u00d1\uffff\1\32"),
         DFA.unpack(u"\1\4")
-=======
-        DFA.unpack(u"\1\2\u00cf\uffff\1\32"),
-        DFA.unpack(u"\1\5")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #37
@@ -26997,29 +24449,16 @@ class sdl92Parser(Parser):
         u"\1\3\27\uffff"
         )
 
-<<<<<<< HEAD
     DFA43_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086\1\103"
-        u"\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\32\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\32\1\u00ad"
+        u"\1\32\1\7\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086\1\103"
+        u"\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\32\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\32\1\u00b0"
         )
 
     DFA43_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086"
-        u"\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\172\1\u0084\1\171"
-        u"\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA42_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1\u0084\1"
-        u"\u00a0\1\167\1\u00da\1\u0083\1\32\1\u0084\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\32\1\u00ae"
-        )
-
-    DFA42_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1"
-        u"\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\170\1\u0084\1\u0082\1\167"
-        u"\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086"
+        u"\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\172\1\u0084\1\171"
+        u"\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA43_accept = DFA.unpack(
@@ -27031,23 +24470,13 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA43_transition = [
-        DFA.unpack(u"\1\3\101\uffff\1\3\32\uffff\2\3\1\uffff\1\2\144\uffff"
+        DFA.unpack(u"\1\3\101\uffff\1\3\32\uffff\2\3\1\uffff\1\2\140\uffff"
         u"\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\5"),
-=======
-    DFA42_transition = [
-        DFA.unpack(u"\1\3\101\uffff\1\3\30\uffff\2\3\1\uffff\1\2\140\uffff"
-        u"\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
-        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
-        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
-        u"\24\uffff\1\5\65\uffff\1\4"),
->>>>>>> remotes/upstream/master
+        u"\4\26\uffff\1\4\65\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -27068,13 +24497,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\3\101\uffff\1\3\35\uffff\1\2\144\uffff\1\27"),
+        DFA.unpack(u"\1\3\101\uffff\1\3\35\uffff\1\2\140\uffff\1\27"),
         DFA.unpack(u"\1\5")
-=======
-        DFA.unpack(u"\1\3\101\uffff\1\3\33\uffff\1\2\140\uffff\1\27"),
-        DFA.unpack(u"\1\4")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #43
@@ -27093,29 +24517,16 @@ class sdl92Parser(Parser):
         u"\1\1\30\uffff"
         )
 
-<<<<<<< HEAD
     DFA44_min = DFA.unpack(
-        u"\1\32\1\uffff\1\7\2\uffff\1\u00ae\1\u0084\1\u00af\1\171\1\103"
-        u"\1\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\32\1\u0086\1\u0084\1\171"
-        u"\1\u0086\1\171\1\u0085\1\u00e0\1\32\1\u00ad"
+        u"\1\32\1\uffff\1\7\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171\1\103"
+        u"\1\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\32\1\u0086\1\u0084\1\171"
+        u"\1\u0086\1\171\1\u0085\1\u00dc\1\32\1\u00b0"
         )
 
     DFA44_max = DFA.unpack(
-        u"\1\u00df\1\uffff\1\u00ad\2\uffff\1\u00ae\1\u0084\1\u00af\1\171"
-        u"\1\103\1\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\134\1\u0086\1\u0084"
-        u"\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA43_min = DFA.unpack(
-        u"\1\32\1\uffff\1\7\2\uffff\1\u0082\1\u00af\1\167\1\u00b0\1\u0084"
-        u"\1\103\1\167\1\u00a0\1\u0083\1\u00da\1\u0084\1\32\1\u0082\1\167"
-        u"\1\u0084\1\167\1\u0083\1\u00da\1\32\1\u00ae"
-        )
-
-    DFA43_max = DFA.unpack(
-        u"\1\u00d9\1\uffff\1\u00ae\2\uffff\1\u0082\1\u00af\1\167\1\u00b0"
-        u"\1\u0084\1\103\1\167\1\u00a0\1\u0083\1\u00da\1\u0084\1\134\1\u0082"
-        u"\1\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\uffff\1\u00b0\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171"
+        u"\1\103\1\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\134\1\u0086\1\u0084"
+        u"\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA44_accept = DFA.unpack(
@@ -27127,23 +24538,13 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA44_transition = [
-        DFA.unpack(u"\1\3\101\uffff\1\4\32\uffff\2\1\146\uffff\1\2"),
+        DFA.unpack(u"\1\3\101\uffff\1\4\32\uffff\2\1\142\uffff\1\2"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff"
         u"\1\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1"
         u"\6\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1"
-        u"\6\26\uffff\1\6\62\uffff\1\5"),
-=======
-    DFA43_transition = [
-        DFA.unpack(u"\1\3\101\uffff\1\4\30\uffff\2\1\142\uffff\1\2"),
-        DFA.unpack(u""),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
-        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
-        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
-        u"\24\uffff\1\5\65\uffff\1\6"),
->>>>>>> remotes/upstream/master
+        u"\6\26\uffff\1\6\65\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\7"),
@@ -27164,13 +24565,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\27"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\3\101\uffff\1\4\u0082\uffff\1\30"),
+        DFA.unpack(u"\1\3\101\uffff\1\4\176\uffff\1\30"),
         DFA.unpack(u"\1\5")
-=======
-        DFA.unpack(u"\1\3\101\uffff\1\4\174\uffff\1\30"),
-        DFA.unpack(u"\1\6")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #44
@@ -27189,29 +24585,16 @@ class sdl92Parser(Parser):
         u"\1\3\27\uffff"
         )
 
-<<<<<<< HEAD
     DFA48_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u00ae\1\u0084\1\u00af\1\171\1\103\1\u0086\1"
-        u"\u00a2\1\171\1\u00e0\1\u0085\1\32\1\u0086\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\32\1\u00ad"
+        u"\1\4\1\7\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171\1\103\1\u0086\1"
+        u"\u00a2\1\171\1\u00dc\1\u0085\1\32\1\u0086\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\32\1\u00b0"
         )
 
     DFA48_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u00ae\1\u0084\1\u00af\1\171\1\103\1"
-        u"\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\u0087\1\u0086\1\u0084\1"
-        u"\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA47_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u0082\1\u00af\1\167\1\u00b0\1\u0084\1\103\1"
-        u"\167\1\u00a0\1\u0083\1\u00da\1\u0084\1\32\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\32\1\u00ae"
-        )
-
-    DFA47_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u0082\1\u00af\1\167\1\u00b0\1\u0084"
-        u"\1\103\1\167\1\u00a0\1\u0083\1\u00da\1\u0084\1\u0085\1\u0082\1"
-        u"\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171\1\103\1"
+        u"\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\u0087\1\u0086\1\u0084\1"
+        u"\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA48_accept = DFA.unpack(
@@ -27227,19 +24610,11 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\2\25\uffff\1\3\11\uffff\5\2\11\uffff\1\2\3\uffff"
         u"\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\4\uffff\1\3\32\uffff"
         u"\2\3\1\uffff\1\3\5\uffff\1\3\6\uffff\1\2\11\uffff\1\2\1\uffff\1"
-<<<<<<< HEAD
-        u"\2\16\uffff\1\2\74\uffff\1\1"),
+        u"\2\16\uffff\1\2\70\uffff\1\1"),
         DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
         u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
         u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\26\uffff\1\5\62\uffff\1\4"),
-=======
-        u"\2\16\uffff\1\2\70\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
-        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
-        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
-        u"\24\uffff\1\4\65\uffff\1\5"),
->>>>>>> remotes/upstream/master
+        u"\5\26\uffff\1\5\65\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -27263,15 +24638,9 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\3\14\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
-<<<<<<< HEAD
         u"\1\2\25\uffff\1\2\7\uffff\1\2\4\uffff\1\3\35\uffff\1\3\14\uffff"
-        u"\1\2\13\uffff\1\2\113\uffff\1\27"),
-        DFA.unpack(u"\1\4")
-=======
-        u"\1\2\25\uffff\1\2\7\uffff\1\2\4\uffff\1\3\33\uffff\1\3\14\uffff"
         u"\1\2\13\uffff\1\2\107\uffff\1\27"),
-        DFA.unpack(u"\1\5")
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\4")
     ]
 
     # class definition for DFA #48
@@ -27290,29 +24659,16 @@ class sdl92Parser(Parser):
         u"\30\uffff"
         )
 
-<<<<<<< HEAD
     DFA66_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u00ae\1\u0084\1\u00af\1\171\1\103\1\u0086"
-        u"\1\u00a2\1\171\1\u00e0\1\u0085\1\32\1\u0086\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\32\1\u00ad"
+        u"\1\32\1\7\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171\1\103\1\u0086"
+        u"\1\u00a2\1\171\1\u00dc\1\u0085\1\32\1\u0086\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\32\1\u00b0"
         )
 
     DFA66_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u00ae\1\u0084\1\u00af\1\171\1\103\1"
-        u"\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\172\1\u0086\1\u0084\1\171"
-        u"\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA65_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u0082\1\u00af\1\167\1\u00b0\1\u0084\1\103\1"
-        u"\167\1\u00a0\1\u0083\1\u00da\1\u0084\1\32\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\32\1\u00ae"
-        )
-
-    DFA65_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u0082\1\u00af\1\167\1\u00b0\1\u0084"
-        u"\1\103\1\167\1\u00a0\1\u0083\1\u00da\1\u0084\1\170\1\u0082\1\167"
-        u"\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171\1\103\1"
+        u"\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\172\1\u0086\1\u0084\1\171"
+        u"\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA66_accept = DFA.unpack(
@@ -27324,23 +24680,13 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA66_transition = [
-        DFA.unpack(u"\1\2\101\uffff\1\2\35\uffff\1\3\5\uffff\1\2\136\uffff"
+        DFA.unpack(u"\1\2\101\uffff\1\2\35\uffff\1\3\5\uffff\1\2\132\uffff"
         u"\1\1"),
         DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
         u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
         u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\26\uffff\1\5\62\uffff\1\4"),
-=======
-    DFA65_transition = [
-        DFA.unpack(u"\1\2\101\uffff\1\2\33\uffff\1\3\5\uffff\1\2\132\uffff"
-        u"\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
-        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
-        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
-        u"\24\uffff\1\4\65\uffff\1\5"),
->>>>>>> remotes/upstream/master
+        u"\5\26\uffff\1\5\65\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -27361,13 +24707,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\2\101\uffff\1\2\35\uffff\1\3\144\uffff\1\27"),
+        DFA.unpack(u"\1\2\101\uffff\1\2\35\uffff\1\3\140\uffff\1\27"),
         DFA.unpack(u"\1\4")
-=======
-        DFA.unpack(u"\1\2\101\uffff\1\2\33\uffff\1\3\140\uffff\1\27"),
-        DFA.unpack(u"\1\5")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #66
@@ -27386,29 +24727,16 @@ class sdl92Parser(Parser):
         u"\31\uffff"
         )
 
-<<<<<<< HEAD
     DFA67_min = DFA.unpack(
-        u"\1\32\1\uffff\1\7\2\uffff\1\u00ae\1\u0084\1\u00af\1\171\1\103"
-        u"\1\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\32\1\u0086\1\u0084\1\171"
-        u"\1\u0086\1\171\1\u0085\1\u00e0\1\32\1\u00ad"
+        u"\1\32\1\uffff\1\7\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171\1\103"
+        u"\1\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\32\1\u0086\1\u0084\1\171"
+        u"\1\u0086\1\171\1\u0085\1\u00dc\1\32\1\u00b0"
         )
 
     DFA67_max = DFA.unpack(
-        u"\1\u00df\1\uffff\1\u00ad\2\uffff\1\u00ae\1\u0084\1\u00af\1\171"
-        u"\1\103\1\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\134\1\u0086\1\u0084"
-        u"\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA66_min = DFA.unpack(
-        u"\1\32\1\uffff\1\7\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1"
-        u"\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\32\1\u0084\1\u0082\1\167"
-        u"\1\u0084\1\167\1\u0083\1\u00da\1\32\1\u00ae"
-        )
-
-    DFA66_max = DFA.unpack(
-        u"\1\u00d9\1\uffff\1\u00ae\2\uffff\1\u00af\1\u0082\1\u00b0\1\167"
-        u"\1\103\1\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\134\1\u0084\1\u0082"
-        u"\1\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\uffff\1\u00b0\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171"
+        u"\1\103\1\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\134\1\u0086\1\u0084"
+        u"\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA67_accept = DFA.unpack(
@@ -27420,23 +24748,13 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA67_transition = [
-        DFA.unpack(u"\1\3\101\uffff\1\4\43\uffff\1\1\136\uffff\1\2"),
+        DFA.unpack(u"\1\3\101\uffff\1\4\43\uffff\1\1\132\uffff\1\2"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff"
         u"\1\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1"
         u"\6\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1"
-        u"\6\26\uffff\1\6\62\uffff\1\5"),
-=======
-    DFA66_transition = [
-        DFA.unpack(u"\1\3\101\uffff\1\4\41\uffff\1\1\132\uffff\1\2"),
-        DFA.unpack(u""),
-        DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff\1"
-        u"\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1\6"
-        u"\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1\6"
-        u"\24\uffff\1\6\65\uffff\1\5"),
->>>>>>> remotes/upstream/master
+        u"\6\26\uffff\1\6\65\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\7"),
@@ -27457,11 +24775,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\27"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\3\101\uffff\1\4\u0082\uffff\1\30"),
-=======
-        DFA.unpack(u"\1\3\101\uffff\1\4\174\uffff\1\30"),
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\3\101\uffff\1\4\176\uffff\1\30"),
         DFA.unpack(u"\1\5")
     ]
 
@@ -27481,29 +24795,16 @@ class sdl92Parser(Parser):
         u"\34\uffff"
         )
 
-<<<<<<< HEAD
     DFA68_min = DFA.unpack(
-        u"\1\34\1\7\1\176\3\uffff\1\u0084\1\u00ae\2\uffff\1\171\1\u00af"
-        u"\1\u0086\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\37\1\u0084"
-        u"\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\37\1\u00ad"
+        u"\1\34\1\7\1\176\3\uffff\1\u0084\1\u00b1\2\uffff\1\171\1\u00b2"
+        u"\1\u0086\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\37\1\u0084"
+        u"\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\37\1\u00b0"
         )
 
     DFA68_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\1\u0093\3\uffff\1\u0084\1\u00ae\2\uffff\1\171"
-        u"\1\u00af\1\u0086\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1"
-        u"\143\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA67_min = DFA.unpack(
-        u"\1\34\1\7\1\174\3\uffff\1\u00af\1\u0082\2\uffff\1\u00b0\1\167\1"
-        u"\103\1\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\37\1\u0084\1\u0082"
-        u"\1\167\1\u0084\1\167\1\u0083\1\u00da\1\37\1\u00ae"
-        )
-
-    DFA67_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\1\u0091\3\uffff\1\u00af\1\u0082\2\uffff\1\u00b0"
-        u"\1\167\1\103\1\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\143\1\u0084"
-        u"\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\1\u0093\3\uffff\1\u0084\1\u00b1\2\uffff\1\171"
+        u"\1\u00b2\1\u0086\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1"
+        u"\143\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA68_accept = DFA.unpack(
@@ -27515,21 +24816,12 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA68_transition = [
-        DFA.unpack(u"\1\3\1\4\1\uffff\1\2\103\uffff\1\5\173\uffff\1\1"),
+        DFA.unpack(u"\1\3\1\4\1\uffff\1\2\103\uffff\1\5\167\uffff\1\1"),
         DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff"
         u"\1\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1"
         u"\6\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1"
-        u"\6\26\uffff\1\6\62\uffff\1\7"),
-=======
-    DFA67_transition = [
-        DFA.unpack(u"\1\3\1\4\1\uffff\1\2\103\uffff\1\5\165\uffff\1\1"),
-        DFA.unpack(u"\1\7\1\uffff\1\7\15\uffff\1\7\2\uffff\1\7\2\uffff\1"
-        u"\7\1\uffff\1\7\2\uffff\2\7\3\uffff\1\7\1\uffff\1\7\10\uffff\1\7"
-        u"\2\uffff\3\7\1\uffff\1\7\25\uffff\1\7\7\uffff\1\7\13\uffff\1\7"
-        u"\24\uffff\1\7\65\uffff\1\6"),
->>>>>>> remotes/upstream/master
+        u"\6\26\uffff\1\6\65\uffff\1\7"),
         DFA.unpack(u"\1\11\3\uffff\1\10\20\uffff\1\11"),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -27554,13 +24846,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\30"),
         DFA.unpack(u"\1\31"),
         DFA.unpack(u"\1\32"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\2\103\uffff\1\5\173\uffff\1\33"),
+        DFA.unpack(u"\1\2\103\uffff\1\5\167\uffff\1\33"),
         DFA.unpack(u"\1\7")
-=======
-        DFA.unpack(u"\1\2\103\uffff\1\5\165\uffff\1\33"),
-        DFA.unpack(u"\1\6")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #68
@@ -27579,29 +24866,16 @@ class sdl92Parser(Parser):
         u"\1\3\27\uffff"
         )
 
-<<<<<<< HEAD
     DFA72_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086\1\103\1"
-        u"\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\37\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\37\1\u00ad"
+        u"\1\4\1\7\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086\1\103\1"
+        u"\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\37\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\37\1\u00b0"
         )
 
     DFA72_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086"
-        u"\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\u0087\1\u0084\1"
-        u"\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA71_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1\u0084\1"
-        u"\u00a0\1\167\1\u00da\1\u0083\1\37\1\u0084\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\37\1\u00ae"
-        )
-
-    DFA71_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1"
-        u"\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\u0085\1\u0084\1\u0082\1"
-        u"\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086"
+        u"\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\u0087\1\u0084\1"
+        u"\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA72_accept = DFA.unpack(
@@ -27613,27 +24887,15 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA72_transition = [
         DFA.unpack(u"\1\2\27\uffff\2\3\1\uffff\1\3\4\uffff\5\2\11\uffff"
         u"\1\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff"
         u"\1\3\31\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
-        u"\1\2\74\uffff\1\1"),
+        u"\1\2\70\uffff\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\5"),
-=======
-    DFA71_transition = [
-        DFA.unpack(u"\1\2\27\uffff\2\3\1\uffff\1\3\4\uffff\5\2\11\uffff\1"
-        u"\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1"
-        u"\3\27\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
-        u"\1\2\70\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
-        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
-        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
-        u"\24\uffff\1\5\65\uffff\1\4"),
->>>>>>> remotes/upstream/master
+        u"\4\26\uffff\1\4\65\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -27646,11 +24908,6 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-<<<<<<< HEAD
-=======
-        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
-        u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
         u"\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\43\uffff\1\2"),
@@ -27660,17 +24917,10 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-<<<<<<< HEAD
         DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
         u"\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\43\uffff\1\2\13\uffff"
-        u"\1\2\113\uffff\1\27"),
-        DFA.unpack(u"\1\5")
-=======
-        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
-        u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2\13\uffff"
         u"\1\2\107\uffff\1\27"),
-        DFA.unpack(u"\1\4")
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\5")
     ]
 
     # class definition for DFA #72
@@ -27693,13 +24943,8 @@ class sdl92Parser(Parser):
         u"\1\4\1\0\27\uffff"
         )
 
-<<<<<<< HEAD
     DFA83_max = DFA.unpack(
-        u"\1\u00df\1\0\27\uffff"
-=======
-    DFA82_max = DFA.unpack(
-        u"\1\u00d9\1\0\27\uffff"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\0\27\uffff"
         )
 
     DFA83_accept = DFA.unpack(
@@ -27714,13 +24959,8 @@ class sdl92Parser(Parser):
     DFA83_transition = [
         DFA.unpack(u"\1\2\27\uffff\1\2\1\1\1\uffff\1\2\4\uffff\5\2\11\uffff"
         u"\1\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff"
-<<<<<<< HEAD
         u"\1\2\31\uffff\1\2\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
-        u"\1\2\74\uffff\1\2"),
-=======
-        u"\1\2\27\uffff\1\2\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
         u"\1\2\70\uffff\1\2"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u"\1\uffff"),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -27796,29 +25036,16 @@ class sdl92Parser(Parser):
         u"\1\3\27\uffff"
         )
 
-<<<<<<< HEAD
     DFA84_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086\1\103\1"
-        u"\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\37\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\37\1\u00ad"
+        u"\1\4\1\7\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086\1\103\1"
+        u"\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\37\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\37\1\u00b0"
         )
 
     DFA84_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086"
-        u"\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\u0087\1\u0084\1"
-        u"\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA83_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1\u0084\1"
-        u"\u00a0\1\167\1\u00da\1\u0083\1\37\1\u0084\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\37\1\u00ae"
-        )
-
-    DFA83_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1"
-        u"\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\u0085\1\u0084\1\u0082\1"
-        u"\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086"
+        u"\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\u0087\1\u0084\1"
+        u"\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA84_accept = DFA.unpack(
@@ -27830,27 +25057,15 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA84_transition = [
         DFA.unpack(u"\1\2\27\uffff\2\3\1\uffff\1\3\4\uffff\5\2\11\uffff"
         u"\1\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff"
         u"\1\3\31\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
-        u"\1\2\74\uffff\1\1"),
+        u"\1\2\70\uffff\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\5"),
-=======
-    DFA83_transition = [
-        DFA.unpack(u"\1\2\27\uffff\2\3\1\uffff\1\3\4\uffff\5\2\11\uffff\1"
-        u"\2\3\uffff\2\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1"
-        u"\3\27\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\16\uffff"
-        u"\1\2\70\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
-        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
-        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
-        u"\24\uffff\1\5\65\uffff\1\4"),
->>>>>>> remotes/upstream/master
+        u"\4\26\uffff\1\4\65\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -27863,11 +25078,6 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-<<<<<<< HEAD
-=======
-        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
-        u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
         u"\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\43\uffff\1\2"),
@@ -27877,17 +25087,10 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-<<<<<<< HEAD
         DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff"
         u"\1\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\43\uffff\1\2\13\uffff"
-        u"\1\2\113\uffff\1\27"),
-        DFA.unpack(u"\1\5")
-=======
-        DFA.unpack(u"\1\3\7\uffff\1\2\12\uffff\1\2\3\uffff\2\2\1\uffff\1"
-        u"\2\25\uffff\1\2\7\uffff\1\2\13\uffff\1\3\41\uffff\1\2\13\uffff"
         u"\1\2\107\uffff\1\27"),
-        DFA.unpack(u"\1\4")
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\5")
     ]
 
     # class definition for DFA #84
@@ -27906,35 +25109,19 @@ class sdl92Parser(Parser):
         u"\51\uffff"
         )
 
-<<<<<<< HEAD
     DFA92_min = DFA.unpack(
-        u"\1\4\1\7\1\u0084\2\uffff\1\u0084\1\u00ae\1\4\1\171\1\u00af\1\7"
-        u"\1\u0086\1\103\1\u0084\1\171\1\u00a2\1\171\1\u0085\1\u00e0\2\u0086"
+        u"\1\4\1\7\1\u0084\2\uffff\1\u0084\1\u00b1\1\4\1\171\1\u00b2\1\7"
+        u"\1\u0086\1\103\1\u0084\1\171\1\u00a2\1\171\1\u0085\1\u00dc\2\u0086"
         u"\1\47\1\171\1\u0084\1\u0085\1\171\2\u0086\1\u0084\2\171\1\u0085"
-        u"\1\u0086\1\u00e0\1\171\1\47\1\u0085\1\u00ad\1\u00d3\1\u00e0\1\47"
+        u"\1\u0086\1\u00dc\1\171\1\47\1\u0085\1\u00b0\1\u00d6\1\u00dc\1\47"
         )
 
     DFA92_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\1\u00d7\2\uffff\1\u0084\1\u00ae\1\u00df\1\171"
-        u"\1\u00af\1\u00ad\1\u0086\1\103\1\u0084\1\171\1\u00a2\1\171\1\u0085"
-        u"\1\u00e0\2\u0086\1\u0087\1\171\1\u0084\1\u0085\1\171\2\u0086\1"
-        u"\u0084\2\171\1\u0085\1\u0086\1\u00e0\1\171\1\u00df\1\u0085\1\u00ad"
-        u"\1\u00d3\1\u00e0\1\u00df"
-=======
-    DFA91_min = DFA.unpack(
-        u"\1\4\1\7\1\u0082\2\uffff\1\u0082\1\u00af\1\4\1\167\1\u00b0\1\7"
-        u"\1\u0084\1\103\1\u0082\1\167\1\u00a0\1\167\1\u0083\1\u00da\2\u0084"
-        u"\1\47\1\167\1\u0082\1\u0083\1\167\2\u0084\1\u0082\2\167\1\u0083"
-        u"\1\u0084\1\u00da\1\167\1\47\1\u0083\1\u00d4\1\u00ae\1\u00da\1\47"
-        )
-
-    DFA91_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\1\u00d5\2\uffff\1\u0082\1\u00af\1\u00d9\1\167"
-        u"\1\u00b0\1\u00ae\1\u0084\1\103\1\u0082\1\167\1\u00a0\1\167\1\u0083"
-        u"\1\u00da\2\u0084\1\u0085\1\167\1\u0082\1\u0083\1\167\2\u0084\1"
-        u"\u0082\2\167\1\u0083\1\u0084\1\u00da\1\167\1\u00d9\1\u0083\1\u00d4"
-        u"\1\u00ae\1\u00da\1\u00d9"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\1\u00d7\2\uffff\1\u0084\1\u00b1\1\u00db\1\171"
+        u"\1\u00b2\1\u00b0\1\u0086\1\103\1\u0084\1\171\1\u00a2\1\171\1\u0085"
+        u"\1\u00dc\2\u0086\1\u0087\1\171\1\u0084\1\u0085\1\171\2\u0086\1"
+        u"\u0084\2\171\1\u0085\1\u0086\1\u00dc\1\171\1\u00db\1\u0085\1\u00b0"
+        u"\1\u00d6\1\u00dc\1\u00db"
         )
 
     DFA92_accept = DFA.unpack(
@@ -27946,49 +25133,28 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA92_transition = [
         DFA.unpack(u"\1\3\37\uffff\5\3\11\uffff\1\3\3\uffff\2\4\1\uffff"
         u"\1\4\25\uffff\1\3\7\uffff\1\4\57\uffff\1\3\11\uffff\1\3\1\uffff"
-        u"\1\2\16\uffff\1\3\74\uffff\1\1"),
+        u"\1\2\16\uffff\1\3\70\uffff\1\1"),
         DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
         u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
         u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\26\uffff\1\5\62\uffff\1\6"),
-        DFA.unpack(u"\1\3\55\uffff\1\3\40\uffff\1\7\3\uffff\1\3"),
-=======
-    DFA91_transition = [
-        DFA.unpack(u"\1\3\37\uffff\5\3\11\uffff\1\3\3\uffff\2\4\1\uffff\1"
-        u"\4\25\uffff\1\3\7\uffff\1\4\55\uffff\1\3\11\uffff\1\3\1\uffff\1"
-        u"\2\16\uffff\1\3\70\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
-        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
-        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
-        u"\24\uffff\1\5\65\uffff\1\6"),
+        u"\5\26\uffff\1\5\65\uffff\1\6"),
         DFA.unpack(u"\1\3\60\uffff\1\3\40\uffff\1\7\1\3"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\10"),
         DFA.unpack(u"\1\11"),
         DFA.unpack(u"\1\3\37\uffff\5\3\11\uffff\1\3\3\uffff\2\4\1\uffff"
-<<<<<<< HEAD
         u"\1\4\25\uffff\1\3\7\uffff\1\4\57\uffff\1\3\11\uffff\1\3\1\uffff"
-        u"\1\3\16\uffff\1\3\74\uffff\1\12"),
-=======
-        u"\1\4\25\uffff\1\3\7\uffff\1\4\55\uffff\1\3\11\uffff\1\3\1\uffff"
         u"\1\3\16\uffff\1\3\70\uffff\1\12"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u"\1\13"),
         DFA.unpack(u"\1\14"),
         DFA.unpack(u"\1\15\1\uffff\1\15\15\uffff\1\15\2\uffff\1\15\2\uffff"
         u"\1\15\1\uffff\1\15\2\uffff\2\15\3\uffff\1\15\1\uffff\1\15\10\uffff"
         u"\1\15\2\uffff\3\15\1\uffff\1\15\25\uffff\1\15\7\uffff\1\15\13\uffff"
-<<<<<<< HEAD
-        u"\1\15\26\uffff\1\15\62\uffff\1\6"),
-=======
-        u"\1\15\24\uffff\1\15\65\uffff\1\6"),
->>>>>>> remotes/upstream/master
+        u"\1\15\26\uffff\1\15\65\uffff\1\6"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
         DFA.unpack(u"\1\20"),
@@ -28015,21 +25181,13 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\43"),
         DFA.unpack(u"\1\44"),
         DFA.unpack(u"\1\3\12\uffff\1\3\3\uffff\2\4\1\uffff\1\4\25\uffff"
-<<<<<<< HEAD
-        u"\1\3\7\uffff\1\4\57\uffff\1\3\13\uffff\1\46\113\uffff\1\45"),
-=======
-        u"\1\3\7\uffff\1\4\55\uffff\1\3\13\uffff\1\45\107\uffff\1\46"),
->>>>>>> remotes/upstream/master
+        u"\1\3\7\uffff\1\4\57\uffff\1\3\13\uffff\1\46\107\uffff\1\45"),
         DFA.unpack(u"\1\47"),
         DFA.unpack(u"\1\6"),
         DFA.unpack(u"\1\7"),
         DFA.unpack(u"\1\50"),
         DFA.unpack(u"\1\3\12\uffff\1\3\3\uffff\2\4\1\uffff\1\4\25\uffff"
-<<<<<<< HEAD
-        u"\1\3\7\uffff\1\4\57\uffff\1\3\127\uffff\1\45")
-=======
-        u"\1\3\7\uffff\1\4\55\uffff\1\3\123\uffff\1\46")
->>>>>>> remotes/upstream/master
+        u"\1\3\7\uffff\1\4\57\uffff\1\3\123\uffff\1\45")
     ]
 
     # class definition for DFA #92
@@ -28048,37 +25206,20 @@ class sdl92Parser(Parser):
         u"\1\3\6\uffff\1\3\42\uffff"
         )
 
-<<<<<<< HEAD
     DFA89_min = DFA.unpack(
-        u"\1\4\1\7\1\u0084\2\uffff\1\u0084\1\u00ae\1\4\1\171\1\u00af\1\7"
-        u"\1\u0084\1\u0086\1\103\1\u0084\1\171\1\u00a2\1\171\1\u0085\1\u00e0"
+        u"\1\4\1\7\1\u0084\2\uffff\1\u0084\1\u00b1\1\4\1\171\1\u00b2\1\7"
+        u"\1\u0084\1\u0086\1\103\1\u0084\1\171\1\u00a2\1\171\1\u0085\1\u00dc"
         u"\2\u0086\1\32\1\171\1\u0084\1\u0085\1\171\2\u0086\1\u0084\2\171"
-        u"\1\u0085\1\u0086\1\u00e0\1\171\1\32\1\u0085\1\u00ad\1\u00d3\1\u00e0"
+        u"\1\u0085\1\u0086\1\u00dc\1\171\1\32\1\u0085\1\u00b0\1\u00d6\1\u00dc"
         u"\1\32"
         )
 
     DFA89_max = DFA.unpack(
-        u"\1\u00df\1\u00b1\1\u00d7\2\uffff\1\u0084\1\u00ae\1\u00df\1\171"
-        u"\1\u00af\1\u00b1\1\u00d7\1\u0086\1\103\1\u0084\1\171\1\u00a2\1"
-        u"\171\1\u0085\1\u00e0\2\u0086\1\u0087\1\171\1\u0084\1\u0085\1\171"
-        u"\2\u0086\1\u0084\2\171\1\u0085\1\u0086\1\u00e0\1\171\1\u00df\1"
-        u"\u0085\1\u00ad\1\u00d3\1\u00e0\1\u00df"
-=======
-    DFA88_min = DFA.unpack(
-        u"\1\4\1\7\1\u0082\2\uffff\1\u00af\1\u0082\1\4\1\u00b0\1\167\1\7"
-        u"\1\u0082\1\103\1\u0084\1\u0082\1\u00a0\2\167\1\u00da\1\u0083\1"
-        u"\u0084\1\32\1\u0084\1\167\1\u0082\1\u0083\1\167\2\u0084\1\u0082"
-        u"\2\167\1\u0083\1\u0084\1\u00da\1\167\1\32\1\u0083\1\u00ae\1\u00d4"
-        u"\1\u00da\1\32"
-        )
-
-    DFA88_max = DFA.unpack(
-        u"\1\u00d9\1\u00b2\1\u00d5\2\uffff\1\u00af\1\u0082\1\u00d9\1\u00b0"
-        u"\1\167\1\u00b2\1\u00d5\1\103\1\u0084\1\u0082\1\u00a0\2\167\1\u00da"
-        u"\1\u0083\1\u0084\1\u0085\1\u0084\1\167\1\u0082\1\u0083\1\167\2"
-        u"\u0084\1\u0082\2\167\1\u0083\1\u0084\1\u00da\1\167\1\u00d9\1\u0083"
-        u"\1\u00ae\1\u00d4\1\u00da\1\u00d9"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b4\1\u00d7\2\uffff\1\u0084\1\u00b1\1\u00db\1\171"
+        u"\1\u00b2\1\u00b4\1\u00d7\1\u0086\1\103\1\u0084\1\171\1\u00a2\1"
+        u"\171\1\u0085\1\u00dc\2\u0086\1\u0087\1\171\1\u0084\1\u0085\1\171"
+        u"\2\u0086\1\u0084\2\171\1\u0085\1\u0086\1\u00dc\1\171\1\u00db\1"
+        u"\u0085\1\u00b0\1\u00d6\1\u00dc\1\u00db"
         )
 
     DFA89_accept = DFA.unpack(
@@ -28095,50 +25236,28 @@ class sdl92Parser(Parser):
         u"\4\4\uffff\1\3\4\uffff\1\4\3\uffff\2\3\1\uffff\1\3\25\uffff\1\4"
         u"\7\uffff\1\3\4\uffff\1\3\6\uffff\1\3\23\uffff\2\3\1\uffff\2\3\1"
         u"\uffff\1\3\2\uffff\1\3\3\uffff\1\3\2\uffff\1\4\2\3\7\uffff\1\4"
-<<<<<<< HEAD
-        u"\1\uffff\1\2\1\3\15\uffff\1\4\74\uffff\1\1"),
+        u"\1\uffff\1\2\1\3\15\uffff\1\4\70\uffff\1\1"),
         DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
         u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
         u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\26\uffff\1\5\62\uffff\1\6\3\uffff\1\3"),
-        DFA.unpack(u"\1\4\55\uffff\1\4\40\uffff\1\7\3\uffff\1\4"),
-=======
-        u"\1\uffff\1\2\1\3\15\uffff\1\4\70\uffff\1\1"),
-        DFA.unpack(u"\1\6\1\uffff\1\6\15\uffff\1\6\2\uffff\1\6\2\uffff\1"
-        u"\6\1\uffff\1\6\2\uffff\2\6\3\uffff\1\6\1\uffff\1\6\10\uffff\1\6"
-        u"\2\uffff\3\6\1\uffff\1\6\25\uffff\1\6\7\uffff\1\6\13\uffff\1\6"
-        u"\24\uffff\1\6\65\uffff\1\5\3\uffff\1\3"),
+        u"\5\26\uffff\1\5\65\uffff\1\6\3\uffff\1\3"),
         DFA.unpack(u"\1\4\60\uffff\1\4\40\uffff\1\7\1\4"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\10"),
         DFA.unpack(u"\1\11"),
-<<<<<<< HEAD
         DFA.unpack(u"\1\4\25\uffff\1\3\1\uffff\2\3\1\uffff\1\3\4\uffff"
         u"\5\4\4\uffff\1\3\4\uffff\1\4\3\uffff\2\3\1\uffff\1\3\25\uffff\1"
         u"\4\7\uffff\1\3\4\uffff\1\3\6\uffff\1\3\23\uffff\2\3\1\uffff\2\3"
         u"\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\2\uffff\1\4\2\3\7\uffff\1"
-        u"\4\1\uffff\1\13\1\3\15\uffff\1\4\74\uffff\1\12"),
-=======
-        DFA.unpack(u"\1\4\25\uffff\1\3\1\uffff\2\3\1\uffff\1\3\4\uffff\5"
-        u"\4\4\uffff\1\3\4\uffff\1\4\3\uffff\2\3\1\uffff\1\3\25\uffff\1\4"
-        u"\7\uffff\1\3\4\uffff\1\3\6\uffff\1\3\21\uffff\2\3\1\uffff\2\3\1"
-        u"\uffff\1\3\2\uffff\1\3\3\uffff\1\3\2\uffff\1\4\2\3\7\uffff\1\4"
-        u"\1\uffff\1\13\1\3\15\uffff\1\4\70\uffff\1\12"),
->>>>>>> remotes/upstream/master
+        u"\4\1\uffff\1\13\1\3\15\uffff\1\4\70\uffff\1\12"),
         DFA.unpack(u"\1\14"),
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16\1\uffff\1\16\15\uffff\1\16\2\uffff\1\16\2\uffff"
         u"\1\16\1\uffff\1\16\2\uffff\2\16\3\uffff\1\16\1\uffff\1\16\10\uffff"
         u"\1\16\2\uffff\3\16\1\uffff\1\16\25\uffff\1\16\7\uffff\1\16\13\uffff"
-<<<<<<< HEAD
-        u"\1\16\26\uffff\1\16\62\uffff\1\6\3\uffff\1\3"),
-        DFA.unpack(u"\1\4\55\uffff\1\4\40\uffff\1\3\3\uffff\1\4"),
-=======
-        u"\1\16\24\uffff\1\16\65\uffff\1\5\3\uffff\1\3"),
+        u"\1\16\26\uffff\1\16\65\uffff\1\6\3\uffff\1\3"),
         DFA.unpack(u"\1\4\60\uffff\1\4\40\uffff\1\3\1\4"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u"\1\17"),
         DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
@@ -28167,26 +25286,16 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\45"),
         DFA.unpack(u"\1\3\4\uffff\1\3\7\uffff\1\4\5\uffff\1\3\4\uffff\1"
         u"\4\3\uffff\2\3\1\uffff\1\3\25\uffff\1\4\7\uffff\1\3\4\uffff\1\3"
-<<<<<<< HEAD
         u"\6\uffff\1\3\26\uffff\1\3\11\uffff\1\3\2\uffff\1\4\13\uffff\1\47"
-        u"\113\uffff\1\46"),
-=======
-        u"\6\uffff\1\3\24\uffff\1\3\11\uffff\1\3\2\uffff\1\4\13\uffff\1\47"
         u"\107\uffff\1\46"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u"\1\50"),
         DFA.unpack(u"\1\6"),
         DFA.unpack(u"\1\7"),
         DFA.unpack(u"\1\51"),
         DFA.unpack(u"\1\3\4\uffff\1\3\7\uffff\1\4\5\uffff\1\3\4\uffff\1"
         u"\4\3\uffff\2\3\1\uffff\1\3\25\uffff\1\4\7\uffff\1\3\4\uffff\1\3"
-<<<<<<< HEAD
         u"\6\uffff\1\3\26\uffff\1\3\11\uffff\1\3\2\uffff\1\4\13\uffff\1\3"
-        u"\113\uffff\1\46")
-=======
-        u"\6\uffff\1\3\24\uffff\1\3\11\uffff\1\3\2\uffff\1\4\13\uffff\1\3"
         u"\107\uffff\1\46")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #89
@@ -28205,29 +25314,16 @@ class sdl92Parser(Parser):
         u"\1\3\22\uffff"
         )
 
-<<<<<<< HEAD
     DFA90_min = DFA.unpack(
-        u"\1\32\1\7\1\u00d3\1\uffff\1\u0084\1\0\1\171\1\uffff\1\u0086\1"
-        u"\171\1\u0085\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0"
+        u"\1\32\1\7\1\u00d6\1\uffff\1\u0084\1\0\1\171\1\uffff\1\u0086\1"
+        u"\171\1\u0085\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc"
         u"\1\32"
         )
 
     DFA90_max = DFA.unpack(
-        u"\1\u00df\1\u00b1\1\u00d3\1\uffff\1\u0084\1\0\1\171\1\uffff\1\u0086"
-        u"\1\171\1\u0085\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0"
-        u"\1\u00df"
-=======
-    DFA89_min = DFA.unpack(
-        u"\1\32\1\7\1\u00d4\1\uffff\1\u0082\1\0\1\167\1\uffff\1\u0084\1\167"
-        u"\1\u0083\1\u0084\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00da\1"
-        u"\32"
-        )
-
-    DFA89_max = DFA.unpack(
-        u"\1\u00d9\1\u00b2\1\u00d4\1\uffff\1\u0082\1\0\1\167\1\uffff\1\u0084"
-        u"\1\167\1\u0083\1\u0084\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00da"
-        u"\1\u00d9"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b4\1\u00d6\1\uffff\1\u0084\1\0\1\171\1\uffff\1\u0086"
+        u"\1\171\1\u0085\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc"
+        u"\1\u00db"
         )
 
     DFA90_accept = DFA.unpack(
@@ -28239,27 +25335,15 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA90_transition = [
         DFA.unpack(u"\1\3\1\uffff\2\3\1\uffff\1\3\15\uffff\1\3\10\uffff"
         u"\2\3\1\uffff\1\3\35\uffff\1\3\4\uffff\1\3\6\uffff\1\3\23\uffff"
         u"\2\3\1\uffff\2\3\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\3\uffff\2"
-        u"\3\11\uffff\1\2\1\3\112\uffff\1\1"),
+        u"\3\11\uffff\1\2\1\3\106\uffff\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\3\3\uffff\1\3"),
-=======
-    DFA89_transition = [
-        DFA.unpack(u"\1\3\1\uffff\2\3\1\uffff\1\3\15\uffff\1\3\10\uffff\2"
-        u"\3\1\uffff\1\3\35\uffff\1\3\4\uffff\1\3\6\uffff\1\3\21\uffff\2"
-        u"\3\1\uffff\2\3\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\3\uffff\2\3"
-        u"\11\uffff\1\2\1\3\106\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
-        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
-        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
-        u"\24\uffff\1\4\65\uffff\1\3\3\uffff\1\3"),
->>>>>>> remotes/upstream/master
+        u"\4\26\uffff\1\4\65\uffff\1\3\3\uffff\1\3"),
         DFA.unpack(u"\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -28277,13 +25361,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\3\4\uffff\1\3\15\uffff\1\3\10\uffff\2\3\1\uffff"
-<<<<<<< HEAD
         u"\1\3\35\uffff\1\3\4\uffff\1\3\6\uffff\1\3\26\uffff\1\3\11\uffff"
-        u"\1\3\16\uffff\1\2\113\uffff\1\3")
-=======
-        u"\1\3\35\uffff\1\3\4\uffff\1\3\6\uffff\1\3\24\uffff\1\3\11\uffff"
         u"\1\3\16\uffff\1\2\107\uffff\1\3")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #90
@@ -28335,29 +25414,16 @@ class sdl92Parser(Parser):
         u"\1\3\27\uffff"
         )
 
-<<<<<<< HEAD
     DFA91_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086\1\103"
-        u"\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\32\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\32\1\u00ad"
+        u"\1\32\1\7\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086\1\103"
+        u"\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\32\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\32\1\u00b0"
         )
 
     DFA91_max = DFA.unpack(
-        u"\1\u00df\1\u00b1\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086"
-        u"\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\2\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA90_min = DFA.unpack(
-        u"\1\32\1\7\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1\u0084\1"
-        u"\u00a0\1\167\1\u00da\1\u0083\1\32\1\u0084\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\32\1\u00ae"
-        )
-
-    DFA90_max = DFA.unpack(
-        u"\1\u00d9\1\u00b2\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1"
-        u"\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\u0082\1\u0084\1\u0082\1"
-        u"\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b4\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086"
+        u"\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\2\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA91_accept = DFA.unpack(
@@ -28369,27 +25435,15 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA91_transition = [
         DFA.unpack(u"\1\3\1\uffff\2\3\1\uffff\1\3\15\uffff\1\3\10\uffff"
         u"\2\2\1\uffff\1\2\35\uffff\1\2\4\uffff\1\3\6\uffff\1\3\23\uffff"
         u"\2\3\1\uffff\2\3\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\3\uffff\2"
-        u"\3\11\uffff\1\2\1\3\112\uffff\1\1"),
+        u"\3\11\uffff\1\2\1\3\106\uffff\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\5\3\uffff\1\3"),
-=======
-    DFA90_transition = [
-        DFA.unpack(u"\1\3\1\uffff\2\3\1\uffff\1\3\15\uffff\1\3\10\uffff\2"
-        u"\2\1\uffff\1\2\35\uffff\1\2\4\uffff\1\3\6\uffff\1\3\21\uffff\2"
-        u"\3\1\uffff\2\3\1\uffff\1\3\2\uffff\1\3\3\uffff\1\3\3\uffff\2\3"
-        u"\11\uffff\1\2\1\3\106\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
-        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
-        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
-        u"\24\uffff\1\5\65\uffff\1\4\3\uffff\1\3"),
->>>>>>> remotes/upstream/master
+        u"\4\26\uffff\1\4\65\uffff\1\5\3\uffff\1\3"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -28413,15 +25467,9 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\3\4\uffff\1\3\15\uffff\1\3\10\uffff\2\2\1\uffff"
-<<<<<<< HEAD
         u"\1\2\35\uffff\1\2\4\uffff\1\3\6\uffff\1\3\26\uffff\1\3\11\uffff"
-        u"\1\3\16\uffff\1\2\113\uffff\1\27"),
-        DFA.unpack(u"\1\5")
-=======
-        u"\1\2\35\uffff\1\2\4\uffff\1\3\6\uffff\1\3\24\uffff\1\3\11\uffff"
         u"\1\3\16\uffff\1\2\107\uffff\1\27"),
-        DFA.unpack(u"\1\4")
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\5")
     ]
 
     # class definition for DFA #91
@@ -28440,27 +25488,15 @@ class sdl92Parser(Parser):
         u"\22\uffff"
         )
 
-<<<<<<< HEAD
     DFA93_min = DFA.unpack(
         u"\1\4\1\7\1\u0084\1\uffff\1\u0084\1\uffff\1\171\1\u0086\1\171\1"
-        u"\u0085\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\47"
+        u"\u0085\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\47"
         )
 
     DFA93_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\1\u00d7\1\uffff\1\u0084\1\uffff\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0"
-        u"\1\u00df"
-=======
-    DFA92_min = DFA.unpack(
-        u"\1\4\1\7\1\u0082\1\uffff\1\u0082\1\uffff\1\167\1\u0084\1\167\1"
-        u"\u0083\1\u0084\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00da\1\47"
-        )
-
-    DFA92_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\1\u00d5\1\uffff\1\u0082\1\uffff\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u0084\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00da"
-        u"\1\u00d9"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\1\u00d7\1\uffff\1\u0084\1\uffff\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc"
+        u"\1\u00db"
         )
 
     DFA93_accept = DFA.unpack(
@@ -28472,25 +25508,14 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA93_transition = [
         DFA.unpack(u"\1\3\37\uffff\5\3\11\uffff\1\3\34\uffff\1\3\67\uffff"
-        u"\1\3\11\uffff\1\3\1\uffff\1\2\16\uffff\1\3\74\uffff\1\1"),
+        u"\1\3\11\uffff\1\3\1\uffff\1\2\16\uffff\1\3\70\uffff\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\3"),
-        DFA.unpack(u"\1\3\55\uffff\1\3\40\uffff\1\5\3\uffff\1\3"),
-=======
-    DFA92_transition = [
-        DFA.unpack(u"\1\3\37\uffff\5\3\11\uffff\1\3\34\uffff\1\3\65\uffff"
-        u"\1\3\11\uffff\1\3\1\uffff\1\2\16\uffff\1\3\70\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
-        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
-        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
-        u"\24\uffff\1\4\65\uffff\1\3"),
+        u"\4\26\uffff\1\4\65\uffff\1\3"),
         DFA.unpack(u"\1\3\60\uffff\1\3\40\uffff\1\5\1\3"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
         DFA.unpack(u""),
@@ -28505,13 +25530,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\17"),
         DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
-<<<<<<< HEAD
         DFA.unpack(u"\1\3\12\uffff\1\3\34\uffff\1\3\67\uffff\1\3\13\uffff"
-        u"\1\5\113\uffff\1\3")
-=======
-        DFA.unpack(u"\1\3\12\uffff\1\3\34\uffff\1\3\65\uffff\1\3\13\uffff"
         u"\1\5\107\uffff\1\3")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #93
@@ -28530,29 +25550,16 @@ class sdl92Parser(Parser):
         u"\40\uffff"
         )
 
-<<<<<<< HEAD
     DFA94_min = DFA.unpack(
-        u"\1\4\1\7\12\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086\1\103"
-        u"\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\47\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\47\1\u00ad"
+        u"\1\4\1\7\12\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086\1\103"
+        u"\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\47\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\47\1\u00b0"
         )
 
     DFA94_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\12\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086"
-        u"\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\u0087\1\u0084\1"
-        u"\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA93_min = DFA.unpack(
-        u"\1\4\1\7\12\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1\u0084\1"
-        u"\u00a0\1\167\1\u00da\1\u0083\1\47\1\u0084\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\47\1\u00ae"
-        )
-
-    DFA93_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\12\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1"
-        u"\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\u0085\1\u0084\1\u0082\1"
-        u"\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\12\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086"
+        u"\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\u0087\1\u0084\1"
+        u"\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA94_accept = DFA.unpack(
@@ -28566,21 +25573,12 @@ class sdl92Parser(Parser):
             
     DFA94_transition = [
         DFA.unpack(u"\1\3\37\uffff\1\10\1\11\1\12\1\6\1\7\11\uffff\1\4\34"
-<<<<<<< HEAD
         u"\uffff\1\2\67\uffff\1\13\11\uffff\1\5\1\uffff\1\3\16\uffff\1\3"
-        u"\74\uffff\1\1"),
+        u"\70\uffff\1\1"),
         DFA.unpack(u"\1\14\1\uffff\1\14\15\uffff\1\14\2\uffff\1\14\2\uffff"
         u"\1\14\1\uffff\1\14\2\uffff\2\14\3\uffff\1\14\1\uffff\1\14\10\uffff"
         u"\1\14\2\uffff\3\14\1\uffff\1\14\25\uffff\1\14\7\uffff\1\14\13\uffff"
-        u"\1\14\26\uffff\1\14\62\uffff\1\15"),
-=======
-        u"\uffff\1\2\65\uffff\1\13\11\uffff\1\5\1\uffff\1\3\16\uffff\1\3"
-        u"\70\uffff\1\1"),
-        DFA.unpack(u"\1\15\1\uffff\1\15\15\uffff\1\15\2\uffff\1\15\2\uffff"
-        u"\1\15\1\uffff\1\15\2\uffff\2\15\3\uffff\1\15\1\uffff\1\15\10\uffff"
-        u"\1\15\2\uffff\3\15\1\uffff\1\15\25\uffff\1\15\7\uffff\1\15\13\uffff"
-        u"\1\15\24\uffff\1\15\65\uffff\1\14"),
->>>>>>> remotes/upstream/master
+        u"\1\14\26\uffff\1\14\65\uffff\1\15"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -28609,11 +25607,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\34"),
         DFA.unpack(u"\1\35"),
         DFA.unpack(u"\1\36"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\6\12\uffff\1\4\34\uffff\1\2\67\uffff\1\13\127\uffff"
-=======
-        DFA.unpack(u"\1\6\12\uffff\1\4\34\uffff\1\2\65\uffff\1\13\123\uffff"
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\6\12\uffff\1\4\34\uffff\1\2\67\uffff\1\13\123\uffff"
         u"\1\37"),
         DFA.unpack(u"\1\15")
     ]
@@ -28634,29 +25628,16 @@ class sdl92Parser(Parser):
         u"\30\uffff"
         )
 
-<<<<<<< HEAD
     DFA105_min = DFA.unpack(
-        u"\1\55\1\7\2\uffff\1\u00ae\1\u0084\1\u00af\1\171\1\103\1\u0086"
-        u"\1\u00a2\1\171\1\u00e0\1\u0085\1\55\1\u0086\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\55\1\u00ad"
+        u"\1\55\1\7\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171\1\103\1\u0086"
+        u"\1\u00a2\1\171\1\u00dc\1\u0085\1\55\1\u0086\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\55\1\u00b0"
         )
 
     DFA105_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u00ae\1\u0084\1\u00af\1\171\1\103\1"
-        u"\u0086\1\u00a2\1\171\1\u00e0\1\u0085\1\u0084\1\u0086\1\u0084\1"
-        u"\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA104_min = DFA.unpack(
-        u"\1\55\1\7\2\uffff\1\u0082\1\u00af\1\167\1\u00b0\1\u0084\1\103\1"
-        u"\167\1\u00a0\1\u0083\1\u00da\1\u0084\1\55\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\55\1\u00ae"
-        )
-
-    DFA104_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u0082\1\u00af\1\167\1\u00b0\1\u0084"
-        u"\1\103\1\167\1\u00a0\1\u0083\1\u00da\1\u0084\2\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u00b1\1\u0084\1\u00b2\1\171\1\103\1"
+        u"\u0086\1\u00a2\1\171\1\u00dc\1\u0085\1\u0084\1\u0086\1\u0084\1"
+        u"\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA105_accept = DFA.unpack(
@@ -28668,21 +25649,12 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA105_transition = [
-        DFA.unpack(u"\1\3\126\uffff\1\2\132\uffff\1\1"),
+        DFA.unpack(u"\1\3\126\uffff\1\2\126\uffff\1\1"),
         DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff"
         u"\1\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1"
         u"\5\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1"
-        u"\5\26\uffff\1\5\62\uffff\1\4"),
-=======
-    DFA104_transition = [
-        DFA.unpack(u"\1\3\124\uffff\1\2\126\uffff\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
-        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
-        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
-        u"\24\uffff\1\4\65\uffff\1\5"),
->>>>>>> remotes/upstream/master
+        u"\5\26\uffff\1\5\65\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -28703,13 +25675,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\3\126\uffff\1\2\132\uffff\1\27"),
+        DFA.unpack(u"\1\3\126\uffff\1\2\126\uffff\1\27"),
         DFA.unpack(u"\1\4")
-=======
-        DFA.unpack(u"\1\3\124\uffff\1\2\126\uffff\1\27"),
-        DFA.unpack(u"\1\5")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #105
@@ -28728,29 +25695,16 @@ class sdl92Parser(Parser):
         u"\1\2\27\uffff"
         )
 
-<<<<<<< HEAD
     DFA103_min = DFA.unpack(
-        u"\1\55\1\7\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086\1\103"
-        u"\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\55\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\55\1\u00ad"
+        u"\1\55\1\7\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086\1\103"
+        u"\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\55\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\55\1\u00b0"
         )
 
     DFA103_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086"
-        u"\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\2\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA102_min = DFA.unpack(
-        u"\1\55\1\7\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1\u0084\1"
-        u"\u00a0\1\167\1\u00da\1\u0083\1\55\1\u0084\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\55\1\u00ae"
-        )
-
-    DFA102_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1"
-        u"\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\u0082\1\u0084\1\u0082\1"
-        u"\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086"
+        u"\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\2\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA103_accept = DFA.unpack(
@@ -28762,21 +25716,12 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA103_transition = [
-        DFA.unpack(u"\1\2\126\uffff\1\3\3\uffff\2\2\125\uffff\1\1"),
+        DFA.unpack(u"\1\2\126\uffff\1\3\3\uffff\2\2\121\uffff\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\5"),
-=======
-    DFA102_transition = [
-        DFA.unpack(u"\1\2\124\uffff\1\3\3\uffff\2\2\121\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
-        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
-        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
-        u"\24\uffff\1\5\65\uffff\1\4"),
->>>>>>> remotes/upstream/master
+        u"\4\26\uffff\1\4\65\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -28797,13 +25742,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-<<<<<<< HEAD
-        DFA.unpack(u"\1\2\126\uffff\1\3\132\uffff\1\27"),
+        DFA.unpack(u"\1\2\126\uffff\1\3\126\uffff\1\27"),
         DFA.unpack(u"\1\5")
-=======
-        DFA.unpack(u"\1\2\124\uffff\1\3\126\uffff\1\27"),
-        DFA.unpack(u"\1\4")
->>>>>>> remotes/upstream/master
     ]
 
     # class definition for DFA #103
@@ -28822,29 +25762,16 @@ class sdl92Parser(Parser):
         u"\1\3\27\uffff"
         )
 
-<<<<<<< HEAD
     DFA113_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086\1\103\1"
-        u"\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\47\1\u0084\1\171\1\u0086"
-        u"\1\171\1\u0085\1\u00e0\1\47\1\u00ad"
+        u"\1\4\1\7\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086\1\103\1"
+        u"\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\47\1\u0084\1\171\1\u0086"
+        u"\1\171\1\u0085\1\u00dc\1\47\1\u00b0"
         )
 
     DFA113_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u0084\1\u00ae\1\171\1\u00af\1\u0086"
-        u"\1\103\1\171\1\u00a2\1\u0085\1\u00e0\1\u0086\1\u0087\1\u0084\1"
-        u"\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df\1\u00ad"
-=======
-    DFA112_min = DFA.unpack(
-        u"\1\4\1\7\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1\u0084\1"
-        u"\u00a0\1\167\1\u00da\1\u0083\1\47\1\u0084\1\u0082\1\167\1\u0084"
-        u"\1\167\1\u0083\1\u00da\1\47\1\u00ae"
-        )
-
-    DFA112_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u00af\1\u0082\1\u00b0\1\167\1\103\1"
-        u"\u0084\1\u00a0\1\167\1\u00da\1\u0083\1\u0085\1\u0084\1\u0082\1"
-        u"\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9\1\u00ae"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u0084\1\u00b1\1\171\1\u00b2\1\u0086"
+        u"\1\103\1\171\1\u00a2\1\u0085\1\u00dc\1\u0086\1\u0087\1\u0084\1"
+        u"\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db\1\u00b0"
         )
 
     DFA113_accept = DFA.unpack(
@@ -28858,21 +25785,12 @@ class sdl92Parser(Parser):
             
     DFA113_transition = [
         DFA.unpack(u"\1\2\37\uffff\5\2\4\uffff\1\3\4\uffff\1\2\3\uffff\2"
-<<<<<<< HEAD
         u"\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\54\uffff\1\3\2\uffff\1"
-        u"\2\2\3\7\uffff\1\2\1\uffff\1\2\16\uffff\1\2\74\uffff\1\1"),
+        u"\2\2\3\7\uffff\1\2\1\uffff\1\2\16\uffff\1\2\70\uffff\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\5"),
-=======
-        u"\2\1\uffff\1\2\25\uffff\1\2\7\uffff\1\2\52\uffff\1\3\2\uffff\1"
-        u"\2\2\3\7\uffff\1\2\1\uffff\1\2\16\uffff\1\2\70\uffff\1\1"),
-        DFA.unpack(u"\1\5\1\uffff\1\5\15\uffff\1\5\2\uffff\1\5\2\uffff\1"
-        u"\5\1\uffff\1\5\2\uffff\2\5\3\uffff\1\5\1\uffff\1\5\10\uffff\1\5"
-        u"\2\uffff\3\5\1\uffff\1\5\25\uffff\1\5\7\uffff\1\5\13\uffff\1\5"
-        u"\24\uffff\1\5\65\uffff\1\4"),
->>>>>>> remotes/upstream/master
+        u"\4\26\uffff\1\4\65\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -28895,15 +25813,9 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\2\5\uffff\1\3\4\uffff\1\2\3\uffff\2\2\1\uffff\1"
-<<<<<<< HEAD
         u"\2\25\uffff\1\2\7\uffff\1\2\54\uffff\1\3\2\uffff\1\2\13\uffff\1"
-        u"\2\113\uffff\1\27"),
-        DFA.unpack(u"\1\5")
-=======
-        u"\2\25\uffff\1\2\7\uffff\1\2\52\uffff\1\3\2\uffff\1\2\13\uffff\1"
         u"\2\107\uffff\1\27"),
-        DFA.unpack(u"\1\4")
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\1\5")
     ]
 
     # class definition for DFA #113
@@ -28926,13 +25838,8 @@ class sdl92Parser(Parser):
         u"\1\4\1\uffff\7\0\1\uffff"
         )
 
-<<<<<<< HEAD
     DFA150_max = DFA.unpack(
-        u"\1\u00df\1\uffff\7\0\1\uffff"
-=======
-    DFA149_max = DFA.unpack(
-        u"\1\u00d9\1\uffff\7\0\1\uffff"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\uffff\7\0\1\uffff"
         )
 
     DFA150_accept = DFA.unpack(
@@ -29118,23 +26025,13 @@ class sdl92Parser(Parser):
         u"\1\171\10\uffff\1\4\2\uffff\1\171\4\uffff\1\77\2\uffff"
         )
 
-<<<<<<< HEAD
     DFA160_max = DFA.unpack(
-        u"\1\u00a7\10\uffff\1\u00df\2\uffff\1\u00a9\4\uffff\1\u00d3\2\uffff"
+        u"\1\u00a7\10\uffff\1\u00db\2\uffff\1\u00a9\4\uffff\1\u00d6\2\uffff"
         )
 
     DFA160_accept = DFA.unpack(
         u"\1\uffff\1\1\1\2\1\3\1\4\1\5\1\6\1\7\1\10\1\uffff\1\12\1\13\1"
         u"\uffff\1\16\1\11\1\14\1\15\1\uffff\1\20\1\17"
-=======
-    DFA159_max = DFA.unpack(
-        u"\1\u00a5\10\uffff\1\u00d9\2\uffff\1\u00a7\4\uffff\1\u00d4\2\uffff"
-        )
-
-    DFA159_accept = DFA.unpack(
-        u"\1\uffff\1\1\1\2\1\3\1\4\1\5\1\6\1\7\1\10\1\uffff\1\12\1\13\1\uffff"
-        u"\1\16\1\11\1\14\1\15\1\uffff\1\20\1\17"
->>>>>>> remotes/upstream/master
         )
 
     DFA160_special = DFA.unpack(
@@ -29142,15 +26039,9 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA160_transition = [
         DFA.unpack(u"\1\12\31\uffff\1\11\12\uffff\1\1\1\2\1\3\1\4\1\5\1"
         u"\6\1\7\1\10\1\13\1\14"),
-=======
-    DFA159_transition = [
-        DFA.unpack(u"\1\12\31\uffff\1\11\12\uffff\1\1\1\2\1\3\1\4\1\5\1\6"
-        u"\1\7\1\10\1\13\1\14"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -29172,14 +26063,9 @@ class sdl92Parser(Parser):
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-<<<<<<< HEAD
         DFA.unpack(u"\1\23\71\uffff\1\23\12\uffff\1\23\1\uffff\1\22\14"
-        u"\uffff\1\23\5\uffff\1\23\4\uffff\12\23\1\22\3\uffff\1\23\46\uffff"
+        u"\uffff\1\23\5\uffff\1\23\4\uffff\12\23\1\22\3\uffff\1\23\51\uffff"
         u"\1\22"),
-=======
-        DFA.unpack(u"\1\23\67\uffff\1\23\12\uffff\1\23\1\uffff\1\22\14\uffff"
-        u"\1\23\5\uffff\1\23\4\uffff\12\23\1\22\3\uffff\1\23\51\uffff\1\22"),
->>>>>>> remotes/upstream/master
         DFA.unpack(u""),
         DFA.unpack(u"")
     ]
@@ -29200,25 +26086,14 @@ class sdl92Parser(Parser):
         u"\21\uffff"
         )
 
-<<<<<<< HEAD
     DFA170_min = DFA.unpack(
         u"\1\66\1\7\2\uffff\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u0086"
-        u"\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\66"
+        u"\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\66"
         )
 
     DFA170_max = DFA.unpack(
-        u"\1\u00df\1\u00ad\2\uffff\1\u0084\1\171\1\u0086\1\171\1\u0085\1"
-        u"\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00e0\1\u00df"
-=======
-    DFA169_min = DFA.unpack(
-        u"\1\66\1\7\2\uffff\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u0084\1"
-        u"\u0082\1\167\1\u0084\1\167\1\u0083\1\u00da\1\66"
-        )
-
-    DFA169_max = DFA.unpack(
-        u"\1\u00d9\1\u00ae\2\uffff\1\u0082\1\167\1\u0084\1\167\1\u0083\1"
-        u"\u0084\1\u0082\1\167\1\u0084\1\167\1\u0083\1\u00da\1\u00d9"
->>>>>>> remotes/upstream/master
+        u"\1\u00db\1\u00b0\2\uffff\1\u0084\1\171\1\u0086\1\171\1\u0085\1"
+        u"\u0086\1\u0084\1\171\1\u0086\1\171\1\u0085\1\u00dc\1\u00db"
         )
 
     DFA170_accept = DFA.unpack(
@@ -29230,23 +26105,13 @@ class sdl92Parser(Parser):
         )
 
             
-<<<<<<< HEAD
     DFA170_transition = [
-        DFA.unpack(u"\2\3\1\uffff\1\3\35\uffff\1\3\73\uffff\1\2\113\uffff"
+        DFA.unpack(u"\2\3\1\uffff\1\3\35\uffff\1\3\73\uffff\1\2\107\uffff"
         u"\1\1"),
         DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff"
         u"\1\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1"
         u"\4\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1"
-        u"\4\26\uffff\1\4\62\uffff\1\3"),
-=======
-    DFA169_transition = [
-        DFA.unpack(u"\2\3\1\uffff\1\3\35\uffff\1\3\71\uffff\1\2\107\uffff"
-        u"\1\1"),
-        DFA.unpack(u"\1\4\1\uffff\1\4\15\uffff\1\4\2\uffff\1\4\2\uffff\1"
-        u"\4\1\uffff\1\4\2\uffff\2\4\3\uffff\1\4\1\uffff\1\4\10\uffff\1\4"
-        u"\2\uffff\3\4\1\uffff\1\4\25\uffff\1\4\7\uffff\1\4\13\uffff\1\4"
-        u"\24\uffff\1\4\65\uffff\1\3"),
->>>>>>> remotes/upstream/master
+        u"\4\26\uffff\1\4\65\uffff\1\3"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\5"),
@@ -29261,11 +26126,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
         DFA.unpack(u"\1\20"),
-<<<<<<< HEAD
-        DFA.unpack(u"\2\3\1\uffff\1\3\35\uffff\1\3\73\uffff\1\2\113\uffff"
-=======
-        DFA.unpack(u"\2\3\1\uffff\1\3\35\uffff\1\3\71\uffff\1\2\107\uffff"
->>>>>>> remotes/upstream/master
+        DFA.unpack(u"\2\3\1\uffff\1\3\35\uffff\1\3\73\uffff\1\2\107\uffff"
         u"\1\3")
     ]
 
@@ -29277,20 +26138,19 @@ class sdl92Parser(Parser):
 
  
 
-<<<<<<< HEAD
-    FOLLOW_use_clause_in_pr_file1255 = frozenset([1, 23, 88, 89, 223])
-    FOLLOW_system_definition_in_pr_file1275 = frozenset([1, 23, 88, 89, 223])
-    FOLLOW_process_definition_in_pr_file1295 = frozenset([1, 23, 88, 89, 223])
+    FOLLOW_use_clause_in_pr_file1255 = frozenset([1, 23, 88, 89, 219])
+    FOLLOW_system_definition_in_pr_file1275 = frozenset([1, 23, 88, 89, 219])
+    FOLLOW_process_definition_in_pr_file1295 = frozenset([1, 23, 88, 89, 219])
     FOLLOW_SYSTEM_in_system_definition1320 = frozenset([147])
-    FOLLOW_system_name_in_system_definition1322 = frozenset([9, 124, 223])
-    FOLLOW_end_in_system_definition1324 = frozenset([35, 90, 91, 94, 111, 223])
-    FOLLOW_entity_in_system_in_system_definition1342 = frozenset([35, 90, 91, 94, 111, 223])
-    FOLLOW_ENDSYSTEM_in_system_definition1361 = frozenset([9, 124, 147, 223])
-    FOLLOW_system_name_in_system_definition1363 = frozenset([9, 124, 223])
+    FOLLOW_system_name_in_system_definition1322 = frozenset([9, 124, 219])
+    FOLLOW_end_in_system_definition1324 = frozenset([35, 90, 91, 94, 111, 219])
+    FOLLOW_entity_in_system_in_system_definition1342 = frozenset([35, 90, 91, 94, 111, 219])
+    FOLLOW_ENDSYSTEM_in_system_definition1361 = frozenset([9, 124, 147, 219])
+    FOLLOW_system_name_in_system_definition1363 = frozenset([9, 124, 219])
     FOLLOW_end_in_system_definition1366 = frozenset([1])
     FOLLOW_use_asn1_in_use_clause1413 = frozenset([89])
     FOLLOW_USE_in_use_clause1432 = frozenset([147])
-    FOLLOW_package_name_in_use_clause1434 = frozenset([9, 124, 223])
+    FOLLOW_package_name_in_use_clause1434 = frozenset([9, 124, 219])
     FOLLOW_end_in_use_clause1436 = frozenset([1])
     FOLLOW_signal_declaration_in_entity_in_system1485 = frozenset([1])
     FOLLOW_procedure_in_entity_in_system1505 = frozenset([1])
@@ -29298,28 +26158,28 @@ class sdl92Parser(Parser):
     FOLLOW_block_definition_in_entity_in_system1545 = frozenset([1])
     FOLLOW_paramnames_in_signal_declaration1569 = frozenset([90])
     FOLLOW_SIGNAL_in_signal_declaration1588 = frozenset([147])
-    FOLLOW_signal_id_in_signal_declaration1590 = frozenset([9, 124, 132, 223])
-    FOLLOW_input_params_in_signal_declaration1592 = frozenset([9, 124, 223])
+    FOLLOW_signal_id_in_signal_declaration1590 = frozenset([9, 124, 132, 219])
+    FOLLOW_input_params_in_signal_declaration1592 = frozenset([9, 124, 219])
     FOLLOW_end_in_signal_declaration1595 = frozenset([1])
     FOLLOW_CHANNEL_in_channel1645 = frozenset([147])
     FOLLOW_channel_id_in_channel1647 = frozenset([113])
     FOLLOW_route_in_channel1665 = frozenset([112, 113])
-    FOLLOW_ENDCHANNEL_in_channel1684 = frozenset([9, 124, 223])
+    FOLLOW_ENDCHANNEL_in_channel1684 = frozenset([9, 124, 219])
     FOLLOW_end_in_channel1686 = frozenset([1])
     FOLLOW_FROM_in_route1733 = frozenset([147])
     FOLLOW_source_id_in_route1735 = frozenset([47])
     FOLLOW_TO_in_route1737 = frozenset([147])
     FOLLOW_dest_id_in_route1739 = frozenset([114])
     FOLLOW_WITH_in_route1741 = frozenset([147])
-    FOLLOW_signal_id_in_route1743 = frozenset([9, 124, 134, 223])
+    FOLLOW_signal_id_in_route1743 = frozenset([9, 124, 134, 219])
     FOLLOW_COMMA_in_route1746 = frozenset([147])
-    FOLLOW_signal_id_in_route1748 = frozenset([9, 124, 134, 223])
+    FOLLOW_signal_id_in_route1748 = frozenset([9, 124, 134, 219])
     FOLLOW_end_in_route1752 = frozenset([1])
     FOLLOW_BLOCK_in_block_definition1801 = frozenset([147])
-    FOLLOW_block_id_in_block_definition1803 = frozenset([9, 124, 223])
-    FOLLOW_end_in_block_definition1805 = frozenset([23, 35, 88, 89, 90, 91, 94, 99, 115, 116, 223])
-    FOLLOW_entity_in_block_in_block_definition1823 = frozenset([23, 35, 88, 89, 90, 91, 94, 99, 115, 116, 223])
-    FOLLOW_ENDBLOCK_in_block_definition1843 = frozenset([9, 124, 223])
+    FOLLOW_block_id_in_block_definition1803 = frozenset([9, 124, 219])
+    FOLLOW_end_in_block_definition1805 = frozenset([23, 35, 88, 89, 90, 91, 94, 99, 115, 116, 219])
+    FOLLOW_entity_in_block_in_block_definition1823 = frozenset([23, 35, 88, 89, 90, 91, 94, 99, 115, 116, 219])
+    FOLLOW_ENDBLOCK_in_block_definition1843 = frozenset([9, 124, 219])
     FOLLOW_end_in_block_definition1845 = frozenset([1])
     FOLLOW_signal_declaration_in_entity_in_block1894 = frozenset([1])
     FOLLOW_signalroute_in_entity_in_block1914 = frozenset([1])
@@ -29332,41 +26192,41 @@ class sdl92Parser(Parser):
     FOLLOW_CONNECT_in_connection2065 = frozenset([147])
     FOLLOW_channel_id_in_connection2067 = frozenset([117])
     FOLLOW_AND_in_connection2069 = frozenset([147])
-    FOLLOW_route_id_in_connection2071 = frozenset([9, 124, 223])
+    FOLLOW_route_id_in_connection2071 = frozenset([9, 124, 219])
     FOLLOW_end_in_connection2073 = frozenset([1])
     FOLLOW_PROCESS_in_process_definition2119 = frozenset([147])
     FOLLOW_process_id_in_process_definition2121 = frozenset([118, 132])
     FOLLOW_number_of_instances_in_process_definition2123 = frozenset([118])
-    FOLLOW_REFERENCED_in_process_definition2126 = frozenset([9, 124, 223])
+    FOLLOW_REFERENCED_in_process_definition2126 = frozenset([9, 124, 219])
     FOLLOW_end_in_process_definition2128 = frozenset([1])
     FOLLOW_cif_in_process_definition2174 = frozenset([23])
     FOLLOW_PROCESS_in_process_definition2177 = frozenset([147])
-    FOLLOW_process_id_in_process_definition2179 = frozenset([9, 124, 132, 223])
-    FOLLOW_number_of_instances_in_process_definition2181 = frozenset([9, 124, 223])
-    FOLLOW_end_in_process_definition2184 = frozenset([26, 35, 92, 119, 122, 223])
-    FOLLOW_text_area_in_process_definition2203 = frozenset([26, 35, 92, 119, 122, 223])
-    FOLLOW_procedure_in_process_definition2207 = frozenset([26, 35, 92, 119, 122, 223])
-    FOLLOW_composite_state_in_process_definition2211 = frozenset([26, 35, 92, 119, 122, 223])
+    FOLLOW_process_id_in_process_definition2179 = frozenset([9, 124, 132, 219])
+    FOLLOW_number_of_instances_in_process_definition2181 = frozenset([9, 124, 219])
+    FOLLOW_end_in_process_definition2184 = frozenset([26, 35, 92, 119, 122, 219])
+    FOLLOW_text_area_in_process_definition2203 = frozenset([26, 35, 92, 119, 122, 219])
+    FOLLOW_procedure_in_process_definition2207 = frozenset([26, 35, 92, 119, 122, 219])
+    FOLLOW_composite_state_in_process_definition2211 = frozenset([26, 35, 92, 119, 122, 219])
     FOLLOW_processBody_in_process_definition2231 = frozenset([119])
-    FOLLOW_ENDPROCESS_in_process_definition2234 = frozenset([9, 124, 147, 223])
-    FOLLOW_process_id_in_process_definition2236 = frozenset([9, 124, 223])
+    FOLLOW_ENDPROCESS_in_process_definition2234 = frozenset([9, 124, 147, 219])
+    FOLLOW_process_id_in_process_definition2236 = frozenset([9, 124, 219])
     FOLLOW_end_in_process_definition2255 = frozenset([1])
     FOLLOW_cif_in_procedure2335 = frozenset([35])
     FOLLOW_PROCEDURE_in_procedure2354 = frozenset([147])
-    FOLLOW_procedure_id_in_procedure2356 = frozenset([9, 124, 223])
-    FOLLOW_end_in_procedure2358 = frozenset([26, 35, 82, 85, 92, 120, 122, 223])
-    FOLLOW_fpar_in_procedure2376 = frozenset([26, 35, 85, 92, 120, 122, 223])
-    FOLLOW_text_area_in_procedure2396 = frozenset([26, 35, 85, 92, 120, 122, 223])
-    FOLLOW_procedure_in_procedure2400 = frozenset([26, 35, 85, 92, 120, 122, 223])
+    FOLLOW_procedure_id_in_procedure2356 = frozenset([9, 124, 219])
+    FOLLOW_end_in_procedure2358 = frozenset([26, 35, 82, 85, 92, 120, 122, 219])
+    FOLLOW_fpar_in_procedure2376 = frozenset([26, 35, 85, 92, 120, 122, 219])
+    FOLLOW_text_area_in_procedure2396 = frozenset([26, 35, 85, 92, 120, 122, 219])
+    FOLLOW_procedure_in_procedure2400 = frozenset([26, 35, 85, 92, 120, 122, 219])
     FOLLOW_processBody_in_procedure2422 = frozenset([120])
-    FOLLOW_ENDPROCEDURE_in_procedure2425 = frozenset([9, 124, 147, 223])
-    FOLLOW_procedure_id_in_procedure2427 = frozenset([9, 124, 223])
-    FOLLOW_EXTERNAL_in_procedure2433 = frozenset([9, 124, 223])
+    FOLLOW_ENDPROCEDURE_in_procedure2425 = frozenset([9, 124, 147, 219])
+    FOLLOW_procedure_id_in_procedure2427 = frozenset([9, 124, 219])
+    FOLLOW_EXTERNAL_in_procedure2433 = frozenset([9, 124, 219])
     FOLLOW_end_in_procedure2452 = frozenset([1])
     FOLLOW_FPAR_in_fpar2534 = frozenset([84, 86, 147])
-    FOLLOW_formal_variable_param_in_fpar2536 = frozenset([9, 124, 134, 223])
+    FOLLOW_formal_variable_param_in_fpar2536 = frozenset([9, 124, 134, 219])
     FOLLOW_COMMA_in_fpar2555 = frozenset([84, 86, 147])
-    FOLLOW_formal_variable_param_in_fpar2557 = frozenset([9, 124, 134, 223])
+    FOLLOW_formal_variable_param_in_fpar2557 = frozenset([9, 124, 134, 219])
     FOLLOW_end_in_fpar2577 = frozenset([1])
     FOLLOW_INOUT_in_formal_variable_param2623 = frozenset([84, 86, 147])
     FOLLOW_IN_in_formal_variable_param2627 = frozenset([84, 86, 147])
@@ -29374,20 +26234,20 @@ class sdl92Parser(Parser):
     FOLLOW_COMMA_in_formal_variable_param2650 = frozenset([84, 86, 147])
     FOLLOW_variable_id_in_formal_variable_param2652 = frozenset([134, 147])
     FOLLOW_sort_in_formal_variable_param2656 = frozenset([1])
-    FOLLOW_cif_in_text_area2710 = frozenset([6, 35, 74, 82, 100, 102, 109, 223])
-    FOLLOW_content_in_text_area2728 = frozenset([6, 35, 74, 82, 100, 102, 109, 223])
+    FOLLOW_cif_in_text_area2710 = frozenset([6, 35, 74, 82, 100, 102, 109, 219])
+    FOLLOW_content_in_text_area2728 = frozenset([6, 35, 74, 82, 100, 102, 109, 219])
     FOLLOW_cif_end_text_in_text_area2747 = frozenset([1])
-    FOLLOW_procedure_in_content2800 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 223])
-    FOLLOW_fpar_in_content2821 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 223])
-    FOLLOW_timer_declaration_in_content2842 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 223])
-    FOLLOW_syntype_definition_in_content2863 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 223])
-    FOLLOW_newtype_definition_in_content2884 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 223])
-    FOLLOW_variable_definition_in_content2905 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 223])
-    FOLLOW_synonym_definition_in_content2926 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 223])
+    FOLLOW_procedure_in_content2800 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 219])
+    FOLLOW_fpar_in_content2821 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 219])
+    FOLLOW_timer_declaration_in_content2842 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 219])
+    FOLLOW_syntype_definition_in_content2863 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 219])
+    FOLLOW_newtype_definition_in_content2884 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 219])
+    FOLLOW_variable_definition_in_content2905 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 219])
+    FOLLOW_synonym_definition_in_content2926 = frozenset([1, 6, 35, 74, 82, 100, 102, 109, 219])
     FOLLOW_TIMER_in_timer_declaration3013 = frozenset([147])
-    FOLLOW_timer_id_in_timer_declaration3015 = frozenset([9, 124, 134, 223])
+    FOLLOW_timer_id_in_timer_declaration3015 = frozenset([9, 124, 134, 219])
     FOLLOW_COMMA_in_timer_declaration3034 = frozenset([147])
-    FOLLOW_timer_id_in_timer_declaration3036 = frozenset([9, 124, 134, 223])
+    FOLLOW_timer_id_in_timer_declaration3036 = frozenset([9, 124, 134, 219])
     FOLLOW_end_in_timer_declaration3056 = frozenset([1])
     FOLLOW_SYNTYPE_in_syntype_definition3087 = frozenset([134, 147])
     FOLLOW_syntype_name_in_syntype_definition3089 = frozenset([139])
@@ -29397,8 +26257,8 @@ class sdl92Parser(Parser):
     FOLLOW_range_condition_in_syntype_definition3099 = frozenset([101, 134])
     FOLLOW_COMMA_in_syntype_definition3102 = frozenset([63, 121, 132, 139, 140, 141, 142, 143, 144, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
     FOLLOW_range_condition_in_syntype_definition3104 = frozenset([101, 134])
-    FOLLOW_ENDSYNTYPE_in_syntype_definition3121 = frozenset([9, 124, 134, 147, 223])
-    FOLLOW_syntype_name_in_syntype_definition3123 = frozenset([9, 124, 223])
+    FOLLOW_ENDSYNTYPE_in_syntype_definition3121 = frozenset([9, 124, 134, 147, 219])
+    FOLLOW_syntype_name_in_syntype_definition3123 = frozenset([9, 124, 219])
     FOLLOW_end_in_syntype_definition3126 = frozenset([1])
     FOLLOW_sort_in_syntype_name3156 = frozenset([1])
     FOLLOW_sort_in_parent_sort3165 = frozenset([1])
@@ -29406,8 +26266,8 @@ class sdl92Parser(Parser):
     FOLLOW_type_name_in_newtype_definition3176 = frozenset([103, 104, 106])
     FOLLOW_array_definition_in_newtype_definition3179 = frozenset([103])
     FOLLOW_structure_definition_in_newtype_definition3181 = frozenset([103])
-    FOLLOW_ENDNEWTYPE_in_newtype_definition3185 = frozenset([9, 124, 134, 147, 223])
-    FOLLOW_type_name_in_newtype_definition3187 = frozenset([9, 124, 223])
+    FOLLOW_ENDNEWTYPE_in_newtype_definition3185 = frozenset([9, 124, 134, 147, 219])
+    FOLLOW_type_name_in_newtype_definition3187 = frozenset([9, 124, 219])
     FOLLOW_end_in_newtype_definition3190 = frozenset([1])
     FOLLOW_sort_in_type_name3215 = frozenset([1])
     FOLLOW_ARRAY_in_array_definition3225 = frozenset([132])
@@ -29417,25 +26277,25 @@ class sdl92Parser(Parser):
     FOLLOW_sort_in_array_definition3233 = frozenset([133])
     FOLLOW_R_PAREN_in_array_definition3235 = frozenset([1])
     FOLLOW_STRUCT_in_structure_definition3255 = frozenset([147])
-    FOLLOW_field_list_in_structure_definition3257 = frozenset([9, 124, 223])
+    FOLLOW_field_list_in_structure_definition3257 = frozenset([9, 124, 219])
     FOLLOW_end_in_structure_definition3259 = frozenset([1])
-    FOLLOW_field_definition_in_field_list3277 = frozenset([1, 9, 124, 223])
+    FOLLOW_field_definition_in_field_list3277 = frozenset([1, 9, 124, 219])
     FOLLOW_end_in_field_list3280 = frozenset([147])
-    FOLLOW_field_definition_in_field_list3282 = frozenset([1, 9, 124, 223])
+    FOLLOW_field_definition_in_field_list3282 = frozenset([1, 9, 124, 219])
     FOLLOW_field_name_in_field_definition3308 = frozenset([134, 147])
     FOLLOW_COMMA_in_field_definition3311 = frozenset([147])
     FOLLOW_field_name_in_field_definition3313 = frozenset([134, 147])
     FOLLOW_sort_in_field_definition3317 = frozenset([1])
     FOLLOW_DCL_in_variable_definition3351 = frozenset([84, 86, 147])
-    FOLLOW_variables_of_sort_in_variable_definition3353 = frozenset([9, 124, 134, 223])
+    FOLLOW_variables_of_sort_in_variable_definition3353 = frozenset([9, 124, 134, 219])
     FOLLOW_COMMA_in_variable_definition3372 = frozenset([84, 86, 147])
-    FOLLOW_variables_of_sort_in_variable_definition3374 = frozenset([9, 124, 134, 223])
+    FOLLOW_variables_of_sort_in_variable_definition3374 = frozenset([9, 124, 134, 219])
     FOLLOW_end_in_variable_definition3394 = frozenset([1])
     FOLLOW_internal_synonym_definition_in_synonym_definition3426 = frozenset([1])
     FOLLOW_SYNONYM_in_internal_synonym_definition3436 = frozenset([134, 147])
-    FOLLOW_synonym_definition_item_in_internal_synonym_definition3438 = frozenset([9, 124, 134, 223])
+    FOLLOW_synonym_definition_item_in_internal_synonym_definition3438 = frozenset([9, 124, 134, 219])
     FOLLOW_COMMA_in_internal_synonym_definition3441 = frozenset([134, 147])
-    FOLLOW_synonym_definition_item_in_internal_synonym_definition3443 = frozenset([9, 124, 134, 223])
+    FOLLOW_synonym_definition_item_in_internal_synonym_definition3443 = frozenset([9, 124, 134, 219])
     FOLLOW_end_in_internal_synonym_definition3447 = frozenset([1])
     FOLLOW_sort_in_synonym_definition_item3467 = frozenset([134, 147])
     FOLLOW_sort_in_synonym_definition_item3469 = frozenset([139])
@@ -29444,7 +26304,7 @@ class sdl92Parser(Parser):
     FOLLOW_variable_id_in_variables_of_sort3513 = frozenset([134, 147])
     FOLLOW_COMMA_in_variables_of_sort3516 = frozenset([84, 86, 147])
     FOLLOW_variable_id_in_variables_of_sort3518 = frozenset([134, 147])
-    FOLLOW_sort_in_variables_of_sort3522 = frozenset([1, 178])
+    FOLLOW_sort_in_variables_of_sort3522 = frozenset([1, 181])
     FOLLOW_ASSIG_OP_in_variables_of_sort3525 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
     FOLLOW_ground_expression_in_variables_of_sort3527 = frozenset([1])
     FOLLOW_expression_in_ground_expression3579 = frozenset([1])
@@ -29453,32 +26313,32 @@ class sdl92Parser(Parser):
     FOLLOW_COMMA_in_number_of_instances3629 = frozenset([121])
     FOLLOW_INT_in_number_of_instances3633 = frozenset([133])
     FOLLOW_R_PAREN_in_number_of_instances3635 = frozenset([1])
-    FOLLOW_start_in_processBody3683 = frozenset([1, 26, 92, 223])
-    FOLLOW_state_in_processBody3687 = frozenset([1, 26, 92, 223])
-    FOLLOW_floating_label_in_processBody3691 = frozenset([1, 26, 92, 223])
-    FOLLOW_cif_in_start3716 = frozenset([122, 223])
+    FOLLOW_start_in_processBody3683 = frozenset([1, 26, 92, 219])
+    FOLLOW_state_in_processBody3687 = frozenset([1, 26, 92, 219])
+    FOLLOW_floating_label_in_processBody3691 = frozenset([1, 26, 92, 219])
+    FOLLOW_cif_in_start3716 = frozenset([122, 219])
     FOLLOW_hyperlink_in_start3735 = frozenset([122])
-    FOLLOW_START_in_start3754 = frozenset([9, 124, 147, 223])
-    FOLLOW_state_entry_point_name_in_start3758 = frozenset([9, 124, 223])
-    FOLLOW_end_in_start3761 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
+    FOLLOW_START_in_start3754 = frozenset([9, 124, 147, 219])
+    FOLLOW_state_entry_point_name_in_start3758 = frozenset([9, 124, 219])
+    FOLLOW_end_in_start3761 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
     FOLLOW_transition_in_start3779 = frozenset([1])
-    FOLLOW_cif_in_floating_label3838 = frozenset([92, 223])
+    FOLLOW_cif_in_floating_label3838 = frozenset([92, 219])
     FOLLOW_hyperlink_in_floating_label3857 = frozenset([92])
-    FOLLOW_CONNECTION_in_floating_label3876 = frozenset([147, 223])
-    FOLLOW_connector_name_in_floating_label3878 = frozenset([211])
-    FOLLOW_211_in_floating_label3880 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 123, 135, 145, 147, 162, 223])
-    FOLLOW_transition_in_floating_label3898 = frozenset([123, 223])
+    FOLLOW_CONNECTION_in_floating_label3876 = frozenset([147, 219])
+    FOLLOW_connector_name_in_floating_label3878 = frozenset([214])
+    FOLLOW_214_in_floating_label3880 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 123, 135, 145, 147, 162, 219])
+    FOLLOW_transition_in_floating_label3898 = frozenset([123, 219])
     FOLLOW_cif_end_label_in_floating_label3917 = frozenset([123])
     FOLLOW_ENDCONNECTION_in_floating_label3936 = frozenset([124])
     FOLLOW_SEMI_in_floating_label3938 = frozenset([1])
-    FOLLOW_cif_in_state3991 = frozenset([26, 223])
+    FOLLOW_cif_in_state3991 = frozenset([26, 219])
     FOLLOW_hyperlink_in_state4010 = frozenset([26])
     FOLLOW_STATE_in_state4029 = frozenset([126, 147])
-    FOLLOW_statelist_in_state4031 = frozenset([9, 124, 223])
-    FOLLOW_end_in_state4035 = frozenset([28, 29, 31, 99, 125, 223])
-    FOLLOW_state_part_in_state4054 = frozenset([28, 29, 31, 99, 125, 223])
-    FOLLOW_ENDSTATE_in_state4074 = frozenset([9, 124, 147, 223])
-    FOLLOW_statename_in_state4076 = frozenset([9, 124, 223])
+    FOLLOW_statelist_in_state4031 = frozenset([9, 124, 219])
+    FOLLOW_end_in_state4035 = frozenset([28, 29, 31, 99, 125, 219])
+    FOLLOW_state_part_in_state4054 = frozenset([28, 29, 31, 99, 125, 219])
+    FOLLOW_ENDSTATE_in_state4074 = frozenset([9, 124, 147, 219])
+    FOLLOW_statename_in_state4076 = frozenset([9, 124, 219])
     FOLLOW_end_in_state4081 = frozenset([1])
     FOLLOW_statename_in_statelist4140 = frozenset([1, 134])
     FOLLOW_COMMA_in_statelist4143 = frozenset([147])
@@ -29491,65 +26351,65 @@ class sdl92Parser(Parser):
     FOLLOW_statename_in_exception_state4245 = frozenset([133, 134])
     FOLLOW_R_PAREN_in_exception_state4249 = frozenset([1])
     FOLLOW_STATE_in_composite_state4290 = frozenset([147])
-    FOLLOW_statename_in_composite_state4292 = frozenset([9, 124, 223])
+    FOLLOW_statename_in_composite_state4292 = frozenset([9, 124, 219])
     FOLLOW_end_in_composite_state4296 = frozenset([127])
-    FOLLOW_SUBSTRUCTURE_in_composite_state4314 = frozenset([26, 35, 86, 92, 122, 128, 129, 223])
-    FOLLOW_connection_points_in_composite_state4332 = frozenset([26, 35, 86, 92, 122, 128, 129, 223])
+    FOLLOW_SUBSTRUCTURE_in_composite_state4314 = frozenset([26, 35, 86, 92, 122, 128, 129, 219])
+    FOLLOW_connection_points_in_composite_state4332 = frozenset([26, 35, 86, 92, 122, 128, 129, 219])
     FOLLOW_composite_state_body_in_composite_state4353 = frozenset([128])
-    FOLLOW_ENDSUBSTRUCTURE_in_composite_state4371 = frozenset([9, 124, 147, 223])
-    FOLLOW_statename_in_composite_state4373 = frozenset([9, 124, 223])
+    FOLLOW_ENDSUBSTRUCTURE_in_composite_state4371 = frozenset([9, 124, 147, 219])
+    FOLLOW_statename_in_composite_state4373 = frozenset([9, 124, 219])
     FOLLOW_end_in_composite_state4378 = frozenset([1])
     FOLLOW_IN_in_connection_points4432 = frozenset([132])
-    FOLLOW_state_entry_exit_points_in_connection_points4434 = frozenset([9, 124, 223])
+    FOLLOW_state_entry_exit_points_in_connection_points4434 = frozenset([9, 124, 219])
     FOLLOW_end_in_connection_points4436 = frozenset([1])
     FOLLOW_OUT_in_connection_points4480 = frozenset([132])
-    FOLLOW_state_entry_exit_points_in_connection_points4482 = frozenset([9, 124, 223])
+    FOLLOW_state_entry_exit_points_in_connection_points4482 = frozenset([9, 124, 219])
     FOLLOW_end_in_connection_points4484 = frozenset([1])
     FOLLOW_L_PAREN_in_state_entry_exit_points4531 = frozenset([147])
     FOLLOW_statename_in_state_entry_exit_points4533 = frozenset([133, 134])
     FOLLOW_COMMA_in_state_entry_exit_points4536 = frozenset([147])
     FOLLOW_statename_in_state_entry_exit_points4538 = frozenset([133, 134])
     FOLLOW_R_PAREN_in_state_entry_exit_points4542 = frozenset([1])
-    FOLLOW_text_area_in_composite_state_body4584 = frozenset([1, 26, 35, 92, 122, 223])
-    FOLLOW_procedure_in_composite_state_body4588 = frozenset([1, 26, 35, 92, 122, 223])
-    FOLLOW_composite_state_in_composite_state_body4592 = frozenset([1, 26, 35, 92, 122, 223])
-    FOLLOW_start_in_composite_state_body4612 = frozenset([1, 26, 92, 122, 223])
-    FOLLOW_state_in_composite_state_body4616 = frozenset([1, 26, 92, 223])
-    FOLLOW_floating_label_in_composite_state_body4620 = frozenset([1, 26, 92, 223])
+    FOLLOW_text_area_in_composite_state_body4584 = frozenset([1, 26, 35, 92, 122, 219])
+    FOLLOW_procedure_in_composite_state_body4588 = frozenset([1, 26, 35, 92, 122, 219])
+    FOLLOW_composite_state_in_composite_state_body4592 = frozenset([1, 26, 35, 92, 122, 219])
+    FOLLOW_start_in_composite_state_body4612 = frozenset([1, 26, 92, 122, 219])
+    FOLLOW_state_in_composite_state_body4616 = frozenset([1, 26, 92, 219])
+    FOLLOW_floating_label_in_composite_state_body4620 = frozenset([1, 26, 92, 219])
     FOLLOW_input_part_in_state_part4645 = frozenset([1])
     FOLLOW_save_part_in_state_part4682 = frozenset([1])
     FOLLOW_spontaneous_transition_in_state_part4717 = frozenset([1])
     FOLLOW_continuous_signal_in_state_part4737 = frozenset([1])
     FOLLOW_connect_part_in_state_part4764 = frozenset([1])
-    FOLLOW_cif_in_connect_part4788 = frozenset([99, 223])
+    FOLLOW_cif_in_connect_part4788 = frozenset([99, 219])
     FOLLOW_hyperlink_in_connect_part4807 = frozenset([99])
-    FOLLOW_CONNECT_in_connect_part4826 = frozenset([9, 124, 126, 147, 223])
-    FOLLOW_connect_list_in_connect_part4828 = frozenset([9, 124, 223])
-    FOLLOW_end_in_connect_part4831 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
+    FOLLOW_CONNECT_in_connect_part4826 = frozenset([9, 124, 126, 147, 219])
+    FOLLOW_connect_list_in_connect_part4828 = frozenset([9, 124, 219])
+    FOLLOW_end_in_connect_part4831 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
     FOLLOW_transition_in_connect_part4849 = frozenset([1])
     FOLLOW_state_exit_point_name_in_connect_list4907 = frozenset([1, 134])
     FOLLOW_COMMA_in_connect_list4910 = frozenset([147])
     FOLLOW_state_exit_point_name_in_connect_list4912 = frozenset([1, 134])
     FOLLOW_ASTERISK_in_connect_list4955 = frozenset([1])
-    FOLLOW_cif_in_spontaneous_transition4978 = frozenset([31, 223])
+    FOLLOW_cif_in_spontaneous_transition4978 = frozenset([31, 219])
     FOLLOW_hyperlink_in_spontaneous_transition4997 = frozenset([31])
     FOLLOW_INPUT_in_spontaneous_transition5016 = frozenset([130])
-    FOLLOW_NONE_in_spontaneous_transition5018 = frozenset([9, 124, 223])
-    FOLLOW_end_in_spontaneous_transition5020 = frozenset([4, 29, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
-    FOLLOW_enabling_condition_in_spontaneous_transition5038 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
+    FOLLOW_NONE_in_spontaneous_transition5018 = frozenset([9, 124, 219])
+    FOLLOW_end_in_spontaneous_transition5020 = frozenset([4, 29, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
+    FOLLOW_enabling_condition_in_spontaneous_transition5038 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
     FOLLOW_transition_in_spontaneous_transition5057 = frozenset([1])
     FOLLOW_PROVIDED_in_enabling_condition5107 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_enabling_condition5109 = frozenset([9, 124, 223])
+    FOLLOW_expression_in_enabling_condition5109 = frozenset([9, 124, 219])
     FOLLOW_end_in_enabling_condition5111 = frozenset([1])
     FOLLOW_PROVIDED_in_continuous_signal5155 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_continuous_signal5157 = frozenset([9, 124, 223])
-    FOLLOW_end_in_continuous_signal5159 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 131, 135, 145, 147, 162, 223])
+    FOLLOW_expression_in_continuous_signal5157 = frozenset([9, 124, 219])
+    FOLLOW_end_in_continuous_signal5159 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 131, 135, 145, 147, 162, 219])
     FOLLOW_PRIORITY_in_continuous_signal5179 = frozenset([121])
-    FOLLOW_INT_in_continuous_signal5183 = frozenset([9, 124, 223])
-    FOLLOW_end_in_continuous_signal5185 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
+    FOLLOW_INT_in_continuous_signal5183 = frozenset([9, 124, 219])
+    FOLLOW_end_in_continuous_signal5185 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
     FOLLOW_transition_in_continuous_signal5205 = frozenset([1])
     FOLLOW_SAVE_in_save_part5255 = frozenset([126, 147])
-    FOLLOW_save_list_in_save_part5257 = frozenset([9, 124, 223])
+    FOLLOW_save_list_in_save_part5257 = frozenset([9, 124, 219])
     FOLLOW_end_in_save_part5275 = frozenset([1])
     FOLLOW_signal_list_in_save_list5319 = frozenset([1])
     FOLLOW_asterisk_save_list_in_save_list5339 = frozenset([1])
@@ -29558,12 +26418,12 @@ class sdl92Parser(Parser):
     FOLLOW_COMMA_in_signal_list5388 = frozenset([147])
     FOLLOW_signal_item_in_signal_list5390 = frozenset([1, 134])
     FOLLOW_signal_id_in_signal_item5440 = frozenset([1])
-    FOLLOW_cif_in_input_part5469 = frozenset([31, 223])
+    FOLLOW_cif_in_input_part5469 = frozenset([31, 219])
     FOLLOW_hyperlink_in_input_part5488 = frozenset([31])
     FOLLOW_INPUT_in_input_part5507 = frozenset([126, 147])
-    FOLLOW_inputlist_in_input_part5509 = frozenset([9, 124, 223])
-    FOLLOW_end_in_input_part5511 = frozenset([1, 4, 29, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
-    FOLLOW_enabling_condition_in_input_part5529 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
+    FOLLOW_inputlist_in_input_part5509 = frozenset([9, 124, 219])
+    FOLLOW_end_in_input_part5511 = frozenset([1, 4, 29, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
+    FOLLOW_enabling_condition_in_input_part5529 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
     FOLLOW_transition_in_input_part5548 = frozenset([1])
     FOLLOW_ASTERISK_in_inputlist5626 = frozenset([1])
     FOLLOW_stimulus_in_inputlist5647 = frozenset([1, 134])
@@ -29576,11 +26436,11 @@ class sdl92Parser(Parser):
     FOLLOW_COMMA_in_input_params5731 = frozenset([84, 86, 147])
     FOLLOW_variable_id_in_input_params5733 = frozenset([133, 134])
     FOLLOW_R_PAREN_in_input_params5737 = frozenset([1])
-    FOLLOW_action_in_transition5782 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
-    FOLLOW_label_in_transition5785 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
+    FOLLOW_action_in_transition5782 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
+    FOLLOW_label_in_transition5785 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
     FOLLOW_terminator_statement_in_transition5788 = frozenset([1])
     FOLLOW_terminator_statement_in_transition5837 = frozenset([1])
-    FOLLOW_label_in_action5881 = frozenset([4, 36, 37, 38, 39, 40, 50, 79, 84, 86, 135, 145, 147, 162, 223])
+    FOLLOW_label_in_action5881 = frozenset([4, 36, 37, 38, 39, 40, 50, 79, 84, 86, 135, 145, 147, 162, 219])
     FOLLOW_task_in_action5901 = frozenset([1])
     FOLLOW_task_body_in_action5921 = frozenset([1])
     FOLLOW_output_in_action5941 = frozenset([1])
@@ -29596,19 +26456,19 @@ class sdl92Parser(Parser):
     FOLLOW_variable_id_in_export6129 = frozenset([133, 134])
     FOLLOW_COMMA_in_export6132 = frozenset([84, 86, 147])
     FOLLOW_variable_id_in_export6134 = frozenset([133, 134])
-    FOLLOW_R_PAREN_in_export6138 = frozenset([9, 124, 223])
+    FOLLOW_R_PAREN_in_export6138 = frozenset([9, 124, 219])
     FOLLOW_end_in_export6156 = frozenset([1])
-    FOLLOW_cif_in_procedure_call6204 = frozenset([135, 223])
+    FOLLOW_cif_in_procedure_call6204 = frozenset([135, 219])
     FOLLOW_hyperlink_in_procedure_call6223 = frozenset([135])
     FOLLOW_CALL_in_procedure_call6242 = frozenset([147])
-    FOLLOW_procedure_call_body_in_procedure_call6244 = frozenset([9, 124, 223])
+    FOLLOW_procedure_call_body_in_procedure_call6244 = frozenset([9, 124, 219])
     FOLLOW_end_in_procedure_call6246 = frozenset([1])
     FOLLOW_procedure_id_in_procedure_call_body6299 = frozenset([1, 132])
     FOLLOW_actual_parameters_in_procedure_call_body6301 = frozenset([1])
     FOLLOW_SET_in_set_timer6352 = frozenset([132])
-    FOLLOW_set_statement_in_set_timer6354 = frozenset([9, 124, 134, 223])
+    FOLLOW_set_statement_in_set_timer6354 = frozenset([9, 124, 134, 219])
     FOLLOW_COMMA_in_set_timer6357 = frozenset([132])
-    FOLLOW_set_statement_in_set_timer6359 = frozenset([9, 124, 134, 223])
+    FOLLOW_set_statement_in_set_timer6359 = frozenset([9, 124, 134, 219])
     FOLLOW_end_in_set_timer6379 = frozenset([1])
     FOLLOW_L_PAREN_in_set_statement6420 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
     FOLLOW_expression_in_set_statement6423 = frozenset([134])
@@ -29616,56 +26476,56 @@ class sdl92Parser(Parser):
     FOLLOW_timer_id_in_set_statement6429 = frozenset([133])
     FOLLOW_R_PAREN_in_set_statement6431 = frozenset([1])
     FOLLOW_RESET_in_reset_timer6487 = frozenset([147])
-    FOLLOW_reset_statement_in_reset_timer6489 = frozenset([9, 124, 134, 223])
+    FOLLOW_reset_statement_in_reset_timer6489 = frozenset([9, 124, 134, 219])
     FOLLOW_COMMA_in_reset_timer6492 = frozenset([147])
-    FOLLOW_reset_statement_in_reset_timer6494 = frozenset([9, 124, 134, 223])
+    FOLLOW_reset_statement_in_reset_timer6494 = frozenset([9, 124, 134, 219])
     FOLLOW_end_in_reset_timer6514 = frozenset([1])
     FOLLOW_timer_id_in_reset_statement6555 = frozenset([1, 132])
     FOLLOW_L_PAREN_in_reset_statement6558 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
     FOLLOW_expression_list_in_reset_statement6560 = frozenset([133])
     FOLLOW_R_PAREN_in_reset_statement6562 = frozenset([1])
     FOLLOW_ALTERNATIVE_in_transition_option6611 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_alternative_question_in_transition_option6613 = frozenset([9, 124, 223])
-    FOLLOW_end_in_transition_option6617 = frozenset([132, 223])
-    FOLLOW_answer_part_in_transition_option6635 = frozenset([45, 132, 223])
+    FOLLOW_alternative_question_in_transition_option6613 = frozenset([9, 124, 219])
+    FOLLOW_end_in_transition_option6617 = frozenset([132, 219])
+    FOLLOW_answer_part_in_transition_option6635 = frozenset([45, 132, 219])
     FOLLOW_alternative_part_in_transition_option6653 = frozenset([136])
-    FOLLOW_ENDALTERNATIVE_in_transition_option6671 = frozenset([9, 124, 223])
+    FOLLOW_ENDALTERNATIVE_in_transition_option6671 = frozenset([9, 124, 219])
     FOLLOW_end_in_transition_option6675 = frozenset([1])
-    FOLLOW_answer_part_in_alternative_part6722 = frozenset([1, 45, 132, 223])
+    FOLLOW_answer_part_in_alternative_part6722 = frozenset([1, 45, 132, 219])
     FOLLOW_else_part_in_alternative_part6725 = frozenset([1])
     FOLLOW_else_part_in_alternative_part6768 = frozenset([1])
     FOLLOW_expression_in_alternative_question6808 = frozenset([1])
     FOLLOW_informal_text_in_alternative_question6828 = frozenset([1])
-    FOLLOW_cif_in_decision6851 = frozenset([39, 223])
+    FOLLOW_cif_in_decision6851 = frozenset([39, 219])
     FOLLOW_hyperlink_in_decision6870 = frozenset([39])
     FOLLOW_DECISION_in_decision6889 = frozenset([63, 121, 132, 138, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_question_in_decision6891 = frozenset([9, 124, 223])
-    FOLLOW_end_in_decision6895 = frozenset([45, 132, 137, 223])
-    FOLLOW_answer_part_in_decision6913 = frozenset([45, 132, 137, 223])
+    FOLLOW_question_in_decision6891 = frozenset([9, 124, 219])
+    FOLLOW_end_in_decision6895 = frozenset([45, 132, 137, 219])
+    FOLLOW_answer_part_in_decision6913 = frozenset([45, 132, 137, 219])
     FOLLOW_alternative_part_in_decision6932 = frozenset([137])
-    FOLLOW_ENDDECISION_in_decision6951 = frozenset([9, 124, 223])
+    FOLLOW_ENDDECISION_in_decision6951 = frozenset([9, 124, 219])
     FOLLOW_end_in_decision6955 = frozenset([1])
-    FOLLOW_cif_in_answer_part7031 = frozenset([132, 223])
+    FOLLOW_cif_in_answer_part7031 = frozenset([132, 219])
     FOLLOW_hyperlink_in_answer_part7050 = frozenset([132])
     FOLLOW_L_PAREN_in_answer_part7069 = frozenset([63, 121, 132, 139, 140, 141, 142, 143, 144, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
     FOLLOW_answer_in_answer_part7071 = frozenset([133])
-    FOLLOW_R_PAREN_in_answer_part7073 = frozenset([211])
-    FOLLOW_211_in_answer_part7075 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
+    FOLLOW_R_PAREN_in_answer_part7073 = frozenset([214])
+    FOLLOW_214_in_answer_part7075 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
     FOLLOW_transition_in_answer_part7077 = frozenset([1])
     FOLLOW_range_condition_in_answer7131 = frozenset([1])
     FOLLOW_informal_text_in_answer7151 = frozenset([1])
-    FOLLOW_cif_in_else_part7174 = frozenset([45, 223])
+    FOLLOW_cif_in_else_part7174 = frozenset([45, 219])
     FOLLOW_hyperlink_in_else_part7193 = frozenset([45])
-    FOLLOW_ELSE_in_else_part7212 = frozenset([211])
-    FOLLOW_211_in_else_part7214 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
+    FOLLOW_ELSE_in_else_part7212 = frozenset([214])
+    FOLLOW_214_in_else_part7214 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
     FOLLOW_transition_in_else_part7216 = frozenset([1])
     FOLLOW_expression_in_question7268 = frozenset([1])
     FOLLOW_informal_text_in_question7309 = frozenset([1])
     FOLLOW_ANY_in_question7346 = frozenset([1])
     FOLLOW_closed_range_in_range_condition7389 = frozenset([1])
     FOLLOW_open_range_in_range_condition7393 = frozenset([1])
-    FOLLOW_INT_in_closed_range7436 = frozenset([211])
-    FOLLOW_211_in_closed_range7438 = frozenset([121])
+    FOLLOW_INT_in_closed_range7436 = frozenset([214])
+    FOLLOW_214_in_closed_range7438 = frozenset([121])
     FOLLOW_INT_in_closed_range7442 = frozenset([1])
     FOLLOW_constant_in_open_range7490 = frozenset([1])
     FOLLOW_EQ_in_open_range7530 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
@@ -29677,371 +26537,371 @@ class sdl92Parser(Parser):
     FOLLOW_constant_in_open_range7543 = frozenset([1])
     FOLLOW_expression_in_constant7606 = frozenset([1])
     FOLLOW_CREATE_in_create_request7650 = frozenset([146, 147])
-    FOLLOW_createbody_in_create_request7669 = frozenset([9, 124, 132, 223])
-    FOLLOW_actual_parameters_in_create_request7687 = frozenset([9, 124, 223])
+    FOLLOW_createbody_in_create_request7669 = frozenset([9, 124, 132, 219])
+    FOLLOW_actual_parameters_in_create_request7687 = frozenset([9, 124, 219])
     FOLLOW_end_in_create_request7706 = frozenset([1])
     FOLLOW_process_id_in_createbody7753 = frozenset([1])
     FOLLOW_THIS_in_createbody7773 = frozenset([1])
-    FOLLOW_cif_in_output7796 = frozenset([50, 223])
+    FOLLOW_cif_in_output7796 = frozenset([50, 219])
     FOLLOW_hyperlink_in_output7815 = frozenset([50])
     FOLLOW_OUTPUT_in_output7834 = frozenset([147])
-    FOLLOW_outputbody_in_output7836 = frozenset([9, 124, 223])
+    FOLLOW_outputbody_in_output7836 = frozenset([9, 124, 219])
     FOLLOW_end_in_output7838 = frozenset([1])
-    FOLLOW_outputstmt_in_outputbody7891 = frozenset([1, 134, 212])
+    FOLLOW_outputstmt_in_outputbody7891 = frozenset([1, 47, 134])
     FOLLOW_COMMA_in_outputbody7894 = frozenset([147])
-    FOLLOW_outputstmt_in_outputbody7896 = frozenset([1, 134, 212])
+    FOLLOW_outputstmt_in_outputbody7896 = frozenset([1, 47, 134])
     FOLLOW_to_part_in_outputbody7900 = frozenset([1])
     FOLLOW_signal_id_in_outputstmt7953 = frozenset([1, 132])
     FOLLOW_actual_parameters_in_outputstmt7972 = frozenset([1])
-    FOLLOW_212_in_to_part7996 = frozenset([146, 147, 187, 190, 194])
+    FOLLOW_TO_in_to_part7996 = frozenset([146, 147, 190, 193, 197])
     FOLLOW_destination_in_to_part7998 = frozenset([1])
-    FOLLOW_213_in_via_part8037 = frozenset([147, 214])
-    FOLLOW_viabody_in_via_part8039 = frozenset([1])
-    FOLLOW_214_in_viabody8079 = frozenset([1])
-    FOLLOW_via_path_in_viabody8118 = frozenset([1])
-    FOLLOW_pid_expression_in_destination8162 = frozenset([1])
-    FOLLOW_process_id_in_destination8182 = frozenset([1])
-    FOLLOW_THIS_in_destination8202 = frozenset([1])
-    FOLLOW_via_path_element_in_via_path8225 = frozenset([1, 134])
-    FOLLOW_COMMA_in_via_path8228 = frozenset([147, 214])
-    FOLLOW_via_path_element_in_via_path8230 = frozenset([1, 134])
-    FOLLOW_ID_in_via_path_element8273 = frozenset([1])
-    FOLLOW_L_PAREN_in_actual_parameters8296 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_actual_parameters8298 = frozenset([133, 134])
-    FOLLOW_COMMA_in_actual_parameters8301 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_actual_parameters8303 = frozenset([133, 134])
-    FOLLOW_R_PAREN_in_actual_parameters8307 = frozenset([1])
-    FOLLOW_cif_in_task8351 = frozenset([79, 223])
-    FOLLOW_hyperlink_in_task8370 = frozenset([79])
-    FOLLOW_TASK_in_task8389 = frozenset([4, 9, 84, 86, 124, 147, 162, 223])
-    FOLLOW_task_body_in_task8391 = frozenset([9, 124, 223])
-    FOLLOW_end_in_task8394 = frozenset([1])
-    FOLLOW_assignement_statement_in_task_body8449 = frozenset([1, 134])
-    FOLLOW_COMMA_in_task_body8452 = frozenset([84, 86, 147])
-    FOLLOW_assignement_statement_in_task_body8454 = frozenset([1, 134])
-    FOLLOW_informal_text_in_task_body8500 = frozenset([1, 134])
-    FOLLOW_COMMA_in_task_body8503 = frozenset([162])
-    FOLLOW_informal_text_in_task_body8505 = frozenset([1, 134])
-    FOLLOW_forloop_in_task_body8551 = frozenset([1, 134])
-    FOLLOW_COMMA_in_task_body8554 = frozenset([4, 84, 86, 147, 162])
-    FOLLOW_forloop_in_task_body8556 = frozenset([1, 134])
-    FOLLOW_FOR_in_forloop8613 = frozenset([84, 86, 147])
-    FOLLOW_variable_id_in_forloop8615 = frozenset([86])
-    FOLLOW_IN_in_forloop8617 = frozenset([5, 84, 86, 147])
-    FOLLOW_variable_in_forloop8620 = frozenset([211])
-    FOLLOW_range_in_forloop8624 = frozenset([211])
-    FOLLOW_211_in_forloop8627 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 148, 162, 223])
-    FOLLOW_transition_in_forloop8645 = frozenset([148])
-    FOLLOW_ENDFOR_in_forloop8664 = frozenset([1])
-    FOLLOW_RANGE_in_range8716 = frozenset([132])
-    FOLLOW_L_PAREN_in_range8734 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_ground_expression_in_range8738 = frozenset([133, 134])
-    FOLLOW_COMMA_in_range8757 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_ground_expression_in_range8761 = frozenset([133, 134])
-    FOLLOW_COMMA_in_range8766 = frozenset([121])
-    FOLLOW_INT_in_range8770 = frozenset([133])
-    FOLLOW_R_PAREN_in_range8790 = frozenset([1])
-    FOLLOW_variable_in_assignement_statement8842 = frozenset([178])
-    FOLLOW_ASSIG_OP_in_assignement_statement8844 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_assignement_statement8846 = frozenset([1])
-    FOLLOW_variable_id_in_variable8893 = frozenset([1, 132, 215])
-    FOLLOW_primary_params_in_variable8895 = frozenset([1, 132, 215])
-    FOLLOW_set_in_field_selection8943 = frozenset([147])
-    FOLLOW_field_name_in_field_selection8949 = frozenset([1])
-    FOLLOW_operand0_in_expression8969 = frozenset([1, 149])
-    FOLLOW_IMPLIES_in_expression8973 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand0_in_expression8976 = frozenset([1, 149])
-    FOLLOW_operand1_in_operand08999 = frozenset([1, 150, 151])
-    FOLLOW_OR_in_operand09004 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_XOR_in_operand09009 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand1_in_operand09014 = frozenset([1, 150, 151])
-    FOLLOW_operand2_in_operand19036 = frozenset([1, 117])
-    FOLLOW_AND_in_operand19040 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand2_in_operand19043 = frozenset([1, 117])
-    FOLLOW_operand3_in_operand29065 = frozenset([1, 86, 139, 140, 141, 142, 143, 144])
-    FOLLOW_EQ_in_operand29094 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_NEQ_in_operand29099 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_GT_in_operand29104 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_GE_in_operand29109 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_LT_in_operand29114 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_LE_in_operand29119 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_IN_in_operand29124 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand3_in_operand29153 = frozenset([1, 86, 139, 140, 141, 142, 143, 144])
-    FOLLOW_operand4_in_operand39175 = frozenset([1, 152, 153, 154])
-    FOLLOW_PLUS_in_operand39180 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_DASH_in_operand39185 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_APPEND_in_operand39190 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand4_in_operand39195 = frozenset([1, 152, 153, 154])
-    FOLLOW_operand5_in_operand49217 = frozenset([1, 126, 155, 156, 157])
-    FOLLOW_ASTERISK_in_operand49246 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_DIV_in_operand49251 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_MOD_in_operand49256 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_REM_in_operand49261 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand5_in_operand49266 = frozenset([1, 126, 155, 156, 157])
-    FOLLOW_primary_qualifier_in_operand59288 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_primary_in_operand59291 = frozenset([1])
-    FOLLOW_asn1Value_in_primary9349 = frozenset([1, 132, 215])
-    FOLLOW_primary_params_in_primary9351 = frozenset([1, 132, 215])
-    FOLLOW_L_PAREN_in_primary9396 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_primary9398 = frozenset([133])
-    FOLLOW_R_PAREN_in_primary9400 = frozenset([1])
-    FOLLOW_conditional_ground_expression_in_primary9441 = frozenset([1])
-    FOLLOW_BitStringLiteral_in_asn1Value9464 = frozenset([1])
-    FOLLOW_OctetStringLiteral_in_asn1Value9501 = frozenset([1])
-    FOLLOW_TRUE_in_asn1Value9536 = frozenset([1])
-    FOLLOW_FALSE_in_asn1Value9555 = frozenset([1])
-    FOLLOW_StringLiteral_in_asn1Value9574 = frozenset([1])
-    FOLLOW_NULL_in_asn1Value9614 = frozenset([1])
-    FOLLOW_PLUS_INFINITY_in_asn1Value9633 = frozenset([1])
-    FOLLOW_MINUS_INFINITY_in_asn1Value9652 = frozenset([1])
-    FOLLOW_ID_in_asn1Value9671 = frozenset([1])
-    FOLLOW_INT_in_asn1Value9689 = frozenset([1])
-    FOLLOW_FloatingPointLiteral_in_asn1Value9707 = frozenset([1])
-    FOLLOW_L_BRACKET_in_asn1Value9740 = frozenset([168])
-    FOLLOW_R_BRACKET_in_asn1Value9742 = frozenset([1])
-    FOLLOW_L_BRACKET_in_asn1Value9774 = frozenset([169])
-    FOLLOW_MANTISSA_in_asn1Value9792 = frozenset([121])
-    FOLLOW_INT_in_asn1Value9796 = frozenset([134])
-    FOLLOW_COMMA_in_asn1Value9798 = frozenset([170])
-    FOLLOW_BASE_in_asn1Value9816 = frozenset([121])
-    FOLLOW_INT_in_asn1Value9820 = frozenset([134])
-    FOLLOW_COMMA_in_asn1Value9822 = frozenset([171])
-    FOLLOW_EXPONENT_in_asn1Value9840 = frozenset([121])
-    FOLLOW_INT_in_asn1Value9844 = frozenset([168])
-    FOLLOW_R_BRACKET_in_asn1Value9863 = frozenset([1])
-    FOLLOW_choiceValue_in_asn1Value9914 = frozenset([1])
-    FOLLOW_L_BRACKET_in_asn1Value9932 = frozenset([147])
-    FOLLOW_namedValue_in_asn1Value9950 = frozenset([134, 168])
-    FOLLOW_COMMA_in_asn1Value9953 = frozenset([147])
-    FOLLOW_namedValue_in_asn1Value9955 = frozenset([134, 168])
-    FOLLOW_R_BRACKET_in_asn1Value9975 = frozenset([1])
-    FOLLOW_L_BRACKET_in_asn1Value10020 = frozenset([121, 147, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167])
-    FOLLOW_asn1Value_in_asn1Value10038 = frozenset([134, 168])
-    FOLLOW_COMMA_in_asn1Value10041 = frozenset([121, 147, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167])
-    FOLLOW_asn1Value_in_asn1Value10043 = frozenset([134, 168])
-    FOLLOW_R_BRACKET_in_asn1Value10063 = frozenset([1])
-    FOLLOW_StringLiteral_in_informal_text10238 = frozenset([1])
-    FOLLOW_ID_in_choiceValue10288 = frozenset([211])
-    FOLLOW_211_in_choiceValue10290 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_choiceValue10292 = frozenset([1])
-    FOLLOW_ID_in_namedValue10341 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_namedValue10343 = frozenset([1])
-    FOLLOW_DASH_in_primary_qualifier10366 = frozenset([1])
-    FOLLOW_NOT_in_primary_qualifier10405 = frozenset([1])
-    FOLLOW_L_PAREN_in_primary_params10427 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_list_in_primary_params10429 = frozenset([133])
-    FOLLOW_R_PAREN_in_primary_params10431 = frozenset([1])
-    FOLLOW_215_in_primary_params10470 = frozenset([121, 147])
-    FOLLOW_literal_id_in_primary_params10472 = frozenset([1])
-    FOLLOW_primary_in_indexed_primary10519 = frozenset([132])
-    FOLLOW_L_PAREN_in_indexed_primary10521 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_list_in_indexed_primary10523 = frozenset([133])
-    FOLLOW_R_PAREN_in_indexed_primary10525 = frozenset([1])
-    FOLLOW_primary_in_field_primary10548 = frozenset([203, 215])
-    FOLLOW_field_selection_in_field_primary10550 = frozenset([1])
-    FOLLOW_216_in_structure_primary10573 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_list_in_structure_primary10575 = frozenset([217])
-    FOLLOW_217_in_structure_primary10577 = frozenset([1])
-    FOLLOW_active_primary_in_active_expression10602 = frozenset([1])
-    FOLLOW_variable_access_in_active_primary10625 = frozenset([1])
-    FOLLOW_operator_application_in_active_primary10645 = frozenset([1])
-    FOLLOW_conditional_expression_in_active_primary10665 = frozenset([1])
-    FOLLOW_imperative_operator_in_active_primary10685 = frozenset([1])
-    FOLLOW_L_PAREN_in_active_primary10705 = frozenset([63, 84, 86, 132, 147, 180, 187, 190, 194, 218, 219, 220, 221, 222])
-    FOLLOW_active_expression_in_active_primary10707 = frozenset([133])
-    FOLLOW_R_PAREN_in_active_primary10709 = frozenset([1])
-    FOLLOW_218_in_active_primary10729 = frozenset([1])
-    FOLLOW_now_expression_in_imperative_operator10756 = frozenset([1])
-    FOLLOW_import_expression_in_imperative_operator10776 = frozenset([1])
-    FOLLOW_pid_expression_in_imperative_operator10796 = frozenset([1])
-    FOLLOW_view_expression_in_imperative_operator10816 = frozenset([1])
-    FOLLOW_timer_active_expression_in_imperative_operator10836 = frozenset([1])
-    FOLLOW_anyvalue_expression_in_imperative_operator10856 = frozenset([1])
-    FOLLOW_219_in_timer_active_expression10879 = frozenset([132])
-    FOLLOW_L_PAREN_in_timer_active_expression10881 = frozenset([147])
-    FOLLOW_timer_id_in_timer_active_expression10883 = frozenset([132, 133])
-    FOLLOW_L_PAREN_in_timer_active_expression10886 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_list_in_timer_active_expression10888 = frozenset([133])
-    FOLLOW_R_PAREN_in_timer_active_expression10890 = frozenset([133])
-    FOLLOW_R_PAREN_in_timer_active_expression10894 = frozenset([1])
-    FOLLOW_220_in_anyvalue_expression10917 = frozenset([132])
-    FOLLOW_L_PAREN_in_anyvalue_expression10919 = frozenset([134, 147])
-    FOLLOW_sort_in_anyvalue_expression10921 = frozenset([133])
-    FOLLOW_R_PAREN_in_anyvalue_expression10923 = frozenset([1])
-    FOLLOW_sort_id_in_sort10941 = frozenset([1])
-    FOLLOW_syntype_id_in_syntype10977 = frozenset([1])
-    FOLLOW_221_in_import_expression11000 = frozenset([132])
-    FOLLOW_L_PAREN_in_import_expression11002 = frozenset([147])
-    FOLLOW_remote_variable_id_in_import_expression11004 = frozenset([133, 134])
-    FOLLOW_COMMA_in_import_expression11007 = frozenset([146, 147, 187, 190, 194])
-    FOLLOW_destination_in_import_expression11009 = frozenset([133])
-    FOLLOW_R_PAREN_in_import_expression11013 = frozenset([1])
-    FOLLOW_222_in_view_expression11036 = frozenset([132])
-    FOLLOW_L_PAREN_in_view_expression11038 = frozenset([147])
-    FOLLOW_view_id_in_view_expression11040 = frozenset([133, 134])
-    FOLLOW_COMMA_in_view_expression11043 = frozenset([187, 190, 194])
-    FOLLOW_pid_expression_in_view_expression11045 = frozenset([133])
-    FOLLOW_R_PAREN_in_view_expression11049 = frozenset([1])
-    FOLLOW_variable_id_in_variable_access11072 = frozenset([1])
-    FOLLOW_operator_id_in_operator_application11095 = frozenset([132])
-    FOLLOW_L_PAREN_in_operator_application11097 = frozenset([63, 84, 86, 132, 147, 180, 187, 190, 194, 218, 219, 220, 221, 222])
-    FOLLOW_active_expression_list_in_operator_application11098 = frozenset([133])
-    FOLLOW_R_PAREN_in_operator_application11100 = frozenset([1])
-    FOLLOW_active_expression_in_active_expression_list11124 = frozenset([1, 134])
-    FOLLOW_COMMA_in_active_expression_list11127 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_list_in_active_expression_list11129 = frozenset([1])
-    FOLLOW_IF_in_conditional_expression11161 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_conditional_expression11163 = frozenset([64])
-    FOLLOW_THEN_in_conditional_expression11165 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_conditional_expression11167 = frozenset([45])
-    FOLLOW_ELSE_in_conditional_expression11169 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_conditional_expression11171 = frozenset([65])
-    FOLLOW_FI_in_conditional_expression11173 = frozenset([1])
-    FOLLOW_external_synonym_id_in_external_synonym11199 = frozenset([1])
-    FOLLOW_IF_in_conditional_ground_expression11222 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_conditional_ground_expression11226 = frozenset([64])
-    FOLLOW_THEN_in_conditional_ground_expression11244 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_conditional_ground_expression11248 = frozenset([45])
-    FOLLOW_ELSE_in_conditional_ground_expression11266 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_conditional_ground_expression11270 = frozenset([65])
-    FOLLOW_FI_in_conditional_ground_expression11272 = frozenset([1])
-    FOLLOW_expression_in_expression_list11324 = frozenset([1, 134])
-    FOLLOW_COMMA_in_expression_list11327 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_expression_list11329 = frozenset([1, 134])
-    FOLLOW_label_in_terminator_statement11372 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
-    FOLLOW_cif_in_terminator_statement11391 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
-    FOLLOW_hyperlink_in_terminator_statement11410 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 223])
-    FOLLOW_terminator_in_terminator_statement11429 = frozenset([9, 124, 223])
-    FOLLOW_end_in_terminator_statement11447 = frozenset([1])
-    FOLLOW_cif_in_label11502 = frozenset([147, 223])
-    FOLLOW_connector_name_in_label11505 = frozenset([211])
-    FOLLOW_211_in_label11507 = frozenset([1])
-    FOLLOW_nextstate_in_terminator11554 = frozenset([1])
-    FOLLOW_join_in_terminator11558 = frozenset([1])
-    FOLLOW_stop_in_terminator11562 = frozenset([1])
-    FOLLOW_return_stmt_in_terminator11566 = frozenset([1])
-    FOLLOW_JOIN_in_join11590 = frozenset([147, 223])
-    FOLLOW_connector_name_in_join11592 = frozenset([1])
-    FOLLOW_STOP_in_stop11632 = frozenset([1])
-    FOLLOW_RETURN_in_return_stmt11655 = frozenset([1, 63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_expression_in_return_stmt11657 = frozenset([1])
-    FOLLOW_NEXTSTATE_in_nextstate11703 = frozenset([147, 153])
-    FOLLOW_nextstatebody_in_nextstate11705 = frozenset([1])
-    FOLLOW_statename_in_nextstatebody11749 = frozenset([1, 48])
-    FOLLOW_via_in_nextstatebody11751 = frozenset([1])
-    FOLLOW_dash_nextstate_in_nextstatebody11772 = frozenset([1])
-    FOLLOW_VIA_in_via11791 = frozenset([147])
-    FOLLOW_state_entry_point_name_in_via11793 = frozenset([1])
-    FOLLOW_cif_in_end11834 = frozenset([9, 223])
-    FOLLOW_hyperlink_in_end11837 = frozenset([9])
-    FOLLOW_COMMENT_in_end11840 = frozenset([162])
-    FOLLOW_StringLiteral_in_end11842 = frozenset([124])
-    FOLLOW_SEMI_in_end11846 = frozenset([1])
-    FOLLOW_cif_decl_in_cif11892 = frozenset([7, 9, 23, 26, 29, 31, 34, 35, 39, 41, 50, 53, 54, 55, 57, 79, 87, 99, 122])
-    FOLLOW_symbolname_in_cif11894 = frozenset([132])
-    FOLLOW_L_PAREN_in_cif11912 = frozenset([121])
-    FOLLOW_INT_in_cif11916 = frozenset([134])
-    FOLLOW_COMMA_in_cif11918 = frozenset([121])
-    FOLLOW_INT_in_cif11922 = frozenset([133])
-    FOLLOW_R_PAREN_in_cif11924 = frozenset([134])
-    FOLLOW_COMMA_in_cif11942 = frozenset([132])
-    FOLLOW_L_PAREN_in_cif11960 = frozenset([121])
-    FOLLOW_INT_in_cif11964 = frozenset([134])
-    FOLLOW_COMMA_in_cif11966 = frozenset([121])
-    FOLLOW_INT_in_cif11970 = frozenset([133])
-    FOLLOW_R_PAREN_in_cif11972 = frozenset([224])
-    FOLLOW_cif_end_in_cif11991 = frozenset([1])
-    FOLLOW_cif_decl_in_hyperlink12045 = frozenset([173])
-    FOLLOW_KEEP_in_hyperlink12047 = frozenset([174])
-    FOLLOW_SPECIFIC_in_hyperlink12049 = frozenset([175])
-    FOLLOW_GEODE_in_hyperlink12051 = frozenset([67])
-    FOLLOW_HYPERLINK_in_hyperlink12053 = frozenset([162])
-    FOLLOW_StringLiteral_in_hyperlink12055 = frozenset([224])
-    FOLLOW_cif_end_in_hyperlink12073 = frozenset([1])
-    FOLLOW_cif_decl_in_paramnames12118 = frozenset([173])
-    FOLLOW_KEEP_in_paramnames12120 = frozenset([174])
-    FOLLOW_SPECIFIC_in_paramnames12122 = frozenset([175])
-    FOLLOW_GEODE_in_paramnames12124 = frozenset([95])
-    FOLLOW_PARAMNAMES_in_paramnames12126 = frozenset([147])
-    FOLLOW_field_name_in_paramnames12128 = frozenset([147, 224])
-    FOLLOW_cif_end_in_paramnames12131 = frozenset([1])
-    FOLLOW_cif_decl_in_use_asn112178 = frozenset([173])
-    FOLLOW_KEEP_in_use_asn112180 = frozenset([174])
-    FOLLOW_SPECIFIC_in_use_asn112182 = frozenset([175])
-    FOLLOW_GEODE_in_use_asn112184 = frozenset([176])
-    FOLLOW_ASNFILENAME_in_use_asn112186 = frozenset([162])
-    FOLLOW_StringLiteral_in_use_asn112188 = frozenset([224])
-    FOLLOW_cif_end_in_use_asn112190 = frozenset([1])
+    FOLLOW_VIA_in_via_part8042 = frozenset([46, 147])
+    FOLLOW_viabody_in_via_part8044 = frozenset([1])
+    FOLLOW_ALL_in_viabody8089 = frozenset([1])
+    FOLLOW_via_path_in_viabody8128 = frozenset([1])
+    FOLLOW_pid_expression_in_destination8172 = frozenset([1])
+    FOLLOW_process_id_in_destination8192 = frozenset([1])
+    FOLLOW_THIS_in_destination8212 = frozenset([1])
+    FOLLOW_via_path_element_in_via_path8235 = frozenset([1, 134])
+    FOLLOW_COMMA_in_via_path8238 = frozenset([46, 147])
+    FOLLOW_via_path_element_in_via_path8240 = frozenset([1, 134])
+    FOLLOW_ID_in_via_path_element8283 = frozenset([1])
+    FOLLOW_L_PAREN_in_actual_parameters8306 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_actual_parameters8308 = frozenset([133, 134])
+    FOLLOW_COMMA_in_actual_parameters8311 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_actual_parameters8313 = frozenset([133, 134])
+    FOLLOW_R_PAREN_in_actual_parameters8317 = frozenset([1])
+    FOLLOW_cif_in_task8361 = frozenset([79, 219])
+    FOLLOW_hyperlink_in_task8380 = frozenset([79])
+    FOLLOW_TASK_in_task8399 = frozenset([4, 9, 84, 86, 124, 147, 162, 219])
+    FOLLOW_task_body_in_task8401 = frozenset([9, 124, 219])
+    FOLLOW_end_in_task8404 = frozenset([1])
+    FOLLOW_assignement_statement_in_task_body8459 = frozenset([1, 134])
+    FOLLOW_COMMA_in_task_body8462 = frozenset([84, 86, 147])
+    FOLLOW_assignement_statement_in_task_body8464 = frozenset([1, 134])
+    FOLLOW_informal_text_in_task_body8510 = frozenset([1, 134])
+    FOLLOW_COMMA_in_task_body8513 = frozenset([162])
+    FOLLOW_informal_text_in_task_body8515 = frozenset([1, 134])
+    FOLLOW_forloop_in_task_body8561 = frozenset([1, 134])
+    FOLLOW_COMMA_in_task_body8564 = frozenset([4, 84, 86, 147, 162])
+    FOLLOW_forloop_in_task_body8566 = frozenset([1, 134])
+    FOLLOW_FOR_in_forloop8623 = frozenset([84, 86, 147])
+    FOLLOW_variable_id_in_forloop8625 = frozenset([86])
+    FOLLOW_IN_in_forloop8627 = frozenset([5, 84, 86, 147])
+    FOLLOW_variable_in_forloop8630 = frozenset([214])
+    FOLLOW_range_in_forloop8634 = frozenset([214])
+    FOLLOW_214_in_forloop8637 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 148, 162, 219])
+    FOLLOW_transition_in_forloop8655 = frozenset([148])
+    FOLLOW_ENDFOR_in_forloop8674 = frozenset([1])
+    FOLLOW_RANGE_in_range8726 = frozenset([132])
+    FOLLOW_L_PAREN_in_range8744 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_ground_expression_in_range8748 = frozenset([133, 134])
+    FOLLOW_COMMA_in_range8767 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_ground_expression_in_range8771 = frozenset([133, 134])
+    FOLLOW_COMMA_in_range8776 = frozenset([121])
+    FOLLOW_INT_in_range8780 = frozenset([133])
+    FOLLOW_R_PAREN_in_range8800 = frozenset([1])
+    FOLLOW_variable_in_assignement_statement8852 = frozenset([181])
+    FOLLOW_ASSIG_OP_in_assignement_statement8854 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_assignement_statement8856 = frozenset([1])
+    FOLLOW_variable_id_in_variable8903 = frozenset([1, 132, 215])
+    FOLLOW_primary_params_in_variable8905 = frozenset([1, 132, 215])
+    FOLLOW_set_in_field_selection8953 = frozenset([147])
+    FOLLOW_field_name_in_field_selection8959 = frozenset([1])
+    FOLLOW_operand0_in_expression8979 = frozenset([1, 149])
+    FOLLOW_IMPLIES_in_expression8983 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand0_in_expression8986 = frozenset([1, 149])
+    FOLLOW_operand1_in_operand09009 = frozenset([1, 150, 151])
+    FOLLOW_OR_in_operand09014 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_XOR_in_operand09019 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand1_in_operand09024 = frozenset([1, 150, 151])
+    FOLLOW_operand2_in_operand19046 = frozenset([1, 117])
+    FOLLOW_AND_in_operand19050 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand2_in_operand19053 = frozenset([1, 117])
+    FOLLOW_operand3_in_operand29075 = frozenset([1, 86, 139, 140, 141, 142, 143, 144])
+    FOLLOW_EQ_in_operand29104 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_NEQ_in_operand29109 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_GT_in_operand29114 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_GE_in_operand29119 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_LT_in_operand29124 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_LE_in_operand29129 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_IN_in_operand29134 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand3_in_operand29163 = frozenset([1, 86, 139, 140, 141, 142, 143, 144])
+    FOLLOW_operand4_in_operand39185 = frozenset([1, 152, 153, 154])
+    FOLLOW_PLUS_in_operand39190 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_DASH_in_operand39195 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_APPEND_in_operand39200 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand4_in_operand39205 = frozenset([1, 152, 153, 154])
+    FOLLOW_operand5_in_operand49227 = frozenset([1, 126, 155, 156, 157])
+    FOLLOW_ASTERISK_in_operand49256 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_DIV_in_operand49261 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_MOD_in_operand49266 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_REM_in_operand49271 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand5_in_operand49276 = frozenset([1, 126, 155, 156, 157])
+    FOLLOW_primary_qualifier_in_operand59298 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_primary_in_operand59301 = frozenset([1])
+    FOLLOW_asn1Value_in_primary9359 = frozenset([1, 132, 215])
+    FOLLOW_primary_params_in_primary9361 = frozenset([1, 132, 215])
+    FOLLOW_L_PAREN_in_primary9406 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_primary9408 = frozenset([133])
+    FOLLOW_R_PAREN_in_primary9410 = frozenset([1])
+    FOLLOW_conditional_ground_expression_in_primary9451 = frozenset([1])
+    FOLLOW_BitStringLiteral_in_asn1Value9474 = frozenset([1])
+    FOLLOW_OctetStringLiteral_in_asn1Value9511 = frozenset([1])
+    FOLLOW_TRUE_in_asn1Value9546 = frozenset([1])
+    FOLLOW_FALSE_in_asn1Value9565 = frozenset([1])
+    FOLLOW_StringLiteral_in_asn1Value9584 = frozenset([1])
+    FOLLOW_NULL_in_asn1Value9624 = frozenset([1])
+    FOLLOW_PLUS_INFINITY_in_asn1Value9643 = frozenset([1])
+    FOLLOW_MINUS_INFINITY_in_asn1Value9662 = frozenset([1])
+    FOLLOW_ID_in_asn1Value9681 = frozenset([1])
+    FOLLOW_INT_in_asn1Value9699 = frozenset([1])
+    FOLLOW_FloatingPointLiteral_in_asn1Value9717 = frozenset([1])
+    FOLLOW_L_BRACKET_in_asn1Value9750 = frozenset([168])
+    FOLLOW_R_BRACKET_in_asn1Value9752 = frozenset([1])
+    FOLLOW_L_BRACKET_in_asn1Value9784 = frozenset([169])
+    FOLLOW_MANTISSA_in_asn1Value9802 = frozenset([121])
+    FOLLOW_INT_in_asn1Value9806 = frozenset([134])
+    FOLLOW_COMMA_in_asn1Value9808 = frozenset([170])
+    FOLLOW_BASE_in_asn1Value9826 = frozenset([121])
+    FOLLOW_INT_in_asn1Value9830 = frozenset([134])
+    FOLLOW_COMMA_in_asn1Value9832 = frozenset([171])
+    FOLLOW_EXPONENT_in_asn1Value9850 = frozenset([121])
+    FOLLOW_INT_in_asn1Value9854 = frozenset([168])
+    FOLLOW_R_BRACKET_in_asn1Value9873 = frozenset([1])
+    FOLLOW_choiceValue_in_asn1Value9924 = frozenset([1])
+    FOLLOW_L_BRACKET_in_asn1Value9942 = frozenset([147])
+    FOLLOW_namedValue_in_asn1Value9960 = frozenset([134, 168])
+    FOLLOW_COMMA_in_asn1Value9963 = frozenset([147])
+    FOLLOW_namedValue_in_asn1Value9965 = frozenset([134, 168])
+    FOLLOW_R_BRACKET_in_asn1Value9985 = frozenset([1])
+    FOLLOW_L_BRACKET_in_asn1Value10030 = frozenset([121, 147, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167])
+    FOLLOW_asn1Value_in_asn1Value10048 = frozenset([134, 168])
+    FOLLOW_COMMA_in_asn1Value10051 = frozenset([121, 147, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167])
+    FOLLOW_asn1Value_in_asn1Value10053 = frozenset([134, 168])
+    FOLLOW_R_BRACKET_in_asn1Value10073 = frozenset([1])
+    FOLLOW_StringLiteral_in_informal_text10248 = frozenset([1])
+    FOLLOW_ID_in_choiceValue10298 = frozenset([214])
+    FOLLOW_214_in_choiceValue10300 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_choiceValue10302 = frozenset([1])
+    FOLLOW_ID_in_namedValue10351 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_namedValue10353 = frozenset([1])
+    FOLLOW_DASH_in_primary_qualifier10376 = frozenset([1])
+    FOLLOW_NOT_in_primary_qualifier10415 = frozenset([1])
+    FOLLOW_L_PAREN_in_primary_params10437 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_list_in_primary_params10439 = frozenset([133])
+    FOLLOW_R_PAREN_in_primary_params10441 = frozenset([1])
+    FOLLOW_215_in_primary_params10480 = frozenset([121, 147])
+    FOLLOW_literal_id_in_primary_params10482 = frozenset([1])
+    FOLLOW_primary_in_indexed_primary10529 = frozenset([132])
+    FOLLOW_L_PAREN_in_indexed_primary10531 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_list_in_indexed_primary10533 = frozenset([133])
+    FOLLOW_R_PAREN_in_indexed_primary10535 = frozenset([1])
+    FOLLOW_primary_in_field_primary10558 = frozenset([206, 215])
+    FOLLOW_field_selection_in_field_primary10560 = frozenset([1])
+    FOLLOW_216_in_structure_primary10583 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_list_in_structure_primary10585 = frozenset([217])
+    FOLLOW_217_in_structure_primary10587 = frozenset([1])
+    FOLLOW_active_primary_in_active_expression10612 = frozenset([1])
+    FOLLOW_variable_access_in_active_primary10635 = frozenset([1])
+    FOLLOW_operator_application_in_active_primary10655 = frozenset([1])
+    FOLLOW_conditional_expression_in_active_primary10675 = frozenset([1])
+    FOLLOW_imperative_operator_in_active_primary10695 = frozenset([1])
+    FOLLOW_L_PAREN_in_active_primary10715 = frozenset([63, 84, 86, 132, 138, 147, 173, 174, 175, 183, 190, 193, 197, 218])
+    FOLLOW_active_expression_in_active_primary10717 = frozenset([133])
+    FOLLOW_R_PAREN_in_active_primary10719 = frozenset([1])
+    FOLLOW_218_in_active_primary10739 = frozenset([1])
+    FOLLOW_now_expression_in_imperative_operator10766 = frozenset([1])
+    FOLLOW_import_expression_in_imperative_operator10786 = frozenset([1])
+    FOLLOW_pid_expression_in_imperative_operator10806 = frozenset([1])
+    FOLLOW_view_expression_in_imperative_operator10826 = frozenset([1])
+    FOLLOW_timer_active_expression_in_imperative_operator10846 = frozenset([1])
+    FOLLOW_anyvalue_expression_in_imperative_operator10866 = frozenset([1])
+    FOLLOW_ACTIVE_in_timer_active_expression10889 = frozenset([132])
+    FOLLOW_L_PAREN_in_timer_active_expression10891 = frozenset([147])
+    FOLLOW_timer_id_in_timer_active_expression10893 = frozenset([132, 133])
+    FOLLOW_L_PAREN_in_timer_active_expression10896 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_list_in_timer_active_expression10898 = frozenset([133])
+    FOLLOW_R_PAREN_in_timer_active_expression10900 = frozenset([133])
+    FOLLOW_R_PAREN_in_timer_active_expression10904 = frozenset([1])
+    FOLLOW_ANY_in_anyvalue_expression10927 = frozenset([132])
+    FOLLOW_L_PAREN_in_anyvalue_expression10929 = frozenset([134, 147])
+    FOLLOW_sort_in_anyvalue_expression10931 = frozenset([133])
+    FOLLOW_R_PAREN_in_anyvalue_expression10933 = frozenset([1])
+    FOLLOW_sort_id_in_sort10951 = frozenset([1])
+    FOLLOW_syntype_id_in_syntype10987 = frozenset([1])
+    FOLLOW_IMPORT_in_import_expression11010 = frozenset([132])
+    FOLLOW_L_PAREN_in_import_expression11012 = frozenset([147])
+    FOLLOW_remote_variable_id_in_import_expression11014 = frozenset([133, 134])
+    FOLLOW_COMMA_in_import_expression11017 = frozenset([146, 147, 190, 193, 197])
+    FOLLOW_destination_in_import_expression11019 = frozenset([133])
+    FOLLOW_R_PAREN_in_import_expression11023 = frozenset([1])
+    FOLLOW_VIEW_in_view_expression11046 = frozenset([132])
+    FOLLOW_L_PAREN_in_view_expression11048 = frozenset([147])
+    FOLLOW_view_id_in_view_expression11050 = frozenset([133, 134])
+    FOLLOW_COMMA_in_view_expression11053 = frozenset([190, 193, 197])
+    FOLLOW_pid_expression_in_view_expression11055 = frozenset([133])
+    FOLLOW_R_PAREN_in_view_expression11059 = frozenset([1])
+    FOLLOW_variable_id_in_variable_access11082 = frozenset([1])
+    FOLLOW_operator_id_in_operator_application11105 = frozenset([132])
+    FOLLOW_L_PAREN_in_operator_application11107 = frozenset([63, 84, 86, 132, 138, 147, 173, 174, 175, 183, 190, 193, 197, 218])
+    FOLLOW_active_expression_list_in_operator_application11108 = frozenset([133])
+    FOLLOW_R_PAREN_in_operator_application11110 = frozenset([1])
+    FOLLOW_active_expression_in_active_expression_list11134 = frozenset([1, 134])
+    FOLLOW_COMMA_in_active_expression_list11137 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_list_in_active_expression_list11139 = frozenset([1])
+    FOLLOW_IF_in_conditional_expression11171 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_conditional_expression11173 = frozenset([64])
+    FOLLOW_THEN_in_conditional_expression11175 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_conditional_expression11177 = frozenset([45])
+    FOLLOW_ELSE_in_conditional_expression11179 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_conditional_expression11181 = frozenset([65])
+    FOLLOW_FI_in_conditional_expression11183 = frozenset([1])
+    FOLLOW_external_synonym_id_in_external_synonym11209 = frozenset([1])
+    FOLLOW_IF_in_conditional_ground_expression11232 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_conditional_ground_expression11236 = frozenset([64])
+    FOLLOW_THEN_in_conditional_ground_expression11254 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_conditional_ground_expression11258 = frozenset([45])
+    FOLLOW_ELSE_in_conditional_ground_expression11276 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_conditional_ground_expression11280 = frozenset([65])
+    FOLLOW_FI_in_conditional_ground_expression11282 = frozenset([1])
+    FOLLOW_expression_in_expression_list11334 = frozenset([1, 134])
+    FOLLOW_COMMA_in_expression_list11337 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_expression_list11339 = frozenset([1, 134])
+    FOLLOW_label_in_terminator_statement11382 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
+    FOLLOW_cif_in_terminator_statement11401 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
+    FOLLOW_hyperlink_in_terminator_statement11420 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 135, 145, 147, 162, 219])
+    FOLLOW_terminator_in_terminator_statement11439 = frozenset([9, 124, 219])
+    FOLLOW_end_in_terminator_statement11457 = frozenset([1])
+    FOLLOW_cif_in_label11512 = frozenset([147, 219])
+    FOLLOW_connector_name_in_label11515 = frozenset([214])
+    FOLLOW_214_in_label11517 = frozenset([1])
+    FOLLOW_nextstate_in_terminator11564 = frozenset([1])
+    FOLLOW_join_in_terminator11568 = frozenset([1])
+    FOLLOW_stop_in_terminator11572 = frozenset([1])
+    FOLLOW_return_stmt_in_terminator11576 = frozenset([1])
+    FOLLOW_JOIN_in_join11600 = frozenset([147, 219])
+    FOLLOW_connector_name_in_join11602 = frozenset([1])
+    FOLLOW_STOP_in_stop11642 = frozenset([1])
+    FOLLOW_RETURN_in_return_stmt11665 = frozenset([1, 63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_expression_in_return_stmt11667 = frozenset([1])
+    FOLLOW_NEXTSTATE_in_nextstate11713 = frozenset([147, 153])
+    FOLLOW_nextstatebody_in_nextstate11715 = frozenset([1])
+    FOLLOW_statename_in_nextstatebody11759 = frozenset([1, 48])
+    FOLLOW_via_in_nextstatebody11761 = frozenset([1])
+    FOLLOW_dash_nextstate_in_nextstatebody11782 = frozenset([1])
+    FOLLOW_VIA_in_via11801 = frozenset([147])
+    FOLLOW_state_entry_point_name_in_via11803 = frozenset([1])
+    FOLLOW_cif_in_end11844 = frozenset([9, 219])
+    FOLLOW_hyperlink_in_end11847 = frozenset([9])
+    FOLLOW_COMMENT_in_end11850 = frozenset([162])
+    FOLLOW_StringLiteral_in_end11852 = frozenset([124])
+    FOLLOW_SEMI_in_end11856 = frozenset([1])
+    FOLLOW_cif_decl_in_cif11902 = frozenset([7, 9, 23, 26, 29, 31, 34, 35, 39, 41, 50, 53, 54, 55, 57, 79, 87, 99, 122])
+    FOLLOW_symbolname_in_cif11904 = frozenset([132])
+    FOLLOW_L_PAREN_in_cif11922 = frozenset([121])
+    FOLLOW_INT_in_cif11926 = frozenset([134])
+    FOLLOW_COMMA_in_cif11928 = frozenset([121])
+    FOLLOW_INT_in_cif11932 = frozenset([133])
+    FOLLOW_R_PAREN_in_cif11934 = frozenset([134])
+    FOLLOW_COMMA_in_cif11952 = frozenset([132])
+    FOLLOW_L_PAREN_in_cif11970 = frozenset([121])
+    FOLLOW_INT_in_cif11974 = frozenset([134])
+    FOLLOW_COMMA_in_cif11976 = frozenset([121])
+    FOLLOW_INT_in_cif11980 = frozenset([133])
+    FOLLOW_R_PAREN_in_cif11982 = frozenset([220])
+    FOLLOW_cif_end_in_cif12001 = frozenset([1])
+    FOLLOW_cif_decl_in_hyperlink12055 = frozenset([176])
+    FOLLOW_KEEP_in_hyperlink12057 = frozenset([177])
+    FOLLOW_SPECIFIC_in_hyperlink12059 = frozenset([178])
+    FOLLOW_GEODE_in_hyperlink12061 = frozenset([67])
+    FOLLOW_HYPERLINK_in_hyperlink12063 = frozenset([162])
+    FOLLOW_StringLiteral_in_hyperlink12065 = frozenset([220])
+    FOLLOW_cif_end_in_hyperlink12083 = frozenset([1])
+    FOLLOW_cif_decl_in_paramnames12128 = frozenset([176])
+    FOLLOW_KEEP_in_paramnames12130 = frozenset([177])
+    FOLLOW_SPECIFIC_in_paramnames12132 = frozenset([178])
+    FOLLOW_GEODE_in_paramnames12134 = frozenset([95])
+    FOLLOW_PARAMNAMES_in_paramnames12136 = frozenset([147])
+    FOLLOW_field_name_in_paramnames12138 = frozenset([147, 220])
+    FOLLOW_cif_end_in_paramnames12141 = frozenset([1])
+    FOLLOW_cif_decl_in_use_asn112188 = frozenset([176])
+    FOLLOW_KEEP_in_use_asn112190 = frozenset([177])
+    FOLLOW_SPECIFIC_in_use_asn112192 = frozenset([178])
+    FOLLOW_GEODE_in_use_asn112194 = frozenset([179])
+    FOLLOW_ASNFILENAME_in_use_asn112196 = frozenset([162])
+    FOLLOW_StringLiteral_in_use_asn112198 = frozenset([220])
+    FOLLOW_cif_end_in_use_asn112200 = frozenset([1])
     FOLLOW_set_in_symbolname0 = frozenset([1])
-    FOLLOW_223_in_cif_decl12617 = frozenset([1])
-    FOLLOW_224_in_cif_end12640 = frozenset([1])
-    FOLLOW_cif_decl_in_cif_end_text12663 = frozenset([22])
-    FOLLOW_ENDTEXT_in_cif_end_text12665 = frozenset([224])
-    FOLLOW_cif_end_in_cif_end_text12667 = frozenset([1])
-    FOLLOW_cif_decl_in_cif_end_label12708 = frozenset([177])
-    FOLLOW_END_in_cif_end_label12710 = frozenset([7])
-    FOLLOW_LABEL_in_cif_end_label12712 = frozenset([224])
-    FOLLOW_cif_end_in_cif_end_label12714 = frozenset([1])
-    FOLLOW_DASH_in_dash_nextstate12730 = frozenset([1])
-    FOLLOW_ID_in_connector_name12744 = frozenset([1])
-    FOLLOW_ID_in_signal_id12763 = frozenset([1])
-    FOLLOW_ID_in_statename12782 = frozenset([1])
-    FOLLOW_ID_in_state_exit_point_name12811 = frozenset([1])
-    FOLLOW_ID_in_state_entry_point_name12840 = frozenset([1])
-    FOLLOW_ID_in_variable_id12857 = frozenset([1])
+    FOLLOW_219_in_cif_decl12627 = frozenset([1])
+    FOLLOW_220_in_cif_end12650 = frozenset([1])
+    FOLLOW_cif_decl_in_cif_end_text12673 = frozenset([22])
+    FOLLOW_ENDTEXT_in_cif_end_text12675 = frozenset([220])
+    FOLLOW_cif_end_in_cif_end_text12677 = frozenset([1])
+    FOLLOW_cif_decl_in_cif_end_label12718 = frozenset([180])
+    FOLLOW_END_in_cif_end_label12720 = frozenset([7])
+    FOLLOW_LABEL_in_cif_end_label12722 = frozenset([220])
+    FOLLOW_cif_end_in_cif_end_label12724 = frozenset([1])
+    FOLLOW_DASH_in_dash_nextstate12740 = frozenset([1])
+    FOLLOW_ID_in_connector_name12754 = frozenset([1])
+    FOLLOW_ID_in_signal_id12773 = frozenset([1])
+    FOLLOW_ID_in_statename12792 = frozenset([1])
+    FOLLOW_ID_in_state_exit_point_name12821 = frozenset([1])
+    FOLLOW_ID_in_state_entry_point_name12850 = frozenset([1])
+    FOLLOW_ID_in_variable_id12867 = frozenset([1])
     FOLLOW_set_in_literal_id0 = frozenset([1])
-    FOLLOW_ID_in_process_id12897 = frozenset([1])
-    FOLLOW_ID_in_system_name12914 = frozenset([1])
-    FOLLOW_ID_in_package_name12930 = frozenset([1])
-    FOLLOW_ID_in_priority_signal_id12959 = frozenset([1])
-    FOLLOW_ID_in_signal_list_id12973 = frozenset([1])
-    FOLLOW_ID_in_timer_id12993 = frozenset([1])
-    FOLLOW_ID_in_field_name13011 = frozenset([1])
-    FOLLOW_ID_in_signal_route_id13024 = frozenset([1])
-    FOLLOW_ID_in_channel_id13042 = frozenset([1])
-    FOLLOW_ID_in_route_id13062 = frozenset([1])
-    FOLLOW_ID_in_block_id13082 = frozenset([1])
-    FOLLOW_ID_in_source_id13101 = frozenset([1])
-    FOLLOW_ID_in_dest_id13122 = frozenset([1])
-    FOLLOW_ID_in_gate_id13143 = frozenset([1])
-    FOLLOW_ID_in_procedure_id13159 = frozenset([1])
-    FOLLOW_ID_in_remote_procedure_id13188 = frozenset([1])
-    FOLLOW_ID_in_operator_id13205 = frozenset([1])
-    FOLLOW_ID_in_synonym_id13223 = frozenset([1])
-    FOLLOW_ID_in_external_synonym_id13252 = frozenset([1])
-    FOLLOW_ID_in_remote_variable_id13281 = frozenset([1])
-    FOLLOW_ID_in_view_id13302 = frozenset([1])
-    FOLLOW_ID_in_sort_id13323 = frozenset([1])
-    FOLLOW_ID_in_syntype_id13341 = frozenset([1])
-    FOLLOW_ID_in_stimulus_id13358 = frozenset([1])
-    FOLLOW_S_in_pid_expression14392 = frozenset([185])
-    FOLLOW_E_in_pid_expression14394 = frozenset([184])
-    FOLLOW_L_in_pid_expression14396 = frozenset([192])
-    FOLLOW_F_in_pid_expression14398 = frozenset([1])
-    FOLLOW_P_in_pid_expression14424 = frozenset([179])
-    FOLLOW_A_in_pid_expression14426 = frozenset([188])
-    FOLLOW_R_in_pid_expression14428 = frozenset([185])
-    FOLLOW_E_in_pid_expression14430 = frozenset([180])
-    FOLLOW_N_in_pid_expression14432 = frozenset([196])
-    FOLLOW_T_in_pid_expression14434 = frozenset([1])
-    FOLLOW_O_in_pid_expression14460 = frozenset([192])
-    FOLLOW_F_in_pid_expression14462 = frozenset([192])
-    FOLLOW_F_in_pid_expression14464 = frozenset([190])
-    FOLLOW_S_in_pid_expression14466 = frozenset([187])
-    FOLLOW_P_in_pid_expression14468 = frozenset([188])
-    FOLLOW_R_in_pid_expression14470 = frozenset([191])
-    FOLLOW_I_in_pid_expression14472 = frozenset([180])
-    FOLLOW_N_in_pid_expression14474 = frozenset([193])
-    FOLLOW_G_in_pid_expression14476 = frozenset([1])
-    FOLLOW_S_in_pid_expression14502 = frozenset([185])
-    FOLLOW_E_in_pid_expression14504 = frozenset([180])
-    FOLLOW_N_in_pid_expression14506 = frozenset([182])
-    FOLLOW_D_in_pid_expression14508 = frozenset([185])
-    FOLLOW_E_in_pid_expression14510 = frozenset([188])
-    FOLLOW_R_in_pid_expression14512 = frozenset([1])
-    FOLLOW_N_in_now_expression14526 = frozenset([194])
-    FOLLOW_O_in_now_expression14528 = frozenset([200])
-    FOLLOW_W_in_now_expression14530 = frozenset([1])
+    FOLLOW_ID_in_process_id12907 = frozenset([1])
+    FOLLOW_ID_in_system_name12924 = frozenset([1])
+    FOLLOW_ID_in_package_name12940 = frozenset([1])
+    FOLLOW_ID_in_priority_signal_id12969 = frozenset([1])
+    FOLLOW_ID_in_signal_list_id12983 = frozenset([1])
+    FOLLOW_ID_in_timer_id13003 = frozenset([1])
+    FOLLOW_ID_in_field_name13021 = frozenset([1])
+    FOLLOW_ID_in_signal_route_id13034 = frozenset([1])
+    FOLLOW_ID_in_channel_id13052 = frozenset([1])
+    FOLLOW_ID_in_route_id13072 = frozenset([1])
+    FOLLOW_ID_in_block_id13092 = frozenset([1])
+    FOLLOW_ID_in_source_id13111 = frozenset([1])
+    FOLLOW_ID_in_dest_id13132 = frozenset([1])
+    FOLLOW_ID_in_gate_id13153 = frozenset([1])
+    FOLLOW_ID_in_procedure_id13169 = frozenset([1])
+    FOLLOW_ID_in_remote_procedure_id13198 = frozenset([1])
+    FOLLOW_ID_in_operator_id13215 = frozenset([1])
+    FOLLOW_ID_in_synonym_id13233 = frozenset([1])
+    FOLLOW_ID_in_external_synonym_id13262 = frozenset([1])
+    FOLLOW_ID_in_remote_variable_id13291 = frozenset([1])
+    FOLLOW_ID_in_view_id13312 = frozenset([1])
+    FOLLOW_ID_in_sort_id13333 = frozenset([1])
+    FOLLOW_ID_in_syntype_id13351 = frozenset([1])
+    FOLLOW_ID_in_stimulus_id13368 = frozenset([1])
+    FOLLOW_S_in_pid_expression14402 = frozenset([188])
+    FOLLOW_E_in_pid_expression14404 = frozenset([187])
+    FOLLOW_L_in_pid_expression14406 = frozenset([195])
+    FOLLOW_F_in_pid_expression14408 = frozenset([1])
+    FOLLOW_P_in_pid_expression14434 = frozenset([182])
+    FOLLOW_A_in_pid_expression14436 = frozenset([191])
+    FOLLOW_R_in_pid_expression14438 = frozenset([188])
+    FOLLOW_E_in_pid_expression14440 = frozenset([183])
+    FOLLOW_N_in_pid_expression14442 = frozenset([199])
+    FOLLOW_T_in_pid_expression14444 = frozenset([1])
+    FOLLOW_O_in_pid_expression14470 = frozenset([195])
+    FOLLOW_F_in_pid_expression14472 = frozenset([195])
+    FOLLOW_F_in_pid_expression14474 = frozenset([193])
+    FOLLOW_S_in_pid_expression14476 = frozenset([190])
+    FOLLOW_P_in_pid_expression14478 = frozenset([191])
+    FOLLOW_R_in_pid_expression14480 = frozenset([194])
+    FOLLOW_I_in_pid_expression14482 = frozenset([183])
+    FOLLOW_N_in_pid_expression14484 = frozenset([196])
+    FOLLOW_G_in_pid_expression14486 = frozenset([1])
+    FOLLOW_S_in_pid_expression14512 = frozenset([188])
+    FOLLOW_E_in_pid_expression14514 = frozenset([183])
+    FOLLOW_N_in_pid_expression14516 = frozenset([185])
+    FOLLOW_D_in_pid_expression14518 = frozenset([188])
+    FOLLOW_E_in_pid_expression14520 = frozenset([191])
+    FOLLOW_R_in_pid_expression14522 = frozenset([1])
+    FOLLOW_N_in_now_expression14536 = frozenset([197])
+    FOLLOW_O_in_now_expression14538 = frozenset([203])
+    FOLLOW_W_in_now_expression14540 = frozenset([1])
     FOLLOW_text_area_in_synpred24_sdl922203 = frozenset([1])
     FOLLOW_procedure_in_synpred25_sdl922207 = frozenset([1])
     FOLLOW_composite_state_in_synpred26_sdl922211 = frozenset([1])
@@ -30060,810 +26920,21 @@ class sdl92Parser(Parser):
     FOLLOW_range_condition_in_synpred147_sdl927131 = frozenset([1])
     FOLLOW_expression_in_synpred151_sdl927268 = frozenset([1])
     FOLLOW_informal_text_in_synpred152_sdl927309 = frozenset([1])
-    FOLLOW_COMMA_in_synpred182_sdl928757 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_ground_expression_in_synpred182_sdl928761 = frozenset([1])
-    FOLLOW_IMPLIES_in_synpred186_sdl928973 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand0_in_synpred186_sdl928976 = frozenset([1])
-    FOLLOW_set_in_synpred188_sdl929002 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand1_in_synpred188_sdl929014 = frozenset([1])
-    FOLLOW_AND_in_synpred189_sdl929040 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand2_in_synpred189_sdl929043 = frozenset([1])
-    FOLLOW_set_in_synpred196_sdl929092 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand3_in_synpred196_sdl929153 = frozenset([1])
-    FOLLOW_set_in_synpred199_sdl929178 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand4_in_synpred199_sdl929195 = frozenset([1])
-    FOLLOW_set_in_synpred203_sdl929244 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
-    FOLLOW_operand5_in_synpred203_sdl929266 = frozenset([1])
-    FOLLOW_primary_params_in_synpred205_sdl929351 = frozenset([1])
-=======
-    FOLLOW_use_clause_in_pr_file1233 = frozenset([1, 23, 88, 89, 217])
-    FOLLOW_system_definition_in_pr_file1253 = frozenset([1, 23, 88, 89, 217])
-    FOLLOW_process_definition_in_pr_file1273 = frozenset([1, 23, 88, 89, 217])
-    FOLLOW_SYSTEM_in_system_definition1298 = frozenset([145])
-    FOLLOW_system_name_in_system_definition1300 = frozenset([9, 122, 217])
-    FOLLOW_end_in_system_definition1302 = frozenset([35, 90, 91, 94, 109, 217])
-    FOLLOW_entity_in_system_in_system_definition1320 = frozenset([35, 90, 91, 94, 109, 217])
-    FOLLOW_ENDSYSTEM_in_system_definition1339 = frozenset([9, 122, 145, 217])
-    FOLLOW_system_name_in_system_definition1341 = frozenset([9, 122, 217])
-    FOLLOW_end_in_system_definition1344 = frozenset([1])
-    FOLLOW_use_asn1_in_use_clause1391 = frozenset([89])
-    FOLLOW_USE_in_use_clause1410 = frozenset([145])
-    FOLLOW_package_name_in_use_clause1412 = frozenset([9, 122, 217])
-    FOLLOW_end_in_use_clause1414 = frozenset([1])
-    FOLLOW_signal_declaration_in_entity_in_system1463 = frozenset([1])
-    FOLLOW_procedure_in_entity_in_system1483 = frozenset([1])
-    FOLLOW_channel_in_entity_in_system1503 = frozenset([1])
-    FOLLOW_block_definition_in_entity_in_system1523 = frozenset([1])
-    FOLLOW_paramnames_in_signal_declaration1547 = frozenset([90])
-    FOLLOW_SIGNAL_in_signal_declaration1566 = frozenset([145])
-    FOLLOW_signal_id_in_signal_declaration1568 = frozenset([9, 122, 130, 217])
-    FOLLOW_input_params_in_signal_declaration1570 = frozenset([9, 122, 217])
-    FOLLOW_end_in_signal_declaration1573 = frozenset([1])
-    FOLLOW_CHANNEL_in_channel1623 = frozenset([145])
-    FOLLOW_channel_id_in_channel1625 = frozenset([111])
-    FOLLOW_route_in_channel1643 = frozenset([110, 111])
-    FOLLOW_ENDCHANNEL_in_channel1662 = frozenset([9, 122, 217])
-    FOLLOW_end_in_channel1664 = frozenset([1])
-    FOLLOW_FROM_in_route1711 = frozenset([145])
-    FOLLOW_source_id_in_route1713 = frozenset([47])
-    FOLLOW_TO_in_route1715 = frozenset([145])
-    FOLLOW_dest_id_in_route1717 = frozenset([112])
-    FOLLOW_WITH_in_route1719 = frozenset([145])
-    FOLLOW_signal_id_in_route1721 = frozenset([9, 122, 132, 217])
-    FOLLOW_COMMA_in_route1724 = frozenset([145])
-    FOLLOW_signal_id_in_route1726 = frozenset([9, 122, 132, 217])
-    FOLLOW_end_in_route1730 = frozenset([1])
-    FOLLOW_BLOCK_in_block_definition1779 = frozenset([145])
-    FOLLOW_block_id_in_block_definition1781 = frozenset([9, 122, 217])
-    FOLLOW_end_in_block_definition1783 = frozenset([23, 35, 88, 89, 90, 91, 94, 99, 113, 114, 217])
-    FOLLOW_entity_in_block_in_block_definition1801 = frozenset([23, 35, 88, 89, 90, 91, 94, 99, 113, 114, 217])
-    FOLLOW_ENDBLOCK_in_block_definition1821 = frozenset([9, 122, 217])
-    FOLLOW_end_in_block_definition1823 = frozenset([1])
-    FOLLOW_signal_declaration_in_entity_in_block1872 = frozenset([1])
-    FOLLOW_signalroute_in_entity_in_block1892 = frozenset([1])
-    FOLLOW_connection_in_entity_in_block1912 = frozenset([1])
-    FOLLOW_block_definition_in_entity_in_block1932 = frozenset([1])
-    FOLLOW_process_definition_in_entity_in_block1952 = frozenset([1])
-    FOLLOW_SIGNALROUTE_in_signalroute1975 = frozenset([145])
-    FOLLOW_route_id_in_signalroute1977 = frozenset([111])
-    FOLLOW_route_in_signalroute1995 = frozenset([1, 111])
-    FOLLOW_CONNECT_in_connection2043 = frozenset([145])
-    FOLLOW_channel_id_in_connection2045 = frozenset([115])
-    FOLLOW_AND_in_connection2047 = frozenset([145])
-    FOLLOW_route_id_in_connection2049 = frozenset([9, 122, 217])
-    FOLLOW_end_in_connection2051 = frozenset([1])
-    FOLLOW_PROCESS_in_process_definition2097 = frozenset([145])
-    FOLLOW_process_id_in_process_definition2099 = frozenset([116, 130])
-    FOLLOW_number_of_instances_in_process_definition2101 = frozenset([116])
-    FOLLOW_REFERENCED_in_process_definition2104 = frozenset([9, 122, 217])
-    FOLLOW_end_in_process_definition2106 = frozenset([1])
-    FOLLOW_cif_in_process_definition2152 = frozenset([23])
-    FOLLOW_PROCESS_in_process_definition2155 = frozenset([145])
-    FOLLOW_process_id_in_process_definition2157 = frozenset([9, 122, 130, 217])
-    FOLLOW_number_of_instances_in_process_definition2159 = frozenset([9, 122, 217])
-    FOLLOW_end_in_process_definition2162 = frozenset([26, 35, 92, 117, 120, 217])
-    FOLLOW_text_area_in_process_definition2181 = frozenset([26, 35, 92, 117, 120, 217])
-    FOLLOW_procedure_in_process_definition2185 = frozenset([26, 35, 92, 117, 120, 217])
-    FOLLOW_composite_state_in_process_definition2189 = frozenset([26, 35, 92, 117, 120, 217])
-    FOLLOW_processBody_in_process_definition2209 = frozenset([117])
-    FOLLOW_ENDPROCESS_in_process_definition2212 = frozenset([9, 122, 145, 217])
-    FOLLOW_process_id_in_process_definition2214 = frozenset([9, 122, 217])
-    FOLLOW_end_in_process_definition2233 = frozenset([1])
-    FOLLOW_cif_in_procedure2313 = frozenset([35])
-    FOLLOW_PROCEDURE_in_procedure2332 = frozenset([145])
-    FOLLOW_procedure_id_in_procedure2334 = frozenset([9, 122, 217])
-    FOLLOW_end_in_procedure2336 = frozenset([26, 35, 82, 85, 92, 118, 120, 217])
-    FOLLOW_fpar_in_procedure2354 = frozenset([26, 35, 85, 92, 118, 120, 217])
-    FOLLOW_text_area_in_procedure2374 = frozenset([26, 35, 85, 92, 118, 120, 217])
-    FOLLOW_procedure_in_procedure2378 = frozenset([26, 35, 85, 92, 118, 120, 217])
-    FOLLOW_processBody_in_procedure2400 = frozenset([118])
-    FOLLOW_ENDPROCEDURE_in_procedure2403 = frozenset([9, 122, 145, 217])
-    FOLLOW_procedure_id_in_procedure2405 = frozenset([9, 122, 217])
-    FOLLOW_EXTERNAL_in_procedure2411 = frozenset([9, 122, 217])
-    FOLLOW_end_in_procedure2430 = frozenset([1])
-    FOLLOW_FPAR_in_fpar2512 = frozenset([84, 86, 145])
-    FOLLOW_formal_variable_param_in_fpar2514 = frozenset([9, 122, 132, 217])
-    FOLLOW_COMMA_in_fpar2533 = frozenset([84, 86, 145])
-    FOLLOW_formal_variable_param_in_fpar2535 = frozenset([9, 122, 132, 217])
-    FOLLOW_end_in_fpar2555 = frozenset([1])
-    FOLLOW_INOUT_in_formal_variable_param2601 = frozenset([84, 86, 145])
-    FOLLOW_IN_in_formal_variable_param2605 = frozenset([84, 86, 145])
-    FOLLOW_variable_id_in_formal_variable_param2625 = frozenset([132, 145])
-    FOLLOW_COMMA_in_formal_variable_param2628 = frozenset([84, 86, 145])
-    FOLLOW_variable_id_in_formal_variable_param2630 = frozenset([132, 145])
-    FOLLOW_sort_in_formal_variable_param2634 = frozenset([1])
-    FOLLOW_cif_in_text_area2688 = frozenset([6, 35, 74, 82, 100, 102, 217])
-    FOLLOW_content_in_text_area2706 = frozenset([6, 35, 74, 82, 100, 102, 217])
-    FOLLOW_cif_end_text_in_text_area2725 = frozenset([1])
-    FOLLOW_procedure_in_content2778 = frozenset([1, 6, 35, 74, 82, 100, 102, 217])
-    FOLLOW_fpar_in_content2799 = frozenset([1, 6, 35, 74, 82, 100, 102, 217])
-    FOLLOW_timer_declaration_in_content2820 = frozenset([1, 6, 35, 74, 82, 100, 102, 217])
-    FOLLOW_syntype_definition_in_content2841 = frozenset([1, 6, 35, 74, 82, 100, 102, 217])
-    FOLLOW_newtype_definition_in_content2862 = frozenset([1, 6, 35, 74, 82, 100, 102, 217])
-    FOLLOW_variable_definition_in_content2883 = frozenset([1, 6, 35, 74, 82, 100, 102, 217])
-    FOLLOW_TIMER_in_timer_declaration2967 = frozenset([145])
-    FOLLOW_timer_id_in_timer_declaration2969 = frozenset([9, 122, 132, 217])
-    FOLLOW_COMMA_in_timer_declaration2988 = frozenset([145])
-    FOLLOW_timer_id_in_timer_declaration2990 = frozenset([9, 122, 132, 217])
-    FOLLOW_end_in_timer_declaration3010 = frozenset([1])
-    FOLLOW_SYNTYPE_in_syntype_definition3041 = frozenset([132, 145])
-    FOLLOW_syntype_name_in_syntype_definition3043 = frozenset([137])
-    FOLLOW_EQ_in_syntype_definition3045 = frozenset([132, 145])
-    FOLLOW_parent_sort_in_syntype_definition3047 = frozenset([101, 105])
-    FOLLOW_CONSTANTS_in_syntype_definition3050 = frozenset([63, 119, 130, 137, 138, 139, 140, 141, 142, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_range_condition_in_syntype_definition3053 = frozenset([101, 132])
-    FOLLOW_COMMA_in_syntype_definition3056 = frozenset([63, 119, 130, 137, 138, 139, 140, 141, 142, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_range_condition_in_syntype_definition3058 = frozenset([101, 132])
-    FOLLOW_ENDSYNTYPE_in_syntype_definition3075 = frozenset([9, 122, 132, 145, 217])
-    FOLLOW_syntype_name_in_syntype_definition3077 = frozenset([9, 122, 217])
-    FOLLOW_end_in_syntype_definition3080 = frozenset([1])
-    FOLLOW_sort_in_syntype_name3110 = frozenset([1])
-    FOLLOW_sort_in_parent_sort3119 = frozenset([1])
-    FOLLOW_NEWTYPE_in_newtype_definition3128 = frozenset([132, 145])
-    FOLLOW_type_name_in_newtype_definition3130 = frozenset([103, 104, 106])
-    FOLLOW_array_definition_in_newtype_definition3133 = frozenset([103])
-    FOLLOW_structure_definition_in_newtype_definition3135 = frozenset([103])
-    FOLLOW_ENDNEWTYPE_in_newtype_definition3139 = frozenset([9, 122, 132, 145, 217])
-    FOLLOW_type_name_in_newtype_definition3141 = frozenset([9, 122, 217])
-    FOLLOW_end_in_newtype_definition3144 = frozenset([1])
-    FOLLOW_sort_in_type_name3169 = frozenset([1])
-    FOLLOW_ARRAY_in_array_definition3179 = frozenset([130])
-    FOLLOW_L_PAREN_in_array_definition3181 = frozenset([132, 145])
-    FOLLOW_sort_in_array_definition3183 = frozenset([132])
-    FOLLOW_COMMA_in_array_definition3185 = frozenset([132, 145])
-    FOLLOW_sort_in_array_definition3187 = frozenset([131])
-    FOLLOW_R_PAREN_in_array_definition3189 = frozenset([1])
-    FOLLOW_STRUCT_in_structure_definition3209 = frozenset([145])
-    FOLLOW_field_list_in_structure_definition3211 = frozenset([9, 122, 217])
-    FOLLOW_end_in_structure_definition3213 = frozenset([1])
-    FOLLOW_field_definition_in_field_list3231 = frozenset([1, 9, 122, 217])
-    FOLLOW_end_in_field_list3234 = frozenset([145])
-    FOLLOW_field_definition_in_field_list3236 = frozenset([1, 9, 122, 217])
-    FOLLOW_field_name_in_field_definition3262 = frozenset([132, 145])
-    FOLLOW_COMMA_in_field_definition3265 = frozenset([145])
-    FOLLOW_field_name_in_field_definition3267 = frozenset([132, 145])
-    FOLLOW_sort_in_field_definition3271 = frozenset([1])
-    FOLLOW_DCL_in_variable_definition3305 = frozenset([84, 86, 145])
-    FOLLOW_variables_of_sort_in_variable_definition3307 = frozenset([9, 122, 132, 217])
-    FOLLOW_COMMA_in_variable_definition3326 = frozenset([84, 86, 145])
-    FOLLOW_variables_of_sort_in_variable_definition3328 = frozenset([9, 122, 132, 217])
-    FOLLOW_end_in_variable_definition3348 = frozenset([1])
-    FOLLOW_variable_id_in_variables_of_sort3393 = frozenset([132, 145])
-    FOLLOW_COMMA_in_variables_of_sort3396 = frozenset([84, 86, 145])
-    FOLLOW_variable_id_in_variables_of_sort3398 = frozenset([132, 145])
-    FOLLOW_sort_in_variables_of_sort3402 = frozenset([1, 179])
-    FOLLOW_ASSIG_OP_in_variables_of_sort3405 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_ground_expression_in_variables_of_sort3407 = frozenset([1])
-    FOLLOW_expression_in_ground_expression3459 = frozenset([1])
-    FOLLOW_L_PAREN_in_number_of_instances3503 = frozenset([119])
-    FOLLOW_INT_in_number_of_instances3507 = frozenset([132])
-    FOLLOW_COMMA_in_number_of_instances3509 = frozenset([119])
-    FOLLOW_INT_in_number_of_instances3513 = frozenset([131])
-    FOLLOW_R_PAREN_in_number_of_instances3515 = frozenset([1])
-    FOLLOW_start_in_processBody3563 = frozenset([1, 26, 92, 217])
-    FOLLOW_state_in_processBody3567 = frozenset([1, 26, 92, 217])
-    FOLLOW_floating_label_in_processBody3571 = frozenset([1, 26, 92, 217])
-    FOLLOW_cif_in_start3596 = frozenset([120, 217])
-    FOLLOW_hyperlink_in_start3615 = frozenset([120])
-    FOLLOW_START_in_start3634 = frozenset([9, 122, 145, 217])
-    FOLLOW_state_entry_point_name_in_start3638 = frozenset([9, 122, 217])
-    FOLLOW_end_in_start3641 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_transition_in_start3659 = frozenset([1])
-    FOLLOW_cif_in_floating_label3718 = frozenset([92, 217])
-    FOLLOW_hyperlink_in_floating_label3737 = frozenset([92])
-    FOLLOW_CONNECTION_in_floating_label3756 = frozenset([145, 217])
-    FOLLOW_connector_name_in_floating_label3758 = frozenset([212])
-    FOLLOW_212_in_floating_label3760 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 121, 133, 143, 145, 160, 217])
-    FOLLOW_transition_in_floating_label3778 = frozenset([121, 217])
-    FOLLOW_cif_end_label_in_floating_label3797 = frozenset([121])
-    FOLLOW_ENDCONNECTION_in_floating_label3816 = frozenset([122])
-    FOLLOW_SEMI_in_floating_label3818 = frozenset([1])
-    FOLLOW_cif_in_state3871 = frozenset([26, 217])
-    FOLLOW_hyperlink_in_state3890 = frozenset([26])
-    FOLLOW_STATE_in_state3909 = frozenset([124, 145])
-    FOLLOW_statelist_in_state3911 = frozenset([9, 122, 217])
-    FOLLOW_end_in_state3915 = frozenset([28, 29, 31, 99, 123, 217])
-    FOLLOW_state_part_in_state3934 = frozenset([28, 29, 31, 99, 123, 217])
-    FOLLOW_ENDSTATE_in_state3954 = frozenset([9, 122, 145, 217])
-    FOLLOW_statename_in_state3956 = frozenset([9, 122, 217])
-    FOLLOW_end_in_state3961 = frozenset([1])
-    FOLLOW_statename_in_statelist4020 = frozenset([1, 132])
-    FOLLOW_COMMA_in_statelist4023 = frozenset([145])
-    FOLLOW_statename_in_statelist4025 = frozenset([1, 132])
-    FOLLOW_ASTERISK_in_statelist4070 = frozenset([1, 130])
-    FOLLOW_exception_state_in_statelist4072 = frozenset([1])
-    FOLLOW_L_PAREN_in_exception_state4118 = frozenset([145])
-    FOLLOW_statename_in_exception_state4120 = frozenset([131, 132])
-    FOLLOW_COMMA_in_exception_state4123 = frozenset([145])
-    FOLLOW_statename_in_exception_state4125 = frozenset([131, 132])
-    FOLLOW_R_PAREN_in_exception_state4129 = frozenset([1])
-    FOLLOW_STATE_in_composite_state4170 = frozenset([145])
-    FOLLOW_statename_in_composite_state4172 = frozenset([9, 122, 217])
-    FOLLOW_end_in_composite_state4176 = frozenset([125])
-    FOLLOW_SUBSTRUCTURE_in_composite_state4194 = frozenset([26, 35, 86, 92, 120, 126, 127, 217])
-    FOLLOW_connection_points_in_composite_state4212 = frozenset([26, 35, 86, 92, 120, 126, 127, 217])
-    FOLLOW_composite_state_body_in_composite_state4233 = frozenset([126])
-    FOLLOW_ENDSUBSTRUCTURE_in_composite_state4251 = frozenset([9, 122, 145, 217])
-    FOLLOW_statename_in_composite_state4253 = frozenset([9, 122, 217])
-    FOLLOW_end_in_composite_state4258 = frozenset([1])
-    FOLLOW_IN_in_connection_points4312 = frozenset([130])
-    FOLLOW_state_entry_exit_points_in_connection_points4314 = frozenset([9, 122, 217])
-    FOLLOW_end_in_connection_points4316 = frozenset([1])
-    FOLLOW_OUT_in_connection_points4360 = frozenset([130])
-    FOLLOW_state_entry_exit_points_in_connection_points4362 = frozenset([9, 122, 217])
-    FOLLOW_end_in_connection_points4364 = frozenset([1])
-    FOLLOW_L_PAREN_in_state_entry_exit_points4411 = frozenset([145])
-    FOLLOW_statename_in_state_entry_exit_points4413 = frozenset([131, 132])
-    FOLLOW_COMMA_in_state_entry_exit_points4416 = frozenset([145])
-    FOLLOW_statename_in_state_entry_exit_points4418 = frozenset([131, 132])
-    FOLLOW_R_PAREN_in_state_entry_exit_points4422 = frozenset([1])
-    FOLLOW_text_area_in_composite_state_body4464 = frozenset([1, 26, 35, 92, 120, 217])
-    FOLLOW_procedure_in_composite_state_body4468 = frozenset([1, 26, 35, 92, 120, 217])
-    FOLLOW_composite_state_in_composite_state_body4472 = frozenset([1, 26, 35, 92, 120, 217])
-    FOLLOW_start_in_composite_state_body4492 = frozenset([1, 26, 92, 120, 217])
-    FOLLOW_state_in_composite_state_body4496 = frozenset([1, 26, 92, 217])
-    FOLLOW_floating_label_in_composite_state_body4500 = frozenset([1, 26, 92, 217])
-    FOLLOW_input_part_in_state_part4525 = frozenset([1])
-    FOLLOW_save_part_in_state_part4562 = frozenset([1])
-    FOLLOW_spontaneous_transition_in_state_part4597 = frozenset([1])
-    FOLLOW_continuous_signal_in_state_part4617 = frozenset([1])
-    FOLLOW_connect_part_in_state_part4644 = frozenset([1])
-    FOLLOW_cif_in_connect_part4668 = frozenset([99, 217])
-    FOLLOW_hyperlink_in_connect_part4687 = frozenset([99])
-    FOLLOW_CONNECT_in_connect_part4706 = frozenset([9, 122, 124, 145, 217])
-    FOLLOW_connect_list_in_connect_part4708 = frozenset([9, 122, 217])
-    FOLLOW_end_in_connect_part4711 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_transition_in_connect_part4729 = frozenset([1])
-    FOLLOW_state_exit_point_name_in_connect_list4787 = frozenset([1, 132])
-    FOLLOW_COMMA_in_connect_list4790 = frozenset([145])
-    FOLLOW_state_exit_point_name_in_connect_list4792 = frozenset([1, 132])
-    FOLLOW_ASTERISK_in_connect_list4835 = frozenset([1])
-    FOLLOW_cif_in_spontaneous_transition4858 = frozenset([31, 217])
-    FOLLOW_hyperlink_in_spontaneous_transition4877 = frozenset([31])
-    FOLLOW_INPUT_in_spontaneous_transition4896 = frozenset([128])
-    FOLLOW_NONE_in_spontaneous_transition4898 = frozenset([9, 122, 217])
-    FOLLOW_end_in_spontaneous_transition4900 = frozenset([4, 29, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_enabling_condition_in_spontaneous_transition4918 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_transition_in_spontaneous_transition4937 = frozenset([1])
-    FOLLOW_PROVIDED_in_enabling_condition4987 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_enabling_condition4989 = frozenset([9, 122, 217])
-    FOLLOW_end_in_enabling_condition4991 = frozenset([1])
-    FOLLOW_PROVIDED_in_continuous_signal5035 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_continuous_signal5037 = frozenset([9, 122, 217])
-    FOLLOW_end_in_continuous_signal5039 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 129, 133, 143, 145, 160, 217])
-    FOLLOW_PRIORITY_in_continuous_signal5059 = frozenset([119])
-    FOLLOW_INT_in_continuous_signal5063 = frozenset([9, 122, 217])
-    FOLLOW_end_in_continuous_signal5065 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_transition_in_continuous_signal5085 = frozenset([1])
-    FOLLOW_SAVE_in_save_part5135 = frozenset([124, 145])
-    FOLLOW_save_list_in_save_part5137 = frozenset([9, 122, 217])
-    FOLLOW_end_in_save_part5155 = frozenset([1])
-    FOLLOW_signal_list_in_save_list5199 = frozenset([1])
-    FOLLOW_asterisk_save_list_in_save_list5219 = frozenset([1])
-    FOLLOW_ASTERISK_in_asterisk_save_list5242 = frozenset([1])
-    FOLLOW_signal_item_in_signal_list5265 = frozenset([1, 132])
-    FOLLOW_COMMA_in_signal_list5268 = frozenset([145])
-    FOLLOW_signal_item_in_signal_list5270 = frozenset([1, 132])
-    FOLLOW_signal_id_in_signal_item5320 = frozenset([1])
-    FOLLOW_cif_in_input_part5349 = frozenset([31, 217])
-    FOLLOW_hyperlink_in_input_part5368 = frozenset([31])
-    FOLLOW_INPUT_in_input_part5387 = frozenset([124, 145])
-    FOLLOW_inputlist_in_input_part5389 = frozenset([9, 122, 217])
-    FOLLOW_end_in_input_part5391 = frozenset([1, 4, 29, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_enabling_condition_in_input_part5409 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_transition_in_input_part5428 = frozenset([1])
-    FOLLOW_ASTERISK_in_inputlist5506 = frozenset([1])
-    FOLLOW_stimulus_in_inputlist5527 = frozenset([1, 132])
-    FOLLOW_COMMA_in_inputlist5530 = frozenset([124, 145])
-    FOLLOW_stimulus_in_inputlist5532 = frozenset([1, 132])
-    FOLLOW_stimulus_id_in_stimulus5580 = frozenset([1, 130])
-    FOLLOW_input_params_in_stimulus5582 = frozenset([1])
-    FOLLOW_L_PAREN_in_input_params5606 = frozenset([84, 86, 145])
-    FOLLOW_variable_id_in_input_params5608 = frozenset([131, 132])
-    FOLLOW_COMMA_in_input_params5611 = frozenset([84, 86, 145])
-    FOLLOW_variable_id_in_input_params5613 = frozenset([131, 132])
-    FOLLOW_R_PAREN_in_input_params5617 = frozenset([1])
-    FOLLOW_action_in_transition5662 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_label_in_transition5665 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_terminator_statement_in_transition5668 = frozenset([1])
-    FOLLOW_terminator_statement_in_transition5717 = frozenset([1])
-    FOLLOW_label_in_action5761 = frozenset([4, 36, 37, 38, 39, 40, 50, 79, 84, 86, 133, 143, 145, 160, 217])
-    FOLLOW_task_in_action5781 = frozenset([1])
-    FOLLOW_task_body_in_action5801 = frozenset([1])
-    FOLLOW_output_in_action5821 = frozenset([1])
-    FOLLOW_create_request_in_action5841 = frozenset([1])
-    FOLLOW_decision_in_action5861 = frozenset([1])
-    FOLLOW_transition_option_in_action5881 = frozenset([1])
-    FOLLOW_set_timer_in_action5901 = frozenset([1])
-    FOLLOW_reset_timer_in_action5921 = frozenset([1])
-    FOLLOW_export_in_action5941 = frozenset([1])
-    FOLLOW_procedure_call_in_action5966 = frozenset([1])
-    FOLLOW_EXPORT_in_export5989 = frozenset([130])
-    FOLLOW_L_PAREN_in_export6007 = frozenset([84, 86, 145])
-    FOLLOW_variable_id_in_export6009 = frozenset([131, 132])
-    FOLLOW_COMMA_in_export6012 = frozenset([84, 86, 145])
-    FOLLOW_variable_id_in_export6014 = frozenset([131, 132])
-    FOLLOW_R_PAREN_in_export6018 = frozenset([9, 122, 217])
-    FOLLOW_end_in_export6036 = frozenset([1])
-    FOLLOW_cif_in_procedure_call6084 = frozenset([133, 217])
-    FOLLOW_hyperlink_in_procedure_call6103 = frozenset([133])
-    FOLLOW_CALL_in_procedure_call6122 = frozenset([145])
-    FOLLOW_procedure_call_body_in_procedure_call6124 = frozenset([9, 122, 217])
-    FOLLOW_end_in_procedure_call6126 = frozenset([1])
-    FOLLOW_procedure_id_in_procedure_call_body6179 = frozenset([1, 130])
-    FOLLOW_actual_parameters_in_procedure_call_body6181 = frozenset([1])
-    FOLLOW_SET_in_set_timer6232 = frozenset([130])
-    FOLLOW_set_statement_in_set_timer6234 = frozenset([9, 122, 132, 217])
-    FOLLOW_COMMA_in_set_timer6237 = frozenset([130])
-    FOLLOW_set_statement_in_set_timer6239 = frozenset([9, 122, 132, 217])
-    FOLLOW_end_in_set_timer6259 = frozenset([1])
-    FOLLOW_L_PAREN_in_set_statement6300 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_set_statement6303 = frozenset([132])
-    FOLLOW_COMMA_in_set_statement6305 = frozenset([145])
-    FOLLOW_timer_id_in_set_statement6309 = frozenset([131])
-    FOLLOW_R_PAREN_in_set_statement6311 = frozenset([1])
-    FOLLOW_RESET_in_reset_timer6367 = frozenset([145])
-    FOLLOW_reset_statement_in_reset_timer6369 = frozenset([9, 122, 132, 217])
-    FOLLOW_COMMA_in_reset_timer6372 = frozenset([145])
-    FOLLOW_reset_statement_in_reset_timer6374 = frozenset([9, 122, 132, 217])
-    FOLLOW_end_in_reset_timer6394 = frozenset([1])
-    FOLLOW_timer_id_in_reset_statement6435 = frozenset([1, 130])
-    FOLLOW_L_PAREN_in_reset_statement6438 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_list_in_reset_statement6440 = frozenset([131])
-    FOLLOW_R_PAREN_in_reset_statement6442 = frozenset([1])
-    FOLLOW_ALTERNATIVE_in_transition_option6491 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_alternative_question_in_transition_option6493 = frozenset([9, 122, 217])
-    FOLLOW_end_in_transition_option6497 = frozenset([130, 217])
-    FOLLOW_answer_part_in_transition_option6515 = frozenset([45, 130, 217])
-    FOLLOW_alternative_part_in_transition_option6533 = frozenset([134])
-    FOLLOW_ENDALTERNATIVE_in_transition_option6551 = frozenset([9, 122, 217])
-    FOLLOW_end_in_transition_option6555 = frozenset([1])
-    FOLLOW_answer_part_in_alternative_part6602 = frozenset([1, 45, 130, 217])
-    FOLLOW_else_part_in_alternative_part6605 = frozenset([1])
-    FOLLOW_else_part_in_alternative_part6648 = frozenset([1])
-    FOLLOW_expression_in_alternative_question6688 = frozenset([1])
-    FOLLOW_informal_text_in_alternative_question6708 = frozenset([1])
-    FOLLOW_cif_in_decision6731 = frozenset([39, 217])
-    FOLLOW_hyperlink_in_decision6750 = frozenset([39])
-    FOLLOW_DECISION_in_decision6769 = frozenset([63, 119, 130, 136, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_question_in_decision6771 = frozenset([9, 122, 217])
-    FOLLOW_end_in_decision6775 = frozenset([45, 130, 135, 217])
-    FOLLOW_answer_part_in_decision6793 = frozenset([45, 130, 135, 217])
-    FOLLOW_alternative_part_in_decision6812 = frozenset([135])
-    FOLLOW_ENDDECISION_in_decision6831 = frozenset([9, 122, 217])
-    FOLLOW_end_in_decision6835 = frozenset([1])
-    FOLLOW_cif_in_answer_part6911 = frozenset([130, 217])
-    FOLLOW_hyperlink_in_answer_part6930 = frozenset([130])
-    FOLLOW_L_PAREN_in_answer_part6949 = frozenset([63, 119, 130, 137, 138, 139, 140, 141, 142, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_answer_in_answer_part6951 = frozenset([131])
-    FOLLOW_R_PAREN_in_answer_part6953 = frozenset([212])
-    FOLLOW_212_in_answer_part6955 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_transition_in_answer_part6957 = frozenset([1])
-    FOLLOW_range_condition_in_answer7011 = frozenset([1])
-    FOLLOW_informal_text_in_answer7031 = frozenset([1])
-    FOLLOW_cif_in_else_part7054 = frozenset([45, 217])
-    FOLLOW_hyperlink_in_else_part7073 = frozenset([45])
-    FOLLOW_ELSE_in_else_part7092 = frozenset([212])
-    FOLLOW_212_in_else_part7094 = frozenset([1, 4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_transition_in_else_part7096 = frozenset([1])
-    FOLLOW_expression_in_question7148 = frozenset([1])
-    FOLLOW_informal_text_in_question7189 = frozenset([1])
-    FOLLOW_ANY_in_question7226 = frozenset([1])
-    FOLLOW_closed_range_in_range_condition7269 = frozenset([1])
-    FOLLOW_open_range_in_range_condition7273 = frozenset([1])
-    FOLLOW_INT_in_closed_range7316 = frozenset([212])
-    FOLLOW_212_in_closed_range7318 = frozenset([119])
-    FOLLOW_INT_in_closed_range7322 = frozenset([1])
-    FOLLOW_constant_in_open_range7370 = frozenset([1])
-    FOLLOW_EQ_in_open_range7410 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_NEQ_in_open_range7412 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_GT_in_open_range7414 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_LT_in_open_range7416 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_LE_in_open_range7418 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_GE_in_open_range7420 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_constant_in_open_range7423 = frozenset([1])
-    FOLLOW_expression_in_constant7486 = frozenset([1])
-    FOLLOW_CREATE_in_create_request7530 = frozenset([144, 145])
-    FOLLOW_createbody_in_create_request7549 = frozenset([9, 122, 130, 217])
-    FOLLOW_actual_parameters_in_create_request7567 = frozenset([9, 122, 217])
-    FOLLOW_end_in_create_request7586 = frozenset([1])
-    FOLLOW_process_id_in_createbody7633 = frozenset([1])
-    FOLLOW_THIS_in_createbody7653 = frozenset([1])
-    FOLLOW_cif_in_output7676 = frozenset([50, 217])
-    FOLLOW_hyperlink_in_output7695 = frozenset([50])
-    FOLLOW_OUTPUT_in_output7714 = frozenset([145])
-    FOLLOW_outputbody_in_output7716 = frozenset([9, 122, 217])
-    FOLLOW_end_in_output7718 = frozenset([1])
-    FOLLOW_outputstmt_in_outputbody7771 = frozenset([1, 47, 132])
-    FOLLOW_COMMA_in_outputbody7774 = frozenset([145])
-    FOLLOW_outputstmt_in_outputbody7776 = frozenset([1, 47, 132])
-    FOLLOW_to_part_in_outputbody7780 = frozenset([1])
-    FOLLOW_signal_id_in_outputstmt7833 = frozenset([1, 130])
-    FOLLOW_actual_parameters_in_outputstmt7852 = frozenset([1])
-    FOLLOW_TO_in_to_part7876 = frozenset([144, 145, 188, 191, 195])
-    FOLLOW_destination_in_to_part7878 = frozenset([1])
-    FOLLOW_VIA_in_via_part7922 = frozenset([46, 145])
-    FOLLOW_viabody_in_via_part7924 = frozenset([1])
-    FOLLOW_ALL_in_viabody7969 = frozenset([1])
-    FOLLOW_via_path_in_viabody8008 = frozenset([1])
-    FOLLOW_pid_expression_in_destination8052 = frozenset([1])
-    FOLLOW_process_id_in_destination8072 = frozenset([1])
-    FOLLOW_THIS_in_destination8092 = frozenset([1])
-    FOLLOW_via_path_element_in_via_path8115 = frozenset([1, 132])
-    FOLLOW_COMMA_in_via_path8118 = frozenset([46, 145])
-    FOLLOW_via_path_element_in_via_path8120 = frozenset([1, 132])
-    FOLLOW_ID_in_via_path_element8163 = frozenset([1])
-    FOLLOW_L_PAREN_in_actual_parameters8186 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_actual_parameters8188 = frozenset([131, 132])
-    FOLLOW_COMMA_in_actual_parameters8191 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_actual_parameters8193 = frozenset([131, 132])
-    FOLLOW_R_PAREN_in_actual_parameters8197 = frozenset([1])
-    FOLLOW_cif_in_task8241 = frozenset([79, 217])
-    FOLLOW_hyperlink_in_task8260 = frozenset([79])
-    FOLLOW_TASK_in_task8279 = frozenset([4, 9, 84, 86, 122, 145, 160, 217])
-    FOLLOW_task_body_in_task8281 = frozenset([9, 122, 217])
-    FOLLOW_end_in_task8284 = frozenset([1])
-    FOLLOW_assignement_statement_in_task_body8339 = frozenset([1, 132])
-    FOLLOW_COMMA_in_task_body8342 = frozenset([84, 86, 145])
-    FOLLOW_assignement_statement_in_task_body8344 = frozenset([1, 132])
-    FOLLOW_informal_text_in_task_body8390 = frozenset([1, 132])
-    FOLLOW_COMMA_in_task_body8393 = frozenset([160])
-    FOLLOW_informal_text_in_task_body8395 = frozenset([1, 132])
-    FOLLOW_forloop_in_task_body8441 = frozenset([1, 132])
-    FOLLOW_COMMA_in_task_body8444 = frozenset([4, 84, 86, 145, 160])
-    FOLLOW_forloop_in_task_body8446 = frozenset([1, 132])
-    FOLLOW_FOR_in_forloop8503 = frozenset([84, 86, 145])
-    FOLLOW_variable_id_in_forloop8505 = frozenset([86])
-    FOLLOW_IN_in_forloop8507 = frozenset([5, 84, 86, 145])
-    FOLLOW_variable_in_forloop8510 = frozenset([212])
-    FOLLOW_range_in_forloop8514 = frozenset([212])
-    FOLLOW_212_in_forloop8517 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 146, 160, 217])
-    FOLLOW_transition_in_forloop8535 = frozenset([146])
-    FOLLOW_ENDFOR_in_forloop8554 = frozenset([1])
-    FOLLOW_RANGE_in_range8606 = frozenset([130])
-    FOLLOW_L_PAREN_in_range8624 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_ground_expression_in_range8628 = frozenset([131, 132])
-    FOLLOW_COMMA_in_range8647 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_ground_expression_in_range8651 = frozenset([131, 132])
-    FOLLOW_COMMA_in_range8656 = frozenset([119])
-    FOLLOW_INT_in_range8660 = frozenset([131])
-    FOLLOW_R_PAREN_in_range8680 = frozenset([1])
-    FOLLOW_variable_in_assignement_statement8732 = frozenset([179])
-    FOLLOW_ASSIG_OP_in_assignement_statement8734 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_assignement_statement8736 = frozenset([1])
-    FOLLOW_variable_id_in_variable8783 = frozenset([1, 130, 213])
-    FOLLOW_primary_params_in_variable8785 = frozenset([1, 130, 213])
-    FOLLOW_set_in_field_selection8833 = frozenset([145])
-    FOLLOW_field_name_in_field_selection8839 = frozenset([1])
-    FOLLOW_operand0_in_expression8859 = frozenset([1, 147])
-    FOLLOW_IMPLIES_in_expression8863 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand0_in_expression8866 = frozenset([1, 147])
-    FOLLOW_operand1_in_operand08889 = frozenset([1, 148, 149])
-    FOLLOW_OR_in_operand08894 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_XOR_in_operand08899 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand1_in_operand08904 = frozenset([1, 148, 149])
-    FOLLOW_operand2_in_operand18926 = frozenset([1, 115])
-    FOLLOW_AND_in_operand18930 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand2_in_operand18933 = frozenset([1, 115])
-    FOLLOW_operand3_in_operand28955 = frozenset([1, 86, 137, 138, 139, 140, 141, 142])
-    FOLLOW_EQ_in_operand28984 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_NEQ_in_operand28989 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_GT_in_operand28994 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_GE_in_operand28999 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_LT_in_operand29004 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_LE_in_operand29009 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_IN_in_operand29014 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand3_in_operand29043 = frozenset([1, 86, 137, 138, 139, 140, 141, 142])
-    FOLLOW_operand4_in_operand39065 = frozenset([1, 150, 151, 152])
-    FOLLOW_PLUS_in_operand39070 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_DASH_in_operand39075 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_APPEND_in_operand39080 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand4_in_operand39085 = frozenset([1, 150, 151, 152])
-    FOLLOW_operand5_in_operand49107 = frozenset([1, 124, 153, 154, 155])
-    FOLLOW_ASTERISK_in_operand49136 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_DIV_in_operand49141 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_MOD_in_operand49146 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_REM_in_operand49151 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand5_in_operand49156 = frozenset([1, 124, 153, 154, 155])
-    FOLLOW_primary_qualifier_in_operand59178 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_primary_in_operand59181 = frozenset([1])
-    FOLLOW_asn1Value_in_primary9239 = frozenset([1, 130, 213])
-    FOLLOW_primary_params_in_primary9241 = frozenset([1, 130, 213])
-    FOLLOW_L_PAREN_in_primary9286 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_primary9288 = frozenset([131])
-    FOLLOW_R_PAREN_in_primary9290 = frozenset([1])
-    FOLLOW_conditional_ground_expression_in_primary9331 = frozenset([1])
-    FOLLOW_BitStringLiteral_in_asn1Value9354 = frozenset([1])
-    FOLLOW_OctetStringLiteral_in_asn1Value9391 = frozenset([1])
-    FOLLOW_TRUE_in_asn1Value9426 = frozenset([1])
-    FOLLOW_FALSE_in_asn1Value9445 = frozenset([1])
-    FOLLOW_StringLiteral_in_asn1Value9464 = frozenset([1])
-    FOLLOW_NULL_in_asn1Value9504 = frozenset([1])
-    FOLLOW_PLUS_INFINITY_in_asn1Value9523 = frozenset([1])
-    FOLLOW_MINUS_INFINITY_in_asn1Value9542 = frozenset([1])
-    FOLLOW_ID_in_asn1Value9561 = frozenset([1])
-    FOLLOW_INT_in_asn1Value9579 = frozenset([1])
-    FOLLOW_FloatingPointLiteral_in_asn1Value9597 = frozenset([1])
-    FOLLOW_L_BRACKET_in_asn1Value9630 = frozenset([166])
-    FOLLOW_R_BRACKET_in_asn1Value9632 = frozenset([1])
-    FOLLOW_L_BRACKET_in_asn1Value9664 = frozenset([167])
-    FOLLOW_MANTISSA_in_asn1Value9682 = frozenset([119])
-    FOLLOW_INT_in_asn1Value9686 = frozenset([132])
-    FOLLOW_COMMA_in_asn1Value9688 = frozenset([168])
-    FOLLOW_BASE_in_asn1Value9706 = frozenset([119])
-    FOLLOW_INT_in_asn1Value9710 = frozenset([132])
-    FOLLOW_COMMA_in_asn1Value9712 = frozenset([169])
-    FOLLOW_EXPONENT_in_asn1Value9730 = frozenset([119])
-    FOLLOW_INT_in_asn1Value9734 = frozenset([166])
-    FOLLOW_R_BRACKET_in_asn1Value9753 = frozenset([1])
-    FOLLOW_choiceValue_in_asn1Value9804 = frozenset([1])
-    FOLLOW_L_BRACKET_in_asn1Value9822 = frozenset([145])
-    FOLLOW_namedValue_in_asn1Value9840 = frozenset([132, 166])
-    FOLLOW_COMMA_in_asn1Value9843 = frozenset([145])
-    FOLLOW_namedValue_in_asn1Value9845 = frozenset([132, 166])
-    FOLLOW_R_BRACKET_in_asn1Value9865 = frozenset([1])
-    FOLLOW_L_BRACKET_in_asn1Value9910 = frozenset([119, 145, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165])
-    FOLLOW_asn1Value_in_asn1Value9928 = frozenset([132, 166])
-    FOLLOW_COMMA_in_asn1Value9931 = frozenset([119, 145, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165])
-    FOLLOW_asn1Value_in_asn1Value9933 = frozenset([132, 166])
-    FOLLOW_R_BRACKET_in_asn1Value9953 = frozenset([1])
-    FOLLOW_StringLiteral_in_informal_text10128 = frozenset([1])
-    FOLLOW_ID_in_choiceValue10178 = frozenset([212])
-    FOLLOW_212_in_choiceValue10180 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_choiceValue10182 = frozenset([1])
-    FOLLOW_ID_in_namedValue10231 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_namedValue10233 = frozenset([1])
-    FOLLOW_DASH_in_primary_qualifier10256 = frozenset([1])
-    FOLLOW_NOT_in_primary_qualifier10295 = frozenset([1])
-    FOLLOW_L_PAREN_in_primary_params10317 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_list_in_primary_params10319 = frozenset([131])
-    FOLLOW_R_PAREN_in_primary_params10321 = frozenset([1])
-    FOLLOW_213_in_primary_params10360 = frozenset([119, 145])
-    FOLLOW_literal_id_in_primary_params10362 = frozenset([1])
-    FOLLOW_primary_in_indexed_primary10409 = frozenset([130])
-    FOLLOW_L_PAREN_in_indexed_primary10411 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_list_in_indexed_primary10413 = frozenset([131])
-    FOLLOW_R_PAREN_in_indexed_primary10415 = frozenset([1])
-    FOLLOW_primary_in_field_primary10438 = frozenset([204, 213])
-    FOLLOW_field_selection_in_field_primary10440 = frozenset([1])
-    FOLLOW_214_in_structure_primary10463 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_list_in_structure_primary10465 = frozenset([215])
-    FOLLOW_215_in_structure_primary10467 = frozenset([1])
-    FOLLOW_active_primary_in_active_expression10492 = frozenset([1])
-    FOLLOW_variable_access_in_active_primary10515 = frozenset([1])
-    FOLLOW_operator_application_in_active_primary10535 = frozenset([1])
-    FOLLOW_conditional_expression_in_active_primary10555 = frozenset([1])
-    FOLLOW_imperative_operator_in_active_primary10575 = frozenset([1])
-    FOLLOW_L_PAREN_in_active_primary10595 = frozenset([63, 84, 86, 130, 136, 145, 171, 172, 173, 181, 188, 191, 195, 216])
-    FOLLOW_active_expression_in_active_primary10597 = frozenset([131])
-    FOLLOW_R_PAREN_in_active_primary10599 = frozenset([1])
-    FOLLOW_216_in_active_primary10619 = frozenset([1])
-    FOLLOW_now_expression_in_imperative_operator10646 = frozenset([1])
-    FOLLOW_import_expression_in_imperative_operator10666 = frozenset([1])
-    FOLLOW_pid_expression_in_imperative_operator10686 = frozenset([1])
-    FOLLOW_view_expression_in_imperative_operator10706 = frozenset([1])
-    FOLLOW_timer_active_expression_in_imperative_operator10726 = frozenset([1])
-    FOLLOW_anyvalue_expression_in_imperative_operator10746 = frozenset([1])
-    FOLLOW_ACTIVE_in_timer_active_expression10769 = frozenset([130])
-    FOLLOW_L_PAREN_in_timer_active_expression10771 = frozenset([145])
-    FOLLOW_timer_id_in_timer_active_expression10773 = frozenset([130, 131])
-    FOLLOW_L_PAREN_in_timer_active_expression10776 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_list_in_timer_active_expression10778 = frozenset([131])
-    FOLLOW_R_PAREN_in_timer_active_expression10780 = frozenset([131])
-    FOLLOW_R_PAREN_in_timer_active_expression10784 = frozenset([1])
-    FOLLOW_ANY_in_anyvalue_expression10807 = frozenset([130])
-    FOLLOW_L_PAREN_in_anyvalue_expression10809 = frozenset([132, 145])
-    FOLLOW_sort_in_anyvalue_expression10811 = frozenset([131])
-    FOLLOW_R_PAREN_in_anyvalue_expression10813 = frozenset([1])
-    FOLLOW_sort_id_in_sort10831 = frozenset([1])
-    FOLLOW_syntype_id_in_syntype10867 = frozenset([1])
-    FOLLOW_IMPORT_in_import_expression10890 = frozenset([130])
-    FOLLOW_L_PAREN_in_import_expression10892 = frozenset([145])
-    FOLLOW_remote_variable_id_in_import_expression10894 = frozenset([131, 132])
-    FOLLOW_COMMA_in_import_expression10897 = frozenset([144, 145, 188, 191, 195])
-    FOLLOW_destination_in_import_expression10899 = frozenset([131])
-    FOLLOW_R_PAREN_in_import_expression10903 = frozenset([1])
-    FOLLOW_VIEW_in_view_expression10926 = frozenset([130])
-    FOLLOW_L_PAREN_in_view_expression10928 = frozenset([145])
-    FOLLOW_view_id_in_view_expression10930 = frozenset([131, 132])
-    FOLLOW_COMMA_in_view_expression10933 = frozenset([188, 191, 195])
-    FOLLOW_pid_expression_in_view_expression10935 = frozenset([131])
-    FOLLOW_R_PAREN_in_view_expression10939 = frozenset([1])
-    FOLLOW_variable_id_in_variable_access10962 = frozenset([1])
-    FOLLOW_operator_id_in_operator_application10985 = frozenset([130])
-    FOLLOW_L_PAREN_in_operator_application10987 = frozenset([63, 84, 86, 130, 136, 145, 171, 172, 173, 181, 188, 191, 195, 216])
-    FOLLOW_active_expression_list_in_operator_application10988 = frozenset([131])
-    FOLLOW_R_PAREN_in_operator_application10990 = frozenset([1])
-    FOLLOW_active_expression_in_active_expression_list11014 = frozenset([1, 132])
-    FOLLOW_COMMA_in_active_expression_list11017 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_list_in_active_expression_list11019 = frozenset([1])
-    FOLLOW_IF_in_conditional_expression11051 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_conditional_expression11053 = frozenset([64])
-    FOLLOW_THEN_in_conditional_expression11055 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_conditional_expression11057 = frozenset([45])
-    FOLLOW_ELSE_in_conditional_expression11059 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_conditional_expression11061 = frozenset([65])
-    FOLLOW_FI_in_conditional_expression11063 = frozenset([1])
-    FOLLOW_ID_in_synonym11078 = frozenset([1])
-    FOLLOW_external_synonym_id_in_external_synonym11102 = frozenset([1])
-    FOLLOW_IF_in_conditional_ground_expression11125 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_conditional_ground_expression11129 = frozenset([64])
-    FOLLOW_THEN_in_conditional_ground_expression11147 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_conditional_ground_expression11151 = frozenset([45])
-    FOLLOW_ELSE_in_conditional_ground_expression11169 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_conditional_ground_expression11173 = frozenset([65])
-    FOLLOW_FI_in_conditional_ground_expression11175 = frozenset([1])
-    FOLLOW_expression_in_expression_list11227 = frozenset([1, 132])
-    FOLLOW_COMMA_in_expression_list11230 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_expression_list11232 = frozenset([1, 132])
-    FOLLOW_label_in_terminator_statement11275 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_cif_in_terminator_statement11294 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_hyperlink_in_terminator_statement11313 = frozenset([4, 36, 37, 38, 39, 40, 50, 54, 55, 57, 79, 84, 86, 87, 133, 143, 145, 160, 217])
-    FOLLOW_terminator_in_terminator_statement11332 = frozenset([9, 122, 217])
-    FOLLOW_end_in_terminator_statement11350 = frozenset([1])
-    FOLLOW_cif_in_label11405 = frozenset([145, 217])
-    FOLLOW_connector_name_in_label11408 = frozenset([212])
-    FOLLOW_212_in_label11410 = frozenset([1])
-    FOLLOW_nextstate_in_terminator11457 = frozenset([1])
-    FOLLOW_join_in_terminator11461 = frozenset([1])
-    FOLLOW_stop_in_terminator11465 = frozenset([1])
-    FOLLOW_return_stmt_in_terminator11469 = frozenset([1])
-    FOLLOW_JOIN_in_join11493 = frozenset([145, 217])
-    FOLLOW_connector_name_in_join11495 = frozenset([1])
-    FOLLOW_STOP_in_stop11535 = frozenset([1])
-    FOLLOW_RETURN_in_return_stmt11558 = frozenset([1, 63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_expression_in_return_stmt11560 = frozenset([1])
-    FOLLOW_NEXTSTATE_in_nextstate11606 = frozenset([145, 151])
-    FOLLOW_nextstatebody_in_nextstate11608 = frozenset([1])
-    FOLLOW_statename_in_nextstatebody11652 = frozenset([1, 48])
-    FOLLOW_via_in_nextstatebody11654 = frozenset([1])
-    FOLLOW_dash_nextstate_in_nextstatebody11675 = frozenset([1])
-    FOLLOW_VIA_in_via11694 = frozenset([145])
-    FOLLOW_state_entry_point_name_in_via11696 = frozenset([1])
-    FOLLOW_cif_in_end11737 = frozenset([9, 217])
-    FOLLOW_hyperlink_in_end11740 = frozenset([9])
-    FOLLOW_COMMENT_in_end11743 = frozenset([160])
-    FOLLOW_StringLiteral_in_end11745 = frozenset([122])
-    FOLLOW_SEMI_in_end11749 = frozenset([1])
-    FOLLOW_cif_decl_in_cif11795 = frozenset([7, 9, 23, 26, 29, 31, 34, 35, 39, 41, 50, 53, 54, 55, 57, 79, 87, 99, 120])
-    FOLLOW_symbolname_in_cif11797 = frozenset([130])
-    FOLLOW_L_PAREN_in_cif11815 = frozenset([119])
-    FOLLOW_INT_in_cif11819 = frozenset([132])
-    FOLLOW_COMMA_in_cif11821 = frozenset([119])
-    FOLLOW_INT_in_cif11825 = frozenset([131])
-    FOLLOW_R_PAREN_in_cif11827 = frozenset([132])
-    FOLLOW_COMMA_in_cif11845 = frozenset([130])
-    FOLLOW_L_PAREN_in_cif11863 = frozenset([119])
-    FOLLOW_INT_in_cif11867 = frozenset([132])
-    FOLLOW_COMMA_in_cif11869 = frozenset([119])
-    FOLLOW_INT_in_cif11873 = frozenset([131])
-    FOLLOW_R_PAREN_in_cif11875 = frozenset([218])
-    FOLLOW_cif_end_in_cif11894 = frozenset([1])
-    FOLLOW_cif_decl_in_hyperlink11948 = frozenset([174])
-    FOLLOW_KEEP_in_hyperlink11950 = frozenset([175])
-    FOLLOW_SPECIFIC_in_hyperlink11952 = frozenset([176])
-    FOLLOW_GEODE_in_hyperlink11954 = frozenset([67])
-    FOLLOW_HYPERLINK_in_hyperlink11956 = frozenset([160])
-    FOLLOW_StringLiteral_in_hyperlink11958 = frozenset([218])
-    FOLLOW_cif_end_in_hyperlink11976 = frozenset([1])
-    FOLLOW_cif_decl_in_paramnames12021 = frozenset([174])
-    FOLLOW_KEEP_in_paramnames12023 = frozenset([175])
-    FOLLOW_SPECIFIC_in_paramnames12025 = frozenset([176])
-    FOLLOW_GEODE_in_paramnames12027 = frozenset([95])
-    FOLLOW_PARAMNAMES_in_paramnames12029 = frozenset([145])
-    FOLLOW_field_name_in_paramnames12031 = frozenset([145, 218])
-    FOLLOW_cif_end_in_paramnames12034 = frozenset([1])
-    FOLLOW_cif_decl_in_use_asn112081 = frozenset([174])
-    FOLLOW_KEEP_in_use_asn112083 = frozenset([175])
-    FOLLOW_SPECIFIC_in_use_asn112085 = frozenset([176])
-    FOLLOW_GEODE_in_use_asn112087 = frozenset([177])
-    FOLLOW_ASNFILENAME_in_use_asn112089 = frozenset([160])
-    FOLLOW_StringLiteral_in_use_asn112091 = frozenset([218])
-    FOLLOW_cif_end_in_use_asn112093 = frozenset([1])
-    FOLLOW_set_in_symbolname0 = frozenset([1])
-    FOLLOW_217_in_cif_decl12520 = frozenset([1])
-    FOLLOW_218_in_cif_end12543 = frozenset([1])
-    FOLLOW_cif_decl_in_cif_end_text12566 = frozenset([22])
-    FOLLOW_ENDTEXT_in_cif_end_text12568 = frozenset([218])
-    FOLLOW_cif_end_in_cif_end_text12570 = frozenset([1])
-    FOLLOW_cif_decl_in_cif_end_label12611 = frozenset([178])
-    FOLLOW_END_in_cif_end_label12613 = frozenset([7])
-    FOLLOW_LABEL_in_cif_end_label12615 = frozenset([218])
-    FOLLOW_cif_end_in_cif_end_label12617 = frozenset([1])
-    FOLLOW_DASH_in_dash_nextstate12633 = frozenset([1])
-    FOLLOW_ID_in_connector_name12647 = frozenset([1])
-    FOLLOW_ID_in_signal_id12666 = frozenset([1])
-    FOLLOW_ID_in_statename12685 = frozenset([1])
-    FOLLOW_ID_in_state_exit_point_name12714 = frozenset([1])
-    FOLLOW_ID_in_state_entry_point_name12743 = frozenset([1])
-    FOLLOW_ID_in_variable_id12760 = frozenset([1])
-    FOLLOW_set_in_literal_id0 = frozenset([1])
-    FOLLOW_ID_in_process_id12800 = frozenset([1])
-    FOLLOW_ID_in_system_name12817 = frozenset([1])
-    FOLLOW_ID_in_package_name12833 = frozenset([1])
-    FOLLOW_ID_in_priority_signal_id12862 = frozenset([1])
-    FOLLOW_ID_in_signal_list_id12876 = frozenset([1])
-    FOLLOW_ID_in_timer_id12896 = frozenset([1])
-    FOLLOW_ID_in_field_name12914 = frozenset([1])
-    FOLLOW_ID_in_signal_route_id12927 = frozenset([1])
-    FOLLOW_ID_in_channel_id12945 = frozenset([1])
-    FOLLOW_ID_in_route_id12965 = frozenset([1])
-    FOLLOW_ID_in_block_id12985 = frozenset([1])
-    FOLLOW_ID_in_source_id13004 = frozenset([1])
-    FOLLOW_ID_in_dest_id13025 = frozenset([1])
-    FOLLOW_ID_in_gate_id13046 = frozenset([1])
-    FOLLOW_ID_in_procedure_id13062 = frozenset([1])
-    FOLLOW_ID_in_remote_procedure_id13091 = frozenset([1])
-    FOLLOW_ID_in_operator_id13108 = frozenset([1])
-    FOLLOW_ID_in_synonym_id13126 = frozenset([1])
-    FOLLOW_ID_in_external_synonym_id13155 = frozenset([1])
-    FOLLOW_ID_in_remote_variable_id13184 = frozenset([1])
-    FOLLOW_ID_in_view_id13205 = frozenset([1])
-    FOLLOW_ID_in_sort_id13226 = frozenset([1])
-    FOLLOW_ID_in_syntype_id13244 = frozenset([1])
-    FOLLOW_ID_in_stimulus_id13261 = frozenset([1])
-    FOLLOW_S_in_pid_expression14295 = frozenset([186])
-    FOLLOW_E_in_pid_expression14297 = frozenset([185])
-    FOLLOW_L_in_pid_expression14299 = frozenset([193])
-    FOLLOW_F_in_pid_expression14301 = frozenset([1])
-    FOLLOW_P_in_pid_expression14327 = frozenset([180])
-    FOLLOW_A_in_pid_expression14329 = frozenset([189])
-    FOLLOW_R_in_pid_expression14331 = frozenset([186])
-    FOLLOW_E_in_pid_expression14333 = frozenset([181])
-    FOLLOW_N_in_pid_expression14335 = frozenset([197])
-    FOLLOW_T_in_pid_expression14337 = frozenset([1])
-    FOLLOW_O_in_pid_expression14363 = frozenset([193])
-    FOLLOW_F_in_pid_expression14365 = frozenset([193])
-    FOLLOW_F_in_pid_expression14367 = frozenset([191])
-    FOLLOW_S_in_pid_expression14369 = frozenset([188])
-    FOLLOW_P_in_pid_expression14371 = frozenset([189])
-    FOLLOW_R_in_pid_expression14373 = frozenset([192])
-    FOLLOW_I_in_pid_expression14375 = frozenset([181])
-    FOLLOW_N_in_pid_expression14377 = frozenset([194])
-    FOLLOW_G_in_pid_expression14379 = frozenset([1])
-    FOLLOW_S_in_pid_expression14405 = frozenset([186])
-    FOLLOW_E_in_pid_expression14407 = frozenset([181])
-    FOLLOW_N_in_pid_expression14409 = frozenset([183])
-    FOLLOW_D_in_pid_expression14411 = frozenset([186])
-    FOLLOW_E_in_pid_expression14413 = frozenset([189])
-    FOLLOW_R_in_pid_expression14415 = frozenset([1])
-    FOLLOW_N_in_now_expression14429 = frozenset([195])
-    FOLLOW_O_in_now_expression14431 = frozenset([201])
-    FOLLOW_W_in_now_expression14433 = frozenset([1])
-    FOLLOW_text_area_in_synpred24_sdl922181 = frozenset([1])
-    FOLLOW_procedure_in_synpred25_sdl922185 = frozenset([1])
-    FOLLOW_composite_state_in_synpred26_sdl922189 = frozenset([1])
-    FOLLOW_processBody_in_synpred27_sdl922209 = frozenset([1])
-    FOLLOW_text_area_in_synpred31_sdl922374 = frozenset([1])
-    FOLLOW_procedure_in_synpred32_sdl922378 = frozenset([1])
-    FOLLOW_processBody_in_synpred33_sdl922400 = frozenset([1])
-    FOLLOW_content_in_synpred40_sdl922706 = frozenset([1])
-    FOLLOW_text_area_in_synpred82_sdl924464 = frozenset([1])
-    FOLLOW_procedure_in_synpred83_sdl924468 = frozenset([1])
-    FOLLOW_composite_state_in_synpred84_sdl924472 = frozenset([1])
-    FOLLOW_enabling_condition_in_synpred106_sdl925409 = frozenset([1])
-    FOLLOW_label_in_synpred113_sdl925665 = frozenset([1])
-    FOLLOW_expression_in_synpred137_sdl926688 = frozenset([1])
-    FOLLOW_answer_part_in_synpred140_sdl926793 = frozenset([1])
-    FOLLOW_range_condition_in_synpred145_sdl927011 = frozenset([1])
-    FOLLOW_expression_in_synpred149_sdl927148 = frozenset([1])
-    FOLLOW_informal_text_in_synpred150_sdl927189 = frozenset([1])
-    FOLLOW_COMMA_in_synpred180_sdl928647 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_ground_expression_in_synpred180_sdl928651 = frozenset([1])
-    FOLLOW_IMPLIES_in_synpred184_sdl928863 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand0_in_synpred184_sdl928866 = frozenset([1])
-    FOLLOW_set_in_synpred186_sdl928892 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand1_in_synpred186_sdl928904 = frozenset([1])
-    FOLLOW_AND_in_synpred187_sdl928930 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand2_in_synpred187_sdl928933 = frozenset([1])
-    FOLLOW_set_in_synpred194_sdl928982 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand3_in_synpred194_sdl929043 = frozenset([1])
-    FOLLOW_set_in_synpred197_sdl929068 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand4_in_synpred197_sdl929085 = frozenset([1])
-    FOLLOW_set_in_synpred201_sdl929134 = frozenset([63, 119, 130, 145, 151, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 170])
-    FOLLOW_operand5_in_synpred201_sdl929156 = frozenset([1])
-    FOLLOW_primary_params_in_synpred203_sdl929241 = frozenset([1])
->>>>>>> remotes/upstream/master
+    FOLLOW_COMMA_in_synpred182_sdl928767 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_ground_expression_in_synpred182_sdl928771 = frozenset([1])
+    FOLLOW_IMPLIES_in_synpred186_sdl928983 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand0_in_synpred186_sdl928986 = frozenset([1])
+    FOLLOW_set_in_synpred188_sdl929012 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand1_in_synpred188_sdl929024 = frozenset([1])
+    FOLLOW_AND_in_synpred189_sdl929050 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand2_in_synpred189_sdl929053 = frozenset([1])
+    FOLLOW_set_in_synpred196_sdl929102 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand3_in_synpred196_sdl929163 = frozenset([1])
+    FOLLOW_set_in_synpred199_sdl929188 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand4_in_synpred199_sdl929205 = frozenset([1])
+    FOLLOW_set_in_synpred203_sdl929254 = frozenset([63, 121, 132, 147, 153, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 172])
+    FOLLOW_operand5_in_synpred203_sdl929276 = frozenset([1])
+    FOLLOW_primary_params_in_synpred205_sdl929361 = frozenset([1])
 
 
 

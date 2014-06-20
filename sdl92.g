@@ -1275,13 +1275,10 @@ ENDNEWTYPE      :       E N D N E W T Y P E;
 ARRAY           :       A R R A Y;	
 CONSTANTS       :	C O N S T A N T S;
 STRUCT          :	S T R U C T;
-<<<<<<< HEAD
 SYNONYM        	:       S Y N O N Y M;	
-=======
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
->>>>>>> remotes/upstream/master
 StringLiteral   :       STR+ ;
 
 fragment
