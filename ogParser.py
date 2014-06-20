@@ -75,7 +75,9 @@ TMPVAR = 0
 
 # ASN.1 types used to support the signature of special operators
 INTEGER = type('IntegerType', (object,), {'kind': 'IntegerType'})
-INT32 = type('Integer32Type', (object,), {'kind': 'Integer32Type'})
+INT32 = type('Integer32Type', (object,), {'kind': 'Integer32Type',
+                                          'Min':'-2147483648',
+                                          'Max':'2147483647'})
 NUMERICAL = type('NumericalType', (object,), {'kind': 'Numerical'})
 TIMER = type('TimerType', (object,), {'kind': 'TimerType'})
 REAL = type('RealType', (object,), {'kind': 'RealType'})
@@ -427,6 +429,22 @@ def check_and_fix_op_params(op_name, expr_list, context):
                             .format(expr.right.inputString))
 
 
+def check_range(typeref, type_to_check):
+    ''' Verify the that the Min/Max bounds of two types are compatible
+        Called to test that assignments are withing allowed range
+        both types assumed to be basic types 
+    '''
+    try:
+        if float(type_to_check.Min) < float(typeref.Min) \
+                or float(type_to_check.Max) > float(typeref.Max):
+            raise TypeError('Expression evaluation in range [{}..{}], '
+                            'outside expected range [{}..{}]'
+                    .format(type_to_check.Min, type_to_check.Max,
+                            typeref.Min, typeref.Max))
+    except (AttributeError, ValueError):
+        raise TypeError('Missing range')
+
+
 def check_type_compatibility(primary, typeRef, context):
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
@@ -486,9 +504,11 @@ def check_type_compatibility(primary, typeRef, context):
     elif isinstance(primary, ogAST.PrimInteger) \
             and actual_type.kind.startswith('Integer'):
         return
+
     elif isinstance(primary, ogAST.PrimReal) \
             and actual_type.kind.startswith('Real'):
         return
+
     elif isinstance(primary, ogAST.PrimBoolean) \
             and actual_type.kind.startswith('Boolean'):
         return
@@ -631,9 +651,18 @@ def compare_types(type_a, type_b):
                                                                  'StringType'):
         # Allow Octet String values to be printable strings.. for convenience
         return
-    elif not(type_a.kind in ('IntegerType', 'Integer32Type', 'RealType') and
-             type_b.kind in ('IntegerType', 'Integer32Type', 'RealType')):
-        raise TypeError('Int/Real mismatch')
+    elif not(type_a.kind in ('IntegerType', 'Integer32Type') and
+             type_b.kind in ('IntegerType', 'Integer32Type')):
+        raise TypeError('One type is an integer, not the other one')
+    elif any(side.kind == 'RealType' for side in (type_a, type_b)):
+        raise TypeError('One type is an REAL, not the other one')
+    elif all(side.kind.startswith('Integer') for side in (type_a, type_b)) \
+            or all(side.kind == 'RealType' for side in (type_a, type_b)):
+        pass # XXX no need for type check here, only at assignments
+#        if float(type_b.Min) < float(type_a.Min) \
+#                or float(type_b.Max) > float(type_a.Max):
+#            raise TypeError('Range [{}..{}] incompatible with range [{}..{}]'
+#                    .format(type_b.Min, type_b.Max, type_a.Min, type_a.Max))
     else:
         return
 
@@ -697,6 +726,17 @@ def find_type(path, context):
                 break
         else:
             if main.lower() in SPECIAL_OPERATORS:
+                param = path[1].get('procParams') or []
+                if not param:
+                    raise TypeError('Missing parameter in {} operator call'
+                                    .format(main))
+                # Retrieve type of first parameter - all operators need it
+                first_param = param[0]
+                first_type = find_variable(first_param.inputString, context)\
+                                 if first_param.exprType == UNKNOWN_TYPE else \
+                                 first_param.exprType
+                first_basic = find_basic_type(first_type)
+
                 # Special operators require type elaboration
                 if main.lower() == 'present':
                     result = type('present', (object,),
@@ -704,33 +744,45 @@ def find_type(path, context):
                                    'EnumValues': {}})
                     # present(choiceType): must return an enum
                     # with elements being the choice options
-                    param, = path[1].get('procParams') or [None]
-                    if not param:
-                        raise TypeError('Missing parameter in PRESENT clause')
+                    if len(param) != 1:
+                        raise TypeError('Wrong number of parameters in '
+                                        'PRESENT clause (only one expected)')
+                    if first_basic.kind != 'ChoiceType':
+                        raise TypeError('PRESENT parameter'
+                                     ' must be a CHOICE type:' + str(path))
                     else:
-                        check_type = find_variable(param.inputString, context)\
-                                if param.exprType == UNKNOWN_TYPE else \
-                                param.exprType
-                        param_type = find_basic_type(check_type)
-                        if param_type.kind != 'ChoiceType':
-                            raise TypeError('PRESENT parameter'
-                                         ' must be a CHOICE type:' + str(path))
-                        else:
-                            result.EnumValues = param_type.Children
-                elif main.lower() in ('length', 'abs', 'fix'):
-                    # XXX length et abs: we must set Min and Max
-                    # and abs may return a RealType, not always integer
-                    result = INTEGER
-                    # type('lenabs', (object,), {'kind': 'IntegerType'})
+                        result.EnumValues = first_basic.Children
+                elif main.lower() in ('length', 'fix'):
+                    if len(param) != 1:
+                        raise TypeError('Wrong number of parameters in {} '
+                                        'operator'.format(main))
+                    # result is an integer type with range of the param type
+                    result = type('fix', (INTEGER,), {'Min': first_basic.Min,
+                                                      'Max': first_basic.Max})
                 elif main.lower() == 'float':
-                    result = REAL
+                    if len(param) != 1:
+                        raise TypeError('Wrong number of parameters in {} '
+                                        'operator'.format(main))
+                    result = type('float_op', (REAL,), {'Min': first_basic.Min,
+                                                       'Max': first_basic.Max})
                 elif main.lower() == 'power':
-                    # Result can be int or real, depending on first param
-                    param = path[1].get('procParams')[0]
-                    check_type = find_variable(param.inputString, context) \
-                            if param.exprType == UNKNOWN_TYPE else \
-                            param.exprType
-                    result = find_basic_type(check_type)
+                    second = param[1]
+                    second_type = find_variable(second.inputString, context)\
+                                  if second.exprType == UNKNOWN_TYPE else \
+                                  second.exprType
+                    second_basic = find_basic_type(second_type)
+                    try:
+                        result = type('Power', (first_basic,),
+                                {'Min':str(pow(float(first_basic.Min),
+                                    float(second_basic.Min))),
+                                 'Max':str(pow(float(first_basic.Max),
+                                    float(second_basic.Max)))})
+                    except OverflowError:
+                        raise TypeError('Result can exceeds 64-bits')
+                elif main.lower() == 'abs':
+                    result = type('Abs', (first_basic,),
+                            {'Min':str(max(float(first_basic.Min), 0)),
+                             'Max':str(max(float(first_basic.Max), 0))})
                 else:  # write and writeln return void
                     pass
     if result.kind == 'ReferenceType':
@@ -793,7 +845,6 @@ def fix_expression_types(expr, context):
                 and isinstance(uk_expr, ogAST.PrimPath) \
                 and len(uk_expr.value) == 1:
             try:
-                #exprType = find_variable(uk_expr.inputString, context)
                 exprType = find_variable(uk_expr.value[0], context)
                 # Differentiate DCL and FPAR variables
                 use_type = ogAST.PrimVariable
@@ -901,8 +952,6 @@ def fix_expression_types(expr, context):
             expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimIfThenElse):
         for det in ('then', 'else'):
-            #if expr.right.value[det].exprType == UNKNOWN_TYPE:
-            #    expr.right.value[det].exprType = expr.left.exprType
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
             check_expr.left = ogAST.PrimPath()
@@ -934,11 +983,22 @@ def fix_expression_types(expr, context):
             else:
                 raise TypeError('Bitwise operators only work with '
                                 'booleans and arrays of booleans')
+
     if expr.right.is_raw != expr.left.is_raw:
         check_type_compatibility(raw_expr, ref_type, context)
-        raw_expr.exprType = ref_type
+        if not raw_expr.exprType.kind.startswith(('Integer', 'Real')):
+            # Raw int/real must keep their type because of the range
+            # that can be computed
+            raw_expr.exprType = ref_type
     else:
         compare_types(expr.left.exprType, expr.right.exprType)
+
+    if isinstance(expr, ogAST.ExprAssign):
+        # Assignment with numerical value: check range
+        basic = find_basic_type(expr.left.exprType)
+        if basic.kind.startswith(('Integer', 'Real')):
+            check_range(basic, find_basic_type(expr.right.exprType))
+
 
 
 def expression_list(root, context):
@@ -1231,14 +1291,39 @@ def expression(root, context):
                      lexer.LE,
                      lexer.IN):
         expr.exprType = BOOLEAN
-#    elif root.type == lexer.PLUS:
-        # Adjust type constraint upper range with sum of expressions
-        # Create a new type to store the new constraint
-        # INCORRECT TO DO IT HERE - we must check right and left types FIRST
-#       expr.exprType = type('Plus_Type',
-#                           (find_basic_type(expr.left.exprType),), {})
-#       expr.exprType.Max = str(int(find_basic_type(expr.left.exprType).Max) +
-#                        int(find_basic_type(expr.right.exprType).Max))
+
+    # Expressions returning a numerical type must have their range defined
+    # accordingly with the kind of opration used between operand:
+    elif root.type in (lexer.PLUS, lexer.ASTERISK, lexer.DASH,
+                       lexer.DIV, lexer.MOD, lexer.REM):
+        basic = find_basic_type(expr.left.exprType)
+        left = find_basic_type(expr.left.exprType)
+        right = find_basic_type(expr.right.exprType)
+        try:
+            if isinstance(expr, ogAST.ExprPlus):
+                attrs = {'Min': str(float(left.Min) + float(right.Min)),
+                         'Max': str(float(left.Max) + float(right.Max))}
+                expr.exprType = type('Plus', (basic,), attrs)
+            elif isinstance(expr, ogAST.ExprMul):
+                attrs = {'Min': str(float(left.Min) * float(right.Min)),
+                         'Max': str(float(left.Max) * float(right.Max))}
+                expr.exprType = type('Mul', (basic,), attrs)
+            elif isinstance(expr, ogAST.ExprMinus):
+                attrs = {'Min': str(float(left.Min) - float(right.Min)),
+                         'Max': str(float(left.Max) - float(right.Max))}
+                expr.exprType = type('Minus', (basic,), attrs)
+            elif isinstance(expr, ogAST.ExprDiv):
+                attrs = {'Min': str(float(left.Min) / (float(right.Min) or 1)),
+                         'Max': str(float(left.Max) / (float(right.Max) or 1))}
+                expr.exprType = type('Div', (basic,), attrs)
+            elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
+                attrs = {'Min': right.Min, 'Max': right.Max}
+                expr.exprType = type('Mod', (basic,), attrs)
+        except ValueError:
+            errors.append('Check that all your numerical data types have '
+                          'a range constraint')
+
+
     elif root.type in (lexer.OR, lexer.AND, lexer.XOR):
         # in the case of bitwise operators, if both sides are arrays,
         # then the result is an array too
@@ -2842,7 +2927,6 @@ def for_loop(root, context):
             forloop['var'] = child.text
             # Implicit variable declaration for the iterator
             context_scope = dict(context.variables)
-            #context.variables[child.text] = (INT32, 0)
         elif child.type == lexer.VARIABLE:
             list_var, err, warn = primary_value(child, context)
             forloop['list'] = ogAST.PrimVariable(primary=list_var)
@@ -2873,7 +2957,21 @@ def for_loop(root, context):
                     context.variables[forloop['var']] = (forloop['type'], 0)
             else:
                 # Using a range - set type of iterator to standard integer
-                context.variables[forloop['var']] = (INT32, 0)
+                start_expr, stop_expr = forloop['range']['start'], \
+                                        forloop['range']['stop']
+                if not start_expr:
+                    r_min = '0'
+                else:
+                    basic = find_basic_type(start_expr.exprType)
+                    r_min = basic.Min if basic != UNKNOWN_TYPE else '0'
+                basic = find_basic_type(stop_expr.exprType)
+                r_max = basic.Max if basic != UNKNOWN_TYPE else '4294967295'
+                # basic may be UNKNOWN_TYPE if the expression is a
+                # reference to an ASN.1 constant - their values are not
+                # currently visible to the SDL parser
+                result_type = type('for_range', (INT32,), {'Min': r_min,
+                                                           'Max': r_max})
+                context.variables[forloop['var']] = (result_type, 0)
 
             forloop['transition'], err, warn = transition(
                                     child, parent=for_loop, context=context)

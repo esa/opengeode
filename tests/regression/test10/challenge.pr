@@ -6,7 +6,7 @@ in (via_toto);
 out (ret0);
 STATE hello;
 SUBSTRUCTURE
-/* CIF PROCEDURE (528, 303), (73, 35) */
+/* CIF PROCEDURE (892, 436), (73, 35) */
 PROCEDURE entry;
 /* CIF START (178, 136), (70, 35) */
 START;
@@ -33,9 +33,9 @@ dcl myresult T_UInt8 := 4;
 -- use the proper one
 dcl result T_UInt32 := 9;
 /* CIF ENDTEXT */
-/* CIF PROCEDURE (558, 143), (70, 35) */
+/* CIF PROCEDURE (558, 143), (70, 33) */
 PROCEDURE exit
-/* CIF COMMENT (648, 119), (157, 93) */
+/* CIF COMMENT (648, 118), (157, 93) */
 COMMENT 'Special exit
 procedure - called
 automatically when
@@ -150,14 +150,14 @@ ENDSUBSTRUCTURE;
 
 dcl result T_uint32 :=0;
 /* CIF ENDTEXT */
-/* CIF PROCEDURE (17, 198), (70, 35) */
+/* CIF PROCEDURE (-19, 183), (70, 35) */
 PROCEDURE foo;
 /* CIF START (190, 53), (70, 35) */
 START;
 /* CIF RETURN (207, 103), (35, 35) */
 RETURN ;
 ENDPROCEDURE;
-/* CIF PROCEDURE (0, 254), (66, 35) */
+/* CIF PROCEDURE (-24, 247), (66, 35) */
 PROCEDURE toto;
 /* CIF TEXT (371, 134), (298, 140) */
 -- Declare your variables
@@ -172,15 +172,15 @@ START;
 DECISION i;
 /* CIF ANSWER (131, 206), (73, 23) */
 (1):
-/* CIF TASK (127, 244), (80, 35) */
-TASK i := i + 1;
+/* CIF TASK (96, 244), (143, 35) */
+TASK i := (i + 1) mod 127;
 /* CIF RETURN (150, 294), (35, 35) */
 RETURN ;
-/* CIF ANSWER (223, 206), (70, 23) */
+/* CIF ANSWER (249, 206), (70, 23) */
 ELSE:
-/* CIF PROCEDURECALL (223, 244), (70, 35) */
+/* CIF PROCEDURECALL (249, 244), (70, 35) */
 CALL foo;
-/* CIF RETURN (240, 294), (35, 35) */
+/* CIF RETURN (266, 294), (35, 35) */
 RETURN ;
 ENDDECISION;
 ENDPROCEDURE;

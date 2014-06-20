@@ -119,7 +119,7 @@ class ExprMod(Expression):
 
 
 class ExprRem(Expression):
-    operand = 'mod'
+    operand = 'rem'
 
 
 class ExprAssign(Expression):
