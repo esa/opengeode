@@ -745,7 +745,7 @@ def _generate_type(ty):
 
         elem_ty = _generate_type(basic_ty.type)
         array_ty = core.Type.array(elem_ty, max_size)
-        struct = Struct(ty.ReferencedTypeName, ['_', array_ty])
+        struct = Struct(ty.ReferencedTypeName, [['_', array_ty]])
         g.structs[ty.ReferencedTypeName] = struct
         return struct.ty
     elif basic_ty.kind == 'SequenceType':
