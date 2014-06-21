@@ -363,7 +363,7 @@ def _prim_path(prim):
     var_ptr = g.module.get_global_variable_named(str(prim.value.pop(0)).lower())
 
     if not prim.value:
-        return var_ptr
+        return g.builder.load(var_ptr)
 
     zero_cons = core.Constant.int(g.i32, 0)
 
@@ -377,7 +377,7 @@ def _prim_path(prim):
         else:
             raise NotImplementedError
 
-    return var_ptr
+    return g.builder.load(var_ptr)
 
 
 @expression.register(ogAST.ExprPlus)
