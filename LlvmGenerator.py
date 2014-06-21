@@ -112,7 +112,10 @@ def _process(process):
 
     # Initialize output signals
     for signal in process.output_signals:
-        param_tys = [core.Type.pointer(_generate_type(signal['type']))]
+        if 'type' in signal:
+            param_tys = [core.Type.pointer(_generate_type(signal['type']))]
+        else:
+            param_tys = []
         func_ty = core.Type.function(g.void, param_tys)
         core.Function.new(g.module, func_ty, str(signal['name']))
 
