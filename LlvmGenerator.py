@@ -766,8 +766,7 @@ def _get_string_cons(str):
         return g.strings[str]
 
     str_val = core.Constant.stringz(str)
-    # TODO: This names can cause conflicts with user defined variables
-    gvar_name = 'str_%s' % len(g.strings)
+    gvar_name = '.str%s' % len(g.strings)
     gvar_val = g.module.add_global_variable(str_val.type, gvar_name)
     gvar_val.initializer = str_val
     g.strings[str] = gvar_val
