@@ -11,6 +11,8 @@
         inner_labels_to_floating(process) : remove labels from transitions
         map_input_state(process) -> mapping: create a mapping
                                     input-state-transition
+        sorted_fields(SEQ/CHOICE) : returns the ordered list of fields
+                                    of an ASN.1 SEQUENCE or CHOICE type
 
     Copyright (c) 2012-2014 European Space Agency
 
@@ -19,6 +21,7 @@
     Contact: maxime.perrotin@esa.int
 """
 
+import operator
 import logging
 from itertools import chain
 from collections import defaultdict
@@ -30,7 +33,7 @@ import ogAST
 LOG = logging.getLogger(__name__)
 
 __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
-           'map_input_state']
+           'map_input_state', 'sorted_fields']
 
 
 def map_input_state(process):
@@ -436,3 +439,12 @@ def find_labels(trans):
                                           [slice(idx + 1, len(trans.actions))])
                         new_fl.transition.terminator = trans.terminator
                     yield new_fl
+
+
+def sorted_fields(atype):
+    ''' Return the sorted list of a SEQUENCE or CHOICE type fields '''
+    if atype.kind not in ('SequenceType', 'ChoiceType'):
+        raise TypeError('Not a SEQUENCE nor a CHOICE')
+    tmp = ([k, val.Line, val.CharPositionInLine]
+             for k, val in atype.Children.viewitems())
+    return (x[0] for x in sorted(tmp, key=operator.itemgetter(1,2)))

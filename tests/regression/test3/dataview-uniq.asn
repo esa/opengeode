@@ -22,8 +22,8 @@ IMPORTS T-Int32, T-UInt32, T-Int8, T-UInt8, T-Boolean FROM TASTE-BasicTypes;
 
 FCE-SGM-EEPROM ::= SEQUENCE {
     sit-1   FCE-SIT-1,
-    sit-2   FCE-SIT-2,
     sit-3   FCE-SIT-3,
+    sit-2   FCE-SIT-2,
     sit-4   FCE-SIT-4
 }
 
