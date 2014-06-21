@@ -533,7 +533,9 @@ def _expr_in(expr):
 @expression.register(ogAST.PrimEnumeratedValue)
 def _enumerated_value(primary):
     ''' Generate code for an enumerated value '''
-    raise NotImplementedError
+    enumerant = primary.value[0].replace('_', '-')
+    basic_ty = find_basic_type(primary.exprType)
+    return core.Constant.int(g.i32, basic_ty.EnumValues[enumerant].IntValue)
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
@@ -759,6 +761,8 @@ def _generate_type(ty):
         struct = Struct(ty.ReferencedTypeName, fields)
         g.structs[ty.ReferencedTypeName] = struct
         return struct.ty
+    elif basic_ty.kind == 'EnumeratedType':
+        return g.i32
     else:
         raise NotImplementedError
 
