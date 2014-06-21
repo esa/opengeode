@@ -67,15 +67,15 @@ class GlobalState():
         )
 
 
-class Struct():
-    def __init__(self, name, fields):
+class StructType():
+    def __init__(self, name, field_names, field_types):
         self.name = name
-        self.fields = fields
-        self.field_names = [n for n, _ in self.fields]
-        self.ty = core.Type.struct([ty for _, ty in self.fields], self.name)
+        self.field_names = field_names
+        self.ty = core.Type.struct(field_types, self.name)
 
-    def idx(self, name):
-        return self.field_names.index(name)
+    def idx(self, field_name):
+        return self.field_names.index(field_name)
+
 
 
 @singledispatch
@@ -750,15 +750,20 @@ def _generate_type(ty):
 
         elem_ty = _generate_type(basic_ty.type)
         array_ty = core.Type.array(elem_ty, max_size)
-        struct = Struct(ty.ReferencedTypeName, [['_', array_ty]])
+        struct = StructType(ty.ReferencedTypeName, [['_', array_ty]])
         g.structs[ty.ReferencedTypeName] = struct
         return struct.ty
     elif basic_ty.kind == 'SequenceType':
         if ty.ReferencedTypeName in g.structs:
             return g.structs[ty.ReferencedTypeName].ty
-        # TODO: Fields should be iterated in the same order as defined in the type
-        fields = [[n, _generate_type(f.type)] for n, f in basic_ty.Children.viewitems()]
-        struct = Struct(ty.ReferencedTypeName, fields)
+
+        field_names = []
+        field_types = []
+        for field_name in Helper.sorted_fields(basic_ty):
+            field_names.append(field_name)
+            field_types.append(_generate_type(basic_ty.Children[field_name].type))
+
+        struct = StructType(ty.ReferencedTypeName, field_names, field_types)
         g.structs[ty.ReferencedTypeName] = struct
         return struct.ty
     elif basic_ty.kind == 'EnumeratedType':
