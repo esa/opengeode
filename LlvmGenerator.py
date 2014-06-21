@@ -477,8 +477,8 @@ def _generate_assign(left, right):
     # This is extracted as an standalone function because is used by
     # multiple generation rules
     if left.type.kind == core.TYPE_POINTER and left.type.pointee.kind == core.TYPE_STRUCT:
-        size = core.Constant.int(g.i64, 2)
-        align = core.Constant.int(g.i32, 1)
+        size = core.Constant.sizeof(left.type.pointee)
+        align = core.Constant.int(g.i32, 0)
         volatile = core.Constant.int(g.i1, 0)
 
         right_ptr = g.builder.bitcast(right, g.i8_ptr)
