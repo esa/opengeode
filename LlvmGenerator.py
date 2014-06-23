@@ -131,13 +131,10 @@ def _process(process):
         g.funcs[func_name.lower()] = func
 
     # Generare process-level vars
-    for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
-        var_type = _generate_type(var_asn1_type)
-        global_var = g.module.add_global_variable(var_type, str(var_name).lower())
-        global_var.initializer = core.Constant.null(var_type)
-
-        if def_value:
-            raise NotImplementedError
+    for name, (ty, expr) in process.variables.viewitems():
+        var_ty = _generate_type(ty)
+        global_var = g.module.add_global_variable(var_ty, str(name).lower())
+        global_var.initializer = core.Constant.null(var_ty)
 
     # Generate process functions
     g.runtr = _generate_runtr_func(process)
@@ -211,7 +208,12 @@ def _generate_startup_func(process):
     builder = core.Builder.new(entry_block)
     g.builder = builder
 
-    # entry
+    # Initialize process level variables
+    for name, (ty, expr) in process.variables.viewitems():
+        if expr:
+            global_var = g.module.get_global_variable_named(str(name).lower())
+            _generate_assign(global_var, expression(expr))
+
     builder.call(g.runtr, [core.Constant.int(core.Type.int(), 0)])
     builder.ret_void()
 
