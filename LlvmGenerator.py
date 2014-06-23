@@ -667,7 +667,7 @@ def _decision(dec):
         g.builder.position_at_end(ans_cond_block)
 
         if ans.kind == 'constant':
-            next_block = ans_cond_blocks[idx+1] if idx < len(ans_cond_blocks) else end_block
+            next_block = ans_cond_blocks[idx+1] if idx < len(ans_cond_blocks)-1 else end_block
 
             expr = ans.openRangeOp()
             expr.left = dec.question
