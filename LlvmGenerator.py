@@ -769,7 +769,7 @@ def _generate_type(ty):
         field_names = []
         field_types = []
         for field_name in Helper.sorted_fields(basic_ty):
-            field_names.append(field_name)
+            field_names.append(field_name.replace('-', '_'))
             field_types.append(_generate_type(basic_ty.Children[field_name].type))
 
         struct = StructType(ty.ReferencedTypeName, field_names, field_types)
