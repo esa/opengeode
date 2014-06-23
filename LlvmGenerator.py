@@ -18,6 +18,7 @@
 """
 
 import logging
+
 from singledispatch import singledispatch
 from llvm import core
 
@@ -39,7 +40,8 @@ class GlobalState():
         self.module = core.Module.new(self.name)
         self.dataview = process.dataview
 
-        self.scope = {}
+        self.scope = Scope()
+        self.global_scope = self.scope
         self.states = {}
         self.structs = {}
         self.strings = {}
@@ -78,6 +80,23 @@ class StructType():
         return self.field_names.index(field_name)
 
 
+class Scope:
+    def __init__(self, parent=None):
+        self.vars = {}
+        self.parent = parent
+
+    def define(self, name, var):
+        self.vars[name.lower()] = var
+
+    def resolve(self, name):
+        var = self.vars.get(name.lower())
+        if var:
+            return var
+        if self.parent:
+            return self.parent.resolve(name)
+        else:
+            raise NameError
+
 
 @singledispatch
 def generate(ast):
@@ -110,12 +129,14 @@ def _process(process):
     # Generate state var
     state_cons = g.module.add_global_variable(g.i32, 'state')
     state_cons.initializer = core.Constant.int(g.i32, -1)
+    g.scope.define('state', state_cons)
 
     # Generare process-level vars
     for name, (ty, expr) in process.variables.viewitems():
         var_ty = _generate_type(ty)
-        global_var = g.module.add_global_variable(var_ty, str(name).lower())
+        global_var = g.module.add_global_variable(var_ty, str(name))
         global_var.initializer = core.Constant.null(var_ty)
+        g.scope.define(str(name).lower(), global_var)
 
     # Initialize output signals
     for signal in process.output_signals:
@@ -138,7 +159,7 @@ def _process(process):
 
     # Generate internal procedures
     for proc in process.content.inner_procedures:
-        raise NotImplementedError
+        generate(proc)
 
     # Generate process functions
     _generate_runtr_func(process)
@@ -161,6 +182,8 @@ def _generate_runtr_func(process):
     func = core.Function.new(g.module, func_type, func_name)
     g.funcs[func_name] = func
 
+    _push_scope()
+
     entry_block = func.append_basic_block('entry')
     cond_block = func.append_basic_block('cond')
     body_block = func.append_basic_block('body')
@@ -170,7 +193,7 @@ def _generate_runtr_func(process):
 
     # entry
     id_ptr = g.builder.alloca(g.i32, None, 'id')
-    g.scope['id'] = id_ptr
+    g.scope.define('id', id_ptr)
     g.builder.store(func.args[0], id_ptr)
     g.builder.branch(cond_block)
 
@@ -198,8 +221,9 @@ def _generate_runtr_func(process):
     g.builder.position_at_end(exit_block)
     g.builder.ret_void()
 
+    _pop_scope()
+
     func.verify()
-    g.scope.clear()
     return func
 
 
@@ -210,17 +234,21 @@ def _generate_startup_func(process):
     func = core.Function.new(g.module, func_type, func_name)
     g.funcs[func_name] = func
 
+    _push_scope()
+
     entry_block = func.append_basic_block('entry')
     g.builder = core.Builder.new(entry_block)
 
     # Initialize process level variables
     for name, (ty, expr) in process.variables.viewitems():
         if expr:
-            global_var = g.module.get_global_variable_named(str(name).lower())
+            global_var = _resolve(str(name))
             _generate_assign(global_var, expression(expr))
 
     g.builder.call(g.funcs['run_transition'], [core.Constant.int(g.i32, 0)])
     g.builder.ret_void()
+
+    _pop_scope()
 
     func.verify()
     return func
@@ -236,13 +264,13 @@ def _generate_input_signal(signal, inputs):
     func = core.Function.new(g.module, func_type, func_name)
     g.funcs[func_name.lower()] = func
 
+    _push_scope()
+
     entry_block = func.append_basic_block('entry')
     exit_block = func.append_basic_block('exit')
     g.builder = core.Builder.new(entry_block)
 
-    runtr_func = g.module.get_function_named('run_transition')
-
-    g_state_val = g.builder.load(g.module.get_global_variable_named('state'))
+    g_state_val = g.builder.load(g.global_scope.resolve('state'))
     switch = g.builder.switch(g_state_val, exit_block)
 
     for state_name, state_id in g.states.iteritems():
@@ -255,16 +283,18 @@ def _generate_input_signal(signal, inputs):
         input = inputs.get(state_name)
         if input:
             for var_name in input.parameters:
-                var_val = g.module.get_global_variable_named(str(var_name).lower())
+                var_val = g.scope.resolve(str(var_name))
                 _generate_assign(var_val, func.args[0])
             if input.transition:
                 id_val = core.Constant.int(g.i32, input.transition_id)
-                g.builder.call(runtr_func, [id_val])
+                g.builder.call(g.funcs['run_transition'], [id_val])
 
         g.builder.ret_void()
 
     g.builder.position_at_end(exit_block)
     g.builder.ret_void()
+
+    _pop_scope()
 
     func.verify()
 
@@ -273,7 +303,7 @@ def _generate_input_signal(signal, inputs):
 @generate.register(ogAST.ProcedureCall)
 def _call_external_function(output):
     ''' Generate the code of a set of output or procedure call statement '''
-
+    zero = core.Constant.int(g.i32, 0)
     for out in output.output:
         name = out['outputName'].lower()
 
@@ -291,7 +321,19 @@ def _call_external_function(output):
             continue
 
         func = g.funcs[str(name).lower()]
-        g.builder.call(func, [expression(p) for p in out.get('params', [])])
+
+        params = []
+        for p in out.get('params', []):
+            p_val = expression(p)
+            # Pass by reference
+            if p_val.type.kind != core.TYPE_POINTER:
+                p_var = g.builder.alloca(p_val.type, None)
+                g.builder.store(p_val, p_var)
+                params.append(p_var)
+            else:
+                params.append(p_val)
+
+        g.builder.call(func, params)
 
 
 def _generate_write(params):
@@ -376,14 +418,14 @@ def expression(expr):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Generate the code for a single variable reference '''
-    return g.module.get_global_variable_named(str(prim.value[0]).lower())
+    return g.scope.resolve(str(prim.value[0]))
 
 
 @expression.register(ogAST.PrimPath)
 def _prim_path(prim):
     ''' Generate the code for an of an element list (path) '''
 
-    var_ptr = g.module.get_global_variable_named(str(prim.value.pop(0)).lower())
+    var_ptr = g.scope.resolve(str(prim.value.pop(0)))
 
     if not prim.value:
         return var_ptr
@@ -719,16 +761,15 @@ def _transition(tr):
 
 def _generate_terminator(term):
     ''' Generate the code for a transition termiantor '''
-    id_ptr = g.scope['id']
     if term.label:
         raise NotImplementedError
     if term.kind == 'next_state':
         state = term.inputString.lower()
         if state.strip() != '-':
             next_id_cons = core.Constant.int(g.i32, term.next_id)
-            g.builder.store(next_id_cons, id_ptr)
+            g.builder.store(next_id_cons, g.scope.resolve('id'))
             if term.next_id == -1:
-                state_ptr = g.module.get_global_variable_named('state')
+                state_ptr = g.global_scope.resolve('state')
                 state_id_cons = g.states[state]
                 g.builder.store(state_id_cons, state_ptr)
         else:
@@ -738,7 +779,14 @@ def _generate_terminator(term):
     elif term.kind == 'stop':
         raise NotImplementedError
     elif term.kind == 'return':
-        raise NotImplementedError
+        if term.next_id == -1 and term.return_expr:
+            g.builder.ret(expression(term.return_expr))
+        elif term.next_id == -1:
+            g.builder.ret_void()
+        else:
+            next_id_cons = core.Constant.int(g.i32, term.next_id)
+            g.builder.store(next_id_cons, g.scope.resolve('id'))
+            g.builder.ret_void()
 
 
 @generate.register(ogAST.Floating_label)
@@ -750,7 +798,31 @@ def _floating_label(label):
 @generate.register(ogAST.Procedure)
 def _inner_procedure(proc):
     ''' Generate the code for a procedure '''
-    raise NotImplementedError
+    func_name = str(proc.inputString)
+    param_tys = [core.Type.pointer(_generate_type(p['type'])) for p in proc.fpar]
+    func_ty = core.Type.function(g.void, param_tys)
+    func = core.Function.new(g.module, func_ty, func_name)
+    g.funcs[func_name] = func
+
+    _push_scope()
+
+    for arg, param in zip(func.args, proc.fpar):
+        g.scope.define(str(param['name']), arg)
+
+    entry_block = func.append_basic_block('entry')
+    g.builder = core.Builder.new(entry_block)
+
+    for name, (ty, expr) in proc.variables.viewitems():
+        raise NotImplementedError
+
+    generate(proc.content.start.transition)
+
+    for label in proc.content.floating_labels:
+        raise NotImplementedError
+
+    _pop_scope()
+
+    func.verify()
 
 
 def _generate_type(ty):
@@ -793,6 +865,16 @@ def _generate_type(ty):
         return g.i32
     else:
         raise NotImplementedError
+
+
+def _push_scope():
+    ''' Push a new scope '''
+    g.scope = Scope(g.scope)
+
+
+def _pop_scope():
+    ''' Pop the current scope '''
+    g.scope = g.scope.parent
 
 
 def _get_string_cons(str):
