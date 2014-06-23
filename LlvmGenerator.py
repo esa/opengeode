@@ -302,6 +302,9 @@ def _generate_write(params):
             false_str_ptr = g.builder.gep(false_str_val, [zero, zero])
             str_ptr = g.builder.select(expr_val, true_str_ptr, false_str_ptr)
             g.builder.call(g.printf, [str_ptr])
+        elif basic_ty.kind == 'StringType':
+            expr_ptr = g.builder.gep(expr_val, [zero, zero])
+            g.builder.call(g.printf, [expr_ptr])
         else:
             raise NotImplementedError
 
@@ -574,7 +577,7 @@ def _empty_string(primary):
 @expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary):
     ''' Generate code for a string (Octet String) '''
-    raise NotImplementedError
+    return _get_string_cons(str(primary.value[1:-1]))
 
 
 @expression.register(ogAST.PrimConstant)
