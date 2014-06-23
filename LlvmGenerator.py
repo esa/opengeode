@@ -293,6 +293,10 @@ def _generate_write(params):
     for param in params:
         basic_ty = find_basic_type(param.exprType)
         expr_val = expression(param)
+
+        if basic_ty.kind != 'StringType' and expr_val.type.kind == core.TYPE_POINTER:
+            expr_val = g.builder.load(expr_val)
+
         if basic_ty.kind == 'IntegerType':
             fmt_val = _get_string_cons('% d')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
@@ -375,7 +379,7 @@ def _prim_path(prim):
     var_ptr = g.module.get_global_variable_named(str(prim.value.pop(0)).lower())
 
     if not prim.value:
-        return g.builder.load(var_ptr)
+        return var_ptr
 
     zero_cons = core.Constant.int(g.i32, 0)
 
@@ -389,7 +393,7 @@ def _prim_path(prim):
         else:
             raise NotImplementedError
 
-    return g.builder.load(var_ptr)
+    return var_ptr
 
 
 @expression.register(ogAST.ExprPlus)
@@ -480,6 +484,7 @@ def _assign(expr):
     ''' Generate the code for an assign expression '''
     left = expression(expr.left)
     right = expression(expr.right)
+
     _generate_assign(left, right)
     return left
 
@@ -488,7 +493,7 @@ def _generate_assign(left, right):
     ''' Generate code for an assign from two LLVM values'''
     # This is extracted as an standalone function because is used by
     # multiple generation rules
-    if left.type.kind == core.TYPE_POINTER and left.type.pointee.kind == core.TYPE_STRUCT:
+    if left.type.pointee.kind == core.TYPE_STRUCT:
         size = core.Constant.sizeof(left.type.pointee)
         align = core.Constant.int(g.i32, 0)
         volatile = core.Constant.int(g.i1, 0)
@@ -498,6 +503,8 @@ def _generate_assign(left, right):
 
         g.builder.call(g.funcs['memcpy'], [left_ptr, right_ptr, size, align, volatile])
     else:
+        if right.type.kind == core.TYPE_POINTER:
+            right = g.builder.load(right)
         g.builder.store(right, left)
 
 
