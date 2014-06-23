@@ -43,6 +43,7 @@ class GlobalState():
         self.states = {}
         self.structs = {}
         self.strings = {}
+        self.funcs = {}
 
         # Initialize built-in types
         self.i1 = core.Type.int(1)
@@ -59,9 +60,9 @@ class GlobalState():
 
         # Intialize built-in functions
         ty = core.Type.function(self.void, [core.Type.pointer(self.i8)], True)
-        self.printf = self.module.add_function(ty, 'printf')
+        self.funcs['printf'] = self.module.add_function(ty, 'printf')
 
-        self.memcpy = core.Function.intrinsic(
+        self.funcs['memcpy'] = core.Function.intrinsic(
             self.module, core.INTR_MEMCPY,
             [self.i8_ptr, self.i8_ptr, self.i64]
         )
@@ -117,13 +118,17 @@ def _process(process):
         else:
             param_tys = []
         func_ty = core.Type.function(g.void, param_tys)
-        core.Function.new(g.module, func_ty, str(signal['name']))
+        func_name = str(signal['name'])
+        func = core.Function.new(g.module, func_ty, func_name)
+        g.funcs[func_name.lower()] = func
 
     # Initialize external procedures
     for proc in [proc for proc in process.procedures if proc.external]:
         param_tys = [core.Type.pointer(_generate_type(p['type'])) for p in proc.fpar]
         func_ty = core.Type.function(g.void, param_tys)
-        core.Function.new(g.module, func_ty, str(proc.inputString))
+        func_name = str(proc.inputString)
+        func = core.Function.new(g.module, func_ty, func_name)
+        g.funcs[func_name.lower()] = func
 
     # Generare process-level vars
     for var_name, (var_asn1_type, def_value) in process.variables.viewitems():
@@ -222,6 +227,7 @@ def _generate_input_signal(signal, inputs):
         param_tys.append(core.Type.pointer(_generate_type(signal['type'])))
     func_type = core.Type.function(g.void, param_tys)
     func = core.Function.new(g.module, func_type, func_name)
+    g.funcs[func_name.lower()] = func
 
     entry_block = func.append_basic_block('entry')
     exit_block = func.append_basic_block('exit')
@@ -277,7 +283,7 @@ def _call_external_function(output):
             _generate_set_timer(out['params'])
             continue
 
-        func = g.module.get_function_named(str(name))
+        func = g.funcs[str(name).lower()]
         g.builder.call(func, [expression(p) for p in out.get('params', [])])
 
 
@@ -290,21 +296,21 @@ def _generate_write(params):
         if basic_ty.kind == 'IntegerType':
             fmt_val = _get_string_cons('% d')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
-            g.builder.call(g.printf, [fmt_ptr, expr_val])
+            g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
         elif basic_ty.kind == 'RealType':
             fmt_val = _get_string_cons('% .14E')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
-            g.builder.call(g.printf, [fmt_ptr, expr_val])
+            g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
         elif basic_ty.kind == 'BooleanType':
             true_str_val = _get_string_cons('TRUE')
             true_str_ptr = g.builder.gep(true_str_val, [zero, zero])
             false_str_val = _get_string_cons('FALSE')
             false_str_ptr = g.builder.gep(false_str_val, [zero, zero])
             str_ptr = g.builder.select(expr_val, true_str_ptr, false_str_ptr)
-            g.builder.call(g.printf, [str_ptr])
+            g.builder.call(g.funcs['printf'], [str_ptr])
         elif basic_ty.kind == 'StringType':
             expr_ptr = g.builder.gep(expr_val, [zero, zero])
-            g.builder.call(g.printf, [expr_ptr])
+            g.builder.call(g.funcs['printf'], [expr_ptr])
         else:
             raise NotImplementedError
 
@@ -316,7 +322,7 @@ def _generate_writeln(params):
     zero = core.Constant.int(g.i32, 0)
     str_cons = _get_string_cons('\n')
     str_ptr = g.builder.gep(str_cons, [zero, zero])
-    g.builder.call(g.printf, [str_ptr])
+    g.builder.call(g.funcs['printf'], [str_ptr])
 
 
 def _generate_reset_timer(params):
@@ -490,7 +496,7 @@ def _generate_assign(left, right):
         right_ptr = g.builder.bitcast(right, g.i8_ptr)
         left_ptr = g.builder.bitcast(left, g.i8_ptr)
 
-        g.builder.call(g.memcpy, [left_ptr, right_ptr, size, align, volatile])
+        g.builder.call(g.funcs['memcpy'], [left_ptr, right_ptr, size, align, volatile])
     else:
         g.builder.store(right, left)
 
