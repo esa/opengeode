@@ -141,7 +141,7 @@ def _process(process):
         raise NotImplementedError
 
     # Generate process functions
-    g.runtr = _generate_runtr_func(process)
+    _generate_runtr_func(process)
     _generate_startup_func(process)
 
     # Generate input signals
@@ -159,6 +159,7 @@ def _generate_runtr_func(process):
     func_name = 'run_transition'
     func_type = core.Type.function(g.void, [g.i32])
     func = core.Function.new(g.module, func_type, func_name)
+    g.funcs[func_name] = func
 
     entry_block = func.append_basic_block('entry')
     cond_block = func.append_basic_block('cond')
@@ -207,10 +208,10 @@ def _generate_startup_func(process):
     func_name = g.name + '_startup'
     func_type = core.Type.function(g.void, [])
     func = core.Function.new(g.module, func_type, func_name)
+    g.funcs[func_name] = func
 
     entry_block = func.append_basic_block('entry')
-    builder = core.Builder.new(entry_block)
-    g.builder = builder
+    g.builder = core.Builder.new(entry_block)
 
     # Initialize process level variables
     for name, (ty, expr) in process.variables.viewitems():
@@ -218,8 +219,8 @@ def _generate_startup_func(process):
             global_var = g.module.get_global_variable_named(str(name).lower())
             _generate_assign(global_var, expression(expr))
 
-    builder.call(g.runtr, [core.Constant.int(core.Type.int(), 0)])
-    builder.ret_void()
+    g.builder.call(g.funcs['run_transition'], [core.Constant.int(g.i32, 0)])
+    g.builder.ret_void()
 
     func.verify()
     return func
