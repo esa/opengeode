@@ -111,6 +111,12 @@ def _process(process):
     state_cons = g.module.add_global_variable(g.i32, 'state')
     state_cons.initializer = core.Constant.int(g.i32, -1)
 
+    # Generare process-level vars
+    for name, (ty, expr) in process.variables.viewitems():
+        var_ty = _generate_type(ty)
+        global_var = g.module.add_global_variable(var_ty, str(name).lower())
+        global_var.initializer = core.Constant.null(var_ty)
+
     # Initialize output signals
     for signal in process.output_signals:
         if 'type' in signal:
@@ -130,11 +136,9 @@ def _process(process):
         func = core.Function.new(g.module, func_ty, func_name)
         g.funcs[func_name.lower()] = func
 
-    # Generare process-level vars
-    for name, (ty, expr) in process.variables.viewitems():
-        var_ty = _generate_type(ty)
-        global_var = g.module.add_global_variable(var_ty, str(name).lower())
-        global_var.initializer = core.Constant.null(var_ty)
+    # Generate internal procedures
+    for proc in process.content.inner_procedures:
+        raise NotImplementedError
 
     # Generate process functions
     g.runtr = _generate_runtr_func(process)
