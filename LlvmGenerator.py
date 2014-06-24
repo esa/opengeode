@@ -148,24 +148,18 @@ def _process(process):
         func_name = '%s_RI_reset_%s' % (process_name, str(timer))
         decl_func(func_name, g.void, [])
 
-    # Initialize output signals
+    # Declare output signal functions
     for signal in process.output_signals:
         if 'type' in signal:
             param_tys = [core.Type.pointer(_generate_type(signal['type']))]
         else:
             param_tys = []
-        func_ty = core.Type.function(g.void, param_tys)
-        func_name = str(signal['name'])
-        func = core.Function.new(g.module, func_ty, func_name)
-        g.funcs[func_name.lower()] = func
+        decl_func(str(signal['name']), g.void, param_tys)
 
-    # Initialize external procedures
+    # Declare external procedures functions
     for proc in [proc for proc in process.procedures if proc.external]:
         param_tys = [core.Type.pointer(_generate_type(p['type'])) for p in proc.fpar]
-        func_ty = core.Type.function(g.void, param_tys)
-        func_name = str(proc.inputString)
-        func = core.Function.new(g.module, func_ty, func_name)
-        g.funcs[func_name.lower()] = func
+        decl_func(str(proc.inputString), g.void, param_tys)
 
     # Generate internal procedures
     for proc in process.content.inner_procedures:
@@ -187,10 +181,7 @@ def _process(process):
 
 def _generate_runtr_func(process):
     ''' Generate code for the run_transition function '''
-    func_name = 'run_transition'
-    func_type = core.Type.function(g.void, [g.i32])
-    func = core.Function.new(g.module, func_type, func_name)
-    g.funcs[func_name] = func
+    func = decl_func('run_transition', g.void, [g.i32])
 
     _push_scope()
 
@@ -239,10 +230,7 @@ def _generate_runtr_func(process):
 
 def _generate_startup_func(process):
     ''' Generate code for the startup function '''
-    func_name = g.name + '_startup'
-    func_type = core.Type.function(g.void, [])
-    func = core.Function.new(g.module, func_type, func_name)
-    g.funcs[func_name] = func
+    func = decl_func(g.name + '_startup', g.void, [])
 
     _push_scope()
 
@@ -270,9 +258,8 @@ def _generate_input_signal(signal, inputs):
     param_tys = []
     if 'type' in signal:
         param_tys.append(core.Type.pointer(_generate_type(signal['type'])))
-    func_type = core.Type.function(g.void, param_tys)
-    func = core.Function.new(g.module, func_type, func_name)
-    g.funcs[func_name.lower()] = func
+
+    func = decl_func(func_name, g.void, param_tys)
 
     _push_scope()
 
@@ -880,11 +867,8 @@ def _floating_label(label):
 @generate.register(ogAST.Procedure)
 def _inner_procedure(proc):
     ''' Generate the code for a procedure '''
-    func_name = str(proc.inputString)
     param_tys = [core.Type.pointer(_generate_type(p['type'])) for p in proc.fpar]
-    func_ty = core.Type.function(g.void, param_tys)
-    func = core.Function.new(g.module, func_ty, func_name)
-    g.funcs[func_name] = func
+    func = decl_func(str(proc.inputString), g.void, param_tys)
 
     _push_scope()
 
