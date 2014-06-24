@@ -240,7 +240,7 @@ def _generate_startup_func(process):
     # Initialize process level variables
     for name, (ty, expr) in process.variables.viewitems():
         if expr:
-            global_var = _resolve(str(name))
+            global_var = g.scope.resolve(str(name))
             _generate_assign(global_var, expression(expr))
 
     g.builder.call(g.funcs['run_transition'], [core.Constant.int(g.i32, 0)])
