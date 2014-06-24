@@ -95,6 +95,7 @@ class Scope:
         if self.parent:
             return self.parent.resolve(name)
         else:
+            print name
             raise NameError
 
 
@@ -108,7 +109,8 @@ def generate(ast):
 @generate.register(ogAST.Process)
 def _process(process):
     ''' Generate LLVM IR code '''
-    LOG.info('Generating LLVM IR code for process ' + str(process.processName))
+    process_name = str(process.processName)
+    LOG.info('Generating LLVM IR code for process ' + process_name)
 
     global g
     g = GlobalState(process)
@@ -137,6 +139,14 @@ def _process(process):
         global_var = g.module.add_global_variable(var_ty, str(name))
         global_var.initializer = core.Constant.null(var_ty)
         g.scope.define(str(name).lower(), global_var)
+
+    # Declare timer set/reset functions
+    for timer in process.timers:
+        func_name = '%s_RI_set_%s' % (process_name, str(timer))
+        # TODO: Should be uint?
+        decl_func(func_name, g.void, [g.i32_ptr])
+        func_name = '%s_RI_reset_%s' % (process_name, str(timer))
+        decl_func(func_name, g.void, [])
 
     # Initialize output signals
     for signal in process.output_signals:
@@ -380,12 +390,28 @@ def _generate_writeln(params):
 
 def _generate_reset_timer(params):
     ''' Generate the code for the reset timer operator '''
-    raise NotImplementedError
+    timer_id = params[0]
+    reset_func_name = '%s_RI_reset_%s' % (g.name, timer_id.value[0])
+    reset_func = g.funcs[reset_func_name.lower()]
+
+    g.builder.call(reset_func, [])
 
 
 def _generate_set_timer(params):
     ''' Generate the code for the set timer operator '''
-    raise NotImplementedError
+    timer_expr, timer_id = params
+    set_func_name = '%s_RI_set_%s' % (g.name, timer_id.value[0])
+    set_func = g.funcs[set_func_name.lower()]
+
+    expr_val = expression(timer_expr)
+
+    if type(timer_expr) in [ogAST.PrimPath, ogAST.PrimVariable]:
+        expr_val = g.builder.load(expr_val)
+
+    tmp_ptr = g.builder.alloca(expr_val.type)
+    g.builder.store(expr_val, tmp_ptr)
+
+    g.builder.call(set_func, [tmp_ptr])
 
 
 @generate.register(ogAST.TaskAssign)
@@ -944,6 +970,14 @@ def _get_string_cons(str):
     gvar_val.initializer = str_val
     g.strings[str] = gvar_val
     return gvar_val
+
+
+def decl_func(name, return_ty, param_tys):
+    ''' Declare a function '''
+    func_ty = core.Type.function(return_ty, param_tys)
+    func = core.Function.new(g.module, func_ty, name)
+    g.funcs[name.lower()] = func
+    return func
 
 
 # TODO: Refactor this into the helper module
