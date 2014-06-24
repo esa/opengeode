@@ -404,6 +404,62 @@ def _task_informal_text(task):
 @generate.register(ogAST.TaskForLoop)
 def _task_forloop(task):
     ''' Generate the code for a for loop '''
+    for loop in task.elems:
+        if loop['range']:
+            _generate_for_range(loop)
+        else:
+            _generate_for_iterable(loop)
+
+
+def _generate_for_range(loop):
+    ''' Generate the code for a for x in range loop '''
+    func = g.builder.basic_block.function
+    cond_block = func.append_basic_block('for:cond')
+    body_block = func.append_basic_block('for:body')
+    inc_block = func.append_basic_block('for:inc')
+    end_block = func.append_basic_block('')
+
+    _push_scope()
+
+    loop_var = g.builder.alloca(g.i32, None, str(loop['var']))
+    g.scope.define(str(loop['var']), loop_var)
+
+    if loop['range']['start']:
+        start_val = expression(loop['range']['start'])
+        if type(loop['range']['start']) in [ogAST.PrimPath, ogAST.PrimVariable]:
+            start_val = g.builder.load(start_val)
+        g.builder.store(start_val, loop_var)
+    else:
+        g.builder.store(core.Constant.int(g.i32, 0), loop_var)
+
+    stop_val = expression(loop['range']['stop'])
+    if type(loop['range']['stop']) in [ogAST.PrimPath, ogAST.PrimVariable]:
+        stop_val = g.builder.load(stop_val)
+    g.builder.branch(cond_block)
+
+    g.builder.position_at_end(cond_block)
+    loop_val = g.builder.load(loop_var)
+    cond_val = g.builder.icmp(core.ICMP_SLT, loop_val, stop_val)
+    g.builder.cbranch(cond_val, body_block, end_block)
+
+    g.builder.position_at_end(body_block)
+    generate(loop['transition'])
+    g.builder.branch(inc_block)
+
+    g.builder.position_at_end(inc_block)
+    step_val = core.Constant.int(g.i32, loop['range']['step'])
+    loop_val = g.builder.load(loop_var)
+    temp_val = g.builder.add(loop_val, step_val)
+    g.builder.store(temp_val, loop_var)
+    g.builder.branch(cond_block)
+
+    g.builder.position_at_end(end_block)
+
+    _pop_scope()
+
+
+def _generate_for_iterable(loop):
+    ''' Generate the code for a for x in iterable loop'''
     raise NotImplementedError
 
 
