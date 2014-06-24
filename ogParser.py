@@ -1693,9 +1693,129 @@ def floating_label(root, parent, context):
     lab.terminators = list(context.terminators[terminators:])
     return lab, errors, warnings
 
+def newtype_gettype(root, ta_ast, context):
+    ''' Returns the name of the new type created by a NEWTYPE construction '''
+    errors = []
+    warnings = []
+    newtypename = ""
+    if (root.getChild(0).type != lexer.SORT):
+        warnings.append("Expected SORT in newtype identifier, got type:" + str(child.type)) 
+        return newtypename, errors, warnings
+        
+    newtypename = root.getChild(0).getChild(0).text
+    return newtypename, errors, warnings
 
+def get_array_type(root):
+    ''' Returns the subtype associated to an NEWTYPE ARRAY construction '''
+    indexSort = root.getChild(0).text
+    typeSort  = root.getChild(1).text
+    typeSortLine = root.getChild(1).getLine()
+    typeSortChar = root.getChild(1).getCharPositionInLine()
+    
+    # Constructing ASN.1 AST subtype
+    newtype = type("SeqOf_type", (object,), {
+        "Line" : typeSortLine, "CharPositionInLine" : typeSortChar, 
+        "Kind" : "ReferenceType" , "ReferencedTypeName" : typeSort
+    })
+    
+    return newtype
+    
+def get_struct_children(root):
+    ''' Returns the fields of a STRUCT as a dictionary '''
+    children = {}
+    fieldlist = root.getChild(0)
+    fieldname = ""
+    typename = ""
+    if (fieldlist.type != lexer.FIELDS):
+        return children
+    
+    for field in fieldlist.getChildren():
+        if (field.type == lexer.FIELD):
+            fieldname = field.getChild(0).text
+            typename = field.getChild(1).getChild(0).text
+            line = field.getChild(0).getLine()
+            charpos = field.getChild(0).getCharPositionInLine()
+            
+            children[fieldname] = type(str(fieldname), (object ,), {
+                "Optional": "False", "Line": line, "CharPositionInLine": charpos, "type": type(str(fieldname + "_type"), (object,), {
+                    "Line": line, "CharPositionInLine": charpos, "kind": "ReferenceType", "ReferencedTypeName": typename
+                })
+            })
+    
+    return children
+
+def syntype(root, ta_ast, context):
+    ''' Parse a SYNTYPE definition and inject it in ASN1 AST'''
+    errors = []
+    warnings = []
+    newtype = ""
+    reftype = ""
+    global DV
+    
+    newtypename = root.getChild(0).getChild(0).text
+    reftypename = root.getChild(1).getChild(0).text
+    newtype = type(str(newtypename), (object,), {
+        "Line" : root.getChild(0).getLine(), "CharPositionInLine" : root.getChild(0).getCharPositionInLine(),
+    })
+    newtype.type = type(str(newtypename) + "_type", (object,), {
+        "Line" : root.getChild(1).getLine(), "CharPositionInLine" : root.getChild(1).getCharPositionInLine(),
+        "kind" : reftype + "Type"
+    })
+    
+    DV.types[str(newtypename)] = newtype
+    LOG.debug("Found new SYNTYPE " + newtypename)
+    return errors, warnings
+    
+def newtype(root, ta_ast, context):
+    ''' Parse a NEWTYPE definition and inject it in ASN1 AST'''
+    errors = []
+    warnings = []
+    global DV
+    
+    newtypename, errors, warnings = newtype_gettype(root, ta_ast, context)
+    if (newtypename == ""):
+        return errors, warnings
+        
+    newtype = type(str(newtypename), (object,), {"Line" : root.getLine(), "CharPositionInLine" : root.getCharPositionInLine()})
+
+    if (root.getChild(1).type == lexer.ARRAY):
+        newtype.kind = "SequenceOfType"
+        newtype.type = get_array_type(root.getChild(1))
+        newtype.Min = "Min"
+        newtype.Max = "Max"
+        DV.types[str(newtypename)] = newtype
+        LOG.debug("Found new ARRAY type " + newtypename)
+    elif  (root.getChild(1).type == lexer.STRUCT):
+        newtype.kind = "SequenceType"
+        newtype.Children = get_struct_children(root.getChild(1))
+        DV.types[str(newtypename)] = newtype
+        LOG.debug("Found new STRUCT type " + newtypename)
+    else:
+        warnings.append(
+                    'Unsupported type definition in newtype, type: ' +
+                    str(child.type))
+     # STRUCT CASE
+    return errors, warnings
+
+def synonym (root, ta_ast, context):
+    ''' Parse a SYNONYM definition and inject it in ASN1 exported variables'''
+    errors = []
+    warnings = []
+    global DV
+
+    if not "SDL-Constants" in DV.asn1Modules:
+        DV.asn1Modules.append("SDL-Constants")
+        DV.exportedVariables["SDL-Constants"] = []
+    
+    for child in root.getChildren():
+        if child.getChild(0).type == lexer.SORT:
+            DV.exportedVariables["SDL-Constants"].append(child.getChild(0).getChild(0).text)
+            
+  
+    return errors, warnings
+    
 def text_area_content(root, ta_ast, context):
-    ''' Content of a text area: DCL, operators, procedures  '''
+    ''' Content of a text area: DCL, NEWTYPES, SYNTYPES, SYNONYMS, operators, procedures  '''
     errors = []
     warnings = []
     for child in root.getChildren():
@@ -1703,6 +1823,18 @@ def text_area_content(root, ta_ast, context):
             err, warn = dcl(child, ta_ast, context)
             errors.extend(err)
             warnings.extend(warn)
+        elif child.type == lexer.SYNONYM_LIST:
+            err, warn = synonym(child, ta_ast, context)
+            errors.extend(err)
+            warnings.extend(warn)  
+        elif child.type == lexer.NEWTYPE:
+            err, warn = newtype(child, ta_ast, context)
+            errors.extend(err)
+            warnings.extend(warn)   
+        elif child.type == lexer.SYNTYPE:
+            err, warn = syntype(child, ta_ast, context)
+            errors.extend(err)
+            warnings.extend(warn)   
         elif child.type == lexer.PROCEDURE:
             proc, err, warn = procedure(child, context=context)
             errors.extend(err)
@@ -2954,6 +3086,12 @@ def pr_file(root):
     errors = []
     warnings = []
     ast = ogAST.AST()
+    global DV
+
+	# In case no ASN.1 files are parsed, the DV structure is pre-initialised
+    # This to allow SDL types injection in ASN1 ASTs
+    DV = type("ASNParseTree", (object, ), {"types" : {}, "exportedVariables": {},  "asn1Modules": [] })
+    
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions
     # and data typess references.
@@ -2979,11 +3117,9 @@ def pr_file(root):
             else:
                 ast.use_clauses.append(clause.text)
         try:
-            global DV
             DV = parse_asn1(tuple(ast.asn1_filenames),
                             ast_version=ASN1.UniqueEnumeratedNames,
                             flags=[ASN1.AstOnly])
-            ast.dataview = types()
             ast.asn1Modules = DV.asn1Modules
             # Add constants defined in the ASN.1 modules (for visibility)
             for mod in ast.asn1Modules:
@@ -3015,11 +3151,18 @@ def pr_file(root):
         LOG.debug('found PROCESS')
         process, err, warn = process_definition(child, parent=ast)
         ast.processes.append(process)
-        process.dataview = ast.dataview
+        process.dataview = types()
         process.asn1Modules = ast.asn1Modules
         errors.extend(err)
         warnings.extend(warn)
     LOG.debug('all files: ' + str(ast.pr_files))
+    
+    # Since SDL type declarations are injected in ASN.1 ast,
+    # The ASN.1 ASTs needs to be copied at the end of PR parsing process
+    # and not just after the ASN1 specific parsing
+    ast.dataview = types()
+    for mod in DV.exportedVariables:
+        ast.asn1_constants.extend(DV.exportedVariables[mod])
     return ast, errors, warnings
 
 

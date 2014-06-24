@@ -123,6 +123,8 @@ tokens {
         STRUCT;
         FIELDS;
         FIELD;
+        SYNONYM;
+        SYNONYM_LIST;
 }
 
 
@@ -263,9 +265,10 @@ content
                  | timer_declaration
                  | syntype_definition
                  | newtype_definition
-                 | variable_definition)*
+                 | variable_definition
+                 | synonym_definition)*
         ->       ^(TEXTAREA_CONTENT
-                     fpar* procedure* variable_definition* syntype_definition* newtype_definition* timer_declaration*);
+                     fpar* procedure* variable_definition* syntype_definition* newtype_definition* timer_declaration* synonym_definition*);
 
 
 timer_declaration
@@ -315,6 +318,16 @@ variable_definition
                 end
         ->      ^(DCL variables_of_sort+);
 
+synonym_definition 
+	:	internal_synonym_definition;
+	
+internal_synonym_definition
+	:	SYNONYM synonym_definition_item (',' synonym_definition_item)* end
+	->	^(SYNONYM_LIST synonym_definition_item+);
+	
+synonym_definition_item
+	:	sort sort '=' ground_expression
+	->      ^(SYNONYM sort sort ground_expression);
 
 variables_of_sort
         :       variable_id (',' variable_id)* sort (':=' ground_expression)?
@@ -959,7 +972,7 @@ conditional_expression
         :       IF expression THEN expression ELSE expression FI;
 
 
-synonym :       ID; // synonym_id | external_synonym;
+//synonym :       ID; // synonym_id | external_synonym;
 
 
 external_synonym
@@ -1260,8 +1273,9 @@ ENDSYNTYPE      :       E N D S Y N T Y P E;
 NEWTYPE         :       N E W T Y P E;
 ENDNEWTYPE      :       E N D N E W T Y P E;
 ARRAY           :       A R R A Y;	
-CONSTANTS       :	C O N S T A N T S;
-STRUCT          :	S T R U C T;
+CONSTANTS       :	    C O N S T A N T S;
+STRUCT          :	    S T R U C T;
+SYNONYM        	:       S Y N O N Y M;	
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
