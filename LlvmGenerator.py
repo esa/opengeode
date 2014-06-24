@@ -142,11 +142,9 @@ def _process(process):
 
     # Declare timer set/reset functions
     for timer in process.timers:
-        func_name = '%s_RI_set_%s' % (process_name, str(timer))
         # TODO: Should be uint?
-        decl_func(func_name, g.void, [g.i32_ptr])
-        func_name = '%s_RI_reset_%s' % (process_name, str(timer))
-        decl_func(func_name, g.void, [])
+        decl_func("set_%s" % str(timer), g.void, [g.i32_ptr], True)
+        decl_func("reset_%s" % str(timer), g.void, [], True)
 
     # Declare output signal functions
     for signal in process.output_signals:
@@ -154,12 +152,12 @@ def _process(process):
             param_tys = [core.Type.pointer(_generate_type(signal['type']))]
         else:
             param_tys = []
-        decl_func(str(signal['name']), g.void, param_tys)
+        decl_func(str(signal['name']), g.void, param_tys, True)
 
     # Declare external procedures functions
     for proc in [proc for proc in process.procedures if proc.external]:
         param_tys = [core.Type.pointer(_generate_type(p['type'])) for p in proc.fpar]
-        decl_func(str(proc.inputString), g.void, param_tys)
+        decl_func(str(proc.inputString), g.void, param_tys, True)
 
     # Generate internal procedures
     for proc in process.content.inner_procedures:
@@ -377,7 +375,7 @@ def _generate_writeln(params):
 def _generate_reset_timer(params):
     ''' Generate the code for the reset timer operator '''
     timer_id = params[0]
-    reset_func_name = '%s_RI_reset_%s' % (g.name, timer_id.value[0])
+    reset_func_name = 'reset_%s' % timer_id.value[0]
     reset_func = g.funcs[reset_func_name.lower()]
 
     g.builder.call(reset_func, [])
@@ -386,7 +384,7 @@ def _generate_reset_timer(params):
 def _generate_set_timer(params):
     ''' Generate the code for the set timer operator '''
     timer_expr, timer_id = params
-    set_func_name = '%s_RI_set_%s' % (g.name, timer_id.value[0])
+    set_func_name = 'set_%s' % timer_id.value[0]
     set_func = g.funcs[set_func_name.lower()]
 
     expr_val = expression(timer_expr)
@@ -955,10 +953,11 @@ def _get_string_cons(str):
     return gvar_val
 
 
-def decl_func(name, return_ty, param_tys):
+def decl_func(name, return_ty, param_tys, extern=False):
     ''' Declare a function '''
     func_ty = core.Type.function(return_ty, param_tys)
-    func = core.Function.new(g.module, func_ty, name)
+    func_name = ("%s_RI_%s" % (g.name, name)) if extern else name
+    func = core.Function.new(g.module, func_ty, func_name)
     g.funcs[name.lower()] = func
     return func
 
