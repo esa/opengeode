@@ -175,7 +175,7 @@ def _process(process):
 
     g.module.verify()
 
-    with open(g.name  + '.ll', 'w') as ll_file:
+    with open(g.name + '.ll', 'w') as ll_file:
         ll_file.write(str(g.module))
 
 
@@ -300,7 +300,6 @@ def _generate_input_signal(signal, inputs):
 @generate.register(ogAST.ProcedureCall)
 def _call_external_function(output):
     ''' Generate the code of a set of output or procedure call statement '''
-    zero = core.Constant.int(g.i32, 0)
     for out in output.output:
         name = out['outputName'].lower()
 
