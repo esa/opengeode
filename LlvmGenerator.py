@@ -554,14 +554,14 @@ def generate_present(params):
 
 def generate_abs(params):
     ''' Generate the code for the built-in abs operation'''
-    left_val = expression(params[0])
+    expr_val = expression(params[0])
 
-    if left_val.type.kind == core.TYPE_INTEGER:
-        left_conv = g.builder.sitofp(left_val, g.double)
-        res_val = g.builder.call(g.funcs['fabs'], [left_conv])
+    if expr_val.type.kind == core.TYPE_INTEGER:
+        expr_conv = g.builder.sitofp(expr_val, g.double)
+        res_val = g.builder.call(g.funcs['fabs'], [expr_conv])
         return g.builder.fptosi(res_val, g.i32)
     else:
-        return g.builder.call(g.funcs['fabs'], [left_val])
+        return g.builder.call(g.funcs['fabs'], [expr_val])
 
 
 def generate_fix(params):
