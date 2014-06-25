@@ -108,8 +108,7 @@ class Scope:
         if self.parent:
             return self.parent.resolve(name)
         else:
-            print name
-            raise NameError
+            raise NameError("name '%s' is not defined" % name)
 
 
 @singledispatch
