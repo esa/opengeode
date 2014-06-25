@@ -96,6 +96,7 @@ class StructType():
 class Scope:
     def __init__(self, parent=None):
         self.vars = {}
+        self.labels = {}
         self.parent = parent
 
     def define(self, name, var):
@@ -109,6 +110,15 @@ class Scope:
             return self.parent.resolve(name)
         else:
             raise NameError("name '%s' is not defined" % name)
+
+    def label(self, name):
+        name = name.lower()
+        label_block = self.labels.get(name)
+        if not label_block:
+            func = g.builder.basic_block.function
+            label_block = func.append_basic_block(name)
+            self.labels[name] = label_block
+        return label_block
 
 
 @singledispatch
@@ -226,11 +236,21 @@ def _generate_runtr_func(process):
         switch.add_case(const, tr_block)
         g.builder.position_at_end(tr_block)
         generate(tr)
-        g.builder.branch(cond_block)
+        if not g.builder.basic_block.terminator:
+            g.builder.branch(cond_block)
 
     # exit
     g.builder.position_at_end(exit_block)
     g.builder.ret_void()
+
+    Helper.inner_labels_to_floating(process)
+    for label in process.content.floating_labels:
+        generate(label)
+
+    # TODO: Use defined cond_block instead?
+    next_tr_label_block = g.scope.label('next_transition')
+    g.builder.position_at_end(next_tr_label_block)
+    g.builder.branch(cond_block)
 
     _pop_scope()
 
@@ -862,15 +882,17 @@ def _decision(dec):
         if ans.transition:
             g.builder.position_at_end(ans_tr_block)
             generate(ans.transition)
-            g.builder.branch(end_block)
+            if not g.builder.basic_block.terminator:
+                g.builder.branch(end_block)
 
     g.builder.position_at_end(end_block)
 
 
 @generate.register(ogAST.Label)
-def _label(tr):
-    ''' TGenerate the code for a Label '''
-    raise NotImplementedError
+def _label(label):
+    ''' Generate the code for a Label '''
+    label_block = g.scope.label(str(label.inputString))
+    g.builder.branch(label_block)
 
 
 @generate.register(ogAST.Transition)
@@ -885,7 +907,7 @@ def _transition(tr):
 
 
 def _generate_terminator(term):
-    ''' Generate the code for a transition termiantor '''
+    ''' Generate the code for a transition terminator '''
     if term.label:
         raise NotImplementedError
     if term.kind == 'next_state':
@@ -898,9 +920,16 @@ def _generate_terminator(term):
                 state_id_cons = g.states[state]
                 g.builder.store(state_id_cons, state_ptr)
         else:
-            raise NotImplementedError
+            next_ids = [nid for nid in term.candidate_id.viewkeys() if nid != -1]
+            if next_ids:
+                raise NotImplementedError
+            else:
+                next_id_cons = core.Constant.int(g.i32, -1)
+                g.builder.store(next_id_cons, g.scope.resolve('id'))
+        g.builder.branch(g.scope.label('next_transition'))
     elif term.kind == 'join':
-        raise NotImplementedError
+        label_block = g.scope.label(str(term.inputString))
+        g.builder.branch(label_block)
     elif term.kind == 'stop':
         raise NotImplementedError
     elif term.kind == 'return':
@@ -911,13 +940,19 @@ def _generate_terminator(term):
         else:
             next_id_cons = core.Constant.int(g.i32, term.next_id)
             g.builder.store(next_id_cons, g.scope.resolve('id'))
-            g.builder.ret_void()
+            g.builder.branch(g.scope.label('next_transition'))
 
 
 @generate.register(ogAST.Floating_label)
 def _floating_label(label):
     ''' Generate the code for a floating label '''
-    raise NotImplementedError
+    label_block = g.scope.label(str(label.inputString))
+    g.builder.position_at_end(label_block)
+
+    if label.transition:
+        generate(label.transition)
+    else:
+        g.builder.ret_void()
 
 
 @generate.register(ogAST.Procedure)
@@ -937,10 +972,12 @@ def _inner_procedure(proc):
     for name, (ty, expr) in proc.variables.viewitems():
         raise NotImplementedError
 
+    Helper.inner_labels_to_floating(proc)
+
     generate(proc.content.start.transition)
 
     for label in proc.content.floating_labels:
-        raise NotImplementedError
+        generate(label)
 
     _pop_scope()
 
