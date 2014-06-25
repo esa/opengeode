@@ -65,8 +65,15 @@ class GlobalState():
         self.funcs['printf'] = self.module.add_function(ty, 'printf')
 
         self.funcs['memcpy'] = core.Function.intrinsic(
-            self.module, core.INTR_MEMCPY,
+            self.module,
+            core.INTR_MEMCPY,
             [self.i8_ptr, self.i8_ptr, self.i64]
+        )
+
+        self.funcs['powi'] = core.Function.intrinsic(
+            self.module,
+            core.INTR_POWI,
+            [self.double]
         )
 
 
@@ -491,24 +498,76 @@ def _primary_variable(prim):
 def _prim_path(prim):
     ''' Generate the code for an of an element list (path) '''
 
-    var_ptr = g.scope.resolve(str(prim.value.pop(0)))
+    specops_generators = {
+        'length': generate_length,
+        'present': generate_present,
+        'abs': generate_abs,
+        'fix': generate_fix,
+        'float': generate_float,
+        'power': generate_power
+    }
 
-    if not prim.value:
+    specop_generator = specops_generators.get(prim.value[0].lower())
+    if specop_generator:
+        return specop_generator(prim.value[1]['procParams'])
+
+    return generate_accessor(prim.value)
+
+
+def generate_accessor(id_names):
+    var_name = id_names.pop(0).lower()
+    var_ptr = g.scope.resolve(str(var_name))
+
+    if not id_names:
         return var_ptr
 
     zero_cons = core.Constant.int(g.i32, 0)
 
-    for field_name in prim.value:
+    for field_name in id_names:
         var_ty = var_ptr.type
-        if var_ty.kind == core.TYPE_POINTER and var_ty.pointee.kind == core.TYPE_STRUCT:
-            struct = g.structs[var_ty.pointee.name]
-            field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name))
-            field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
-            var_ptr = field_ptr
-        else:
-            raise NotImplementedError
+        struct = g.structs[var_ty.pointee.name]
+        field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name.lower()))
+        field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
+        var_ptr = field_ptr
 
     return var_ptr
+
+
+def generate_length(params):
+    raise NotImplementedError
+
+
+def generate_present(params):
+    raise NotImplementedError
+
+
+def generate_abs(params):
+    raise NotImplementedError
+
+
+def generate_fix(params):
+    raise NotImplementedError
+
+
+def generate_float(params):
+    raise NotImplementedError
+
+
+def generate_power(params):
+    left_val = expression(params[0])
+    if type(params[0]) in [ogAST.PrimPath, ogAST.PrimVariable]:
+        left_val = g.builder.load(left_val)
+
+    right_val = expression(params[1])
+    if type(params[1]) in [ogAST.PrimPath, ogAST.PrimVariable]:
+        right_val = g.builder.load(right_val)
+
+    if left_val.type.kind == core.TYPE_INTEGER:
+        left_conv = g.builder.sitofp(left_val, g.double)
+        res_val = g.builder.call(g.funcs['powi'], [left_conv, right_val])
+        return g.builder.fptosi(res_val, g.i32)
+    else:
+        return g.builder.call(g.funcs['powi'], [left_val, right_val])
 
 
 @expression.register(ogAST.ExprPlus)

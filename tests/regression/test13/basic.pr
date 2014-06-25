@@ -136,7 +136,15 @@ COMMENT 'true';
 CALL writeln(3.0 = f)
 /* CIF COMMENT (60, 1358), (70, 35) */
 COMMENT 'true';
-/* CIF NEXTSTATE (-85, 1408), (100, 50) */
+/* CIF PROCEDURECALL (-127, 1408), (185, 34) */
+CALL writeln(power(i, 3))
+/* CIF COMMENT (77, 1407), (70, 35) */
+COMMENT '27';
+/* CIF PROCEDURECALL (-120, 1457), (171, 35) */
+CALL writeln(power(f, 3))
+/* CIF COMMENT (70, 1457), (70, 35) */
+COMMENT '27.0';
+/* CIF NEXTSTATE (-85, 1507), (100, 50) */
 NEXTSTATE Wait;
 ENDSTATE;
 ENDPROCESS basic;
