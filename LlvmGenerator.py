@@ -292,7 +292,10 @@ def _generate_input_signal(signal, inputs):
         if input:
             for var_name in input.parameters:
                 var_ptr = g.scope.resolve(str(var_name))
-                generate_assign(var_ptr, func.args[0])
+                if is_struct_ptr(var_ptr):
+                    generate_assign(var_ptr, func.args[0])
+                else:
+                    generate_assign(var_ptr, g.builder.load(func.args[0]))
             if input.transition:
                 id_val = core.Constant.int(g.i32, input.transition_id)
                 g.builder.call(g.funcs['run_transition'], [id_val])
