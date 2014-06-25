@@ -418,7 +418,7 @@ def _task_assign(task):
 @generate.register(ogAST.TaskInformalText)
 def _task_informal_text(task):
     ''' Generate comments for informal text '''
-    raise NotImplementedError
+    pass
 
 
 @generate.register(ogAST.TaskForLoop)
