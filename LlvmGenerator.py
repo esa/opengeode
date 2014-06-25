@@ -246,7 +246,7 @@ def _generate_startup_func(process):
     for name, (ty, expr) in process.variables.viewitems():
         if expr:
             global_var = g.scope.resolve(str(name))
-            _generate_assign(global_var, expression(expr))
+            generate_assign(global_var, expression(expr))
 
     g.builder.call(g.funcs['run_transition'], [core.Constant.int(g.i32, 0)])
     g.builder.ret_void()
@@ -285,8 +285,8 @@ def _generate_input_signal(signal, inputs):
         input = inputs.get(state_name)
         if input:
             for var_name in input.parameters:
-                var_val = g.scope.resolve(str(var_name))
-                _generate_assign(var_val, func.args[0])
+                var_ptr = g.scope.resolve(str(var_name))
+                generate_assign(var_ptr, func.args[0])
             if input.transition:
                 id_val = core.Constant.int(g.i32, input.transition_id)
                 g.builder.call(g.funcs['run_transition'], [id_val])
@@ -344,9 +344,6 @@ def _generate_write(params):
         basic_ty = find_basic_type(param.exprType)
         expr_val = expression(param)
 
-        if basic_ty.kind != 'StringType' and expr_val.type.kind == core.TYPE_POINTER:
-            expr_val = g.builder.load(expr_val)
-
         if basic_ty.kind == 'IntegerType':
             fmt_val = _get_string_cons('% d')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
@@ -396,9 +393,6 @@ def _generate_set_timer(params):
 
     expr_val = expression(timer_expr)
 
-    if type(timer_expr) in [ogAST.PrimPath, ogAST.PrimVariable]:
-        expr_val = g.builder.load(expr_val)
-
     tmp_ptr = g.builder.alloca(expr_val.type)
     g.builder.store(expr_val, tmp_ptr)
 
@@ -443,15 +437,11 @@ def _generate_for_range(loop):
 
     if loop['range']['start']:
         start_val = expression(loop['range']['start'])
-        if type(loop['range']['start']) in [ogAST.PrimPath, ogAST.PrimVariable]:
-            start_val = g.builder.load(start_val)
         g.builder.store(start_val, loop_var)
     else:
         g.builder.store(core.Constant.int(g.i32, 0), loop_var)
 
     stop_val = expression(loop['range']['stop'])
-    if type(loop['range']['stop']) in [ogAST.PrimPath, ogAST.PrimVariable]:
-        stop_val = g.builder.load(stop_val)
     g.builder.branch(cond_block)
 
     g.builder.position_at_end(cond_block)
@@ -480,7 +470,38 @@ def _generate_for_iterable(loop):
     raise NotImplementedError
 
 
-# ------ expressions --------
+@singledispatch
+def reference(prim):
+    ''' Generate a variable reference '''
+    raise TypeError('Unsupported reference: ' + str(expr))
+
+
+@reference.register(ogAST.PrimVariable)
+def _prim_var_reference(prim):
+    ''' Generate a primary variable reference '''
+    return g.scope.resolve(str(prim.value[0]))
+
+
+@reference.register(ogAST.PrimPath)
+def _prim_path_reference(prim):
+    ''' Generate a primary path reference '''
+    var_name = prim.value.pop(0).lower()
+    var_ptr = g.scope.resolve(str(var_name))
+
+    if not prim.value:
+        return var_ptr
+
+    zero_cons = core.Constant.int(g.i32, 0)
+
+    for field_name in prim.value:
+        var_ty = var_ptr.type
+        struct = g.structs[var_ty.pointee.name]
+        field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name.lower()))
+        field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
+        var_ptr = field_ptr
+
+    return var_ptr
+
 
 @singledispatch
 def expression(expr):
@@ -490,14 +511,14 @@ def expression(expr):
 
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
-    ''' Generate the code for a single variable reference '''
-    return g.scope.resolve(str(prim.value[0]))
+    ''' Generate the code for a variable expression '''
+    var_ptr = reference(prim)
+    return var_ptr if is_struct_ptr(var_ptr) else g.builder.load(var_ptr)
 
 
 @expression.register(ogAST.PrimPath)
 def _prim_path(prim):
-    ''' Generate the code for an of an element list (path) '''
-
+    ''' Generate the code for an of path expression '''
     specops_generators = {
         'length': generate_length,
         'present': generate_present,
@@ -511,26 +532,8 @@ def _prim_path(prim):
     if specop_generator:
         return specop_generator(prim.value[1]['procParams'])
 
-    return generate_accessor(prim.value)
-
-
-def generate_accessor(id_names):
-    var_name = id_names.pop(0).lower()
-    var_ptr = g.scope.resolve(str(var_name))
-
-    if not id_names:
-        return var_ptr
-
-    zero_cons = core.Constant.int(g.i32, 0)
-
-    for field_name in id_names:
-        var_ty = var_ptr.type
-        struct = g.structs[var_ty.pointee.name]
-        field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name.lower()))
-        field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
-        var_ptr = field_ptr
-
-    return var_ptr
+    var_ptr = reference(prim)
+    return var_ptr if is_struct_ptr(var_ptr) else g.builder.load(var_ptr)
 
 
 def generate_length(params):
@@ -555,12 +558,7 @@ def generate_float(params):
 
 def generate_power(params):
     left_val = expression(params[0])
-    if type(params[0]) in [ogAST.PrimPath, ogAST.PrimVariable]:
-        left_val = g.builder.load(left_val)
-
     right_val = expression(params[1])
-    if type(params[1]) in [ogAST.PrimPath, ogAST.PrimVariable]:
-        right_val = g.builder.load(right_val)
 
     if left_val.type.kind == core.TYPE_INTEGER:
         left_conv = g.builder.sitofp(left_val, g.double)
@@ -586,15 +584,6 @@ def _basic(expr):
     ''' Generate the code for an arithmetic of relational expression '''
     lefttmp = expression(expr.left)
     righttmp = expression(expr.right)
-
-    # load the value of the expression if it is a pointer
-    if lefttmp.type.kind == core.TYPE_POINTER:
-        lefttmp = g.builder.load(lefttmp, 'lefttmp')
-    if righttmp.type.kind == core.TYPE_POINTER:
-        righttmp = g.builder.load(righttmp, 'righttmp')
-
-    if lefttmp.type.kind != righttmp.type.kind:
-        raise NotImplementedError
 
     if lefttmp.type.kind == core.TYPE_INTEGER:
         if expr.operand == '+':
@@ -656,18 +645,14 @@ def _basic(expr):
 @expression.register(ogAST.ExprAssign)
 def _assign(expr):
     ''' Generate the code for an assign expression '''
-    left = expression(expr.left)
-    right = expression(expr.right)
-
-    _generate_assign(left, right)
-    return left
+    generate_assign(reference(expr.left), expression(expr.right))
 
 
-def _generate_assign(left, right):
+def generate_assign(left, right):
     ''' Generate code for an assign from two LLVM values'''
     # This is extracted as an standalone function because is used by
     # multiple generation rules
-    if left.type.pointee.kind == core.TYPE_STRUCT:
+    if is_struct_ptr(left):
         size = core.Constant.sizeof(left.type.pointee)
         align = core.Constant.int(g.i32, 0)
         volatile = core.Constant.int(g.i1, 0)
@@ -677,8 +662,6 @@ def _generate_assign(left, right):
 
         g.builder.call(g.funcs['memcpy'], [left_ptr, right_ptr, size, align, volatile])
     else:
-        if right.type.kind == core.TYPE_POINTER:
-            right = g.builder.load(right)
         g.builder.store(right, left)
 
 
@@ -693,12 +676,6 @@ def _logical(expr):
     ty = find_basic_type(expr.exprType)
     if ty.kind != 'BooleanType':
         raise NotImplementedError
-
-    # load the value of the expression if it is a pointer
-    if lefttmp.type.kind == core.TYPE_POINTER:
-        lefttmp = g.builder.load(lefttmp, 'lefttmp')
-    if righttmp.type.kind == core.TYPE_POINTER:
-        righttmp = g.builder.load(righttmp, 'righttmp')
 
     if expr.operand == 'and':
         return g.builder.and_(lefttmp, righttmp, 'andtmp')
@@ -1019,6 +996,10 @@ def decl_func(name, return_ty, param_tys, extern=False):
     func = core.Function.new(g.module, func_ty, func_name)
     g.funcs[name.lower()] = func
     return func
+
+
+def is_struct_ptr(val):
+    return val.type.kind == core.TYPE_POINTER and val.type.pointee.kind == core.TYPE_STRUCT
 
 
 # TODO: Refactor this into the helper module
