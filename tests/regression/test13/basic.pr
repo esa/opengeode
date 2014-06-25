@@ -160,7 +160,11 @@ COMMENT '1.0';
 CALL writeln(abs(-1.0))
 /* CIF COMMENT (57, 1657), (70, 35) */
 COMMENT '1.0';
-/* CIF NEXTSTATE (-85, 1707), (100, 50) */
+/* CIF PROCEDURECALL (-104, 1707), (138, 35) */
+CALL writeln(float(1))
+/* CIF COMMENT (54, 1707), (70, 35) */
+COMMENT '1.0';
+/* CIF NEXTSTATE (-85, 1757), (100, 50) */
 NEXTSTATE Wait;
 ENDSTATE;
 ENDPROCESS basic;

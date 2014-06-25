@@ -571,7 +571,8 @@ def generate_fix(params):
 
 def generate_float(params):
     ''' Generate the code for the built-in float operation'''
-    raise NotImplementedError
+    expr_val = expression(params[0])
+    return g.builder.sitofp(expr_val, g.double)
 
 
 def generate_power(params):
