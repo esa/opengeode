@@ -493,7 +493,7 @@ def _prim_var_reference(prim):
 @reference.register(ogAST.PrimPath)
 def _prim_path_reference(prim):
     ''' Generate a primary path reference '''
-    var_name = prim.value.pop(0).lower()
+    var_name = prim.value[0].lower()
     var_ptr = g.scope.resolve(str(var_name))
 
     if not prim.value:
@@ -501,7 +501,7 @@ def _prim_path_reference(prim):
 
     zero_cons = core.Constant.int(g.i32, 0)
 
-    for field_name in prim.value:
+    for field_name in prim.value[1:]:
         var_ty = var_ptr.type
         struct = g.structs[var_ty.pointee.name]
         field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name.lower()))
