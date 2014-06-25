@@ -76,6 +76,12 @@ class GlobalState():
             [self.double]
         )
 
+        self.funcs['fabs'] = core.Function.intrinsic(
+            self.module,
+            core.INTR_FABS,
+            [self.double]
+        )
+
 
 class StructType():
     def __init__(self, name, field_names, field_types):
@@ -548,7 +554,14 @@ def generate_present(params):
 
 def generate_abs(params):
     ''' Generate the code for the built-in abs operation'''
-    raise NotImplementedError
+    left_val = expression(params[0])
+
+    if left_val.type.kind == core.TYPE_INTEGER:
+        left_conv = g.builder.sitofp(left_val, g.double)
+        res_val = g.builder.call(g.funcs['fabs'], [left_conv])
+        return g.builder.fptosi(res_val, g.i32)
+    else:
+        return g.builder.call(g.funcs['fabs'], [left_val])
 
 
 def generate_fix(params):
