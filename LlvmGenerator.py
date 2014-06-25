@@ -566,7 +566,8 @@ def generate_abs(params):
 
 def generate_fix(params):
     ''' Generate the code for the built-in fix operation'''
-    raise NotImplementedError
+    expr_val = expression(params[0])
+    return g.builder.fptosi(expr_val, g.i32)
 
 
 def generate_float(params):
