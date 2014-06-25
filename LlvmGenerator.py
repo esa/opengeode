@@ -537,26 +537,32 @@ def _prim_path(prim):
 
 
 def generate_length(params):
+    ''' Generate the code for the built-in length operation'''
     raise NotImplementedError
 
 
 def generate_present(params):
+    ''' Generate the code for the built-in present operation'''
     raise NotImplementedError
 
 
 def generate_abs(params):
+    ''' Generate the code for the built-in abs operation'''
     raise NotImplementedError
 
 
 def generate_fix(params):
+    ''' Generate the code for the built-in fix operation'''
     raise NotImplementedError
 
 
 def generate_float(params):
+    ''' Generate the code for the built-in float operation'''
     raise NotImplementedError
 
 
 def generate_power(params):
+    ''' Generate the code for the built-in power operation'''
     left_val = expression(params[0])
     right_val = expression(params[1])
 
