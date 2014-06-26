@@ -566,7 +566,11 @@ def _prim_path(prim):
 
 def generate_length(params):
     ''' Generate the code for the built-in length operation'''
-    raise NotImplementedError
+    seq_ptr = reference(params[0])
+    size = core.Constant.sizeof(seq_ptr.type.pointee)
+    tmp = g.builder.alloca(size.type)
+    g.builder.store(size, tmp)
+    return tmp
 
 
 def generate_present(params):
