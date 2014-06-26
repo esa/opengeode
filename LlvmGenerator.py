@@ -580,10 +580,8 @@ def generate_access(prim):
 def generate_length(params):
     ''' Generate the code for the built-in length operation'''
     seq_ptr = reference(params[0])
-    size = core.Constant.sizeof(seq_ptr.type.pointee)
-    tmp = g.builder.alloca(size.type)
-    g.builder.store(size, tmp)
-    return tmp
+    arr_ty = seq_ptr.type.pointee.elements[0]
+    return core.Constant.int(g.i32, arr_ty.count)
 
 
 def generate_present(params):
