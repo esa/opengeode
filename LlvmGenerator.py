@@ -521,12 +521,19 @@ def _prim_path_reference(prim):
 
     zero_cons = core.Constant.int(g.i32, 0)
 
-    for field_name in prim.value[1:]:
-        var_ty = var_ptr.type
-        struct = g.structs[var_ty.pointee.name]
-        field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name.lower()))
-        field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
-        var_ptr = field_ptr
+    for elem in prim.value[1:]:
+        if type(elem) == dict:
+            if 'index' in elem:
+                idx_val = expression(elem['index'][0])
+                var_ptr = g.builder.gep(var_ptr, [zero_cons, zero_cons, idx_val])
+            else:
+                raise NotImplementedError
+        else:
+            var_ty = var_ptr.type
+            struct = g.structs[var_ty.pointee.name]
+            field_idx_cons = core.Constant.int(g.i32, struct.idx(elem.lower()))
+            field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
+            var_ptr = field_ptr
 
     return var_ptr
 
@@ -556,10 +563,16 @@ def _prim_path(prim):
         'power': generate_power
     }
 
-    specop_generator = specops_generators.get(prim.value[0].lower())
-    if specop_generator:
-        return specop_generator(prim.value[1]['procParams'])
+    name = prim.value[0].lower()
+    if name in specops_generators:
+        generator = specops_generators[name]
+        return generator(prim.value[1]['procParams'])
 
+    return generate_access(prim)
+
+
+def generate_access(prim):
+    ''' Generate the code for an access '''
     var_ptr = reference(prim)
     return var_ptr if is_struct_ptr(var_ptr) else g.builder.load(var_ptr)
 
