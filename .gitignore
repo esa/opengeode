@@ -1,5 +1,7 @@
 *.pyc
 
+*.autosave
+
 tests/**/*.ads
 tests/**/*.adb
 tests/**/*.ali
