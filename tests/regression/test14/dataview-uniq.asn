@@ -1,0 +1,13 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+Int32 ::= INTEGER (-2147483648 .. 2147483647)
+
+Point ::= SEQUENCE {
+    x Int32,
+    y Int32
+}
+
+List ::= SEQUENCE (SIZE (2)) OF Int32
+
+END
