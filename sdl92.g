@@ -123,6 +123,8 @@ tokens {
         STRUCT;
         FIELDS;
         FIELD;
+        SYNONYM;
+        SYNONYM_LIST;
 }
 
 
@@ -263,9 +265,11 @@ content
                  | timer_declaration
                  | syntype_definition
                  | newtype_definition
-                 | variable_definition)*
-        ->       ^(TEXTAREA_CONTENT
-                     fpar* procedure* variable_definition* syntype_definition* newtype_definition* timer_declaration*);
+                 | variable_definition
+                 | synonym_definition)*
+        ->       ^(TEXTAREA_CONTENT fpar* procedure* variable_definition*
+                   syntype_definition* newtype_definition* timer_declaration*
+                   synonym_definition*);
 
 
 timer_declaration
@@ -275,39 +279,41 @@ timer_declaration
         ->      ^(TIMER timer_id+);
 
 syntype_definition
-	:	SYNTYPE syntype_name '=' parent_sort (CONSTANTS (range_condition (',' range_condition)* ))?
-	        ENDSYNTYPE syntype_name? end
-	->      ^(SYNTYPE syntype_name parent_sort range_condition*);
-	
-syntype_name 
-	:	sort;
+        :       SYNTYPE syntype_name '=' parent_sort
+                (CONSTANTS (range_condition (',' range_condition)* ))?
+                ENDSYNTYPE syntype_name? end
+        ->      ^(SYNTYPE syntype_name parent_sort range_condition*);
+
+syntype_name
+        :       sort;
 
 parent_sort
-	:	sort;
+        :       sort;
 
 newtype_definition
-	:	NEWTYPE type_name (array_definition|structure_definition)? ENDNEWTYPE type_name? end
-	->	^(NEWTYPE type_name array_definition* structure_definition*);
+        :       NEWTYPE type_name (array_definition|structure_definition)?
+                ENDNEWTYPE type_name? end
+        ->      ^(NEWTYPE type_name array_definition* structure_definition*);
 
 
 type_name
-	:	sort;
-	
+        :       sort;
+
 array_definition
-	:	ARRAY '(' sort ',' sort ')'
-	->	^(ARRAY sort sort);
+        :       ARRAY '(' sort ',' sort ')'
+        ->      ^(ARRAY sort sort);
 
 structure_definition
-	:	STRUCT field_list end
-	->	^(STRUCT field_list);
+        :       STRUCT field_list end
+        ->      ^(STRUCT field_list);
 
 field_list
-	:	field_definition (end field_definition)*
-	->      ^(FIELDS field_definition+);
+        :       field_definition (end field_definition)*
+        ->      ^(FIELDS field_definition+);
 
 field_definition
-	:	field_name (',' field_name)* sort
-	->	^(FIELD field_name+ sort);
+        :       field_name (',' field_name)* sort
+        ->      ^(FIELD field_name+ sort);
 
 variable_definition
         :       DCL variables_of_sort
@@ -315,6 +321,17 @@ variable_definition
                 end
         ->      ^(DCL variables_of_sort+);
 
+synonym_definition
+        :       internal_synonym_definition;
+
+internal_synonym_definition
+        :       SYNONYM synonym_definition_item (',' synonym_definition_item)*
+                end
+        ->      ^(SYNONYM_LIST synonym_definition_item+);
+
+synonym_definition_item
+        :       sort sort '=' ground_expression
+        ->      ^(SYNONYM sort sort ground_expression);
 
 variables_of_sort
         :       variable_id (',' variable_id)* sort (':=' ground_expression)?
@@ -959,7 +976,7 @@ conditional_expression
         :       IF expression THEN expression ELSE expression FI;
 
 
-synonym :       ID; // synonym_id | external_synonym;
+//synonym :       ID; // synonym_id | external_synonym;
 
 
 external_synonym
@@ -1260,8 +1277,9 @@ ENDSYNTYPE      :       E N D S Y N T Y P E;
 NEWTYPE         :       N E W T Y P E;
 ENDNEWTYPE      :       E N D N E W T Y P E;
 ARRAY           :       A R R A Y;	
-CONSTANTS       :	C O N S T A N T S;
-STRUCT          :	S T R U C T;
+CONSTANTS       :	    C O N S T A N T S;
+STRUCT          :	    S T R U C T;
+SYNONYM        	:       S Y N O N Y M;	
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
