@@ -20,6 +20,7 @@ paths = [
     'regression/test11',
     'regression/test12',
     'regression/test13',
+    'regression/test14',
 ]
 
 
