@@ -1716,37 +1716,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         super(OG_MainWindow, self).closeEvent(event)
 
 
-def opengeode():
-    ''' Tool entry point '''
-    # Catch Ctrl-C to stop the app from the console
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    # Initialize logging
-    terminal_formatter = logging.Formatter(
-            fmt="[%(levelname)s] %(message)s")
-    handler_console = logging.StreamHandler()
-    handler_console.setFormatter(terminal_formatter)
-    LOG.addHandler(handler_console)
-
-    app = QtGui.QApplication.instance()
-    if app is None:
-        app = QtGui.QApplication(sys.argv)
-    app.setApplicationName('OpenGEODE')
-    app.setWindowIcon(QtGui.QIcon(':icons/input.png'))
-
-    # Set all encodings to utf-8 in Qt
-    QtCore.QTextCodec.setCodecForCStrings(
-                                       QtCore.QTextCodec.codecForName('UTF-8'))
-
-    # Bypass system-default font, to harmonize size on all platforms
-    font_database = QtGui.QFontDatabase()
-    font_database.addApplicationFont(':fonts/Ubuntu-RI.ttf')
-    font_database.addApplicationFont(':fonts/Ubuntu-R.ttf')
-    font_database.addApplicationFont(':fonts/Ubuntu-B.ttf')
-    font_database.addApplicationFont(':fonts/Ubuntu-BI.ttf')
-    app.setFont(QtGui.QFont('Ubuntu', 10))
-
-    # Parse the command line
+def parse_args():
+    ''' Parse command line arguments '''
     parser = argparse.ArgumentParser(version=__version__)
     parser.add_argument('-g', '--debug', action='store_true', default=False,
             help='Display debug information')
@@ -1765,101 +1736,194 @@ def opengeode():
     parser.add_argument('--split', dest='split', action='store_true',
             help='Save pictures in multiple files (one per floating item)')
     parser.add_argument('files', metavar='file.pr', type=str, nargs='*',
-                   help='SDL file(s)')
-    options = parser.parse_args()
-    ret = 0
+            help='SDL file(s)')
+    return parser.parse_args()
+
+
+def init_logging(options):
+    ''' Initialize logging '''
+    terminal_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")
+    handler_console = logging.StreamHandler()
+    handler_console.setFormatter(terminal_formatter)
+    LOG.addHandler(handler_console)
+
     level = logging.DEBUG if options.debug else logging.INFO
 
     # Set log level for all libraries
     LOG.setLevel(level)
     try:
-        for module in (sdlSymbols, genericSymbols, ogAST, ogParser, Lander,
-                AdaGenerator, undoCommands, Renderer, Clipboard, Statechart,
-                Helper, LlvmGenerator, Asn1scc, Connectors):
+        modules = (
+            sdlSymbols,
+            genericSymbols,
+            ogAST,
+            ogParser,
+            Lander,
+            AdaGenerator,
+            undoCommands,
+            Renderer,
+            Clipboard,
+            Statechart,
+            Helper,
+            LlvmGenerator,
+            Asn1scc,
+            Connectors
+        )
+        for module in modules:
             module.LOG.addHandler(handler_console)
             module.LOG.setLevel(level)
     except NameError:
-	    # Some modules may not be loaded (like llvm on Windows)
-	    pass;
+        # Some modules may not be loaded (like llvm on Windows)
+        pass
+
+
+def parse(files):
+    ''' Parse files '''
+    LOG.info('Checking ' + str(files))
+    ast, warnings, errors = ogParser.parse_pr(files=files)
+
+    LOG.info(
+        'Parsing complete. Summary, found %d warnings and %d errors' % (len(warnings), len(errors))
+    )
+    for warning in warnings:
+        LOG.warning(warning[0])
+    for error in errors:
+        LOG.error(error[0])
+
+    return ast, warnings, errors
+
+
+def generate(process, options):
+    ''' Generate code '''
+    if options.toAda:
+        LOG.info('Generating Ada code')
+        try:
+            AdaGenerator.generate(process)
+        except (TypeError, ValueError, NameError) as err:
+            LOG.error(str(err))
+            LOG.debug(str(traceback.format_exc()))
+            LOG.error('Ada code generation failed')
+
+    if options.llvm:
+        LOG.info('Generating LLVM code')
+        try:
+            LlvmGenerator.generate(process)
+        except (TypeError, ValueError, NameError) as err:
+            LOG.error(str(err))
+            LOG.debug(str(traceback.format_exc()))
+            LOG.error('LLVM IR generation failed')
+
+
+def export(process, options):
+    ''' Export process '''
+    # Qt must be initialized before using SDL_Scene
+    init_qt()
+
+    export_fmt = []
+    if options.png:
+        export_fmt.append('png')
+    if options.pdf:
+        export_fmt.append('pdf')
+    if options.svg:
+        export_fmt.append('svg')
+    if not export_fmt:
+        return
+
+    name = process.processName
+    scene = SDL_Scene(context='process')
+    scene.render_everything(process)
+    # Update connections, placements:
+    scene.refresh()
+
+    for doc_fmt in export_fmt:
+        LOG.info('Saving {ext} file: {name}.{ext}'.format(ext=doc_fmt, name=name))
+        scene.export_img(name, doc_format=doc_fmt, split=options.split)
+
+
+def cli(options):
+    ''' Run CLI App '''
+    try:
+        ast, warnings, errors = parse(options.files)
+    except IOError:
+        LOG.error('Aborting due to parsing error (check input file)')
+        return 1
+
+    if len(ast.processes) != 1:
+        LOG.error('Only one process at a time is supported')
+        return 1
+
+    if options.png or options.pdf or options.svg:
+        export(ast.processes[0], options)
+
+    if options.toAda or options.llvm:
+        if not errors:
+            generate(ast.processes[0], options)
+        else:
+            LOG.error('Too many errors, cannot generate code')
+
+    return 0 if not errors else 1
+
+
+def init_qt():
+    ''' Initialize QT '''
+    app = QtGui.QApplication.instance()
+    if app is None:
+        app = QtGui.QApplication(sys.argv)
+    return app
+
+
+def gui(options):
+    ''' Run GUI App '''
+    LOG.debug('Running the GUI')
+    LOG.info('Model backup enabled - auto-saving every 2 minutes')
+
+    app = init_qt()
+    app.setApplicationName('OpenGEODE')
+    app.setWindowIcon(QtGui.QIcon(':icons/input.png'))
+
+    # Set all encodings to utf-8 in Qt
+    QtCore.QTextCodec.setCodecForCStrings(
+        QtCore.QTextCodec.codecForName('UTF-8')
+    )
+
+    # Bypass system-default font, to harmonize size on all platforms
+    font_database = QtGui.QFontDatabase()
+    font_database.addApplicationFont(':fonts/Ubuntu-RI.ttf')
+    font_database.addApplicationFont(':fonts/Ubuntu-R.ttf')
+    font_database.addApplicationFont(':fonts/Ubuntu-B.ttf')
+    font_database.addApplicationFont(':fonts/Ubuntu-BI.ttf')
+    app.setFont(QtGui.QFont('Ubuntu', 10))
+
     # Initialize the clipboard
     Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
 
-    LOG.debug('Starting OpenGEODE version ' + __version__)
+    # Load the application layout from the .ui file
+    loader = QUiLoader()
+    loader.registerCustomWidget(OG_MainWindow)
+    loader.registerCustomWidget(SDL_View)
+    ui_file = QFile(':/opengeode.ui')
+    ui_file.open(QFile.ReadOnly)
+    my_widget = loader.load(ui_file)
+    ui_file.close()
+    my_widget.start(options.files)
 
-    if(options.check or options.toAda or options.png or
-            options.pdf or options.svg or options.llvm):
-        LOG.info('Checking ' + str(options.files))
-        try:
-            ast, warnings, errors = ogParser.parse_pr(files=options.files)
-        except IOError:
-            LOG.error('Aborting due to parsing error (check input file)')
-            return -1
-        try:
-            process, = ast.processes
-        except ValueError:
-            LOG.error('Only one process at a time is supported')
-            return -1
-        LOG.info('Parsing complete. Summary, found ' +
-                str(len(warnings)) +
-                ' warnings and ' +
-                str(len(errors)) +
-                ' errors')
-        for warning in warnings:
-            LOG.warning(warning[0])
-        for error in errors:
-            LOG.error(error[0])
-        if errors:
-            ret = -1
-            if options.toAda or options.llvm:
-                LOG.error('Too many errors, cannot generate code')
-        if options.toAda and not errors:
-            LOG.info('Generating Ada code')
-            try:
-                AdaGenerator.generate(process)
-            except (TypeError, ValueError, NameError) as err:
-                LOG.error(str(err))
-                LOG.debug(str(traceback.format_exc()))
-                LOG.error('Code generation failed')
-        if options.llvm and not errors:
-            LOG.info('Generating LLVM code')
-            try:
-                LlvmGenerator.generate(process)
-            except (TypeError, ValueError, NameError) as err:
-                LOG.error(str(err))
-                LOG.debug(str(traceback.format_exc()))
-                LOG.error('LLVM Code generation failed')
-        export_fmt = []
-        if options.png:
-            export_fmt.append('png')
-        if options.pdf:
-            export_fmt.append('pdf')
-        if options.svg:
-            export_fmt.append('svg')
-        if export_fmt:
-            scene = SDL_Scene(context='process')
-            scene.render_everything(process)
-            # Update connections, placements:
-            scene.refresh()
-            for doc_fmt in export_fmt:
-                LOG.info('Saving {ext} file: {name}.{ext}'.format(
-                               ext=doc_fmt, name=process.processName))
-                scene.export_img(process.processName,
-                                 doc_format=doc_fmt,
-                                 split=options.split)
+    return app.exec_()
+
+
+def opengeode():
+    ''' Tool entry point '''
+    # Catch Ctrl-C to stop the app from the console
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    options = parse_args()
+
+    init_logging(options)
+
+    LOG.debug('Starting OpenGEODE version ' + __version__)
+    if any((options.check, options.toAda, options.png, options.pdf, options.svg, options.llvm)):
+        return cli(options)
     else:
-        LOG.debug('Running the GUI')
-        LOG.info('Model backup enabled - auto-saving every 2 minutes')
-        # Load the application layout from the .ui file
-        loader = QUiLoader()
-        loader.registerCustomWidget(OG_MainWindow)
-        loader.registerCustomWidget(SDL_View)
-        ui_file = QFile(':/opengeode.ui')
-        ui_file.open(QFile.ReadOnly)
-        my_widget = loader.load(ui_file)
-        ui_file.close()
-        my_widget.start(options.files)
-        ret = app.exec_()
-    return ret
+        return gui(options)
+
 
 if __name__ == '__main__':
     sys.exit(opengeode())
