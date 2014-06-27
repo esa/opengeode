@@ -1,4 +1,4 @@
-all: test-ada
+all: test-ada test-llvm
 
 test-parse:
 	../../../opengeode.py basic.pr system_structure.pr --check
@@ -12,5 +12,14 @@ test-ada:
 	gnatlink test_ada.o basic.ali -lgnat -lm -o testcase
 	./testcase | diff expected -
 
+test-llvm:
+	../../../opengeode.py basic.pr system_structure.pr --check --llvm
+	llc basic.ll
+	gcc -c basic.s
+	gcc -c test_llvm.c
+	gcc basic.o test_llvm.o -o testcase
+	./testcase | diff expected -
+
 clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner bin *.wrn *.gpr testcase
+	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
+	bin *.wrn *.gpr testcase *.ll *.s

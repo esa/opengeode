@@ -21,5 +21,5 @@ test-llvm:
 	./testcase | diff expected -
 
 clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali \
-	gnat.cfg examiner bin *.wrn *.gpr testcase sequences.ll sequences.s
+	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
+	bin *.wrn *.gpr testcase *.ll *.s
