@@ -752,7 +752,49 @@ def _append(expr):
 @expression.register(ogAST.ExprIn)
 def _expr_in(expr):
     ''' Generate the code for an in expression '''
-    raise NotImplementedError
+    func = g.builder.basic_block.function
+
+    next_block = func.append_basic_block('in:next')
+    check_block = func.append_basic_block('in:check')
+    end_block = func.append_basic_block('in:end')
+
+    seq_asn1_ty = find_basic_type(expr.left.exprType)
+    if seq_asn1_ty.Min != seq_asn1_ty.Max:
+        # variable size sequence
+        raise NotImplementedError
+
+    idx_ptr = g.builder.alloca(g.i32)
+    g.builder.store(core.Constant.int(g.i32, 0), idx_ptr)
+
+    # TODO: Should be 'left' in 'right'?
+    value_val = expression(expr.right)
+    array_ptr = expression(expr.left)
+
+    array_ty = array_ptr.type.pointee.elements[0]
+    array_size = core.Constant.int(g.i32, array_ty.count)
+    zero_cons = core.Constant.int(g.i32, 0)
+
+    g.builder.branch(check_block)
+
+    g.builder.position_at_end(check_block)
+    idx_val = g.builder.load(idx_ptr)
+    elem_val = g.builder.load(g.builder.gep(array_ptr, [zero_cons, zero_cons, idx_val]))
+    if value_val.type.kind == core.TYPE_INTEGER:
+        cond_val = g.builder.icmp(core.ICMP_EQ, value_val, elem_val)
+    elif value_val.type.kind == core.TYPE_DOUBLE:
+        cond_val = g.builder.fcmp(core.FCMP_OEQ, value_val, elem_val)
+    else:
+        raise NotImplementedError
+    g.builder.cbranch(cond_val, end_block, next_block)
+
+    g.builder.position_at_end(next_block)
+    idx_tmp_val = g.builder.add(idx_val, core.Constant.int(g.i32, 1))
+    g.builder.store(idx_tmp_val, idx_ptr)
+    end_cond_val = g.builder.icmp(core.ICMP_SGE, idx_tmp_val, array_size)
+    g.builder.cbranch(end_cond_val, end_block, check_block)
+
+    g.builder.position_at_end(end_block)
+    return cond_val
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
