@@ -1,15 +1,12 @@
-all: compile
+all: test-ada
 
-generate-code:
-	../../../opengeode.py --toAda orchestrator.pr system_structure.pr
-
-
-compile: generate-code
-	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatmake -c orchestrator.adb && echo 'All OK!'
-
-parse:
+test-parse:
 	../../../opengeode.py orchestrator.pr system_structure.pr --check
+
+test-ada:
+	../../../opengeode.py --toAda orchestrator.pr system_structure.pr
+	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	gnatmake -c orchestrator.adb
 
 coverage:
 	coverage run -p ../../../opengeode.py orchestrator.pr system_structure.pr --toAda
