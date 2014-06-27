@@ -870,10 +870,9 @@ def _sequence(seq):
     zero_cons = core.Constant.int(g.i32, 0)
 
     for field_name, field_expr in seq.value.viewitems():
-        field_val = expression(field_expr)
         field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name))
         field_ptr = g.builder.gep(struct_ptr, [zero_cons, field_idx_cons])
-        g.builder.store(field_val, field_ptr)
+        generate_assign(field_ptr, expression(field_expr))
 
     return struct_ptr
 
@@ -1051,8 +1050,11 @@ def _generate_type(ty):
     elif basic_ty.kind == 'RealType':
         return g.double
     elif basic_ty.kind == 'SequenceOfType':
-        if ty.ReferencedTypeName in g.structs:
-            return g.structs[ty.ReferencedTypeName].ty
+        try:
+            if ty.ReferencedTypeName in g.structs:
+                return g.structs[ty.ReferencedTypeName].ty
+        except AttributeError:
+            pass
 
         min_size = int(basic_ty.Max)
         max_size = int(basic_ty.Min)
@@ -1061,8 +1063,13 @@ def _generate_type(ty):
 
         elem_ty = _generate_type(basic_ty.type)
         array_ty = core.Type.array(elem_ty, max_size)
-        struct = StructType(ty.ReferencedTypeName, ['_'], [array_ty])
-        g.structs[ty.ReferencedTypeName] = struct
+
+        try:
+            struct = decl_struct(['arr'], [array_ty], ty.ReferencedTypeName)
+        except AttributeError:
+            # anonymous sequence used in expressions like a in {b, c, d}
+            struct = decl_struct(['arr'], [array_ty])
+
         return struct.ty
     elif basic_ty.kind == 'SequenceType':
         if ty.ReferencedTypeName in g.structs:
@@ -1073,9 +1080,7 @@ def _generate_type(ty):
         for field_name in Helper.sorted_fields(basic_ty):
             field_names.append(field_name.replace('-', '_'))
             field_types.append(_generate_type(basic_ty.Children[field_name].type))
-
-        struct = StructType(ty.ReferencedTypeName, field_names, field_types)
-        g.structs[ty.ReferencedTypeName] = struct
+        struct = decl_struct(field_names, field_types, ty.ReferencedTypeName)
         return struct.ty
     elif basic_ty.kind == 'EnumeratedType':
         return g.i32
@@ -1113,6 +1118,14 @@ def decl_func(name, return_ty, param_tys, extern=False):
     func = core.Function.new(g.module, func_ty, func_name)
     g.funcs[name.lower()] = func
     return func
+
+
+def decl_struct(field_names, field_types, name=None):
+    ''' Declare a struct '''
+    name = name if name else "struct.%s" % len(g.structs)
+    struct_ty = StructType(name, field_names, field_types)
+    g.structs[name] = struct_ty
+    return struct_ty
 
 
 def is_struct_ptr(val):
