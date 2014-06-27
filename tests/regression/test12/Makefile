@@ -1,20 +1,15 @@
-all: compile
+all: test-ada
 
-generate-code:
+test-parse:
+	../../../opengeode.py trafficlight.pr system_structure.pr --check
+
+test-ada:
 	../../../opengeode.py --toAda trafficlight.pr system_structure.pr
-
-generate-llvm:
-	../../../opengeode.py --llvm trafficlight.pr system_structure.pr
-
-compile: generate-code
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatmake -c *.adb && echo 'All OK!'
+	gnatmake -c *.adb
 	#gcc -c test.c
 	#gnatbind -n trafficlight.ali
 	#gnatlink -o testcase test.o trafficlight.ali -lgnat -lm
-
-parse:
-	../../../opengeode.py trafficlight.pr system_structure.pr --check
 
 coverage:
 	coverage run -p ../../../opengeode.py trafficlight.pr system_structure.pr --toAda

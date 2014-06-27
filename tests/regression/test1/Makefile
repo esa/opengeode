@@ -1,17 +1,12 @@
-all: compile
+all: test-ada
 
-generate-code:
-	../../../opengeode.py --toAda og.pr system_structure.pr
-
-generate-llvm:
-	../../../opengeode.py --llvm og.pr system_structure.pr
-
-compile: generate-code
-	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatmake -c og.adb && echo 'All OK!'
-
-parse:
+test-parse:
 	../../../opengeode.py og.pr system_structure.pr --check
+
+test-ada:
+	../../../opengeode.py --toAda og.pr system_structure.pr
+	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	gnatmake -c og.adb
 
 coverage:
 	coverage run -p ../../../opengeode.py og.pr system_structure.pr --toAda
