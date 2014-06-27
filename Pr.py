@@ -16,13 +16,49 @@
 
 
 import logging
+from collections import deque
+from itertools import chain
 from singledispatch import singledispatch
 
 import genericSymbols, sdlSymbols
 
 LOG = logging.getLogger(__name__)
 
-__all__ = ['generate']
+__all__ = ['parse_scene', 'generate']
+
+
+class Indent(deque):
+    ''' Extension of the deque class to support automatic indenting '''
+    indent = 0
+
+    def append(self, string):
+        ''' Redefinition of the append to insert the indent pattern '''
+        super(Indent, self).append('    ' * Indent.indent + string)
+
+
+def parse_scene(scene):
+    ''' Return the PR string for a complete scene) '''
+    pr_data = deque()
+    for each in scene.processes:
+        pr_data.extend(generate(each))
+
+    for each in chain(scene.texts, scene.procs, scene.start):
+        pr_data.extend(generate(each))
+    for each in scene.floating_labels:
+        pr_data.extend(generate(each))
+    composite = set(scene.composite_states.keys())
+    for each in scene.states:
+        if each.is_composite():
+            try:
+                composite.remove(unicode(each).lower())
+                sub_state = generate(each, composite=True, nextstate=False)
+                if sub_state:
+                    sub_state.reverse()
+                    pr_data.extendleft(sub_state)
+            except KeyError:
+                pass
+        pr_data.extend(generate(each, nextstate=False))
+    return list(pr_data)
 
 
 def cif_coord(name, symbol):
@@ -37,13 +73,14 @@ def cif_coord(name, symbol):
 def hyperlink(symbol):
     ''' PR string for the optional hyperlink associated to a symbol '''
     return u"/* CIF Keep Specific Geode HyperLink '{}' */".format(
-                                                              symbol.hyperlink)
+                                                         symbol.text.hyperlink)
 
 
 def common(name, symbol):
     ''' PR string format that is shared by most symbols '''
-    result = [cif_coord(name, symbol)]
-    if symbol.hyperlink:
+    result = Indent()
+    result.append(cif_coord(name, symbol))
+    if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
     result.append(u'{} {}{}'.format(name, unicode(symbol.text), ';'
                                 if not symbol.comment else ''))
@@ -54,35 +91,38 @@ def common(name, symbol):
 
 def recursive_aligned(symbol):
     ''' Get the branch following symbol '''
-    result = []
+    result = Indent()
+    Indent.indent += 1
     next_symbol = symbol.next_aligned_symbol()
     while next_symbol:
         result.extend(generate(next_symbol))
         next_symbol = next_symbol.next_aligned_symbol()
+    Indent.indent -= 1
     return result
 
 
 @singledispatch
-def generate(symbol, recursive=True):
+def generate(symbol, *args, **kwargs):
     ''' Generate text for a symbol, recursively or not - return a list of
         strings '''
     _, _ = symbol, recursive
     raise NotImplementedError('[PR Generator] Unsupported AST construct')
-    return []
+    return Indent()
 
 
 @generate.register(genericSymbols.Comment)
-def _comment(symbol):
+def _comment(symbol, **kwargs):
     ''' Optional comment linked to a symbol '''
-    result = [cif_coord('COMMENT', symbol)]
-    if symbol.hyperlink:
+    result = Indent()
+    result.append(cif_coord('COMMENT', symbol))
+    if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append('COMMENT \'{}\';'.format(unicode(symbol.text)))
+    result.append(u'COMMENT \'{}\';'.format(unicode(symbol.text)))
     return result
 
 
 @generate.register(sdlSymbols.Input)
-def _input(symbol, recursive=True):
+def _input(symbol, recursive=True, **kwargs):
     ''' Input symbol or branch if recursive is set '''
     result = common('INPUT', symbol)
     if recursive:
@@ -91,7 +131,7 @@ def _input(symbol, recursive=True):
 
 
 @generate.register(sdlSymbols.Connect)
-def _connect(symbol, recursive=True):
+def _connect(symbol, recursive=True, **kwargs):
     ''' Connect symbol or branch if recursive is set '''
     result = common('CONNECT', symbol)
     if recursive:
@@ -100,17 +140,18 @@ def _connect(symbol, recursive=True):
 
 
 @generate.register(sdlSymbols.Output)
-def _output(symbol):
+def _output(symbol, **kwargs):
     ''' Output symbol '''
     return common('OUTPUT', symbol)
 
 
 @generate.register(sdlSymbols.Decision)
-def _decision(symbol, recursive=True):
+def _decision(symbol, recursive=True, **kwargs):
     ''' Decision symbol or branch if recursive is set '''
     result = common('DECISION', symbol)
     if recursive:
         else_branch = None
+        Indent.indent += 1
         for answer in symbol.branches():
             if unicode(answer).lower().strip() == 'else':
                 else_branch = generate(answer)
@@ -118,89 +159,171 @@ def _decision(symbol, recursive=True):
                 result.extend(generate(answer))
         if else_branch:
             result.extend(else_branch)
-    result.append('ENDDECISION;')
+        Indent.indent -= 1
+    result.append(u'ENDDECISION;')
+    return result
 
 
 @generate.register(sdlSymbols.DecisionAnswer)
-def _decisionanswer(symbol, recursive=True):
+def _decisionanswer(symbol, recursive=True, **kwargs):
     ''' Decision Answer symbol or branch if recursive is set '''
+    result = Indent()
+    Indent.indent += 1
+    result.append(cif_coord('ANSWER', symbol))
     ans = unicode(symbol)
     if ans.lower().strip() != u'else':
         ans = u'({})'.format(ans)
-    result = [cif_coord('ANSWER', symbol)]
-    if symbol.hyperlink:
+    if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append('{}:'.format(ans))
+    result.append(u'{}:'.format(ans))
     if recursive:
         result.extend(recursive_aligned(symbol))
+    Indent.indent -= 1
     return result
 
 
 @generate.register(sdlSymbols.Join)
-def _join(symbol):
+def _join(symbol, **kwargs):
     ''' Join symbol '''
     return common('JOIN', symbol)
 
 
 @generate.register(sdlSymbols.ProcedureStop)
-def _procedurestop(symbol):
+def _procedurestop(symbol, **kwargs):
     ''' Procedure Stop symbol '''
     return common('RETURN', symbol)
 
 
-@generate.register(sdlSymbols.Label)
-def _label(symbol, recursive=True):
-    ''' Label symbol or branch if recursive is set '''
-    _, _ = symbol, recursive
-
-
 @generate.register(sdlSymbols.Task)
-def _task(symbol):
+def _task(symbol, **kwargs):
     ''' Task symbol '''
     return common('TASK', symbol)
 
 
 @generate.register(sdlSymbols.ProcedureCall)
-def _procedurecall(symbol):
+def _procedurecall(symbol, **kwargs):
     ''' Procedure call symbol '''
-    result = [cif_coord('PROCEDURECALL', symbol)]
-    if symbol.hyperlink:
+    result = Indent()
+    result.append(cif_coord('PROCEDURECALL', symbol))
+    if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
     result.append(u'CALL {}{}'.format(unicode(symbol.text), ';'
                                       if not symbol.comment else ''))
+    if symbol.comment:
+        result.extend(generate(symbol.comment))
     return result
 
 
 @generate.register(sdlSymbols.TextSymbol)
-def _textsymbol(symbol):
+def _textsymbol(symbol, **kwargs):
     ''' Text Area symbol '''
-    result = [cif_coord('TEXT', symbol)]
-    if symbol.hyperlink:
+    result = Indent()
+    result.append(cif_coord('TEXT', symbol))
+    if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
     result.append(unicode(symbol.text))
-    result.append('/* CIF ENDTEXT */')
+    result.append(u'/* CIF ENDTEXT */')
+    return result
+
+
+@generate.register(sdlSymbols.Label)
+def _label(symbol, recursive=True, **kwargs):
+    ''' Label symbol or branch if recursive is set '''
+    result = Indent()
+    result.append(cif_coord('LABEL', symbol))
+    if symbol.text.hyperlink:
+        result.append(hyperlink(symbol))
+    if symbol.common_name == 'floating_label':
+        result.append(u'CONNECTION {}:'.format(unicode(symbol)))
+        if recursive:
+            result.extend(recursive_aligned(symbol))
+        result.append(u'/* CIF End Label */')
+        result.append(u'ENDCONNECTION;')
+    else:
+        result.append(u'{}:'.format(unicode(symbol)))
     return result
 
 
 @generate.register(sdlSymbols.State)
-def _state(symbol, recursive=True):
-    ''' State symbol or branch if recursive is set '''
-    _, _ = symbol, recursive
+def _state(symbol, recursive=True, nextstate=True, composite=False, **kwargs):
+    ''' State/Nextstate symbol or branch if recursive is set '''
+    if nextstate:
+        result = common('NEXTSTATE', symbol)
+    elif not composite and symbol.hasParent \
+            and not [each for each in symbol.childSymbols()
+            if not isinstance(each, genericSymbols.Comment)]:
+        # If nextstate has no child, don't generate anything
+        result = []
+    elif not composite:
+        result = common('STATE', symbol)
+        if recursive:
+            Indent.indent += 1
+            # Generate code for INPUT and CONNECT symbols
+            for each in (symb for symb in symbol.childSymbols()
+                         if isinstance(symb, sdlSymbols.Input)):
+                result.extend(generate(each))
+            Indent.indent -= 1
+        result.append(u'ENDSTATE;')
+    else:
+        # Generate code for a nested state
+        result = Indent()
+        result.extend(['STATE {};'.format(unicode(symbol)),
+                  'SUBSTRUCTURE'])
+        Indent.indent += 1
+        entry_points, exit_points = [], []
+        for each in symbol.nested_scene.start:
+            if unicode(each):
+                entry_points.append(unicode(each))
+        for each in symbol.nested_scene.returns:
+            if unicode(each) != u'no_name':
+                exit_points.append(unicode(each))
+        if entry_points:
+            result.append(u'in ({});'.format(','.join(entry_points)))
+        if exit_points:
+            result.append(u'out ({});'.format(','.join(exit_points)))
+        Indent.indent += 1
+        result.extend(parse_scene(symbol.nested_scene))
+        Indent.indent -= 1
+        Indent.indent -= 1
+        result.append(u'ENDSUBSTRUCTURE;')
+    return result
 
 
 @generate.register(sdlSymbols.Process)
-def _process(symbol, recursive=True):
-    ''' Process symbol or branch if recursive is set '''
-    _, _ = symbol, recursive
+def _process(symbol, recursive=True, **kwargs):
+    ''' Process symbol and inner content if recursive is set '''
+    result = common('PROCESS', symbol)
+    if recursive and symbol.nested_scene:
+        Indent.indent += 1
+        result.extend(parse_scene(symbol.nested_scene))
+        Indent.indent -= 1
+    result.append(u'ENDPROCESS {};'.format(unicode(symbol)))
+    return result
 
 
 @generate.register(sdlSymbols.Procedure)
-def _procedure(symbol, recursive=True):
+def _procedure(symbol, recursive=True, **kwargs):
     ''' Procedure symbol or branch if recursive is set '''
-    _, _ = symbol, recursive
+    result = common('PROCEDURE', symbol)
+    if recursive and symbol.nested_scene:
+        Indent.indent += 1
+        result.extend(parse_scene(symbol.nested_scene))
+        Indent.indent -= 1
+    result.append(u'ENDPROCEDURE;'.format(unicode(symbol)))
+    return result
 
 
 @generate.register(sdlSymbols.Start)
-def _start(symbol, recursive=True):
+def _start(symbol, recursive=True, **kwargs):
     ''' START symbol or branch if recursive is set '''
-    _, _ = symbol, recursive
+    result = Indent()
+    result.append(cif_coord('START', symbol))
+    result.append(u'START{via}{comment}'
+                  .format(via=(' ' + unicode(symbol) + ' ')
+                          if unicode(symbol).replace('START', '') else '',
+                          comment=';' if not symbol.comment else ''))
+    if symbol.comment:
+        result.extend(generate(symbol.comment))
+    if recursive:
+        result.extend(recursive_aligned(symbol))
+    return result

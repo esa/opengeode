@@ -78,6 +78,7 @@ import Clipboard
 import Statechart
 import Lander
 import Helper
+import Pr
 
 
 # Try importing graphviz for the SDL to Statechart converter
@@ -537,6 +538,19 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             msg_box.setDefaultButton(QtGui.QMessageBox.Discard)
             msg_box.exec_()
 
+    def check_syntax(self, symbol):
+        ''' Create PR representation for a symbol and check its syntax '''
+        pr_text = '\n'.join(Pr.generate(symbol, recursive=False))
+        errors = symbol.check_syntax(pr_text)
+        self.raise_syntax_errors(errors)
+
+    def update_completion_list(self, symbol):
+        ''' When text has changed on a symbol, update the data dictionnary '''
+        pr_text = '\n'.join(Pr.generate(symbol,
+                                        recursive=False,
+                                        nextstate=False))
+        symbol.update_completion_list(pr_text=pr_text)
+
     def find_text(self, pattern):
         ''' Return all symbols with matching text '''
         for item in (symbol for symbol in self.items()
@@ -671,31 +685,31 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.undo_stack.endMacro()
                 self.refresh()
 
-    def get_pr_string(self):
-        ''' Parse the graphical items and returns a PR string '''
-        pr_data = deque()
-        for each in self.processes:
-            pr_data.append(each.PR())
-
-        for item in chain(self.texts, self.procs, self.start):
-            pr_data.append(item.PR())
-        for item in self.floating_labels:
-            pr_data.append(item.PR_floating())
-        composite = set(self.composite_states.keys())
-        for item in self.states:
-            if item.is_composite():
-                try:
-                    composite.remove(unicode(item).lower())
-                    pr_data.appendleft(item.parse_composite_state())
-                except KeyError:
-                    pass
-            pr_data.append(item.PR_state())
-
-        return list(pr_data)
+#   def get_pr_string(self):
+#       ''' Parse the graphical items and returns a PR string '''
+#       pr_data = deque()
+#       for each in self.processes:
+#           pr_data.append(each.PR())
+#
+#       for item in chain(self.texts, self.procs, self.start):
+#           pr_data.append(item.PR())
+#       for item in self.floating_labels:
+#           pr_data.append(item.PR_floating())
+#       composite = set(self.composite_states.keys())
+#       for item in self.states:
+#           if item.is_composite():
+#               try:
+#                   composite.remove(unicode(item).lower())
+#                   pr_data.appendleft(item.parse_composite_state())
+#               except KeyError:
+#                   pass
+#           pr_data.append(item.PR_state())
+#
+#       return list(pr_data)
 
     def sdl_to_statechart(self):
         ''' Create a graphviz representation of the SDL model '''
-        pr_raw = self.get_pr_string()
+        pr_raw = Pr.parse_scene(self)
         pr_data = unicode('\n'.join(pr_raw))
         ast, _, _ = ogParser.parse_pr(string=pr_data)
         try:
@@ -1302,7 +1316,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             each.translate_to_origin()
         delta_x, delta_y = scene.translate_to_origin()
 
-        pr_raw = scene.get_pr_string()
+        pr_raw = Pr.parse_scene(scene)
 
         # Move items back to original place to avoid scrollbar jumps
         for item in scene.floating_symb:
@@ -1412,7 +1426,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                 return False
         self.need_new_scene.emit()
         self.parent_scene = []
-        #self.scene().undo_stack.clear()
+        self.scene().undo_stack.clear()
         #self.scene().clear()
         G_SYMBOLS.clear()
         self.scene().process_name = ''
@@ -1454,7 +1468,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
-        pr_raw = scene.get_pr_string()
+        pr_raw = Pr.parse_scene(scene)
         pr_data = unicode('\n'.join(pr_raw))
         if pr_data:
             _, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
@@ -1468,7 +1482,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
-        pr_raw = scene.get_pr_string()
+        pr_raw = Pr.parse_scene(scene)
         pr_data = unicode('\n'.join(pr_raw))
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
@@ -1775,12 +1789,12 @@ def opengeode():
     try:
         for module in (sdlSymbols, genericSymbols, ogAST, ogParser, Lander,
                 AdaGenerator, undoCommands, Renderer, Clipboard, Statechart,
-                Helper, LlvmGenerator, Asn1scc, Connectors):
+                Helper, LlvmGenerator, Asn1scc, Connectors, Pr):
             module.LOG.addHandler(handler_console)
             module.LOG.setLevel(level)
     except NameError:
-	    # Some modules may not be loaded (like llvm on Windows)
-	    pass;
+        # Some modules may not be loaded (like llvm on Windows)
+        pass;
     # Initialize the clipboard
     Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
 
