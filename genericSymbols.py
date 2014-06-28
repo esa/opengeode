@@ -308,6 +308,9 @@ class EditableText(QGraphicsTextItem, object):
         self.completion_prefix = text_cursor.selectedText()
         completion_count = self.completer.set_completion_prefix(
                 self.completion_prefix)
+        if event.key() in (Qt.Key_Period, Qt.Key_Exclam):
+            # Enable autocompletion of complex types
+            pass  # placeholder to update autocompletion list
         if(completion_count > 0 and len(self.completion_prefix) > 1) or(
                 event.key() == Qt.Key_F8):
             # Save the position of the cursor
@@ -362,9 +365,9 @@ class EditableText(QGraphicsTextItem, object):
             if(self.oldSize != self.parentItem().boundingRect() or
                                                 self.oldText != unicode(self)):
                 # Call syntax checker from item containing the text (if any)
-                self.parentItem().check_syntax()
+                self.scene().check_syntax(self.parentItem())
                 # Update class completion list
-                self.parentItem().update_completion_list()
+                self.scene().update_completion_list(self.parentItem())
                 # Create undo command, including possible CAM
                 with undoCommands.UndoMacro(self.scene().undo_stack, 'Text'):
                     undo_cmd = undoCommands.ResizeSymbol(
@@ -396,18 +399,6 @@ class EditableText(QGraphicsTextItem, object):
             self.oldText = unicode(self)
             self.oldSize = self.parentItem().boundingRect()
             self.editing = True
-
-    def PR(self):
-        '''
-            Return the PR notation for the hyperlink
-            TODO: remove from here, put in SDL symbols
-        '''
-        if self.hyperlink:
-            return(
-                u"/* CIF Keep Specific Geode HyperLink '{hlink}' */\n".format(
-                    hlink=self.hyperlink))
-        else:
-            return u''
 
     def __str__(self):
         ''' Print the text inside the symbol '''
@@ -601,14 +592,10 @@ class Symbol(QObject, QGraphicsPathItem, object):
         ''' Return the text inside the symbol '''
         return unicode(self.text) or u'no_name'
 
-    def parse_gr(self, recursive=True):
-        ''' Parse the graphical representation, return PR form '''
-        return self.PR()
-
-    def get_ast(self):
+    def get_ast(self, pr_text):
         ''' Return the symbol in the AST form, as returned by the parser '''
-        ast, _, ___, ____, terminators = self.parser.parseSingleElement(
-            self.common_name, self.PR())
+        ast, _, _, _, terminators = \
+                self.parser.parseSingleElement(self.common_name, pr_text)
         return ast, terminators
 
     def edit_text(self, pos=None):
@@ -624,7 +611,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         except AttributeError:
             return
 
-    def update_completion_list(self):
+    def update_completion_list(self, **kwargs):
         '''
             Update the text autocompletion list based on the symbol text
             This function is typically called when user has typed new text
@@ -632,18 +619,15 @@ class Symbol(QObject, QGraphicsPathItem, object):
         '''
         pass
 
-    def check_syntax(self):
+    def check_syntax(self, text):
         ''' Check the syntax of the text inside the symbol (if any) '''
         try:
-            _, syntax_errors, _, _, _ = (self.parser.parseSingleElement(
-                                                self.common_name, self.PR()))
+            _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
+                                           self.common_name, text)
         except (AssertionError, AttributeError):
             LOG.error('Checker failed - no parser for this construct?')
         else:
-            try:
-                self.scene().raise_syntax_errors(syntax_errors)
-            except:
-                print('[SYNTAX ERROR] ' + '\n'.join(syntax_errors))
+            return syntax_errors
 
     def paint(self, painter, _, ___):
         ''' Apply anti-aliasing or not (symbol attribute) '''
@@ -1160,17 +1144,6 @@ class Comment(Symbol):
             (comments do not influence them)
         '''
         pass
-
-    def PR(self):
-        ''' Return the text corresponding to the SDL PR notation '''
-        pos = self.scenePos()
-        return (u'\n/* CIF COMMENT ({x}, {y}), ({w}, {h}) */\n'
-                '{hlink}'
-                'COMMENT \'{comment}\';'.format(hlink=self.text.PR(),
-                    x=int(pos.x()), y=int(pos.y()),
-                    w=int(self.boundingRect().width()),
-                    h=int(self.boundingRect().height()),
-                    comment=unicode(self.text)))
 
 
 class Cornergrabber(QGraphicsPolygonItem, object):
