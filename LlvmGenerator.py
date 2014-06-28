@@ -1003,6 +1003,8 @@ def _generate_terminator(term):
 def _floating_label(label):
     ''' Generate the code for a floating label '''
     label_block = g.scope.label(str(label.inputString))
+    if not g.builder.basic_block.terminator:
+        g.builder.branch(label_block)
     g.builder.position_at_end(label_block)
 
     if label.transition:
