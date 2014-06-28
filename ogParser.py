@@ -858,7 +858,7 @@ def fix_expression_types(expr, context):
             except AttributeError:
                 pass
 
-    # If a side of the expression is of Enumerated of Choice type, check if
+    # If a side of the expression is of Enumerated or Choice type, check if
     # the other side is a literal of that sort, and change type accordingly
     for side in permutations(('left', 'right')):
         side_type = find_basic_type(getattr(expr, side[0]).exprType).kind
@@ -888,6 +888,28 @@ def fix_expression_types(expr, context):
             typed_expr = side
             ref_type = typed_expr.exprType
 
+    # If a side is a raw Sequence Of with unknown type, try to resolve it
+    for side in permutations(('left', 'right')):
+        value = getattr(expr, side[0])  # get expr.left then expr.right
+        if not isinstance(value, ogAST.PrimSequenceOf):
+            continue
+        other = getattr(expr, side[1])  # other side
+        basic = find_basic_type(value.exprType)
+        if basic.kind == 'SequenceOfType' and basic.type == UNKNOWN_TYPE:
+            asn_type = find_basic_type(other.exprType)
+            if asn_type.kind == 'SequenceOfType':
+                asn_type = asn_type.type
+                for idx, elem in enumerate(value.value):
+                    check_expr = ogAST.ExprAssign()
+                    check_expr.left = ogAST.PrimPath()
+                    check_expr.left.exprType = asn_type
+                    check_expr.right = elem
+                    fix_expression_types(check_expr, context)
+                    value.value[idx] = check_expr.right
+            # the type of the raw PrimSequenceOf can be set now
+            value.exprType.type = asn_type
+
+
     # Type check that is specific to IN expressions
     if isinstance(expr, ogAST.ExprIn):
         # check that left part is a SEQUENCE OF or a string
@@ -899,6 +921,20 @@ def fix_expression_types(expr, context):
         else:
             raise TypeError('IN expression: right part must be a list')
         compare_types(expr.right.exprType, ref_type)
+        if expr.right.is_raw == expr.left.is_raw == True:
+            # If both sides are raw (e.g. "3 in {1,2,3}"), evaluate expression
+            bool_expr = ogAST.PrimBoolean()
+            bool_expr.inputString = expr.inputString
+            bool_expr.line = expr.line
+            bool_expr.charPositionInLine = expr.charPositionInLine
+            bool_expr.exprType = type('PrBool', (object,),
+                                      {'kind': 'BooleanType'})
+            if expr.right.value in [each.value for each in expr.left.value]:
+                bool_expr.value = ['true']
+                raise Warning('Expression is always true', bool_expr)
+            else:
+                bool_expr.value = ['false']
+                raise Warning('Expression is always false', bool_expr)
         return
 
     if expr.right.is_raw == expr.left.is_raw == False:
@@ -959,17 +995,17 @@ def fix_expression_types(expr, context):
             check_expr.right = expr.right.value[det]
             fix_expression_types(check_expr, context)
             expr.right.value[det] = check_expr.right
-    elif isinstance(expr.right, ogAST.PrimSequenceOf):
-        asn_type = find_basic_type(expr.left.exprType).type
-        for idx, elem in enumerate(expr.right.value):
-            check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimPath()
-            check_expr.left.exprType = asn_type
-            check_expr.right = elem
-            fix_expression_types(check_expr, context)
-            expr.right.value[idx] = check_expr.right
-        # the type of the raw PrimSequenceOf can be set now
-        expr.right.exprType.type = asn_type
+ #  elif isinstance(expr.right, ogAST.PrimSequenceOf):
+ #      asn_type = find_basic_type(expr.left.exprType).type
+ #      for idx, elem in enumerate(expr.right.value):
+ #          check_expr = ogAST.ExprAssign()
+ #          check_expr.left = ogAST.PrimPath()
+ #          check_expr.left.exprType = asn_type
+ #          check_expr.right = elem
+ #          fix_expression_types(check_expr, context)
+ #          expr.right.value[idx] = check_expr.right
+ #      # the type of the raw PrimSequenceOf can be set now
+ #      expr.right.exprType.type = asn_type
 
     if isinstance(expr, (ogAST.ExprAnd, ogAST.ExprOr, ogAST.ExprXor)):
         # Bitwise operators: check that both sides are booleans
@@ -1105,8 +1141,12 @@ def primary_value(root, context=None):
                 prim_elem.line = elem.getLine()
                 prim_elem.charPositionInLine = elem.getCharPositionInLine()
                 prim.value.append(prim_elem)
-            prim.exprType = type('PrSO', (object,), {'kind': 'SequenceOfType',
-             'Min': str(len(child.children)), 'Max': str(len(child.children))})
+            prim.exprType = type('PrSO', (object,), {
+                'kind': 'SequenceOfType',
+                'Min': str(len(child.children)),
+                'Max': str(len(child.children)),
+                'type': UNKNOWN_TYPE
+             })
         elif child.type == lexer.BITSTR:
             prim = ogAST.PrimBitStringLiteral()
             warnings.append('Bit string literal not supported yet')
@@ -1282,6 +1322,13 @@ def expression(root, context):
                 type_name(expr.left.exprType) + '), right (' +
                 expr.right.inputString + ', type= ' +
                 type_name(expr.right.exprType) + ') ' + str(err))
+        except Warning as warn:
+            # warnings are raised when an expression returns always true or
+            # false. In that case a new expression is returned
+            report, new_expr = warn.args
+            warnings.append('Expression "{}" : {}'.
+                             format(expr.inputString, str(report)))
+            expr = new_expr
 
     if root.type in (lexer.EQ,
                      lexer.NEQ,
@@ -1927,6 +1974,8 @@ def signal(root):
             except ValueError:
                 errors.append(new_signal['name'] + ' cannot have more' +
                   ' than one parameter. Check signal declaration.')
+            except TypeError as err:
+                errors.append(str(err))
     return new_signal, errors, warnings
 
 
