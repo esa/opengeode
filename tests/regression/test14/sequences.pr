@@ -9,7 +9,7 @@ DCL p1 Point;
 DCL p2 Point;
 DCL l1 List;
 DCL l2 List;
-DCL nested Nested3;
+DCL nested Nested;
 /* CIF ENDTEXT */
 /* CIF START (0, 0), (70, 35) */
 START;
@@ -160,7 +160,7 @@ CALL writeln(2 in {1, 2, 3})
 COMMENT 'TRUE';
 /* CIF PROCEDURECALL (-46, 2210), (162, 35) */
 CALL writeln(4 in {1, 2, 3})
-/* CIF COMMENT (136, 2210), (70, 35) */
+/* CIF COMMENT (136, 2210), (75, 35) */
 COMMENT 'FALSE';
 /* CIF NEXTSTATE (0, 2260), (70, 35) */
 NEXTSTATE Wait;

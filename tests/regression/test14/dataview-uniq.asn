@@ -10,21 +10,15 @@ Point ::= SEQUENCE {
 
 List ::= SEQUENCE (SIZE (2)) OF Int32
 
-Nested0 ::= SEQUENCE {
-    p Point,
-    l List
-}
-
-Nested1 ::= SEQUENCE {
-    c Nested0
-}
-
-Nested2 ::= SEQUENCE {
-    b Nested1
-}
-
-Nested3 ::= SEQUENCE {
-    a Nested2
+Nested ::= SEQUENCE {
+    a SEQUENCE {
+        b SEQUENCE {
+            c SEQUENCE {
+                p Point,
+                l List
+            }
+        }
+    }
 }
 
 END
