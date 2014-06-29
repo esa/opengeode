@@ -633,9 +633,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             Clipboard.copy(self.selected_symbols())
         except TypeError as error_msg:
             try:
-                self.messages_window.addItem(str(error_msg))
+                self.messages_window.addItem(unicode(error_msg))
             except AttributeError:
-                LOG.error(str(error_msg))
+                LOG.error(unicode(error_msg))
             raise
 
     def cut_selected_symbols(self):
@@ -662,7 +662,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             try:
                 new_items = Clipboard.paste(parent_item, self)
             except TypeError as error_msg:
-                self.messages_window.addItem(str(error_msg))
+                LOG.error(str(error_msg))
+                try:
+                    self.messages_window.addItem(str(error_msg))
+                except AttributeError:
+                    pass
             else:
                 self.undo_stack.beginMacro('Paste')
                 for item in new_items:
@@ -685,28 +689,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.undo_stack.endMacro()
                 self.refresh()
 
-#   def get_pr_string(self):
-#       ''' Parse the graphical items and returns a PR string '''
-#       pr_data = deque()
-#       for each in self.processes:
-#           pr_data.append(each.PR())
-#
-#       for item in chain(self.texts, self.procs, self.start):
-#           pr_data.append(item.PR())
-#       for item in self.floating_labels:
-#           pr_data.append(item.PR_floating())
-#       composite = set(self.composite_states.keys())
-#       for item in self.states:
-#           if item.is_composite():
-#               try:
-#                   composite.remove(unicode(item).lower())
-#                   pr_data.appendleft(item.parse_composite_state())
-#               except KeyError:
-#                   pass
-#           pr_data.append(item.PR_state())
-#
-#       return list(pr_data)
-
     def sdl_to_statechart(self):
         ''' Create a graphviz representation of the SDL model '''
         pr_raw = Pr.parse_scene(self)
@@ -723,7 +705,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def export_branch_to_picture(self, symbol, filename, doc_format):
         ''' Save a symbol and its followers to a file '''
-        temp_scene = SDL_Scene()
+        temp_scene = SDL_Scene(context=self.context)
         temp_scene.messages_window = self.messages_window
         self.clearSelection()
         symbol.select()
@@ -746,7 +728,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # Save in multiple files
             index = 0
             for item in self.floating_symb:
-                self.export_branch_to_picture(item, filename + str(index),
+                LOG.info('Saving {ext} file: {name}.{ext}'
+                     .format(ext=doc_format, name=filename + '-' + str(index)))
+                self.export_branch_to_picture(item,
+                                              filename + '-' + str(index),
                                               doc_format)
                 index += 1
 
@@ -756,12 +741,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.clearSelection()
         self.clear_focus()
         # Copy in a different scene to get the smallest rectangle
-        other_scene = SDL_Scene()
+        other_scene = SDL_Scene(context=self.context)
         other_scene.messages_window = self.messages_window
         other_scene.setBackgroundBrush(QtGui.QBrush())
         for each in self.floating_symb:
             each.select()
-            self.copy_selected_symbols()
+            try:
+                self.copy_selected_symbols()
+            except AttributeError as err:
+                LOG.error(str(err))
             other_scene.paste_symbols()
             each.select(False)
         rect = other_scene.sceneRect()
@@ -1796,9 +1784,9 @@ def parse(files):
     LOG.info('Checking ' + str(files))
     ast, warnings, errors = ogParser.parse_pr(files=files)
 
-    LOG.info(
-        'Parsing complete. Summary, found %d warnings and %d errors' % (len(warnings), len(errors))
-    )
+    LOG.info('Parsing complete. '
+             'Summary, found {} warnings and {} errors'
+             .format(len(warnings), len(errors)))
     for warning in warnings:
         LOG.warning(warning[0])
     for error in errors:
@@ -1828,10 +1816,13 @@ def generate(process, options):
             LOG.error('LLVM IR generation failed')
 
 
-def export(process, options):
+def export(ast, options):
     ''' Export process '''
     # Qt must be initialized before using SDL_Scene
     init_qt()
+
+    # Initialize the clipboard
+    Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
 
     export_fmt = []
     if options.png:
@@ -1843,15 +1834,43 @@ def export(process, options):
     if not export_fmt:
         return
 
+    process, = ast.processes
+    try:
+        syst, = ast.systems
+        block, = syst.blocks
+        if block.processes[0].referenced:
+            LOG.debug('Process is referenced, fixing')
+            block.processes = [process]
+    except ValueError:
+        # No System/Block hierarchy, creating single block
+        block = ogAST.Block()
+        block.processes = [process]
+
     name = process.processName
-    scene = SDL_Scene(context='process')
-    scene.render_everything(process)
+    scene = SDL_Scene(context='block')
+    scene.render_everything(block)
     # Update connections, placements:
     scene.refresh()
 
-    for doc_fmt in export_fmt:
-        LOG.info('Saving {ext} file: {name}.{ext}'.format(ext=doc_fmt, name=name))
-        scene.export_img(name, doc_format=doc_fmt, split=options.split)
+    scenes = [scene]
+    def find_nested_scenes(top):
+        ''' Find all scenes (procedures, states, processes...) '''
+        for each in top.visible_symb:
+            if each.nested_scene:
+                yield each.nested_scene
+                for deep in find_nested_scenes(each.nested_scene):
+                    yield deep
+    for each in find_nested_scenes(scene):
+        if any(each.visible_symb):
+            scenes.append(each)
+
+    for idx, diagram in enumerate(scenes):
+        for doc_fmt in export_fmt:
+            LOG.info('Saving {ext} file: {name}.{ext}'
+                     .format(ext=doc_fmt, name=name+str(idx)))
+            diagram.export_img(name+str(idx),
+                               doc_format=doc_fmt,
+                               split=options.split)
 
 
 def cli(options):
@@ -1867,7 +1886,7 @@ def cli(options):
         return 1
 
     if options.png or options.pdf or options.svg:
-        export(ast.processes[0], options)
+        export(ast, options)
 
     if options.toAda or options.llvm:
         if not errors:
@@ -1879,7 +1898,7 @@ def cli(options):
 
 
 def init_qt():
-    ''' Initialize QT '''
+    ''' Initialize Qt '''
     app = QtGui.QApplication.instance()
     if app is None:
         app = QtGui.QApplication(sys.argv)

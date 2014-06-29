@@ -47,6 +47,7 @@ def add_to_scene(item, scene):
     if type(item) in scene.allowed_symbols:
         scene.addItem(item)
     else:
+        #print type(item), scene.allowed_symbols, scene.context
         raise TypeError('This symbol does not fit the current scene')
 
 
@@ -129,10 +130,10 @@ def _automaton(ast, scene):
             new_state = render(state, scene=scene, states=ast.states,
                                terminators=ast.parent.terminators)
             if new_state.nested_scene:
-                if str(new_state).lower() in nested_states:
+                if unicode(new_state).lower() in nested_states:
                     new_state.nested_scene = None
                 else:
-                    nested_states.append(str(new_state).lower())
+                    nested_states.append(unicode(new_state).lower())
         except TypeError:
             # Discard terminators (see _state function for explanation)
             pass

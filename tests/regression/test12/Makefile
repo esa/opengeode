@@ -11,8 +11,12 @@ test-ada:
 	#gnatbind -n trafficlight.ali
 	#gnatlink -o testcase test.o trafficlight.ali -lgnat -lm
 
+test-export:
+	../../../opengeode.py --png --pdf --svg trafficlight.pr system_structure.pr
+	../../../opengeode.py --png --pdf --svg --split trafficlight.pr system_structure.pr
+
 coverage:
 	coverage run -p ../../../opengeode.py trafficlight.pr system_structure.pr --toAda
 
 clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner bin *.wrn *.gpr test
+	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner bin *.wrn *.gpr *.pdf *.svg *.png test

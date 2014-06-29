@@ -751,6 +751,9 @@ class Procedure(object):
         self.comment = None
         # Set of symbols contained in the procedure (type Automaton)
         self.content = Automaton(parent=self)
+        # input/output signal lists - unused but for context information
+        self.input_signals = []
+        self.output_signals = []
 
 
 class Process(object):
