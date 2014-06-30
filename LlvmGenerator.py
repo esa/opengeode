@@ -30,11 +30,11 @@ LOG = logging.getLogger(__name__)
 __all__ = ['generate']
 
 
-# Global state
+# Global context
 g = None
 
 
-class GlobalState():
+class Context():
     def __init__(self, process):
         self.name = str(process.processName)
         self.module = core.Module.new(self.name)
@@ -156,7 +156,7 @@ def _process(process):
     LOG.info('Generating LLVM IR code for process ' + process_name)
 
     global g
-    g = GlobalState(process)
+    g = Context(process)
 
     # In case model has nested states, flatten everything
     Helper.flatten(process)
