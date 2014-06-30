@@ -15,6 +15,7 @@
     This module is managing the Copy and Paste functions.
 """
 
+import traceback
 import logging
 from itertools import chain
 import PySide
@@ -143,10 +144,22 @@ def paste_floating_objects(scene):
                 symbols.append(new_item)
                 # Insert the new state at click coordinates
                 Renderer.add_to_scene(new_item, scene)
-        for each in chain(text_areas, labels, procedures, processes):
-            LOG.debug('PASTE TA/LAB/PROC')
+        for each in chain(text_areas, labels):
+            LOG.debug('PASTE Text Area/Label')
             new_item = Renderer.render(each, scene, states=states)
             symbols.append(new_item)
+        for each in chain(procedures, processes):
+            LOG.debug('PASTE Process/Procedure')
+            new_item = Renderer.render(each, scene, states=states)
+            symbols.append(new_item)
+            new_item.nested_scene = scene.create_subscene(
+                                               type(new_item).__name__.lower())
+            # Render recursively, creating any required scene
+            try:
+                new_item.nested_scene.render_everything(each.content)
+            except TypeError as err:
+                LOG.debug(str(err))
+
         if start:
             start, = start
             LOG.debug('PASTE START')

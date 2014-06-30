@@ -389,7 +389,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def all_nested_scenes(self):
         ''' Return all nested scenes, recursively '''
         for each in self.visible_symb:
-            if each.nested_scene and isinstance(each, SDL_Scene):
+            if each.nested_scene and isinstance(each.nested_scene, SDL_Scene):
                 yield each.nested_scene
                 for sub in each.nested_scene.all_nested_scenes:
                     yield sub
@@ -406,15 +406,21 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # XXX - should be set when entering the process
                 self.process_name = ast.processName
 
-            # Render top-level items and their children:
-            for each in Renderer.render(content, dest_scene):
-                G_SYMBOLS.add(each)
+            try:
+                # Render top-level items and their children:
+                for each in Renderer.render(content, dest_scene):
+                    G_SYMBOLS.add(each)
+            except TypeError as err:
+                LOG.error(traceback.format_exc())
 
             # Render nested scenes, recursively:
             for each in (item for item in dest_scene.visible_symb
                          if item.nested_scene):
-                subscene = SDL_Scene(context=each.__class__.__name__.lower())
-                subscene.messages_window = self.messages_window
+                subscene = \
+                        self.create_subscene(each.__class__.__name__.lower())
+                #subscene = SDL_Scene(context=each.__class__.__name__.lower())
+                #subscene.messages_window = self.messages_window
+                subscene.name = unicode(each)
                 recursive_render(each.nested_scene.content, subscene)
                 each.nested_scene = subscene
 
@@ -728,11 +734,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # Save in multiple files
             index = 0
             for item in self.floating_symb:
+                name = '{}-{}'.format(filename, str(index))
                 LOG.info('Saving {ext} file: {name}.{ext}'
-                     .format(ext=doc_format, name=filename + '-' + str(index)))
-                self.export_branch_to_picture(item,
-                                              filename + '-' + str(index),
-                                              doc_format)
+                         .format(ext=doc_format, name=name))
+                self.export_branch_to_picture(item, name, doc_format)
                 index += 1
 
         if filename.split('.')[-1] != doc_format:
@@ -749,6 +754,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             try:
                 self.copy_selected_symbols()
             except AttributeError as err:
+                LOG.debug(str(traceback.format_exc()))
                 LOG.error(str(err))
             other_scene.paste_symbols()
             each.select(False)
@@ -974,6 +980,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 pprint.pprint(selection.__dict__, None, 2, 1)
             code.interact('type your command:', local=locals())
 
+
+    def create_subscene(self, context):
+        ''' Create a new SDL scene, e.g. for nested symbols '''
+        subscene = SDL_Scene(context=context)
+        subscene.messages_window = self.messages_window
+        return subscene
+
+
     def place_symbol(self, item_type, parent, pos=None):
         ''' Draw a symbol on the scene '''
         item = item_type()
@@ -991,11 +1005,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # When creating a new decision, add two default answers
             self.place_symbol(item_type=DecisionAnswer, parent=item)
             self.place_symbol(item_type=DecisionAnswer, parent=item)
-        elif item_type in (Procedure, State):
-            # Create a sub-scene for the procedure or nested state
-            subscene = SDL_Scene(context=item_type.__name__.lower())
-            subscene.messages_window = self.messages_window
-            item.nested_scene = subscene
+        elif item_type in (Procedure, State, Process):
+            # Create a sub-scene for clickable symbols
+            item.nested_scene = \
+                    self.create_subscene(item_type.__name__.lower())
 
         self.clearSelection()
         self.clear_focus()
@@ -1230,9 +1243,8 @@ class SDL_View(QtGui.QGraphicsView, object):
                     item.double_click()
                     ctx = unicode(item.__class__.__name__.lower())
                     if not isinstance(item.nested_scene, SDL_Scene):
-                        subscene = SDL_Scene(context=ctx)
-                        subscene.messages_window = self.messages_window
-                        item.nested_scene = subscene
+                        item.nested_scene = \
+                                self.scene().create_subscene(context=ctx)
                     self.go_down(item.nested_scene,
                                  name=ctx + u' ' + unicode(item))
                 else:
@@ -1377,7 +1389,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         else:
             self.load_file(filenames)
 
-    def isModelClean(self):
+    def is_model_clean(self):
         ''' Check recursively if anything has changed in any scene '''
         if self.parent_scene:
             scene = self.parent_scene[0][0]
@@ -1408,7 +1420,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def new_diagram(self):
         ''' If model state is clean, reset current diagram '''
-        if not self.isModelClean():
+        if not self.is_model_clean():
             # If changes occured since last save, pop up a window
             if not self.propose_to_save():
                 return False
@@ -1705,7 +1717,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     # pylint: disable=C0103
     def closeEvent(self, event):
         ''' Close main application '''
-        if not self.view.isModelClean():
+        if not self.view.is_model_clean():
             if not self.view.propose_to_save():
                 event.ignore()
                 return
@@ -1846,31 +1858,25 @@ def export(ast, options):
         block = ogAST.Block()
         block.processes = [process]
 
-    name = process.processName
     scene = SDL_Scene(context='block')
     scene.render_everything(block)
-    # Update connections, placements:
+    # Update connections, placements
     scene.refresh()
 
     scenes = [scene]
-    def find_nested_scenes(top):
-        ''' Find all scenes (procedures, states, processes...) '''
-        for each in top.visible_symb:
-            if each.nested_scene:
-                yield each.nested_scene
-                for deep in find_nested_scenes(each.nested_scene):
-                    yield deep
-    for each in find_nested_scenes(scene):
+    for each in set(scene.all_nested_scenes):
         if any(each.visible_symb):
             scenes.append(each)
 
     for idx, diagram in enumerate(scenes):
         for doc_fmt in export_fmt:
+            name = '{}-{}-{}-{}'.format(str(idx),
+                                        process.processName,
+                                        diagram.context,
+                                        diagram.name or 'main')
             LOG.info('Saving {ext} file: {name}.{ext}'
-                     .format(ext=doc_fmt, name=name+str(idx)))
-            diagram.export_img(name+str(idx),
-                               doc_format=doc_fmt,
-                               split=options.split)
+                     .format(ext=doc_fmt, name=name))
+            diagram.export_img(name, doc_format=doc_fmt, split=options.split)
 
 
 def cli(options):
