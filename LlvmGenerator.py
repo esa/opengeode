@@ -157,7 +157,7 @@ def _process(process):
 
     # Generare process-level vars
     for name, (ty, expr) in process.variables.viewitems():
-        var_ty = _generate_type(ty)
+        var_ty = generate_type(ty)
         global_var = g.module.add_global_variable(var_ty, str(name))
         global_var.initializer = core.Constant.null(var_ty)
         g.scope.define(str(name).lower(), global_var)
@@ -171,14 +171,14 @@ def _process(process):
     # Declare output signal functions
     for signal in process.output_signals:
         if 'type' in signal:
-            param_tys = [core.Type.pointer(_generate_type(signal['type']))]
+            param_tys = [core.Type.pointer(generate_type(signal['type']))]
         else:
             param_tys = []
         decl_func(str(signal['name']), g.void, param_tys, True)
 
     # Declare external procedures functions
     for proc in [proc for proc in process.procedures if proc.external]:
-        param_tys = [core.Type.pointer(_generate_type(p['type'])) for p in proc.fpar]
+        param_tys = [core.Type.pointer(generate_type(p['type'])) for p in proc.fpar]
         decl_func(str(proc.inputString), g.void, param_tys, True)
 
     # Generate internal procedures
@@ -186,12 +186,12 @@ def _process(process):
         generate(proc)
 
     # Generate process functions
-    _generate_runtr_func(process)
-    _generate_startup_func(process)
+    generate_runtr_func(process)
+    generate_startup_func(process)
 
     # Generate input signals
     for signal in process.input_signals:
-        _generate_input_signal(signal, mapping[signal['name']])
+        generate_input_signal(signal, mapping[signal['name']])
 
     g.module.verify()
 
@@ -199,11 +199,11 @@ def _process(process):
         ll_file.write(str(g.module))
 
 
-def _generate_runtr_func(process):
+def generate_runtr_func(process):
     ''' Generate code for the run_transition function '''
     func = decl_func('run_transition', g.void, [g.i32])
 
-    _push_scope()
+    open_scope()
 
     entry_block = func.append_basic_block('entry')
     cond_block = func.append_basic_block('cond')
@@ -252,17 +252,17 @@ def _generate_runtr_func(process):
     g.builder.position_at_end(next_tr_label_block)
     g.builder.branch(cond_block)
 
-    _pop_scope()
+    close_scope()
 
     func.verify()
     return func
 
 
-def _generate_startup_func(process):
+def generate_startup_func(process):
     ''' Generate code for the startup function '''
     func = decl_func(g.name + '_startup', g.void, [])
 
-    _push_scope()
+    open_scope()
 
     entry_block = func.append_basic_block('entry')
     g.builder = core.Builder.new(entry_block)
@@ -276,22 +276,22 @@ def _generate_startup_func(process):
     g.builder.call(g.funcs['run_transition'], [core.Constant.int(g.i32, 0)])
     g.builder.ret_void()
 
-    _pop_scope()
+    close_scope()
 
     func.verify()
     return func
 
 
-def _generate_input_signal(signal, inputs):
+def generate_input_signal(signal, inputs):
     ''' Generate code for an input signal '''
     func_name = g.name + "_" + str(signal['name'])
     param_tys = []
     if 'type' in signal:
-        param_tys.append(core.Type.pointer(_generate_type(signal['type'])))
+        param_tys.append(core.Type.pointer(generate_type(signal['type'])))
 
     func = decl_func(func_name, g.void, param_tys)
 
-    _push_scope()
+    open_scope()
 
     entry_block = func.append_basic_block('entry')
     exit_block = func.append_basic_block('exit')
@@ -324,7 +324,7 @@ def _generate_input_signal(signal, inputs):
     g.builder.position_at_end(exit_block)
     g.builder.ret_void()
 
-    _pop_scope()
+    close_scope()
 
     func.verify()
 
@@ -337,16 +337,16 @@ def _call_external_function(output):
         name = out['outputName'].lower()
 
         if name == 'write':
-            _generate_write(out['params'])
+            generate_write(out['params'])
             continue
         elif name == 'writeln':
-            _generate_writeln(out['params'])
+            generate_writeln(out['params'])
             continue
         elif name == 'reset_timer':
-            _generate_reset_timer(out['params'])
+            generate_reset_timer(out['params'])
             continue
         elif name == 'set_timer':
-            _generate_set_timer(out['params'])
+            generate_set_timer(out['params'])
             continue
 
         func = g.funcs[str(name).lower()]
@@ -365,7 +365,7 @@ def _call_external_function(output):
         g.builder.call(func, params)
 
 
-def _generate_write(params):
+def generate_write(params):
     ''' Generate the code for the write operator '''
     zero = core.Constant.int(g.i32, 0)
     for param in params:
@@ -373,17 +373,17 @@ def _generate_write(params):
         expr_val = expression(param)
 
         if basic_ty.kind == 'IntegerType':
-            fmt_val = _get_string_cons('% d')
+            fmt_val = get_string_cons('% d')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
             g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
         elif basic_ty.kind == 'RealType':
-            fmt_val = _get_string_cons('% .14E')
+            fmt_val = get_string_cons('% .14E')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
             g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
         elif basic_ty.kind == 'BooleanType':
-            true_str_val = _get_string_cons('TRUE')
+            true_str_val = get_string_cons('TRUE')
             true_str_ptr = g.builder.gep(true_str_val, [zero, zero])
-            false_str_val = _get_string_cons('FALSE')
+            false_str_val = get_string_cons('FALSE')
             false_str_ptr = g.builder.gep(false_str_val, [zero, zero])
             str_ptr = g.builder.select(expr_val, true_str_ptr, false_str_ptr)
             g.builder.call(g.funcs['printf'], [str_ptr])
@@ -394,17 +394,17 @@ def _generate_write(params):
             raise NotImplementedError
 
 
-def _generate_writeln(params):
+def generate_writeln(params):
     ''' Generate the code for the writeln operator '''
-    _generate_write(params)
+    generate_write(params)
 
     zero = core.Constant.int(g.i32, 0)
-    str_cons = _get_string_cons('\n')
+    str_cons = get_string_cons('\n')
     str_ptr = g.builder.gep(str_cons, [zero, zero])
     g.builder.call(g.funcs['printf'], [str_ptr])
 
 
-def _generate_reset_timer(params):
+def generate_reset_timer(params):
     ''' Generate the code for the reset timer operator '''
     timer_id = params[0]
     reset_func_name = 'reset_%s' % timer_id.value[0]
@@ -413,7 +413,7 @@ def _generate_reset_timer(params):
     g.builder.call(reset_func, [])
 
 
-def _generate_set_timer(params):
+def generate_set_timer(params):
     ''' Generate the code for the set timer operator '''
     timer_expr, timer_id = params
     set_func_name = 'set_%s' % timer_id.value[0]
@@ -445,12 +445,12 @@ def _task_forloop(task):
     ''' Generate the code for a for loop '''
     for loop in task.elems:
         if loop['range']:
-            _generate_for_range(loop)
+            generate_for_range(loop)
         else:
-            _generate_for_iterable(loop)
+            generate_for_iterable(loop)
 
 
-def _generate_for_range(loop):
+def generate_for_range(loop):
     ''' Generate the code for a for x in range loop '''
     func = g.builder.basic_block.function
     cond_block = func.append_basic_block('for:cond')
@@ -458,7 +458,7 @@ def _generate_for_range(loop):
     inc_block = func.append_basic_block('for:inc')
     end_block = func.append_basic_block('')
 
-    _push_scope()
+    open_scope()
 
     loop_var = g.builder.alloca(g.i32, None, str(loop['var']))
     g.scope.define(str(loop['var']), loop_var)
@@ -490,10 +490,10 @@ def _generate_for_range(loop):
 
     g.builder.position_at_end(end_block)
 
-    _pop_scope()
+    close_scope()
 
 
-def _generate_for_iterable(loop):
+def generate_for_iterable(loop):
     ''' Generate the code for a for x in iterable loop'''
     raise NotImplementedError
 
@@ -841,7 +841,7 @@ def _empty_string(primary):
 @expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary):
     ''' Generate code for a string (Octet String) '''
-    return _get_string_cons(str(primary.value[1:-1]))
+    return get_string_cons(str(primary.value[1:-1]))
 
 
 @expression.register(ogAST.PrimConstant)
@@ -880,7 +880,7 @@ def _sequence(seq):
 @expression.register(ogAST.PrimSequenceOf)
 def _sequence_of(seqof):
     ''' Generate the code for an ASN.1 SEQUENCE OF '''
-    ty = _generate_type(seqof.exprType)
+    ty = generate_type(seqof.exprType)
     struct_ptr = g.builder.alloca(ty)
     zero_cons = core.Constant.int(g.i32, 0)
     array_ptr = g.builder.gep(struct_ptr, [zero_cons, zero_cons])
@@ -959,10 +959,10 @@ def _transition(tr):
         if isinstance(action, ogAST.Label):
             return
     if tr.terminator:
-        _generate_terminator(tr.terminator)
+        generate_terminator(tr.terminator)
 
 
-def _generate_terminator(term):
+def generate_terminator(term):
     ''' Generate the code for a transition terminator '''
     if term.label:
         raise NotImplementedError
@@ -1016,10 +1016,10 @@ def _floating_label(label):
 @generate.register(ogAST.Procedure)
 def _inner_procedure(proc):
     ''' Generate the code for a procedure '''
-    param_tys = [core.Type.pointer(_generate_type(p['type'])) for p in proc.fpar]
+    param_tys = [core.Type.pointer(generate_type(p['type'])) for p in proc.fpar]
     func = decl_func(str(proc.inputString), g.void, param_tys)
 
-    _push_scope()
+    open_scope()
 
     for arg, param in zip(func.args, proc.fpar):
         g.scope.define(str(param['name']), arg)
@@ -1037,12 +1037,12 @@ def _inner_procedure(proc):
     for label in proc.content.floating_labels:
         generate(label)
 
-    _pop_scope()
+    close_scope()
 
     func.verify()
 
 
-def _generate_type(ty):
+def generate_type(ty):
     ''' Generate the equivalent LLVM type of a ASN.1 type '''
     basic_ty = find_basic_type(ty)
     if basic_ty.kind == 'IntegerType':
@@ -1063,7 +1063,7 @@ def _generate_type(ty):
         if min_size != max_size:
             raise NotImplementedError
 
-        elem_ty = _generate_type(basic_ty.type)
+        elem_ty = generate_type(basic_ty.type)
         array_ty = core.Type.array(elem_ty, max_size)
 
         try:
@@ -1081,7 +1081,7 @@ def _generate_type(ty):
         field_types = []
         for field_name in Helper.sorted_fields(basic_ty):
             field_names.append(field_name.replace('-', '_'))
-            field_types.append(_generate_type(basic_ty.Children[field_name].type))
+            field_types.append(generate_type(basic_ty.Children[field_name].type))
         struct = decl_struct(field_names, field_types, ty.ReferencedTypeName)
         return struct.ty
     elif basic_ty.kind == 'EnumeratedType':
@@ -1090,17 +1090,17 @@ def _generate_type(ty):
         raise NotImplementedError
 
 
-def _push_scope():
-    ''' Push a new scope '''
+def open_scope():
+    ''' Open a new scope '''
     g.scope = Scope(g.scope)
 
 
-def _pop_scope():
-    ''' Pop the current scope '''
+def close_scope():
+    ''' Close the current scope '''
     g.scope = g.scope.parent
 
 
-def _get_string_cons(str):
+def get_string_cons(str):
     ''' Returns a reference to a global string constant with the given value '''
     if str in g.strings:
         return g.strings[str]
