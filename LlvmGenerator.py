@@ -548,7 +548,10 @@ def generate_for_iterable(loop):
     # load block
     g.builder.position_at_end(load_block)
     idx_var = g.builder.load(idx_ptr)
-    generate_assign(var_ptr, g.builder.load(g.builder.gep(array_ptr, [g.zero, idx_var])))
+    if element_typ.kind == core.TYPE_STRUCT:
+        generate_assign(var_ptr, g.builder.gep(array_ptr, [g.zero, idx_var]))
+    else:
+        generate_assign(var_ptr, g.builder.load(g.builder.gep(array_ptr, [g.zero, idx_var])))
     g.builder.branch(body_block)
 
     # body block
