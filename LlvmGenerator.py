@@ -20,7 +20,7 @@
 import logging
 
 from singledispatch import singledispatch
-from llvm import core
+from llvm import core, ee
 
 import ogAST
 import Helper
@@ -38,12 +38,14 @@ class GlobalState():
     def __init__(self, process):
         self.name = str(process.processName)
         self.module = core.Module.new(self.name)
+        self.target_data = ee.TargetData.new(self.module.data_layout)
         self.dataview = process.dataview
 
         self.scope = Scope()
         self.global_scope = self.scope
         self.states = {}
         self.structs = {}
+        self.unions = {}
         self.strings = {}
         self.funcs = {}
 
@@ -91,6 +93,21 @@ class StructType():
 
     def idx(self, field_name):
         return self.field_names.index(field_name)
+
+
+class UnionType():
+    def __init__(self, name, field_names, field_types):
+        self.name = name
+        self.field_names = field_names
+        self.field_types = field_types
+        # Unions are represented a struct with a field indicating the index of its type
+        # and a byte array with the size of the biggest type in the union
+        self.size = max([g.target_data.size(ty) for ty in field_types])
+        self.ty = core.Type.struct([g.i32, core.Type.array(g.i8, self.size)], name)
+
+    def kind(self, name):
+        idx = self.field_names.index(name)
+        return (idx, self.field_types[idx])
 
 
 class Scope:
@@ -530,11 +547,18 @@ def _prim_path_reference(prim):
                 raise NotImplementedError
         else:
             var_ty = var_ptr.type
-            struct = g.structs[var_ty.pointee.name]
-            field_idx_cons = core.Constant.int(g.i32, struct.idx(elem.lower()))
-            field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
-            var_ptr = field_ptr
-
+            if var_ty.pointee.name in g.structs:
+                struct = g.structs[var_ty.pointee.name]
+                field_idx_cons = core.Constant.int(g.i32, struct.idx(elem))
+                field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
+                var_ptr = field_ptr
+            elif var_ty.pointee.name in g.unions:
+                union = g.unions[var_ty.pointee.name]
+                _, field_ty = union.kind(elem)
+                field_ptr = g.builder.gep(var_ptr, [zero_cons, core.Constant.int(g.i32, 1)])
+                var_ptr = g.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
+            else:
+                raise NotImplementedError
     return var_ptr
 
 
@@ -897,7 +921,23 @@ def _sequence_of(seqof):
 @expression.register(ogAST.PrimChoiceItem)
 def _choiceitem(choice):
     ''' Generate the code for a CHOICE expression '''
-    raise NotImplementedError
+    union = g.unions[choice.exprType.ReferencedTypeName]
+    union_ptr = g.builder.alloca(union.ty)
+
+    zero_cons = core.Constant.int(g.i32, 0)
+    one_cons = core.Constant.int(g.i32, 1)
+
+    expr_val = expression(choice.value['value'])
+    kind_idx, field_ty = union.kind(choice.value['choice'])
+
+    kind_ptr = g.builder.gep(union_ptr, [zero_cons, zero_cons])
+    g.builder.store(core.Constant.int(g.i32, kind_idx), kind_ptr)
+
+    field_ptr = g.builder.gep(union_ptr, [zero_cons, one_cons])
+    field_ptr = g.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
+    generate_assign(field_ptr, expr_val)
+
+    return union_ptr
 
 
 @generate.register(ogAST.Decision)
@@ -1086,6 +1126,18 @@ def generate_type(ty):
         return struct.ty
     elif basic_ty.kind == 'EnumeratedType':
         return g.i32
+    elif basic_ty.kind == 'ChoiceType':
+        if ty.ReferencedTypeName in g.unions:
+            return g.unions[ty.ReferencedTypeName].ty
+
+        field_names = []
+        field_types = []
+        for name, t in basic_ty.Children.viewitems():
+            field_names.append(name)
+            field_types.append(generate_type(t.type))
+
+        union = decl_union(field_names, field_types, ty.ReferencedTypeName)
+        return union.ty
     else:
         raise NotImplementedError
 
@@ -1125,9 +1177,16 @@ def decl_func(name, return_ty, param_tys, extern=False):
 def decl_struct(field_names, field_types, name=None):
     ''' Declare a struct '''
     name = name if name else "struct.%s" % len(g.structs)
-    struct_ty = StructType(name, field_names, field_types)
-    g.structs[name] = struct_ty
-    return struct_ty
+    struct = StructType(name, field_names, field_types)
+    g.structs[name] = struct
+    return struct
+
+
+def decl_union(field_names, field_types, name=None):
+    name = name if name else "union.%s" % len(g.structs)
+    union = UnionType(name, field_names, field_types)
+    g.unions[name] = union
+    return union
 
 
 def is_struct_ptr(val):
