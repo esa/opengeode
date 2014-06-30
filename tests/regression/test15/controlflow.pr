@@ -7,15 +7,18 @@ PROCESS controlflow;
 
 DCL n Int32;
 DCL b Bool;
-DCL l List;
+DCL l1 IntList;
+DCL l2 PointList;
     /* CIF ENDTEXT */
     /* CIF START (0, 0), (70, 35) */
     START;
         /* CIF TASK (0, 50), (70, 35) */
         TASK n := 0;
-        /* CIF TASK (-10, 100), (90, 35) */
-        TASK l := {1, 2};
-        /* CIF NEXTSTATE (0, 150), (70, 35) */
+        /* CIF TASK (-13, 100), (97, 35) */
+        TASK l1 := {1, 2};
+        /* CIF TASK (-55, 150), (181, 35) */
+        TASK l2 := {{x 1, y 2}, {x 3, y 4}};
+        /* CIF NEXTSTATE (0, 200), (70, 35) */
         NEXTSTATE Wait;
     /* CIF LABEL (470, 571), (78, 35) */
     CONNECTION label1:
@@ -37,51 +40,59 @@ DCL l List;
         NEXTSTATE wait;
     /* CIF End Label */
     ENDCONNECTION;
-    /* CIF STATE (0, 150), (70, 35) */
+    /* CIF STATE (0, 200), (70, 35) */
     STATE Wait;
-        /* CIF INPUT (0, 205), (70, 35) */
+        /* CIF INPUT (0, 255), (70, 35) */
         INPUT run;
-            /* CIF DECISION (0, 255), (70, 50) */
+            /* CIF DECISION (0, 305), (70, 50) */
             DECISION b;
-                    /* CIF ANSWER (-61, 325), (73, 24) */
+                    /* CIF ANSWER (-61, 375), (73, 24) */
                     (true):
-                        /* CIF PROCEDURECALL (-83, 364), (118, 35) */
+                        /* CIF PROCEDURECALL (-83, 414), (118, 35) */
                         CALL writeln(true);
-                    /* CIF ANSWER (65, 325), (78, 24) */
+                    /* CIF ANSWER (65, 375), (78, 24) */
                     (false):
-                        /* CIF PROCEDURECALL (42, 364), (122, 35) */
+                        /* CIF PROCEDURECALL (42, 414), (122, 35) */
                         CALL writeln(false);
             ENDDECISION;
-            /* CIF DECISION (0, 414), (70, 50) */
+            /* CIF DECISION (0, 464), (70, 50) */
             DECISION n;
-                    /* CIF ANSWER (-32, 444), (70, 24) */
+                    /* CIF ANSWER (-32, 484), (70, 24) */
                     (2):
-                        /* CIF PROCEDURECALL (-47, 483), (100, 35) */
+                        /* CIF PROCEDURECALL (-47, 523), (100, 35) */
                         CALL writeln(2);
-                    /* CIF ANSWER (-143, 445), (70, 24) */
+                    /* CIF ANSWER (-143, 485), (70, 24) */
                     (1):
-                        /* CIF PROCEDURECALL (-158, 484), (100, 35) */
+                        /* CIF PROCEDURECALL (-158, 524), (100, 35) */
                         CALL writeln(1);
-                    /* CIF ANSWER (90, 444), (70, 24) */
+                    /* CIF ANSWER (90, 484), (70, 24) */
                     else:
-                        /* CIF PROCEDURECALL (62, 483), (124, 35) */
+                        /* CIF PROCEDURECALL (62, 523), (124, 35) */
                         CALL writeln('else');
             ENDDECISION;
-            /* CIF TASK (-48, 534), (167, 56) */
+            /* CIF TASK (-48, 574), (167, 56) */
             TASK for x in range(3):
     call writeln(x);
 endfor;
-            /* CIF TASK (0, 605), (70, 35) */
+            /* CIF TASK (0, 645), (70, 35) */
             TASK n := 0;
-            /* CIF TASK (-55, 655), (181, 56) */
+            /* CIF TASK (-55, 695), (181, 56) */
             TASK for x in range(2, 10, 2):
     n := (n + x) mod 255
 endfor;
-            /* CIF PROCEDURECALL (-15, 726), (100, 35) */
+            /* CIF PROCEDURECALL (-15, 766), (100, 34) */
             CALL writeln(n)
-            /* CIF COMMENT (105, 701), (70, 35) */
+            /* CIF COMMENT (105, 730), (70, 35) */
             COMMENT '20';
-            /* CIF JOIN (17, 776), (35, 35) */
+            /* CIF TASK (-36, 815), (142, 56) */
+            TASK for x in l1:
+  call writeln(x);
+endfor;
+            /* CIF TASK (-38, 886), (146, 56) */
+            TASK for p in l2:
+  call writeln(p!x);
+endfor;
+            /* CIF JOIN (17, 957), (35, 35) */
             JOIN label1;
     ENDSTATE;
 ENDPROCESS controlflow;

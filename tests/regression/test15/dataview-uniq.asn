@@ -5,6 +5,13 @@ Int32 ::= INTEGER (-2147483648 .. 2147483647)
 
 Bool ::= BOOLEAN
 
-List ::= SEQUENCE (SIZE (2)) OF Int32
+Point ::= SEQUENCE {
+    x Int32,
+    y Int32
+}
+
+IntList ::= SEQUENCE (SIZE (2)) OF Int32
+
+PointList ::= SEQUENCE (SIZE(2)) OF Point
 
 END

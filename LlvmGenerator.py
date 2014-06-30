@@ -62,6 +62,10 @@ class GlobalState():
         self.i64_ptr = core.Type.pointer(self.i64)
         self.double_ptr = core.Type.pointer(self.double)
 
+        # Initialize common constants
+        self.zero = core.Constant.int(self.i32, 0)
+        self.one = core.Constant.int(self.i32, 1)
+
         # Intialize built-in functions
         ty = core.Type.function(self.void, [core.Type.pointer(self.i8)], True)
         self.funcs['printf'] = self.module.add_function(ty, 'printf')
@@ -512,7 +516,56 @@ def generate_for_range(loop):
 
 def generate_for_iterable(loop):
     ''' Generate the code for a for x in iterable loop'''
-    raise NotImplementedError
+    seqof_asn1ty = find_basic_type(loop['list'].exprType)
+    if seqof_asn1ty.Min != seqof_asn1ty.Min:
+        raise NotImplementedError
+
+    func = g.builder.basic_block.function
+
+    # block for loading the value from the secuence
+    # at the current index, incrementing the index afterwards
+    load_block = func.append_basic_block('forin:load')
+    # block for the body of the loop
+    body_block = func.append_basic_block('forin:body')
+    # block for checking if should loop again or terminate
+    cond_block = func.append_basic_block('forin:cond')
+    end_block = func.append_basic_block('')
+
+    open_scope()
+
+    idx_ptr = g.builder.alloca(g.i32)
+    g.builder.store(core.Constant.int(g.i32, 0), idx_ptr)
+    seqof_struct_ptr = expression(loop['list'])
+    array_ptr = g.builder.gep(seqof_struct_ptr, [g.zero, g.zero])
+    element_typ = array_ptr.type.pointee.element
+    array_len_val = core.Constant.int(g.i32, array_ptr.type.pointee.count)
+
+    var_ptr = g.builder.alloca(element_typ, None, str(loop['var']))
+    g.scope.define(str(loop['var']), var_ptr)
+
+    g.builder.branch(load_block)
+
+    # load block
+    g.builder.position_at_end(load_block)
+    idx_var = g.builder.load(idx_ptr)
+    generate_assign(var_ptr, g.builder.load(g.builder.gep(array_ptr, [g.zero, idx_var])))
+    g.builder.branch(body_block)
+
+    # body block
+    g.builder.position_at_end(body_block)
+    generate(loop['transition'])
+    g.builder.branch(cond_block)
+
+    # cond block
+    g.builder.position_at_end(cond_block)
+    tmp_val = g.builder.add(idx_var, g.one)
+    g.builder.store(tmp_val, idx_ptr)
+    cond_val = g.builder.icmp(core.ICMP_SLT, tmp_val, array_len_val)
+    g.builder.cbranch(cond_val, load_block, end_block)
+
+    g.builder.position_at_end(end_block)
+
+    close_scope()
 
 
 @singledispatch
