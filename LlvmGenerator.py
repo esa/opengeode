@@ -966,7 +966,7 @@ def _sequence_of(seqof):
         idx_cons = core.Constant.int(g.i32, idx)
         expr_val = expression(expr)
         pos_ptr = g.builder.gep(array_ptr, [zero_cons, idx_cons])
-        g.builder.store(expr_val, pos_ptr)
+        generate_assign(pos_ptr, expr_val)
 
     return struct_ptr
 
