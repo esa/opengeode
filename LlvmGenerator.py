@@ -592,13 +592,11 @@ def _prim_path_reference(prim):
     if not prim.value:
         return var_ptr
 
-    zero_cons = core.Constant.int(g.i32, 0)
-
     for elem in prim.value[1:]:
         if type(elem) == dict:
             if 'index' in elem:
                 idx_val = expression(elem['index'][0])
-                var_ptr = g.builder.gep(var_ptr, [zero_cons, zero_cons, idx_val])
+                var_ptr = g.builder.gep(var_ptr, [g.zero, g.zero, idx_val])
             else:
                 raise NotImplementedError
         else:
@@ -606,12 +604,12 @@ def _prim_path_reference(prim):
             if var_ty.pointee.name in g.structs:
                 struct = g.structs[var_ty.pointee.name]
                 field_idx_cons = core.Constant.int(g.i32, struct.idx(elem))
-                field_ptr = g.builder.gep(var_ptr, [zero_cons, field_idx_cons])
+                field_ptr = g.builder.gep(var_ptr, [g.zero, field_idx_cons])
                 var_ptr = field_ptr
             elif var_ty.pointee.name in g.unions:
                 union = g.unions[var_ty.pointee.name]
                 _, field_ty = union.kind(elem)
-                field_ptr = g.builder.gep(var_ptr, [zero_cons, core.Constant.int(g.i32, 1)])
+                field_ptr = g.builder.gep(var_ptr, [g.zero, g.one])
                 var_ptr = g.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
             else:
                 raise NotImplementedError
@@ -852,13 +850,12 @@ def _expr_in(expr):
 
     array_ty = array_ptr.type.pointee.elements[0]
     array_size = core.Constant.int(g.i32, array_ty.count)
-    zero_cons = core.Constant.int(g.i32, 0)
 
     g.builder.branch(check_block)
 
     g.builder.position_at_end(check_block)
     idx_val = g.builder.load(idx_ptr)
-    elem_val = g.builder.load(g.builder.gep(array_ptr, [zero_cons, zero_cons, idx_val]))
+    elem_val = g.builder.load(g.builder.gep(array_ptr, [g.zero, g.zero, idx_val]))
     if value_val.type.kind == core.TYPE_INTEGER:
         cond_val = g.builder.icmp(core.ICMP_EQ, value_val, elem_val)
     elif value_val.type.kind == core.TYPE_DOUBLE:
@@ -947,11 +944,10 @@ def _sequence(seq):
     ''' Generate the code for an ASN.1 SEQUENCE '''
     struct = g.structs[seq.exprType.ReferencedTypeName]
     struct_ptr = g.builder.alloca(struct.ty)
-    zero_cons = core.Constant.int(g.i32, 0)
 
     for field_name, field_expr in seq.value.viewitems():
         field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name))
-        field_ptr = g.builder.gep(struct_ptr, [zero_cons, field_idx_cons])
+        field_ptr = g.builder.gep(struct_ptr, [g.zero, field_idx_cons])
         generate_assign(field_ptr, expression(field_expr))
 
     return struct_ptr
@@ -962,13 +958,12 @@ def _sequence_of(seqof):
     ''' Generate the code for an ASN.1 SEQUENCE OF '''
     ty = generate_type(seqof.exprType)
     struct_ptr = g.builder.alloca(ty)
-    zero_cons = core.Constant.int(g.i32, 0)
-    array_ptr = g.builder.gep(struct_ptr, [zero_cons, zero_cons])
+    array_ptr = g.builder.gep(struct_ptr, [g.zero, g.zero])
 
     for idx, expr in enumerate(seqof.value):
         idx_cons = core.Constant.int(g.i32, idx)
         expr_val = expression(expr)
-        pos_ptr = g.builder.gep(array_ptr, [zero_cons, idx_cons])
+        pos_ptr = g.builder.gep(array_ptr, [g.zero, idx_cons])
         generate_assign(pos_ptr, expr_val)
 
     return struct_ptr
@@ -980,16 +975,13 @@ def _choiceitem(choice):
     union = g.unions[choice.exprType.ReferencedTypeName]
     union_ptr = g.builder.alloca(union.ty)
 
-    zero_cons = core.Constant.int(g.i32, 0)
-    one_cons = core.Constant.int(g.i32, 1)
-
     expr_val = expression(choice.value['value'])
     kind_idx, field_ty = union.kind(choice.value['choice'])
 
-    kind_ptr = g.builder.gep(union_ptr, [zero_cons, zero_cons])
+    kind_ptr = g.builder.gep(union_ptr, [g.zero, g.zero])
     g.builder.store(core.Constant.int(g.i32, kind_idx), kind_ptr)
 
-    field_ptr = g.builder.gep(union_ptr, [zero_cons, one_cons])
+    field_ptr = g.builder.gep(union_ptr, [g.zero, g.one])
     field_ptr = g.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
     generate_assign(field_ptr, expr_val)
 
