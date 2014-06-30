@@ -389,7 +389,7 @@ def generate_write(params):
         basic_ty = find_basic_type(param.exprType)
         expr_val = expression(param)
 
-        if basic_ty.kind == 'IntegerType':
+        if basic_ty.kind in ['IntegerType', 'Integer32Type']:
             fmt_val = get_string_cons('% d')
             fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
             g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
@@ -1085,7 +1085,7 @@ def _inner_procedure(proc):
 def generate_type(ty):
     ''' Generate the equivalent LLVM type of a ASN.1 type '''
     basic_ty = find_basic_type(ty)
-    if basic_ty.kind == 'IntegerType':
+    if basic_ty.kind in ['IntegerType', 'Integer32Type']:
         return g.i32
     elif basic_ty.kind == 'BooleanType':
         return g.i1
