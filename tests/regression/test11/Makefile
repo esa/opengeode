@@ -18,7 +18,9 @@ test-llvm:
 	gcc -c og.s
 	gcc -c test_llvm.c
 	gcc og.o test_llvm.o -o testcase
-	./testcase | diff expected -
+	# loops forever. Fail until fixed
+	#./testcase | diff expected -
+	exit 1
 
 
 coverage:
