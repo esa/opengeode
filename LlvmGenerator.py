@@ -1209,6 +1209,12 @@ def _inner_procedure(proc):
 def generate_type(ty):
     ''' Generate the equivalent LLVM type of a ASN.1 type '''
     basic_ty = find_basic_type(ty)
+
+    try:
+        name = ty.ReferencedTypeName.replace('-', '_')
+    except AttributeError:
+        name = None
+
     if basic_ty.kind in ['IntegerType', 'Integer32Type']:
         return g.i32
     elif basic_ty.kind == 'BooleanType':
@@ -1216,60 +1222,80 @@ def generate_type(ty):
     elif basic_ty.kind == 'RealType':
         return g.double
     elif basic_ty.kind == 'SequenceOfType':
-        try:
-            if ty.ReferencedTypeName in g.structs:
-                return g.structs[ty.ReferencedTypeName].ty
-        except AttributeError:
-            pass
-
-        min_size = int(basic_ty.Max)
-        max_size = int(basic_ty.Min)
-        if min_size != max_size:
-            raise NotImplementedError
-
-        elem_ty = generate_type(basic_ty.type)
-        array_ty = core.Type.array(elem_ty, max_size)
-
-        try:
-            struct = decl_struct(['arr'], [array_ty], ty.ReferencedTypeName)
-        except AttributeError:
-            # anonymous sequence used in expressions like a in {b, c, d}
-            struct = decl_struct(['arr'], [array_ty])
-
-        return struct.ty
+        return generate_sequenceof_type(name, basic_ty)
     elif basic_ty.kind == 'SequenceType':
-        if ty.ReferencedTypeName in g.structs:
-            return g.structs[ty.ReferencedTypeName].ty
-
-        field_names = []
-        field_types = []
-        for field_name in Helper.sorted_fields(basic_ty):
-            field_names.append(field_name.replace('-', '_'))
-            field_types.append(generate_type(basic_ty.Children[field_name].type))
-        struct = decl_struct(field_names, field_types, ty.ReferencedTypeName)
-        return struct.ty
+        return generate_sequence_type(name, basic_ty)
     elif basic_ty.kind == 'EnumeratedType':
         return g.i32
     elif basic_ty.kind == 'ChoiceType':
-        if ty.ReferencedTypeName in g.unions:
-            return g.unions[ty.ReferencedTypeName].ty
-
-        field_names = []
-        field_types = []
-        for name, t in basic_ty.Children.viewitems():
-            field_names.append(name)
-            field_types.append(generate_type(t.type))
-
-        union = decl_union(field_names, field_types, ty.ReferencedTypeName)
-        return union.ty
+        return generate_choice_type(name, basic_ty)
     elif basic_ty.kind == 'OctetStringType':
-        max_size = int(basic_ty.Max)
-        name = ty.ReferencedTypeName.replace('-', '_')
-        arr_ty = core.Type.array(g.i8, max_size)
-        struct = decl_struct(['nCount', 'arr'], [g.i32, arr_ty], name)
-        return struct.ty
+        return generate_octetstring_type(name, basic_ty)
     else:
         raise NotImplementedError
+
+
+def generate_sequenceof_type(name, sequenceof_ty):
+    ''' Generate the equivalent LLVM type of a SequenceOf type '''
+
+    if name and name in g.structs:
+        return g.structs[name].ty
+
+    min_size = int(sequenceof_ty.Max)
+    max_size = int(sequenceof_ty.Min)
+    if min_size != max_size:
+        raise NotImplementedError
+
+    elem_ty = generate_type(sequenceof_ty.type)
+    array_ty = core.Type.array(elem_ty, max_size)
+
+    if name:
+        struct = decl_struct(['arr'], [array_ty], name)
+    else:
+        # anonymous sequence used in expressions like a in {b, c, d}
+        struct = decl_struct(['arr'], [array_ty])
+
+    return struct.ty
+
+
+def generate_sequence_type(name, sequence_ty):
+    ''' Generate the equivalent LLVM type of a Sequence type '''
+    if name in g.structs:
+        return g.structs[name].ty
+
+    field_names = []
+    field_types = []
+    for field_name in Helper.sorted_fields(sequence_ty):
+        field_names.append(field_name.replace('-', '_'))
+        field_types.append(generate_type(sequence_ty.Children[field_name].type))
+    struct = decl_struct(field_names, field_types, name)
+    return struct.ty
+
+
+def generate_choice_type(name, choice_ty):
+    ''' Generate the equivalent LLVM type of a Choice type '''
+    if name in g.unions:
+        return g.unions[name].ty
+
+    field_names = []
+    field_types = []
+    for name, t in choice_ty.Children.viewitems():
+        field_names.append(name)
+        field_types.append(generate_type(t.type))
+
+    union = decl_union(field_names, field_types, name)
+    return union.ty
+
+
+def generate_octetstring_type(name, octetstring_ty):
+    ''' Generate the equivalent LLVM type of a OcterString type '''
+    if name in g.structs:
+        return g.structs[name].ty
+
+    max_size = int(octetstring_ty.Max)
+    arr_ty = core.Type.array(g.i8, max_size)
+    struct = decl_struct(['nCount', 'arr'], [g.i32, arr_ty], name)
+    return struct.ty
 
 
 def open_scope():
