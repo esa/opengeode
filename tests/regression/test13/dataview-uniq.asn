@@ -4,5 +4,6 @@ BEGIN
 Int ::= INTEGER(0..1000)
 Bool ::= BOOLEAN
 Float ::= REAL (0..10000.0)
+String ::= OCTET STRING (SIZE (0..20))
 
 END

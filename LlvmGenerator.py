@@ -388,29 +388,30 @@ def _call_external_function(output):
 
 def generate_write(params):
     ''' Generate the code for the write operator '''
-    zero = core.Constant.int(g.i32, 0)
     for param in params:
         basic_ty = find_basic_type(param.exprType)
         expr_val = expression(param)
 
         if basic_ty.kind in ['IntegerType', 'Integer32Type']:
             fmt_val = get_string_cons('% d')
-            fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
+            fmt_ptr = g.builder.gep(fmt_val, [g.zero, g.zero])
             g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
         elif basic_ty.kind == 'RealType':
             fmt_val = get_string_cons('% .14E')
-            fmt_ptr = g.builder.gep(fmt_val, [zero, zero])
+            fmt_ptr = g.builder.gep(fmt_val, [g.zero, g.zero])
             g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
         elif basic_ty.kind == 'BooleanType':
             true_str_val = get_string_cons('TRUE')
-            true_str_ptr = g.builder.gep(true_str_val, [zero, zero])
+            true_str_ptr = g.builder.gep(true_str_val, [g.zero, g.zero])
             false_str_val = get_string_cons('FALSE')
-            false_str_ptr = g.builder.gep(false_str_val, [zero, zero])
+            false_str_ptr = g.builder.gep(false_str_val, [g.zero, g.zero])
             str_ptr = g.builder.select(expr_val, true_str_ptr, false_str_ptr)
             g.builder.call(g.funcs['printf'], [str_ptr])
-        elif basic_ty.kind == 'StringType':
-            expr_ptr = g.builder.gep(expr_val, [zero, zero])
-            g.builder.call(g.funcs['printf'], [expr_ptr])
+        elif basic_ty.kind in ['StringType', 'OctetStringType']:
+            fmt_val = get_string_cons('%s')
+            fmt_ptr = g.builder.gep(fmt_val, [g.zero, g.zero])
+            arr_ptr = g.builder.gep(expr_val, [g.zero, g.one])
+            g.builder.call(g.funcs['printf'], [fmt_ptr, arr_ptr])
         else:
             raise NotImplementedError
 
@@ -918,7 +919,33 @@ def _empty_string(primary):
 @expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary):
     ''' Generate code for a string (Octet String) '''
-    return get_string_cons(str(primary.value[1:-1]))
+    str_val = get_string_cons(str(primary.value[1:-1]))
+    str_ptr = g.builder.gep(str_val, [g.zero, g.zero])
+
+    # Allocate anonymous OctetString struct
+    str_len = len(str(primary.value[1:-1])) + 1
+    str_len_val = core.Constant.int(g.i32, str_len)
+    arr_ty = core.Type.array(g.i8, str_len)
+    struct = decl_struct(['nCount', 'arr'], [g.i32, arr_ty])
+    octectstr_ptr = g.builder.alloca(struct.ty)
+
+    # Copy length
+    count_ptr = g.builder.gep(octectstr_ptr, [g.zero, g.zero])
+    g.builder.store(str_len_val, count_ptr)
+
+    # Copy constant string
+    arr_ptr = g.builder.gep(octectstr_ptr, [g.zero, g.one])
+
+    casted_arr_ptr = g.builder.bitcast(arr_ptr, g.i8_ptr)
+    casted_str_ptr = g.builder.bitcast(str_ptr, g.i8_ptr)
+
+    size = core.Constant.int(g.i64, str_len)
+    align = core.Constant.int(g.i32, 0)
+    volatile = core.Constant.int(g.i1, 0)
+
+    g.builder.call(g.funcs['memcpy'], [casted_arr_ptr, casted_str_ptr, size, align, volatile])
+
+    return octectstr_ptr
 
 
 @expression.register(ogAST.PrimConstant)
@@ -1186,6 +1213,12 @@ def generate_type(ty):
 
         union = decl_union(field_names, field_types, ty.ReferencedTypeName)
         return union.ty
+    elif basic_ty.kind == 'OctetStringType':
+        max_size = int(basic_ty.Max)
+        name = ty.ReferencedTypeName.replace('-', '_')
+        arr_ty = core.Type.array(g.i8, max_size)
+        struct = decl_struct(['nCount', 'arr'], [g.i32, arr_ty], name)
+        return struct.ty
     else:
         raise NotImplementedError
 
