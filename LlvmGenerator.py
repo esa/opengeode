@@ -165,11 +165,14 @@ def _process(process):
     # generate the lookup tables for the state machine runtime
     mapping = Helper.map_input_state(process)
 
-    # Initialize states enum
-    for name in process.mapping.iterkeys():
+    # Initialize states
+    for name, val in process.mapping.viewitems():
         if not name.endswith('START'):
-            cons = core.Constant.int(g.i32, len(g.states))
-            g.states[name] = cons
+            cons_val = core.Constant.int(g.i32, len(g.states))
+            g.states[name] = cons_val
+        elif name != 'START':
+            cons_val = core.Constant.int(g.i32, val)
+            g.states[name] = cons_val
 
     # Generate state var
     state_cons = g.module.add_global_variable(g.i32, 'state')
@@ -1081,37 +1084,81 @@ def generate_terminator(term):
     ''' Generate the code for a transition terminator '''
     if term.label:
         raise NotImplementedError
+
     if term.kind == 'next_state':
-        state = term.inputString.lower()
-        if state.strip() != '-':
-            next_id_cons = core.Constant.int(g.i32, term.next_id)
-            g.builder.store(next_id_cons, g.scope.resolve('id'))
-            if term.next_id == -1:
-                state_ptr = g.global_scope.resolve('state')
-                state_id_cons = g.states[state]
-                g.builder.store(state_id_cons, state_ptr)
-        else:
-            next_ids = [nid for nid in term.candidate_id.viewkeys() if nid != -1]
-            if next_ids:
-                raise NotImplementedError
-            else:
-                next_id_cons = core.Constant.int(g.i32, -1)
-                g.builder.store(next_id_cons, g.scope.resolve('id'))
-        g.builder.branch(g.scope.label('next_transition'))
+        generate_next_state_terminator(term)
     elif term.kind == 'join':
-        label_block = g.scope.label(str(term.inputString))
-        g.builder.branch(label_block)
+        generate_join_terminator(term)
     elif term.kind == 'stop':
-        raise NotImplementedError
+        generate_stop_terminator(term)
     elif term.kind == 'return':
-        if term.next_id == -1 and term.return_expr:
-            g.builder.ret(expression(term.return_expr))
-        elif term.next_id == -1:
-            g.builder.ret_void()
+        generate_return_terminator(term)
+
+
+def generate_next_state_terminator(term):
+    ''' Generate the code for a next state transition terminator '''
+    state = term.inputString.lower()
+    if state.strip() != '-':
+        if term.next_id in g.states:
+            next_id_val = g.states[term.next_id]
         else:
-            next_id_cons = core.Constant.int(g.i32, term.next_id)
+            next_id_val = core.Constant.int(g.i32, term.next_id)
+        g.builder.store(next_id_val, g.scope.resolve('id'))
+        if term.next_id == -1:
+            g.builder.store(g.states[state], g.global_scope.resolve('state'))
+    else:
+        nexts = [(n, s) for (n, s) in term.candidate_id.viewitems() if n != -1]
+        if nexts:
+            # Calculate next transition id in base of the current state
+            func = g.builder.basic_block.function
+            curr_state_val = g.builder.load(g.global_scope.resolve('state'))
+            default_case_block = func.append_basic_block('')
+            end_block = func.append_basic_block('')
+            switch = g.builder.switch(curr_state_val, default_case_block)
+
+            for next_state, states in nexts:
+                next_id_val = g.states[next_state]
+                for state in states:
+                    case_block = func.append_basic_block('')
+                    switch.add_case(g.states[state], case_block)
+                    g.builder.position_at_end(case_block)
+                    g.builder.store(next_id_val, g.scope.resolve('id'))
+                    g.builder.branch(end_block)
+
+            g.builder.position_at_end(default_case_block)
+            next_id_val = core.Constant.int(g.i32, -1)
+            g.builder.store(next_id_val, g.scope.resolve('id'))
+            g.builder.branch(end_block)
+
+            g.builder.position_at_end(end_block)
+        else:
+            next_id_cons = core.Constant.int(g.i32, -1)
             g.builder.store(next_id_cons, g.scope.resolve('id'))
-            g.builder.branch(g.scope.label('next_transition'))
+
+    g.builder.branch(g.scope.label('next_transition'))
+
+
+def generate_join_terminator(term):
+    ''' Generate the code for a join transition terminator '''
+    label_block = g.scope.label(str(term.inputString))
+    g.builder.branch(label_block)
+
+
+def generate_stop_terminator(term):
+    ''' Generate the code for a stop transition terminator '''
+    raise NotImplementedError
+
+
+def generate_return_terminator(term):
+    ''' Generate the code for a return transition terminator '''
+    if term.next_id == -1 and term.return_expr:
+        g.builder.ret(expression(term.return_expr))
+    elif term.next_id == -1:
+        g.builder.ret_void()
+    else:
+        next_id_cons = core.Constant.int(g.i32, term.next_id)
+        g.builder.store(next_id_cons, g.scope.resolve('id'))
+        g.builder.branch(g.scope.label('next_transition'))
 
 
 @generate.register(ogAST.Floating_label)
