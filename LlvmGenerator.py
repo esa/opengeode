@@ -1034,7 +1034,7 @@ def _decision(dec):
             ans_tr_block = func.append_basic_block('ans_tr')
         g.builder.position_at_end(ans_cond_block)
 
-        if ans.kind == 'constant':
+        if ans.kind in ['constant', 'open_range']:
             next_block = ans_cond_blocks[idx + 1] if idx < len(ans_cond_blocks) - 1 else end_block
 
             expr = ans.openRangeOp()
