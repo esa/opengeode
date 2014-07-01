@@ -325,6 +325,8 @@ def generate_input_signal(signal, inputs):
     switch = g.builder.switch(g_state_val, exit_block)
 
     for state_name, state_id in g.states.iteritems():
+        if state_name.endswith('START'):
+            continue
         state_block = func.append_basic_block('state_%s' % str(state_name))
         switch.add_case(state_id, state_block)
         g.builder.position_at_end(state_block)
