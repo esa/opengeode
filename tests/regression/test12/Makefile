@@ -16,9 +16,13 @@ test-llvm:
 	llc trafficlight.ll
 	gcc -c trafficlight.s
 
+test-export:
+	../../../opengeode.py --png --pdf --svg trafficlight.pr system_structure.pr
+	../../../opengeode.py --png --pdf --svg --split trafficlight.pr system_structure.pr
+
 coverage:
 	coverage run -p ../../../opengeode.py trafficlight.pr system_structure.pr --toAda
 
 clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
-	bin *.wrn *.gpr testcase *.ll *.s
+	bin *.wrn *.gpr testcase *.ll *.s *.pdf *.svg *.png

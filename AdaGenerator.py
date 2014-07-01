@@ -704,6 +704,9 @@ def _primary_variable(prim):
             sep=sep, name=prim.value[0])
     if prim.op_minus:
         ada_string = '(-{})'.format(ada_string)
+    if prim.exprType.__name__ == 'for_range':
+        # Ada iterator in FOR loops is an Integer - we must cast to 64 bits
+        ada_string = u'Interfaces.Integer_64({})'.format(ada_string)
     return [], ada_string, []
 
 

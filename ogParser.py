@@ -1366,7 +1366,7 @@ def expression(root, context):
             elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
                 attrs = {'Min': right.Min, 'Max': right.Max}
                 expr.exprType = type('Mod', (basic,), attrs)
-        except ValueError:
+        except (ValueError, AttributeError):
             errors.append('Check that all your numerical data types have '
                           'a range constraint')
 
@@ -2533,7 +2533,7 @@ def outputbody(root, context):
             warnings.extend(warn)
         elif child.type == lexer.TO:
             pass
-			# TODO: better support of TO primitive
+        # TODO: better support of TO primitive
         else:
             warnings.append('Unsupported output body type:' +
                     str(child.type))
@@ -3298,7 +3298,16 @@ def parseSingleElement(elem='', string=''):
     assert(elem in ('input_part', 'output', 'decision', 'alternative_part',
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
-            'connect_part', 'process_definition'))
+            'connect_part', 'process_definition', 'proc_start', 'state_start'))
+    # Create a dummy context, needed to place context data
+    if elem == 'proc_start':
+        elem = 'start'
+        context = ogAST.Procedure()
+    elif elem == 'state_start':
+        elem = 'start'
+        context = ogAST.CompositeState()
+    else:
+        context = ogAST.Process()
     LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)
@@ -3318,12 +3327,12 @@ def parseSingleElement(elem='', string=''):
         root = r.tree
         root.token_stream = parser.getTokenStream()
         backend_ptr = eval(elem)
-        # Create a dummy process, needed to place context data
-        context = ogAST.Process()
         try:
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
-        except AttributeError:
+        except AttributeError as err:
+            print str(err)
+            print (traceback.format_exc())
             # Syntax checker has no visibility on variables and types
             # so we have to discard exceptions sent by e.g. find_variable
             pass

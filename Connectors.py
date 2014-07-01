@@ -252,11 +252,15 @@ class Channel(Connection):
     def end_point(self):
         ''' Compute connection end point - redefined function '''
         # Arrow always bumps at the screen edge
-        view = self.scene().views()[0]
-        view_pos = view.mapToScene(
+        try:
+            view = self.scene().views()[0]
+            view_pos = view.mapToScene(
                            view.viewport().geometry()).boundingRect().topLeft()
-        scene_pos_x = self.mapFromScene(view_pos).x()
-        return QPointF(scene_pos_x, self.start_point.y())
+            scene_pos_x = self.mapFromScene(view_pos).x()
+            return QPointF(scene_pos_x, self.start_point.y())
+        except IndexError:
+            # In case there is no view (e.g. Export PNG from cmd line)
+            return QPointF(self.start_point.x() - 50, self.start_point.y())
 
 
 class Controlpoint(QGraphicsPathItem, object):

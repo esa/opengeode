@@ -846,6 +846,7 @@ class ProcedureStart(Start):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
+    common_name = 'proc_start'
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
@@ -863,6 +864,7 @@ class StateStart(Start):
     ''' Composite states can have several named START symbols '''
     has_text_area = True
     is_singleton = False
+    common_name = 'state_start'
 
     def __unicode__(self):
         ''' Return the state entry point '''
