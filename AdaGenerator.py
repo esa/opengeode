@@ -931,8 +931,11 @@ def _bitwise_operators(expr):
             ada_string += u", Length => {left}.Length".format(left=left_str)
         ada_string += u')'
     else:
-        ada_string = u'({left} {op} {right})'.format(
-                               left=left_str, op=expr.operand, right=right_str)
+        ada_string = u'({left} {op}{short} {right})'.format(
+                               left=left_str,
+                               op=expr.operand,
+                               short=expr.shortcircuit,
+                               right=right_str)
     code.extend(left_stmts)
     code.extend(right_stmts)
     local_decl.extend(left_local)

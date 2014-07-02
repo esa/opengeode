@@ -1282,6 +1282,22 @@ def expression(root, context):
                                  root.getCharPositionInLine())
         expr.exprType = UNKNOWN_TYPE
 
+    if root.type in (lexer.OR, lexer.AND):
+        # detect optional THEN in AND/OR expressions, indicating that the
+        # short-circuit version of the operator is needed, to prevent the
+        # evaluation of the right part if the left part does not evaluate
+        # to true.
+        for idx, val in enumerate(root.children):
+            if val.type == lexer.THEN:
+                expr.shortcircuit = ' then'
+                root.children.pop(idx)
+                break
+            elif val.type == lexer.ELSE:
+                expr.shortcircuit = ' else'
+                root.children.pop(idx)
+                break
+
+
     if root.type in (lexer.PLUS,
                      lexer.ASTERISK,
                      lexer.DASH,
