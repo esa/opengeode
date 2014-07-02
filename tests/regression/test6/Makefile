@@ -7,6 +7,11 @@ test-ada:
 	../../../opengeode.py --toAda myfunction.pr system_structure.pr
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
 	gnatmake -c myfunction.adb
+	gcc -c test.c
+	gnatbind -n myfunction.ali
+	gnatlink -o testcase test.o myfunction.ali -lgnat
+	./testcase
+	./testcase | diff expected -
 
 test-llvm:
 	../../../opengeode.py myfunction.pr system_structure.pr --llvm

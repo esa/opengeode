@@ -796,8 +796,8 @@ field_selection
         :       (('!'|'.') field_name);
 
 expression      :       operand0 ( IMPLIES^ operand0)* ;
-operand0        :       operand1 (( OR^ | XOR^ ) operand1)*;
-operand1        :       operand2 ( AND^ operand2)*;
+operand0        :       operand1 (( (OR^ ELSE?) | XOR^ ) operand1)*;
+operand1        :       operand2 ( AND^ THEN? operand2)*;
 operand2        :       operand3
                         (( EQ^ | NEQ^ | GT^ | GE^ | LT^ | LE^ | IN^ )
                         operand3)*;

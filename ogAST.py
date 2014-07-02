@@ -76,14 +76,19 @@ class ExprMinus(Expression):
 
 class ExprOr(Expression):
     operand = 'or'
+    # Indicate that short circuit form is used ("or else")
+    shortcircuit = ''
 
 
 class ExprAnd(Expression):
     operand = 'and'
+    # Indicate that short circuit form is used ("and then")
+    shortcircuit = ''
 
 
 class ExprXor(Expression):
     operand = 'xor'
+    shortcircuit = ''
 
 
 class ExprEq(Expression):
