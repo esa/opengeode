@@ -22,7 +22,7 @@ dcl someInt t_uInt8 := 2;
 -- To test 'op_not'
 dcl opnot T_boolean := not true;
     /* CIF ENDTEXT */
-    /* CIF PROCEDURE (891, 490), (91, 35) */
+    /* CIF PROCEDURE (982, 490), (91, 35) */
     PROCEDURE factorial;
         /* CIF TEXT (29, 42), (215, 48) */
         fpar in N MyInteger, 
@@ -41,52 +41,61 @@ endfor;
     ENDPROCEDURE;
     /* CIF START (591, 0), (100, 50) */
     START;
-        /* CIF DECISION (516, 65), (250, 50) */
-        DECISION someint = 5 and then somereal=1.1
-or else someint = 6;
-                /* CIF ANSWER (561, 135), (70, 23) */
+        /* CIF TASK (586, 65), (110, 35) */
+        TASK someInt := 0;
+        /* CIF DECISION (504, 115), (273, 87) */
+        DECISION someint /=0 and then (10 / someInt > 0)
+or else someint = 0
+        /* CIF COMMENT (793, 124), (179, 68) */
+        COMMENT 'Using "and else" is the
+short-circuit form. The
+second part should not
+be evaluated.';
+                /* CIF ANSWER (561, 222), (70, 23) */
                 (true):
-                /* CIF ANSWER (651, 135), (70, 23) */
+                    /* CIF TASK (541, 260), (110, 35) */
+                    TASK someInt := 5;
+                    /* CIF PROCEDURECALL (537, 310), (117, 38) */
+                    CALL writeln('OK');
+                /* CIF ANSWER (664, 222), (70, 23) */
                 (false):
         ENDDECISION;
-        /* CIF NEXTSTATE (591, 183), (100, 50) */
+        /* CIF NEXTSTATE (591, 363), (100, 50) */
         NEXTSTATE Wait;
-    /* CIF STATE (591, 183), (100, 50) */
+    /* CIF STATE (591, 363), (100, 50) */
     STATE Wait;
-        /* CIF INPUT (810, 253), (100, 50) */
+        /* CIF INPUT (810, 433), (100, 50) */
         INPUT mytimer;
-            /* CIF PROCEDURECALL (792, 318), (135, 50) */
-            CALL writeln
-('timer expired');
-            /* CIF PROCEDURECALL (780, 383), (160, 35) */
+            /* CIF PROCEDURECALL (769, 498), (182, 50) */
+            CALL writeln('timer expired');
+            /* CIF PROCEDURECALL (780, 563), (160, 35) */
             CALL factorial(3, someint);
-            /* CIF NEXTSTATE (810, 433), (100, 50) */
+            /* CIF NEXTSTATE (810, 613), (100, 50) */
             NEXTSTATE Wait;
-        /* CIF INPUT (450, 253), (198, 50) */
+        /* CIF INPUT (450, 433), (198, 50) */
         INPUT start_something (toto);
-            /* CIF OUTPUT (414, 318), (270, 50) */
+            /* CIF OUTPUT (414, 498), (270, 50) */
             OUTPUT result_data((toto+1) mod 2147483647);
-            /* CIF PROCEDURECALL (474, 383), (150, 50) */
+            /* CIF PROCEDURECALL (474, 563), (150, 50) */
             CALL writeln
 ('Hello Toto', toto);
-            /* CIF PROCEDURECALL (483, 448), (132, 50) */
-            CALL set_timer
-(1000, myTimer);
-            /* CIF TASK (391, 513), (316, 35) */
+            /* CIF PROCEDURECALL (451, 628), (196, 50) */
+            CALL set_timer(1000, myTimer);
+            /* CIF TASK (391, 693), (316, 35) */
             TASK someReal := power(someReal, someInt mod 1);
-            /* CIF PROCEDURECALL (379, 563), (340, 35) */
+            /* CIF PROCEDURECALL (379, 743), (340, 35) */
             CALL writeln('1.5 ** 2 == ', someReal, ' (should be 2.25 )');
-            /* CIF TASK (448, 613), (201, 35) */
+            /* CIF TASK (448, 793), (201, 35) */
             TASK someReal := float(someInt);
-            /* CIF TASK (428, 663), (241, 35) */
+            /* CIF TASK (428, 843), (241, 35) */
             TASK someInt := fix(someReal) mod 255;
-            /* CIF TASK (473, 713), (152, 35) */
+            /* CIF TASK (473, 893), (152, 35) */
             TASK opnot := not opnot;
-            /* CIF TASK (470, 763), (157, 35) */
+            /* CIF TASK (470, 943), (157, 35) */
             TASK someint := -someint;
-            /* CIF TASK (467, 813), (164, 35) */
+            /* CIF TASK (467, 993), (164, 35) */
             TASK someint := (-8) mod 5;
-            /* CIF NEXTSTATE (498, 863), (102, 50) */
+            /* CIF NEXTSTATE (498, 1043), (102, 50) */
             NEXTSTATE wait;
     ENDSTATE;
 ENDPROCESS myfunction;
