@@ -614,8 +614,8 @@ def _prim_path_reference(prim):
                 idx_val = expression(elem['index'][0])
                 array_ptr = g.builder.gep(var_ptr, [g.zero, g.zero])
                 # TODO: Refactor this
-                if array_ptr.type.pointee.kind != core.TYPE_VECTOR:
-                    # If is not a vector this is a pointer to a variable size SeqOf
+                if array_ptr.type.pointee.kind != core.TYPE_ARRAY:
+                    # If is not an array this is a pointer to a variable size SeqOf
                     # The array is in the second field of the struct
                     var_ptr = g.builder.gep(var_ptr, [g.zero, g.one, idx_val])
                 else:
