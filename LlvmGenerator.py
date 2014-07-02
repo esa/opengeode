@@ -1218,6 +1218,9 @@ def _inner_procedure(proc):
     param_tys = [core.Type.pointer(generate_type(p['type'])) for p in proc.fpar]
     func = decl_func(str(proc.inputString), g.void, param_tys)
 
+    if proc.external:
+        return
+
     open_scope()
 
     for arg, param in zip(func.args, proc.fpar):
