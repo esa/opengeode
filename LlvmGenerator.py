@@ -994,7 +994,27 @@ def _mantissa_base_exp(primary):
 @expression.register(ogAST.PrimIfThenElse)
 def _if_then_else(ifthen):
     ''' Generate the code for ternary operator '''
-    raise NotImplementedError
+    func = g.builder.basic_block.function
+
+    if_block = func.append_basic_block('ternary:if')
+    else_block = func.append_basic_block('ternary:else')
+    end_block = func.append_basic_block('')
+
+    res_ptr = g.builder.alloca(generate_type(ifthen.exprType))
+    cond_val = expression(ifthen.value['if'])
+    g.builder.cbranch(cond_val, if_block, else_block)
+
+    g.builder.position_at_end(if_block)
+    generate_assign(res_ptr, expression(ifthen.value['then']))
+    g.builder.branch(end_block)
+
+    g.builder.position_at_end(else_block)
+    generate_assign(res_ptr, expression(ifthen.value['else']))
+    g.builder.branch(end_block)
+
+    g.builder.position_at_end(end_block)
+
+    return g.builder.load(res_ptr)
 
 
 @expression.register(ogAST.PrimSequence)
