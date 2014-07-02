@@ -829,19 +829,44 @@ def generate_assign(left, right):
 @expression.register(ogAST.ExprXor)
 def _logical(expr):
     ''' Generate the code for a logical expression '''
-    lefttmp = expression(expr.left)
-    righttmp = expression(expr.right)
+    if expr.shortcircuit:
+        func = g.builder.basic_block.function
 
-    ty = find_basic_type(expr.exprType)
-    if ty.kind != 'BooleanType':
-        raise NotImplementedError
+        right_block = func.append_basic_block('')
+        end_block = func.append_basic_block('')
 
-    if expr.operand == 'and':
-        return g.builder.and_(lefttmp, righttmp, 'andtmp')
-    elif expr.operand == 'or':
-        return g.builder.or_(lefttmp, righttmp, 'ortmp')
+        res_ptr = g.builder.alloca(g.i1)
+        left_val = expression(expr.left)
+        g.builder.store(left_val, res_ptr)
+
+        if expr.operand == 'and':
+            g.builder.cbranch(left_val, right_block, end_block)
+        elif expr.operand == 'or':
+            g.builder.cbranch(left_val, end_block, right_block)
+        else:
+            raise NotImplementedError
+
+        g.builder.position_at_end(right_block)
+        right_val = expression(expr.right)
+        g.builder.store(right_val, res_ptr)
+        g.builder.branch(end_block)
+
+        g.builder.position_at_end(end_block)
+        return g.builder.load(res_ptr)
     else:
-        return g.builder.xor(lefttmp, righttmp, 'xortmp')
+        left_val = expression(expr.left)
+        right_val = expression(expr.right)
+
+        ty = find_basic_type(expr.exprType)
+        if ty.kind != 'BooleanType':
+            raise NotImplementedError
+
+        if expr.operand == 'and':
+            return g.builder.and_(left_val, right_val)
+        elif expr.operand == 'or':
+            return g.builder.or_(left_val, right_val)
+        else:
+            return g.builder.xor(left_val, right_val)
 
 
 @expression.register(ogAST.ExprAppend)
