@@ -1275,7 +1275,14 @@ def _inner_procedure(proc):
     g.builder = core.Builder.new(entry_block)
 
     for name, (ty, expr) in proc.variables.viewitems():
-        raise NotImplementedError
+        var_ty = generate_type(ty)
+        var_ptr = g.builder.alloca(var_ty)
+        g.scope.define(name, var_ptr)
+        if expr:
+            expr_val = expression(expr)
+            generate_assign(var_ptr, expr_val)
+        else:
+            g.builder.store(core.Constant.null(var_ty), var_ptr)
 
     Helper.inner_labels_to_floating(proc)
 
