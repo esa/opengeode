@@ -523,8 +523,7 @@ def generate_for_range(loop):
 def generate_for_iterable(loop):
     ''' Generate the code for a for x in iterable loop'''
     seqof_asn1ty = find_basic_type(loop['list'].exprType)
-    if seqof_asn1ty.Min != seqof_asn1ty.Min:
-        raise NotImplementedError
+    is_variable_size = seqof_asn1ty.Min != seqof_asn1ty.Max
 
     func = g.builder.basic_block.function
 
@@ -542,9 +541,20 @@ def generate_for_iterable(loop):
     idx_ptr = g.builder.alloca(g.i32)
     g.builder.store(core.Constant.int(g.i32, 0), idx_ptr)
     seqof_struct_ptr = expression(loop['list'])
-    array_ptr = g.builder.gep(seqof_struct_ptr, [g.zero, g.zero])
+
+    if is_variable_size:
+        # In variable size SequenceOfs the array values are in the second field
+        array_ptr = g.builder.gep(seqof_struct_ptr, [g.zero, g.one])
+    else:
+        array_ptr = g.builder.gep(seqof_struct_ptr, [g.zero, g.zero])
+
     element_typ = array_ptr.type.pointee.element
-    array_len_val = core.Constant.int(g.i32, array_ptr.type.pointee.count)
+
+    if is_variable_size:
+        # load the current number of elements that is on the first field
+        end_idx = g.builder.load(g.builder.gep(seqof_struct_ptr, [g.zero, g.zero]))
+    else:
+        end_idx = core.Constant.int(g.i32, array_ptr.type.pointee.count)
 
     var_ptr = g.builder.alloca(element_typ, None, str(loop['var']))
     g.scope.define(str(loop['var']), var_ptr)
@@ -569,7 +579,7 @@ def generate_for_iterable(loop):
     g.builder.position_at_end(cond_block)
     tmp_val = g.builder.add(idx_var, g.one)
     g.builder.store(tmp_val, idx_ptr)
-    cond_val = g.builder.icmp(core.ICMP_SLT, tmp_val, array_len_val)
+    cond_val = g.builder.icmp(core.ICMP_SLT, tmp_val, end_idx)
     g.builder.cbranch(cond_val, load_block, end_block)
 
     g.builder.position_at_end(end_block)
@@ -602,7 +612,14 @@ def _prim_path_reference(prim):
         if type(elem) == dict:
             if 'index' in elem:
                 idx_val = expression(elem['index'][0])
-                var_ptr = g.builder.gep(var_ptr, [g.zero, g.zero, idx_val])
+                array_ptr = g.builder.gep(var_ptr, [g.zero, g.zero])
+                # TODO: Refactor this
+                if array_ptr.type.pointee.kind != core.TYPE_VECTOR:
+                    # If is not a vector this is a pointer to a variable size SeqOf
+                    # The array is in the second field of the struct
+                    var_ptr = g.builder.gep(var_ptr, [g.zero, g.one, idx_val])
+                else:
+                    var_ptr = g.builder.gep(var_ptr, [g.zero, g.zero, idx_val])
             else:
                 raise NotImplementedError
         else:
@@ -843,25 +860,34 @@ def _expr_in(expr):
     end_block = func.append_basic_block('in:end')
 
     seq_asn1_ty = find_basic_type(expr.left.exprType)
-    if seq_asn1_ty.Min != seq_asn1_ty.Max:
-        # variable size sequence
-        raise NotImplementedError
+
+    is_variable_size = seq_asn1_ty.Min != seq_asn1_ty.Max
 
     idx_ptr = g.builder.alloca(g.i32)
     g.builder.store(core.Constant.int(g.i32, 0), idx_ptr)
 
     # TODO: Should be 'left' in 'right'?
     value_val = expression(expr.right)
-    array_ptr = expression(expr.left)
+    struct_ptr = expression(expr.left)
 
-    array_ty = array_ptr.type.pointee.elements[0]
-    array_size = core.Constant.int(g.i32, array_ty.count)
+    if is_variable_size:
+        # load the current number of elements from the first field
+        end_idx = g.builder.load(g.builder.gep(struct_ptr, [g.zero, g.zero]))
+    else:
+        array_ty = struct_ptr.type.pointee.elements[0]
+        end_idx = core.Constant.int(g.i32, array_ty.count)
 
     g.builder.branch(check_block)
 
     g.builder.position_at_end(check_block)
     idx_val = g.builder.load(idx_ptr)
-    elem_val = g.builder.load(g.builder.gep(array_ptr, [g.zero, g.zero, idx_val]))
+
+    if is_variable_size:
+        # The array values are in the second field in variable size arrays
+        elem_val = g.builder.load(g.builder.gep(struct_ptr, [g.zero, g.one, idx_val]))
+    else:
+        elem_val = g.builder.load(g.builder.gep(struct_ptr, [g.zero, g.zero, idx_val]))
+
     if value_val.type.kind == core.TYPE_INTEGER:
         cond_val = g.builder.icmp(core.ICMP_EQ, value_val, elem_val)
     elif value_val.type.kind == core.TYPE_DOUBLE:
@@ -871,9 +897,9 @@ def _expr_in(expr):
     g.builder.cbranch(cond_val, end_block, next_block)
 
     g.builder.position_at_end(next_block)
-    idx_tmp_val = g.builder.add(idx_val, core.Constant.int(g.i32, 1))
+    idx_tmp_val = g.builder.add(idx_val, g.one)
     g.builder.store(idx_tmp_val, idx_ptr)
-    end_cond_val = g.builder.icmp(core.ICMP_SGE, idx_tmp_val, array_size)
+    end_cond_val = g.builder.icmp(core.ICMP_SGE, idx_tmp_val, end_idx)
     g.builder.cbranch(end_cond_val, end_block, check_block)
 
     g.builder.position_at_end(end_block)
@@ -988,9 +1014,18 @@ def _sequence(seq):
 @expression.register(ogAST.PrimSequenceOf)
 def _sequence_of(seqof):
     ''' Generate the code for an ASN.1 SEQUENCE OF '''
+    basic_ty = find_basic_type(seqof.exprType)
     ty = generate_type(seqof.exprType)
     struct_ptr = g.builder.alloca(ty)
-    array_ptr = g.builder.gep(struct_ptr, [g.zero, g.zero])
+
+    is_variable_size = basic_ty.Min != basic_ty.Max
+
+    if is_variable_size:
+        size_val = core.Constant.int(g.i32, len(seqof.value))
+        g.builder.store(size_val, g.builder.gep(struct_ptr, [g.zero, g.zero]))
+        array_ptr = g.builder.gep(struct_ptr, [g.zero, g.one])
+    else:
+        array_ptr = g.builder.gep(struct_ptr, [g.zero, g.zero])
 
     for idx, expr in enumerate(seqof.value):
         idx_cons = core.Constant.int(g.i32, idx)
@@ -1237,23 +1272,20 @@ def generate_type(ty):
 
 def generate_sequenceof_type(name, sequenceof_ty):
     ''' Generate the equivalent LLVM type of a SequenceOf type '''
-
     if name and name in g.structs:
         return g.structs[name].ty
 
-    min_size = int(sequenceof_ty.Max)
-    max_size = int(sequenceof_ty.Min)
-    if min_size != max_size:
-        raise NotImplementedError
+    min_size = int(sequenceof_ty.Min)
+    max_size = int(sequenceof_ty.Max)
+    is_variable_size = min_size != max_size
 
     elem_ty = generate_type(sequenceof_ty.type)
     array_ty = core.Type.array(elem_ty, max_size)
 
-    if name:
-        struct = decl_struct(['arr'], [array_ty], name)
+    if is_variable_size:
+        struct = decl_struct(['nCount', 'arr'], [g.i32, array_ty], name)
     else:
-        # anonymous sequence used in expressions like a in {b, c, d}
-        struct = decl_struct(['arr'], [array_ty])
+        struct = decl_struct(['arr'], [array_ty], name)
 
     return struct.ty
 
