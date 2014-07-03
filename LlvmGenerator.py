@@ -817,7 +817,9 @@ def generate_length(params):
 
 def generate_present(params):
     ''' Generate the code for the built-in present operation'''
-    raise NotImplementedError
+    expr_val = expression(params[0])
+    kind_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.zero])
+    return ctx.builder.load(kind_ptr)
 
 
 def generate_abs(params):
