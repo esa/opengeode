@@ -168,9 +168,9 @@ class Context():
 
         for idx, field_name in enumerate(Helper.sorted_fields(choice_ty)):
             # enum values used in choice determinant/present
-            self.enums[field_name] = core.Constant.int(self.i32, idx)
+            self.enums[field_name.replace('-', '_')] = core.Constant.int(self.i32, idx)
 
-            field_names.append(field_name)
+            field_names.append(field_name.replace('-', '_'))
             field_types.append(self.type_of(choice_ty.Children[field_name].type))
 
         union = self.decl_union(field_names, field_types, name)
@@ -1079,7 +1079,7 @@ def _enumerated_value(primary):
 @expression.register(ogAST.PrimChoiceDeterminant)
 def _choice_determinant(primary):
     ''' Generate code for a choice determinant (enumerated) '''
-    enumerant = primary.value[0].replace('_', '-')
+    enumerant = primary.value[0].replace('-', '_')
     return ctx.enums[enumerant]
 
 
