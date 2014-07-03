@@ -1085,7 +1085,11 @@ def _boolean(primary):
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''
-    raise NotImplementedError
+    # TODO: Why is this named string if it's not an string?
+    struct_ty = ctx.type_of(primary.exprType)
+    struct_ptr = ctx.builder.alloca(struct_ty)
+    ctx.builder.store(core.Constant.null(struct_ty), struct_ptr)
+    return struct_ptr
 
 
 @expression.register(ogAST.PrimStringLiteral)
