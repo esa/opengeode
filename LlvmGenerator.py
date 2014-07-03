@@ -90,9 +90,11 @@ class Context():
         )
 
     def open_scope(self):
+        ''' Open a scope '''
         self.scope = Scope(self.scope)
 
     def close_scope(self):
+        ''' Close the current scope '''
         self.scope = self.scope.parent
 
     def type_of(self, asn1ty):
