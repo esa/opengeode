@@ -31,7 +31,7 @@ __all__ = ['generate']
 
 
 # Global context
-g = None
+ctx = None
 
 
 class Context():
@@ -106,8 +106,8 @@ class UnionType():
         self.field_types = field_types
         # Unions are represented a struct with a field indicating the index of its type
         # and a byte array with the size of the biggest type in the union
-        self.size = max([g.target_data.size(ty) for ty in field_types])
-        self.ty = core.Type.struct([g.i32, core.Type.array(g.i8, self.size)], name)
+        self.size = max([ctx.target_data.size(ty) for ty in field_types])
+        self.ty = core.Type.struct([ctx.i32, core.Type.array(ctx.i8, self.size)], name)
 
     def kind(self, name):
         idx = self.field_names.index(name)
@@ -136,7 +136,7 @@ class Scope:
         name = name.lower()
         label_block = self.labels.get(name)
         if not label_block:
-            func = g.builder.basic_block.function
+            func = ctx.builder.basic_block.function
             label_block = func.append_basic_block(name)
             self.labels[name] = label_block
         return label_block
@@ -155,8 +155,8 @@ def _process(process):
     process_name = str(process.processName)
     LOG.info('Generating LLVM IR code for process ' + process_name)
 
-    global g
-    g = Context(process)
+    global ctx
+    ctx = Context(process)
 
     # In case model has nested states, flatten everything
     Helper.flatten(process)
@@ -168,29 +168,29 @@ def _process(process):
     # Initialize states
     for name, val in process.mapping.viewitems():
         if not name.endswith('START'):
-            cons_val = core.Constant.int(g.i32, len(g.states))
-            g.states[name] = cons_val
+            cons_val = core.Constant.int(ctx.i32, len(ctx.states))
+            ctx.states[name] = cons_val
         elif name != 'START':
-            cons_val = core.Constant.int(g.i32, val)
-            g.states[name] = cons_val
+            cons_val = core.Constant.int(ctx.i32, val)
+            ctx.states[name] = cons_val
 
     # Generate state var
-    state_cons = g.module.add_global_variable(g.i32, 'state')
-    state_cons.initializer = core.Constant.int(g.i32, -1)
-    g.scope.define('state', state_cons)
+    state_cons = ctx.module.add_global_variable(ctx.i32, 'state')
+    state_cons.initializer = core.Constant.int(ctx.i32, -1)
+    ctx.scope.define('state', state_cons)
 
     # Generare process-level vars
     for name, (ty, expr) in process.variables.viewitems():
         var_ty = generate_type(ty)
-        global_var = g.module.add_global_variable(var_ty, str(name))
+        global_var = ctx.module.add_global_variable(var_ty, str(name))
         global_var.initializer = core.Constant.null(var_ty)
-        g.scope.define(str(name).lower(), global_var)
+        ctx.scope.define(str(name).lower(), global_var)
 
     # Declare timer set/reset functions
     for timer in process.timers:
         # TODO: Should be uint?
-        decl_func("set_%s" % str(timer), g.void, [g.i32_ptr], True)
-        decl_func("reset_%s" % str(timer), g.void, [], True)
+        decl_func("set_%s" % str(timer), ctx.void, [ctx.i32_ptr], True)
+        decl_func("reset_%s" % str(timer), ctx.void, [], True)
 
     # Declare output signal functions
     for signal in process.output_signals:
@@ -198,12 +198,12 @@ def _process(process):
             param_tys = [core.Type.pointer(generate_type(signal['type']))]
         else:
             param_tys = []
-        decl_func(str(signal['name']), g.void, param_tys, True)
+        decl_func(str(signal['name']), ctx.void, param_tys, True)
 
     # Declare external procedures functions
     for proc in [proc for proc in process.procedures if proc.external]:
         param_tys = [core.Type.pointer(generate_type(p['type'])) for p in proc.fpar]
-        decl_func(str(proc.inputString), g.void, param_tys, True)
+        decl_func(str(proc.inputString), ctx.void, param_tys, True)
 
     # Generate internal procedures
     for proc in process.content.inner_procedures:
@@ -217,15 +217,15 @@ def _process(process):
     for signal in process.input_signals:
         generate_input_signal(signal, mapping[signal['name']])
 
-    g.module.verify()
+    ctx.module.verify()
 
-    with open(g.name + '.ll', 'w') as ll_file:
-        ll_file.write(str(g.module))
+    with open(ctx.name + '.ll', 'w') as ll_file:
+        ll_file.write(str(ctx.module))
 
 
 def generate_runtr_func(process):
     ''' Generate code for the run_transition function '''
-    func = decl_func('run_transition', g.void, [g.i32])
+    func = decl_func('run_transition', ctx.void, [ctx.i32])
 
     open_scope()
 
@@ -234,47 +234,47 @@ def generate_runtr_func(process):
     body_block = func.append_basic_block('body')
     exit_block = func.append_basic_block('exit')
 
-    g.builder = core.Builder.new(entry_block)
+    ctx.builder = core.Builder.new(entry_block)
 
     # entry
-    id_ptr = g.builder.alloca(g.i32, None, 'id')
-    g.scope.define('id', id_ptr)
-    g.builder.store(func.args[0], id_ptr)
-    g.builder.branch(cond_block)
+    id_ptr = ctx.builder.alloca(ctx.i32, None, 'id')
+    ctx.scope.define('id', id_ptr)
+    ctx.builder.store(func.args[0], id_ptr)
+    ctx.builder.branch(cond_block)
 
     # cond
-    g.builder.position_at_end(cond_block)
-    no_tr_cons = core.Constant.int(g.i32, -1)
-    id_val = g.builder.load(id_ptr)
-    cond_val = g.builder.icmp(core.ICMP_NE, id_val, no_tr_cons, 'cond')
-    g.builder.cbranch(cond_val, body_block, exit_block)
+    ctx.builder.position_at_end(cond_block)
+    no_tr_cons = core.Constant.int(ctx.i32, -1)
+    id_val = ctx.builder.load(id_ptr)
+    cond_val = ctx.builder.icmp(core.ICMP_NE, id_val, no_tr_cons, 'cond')
+    ctx.builder.cbranch(cond_val, body_block, exit_block)
 
     # body
-    g.builder.position_at_end(body_block)
-    switch = g.builder.switch(func.args[0], exit_block)
+    ctx.builder.position_at_end(body_block)
+    switch = ctx.builder.switch(func.args[0], exit_block)
 
     # transitions
     for idx, tr in enumerate(process.transitions):
         tr_block = func.append_basic_block('tr%d' % idx)
-        const = core.Constant.int(g.i32, idx)
+        const = core.Constant.int(ctx.i32, idx)
         switch.add_case(const, tr_block)
-        g.builder.position_at_end(tr_block)
+        ctx.builder.position_at_end(tr_block)
         generate(tr)
-        if not g.builder.basic_block.terminator:
-            g.builder.branch(cond_block)
+        if not ctx.builder.basic_block.terminator:
+            ctx.builder.branch(cond_block)
 
     # exit
-    g.builder.position_at_end(exit_block)
-    g.builder.ret_void()
+    ctx.builder.position_at_end(exit_block)
+    ctx.builder.ret_void()
 
     Helper.inner_labels_to_floating(process)
     for label in process.content.floating_labels:
         generate(label)
 
     # TODO: Use defined cond_block instead?
-    next_tr_label_block = g.scope.label('next_transition')
-    g.builder.position_at_end(next_tr_label_block)
-    g.builder.branch(cond_block)
+    next_tr_label_block = ctx.scope.label('next_transition')
+    ctx.builder.position_at_end(next_tr_label_block)
+    ctx.builder.branch(cond_block)
 
     close_scope()
 
@@ -284,21 +284,21 @@ def generate_runtr_func(process):
 
 def generate_startup_func(process):
     ''' Generate code for the startup function '''
-    func = decl_func(g.name + '_startup', g.void, [])
+    func = decl_func(ctx.name + '_startup', ctx.void, [])
 
     open_scope()
 
     entry_block = func.append_basic_block('entry')
-    g.builder = core.Builder.new(entry_block)
+    ctx.builder = core.Builder.new(entry_block)
 
     # Initialize process level variables
     for name, (ty, expr) in process.variables.viewitems():
         if expr:
-            global_var = g.scope.resolve(str(name))
+            global_var = ctx.scope.resolve(str(name))
             generate_assign(global_var, expression(expr))
 
-    g.builder.call(g.funcs['run_transition'], [core.Constant.int(g.i32, 0)])
-    g.builder.ret_void()
+    ctx.builder.call(ctx.funcs['run_transition'], [core.Constant.int(ctx.i32, 0)])
+    ctx.builder.ret_void()
 
     close_scope()
 
@@ -308,47 +308,47 @@ def generate_startup_func(process):
 
 def generate_input_signal(signal, inputs):
     ''' Generate code for an input signal '''
-    func_name = g.name + "_" + str(signal['name'])
+    func_name = ctx.name + "_" + str(signal['name'])
     param_tys = []
     if 'type' in signal:
         param_tys.append(core.Type.pointer(generate_type(signal['type'])))
 
-    func = decl_func(func_name, g.void, param_tys)
+    func = decl_func(func_name, ctx.void, param_tys)
 
     open_scope()
 
     entry_block = func.append_basic_block('entry')
     exit_block = func.append_basic_block('exit')
-    g.builder = core.Builder.new(entry_block)
+    ctx.builder = core.Builder.new(entry_block)
 
-    g_state_val = g.builder.load(g.global_scope.resolve('state'))
-    switch = g.builder.switch(g_state_val, exit_block)
+    g_state_val = ctx.builder.load(ctx.global_scope.resolve('state'))
+    switch = ctx.builder.switch(g_state_val, exit_block)
 
-    for state_name, state_id in g.states.iteritems():
+    for state_name, state_id in ctx.states.iteritems():
         if state_name.endswith('START'):
             continue
         state_block = func.append_basic_block('state_%s' % str(state_name))
         switch.add_case(state_id, state_block)
-        g.builder.position_at_end(state_block)
+        ctx.builder.position_at_end(state_block)
 
         # TODO: Nested states
 
         input = inputs.get(state_name)
         if input:
             for var_name in input.parameters:
-                var_ptr = g.scope.resolve(str(var_name))
+                var_ptr = ctx.scope.resolve(str(var_name))
                 if is_struct_ptr(var_ptr):
                     generate_assign(var_ptr, func.args[0])
                 else:
-                    generate_assign(var_ptr, g.builder.load(func.args[0]))
+                    generate_assign(var_ptr, ctx.builder.load(func.args[0]))
             if input.transition:
-                id_val = core.Constant.int(g.i32, input.transition_id)
-                g.builder.call(g.funcs['run_transition'], [id_val])
+                id_val = core.Constant.int(ctx.i32, input.transition_id)
+                ctx.builder.call(ctx.funcs['run_transition'], [id_val])
 
-        g.builder.ret_void()
+        ctx.builder.ret_void()
 
-    g.builder.position_at_end(exit_block)
-    g.builder.ret_void()
+    ctx.builder.position_at_end(exit_block)
+    ctx.builder.ret_void()
 
     close_scope()
 
@@ -375,20 +375,20 @@ def _call_external_function(output):
             generate_set_timer(out['params'])
             continue
 
-        func = g.funcs[str(name).lower()]
+        func = ctx.funcs[str(name).lower()]
 
         params = []
         for p in out.get('params', []):
             p_val = expression(p)
             # Pass by reference
             if p_val.type.kind != core.TYPE_POINTER:
-                p_var = g.builder.alloca(p_val.type, None)
-                g.builder.store(p_val, p_var)
+                p_var = ctx.builder.alloca(p_val.type, None)
+                ctx.builder.store(p_val, p_var)
                 params.append(p_var)
             else:
                 params.append(p_val)
 
-        g.builder.call(func, params)
+        ctx.builder.call(func, params)
 
 
 def generate_write(params):
@@ -399,24 +399,24 @@ def generate_write(params):
 
         if basic_ty.kind in ['IntegerType', 'Integer32Type']:
             fmt_val = get_string_cons('% d')
-            fmt_ptr = g.builder.gep(fmt_val, [g.zero, g.zero])
-            g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
+            fmt_ptr = ctx.builder.gep(fmt_val, [ctx.zero, ctx.zero])
+            ctx.builder.call(ctx.funcs['printf'], [fmt_ptr, expr_val])
         elif basic_ty.kind == 'RealType':
             fmt_val = get_string_cons('% .14E')
-            fmt_ptr = g.builder.gep(fmt_val, [g.zero, g.zero])
-            g.builder.call(g.funcs['printf'], [fmt_ptr, expr_val])
+            fmt_ptr = ctx.builder.gep(fmt_val, [ctx.zero, ctx.zero])
+            ctx.builder.call(ctx.funcs['printf'], [fmt_ptr, expr_val])
         elif basic_ty.kind == 'BooleanType':
             true_str_val = get_string_cons('TRUE')
-            true_str_ptr = g.builder.gep(true_str_val, [g.zero, g.zero])
+            true_str_ptr = ctx.builder.gep(true_str_val, [ctx.zero, ctx.zero])
             false_str_val = get_string_cons('FALSE')
-            false_str_ptr = g.builder.gep(false_str_val, [g.zero, g.zero])
-            str_ptr = g.builder.select(expr_val, true_str_ptr, false_str_ptr)
-            g.builder.call(g.funcs['printf'], [str_ptr])
+            false_str_ptr = ctx.builder.gep(false_str_val, [ctx.zero, ctx.zero])
+            str_ptr = ctx.builder.select(expr_val, true_str_ptr, false_str_ptr)
+            ctx.builder.call(ctx.funcs['printf'], [str_ptr])
         elif basic_ty.kind in ['StringType', 'OctetStringType']:
             fmt_val = get_string_cons('%s')
-            fmt_ptr = g.builder.gep(fmt_val, [g.zero, g.zero])
-            arr_ptr = g.builder.gep(expr_val, [g.zero, g.one])
-            g.builder.call(g.funcs['printf'], [fmt_ptr, arr_ptr])
+            fmt_ptr = ctx.builder.gep(fmt_val, [ctx.zero, ctx.zero])
+            arr_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.one])
+            ctx.builder.call(ctx.funcs['printf'], [fmt_ptr, arr_ptr])
         else:
             raise NotImplementedError
 
@@ -425,33 +425,33 @@ def generate_writeln(params):
     ''' Generate the code for the writeln operator '''
     generate_write(params)
 
-    zero = core.Constant.int(g.i32, 0)
+    zero = core.Constant.int(ctx.i32, 0)
     str_cons = get_string_cons('\n')
-    str_ptr = g.builder.gep(str_cons, [zero, zero])
-    g.builder.call(g.funcs['printf'], [str_ptr])
+    str_ptr = ctx.builder.gep(str_cons, [zero, zero])
+    ctx.builder.call(ctx.funcs['printf'], [str_ptr])
 
 
 def generate_reset_timer(params):
     ''' Generate the code for the reset timer operator '''
     timer_id = params[0]
     reset_func_name = 'reset_%s' % timer_id.value[0]
-    reset_func = g.funcs[reset_func_name.lower()]
+    reset_func = ctx.funcs[reset_func_name.lower()]
 
-    g.builder.call(reset_func, [])
+    ctx.builder.call(reset_func, [])
 
 
 def generate_set_timer(params):
     ''' Generate the code for the set timer operator '''
     timer_expr, timer_id = params
     set_func_name = 'set_%s' % timer_id.value[0]
-    set_func = g.funcs[set_func_name.lower()]
+    set_func = ctx.funcs[set_func_name.lower()]
 
     expr_val = expression(timer_expr)
 
-    tmp_ptr = g.builder.alloca(expr_val.type)
-    g.builder.store(expr_val, tmp_ptr)
+    tmp_ptr = ctx.builder.alloca(expr_val.type)
+    ctx.builder.store(expr_val, tmp_ptr)
 
-    g.builder.call(set_func, [tmp_ptr])
+    ctx.builder.call(set_func, [tmp_ptr])
 
 
 @generate.register(ogAST.TaskAssign)
@@ -479,7 +479,7 @@ def _task_forloop(task):
 
 def generate_for_range(loop):
     ''' Generate the code for a for x in range loop '''
-    func = g.builder.basic_block.function
+    func = ctx.builder.basic_block.function
     cond_block = func.append_basic_block('for:cond')
     body_block = func.append_basic_block('for:body')
     inc_block = func.append_basic_block('for:inc')
@@ -487,35 +487,35 @@ def generate_for_range(loop):
 
     open_scope()
 
-    loop_var = g.builder.alloca(g.i32, None, str(loop['var']))
-    g.scope.define(str(loop['var']), loop_var)
+    loop_var = ctx.builder.alloca(ctx.i32, None, str(loop['var']))
+    ctx.scope.define(str(loop['var']), loop_var)
 
     if loop['range']['start']:
         start_val = expression(loop['range']['start'])
-        g.builder.store(start_val, loop_var)
+        ctx.builder.store(start_val, loop_var)
     else:
-        g.builder.store(core.Constant.int(g.i32, 0), loop_var)
+        ctx.builder.store(core.Constant.int(ctx.i32, 0), loop_var)
 
     stop_val = expression(loop['range']['stop'])
-    g.builder.branch(cond_block)
+    ctx.builder.branch(cond_block)
 
-    g.builder.position_at_end(cond_block)
-    loop_val = g.builder.load(loop_var)
-    cond_val = g.builder.icmp(core.ICMP_SLT, loop_val, stop_val)
-    g.builder.cbranch(cond_val, body_block, end_block)
+    ctx.builder.position_at_end(cond_block)
+    loop_val = ctx.builder.load(loop_var)
+    cond_val = ctx.builder.icmp(core.ICMP_SLT, loop_val, stop_val)
+    ctx.builder.cbranch(cond_val, body_block, end_block)
 
-    g.builder.position_at_end(body_block)
+    ctx.builder.position_at_end(body_block)
     generate(loop['transition'])
-    g.builder.branch(inc_block)
+    ctx.builder.branch(inc_block)
 
-    g.builder.position_at_end(inc_block)
-    step_val = core.Constant.int(g.i32, loop['range']['step'])
-    loop_val = g.builder.load(loop_var)
-    temp_val = g.builder.add(loop_val, step_val)
-    g.builder.store(temp_val, loop_var)
-    g.builder.branch(cond_block)
+    ctx.builder.position_at_end(inc_block)
+    step_val = core.Constant.int(ctx.i32, loop['range']['step'])
+    loop_val = ctx.builder.load(loop_var)
+    temp_val = ctx.builder.add(loop_val, step_val)
+    ctx.builder.store(temp_val, loop_var)
+    ctx.builder.branch(cond_block)
 
-    g.builder.position_at_end(end_block)
+    ctx.builder.position_at_end(end_block)
 
     close_scope()
 
@@ -525,7 +525,7 @@ def generate_for_iterable(loop):
     seqof_asn1ty = find_basic_type(loop['list'].exprType)
     is_variable_size = seqof_asn1ty.Min != seqof_asn1ty.Max
 
-    func = g.builder.basic_block.function
+    func = ctx.builder.basic_block.function
 
     # block for loading the value from the secuence
     # at the current index, incrementing the index afterwards
@@ -538,51 +538,51 @@ def generate_for_iterable(loop):
 
     open_scope()
 
-    idx_ptr = g.builder.alloca(g.i32)
-    g.builder.store(core.Constant.int(g.i32, 0), idx_ptr)
+    idx_ptr = ctx.builder.alloca(ctx.i32)
+    ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
     seqof_struct_ptr = expression(loop['list'])
 
     if is_variable_size:
         # In variable size SequenceOfs the array values are in the second field
-        array_ptr = g.builder.gep(seqof_struct_ptr, [g.zero, g.one])
+        array_ptr = ctx.builder.gep(seqof_struct_ptr, [ctx.zero, ctx.one])
     else:
-        array_ptr = g.builder.gep(seqof_struct_ptr, [g.zero, g.zero])
+        array_ptr = ctx.builder.gep(seqof_struct_ptr, [ctx.zero, ctx.zero])
 
     element_typ = array_ptr.type.pointee.element
 
     if is_variable_size:
         # load the current number of elements that is on the first field
-        end_idx = g.builder.load(g.builder.gep(seqof_struct_ptr, [g.zero, g.zero]))
+        end_idx = ctx.builder.load(ctx.builder.gep(seqof_struct_ptr, [ctx.zero, ctx.zero]))
     else:
-        end_idx = core.Constant.int(g.i32, array_ptr.type.pointee.count)
+        end_idx = core.Constant.int(ctx.i32, array_ptr.type.pointee.count)
 
-    var_ptr = g.builder.alloca(element_typ, None, str(loop['var']))
-    g.scope.define(str(loop['var']), var_ptr)
+    var_ptr = ctx.builder.alloca(element_typ, None, str(loop['var']))
+    ctx.scope.define(str(loop['var']), var_ptr)
 
-    g.builder.branch(load_block)
+    ctx.builder.branch(load_block)
 
     # load block
-    g.builder.position_at_end(load_block)
-    idx_var = g.builder.load(idx_ptr)
+    ctx.builder.position_at_end(load_block)
+    idx_var = ctx.builder.load(idx_ptr)
     if element_typ.kind == core.TYPE_STRUCT:
-        generate_assign(var_ptr, g.builder.gep(array_ptr, [g.zero, idx_var]))
+        generate_assign(var_ptr, ctx.builder.gep(array_ptr, [ctx.zero, idx_var]))
     else:
-        generate_assign(var_ptr, g.builder.load(g.builder.gep(array_ptr, [g.zero, idx_var])))
-    g.builder.branch(body_block)
+        generate_assign(var_ptr, ctx.builder.load(ctx.builder.gep(array_ptr, [ctx.zero, idx_var])))
+    ctx.builder.branch(body_block)
 
     # body block
-    g.builder.position_at_end(body_block)
+    ctx.builder.position_at_end(body_block)
     generate(loop['transition'])
-    g.builder.branch(cond_block)
+    ctx.builder.branch(cond_block)
 
     # cond block
-    g.builder.position_at_end(cond_block)
-    tmp_val = g.builder.add(idx_var, g.one)
-    g.builder.store(tmp_val, idx_ptr)
-    cond_val = g.builder.icmp(core.ICMP_SLT, tmp_val, end_idx)
-    g.builder.cbranch(cond_val, load_block, end_block)
+    ctx.builder.position_at_end(cond_block)
+    tmp_val = ctx.builder.add(idx_var, ctx.one)
+    ctx.builder.store(tmp_val, idx_ptr)
+    cond_val = ctx.builder.icmp(core.ICMP_SLT, tmp_val, end_idx)
+    ctx.builder.cbranch(cond_val, load_block, end_block)
 
-    g.builder.position_at_end(end_block)
+    ctx.builder.position_at_end(end_block)
 
     close_scope()
 
@@ -596,14 +596,14 @@ def reference(prim):
 @reference.register(ogAST.PrimVariable)
 def _prim_var_reference(prim):
     ''' Generate a primary variable reference '''
-    return g.scope.resolve(str(prim.value[0]))
+    return ctx.scope.resolve(str(prim.value[0]))
 
 
 @reference.register(ogAST.PrimPath)
 def _prim_path_reference(prim):
     ''' Generate a primary path reference '''
     var_name = prim.value[0].lower()
-    var_ptr = g.scope.resolve(str(var_name))
+    var_ptr = ctx.scope.resolve(str(var_name))
 
     if not prim.value:
         return var_ptr
@@ -612,28 +612,28 @@ def _prim_path_reference(prim):
         if type(elem) == dict:
             if 'index' in elem:
                 idx_val = expression(elem['index'][0])
-                array_ptr = g.builder.gep(var_ptr, [g.zero, g.zero])
+                array_ptr = ctx.builder.gep(var_ptr, [ctx.zero, ctx.zero])
                 # TODO: Refactor this
                 if array_ptr.type.pointee.kind != core.TYPE_ARRAY:
                     # If is not an array this is a pointer to a variable size SeqOf
                     # The array is in the second field of the struct
-                    var_ptr = g.builder.gep(var_ptr, [g.zero, g.one, idx_val])
+                    var_ptr = ctx.builder.gep(var_ptr, [ctx.zero, ctx.one, idx_val])
                 else:
-                    var_ptr = g.builder.gep(var_ptr, [g.zero, g.zero, idx_val])
+                    var_ptr = ctx.builder.gep(var_ptr, [ctx.zero, ctx.zero, idx_val])
             else:
                 raise NotImplementedError
         else:
             var_ty = var_ptr.type
-            if var_ty.pointee.name in g.structs:
-                struct = g.structs[var_ty.pointee.name]
-                field_idx_cons = core.Constant.int(g.i32, struct.idx(elem))
-                field_ptr = g.builder.gep(var_ptr, [g.zero, field_idx_cons])
+            if var_ty.pointee.name in ctx.structs:
+                struct = ctx.structs[var_ty.pointee.name]
+                field_idx_cons = core.Constant.int(ctx.i32, struct.idx(elem))
+                field_ptr = ctx.builder.gep(var_ptr, [ctx.zero, field_idx_cons])
                 var_ptr = field_ptr
-            elif var_ty.pointee.name in g.unions:
-                union = g.unions[var_ty.pointee.name]
+            elif var_ty.pointee.name in ctx.unions:
+                union = ctx.unions[var_ty.pointee.name]
                 _, field_ty = union.kind(elem)
-                field_ptr = g.builder.gep(var_ptr, [g.zero, g.one])
-                var_ptr = g.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
+                field_ptr = ctx.builder.gep(var_ptr, [ctx.zero, ctx.one])
+                var_ptr = ctx.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
             else:
                 raise NotImplementedError
     return var_ptr
@@ -649,7 +649,7 @@ def expression(expr):
 def _primary_variable(prim):
     ''' Generate the code for a variable expression '''
     var_ptr = reference(prim)
-    return var_ptr if is_struct_ptr(var_ptr) else g.builder.load(var_ptr)
+    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
 
 
 @expression.register(ogAST.PrimPath)
@@ -675,14 +675,14 @@ def _prim_path(prim):
 def generate_access(prim):
     ''' Generate the code for an access '''
     var_ptr = reference(prim)
-    return var_ptr if is_struct_ptr(var_ptr) else g.builder.load(var_ptr)
+    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
 
 
 def generate_length(params):
     ''' Generate the code for the built-in length operation'''
     seq_ptr = reference(params[0])
     arr_ty = seq_ptr.type.pointee.elements[0]
-    return core.Constant.int(g.i32, arr_ty.count)
+    return core.Constant.int(ctx.i32, arr_ty.count)
 
 
 def generate_present(params):
@@ -695,23 +695,23 @@ def generate_abs(params):
     expr_val = expression(params[0])
 
     if expr_val.type.kind == core.TYPE_INTEGER:
-        expr_conv = g.builder.sitofp(expr_val, g.double)
-        res_val = g.builder.call(g.funcs['fabs'], [expr_conv])
-        return g.builder.fptosi(res_val, g.i32)
+        expr_conv = ctx.builder.sitofp(expr_val, ctx.double)
+        res_val = ctx.builder.call(ctx.funcs['fabs'], [expr_conv])
+        return ctx.builder.fptosi(res_val, ctx.i32)
     else:
-        return g.builder.call(g.funcs['fabs'], [expr_val])
+        return ctx.builder.call(ctx.funcs['fabs'], [expr_val])
 
 
 def generate_fix(params):
     ''' Generate the code for the built-in fix operation'''
     expr_val = expression(params[0])
-    return g.builder.fptosi(expr_val, g.i32)
+    return ctx.builder.fptosi(expr_val, ctx.i32)
 
 
 def generate_float(params):
     ''' Generate the code for the built-in float operation'''
     expr_val = expression(params[0])
-    return g.builder.sitofp(expr_val, g.double)
+    return ctx.builder.sitofp(expr_val, ctx.double)
 
 
 def generate_power(params):
@@ -720,11 +720,11 @@ def generate_power(params):
     right_val = expression(params[1])
 
     if left_val.type.kind == core.TYPE_INTEGER:
-        left_conv = g.builder.sitofp(left_val, g.double)
-        res_val = g.builder.call(g.funcs['powi'], [left_conv, right_val])
-        return g.builder.fptosi(res_val, g.i32)
+        left_conv = ctx.builder.sitofp(left_val, ctx.double)
+        res_val = ctx.builder.call(ctx.funcs['powi'], [left_conv, right_val])
+        return ctx.builder.fptosi(res_val, ctx.i32)
     else:
-        return g.builder.call(g.funcs['powi'], [left_val, right_val])
+        return ctx.builder.call(ctx.funcs['powi'], [left_val, right_val])
 
 
 @expression.register(ogAST.ExprPlus)
@@ -746,55 +746,55 @@ def _basic(expr):
 
     if lefttmp.type.kind == core.TYPE_INTEGER:
         if expr.operand == '+':
-            return g.builder.add(lefttmp, righttmp, 'addtmp')
+            return ctx.builder.add(lefttmp, righttmp, 'addtmp')
         elif expr.operand == '-':
-            return g.builder.sub(lefttmp, righttmp, 'subtmp')
+            return ctx.builder.sub(lefttmp, righttmp, 'subtmp')
         elif expr.operand == '*':
-            return g.builder.mul(lefttmp, righttmp, 'multmp')
+            return ctx.builder.mul(lefttmp, righttmp, 'multmp')
         elif expr.operand == '/':
-            return g.builder.sdiv(lefttmp, righttmp, 'divtmp')
+            return ctx.builder.sdiv(lefttmp, righttmp, 'divtmp')
         elif expr.operand == 'mod':
             # l mod r == (((l rem r) + r) rem r)
-            remtmp = g.builder.srem(lefttmp, righttmp)
-            addtmp = g.builder.add(remtmp, righttmp)
-            return g.builder.srem(addtmp, righttmp, 'modtmp')
+            remtmp = ctx.builder.srem(lefttmp, righttmp)
+            addtmp = ctx.builder.add(remtmp, righttmp)
+            return ctx.builder.srem(addtmp, righttmp, 'modtmp')
         elif expr.operand == 'rem':
-            return g.builder.srem(lefttmp, righttmp, 'remtmp')
+            return ctx.builder.srem(lefttmp, righttmp, 'remtmp')
         elif expr.operand == '<':
-            return g.builder.icmp(core.ICMP_SLT, lefttmp, righttmp, 'lttmp')
+            return ctx.builder.icmp(core.ICMP_SLT, lefttmp, righttmp, 'lttmp')
         elif expr.operand == '<=':
-            return g.builder.icmp(core.ICMP_SLE, lefttmp, righttmp, 'letmp')
+            return ctx.builder.icmp(core.ICMP_SLE, lefttmp, righttmp, 'letmp')
         elif expr.operand == '=':
-            return g.builder.icmp(core.ICMP_EQ, lefttmp, righttmp, 'eqtmp')
+            return ctx.builder.icmp(core.ICMP_EQ, lefttmp, righttmp, 'eqtmp')
         elif expr.operand == '/=':
-            return g.builder.icmp(core.ICMP_NE, lefttmp, righttmp, 'netmp')
+            return ctx.builder.icmp(core.ICMP_NE, lefttmp, righttmp, 'netmp')
         elif expr.operand == '>=':
-            return g.builder.icmp(core.ICMP_SGE, lefttmp, righttmp, 'getmp')
+            return ctx.builder.icmp(core.ICMP_SGE, lefttmp, righttmp, 'getmp')
         elif expr.operand == '>':
-            return g.builder.icmp(core.ICMP_SGT, lefttmp, righttmp, 'gttmp')
+            return ctx.builder.icmp(core.ICMP_SGT, lefttmp, righttmp, 'gttmp')
         else:
             raise NotImplementedError
     elif lefttmp.type.kind == core.TYPE_DOUBLE:
         if expr.operand == '+':
-            return g.builder.fadd(lefttmp, righttmp, 'addtmp')
+            return ctx.builder.fadd(lefttmp, righttmp, 'addtmp')
         elif expr.operand == '-':
-            return g.builder.fsub(lefttmp, righttmp, 'subtmp')
+            return ctx.builder.fsub(lefttmp, righttmp, 'subtmp')
         elif expr.operand == '*':
-            return g.builder.fmul(lefttmp, righttmp, 'multmp')
+            return ctx.builder.fmul(lefttmp, righttmp, 'multmp')
         elif expr.operand == '/':
-            return g.builder.fdiv(lefttmp, righttmp, 'divtmp')
+            return ctx.builder.fdiv(lefttmp, righttmp, 'divtmp')
         elif expr.operand == '<':
-            return g.builder.fcmp(core.FCMP_OLT, lefttmp, righttmp, 'lttmp')
+            return ctx.builder.fcmp(core.FCMP_OLT, lefttmp, righttmp, 'lttmp')
         elif expr.operand == '<=':
-            return g.builder.fcmp(core.FCMP_OLE, lefttmp, righttmp, 'letmp')
+            return ctx.builder.fcmp(core.FCMP_OLE, lefttmp, righttmp, 'letmp')
         elif expr.operand == '=':
-            return g.builder.fcmp(core.FCMP_OEQ, lefttmp, righttmp, 'eqtmp')
+            return ctx.builder.fcmp(core.FCMP_OEQ, lefttmp, righttmp, 'eqtmp')
         elif expr.operand == '/=':
-            return g.builder.fcmp(core.FCMP_ONE, lefttmp, righttmp, 'netmp')
+            return ctx.builder.fcmp(core.FCMP_ONE, lefttmp, righttmp, 'netmp')
         elif expr.operand == '>=':
-            return g.builder.fcmp(core.FCMP_OGE, lefttmp, righttmp, 'getmp')
+            return ctx.builder.fcmp(core.FCMP_OGE, lefttmp, righttmp, 'getmp')
         elif expr.operand == '>':
-            return g.builder.fcmp(core.FCMP_OGT, lefttmp, righttmp, 'gttmp')
+            return ctx.builder.fcmp(core.FCMP_OGT, lefttmp, righttmp, 'gttmp')
         else:
             raise NotImplementedError
     else:
@@ -813,15 +813,15 @@ def generate_assign(left, right):
     # multiple generation rules
     if is_struct_ptr(left):
         size = core.Constant.sizeof(left.type.pointee)
-        align = core.Constant.int(g.i32, 0)
-        volatile = core.Constant.int(g.i1, 0)
+        align = core.Constant.int(ctx.i32, 0)
+        volatile = core.Constant.int(ctx.i1, 0)
 
-        right_ptr = g.builder.bitcast(right, g.i8_ptr)
-        left_ptr = g.builder.bitcast(left, g.i8_ptr)
+        right_ptr = ctx.builder.bitcast(right, ctx.i8_ptr)
+        left_ptr = ctx.builder.bitcast(left, ctx.i8_ptr)
 
-        g.builder.call(g.funcs['memcpy'], [left_ptr, right_ptr, size, align, volatile])
+        ctx.builder.call(ctx.funcs['memcpy'], [left_ptr, right_ptr, size, align, volatile])
     else:
-        g.builder.store(right, left)
+        ctx.builder.store(right, left)
 
 
 @expression.register(ogAST.ExprOr)
@@ -830,29 +830,29 @@ def generate_assign(left, right):
 def _logical(expr):
     ''' Generate the code for a logical expression '''
     if expr.shortcircuit:
-        func = g.builder.basic_block.function
+        func = ctx.builder.basic_block.function
 
         right_block = func.append_basic_block('')
         end_block = func.append_basic_block('')
 
-        res_ptr = g.builder.alloca(g.i1)
+        res_ptr = ctx.builder.alloca(ctx.i1)
         left_val = expression(expr.left)
-        g.builder.store(left_val, res_ptr)
+        ctx.builder.store(left_val, res_ptr)
 
         if expr.operand == 'and':
-            g.builder.cbranch(left_val, right_block, end_block)
+            ctx.builder.cbranch(left_val, right_block, end_block)
         elif expr.operand == 'or':
-            g.builder.cbranch(left_val, end_block, right_block)
+            ctx.builder.cbranch(left_val, end_block, right_block)
         else:
             raise NotImplementedError
 
-        g.builder.position_at_end(right_block)
+        ctx.builder.position_at_end(right_block)
         right_val = expression(expr.right)
-        g.builder.store(right_val, res_ptr)
-        g.builder.branch(end_block)
+        ctx.builder.store(right_val, res_ptr)
+        ctx.builder.branch(end_block)
 
-        g.builder.position_at_end(end_block)
-        return g.builder.load(res_ptr)
+        ctx.builder.position_at_end(end_block)
+        return ctx.builder.load(res_ptr)
     else:
         left_val = expression(expr.left)
         right_val = expression(expr.right)
@@ -862,11 +862,11 @@ def _logical(expr):
             raise NotImplementedError
 
         if expr.operand == 'and':
-            return g.builder.and_(left_val, right_val)
+            return ctx.builder.and_(left_val, right_val)
         elif expr.operand == 'or':
-            return g.builder.or_(left_val, right_val)
+            return ctx.builder.or_(left_val, right_val)
         else:
-            return g.builder.xor(left_val, right_val)
+            return ctx.builder.xor(left_val, right_val)
 
 
 @expression.register(ogAST.ExprAppend)
@@ -878,7 +878,7 @@ def _append(expr):
 @expression.register(ogAST.ExprIn)
 def _expr_in(expr):
     ''' Generate the code for an in expression '''
-    func = g.builder.basic_block.function
+    func = ctx.builder.basic_block.function
 
     next_block = func.append_basic_block('in:next')
     check_block = func.append_basic_block('in:check')
@@ -888,8 +888,8 @@ def _expr_in(expr):
 
     is_variable_size = seq_asn1_ty.Min != seq_asn1_ty.Max
 
-    idx_ptr = g.builder.alloca(g.i32)
-    g.builder.store(core.Constant.int(g.i32, 0), idx_ptr)
+    idx_ptr = ctx.builder.alloca(ctx.i32)
+    ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
 
     # TODO: Should be 'left' in 'right'?
     value_val = expression(expr.right)
@@ -897,37 +897,37 @@ def _expr_in(expr):
 
     if is_variable_size:
         # load the current number of elements from the first field
-        end_idx = g.builder.load(g.builder.gep(struct_ptr, [g.zero, g.zero]))
+        end_idx = ctx.builder.load(ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero]))
     else:
         array_ty = struct_ptr.type.pointee.elements[0]
-        end_idx = core.Constant.int(g.i32, array_ty.count)
+        end_idx = core.Constant.int(ctx.i32, array_ty.count)
 
-    g.builder.branch(check_block)
+    ctx.builder.branch(check_block)
 
-    g.builder.position_at_end(check_block)
-    idx_val = g.builder.load(idx_ptr)
+    ctx.builder.position_at_end(check_block)
+    idx_val = ctx.builder.load(idx_ptr)
 
     if is_variable_size:
         # The array values are in the second field in variable size arrays
-        elem_val = g.builder.load(g.builder.gep(struct_ptr, [g.zero, g.one, idx_val]))
+        elem_val = ctx.builder.load(ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one, idx_val]))
     else:
-        elem_val = g.builder.load(g.builder.gep(struct_ptr, [g.zero, g.zero, idx_val]))
+        elem_val = ctx.builder.load(ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero, idx_val]))
 
     if value_val.type.kind == core.TYPE_INTEGER:
-        cond_val = g.builder.icmp(core.ICMP_EQ, value_val, elem_val)
+        cond_val = ctx.builder.icmp(core.ICMP_EQ, value_val, elem_val)
     elif value_val.type.kind == core.TYPE_DOUBLE:
-        cond_val = g.builder.fcmp(core.FCMP_OEQ, value_val, elem_val)
+        cond_val = ctx.builder.fcmp(core.FCMP_OEQ, value_val, elem_val)
     else:
         raise NotImplementedError
-    g.builder.cbranch(cond_val, end_block, next_block)
+    ctx.builder.cbranch(cond_val, end_block, next_block)
 
-    g.builder.position_at_end(next_block)
-    idx_tmp_val = g.builder.add(idx_val, g.one)
-    g.builder.store(idx_tmp_val, idx_ptr)
-    end_cond_val = g.builder.icmp(core.ICMP_SGE, idx_tmp_val, end_idx)
-    g.builder.cbranch(end_cond_val, end_block, check_block)
+    ctx.builder.position_at_end(next_block)
+    idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
+    ctx.builder.store(idx_tmp_val, idx_ptr)
+    end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, end_idx)
+    ctx.builder.cbranch(end_cond_val, end_block, check_block)
 
-    g.builder.position_at_end(end_block)
+    ctx.builder.position_at_end(end_block)
     return cond_val
 
 
@@ -936,7 +936,7 @@ def _enumerated_value(primary):
     ''' Generate code for an enumerated value '''
     enumerant = primary.value[0].replace('_', '-')
     basic_ty = find_basic_type(primary.exprType)
-    return core.Constant.int(g.i32, basic_ty.EnumValues[enumerant].IntValue)
+    return core.Constant.int(ctx.i32, basic_ty.EnumValues[enumerant].IntValue)
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
@@ -948,22 +948,22 @@ def _choice_determinant(primary):
 @expression.register(ogAST.PrimInteger)
 def _integer(primary):
     ''' Generate code for a raw integer value  '''
-    return core.Constant.int(g.i32, primary.value[0])
+    return core.Constant.int(ctx.i32, primary.value[0])
 
 
 @expression.register(ogAST.PrimReal)
 def _real(primary):
     ''' Generate code for a raw real value  '''
-    return core.Constant.real(g.double, primary.value[0])
+    return core.Constant.real(ctx.double, primary.value[0])
 
 
 @expression.register(ogAST.PrimBoolean)
 def _boolean(primary):
     ''' Generate code for a raw boolean value  '''
     if primary.value[0].lower() == 'true':
-        return core.Constant.int(g.i1, 1)
+        return core.Constant.int(ctx.i1, 1)
     else:
-        return core.Constant.int(g.i1, 0)
+        return core.Constant.int(ctx.i1, 0)
 
 
 @expression.register(ogAST.PrimEmptyString)
@@ -976,30 +976,30 @@ def _empty_string(primary):
 def _string_literal(primary):
     ''' Generate code for a string (Octet String) '''
     str_val = get_string_cons(str(primary.value[1:-1]))
-    str_ptr = g.builder.gep(str_val, [g.zero, g.zero])
+    str_ptr = ctx.builder.gep(str_val, [ctx.zero, ctx.zero])
 
     # Allocate anonymous OctetString struct
     str_len = len(str(primary.value[1:-1])) + 1
-    str_len_val = core.Constant.int(g.i32, str_len)
-    arr_ty = core.Type.array(g.i8, str_len)
-    struct = decl_struct(['nCount', 'arr'], [g.i32, arr_ty])
-    octectstr_ptr = g.builder.alloca(struct.ty)
+    str_len_val = core.Constant.int(ctx.i32, str_len)
+    arr_ty = core.Type.array(ctx.i8, str_len)
+    struct = decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty])
+    octectstr_ptr = ctx.builder.alloca(struct.ty)
 
     # Copy length
-    count_ptr = g.builder.gep(octectstr_ptr, [g.zero, g.zero])
-    g.builder.store(str_len_val, count_ptr)
+    count_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
+    ctx.builder.store(str_len_val, count_ptr)
 
     # Copy constant string
-    arr_ptr = g.builder.gep(octectstr_ptr, [g.zero, g.one])
+    arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.one])
 
-    casted_arr_ptr = g.builder.bitcast(arr_ptr, g.i8_ptr)
-    casted_str_ptr = g.builder.bitcast(str_ptr, g.i8_ptr)
+    casted_arr_ptr = ctx.builder.bitcast(arr_ptr, ctx.i8_ptr)
+    casted_str_ptr = ctx.builder.bitcast(str_ptr, ctx.i8_ptr)
 
-    size = core.Constant.int(g.i64, str_len)
-    align = core.Constant.int(g.i32, 0)
-    volatile = core.Constant.int(g.i1, 0)
+    size = core.Constant.int(ctx.i64, str_len)
+    align = core.Constant.int(ctx.i32, 0)
+    volatile = core.Constant.int(ctx.i1, 0)
 
-    g.builder.call(g.funcs['memcpy'], [casted_arr_ptr, casted_str_ptr, size, align, volatile])
+    ctx.builder.call(ctx.funcs['memcpy'], [casted_arr_ptr, casted_str_ptr, size, align, volatile])
 
     return octectstr_ptr
 
@@ -1019,38 +1019,38 @@ def _mantissa_base_exp(primary):
 @expression.register(ogAST.PrimIfThenElse)
 def _if_then_else(ifthen):
     ''' Generate the code for ternary operator '''
-    func = g.builder.basic_block.function
+    func = ctx.builder.basic_block.function
 
     if_block = func.append_basic_block('ternary:if')
     else_block = func.append_basic_block('ternary:else')
     end_block = func.append_basic_block('')
 
-    res_ptr = g.builder.alloca(generate_type(ifthen.exprType))
+    res_ptr = ctx.builder.alloca(generate_type(ifthen.exprType))
     cond_val = expression(ifthen.value['if'])
-    g.builder.cbranch(cond_val, if_block, else_block)
+    ctx.builder.cbranch(cond_val, if_block, else_block)
 
-    g.builder.position_at_end(if_block)
+    ctx.builder.position_at_end(if_block)
     generate_assign(res_ptr, expression(ifthen.value['then']))
-    g.builder.branch(end_block)
+    ctx.builder.branch(end_block)
 
-    g.builder.position_at_end(else_block)
+    ctx.builder.position_at_end(else_block)
     generate_assign(res_ptr, expression(ifthen.value['else']))
-    g.builder.branch(end_block)
+    ctx.builder.branch(end_block)
 
-    g.builder.position_at_end(end_block)
+    ctx.builder.position_at_end(end_block)
 
-    return g.builder.load(res_ptr)
+    return ctx.builder.load(res_ptr)
 
 
 @expression.register(ogAST.PrimSequence)
 def _sequence(seq):
     ''' Generate the code for an ASN.1 SEQUENCE '''
-    struct = g.structs[seq.exprType.ReferencedTypeName]
-    struct_ptr = g.builder.alloca(struct.ty)
+    struct = ctx.structs[seq.exprType.ReferencedTypeName]
+    struct_ptr = ctx.builder.alloca(struct.ty)
 
     for field_name, field_expr in seq.value.viewitems():
-        field_idx_cons = core.Constant.int(g.i32, struct.idx(field_name))
-        field_ptr = g.builder.gep(struct_ptr, [g.zero, field_idx_cons])
+        field_idx_cons = core.Constant.int(ctx.i32, struct.idx(field_name))
+        field_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, field_idx_cons])
         generate_assign(field_ptr, expression(field_expr))
 
     return struct_ptr
@@ -1061,21 +1061,21 @@ def _sequence_of(seqof):
     ''' Generate the code for an ASN.1 SEQUENCE OF '''
     basic_ty = find_basic_type(seqof.exprType)
     ty = generate_type(seqof.exprType)
-    struct_ptr = g.builder.alloca(ty)
+    struct_ptr = ctx.builder.alloca(ty)
 
     is_variable_size = basic_ty.Min != basic_ty.Max
 
     if is_variable_size:
-        size_val = core.Constant.int(g.i32, len(seqof.value))
-        g.builder.store(size_val, g.builder.gep(struct_ptr, [g.zero, g.zero]))
-        array_ptr = g.builder.gep(struct_ptr, [g.zero, g.one])
+        size_val = core.Constant.int(ctx.i32, len(seqof.value))
+        ctx.builder.store(size_val, ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero]))
+        array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one])
     else:
-        array_ptr = g.builder.gep(struct_ptr, [g.zero, g.zero])
+        array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
 
     for idx, expr in enumerate(seqof.value):
-        idx_cons = core.Constant.int(g.i32, idx)
+        idx_cons = core.Constant.int(ctx.i32, idx)
         expr_val = expression(expr)
-        pos_ptr = g.builder.gep(array_ptr, [g.zero, idx_cons])
+        pos_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_cons])
         generate_assign(pos_ptr, expr_val)
 
     return struct_ptr
@@ -1084,17 +1084,17 @@ def _sequence_of(seqof):
 @expression.register(ogAST.PrimChoiceItem)
 def _choiceitem(choice):
     ''' Generate the code for a CHOICE expression '''
-    union = g.unions[choice.exprType.ReferencedTypeName]
-    union_ptr = g.builder.alloca(union.ty)
+    union = ctx.unions[choice.exprType.ReferencedTypeName]
+    union_ptr = ctx.builder.alloca(union.ty)
 
     expr_val = expression(choice.value['value'])
     kind_idx, field_ty = union.kind(choice.value['choice'])
 
-    kind_ptr = g.builder.gep(union_ptr, [g.zero, g.zero])
-    g.builder.store(core.Constant.int(g.i32, kind_idx), kind_ptr)
+    kind_ptr = ctx.builder.gep(union_ptr, [ctx.zero, ctx.zero])
+    ctx.builder.store(core.Constant.int(ctx.i32, kind_idx), kind_ptr)
 
-    field_ptr = g.builder.gep(union_ptr, [g.zero, g.one])
-    field_ptr = g.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
+    field_ptr = ctx.builder.gep(union_ptr, [ctx.zero, ctx.one])
+    field_ptr = ctx.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
     generate_assign(field_ptr, expr_val)
 
     return union_ptr
@@ -1103,18 +1103,18 @@ def _choiceitem(choice):
 @generate.register(ogAST.Decision)
 def _decision(dec):
     ''' Generate the code for a decision '''
-    func = g.builder.basic_block.function
+    func = ctx.builder.basic_block.function
 
     ans_cond_blocks = [func.append_basic_block('ans_cond') for ans in dec.answers]
     end_block = func.append_basic_block('end')
 
-    g.builder.branch(ans_cond_blocks[0])
+    ctx.builder.branch(ans_cond_blocks[0])
 
     for idx, ans in enumerate(dec.answers):
         ans_cond_block = ans_cond_blocks[idx]
         if ans.transition:
             ans_tr_block = func.append_basic_block('ans_tr')
-        g.builder.position_at_end(ans_cond_block)
+        ctx.builder.position_at_end(ans_cond_block)
 
         if ans.kind in ['constant', 'open_range']:
             next_block = ans_cond_blocks[idx + 1] if idx < len(ans_cond_blocks) - 1 else end_block
@@ -1124,31 +1124,31 @@ def _decision(dec):
             expr.right = ans.constant
             expr_val = expression(expr)
 
-            true_cons = core.Constant.int(g.i1, 1)
-            cond_val = g.builder.icmp(core.ICMP_EQ, expr_val, true_cons)
-            g.builder.cbranch(cond_val, ans_tr_block if ans.transition else end_block, next_block)
+            true_cons = core.Constant.int(ctx.i1, 1)
+            cond_val = ctx.builder.icmp(core.ICMP_EQ, expr_val, true_cons)
+            ctx.builder.cbranch(cond_val, ans_tr_block if ans.transition else end_block, next_block)
         elif ans.kind == 'else':
             if ans.transition:
-                g.builder.branch(ans_tr_block)
+                ctx.builder.branch(ans_tr_block)
             else:
-                g.builder.branch(end_block)
+                ctx.builder.branch(end_block)
         else:
             raise NotImplementedError
 
         if ans.transition:
-            g.builder.position_at_end(ans_tr_block)
+            ctx.builder.position_at_end(ans_tr_block)
             generate(ans.transition)
-            if not g.builder.basic_block.terminator:
-                g.builder.branch(end_block)
+            if not ctx.builder.basic_block.terminator:
+                ctx.builder.branch(end_block)
 
-    g.builder.position_at_end(end_block)
+    ctx.builder.position_at_end(end_block)
 
 
 @generate.register(ogAST.Label)
 def _label(label):
     ''' Generate the code for a Label '''
-    label_block = g.scope.label(str(label.inputString))
-    g.builder.branch(label_block)
+    label_block = ctx.scope.label(str(label.inputString))
+    ctx.builder.branch(label_block)
 
 
 @generate.register(ogAST.Transition)
@@ -1181,49 +1181,49 @@ def generate_next_state_terminator(term):
     ''' Generate the code for a next state transition terminator '''
     state = term.inputString.lower()
     if state.strip() != '-':
-        if term.next_id in g.states:
-            next_id_val = g.states[term.next_id]
+        if term.next_id in ctx.states:
+            next_id_val = ctx.states[term.next_id]
         else:
-            next_id_val = core.Constant.int(g.i32, term.next_id)
-        g.builder.store(next_id_val, g.scope.resolve('id'))
+            next_id_val = core.Constant.int(ctx.i32, term.next_id)
+        ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
         if term.next_id == -1:
-            g.builder.store(g.states[state], g.global_scope.resolve('state'))
+            ctx.builder.store(ctx.states[state], ctx.global_scope.resolve('state'))
     else:
         nexts = [(n, s) for (n, s) in term.candidate_id.viewitems() if n != -1]
         if nexts:
             # Calculate next transition id in base of the current state
-            func = g.builder.basic_block.function
-            curr_state_val = g.builder.load(g.global_scope.resolve('state'))
+            func = ctx.builder.basic_block.function
+            curr_state_val = ctx.builder.load(ctx.global_scope.resolve('state'))
             default_case_block = func.append_basic_block('')
             end_block = func.append_basic_block('')
-            switch = g.builder.switch(curr_state_val, default_case_block)
+            switch = ctx.builder.switch(curr_state_val, default_case_block)
 
             for next_state, states in nexts:
-                next_id_val = g.states[next_state]
+                next_id_val = ctx.states[next_state]
                 for state in states:
                     case_block = func.append_basic_block('')
-                    switch.add_case(g.states[state], case_block)
-                    g.builder.position_at_end(case_block)
-                    g.builder.store(next_id_val, g.scope.resolve('id'))
-                    g.builder.branch(end_block)
+                    switch.add_case(ctx.states[state], case_block)
+                    ctx.builder.position_at_end(case_block)
+                    ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
+                    ctx.builder.branch(end_block)
 
-            g.builder.position_at_end(default_case_block)
-            next_id_val = core.Constant.int(g.i32, -1)
-            g.builder.store(next_id_val, g.scope.resolve('id'))
-            g.builder.branch(end_block)
+            ctx.builder.position_at_end(default_case_block)
+            next_id_val = core.Constant.int(ctx.i32, -1)
+            ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
+            ctx.builder.branch(end_block)
 
-            g.builder.position_at_end(end_block)
+            ctx.builder.position_at_end(end_block)
         else:
-            next_id_cons = core.Constant.int(g.i32, -1)
-            g.builder.store(next_id_cons, g.scope.resolve('id'))
+            next_id_cons = core.Constant.int(ctx.i32, -1)
+            ctx.builder.store(next_id_cons, ctx.scope.resolve('id'))
 
-    g.builder.branch(g.scope.label('next_transition'))
+    ctx.builder.branch(ctx.scope.label('next_transition'))
 
 
 def generate_join_terminator(term):
     ''' Generate the code for a join transition terminator '''
-    label_block = g.scope.label(str(term.inputString))
-    g.builder.branch(label_block)
+    label_block = ctx.scope.label(str(term.inputString))
+    ctx.builder.branch(label_block)
 
 
 def generate_stop_terminator(term):
@@ -1234,34 +1234,34 @@ def generate_stop_terminator(term):
 def generate_return_terminator(term):
     ''' Generate the code for a return transition terminator '''
     if term.next_id == -1 and term.return_expr:
-        g.builder.ret(expression(term.return_expr))
+        ctx.builder.ret(expression(term.return_expr))
     elif term.next_id == -1:
-        g.builder.ret_void()
+        ctx.builder.ret_void()
     else:
-        next_id_cons = core.Constant.int(g.i32, term.next_id)
-        g.builder.store(next_id_cons, g.scope.resolve('id'))
-        g.builder.branch(g.scope.label('next_transition'))
+        next_id_cons = core.Constant.int(ctx.i32, term.next_id)
+        ctx.builder.store(next_id_cons, ctx.scope.resolve('id'))
+        ctx.builder.branch(ctx.scope.label('next_transition'))
 
 
 @generate.register(ogAST.Floating_label)
 def _floating_label(label):
     ''' Generate the code for a floating label '''
-    label_block = g.scope.label(str(label.inputString))
-    if not g.builder.basic_block.terminator:
-        g.builder.branch(label_block)
-    g.builder.position_at_end(label_block)
+    label_block = ctx.scope.label(str(label.inputString))
+    if not ctx.builder.basic_block.terminator:
+        ctx.builder.branch(label_block)
+    ctx.builder.position_at_end(label_block)
 
     if label.transition:
         generate(label.transition)
     else:
-        g.builder.ret_void()
+        ctx.builder.ret_void()
 
 
 @generate.register(ogAST.Procedure)
 def _inner_procedure(proc):
     ''' Generate the code for a procedure '''
     param_tys = [core.Type.pointer(generate_type(p['type'])) for p in proc.fpar]
-    func = decl_func(str(proc.inputString), g.void, param_tys)
+    func = decl_func(str(proc.inputString), ctx.void, param_tys)
 
     if proc.external:
         return
@@ -1269,20 +1269,20 @@ def _inner_procedure(proc):
     open_scope()
 
     for arg, param in zip(func.args, proc.fpar):
-        g.scope.define(str(param['name']), arg)
+        ctx.scope.define(str(param['name']), arg)
 
     entry_block = func.append_basic_block('entry')
-    g.builder = core.Builder.new(entry_block)
+    ctx.builder = core.Builder.new(entry_block)
 
     for name, (ty, expr) in proc.variables.viewitems():
         var_ty = generate_type(ty)
-        var_ptr = g.builder.alloca(var_ty)
-        g.scope.define(name, var_ptr)
+        var_ptr = ctx.builder.alloca(var_ty)
+        ctx.scope.define(name, var_ptr)
         if expr:
             expr_val = expression(expr)
             generate_assign(var_ptr, expr_val)
         else:
-            g.builder.store(core.Constant.null(var_ty), var_ptr)
+            ctx.builder.store(core.Constant.null(var_ty), var_ptr)
 
     Helper.inner_labels_to_floating(proc)
 
@@ -1306,17 +1306,17 @@ def generate_type(ty):
         name = None
 
     if basic_ty.kind in ['IntegerType', 'Integer32Type']:
-        return g.i32
+        return ctx.i32
     elif basic_ty.kind == 'BooleanType':
-        return g.i1
+        return ctx.i1
     elif basic_ty.kind == 'RealType':
-        return g.double
+        return ctx.double
     elif basic_ty.kind == 'SequenceOfType':
         return generate_sequenceof_type(name, basic_ty)
     elif basic_ty.kind == 'SequenceType':
         return generate_sequence_type(name, basic_ty)
     elif basic_ty.kind == 'EnumeratedType':
-        return g.i32
+        return ctx.i32
     elif basic_ty.kind == 'ChoiceType':
         return generate_choice_type(name, basic_ty)
     elif basic_ty.kind == 'OctetStringType':
@@ -1327,8 +1327,8 @@ def generate_type(ty):
 
 def generate_sequenceof_type(name, sequenceof_ty):
     ''' Generate the equivalent LLVM type of a SequenceOf type '''
-    if name and name in g.structs:
-        return g.structs[name].ty
+    if name and name in ctx.structs:
+        return ctx.structs[name].ty
 
     min_size = int(sequenceof_ty.Min)
     max_size = int(sequenceof_ty.Max)
@@ -1338,7 +1338,7 @@ def generate_sequenceof_type(name, sequenceof_ty):
     array_ty = core.Type.array(elem_ty, max_size)
 
     if is_variable_size:
-        struct = decl_struct(['nCount', 'arr'], [g.i32, array_ty], name)
+        struct = decl_struct(['nCount', 'arr'], [ctx.i32, array_ty], name)
     else:
         struct = decl_struct(['arr'], [array_ty], name)
 
@@ -1347,8 +1347,8 @@ def generate_sequenceof_type(name, sequenceof_ty):
 
 def generate_sequence_type(name, sequence_ty):
     ''' Generate the equivalent LLVM type of a Sequence type '''
-    if name in g.structs:
-        return g.structs[name].ty
+    if name in ctx.structs:
+        return ctx.structs[name].ty
 
     field_names = []
     field_types = []
@@ -1361,8 +1361,8 @@ def generate_sequence_type(name, sequence_ty):
 
 def generate_choice_type(name, choice_ty):
     ''' Generate the equivalent LLVM type of a Choice type '''
-    if name in g.unions:
-        return g.unions[name].ty
+    if name in ctx.unions:
+        return ctx.unions[name].ty
 
     field_names = []
     field_types = []
@@ -1376,59 +1376,59 @@ def generate_choice_type(name, choice_ty):
 
 def generate_octetstring_type(name, octetstring_ty):
     ''' Generate the equivalent LLVM type of a OcterString type '''
-    if name in g.structs:
-        return g.structs[name].ty
+    if name in ctx.structs:
+        return ctx.structs[name].ty
 
     max_size = int(octetstring_ty.Max)
-    arr_ty = core.Type.array(g.i8, max_size)
-    struct = decl_struct(['nCount', 'arr'], [g.i32, arr_ty], name)
+    arr_ty = core.Type.array(ctx.i8, max_size)
+    struct = decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty], name)
     return struct.ty
 
 
 def open_scope():
     ''' Open a new scope '''
-    g.scope = Scope(g.scope)
+    ctx.scope = Scope(ctx.scope)
 
 
 def close_scope():
     ''' Close the current scope '''
-    g.scope = g.scope.parent
+    ctx.scope = ctx.scope.parent
 
 
 def get_string_cons(str):
     ''' Returns a reference to a global string constant with the given value '''
-    if str in g.strings:
-        return g.strings[str]
+    if str in ctx.strings:
+        return ctx.strings[str]
 
     str_val = core.Constant.stringz(str)
-    gvar_name = '.str%s' % len(g.strings)
-    gvar_val = g.module.add_global_variable(str_val.type, gvar_name)
+    gvar_name = '.str%s' % len(ctx.strings)
+    gvar_val = ctx.module.add_global_variable(str_val.type, gvar_name)
     gvar_val.initializer = str_val
-    g.strings[str] = gvar_val
+    ctx.strings[str] = gvar_val
     return gvar_val
 
 
 def decl_func(name, return_ty, param_tys, extern=False):
     ''' Declare a function '''
     func_ty = core.Type.function(return_ty, param_tys)
-    func_name = ("%s_RI_%s" % (g.name, name)) if extern else name
-    func = core.Function.new(g.module, func_ty, func_name)
-    g.funcs[name.lower()] = func
+    func_name = ("%s_RI_%s" % (ctx.name, name)) if extern else name
+    func = core.Function.new(ctx.module, func_ty, func_name)
+    ctx.funcs[name.lower()] = func
     return func
 
 
 def decl_struct(field_names, field_types, name=None):
     ''' Declare a struct '''
-    name = name if name else "struct.%s" % len(g.structs)
+    name = name if name else "struct.%s" % len(ctx.structs)
     struct = StructType(name, field_names, field_types)
-    g.structs[name] = struct
+    ctx.structs[name] = struct
     return struct
 
 
 def decl_union(field_names, field_types, name=None):
-    name = name if name else "union.%s" % len(g.structs)
+    name = name if name else "union.%s" % len(ctx.structs)
     union = UnionType(name, field_names, field_types)
-    g.unions[name] = union
+    ctx.unions[name] = union
     return union
 
 
@@ -1442,8 +1442,8 @@ def find_basic_type(a_type):
     basic_type = a_type
     while basic_type.kind == 'ReferenceType':
         # Find type with proper case in the data view
-        for typename in g.dataview.viewkeys():
+        for typename in ctx.dataview.viewkeys():
             if typename.lower() == basic_type.ReferencedTypeName.lower():
-                basic_type = g.dataview[typename].type
+                basic_type = ctx.dataview[typename].type
                 break
     return basic_type
