@@ -164,9 +164,9 @@ class Context():
         ''' Return the equivalent LL type of a Choice ASN.1 type '''
         field_names = []
         field_types = []
-        for name, t in choice_ty.Children.viewitems():
-            field_names.append(name)
-            field_types.append(self.type_of(t.type))
+        for field_name, field_ty in choice_ty.Children.viewitems():
+            field_names.append(field_name)
+            field_types.append(self.type_of(field_ty.type))
 
         union = self.decl_union(field_names, field_types, name)
         return union.ty
