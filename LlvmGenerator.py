@@ -68,7 +68,7 @@ class Context():
         self.one = core.Constant.int(self.i32, 1)
 
         # Intialize built-in functions
-        ty = core.Type.function(self.void, [core.Type.pointer(self.i8)], True)
+        ty = core.Type.function(self.void, [self.i8_ptr], True)
         self.funcs['printf'] = self.module.add_function(ty, 'printf')
 
         self.funcs['memcpy'] = core.Function.intrinsic(
