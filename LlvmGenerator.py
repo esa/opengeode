@@ -143,9 +143,9 @@ class Context():
         array_ty = core.Type.array(elem_ty, max_size)
 
         if is_variable_size:
-            struct = decl_struct(['nCount', 'arr'], [ctx.i32, array_ty], name)
+            struct = self.decl_struct(['nCount', 'arr'], [ctx.i32, array_ty], name)
         else:
-            struct = decl_struct(['arr'], [array_ty], name)
+            struct = self.decl_struct(['arr'], [array_ty], name)
 
         return struct.ty
 
@@ -156,7 +156,7 @@ class Context():
         for field_name in Helper.sorted_fields(sequence_ty):
             field_names.append(field_name.replace('-', '_'))
             field_types.append(self.type_of(sequence_ty.Children[field_name].type))
-        struct = decl_struct(field_names, field_types, name)
+        struct = self.decl_struct(field_names, field_types, name)
 
         return struct.ty
 
@@ -168,14 +168,14 @@ class Context():
             field_names.append(name)
             field_types.append(self.type_of(t.type))
 
-        union = decl_union(field_names, field_types, name)
+        union = self.decl_union(field_names, field_types, name)
         return union.ty
 
     def _type_of_octetstring(self, name, octetstring_ty):
         ''' Return the equivalent LL type of a OcterString ASN.1 type '''
         max_size = int(octetstring_ty.Max)
         arr_ty = core.Type.array(ctx.i8, max_size)
-        struct = decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty], name)
+        struct = self.decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty], name)
         return struct.ty
 
     def string_ptr(self, str):
@@ -189,6 +189,27 @@ class Context():
         var_ptr.initializer = str_val
         self.strings[str] = var_ptr
         return var_ptr.gep([self.zero, self.zero])
+
+    def decl_func(self, name, return_ty, param_tys, extern=False):
+        ''' Declare a function '''
+        func_ty = core.Type.function(return_ty, param_tys)
+        func_name = ("%s_RI_%s" % (self.name, name)) if extern else name
+        func = core.Function.new(self.module, func_ty, func_name)
+        self.funcs[name.lower()] = func
+        return func
+
+    def decl_struct(self, field_names, field_types, name=None):
+        ''' Declare a struct '''
+        name = name if name else "struct.%s" % len(self.structs)
+        struct = StructType(name, field_names, field_types)
+        self.structs[name] = struct
+        return struct
+
+    def decl_union(self, field_names, field_types, name=None):
+        name = name if name else "union.%s" % len(self.structs)
+        union = UnionType(name, field_names, field_types)
+        self.unions[name] = union
+        return union
 
 
 class StructType():
@@ -291,8 +312,8 @@ def _process(process):
     # Declare timer set/reset functions
     for timer in process.timers:
         # TODO: Should be uint?
-        decl_func("set_%s" % str(timer), ctx.void, [ctx.i32_ptr], True)
-        decl_func("reset_%s" % str(timer), ctx.void, [], True)
+        ctx.decl_func("set_%s" % str(timer), ctx.void, [ctx.i32_ptr], True)
+        ctx.decl_func("reset_%s" % str(timer), ctx.void, [], True)
 
     # Declare output signal functions
     for signal in process.output_signals:
@@ -300,12 +321,12 @@ def _process(process):
             param_tys = [core.Type.pointer(ctx.type_of(signal['type']))]
         else:
             param_tys = []
-        decl_func(str(signal['name']), ctx.void, param_tys, True)
+        ctx.decl_func(str(signal['name']), ctx.void, param_tys, True)
 
     # Declare external procedures functions
     for proc in [proc for proc in process.procedures if proc.external]:
         param_tys = [core.Type.pointer(ctx.type_of(p['type'])) for p in proc.fpar]
-        decl_func(str(proc.inputString), ctx.void, param_tys, True)
+        ctx.decl_func(str(proc.inputString), ctx.void, param_tys, True)
 
     # Generate internal procedures
     for proc in process.content.inner_procedures:
@@ -327,7 +348,7 @@ def _process(process):
 
 def generate_runtr_func(process):
     ''' Generate code for the run_transition function '''
-    func = decl_func('run_transition', ctx.void, [ctx.i32])
+    func = ctx.decl_func('run_transition', ctx.void, [ctx.i32])
 
     ctx.open_scope()
 
@@ -386,7 +407,7 @@ def generate_runtr_func(process):
 
 def generate_startup_func(process):
     ''' Generate code for the startup function '''
-    func = decl_func(ctx.name + '_startup', ctx.void, [])
+    func = ctx.decl_func(ctx.name + '_startup', ctx.void, [])
 
     ctx.open_scope()
 
@@ -415,7 +436,7 @@ def generate_input_signal(signal, inputs):
     if 'type' in signal:
         param_tys.append(core.Type.pointer(ctx.type_of(signal['type'])))
 
-    func = decl_func(func_name, ctx.void, param_tys)
+    func = ctx.decl_func(func_name, ctx.void, param_tys)
 
     ctx.open_scope()
 
@@ -1076,7 +1097,7 @@ def _string_literal(primary):
     str_len = len(str(primary.value[1:-1])) + 1
     str_len_val = core.Constant.int(ctx.i32, str_len)
     arr_ty = core.Type.array(ctx.i8, str_len)
-    struct = decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty])
+    struct = ctx.decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty])
     octectstr_ptr = ctx.builder.alloca(struct.ty)
 
     # Copy length
@@ -1355,7 +1376,7 @@ def _floating_label(label):
 def _inner_procedure(proc):
     ''' Generate the code for a procedure '''
     param_tys = [core.Type.pointer(ctx.type_of(p['type'])) for p in proc.fpar]
-    func = decl_func(str(proc.inputString), ctx.void, param_tys)
+    func = ctx.decl_func(str(proc.inputString), ctx.void, param_tys)
 
     if proc.external:
         return
@@ -1388,30 +1409,6 @@ def _inner_procedure(proc):
     ctx.close_scope()
 
     func.verify()
-
-
-def decl_func(name, return_ty, param_tys, extern=False):
-    ''' Declare a function '''
-    func_ty = core.Type.function(return_ty, param_tys)
-    func_name = ("%s_RI_%s" % (ctx.name, name)) if extern else name
-    func = core.Function.new(ctx.module, func_ty, func_name)
-    ctx.funcs[name.lower()] = func
-    return func
-
-
-def decl_struct(field_names, field_types, name=None):
-    ''' Declare a struct '''
-    name = name if name else "struct.%s" % len(ctx.structs)
-    struct = StructType(name, field_names, field_types)
-    ctx.structs[name] = struct
-    return struct
-
-
-def decl_union(field_names, field_types, name=None):
-    name = name if name else "union.%s" % len(ctx.structs)
-    union = UnionType(name, field_names, field_types)
-    ctx.unions[name] = union
-    return union
 
 
 def is_struct_ptr(val):
