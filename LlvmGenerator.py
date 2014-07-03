@@ -201,15 +201,25 @@ class Context():
     def decl_struct(self, field_names, field_types, name=None):
         ''' Declare a struct '''
         name = name if name else "struct.%s" % len(self.structs)
+        name = name.replace('-', '_')
         struct = StructType(name, field_names, field_types)
         self.structs[name] = struct
         return struct
 
+    def resolve_struct(self, name):
+        ''' Return the struct associated to a name '''
+        return self.structs[name.replace('-', '_')]
+
     def decl_union(self, field_names, field_types, name=None):
         name = name if name else "union.%s" % len(self.structs)
+        name = name.replace('-', '_')
         union = UnionType(name, field_names, field_types)
         self.unions[name] = union
         return union
+
+    def resolve_union(self, name):
+        ''' Return the union associated to a name '''
+        return self.unions[name.replace('-', '_')]
 
 
 class StructType():
@@ -1168,7 +1178,7 @@ def _if_then_else(ifthen):
 @expression.register(ogAST.PrimSequence)
 def _sequence(seq):
     ''' Generate the code for an ASN.1 SEQUENCE '''
-    struct = ctx.structs[seq.exprType.ReferencedTypeName]
+    struct = ctx.resolve_struct(seq.exprType.ReferencedTypeName)
     struct_ptr = ctx.builder.alloca(struct.ty)
 
     for field_name, field_expr in seq.value.viewitems():
@@ -1207,7 +1217,7 @@ def _sequence_of(seqof):
 @expression.register(ogAST.PrimChoiceItem)
 def _choiceitem(choice):
     ''' Generate the code for a CHOICE expression '''
-    union = ctx.unions[choice.exprType.ReferencedTypeName]
+    union = ctx.resolve_union(choice.exprType.ReferencedTypeName)
     union_ptr = ctx.builder.alloca(union.ty)
 
     expr_val = expression(choice.value['value'])
