@@ -88,6 +88,12 @@ class Context():
             [self.double]
         )
 
+    def open_scope(self):
+        self.scope = Scope(self.scope)
+
+    def close_scope(self):
+        self.scope = self.scope.parent
+
 
 class StructType():
     def __init__(self, name, field_names, field_types):
@@ -227,7 +233,7 @@ def generate_runtr_func(process):
     ''' Generate code for the run_transition function '''
     func = decl_func('run_transition', ctx.void, [ctx.i32])
 
-    open_scope()
+    ctx.open_scope()
 
     entry_block = func.append_basic_block('entry')
     cond_block = func.append_basic_block('cond')
@@ -276,7 +282,7 @@ def generate_runtr_func(process):
     ctx.builder.position_at_end(next_tr_label_block)
     ctx.builder.branch(cond_block)
 
-    close_scope()
+    ctx.close_scope()
 
     func.verify()
     return func
@@ -286,7 +292,7 @@ def generate_startup_func(process):
     ''' Generate code for the startup function '''
     func = decl_func(ctx.name + '_startup', ctx.void, [])
 
-    open_scope()
+    ctx.open_scope()
 
     entry_block = func.append_basic_block('entry')
     ctx.builder = core.Builder.new(entry_block)
@@ -300,7 +306,7 @@ def generate_startup_func(process):
     ctx.builder.call(ctx.funcs['run_transition'], [core.Constant.int(ctx.i32, 0)])
     ctx.builder.ret_void()
 
-    close_scope()
+    ctx.close_scope()
 
     func.verify()
     return func
@@ -315,7 +321,7 @@ def generate_input_signal(signal, inputs):
 
     func = decl_func(func_name, ctx.void, param_tys)
 
-    open_scope()
+    ctx.open_scope()
 
     entry_block = func.append_basic_block('entry')
     exit_block = func.append_basic_block('exit')
@@ -350,7 +356,7 @@ def generate_input_signal(signal, inputs):
     ctx.builder.position_at_end(exit_block)
     ctx.builder.ret_void()
 
-    close_scope()
+    ctx.close_scope()
 
     func.verify()
 
@@ -485,7 +491,7 @@ def generate_for_range(loop):
     inc_block = func.append_basic_block('for:inc')
     end_block = func.append_basic_block('')
 
-    open_scope()
+    ctx.open_scope()
 
     loop_var = ctx.builder.alloca(ctx.i32, None, str(loop['var']))
     ctx.scope.define(str(loop['var']), loop_var)
@@ -517,7 +523,7 @@ def generate_for_range(loop):
 
     ctx.builder.position_at_end(end_block)
 
-    close_scope()
+    ctx.close_scope()
 
 
 def generate_for_iterable(loop):
@@ -536,7 +542,7 @@ def generate_for_iterable(loop):
     cond_block = func.append_basic_block('forin:cond')
     end_block = func.append_basic_block('')
 
-    open_scope()
+    ctx.open_scope()
 
     idx_ptr = ctx.builder.alloca(ctx.i32)
     ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
@@ -584,7 +590,7 @@ def generate_for_iterable(loop):
 
     ctx.builder.position_at_end(end_block)
 
-    close_scope()
+    ctx.close_scope()
 
 
 @singledispatch
@@ -1266,7 +1272,7 @@ def _inner_procedure(proc):
     if proc.external:
         return
 
-    open_scope()
+    ctx.open_scope()
 
     for arg, param in zip(func.args, proc.fpar):
         ctx.scope.define(str(param['name']), arg)
@@ -1291,7 +1297,7 @@ def _inner_procedure(proc):
     for label in proc.content.floating_labels:
         generate(label)
 
-    close_scope()
+    ctx.close_scope()
 
     func.verify()
 
@@ -1383,16 +1389,6 @@ def generate_octetstring_type(name, octetstring_ty):
     arr_ty = core.Type.array(ctx.i8, max_size)
     struct = decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty], name)
     return struct.ty
-
-
-def open_scope():
-    ''' Open a new scope '''
-    ctx.scope = Scope(ctx.scope)
-
-
-def close_scope():
-    ''' Close the current scope '''
-    ctx.scope = ctx.scope.parent
 
 
 def get_string_cons(str):
