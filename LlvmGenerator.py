@@ -44,6 +44,7 @@ class Context():
         self.scope = Scope()
         self.global_scope = self.scope
         self.states = {}
+        self.enums = {}
         self.structs = {}
         self.unions = {}
         self.strings = {}
@@ -164,9 +165,13 @@ class Context():
         ''' Return the equivalent LL type of a Choice ASN.1 type '''
         field_names = []
         field_types = []
-        for field_name, field_ty in choice_ty.Children.viewitems():
+
+        for idx, field_name in enumerate(Helper.sorted_fields(choice_ty)):
+            # enum values used in choice determinant/present
+            self.enums[field_name] = core.Constant.int(self.i32, idx)
+
             field_names.append(field_name)
-            field_types.append(self.type_of(field_ty.type))
+            field_types.append(self.type_of(choice_ty.Children[field_name].type))
 
         union = self.decl_union(field_names, field_types, name)
         return union.ty
@@ -1074,7 +1079,8 @@ def _enumerated_value(primary):
 @expression.register(ogAST.PrimChoiceDeterminant)
 def _choice_determinant(primary):
     ''' Generate code for a choice determinant (enumerated) '''
-    raise NotImplementedError
+    enumerant = primary.value[0].replace('_', '-')
+    return ctx.enums[enumerant]
 
 
 @expression.register(ogAST.PrimInteger)
