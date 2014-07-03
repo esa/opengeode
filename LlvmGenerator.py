@@ -798,6 +798,10 @@ def generate_length(params):
     ''' Generate the code for the built-in length operation'''
     seq_ptr = reference(params[0])
     arr_ty = seq_ptr.type.pointee.elements[0]
+    if arr_ty.kind != core.TYPE_ARRAY:
+        # If is not an array this is a pointer to a variable size SeqOf
+        # The array is in the second field of the struct
+        arr_ty = seq_ptr.type.pointee.elements[1]
     return core.Constant.int(ctx.i32, arr_ty.count)
 
 
