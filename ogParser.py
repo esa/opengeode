@@ -685,11 +685,7 @@ def compare_types(type_a, type_b):
         raise TypeError('One type is an REAL, not the other one')
     elif all(side.kind.startswith('Integer') for side in (type_a, type_b)) \
             or all(side.kind == 'RealType' for side in (type_a, type_b)):
-        pass # XXX no need for type check here, only at assignments
-#        if float(type_b.Min) < float(type_a.Min) \
-#                or float(type_b.Max) > float(type_a.Max):
-#            raise TypeError('Range [{}..{}] incompatible with range [{}..{}]'
-#                    .format(type_b.Min, type_b.Max, type_a.Min, type_a.Max))
+        pass
     else:
         return
 
@@ -1291,7 +1287,6 @@ def primary(root, context):
         prim.inputString = get_input_string(root)
         prim.line = root.getLine()
         prim.charPositionInLine = root.getCharPositionInLine()
-        prim.op_not, prim.op_minus = op_not, op_minus
         if op_not:
             prim.op_not = True
         if op_minus:
