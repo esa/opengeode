@@ -317,7 +317,7 @@ package {process_name} is'''.format(process_name=process_name,
     for timer in process.timers:
         ads_template.append(
                 u'--  Timer {} SET and RESET functions'.format(timer))
-        ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
+        ads_template.append(u'procedure SET_{}(val: access Asn1Int);'
                 .format(timer))
         ads_template.append(
                 u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
@@ -435,7 +435,7 @@ def write_statement(param, newline):
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
         if type_kind == 'IntegerType':
-            cast = "Interfaces.Integer_64"
+            cast = "Asn1Int"
         elif type_kind == 'RealType':
             cast = 'Long_Float'
         elif type_kind == 'BooleanType':
@@ -501,7 +501,9 @@ def _call_external_function(output):
             local_decl.extend(p_local)
             # Use a temporary variable to store the timer value
             tmp_id = 'tmp' + str(out['tmpVars'][0])
-            local_decl.append('{} : aliased asn1SccT_Uint32;'.format(tmp_id))
+            local_decl.append('{} : aliased Asn1Int;'
+                              .format(tmp_id))
+            #local_decl.append('{} : aliased Interfaces.Integer_64' asn1SccT_Uint32;'.format(tmp_id))
             code.append('{tmp} := {val};'.format(tmp=tmp_id, val=t_val))
             code.append("SET_{timer}({value}'access);"
                                              .format(timer=p_id, value=tmp_id))
@@ -706,7 +708,7 @@ def _primary_variable(prim):
         ada_string = '(-{})'.format(ada_string)
     if prim.exprType.__name__ == 'for_range':
         # Ada iterator in FOR loops is an Integer - we must cast to 64 bits
-        ada_string = u'Interfaces.Integer_64({})'.format(ada_string)
+        ada_string = u'Asn1Int({})'.format(ada_string)
     return [], ada_string, []
 
 
@@ -810,7 +812,7 @@ def _prim_path(primary_id):
                     ada_string += '{op}({param})'.format(
                             param=param_str,
                             op='abs' if special_op == 'Abs' else
-                            'Interfaces.Integer_64' if special_op == 'CastInt'
+                            'Asn1Int' if special_op == 'CastInt'
                             else 'adaasn1rtl.Asn1Real'
                             if special_op == 'CastReal' else 'ERROR')
                 elif special_op == 'Power':
@@ -839,7 +841,7 @@ def _prim_path(primary_id):
                     if min_length == max_length:
                         ada_string += min_length
                     else:
-                        ada_string += ('Interfaces.Integer_64({e}.Length)'
+                        ada_string += ('Asn1Int({e}.Length)'
                                 .format(e=param_str))
                 elif special_op == 'ChoiceKind':
                     # User wants to know what CHOICE element is present
@@ -874,6 +876,10 @@ def _prim_path(primary_id):
                     ada_string += ', '.join(list_of_params)
                     ada_string += ')'
         sep = '.'
+    if primary_id.op_not:
+        ada_string = 'not {}'.format(ada_string)
+    elif primary_id.op_minus:
+        ada_string = '(-{})'.format(ada_string)
     return stmts, ada_string, local_decl
 
 
@@ -1076,8 +1082,11 @@ def _integer(primary):
 
 @expression.register(ogAST.PrimBoolean)
 def _integer(primary):
-    ''' Generate code for a raw integer/real/boolean value  '''
-    return [], primary.value[0], []
+    ''' Generate code for a raw boolean value  '''
+    ada_string = primary.value[0]
+    if primary.op_not:
+        ada_string = 'not {}'.format(ada_string)
+    return [], ada_string, []
 
 
 @expression.register(ogAST.PrimEmptyString)
@@ -1125,25 +1134,41 @@ def _if_then_else(ifThenElse):
     ''' Return string and statements for ternary operator '''
     resType = ifThenElse.exprType
     stmts = []
-    local_decl = ['tmp{idx} : asn1Scc{resType};'.format(
-        idx=ifThenElse.value['tmpVar'],
-        resType=resType.ReferencedTypeName.replace('-', '_'))]
+    if resType.kind.startswith('Integer'):
+        tmp_type = 'Asn1Int'
+    elif resType.kind == 'StandardStringType':
+        then_str = ifThenElse.value['then'].value.replace("'", '"')
+        else_str = ifThenElse.value['else'].value.replace("'", '"')
+        lens = [len(then_str), len(else_str)]
+        tmp_type = 'String(1 .. {})'.format(max(lens) - 2)
+        # Ada require fixed-length strings, adjust with spaces
+        if lens[0] < lens[1]:
+            then_str = then_str[0:-1] + ' '* (lens[1] - lens[0]) + '"'
+        elif lens[1] < lens[0]:
+            else_str = else_str[0:-1] + ' '* (lens[0] - lens[1]) + '"'
+    else:
+        tmp_type = 'asn1Scc' + resType.ReferencedTypeName.replace('-', '_')
+    local_decl = ['tmp{idx} : {tmpType};'.format(
+                                                idx=ifThenElse.value['tmpVar'],
+                                                tmpType=tmp_type)]
     if_stmts, if_str, if_local = expression(ifThenElse.value['if'])
-    then_stmts, then_str, then_local = expression(ifThenElse.value['then'])
-    else_stmts, else_str, else_local = expression(ifThenElse.value['else'])
     stmts.extend(if_stmts)
-    stmts.extend(then_stmts)
-    stmts.extend(else_stmts)
     local_decl.extend(if_local)
-    local_decl.extend(then_local)
-    local_decl.extend(else_local)
-    stmts.append(u'if {if_str} then'.format(
-        if_str=if_str))
+    if resType.kind != 'StandardStringType':
+        then_stmts, then_str, then_local = expression(ifThenElse.value['then'])
+        else_stmts, else_str, else_local = expression(ifThenElse.value['else'])
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
+        local_decl.extend(then_local)
+        local_decl.extend(else_local)
+    stmts.append(u'if {if_str} then'.format(if_str=if_str))
     stmts.append(u'tmp{idx} := {then_str};'.format(
-        idx=ifThenElse.value['tmpVar'], then_str=then_str))
+                                                idx=ifThenElse.value['tmpVar'],
+                                                then_str=then_str))
     stmts.append('else')
     stmts.append(u'tmp{idx} := {else_str};'.format(
-        idx=ifThenElse.value['tmpVar'], else_str=else_str))
+                                                idx=ifThenElse.value['tmpVar'],
+                                                else_str=else_str))
     stmts.append('end if;')
     ada_string = u'tmp{idx}'.format(idx=ifThenElse.value['tmpVar'])
     return stmts, ada_string, local_decl

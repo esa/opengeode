@@ -74,17 +74,22 @@ DV = None
 TMPVAR = 0
 
 # ASN.1 types used to support the signature of special operators
-INTEGER = type('IntegerType', (object,), {'kind': 'IntegerType'})
+INTEGER = type('IntegerType', (object,), {'kind': 'IntegerType',
+                                          'Min': str(-(2 ** 63)),
+                                          'Max': str(2 ** 63 - 1)})
 INT32 = type('Integer32Type', (object,), {'kind': 'Integer32Type',
                                           'Min':'-2147483648',
                                           'Max':'2147483647'})
 NUMERICAL = type('NumericalType', (object,), {'kind': 'Numerical'})
 TIMER = type('TimerType', (object,), {'kind': 'TimerType'})
-REAL = type('RealType', (object,), {'kind': 'RealType'})
+REAL = type('RealType', (object,), {'kind': 'RealType',
+                                    'Min': str(1e-308),
+                                    'Max': str(1e308)})
 LIST = type('ListType', (object,), {'kind': 'ListType'})
 ANY_TYPE = type('AnyType', (object,), {'kind': 'AnyType'})
 CHOICE = type('ChoiceType', (object,), {'kind': 'ChoiceType'})
 BOOLEAN = type('BooleanType', (object,), {'kind': 'BooleanType'})
+RAWSTRING = type('RawString', (object,), {'kind': 'StandardStringType'})
 
 UNKNOWN_TYPE = type('UnknownType', (object,), {'kind': 'UnknownType'})
 
@@ -303,8 +308,7 @@ def fix_special_operators(op_name, expr_list, context):
                                  .format(op_name))
         expr = expr_list[0]
         if expr.exprType is UNKNOWN_TYPE:
-            expr.exprType = find_variable(expr.inputString, context)
-            # XXX don't use inputString, there can be brackets
+            expr.exprType = find_variable(expr.value[0], context)
             # XXX should change type to PrimVariable
         basic = find_basic_type(expr.exprType)
         if op_name.lower() == 'length' and basic.kind != 'SequenceOfType' \
@@ -322,8 +326,7 @@ def fix_special_operators(op_name, expr_list, context):
         types = {}
         for idx, expr in enumerate(expr_list):
             if expr.exprType is UNKNOWN_TYPE:
-                expr.exprType = find_variable(expr.inputString, context)
-                # XXX don't use inputString, there can be brackets
+                expr.exprType = find_variable(expr.value[0], context)
                 # XXX should change type to PrimVariable
             if idx == 0 and not find_basic_type(expr.exprType).kind in (
                     'IntegerType', 'Integer32Type', 'Numerical', 'RealType'):
@@ -334,7 +337,21 @@ def fix_special_operators(op_name, expr_list, context):
     elif op_name.lower() in ('write', 'writeln'):
         for param in expr_list:
             if param.exprType is UNKNOWN_TYPE:
-                param.exprType = find_variable(param.inputString, context)
+                for each in (INTEGER, REAL, BOOLEAN, RAWSTRING):
+                    try:
+                        check_type_compatibility(param, each, context)
+                        param.exprType = each
+                        break
+                    except TypeError:
+                        continue
+                else:
+                    # Type not found among supported types
+                    # Has to be a variable...otherwise, error!
+                    try:
+                        param.exprType = find_variable(param.value[0], context)
+                    except KeyError, AttributeError:
+                        raise TypeError('Could not determine type of argument'
+                                        ' "{}"'.format(param.inputString))
             basic = find_basic_type(param.exprType)
             if basic.kind not in ('IntegerType', 'Integer32Type',
                                   'RealType', 'BooleanType') \
@@ -490,6 +507,12 @@ def check_type_compatibility(primary, typeRef, context):
                     check_type_compatibility(expr, typeRef, context)
                 # compare the types for semantic equivalence:
                 else:
+                    if expr.exprType is UNKNOWN_TYPE:
+                        # If it was not resolved before, it must be a variable
+                        # this can happen in the context of a special operator
+                        # (write), where at no point before where the type
+                        # could be compared to another type
+                        expr.exprType = find_variable(expr.value[0], context)
                     compare_types(expr.exprType, typeRef)
         return
     elif isinstance(primary, ogAST.PrimVariable):
@@ -602,14 +625,18 @@ def check_type_compatibility(primary, typeRef, context):
     elif isinstance(primary, ogAST.PrimStringLiteral):
         # Octet strings
         basic_type = find_basic_type(typeRef)
-        if(basic_type.kind.endswith('StringType') and
-           int(basic_type.Min) <= len(
-                          primary.value[1:-1]) <= int(basic_type.Max)):
+        if basic_type.kind == 'StandardStringType':
             return
-        else:
-            raise TypeError('Invalid string literal - check that lenght is'
-                            'within the bound limits {Min}..{Max}'.format
+        elif basic_type.kind.endswith('StringType'):
+            if int(basic_type.Min) <= len(
+                          primary.value[1:-1]) <= int(basic_type.Max):
+                return
+            else:
+                raise TypeError('Invalid string literal - check that length is'
+                                'within the bound limits {Min}..{Max}'.format
                             (Min=str(basic_type.Min), Max=str(basic_type.Max)))
+        else:
+            raise TypeError('String literal not expected')
     elif (isinstance(primary, ogAST.PrimMantissaBaseExp) and
                                             actual_type.kind == 'RealType'):
         LOG.debug('PROBABLY (it is a float but I did not check'
@@ -658,11 +685,7 @@ def compare_types(type_a, type_b):
         raise TypeError('One type is an REAL, not the other one')
     elif all(side.kind.startswith('Integer') for side in (type_a, type_b)) \
             or all(side.kind == 'RealType' for side in (type_a, type_b)):
-        pass # XXX no need for type check here, only at assignments
-#        if float(type_b.Min) < float(type_a.Min) \
-#                or float(type_b.Max) > float(type_a.Max):
-#            raise TypeError('Range [{}..{}] incompatible with range [{}..{}]'
-#                    .format(type_b.Min, type_b.Max, type_a.Min, type_a.Max))
+        pass
     else:
         return
 
@@ -1182,6 +1205,7 @@ def primary_value(root, context=None):
                     check_and_fix_op_params(
                             prim.value[0].lower(), expr_list, context)
                 except (AttributeError, TypeError) as err:
+                    LOG.debug(traceback.format_exc())
                     errors.append(str(err) + '- ' + get_input_string(root))
                 prim.value.append({'procParams': expr_list})
             else:
@@ -1263,7 +1287,6 @@ def primary(root, context):
         prim.inputString = get_input_string(root)
         prim.line = root.getLine()
         prim.charPositionInLine = root.getCharPositionInLine()
-        prim.op_not, prim.op_minus = op_not, op_minus
         if op_not:
             prim.op_not = True
         if op_minus:
