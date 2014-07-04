@@ -1,2 +1,10 @@
 [C Code] Running test
+-2 is FALSE
+ 2 2 1
+FALSE TRUE
 OK
+[C] result_data: 6
+Hello Toto 5
+[C] SET MyTimer: 1000
+ 1.50000000000000E+00 ** 2 ==  2.25000000000000E+00 (should be 2.25 )
+timer expired

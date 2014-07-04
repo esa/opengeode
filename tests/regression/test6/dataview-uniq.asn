@@ -23,6 +23,7 @@ IMPORTS T-Int32, T-UInt32, T-Int8, T-UInt8, T-Boolean FROM TASTE-BasicTypes;
 MyInteger   ::= T-UInt8
 
 MyReal	    ::= REAL (0.0 .. 1000.0)
+LargerReal  ::= REAL (0.0 .. 1000000000)
 
 MyEnum	    ::= ENUMERATED { hello, world, howareyou }
 
@@ -37,7 +38,7 @@ MyChoice    ::= CHOICE {
 }
 
 MySeqOf	    ::= SEQUENCE (SIZE (2)) OF MyEnum
-
+SeqInt      ::= SEQUENCE (SIZE(1..2)) OF T-UInt8
 MyOctStr    ::= OCTET STRING (SIZE (3))
 
 -- You can also declare variables (they will be visible in C, Ada and SDL)

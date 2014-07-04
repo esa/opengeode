@@ -10,7 +10,6 @@ test-ada:
 	gcc -c test.c
 	gnatbind -n myfunction.ali
 	gnatlink -o testcase test.o myfunction.ali -lgnat
-	./testcase
 	./testcase | diff expected -
 
 coverage:
