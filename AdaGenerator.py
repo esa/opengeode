@@ -355,7 +355,7 @@ package {process_name} is'''.format(process_name=process_name,
         code_labels.extend(code_label)
 
     # Declare the local variables needed by the transitions in the template
-    decl = ['{line}'.format(line=l)
+    decl = [u'{line}'.format(line=l)
             for l in local_decl_transitions]
     taste_template.extend(decl)
     taste_template.append('begin')
@@ -429,8 +429,17 @@ def write_statement(param, newline):
             # Raw string
             string = '"' + param.value[1:-1].replace('"', "'") + '"'
         else:
-            # XXX Cannot print an octet string like that...
             code, string, local = expression(param)
+            if type_kind == 'OctetStringType':
+                # Octet string -> convert to Ada string
+                sep = u'\u00dc'
+                local.append(u'{}{}str : String(1 .. {});'
+                             .format(string, sep, basic_type.Max))
+                code.extend([u"for i in {}.Data'Range loop".format(string),
+                             u"{st}{sep}str(i) := Character'Val({st}.Data(i));"
+                             .format(st=string, sep=sep),
+                             u"end loop;"])
+                string = u"{}{}str".format(string, sep)
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
@@ -444,7 +453,7 @@ def write_statement(param, newline):
             cast = 'Integer'
         string = u"{cast}'Image({s})".format(cast=cast, s=string)
     else:
-        error = ('Unsupported parameter in write call ' +
+        error = (u'Unsupported parameter in write call ' +
                 param.inputString)
         LOG.error(error)
         raise TypeError(error)
@@ -503,7 +512,6 @@ def _call_external_function(output):
             tmp_id = 'tmp' + str(out['tmpVars'][0])
             local_decl.append('{} : aliased Asn1Int;'
                               .format(tmp_id))
-            #local_decl.append('{} : aliased Interfaces.Integer_64' asn1SccT_Uint32;'.format(tmp_id))
             code.append('{tmp} := {val};'.format(tmp=tmp_id, val=t_val))
             code.append("SET_{timer}({value}'access);"
                                              .format(timer=p_id, value=tmp_id))
