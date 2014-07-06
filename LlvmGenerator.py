@@ -148,16 +148,24 @@ class Context():
         else:
             struct = self.decl_struct(['arr'], [array_ty], name)
 
+        struct_ptr = core.Type.pointer(struct.ty)
+        self.decl_func("%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
+
         return struct.ty
 
     def _type_of_sequence(self, name, sequence_ty):
         ''' Return the LL type of a Sequence ASN.1 type '''
         field_names = []
         field_types = []
+
         for field_name in Helper.sorted_fields(sequence_ty):
             field_names.append(field_name.replace('-', '_'))
             field_types.append(self.type_of(sequence_ty.Children[field_name].type))
+
         struct = self.decl_struct(field_names, field_types, name)
+
+        struct_ptr = core.Type.pointer(struct.ty)
+        self.decl_func("%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
         return struct.ty
 
@@ -174,6 +182,10 @@ class Context():
             field_types.append(self.type_of(choice_ty.Children[field_name].type))
 
         union = self.decl_union(field_names, field_types, name)
+
+        union_ptr = core.Type.pointer(union.ty)
+        self.decl_func("%s_Equal" % name, self.i1, [union_ptr, union_ptr])
+
         return union.ty
 
     def _type_of_octetstring(self, name, octetstring_ty):
@@ -181,6 +193,10 @@ class Context():
         max_size = int(octetstring_ty.Max)
         arr_ty = core.Type.array(ctx.i8, max_size)
         struct = self.decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty], name)
+
+        struct_ptr = core.Type.pointer(struct.ty)
+        self.decl_func("%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
+
         return struct.ty
 
     def string_ptr(self, str):
@@ -932,6 +948,14 @@ def _basic(expr):
             return ctx.builder.fcmp(core.FCMP_OGE, lefttmp, righttmp, 'getmp')
         elif expr.operand == '>':
             return ctx.builder.fcmp(core.FCMP_OGT, lefttmp, righttmp, 'gttmp')
+        else:
+            raise NotImplementedError
+    elif is_struct_ptr(lefttmp):
+        if expr.operand in ['=', '/=']:
+            type_name = expr.left.exprType.ReferencedTypeName.replace('-', '_').lower()
+            func = ctx.funcs["%s_equal" % type_name]
+            res_val = ctx.builder.call(func, [lefttmp, righttmp])
+            return ctx.builder.not_(res_val) if expr.operand == '/=' else res_val
         else:
             raise NotImplementedError
     else:
