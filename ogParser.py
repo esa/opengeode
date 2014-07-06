@@ -90,6 +90,7 @@ ANY_TYPE = type('AnyType', (object,), {'kind': 'AnyType'})
 CHOICE = type('ChoiceType', (object,), {'kind': 'ChoiceType'})
 BOOLEAN = type('BooleanType', (object,), {'kind': 'BooleanType'})
 RAWSTRING = type('RawString', (object,), {'kind': 'StandardStringType'})
+OCTETSTRING = type('OctetString', (object,), {'kind': 'OctetStringType'})
 
 UNKNOWN_TYPE = type('UnknownType', (object,), {'kind': 'UnknownType'})
 
@@ -337,10 +338,15 @@ def fix_special_operators(op_name, expr_list, context):
     elif op_name.lower() in ('write', 'writeln'):
         for param in expr_list:
             if param.exprType is UNKNOWN_TYPE:
-                for each in (INTEGER, REAL, BOOLEAN, RAWSTRING):
+                for each in (INTEGER, REAL, BOOLEAN, RAWSTRING, OCTETSTRING):
                     try:
                         check_type_compatibility(param, each, context)
-                        param.exprType = each
+                        if each is OCTETSTRING and isinstance(param,
+                                                         ogAST.PrimIfThenElse):
+                            print param.inputString, 'is OCTET STRING'
+                            param.exprType = param.value['then'].exprType
+                        else:
+                            param.exprType = each
                         break
                     except TypeError:
                         continue
