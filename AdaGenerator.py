@@ -433,13 +433,26 @@ def write_statement(param, newline):
             if type_kind == 'OctetStringType':
                 # Octet string -> convert to Ada string
                 sep = u'\u00dc'
-                local.append(u'{}{}str : String(1 .. {});'
-                             .format(string, sep, basic_type.Max))
-                code.extend([u"for i in {}.Data'Range loop".format(string),
-                             u"{st}{sep}str(i) := Character'Val({st}.Data(i));"
-                             .format(st=string, sep=sep),
+                localstr = u'tmp{}{}str'.format(str(param.tmpVar), sep)
+                local.append(u'{} : String(1 .. {});'
+                             .format(localstr, basic_type.Max))
+                range_len = u"{}.Data'Range".format(string) \
+                                if basic_type.Min == basic_type.Max \
+                                else "1 .. {}.Length".format(string)
+                code.extend([u"for i in {} loop".format(range_len),
+                             u"{tmp}(i) := Character'Val({st}.Data(i));"
+                             .format(tmp=localstr, st=string, sep=sep),
                              u"end loop;"])
-                string = u"{}{}str".format(string, sep)
+                if basic_type.Min != basic_type.Max:
+                     code.extend(["if {string}.Length < {to} then"
+                                     .format(string=string, to=basic_type.Max),
+                         u"{tmp}({string}.Length + 1 .. {to}) "
+                         u":= (others=>Character'Val(0));"
+                                 .format(tmp=localstr,
+                                         string=string,
+                                         to=basic_type.Max),
+                                 "end if;"])
+                string = localstr
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
