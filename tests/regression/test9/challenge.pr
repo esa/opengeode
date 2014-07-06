@@ -1,43 +1,47 @@
 /* CIF PROCESS (150, 150), (150, 75) */
 PROCESS challenge;
-/* CIF TEXT (-187, 64), (254, 104) */
-procedure test;
+    /* CIF TEXT (0, 26), (502, 179) */
+    procedure test;
 fpar  in first t_UInt8,
            in/out second t_boolean;
 external;
 
 dcl testvalue t_boolean := true;
-/* CIF ENDTEXT */
-/* CIF TEXT (587, 91), (298, 120) */
-dcl count, actual_count CountTab;
+
+
+dcl nested Nested := {a {b {c {p {x 1, y 2}, l {3, 4}}}}};
+    /* CIF ENDTEXT */
+    /* CIF TEXT (922, 91), (298, 120) */
+    dcl count, actual_count CountTab;
 dcl pow_value T_UInt32 := 0;
 dcl check T_UInt8;
 
 dcl bitwise SeqBit;
 dcl bitwise2 SeqBit2;
 dcl boolwise t_Boolean;
-/* CIF ENDTEXT */
-/* CIF START (337, 14), (68, 37) */
-START;
-/* CIF TASK (279, 66), (184, 72) */
-TASK for x in count:
+    /* CIF ENDTEXT */
+    /* CIF START (672, 14), (68, 37) */
+    START;
+        /* CIF TASK (614, 66), (184, 72) */
+        TASK for x in count:
     count(x) := count_max
     actual_count(x) := 0
 endfor;
-/* CIF NEXTSTATE (336, 153), (70, 35) */
-NEXTSTATE Wait;
-/* CIF STATE (585, 11), (68, 35) */
-STATE Wait;
-ENDSTATE;
-
-/* CIF STATE (336, 153), (70, 35) */
-STATE Wait;
-/* CIF INPUT (336, 208), (70, 35) */
-INPUT run;
-/* CIF PROCEDURECALL (288, 258), (166, 35) */
-CALL writeln('Computing');
-/* CIF TASK (165, 308), (412, 216) */
-TASK for x in range(exceed_nb):
+        /* CIF TASK (557, 153), (298, 35) */
+        TASK nested := {a {b {c {p {x 1, y 2}, l {3, 4}}}}};
+        /* CIF NEXTSTATE (671, 203), (70, 35) */
+        NEXTSTATE Wait;
+    /* CIF STATE (760, 11), (68, 35) */
+    STATE Wait;
+    ENDSTATE;
+    /* CIF STATE (671, 203), (70, 35) */
+    STATE Wait;
+        /* CIF INPUT (671, 258), (70, 35) */
+        INPUT run;
+            /* CIF PROCEDURECALL (623, 308), (166, 35) */
+            CALL writeln('Computing');
+            /* CIF TASK (500, 358), (412, 216) */
+            TASK for x in range(exceed_nb):
     for n in range(nb_bit):
         call pow(2, n, pow_value);
         check := if val_max - x>0 and pow_value>0 then 1 else 0 fi
@@ -50,7 +54,7 @@ TASK for x in range(exceed_nb):
         call test((n+1) mod 255, testvalue);
     endfor
 endfor;
-/* CIF NEXTSTATE (336, 539), (70, 35) */
-NEXTSTATE wait;
-ENDSTATE;
+            /* CIF NEXTSTATE (671, 589), (70, 35) */
+            NEXTSTATE wait;
+    ENDSTATE;
 ENDPROCESS challenge;
