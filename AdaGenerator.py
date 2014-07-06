@@ -722,11 +722,15 @@ def expression(expr):
 def _primary_variable(prim):
     ''' Single variable reference '''
     sep = u'l_' if find_var(prim.value[0]) else u''
-    ada_string = u'{opnot}{sep}{name}'.format(
-            opnot='not ' if prim.op_not else '',
-            sep=sep, name=prim.value[0])
-    if prim.op_minus:
-        ada_string = '(-{})'.format(ada_string)
+#   ada_string = u'{opnot}{sep}{name}'.format(
+#           opnot='not ' if prim.op_not else '',
+#           sep=sep, name=prim.value[0])
+#   if prim.op_minus:
+#       ada_string = '(-{})'.format(ada_string)
+
+    string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
+    ada_string = unary(prim, string)
+
     if prim.exprType.__name__ == 'for_range':
         # Ada iterator in FOR loops is an Integer - we must cast to 64 bits
         ada_string = u'Asn1Int({})'.format(ada_string)
@@ -897,10 +901,11 @@ def _prim_path(primary_id):
                     ada_string += ', '.join(list_of_params)
                     ada_string += ')'
         sep = '.'
-    if primary_id.op_not:
-        ada_string = 'not {}'.format(ada_string)
-    elif primary_id.op_minus:
-        ada_string = '(-{})'.format(ada_string)
+    ada_string = unary(primary_id, ada_string)
+#   if primary_id.op_not:
+#       ada_string = 'not {}'.format(ada_string)
+#   elif primary_id.op_minus:
+#       ada_string = '(-{})'.format(ada_string)
     return stmts, ada_string, local_decl
 
 
@@ -928,6 +933,7 @@ def _basic_operators(expr):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
+    ada_string = unary(expr, ada_string)
     return code, ada_string, local_decl
 
 
@@ -967,6 +973,7 @@ def _bitwise_operators(expr):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
+    ada_string = unary(expr, ada_string)
     return code, ada_string, local_decl
 
 
@@ -1039,6 +1046,7 @@ def _append(expr):
     return stmts, ada_string, local_decl
 
 
+
 @expression.register(ogAST.ExprIn)
 def _expr_in(expr):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
@@ -1092,12 +1100,13 @@ def _choice_determinant(primary):
 def _integer(primary):
     ''' Generate code for a raw numerical value  '''
     ada_string = primary.value[0]
-    if primary.op_minus and float(ada_string) >= 0:
-        ada_string = '(-{})'.format(ada_string)
-    elif float(ada_string) < 0:
-        ada_string = '({})'.format(ada_string)
-    if primary.op_not:
-        ada_string = 'not {}'.format(ada_string)
+    ada_string = unary(primary, ada_string)
+#   if primary.op_minus and float(ada_string) >= 0:
+#       ada_string = '(-{})'.format(ada_string)
+#   elif float(ada_string) < 0:
+#       ada_string = '({})'.format(ada_string)
+#   if primary.op_not:
+#       ada_string = 'not {}'.format(ada_string)
     return [], ada_string, []
 
 
@@ -1105,8 +1114,9 @@ def _integer(primary):
 def _integer(primary):
     ''' Generate code for a raw boolean value  '''
     ada_string = primary.value[0]
-    if primary.op_not:
-        ada_string = 'not {}'.format(ada_string)
+    ada_string = unary(primary, ada_string)
+#   if primary.op_not:
+#       ada_string = 'not {}'.format(ada_string)
     return [], ada_string, []
 
 
@@ -1522,6 +1532,23 @@ def _inner_procedure(proc):
 
 
 # A few helper functions needed by the Ada backend
+
+def unary(expr, string):
+    ''' Check for NOT or MINUS unary operators and add them to the string '''
+    op_minus = getattr(expr, 'op_minus', False)
+    op_not = getattr(expr, 'op_not', False)
+    try:
+        float_val = float(string)
+    except ValueError:
+        float_val = 1
+    if op_minus and float_val > 0:
+        string = u'(-{})'.format(string)
+    elif float_val <= 0:
+        string = u'({})'.format(string)
+    if op_not:
+        string = u'not {}'.format(string)
+    return string
+
 
 def find_basic_type(a_type):
     ''' Return the ASN.1 basic type of a_type '''
