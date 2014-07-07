@@ -1436,6 +1436,9 @@ def expression(root, context):
 
     if root.type == lexer.PRIMARY:
         expr, err, warn = primary(root, context)
+        if not expr:
+            expr = ogAST.Primary()
+            errors.append('Unable to parse primary - Check the syntax')
         expr.inputString = get_input_string(root)
         expr.line = root.getLine()
         expr.charPositionInLine = root.getCharPositionInLine()
