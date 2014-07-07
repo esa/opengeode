@@ -452,7 +452,7 @@ def write_statement(param, newline):
                                          string=string,
                                          to=basic_type.Max),
                                  "end if;"])
-                string = localstr
+                string = u'{}({})'.format(localstr, range_len)
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
@@ -722,11 +722,6 @@ def expression(expr):
 def _primary_variable(prim):
     ''' Single variable reference '''
     sep = u'l_' if find_var(prim.value[0]) else u''
-#   ada_string = u'{opnot}{sep}{name}'.format(
-#           opnot='not ' if prim.op_not else '',
-#           sep=sep, name=prim.value[0])
-#   if prim.op_minus:
-#       ada_string = '(-{})'.format(ada_string)
 
     string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
     ada_string = unary(prim, string)
@@ -902,10 +897,6 @@ def _prim_path(primary_id):
                     ada_string += ')'
         sep = '.'
     ada_string = unary(primary_id, ada_string)
-#   if primary_id.op_not:
-#       ada_string = 'not {}'.format(ada_string)
-#   elif primary_id.op_minus:
-#       ada_string = '(-{})'.format(ada_string)
     return stmts, ada_string, local_decl
 
 
@@ -1101,12 +1092,6 @@ def _integer(primary):
     ''' Generate code for a raw numerical value  '''
     ada_string = primary.value[0]
     ada_string = unary(primary, ada_string)
-#   if primary.op_minus and float(ada_string) >= 0:
-#       ada_string = '(-{})'.format(ada_string)
-#   elif float(ada_string) < 0:
-#       ada_string = '({})'.format(ada_string)
-#   if primary.op_not:
-#       ada_string = 'not {}'.format(ada_string)
     return [], ada_string, []
 
 
@@ -1115,8 +1100,6 @@ def _integer(primary):
     ''' Generate code for a raw boolean value  '''
     ada_string = primary.value[0]
     ada_string = unary(primary, ada_string)
-#   if primary.op_not:
-#       ada_string = 'not {}'.format(ada_string)
     return [], ada_string, []
 
 
