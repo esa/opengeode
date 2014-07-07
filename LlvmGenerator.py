@@ -1213,7 +1213,12 @@ def _sequence(seq):
     struct = ctx.resolve_struct(seq.exprType.ReferencedTypeName)
     struct_ptr = ctx.builder.alloca(struct.ty)
 
+    seq_asn1ty = ctx.dataview[seq.exprType.ReferencedTypeName]
+
     for field_name, field_expr in seq.value.viewitems():
+        # Workarround for unknown types in nested sequences
+        field_expr.exprType = seq_asn1ty.type.Children[field_name.replace('_', '-')].type
+
         field_idx_cons = core.Constant.int(ctx.i32, struct.idx(field_name))
         field_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, field_idx_cons])
         generate_assign(field_ptr, expression(field_expr))
