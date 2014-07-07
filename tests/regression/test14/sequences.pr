@@ -47,40 +47,40 @@ DCL nested Nested;
             COMMENT '2';
             /* CIF PROCEDURECALL (-33, 605), (137, 35) */
             CALL writeln(p1 = p2)
-            /* CIF COMMENT (123, 605), (70, 35) */
-            COMMENT 'true';
+            /* CIF COMMENT (123, 605), (71, 35) */
+            COMMENT 'TRUE';
             /* CIF PROCEDURECALL (-36, 655), (142, 35) */
             CALL writeln(p1 /= p2)
-            /* CIF COMMENT (126, 655), (70, 35) */
-            COMMENT 'false';
+            /* CIF COMMENT (126, 655), (75, 35) */
+            COMMENT 'FALSE';
             /* CIF TASK (-9, 705), (88, 35) */
             TASK p1!x := 3;
             /* CIF TASK (-9, 755), (88, 35) */
             TASK p1!y := 4;
-            /* CIF PROCEDURECALL (-33, 805), (137, 35) */
-            CALL writeln(p1 = p2)
-            /* CIF COMMENT (123, 805), (70, 35) */
-            COMMENT 'false';
-            /* CIF PROCEDURECALL (-36, 855), (142, 35) */
-            CALL writeln(p1 /= p2)
-            /* CIF COMMENT (126, 855), (70, 35) */
-            COMMENT 'true';
-            /* CIF PROCEDURECALL (-24, 905), (119, 35) */
+            /* CIF PROCEDURECALL (-24, 805), (119, 35) */
             CALL writeln(p1!x)
-            /* CIF COMMENT (114, 905), (70, 35) */
+            /* CIF COMMENT (113, 805), (70, 35) */
             COMMENT '3';
-            /* CIF PROCEDURECALL (-24, 955), (118, 35) */
+            /* CIF PROCEDURECALL (-24, 855), (118, 35) */
             CALL writeln(p1!y)
-            /* CIF COMMENT (114, 955), (70, 35) */
+            /* CIF COMMENT (114, 855), (70, 35) */
             COMMENT '4';
-            /* CIF PROCEDURECALL (-24, 1005), (119, 35) */
+            /* CIF PROCEDURECALL (-24, 905), (119, 35) */
             CALL writeln(p2!x)
-            /* CIF COMMENT (114, 1005), (70, 35) */
+            /* CIF COMMENT (113, 905), (70, 35) */
             COMMENT '1';
-            /* CIF PROCEDURECALL (-24, 1055), (118, 35) */
+            /* CIF PROCEDURECALL (-24, 955), (118, 35) */
             CALL writeln(p2!y)
-            /* CIF COMMENT (114, 1055), (70, 35) */
+            /* CIF COMMENT (114, 955), (70, 35) */
             COMMENT '2';
+            /* CIF PROCEDURECALL (-33, 1005), (137, 35) */
+            CALL writeln(p1 = p2)
+            /* CIF COMMENT (123, 1005), (75, 35) */
+            COMMENT 'FALSE';
+            /* CIF PROCEDURECALL (-36, 1055), (142, 35) */
+            CALL writeln(p1 /= p2)
+            /* CIF COMMENT (126, 1055), (71, 35) */
+            COMMENT 'TRUE';
             /* CIF PROCEDURECALL (-41, 1105), (152, 35) */
             CALL writeln(length(l1))
             /* CIF COMMENT (131, 1105), (70, 35) */
@@ -103,12 +103,12 @@ DCL nested Nested;
             COMMENT '6';
             /* CIF PROCEDURECALL (-36, 1357), (142, 35) */
             CALL writeln(l1 = l2)
-            /* CIF COMMENT (126, 1357), (70, 35) */
-            COMMENT 'true';
+            /* CIF COMMENT (126, 1357), (71, 35) */
+            COMMENT 'TRUE';
             /* CIF PROCEDURECALL (-34, 1407), (138, 35) */
             CALL writeln(l1 /= l2)
-            /* CIF COMMENT (124, 1407), (70, 35) */
-            COMMENT 'false';
+            /* CIF COMMENT (124, 1407), (75, 35) */
+            COMMENT 'FALSE';
             /* CIF TASK (-9, 1457), (89, 35) */
             TASK l1(0) := 7;
             /* CIF TASK (-9, 1508), (89, 35) */
@@ -131,12 +131,12 @@ DCL nested Nested;
             COMMENT '6';
             /* CIF PROCEDURECALL (-36, 1758), (142, 35) */
             CALL writeln(l1 = l2)
-            /* CIF COMMENT (126, 1758), (70, 35) */
-            COMMENT 'false';
+            /* CIF COMMENT (126, 1758), (75, 35) */
+            COMMENT 'FALSE';
             /* CIF PROCEDURECALL (-34, 1808), (138, 35) */
             CALL writeln(l1 /= l2)
-            /* CIF COMMENT (124, 1808), (70, 35) */
-            COMMENT 'true';
+            /* CIF COMMENT (124, 1808), (71, 35) */
+            COMMENT 'TRUE';
             /* CIF PROCEDURECALL (-29, 1858), (129, 35) */
             CALL writeln(8 in l1)
             /* CIF COMMENT (119, 1858), (71, 35) */
