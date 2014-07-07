@@ -452,7 +452,7 @@ def write_statement(param, newline):
                                          string=string,
                                          to=basic_type.Max),
                                  "end if;"])
-                string = localstr
+                string = u'{}({})'.format(localstr, range_len)
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)

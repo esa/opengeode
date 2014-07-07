@@ -1959,7 +1959,8 @@ def opengeode():
     init_logging(options)
 
     LOG.debug('Starting OpenGEODE version ' + __version__)
-    if any((options.check, options.toAda, options.png, options.pdf, options.svg, options.llvm)):
+    if any((options.check, options.toAda, options.png, options.pdf,
+            options.svg, options.llvm)):
         return cli(options)
     else:
         return gui(options)

@@ -4,7 +4,7 @@ test-parse:
 	../../../opengeode.py myfunction.pr system_structure.pr --check
 
 test-ada:
-	../../../opengeode.py --toAda myfunction.pr system_structure.pr
+	../../../opengeode.py --toAda myfunction.pr system_structure.pr || exit 1
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
 	gnatmake -c myfunction.adb
 	gcc -c test.c
