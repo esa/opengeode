@@ -14,10 +14,12 @@ test-ada:
 
 test-llvm:
 	../../../opengeode.py sequences.pr system_structure.pr --check --llvm
+	asn1.exe -c dataview-uniq.asn -equal
 	llc sequences.ll
-	gcc -c sequences.s
-	gcc -c test_llvm.c
-	gcc sequences.o test_llvm.o -o testcase
+	clang -c sequences.s
+	clang -c dataview-uniq.c
+	clang -c test_llvm.c
+	clang sequences.o dataview-uniq.o test_llvm.o -o testcase
 	./testcase | diff expected -
 
 clean:
