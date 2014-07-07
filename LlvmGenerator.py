@@ -110,7 +110,9 @@ class Context():
 
         basic_asn1ty = find_basic_type(asn1ty)
 
-        if basic_asn1ty.kind in ['IntegerType', 'Integer32Type']:
+        if basic_asn1ty.kind == 'IntegerType':
+            llty = ctx.i64
+        elif basic_asn1ty.kind == 'Integer32Type':
             llty = ctx.i32
         elif basic_asn1ty.kind == 'BooleanType':
             llty = ctx.i1
@@ -343,7 +345,7 @@ def _process(process):
     # Declare timer set/reset functions
     for timer in process.timers:
         # TODO: Should be uint?
-        ctx.decl_func("set_%s" % str(timer), ctx.void, [ctx.i32_ptr], True)
+        ctx.decl_func("set_%s" % str(timer), ctx.void, [ctx.i64_ptr], True)
         ctx.decl_func("reset_%s" % str(timer), ctx.void, [], True)
 
     # Declare output signal functions
@@ -634,14 +636,14 @@ def generate_for_range(loop):
 
     ctx.open_scope()
 
-    loop_var = ctx.builder.alloca(ctx.i32, None, str(loop['var']))
+    loop_var = ctx.builder.alloca(ctx.i64, None, str(loop['var']))
     ctx.scope.define(str(loop['var']), loop_var)
 
     if loop['range']['start']:
         start_val = expression(loop['range']['start'])
         ctx.builder.store(start_val, loop_var)
     else:
-        ctx.builder.store(core.Constant.int(ctx.i32, 0), loop_var)
+        ctx.builder.store(core.Constant.int(ctx.i64, 0), loop_var)
 
     stop_val = expression(loop['range']['stop'])
     ctx.builder.branch(cond_block)
@@ -656,7 +658,7 @@ def generate_for_range(loop):
     ctx.builder.branch(inc_block)
 
     ctx.builder.position_at_end(inc_block)
-    step_val = core.Constant.int(ctx.i32, loop['range']['step'])
+    step_val = core.Constant.int(ctx.i64, loop['range']['step'])
     loop_val = ctx.builder.load(loop_var)
     temp_val = ctx.builder.add(loop_val, step_val)
     ctx.builder.store(temp_val, loop_var)
@@ -833,7 +835,7 @@ def generate_length(params):
         # If is not an array this is a pointer to a variable size SeqOf
         # The array is in the second field of the struct
         arr_ty = seq_ptr.type.pointee.elements[1]
-    return core.Constant.int(ctx.i32, arr_ty.count)
+    return core.Constant.int(ctx.i64, arr_ty.count)
 
 
 def generate_present(params):
@@ -850,7 +852,7 @@ def generate_abs(params):
     if expr_val.type.kind == core.TYPE_INTEGER:
         expr_conv = ctx.builder.sitofp(expr_val, ctx.double)
         res_val = ctx.builder.call(ctx.funcs['fabs'], [expr_conv])
-        return ctx.builder.fptosi(res_val, ctx.i32)
+        return ctx.builder.fptosi(res_val, ctx.i64)
     else:
         return ctx.builder.call(ctx.funcs['fabs'], [expr_val])
 
@@ -858,7 +860,7 @@ def generate_abs(params):
 def generate_fix(params):
     ''' Generate the code for the built-in fix operation'''
     expr_val = expression(params[0])
-    return ctx.builder.fptosi(expr_val, ctx.i32)
+    return ctx.builder.fptosi(expr_val, ctx.i64)
 
 
 def generate_float(params):
@@ -871,13 +873,13 @@ def generate_power(params):
     ''' Generate the code for the built-in power operation'''
     left_val = expression(params[0])
     right_val = expression(params[1])
-
+    right_conv = ctx.builder.trunc(right_val, ctx.i32)
     if left_val.type.kind == core.TYPE_INTEGER:
         left_conv = ctx.builder.sitofp(left_val, ctx.double)
-        res_val = ctx.builder.call(ctx.funcs['powi'], [left_conv, right_val])
-        return ctx.builder.fptosi(res_val, ctx.i32)
+        res_val = ctx.builder.call(ctx.funcs['powi'], [left_conv, right_conv])
+        return ctx.builder.fptosi(res_val, ctx.i64)
     else:
-        return ctx.builder.call(ctx.funcs['powi'], [left_val, right_val])
+        return ctx.builder.call(ctx.funcs['powi'], [left_val, right_conv])
 
 
 @expression.register(ogAST.ExprPlus)
@@ -1110,7 +1112,7 @@ def _choice_determinant(primary):
 @expression.register(ogAST.PrimInteger)
 def _integer(primary):
     ''' Generate code for a raw integer value  '''
-    return core.Constant.int(ctx.i32, primary.value[0])
+    return core.Constant.int(ctx.i64, primary.value[0])
 
 
 @expression.register(ogAST.PrimReal)
