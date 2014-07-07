@@ -2980,7 +2980,8 @@ def assign(root, context):
             expr.left.inputString + ', type= ' +
             type_name(expr.left.exprType) + '), right (' +
             expr.right.inputString + ', type= ' +
-            type_name(expr.right.exprType) + ') ' + str(err))
+            (type_name(expr.right.exprType) 
+                if expr.right.exprType else 'Unknown') + ') ' + str(err))
     else:
         expr.right.exprType = expr.left.exprType
 
