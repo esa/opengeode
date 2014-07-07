@@ -61,6 +61,8 @@ OPKIND = {lexer.PLUS: ogAST.ExprPlus,
           lexer.APPEND: ogAST.ExprAppend,
           lexer.IN: ogAST.ExprIn,
           lexer.REM: ogAST.ExprRem,
+          lexer.NOT: ogAST.ExprNot,
+          lexer.NEG: ogAST.ExprNeg,
           lexer.PRIMARY: ogAST.Primary}
 
 # Insert current path in the search list for importing modules
@@ -454,7 +456,7 @@ def check_and_fix_op_params(op_name, expr_list, context):
 def check_range(typeref, type_to_check):
     ''' Verify the that the Min/Max bounds of two types are compatible
         Called to test that assignments are withing allowed range
-        both types assumed to be basic types 
+        both types assumed to be basic types
     '''
     try:
         if float(type_to_check.Min) < float(typeref.Min) \
@@ -861,8 +863,28 @@ def find_type(path, context):
     return result
 
 
+def fix_expression_type(expr, context):
+    ''' Check/ensure type consistency in unary expressions '''
+    if expr.expr.exprType == UNKNOWN_TYPE \
+            and isinstance(expr.expr, ogAST.PrimPath) \
+            and len(expr.expr.value) == 1:
+        try:
+            exprType = find_variable(expr.expr.value[0], context)
+            # Differentiate DCL and FPAR variables
+            use_type = ogAST.PrimVariable
+            if isinstance(context, ogAST.Procedure):
+                for each in context.fpar:
+                    if each['name'].lower() == expr.expr.value[0].lower():
+                        use_type = ogAST.PrimFPAR
+                        break
+            expr.expr = use_type(primary=expr.expr)
+            expr.expr.exprType = exprType
+        except AttributeError:
+            pass
+
+
 def fix_expression_types(expr, context):
-    ''' Check/ensure type consistency in expressions having two sides '''
+    ''' Check/ensure type consistency in binary expressions '''
     if isinstance(expr, ogAST.Primary):
         return
 
@@ -1249,14 +1271,9 @@ def primary(root, context):
     ''' Process a primary (-/NOT value) '''
     warnings = []
     errors = []
-    op_not, op_minus = False, False
     prim = None
     for child in root.getChildren():
-        if child.type == lexer.NOT:
-            op_not = True
-        elif child.type == lexer.MINUS:
-            op_minus = True
-        elif child.type == lexer.PRIMARY_ID:
+        if child.type == lexer.PRIMARY_ID:
             # Variable reference, indexed values, or ASN.1 value notation
             prim, err, warn = primary_value(child, context=context)
             errors.extend(err)
@@ -1292,10 +1309,6 @@ def primary(root, context):
         prim.inputString = get_input_string(root)
         prim.line = root.getLine()
         prim.charPositionInLine = root.getCharPositionInLine()
-        if op_not:
-            prim.op_not = True
-        if op_minus:
-            prim.op_minus = True
 
     return prim, errors, warnings
 
@@ -1325,7 +1338,7 @@ def expression(root, context):
                 root.children.pop(idx)
                 break
 
-
+    # Binary expressions
     if root.type in (lexer.PLUS,
                      lexer.ASTERISK,
                      lexer.DASH,
@@ -1374,6 +1387,15 @@ def expression(root, context):
                              format(expr.inputString, str(report)))
             expr = new_expr
 
+    # Unary expressions
+    elif root.type in (lexer.NOT, lexer.NEG):
+        child = root.getChildren()[0]
+        expr.expr, err_expr, warn_expr = expression(child, context)
+        errors.extend(err_expr)
+        warnings.extend(warn_expr)
+
+        fix_expression_type(expr, context)
+
     if root.type in (lexer.EQ,
                      lexer.NEQ,
                      lexer.GT,
@@ -1414,7 +1436,6 @@ def expression(root, context):
             errors.append('Check that all your numerical data types have '
                           'a range constraint')
 
-
     elif root.type in (lexer.OR, lexer.AND, lexer.XOR):
         # in the case of bitwise operators, if both sides are arrays,
         # then the result is an array too
@@ -1425,14 +1446,21 @@ def expression(root, context):
         else:
             expr.exprType = expr.left.exprType
 
-    elif root.type in (lexer.PLUS,
-                       lexer.ASTERISK,
-                       lexer.DASH,
-                       lexer.DIV,
-                       lexer.APPEND,
-                       lexer.REM,
-                       lexer.MOD):
+    elif root.type == lexer.NOT:
+        basic = find_basic_type(expr.expr.exprType)
+        if basic.kind == 'BooleanType':
+            expr.exprType = BOOLEAN
+        else:
+            expr.exprType = expr.expr.exprType
+
+    elif root.type == lexer.APPEND:
         expr.exprType = expr.left.exprType
+
+    elif root.type == lexer.NEG:
+        basic = find_basic_type(expr.expr.exprType)
+        attrs = {'Min': str(-float(basic.Max)),
+                 'Max': str(-float(basic.Min))}
+        expr.exprType = type('Neg', (basic,), attrs)
 
     if root.type == lexer.PRIMARY:
         expr, err, warn = primary(root, context)
@@ -1927,15 +1955,15 @@ def text_area_content(root, ta_ast, context):
         elif child.type == lexer.SYNONYM_LIST:
             err, warn = synonym(child, ta_ast, context)
             errors.extend(err)
-            warnings.extend(warn)  
+            warnings.extend(warn)
         elif child.type == lexer.NEWTYPE:
             err, warn = newtype(child, ta_ast, context)
             errors.extend(err)
-            warnings.extend(warn)   
+            warnings.extend(warn)
         elif child.type == lexer.SYNTYPE:
             err, warn = syntype(child, ta_ast, context)
             errors.extend(err)
-            warnings.extend(warn)   
+            warnings.extend(warn)
         elif child.type == lexer.PROCEDURE:
             proc, err, warn = procedure(child, context=context)
             errors.extend(err)

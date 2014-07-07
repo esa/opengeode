@@ -127,6 +127,14 @@ class ExprRem(Expression):
     operand = 'rem'
 
 
+class ExprNot(Expression):
+    operand = 'not'
+
+
+class ExprNeg(Expression):
+    operand = '-'
+
+
 class ExprAssign(Expression):
     operand = ':='
 
@@ -157,16 +165,12 @@ class Primary(Expression):
             self.inputString = primary.inputString
             self.line = primary.line
             self.charPositionInLine = primary.charPositionInLine
-            self.op_not = primary.op_not
-            self.op_minus = primary.op_minus
             self.value = primary.value
             self.exprType = primary.exprType
         else:
             self.inputString = inputString
             self.line = line
             self.charPositionInLine = charPositionInLine
-            self.op_not = False
-            self.op_minus = False
             self.value = None
             self.exprType = None
 
