@@ -343,7 +343,6 @@ def fix_special_operators(op_name, expr_list, context):
                         check_type_compatibility(param, each, context)
                         if each is OCTETSTRING and isinstance(param,
                                                          ogAST.PrimIfThenElse):
-                            print param.inputString, 'is OCTET STRING'
                             param.exprType = param.value['then'].exprType
                         else:
                             param.exprType = each

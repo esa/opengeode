@@ -18,6 +18,28 @@ OctString ::= OCTET STRING (SIZE(4))
 SeqBit ::= SEQUENCE (SIZE(32)) OF BOOLEAN
 SeqBit2 ::= SEQUENCE (SIZE(1..32)) OF BOOLEAN
 
+
+Int32 ::= INTEGER (-2147483648 .. 2147483647)
+
+Point ::= SEQUENCE {
+    x Int32,
+    y Int32
+}
+
+List ::= SEQUENCE (SIZE (2)) OF Int32
+
+Nested ::= SEQUENCE {
+    a SEQUENCE {
+        b SEQUENCE {
+            c SEQUENCE {
+                p Point,
+                l List
+            }
+        }
+    }
+}
+
+
 END
 
 TASTE-Dataview DEFINITIONS ::=
