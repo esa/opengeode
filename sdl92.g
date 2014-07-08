@@ -1,4 +1,4 @@
-/* 
+/*
     OpenGEODE
     ANTLR 3.1.3 grammar for the SDL92 langage
     Includes the following features from SDL2000+:
@@ -89,7 +89,7 @@ tokens {
         VARIABLES;
         SORT;
         DCL;
-        MINUS;
+        NEG;
         GROUND;
         TEXTAREA;
         TEXTAREA_CONTENT;
@@ -183,7 +183,7 @@ route
 
 block_definition
         :       BLOCK block_id end
-                entity_in_block* 
+                entity_in_block*
                 ENDBLOCK end
         ->      ^(BLOCK block_id entity_in_block*);
 
@@ -456,7 +456,7 @@ enabling_condition
 
 
 continuous_signal
-        :       PROVIDED expression end 
+        :       PROVIDED expression end
                 (PRIORITY integer_literal_name=INT end)?
                 transition
         ->      ^(PROVIDED expression $integer_literal_name? transition);
@@ -491,7 +491,7 @@ signal_item
                 signal_list_id |
                 timer_id;*/
 
-/*   Not considered for the moment 
+/*   Not considered for the moment
      (irrelevant in the scope of the generation of code for a single process)
 priority_input
         :       PRIORITY INPUT priority_input_list end transition;
@@ -576,7 +576,7 @@ procedure_call
 
 
 procedure_call_body
-        :       procedure_id actual_parameters?   
+        :       procedure_id actual_parameters?
         ->      ^(OUTPUT_BODY procedure_id actual_parameters?);
 
 
@@ -685,7 +685,7 @@ constant
 
 
 create_request
-        :       CREATE 
+        :       CREATE
                 createbody
                 actual_parameters?
                 end
@@ -712,7 +712,7 @@ outputbody
 
 
 outputstmt
-        :       signal_id 
+        :       signal_id
                 actual_parameters?;
 
 to_part
@@ -795,20 +795,30 @@ variable
 field_selection
         :       (('!'|'.') field_name);
 
-expression      :       operand0 ( IMPLIES^ operand0)* ;
-operand0        :       operand1 (( (OR^ ELSE?) | XOR^ ) operand1)*;
-operand1        :       operand2 ( AND^ THEN? operand2)*;
-operand2        :       operand3
-                        (( EQ^ | NEQ^ | GT^ | GE^ | LT^ | LE^ | IN^ )
-                        operand3)*;
-operand3        :       operand4 (( PLUS^ | DASH^ | APPEND^ ) operand4)*;
-operand4        :       operand5
-                        (( ASTERISK^ | DIV^ | MOD^ | REM^ ) operand5)*;
-operand5        :       primary_qualifier? primary
-                ->      ^(PRIMARY primary_qualifier? primary);
+expression
+        :       operand0 ( IMPLIES^ operand0)* ;
 
+operand0
+        :       operand1 (( (OR^ ELSE?) | XOR^ ) operand1)*;
 
-// primary below covers all cases including ASN.1 Value Notation 
+operand1
+        :       operand2 ( AND^ THEN? operand2)*;
+
+operand2
+        :       operand3 (( EQ^ | NEQ^ | GT^ | GE^ | LT^ | LE^ | IN^ ) operand3)*;
+
+operand3
+        :       operand4 (( PLUS^ | DASH^ | APPEND^ ) operand4)*;
+
+operand4
+        :       operand5 (( ASTERISK^ | DIV^ | MOD^ | REM^ ) operand5)*;
+
+operand5
+        :       primary -> ^(PRIMARY primary)
+        |       NOT^ operand5
+        |       DASH operand5 -> ^(NEG operand5);
+
+// primary below covers all cases including ASN.1 Value Notation
 primary
         :       a=asn1Value primary_params*
         ->      ^(PRIMARY_ID asn1Value primary_params*)
@@ -833,7 +843,7 @@ asn1Value
         |       L_BRACKET
                 MANTISSA mant=INT COMMA
                 BASE bas=INT COMMA
-                EXPONENT exp=INT 
+                EXPONENT exp=INT
                 R_BRACKET                   -> ^(FLOAT2 $mant $bas $exp)
         |       choiceValue
         |       L_BRACKET
@@ -859,7 +869,7 @@ informal_text
 
 
 // hello:5  (CHOICE field value)
-choiceValue 
+choiceValue
         :        choice=ID ':' expression
         ->       ^(CHOICE $choice expression);
 
@@ -869,12 +879,6 @@ namedValue
         :       ID expression;
 
 
-primary_qualifier
-        :       DASH
-        ->      ^(MINUS)
-                | NOT;
-
-
 primary_params
         :      '(' expression_list ')'
         ->     ^(PARAMS expression_list)
@@ -882,7 +886,7 @@ primary_params
         ->     ^(FIELD_NAME literal_id);
 
 
-/* All cases are covered by the ground primary 
+/* All cases are covered by the ground primary
    above (Except structure primary, but we favour ASN.1 notation)
 extended_primary
         :       synonym         |
@@ -960,7 +964,7 @@ operator_application
         :       operator_id '('active_expression_list ')';
 
 
-active_expression_list 
+active_expression_list
         :       active_expression (',' expression_list)?;/* |
                 ground_expression ',' active_expression_list;*/   // Will not work (recursion)
 /*
@@ -990,7 +994,7 @@ conditional_ground_expression
         ->      ^(IFTHENELSE $ifexpr $thenexpr $elseexpr);
 
 
-expression_list 
+expression_list
         :       expression (',' expression)*
         ->      expression+;
 
@@ -1048,7 +1052,7 @@ cif
         :       cif_decl symbolname
                 L_PAREN x=INT COMMA y=INT R_PAREN
                 COMMA
-                L_PAREN width=INT COMMA height=INT R_PAREN 
+                L_PAREN width=INT COMMA height=INT R_PAREN
                 cif_end
         ->      ^(CIF $x $y $width $height);
 
@@ -1060,7 +1064,7 @@ hyperlink
 
 /* OpenGEODE specific: SDL does not allow specifying the name
    of signal parameters, but it is needed to generate function signatures
-   when generating code (in particular in Ada, where the name in the 
+   when generating code (in particular in Ada, where the name in the
    body must comply with the one of the source
    Extension is using CIF comment so it is invisible to other SDL parsers
    (This is valid SDL code - see ITU-T Z106)
@@ -1273,13 +1277,13 @@ ENDBLOCK        :       E N D B L O C K;
 SIGNALROUTE     :       S I G N A L R O U T E;
 CONNECT         :       C O N N E C T;
 SYNTYPE         :       S Y N T Y P E;
-ENDSYNTYPE      :       E N D S Y N T Y P E;		
+ENDSYNTYPE      :       E N D S Y N T Y P E;
 NEWTYPE         :       N E W T Y P E;
 ENDNEWTYPE      :       E N D N E W T Y P E;
-ARRAY           :       A R R A Y;	
+ARRAY           :       A R R A Y;
 CONSTANTS       :	    C O N S T A N T S;
 STRUCT          :	    S T R U C T;
-SYNONYM        	:       S Y N O N Y M;	
+SYNONYM        	:       S Y N O N Y M;
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;

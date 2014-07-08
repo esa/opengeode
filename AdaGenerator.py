@@ -723,8 +723,7 @@ def _primary_variable(prim):
     ''' Single variable reference '''
     sep = u'l_' if find_var(prim.value[0]) else u''
 
-    string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
-    ada_string = unary(prim, string)
+    ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
     if prim.exprType.__name__ == 'for_range':
         # Ada iterator in FOR loops is an Integer - we must cast to 64 bits
@@ -896,7 +895,6 @@ def _prim_path(primary_id):
                     ada_string += ', '.join(list_of_params)
                     ada_string += ')'
         sep = '.'
-    ada_string = unary(primary_id, ada_string)
     return stmts, ada_string, local_decl
 
 
@@ -924,7 +922,6 @@ def _basic_operators(expr):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    ada_string = unary(expr, ada_string)
     return code, ada_string, local_decl
 
 
@@ -964,7 +961,18 @@ def _bitwise_operators(expr):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    ada_string = unary(expr, ada_string)
+    return code, ada_string, local_decl
+
+
+@expression.register(ogAST.ExprNot)
+@expression.register(ogAST.ExprNeg)
+def _unary_operator(expr):
+    ''' Generate the code for an unary expression '''
+    code, local_decl = [], []
+    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    ada_string = u'({op} {expr})'.format(op=expr.operand, expr=expr_str)
+    code.extend(expr_stmts)
+    local_decl.extend(expr_local)
     return code, ada_string, local_decl
 
 
@@ -1090,8 +1098,11 @@ def _choice_determinant(primary):
 @expression.register(ogAST.PrimReal)
 def _integer(primary):
     ''' Generate code for a raw numerical value  '''
-    ada_string = primary.value[0]
-    ada_string = unary(primary, ada_string)
+    if float(primary.value[0]) < 0:
+        # Parentesize negative integers for maintaining the precedence in the generated code
+        ada_string = '({})'.format(primary.value[0])
+    else:
+        ada_string = primary.value[0]
     return [], ada_string, []
 
 
@@ -1099,7 +1110,6 @@ def _integer(primary):
 def _integer(primary):
     ''' Generate code for a raw boolean value  '''
     ada_string = primary.value[0]
-    ada_string = unary(primary, ada_string)
     return [], ada_string, []
 
 
@@ -1512,25 +1522,6 @@ def _inner_procedure(proc):
     VARIABLES.update(outer_scope)
 
     return code, local_decl
-
-
-# A few helper functions needed by the Ada backend
-
-def unary(expr, string):
-    ''' Check for NOT or MINUS unary operators and add them to the string '''
-    op_minus = getattr(expr, 'op_minus', False)
-    op_not = getattr(expr, 'op_not', False)
-    try:
-        float_val = float(string)
-    except ValueError:
-        float_val = 1
-    if op_minus and float_val > 0:
-        string = u'(-{})'.format(string)
-    elif float_val <= 0:
-        string = u'({})'.format(string)
-    if op_not:
-        string = u'not {}'.format(string)
-    return string
 
 
 def find_basic_type(a_type):
