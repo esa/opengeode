@@ -964,6 +964,18 @@ def _basic(expr):
         raise NotImplementedError
 
 
+@expression.register(ogAST.ExprNeg)
+def _neg(expr):
+    ''' Generate the code for a negative expression '''
+    expr_val = expression(expr.expr)
+    if expr_val.type.kind == core.TYPE_INTEGER:
+        zero_val = core.Constant.int(ctx.i64, 0)
+        return ctx.builder.sub(zero_val, expr_val)
+    else:
+        zero_val = core.Constant.real(ctx.double, 0)
+        return ctx.builder.fsub(zero_val, expr_val)
+
+
 @expression.register(ogAST.ExprAssign)
 def _assign(expr):
     ''' Generate the code for an assign expression '''
