@@ -1354,6 +1354,26 @@ def binary_expression(root, context):
     return expr, errors, warnings
 
 
+def incompatible_types(expr, reason):
+    ''' Generate an error message for incompatible types in binary expressions '''
+    return (
+        'Types are incompatible in expression: ' +
+        'left (' + expr.left.inputString + ', type= ' +
+        type_name(expr.left.exprType) + '), ' +
+        'right (' + expr.right.inputString + ', type= ' +
+        type_name(expr.right.exprType) + ') ' + reason
+    )
+
+
+def incompatible_type(expr, reason):
+    ''' Generate an error message for incompatible type in unary expression '''
+    return (
+        'Type is incompatible in expression: ' +
+        '(' + expr.expr.inputString + ', type= ' +
+        type_name(expr.expr.exprType) + ')' + reason
+    )
+
+
 def unary_expression(root, context):
     ''' Unary expression analysys '''
     expr = expr_ast(root)
@@ -1420,18 +1440,7 @@ def logic_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append('Types are incompatible in expression: left (' +
-            expr.left.inputString + ', type= ' +
-            type_name(expr.left.exprType) + '), right (' +
-            expr.right.inputString + ', type= ' +
-            type_name(expr.right.exprType) + ') ' + str(err))
-    except Warning as warn:
-        # warnings are raised when an expression returns always true or
-        # false. In that case a new expression is returned
-        report, new_expr = warn.args
-        warnings.append('Expression "%s" : %s'.
-                         format(expr.inputString, str(report)))
-        expr = new_expr
+        errors.append(incompatible_types(expr, str(err)))
 
     # if both sides are arrays, then the result is an array too
     basic_left = find_basic_type(expr.left.exprType)
@@ -1451,18 +1460,7 @@ def arithmetic_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append('Types are incompatible in expression: left (' +
-            expr.left.inputString + ', type= ' +
-            type_name(expr.left.exprType) + '), right (' +
-            expr.right.inputString + ', type= ' +
-            type_name(expr.right.exprType) + ') ' + str(err))
-    except Warning as warn:
-        # warnings are raised when an expression returns always true or
-        # false. In that case a new expression is returned
-        report, new_expr = warn.args
-        warnings.append('Expression "{}" : {}'.
-                         format(expr.inputString, str(report)))
-        expr = new_expr
+        errors.append(incompatible_types(expr, str(err)))
 
     # Expressions returning a numerical type must have their range defined
     # accordingly with the kind of opration used between operand:
@@ -1490,8 +1488,8 @@ def arithmetic_expression(root, context):
             attrs = {'Min': right.Min, 'Max': right.Max}
             expr.exprType = type('Mod', (basic,), attrs)
     except (ValueError, AttributeError):
-        errors.append('Check that all your numerical data types have '
-                      'a range constraint')
+        msg = 'Check that all your numerical data types have a range constraint'
+        errors.append(incompatible_types(expr, msg))
 
     return expr, errors, warnings
 
@@ -1503,18 +1501,7 @@ def relational_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append('Types are incompatible in expression: left (' +
-            expr.left.inputString + ', type= ' +
-            type_name(expr.left.exprType) + '), right (' +
-            expr.right.inputString + ', type= ' +
-            type_name(expr.right.exprType) + ') ' + str(err))
-    except Warning as warn:
-        # warnings are raised when an expression returns always true or
-        # false. In that case a new expression is returned
-        report, new_expr = warn.args
-        warnings.append('Expression "{}" : {}'.
-                         format(expr.inputString, str(report)))
-        expr = new_expr
+        errors.append(incompatible_types(expr, str(err)))
 
     expr.exprType = BOOLEAN
 
@@ -1531,17 +1518,12 @@ def in_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append('Types are incompatible in expression: left (' +
-            expr.left.inputString + ', type= ' +
-            type_name(expr.left.exprType) + '), right (' +
-            expr.right.inputString + ', type= ' +
-            type_name(expr.right.exprType) + ') ' + str(err))
+        errors.append(incompatible_types(expr, str(err)))
     except Warning as warn:
         # warnings are raised when an expression returns always true or
         # false. In that case a new expression is returned
         report, new_expr = warn.args
-        warnings.append('Expression "{}" : {}'.
-                         format(expr.inputString, str(report)))
+        warnings.append('Expression "%s" : %s' % (expr.inputString, str(report)))
         expr = new_expr
 
     expr.exprType = BOOLEAN
@@ -1556,18 +1538,7 @@ def append_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append('Types are incompatible in expression: left (' +
-            expr.left.inputString + ', type= ' +
-            type_name(expr.left.exprType) + '), right (' +
-            expr.right.inputString + ', type= ' +
-            type_name(expr.right.exprType) + ') ' + str(err))
-    except Warning as warn:
-        # warnings are raised when an expression returns always true or
-        # false. In that case a new expression is returned
-        report, new_expr = warn.args
-        warnings.append('Expression "{}" : {}'.
-                         format(expr.inputString, str(report)))
-        expr = new_expr
+        errors.append(incompatible_types(expr, str(err)))
 
     expr.exprType = expr.left.exprType
 
@@ -1588,7 +1559,8 @@ def not_expression(root, context):
     elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
         expr.exprType = expr.expr.exprType
     else:
-        errors.append('Bitwise operators only work with booleans and arrays of booleans')
+        msg = 'Bitwise operators only work with booleans and arrays of booleans'
+        errors.append(incompatible_type(expr, msg))
 
     return expr, errors, warnings
 
@@ -1601,14 +1573,16 @@ def neg_expression(root, context):
 
     basic = find_basic_type(expr.expr.exprType)
     if not basic.kind in ('IntegerType', 'Integer32Type', 'RealType'):
-        errors.append('Negative expressions can only be applied to numeric types')
+        msg = 'Negative expressions can only be applied to numeric types'
+        errors.append(incompatible_type(expr, msg))
         return expr, errors, warnings
 
     try:
         attrs = {'Min': str(-float(basic.Max)), 'Max': str(-float(basic.Min))}
         expr.exprType = type('Neg', (basic,), attrs)
     except (ValueError, AttributeError):
-        errors.append('Check that all your numerical data types have a range constraint')
+        msg = 'Check that all your numerical data types have a range constraint'
+        errors.append(incompatible_type(expr, msg))
 
     return expr, errors, warnings
 
