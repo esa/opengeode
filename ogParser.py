@@ -1305,23 +1305,94 @@ def primary(root, context):
             warnings.append('Unsupported primary child type:' +
                     str(child.type) + ' (line ' +
                     str(child.getLine()) + ')')
-    if prim:
-        prim.inputString = get_input_string(root)
-        prim.line = root.getLine()
-        prim.charPositionInLine = root.getCharPositionInLine()
+    if not prim:
+        prim = ogAST.Primary()
+        errors.append('Unable to parse primary - Check the syntax')
+
+    prim.inputString = get_input_string(root)
+    prim.line = root.getLine()
+    prim.charPositionInLine = root.getCharPositionInLine()
+
+    # Expressions may need intermediate storage for code generation
+    global TMPVAR
+    prim.tmpVar = TMPVAR
+    TMPVAR += 1
 
     return prim, errors, warnings
 
 
+def expr_ast(root):
+    ''' Create an AST node from a Parse Tree node '''
+    Node = OPKIND[root.type]
+    node = Node(
+        get_input_string(root),
+        root.getLine(),
+        root.getCharPositionInLine()
+    )
+    node.exprType = UNKNOWN_TYPE
+
+    # Expressions may need intermediate storage for code generation
+    global TMPVAR
+    node.tmpVar = TMPVAR
+    TMPVAR += 1
+
+    return node
+
+
+def binary_expression(root, context):
+    ''' Binary expression analysys '''
+    expr, errors, warnings = expr_ast(root), [], []
+
+    left, right = root.children
+    expr.left, err_left, warn_left = expression(left, context)
+    expr.right, err_right, warn_right = expression(right, context)
+    errors.extend(err_left)
+    warnings.extend(warn_left)
+    errors.extend(err_right)
+    warnings.extend(warn_right)
+
+    return expr, errors, warnings
+
+
+def unary_expression(root, context):
+    ''' Unary expression analysys '''
+    expr = expr_ast(root)
+
+    child = root.children[0]
+    expr.expr, errors, warnings = expression(child, context)
+
+    return expr, errors, warnings
+
+
 def expression(root, context):
     ''' Expression analysis (e.g. 5+5*hello(world)!foo) '''
-    errors = []
-    warnings = []
-    global TMPVAR
-    if root.type != lexer.PRIMARY:
-        expr = OPKIND[root.type](get_input_string(root), root.getLine(),
-                                 root.getCharPositionInLine())
-        expr.exprType = UNKNOWN_TYPE
+    logic = (lexer.OR, lexer.AND, lexer.XOR)
+    arithmetic = (lexer.PLUS, lexer.ASTERISK, lexer.DASH, lexer.DIV, lexer.MOD, lexer.REM)
+    relational = (lexer.EQ, lexer.NEQ, lexer.GT, lexer.GE, lexer.LT, lexer.LE)
+
+    if root.type == lexer.PRIMARY:
+        return primary(root, context)
+    elif root.type in logic:
+        return logic_expression(root, context)
+    elif root.type in arithmetic:
+        return arithmetic_expression(root, context)
+    elif root.type in relational:
+        return relational_expression(root, context)
+    elif root.type == lexer.IN:
+        return in_expression(root, context)
+    elif root.type == lexer.APPEND:
+        return append_expression(root, context)
+    elif root.type == lexer.NOT:
+        return not_expression(root, context)
+    elif root.type == lexer.NEG:
+        return neg_expression(root, context)
+    else:
+        raise NotImplementedError
+
+
+def logic_expression(root, context):
+    ''' Logic expression analysis '''
+    expr, errors, warnings = expr_ast(root), [], []
 
     if root.type in (lexer.OR, lexer.AND):
         # detect optional THEN in AND/OR expressions, indicating that the
@@ -1338,144 +1409,207 @@ def expression(root, context):
                 root.children.pop(idx)
                 break
 
-    # Binary expressions
-    if root.type in (lexer.PLUS,
-                     lexer.ASTERISK,
-                     lexer.DASH,
-                     lexer.APPEND,
-                     lexer.IMPLIES,
-                     lexer.OR,
-                     lexer.XOR,
-                     lexer.AND,
-                     lexer.EQ,
-                     lexer.NEQ,
-                     lexer.GT,
-                     lexer.GE,
-                     lexer.LT,
-                     lexer.LE,
-                     lexer.IN,
-                     lexer.DIV,
-                     lexer.MOD,
-                     lexer.REM):
+    left, right = root.children
+    expr.left, err_left, warn_left = expression(left, context)
+    expr.right, err_right, warn_right = expression(right, context)
+    errors.extend(err_left)
+    warnings.extend(warn_left)
+    errors.extend(err_right)
+    warnings.extend(warn_right)
 
-        left, right = root.getChildren()
+    try:
+        fix_expression_types(expr, context)
+    except (AttributeError, TypeError) as err:
+        errors.append('Types are incompatible in expression: left (' +
+            expr.left.inputString + ', type= ' +
+            type_name(expr.left.exprType) + '), right (' +
+            expr.right.inputString + ', type= ' +
+            type_name(expr.right.exprType) + ') ' + str(err))
+    except Warning as warn:
+        # warnings are raised when an expression returns always true or
+        # false. In that case a new expression is returned
+        report, new_expr = warn.args
+        warnings.append('Expression "%s" : %s'.
+                         format(expr.inputString, str(report)))
+        expr = new_expr
 
-        if root.type == lexer.IN:
-            # Left and right are reversed for IN operator
-            left, right = right, left
-
-        expr.left, err_left, warn_left = expression(left, context)
-        expr.right, err_right, warn_right = expression(right, context)
-        errors.extend(err_left)
-        warnings.extend(warn_left)
-        errors.extend(err_right)
-        warnings.extend(warn_right)
-
-        try:
-            fix_expression_types(expr, context)
-        except (AttributeError, TypeError) as err:
-            errors.append('Types are incompatible in expression: left (' +
-                expr.left.inputString + ', type= ' +
-                type_name(expr.left.exprType) + '), right (' +
-                expr.right.inputString + ', type= ' +
-                type_name(expr.right.exprType) + ') ' + str(err))
-        except Warning as warn:
-            # warnings are raised when an expression returns always true or
-            # false. In that case a new expression is returned
-            report, new_expr = warn.args
-            warnings.append('Expression "{}" : {}'.
-                             format(expr.inputString, str(report)))
-            expr = new_expr
-
-    # Unary expressions
-    elif root.type in (lexer.NOT, lexer.NEG):
-        child = root.getChildren()[0]
-        expr.expr, err_expr, warn_expr = expression(child, context)
-        errors.extend(err_expr)
-        warnings.extend(warn_expr)
-
-        fix_expression_type(expr, context)
-
-    if root.type in (lexer.EQ,
-                     lexer.NEQ,
-                     lexer.GT,
-                     lexer.GE,
-                     lexer.LT,
-                     lexer.LE,
-                     lexer.IN):
+    # if both sides are arrays, then the result is an array too
+    basic_left = find_basic_type(expr.left.exprType)
+    basic_right = find_basic_type(expr.right.exprType)
+    if basic_left.kind == basic_right.kind == 'BooleanType':
         expr.exprType = BOOLEAN
+    else:
+        expr.exprType = expr.left.exprType
+
+    return expr, errors, warnings
+
+
+def arithmetic_expression(root, context):
+    ''' Arithmetic expression analysis '''
+    expr, errors, warnings = binary_expression(root, context)
+
+    try:
+        fix_expression_types(expr, context)
+    except (AttributeError, TypeError) as err:
+        errors.append('Types are incompatible in expression: left (' +
+            expr.left.inputString + ', type= ' +
+            type_name(expr.left.exprType) + '), right (' +
+            expr.right.inputString + ', type= ' +
+            type_name(expr.right.exprType) + ') ' + str(err))
+    except Warning as warn:
+        # warnings are raised when an expression returns always true or
+        # false. In that case a new expression is returned
+        report, new_expr = warn.args
+        warnings.append('Expression "{}" : {}'.
+                         format(expr.inputString, str(report)))
+        expr = new_expr
 
     # Expressions returning a numerical type must have their range defined
     # accordingly with the kind of opration used between operand:
-    elif root.type in (lexer.PLUS, lexer.ASTERISK, lexer.DASH,
-                       lexer.DIV, lexer.MOD, lexer.REM):
-        basic = find_basic_type(expr.left.exprType)
-        left = find_basic_type(expr.left.exprType)
-        right = find_basic_type(expr.right.exprType)
-        try:
-            if isinstance(expr, ogAST.ExprPlus):
-                attrs = {'Min': str(float(left.Min) + float(right.Min)),
-                         'Max': str(float(left.Max) + float(right.Max))}
-                expr.exprType = type('Plus', (basic,), attrs)
-            elif isinstance(expr, ogAST.ExprMul):
-                attrs = {'Min': str(float(left.Min) * float(right.Min)),
-                         'Max': str(float(left.Max) * float(right.Max))}
-                expr.exprType = type('Mul', (basic,), attrs)
-            elif isinstance(expr, ogAST.ExprMinus):
-                attrs = {'Min': str(float(left.Min) - float(right.Min)),
-                         'Max': str(float(left.Max) - float(right.Max))}
-                expr.exprType = type('Minus', (basic,), attrs)
-            elif isinstance(expr, ogAST.ExprDiv):
-                attrs = {'Min': str(float(left.Min) / (float(right.Min) or 1)),
-                         'Max': str(float(left.Max) / (float(right.Max) or 1))}
-                expr.exprType = type('Div', (basic,), attrs)
-            elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
-                attrs = {'Min': right.Min, 'Max': right.Max}
-                expr.exprType = type('Mod', (basic,), attrs)
-        except (ValueError, AttributeError):
-            errors.append('Check that all your numerical data types have '
-                          'a range constraint')
+    basic = find_basic_type(expr.left.exprType)
+    left = find_basic_type(expr.left.exprType)
+    right = find_basic_type(expr.right.exprType)
+    try:
+        if isinstance(expr, ogAST.ExprPlus):
+            attrs = {'Min': str(float(left.Min) + float(right.Min)),
+                     'Max': str(float(left.Max) + float(right.Max))}
+            expr.exprType = type('Plus', (basic,), attrs)
+        elif isinstance(expr, ogAST.ExprMul):
+            attrs = {'Min': str(float(left.Min) * float(right.Min)),
+                     'Max': str(float(left.Max) * float(right.Max))}
+            expr.exprType = type('Mul', (basic,), attrs)
+        elif isinstance(expr, ogAST.ExprMinus):
+            attrs = {'Min': str(float(left.Min) - float(right.Min)),
+                     'Max': str(float(left.Max) - float(right.Max))}
+            expr.exprType = type('Minus', (basic,), attrs)
+        elif isinstance(expr, ogAST.ExprDiv):
+            attrs = {'Min': str(float(left.Min) / (float(right.Min) or 1)),
+                     'Max': str(float(left.Max) / (float(right.Max) or 1))}
+            expr.exprType = type('Div', (basic,), attrs)
+        elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
+            attrs = {'Min': right.Min, 'Max': right.Max}
+            expr.exprType = type('Mod', (basic,), attrs)
+    except (ValueError, AttributeError):
+        errors.append('Check that all your numerical data types have '
+                      'a range constraint')
 
-    elif root.type in (lexer.OR, lexer.AND, lexer.XOR):
-        # in the case of bitwise operators, if both sides are arrays,
-        # then the result is an array too
-        basic_left = find_basic_type(expr.left.exprType)
-        basic_right = find_basic_type(expr.right.exprType)
-        if basic_left.kind == basic_right.kind == 'BooleanType':
-            expr.exprType = BOOLEAN
-        else:
-            expr.exprType = expr.left.exprType
+    return expr, errors, warnings
 
-    elif root.type == lexer.NOT:
-        basic = find_basic_type(expr.expr.exprType)
-        if basic.kind == 'BooleanType':
-            expr.exprType = BOOLEAN
-        else:
-            expr.exprType = expr.expr.exprType
 
-    elif root.type == lexer.APPEND:
-        expr.exprType = expr.left.exprType
+def relational_expression(root, context):
+    ''' Relational expression analysys '''
+    expr, errors, warnings = binary_expression(root, context)
 
-    elif root.type == lexer.NEG:
-        basic = find_basic_type(expr.expr.exprType)
-        attrs = {'Min': str(-float(basic.Max)),
-                 'Max': str(-float(basic.Min))}
+    try:
+        fix_expression_types(expr, context)
+    except (AttributeError, TypeError) as err:
+        errors.append('Types are incompatible in expression: left (' +
+            expr.left.inputString + ', type= ' +
+            type_name(expr.left.exprType) + '), right (' +
+            expr.right.inputString + ', type= ' +
+            type_name(expr.right.exprType) + ') ' + str(err))
+    except Warning as warn:
+        # warnings are raised when an expression returns always true or
+        # false. In that case a new expression is returned
+        report, new_expr = warn.args
+        warnings.append('Expression "{}" : {}'.
+                         format(expr.inputString, str(report)))
+        expr = new_expr
+
+    expr.exprType = BOOLEAN
+
+    return expr, errors, warnings
+
+
+def in_expression(root, context):
+    ''' In expression analysis '''
+    # Left and right are reversed for IN operator
+    root.children[0], root.children[1] = root.children[1], root.children[0]
+
+    expr, errors, warnings = binary_expression(root, context)
+
+    try:
+        fix_expression_types(expr, context)
+    except (AttributeError, TypeError) as err:
+        errors.append('Types are incompatible in expression: left (' +
+            expr.left.inputString + ', type= ' +
+            type_name(expr.left.exprType) + '), right (' +
+            expr.right.inputString + ', type= ' +
+            type_name(expr.right.exprType) + ') ' + str(err))
+    except Warning as warn:
+        # warnings are raised when an expression returns always true or
+        # false. In that case a new expression is returned
+        report, new_expr = warn.args
+        warnings.append('Expression "{}" : {}'.
+                         format(expr.inputString, str(report)))
+        expr = new_expr
+
+    expr.exprType = BOOLEAN
+
+    return expr, errors, warnings
+
+
+def append_expression(root, context):
+    ''' Append expression analysis '''
+    expr, errors, warnings = binary_expression(root, context)
+
+    try:
+        fix_expression_types(expr, context)
+    except (AttributeError, TypeError) as err:
+        errors.append('Types are incompatible in expression: left (' +
+            expr.left.inputString + ', type= ' +
+            type_name(expr.left.exprType) + '), right (' +
+            expr.right.inputString + ', type= ' +
+            type_name(expr.right.exprType) + ') ' + str(err))
+    except Warning as warn:
+        # warnings are raised when an expression returns always true or
+        # false. In that case a new expression is returned
+        report, new_expr = warn.args
+        warnings.append('Expression "{}" : {}'.
+                         format(expr.inputString, str(report)))
+        expr = new_expr
+
+    expr.exprType = expr.left.exprType
+
+    return expr, errors, warnings
+
+
+def not_expression(root, context):
+    ''' Not expression analysis '''
+    expr, errors, warnings = unary_expression(root, context)
+
+    fix_expression_type(expr, context)
+
+    bty = find_basic_type(expr.expr.exprType)
+    if bty.kind in ('BooleanType', ):
+        expr.exprType = BOOLEAN
+    elif bty.kind == 'BitStringType':
+        expr.exprType = expr.expr.exprType
+    elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
+        expr.exprType = expr.expr.exprType
+    else:
+        errors.append('Bitwise operators only work with booleans and arrays of booleans')
+
+    return expr, errors, warnings
+
+
+def neg_expression(root, context):
+    ''' Negative expression analysis '''
+    expr, errors, warnings = unary_expression(root, context)
+
+    fix_expression_type(expr, context)
+
+    basic = find_basic_type(expr.expr.exprType)
+    if not basic.kind in ('IntegerType', 'Integer32Type', 'RealType'):
+        errors.append('Negative expressions can only be applied to numeric types')
+        return expr, errors, warnings
+
+    try:
+        attrs = {'Min': str(-float(basic.Max)), 'Max': str(-float(basic.Min))}
         expr.exprType = type('Neg', (basic,), attrs)
+    except (ValueError, AttributeError):
+        errors.append('Check that all your numerical data types have a range constraint')
 
-    if root.type == lexer.PRIMARY:
-        expr, err, warn = primary(root, context)
-        if not expr:
-            expr = ogAST.Primary()
-            errors.append('Unable to parse primary - Check the syntax')
-        expr.inputString = get_input_string(root)
-        expr.line = root.getLine()
-        expr.charPositionInLine = root.getCharPositionInLine()
-        errors.extend(err)
-        warnings.extend(warn)
-
-    # Expressions may need intermediate storage for code generation
-    expr.tmpVar = TMPVAR
-    TMPVAR += 1
     return expr, errors, warnings
 
 
