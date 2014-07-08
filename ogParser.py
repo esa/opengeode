@@ -959,32 +959,7 @@ def fix_expression_types(expr, context):
             # the type of the raw PrimSequenceOf can be set now
             value.exprType.type = asn_type
 
-
-    # Type check that is specific to IN expressions
     if isinstance(expr, ogAST.ExprIn):
-        # check that left part is a SEQUENCE OF or a string
-        container_basic_type = find_basic_type(expr.left.exprType)
-        if container_basic_type.kind == 'SequenceOfType':
-            ref_type = container_basic_type.type
-        elif container_basic_type.kind.endswith('StringType'):
-            ref_type = container_basic_type
-        else:
-            raise TypeError('IN expression: right part must be a list')
-        compare_types(expr.right.exprType, ref_type)
-        if expr.right.is_raw == expr.left.is_raw == True:
-            # If both sides are raw (e.g. "3 in {1,2,3}"), evaluate expression
-            bool_expr = ogAST.PrimBoolean()
-            bool_expr.inputString = expr.inputString
-            bool_expr.line = expr.line
-            bool_expr.charPositionInLine = expr.charPositionInLine
-            bool_expr.exprType = type('PrBool', (object,),
-                                      {'kind': 'BooleanType'})
-            if expr.right.value in [each.value for each in expr.left.value]:
-                bool_expr.value = ['true']
-                raise Warning('Expression is always true', bool_expr)
-            else:
-                bool_expr.value = ['false']
-                raise Warning('Expression is always false', bool_expr)
         return
 
     if expr.right.is_raw == expr.left.is_raw == False:
@@ -1056,19 +1031,6 @@ def fix_expression_types(expr, context):
  #          expr.right.value[idx] = check_expr.right
  #      # the type of the raw PrimSequenceOf can be set now
  #      expr.right.exprType.type = asn_type
-
-    if isinstance(expr, (ogAST.ExprAnd, ogAST.ExprOr, ogAST.ExprXor)):
-        # Bitwise operators: check that both sides are booleans
-        for side in expr.left, expr.right:
-            basic_type = find_basic_type(side.exprType)
-            if basic_type.kind in ('BooleanType', 'BitStringType'):
-                continue
-            elif basic_type.kind == 'SequenceOfType':
-                if find_basic_type(side.exprType).type.kind == 'BooleanType':
-                    continue
-            else:
-                raise TypeError('Bitwise operators only work with '
-                                'booleans and arrays of booleans')
 
     if expr.right.is_raw != expr.left.is_raw:
         check_type_compatibility(raw_expr, ref_type, context)
@@ -1442,10 +1404,19 @@ def logic_expression(root, context):
     except (AttributeError, TypeError) as err:
         errors.append(incompatible_types(expr, str(err)))
 
-    # if both sides are arrays, then the result is an array too
-    basic_left = find_basic_type(expr.left.exprType)
-    basic_right = find_basic_type(expr.right.exprType)
-    if basic_left.kind == basic_right.kind == 'BooleanType':
+    left_bty = find_basic_type(expr.left.exprType)
+    right_bty = find_basic_type(expr.right.exprType)
+    for bty in left_bty, right_bty:
+        if bty.kind in ('BooleanType', 'BitStringType'):
+            continue
+        elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
+            continue
+        else:
+            msg = 'Bitwise operators only work with booleans and arrays of booleans'
+            errors.append(incompatible_types(expr, msg))
+
+    # TODO: Is this correct?
+    if left_bty.kind == right_bty.kind == 'BooleanType':
         expr.exprType = BOOLEAN
     else:
         expr.exprType = expr.left.exprType
@@ -1514,19 +1485,39 @@ def in_expression(root, context):
     root.children[0], root.children[1] = root.children[1], root.children[0]
 
     expr, errors, warnings = binary_expression(root, context)
+    expr.exprType = BOOLEAN
 
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
         errors.append(incompatible_types(expr, str(err)))
-    except Warning as warn:
-        # warnings are raised when an expression returns always true or
-        # false. In that case a new expression is returned
-        report, new_expr = warn.args
-        warnings.append('Expression "%s" : %s' % (expr.inputString, str(report)))
-        expr = new_expr
 
-    expr.exprType = BOOLEAN
+    # check that left part is a SEQUENCE OF or a string
+    container_basic_type = find_basic_type(expr.left.exprType)
+    if container_basic_type.kind == 'SequenceOfType':
+        ref_type = container_basic_type.type
+    elif container_basic_type.kind.endswith('StringType'):
+        ref_type = container_basic_type
+    else:
+        msg = 'IN expression: right part must be a list'
+        errors.append(incompatible_types(expr, msg))
+        return expr, errors, warnings
+
+    compare_types(expr.right.exprType, ref_type)
+    if expr.right.is_raw and expr.left.is_raw:
+        # If both sides are raw (e.g. "3 in {1,2,3}"), evaluate expression
+        bool_expr = ogAST.PrimBoolean()
+        bool_expr.inputString = expr.inputString
+        bool_expr.line = expr.line
+        bool_expr.charPositionInLine = expr.charPositionInLine
+        bool_expr.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
+        if expr.right.value in [each.value for each in expr.left.value]:
+            bool_expr.value = ['true']
+            warnings.append('Expression %s is always true' % expr.inputString)
+        else:
+            bool_expr.value = ['false']
+            warnings.append('Expression %s is always false' % expr.inputString)
+        expr = bool_expr
 
     return expr, errors, warnings
 
