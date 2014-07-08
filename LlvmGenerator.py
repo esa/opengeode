@@ -1032,6 +1032,12 @@ def _logical(expr):
             return ctx.builder.xor(left_val, right_val)
 
 
+@expression.register(ogAST.ExprNot)
+def _not(expr):
+    ''' Generate the code for a not expression '''
+    return ctx.builder.not_(expression(expr.expr))
+
+
 @expression.register(ogAST.ExprAppend)
 def _append(expr):
     ''' Generate code for the APPEND construct: a // b '''
