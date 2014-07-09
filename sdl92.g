@@ -80,6 +80,7 @@ tokens {
         PARAM;
         PARAMNAMES;
         PARAMS;
+        PAREN;
         PRIMARY;
         PRIMARY_ID;
         PROCEDURE;
@@ -814,17 +815,15 @@ operand4
         :       operand5 (( ASTERISK^ | DIV^ | MOD^ | REM^ ) operand5)*;
 
 operand5
-        :       primary -> ^(PRIMARY primary)
+        :       primary
         |       NOT^ operand5
         |       DASH operand5 -> ^(NEG operand5);
 
-// primary below covers all cases including ASN.1 Value Notation
 primary
-        :       a=asn1Value primary_params*
-        ->      ^(PRIMARY_ID asn1Value primary_params*)
-                | L_PAREN expression R_PAREN
-        ->      ^(EXPRESSION expression)
-                | conditional_ground_expression;
+        :       asn1Value primary_params*   -> ^(PRIMARY_ID asn1Value primary_params*)
+        |       L_PAREN expression R_PAREN  -> ^(PAREN expression)
+        |       conditional_ground_expression
+        ;
 
 // ASN.1 Value Notation used for assignations and comparisons
 asn1Value

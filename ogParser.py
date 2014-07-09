@@ -43,27 +43,30 @@ from Asn1scc import parse_asn1, ASN1
 
 LOG = logging.getLogger(__name__)
 
-OPKIND = {lexer.PLUS: ogAST.ExprPlus,
-          lexer.ASTERISK: ogAST.ExprMul,
-          lexer.IMPLIES: ogAST.ExprImplies,
-          lexer.DASH: ogAST.ExprMinus,
-          lexer.OR: ogAST.ExprOr,
-          lexer.AND: ogAST.ExprAnd,
-          lexer.XOR: ogAST.ExprXor,
-          lexer.EQ: ogAST.ExprEq,
-          lexer.NEQ: ogAST.ExprNeq,
-          lexer.GT: ogAST.ExprGt,
-          lexer.GE: ogAST.ExprGe,
-          lexer.LT: ogAST.ExprLt,
-          lexer.LE: ogAST.ExprLe,
-          lexer.DIV: ogAST.ExprDiv,
-          lexer.MOD: ogAST.ExprMod,
-          lexer.APPEND: ogAST.ExprAppend,
-          lexer.IN: ogAST.ExprIn,
-          lexer.REM: ogAST.ExprRem,
-          lexer.NOT: ogAST.ExprNot,
-          lexer.NEG: ogAST.ExprNeg,
-          lexer.PRIMARY: ogAST.Primary}
+EXPR_NODE = {
+    lexer.PLUS: ogAST.ExprPlus,
+    lexer.ASTERISK: ogAST.ExprMul,
+    lexer.IMPLIES: ogAST.ExprImplies,
+    lexer.DASH: ogAST.ExprMinus,
+    lexer.OR: ogAST.ExprOr,
+    lexer.AND: ogAST.ExprAnd,
+    lexer.XOR: ogAST.ExprXor,
+    lexer.EQ: ogAST.ExprEq,
+    lexer.NEQ: ogAST.ExprNeq,
+    lexer.GT: ogAST.ExprGt,
+    lexer.GE: ogAST.ExprGe,
+    lexer.LT: ogAST.ExprLt,
+    lexer.LE: ogAST.ExprLe,
+    lexer.DIV: ogAST.ExprDiv,
+    lexer.MOD: ogAST.ExprMod,
+    lexer.APPEND: ogAST.ExprAppend,
+    lexer.IN: ogAST.ExprIn,
+    lexer.REM: ogAST.ExprRem,
+    lexer.NOT: ogAST.ExprNot,
+    lexer.NEG: ogAST.ExprNeg,
+    lexer.PRIMARY: ogAST.Primary,
+    lexer.IFTHENELSE: ogAST.PrimIfThenElse,
+}
 
 # Insert current path in the search list for importing modules
 sys.path.insert(0, '.')
@@ -1226,56 +1229,7 @@ def primary_value(root, context=None):
         prim.inputString = get_input_string(root)
     else:
         prim = ogAST.PrimPath()
-    return prim, errors, warnings
 
-
-def primary(root, context):
-    ''' Process a primary (-/NOT value) '''
-    warnings = []
-    errors = []
-    prim = None
-    for child in root.getChildren():
-        if child.type == lexer.PRIMARY_ID:
-            # Variable reference, indexed values, or ASN.1 value notation
-            prim, err, warn = primary_value(child, context=context)
-            errors.extend(err)
-            warnings.extend(warn)
-        elif child.type == lexer.EXPRESSION:
-            prim, err, warn = expression(child.getChild(0), context)
-            errors.extend(err)
-            warnings.extend(warn)
-        elif child.type == lexer.IFTHENELSE:
-            prim = ogAST.PrimIfThenElse()
-            if_part, then_part, else_part = child.getChildren()
-            if_expr, err, warn = expression(if_part, context)
-            errors.extend(err)
-            warnings.extend(warn)
-            then_expr, err, warn = expression(then_part, context)
-            errors.extend(err)
-            warnings.extend(warn)
-            else_expr, err, warn = expression(else_part, context)
-            errors.extend(err)
-            warnings.extend(warn)
-            global TMPVAR
-            prim.value = {'if': if_expr,
-                          'then': then_expr,
-                          'else': else_expr,
-                          'tmpVar': TMPVAR}
-            prim.exprType = UNKNOWN_TYPE
-            TMPVAR += 1
-        else:
-            warnings.append('Unsupported primary child type:' +
-                    str(child.type) + ' (line ' +
-                    str(child.getLine()) + ')')
-    if not prim:
-        prim = ogAST.Primary()
-        errors.append('Unable to parse primary - Check the syntax')
-
-    prim.inputString = get_input_string(root)
-    prim.line = root.getLine()
-    prim.charPositionInLine = root.getCharPositionInLine()
-
-    # Expressions may need intermediate storage for code generation
     global TMPVAR
     prim.tmpVar = TMPVAR
     TMPVAR += 1
@@ -1285,7 +1239,7 @@ def primary(root, context):
 
 def expr_ast(root):
     ''' Create an AST node from a Parse Tree node '''
-    Node = OPKIND[root.type]
+    Node = EXPR_NODE[root.type]
     node = Node(
         get_input_string(root),
         root.getLine(),
@@ -1352,9 +1306,7 @@ def expression(root, context):
     arithmetic = (lexer.PLUS, lexer.ASTERISK, lexer.DASH, lexer.DIV, lexer.MOD, lexer.REM)
     relational = (lexer.EQ, lexer.NEQ, lexer.GT, lexer.GE, lexer.LT, lexer.LE)
 
-    if root.type == lexer.PRIMARY:
-        return primary(root, context)
-    elif root.type in logic:
+    if root.type in logic:
         return logic_expression(root, context)
     elif root.type in arithmetic:
         return arithmetic_expression(root, context)
@@ -1368,7 +1320,14 @@ def expression(root, context):
         return not_expression(root, context)
     elif root.type == lexer.NEG:
         return neg_expression(root, context)
+    elif root.type == lexer.PAREN:
+        return expression(root.children[0], context)
+    elif root.type == lexer.PRIMARY_ID:
+        return primary_value(root, context)
+    elif root.type == lexer.IFTHENELSE:
+        return if_then_else_expression(root, context)
     else:
+        # TODO: return error/warning message
         raise NotImplementedError
 
 
@@ -1574,6 +1533,35 @@ def neg_expression(root, context):
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types have a range constraint'
         errors.append(incompatible_type(expr, msg))
+
+    return expr, errors, warnings
+
+
+def if_then_else_expression(root, context):
+    ''' If Then Else expression analysis '''
+    expr, errors, warnings = expr_ast(root), [], []
+
+    if_part, then_part, else_part = root.getChildren()
+
+    if_expr, err, warn = expression(if_part, context)
+    errors.extend(err)
+    warnings.extend(warn)
+
+    then_expr, err, warn = expression(then_part, context)
+    errors.extend(err)
+    warnings.extend(warn)
+
+    else_expr, err, warn = expression(else_part, context)
+    errors.extend(err)
+    warnings.extend(warn)
+
+    # TODO: Refactor this
+    expr.value = {
+        'if': if_expr,
+        'then': then_expr,
+        'else': else_expr,
+        'tmpVar': expr.tmpVar
+    }
 
     return expr, errors, warnings
 
@@ -2797,7 +2785,7 @@ def alternative_part(root, parent, context):
                     if not ans.openRangeOp:
                         ans.openRangeOp = ogAST.ExprEq
                 else:
-                    ans.openRangeOp = OPKIND[c.type]
+                    ans.openRangeOp = EXPR_NODE[c.type]
         elif child.type == lexer.INFORMAL_TEXT:
             ans.kind = 'informal_text'
             ans.informalText = child.getChild(0).toString()[1:-1]
