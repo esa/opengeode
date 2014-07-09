@@ -1067,17 +1067,12 @@ def expression_list(root, context):
 
 def primary_path(root, context=None):
     '''Process a primary path'''
-    global TMPVAR
-
     errors, warnings = [], []
 
     prim = ogAST.PrimPath()
     prim.value = [root.children[0].text]
     prim.exprType = UNKNOWN_TYPE
-
-    global TMPVAR
-    prim.tmpVar = TMPVAR
-    TMPVAR += 1
+    prim.tmpVar = tmp()
 
     # Process fields or params, if any
     for child in root.children[slice(1, len(root.children))]:
@@ -1110,8 +1105,7 @@ def primary_path(root, context=None):
                 elif len(expr_list) == 2:
                     # Substring (range, two params)
                     prim.value.append(
-                            {'substring': expr_list, 'tmpVar': TMPVAR})
-                    TMPVAR += 1
+                            {'substring': expr_list, 'tmpVar': tmp()})
                 else:
                     errors.append('Wrong number of parameters')
         elif child.type == lexer.FIELD_NAME:
@@ -1136,6 +1130,14 @@ def primary_path(root, context=None):
     return prim, errors, warnings
 
 
+def tmp():
+    ''' Return a temporary variable name '''
+    global TMPVAR
+    varname = TMPVAR
+    TMPVAR += 1
+    return varname
+
+
 def expr_ast(root):
     ''' Create an AST node from a Parse Tree node '''
     Node = EXPR_NODE[root.type]
@@ -1145,11 +1147,7 @@ def expr_ast(root):
         root.getCharPositionInLine()
     )
     node.exprType = UNKNOWN_TYPE
-
-    # Expressions may need intermediate storage for code generation
-    global TMPVAR
-    node.tmpVar = TMPVAR
-    TMPVAR += 1
+    node.tmpVar = tmp()
 
     return node
 
@@ -1571,10 +1569,7 @@ def literal(root, context):
         raise NotImplementedError
 
     prim.inputString = get_input_string(root)
-
-    global TMPVAR
-    prim.tmpVar = TMPVAR
-    TMPVAR += 1
+    prim.tmpVar = tmp()
 
     return prim, errors, warnings
 
@@ -2724,10 +2719,8 @@ def outputbody(root, context):
         LOG.debug(str(traceback.format_exc()))
     if body['params']:
         body['tmpVars'] = []
-        global TMPVAR
         for _ in body['params']:
-            body['tmpVars'].append(TMPVAR)
-            TMPVAR += 1
+            body['tmpVars'].append(tmp())
     return body, errors, warnings
 
 
@@ -2828,9 +2821,7 @@ def decision(root, parent, context):
     errors = []
     warnings = []
     dec = ogAST.Decision()
-    global TMPVAR
-    dec.tmpVar = TMPVAR
-    TMPVAR += 1
+    dec.tmpVar = tmp()
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
