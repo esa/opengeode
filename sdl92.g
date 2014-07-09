@@ -69,6 +69,7 @@ tokens {
         INPUTLIST;
         JOIN;
         LABEL;
+        LITERAL;
         NEG;
         NEWTYPE;
         NEXTSTATE;
@@ -82,7 +83,7 @@ tokens {
         PARAMS;
         PAREN;
         PRIMARY;
-        PRIMARY_ID;
+        PRIMPATH;
         PROCEDURE;
         PROCEDURE_CALL;
         PROCEDURE_NAME;
@@ -820,51 +821,42 @@ operand5
         |       DASH operand5 -> ^(NEG operand5);
 
 primary
-        :       asn1Value primary_params*   -> ^(PRIMARY_ID asn1Value primary_params*)
-        |       L_PAREN expression R_PAREN  -> ^(PAREN expression)
+        :       ID primary_params+            -> ^(PRIMPATH ID primary_params*)
+        |       literal                       -> ^(LITERAL literal)
+        |       '(' expression ')'            -> ^(PAREN expression)
         |       conditional_ground_expression
         ;
 
-// ASN.1 Value Notation used for assignations and comparisons
-asn1Value
-        :       BitStringLiteral            -> ^(BITSTR BitStringLiteral)
-        |       OctetStringLiteral          -> ^(OCTSTR OctetStringLiteral)
+literal
+        :       BITSTR^
+        |       OCTSTR^
         |       TRUE^
         |       FALSE^
-        |       StringLiteral               -> ^(STRING StringLiteral)
+        |       STRING
         |       NULL^
         |       PLUS_INFINITY^
         |       MINUS_INFINITY^
-        |       ID
-        |       INT
-        |       FloatingPointLiteral        -> ^(FLOAT FloatingPointLiteral)
-        |       L_BRACKET R_BRACKET         -> ^(EMPTYSTR)
-        |       L_BRACKET
+        |       INT^
+        |       FLOAT^
+        |       ID^
+        |       choiceValue
+        |       '{' '}'                     -> ^(EMPTYSTR)
+        |       '{'
                 MANTISSA mant=INT COMMA
                 BASE bas=INT COMMA
                 EXPONENT exp=INT
-                R_BRACKET                   -> ^(FLOAT2 $mant $bas $exp)
-        |       choiceValue
-        |       L_BRACKET
+                '}'                         -> ^(FLOAT2 $mant $bas $exp)
+        |       '{'
                 namedValue (COMMA namedValue)*
-                R_BRACKET                   -> ^(SEQUENCE namedValue+)
-        |       L_BRACKET
-                asn1Value (COMMA asn1Value)*
-                R_BRACKET                   -> ^(SEQOF asn1Value+)
+                '}'                         -> ^(SEQUENCE namedValue+)
+        |       '{'
+                literal (COMMA literal)*
+                '}'                         -> ^(SEQOF literal+)
         ;
 
-BitStringLiteral
-        :       '"' ('0'|'1'|' ' | '\t' | '\r' | '\n')* '"B';
-
-
-OctetStringLiteral
-        :       '"' ('0'..'9'|'a'..'f'|'A'..'F'|' ' | '\t' | '\r' | '\n')*
-                '"H';
-
-
 informal_text
-        :        StringLiteral
-        ->       ^(INFORMAL_TEXT StringLiteral);
+        :        STRING
+        ->       ^(INFORMAL_TEXT STRING);
 
 
 // hello:5  (CHOICE field value)
@@ -1043,8 +1035,8 @@ via     :       VIA state_entry_point_name
 
 
 end
-        :   (cif? hyperlink? COMMENT StringLiteral)? SEMI
-        -> ^(COMMENT cif? hyperlink? StringLiteral)?;
+        :   (cif? hyperlink? COMMENT STRING)? SEMI
+        -> ^(COMMENT cif? hyperlink? STRING)?;
 
 
 cif
@@ -1057,9 +1049,9 @@ cif
 
 
 hyperlink
-        :       cif_decl KEEP SPECIFIC GEODE HYPERLINK StringLiteral
+        :       cif_decl KEEP SPECIFIC GEODE HYPERLINK STRING
                 cif_end
-        ->      ^(HYPERLINK StringLiteral);
+        ->      ^(HYPERLINK STRING);
 
 /* OpenGEODE specific: SDL does not allow specifying the name
    of signal parameters, but it is needed to generate function signatures
@@ -1078,8 +1070,8 @@ paramnames
    CIF Extensions are valid SDL constructs (ITU-T Z106)
 */
 use_asn1
-        :       cif_decl KEEP SPECIFIC GEODE ASNFILENAME StringLiteral cif_end
-        ->      ^(ASN1 StringLiteral);
+        :       cif_decl KEEP SPECIFIC GEODE ASNFILENAME STRING cif_end
+        ->      ^(ASN1 STRING);
 
 
 symbolname
@@ -1286,12 +1278,21 @@ SYNONYM        	:       S Y N O N Y M;
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
-StringLiteral   :       STR+ ;
 
 fragment
 STR
-        :       '\'' ( options {greedy=false;} : .)* '\''
-        ;
+        :       '\'' ( options {greedy=false;} : .)* '\'';
+
+STRING
+        :       STR+ ;
+
+BITSTR
+        :       '"' ('0'|'1'|' ' | '\t' | '\r' | '\n')* '"B';
+
+
+OCTSTR
+        :       '"' ('0'..'9'|'a'..'f'|'A'..'F'|' ' | '\t' | '\r' | '\n')*
+                '"H';
 
 ID
         :       ALPHA (ALPHA | DIGITS | '_')*;
@@ -1306,13 +1307,12 @@ fragment
 DIGITS
         :       ('0'..'9')+;
 
-FloatingPointLiteral
+FLOAT
         :       INT DOT (DIGITS)? (Exponent)?
         |       INT
         ;
 
-WS  :   (' ' | '\t' | '\r' | '\n')+ {$channel=HIDDEN;}
-    ;
+WS  :   (' ' | '\t' | '\r' | '\n')+ {$channel=HIDDEN;};
 /*
 COMMENT
     :   '//' ( options {greedy=false;} : . )* '//' {$channel=HIDDEN;}

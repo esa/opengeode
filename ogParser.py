@@ -1065,116 +1065,19 @@ def expression_list(root, context):
     return result, errors, warnings
 
 
-def primary_value(root, context=None):
-    '''
-        Process a primary expression such as a!b(4)!c(hello)
-        or { x 1, y a:2 } (ASN.1 Value Notation)
-        Try to determine the type of the primary when possible
-        There are three cases where the type cannot be determined at all:
-        (1) if the primary is a single literal (can be a var, enum or choice)
-        (2) if the primary is a sequence literal
-        (3) if the type is a choice literal
-        In case of a SEQUENCE OF, the Min/Max values are set
-    '''
-    warnings = []
-    errors = []
-    prim = None
+def primary_path(root, context=None):
+    '''Process a primary path'''
     global TMPVAR
 
-    def primary_elem(child):
-        ''' Process a single token '''
-        prim = None
-        if child.type == lexer.ID:
-            prim = ogAST.PrimPath()
-            prim.value = [child.text]
-            prim.exprType = UNKNOWN_TYPE
-        elif child.type == lexer.INT:
-            prim = ogAST.PrimInteger()
-            prim.value = [child.text.lower()]
-            prim.exprType = type('PrInt', (object,),
-                 {'kind': 'IntegerType', 'Min': child.text, 'Max': child.text})
-        elif child.type in (lexer.TRUE, lexer.FALSE):
-            prim = ogAST.PrimBoolean()
-            prim.value = [child.text.lower()]
-            prim.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
-        elif child.type == lexer.FLOAT:
-            prim = ogAST.PrimReal()
-            prim.value = [child.getChild(0).text]
-            prim.exprType = type('PrReal', (object,),
-                 {'kind': 'RealType',
-                  'Min': prim.value[0], 'Max': prim.value[0]})
-        elif child.type == lexer.STRING:
-            prim = ogAST.PrimStringLiteral()
-            prim.value = child.getChild(0).text
-            prim.exprType = type('PrStr', (object,),
-                          {'kind': 'StringType',
-                           'Min': str(len(prim.value) - 2),
-                           'Max': str(len(prim.value) - 2)})
-        elif child.type == lexer.FLOAT2:
-            prim = ogAST.PrimMantissaBaseExp()
-            mant = float(child.getChild(0).toString())
-            base = int(child.getChild(1).toString())
-            exp = int(child.getChild(2).toString())
-            # Compute mantissa * base**exponent to get the value type range
-            value = float(mant * pow(base, exp))
-            prim.value = {'mantissa': mant, 'base': base, 'exponent': exp}
-            prim.exprType = type('PrMantissa', (object,),
-                 {'kind': 'RealType',
-                  'Min': str(value), 'Max': str(value)})
-        elif child.type == lexer.EMPTYSTR:
-            # Empty SEQUENCE OF (i.e. "{}")
-            prim = ogAST.PrimEmptyString()
-            prim.exprType = type('PrES', (object,), {'kind': 'SequenceOfType',
-                'Min': '0', 'Max': '0'})
-        elif child.type == lexer.CHOICE:
-            prim = ogAST.PrimChoiceItem()
-            choice = child.getChild(0).toString()
-            expr, err, warn = expression(child.getChild(1), context)
-            errors.extend(err)
-            warnings.extend(warn)
-            prim.value = {'choice': choice, 'value': expr}
-            prim.exprType = UNKNOWN_TYPE
-        elif child.type == lexer.SEQUENCE:
-            prim = ogAST.PrimSequence()
-            prim.value = {}
-            for elem in child.getChildren():
-                if elem.type == lexer.ID:
-                    field_name = elem.text
-                else:
-                    prim.value[field_name], err, warn = (
-                                                     expression(elem, context))
-                    errors.extend(err)
-                    warnings.extend(warn)
-            prim.exprType = UNKNOWN_TYPE
-        elif child.type == lexer.SEQOF:
-            prim = ogAST.PrimSequenceOf()
-            prim.value = []
-            for elem in child.getChildren():
-                # SEQUENCE OF elements cannot have fieldnames/indexes
-                prim_elem = primary_elem(elem)
-                prim_elem.inputString = get_input_string(elem)
-                prim_elem.line = elem.getLine()
-                prim_elem.charPositionInLine = elem.getCharPositionInLine()
-                prim.value.append(prim_elem)
-            prim.exprType = type('PrSO', (object,), {
-                'kind': 'SequenceOfType',
-                'Min': str(len(child.children)),
-                'Max': str(len(child.children)),
-                'type': UNKNOWN_TYPE
-             })
-        elif child.type == lexer.BITSTR:
-            prim = ogAST.PrimBitStringLiteral()
-            warnings.append('Bit string literal not supported yet')
-        elif child.type == lexer.OCTSTR:
-            prim = ogAST.PrimOctetStringLiteral()
-            warnings.append('Octet string literal not supported yet')
-        else:
-            warnings.append('Unsupported primary construct, type:' +
-                    str(child.type) +
-                    ' (line ' + str(child.getLine()) + ')')
-        return prim
+    errors, warnings = [], []
 
-    prim = primary_elem(root.getChild(0))
+    prim = ogAST.PrimPath()
+    prim.value = [root.children[0].text]
+    prim.exprType = UNKNOWN_TYPE
+
+    global TMPVAR
+    prim.tmpVar = TMPVAR
+    TMPVAR += 1
 
     # Process fields or params, if any
     for child in root.children[slice(1, len(root.children))]:
@@ -1229,10 +1132,6 @@ def primary_value(root, context=None):
         prim.inputString = get_input_string(root)
     else:
         prim = ogAST.PrimPath()
-
-    global TMPVAR
-    prim.tmpVar = TMPVAR
-    TMPVAR += 1
 
     return prim, errors, warnings
 
@@ -1322,12 +1221,13 @@ def expression(root, context):
         return neg_expression(root, context)
     elif root.type == lexer.PAREN:
         return expression(root.children[0], context)
-    elif root.type == lexer.PRIMARY_ID:
-        return primary_value(root, context)
+    elif root.type == lexer.PRIMPATH:
+        return primary_path(root, context)
     elif root.type == lexer.IFTHENELSE:
         return if_then_else_expression(root, context)
+    elif root.type == lexer.LITERAL:
+        return literal(root.children[0], context)
     else:
-        # TODO: return error/warning message
         raise NotImplementedError
 
 
@@ -1564,6 +1464,119 @@ def if_then_else_expression(root, context):
     }
 
     return expr, errors, warnings
+
+
+def literal(root, context):
+    ''' Literal expression analysis '''
+    prim, errors, warnings = None, [], []
+
+    if root.type == lexer.ID:
+        prim = ogAST.PrimPath()
+        prim.value = [root.text]
+        prim.exprType = UNKNOWN_TYPE
+    elif root.type == lexer.INT:
+        prim = ogAST.PrimInteger()
+        prim.value = [root.text.lower()]
+        prim.exprType = type('PrInt', (object,), {
+            'kind': 'IntegerType',
+            'Min': root.text,
+            'Max': root.text
+        })
+    elif root.type in (lexer.TRUE, lexer.FALSE):
+        prim = ogAST.PrimBoolean()
+        prim.value = [root.text.lower()]
+        prim.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
+    elif root.type == lexer.FLOAT:
+        prim = ogAST.PrimReal()
+        prim.value = [root.text]
+        prim.exprType = type('PrReal', (object,), {
+            'kind': 'RealType',
+            'Min': prim.value[0],
+            'Max': prim.value[0]
+        })
+    elif root.type == lexer.STRING:
+        prim = ogAST.PrimStringLiteral()
+        prim.value = root.text
+        prim.exprType = type('PrStr', (object,), {
+            'kind': 'StringType',
+            'Min': str(len(prim.value) - 2),
+            'Max': str(len(prim.value) - 2)
+        })
+    elif root.type == lexer.FLOAT2:
+        prim = ogAST.PrimMantissaBaseExp()
+        mant = float(root.getChild(0).toString())
+        base = int(root.getChild(1).toString())
+        exp = int(root.getChild(2).toString())
+        # Compute mantissa * base**exponent to get the value type range
+        value = float(mant * pow(base, exp))
+        prim.value = {'mantissa': mant, 'base': base, 'exponent': exp}
+        prim.exprType = type('PrMantissa', (object,), {
+            'kind': 'RealType',
+            'Min': str(value),
+            'Max': str(value)
+        })
+    elif root.type == lexer.EMPTYSTR:
+        # Empty SEQUENCE OF (i.e. "{}")
+        prim = ogAST.PrimEmptyString()
+        prim.exprType = type('PrES', (object,), {
+            'kind': 'SequenceOfType',
+            'Min': '0',
+            'Max': '0'
+        })
+    elif root.type == lexer.CHOICE:
+        prim = ogAST.PrimChoiceItem()
+        choice = root.getChild(0).toString()
+        expr, err, warn = expression(root.getChild(1), context)
+        errors.extend(err)
+        warnings.extend(warn)
+        prim.value = {'choice': choice, 'value': expr}
+        prim.exprType = UNKNOWN_TYPE
+    elif root.type == lexer.SEQUENCE:
+        prim = ogAST.PrimSequence()
+        prim.value = {}
+        for elem in root.getChildren():
+            if elem.type == lexer.ID:
+                field_name = elem.text
+            else:
+                prim.value[field_name], err, warn = (expression(elem, context))
+                errors.extend(err)
+                warnings.extend(warn)
+        prim.exprType = UNKNOWN_TYPE
+    elif root.type == lexer.SEQOF:
+        prim = ogAST.PrimSequenceOf()
+        prim.value = []
+        for elem in root.getChildren():
+            # SEQUENCE OF elements cannot have fieldnames/indexes
+            prim_elem, prim_elem_errors, prim_elem_warnings = literal(elem, context)
+            errors += prim_elem_errors
+            warnings += prim_elem_warnings
+            prim_elem.inputString = get_input_string(elem)
+            prim_elem.line = elem.getLine()
+            prim_elem.charPositionInLine = elem.getCharPositionInLine()
+            prim.value.append(prim_elem)
+        prim.exprType = type('PrSO', (object,), {
+            'kind': 'SequenceOfType',
+            'Min': str(len(root.children)),
+            'Max': str(len(root.children)),
+            'type': UNKNOWN_TYPE
+        })
+    elif root.type == lexer.BITSTR:
+        prim = ogAST.PrimBitStringLiteral()
+        warnings.append('Bit string literal not supported yet')
+    elif root.type == lexer.OCTSTR:
+        prim = ogAST.PrimOctetStringLiteral()
+        warnings.append('Octet string literal not supported yet')
+    else:
+        # TODO: return error message
+        raise NotImplementedError
+
+    prim.inputString = get_input_string(root)
+
+    global TMPVAR
+    prim.tmpVar = TMPVAR
+    TMPVAR += 1
+
+    return prim, errors, warnings
 
 
 def variables(root, ta_ast, context):
@@ -2662,7 +2675,7 @@ def end(root, parent=None, context=None):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             c.pos_x, c.pos_y, c.width, c.height = cif(child)
-        elif child.type == lexer.StringLiteral:
+        elif child.type == lexer.STRING:
             c.inputString = child.toString()[1:-1]
         elif child.type == lexer.HYPERLINK:
             c.hyperlink = child.getChild(0).toString()[1:-1]
@@ -3076,7 +3089,7 @@ def assign(root, context):
     for child in root.getChildren():
         if child.type == lexer.VARIABLE:
             # Left part of the assignation
-            prim, err, warn = primary_value(child, context)
+            prim, err, warn = primary_path(child, context)
             prim.inputString = get_input_string(child)
             prim.line = child.getLine()
             prim.charPositionInLine = child.getCharPositionInLine()
@@ -3146,7 +3159,7 @@ def for_loop(root, context):
             # Implicit variable declaration for the iterator
             context_scope = dict(context.variables)
         elif child.type == lexer.VARIABLE:
-            list_var, err, warn = primary_value(child, context)
+            list_var, err, warn = primary_path(child, context)
             forloop['list'] = ogAST.PrimVariable(primary=list_var)
             warnings.extend(warn)
             errors.extend(err)
