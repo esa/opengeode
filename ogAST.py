@@ -782,7 +782,8 @@ class Process(object):
         self.global_variables = {}
         self.global_timers = []
         # Set default coordinates and width/height
-        self.pos_x = self.pos_y = 150
+        self.pos_x = 250
+        self.pos_y = 150
         self.width = 150
         self.height = 75
         # Optional hyperlink

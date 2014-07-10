@@ -28,6 +28,8 @@ __author__ = 'Maxime Perrotin'
 
 import sys
 import os
+import re
+import fnmatch
 import logging
 import traceback
 from itertools import chain, permutations
@@ -3243,12 +3245,20 @@ def pr_file(root):
         LOG.debug('USE clause')
         # USE clauses can contain a CIF comment with the ASN.1 filename
         use_clause_subs = child.getChildren()
+        asn1_filename = None
         for clause in use_clause_subs:
             if clause.type == lexer.ASN1:
                 asn1_filename = clause.getChild(0).text[1:-1]
                 ast.asn1_filenames.append(asn1_filename)
             else:
                 ast.use_clauses.append(clause.text)
+#       if not asn1_filename:
+#           # Look for case insentitive pr file and add it to AST
+#           search = fnmatch.translate(clause.text + '.pr')
+#           searchobj = re.compile(search, re.IGNORECASE)
+#           for each in os.listdir('.'):
+#               if searchobj.match(each):
+#                   print 'found', each
         try:
             DV = parse_asn1(tuple(ast.asn1_filenames),
                             ast_version=ASN1.UniqueEnumeratedNames,
@@ -3261,6 +3271,7 @@ def pr_file(root):
             # Can happen if DataView.py is not there
             LOG.info('USE Clause did not contain ASN.1 filename')
             LOG.debug(str(err))
+
     for child in systems:
         LOG.debug('found SYSTEM')
         system, err, warn = system_definition(child, parent=ast)

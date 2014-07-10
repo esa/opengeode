@@ -30,6 +30,7 @@ from itertools import chain
 # Added to please py2exe - NOQA makes flake8 ignore the following lines:
 # pylint: disable=W0611
 import enum  # NOQA
+import fnmatch  # NOQA
 import operator  # NOQA
 import subprocess  # NOQA
 import distutils  # NOQA
@@ -1649,7 +1650,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                         types.append(file_handler.read())
                 if types:
                     self.asn1_area.text.setPlainText('\n'.join(types))
+                    # ASN.1 text area is read-only:
+                    self.asn1_area.text.setTextInteractionFlags(
+                                            QtCore.Qt.TextBrowserInteraction)
                     self.asn1_area.text.try_resize()
+
             except IOError as err:
                 LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
             except AttributeError:

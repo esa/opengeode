@@ -723,6 +723,9 @@ class Process(HorizontalSymbol):
         if ast.comment:
             Comment(parent=self, ast=ast.comment)
         self.nested_scene = subscene
+        self.input_signals = ast.input_signals
+        self.output_signals = ast.output_signals
+        self.insert_symbol(None, self.x(), self.y())
 
     def insert_symbol(self, parent, x, y):
         ''' Redefinition - adds connection line to env '''
