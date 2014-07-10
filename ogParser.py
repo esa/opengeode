@@ -2234,6 +2234,8 @@ def process_definition(root, parent=None, context=None):
             process.composite_states.append(comp)
         elif child.type == lexer.REFERENCED:
             process.referenced = True
+        elif child.type == lexer.COMMENT:
+            process.comment, _, _ = end(child)
         else:
             warnings.append('Unsupported process definition child: ' +
                              sdl92Parser.tokenNames[child.type] +

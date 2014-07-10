@@ -218,7 +218,7 @@ process_definition
                 (text_area | procedure | composite_state)*
                 processBody? ENDPROCESS process_id?
                 end
-        ->      ^(PROCESS cif? process_id number_of_instances?
+        ->      ^(PROCESS cif? process_id number_of_instances? end?
                 text_area* procedure* composite_state* processBody?);
 
 
