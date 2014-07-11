@@ -1229,30 +1229,18 @@ def expression(root, context):
 
 def logic_expression(root, context):
     ''' Logic expression analysis '''
-    expr, errors, warnings = expr_ast(root), [], []
+    shortcircuit = ''
+    # detect optional THEN in AND/OR expressions, indicating that the
+    # short-circuit version of the operator is needed, to prevent the
+    # evaluation of the right part if the left part does not evaluate
+    # to true.
+    if root.type in (lexer.OR, lexer.AND) and len(root.children) == 3:
+        if root.children[1].type in (lexer.THEN, lexer.ELSE):
+            root.children.pop(1)
+            shortcircuit = ' else' if root.type == lexer.OR else ' then'
 
-    if root.type in (lexer.OR, lexer.AND):
-        # detect optional THEN in AND/OR expressions, indicating that the
-        # short-circuit version of the operator is needed, to prevent the
-        # evaluation of the right part if the left part does not evaluate
-        # to true.
-        for idx, val in enumerate(root.children):
-            if val.type == lexer.THEN:
-                expr.shortcircuit = ' then'
-                root.children.pop(idx)
-                break
-            elif val.type == lexer.ELSE:
-                expr.shortcircuit = ' else'
-                root.children.pop(idx)
-                break
-
-    left, right = root.children
-    expr.left, err_left, warn_left = expression(left, context)
-    expr.right, err_right, warn_right = expression(right, context)
-    errors.extend(err_left)
-    warnings.extend(warn_left)
-    errors.extend(err_right)
-    warnings.extend(warn_right)
+    expr, errors, warnings = binary_expression(root, context)
+    expr.shortcircuit = shortcircuit
 
     try:
         fix_expression_types(expr, context)
