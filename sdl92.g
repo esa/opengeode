@@ -82,8 +82,8 @@ tokens {
         PARAMNAMES;
         PARAMS;
         PAREN;
+        PATH;
         PRIMARY;
-        PRIMPATH;
         PROCEDURE;
         PROCEDURE_CALL;
         PROCEDURE_NAME;
@@ -798,36 +798,33 @@ field_selection
         :       (('!'|'.') field_name);
 
 expression
-        :       operand0 ( IMPLIES^ operand0)* ;
+        :       binary_expression;
 
-operand0
-        :       operand1 (( (OR^ ELSE?) | XOR^ ) operand1)*;
+binary_expression
+        :       binary_expression_0 ( IMPLIES^ binary_expression_0)*;
+binary_expression_0
+        :       binary_expression_1 (( (OR^ ELSE?) | XOR^ ) binary_expression_1)*;
+binary_expression_1
+        :       binary_expression_2 ( AND^ THEN? binary_expression_2)*;
+binary_expression_2
+        :       binary_expression_3 (( EQ^ | NEQ^ | GT^ | GE^ | LT^ | LE^ | IN^ ) binary_expression_3)*;
+binary_expression_3
+        :       binary_expression_4 (( PLUS^ | DASH^ | APPEND^ ) binary_expression_4)*;
+binary_expression_4
+        :       unary_expression (( ASTERISK^ | DIV^ | MOD^ | REM^ ) unary_expression)*;
 
-operand1
-        :       operand2 ( AND^ THEN? operand2)*;
+unary_expression
+        :       primary_expression
+        |       NOT^ unary_expression
+        |       DASH unary_expression -> ^(NEG unary_expression);
 
-operand2
-        :       operand3 (( EQ^ | NEQ^ | GT^ | GE^ | LT^ | LE^ | IN^ ) operand3)*;
-
-operand3
-        :       operand4 (( PLUS^ | DASH^ | APPEND^ ) operand4)*;
-
-operand4
-        :       operand5 (( ASTERISK^ | DIV^ | MOD^ | REM^ ) operand5)*;
-
-operand5
-        :       primary
-        |       NOT^ operand5
-        |       DASH operand5 -> ^(NEG operand5);
-
-primary
-        :       ID primary_params+            -> ^(PRIMPATH ID primary_params*)
-        |       literal                       -> ^(LITERAL literal)
+primary_expression
+        :       primary                       -> ^(PRIMARY primary)
         |       '(' expression ')'            -> ^(PAREN expression)
         |       conditional_ground_expression
         ;
 
-literal
+primary
         :       BITSTR^
         |       OCTSTR^
         |       TRUE^
@@ -838,8 +835,8 @@ literal
         |       MINUS_INFINITY^
         |       INT^
         |       FLOAT^
-        |       ID^
-        |       choiceValue
+        |       ID ':' expression           -> ^(CHOICE ID expression)
+        |       ID primary_params*          -> ^(PATH ID primary_params*)
         |       '{' '}'                     -> ^(EMPTYSTR)
         |       '{'
                 MANTISSA mant=INT COMMA
@@ -847,11 +844,11 @@ literal
                 EXPONENT exp=INT
                 '}'                         -> ^(FLOAT2 $mant $bas $exp)
         |       '{'
-                namedValue (COMMA namedValue)*
-                '}'                         -> ^(SEQUENCE namedValue+)
+                named_value (COMMA named_value)*
+                '}'                         -> ^(SEQUENCE named_value+)
         |       '{'
-                literal (COMMA literal)*
-                '}'                         -> ^(SEQOF literal+)
+                primary (COMMA primary)*
+                '}'                         -> ^(SEQOF primary+)
         ;
 
 informal_text
@@ -859,14 +856,8 @@ informal_text
         ->       ^(INFORMAL_TEXT STRING);
 
 
-// hello:5  (CHOICE field value)
-choiceValue
-        :        choice=ID ':' expression
-        ->       ^(CHOICE $choice expression);
-
-
 // { a 5 } (SEQUENCE field value)
-namedValue
+named_value
         :       ID expression;
 
 

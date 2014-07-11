@@ -1219,12 +1219,10 @@ def expression(root, context):
         return neg_expression(root, context)
     elif root.type == lexer.PAREN:
         return expression(root.children[0], context)
-    elif root.type == lexer.PRIMPATH:
-        return primary_path(root, context)
     elif root.type == lexer.IFTHENELSE:
         return if_then_else_expression(root, context)
-    elif root.type == lexer.LITERAL:
-        return literal(root.children[0], context)
+    elif root.type == lexer.PRIMARY:
+        return primary(root.children[0], context)
     else:
         raise NotImplementedError
 
@@ -1464,14 +1462,12 @@ def if_then_else_expression(root, context):
     return expr, errors, warnings
 
 
-def literal(root, context):
+def primary(root, context):
     ''' Literal expression analysis '''
     prim, errors, warnings = None, [], []
 
-    if root.type == lexer.ID:
-        prim = ogAST.PrimPath()
-        prim.value = [root.text]
-        prim.exprType = UNKNOWN_TYPE
+    if root.type == lexer.PATH:
+        return primary_path(root, context)
     elif root.type == lexer.INT:
         prim = ogAST.PrimInteger()
         prim.value = [root.text.lower()]
@@ -1545,7 +1541,7 @@ def literal(root, context):
         prim.value = []
         for elem in root.getChildren():
             # SEQUENCE OF elements cannot have fieldnames/indexes
-            prim_elem, prim_elem_errors, prim_elem_warnings = literal(elem, context)
+            prim_elem, prim_elem_errors, prim_elem_warnings = primary(elem, context)
             errors += prim_elem_errors
             warnings += prim_elem_warnings
             prim_elem.inputString = get_input_string(elem)
