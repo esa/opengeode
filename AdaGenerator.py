@@ -642,29 +642,30 @@ def _task_forloop(task):
                                                        loop['range']['start'])
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
-                # ASN.1 Integers are 64 bits - we need to convert to 32 bits
-                #if isinstance(loop['range']['start'], ogAST.PrimInteger):
-                #    start_str = 'Integer({})'.format(start_str)
             if loop['range']['step'] == 1:
                 start_str += '..'
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
+            if unicode.isnumeric(stop_str):
+                stop_str = unicode(int(stop_str) - 1)
+            else:
+                stop_str = u'{} - 1'.format(stop_str)
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
             #if isinstance(loop['range']['stop'], ogAST.PrimInteger):
             #    stop_str = 'Integer({})'.format(stop_str)
             if loop['range']['step'] == 1:
                 stmt.append(
-                       'for {it} in {start}{stop} loop'
+                       u'for {it} in {start}{stop} loop'
                        .format(it=loop['var'], start=start_str, stop=stop_str))
             else:
                 # Step is not directly supported in Ada, we need to use 'while'
                 stmt.extend(['declare',
-                             '{it} : Integer := {start};'
+                             u'{it} : Integer := {start};'
                              .format(it=loop['var'],
                              start=start_str),
                              '',
                              'begin',
-                             'while {it} < {stop} loop'.format(it=loop['var'],
+                             u'while {it} < {stop} loop'.format(it=loop['var'],
                                                                stop=stop_str)])
         else:
             # case of form: FOR x in SEQUENCE OF
