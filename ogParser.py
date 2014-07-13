@@ -2814,7 +2814,8 @@ def decision(root, parent, context):
 
 
 def nextstate(root, context):
-    ''' Parse a NEXTSTATE [VIA State_Entry_Point] '''
+    ''' Parse a NEXTSTATE [VIA State_Entry_Point] - detect various kinds of
+        errors when trying to enter a nested state '''
     next_state_id, via, entrypoint = '', None, None
     errors = []
     for child in root.getChildren():
@@ -2849,6 +2850,16 @@ def nextstate(root, context):
                 errors.append('"History" NEXTSTATE cannot have a "via" clause')
         else:
             errors.append('NEXTSTATE undefined construct')
+        if not via:
+            # check that if the nextstate is nested, it has a START symbol
+            try:
+                composite, = (comp for comp in context.composite_states
+                          if comp.statename.lower() == next_state_id.lower())
+                if not composite.content.start:
+                    errors.append('Composite state "{}" has no unnamed '
+                                  'START symbol'.format(composite.statename))
+            except ValueError:
+                pass
     return next_state_id, via, entrypoint, errors
 
 
