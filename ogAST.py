@@ -455,6 +455,8 @@ class Terminator(object):
         # There can be several if terminator follows a floating label
         # Note, this field is updated by the Helper.flatten function
         self.possible_states = []
+        # optional composite state content (type CompositeState)
+        self.composite = None
 
     def trace(self):
         ''' Debug output for terminators '''

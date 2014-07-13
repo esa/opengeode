@@ -647,7 +647,7 @@ class State(VerticalSymbol):
     def allow_nesting(self):
         ''' Redefinition - must be checked according to context '''
         result = not any(elem in unicode(self).lower().strip()
-                       for elem in ('-', ',', '*', ' '))
+                       for elem in ('-', ',', '*'))
         return result
 
     @property
@@ -658,7 +658,7 @@ class State(VerticalSymbol):
     def double_click(self):
         ''' Catch a double click - Set nested scene '''
         for each, value in self.scene().composite_states.viewitems():
-            if unicode(self).lower() == unicode(each):
+            if unicode(self).split()[0].lower() == unicode(each):
                 self.nested_scene = value
                 break
         else:

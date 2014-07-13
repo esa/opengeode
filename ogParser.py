@@ -1681,6 +1681,13 @@ def composite_state(root, parent=None, context=None):
         errors.extend(err)
         warnings.extend(warn)
         comp.content.states.append(newstate)
+    # Post-processing: check that all NEXTSTATEs have a corresponding STATE
+    for ns in [t.inputString.lower() for t in comp.terminators
+            if t.kind == 'next_state']:
+        if not ns in [s.lower() for s in
+                comp.mapping.viewkeys()] + ['-']:
+            errors.append('In composite state "{}": missing definition '
+                         'of substate "{}"'.format(comp.statename, ns.upper()))
     return comp, errors, warnings
 
 
@@ -2809,6 +2816,7 @@ def decision(root, parent, context):
 def nextstate(root, context):
     ''' Parse a NEXTSTATE [VIA State_Entry_Point] '''
     next_state_id, via, entrypoint = '', None, None
+    errors = []
     for child in root.getChildren():
         if child.type == lexer.ID:
             next_state_id = child.text
@@ -2824,25 +2832,24 @@ def nextstate(root, context):
                                   if comp.statename.lower()
                                                 == next_state_id.lower())
                 except ValueError:
-                    raise TypeError('State {} is not a composite state'
+                    errors.append('State {} is not a composite state'
                                     .format(next_state_id))
                 else:
                     if entrypoint.lower() not in composite.state_entrypoints:
-                        raise TypeError('State {s} has no "{p}" entrypoint'
-                                        .format(s=next_state_id, p=entrypoint))
+                        errors.append('State {s} has no "{p}" entrypoint'
+                                       .format(s=next_state_id, p=entrypoint))
                     for each in composite.content.named_start:
                         if each.inputString == entrypoint.lower() + '_START':
                             break
                     else:
-                        raise TypeError('Entrypoint {p} in state {s} is '
-                                        'declared but not defined'.format
-                                        (s=next_state_id, p=entrypoint))
+                        errors.append('Entrypoint {p} in state {s} is '
+                                      'declared but not defined'.format
+                                      (s=next_state_id, p=entrypoint))
             else:
-                raise TypeError('"History" NEXTSTATE'
-                                 ' cannot have a "via" clause')
+                errors.append('"History" NEXTSTATE cannot have a "via" clause')
         else:
-            raise TypeError('NEXTSTATE undefined construct')
-    return next_state_id, via, entrypoint
+            errors.append('NEXTSTATE undefined construct')
+    return next_state_id, via, entrypoint, errors
 
 
 def terminator_statement(root, parent, context):
@@ -2864,15 +2871,21 @@ def terminator_statement(root, parent, context):
             lab.terminators = [t]
         elif term.type == lexer.NEXTSTATE:
             t.kind = 'next_state'
-            try:
-                t.inputString, t.via, t.entrypoint = nextstate(term, context)
-            except TypeError as err:
-                errors.append(str(err))
+            t.inputString, t.via, t.entrypoint, err = nextstate(term, context)
+            if err:
+                errors.extend(err)
             t.line = term.getChild(0).getLine()
             t.charPositionInLine = term.getChild(0).getCharPositionInLine()
             # Add next state infos at process level
             # Used in rendering backends to merge a NEXTSTATE with a STATE
             context.terminators.append(t)
+            # post-processing: if nextatate is nested, add link to the content
+            # (normally handled at state level, but if state is not defined
+            # standalone, the nextstate must hold the composite content)
+            if t.inputString != '-':
+                for each in context.composite_states:
+                    if each.statename.lower() == t.inputString.lower():
+                        t.composite = each
         elif term.type == lexer.JOIN:
             t.kind = 'join'
             t.inputString = term.getChild(0).toString()

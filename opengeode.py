@@ -377,7 +377,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         for each in self.states:
             if each.is_composite() and \
                   each.nested_scene not in self._composite_states.viewvalues():
-                self._composite_states[unicode(each).lower()] = \
+                self._composite_states[unicode(each).split()[0].lower()] = \
                                                             each.nested_scene
         return self._composite_states
 
