@@ -1051,7 +1051,6 @@ def fix_expression_types(expr, context):
             check_range(basic, find_basic_type(expr.right.exprType))
 
 
-
 def expression_list(root, context):
     ''' Parse a list of expression parameters '''
     errors = []
@@ -1066,19 +1065,23 @@ def expression_list(root, context):
 
 
 def primary_path(root, context=None):
-    '''Process a primary path'''
+    ''' Primary path analysis '''
     errors, warnings = [], []
 
     prim = ogAST.PrimPath()
     prim.value = [root.children[0].text]
     prim.exprType = UNKNOWN_TYPE
+    prim.inputString = get_input_string(root)
     prim.tmpVar = tmp()
 
+    if len(root.children) == 1:
+        return prim, errors, warnings
+
+    proc_list = [proc.inputString.lower() for proc in context.procedures]
+    call = prim.value[0].lower() in (SPECIAL_OPERATORS.keys() + proc_list)
+
     # Process fields or params, if any
-    for child in root.children[slice(1, len(root.children))]:
-        if not isinstance(prim, ogAST.PrimPath):
-            errors.append('Ground expression cannot have index or params: ' +
-                           get_input_string(root))
+    for i, child in enumerate(root.children[1:]):
         if child.type == lexer.PARAMS:
             # Cover parameters of operator calls within a task
             # but not parameters of output or procedure calls
@@ -1086,14 +1089,14 @@ def primary_path(root, context=None):
             expr_list, err, warn = expression_list(child, context)
             errors.extend(err)
             warnings.extend(warn)
-            procedures_list = [proc.inputString.lower() for proc in
-                    context.procedures]
-            if prim.value[0].lower() in (SPECIAL_OPERATORS.keys()
-                                         + procedures_list):
+
+            # only the first part of the path can be a call expression
+            if call and i == 0:
                 # here we must check/set the type of each param
                 try:
                     check_and_fix_op_params(
-                            prim.value[0].lower(), expr_list, context)
+                        prim.value[0].lower(), expr_list, context
+                    )
                 except (AttributeError, TypeError) as err:
                     LOG.debug(traceback.format_exc())
                     errors.append(str(err) + '- ' + get_input_string(root))
@@ -1105,27 +1108,20 @@ def primary_path(root, context=None):
                 elif len(expr_list) == 2:
                     # Substring (range, two params)
                     prim.value.append(
-                            {'substring': expr_list, 'tmpVar': tmp()})
+                        {'substring': expr_list, 'tmpVar': tmp()}
+                    )
                 else:
                     errors.append('Wrong number of parameters')
         elif child.type == lexer.FIELD_NAME:
             prim.value.append(child.getChild(0).text)
 
-    # If there were parameters or index, try to determine the type of
-    # the expression
-    if isinstance(prim, ogAST.PrimPath) and len(prim.value) > 1:
-        try:
-            prim.exprType = find_type(prim.value, context)
-        except TypeError as err:
-            errors.append('Type of expression "'
-                           + get_input_string(root)
-                           + '" not found: ' + str(err))
-        except AttributeError as err:
-            LOG.debug('[find_types] ' + str(err))
-    if prim:
-        prim.inputString = get_input_string(root)
-    else:
-        prim = ogAST.PrimPath()
+    try:
+        prim.exprType = find_type(prim.value, context)
+    except TypeError as err:
+        input_str = get_input_string(root)
+        errors.append('Type of expression "%s" not found: %s' % (input_str, str(err)))
+    except AttributeError as err:
+        LOG.debug('[find_types] ' + str(err))
 
     return prim, errors, warnings
 
