@@ -645,15 +645,15 @@ def _task_forloop(task):
             if loop['range']['step'] == 1:
                 start_str += '..'
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
-            if unicode.isnumeric(stop_str):
-                stop_str = unicode(int(stop_str) - 1)
-            else:
-                stop_str = u'{} - 1'.format(stop_str)
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
             #if isinstance(loop['range']['stop'], ogAST.PrimInteger):
             #    stop_str = 'Integer({})'.format(stop_str)
             if loop['range']['step'] == 1:
+                if unicode.isnumeric(stop_str):
+                    stop_str = unicode(int(stop_str) - 1)
+                else:
+                    stop_str = u'{} - 1'.format(stop_str)
                 stmt.append(
                        u'for {it} in {start}{stop} loop'
                        .format(it=loop['var'], start=start_str, stop=stop_str))
