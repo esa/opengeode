@@ -791,8 +791,9 @@ assignement_statement
 
 // Variable: covers eg. toto(5)(4)!titi(3)!tutu!yoyo
 variable
-        :       variable_id primary_params*
-        ->      ^(VARIABLE variable_id primary_params*);
+        :       ID primary_params+     ->  ^(PATH ID primary_params+)
+        |       ID                     ->  ^(VARIABLE ID);
+
 
 field_selection
         :       (('!'|'.') field_name);
@@ -836,7 +837,8 @@ primary
         |       INT^
         |       FLOAT^
         |       ID ':' expression           -> ^(CHOICE ID expression)
-        |       ID primary_params*          -> ^(PATH ID primary_params*)
+        |       ID primary_params+          -> ^(PATH ID primary_params+)
+        |       ID                          -> ^(VARIABLE ID)
         |       '{' '}'                     -> ^(EMPTYSTR)
         |       '{'
                 MANTISSA mant=INT COMMA

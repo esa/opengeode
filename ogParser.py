@@ -866,50 +866,10 @@ def find_type(path, context):
     return result
 
 
-def fix_expression_type(expr, context):
-    ''' Check/ensure type consistency in unary expressions '''
-    if expr.expr.exprType == UNKNOWN_TYPE \
-            and isinstance(expr.expr, ogAST.PrimPath) \
-            and len(expr.expr.value) == 1:
-        try:
-            exprType = find_variable(expr.expr.value[0], context)
-            # Differentiate DCL and FPAR variables
-            use_type = ogAST.PrimVariable
-            if isinstance(context, ogAST.Procedure):
-                for each in context.fpar:
-                    if each['name'].lower() == expr.expr.value[0].lower():
-                        use_type = ogAST.PrimFPAR
-                        break
-            expr.expr = use_type(primary=expr.expr)
-            expr.expr.exprType = exprType
-        except AttributeError:
-            pass
-
-
 def fix_expression_types(expr, context):
     ''' Check/ensure type consistency in binary expressions '''
     if isinstance(expr, ogAST.Primary):
         return
-
-    for side in ('left', 'right'):
-        # Determine if the expression is a variable
-        uk_expr = getattr(expr, side)
-        if uk_expr.exprType == UNKNOWN_TYPE \
-                and isinstance(uk_expr, ogAST.PrimPath) \
-                and len(uk_expr.value) == 1:
-            try:
-                exprType = find_variable(uk_expr.value[0], context)
-                # Differentiate DCL and FPAR variables
-                use_type = ogAST.PrimVariable
-                if isinstance(context, ogAST.Procedure):
-                    for each in context.fpar:
-                        if each['name'].lower() == uk_expr.value[0].lower():
-                            use_type = ogAST.PrimFPAR
-                            break
-                setattr(expr, side, use_type(primary=uk_expr))
-                getattr(expr, side).exprType = exprType
-            except AttributeError:
-                pass
 
     # If a side of the expression is of Enumerated or Choice type, check if
     # the other side is a literal of that sort, and change type accordingly
@@ -1074,9 +1034,6 @@ def primary_path(root, context=None):
     prim.inputString = get_input_string(root)
     prim.tmpVar = tmp()
 
-    if len(root.children) == 1:
-        return prim, errors, warnings
-
     proc_list = [proc.inputString.lower() for proc in context.procedures]
     call = prim.value[0].lower() in (SPECIAL_OPERATORS.keys() + proc_list)
 
@@ -1122,6 +1079,32 @@ def primary_path(root, context=None):
         errors.append('Type of expression "%s" not found: %s' % (input_str, str(err)))
     except AttributeError as err:
         LOG.debug('[find_types] ' + str(err))
+
+    return prim, errors, warnings
+
+
+def primary_variable(root, context):
+    ''' Primary Variable analysis '''
+    lexeme = root.children[0].text
+
+    # Differentiate DCL and FPAR variables
+    Prim = ogAST.PrimVariable
+    if isinstance(context, ogAST.Procedure):
+        for each in context.fpar:
+            if each['name'].lower() == lexeme.lower():
+                Prim = ogAST.PrimFPAR
+                break
+
+    prim, errors, warnings = Prim(), [], []
+    prim.value = [root.children[0].text]
+    prim.exprType = UNKNOWN_TYPE
+    prim.inputString = get_input_string(root)
+    prim.tmpVar = tmp()
+
+    try:
+        prim.exprType = find_variable(lexeme, context)
+    except AttributeError:
+        pass
 
     return prim, errors, warnings
 
@@ -1379,8 +1362,6 @@ def not_expression(root, context):
     ''' Not expression analysis '''
     expr, errors, warnings = unary_expression(root, context)
 
-    fix_expression_type(expr, context)
-
     bty = find_basic_type(expr.expr.exprType)
     if bty.kind in ('BooleanType', ):
         expr.exprType = BOOLEAN
@@ -1398,8 +1379,6 @@ def not_expression(root, context):
 def neg_expression(root, context):
     ''' Negative expression analysis '''
     expr, errors, warnings = unary_expression(root, context)
-
-    fix_expression_type(expr, context)
 
     basic = find_basic_type(expr.expr.exprType)
     if not basic.kind in ('IntegerType', 'Integer32Type', 'RealType'):
@@ -1450,7 +1429,9 @@ def primary(root, context):
     ''' Literal expression analysis '''
     prim, errors, warnings = None, [], []
 
-    if root.type == lexer.PATH:
+    if root.type == lexer.VARIABLE:
+        return primary_variable(root, context)
+    elif root.type == lexer.PATH:
         return primary_path(root, context)
     elif root.type == lexer.INT:
         prim = ogAST.PrimInteger()
@@ -3057,21 +3038,18 @@ def assign(root, context):
             get_input_string(root), root.getLine(),
             root.getCharPositionInLine())
     expr.kind = 'assign'
-    for child in root.getChildren():
-        if child.type == lexer.VARIABLE:
-            # Left part of the assignation
-            prim, err, warn = primary_path(child, context)
-            prim.inputString = get_input_string(child)
-            prim.line = child.getLine()
-            prim.charPositionInLine = child.getCharPositionInLine()
-            warnings.extend(warn)
-            errors.extend(err)
-            expr.left = prim
-        else:
-            # Right part of the assignation
-            expr.right, err, warn = expression(child, context)
-            errors.extend(err)
-            warnings.extend(warn)
+
+    if root.children[0].type == lexer.PATH:
+        expr.left, err, warn = primary_path(root.children[0], context)
+    else:
+        expr.left, err, warn = primary_variable(root.children[0], context)
+    warnings.extend(warn)
+    errors.extend(err)
+
+    expr.right, err, warn = expression(root.children[1], context)
+    errors.extend(err)
+    warnings.extend(warn)
+
     try:
         fix_expression_types(expr, context)
     except(AttributeError, TypeError) as err:
@@ -3130,6 +3108,11 @@ def for_loop(root, context):
             # Implicit variable declaration for the iterator
             context_scope = dict(context.variables)
         elif child.type == lexer.VARIABLE:
+            list_var, err, warn = primary_variable(child, context)
+            forloop['list'] = ogAST.PrimVariable(primary=list_var)
+            warnings.extend(warn)
+            errors.extend(err)
+        elif child.type == lexer.PATH:
             list_var, err, warn = primary_path(child, context)
             forloop['list'] = ogAST.PrimVariable(primary=list_var)
             warnings.extend(warn)
