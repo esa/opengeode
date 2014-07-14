@@ -868,9 +868,6 @@ def find_type(path, context):
 
 def fix_expression_types(expr, context):
     ''' Check/ensure type consistency in binary expressions '''
-    if isinstance(expr, ogAST.Primary):
-        return
-
     # If a side of the expression is of Enumerated or Choice type, check if
     # the other side is a literal of that sort, and change type accordingly
     for side in permutations(('left', 'right')):
