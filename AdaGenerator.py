@@ -731,6 +731,167 @@ def _primary_variable(prim):
     return [], ada_string, []
 
 
+@expression.register(ogAST.PrimCall)
+def _prim_call(prim):
+    stmts, ada_string, local_decl = [], '', []
+
+    ident = prim.value[0].lower()
+    params = prim.value[1]['procParams']
+
+    if ident in ('abs', 'fix', 'float'):
+        # Return absolute value of a number
+        param_stmts, param_str, local_var = expression(params[0])
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        ada_string += '{op}({param})'.format(
+                param=param_str,
+                op='abs' if ident == 'abs' else
+                'Asn1Int' if ident == 'fix'
+                else 'adaasn1rtl.Asn1Real'
+                if ident == 'float' else 'ERROR')
+    elif ident == 'power':
+        operands = [None, None]
+        for idx, param in enumerate(params):
+            stmt, operands[idx], local = expression(param)
+            stmts.extend(stmt)
+            local_decl.extend(local)
+        ada_string += '{op[0]} ** Natural({op[1]})'.format(op=operands)
+    elif ident == 'length':
+        # Length of sequence of: take only the first parameter
+        exp = params[0]
+        exp_type = find_basic_type(exp.exprType)
+        min_length = getattr(exp_type, 'Min', None)
+        max_length = getattr(exp_type, 'Max', None)
+        if min_length is None or max_length is None:
+            error = '{} is not a SEQUENCE OF'.format(
+                    exp.inputString)
+            LOG.error(error)
+            raise TypeError(error)
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        if min_length == max_length:
+            ada_string += min_length
+        else:
+            ada_string += ('Asn1Int({e}.Length)'.format(e=param_str))
+    elif ident == 'present':
+        # User wants to know what CHOICE element is present
+        exp = params[0]
+        # Get the basic type to make sure it is a choice
+        exp_type = find_basic_type(exp.exprType)
+        # Also get the ASN.1 type name as it is
+        # needed to build the Ada expression
+        exp_typename = \
+                (getattr(exp.exprType, 'ReferencedTypeName',
+                     None) or exp.exprType.kind).replace('-', '_')
+        if exp_type.kind != 'ChoiceType':
+            error = '{} is not a CHOICE'.format(exp.inputString)
+            LOG.error(error)
+            raise TypeError(error)
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        ada_string += ('asn1Scc{t}_Kind({e})'.format(
+            t=exp_typename, e=param_str))
+    else:
+        ada_string += '('
+        # Take all params and join them with commas
+        list_of_params = []
+        for param in params:
+            param_stmt, param_str, local_var = (expression(param))
+            list_of_params.append(param_str)
+            stmts.extend(param_stmt)
+            local_decl.extend(local_var)
+        ada_string += ', '.join(list_of_params)
+        ada_string += ')'
+
+    return stmts, ada_string, local_decl
+
+
+@expression.register(ogAST.PrimIndex)
+def _prim_index(prim):
+    stmts, ada_string, local_decl = [], '', []
+
+    receiver = prim.value[0]
+
+    receiver_stms, reciver_string, receiver_decl = expression(receiver)
+    ada_string = reciver_string
+    stmts.extend(receiver_stms)
+    local_decl.extend(receiver_decl)
+
+    idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0])
+    if unicode.isnumeric(idx_string):
+        idx_string = int(idx_string) + 1
+    else:
+        idx_string = '1+Integer({idx})'.format(idx=idx_string)
+    ada_string += '.Data({idx})'.format(idx=idx_string)
+    stmts.extend(idx_stmts)
+    local_decl.extend(idx_var)
+
+    return stmts, ada_string, local_decl
+
+
+@expression.register(ogAST.PrimSubstring)
+def _prim_substring(prim):
+    stmts, ada_string, local_decl = [], '', []
+
+    receiver = prim.value[0]
+
+    receiver_stms, reciver_string, receiver_decl = expression(receiver)
+    ada_string = reciver_string
+    stmts.extend(receiver_stms)
+    local_decl.extend(receiver_decl)
+
+    receiver_ty_name = receiver.exprType.ReferencedTypeName.replace('-', '_')
+
+    r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0])
+    r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1])
+
+    # should we add 1 in case of numerical values? (see index)
+    ada_string += '.Data({r1}..{r2})'.format(r1=r1_string, r2=r2_string)
+    stmts.extend(r1_stmts)
+    stmts.extend(r2_stmts)
+    local_decl.extend(r1_local)
+    local_decl.extend(r2_local)
+
+    local_decl.append('tmp{idx} : aliased asn1Scc{parent_type};'.format(idx=prim.value[1]['tmpVar'], parent_type=receiver_ty_name))
+
+    # XXX types with fixed length: substrings will not work
+    if unicode.isnumeric(r1_string) and unicode.isnumeric(r2_string):
+        length = int(r2_string) - int(r1_string) + 1
+    else:
+        length = ('{r2} - {r1} + 1'.format(r2=r2_string, r1=r1_string))
+    stmts.append('tmp{idx}.Length := {length};'.format(idx=prim.value[1]['tmpVar'], length=length))
+
+    stmts.append('tmp{idx}.Data(1..{length}) := {data};'.format(idx=prim.value[1]['tmpVar'], length=length, data=ada_string))
+    ada_string = 'tmp{idx}'.format(idx=prim.value[1]['tmpVar'])
+
+    return stmts, ada_string, local_decl
+
+
+@expression.register(ogAST.PrimSelector)
+def _prim_selector(prim):
+    stmts, ada_string, local_decl = [], '', []
+
+    receiver = prim.value[0]
+    field_name = prim.value[1]
+
+    receiver_stms, reciver_string, receiver_decl = expression(receiver)
+    ada_string = reciver_string
+    stmts.extend(receiver_stms)
+    local_decl.extend(receiver_decl)
+
+    receiver_bty = find_basic_type(receiver.exprType)
+    receiver_ty_name = receiver.exprType.ReferencedTypeName.replace('-', '_')
+
+    if receiver_bty.kind == 'ChoiceType':
+        ada_string = ('asn1Scc{typename}_{field_name}_get({ada_string})'.format(typename=receiver_ty_name, field_name=field_name, ada_string=ada_string))
+    else:
+        ada_string += '.' + field_name
+
+    return stmts, ada_string, local_decl
+
+
 @expression.register(ogAST.PrimPath)
 def _prim_path(primary_id):
     '''

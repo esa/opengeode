@@ -82,7 +82,6 @@ tokens {
         PARAMNAMES;
         PARAMS;
         PAREN;
-        PATH;
         PRIMARY;
         PROCEDURE;
         PROCEDURE_CALL;
@@ -95,6 +94,7 @@ tokens {
         RETURN;
         ROUTE;
         SAVE;
+        SELECTOR;
         SEQOF;
         SEQUENCE;
         SET;
@@ -772,7 +772,7 @@ task_body
 
 // SDL extension - FOR loop in TASKs
 forloop
-        :       FOR variable_id IN (variable | range) ':'
+        :       FOR variable_id IN (range | variable) ':'
                 transition?
                 ENDFOR
         ->      ^(FOR variable_id variable? range? transition?);
@@ -791,15 +791,17 @@ assignement_statement
 
 // Variable: covers eg. toto(5)(4)!titi(3)!tutu!yoyo
 variable
-        :       ID primary_params+     ->  ^(PATH ID primary_params+)
+        :       postfix_expression
         |       ID                     ->  ^(VARIABLE ID);
 
 
 field_selection
         :       (('!'|'.') field_name);
 
+
 expression
         :       binary_expression;
+
 
 binary_expression
         :       binary_expression_0 ( IMPLIES^ binary_expression_0)*;
@@ -814,16 +816,29 @@ binary_expression_3
 binary_expression_4
         :       unary_expression (( ASTERISK^ | DIV^ | MOD^ | REM^ ) unary_expression)*;
 
+
 unary_expression
-        :       primary_expression
+        :       postfix_expression
+        |       primary_expression
         |       NOT^ unary_expression
-        |       DASH unary_expression -> ^(NEG unary_expression);
+        |       DASH unary_expression -> ^(NEG unary_expression)
+        ;
+
+
+postfix_expression
+        :       (ID -> ^(PRIMARY ^(VARIABLE ID)))
+                (   '(' params=expression_list ')' -> ^(CALL $postfix_expression ^(PARAMS $params))
+                |   '!' field_name  -> ^(SELECTOR $postfix_expression field_name)
+                )+
+        ;
+
 
 primary_expression
         :       primary                       -> ^(PRIMARY primary)
         |       '(' expression ')'            -> ^(PAREN expression)
         |       conditional_ground_expression
         ;
+
 
 primary
         :       BITSTR^
@@ -837,7 +852,6 @@ primary
         |       INT^
         |       FLOAT^
         |       ID ':' expression           -> ^(CHOICE ID expression)
-        |       ID primary_params+          -> ^(PATH ID primary_params+)
         |       ID                          -> ^(VARIABLE ID)
         |       '{' '}'                     -> ^(EMPTYSTR)
         |       '{'
@@ -852,6 +866,7 @@ primary
                 primary (COMMA primary)*
                 '}'                         -> ^(SEQOF primary+)
         ;
+
 
 informal_text
         :        STRING

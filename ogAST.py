@@ -193,6 +193,22 @@ class PrimPath(Primary):
     is_raw = False
 
 
+class PrimCall(PrimPath):
+    pass
+
+
+class PrimIndex(PrimPath):
+    pass
+
+
+class PrimSubstring(PrimPath):
+    pass
+
+
+class PrimSelector(PrimPath):
+    pass
+
+
 class PrimVariable(PrimPath):
     pass
 
