@@ -306,6 +306,25 @@ class EditableText(QGraphicsTextItem, object):
         text_cursor = self.textCursor()
         text_cursor.select(QTextCursor.WordUnderCursor)
         self.completion_prefix = text_cursor.selectedText()
+
+        # Work in progress - to support advanced autocompletion
+        tmp = self.textCursor()
+        pos = tmp.positionInBlock()
+        tmp.select(QTextCursor.BlockUnderCursor)
+        try:
+            import string
+            line = tmp.selectedText()
+            if line[pos] in string.ascii_letters + '!' + '.' + '_':
+                last_word = line[slice(0, pos + 1)].split()[-1]
+            else:
+                last_word = ''
+        except IndexError:
+            pass
+        else:
+            pass
+            # print last_word.encode('utf-8')
+        # -- END
+
         completion_count = self.completer.set_completion_prefix(
                 self.completion_prefix)
         if event.key() in (Qt.Key_Period, Qt.Key_Exclam):

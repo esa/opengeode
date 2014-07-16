@@ -145,6 +145,15 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+0.993 (07/2014)
+     - Parser bugfixes
+     - Better support for nested states
+     - Ada generator improvements
+     - Support for unicode
+     - Indentation of PR code
+     - Copy-paste of procedures and nested states
+     - Improved regression testing
+
 0.99 (04/2014)
      - Refactoring of the backend engine, now using singledispatch
      - Support of hierachical states

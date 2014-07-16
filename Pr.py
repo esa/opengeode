@@ -106,8 +106,9 @@ def recursive_aligned(symbol):
 def generate(symbol, *args, **kwargs):
     ''' Generate text for a symbol, recursively or not - return a list of
         strings '''
-    _, _ = symbol, recursive
-    raise NotImplementedError('[PR Generator] Unsupported AST construct')
+    _ = symbol
+    raise NotImplementedError('Unsupported AST construct: {}'
+                              .format(type(symbol)))
     return Indent()
 
 

@@ -647,8 +647,6 @@ def _task_forloop(task):
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
-            #if isinstance(loop['range']['stop'], ogAST.PrimInteger):
-            #    stop_str = 'Integer({})'.format(stop_str)
             if loop['range']['step'] == 1:
                 if unicode.isnumeric(stop_str):
                     stop_str = unicode(int(stop_str) - 1)
@@ -896,7 +894,7 @@ def _prim_path(primary_id):
                     ada_string += ', '.join(list_of_params)
                     ada_string += ')'
         sep = '.'
-    return stmts, ada_string, local_decl
+    return stmts, unicode(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprPlus)
@@ -923,7 +921,7 @@ def _basic_operators(expr):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    return code, ada_string, local_decl
+    return code, unicode(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprOr)
@@ -939,7 +937,7 @@ def _bitwise_operators(expr):
         # Sequence of boolean or bit string
         if expr.right.is_raw:
             # Declare a temporary variable to store the raw value
-            tmp_string = 'tmp{}'.format(expr.right.tmpVar)
+            tmp_string = u'tmp{}'.format(expr.right.tmpVar)
             local_decl.append(u'{tmp} : aliased asn1Scc{eType};'.format(
                         tmp=tmp_string,
                         eType=expr.right.exprType.ReferencedTypeName
@@ -962,7 +960,7 @@ def _bitwise_operators(expr):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    return code, ada_string, local_decl
+    return code, unicode(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprNot)
@@ -974,7 +972,7 @@ def _unary_operator(expr):
     ada_string = u'({op} {expr})'.format(op=expr.operand, expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
-    return code, ada_string, local_decl
+    return code, unicode(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprAppend)
@@ -1043,7 +1041,7 @@ def _append(expr):
                 rid=expr.right.sid, l2=expr.right.slen))
     stmts.append('{res}.Length := {l1} + {l2};'.format(
                 res=ada_string, l1=expr.left.slen, l2=expr.right.slen))
-    return stmts, ada_string, local_decl
+    return stmts, unicode(ada_string), local_decl
 
 
 
@@ -1075,7 +1073,7 @@ def _expr_in(expr):
     stmts.append("exit in_loop_{tmp} when {tmp} = True;"
                   .format(tmp=ada_string))
     stmts.append("end loop in_loop_{};".format(ada_string))
-    return stmts, ada_string, local_decl
+    return stmts, unicode(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
@@ -1083,8 +1081,8 @@ def _enumerated_value(primary):
     ''' Generate code for an enumerated value '''
     enumerant = primary.value[0].replace('_', '-')
     basic = find_basic_type(primary.exprType)
-    ada_string = ('asn1Scc' + basic.EnumValues[enumerant].EnumID)
-    return [], ada_string, []
+    ada_string = (u'asn1Scc' + basic.EnumValues[enumerant].EnumID)
+    return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
@@ -1092,7 +1090,7 @@ def _choice_determinant(primary):
     ''' Generate code for a choice determinant (enumerated) '''
     enumerant = primary.value[0].replace('_', '-')
     ada_string = primary.exprType.EnumValues[enumerant].EnumID
-    return [], ada_string, []
+    return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimInteger)
@@ -1100,26 +1098,27 @@ def _choice_determinant(primary):
 def _integer(primary):
     ''' Generate code for a raw numerical value  '''
     if float(primary.value[0]) < 0:
-        # Parentesize negative integers for maintaining the precedence in the generated code
-        ada_string = '({})'.format(primary.value[0])
+        # Parentesize negative integers for maintaining
+        # the precedence in the generated code
+        ada_string = u'({})'.format(primary.value[0])
     else:
         ada_string = primary.value[0]
-    return [], ada_string, []
+    return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimBoolean)
 def _integer(primary):
     ''' Generate code for a raw boolean value  '''
     ada_string = primary.value[0]
-    return [], ada_string, []
+    return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''
-    ada_string = 'asn1Scc{typeRef}_Init'.format(
+    ada_string = u'asn1Scc{typeRef}_Init'.format(
              typeRef=primary.exprType.ReferencedTypeName.replace('-', '_'))
-    return [], ada_string, []
+    return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimStringLiteral)
@@ -1130,20 +1129,20 @@ def _string_literal(primary):
     # then convert the string to an array of unsigned_8 integers
     # as expected by the Ada type corresponding to Octet String
     unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
-    ada_string = '(Data => (' + ', '.join(
+    ada_string = u'(Data => (' + ', '.join(
                                          unsigned_8) + ', others => 0)'
     if basic_type.Min != basic_type.Max:
         # Non-fixed string size -> add Length field
-        ada_string += ', Length => {}'.format(
+        ada_string += u', Length => {}'.format(
                                 str(len(primary.value[1:-1])))
     ada_string += ')'
-    return [], ada_string, []
+    return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary):
     ''' Generate code for a reference to an ASN.1 constant '''
-    return [], primary.value[0], []
+    return [], unicode(primary.value[0]), []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
@@ -1151,7 +1150,7 @@ def _mantissa_base_exp(primary):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
     # TODO
     _ = primary
-    return [], '', []
+    return [], u'', []
 
 
 @expression.register(ogAST.PrimIfThenElse)
@@ -1196,7 +1195,7 @@ def _if_then_else(ifThenElse):
                                                 else_str=else_str))
     stmts.append('end if;')
     ada_string = u'tmp{idx}'.format(idx=ifThenElse.value['tmpVar'])
-    return stmts, ada_string, local_decl
+    return stmts, unicode(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimSequence)
@@ -1220,7 +1219,7 @@ def _sequence(seq):
         stmts.extend(value_stmts)
         local_decl.extend(local_var)
     ada_string += ')'
-    return stmts, ada_string, local_decl
+    return stmts, unicode(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimSequenceOf)
@@ -1253,7 +1252,7 @@ def _sequence_of(seqof):
         local_decl.extend(local_var)
         ada_string += '{i} => {value}, '.format(i=i + 1, value=item_str)
     ada_string += 'others => {anyVal}))'.format(anyVal=item_str)
-    return stmts, ada_string, local_decl
+    return stmts, unicode(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimChoiceItem)
@@ -1268,7 +1267,7 @@ def _choiceitem(choice):
             cType=actual_type,
             opt=choice.value['choice'],
             expr=choice_str)
-    return stmts, ada_string, local_decl
+    return stmts, unicode(ada_string), local_decl
 
 
 @generate.register(ogAST.Decision)
