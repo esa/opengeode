@@ -261,6 +261,16 @@ def get_input_string(root):
             root.getTokenStopIndex())
 
 
+def error(root, msg):
+    ''' Return an error message '''
+    return '{} - line {}'.format(msg, root.getLine())
+
+
+def warning(root, msg):
+    ''' Return a warning message '''
+    return '{} - line {}'.format(msg, root.getLine())
+
+
 def get_state_list(process_root):
     ''' Return the list of states of a process '''
     # 1) get all STATE statements
@@ -949,26 +959,6 @@ def binary_expression(root, context):
     return expr, errors, warnings
 
 
-def incompatible_types(expr, reason):
-    ''' Generate an error message for incompatible types in binary expressions '''
-    return (
-        'Types are incompatible in expression: ' +
-        'left (' + expr.left.inputString + ', type= ' +
-        type_name(expr.left.exprType) + '), ' +
-        'right (' + expr.right.inputString + ', type= ' +
-        type_name(expr.right.exprType) + ') ' + reason
-    )
-
-
-def incompatible_type(expr, reason):
-    ''' Generate an error message for incompatible type in unary expression '''
-    return (
-        'Type is incompatible in expression: ' +
-        '(' + expr.expr.inputString + ', type= ' +
-        type_name(expr.expr.exprType) + ')' + reason
-    )
-
-
 def unary_expression(root, context):
     ''' Unary expression analysys '''
     expr = expr_ast(root)
@@ -1010,7 +1000,6 @@ def expression(root, context):
     elif root.type == lexer.SELECTOR:
         return selector_expression(root, context)
     else:
-        print root
         raise NotImplementedError
 
 
@@ -1032,7 +1021,7 @@ def logic_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append(incompatible_types(expr, str(err)))
+        errors.append(error(root, str(err)))
 
     left_bty = find_basic_type(expr.left.exprType)
     right_bty = find_basic_type(expr.right.exprType)
@@ -1043,7 +1032,7 @@ def logic_expression(root, context):
             continue
         else:
             msg = 'Bitwise operators only work with booleans and arrays of booleans'
-            errors.append(incompatible_types(expr, msg))
+            errors.append(error(root, msg))
 
     # TODO: Is this correct?
     if left_bty.kind == right_bty.kind == 'BooleanType':
@@ -1061,7 +1050,7 @@ def arithmetic_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append(incompatible_types(expr, str(err)))
+        errors.append(error(root, str(err)))
 
     # Expressions returning a numerical type must have their range defined
     # accordingly with the kind of opration used between operand:
@@ -1090,7 +1079,7 @@ def arithmetic_expression(root, context):
             expr.exprType = type('Mod', (basic,), attrs)
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types have a range constraint'
-        errors.append(incompatible_types(expr, msg))
+        errors.append(error(root, msg))
 
     return expr, errors, warnings
 
@@ -1102,7 +1091,7 @@ def relational_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append(incompatible_types(expr, str(err)))
+        errors.append(error(root, str(err)))
 
     expr.exprType = BOOLEAN
 
@@ -1120,7 +1109,7 @@ def in_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append(incompatible_types(expr, str(err)))
+        errors.append(error(root, str(err)))
 
     # check that left part is a SEQUENCE OF or a string
     container_basic_type = find_basic_type(expr.left.exprType)
@@ -1130,7 +1119,7 @@ def in_expression(root, context):
         ref_type = container_basic_type
     else:
         msg = 'IN expression: right part must be a list'
-        errors.append(incompatible_types(expr, msg))
+        errors.append(error(root, msg))
         return expr, errors, warnings
 
     compare_types(expr.right.exprType, ref_type)
@@ -1159,7 +1148,7 @@ def append_expression(root, context):
     try:
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
-        errors.append(incompatible_types(expr, str(err)))
+        errors.append(error(root, str(err)))
 
     expr.exprType = expr.left.exprType
 
@@ -1179,7 +1168,7 @@ def not_expression(root, context):
         expr.exprType = expr.expr.exprType
     else:
         msg = 'Bitwise operators only work with booleans and arrays of booleans'
-        errors.append(incompatible_type(expr, msg))
+        errors.append(error(root, msg))
 
     return expr, errors, warnings
 
@@ -1191,7 +1180,7 @@ def neg_expression(root, context):
     basic = find_basic_type(expr.expr.exprType)
     if not basic.kind in ('IntegerType', 'Integer32Type', 'RealType'):
         msg = 'Negative expressions can only be applied to numeric types'
-        errors.append(incompatible_type(expr, msg))
+        errors.append(error(root, msg))
         return expr, errors, warnings
 
     try:
@@ -1199,7 +1188,7 @@ def neg_expression(root, context):
         expr.exprType = type('Neg', (basic,), attrs)
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types have a range constraint'
-        errors.append(incompatible_type(expr, msg))
+        errors.append(error(root, msg))
 
     return expr, errors, warnings
 
@@ -1258,7 +1247,7 @@ def call_expression(root, context):
         node = ogAST.PrimCall()  # Use error node instead?
         node.inputString = get_input_string(root)
         node.exprType = UNKNOWN_TYPE
-        errors.append('Wrong number of parameters')
+        errors.append(error(root, 'Wrong number of parameters'))
         return node, errors, warnings
 
 
@@ -1279,8 +1268,7 @@ def primary_call(root, context):
     try:
         check_and_fix_op_params(ident, params, context)
     except (AttributeError, TypeError) as err:
-        LOG.debug(traceback.format_exc())
-        errors.append(str(err) + '- ' + get_input_string(root))
+        errors.append(error(root, str(err)))
 
     node.value = [ident, {'procParams': params}]
 
@@ -1294,25 +1282,30 @@ def primary_call(root, context):
         # present(choiceType): must return an enum
         # with elements being the choice options
         if len(params) != 1:
-            raise TypeError('Wrong number of parameters in '
-                            'PRESENT clause (only one expected)')
+            errors.append(error(root, 'Wrong number of parameters in '
+                                      'PRESENT clause (only one expected)'))
 
         if find_basic_type(params[0].exprType).kind != 'ChoiceType':
-            raise TypeError('PRESENT parameter must be a CHOICE type:' + str(ident))
+            errors.append(error(root, 'PRESENT parameter must be a CHOICE type'))
         else:
             node.exprType.EnumValues = params_bty[0].Children
 
     elif ident in ('length', 'fix'):
         if len(params) != 1:
-            raise TypeError('Wrong number of parameters in {} operator'.format(ident))
+            msg = 'Wrong number of parameters in {} operator'.format(ident)
+            errors.append(error(root, msg))
+
         # result is an integer type with range of the param type
         node.exprType = type('fix', (INTEGER,), {
             'Min': params_bty[0].Min,
             'Max': params_bty[0].Max
         })
+
     elif ident == 'float':
         if len(params) != 1:
-            raise TypeError('Wrong number of parameters in {} operator'.format(ident))
+            msg = 'Wrong number of parameters in {} operator'.format(ident)
+            errors.append(root, msg)
+
         node.exprType = type('float_op', (REAL,), {
             'Min': params_bty[0].Min,
             'Max': params_bty[0].Max
@@ -1325,7 +1318,7 @@ def primary_call(root, context):
                 'Max': str(pow(float(params_bty[0].Max), float(params_bty[1].Max)))
             })
         except OverflowError:
-            raise TypeError('Result can exceeds 64-bits')
+            errors.append(error(root, 'Result can exceeds 64-bits'))
 
     elif ident == 'abs':
         node.exprType = type('Abs', (params_bty[0],), {
@@ -1365,7 +1358,8 @@ def primary_index(root, context):
     if receiver_bty.kind == 'SequenceOfType':
         node.exprType = receiver_bty.type
     else:
-        errors.append('Element {} cannot have an index - {}'.format(receiver, node.inputString))
+        msg = 'Element {} cannot have an index'.format(receiver)
+        errors.append(error(root, msg))
 
     return node, errors, warnings
 
@@ -1392,9 +1386,8 @@ def primary_substring(root, context):
     if receiver_bty.kind == 'SequenceOfType' or receiver_bty.kind.endswith('StringType'):
         node.exprType = receiver.exprType
     else:
-        errors.append(
-            'Element {} cannot have a substring - {}'.format(receiver, node.inputString)
-        )
+        msg = 'Element {} cannot have a substring'.format(receiver)
+        errors.append(error(root, msg))
 
     return node, errors, warnings
 
@@ -1420,9 +1413,8 @@ def selector_expression(root, context):
             node.exprType = f.type
             break
     else:
-        errors.append(
-            'Field "{}" not found in expression {}'.format(field_name, node.inputString)
-        )
+        msg = 'Field "{}" not found in expression {}'.format(field_name)
+        errors.append(error(root, msg))
 
     node.value = [receiver, field_name.replace('-', '_').lower()]
 
@@ -1523,10 +1515,10 @@ def primary(root, context):
         })
     elif root.type == lexer.BITSTR:
         prim = ogAST.PrimBitStringLiteral()
-        warnings.append('Bit string literal not supported yet')
+        warnings.append(warning(root, 'Bit string literal not supported yet'))
     elif root.type == lexer.OCTSTR:
         prim = ogAST.PrimOctetStringLiteral()
-        warnings.append('Octet string literal not supported yet')
+        warnings.append(warning(root, 'Octet string literal not supported yet'))
     else:
         # TODO: return error message
         raise NotImplementedError
@@ -1552,7 +1544,7 @@ def variables(root, ta_ast, context):
             try:
                 asn1_sort = sdl_to_asn1(sort)
             except TypeError as err:
-                errors.append(str(err) + '(line ' + str(child.getLine()) + ')')
+                errors.append(error(root, str(err)))
         elif child.type == lexer.GROUND:
             # Default value for a variable - needs to be a ground expression
             def_value, err, warn = expression(child.getChild(0), context)
