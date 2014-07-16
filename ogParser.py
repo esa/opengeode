@@ -1274,7 +1274,7 @@ def primary_call(root, context):
     warnings.extend(param_warnings)
 
     try:
-        check_and_fix_op_params(ident, params, context)
+        fix_special_operators(ident, params, context)
     except (AttributeError, TypeError) as err:
         errors.append(error(root, str(err)))
 
@@ -1285,24 +1285,10 @@ def primary_call(root, context):
     if ident == 'present':
         node.exprType = type('present', (object,), {
             'kind': 'ChoiceEnumeratedType',
-            'EnumValues': {}
+            'EnumValues': params_bty[0].Children
         })
-        # present(choiceType): must return an enum
-        # with elements being the choice options
-        if len(params) != 1:
-            errors.append(error(root, 'Wrong number of parameters in '
-                                      'PRESENT clause (only one expected)'))
-
-        if find_basic_type(params[0].exprType).kind != 'ChoiceType':
-            errors.append(error(root, 'PRESENT parameter must be a CHOICE type'))
-        else:
-            node.exprType.EnumValues = params_bty[0].Children
 
     elif ident in ('length', 'fix'):
-        if len(params) != 1:
-            msg = 'Wrong number of parameters in {} operator'.format(ident)
-            errors.append(error(root, msg))
-
         # result is an integer type with range of the param type
         node.exprType = type('fix', (INTEGER,), {
             'Min': params_bty[0].Min,
@@ -1310,10 +1296,6 @@ def primary_call(root, context):
         })
 
     elif ident == 'float':
-        if len(params) != 1:
-            msg = 'Wrong number of parameters in {} operator'.format(ident)
-            errors.append(root, msg)
-
         node.exprType = type('float_op', (REAL,), {
             'Min': params_bty[0].Min,
             'Max': params_bty[0].Max
@@ -1333,13 +1315,6 @@ def primary_call(root, context):
             'Min': str(max(float(params_bty[0].Min), 0)),
             'Max': str(max(float(params_bty[0].Max), 0))
         })
-
-    elif ident in ('write', 'writeln'):
-        # write and writeln return void
-        pass
-
-    else:
-        raise NotImplementedError
 
     return node, errors, warnings
 
