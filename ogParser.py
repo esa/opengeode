@@ -83,8 +83,8 @@ INTEGER = type('IntegerType', (object,), {'kind': 'IntegerType',
                                           'Min': str(-(2 ** 63)),
                                           'Max': str(2 ** 63 - 1)})
 INT32 = type('Integer32Type', (object,), {'kind': 'Integer32Type',
-                                          'Min':'-2147483648',
-                                          'Max':'2147483647'})
+                                          'Min': '-2147483648',
+                                          'Max': '2147483647'})
 NUMERICAL = type('NumericalType', (object,), {'kind': 'Numerical'})
 TIMER = type('TimerType', (object,), {'kind': 'TimerType'})
 REAL = type('RealType', (object,), {'kind': 'RealType',
@@ -347,7 +347,6 @@ def fix_special_operators(op_name, expr_list, context):
     elif op_name.lower() == 'power':
         if len(expr_list) != 2:
             raise AttributeError('The "power" operator takes two parameters')
-        types = {}
         for idx, expr in enumerate(expr_list):
             if expr.exprType is UNKNOWN_TYPE:
                 expr.exprType = find_variable(expr.value[0], context)
@@ -377,7 +376,7 @@ def fix_special_operators(op_name, expr_list, context):
                     # Has to be a variable...otherwise, error!
                     try:
                         param.exprType = find_variable(param.value[0], context)
-                    except KeyError, AttributeError:
+                    except (KeyError, AttributeError):
                         raise TypeError('Could not determine type of argument'
                                         ' "{}"'.format(param.inputString))
             basic = find_basic_type(param.exprType)
@@ -604,7 +603,7 @@ def check_type_compatibility(primary, typeRef, context):
                         # Compare the types for semantic equivalence
                         try:
                             compare_types(
-                                  primary.value[ufield].exprType, fd_data.type)
+                                    primary.value[ufield].exprType, fd_data.type)
                         except TypeError as err:
                             raise TypeError('Field ' + ufield +
                                         ' is not of the proper type, i.e. ' +
@@ -640,10 +639,10 @@ def check_type_compatibility(primary, typeRef, context):
         value.exprType = choice_field_type         # XXX
         return
     elif isinstance(primary, ogAST.PrimChoiceDeterminant) \
-                                     and actual_type.kind.startswith('Choice'):
+                and actual_type.kind.startswith('Choice'):
         for choicekey, choice in actual_type.EnumValues.viewitems():
             if choicekey.replace('-', '_').lower() == \
-                                                   primary.inputString.lower():
+                    primary.inputString.lower():
                 break
         else:
             raise TypeError('Non-existent choice "{choice}" in type {t1}'
@@ -657,7 +656,7 @@ def check_type_compatibility(primary, typeRef, context):
             return
         elif basic_type.kind.endswith('StringType'):
             if int(basic_type.Min) <= len(
-                          primary.value[1:-1]) <= int(basic_type.Max):
+                    primary.value[1:-1]) <= int(basic_type.Max):
                 return
             else:
                 raise TypeError('Invalid string literal - check that length is'
@@ -702,8 +701,7 @@ def compare_types(type_a, type_b):
             else:
                 raise TypeError('Incompatible arrays')
         return
-    elif type_a.kind.endswith('StringType') and type_b.kind.endswith(
-                                                                 'StringType'):
+    elif type_a.kind.endswith('StringType') and type_b.kind.endswith('StringType'):
         # Allow Octet String values to be printable strings.. for convenience
         return
     elif not(type_a.kind in ('IntegerType', 'Integer32Type') and
@@ -824,7 +822,7 @@ def fix_expression_types(expr, context):
             if fd_expr.exprType == UNKNOWN_TYPE:
                 try:
                     expected_type = asn_type.Children.get(
-                                                 field.replace('_', '-')).type
+                            field.replace('_', '-')).type
                 except AttributeError:
                     raise TypeError('Field not found: ' + field)
                 check_expr = ogAST.ExprAssign()
@@ -1804,7 +1802,6 @@ def procedure(root, parent=None, context=None):
 
 def floating_label(root, parent, context):
     ''' Floating label: name and optional transition '''
-    _ = parent
     errors = []
     warnings = []
     lab = ogAST.Floating_label()
@@ -1840,6 +1837,7 @@ def floating_label(root, parent, context):
     lab.terminators = list(context.terminators[terminators:])
     return lab, errors, warnings
 
+
 def newtype_gettype(root, ta_ast, context):
     ''' Returns the name of the new type created by a NEWTYPE construction '''
     errors = []
@@ -1847,26 +1845,28 @@ def newtype_gettype(root, ta_ast, context):
     newtypename = ""
     if (root.getChild(0).type != lexer.SORT):
         warnings.append("Expected SORT in newtype identifier, got type:"
-                        + str(child.type))
+                        + str(root.type))
         return newtypename, errors, warnings
 
     newtypename = root.getChild(0).getChild(0).text
     return newtypename, errors, warnings
 
+
 def get_array_type(root):
     ''' Returns the subtype associated to an NEWTYPE ARRAY construction '''
-    indexSort = root.getChild(0).text
-    typeSort  = root.getChild(1).text
+    # indexSort = root.getChild(0).text
+    typeSort = root.getChild(1).text
     typeSortLine = root.getChild(1).getLine()
     typeSortChar = root.getChild(1).getCharPositionInLine()
 
     # Constructing ASN.1 AST subtype
     newtype = type("SeqOf_type", (object,), {
-        "Line" : typeSortLine, "CharPositionInLine" : typeSortChar,
-        "Kind" : "ReferenceType" , "ReferencedTypeName" : typeSort
+        "Line": typeSortLine, "CharPositionInLine": typeSortChar,
+        "Kind": "ReferenceType", "ReferencedTypeName": typeSort
     })
 
     return newtype
+
 
 def get_struct_children(root):
     ''' Returns the fields of a STRUCT as a dictionary '''
@@ -1884,7 +1884,7 @@ def get_struct_children(root):
             line = field.getChild(0).getLine()
             charpos = field.getChild(0).getCharPositionInLine()
 
-            children[fieldname] = type(str(fieldname), (object ,), {
+            children[fieldname] = type(str(fieldname), (object,), {
                 "Optional": "False", "Line": line,
                 "CharPositionInLine": charpos,
                 "type": type(str(fieldname + "_type"), (object,), {
@@ -1893,6 +1893,7 @@ def get_struct_children(root):
                 })
             })
     return children
+
 
 def syntype(root, ta_ast, context):
     ''' Parse a SYNTYPE definition and inject it in ASN1 AST'''
@@ -1903,20 +1904,21 @@ def syntype(root, ta_ast, context):
     global DV
 
     newtypename = root.getChild(0).getChild(0).text
-    reftypename = root.getChild(1).getChild(0).text
+    # reftypename = root.getChild(1).getChild(0).text
     newtype = type(str(newtypename), (object,), {
-        "Line" : root.getChild(0).getLine(),
-        "CharPositionInLine" : root.getChild(0).getCharPositionInLine(),
+        "Line": root.getChild(0).getLine(),
+        "CharPositionInLine": root.getChild(0).getCharPositionInLine(),
     })
     newtype.type = type(str(newtypename) + "_type", (object,), {
-        "Line" : root.getChild(1).getLine(),
-        "CharPositionInLine" : root.getChild(1).getCharPositionInLine(),
-        "kind" : reftype + "Type"
+        "Line": root.getChild(1).getLine(),
+        "CharPositionInLine": root.getChild(1).getCharPositionInLine(),
+        "kind": reftype + "Type"
     })
 
     DV.types[str(newtypename)] = newtype
     LOG.debug("Found new SYNTYPE " + newtypename)
     return errors, warnings
+
 
 def newtype(root, ta_ast, context):
     ''' Parse a NEWTYPE definition and inject it in ASN1 AST'''
@@ -1929,8 +1931,8 @@ def newtype(root, ta_ast, context):
         return errors, warnings
 
     newtype = type(str(newtypename), (object,), {
-                   "Line" : root.getLine(),
-                   "CharPositionInLine" : root.getCharPositionInLine()})
+                   "Line": root.getLine(),
+                   "CharPositionInLine": root.getCharPositionInLine()})
 
     if (root.getChild(1).type == lexer.ARRAY):
         newtype.kind = "SequenceOfType"
@@ -1939,7 +1941,7 @@ def newtype(root, ta_ast, context):
         newtype.Max = "Max"
         DV.types[str(newtypename)] = newtype
         LOG.debug("Found new ARRAY type " + newtypename)
-    elif  (root.getChild(1).type == lexer.STRUCT):
+    elif (root.getChild(1).type == lexer.STRUCT):
         newtype.kind = "SequenceType"
         newtype.Children = get_struct_children(root.getChild(1))
         DV.types[str(newtypename)] = newtype
@@ -1947,11 +1949,12 @@ def newtype(root, ta_ast, context):
     else:
         warnings.append(
                     'Unsupported type definition in newtype, type: ' +
-                    str(child.type))
+                    str(root.type))
      # STRUCT CASE
     return errors, warnings
 
-def synonym (root, ta_ast, context):
+
+def synonym(root, ta_ast, context):
     ''' Parse a SYNONYM definition and inject it in ASN1 exported variables'''
     errors = []
     warnings = []
@@ -1966,6 +1969,7 @@ def synonym (root, ta_ast, context):
             DV.exportedVariables["SDL-Constants"].append(
                                             child.getChild(0).getChild(0).text)
     return errors, warnings
+
 
 def text_area_content(root, ta_ast, context):
     ''' Content of a text area: DCL, NEWTYPES, SYNTYPES, SYNONYMS, operators,
@@ -2221,7 +2225,7 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.START:
             # START transition (fills the mapping structure)
             process.content.start, err, warn = start(
-                                             child, context=process)
+                    child, context=process)
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.STATE:
@@ -2402,7 +2406,7 @@ def state(root, parent, context):
         elif child.type == lexer.INPUT:
             # A transition triggered by an INPUT
             inp, err, warn = \
-                           input_part(child, parent=state_def, context=context)
+                    input_part(child, parent=state_def, context=context)
             errors.extend(err)
             warnings.extend(warn)
             try:
@@ -2419,8 +2423,8 @@ def state(root, parent, context):
                     asterisk_input = inp
         elif child.type == lexer.CONNECT:
             if asterisk_state or len(state_def.statelist) != 1 \
-                 or (state_def.statelist[0].lower()
-                 not in (comp.statename for comp in context.composite_states)):
+                    or (state_def.statelist[0].lower()
+                    not in (comp.statename for comp in context.composite_states)):
                 errors.append('State {} is not a composite state and cannot '
                               'be followed by a connect statement'
                               .format(state_def.statelist[0]))
@@ -2903,7 +2907,7 @@ def terminator_statement(root, parent, context):
             t.kind = 'return'
             if term.children:
                 t.return_expr, err, warn = expression(
-                                                     term.getChild(0), context)
+                        term.getChild(0), context)
                 t.inputString = t.return_expr.inputString
                 errors.extend(err)
                 warnings.extend(warn)
@@ -3247,7 +3251,7 @@ def pr_file(root):
     # In case no ASN.1 files are parsed, the DV structure is pre-initialised
     # This to allow SDL types injection in ASN1 ASTs
     DV = type("ASNParseTree", (object, ),
-              {"types" : {}, "exportedVariables": {},  "asn1Modules": [] })
+              {"types": {}, "exportedVariables": {}, "asn1Modules": []})
 
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions

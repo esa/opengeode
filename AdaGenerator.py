@@ -91,7 +91,6 @@ PROCEDURES = []
 @singledispatch
 def generate(ast):
     ''' Generate the code for an item of the AST '''
-    _ = ast
     raise TypeError('[AdaGenerator] Unsupported AST construct')
     return [], []
 
@@ -223,7 +222,7 @@ package {process_name} is'''.format(process_name=process_name,
         if 'type' in signal:
             typename = signal['type'].ReferencedTypeName.replace('-', '_')
             pi_header += '({pName}: access asn1Scc{pType})'.format(
-                                           pName=param_name, pType=typename)
+                                        pName=param_name, pType=typename)
 
         # Add declaration of the provided interface in the .ads file
         ads_template.append('--  Provided interface "' + signal['name'] + '"')
@@ -279,7 +278,7 @@ package {process_name} is'''.format(process_name=process_name,
         taste_template.append('null;')
         taste_template.append('end case;')
         taste_template.append(u'end {sig_name};'.format(
-                                                      sig_name=signal['name']))
+                                                    sig_name=signal['name']))
         taste_template.append('\n')
 
     # for the .ads file, generate the declaration of the required interfaces
@@ -308,7 +307,7 @@ package {process_name} is'''.format(process_name=process_name,
         if params:
             ri_header += u'(' + u';'.join(params) + ')'
         ads_template.append(
-                           u'--  Sync required interface "' + proc.inputString)
+                        u'--  Sync required interface "' + proc.inputString)
         ads_template.append(ri_header + u';')
         ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
                 .format(sig=proc.inputString, proc=process_name))
@@ -444,7 +443,7 @@ def write_statement(param, newline):
                              .format(tmp=localstr, st=string, sep=sep),
                              u"end loop;"])
                 if basic_type.Min != basic_type.Max:
-                     code.extend(["if {string}.Length < {to} then"
+                        code.extend(["if {string}.Length < {to} then"
                                      .format(string=string, to=basic_type.Max),
                          u"{tmp}({string}.Length + 1 .. {to}) "
                          u":= (others=>Character'Val(0));"
@@ -562,7 +561,7 @@ def _call_external_function(output):
                 # Create a temporary variable for input parameters only
                 # (If needed, i.e. if argument is not a local variable)
                 if param_direction == 'in' \
-                and (not (isinstance(param, ogAST.PrimVariable) and
+                        and (not (isinstance(param, ogAST.PrimVariable) and
                 p_id.startswith('l_')) or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = out['tmpVars'][idx]
                     local_decl.append('tmp{idx} : aliased asn1Scc{oType};'
@@ -639,7 +638,7 @@ def _task_forloop(task):
             start_str, stop_str = '0', ''
             if loop['range']['start']:
                 start_stmt, start_str, start_local = expression(
-                                                       loop['range']['start'])
+                                                    loop['range']['start'])
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
                 # ASN.1 Integers are 64 bits - we need to convert to 32 bits
@@ -654,8 +653,8 @@ def _task_forloop(task):
             #    stop_str = 'Integer({})'.format(stop_str)
             if loop['range']['step'] == 1:
                 stmt.append(
-                       'for {it} in {start}{stop} loop'
-                       .format(it=loop['var'], start=start_str, stop=stop_str))
+                        'for {it} in {start}{stop} loop'
+                        .format(it=loop['var'], start=start_str, stop=stop_str))
             else:
                 # Step is not directly supported in Ada, we need to use 'while'
                 stmt.extend(['declare',
@@ -713,7 +712,6 @@ def expression(expr):
         - useable string corresponding to the evaluation of the expression,
         - list of local declarations
     '''
-    _ = expr
     raise TypeError('Unsupported expression: ' + str(expr))
     return [], '', []
 
@@ -854,16 +852,19 @@ def _prim_substring(prim):
     local_decl.extend(r1_local)
     local_decl.extend(r2_local)
 
-    local_decl.append('tmp{idx} : aliased asn1Scc{parent_type};'.format(idx=prim.value[1]['tmpVar'], parent_type=receiver_ty_name))
+    local_decl.append('tmp{idx} : aliased asn1Scc{parent_type};'.format(
+            idx=prim.value[1]['tmpVar'], parent_type=receiver_ty_name))
 
     # XXX types with fixed length: substrings will not work
     if unicode.isnumeric(r1_string) and unicode.isnumeric(r2_string):
         length = int(r2_string) - int(r1_string) + 1
     else:
         length = ('{r2} - {r1} + 1'.format(r2=r2_string, r1=r1_string))
-    stmts.append('tmp{idx}.Length := {length};'.format(idx=prim.value[1]['tmpVar'], length=length))
+    stmts.append('tmp{idx}.Length := {length};'.format(
+            idx=prim.value[1]['tmpVar'], length=length))
 
-    stmts.append('tmp{idx}.Data(1..{length}) := {data};'.format(idx=prim.value[1]['tmpVar'], length=length, data=ada_string))
+    stmts.append('tmp{idx}.Data(1..{length}) := {data};'.format(
+        idx=prim.value[1]['tmpVar'], length=length, data=ada_string))
     ada_string = 'tmp{idx}'.format(idx=prim.value[1]['tmpVar'])
 
     return stmts, ada_string, local_decl
@@ -885,7 +886,8 @@ def _prim_selector(prim):
     receiver_ty_name = receiver.exprType.ReferencedTypeName.replace('-', '_')
 
     if receiver_bty.kind == 'ChoiceType':
-        ada_string = ('asn1Scc{typename}_{field_name}_get({ada_string})'.format(typename=receiver_ty_name, field_name=field_name, ada_string=ada_string))
+        ada_string = ('asn1Scc{typename}_{field_name}_get({ada_string})'.format(
+            typename=receiver_ty_name, field_name=field_name, ada_string=ada_string))
     else:
         ada_string += '.' + field_name
 
@@ -947,10 +949,10 @@ def _bitwise_operators(expr):
         ada_string += u')'
     else:
         ada_string = u'({left} {op}{short} {right})'.format(
-                               left=left_str,
-                               op=expr.operand,
-                               short=expr.shortcircuit,
-                               right=right_str)
+                                left=left_str,
+                                op=expr.operand,
+                                short=expr.shortcircuit,
+                                right=right_str)
     code.extend(left_stmts)
     code.extend(right_stmts)
     local_decl.extend(left_local)
@@ -1039,7 +1041,6 @@ def _append(expr):
     return stmts, ada_string, local_decl
 
 
-
 @expression.register(ogAST.ExprIn)
 def _expr_in(expr):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
@@ -1101,7 +1102,7 @@ def _integer(primary):
 
 
 @expression.register(ogAST.PrimBoolean)
-def _integer(primary):
+def _boolean(primary):
     ''' Generate code for a raw boolean value  '''
     ada_string = primary.value[0]
     return [], ada_string, []
@@ -1111,7 +1112,7 @@ def _integer(primary):
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''
     ada_string = 'asn1Scc{typeRef}_Init'.format(
-             typeRef=primary.exprType.ReferencedTypeName.replace('-', '_'))
+            typeRef=primary.exprType.ReferencedTypeName.replace('-', '_'))
     return [], ada_string, []
 
 
@@ -1124,7 +1125,7 @@ def _string_literal(primary):
     # as expected by the Ada type corresponding to Octet String
     unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
     ada_string = '(Data => (' + ', '.join(
-                                         unsigned_8) + ', others => 0)'
+                                        unsigned_8) + ', others => 0)'
     if basic_type.Min != basic_type.Max:
         # Non-fixed string size -> add Length field
         ada_string += ', Length => {}'.format(
@@ -1143,7 +1144,6 @@ def _constant(primary):
 def _mantissa_base_exp(primary):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
     # TODO
-    _ = primary
     return [], '', []
 
 
@@ -1161,9 +1161,9 @@ def _if_then_else(ifThenElse):
         tmp_type = 'String(1 .. {})'.format(max(lens) - 2)
         # Ada require fixed-length strings, adjust with spaces
         if lens[0] < lens[1]:
-            then_str = then_str[0:-1] + ' '* (lens[1] - lens[0]) + '"'
+            then_str = then_str[0:-1] + ' ' * (lens[1] - lens[0]) + '"'
         elif lens[1] < lens[0]:
-            else_str = else_str[0:-1] + ' '* (lens[0] - lens[1]) + '"'
+            else_str = else_str[0:-1] + ' ' * (lens[0] - lens[1]) + '"'
     else:
         tmp_type = 'asn1Scc' + resType.ReferencedTypeName.replace('-', '_')
     local_decl = ['tmp{idx} : {tmpType};'.format(
@@ -1255,7 +1255,7 @@ def _choiceitem(choice):
     stmts, choice_str, local_decl = expression(choice.value['value'])
     choiceType = choice.exprType
     actual_type = getattr(
-                     choiceType, 'ReferencedTypeName', None) or choiceType.kind
+                    choiceType, 'ReferencedTypeName', None) or choiceType.kind
     actual_type = actual_type.replace('-', '_')
     ada_string = 'asn1Scc{cType}_{opt}_set({expr})'.format(
             cType=actual_type,
@@ -1379,7 +1379,7 @@ def _transition(tr):
                                 unicode(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
                         code.append(u'state := {nextState};'.format(
-                                 nextState=tr.terminator.inputString))
+                                nextState=tr.terminator.inputString))
                 else:
                     if any(next_id
                            for next_id in tr.terminator.candidate_id.viewkeys()
