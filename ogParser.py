@@ -1386,6 +1386,20 @@ def primary_substring(root, context):
     if receiver_bty.kind == 'SequenceOfType' or \
             receiver_bty.kind.endswith('StringType'):
         node.exprType = receiver.exprType
+        # Check bounds
+        basic = find_basic_type(node.exprType)
+        min0 = find_basic_type(params[0].exprType).Min
+        min1 = find_basic_type(params[1].exprType).Min
+        max0 = find_basic_type(params[0].exprType).Max
+        max1 = find_basic_type(params[1].exprType).Max
+        if int(min0) > int(min1) or int(max0) > int(max1):
+            msg = 'Substring bounds are invalid'
+            errors.append(error(root, msg))
+        if int(min0) > int(basic.Max) \
+                or int(max1) > int(basic.Max):
+            msg = 'Substring bounds [{}..{}] outside range [{}..{}]'.format(
+                    min0, max1, basic.Min, basic.Max)
+            errors.append(error(root, msg))
     else:
         msg = 'Element {} cannot have a substring'.format(receiver)
         errors.append(error(root, msg))
