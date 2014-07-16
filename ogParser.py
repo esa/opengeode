@@ -289,12 +289,12 @@ def get_input_string(root):
 
 def error(root, msg):
     ''' Return an error message '''
-    return '{} - line {}'.format(msg, root.getLine())
+    return '{} - "{}"'.format(msg, get_input_string(root))
 
 
 def warning(root, msg):
     ''' Return a warning message '''
-    return '{} - line {}'.format(msg, root.getLine())
+    return '{} - "{}"'.format(msg, get_input_string(root))
 
 
 def tmp():
