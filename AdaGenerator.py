@@ -828,6 +828,7 @@ def _prim_index(prim):
 
 @expression.register(ogAST.PrimSubstring)
 def _prim_substring(prim):
+    ''' Generate expression for SEQOF/OCT.STRING substrings, e.g. foo(1,2) '''
     stmts, ada_string, local_decl = [], '', []
 
     receiver = prim.value[0]
@@ -857,7 +858,10 @@ def _prim_substring(prim):
         length = int(r2_string) - int(r1_string) + 1
     else:
         length = ('{r2} - {r1} + 1'.format(r2=r2_string, r1=r1_string))
-    stmts.append('tmp{idx}.Length := {length};'.format(
+
+    prim_basic = find_basic_type(prim.exprType)
+    if int(prim_basic.Min) != int(prim_basic.Max):
+        stmts.append('tmp{idx}.Length := {length};'.format(
             idx=prim.value[1]['tmpVar'], length=length))
 
     stmts.append('tmp{idx}.Data(1..{length}) := {data};'.format(
