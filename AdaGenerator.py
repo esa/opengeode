@@ -455,14 +455,12 @@ def write_statement(param, newline):
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
-        if type_kind == 'IntegerType':
+        if type_kind in ('IntegerType', 'Integer32Type'):
             cast = "Asn1Int"
         elif type_kind == 'RealType':
             cast = 'Long_Float'
         elif type_kind == 'BooleanType':
             cast = 'Boolean'
-        elif type_kind == 'Integer32Type':
-            cast = 'Integer'
         string = u"{cast}'Image({s})".format(cast=cast, s=string)
     else:
         error = (u'Unsupported parameter in write call ' +
