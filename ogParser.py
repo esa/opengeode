@@ -131,13 +131,29 @@ type_name = lambda t: \
 types = lambda: getattr(DV, 'types', {})
 
 
+def is_integer(ty):
+    ''' Return true if a type is an Integer Type '''
+    return find_basic_type(ty).kind in (
+        'IntegerType',
+        'Integer32Type'
+    )
+
+
 def is_numeric(ty):
-    ''' Return true if a type is numeric '''
+    ''' Return true if a type is a Numeric Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
         'Integer32Type',
         'Numerical',
         'RealType'
+    )
+
+
+def is_string(ty):
+    ''' Return true if a type is a String Type '''
+    return find_basic_type(ty).kind in (
+        'StandardStringType',
+        'OctetStringType'
     )
 
 
@@ -346,12 +362,11 @@ def fix_special_operators(op_name, expr_list, context):
             # XXX should change type to PrimVariable
         basic = find_basic_type(expr.exprType)
         if op_name.lower() == 'length' and basic.kind != 'SequenceOfType' \
-                                 and not basic.kind.endswith('StringType'):
+                and not is_string(basic):
             raise TypeError('Length operator works only on strings/lists')
         elif op_name.lower() == 'present' and basic.kind != 'ChoiceType':
             raise TypeError('Present operator works only on CHOICE types')
-        elif op_name.lower() in ('abs', 'float', 'fix') and not basic.kind in (
-                'IntegerType', 'Integer32Type', 'RealType', 'NumericalType'):
+        elif op_name.lower() in ('abs', 'float', 'fix') and not is_numeric(basic):
             raise TypeError('"{}" operator needs a numerical parameter'.format(
                 op_name))
     elif op_name.lower() == 'power':
@@ -361,11 +376,9 @@ def fix_special_operators(op_name, expr_list, context):
             if expr.exprType is UNKNOWN_TYPE:
                 expr.exprType = find_variable(expr.value[0], context)
                 # XXX should change type to PrimVariable
-            if idx == 0 and not find_basic_type(expr.exprType).kind in (
-                    'IntegerType', 'Integer32Type', 'Numerical', 'RealType'):
+            if idx == 0 and not is_numeric(expr.exprType):
                 raise TypeError('First parameter of power must be numerical')
-            elif idx == 1 and not find_basic_type(expr.exprType).kind in (
-                    'IntegerType', 'Integer32Type'):
+            elif idx == 1 and not is_integer(expr.exprType):
                 raise TypeError('Second parameter of power must be integer')
     elif op_name.lower() in ('write', 'writeln'):
         for param in expr_list:
@@ -1158,7 +1171,7 @@ def neg_expression(root, context):
     expr, errors, warnings = unary_expression(root, context)
 
     basic = find_basic_type(expr.expr.exprType)
-    if not basic.kind in ('IntegerType', 'Integer32Type', 'RealType'):
+    if not is_numeric(basic):
         msg = 'Negative expressions can only be applied to numeric types'
         errors.append(error(root, msg))
         return expr, errors, warnings
