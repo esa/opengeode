@@ -797,7 +797,7 @@ def fix_expression_types(expr, context):
     if isinstance(expr, ogAST.ExprIn):
         return
 
-    if expr.right.is_raw == expr.left.is_raw == False:
+    if not expr.right.is_raw and not expr.left.is_raw:
         unknown = [uk_expr for uk_expr in expr.right, expr.left
                    if uk_expr.exprType == UNKNOWN_TYPE]
         if unknown:
@@ -855,17 +855,6 @@ def fix_expression_types(expr, context):
             check_expr.right = expr.right.value[det]
             fix_expression_types(check_expr, context)
             expr.right.value[det] = check_expr.right
- #  elif isinstance(expr.right, ogAST.PrimSequenceOf):
- #      asn_type = find_basic_type(expr.left.exprType).type
- #      for idx, elem in enumerate(expr.right.value):
- #          check_expr = ogAST.ExprAssign()
- #          check_expr.left = ogAST.PrimPath()
- #          check_expr.left.exprType = asn_type
- #          check_expr.right = elem
- #          fix_expression_types(check_expr, context)
- #          expr.right.value[idx] = check_expr.right
- #      # the type of the raw PrimSequenceOf can be set now
- #      expr.right.exprType.type = asn_type
 
     if expr.right.is_raw != expr.left.is_raw:
         check_type_compatibility(raw_expr, ref_type, context)
@@ -875,12 +864,6 @@ def fix_expression_types(expr, context):
             raw_expr.exprType = ref_type
     else:
         compare_types(expr.left.exprType, expr.right.exprType)
-
-    if isinstance(expr, ogAST.ExprAssign):
-        # Assignment with numerical value: check range
-        basic = find_basic_type(expr.left.exprType)
-        if basic.kind.startswith(('Integer', 'Real')):
-            check_range(basic, find_basic_type(expr.right.exprType))
 
 
 def expression_list(root, context):
@@ -3050,6 +3033,10 @@ def assign(root, context):
 
     try:
         fix_expression_types(expr, context)
+        # Assignment with numerical value: check range
+        basic = find_basic_type(expr.left.exprType)
+        if basic.kind.startswith(('Integer', 'Real')):
+            check_range(basic, find_basic_type(expr.right.exprType))
     except(AttributeError, TypeError) as err:
         errors.append('Types are incompatible in assignment: left (' +
             expr.left.inputString + ', type= ' +
