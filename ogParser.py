@@ -628,7 +628,7 @@ def check_type_compatibility(primary, typeRef, context):
                         # Compare the types for semantic equivalence
                         try:
                             compare_types(
-                                    primary.value[ufield].exprType, fd_data.type)
+                                  primary.value[ufield].exprType, fd_data.type)
                         except TypeError as err:
                             raise TypeError('Field ' + ufield +
                                         ' is not of the proper type, i.e. ' +
@@ -984,7 +984,8 @@ def unary_expression(root, context):
 def expression(root, context):
     ''' Expression analysis (e.g. 5+5*hello(world)!foo) '''
     logic = (lexer.OR, lexer.AND, lexer.XOR)
-    arithmetic = (lexer.PLUS, lexer.ASTERISK, lexer.DASH, lexer.DIV, lexer.MOD, lexer.REM)
+    arithmetic = (lexer.PLUS, lexer.ASTERISK, lexer.DASH,
+                  lexer.DIV, lexer.MOD, lexer.REM)
     relational = (lexer.EQ, lexer.NEQ, lexer.GT, lexer.GE, lexer.LT, lexer.LE)
 
     if root.type in logic:
@@ -1038,7 +1039,8 @@ def logic_expression(root, context):
         elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
             continue
         else:
-            msg = 'Bitwise operators only work with booleans and arrays of booleans'
+            msg = 'Bitwise operators only work with booleans '\
+                  'and arrays of booleans'
             errors.append(error(root, msg))
 
     # TODO: Is this correct?
@@ -1080,7 +1082,8 @@ def arithmetic_expression(root, context):
             attrs = {'Min': right.Min, 'Max': right.Max}
             expr.exprType = type('Mod', (basic,), attrs)
     except (ValueError, AttributeError):
-        msg = 'Check that all your numerical data types have a range constraint'
+        msg = 'Check that all your numerical data types '\
+              'have a range constraint'
         errors.append(error(root, msg))
 
     if root.type in (lexer.REM, lexer.MOD):
@@ -1138,10 +1141,12 @@ def in_expression(root, context):
         bool_expr.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
         if expr.right.value in [each.value for each in expr.left.value]:
             bool_expr.value = ['true']
-            warnings.append('Expression {} is always true'.format(expr.inputString))
+            warnings.append('Expression {} is always true'
+                            .format(expr.inputString))
         else:
             bool_expr.value = ['false']
-            warnings.append('Expression {} is always false'.format(expr.inputString))
+            warnings.append('Expression {} is always false'
+                            .format(expr.inputString))
         expr = bool_expr
 
     return expr, errors, warnings
@@ -1169,7 +1174,8 @@ def not_expression(root, context):
     elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
         expr.exprType = expr.expr.exprType
     else:
-        msg = 'Bitwise operators only work with booleans and arrays of booleans'
+        msg = 'Bitwise operators only work with booleans '\
+              'and arrays of booleans'
         errors.append(error(root, msg))
 
     return expr, errors, warnings
@@ -1189,7 +1195,8 @@ def neg_expression(root, context):
         attrs = {'Min': str(-float(basic.Max)), 'Max': str(-float(basic.Min))}
         expr.exprType = type('Neg', (basic,), attrs)
     except (ValueError, AttributeError):
-        msg = 'Check that all your numerical data types have a range constraint'
+        msg = 'Check that all your numerical data types '\
+              'have a range constraint'
         errors.append(error(root, msg))
 
     return expr, errors, warnings
@@ -1241,7 +1248,8 @@ def call_expression(root, context):
         if primary.children[0].type == lexer.VARIABLE:
             variable = primary.children[0]
             ident = variable.children[0].text.lower()
-            proc_list = [proc.inputString.lower() for proc in context.procedures]
+            proc_list = [proc.inputString.lower()
+                         for proc in context.procedures]
             if ident in (SPECIAL_OPERATORS.keys() + proc_list):
                 return primary_call(root, context)
 
@@ -1271,7 +1279,8 @@ def primary_call(root, context):
 
     ident = root.children[0].children[0].children[0].text.lower()
 
-    params, params_errors, param_warnings = expression_list(root.children[1], context)
+    params, params_errors, param_warnings = \
+                                expression_list(root.children[1], context)
     errors.extend(params_errors)
     warnings.extend(param_warnings)
 
@@ -1306,8 +1315,10 @@ def primary_call(root, context):
     elif ident == 'power':
         try:
             node.exprType = type('Power', (params_bty[0],), {
-                'Min': str(pow(float(params_bty[0].Min), float(params_bty[1].Min))),
-                'Max': str(pow(float(params_bty[0].Max), float(params_bty[1].Max)))
+                'Min': str(pow(float(params_bty[0].Min),
+                               float(params_bty[1].Min))),
+                'Max': str(pow(float(params_bty[0].Max),
+                               float(params_bty[1].Max)))
             })
         except OverflowError:
             errors.append(error(root, 'Result can exceeds 64-bits'))
@@ -1329,12 +1340,14 @@ def primary_index(root, context):
     node.inputString = get_input_string(root)
     node.tmpVar = tmp()
 
-    receiver, receiver_err, receiver_warn = expression(root.children[0], context)
+    receiver, receiver_err, receiver_warn = \
+                                expression(root.children[0], context)
     receiver_bty = find_basic_type(receiver.exprType)
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
 
-    params, params_errors, param_warnings = expression_list(root.children[1], context)
+    params, params_errors, param_warnings = \
+                                expression_list(root.children[1], context)
     errors.extend(params_errors)
     warnings.extend(param_warnings)
 
@@ -1357,18 +1370,21 @@ def primary_substring(root, context):
     node.inputString = get_input_string(root)
     node.tmpVar = tmp()
 
-    receiver, receiver_err, receiver_warn = expression(root.children[0], context)
+    receiver, receiver_err, receiver_warn = \
+                                    expression(root.children[0], context)
     receiver_bty = find_basic_type(receiver.exprType)
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
 
-    params, params_errors, param_warnings = expression_list(root.children[1], context)
+    params, params_errors, param_warnings = \
+                                    expression_list(root.children[1], context)
     errors.extend(params_errors)
     warnings.extend(param_warnings)
 
     node.value = [receiver, {'substring': params, 'tmpVar': tmp()}]
 
-    if receiver_bty.kind == 'SequenceOfType' or receiver_bty.kind.endswith('StringType'):
+    if receiver_bty.kind == 'SequenceOfType' or \
+            receiver_bty.kind.endswith('StringType'):
         node.exprType = receiver.exprType
     else:
         msg = 'Element {} cannot have a substring'.format(receiver)
@@ -1386,7 +1402,8 @@ def selector_expression(root, context):
     node.inputString = get_input_string(root)
     node.tmpVar = tmp()
 
-    receiver, receiver_err, receiver_warn = expression(root.children[0], context)
+    receiver, receiver_err, receiver_warn = \
+                                expression(root.children[0], context)
     receiver_bty = find_basic_type(receiver.exprType)
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
@@ -1485,7 +1502,8 @@ def primary(root, context):
         prim.value = []
         for elem in root.getChildren():
             # SEQUENCE OF elements cannot have fieldnames/indexes
-            prim_elem, prim_elem_errors, prim_elem_warnings = primary(elem, context)
+            prim_elem, prim_elem_errors, prim_elem_warnings = \
+                                                        primary(elem, context)
             errors += prim_elem_errors
             warnings += prim_elem_warnings
             prim_elem.inputString = get_input_string(elem)
@@ -1503,7 +1521,8 @@ def primary(root, context):
         warnings.append(warning(root, 'Bit string literal not supported yet'))
     elif root.type == lexer.OCTSTR:
         prim = ogAST.PrimOctetStringLiteral()
-        warnings.append(warning(root, 'Octet string literal not supported yet'))
+        warnings.append(
+                       warning(root, 'Octet string literal not supported yet'))
     else:
         # TODO: return error message
         raise NotImplementedError
@@ -1640,8 +1659,7 @@ def composite_state(root, parent=None, context=None):
     # Gather the list of states defined in the composite state
     # and map a list of transitionsi to each state
     comp.mapping = {name: [] for name in get_state_list(root)}
-    inner_composite = []
-    states = []
+    inner_composite, states, floatings, starts = [], [], [], []
     for child in root.getChildren():
         if child.type == lexer.ID:
             comp.line = child.getLine()
@@ -1678,21 +1696,9 @@ def composite_state(root, parent=None, context=None):
         elif child.type == lexer.STATE:
             states.append(child)
         elif child.type == lexer.FLOATING_LABEL:
-            lab, err, warn = floating_label(child, parent=None, context=comp)
-            errors.extend(err)
-            warnings.extend(warn)
-            comp.content.floating_labels.append(lab)
+            floatings.append(child)
         elif child.type == lexer.START:
-            # START transition (fills the mapping structure)
-            st, err, warn = start(child, context=comp)
-            errors.extend(err)
-            warnings.extend(warn)
-            if st.inputString:
-                comp.content.named_start.append(st)
-            elif not comp.content.start:
-                comp.content.start = st
-            else:
-                errors.append('Only one unnamed START transition is allowed')
+            starts.append(child)
         else:
             warnings.append(
                     'Unsupported construct in nested state, type: ' +
@@ -1706,6 +1712,23 @@ def composite_state(root, parent=None, context=None):
         errors.extend(err)
         warnings.extend(warn)
         comp.composite_states.append(inner)
+    # Parse other elements after the nested states
+    for each in starts:
+         # START transition (fills the mapping structure)
+        st, err, warn = start(each, context=comp)
+        errors.extend(err)
+        warnings.extend(warn)
+        if st.inputString:
+            comp.content.named_start.append(st)
+        elif not comp.content.start:
+            comp.content.start = st
+        else:
+            errors.append('Only one unnamed START transition is allowed')
+    for each in floatings:
+        lab, err, warn = floating_label(each, parent=None, context=comp)
+        errors.extend(err)
+        warnings.extend(warn)
+        comp.content.floating_labels.append(lab)
     for each in states:
         # And parse the states after inner states to make sure all CONNECTS
         # are properly defined.
@@ -2444,8 +2467,8 @@ def state(root, parent, context):
                     asterisk_input = inp
         elif child.type == lexer.CONNECT:
             if asterisk_state or len(state_def.statelist) != 1 \
-                    or (state_def.statelist[0].lower()
-                    not in (comp.statename for comp in context.composite_states)):
+                 or (state_def.statelist[0].lower()
+                 not in (comp.statename for comp in context.composite_states)):
                 errors.append('State {} is not a composite state and cannot '
                               'be followed by a connect statement'
                               .format(state_def.statelist[0]))
