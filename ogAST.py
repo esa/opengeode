@@ -47,9 +47,7 @@ class Expression(object):
         self.inputString = inputString
         self.line = line
         self.charPositionInLine = charPositionInLine
-        # left and right are of type Expression (absent for primaries)
-        self.left = None
-        self.right = None
+
         # exprType is an ASN.1 type (as exported by asn1scc)
         self.exprType = None
         # Hint for code generators: intermediate storage identifier
@@ -180,37 +178,24 @@ class Primary(Expression):
                 l=self.line, c=self.charPositionInLine)
 
 
-# Subclasses of Primary - never use Primary directly
-class PrimPath(Primary):
-    ''' PrimPath is a list of elements needed to identify a value
-        For example, "i!j!k(5)" is stored as:
-        [ 'i', 'j', 'k', {'index':[Expression list]}]
-           (in that case, 5 is an index)
-        other example: "hello(world)" ->
-             ['hello', {'procParams':[Expression list]'}]
-        (in that case, hello is an operator and world is its parameter)
-    '''
+class PrimCall(Primary):
     is_raw = False
 
 
-class PrimCall(PrimPath):
-    pass
+class PrimIndex(Primary):
+    is_raw = False
 
 
-class PrimIndex(PrimPath):
-    pass
+class PrimSubstring(Primary):
+    is_raw = False
 
 
-class PrimSubstring(PrimPath):
-    pass
+class PrimSelector(Primary):
+    is_raw = False
 
 
-class PrimSelector(PrimPath):
-    pass
-
-
-class PrimVariable(PrimPath):
-    pass
+class PrimVariable(Primary):
+    is_raw = False
 
 
 class PrimFPAR(PrimVariable):

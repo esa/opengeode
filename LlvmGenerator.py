@@ -92,7 +92,7 @@ def _process(process):
     # Clear scope
     LLVM['named_values'].clear()
     # Create the function name and type
-    funct_name = str(process_name) + '_startup' 
+    funct_name = str(process_name) + '_startup'
     funct_type = core.Type.function(core.Type.void(), [])
     # Create a function object
     function = core.Function.new(LLVM['module'], funct_type, funct_name)
@@ -163,20 +163,6 @@ def expression(expr):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
-    pass
-
-
-@expression.register(ogAST.PrimPath)
-def _prim_path(primaryId):
-    '''
-        Return the string of an element list (path)
-        cases: a => 'l_a' (reference to a variable)
-        a_timer => 'a_timer'  (reference to a timer)
-        a!b => a.b (field of a structure)
-        a!b if a is a CHOICE => TypeOfa_b_get(a)
-        a(Expression) => a(ExpressionSolver) (array index)
-        Expression can be complex (if-then-else-fi..)
-    '''
     pass
 
 

@@ -307,7 +307,7 @@ def is_constant(var):
         return False
     if isinstance(var, ogAST.PrimConstant):
         return True
-    if DV and isinstance(var, ogAST.PrimPath):
+    if DV and isinstance(var, ogAST.PrimVariable):
         for mod in DV.asn1Modules:
             for constant in DV.exportedVariables[mod]:
                 if(constant.lower() == var.value[0].lower().replace('_', '-')):
@@ -455,7 +455,7 @@ def check_and_fix_op_params(op_name, expr_list, context):
             dataview_type = UNKNOWN_TYPE
 
         expr = ogAST.ExprAssign()
-        expr.left = ogAST.PrimPath()
+        expr.left = ogAST.PrimVariable()
         expr.left.exprType = dataview_type
         expr.right = param
         fix_expression_types(expr, context)
@@ -786,7 +786,7 @@ def fix_expression_types(expr, context):
                 asn_type = asn_type.type
                 for idx, elem in enumerate(value.value):
                     check_expr = ogAST.ExprAssign()
-                    check_expr.left = ogAST.PrimPath()
+                    check_expr.left = ogAST.PrimVariable()
                     check_expr.left.exprType = asn_type
                     check_expr.right = elem
                     fix_expression_types(check_expr, context)
@@ -820,7 +820,7 @@ def fix_expression_types(expr, context):
                 except AttributeError:
                     raise TypeError('Field not found: ' + field)
                 check_expr = ogAST.ExprAssign()
-                check_expr.left = ogAST.PrimPath()
+                check_expr.left = ogAST.PrimVariable()
                 check_expr.left.exprType = expected_type
                 check_expr.right = fd_expr
                 fix_expression_types(check_expr, context)
@@ -841,7 +841,7 @@ def fix_expression_types(expr, context):
             except AttributeError:
                 raise TypeError('Field not found in CHOICE: ' + field)
             check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimPath()
+            check_expr.left = ogAST.PrimVariable()
             check_expr.left.exprType = expected_type
             check_expr.right = expr.right.value['value']
             fix_expression_types(check_expr, context)
@@ -850,7 +850,7 @@ def fix_expression_types(expr, context):
         for det in ('then', 'else'):
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimPath()
+            check_expr.left = ogAST.PrimVariable()
             check_expr.left.exprType = expr.left.exprType
             check_expr.right = expr.right.value[det]
             fix_expression_types(check_expr, context)
@@ -1551,7 +1551,7 @@ def variables(root, ta_ast, context):
             errors.extend(err)
             warnings.extend(warn)
             expr = ogAST.ExprAssign()
-            expr.left = ogAST.PrimPath()
+            expr.left = ogAST.PrimVariable()
             expr.left.inputString = var[-1]
             expr.left.exprType = asn1_sort
             expr.right = def_value
@@ -1810,7 +1810,7 @@ def procedure(root, parent=None, context=None):
                           + proc.inputString)
         elif proc.return_type and each.return_expr:
             check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimPath()
+            check_expr.left = ogAST.PrimVariable()
             check_expr.left.exprType = proc.return_type
             check_expr.right = each.return_expr
             try:
