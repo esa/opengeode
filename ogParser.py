@@ -271,6 +271,14 @@ def warning(root, msg):
     return '{} - line {}'.format(msg, root.getLine())
 
 
+def tmp():
+    ''' Return a temporary variable name '''
+    global TMPVAR
+    varname = TMPVAR
+    TMPVAR += 1
+    return varname
+
+
 def get_state_list(process_root):
     ''' Return the list of states of a process '''
     # 1) get all STATE statements
@@ -905,31 +913,18 @@ def primary_variable(root, context):
     return prim, errors, warnings
 
 
-def tmp():
-    ''' Return a temporary variable name '''
-    global TMPVAR
-    varname = TMPVAR
-    TMPVAR += 1
-    return varname
+def binary_expression(root, context):
+    ''' Binary expression analysys '''
+    errors, warnings = [], []
 
-
-def expr_ast(root):
-    ''' Create an AST node from a Parse Tree node '''
-    Node = EXPR_NODE[root.type]
-    node = Node(
+    ExprNode = EXPR_NODE[root.type]
+    expr = ExprNode(
         get_input_string(root),
         root.getLine(),
         root.getCharPositionInLine()
     )
-    node.exprType = UNKNOWN_TYPE
-    node.tmpVar = tmp()
-
-    return node
-
-
-def binary_expression(root, context):
-    ''' Binary expression analysys '''
-    expr, errors, warnings = expr_ast(root), [], []
+    expr.exprType = UNKNOWN_TYPE
+    expr.tmpVar = tmp()
 
     left, right = root.children
     expr.left, err_left, warn_left = expression(left, context)
@@ -944,10 +939,16 @@ def binary_expression(root, context):
 
 def unary_expression(root, context):
     ''' Unary expression analysys '''
-    expr = expr_ast(root)
+    ExprNode = EXPR_NODE[root.type]
+    expr = ExprNode(
+        get_input_string(root),
+        root.getLine(),
+        root.getCharPositionInLine()
+    )
+    expr.exprType = UNKNOWN_TYPE
+    expr.tmpVar = tmp()
 
-    child = root.children[0]
-    expr.expr, errors, warnings = expression(child, context)
+    expr.expr, errors, warnings = expression(root.children[0], context)
 
     return expr, errors, warnings
 
@@ -1178,7 +1179,15 @@ def neg_expression(root, context):
 
 def if_then_else_expression(root, context):
     ''' If Then Else expression analysis '''
-    expr, errors, warnings = expr_ast(root), [], []
+    errors, warnings = [], []
+
+    expr = ogAST.PrimIfThenElse(
+        get_input_string(root),
+        root.getLine(),
+        root.getCharPositionInLine()
+    )
+    expr.exprType = UNKNOWN_TYPE
+    expr.tmpVar = tmp()
 
     if_part, then_part, else_part = root.getChildren()
 
