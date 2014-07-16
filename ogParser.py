@@ -131,6 +131,16 @@ type_name = lambda t: \
 types = lambda: getattr(DV, 'types', {})
 
 
+def is_numeric(ty):
+    ''' Return true if a type is numeric '''
+    return find_basic_type(ty).kind in (
+        'IntegerType',
+        'Integer32Type',
+        'Numerical',
+        'RealType'
+    )
+
+
 def sdl_to_asn1(sort):
     '''
         Convert case insensitive type reference to the actual type as found
@@ -1065,7 +1075,12 @@ def relational_expression(root, context):
     ''' Relational expression analysys '''
     expr, errors, warnings = binary_expression(root, context)
 
-    # TODO: Check types
+    if root.type not in (lexer.EQ, lexer.NEQ):
+        for ty in (expr.left.exprType, expr.right.exprType):
+            if not is_numeric(ty):
+                errors.append(error(root,
+                    'Operands in relational expressions must be numerical'))
+                break
 
     expr.exprType = BOOLEAN
 
