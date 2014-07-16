@@ -327,6 +327,7 @@ def _terminator(ast, scene, parent, states):
                 for each in chain(state_ast.inputs, state_ast.connects):
                     render(each, scene=scene, parent=symbol, states=states)
                 break
+        symbol.nested_scene = ast.composite or ogAST.CompositeState()
     elif ast.kind == 'join':
         symbol = sdlSymbols.Join(parent, ast)
     elif ast.kind in ('return', 'stop'):

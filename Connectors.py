@@ -236,11 +236,29 @@ class CommentConnection(Connection):
 
 class Channel(Connection):
     ''' Subclass of Connection used to draw channels between processes '''
+    in_sig = out_sig = None
     def __init__(self, process):
         ''' Set generic parameters from Connection class '''
         super(Channel, self).__init__(process, process)
-        self.text_label = None
+        self.label_in = QGraphicsTextItem('[]', parent=self)
+        self.label_out = QGraphicsTextItem('[]', parent=self)
+        if not Channel.in_sig:
+            # keep at class level as long as only one process is supported
+            # when copy-pasting a process the challel in/out signal lists
+            # are not parsed. Workaround is to keep the list "global"
+            # to allow a copy of both process and channel
+            # Needed for the image exporter, that copies the scene to a
+            # temporary one
+            Channel.in_sig = '[{}]'.format(',\n'.join(sig['name']
+                                   for sig in process.input_signals))
+            Channel.out_sig = '[{}]'.format(',\n'.join(sig['name']
+                                    for sig in process.output_signals))
+        font = QFont('Ubuntu', pointSize=8)
+        for each in (self.label_in, self.label_out):
+            each.setFont(font)
+            each.show()
         self.process = process
+        self.reshape()
 
     @property
     def start_point(self):
@@ -258,9 +276,23 @@ class Channel(Connection):
                            view.viewport().geometry()).boundingRect().topLeft()
             scene_pos_x = self.mapFromScene(view_pos).x()
             return QPointF(scene_pos_x, self.start_point.y())
-        except IndexError:
+        except (IndexError, AttributeError):
             # In case there is no view (e.g. Export PNG from cmd line)
-            return QPointF(self.start_point.x() - 50, self.start_point.y())
+            return QPointF(self.start_point.x() - 250, self.start_point.y())
+
+    def reshape(self):
+        ''' Redefine shape function to add the text areas '''
+        super(Channel, self).reshape()
+
+        self.label_in.setPlainText(self.in_sig)
+        self.label_out.setPlainText(self.out_sig)
+
+        width_in = self.label_in.boundingRect().width()
+
+        self.label_in.setX(self.start_point.x() - width_in)
+        self.label_in.setY(self.start_point.y() + 5)
+        self.label_out.setX(self.end_point.x() + 10)
+        self.label_out.setY(self.end_point.y() + 5)
 
 
 class Controlpoint(QGraphicsPathItem, object):

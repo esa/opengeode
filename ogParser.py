@@ -28,6 +28,8 @@ __author__ = 'Maxime Perrotin'
 
 import sys
 import os
+import re
+import fnmatch
 import logging
 import traceback
 from itertools import chain, permutations
@@ -1712,6 +1714,13 @@ def composite_state(root, parent=None, context=None):
         errors.extend(err)
         warnings.extend(warn)
         comp.content.states.append(newstate)
+    # Post-processing: check that all NEXTSTATEs have a corresponding STATE
+    for ns in [t.inputString.lower() for t in comp.terminators
+            if t.kind == 'next_state']:
+        if not ns in [s.lower() for s in
+                comp.mapping.viewkeys()] + ['-']:
+            errors.append('In composite state "{}": missing definition '
+                         'of substate "{}"'.format(comp.statename, ns.upper()))
     return comp, errors, warnings
 
 
@@ -2271,6 +2280,8 @@ def process_definition(root, parent=None, context=None):
             process.composite_states.append(comp)
         elif child.type == lexer.REFERENCED:
             process.referenced = True
+        elif child.type == lexer.COMMENT:
+            process.comment, _, _ = end(child)
         else:
             warnings.append('Unsupported process definition child: ' +
                              sdl92Parser.tokenNames[child.type] +
@@ -2838,8 +2849,10 @@ def decision(root, parent, context):
 
 
 def nextstate(root, context):
-    ''' Parse a NEXTSTATE [VIA State_Entry_Point] '''
+    ''' Parse a NEXTSTATE [VIA State_Entry_Point] - detect various kinds of
+        errors when trying to enter a nested state '''
     next_state_id, via, entrypoint = '', None, None
+    errors = []
     for child in root.getChildren():
         if child.type == lexer.ID:
             next_state_id = child.text
@@ -2855,25 +2868,34 @@ def nextstate(root, context):
                                   if comp.statename.lower()
                                                 == next_state_id.lower())
                 except ValueError:
-                    raise TypeError('State {} is not a composite state'
+                    errors.append('State {} is not a composite state'
                                     .format(next_state_id))
                 else:
                     if entrypoint.lower() not in composite.state_entrypoints:
-                        raise TypeError('State {s} has no "{p}" entrypoint'
-                                        .format(s=next_state_id, p=entrypoint))
+                        errors.append('State {s} has no "{p}" entrypoint'
+                                       .format(s=next_state_id, p=entrypoint))
                     for each in composite.content.named_start:
                         if each.inputString == entrypoint.lower() + '_START':
                             break
                     else:
-                        raise TypeError('Entrypoint {p} in state {s} is '
-                                        'declared but not defined'.format
-                                        (s=next_state_id, p=entrypoint))
+                        errors.append('Entrypoint {p} in state {s} is '
+                                      'declared but not defined'.format
+                                      (s=next_state_id, p=entrypoint))
             else:
-                raise TypeError('"History" NEXTSTATE'
-                                 ' cannot have a "via" clause')
+                errors.append('"History" NEXTSTATE cannot have a "via" clause')
         else:
-            raise TypeError('NEXTSTATE undefined construct')
-    return next_state_id, via, entrypoint
+            errors.append('NEXTSTATE undefined construct')
+        if not via:
+            # check that if the nextstate is nested, it has a START symbol
+            try:
+                composite, = (comp for comp in context.composite_states
+                          if comp.statename.lower() == next_state_id.lower())
+                if not composite.content.start:
+                    errors.append('Composite state "{}" has no unnamed '
+                                  'START symbol'.format(composite.statename))
+            except ValueError:
+                pass
+    return next_state_id, via, entrypoint, errors
 
 
 def terminator_statement(root, parent, context):
@@ -2895,15 +2917,21 @@ def terminator_statement(root, parent, context):
             lab.terminators = [t]
         elif term.type == lexer.NEXTSTATE:
             t.kind = 'next_state'
-            try:
-                t.inputString, t.via, t.entrypoint = nextstate(term, context)
-            except TypeError as err:
-                errors.append(str(err))
+            t.inputString, t.via, t.entrypoint, err = nextstate(term, context)
+            if err:
+                errors.extend(err)
             t.line = term.getChild(0).getLine()
             t.charPositionInLine = term.getChild(0).getCharPositionInLine()
             # Add next state infos at process level
             # Used in rendering backends to merge a NEXTSTATE with a STATE
             context.terminators.append(t)
+            # post-processing: if nextatate is nested, add link to the content
+            # (normally handled at state level, but if state is not defined
+            # standalone, the nextstate must hold the composite content)
+            if t.inputString != '-':
+                for each in context.composite_states:
+                    if each.statename.lower() == t.inputString.lower():
+                        t.composite = each
         elif term.type == lexer.JOIN:
             t.kind = 'join'
             t.inputString = term.getChild(0).toString()
@@ -3048,7 +3076,8 @@ def assign(root, context):
             expr.left.inputString + ', type= ' +
             type_name(expr.left.exprType) + '), right (' +
             expr.right.inputString + ', type= ' +
-            type_name(expr.right.exprType) + ') ' + str(err))
+            (type_name(expr.right.exprType) 
+                if expr.right.exprType else 'Unknown') + ') ' + str(err))
     else:
         expr.right.exprType = expr.left.exprType
 
@@ -3281,12 +3310,20 @@ def pr_file(root):
         LOG.debug('USE clause')
         # USE clauses can contain a CIF comment with the ASN.1 filename
         use_clause_subs = child.getChildren()
+        asn1_filename = None
         for clause in use_clause_subs:
             if clause.type == lexer.ASN1:
                 asn1_filename = clause.getChild(0).text[1:-1]
                 ast.asn1_filenames.append(asn1_filename)
             else:
                 ast.use_clauses.append(clause.text)
+#       if not asn1_filename:
+#           # Look for case insentitive pr file and add it to AST
+#           search = fnmatch.translate(clause.text + '.pr')
+#           searchobj = re.compile(search, re.IGNORECASE)
+#           for each in os.listdir('.'):
+#               if searchobj.match(each):
+#                   print 'found', each
         try:
             DV = parse_asn1(tuple(ast.asn1_filenames),
                             ast_version=ASN1.UniqueEnumeratedNames,
@@ -3299,6 +3336,7 @@ def pr_file(root):
             # Can happen if DataView.py is not there
             LOG.info('USE Clause did not contain ASN.1 filename')
             LOG.debug(str(err))
+
     for child in systems:
         LOG.debug('found SYSTEM')
         system, err, warn = system_definition(child, parent=ast)

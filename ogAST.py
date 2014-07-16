@@ -456,6 +456,8 @@ class Terminator(object):
         # There can be several if terminator follows a floating label
         # Note, this field is updated by the Helper.flatten function
         self.possible_states = []
+        # optional composite state content (type CompositeState)
+        self.composite = None
 
     def trace(self):
         ''' Debug output for terminators '''
@@ -783,7 +785,8 @@ class Process(object):
         self.global_variables = {}
         self.global_timers = []
         # Set default coordinates and width/height
-        self.pos_x = self.pos_y = 150
+        self.pos_x = 250
+        self.pos_y = 150
         self.width = 150
         self.height = 75
         # Optional hyperlink
