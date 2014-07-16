@@ -934,6 +934,11 @@ def binary_expression(root, context):
     errors.extend(err_right)
     warnings.extend(warn_right)
 
+    try:
+        fix_expression_types(expr, context)
+    except (AttributeError, TypeError) as err:
+        errors.append(error(root, str(err)))
+
     return expr, errors, warnings
 
 
@@ -1002,11 +1007,6 @@ def logic_expression(root, context):
     expr, errors, warnings = binary_expression(root, context)
     expr.shortcircuit = shortcircuit
 
-    try:
-        fix_expression_types(expr, context)
-    except (AttributeError, TypeError) as err:
-        errors.append(error(root, str(err)))
-
     left_bty = find_basic_type(expr.left.exprType)
     right_bty = find_basic_type(expr.right.exprType)
     for bty in left_bty, right_bty:
@@ -1030,11 +1030,6 @@ def logic_expression(root, context):
 def arithmetic_expression(root, context):
     ''' Arithmetic expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
-
-    try:
-        fix_expression_types(expr, context)
-    except (AttributeError, TypeError) as err:
-        errors.append(error(root, str(err)))
 
     # Expressions returning a numerical type must have their range defined
     # accordingly with the kind of opration used between operand:
@@ -1072,10 +1067,7 @@ def relational_expression(root, context):
     ''' Relational expression analysys '''
     expr, errors, warnings = binary_expression(root, context)
 
-    try:
-        fix_expression_types(expr, context)
-    except (AttributeError, TypeError) as err:
-        errors.append(error(root, str(err)))
+    # TODO: Check types
 
     expr.exprType = BOOLEAN
 
@@ -1089,11 +1081,6 @@ def in_expression(root, context):
 
     expr, errors, warnings = binary_expression(root, context)
     expr.exprType = BOOLEAN
-
-    try:
-        fix_expression_types(expr, context)
-    except (AttributeError, TypeError) as err:
-        errors.append(error(root, str(err)))
 
     # check that left part is a SEQUENCE OF or a string
     container_basic_type = find_basic_type(expr.left.exprType)
@@ -1129,13 +1116,9 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    try:
-        fix_expression_types(expr, context)
-    except (AttributeError, TypeError) as err:
-        errors.append(error(root, str(err)))
+    # TODO: Check types
 
     expr.exprType = expr.left.exprType
-
     return expr, errors, warnings
 
 
