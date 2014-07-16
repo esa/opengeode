@@ -1081,6 +1081,13 @@ def arithmetic_expression(root, context):
         msg = 'Check that all your numerical data types have a range constraint'
         errors.append(error(root, msg))
 
+    if root.type in (lexer.REM, lexer.MOD):
+        for ty in (expr.left.exprType, expr.right.exprType):
+            if not is_integer(ty):
+                msg = 'Mod/Rem expressions can only applied to Integer types'
+                errors.append(error(root, msg))
+                break
+
     return expr, errors, warnings
 
 
