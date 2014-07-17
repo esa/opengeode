@@ -1056,7 +1056,62 @@ def _logical(expr):
 @expression.register(ogAST.ExprNot)
 def _not(expr):
     ''' Generate the code for a not expression '''
-    return ctx.builder.not_(expression(expr.expr))
+    bty = find_basic_type(expr.exprType)
+
+    if bty.kind == 'BooleanType':
+        return ctx.builder.not_(expression(expr.expr))
+
+    elif bty.kind == 'SequenceOfType':
+        func = ctx.builder.basic_block.function
+
+        not_block = func.append_basic_block('not:not')
+        next_block = func.append_basic_block('not:next')
+        end_block = func.append_basic_block('not:end')
+
+        idx_ptr = ctx.builder.alloca(ctx.i32)
+        ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
+
+        struct_ptr = expression(expr.expr)
+        res_struct_ptr = ctx.builder.alloca(struct_ptr.type.pointee)
+
+        if bty.Min != bty.Max:
+            len_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
+            len_val = ctx.builder.load(len_ptr)
+            res_len_ptr = ctx.builder.gep(res_struct_ptr, [ctx.zero, ctx.zero])
+            ctx.builder.store(len_val, res_len_ptr)
+        else:
+            array_ty = struct_ptr.type.pointee.elements[0]
+            len_val = core.Constant.int(ctx.i32, array_ty.count)
+
+        ctx.builder.branch(not_block)
+
+        ctx.builder.position_at_end(not_block)
+        idx_val = ctx.builder.load(idx_ptr)
+
+        if bty.Min != bty.Max:
+            elem_idxs = [ctx.zero, ctx.one, idx_val]
+        else:
+            elem_idxs = [ctx.zero, ctx.zero, idx_val]
+
+        elem_ptr = ctx.builder.gep(struct_ptr, elem_idxs)
+        elem_val = ctx.builder.load(elem_ptr)
+        res_elem_val = ctx.builder.not_(elem_val)
+        res_elem_ptr = ctx.builder.gep(res_struct_ptr, elem_idxs)
+        ctx.builder.store(res_elem_val, res_elem_ptr)
+
+        ctx.builder.branch(next_block)
+
+        ctx.builder.position_at_end(next_block)
+        idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
+        ctx.builder.store(idx_tmp_val, idx_ptr)
+        end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, len_val)
+        ctx.builder.cbranch(end_cond_val, end_block, not_block)
+
+        ctx.builder.position_at_end(end_block)
+        return res_struct_ptr
+
+    else:
+        raise NotImplementedError
 
 
 @expression.register(ogAST.ExprAppend)
