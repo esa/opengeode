@@ -380,7 +380,6 @@ def _rename_expr(ast, from_name, to_name):
     rename_everything(ast.right, from_name, to_name)
 
 
-@rename_everything.register(ogAST.PrimPath)
 @rename_everything.register(ogAST.PrimVariable)
 def _rename_path(ast, from_name, to_name):
     ''' Ultimate seek point for the renaming: primary path/variables '''

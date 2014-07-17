@@ -18,113 +18,115 @@ options {
 }
 
 tokens {
-        FOR;
-        RANGE;
-        TIMER;
-        LABEL;
-        IFTHENELSE;
-        COMMENT;
-        VALUE;
-        CHOICE;
-        SEQUENCE;
-        SEQOF;
-        EMPTYSTR;
-        FLOAT;
-        FLOAT2;
-        BITSTR;
-        OCTSTR;
-        STRING;
-        EXPRESSION;
-        DIGITS;
-        ENDTEXT;
-        PROCESS;
-        NUMBER_OF_INSTANCES;
-        TRANSITION;
-        STATE;
-        INPUT_NONE;
-        SAVE;
-        PROVIDED;
-        SIGNAL_LIST;
-        INPUT;
-        STIMULUS;
         ACTION;
-        PROCEDURE_CALL;
-        PROCEDURE;
-        SET;
-        RESET;
-        EXPORT;
-        DECISION;
+        ALL;
         ALTERNATIVE;
         ANSWER;
-        CLOSED_RANGE;
-        OPEN_RANGE;
-        CONSTANT;
-        ELSE;
-        ALL;
-        TO;
-        VIA;
-        VIAPATH;
-        OUTPUT;
-        OUTPUT_BODY;
-        ASSIGN;
-        TEXT;
-        NEXTSTATE;
-        JOIN;
-        TERMINATOR;
-        RETURN;
-        PROCEDURE_NAME;
-        PARAMS;
-        FIELD_NAME;
-        PRIMARY;
-        PRIMARY_ID;
-        IF;
-        THEN;
-        FI;
-        CIF;
-        HYPERLINK;
-        STATELIST;
-        INPUTLIST;
-        INFORMAL_TEXT;
-        VARIABLE;
-        VARIABLES;
-        SORT;
-        DCL;
-        NEG;
-        GROUND;
-        TEXTAREA;
-        TEXTAREA_CONTENT;
-        TASK;
-        TASK_BODY;
-        QUESTION;
-        FPAR;
-        PARAM;
-        INOUT;
-        EXTERNAL;
-        IN;
-        STOP;
-        SYSTEM;
-        USE;
-        SIGNAL;
-        CHANNEL;
-        CONNECTION;
-        ROUTE;
-        BLOCK;
-        PARAMNAMES;
+        ARRAY;
         ASN1;
-        FLOATING_LABEL;
+        ASSIGN;
+        BITSTR;
+        BLOCK;
+        CHANNEL;
+        CHOICE;
+        CIF;
+        CLOSED_RANGE;
+        COMMENT;
         COMPOSITE_STATE;
         CONNECT;
-        SYNTYPE;
-        ENDSYNTYPE;
-        NEWTYPE;
-        ENDNEWTYPE;
-        ARRAY;
+        CONNECTION;
+        CONSTANT;
         CONSTANTS;
-        STRUCT;
-        FIELDS;
+        DCL;
+        DECISION;
+        DIGITS;
+        ELSE;
+        EMPTYSTR;
+        ENDNEWTYPE;
+        ENDSYNTYPE;
+        ENDTEXT;
+        EXPORT;
+        EXPRESSION;
+        EXTERNAL;
+        FI;
         FIELD;
+        FIELD_NAME;
+        FIELDS;
+        FLOAT2;
+        FLOAT;
+        FLOATING_LABEL;
+        FOR;
+        FPAR;
+        GROUND;
+        HYPERLINK;
+        IF;
+        IFTHENELSE;
+        IN;
+        INFORMAL_TEXT;
+        INOUT;
+        INPUT;
+        INPUT_NONE;
+        INPUTLIST;
+        JOIN;
+        LABEL;
+        LITERAL;
+        NEG;
+        NEWTYPE;
+        NEXTSTATE;
+        NUMBER_OF_INSTANCES;
+        OCTSTR;
+        OPEN_RANGE;
+        OUTPUT;
+        OUTPUT_BODY;
+        PARAM;
+        PARAMNAMES;
+        PARAMS;
+        PAREN;
+        PRIMARY;
+        PROCEDURE;
+        PROCEDURE_CALL;
+        PROCEDURE_NAME;
+        PROCESS;
+        PROVIDED;
+        QUESTION;
+        RANGE;
+        RESET;
+        RETURN;
+        ROUTE;
+        SAVE;
+        SELECTOR;
+        SEQOF;
+        SEQUENCE;
+        SET;
+        SIGNAL;
+        SIGNAL_LIST;
+        SORT;
+        STATE;
+        STATELIST;
+        STIMULUS;
+        STOP;
+        STRING;
+        STRUCT;
         SYNONYM;
         SYNONYM_LIST;
+        SYNTYPE;
+        SYSTEM;
+        TASK;
+        TASK_BODY;
+        TERMINATOR;
+        TEXT;
+        TEXTAREA;
+        TEXTAREA_CONTENT;
+        THEN;
+        TIMER;
+        TO;
+        TRANSITION;
+        USE;
+        VALUE;
+        VARIABLE;
+        VARIABLES;
+        VIA;
+        VIAPATH;
 }
 
 
@@ -218,7 +220,7 @@ process_definition
                 (text_area | procedure | composite_state)*
                 processBody? ENDPROCESS process_id?
                 end
-        ->      ^(PROCESS cif? process_id number_of_instances?
+        ->      ^(PROCESS cif? process_id number_of_instances? end?
                 text_area* procedure* composite_state* processBody?);
 
 
@@ -770,7 +772,7 @@ task_body
 
 // SDL extension - FOR loop in TASKs
 forloop
-        :       FOR variable_id IN (variable | range) ':'
+        :       FOR variable_id IN (range | variable) ':'
                 transition?
                 ENDFOR
         ->      ^(FOR variable_id variable? range? transition?);
@@ -789,93 +791,90 @@ assignement_statement
 
 // Variable: covers eg. toto(5)(4)!titi(3)!tutu!yoyo
 variable
-        :       variable_id primary_params*
-        ->      ^(VARIABLE variable_id primary_params*);
+        :       postfix_expression
+        |       ID                     ->  ^(VARIABLE ID);
+
 
 field_selection
         :       (('!'|'.') field_name);
 
+
 expression
-        :       operand0 ( IMPLIES^ operand0)* ;
+        :       binary_expression;
 
-operand0
-        :       operand1 (( (OR^ ELSE?) | XOR^ ) operand1)*;
 
-operand1
-        :       operand2 ( AND^ THEN? operand2)*;
+binary_expression
+        :       binary_expression_0 ( IMPLIES^ binary_expression_0)*;
+binary_expression_0
+        :       binary_expression_1 (( (OR^ ELSE?) | XOR^ ) binary_expression_1)*;
+binary_expression_1
+        :       binary_expression_2 ( AND^ THEN? binary_expression_2)*;
+binary_expression_2
+        :       binary_expression_3 (( EQ^ | NEQ^ | GT^ | GE^ | LT^ | LE^ | IN^ ) binary_expression_3)*;
+binary_expression_3
+        :       binary_expression_4 (( PLUS^ | DASH^ | APPEND^ ) binary_expression_4)*;
+binary_expression_4
+        :       unary_expression (( ASTERISK^ | DIV^ | MOD^ | REM^ ) unary_expression)*;
 
-operand2
-        :       operand3 (( EQ^ | NEQ^ | GT^ | GE^ | LT^ | LE^ | IN^ ) operand3)*;
 
-operand3
-        :       operand4 (( PLUS^ | DASH^ | APPEND^ ) operand4)*;
+unary_expression
+        :       postfix_expression
+        |       primary_expression
+        |       NOT^ unary_expression
+        |       DASH unary_expression -> ^(NEG unary_expression)
+        ;
 
-operand4
-        :       operand5 (( ASTERISK^ | DIV^ | MOD^ | REM^ ) operand5)*;
 
-operand5
-        :       primary -> ^(PRIMARY primary)
-        |       NOT^ operand5
-        |       DASH operand5 -> ^(NEG operand5);
+postfix_expression
+        :       (ID -> ^(PRIMARY ^(VARIABLE ID)))
+                (   '(' params=expression_list ')' -> ^(CALL $postfix_expression ^(PARAMS $params))
+                |   '!' field_name  -> ^(SELECTOR $postfix_expression field_name)
+                )+
+        ;
 
-// primary below covers all cases including ASN.1 Value Notation
+
+primary_expression
+        :       primary                       -> ^(PRIMARY primary)
+        |       '(' expression ')'            -> ^(PAREN expression)
+        |       conditional_ground_expression
+        ;
+
+
 primary
-        :       a=asn1Value primary_params*
-        ->      ^(PRIMARY_ID asn1Value primary_params*)
-                | L_PAREN expression R_PAREN
-        ->      ^(EXPRESSION expression)
-                | conditional_ground_expression;
-
-// ASN.1 Value Notation used for assignations and comparisons
-asn1Value
-        :       BitStringLiteral            -> ^(BITSTR BitStringLiteral)
-        |       OctetStringLiteral          -> ^(OCTSTR OctetStringLiteral)
+        :       BITSTR^
+        |       OCTSTR^
         |       TRUE^
         |       FALSE^
-        |       StringLiteral               -> ^(STRING StringLiteral)
+        |       STRING
         |       NULL^
         |       PLUS_INFINITY^
         |       MINUS_INFINITY^
-        |       ID
-        |       INT
-        |       FloatingPointLiteral        -> ^(FLOAT FloatingPointLiteral)
-        |       L_BRACKET R_BRACKET         -> ^(EMPTYSTR)
-        |       L_BRACKET
+        |       INT^
+        |       FLOAT^
+        |       ID ':' expression           -> ^(CHOICE ID expression)
+        |       ID                          -> ^(VARIABLE ID)
+        |       '{' '}'                     -> ^(EMPTYSTR)
+        |       '{'
                 MANTISSA mant=INT COMMA
                 BASE bas=INT COMMA
                 EXPONENT exp=INT
-                R_BRACKET                   -> ^(FLOAT2 $mant $bas $exp)
-        |       choiceValue
-        |       L_BRACKET
-                namedValue (COMMA namedValue)*
-                R_BRACKET                   -> ^(SEQUENCE namedValue+)
-        |       L_BRACKET
-                asn1Value (COMMA asn1Value)*
-                R_BRACKET                   -> ^(SEQOF asn1Value+)
+                '}'                         -> ^(FLOAT2 $mant $bas $exp)
+        |       '{'
+                named_value (COMMA named_value)*
+                '}'                         -> ^(SEQUENCE named_value+)
+        |       '{'
+                primary (COMMA primary)*
+                '}'                         -> ^(SEQOF primary+)
         ;
-
-BitStringLiteral
-        :       '"' ('0'|'1'|' ' | '\t' | '\r' | '\n')* '"B';
-
-
-OctetStringLiteral
-        :       '"' ('0'..'9'|'a'..'f'|'A'..'F'|' ' | '\t' | '\r' | '\n')*
-                '"H';
 
 
 informal_text
-        :        StringLiteral
-        ->       ^(INFORMAL_TEXT StringLiteral);
-
-
-// hello:5  (CHOICE field value)
-choiceValue
-        :        choice=ID ':' expression
-        ->       ^(CHOICE $choice expression);
+        :        STRING
+        ->       ^(INFORMAL_TEXT STRING);
 
 
 // { a 5 } (SEQUENCE field value)
-namedValue
+named_value
         :       ID expression;
 
 
@@ -1044,8 +1043,8 @@ via     :       VIA state_entry_point_name
 
 
 end
-        :   (cif? hyperlink? COMMENT StringLiteral)? SEMI
-        -> ^(COMMENT cif? hyperlink? StringLiteral)?;
+        :   (cif? hyperlink? COMMENT STRING)? SEMI
+        -> ^(COMMENT cif? hyperlink? STRING)?;
 
 
 cif
@@ -1058,9 +1057,9 @@ cif
 
 
 hyperlink
-        :       cif_decl KEEP SPECIFIC GEODE HYPERLINK StringLiteral
+        :       cif_decl KEEP SPECIFIC GEODE HYPERLINK STRING
                 cif_end
-        ->      ^(HYPERLINK StringLiteral);
+        ->      ^(HYPERLINK STRING);
 
 /* OpenGEODE specific: SDL does not allow specifying the name
    of signal parameters, but it is needed to generate function signatures
@@ -1079,8 +1078,8 @@ paramnames
    CIF Extensions are valid SDL constructs (ITU-T Z106)
 */
 use_asn1
-        :       cif_decl KEEP SPECIFIC GEODE ASNFILENAME StringLiteral cif_end
-        ->      ^(ASN1 StringLiteral);
+        :       cif_decl KEEP SPECIFIC GEODE ASNFILENAME STRING cif_end
+        ->      ^(ASN1 STRING);
 
 
 symbolname
@@ -1287,12 +1286,21 @@ SYNONYM        	:       S Y N O N Y M;
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
-StringLiteral   :       STR+ ;
 
 fragment
 STR
-        :       '\'' ( options {greedy=false;} : .)* '\''
-        ;
+        :       '\'' ( options {greedy=false;} : .)* '\'';
+
+STRING
+        :       STR+ ;
+
+BITSTR
+        :       '"' ('0'|'1'|' ' | '\t' | '\r' | '\n')* '"B';
+
+
+OCTSTR
+        :       '"' ('0'..'9'|'a'..'f'|'A'..'F'|' ' | '\t' | '\r' | '\n')*
+                '"H';
 
 ID
         :       ALPHA (ALPHA | DIGITS | '_')*;
@@ -1307,13 +1315,12 @@ fragment
 DIGITS
         :       ('0'..'9')+;
 
-FloatingPointLiteral
+FLOAT
         :       INT DOT (DIGITS)? (Exponent)?
         |       INT
         ;
 
-WS  :   (' ' | '\t' | '\r' | '\n')+ {$channel=HIDDEN;}
-    ;
+WS  :   (' ' | '\t' | '\r' | '\n')+ {$channel=HIDDEN;};
 /*
 COMMENT
     :   '//' ( options {greedy=false;} : . )* '//' {$channel=HIDDEN;}

@@ -47,9 +47,7 @@ class Expression(object):
         self.inputString = inputString
         self.line = line
         self.charPositionInLine = charPositionInLine
-        # left and right are of type Expression (absent for primaries)
-        self.left = None
-        self.right = None
+
         # exprType is an ASN.1 type (as exported by asn1scc)
         self.exprType = None
         # Hint for code generators: intermediate storage identifier
@@ -180,21 +178,24 @@ class Primary(Expression):
                 l=self.line, c=self.charPositionInLine)
 
 
-# Subclasses of Primary - never use Primary directly
-class PrimPath(Primary):
-    ''' PrimPath is a list of elements needed to identify a value
-        For example, "i!j!k(5)" is stored as:
-        [ 'i', 'j', 'k', {'index':[Expression list]}]
-           (in that case, 5 is an index)
-        other example: "hello(world)" ->
-             ['hello', {'procParams':[Expression list]'}]
-        (in that case, hello is an operator and world is its parameter)
-    '''
+class PrimCall(Primary):
     is_raw = False
 
 
-class PrimVariable(PrimPath):
-    pass
+class PrimIndex(Primary):
+    is_raw = False
+
+
+class PrimSubstring(Primary):
+    is_raw = False
+
+
+class PrimSelector(Primary):
+    is_raw = False
+
+
+class PrimVariable(Primary):
+    is_raw = False
 
 
 class PrimFPAR(PrimVariable):
@@ -455,6 +456,8 @@ class Terminator(object):
         # There can be several if terminator follows a floating label
         # Note, this field is updated by the Helper.flatten function
         self.possible_states = []
+        # optional composite state content (type CompositeState)
+        self.composite = None
 
     def trace(self):
         ''' Debug output for terminators '''
@@ -782,7 +785,8 @@ class Process(object):
         self.global_variables = {}
         self.global_timers = []
         # Set default coordinates and width/height
-        self.pos_x = self.pos_y = 150
+        self.pos_x = 250
+        self.pos_y = 150
         self.width = 150
         self.height = 75
         # Optional hyperlink

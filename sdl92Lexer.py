@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-07-07 18:45:53
+# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-07-16 18:29:59
 
 import sys
 from antlr3 import *
@@ -9,224 +9,222 @@ from antlr3.compat import set, frozenset
 HIDDEN = BaseRecognizer.HIDDEN
 
 # token types
-NUMBER_OF_INSTANCES=24
-COMMENT2=211
-MANTISSA=170
-ROUTE=93
-MOD=156
-GROUND=76
-PARAM=83
-NOT=158
-SEQOF=13
-TEXTAREA_CONTENT=78
+NUMBER_OF_INSTANCES=59
+COMMENT2=209
+MANTISSA=166
+ROUTE=78
+MOD=158
+GROUND=43
+PARAM=64
+NOT=160
+SEQOF=81
+TEXTAREA_CONTENT=102
 EOF=-1
-ACTION=33
-IMPORT=174
-CREATE=145
-FPAR=82
-NEXTSTATE=54
-RETURN=57
-THIS=146
-VIAPATH=49
-CHANNEL=91
-ENDCONNECTION=123
-EXPORT=38
-EQ=139
-INFORMAL_TEXT=70
-GEODE=178
-D=185
-E=188
-F=195
-GE=144
-G=196
-A=182
-IMPLIES=149
-B=204
-C=186
-L=187
-M=192
-N=183
-O=197
-TERMINATOR=56
-H=198
-I=194
-ELSE=45
-J=205
-K=189
-U=201
-T=199
-W=203
-STOP=87
-V=202
-INT=121
-Q=212
-P=190
-S=193
-VALUE=10
-R=191
-Y=184
-X=200
-FI=65
-Z=213
-MINUS_INFINITY=166
-WS=210
-OUT=129
-FloatingPointLiteral=167
-NONE=130
-INPUT_NONE=27
-CONSTANT=44
-GT=141
-CALL=135
-END=180
-FLOATING_LABEL=97
+ACTION=4
+IMPORT=170
+CREATE=147
+FPAR=42
+NEXTSTATE=58
+RETURN=77
+THIS=148
+CHANNEL=13
+VIAPATH=112
+ENDCONNECTION=125
+EXPORT=31
+EQ=141
+INFORMAL_TEXT=48
+GEODE=174
+D=183
+E=186
+F=193
+GE=146
+G=194
+A=180
+IMPLIES=151
+B=202
+C=184
+L=185
+M=190
+N=181
+O=195
+TERMINATOR=99
+H=196
+I=192
+ELSE=26
+J=203
+K=187
+U=199
+T=197
+W=201
+STOP=90
+V=200
+INT=123
+Q=210
+P=188
+S=191
+VALUE=108
+R=189
+Y=182
+X=198
+FI=34
+Z=211
+MINUS_INFINITY=165
+WS=208
+OUT=131
+NONE=132
+INPUT_NONE=51
+CONSTANT=21
+GT=143
+CALL=137
+END=176
+FLOATING_LABEL=40
 T__215=215
-IFTHENELSE=8
+IFTHENELSE=46
 T__216=216
+T__213=213
 T__214=214
-T__219=219
 T__217=217
 T__218=218
-INPUT=31
-ENDSUBSTRUCTURE=128
-FLOAT=15
-SUBSTRUCTURE=127
-ASTERISK=126
-INOUT=84
-T__220=220
-STR=207
-STIMULUS=32
-THEN=64
-ENDDECISION=137
-OPEN_RANGE=43
-SIGNAL=90
-ENDSYSTEM=111
-PLUS=152
-CHOICE=11
-TASK_BODY=80
-PARAMS=59
-CLOSED_RANGE=42
-STATE=26
-STATELIST=68
-TO=47
-ASSIG_OP=181
-SIGNALROUTE=116
-ENDSYNTYPE=101
-SORT=73
-SET=36
-TEXT=53
-SEMI=124
-TEXTAREA=77
-StringLiteral=163
-BLOCK=94
-CIF=66
-START=122
-DECISION=39
-DIV=155
-PROCESS=23
-STRING=19
-INPUTLIST=69
-EXTERNAL=85
-LT=142
-EXPONENT=172
-TRANSITION=25
-ENDBLOCK=115
-RESET=37
-ENDNEWTYPE=103
-BitStringLiteral=159
-SIGNAL_LIST=30
-ENDTEXT=22
-CONNECTION=92
-SYSTEM=88
-CONNECT=99
-L_PAREN=132
-PROCEDURE_CALL=34
-BASE=171
-COMMENT=9
-SYNONYM=109
-ENDALTERNATIVE=136
-ARRAY=104
-ACTIVE=173
-ENDFOR=148
-FIELD_NAME=60
-OCTSTR=18
-VIEW=175
-EMPTYSTR=14
-ENDCHANNEL=112
-NULL=164
-ANSWER=41
-PRIMARY=61
-TASK=79
-REFERENCED=118
-ALPHA=208
-SEQUENCE=12
-VARIABLE=71
-PRIORITY=131
-SPECIFIC=177
-OR=150
-COMPOSITE_STATE=98
-OctetStringLiteral=160
-FIELD=108
-USE=89
-FROM=113
-ENDPROCEDURE=120
+INPUT=50
+ENDSUBSTRUCTURE=130
+FLOAT=39
+SUBSTRUCTURE=129
+ASTERISK=128
+PAREN=67
+INOUT=49
+STR=205
+STIMULUS=89
+SELECTOR=80
+THEN=103
+ENDDECISION=139
+OPEN_RANGE=61
+SIGNAL=84
+ENDSYSTEM=113
+PLUS=154
+CHOICE=14
+T__212=212
+TASK_BODY=98
+PARAMS=66
+CLOSED_RANGE=16
+STATE=87
+STATELIST=88
+TO=105
+ASSIG_OP=177
+SIGNALROUTE=118
+ENDSYNTYPE=29
+SORT=86
+SET=83
+TEXT=100
+SEMI=126
+TEXTAREA=101
+BLOCK=12
+CIF=15
+START=124
+DECISION=24
+DIV=157
+PROCESS=72
+STRING=91
+INPUTLIST=52
+EXTERNAL=33
+LT=144
+EXPONENT=168
+TRANSITION=106
+ENDBLOCK=117
+RESET=76
+ENDNEWTYPE=28
+SIGNAL_LIST=85
+ENDTEXT=30
+CONNECTION=20
+SYSTEM=96
+CONNECT=19
+L_PAREN=134
+PROCEDURE_CALL=70
+BASE=167
+COMMENT=17
+SYNONYM=93
+ENDALTERNATIVE=138
+ARRAY=8
+ACTIVE=169
+ENDFOR=150
+FIELD_NAME=36
+OCTSTR=60
+VIEW=171
+EMPTYSTR=27
+ENDCHANNEL=114
+NULL=163
+ANSWER=7
+PRIMARY=68
+TASK=97
+REFERENCED=120
+ALPHA=206
+SEQUENCE=82
+VARIABLE=109
+PRIORITY=133
+SPECIFIC=173
+OR=152
+COMPOSITE_STATE=18
+FIELD=35
+USE=107
+FROM=115
+ENDPROCEDURE=122
 FALSE=162
-OUTPUT=50
-SYNONYM_LIST=110
-APPEND=154
-L_BRACKET=168
-PRIMARY_ID=62
-DIGITS=21
-HYPERLINK=67
-NEWTYPE=102
-Exponent=209
-FOR=4
-ENDSTATE=125
-PROCEDURE_NAME=58
-CONSTANTS=105
-AND=117
-ID=147
-FLOAT2=16
-IF=63
-IN=86
-PROVIDED=29
-COMMA=134
-ALL=46
-ASNFILENAME=179
-DOT=206
-EXPRESSION=20
-WITH=114
-BITSTR=17
-XOR=151
-DASH=153
-ENDPROCESS=119
-DCL=74
-RANGE=5
-VIA=48
-STRUCT=106
-SAVE=28
-FIELDS=107
-REM=157
+OUTPUT=62
+SYNONYM_LIST=94
+APPEND=156
+L_BRACKET=178
+DIGITS=25
+HYPERLINK=44
+NEWTYPE=57
+Exponent=207
+FOR=41
+ENDSTATE=127
+PROCEDURE_NAME=71
+CONSTANTS=22
+AND=119
+ID=149
+FLOAT2=38
+IF=45
+IN=47
+PROVIDED=73
+COMMA=136
+ALL=5
+ASNFILENAME=175
+DOT=204
+EXPRESSION=32
+WITH=116
+BITSTR=11
+XOR=153
+DASH=155
+ENDPROCESS=121
+DCL=23
+VIA=111
+RANGE=75
+STRUCT=92
+LITERAL=55
+SAVE=79
+FIELDS=37
+REM=159
 TRUE=161
-R_BRACKET=169
-PROCEDURE=35
-JOIN=55
-R_PAREN=133
-OUTPUT_BODY=51
-NEQ=140
-ANY=138
-QUESTION=81
-LABEL=7
-PLUS_INFINITY=165
-PARAMNAMES=95
-ASN1=96
-KEEP=176
-NEG=75
-ASSIGN=52
-VARIABLES=72
-ALTERNATIVE=40
-SYNTYPE=100
-TIMER=6
-LE=143
+R_BRACKET=179
+JOIN=53
+PROCEDURE=69
+R_PAREN=135
+OUTPUT_BODY=63
+NEQ=142
+ANY=140
+QUESTION=74
+LABEL=54
+PLUS_INFINITY=164
+PARAMNAMES=65
+ASN1=9
+KEEP=172
+NEG=56
+VARIABLES=110
+ASSIGN=10
+ALTERNATIVE=6
+SYNTYPE=95
+TIMER=104
+LE=145
 
 
 class sdl92Lexer(Lexer):
@@ -268,6 +266,56 @@ class sdl92Lexer(Lexer):
 
 
 
+    # $ANTLR start "T__212"
+    def mT__212(self, ):
+
+        try:
+            _type = T__212
+            _channel = DEFAULT_CHANNEL
+
+            # sdl92.g:7:8: ( ':' )
+            # sdl92.g:7:10: ':'
+            pass 
+            self.match(58)
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "T__212"
+
+
+
+    # $ANTLR start "T__213"
+    def mT__213(self, ):
+
+        try:
+            _type = T__213
+            _channel = DEFAULT_CHANNEL
+
+            # sdl92.g:8:8: ( '!' )
+            # sdl92.g:8:10: '!'
+            pass 
+            self.match(33)
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "T__213"
+
+
+
     # $ANTLR start "T__214"
     def mT__214(self, ):
 
@@ -275,10 +323,10 @@ class sdl92Lexer(Lexer):
             _type = T__214
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:7:8: ( ':' )
-            # sdl92.g:7:10: ':'
+            # sdl92.g:9:8: ( '(.' )
+            # sdl92.g:9:10: '(.'
             pass 
-            self.match(58)
+            self.match("(.")
 
 
 
@@ -300,10 +348,10 @@ class sdl92Lexer(Lexer):
             _type = T__215
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:8:8: ( '!' )
-            # sdl92.g:8:10: '!'
+            # sdl92.g:10:8: ( '.)' )
+            # sdl92.g:10:10: '.)'
             pass 
-            self.match(33)
+            self.match(".)")
 
 
 
@@ -325,10 +373,10 @@ class sdl92Lexer(Lexer):
             _type = T__216
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:9:8: ( '(.' )
-            # sdl92.g:9:10: '(.'
+            # sdl92.g:11:8: ( 'ERROR' )
+            # sdl92.g:11:10: 'ERROR'
             pass 
-            self.match("(.")
+            self.match("ERROR")
 
 
 
@@ -350,10 +398,10 @@ class sdl92Lexer(Lexer):
             _type = T__217
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:10:8: ( '.)' )
-            # sdl92.g:10:10: '.)'
+            # sdl92.g:12:8: ( '/* CIF' )
+            # sdl92.g:12:10: '/* CIF'
             pass 
-            self.match(".)")
+            self.match("/* CIF")
 
 
 
@@ -375,56 +423,6 @@ class sdl92Lexer(Lexer):
             _type = T__218
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:11:8: ( 'ERROR' )
-            # sdl92.g:11:10: 'ERROR'
-            pass 
-            self.match("ERROR")
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-
-        finally:
-
-            pass
-
-    # $ANTLR end "T__218"
-
-
-
-    # $ANTLR start "T__219"
-    def mT__219(self, ):
-
-        try:
-            _type = T__219
-            _channel = DEFAULT_CHANNEL
-
-            # sdl92.g:12:8: ( '/* CIF' )
-            # sdl92.g:12:10: '/* CIF'
-            pass 
-            self.match("/* CIF")
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-
-        finally:
-
-            pass
-
-    # $ANTLR end "T__219"
-
-
-
-    # $ANTLR start "T__220"
-    def mT__220(self, ):
-
-        try:
-            _type = T__220
-            _channel = DEFAULT_CHANNEL
-
             # sdl92.g:13:8: ( '*/' )
             # sdl92.g:13:10: '*/'
             pass 
@@ -439,105 +437,7 @@ class sdl92Lexer(Lexer):
 
             pass
 
-    # $ANTLR end "T__220"
-
-
-
-    # $ANTLR start "BitStringLiteral"
-    def mBitStringLiteral(self, ):
-
-        try:
-            _type = BitStringLiteral
-            _channel = DEFAULT_CHANNEL
-
-            # sdl92.g:858:9: ( '\"' ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )* '\"B' )
-            # sdl92.g:858:17: '\"' ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )* '\"B'
-            pass 
-            self.match(34)
-            # sdl92.g:858:21: ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )*
-            while True: #loop1
-                alt1 = 2
-                LA1_0 = self.input.LA(1)
-
-                if ((9 <= LA1_0 <= 10) or LA1_0 == 13 or LA1_0 == 32 or (48 <= LA1_0 <= 49)) :
-                    alt1 = 1
-
-
-                if alt1 == 1:
-                    # sdl92.g:
-                    pass 
-                    if (9 <= self.input.LA(1) <= 10) or self.input.LA(1) == 13 or self.input.LA(1) == 32 or (48 <= self.input.LA(1) <= 49):
-                        self.input.consume()
-                    else:
-                        mse = MismatchedSetException(None, self.input)
-                        self.recover(mse)
-                        raise mse
-
-
-
-                else:
-                    break #loop1
-            self.match("\"B")
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-
-        finally:
-
-            pass
-
-    # $ANTLR end "BitStringLiteral"
-
-
-
-    # $ANTLR start "OctetStringLiteral"
-    def mOctetStringLiteral(self, ):
-
-        try:
-            _type = OctetStringLiteral
-            _channel = DEFAULT_CHANNEL
-
-            # sdl92.g:862:9: ( '\"' ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )* '\"H' )
-            # sdl92.g:862:17: '\"' ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )* '\"H'
-            pass 
-            self.match(34)
-            # sdl92.g:862:21: ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )*
-            while True: #loop2
-                alt2 = 2
-                LA2_0 = self.input.LA(1)
-
-                if ((9 <= LA2_0 <= 10) or LA2_0 == 13 or LA2_0 == 32 or (48 <= LA2_0 <= 57) or (65 <= LA2_0 <= 70) or (97 <= LA2_0 <= 102)) :
-                    alt2 = 1
-
-
-                if alt2 == 1:
-                    # sdl92.g:
-                    pass 
-                    if (9 <= self.input.LA(1) <= 10) or self.input.LA(1) == 13 or self.input.LA(1) == 32 or (48 <= self.input.LA(1) <= 57) or (65 <= self.input.LA(1) <= 70) or (97 <= self.input.LA(1) <= 102):
-                        self.input.consume()
-                    else:
-                        mse = MismatchedSetException(None, self.input)
-                        self.recover(mse)
-                        raise mse
-
-
-
-                else:
-                    break #loop2
-            self.match("\"H")
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-
-        finally:
-
-            pass
-
-    # $ANTLR end "OctetStringLiteral"
+    # $ANTLR end "T__218"
 
 
 
@@ -548,8 +448,8 @@ class sdl92Lexer(Lexer):
             _type = ASSIG_OP
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1162:17: ( ':=' )
-            # sdl92.g:1162:25: ':='
+            # sdl92.g:1161:17: ( ':=' )
+            # sdl92.g:1161:25: ':='
             pass 
             self.match(":=")
 
@@ -573,8 +473,8 @@ class sdl92Lexer(Lexer):
             _type = L_BRACKET
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1163:17: ( '{' )
-            # sdl92.g:1163:25: '{'
+            # sdl92.g:1162:17: ( '{' )
+            # sdl92.g:1162:25: '{'
             pass 
             self.match(123)
 
@@ -598,8 +498,8 @@ class sdl92Lexer(Lexer):
             _type = R_BRACKET
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1164:17: ( '}' )
-            # sdl92.g:1164:25: '}'
+            # sdl92.g:1163:17: ( '}' )
+            # sdl92.g:1163:25: '}'
             pass 
             self.match(125)
 
@@ -623,8 +523,8 @@ class sdl92Lexer(Lexer):
             _type = L_PAREN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1165:17: ( '(' )
-            # sdl92.g:1165:25: '('
+            # sdl92.g:1164:17: ( '(' )
+            # sdl92.g:1164:25: '('
             pass 
             self.match(40)
 
@@ -648,8 +548,8 @@ class sdl92Lexer(Lexer):
             _type = R_PAREN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1166:17: ( ')' )
-            # sdl92.g:1166:25: ')'
+            # sdl92.g:1165:17: ( ')' )
+            # sdl92.g:1165:25: ')'
             pass 
             self.match(41)
 
@@ -673,8 +573,8 @@ class sdl92Lexer(Lexer):
             _type = COMMA
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1167:17: ( ',' )
-            # sdl92.g:1167:25: ','
+            # sdl92.g:1166:17: ( ',' )
+            # sdl92.g:1166:25: ','
             pass 
             self.match(44)
 
@@ -698,8 +598,8 @@ class sdl92Lexer(Lexer):
             _type = SEMI
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1168:17: ( ';' )
-            # sdl92.g:1168:25: ';'
+            # sdl92.g:1167:17: ( ';' )
+            # sdl92.g:1167:25: ';'
             pass 
             self.match(59)
 
@@ -723,8 +623,8 @@ class sdl92Lexer(Lexer):
             _type = DASH
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1169:17: ( '-' )
-            # sdl92.g:1169:25: '-'
+            # sdl92.g:1168:17: ( '-' )
+            # sdl92.g:1168:25: '-'
             pass 
             self.match(45)
 
@@ -748,8 +648,8 @@ class sdl92Lexer(Lexer):
             _type = ANY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1170:17: ( A N Y )
-            # sdl92.g:1170:25: A N Y
+            # sdl92.g:1169:17: ( A N Y )
+            # sdl92.g:1169:25: A N Y
             pass 
             self.mA()
             self.mN()
@@ -775,8 +675,8 @@ class sdl92Lexer(Lexer):
             _type = ASTERISK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1171:17: ( '*' )
-            # sdl92.g:1171:25: '*'
+            # sdl92.g:1170:17: ( '*' )
+            # sdl92.g:1170:25: '*'
             pass 
             self.match(42)
 
@@ -800,8 +700,8 @@ class sdl92Lexer(Lexer):
             _type = DCL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1172:17: ( D C L )
-            # sdl92.g:1172:25: D C L
+            # sdl92.g:1171:17: ( D C L )
+            # sdl92.g:1171:25: D C L
             pass 
             self.mD()
             self.mC()
@@ -827,8 +727,8 @@ class sdl92Lexer(Lexer):
             _type = END
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1173:17: ( E N D )
-            # sdl92.g:1173:25: E N D
+            # sdl92.g:1172:17: ( E N D )
+            # sdl92.g:1172:25: E N D
             pass 
             self.mE()
             self.mN()
@@ -854,8 +754,8 @@ class sdl92Lexer(Lexer):
             _type = KEEP
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1174:17: ( K E E P )
-            # sdl92.g:1174:25: K E E P
+            # sdl92.g:1173:17: ( K E E P )
+            # sdl92.g:1173:25: K E E P
             pass 
             self.mK()
             self.mE()
@@ -882,8 +782,8 @@ class sdl92Lexer(Lexer):
             _type = PARAMNAMES
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1175:17: ( P A R A M N A M E S )
-            # sdl92.g:1175:25: P A R A M N A M E S
+            # sdl92.g:1174:17: ( P A R A M N A M E S )
+            # sdl92.g:1174:25: P A R A M N A M E S
             pass 
             self.mP()
             self.mA()
@@ -916,8 +816,8 @@ class sdl92Lexer(Lexer):
             _type = SPECIFIC
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1176:17: ( S P E C I F I C )
-            # sdl92.g:1176:25: S P E C I F I C
+            # sdl92.g:1175:17: ( S P E C I F I C )
+            # sdl92.g:1175:25: S P E C I F I C
             pass 
             self.mS()
             self.mP()
@@ -948,8 +848,8 @@ class sdl92Lexer(Lexer):
             _type = GEODE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1177:17: ( G E O D E )
-            # sdl92.g:1177:25: G E O D E
+            # sdl92.g:1176:17: ( G E O D E )
+            # sdl92.g:1176:25: G E O D E
             pass 
             self.mG()
             self.mE()
@@ -977,8 +877,8 @@ class sdl92Lexer(Lexer):
             _type = HYPERLINK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1178:17: ( H Y P E R L I N K )
-            # sdl92.g:1178:25: H Y P E R L I N K
+            # sdl92.g:1177:17: ( H Y P E R L I N K )
+            # sdl92.g:1177:25: H Y P E R L I N K
             pass 
             self.mH()
             self.mY()
@@ -1010,8 +910,8 @@ class sdl92Lexer(Lexer):
             _type = ENDTEXT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1179:17: ( E N D T E X T )
-            # sdl92.g:1179:25: E N D T E X T
+            # sdl92.g:1178:17: ( E N D T E X T )
+            # sdl92.g:1178:25: E N D T E X T
             pass 
             self.mE()
             self.mN()
@@ -1041,8 +941,8 @@ class sdl92Lexer(Lexer):
             _type = RETURN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1180:17: ( R E T U R N )
-            # sdl92.g:1180:25: R E T U R N
+            # sdl92.g:1179:17: ( R E T U R N )
+            # sdl92.g:1179:25: R E T U R N
             pass 
             self.mR()
             self.mE()
@@ -1071,8 +971,8 @@ class sdl92Lexer(Lexer):
             _type = TIMER
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1181:17: ( T I M E R )
-            # sdl92.g:1181:25: T I M E R
+            # sdl92.g:1180:17: ( T I M E R )
+            # sdl92.g:1180:25: T I M E R
             pass 
             self.mT()
             self.mI()
@@ -1100,8 +1000,8 @@ class sdl92Lexer(Lexer):
             _type = PROCESS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1182:17: ( P R O C E S S )
-            # sdl92.g:1182:25: P R O C E S S
+            # sdl92.g:1181:17: ( P R O C E S S )
+            # sdl92.g:1181:25: P R O C E S S
             pass 
             self.mP()
             self.mR()
@@ -1131,8 +1031,8 @@ class sdl92Lexer(Lexer):
             _type = ENDPROCESS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1183:17: ( E N D P R O C E S S )
-            # sdl92.g:1183:25: E N D P R O C E S S
+            # sdl92.g:1182:17: ( E N D P R O C E S S )
+            # sdl92.g:1182:25: E N D P R O C E S S
             pass 
             self.mE()
             self.mN()
@@ -1165,8 +1065,8 @@ class sdl92Lexer(Lexer):
             _type = START
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1184:17: ( S T A R T )
-            # sdl92.g:1184:25: S T A R T
+            # sdl92.g:1183:17: ( S T A R T )
+            # sdl92.g:1183:25: S T A R T
             pass 
             self.mS()
             self.mT()
@@ -1194,8 +1094,8 @@ class sdl92Lexer(Lexer):
             _type = STATE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1185:17: ( S T A T E )
-            # sdl92.g:1185:25: S T A T E
+            # sdl92.g:1184:17: ( S T A T E )
+            # sdl92.g:1184:25: S T A T E
             pass 
             self.mS()
             self.mT()
@@ -1223,8 +1123,8 @@ class sdl92Lexer(Lexer):
             _type = TEXT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1186:17: ( T E X T )
-            # sdl92.g:1186:25: T E X T
+            # sdl92.g:1185:17: ( T E X T )
+            # sdl92.g:1185:25: T E X T
             pass 
             self.mT()
             self.mE()
@@ -1251,8 +1151,8 @@ class sdl92Lexer(Lexer):
             _type = PROCEDURE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1187:17: ( P R O C E D U R E )
-            # sdl92.g:1187:25: P R O C E D U R E
+            # sdl92.g:1186:17: ( P R O C E D U R E )
+            # sdl92.g:1186:25: P R O C E D U R E
             pass 
             self.mP()
             self.mR()
@@ -1284,8 +1184,8 @@ class sdl92Lexer(Lexer):
             _type = ENDPROCEDURE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1188:17: ( E N D P R O C E D U R E )
-            # sdl92.g:1188:25: E N D P R O C E D U R E
+            # sdl92.g:1187:17: ( E N D P R O C E D U R E )
+            # sdl92.g:1187:25: E N D P R O C E D U R E
             pass 
             self.mE()
             self.mN()
@@ -1320,8 +1220,8 @@ class sdl92Lexer(Lexer):
             _type = PROCEDURE_CALL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1189:17: ( P R O C E D U R E C A L L )
-            # sdl92.g:1189:25: P R O C E D U R E C A L L
+            # sdl92.g:1188:17: ( P R O C E D U R E C A L L )
+            # sdl92.g:1188:25: P R O C E D U R E C A L L
             pass 
             self.mP()
             self.mR()
@@ -1357,8 +1257,8 @@ class sdl92Lexer(Lexer):
             _type = ENDSTATE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1190:17: ( E N D S T A T E )
-            # sdl92.g:1190:25: E N D S T A T E
+            # sdl92.g:1189:17: ( E N D S T A T E )
+            # sdl92.g:1189:25: E N D S T A T E
             pass 
             self.mE()
             self.mN()
@@ -1389,8 +1289,8 @@ class sdl92Lexer(Lexer):
             _type = INPUT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1191:17: ( I N P U T )
-            # sdl92.g:1191:25: I N P U T
+            # sdl92.g:1190:17: ( I N P U T )
+            # sdl92.g:1190:25: I N P U T
             pass 
             self.mI()
             self.mN()
@@ -1418,8 +1318,8 @@ class sdl92Lexer(Lexer):
             _type = PROVIDED
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1192:17: ( P R O V I D E D )
-            # sdl92.g:1192:25: P R O V I D E D
+            # sdl92.g:1191:17: ( P R O V I D E D )
+            # sdl92.g:1191:25: P R O V I D E D
             pass 
             self.mP()
             self.mR()
@@ -1450,8 +1350,8 @@ class sdl92Lexer(Lexer):
             _type = PRIORITY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1193:17: ( P R I O R I T Y )
-            # sdl92.g:1193:25: P R I O R I T Y
+            # sdl92.g:1192:17: ( P R I O R I T Y )
+            # sdl92.g:1192:25: P R I O R I T Y
             pass 
             self.mP()
             self.mR()
@@ -1482,8 +1382,8 @@ class sdl92Lexer(Lexer):
             _type = SAVE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1194:17: ( S A V E )
-            # sdl92.g:1194:25: S A V E
+            # sdl92.g:1193:17: ( S A V E )
+            # sdl92.g:1193:25: S A V E
             pass 
             self.mS()
             self.mA()
@@ -1510,8 +1410,8 @@ class sdl92Lexer(Lexer):
             _type = NONE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1195:17: ( N O N E )
-            # sdl92.g:1195:25: N O N E
+            # sdl92.g:1194:17: ( N O N E )
+            # sdl92.g:1194:25: N O N E
             pass 
             self.mN()
             self.mO()
@@ -1538,8 +1438,8 @@ class sdl92Lexer(Lexer):
             _type = FOR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1202:17: ( F O R )
-            # sdl92.g:1202:25: F O R
+            # sdl92.g:1201:17: ( F O R )
+            # sdl92.g:1201:25: F O R
             pass 
             self.mF()
             self.mO()
@@ -1565,8 +1465,8 @@ class sdl92Lexer(Lexer):
             _type = ENDFOR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1203:17: ( E N D F O R )
-            # sdl92.g:1203:25: E N D F O R
+            # sdl92.g:1202:17: ( E N D F O R )
+            # sdl92.g:1202:25: E N D F O R
             pass 
             self.mE()
             self.mN()
@@ -1595,8 +1495,8 @@ class sdl92Lexer(Lexer):
             _type = RANGE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1204:17: ( R A N G E )
-            # sdl92.g:1204:25: R A N G E
+            # sdl92.g:1203:17: ( R A N G E )
+            # sdl92.g:1203:25: R A N G E
             pass 
             self.mR()
             self.mA()
@@ -1624,8 +1524,8 @@ class sdl92Lexer(Lexer):
             _type = NEXTSTATE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1205:17: ( N E X T S T A T E )
-            # sdl92.g:1205:25: N E X T S T A T E
+            # sdl92.g:1204:17: ( N E X T S T A T E )
+            # sdl92.g:1204:25: N E X T S T A T E
             pass 
             self.mN()
             self.mE()
@@ -1657,8 +1557,8 @@ class sdl92Lexer(Lexer):
             _type = ANSWER
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1206:17: ( A N S W E R )
-            # sdl92.g:1206:25: A N S W E R
+            # sdl92.g:1205:17: ( A N S W E R )
+            # sdl92.g:1205:25: A N S W E R
             pass 
             self.mA()
             self.mN()
@@ -1687,8 +1587,8 @@ class sdl92Lexer(Lexer):
             _type = COMMENT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1207:17: ( C O M M E N T )
-            # sdl92.g:1207:25: C O M M E N T
+            # sdl92.g:1206:17: ( C O M M E N T )
+            # sdl92.g:1206:25: C O M M E N T
             pass 
             self.mC()
             self.mO()
@@ -1718,8 +1618,8 @@ class sdl92Lexer(Lexer):
             _type = LABEL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1208:17: ( L A B E L )
-            # sdl92.g:1208:25: L A B E L
+            # sdl92.g:1207:17: ( L A B E L )
+            # sdl92.g:1207:25: L A B E L
             pass 
             self.mL()
             self.mA()
@@ -1747,8 +1647,8 @@ class sdl92Lexer(Lexer):
             _type = STOP
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1209:17: ( S T O P )
-            # sdl92.g:1209:25: S T O P
+            # sdl92.g:1208:17: ( S T O P )
+            # sdl92.g:1208:25: S T O P
             pass 
             self.mS()
             self.mT()
@@ -1775,8 +1675,8 @@ class sdl92Lexer(Lexer):
             _type = IF
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1210:17: ( I F )
-            # sdl92.g:1210:25: I F
+            # sdl92.g:1209:17: ( I F )
+            # sdl92.g:1209:25: I F
             pass 
             self.mI()
             self.mF()
@@ -1801,8 +1701,8 @@ class sdl92Lexer(Lexer):
             _type = THEN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1211:17: ( T H E N )
-            # sdl92.g:1211:25: T H E N
+            # sdl92.g:1210:17: ( T H E N )
+            # sdl92.g:1210:25: T H E N
             pass 
             self.mT()
             self.mH()
@@ -1829,8 +1729,8 @@ class sdl92Lexer(Lexer):
             _type = ELSE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1212:17: ( E L S E )
-            # sdl92.g:1212:25: E L S E
+            # sdl92.g:1211:17: ( E L S E )
+            # sdl92.g:1211:25: E L S E
             pass 
             self.mE()
             self.mL()
@@ -1857,8 +1757,8 @@ class sdl92Lexer(Lexer):
             _type = FI
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1213:17: ( F I )
-            # sdl92.g:1213:25: F I
+            # sdl92.g:1212:17: ( F I )
+            # sdl92.g:1212:25: F I
             pass 
             self.mF()
             self.mI()
@@ -1883,8 +1783,8 @@ class sdl92Lexer(Lexer):
             _type = CREATE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1214:17: ( C R E A T E )
-            # sdl92.g:1214:25: C R E A T E
+            # sdl92.g:1213:17: ( C R E A T E )
+            # sdl92.g:1213:25: C R E A T E
             pass 
             self.mC()
             self.mR()
@@ -1913,8 +1813,8 @@ class sdl92Lexer(Lexer):
             _type = OUTPUT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1215:17: ( O U T P U T )
-            # sdl92.g:1215:25: O U T P U T
+            # sdl92.g:1214:17: ( O U T P U T )
+            # sdl92.g:1214:25: O U T P U T
             pass 
             self.mO()
             self.mU()
@@ -1943,8 +1843,8 @@ class sdl92Lexer(Lexer):
             _type = CALL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1216:17: ( C A L L )
-            # sdl92.g:1216:25: C A L L
+            # sdl92.g:1215:17: ( C A L L )
+            # sdl92.g:1215:25: C A L L
             pass 
             self.mC()
             self.mA()
@@ -1971,8 +1871,8 @@ class sdl92Lexer(Lexer):
             _type = THIS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1217:17: ( T H I S )
-            # sdl92.g:1217:25: T H I S
+            # sdl92.g:1216:17: ( T H I S )
+            # sdl92.g:1216:25: T H I S
             pass 
             self.mT()
             self.mH()
@@ -1999,8 +1899,8 @@ class sdl92Lexer(Lexer):
             _type = SET
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1218:17: ( S E T )
-            # sdl92.g:1218:25: S E T
+            # sdl92.g:1217:17: ( S E T )
+            # sdl92.g:1217:25: S E T
             pass 
             self.mS()
             self.mE()
@@ -2026,8 +1926,8 @@ class sdl92Lexer(Lexer):
             _type = RESET
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1219:17: ( R E S E T )
-            # sdl92.g:1219:25: R E S E T
+            # sdl92.g:1218:17: ( R E S E T )
+            # sdl92.g:1218:25: R E S E T
             pass 
             self.mR()
             self.mE()
@@ -2055,8 +1955,8 @@ class sdl92Lexer(Lexer):
             _type = ENDALTERNATIVE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1220:17: ( E N D A L T E R N A T I V E )
-            # sdl92.g:1220:25: E N D A L T E R N A T I V E
+            # sdl92.g:1219:17: ( E N D A L T E R N A T I V E )
+            # sdl92.g:1219:25: E N D A L T E R N A T I V E
             pass 
             self.mE()
             self.mN()
@@ -2093,8 +1993,8 @@ class sdl92Lexer(Lexer):
             _type = ALTERNATIVE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1221:17: ( A L T E R N A T I V E )
-            # sdl92.g:1221:25: A L T E R N A T I V E
+            # sdl92.g:1220:17: ( A L T E R N A T I V E )
+            # sdl92.g:1220:25: A L T E R N A T I V E
             pass 
             self.mA()
             self.mL()
@@ -2128,8 +2028,8 @@ class sdl92Lexer(Lexer):
             _type = DECISION
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1222:17: ( D E C I S I O N )
-            # sdl92.g:1222:25: D E C I S I O N
+            # sdl92.g:1221:17: ( D E C I S I O N )
+            # sdl92.g:1221:25: D E C I S I O N
             pass 
             self.mD()
             self.mE()
@@ -2160,8 +2060,8 @@ class sdl92Lexer(Lexer):
             _type = ENDDECISION
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1223:17: ( E N D D E C I S I O N )
-            # sdl92.g:1223:25: E N D D E C I S I O N
+            # sdl92.g:1222:17: ( E N D D E C I S I O N )
+            # sdl92.g:1222:25: E N D D E C I S I O N
             pass 
             self.mE()
             self.mN()
@@ -2195,8 +2095,8 @@ class sdl92Lexer(Lexer):
             _type = EXPORT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1224:17: ( E X P O R T )
-            # sdl92.g:1224:25: E X P O R T
+            # sdl92.g:1223:17: ( E X P O R T )
+            # sdl92.g:1223:25: E X P O R T
             pass 
             self.mE()
             self.mX()
@@ -2225,8 +2125,8 @@ class sdl92Lexer(Lexer):
             _type = EXTERNAL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1225:17: ( E X T E R N A L )
-            # sdl92.g:1225:25: E X T E R N A L
+            # sdl92.g:1224:17: ( E X T E R N A L )
+            # sdl92.g:1224:25: E X T E R N A L
             pass 
             self.mE()
             self.mX()
@@ -2257,8 +2157,8 @@ class sdl92Lexer(Lexer):
             _type = REFERENCED
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1226:17: ( R E F E R E N C E D )
-            # sdl92.g:1226:25: R E F E R E N C E D
+            # sdl92.g:1225:17: ( R E F E R E N C E D )
+            # sdl92.g:1225:25: R E F E R E N C E D
             pass 
             self.mR()
             self.mE()
@@ -2291,8 +2191,8 @@ class sdl92Lexer(Lexer):
             _type = CONNECTION
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1227:17: ( C O N N E C T I O N )
-            # sdl92.g:1227:25: C O N N E C T I O N
+            # sdl92.g:1226:17: ( C O N N E C T I O N )
+            # sdl92.g:1226:25: C O N N E C T I O N
             pass 
             self.mC()
             self.mO()
@@ -2325,8 +2225,8 @@ class sdl92Lexer(Lexer):
             _type = ENDCONNECTION
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1228:17: ( E N D C O N N E C T I O N )
-            # sdl92.g:1228:25: E N D C O N N E C T I O N
+            # sdl92.g:1227:17: ( E N D C O N N E C T I O N )
+            # sdl92.g:1227:25: E N D C O N N E C T I O N
             pass 
             self.mE()
             self.mN()
@@ -2362,8 +2262,8 @@ class sdl92Lexer(Lexer):
             _type = FROM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1229:17: ( F R O M )
-            # sdl92.g:1229:25: F R O M
+            # sdl92.g:1228:17: ( F R O M )
+            # sdl92.g:1228:25: F R O M
             pass 
             self.mF()
             self.mR()
@@ -2390,8 +2290,8 @@ class sdl92Lexer(Lexer):
             _type = TO
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1230:17: ( T O )
-            # sdl92.g:1230:25: T O
+            # sdl92.g:1229:17: ( T O )
+            # sdl92.g:1229:25: T O
             pass 
             self.mT()
             self.mO()
@@ -2416,8 +2316,8 @@ class sdl92Lexer(Lexer):
             _type = WITH
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1231:17: ( W I T H )
-            # sdl92.g:1231:25: W I T H
+            # sdl92.g:1230:17: ( W I T H )
+            # sdl92.g:1230:25: W I T H
             pass 
             self.mW()
             self.mI()
@@ -2444,8 +2344,8 @@ class sdl92Lexer(Lexer):
             _type = VIA
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1232:17: ( V I A )
-            # sdl92.g:1232:25: V I A
+            # sdl92.g:1231:17: ( V I A )
+            # sdl92.g:1231:25: V I A
             pass 
             self.mV()
             self.mI()
@@ -2471,8 +2371,8 @@ class sdl92Lexer(Lexer):
             _type = ALL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1233:17: ( A L L )
-            # sdl92.g:1233:25: A L L
+            # sdl92.g:1232:17: ( A L L )
+            # sdl92.g:1232:25: A L L
             pass 
             self.mA()
             self.mL()
@@ -2498,8 +2398,8 @@ class sdl92Lexer(Lexer):
             _type = TASK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1234:17: ( T A S K )
-            # sdl92.g:1234:25: T A S K
+            # sdl92.g:1233:17: ( T A S K )
+            # sdl92.g:1233:25: T A S K
             pass 
             self.mT()
             self.mA()
@@ -2526,8 +2426,8 @@ class sdl92Lexer(Lexer):
             _type = JOIN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1235:17: ( J O I N )
-            # sdl92.g:1235:25: J O I N
+            # sdl92.g:1234:17: ( J O I N )
+            # sdl92.g:1234:25: J O I N
             pass 
             self.mJ()
             self.mO()
@@ -2554,8 +2454,8 @@ class sdl92Lexer(Lexer):
             _type = PLUS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1236:17: ( '+' )
-            # sdl92.g:1236:25: '+'
+            # sdl92.g:1235:17: ( '+' )
+            # sdl92.g:1235:25: '+'
             pass 
             self.match(43)
 
@@ -2579,8 +2479,8 @@ class sdl92Lexer(Lexer):
             _type = DOT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1237:17: ( '.' )
-            # sdl92.g:1237:25: '.'
+            # sdl92.g:1236:17: ( '.' )
+            # sdl92.g:1236:25: '.'
             pass 
             self.match(46)
 
@@ -2604,8 +2504,8 @@ class sdl92Lexer(Lexer):
             _type = APPEND
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1238:17: ( '//' )
-            # sdl92.g:1238:25: '//'
+            # sdl92.g:1237:17: ( '//' )
+            # sdl92.g:1237:25: '//'
             pass 
             self.match("//")
 
@@ -2629,8 +2529,8 @@ class sdl92Lexer(Lexer):
             _type = IN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1239:17: ( I N )
-            # sdl92.g:1239:25: I N
+            # sdl92.g:1238:17: ( I N )
+            # sdl92.g:1238:25: I N
             pass 
             self.mI()
             self.mN()
@@ -2655,8 +2555,8 @@ class sdl92Lexer(Lexer):
             _type = OUT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1240:17: ( O U T )
-            # sdl92.g:1240:25: O U T
+            # sdl92.g:1239:17: ( O U T )
+            # sdl92.g:1239:25: O U T
             pass 
             self.mO()
             self.mU()
@@ -2682,8 +2582,8 @@ class sdl92Lexer(Lexer):
             _type = INOUT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1241:17: ( I N '/' O U T )
-            # sdl92.g:1241:25: I N '/' O U T
+            # sdl92.g:1240:17: ( I N '/' O U T )
+            # sdl92.g:1240:25: I N '/' O U T
             pass 
             self.mI()
             self.mN()
@@ -2712,8 +2612,8 @@ class sdl92Lexer(Lexer):
             _type = SUBSTRUCTURE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1242:17: ( S U B S T R U C T U R E )
-            # sdl92.g:1242:25: S U B S T R U C T U R E
+            # sdl92.g:1241:17: ( S U B S T R U C T U R E )
+            # sdl92.g:1241:25: S U B S T R U C T U R E
             pass 
             self.mS()
             self.mU()
@@ -2748,8 +2648,8 @@ class sdl92Lexer(Lexer):
             _type = ENDSUBSTRUCTURE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1243:17: ( E N D S U B S T R U C T U R E )
-            # sdl92.g:1243:25: E N D S U B S T R U C T U R E
+            # sdl92.g:1242:17: ( E N D S U B S T R U C T U R E )
+            # sdl92.g:1242:25: E N D S U B S T R U C T U R E
             pass 
             self.mE()
             self.mN()
@@ -2787,8 +2687,8 @@ class sdl92Lexer(Lexer):
             _type = FPAR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1244:17: ( F P A R )
-            # sdl92.g:1244:25: F P A R
+            # sdl92.g:1243:17: ( F P A R )
+            # sdl92.g:1243:25: F P A R
             pass 
             self.mF()
             self.mP()
@@ -2815,8 +2715,8 @@ class sdl92Lexer(Lexer):
             _type = PARAM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1245:17: ( P A R A M )
-            # sdl92.g:1245:25: P A R A M
+            # sdl92.g:1244:17: ( P A R A M )
+            # sdl92.g:1244:25: P A R A M
             pass 
             self.mP()
             self.mA()
@@ -2844,8 +2744,8 @@ class sdl92Lexer(Lexer):
             _type = EQ
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1246:17: ( '=' )
-            # sdl92.g:1246:25: '='
+            # sdl92.g:1245:17: ( '=' )
+            # sdl92.g:1245:25: '='
             pass 
             self.match(61)
 
@@ -2869,8 +2769,8 @@ class sdl92Lexer(Lexer):
             _type = NEQ
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1247:17: ( '/=' )
-            # sdl92.g:1247:25: '/='
+            # sdl92.g:1246:17: ( '/=' )
+            # sdl92.g:1246:25: '/='
             pass 
             self.match("/=")
 
@@ -2894,8 +2794,8 @@ class sdl92Lexer(Lexer):
             _type = GT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1248:17: ( '>' )
-            # sdl92.g:1248:25: '>'
+            # sdl92.g:1247:17: ( '>' )
+            # sdl92.g:1247:25: '>'
             pass 
             self.match(62)
 
@@ -2919,8 +2819,8 @@ class sdl92Lexer(Lexer):
             _type = GE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1249:17: ( '>=' )
-            # sdl92.g:1249:25: '>='
+            # sdl92.g:1248:17: ( '>=' )
+            # sdl92.g:1248:25: '>='
             pass 
             self.match(">=")
 
@@ -2944,8 +2844,8 @@ class sdl92Lexer(Lexer):
             _type = LT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1250:17: ( '<' )
-            # sdl92.g:1250:26: '<'
+            # sdl92.g:1249:17: ( '<' )
+            # sdl92.g:1249:26: '<'
             pass 
             self.match(60)
 
@@ -2969,8 +2869,8 @@ class sdl92Lexer(Lexer):
             _type = LE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1251:17: ( '<=' )
-            # sdl92.g:1251:25: '<='
+            # sdl92.g:1250:17: ( '<=' )
+            # sdl92.g:1250:25: '<='
             pass 
             self.match("<=")
 
@@ -2994,8 +2894,8 @@ class sdl92Lexer(Lexer):
             _type = NOT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1252:17: ( N O T )
-            # sdl92.g:1252:25: N O T
+            # sdl92.g:1251:17: ( N O T )
+            # sdl92.g:1251:25: N O T
             pass 
             self.mN()
             self.mO()
@@ -3021,8 +2921,8 @@ class sdl92Lexer(Lexer):
             _type = OR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1253:17: ( O R )
-            # sdl92.g:1253:25: O R
+            # sdl92.g:1252:17: ( O R )
+            # sdl92.g:1252:25: O R
             pass 
             self.mO()
             self.mR()
@@ -3047,8 +2947,8 @@ class sdl92Lexer(Lexer):
             _type = XOR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1254:17: ( X O R )
-            # sdl92.g:1254:25: X O R
+            # sdl92.g:1253:17: ( X O R )
+            # sdl92.g:1253:25: X O R
             pass 
             self.mX()
             self.mO()
@@ -3074,8 +2974,8 @@ class sdl92Lexer(Lexer):
             _type = AND
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1255:17: ( A N D )
-            # sdl92.g:1255:25: A N D
+            # sdl92.g:1254:17: ( A N D )
+            # sdl92.g:1254:25: A N D
             pass 
             self.mA()
             self.mN()
@@ -3101,8 +3001,8 @@ class sdl92Lexer(Lexer):
             _type = IMPLIES
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1256:17: ( '=>' )
-            # sdl92.g:1256:25: '=>'
+            # sdl92.g:1255:17: ( '=>' )
+            # sdl92.g:1255:25: '=>'
             pass 
             self.match("=>")
 
@@ -3126,8 +3026,8 @@ class sdl92Lexer(Lexer):
             _type = DIV
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1257:17: ( '/' )
-            # sdl92.g:1257:25: '/'
+            # sdl92.g:1256:17: ( '/' )
+            # sdl92.g:1256:25: '/'
             pass 
             self.match(47)
 
@@ -3151,8 +3051,8 @@ class sdl92Lexer(Lexer):
             _type = MOD
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1258:17: ( M O D )
-            # sdl92.g:1258:25: M O D
+            # sdl92.g:1257:17: ( M O D )
+            # sdl92.g:1257:25: M O D
             pass 
             self.mM()
             self.mO()
@@ -3178,8 +3078,8 @@ class sdl92Lexer(Lexer):
             _type = REM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1259:17: ( R E M )
-            # sdl92.g:1259:25: R E M
+            # sdl92.g:1258:17: ( R E M )
+            # sdl92.g:1258:25: R E M
             pass 
             self.mR()
             self.mE()
@@ -3205,8 +3105,8 @@ class sdl92Lexer(Lexer):
             _type = TRUE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1260:17: ( T R U E )
-            # sdl92.g:1260:25: T R U E
+            # sdl92.g:1259:17: ( T R U E )
+            # sdl92.g:1259:25: T R U E
             pass 
             self.mT()
             self.mR()
@@ -3233,8 +3133,8 @@ class sdl92Lexer(Lexer):
             _type = FALSE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1261:17: ( F A L S E )
-            # sdl92.g:1261:25: F A L S E
+            # sdl92.g:1260:17: ( F A L S E )
+            # sdl92.g:1260:25: F A L S E
             pass 
             self.mF()
             self.mA()
@@ -3262,8 +3162,8 @@ class sdl92Lexer(Lexer):
             _type = ASNFILENAME
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1262:17: ( A S N F I L E N A M E )
-            # sdl92.g:1262:25: A S N F I L E N A M E
+            # sdl92.g:1261:17: ( A S N F I L E N A M E )
+            # sdl92.g:1261:25: A S N F I L E N A M E
             pass 
             self.mA()
             self.mS()
@@ -3297,8 +3197,8 @@ class sdl92Lexer(Lexer):
             _type = NULL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1263:17: ( N U L L )
-            # sdl92.g:1263:25: N U L L
+            # sdl92.g:1262:17: ( N U L L )
+            # sdl92.g:1262:25: N U L L
             pass 
             self.mN()
             self.mU()
@@ -3325,8 +3225,8 @@ class sdl92Lexer(Lexer):
             _type = PLUS_INFINITY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1264:17: ( P L U S '-' I N F I N I T Y )
-            # sdl92.g:1264:25: P L U S '-' I N F I N I T Y
+            # sdl92.g:1263:17: ( P L U S '-' I N F I N I T Y )
+            # sdl92.g:1263:25: P L U S '-' I N F I N I T Y
             pass 
             self.mP()
             self.mL()
@@ -3362,8 +3262,8 @@ class sdl92Lexer(Lexer):
             _type = MINUS_INFINITY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1265:17: ( M I N U S '-' I N F I N I T Y )
-            # sdl92.g:1265:25: M I N U S '-' I N F I N I T Y
+            # sdl92.g:1264:17: ( M I N U S '-' I N F I N I T Y )
+            # sdl92.g:1264:25: M I N U S '-' I N F I N I T Y
             pass 
             self.mM()
             self.mI()
@@ -3400,8 +3300,8 @@ class sdl92Lexer(Lexer):
             _type = MANTISSA
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1266:17: ( M A N T I S S A )
-            # sdl92.g:1266:25: M A N T I S S A
+            # sdl92.g:1265:17: ( M A N T I S S A )
+            # sdl92.g:1265:25: M A N T I S S A
             pass 
             self.mM()
             self.mA()
@@ -3432,8 +3332,8 @@ class sdl92Lexer(Lexer):
             _type = EXPONENT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1267:17: ( E X P O N E N T )
-            # sdl92.g:1267:25: E X P O N E N T
+            # sdl92.g:1266:17: ( E X P O N E N T )
+            # sdl92.g:1266:25: E X P O N E N T
             pass 
             self.mE()
             self.mX()
@@ -3464,8 +3364,8 @@ class sdl92Lexer(Lexer):
             _type = BASE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1268:17: ( B A S E )
-            # sdl92.g:1268:25: B A S E
+            # sdl92.g:1267:17: ( B A S E )
+            # sdl92.g:1267:25: B A S E
             pass 
             self.mB()
             self.mA()
@@ -3492,8 +3392,8 @@ class sdl92Lexer(Lexer):
             _type = SYSTEM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1269:17: ( S Y S T E M )
-            # sdl92.g:1269:25: S Y S T E M
+            # sdl92.g:1268:17: ( S Y S T E M )
+            # sdl92.g:1268:25: S Y S T E M
             pass 
             self.mS()
             self.mY()
@@ -3522,8 +3422,8 @@ class sdl92Lexer(Lexer):
             _type = ENDSYSTEM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1270:17: ( E N D S Y S T E M )
-            # sdl92.g:1270:25: E N D S Y S T E M
+            # sdl92.g:1269:17: ( E N D S Y S T E M )
+            # sdl92.g:1269:25: E N D S Y S T E M
             pass 
             self.mE()
             self.mN()
@@ -3555,8 +3455,8 @@ class sdl92Lexer(Lexer):
             _type = CHANNEL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1271:17: ( C H A N N E L )
-            # sdl92.g:1271:25: C H A N N E L
+            # sdl92.g:1270:17: ( C H A N N E L )
+            # sdl92.g:1270:25: C H A N N E L
             pass 
             self.mC()
             self.mH()
@@ -3586,8 +3486,8 @@ class sdl92Lexer(Lexer):
             _type = ENDCHANNEL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1272:17: ( E N D C H A N N E L )
-            # sdl92.g:1272:25: E N D C H A N N E L
+            # sdl92.g:1271:17: ( E N D C H A N N E L )
+            # sdl92.g:1271:25: E N D C H A N N E L
             pass 
             self.mE()
             self.mN()
@@ -3620,8 +3520,8 @@ class sdl92Lexer(Lexer):
             _type = USE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1273:17: ( U S E )
-            # sdl92.g:1273:25: U S E
+            # sdl92.g:1272:17: ( U S E )
+            # sdl92.g:1272:25: U S E
             pass 
             self.mU()
             self.mS()
@@ -3647,8 +3547,8 @@ class sdl92Lexer(Lexer):
             _type = SIGNAL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1274:17: ( S I G N A L )
-            # sdl92.g:1274:25: S I G N A L
+            # sdl92.g:1273:17: ( S I G N A L )
+            # sdl92.g:1273:25: S I G N A L
             pass 
             self.mS()
             self.mI()
@@ -3677,8 +3577,8 @@ class sdl92Lexer(Lexer):
             _type = BLOCK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1275:17: ( B L O C K )
-            # sdl92.g:1275:25: B L O C K
+            # sdl92.g:1274:17: ( B L O C K )
+            # sdl92.g:1274:25: B L O C K
             pass 
             self.mB()
             self.mL()
@@ -3706,8 +3606,8 @@ class sdl92Lexer(Lexer):
             _type = ENDBLOCK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1276:17: ( E N D B L O C K )
-            # sdl92.g:1276:25: E N D B L O C K
+            # sdl92.g:1275:17: ( E N D B L O C K )
+            # sdl92.g:1275:25: E N D B L O C K
             pass 
             self.mE()
             self.mN()
@@ -3738,8 +3638,8 @@ class sdl92Lexer(Lexer):
             _type = SIGNALROUTE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1277:17: ( S I G N A L R O U T E )
-            # sdl92.g:1277:25: S I G N A L R O U T E
+            # sdl92.g:1276:17: ( S I G N A L R O U T E )
+            # sdl92.g:1276:25: S I G N A L R O U T E
             pass 
             self.mS()
             self.mI()
@@ -3773,8 +3673,8 @@ class sdl92Lexer(Lexer):
             _type = CONNECT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1278:17: ( C O N N E C T )
-            # sdl92.g:1278:25: C O N N E C T
+            # sdl92.g:1277:17: ( C O N N E C T )
+            # sdl92.g:1277:25: C O N N E C T
             pass 
             self.mC()
             self.mO()
@@ -3804,8 +3704,8 @@ class sdl92Lexer(Lexer):
             _type = SYNTYPE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1279:17: ( S Y N T Y P E )
-            # sdl92.g:1279:25: S Y N T Y P E
+            # sdl92.g:1278:17: ( S Y N T Y P E )
+            # sdl92.g:1278:25: S Y N T Y P E
             pass 
             self.mS()
             self.mY()
@@ -3835,8 +3735,8 @@ class sdl92Lexer(Lexer):
             _type = ENDSYNTYPE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1280:17: ( E N D S Y N T Y P E )
-            # sdl92.g:1280:25: E N D S Y N T Y P E
+            # sdl92.g:1279:17: ( E N D S Y N T Y P E )
+            # sdl92.g:1279:25: E N D S Y N T Y P E
             pass 
             self.mE()
             self.mN()
@@ -3869,8 +3769,8 @@ class sdl92Lexer(Lexer):
             _type = NEWTYPE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1281:17: ( N E W T Y P E )
-            # sdl92.g:1281:25: N E W T Y P E
+            # sdl92.g:1280:17: ( N E W T Y P E )
+            # sdl92.g:1280:25: N E W T Y P E
             pass 
             self.mN()
             self.mE()
@@ -3900,8 +3800,8 @@ class sdl92Lexer(Lexer):
             _type = ENDNEWTYPE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1282:17: ( E N D N E W T Y P E )
-            # sdl92.g:1282:25: E N D N E W T Y P E
+            # sdl92.g:1281:17: ( E N D N E W T Y P E )
+            # sdl92.g:1281:25: E N D N E W T Y P E
             pass 
             self.mE()
             self.mN()
@@ -3934,8 +3834,8 @@ class sdl92Lexer(Lexer):
             _type = ARRAY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1283:17: ( A R R A Y )
-            # sdl92.g:1283:25: A R R A Y
+            # sdl92.g:1282:17: ( A R R A Y )
+            # sdl92.g:1282:25: A R R A Y
             pass 
             self.mA()
             self.mR()
@@ -3963,8 +3863,8 @@ class sdl92Lexer(Lexer):
             _type = CONSTANTS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1284:17: ( C O N S T A N T S )
-            # sdl92.g:1284:23: C O N S T A N T S
+            # sdl92.g:1283:17: ( C O N S T A N T S )
+            # sdl92.g:1283:23: C O N S T A N T S
             pass 
             self.mC()
             self.mO()
@@ -3996,8 +3896,8 @@ class sdl92Lexer(Lexer):
             _type = STRUCT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1285:17: ( S T R U C T )
-            # sdl92.g:1285:23: S T R U C T
+            # sdl92.g:1284:17: ( S T R U C T )
+            # sdl92.g:1284:23: S T R U C T
             pass 
             self.mS()
             self.mT()
@@ -4026,8 +3926,8 @@ class sdl92Lexer(Lexer):
             _type = SYNONYM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1286:17: ( S Y N O N Y M )
-            # sdl92.g:1286:25: S Y N O N Y M
+            # sdl92.g:1285:17: ( S Y N O N Y M )
+            # sdl92.g:1285:25: S Y N O N Y M
             pass 
             self.mS()
             self.mY()
@@ -4057,8 +3957,8 @@ class sdl92Lexer(Lexer):
             _type = IMPORT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1287:17: ( I M P O R T )
-            # sdl92.g:1287:25: I M P O R T
+            # sdl92.g:1286:17: ( I M P O R T )
+            # sdl92.g:1286:25: I M P O R T
             pass 
             self.mI()
             self.mM()
@@ -4087,8 +3987,8 @@ class sdl92Lexer(Lexer):
             _type = VIEW
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1288:17: ( V I E W )
-            # sdl92.g:1288:25: V I E W
+            # sdl92.g:1287:17: ( V I E W )
+            # sdl92.g:1287:25: V I E W
             pass 
             self.mV()
             self.mI()
@@ -4115,8 +4015,8 @@ class sdl92Lexer(Lexer):
             _type = ACTIVE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1289:17: ( A C T I V E )
-            # sdl92.g:1289:25: A C T I V E
+            # sdl92.g:1288:17: ( A C T I V E )
+            # sdl92.g:1288:25: A C T I V E
             pass 
             self.mA()
             self.mC()
@@ -4138,81 +4038,33 @@ class sdl92Lexer(Lexer):
 
 
 
-    # $ANTLR start "StringLiteral"
-    def mStringLiteral(self, ):
-
-        try:
-            _type = StringLiteral
-            _channel = DEFAULT_CHANNEL
-
-            # sdl92.g:1290:17: ( ( STR )+ )
-            # sdl92.g:1290:25: ( STR )+
-            pass 
-            # sdl92.g:1290:25: ( STR )+
-            cnt3 = 0
-            while True: #loop3
-                alt3 = 2
-                LA3_0 = self.input.LA(1)
-
-                if (LA3_0 == 39) :
-                    alt3 = 1
-
-
-                if alt3 == 1:
-                    # sdl92.g:1290:25: STR
-                    pass 
-                    self.mSTR()
-
-
-                else:
-                    if cnt3 >= 1:
-                        break #loop3
-
-                    eee = EarlyExitException(3, self.input)
-                    raise eee
-
-                cnt3 += 1
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-
-        finally:
-
-            pass
-
-    # $ANTLR end "StringLiteral"
-
-
-
     # $ANTLR start "STR"
     def mSTR(self, ):
 
         try:
-            # sdl92.g:1294:9: ( '\\'' ( options {greedy=false; } : . )* '\\'' )
-            # sdl92.g:1294:17: '\\'' ( options {greedy=false; } : . )* '\\''
+            # sdl92.g:1292:9: ( '\\'' ( options {greedy=false; } : . )* '\\'' )
+            # sdl92.g:1292:17: '\\'' ( options {greedy=false; } : . )* '\\''
             pass 
             self.match(39)
-            # sdl92.g:1294:22: ( options {greedy=false; } : . )*
-            while True: #loop4
-                alt4 = 2
-                LA4_0 = self.input.LA(1)
+            # sdl92.g:1292:22: ( options {greedy=false; } : . )*
+            while True: #loop1
+                alt1 = 2
+                LA1_0 = self.input.LA(1)
 
-                if (LA4_0 == 39) :
-                    alt4 = 2
-                elif ((0 <= LA4_0 <= 38) or (40 <= LA4_0 <= 65535)) :
-                    alt4 = 1
+                if (LA1_0 == 39) :
+                    alt1 = 2
+                elif ((0 <= LA1_0 <= 38) or (40 <= LA1_0 <= 65535)) :
+                    alt1 = 1
 
 
-                if alt4 == 1:
-                    # sdl92.g:1294:50: .
+                if alt1 == 1:
+                    # sdl92.g:1292:50: .
                     pass 
                     self.matchAny()
 
 
                 else:
-                    break #loop4
+                    break #loop1
             self.match(39)
 
 
@@ -4226,6 +4078,152 @@ class sdl92Lexer(Lexer):
 
 
 
+    # $ANTLR start "STRING"
+    def mSTRING(self, ):
+
+        try:
+            _type = STRING
+            _channel = DEFAULT_CHANNEL
+
+            # sdl92.g:1295:9: ( ( STR )+ )
+            # sdl92.g:1295:17: ( STR )+
+            pass 
+            # sdl92.g:1295:17: ( STR )+
+            cnt2 = 0
+            while True: #loop2
+                alt2 = 2
+                LA2_0 = self.input.LA(1)
+
+                if (LA2_0 == 39) :
+                    alt2 = 1
+
+
+                if alt2 == 1:
+                    # sdl92.g:1295:17: STR
+                    pass 
+                    self.mSTR()
+
+
+                else:
+                    if cnt2 >= 1:
+                        break #loop2
+
+                    eee = EarlyExitException(2, self.input)
+                    raise eee
+
+                cnt2 += 1
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "STRING"
+
+
+
+    # $ANTLR start "BITSTR"
+    def mBITSTR(self, ):
+
+        try:
+            _type = BITSTR
+            _channel = DEFAULT_CHANNEL
+
+            # sdl92.g:1298:9: ( '\"' ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )* '\"B' )
+            # sdl92.g:1298:17: '\"' ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )* '\"B'
+            pass 
+            self.match(34)
+            # sdl92.g:1298:21: ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )*
+            while True: #loop3
+                alt3 = 2
+                LA3_0 = self.input.LA(1)
+
+                if ((9 <= LA3_0 <= 10) or LA3_0 == 13 or LA3_0 == 32 or (48 <= LA3_0 <= 49)) :
+                    alt3 = 1
+
+
+                if alt3 == 1:
+                    # sdl92.g:
+                    pass 
+                    if (9 <= self.input.LA(1) <= 10) or self.input.LA(1) == 13 or self.input.LA(1) == 32 or (48 <= self.input.LA(1) <= 49):
+                        self.input.consume()
+                    else:
+                        mse = MismatchedSetException(None, self.input)
+                        self.recover(mse)
+                        raise mse
+
+
+
+                else:
+                    break #loop3
+            self.match("\"B")
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "BITSTR"
+
+
+
+    # $ANTLR start "OCTSTR"
+    def mOCTSTR(self, ):
+
+        try:
+            _type = OCTSTR
+            _channel = DEFAULT_CHANNEL
+
+            # sdl92.g:1302:9: ( '\"' ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )* '\"H' )
+            # sdl92.g:1302:17: '\"' ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )* '\"H'
+            pass 
+            self.match(34)
+            # sdl92.g:1302:21: ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )*
+            while True: #loop4
+                alt4 = 2
+                LA4_0 = self.input.LA(1)
+
+                if ((9 <= LA4_0 <= 10) or LA4_0 == 13 or LA4_0 == 32 or (48 <= LA4_0 <= 57) or (65 <= LA4_0 <= 70) or (97 <= LA4_0 <= 102)) :
+                    alt4 = 1
+
+
+                if alt4 == 1:
+                    # sdl92.g:
+                    pass 
+                    if (9 <= self.input.LA(1) <= 10) or self.input.LA(1) == 13 or self.input.LA(1) == 32 or (48 <= self.input.LA(1) <= 57) or (65 <= self.input.LA(1) <= 70) or (97 <= self.input.LA(1) <= 102):
+                        self.input.consume()
+                    else:
+                        mse = MismatchedSetException(None, self.input)
+                        self.recover(mse)
+                        raise mse
+
+
+
+                else:
+                    break #loop4
+            self.match("\"H")
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "OCTSTR"
+
+
+
     # $ANTLR start "ID"
     def mID(self, ):
 
@@ -4233,11 +4231,11 @@ class sdl92Lexer(Lexer):
             _type = ID
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1298:9: ( ALPHA ( ALPHA | DIGITS | '_' )* )
-            # sdl92.g:1298:17: ALPHA ( ALPHA | DIGITS | '_' )*
+            # sdl92.g:1306:9: ( ALPHA ( ALPHA | DIGITS | '_' )* )
+            # sdl92.g:1306:17: ALPHA ( ALPHA | DIGITS | '_' )*
             pass 
             self.mALPHA()
-            # sdl92.g:1298:23: ( ALPHA | DIGITS | '_' )*
+            # sdl92.g:1306:23: ( ALPHA | DIGITS | '_' )*
             while True: #loop5
                 alt5 = 4
                 LA5 = self.input.LA(1)
@@ -4249,19 +4247,19 @@ class sdl92Lexer(Lexer):
                     alt5 = 3
 
                 if alt5 == 1:
-                    # sdl92.g:1298:24: ALPHA
+                    # sdl92.g:1306:24: ALPHA
                     pass 
                     self.mALPHA()
 
 
                 elif alt5 == 2:
-                    # sdl92.g:1298:32: DIGITS
+                    # sdl92.g:1306:32: DIGITS
                     pass 
                     self.mDIGITS()
 
 
                 elif alt5 == 3:
-                    # sdl92.g:1298:41: '_'
+                    # sdl92.g:1306:41: '_'
                     pass 
                     self.match(95)
 
@@ -4286,7 +4284,7 @@ class sdl92Lexer(Lexer):
     def mALPHA(self, ):
 
         try:
-            # sdl92.g:1301:9: ( ( 'a' .. 'z' ) | ( 'A' .. 'Z' ) )
+            # sdl92.g:1309:9: ( ( 'a' .. 'z' ) | ( 'A' .. 'Z' ) )
             alt6 = 2
             LA6_0 = self.input.LA(1)
 
@@ -4300,10 +4298,10 @@ class sdl92Lexer(Lexer):
                 raise nvae
 
             if alt6 == 1:
-                # sdl92.g:1301:17: ( 'a' .. 'z' )
+                # sdl92.g:1309:17: ( 'a' .. 'z' )
                 pass 
-                # sdl92.g:1301:17: ( 'a' .. 'z' )
-                # sdl92.g:1301:18: 'a' .. 'z'
+                # sdl92.g:1309:17: ( 'a' .. 'z' )
+                # sdl92.g:1309:18: 'a' .. 'z'
                 pass 
                 self.matchRange(97, 122)
 
@@ -4312,10 +4310,10 @@ class sdl92Lexer(Lexer):
 
 
             elif alt6 == 2:
-                # sdl92.g:1301:28: ( 'A' .. 'Z' )
+                # sdl92.g:1309:28: ( 'A' .. 'Z' )
                 pass 
-                # sdl92.g:1301:28: ( 'A' .. 'Z' )
-                # sdl92.g:1301:29: 'A' .. 'Z'
+                # sdl92.g:1309:28: ( 'A' .. 'Z' )
+                # sdl92.g:1309:29: 'A' .. 'Z'
                 pass 
                 self.matchRange(65, 90)
 
@@ -4339,23 +4337,23 @@ class sdl92Lexer(Lexer):
             _type = INT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1303:9: ( ( DASH )? ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* ) )
-            # sdl92.g:1303:17: ( DASH )? ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
+            # sdl92.g:1311:9: ( ( DASH )? ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* ) )
+            # sdl92.g:1311:17: ( DASH )? ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
             pass 
-            # sdl92.g:1303:17: ( DASH )?
+            # sdl92.g:1311:17: ( DASH )?
             alt7 = 2
             LA7_0 = self.input.LA(1)
 
             if (LA7_0 == 45) :
                 alt7 = 1
             if alt7 == 1:
-                # sdl92.g:1303:17: DASH
+                # sdl92.g:1311:17: DASH
                 pass 
                 self.mDASH()
 
 
 
-            # sdl92.g:1303:23: ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
+            # sdl92.g:1311:23: ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
             alt9 = 2
             LA9_0 = self.input.LA(1)
 
@@ -4369,22 +4367,22 @@ class sdl92Lexer(Lexer):
                 raise nvae
 
             if alt9 == 1:
-                # sdl92.g:1303:25: '0'
+                # sdl92.g:1311:25: '0'
                 pass 
                 self.match(48)
 
 
             elif alt9 == 2:
-                # sdl92.g:1303:31: ( '1' .. '9' ) ( '0' .. '9' )*
+                # sdl92.g:1311:31: ( '1' .. '9' ) ( '0' .. '9' )*
                 pass 
-                # sdl92.g:1303:31: ( '1' .. '9' )
-                # sdl92.g:1303:32: '1' .. '9'
+                # sdl92.g:1311:31: ( '1' .. '9' )
+                # sdl92.g:1311:32: '1' .. '9'
                 pass 
                 self.matchRange(49, 57)
 
 
 
-                # sdl92.g:1303:42: ( '0' .. '9' )*
+                # sdl92.g:1311:42: ( '0' .. '9' )*
                 while True: #loop8
                     alt8 = 2
                     LA8_0 = self.input.LA(1)
@@ -4394,7 +4392,7 @@ class sdl92Lexer(Lexer):
 
 
                     if alt8 == 1:
-                        # sdl92.g:1303:43: '0' .. '9'
+                        # sdl92.g:1311:43: '0' .. '9'
                         pass 
                         self.matchRange(48, 57)
 
@@ -4422,10 +4420,10 @@ class sdl92Lexer(Lexer):
     def mDIGITS(self, ):
 
         try:
-            # sdl92.g:1308:9: ( ( '0' .. '9' )+ )
-            # sdl92.g:1308:17: ( '0' .. '9' )+
+            # sdl92.g:1316:9: ( ( '0' .. '9' )+ )
+            # sdl92.g:1316:17: ( '0' .. '9' )+
             pass 
-            # sdl92.g:1308:17: ( '0' .. '9' )+
+            # sdl92.g:1316:17: ( '0' .. '9' )+
             cnt10 = 0
             while True: #loop10
                 alt10 = 2
@@ -4436,7 +4434,7 @@ class sdl92Lexer(Lexer):
 
 
                 if alt10 == 1:
-                    # sdl92.g:1308:18: '0' .. '9'
+                    # sdl92.g:1316:18: '0' .. '9'
                     pass 
                     self.matchRange(48, 57)
 
@@ -4461,42 +4459,42 @@ class sdl92Lexer(Lexer):
 
 
 
-    # $ANTLR start "FloatingPointLiteral"
-    def mFloatingPointLiteral(self, ):
+    # $ANTLR start "FLOAT"
+    def mFLOAT(self, ):
 
         try:
-            _type = FloatingPointLiteral
+            _type = FLOAT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1311:9: ( INT DOT ( DIGITS )? ( Exponent )? | INT )
+            # sdl92.g:1319:9: ( INT DOT ( DIGITS )? ( Exponent )? | INT )
             alt13 = 2
             alt13 = self.dfa13.predict(self.input)
             if alt13 == 1:
-                # sdl92.g:1311:17: INT DOT ( DIGITS )? ( Exponent )?
+                # sdl92.g:1319:17: INT DOT ( DIGITS )? ( Exponent )?
                 pass 
                 self.mINT()
                 self.mDOT()
-                # sdl92.g:1311:25: ( DIGITS )?
+                # sdl92.g:1319:25: ( DIGITS )?
                 alt11 = 2
                 LA11_0 = self.input.LA(1)
 
                 if ((48 <= LA11_0 <= 57)) :
                     alt11 = 1
                 if alt11 == 1:
-                    # sdl92.g:1311:26: DIGITS
+                    # sdl92.g:1319:26: DIGITS
                     pass 
                     self.mDIGITS()
 
 
 
-                # sdl92.g:1311:35: ( Exponent )?
+                # sdl92.g:1319:35: ( Exponent )?
                 alt12 = 2
                 LA12_0 = self.input.LA(1)
 
                 if (LA12_0 == 69 or LA12_0 == 101) :
                     alt12 = 1
                 if alt12 == 1:
-                    # sdl92.g:1311:36: Exponent
+                    # sdl92.g:1319:36: Exponent
                     pass 
                     self.mExponent()
 
@@ -4505,7 +4503,7 @@ class sdl92Lexer(Lexer):
 
 
             elif alt13 == 2:
-                # sdl92.g:1312:17: INT
+                # sdl92.g:1320:17: INT
                 pass 
                 self.mINT()
 
@@ -4517,7 +4515,7 @@ class sdl92Lexer(Lexer):
 
             pass
 
-    # $ANTLR end "FloatingPointLiteral"
+    # $ANTLR end "FLOAT"
 
 
 
@@ -4528,10 +4526,10 @@ class sdl92Lexer(Lexer):
             _type = WS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1315:5: ( ( ' ' | '\\t' | '\\r' | '\\n' )+ )
-            # sdl92.g:1315:9: ( ' ' | '\\t' | '\\r' | '\\n' )+
+            # sdl92.g:1323:5: ( ( ' ' | '\\t' | '\\r' | '\\n' )+ )
+            # sdl92.g:1323:9: ( ' ' | '\\t' | '\\r' | '\\n' )+
             pass 
-            # sdl92.g:1315:9: ( ' ' | '\\t' | '\\r' | '\\n' )+
+            # sdl92.g:1323:9: ( ' ' | '\\t' | '\\r' | '\\n' )+
             cnt14 = 0
             while True: #loop14
                 alt14 = 2
@@ -4582,8 +4580,8 @@ class sdl92Lexer(Lexer):
     def mExponent(self, ):
 
         try:
-            # sdl92.g:1324:10: ( ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+ )
-            # sdl92.g:1324:12: ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+
+            # sdl92.g:1331:10: ( ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+ )
+            # sdl92.g:1331:12: ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+
             pass 
             if self.input.LA(1) == 69 or self.input.LA(1) == 101:
                 self.input.consume()
@@ -4592,7 +4590,7 @@ class sdl92Lexer(Lexer):
                 self.recover(mse)
                 raise mse
 
-            # sdl92.g:1324:22: ( '+' | '-' )?
+            # sdl92.g:1331:22: ( '+' | '-' )?
             alt15 = 2
             LA15_0 = self.input.LA(1)
 
@@ -4611,7 +4609,7 @@ class sdl92Lexer(Lexer):
 
 
 
-            # sdl92.g:1324:33: ( '0' .. '9' )+
+            # sdl92.g:1331:33: ( '0' .. '9' )+
             cnt16 = 0
             while True: #loop16
                 alt16 = 2
@@ -4622,7 +4620,7 @@ class sdl92Lexer(Lexer):
 
 
                 if alt16 == 1:
-                    # sdl92.g:1324:34: '0' .. '9'
+                    # sdl92.g:1331:34: '0' .. '9'
                     pass 
                     self.matchRange(48, 57)
 
@@ -4654,11 +4652,11 @@ class sdl92Lexer(Lexer):
             _type = COMMENT2
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1328:9: ( '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' ) )
-            # sdl92.g:1328:18: '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' )
+            # sdl92.g:1335:9: ( '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' ) )
+            # sdl92.g:1335:18: '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' )
             pass 
             self.match("--")
-            # sdl92.g:1328:23: ( options {greedy=false; } : . )*
+            # sdl92.g:1335:23: ( options {greedy=false; } : . )*
             while True: #loop17
                 alt17 = 2
                 LA17_0 = self.input.LA(1)
@@ -4681,14 +4679,14 @@ class sdl92Lexer(Lexer):
 
 
                 if alt17 == 1:
-                    # sdl92.g:1328:51: .
+                    # sdl92.g:1335:51: .
                     pass 
                     self.matchAny()
 
 
                 else:
                     break #loop17
-            # sdl92.g:1328:56: ( '--' | ( '\\r' )? '\\n' )
+            # sdl92.g:1335:56: ( '--' | ( '\\r' )? '\\n' )
             alt19 = 2
             LA19_0 = self.input.LA(1)
 
@@ -4702,22 +4700,22 @@ class sdl92Lexer(Lexer):
                 raise nvae
 
             if alt19 == 1:
-                # sdl92.g:1328:57: '--'
+                # sdl92.g:1335:57: '--'
                 pass 
                 self.match("--")
 
 
             elif alt19 == 2:
-                # sdl92.g:1328:62: ( '\\r' )? '\\n'
+                # sdl92.g:1335:62: ( '\\r' )? '\\n'
                 pass 
-                # sdl92.g:1328:62: ( '\\r' )?
+                # sdl92.g:1335:62: ( '\\r' )?
                 alt18 = 2
                 LA18_0 = self.input.LA(1)
 
                 if (LA18_0 == 13) :
                     alt18 = 1
                 if alt18 == 1:
-                    # sdl92.g:1328:62: '\\r'
+                    # sdl92.g:1335:62: '\\r'
                     pass 
                     self.match(13)
 
@@ -4748,8 +4746,8 @@ class sdl92Lexer(Lexer):
     def mA(self, ):
 
         try:
-            # sdl92.g:1333:11: ( ( 'a' | 'A' ) )
-            # sdl92.g:1333:12: ( 'a' | 'A' )
+            # sdl92.g:1340:11: ( ( 'a' | 'A' ) )
+            # sdl92.g:1340:12: ( 'a' | 'A' )
             pass 
             if self.input.LA(1) == 65 or self.input.LA(1) == 97:
                 self.input.consume()
@@ -4774,8 +4772,8 @@ class sdl92Lexer(Lexer):
     def mB(self, ):
 
         try:
-            # sdl92.g:1334:11: ( ( 'b' | 'B' ) )
-            # sdl92.g:1334:12: ( 'b' | 'B' )
+            # sdl92.g:1341:11: ( ( 'b' | 'B' ) )
+            # sdl92.g:1341:12: ( 'b' | 'B' )
             pass 
             if self.input.LA(1) == 66 or self.input.LA(1) == 98:
                 self.input.consume()
@@ -4800,8 +4798,8 @@ class sdl92Lexer(Lexer):
     def mC(self, ):
 
         try:
-            # sdl92.g:1335:11: ( ( 'c' | 'C' ) )
-            # sdl92.g:1335:12: ( 'c' | 'C' )
+            # sdl92.g:1342:11: ( ( 'c' | 'C' ) )
+            # sdl92.g:1342:12: ( 'c' | 'C' )
             pass 
             if self.input.LA(1) == 67 or self.input.LA(1) == 99:
                 self.input.consume()
@@ -4826,8 +4824,8 @@ class sdl92Lexer(Lexer):
     def mD(self, ):
 
         try:
-            # sdl92.g:1336:11: ( ( 'd' | 'D' ) )
-            # sdl92.g:1336:12: ( 'd' | 'D' )
+            # sdl92.g:1343:11: ( ( 'd' | 'D' ) )
+            # sdl92.g:1343:12: ( 'd' | 'D' )
             pass 
             if self.input.LA(1) == 68 or self.input.LA(1) == 100:
                 self.input.consume()
@@ -4852,8 +4850,8 @@ class sdl92Lexer(Lexer):
     def mE(self, ):
 
         try:
-            # sdl92.g:1337:11: ( ( 'e' | 'E' ) )
-            # sdl92.g:1337:12: ( 'e' | 'E' )
+            # sdl92.g:1344:11: ( ( 'e' | 'E' ) )
+            # sdl92.g:1344:12: ( 'e' | 'E' )
             pass 
             if self.input.LA(1) == 69 or self.input.LA(1) == 101:
                 self.input.consume()
@@ -4878,8 +4876,8 @@ class sdl92Lexer(Lexer):
     def mF(self, ):
 
         try:
-            # sdl92.g:1338:11: ( ( 'f' | 'F' ) )
-            # sdl92.g:1338:12: ( 'f' | 'F' )
+            # sdl92.g:1345:11: ( ( 'f' | 'F' ) )
+            # sdl92.g:1345:12: ( 'f' | 'F' )
             pass 
             if self.input.LA(1) == 70 or self.input.LA(1) == 102:
                 self.input.consume()
@@ -4904,8 +4902,8 @@ class sdl92Lexer(Lexer):
     def mG(self, ):
 
         try:
-            # sdl92.g:1339:11: ( ( 'g' | 'G' ) )
-            # sdl92.g:1339:12: ( 'g' | 'G' )
+            # sdl92.g:1346:11: ( ( 'g' | 'G' ) )
+            # sdl92.g:1346:12: ( 'g' | 'G' )
             pass 
             if self.input.LA(1) == 71 or self.input.LA(1) == 103:
                 self.input.consume()
@@ -4930,8 +4928,8 @@ class sdl92Lexer(Lexer):
     def mH(self, ):
 
         try:
-            # sdl92.g:1340:11: ( ( 'h' | 'H' ) )
-            # sdl92.g:1340:12: ( 'h' | 'H' )
+            # sdl92.g:1347:11: ( ( 'h' | 'H' ) )
+            # sdl92.g:1347:12: ( 'h' | 'H' )
             pass 
             if self.input.LA(1) == 72 or self.input.LA(1) == 104:
                 self.input.consume()
@@ -4956,8 +4954,8 @@ class sdl92Lexer(Lexer):
     def mI(self, ):
 
         try:
-            # sdl92.g:1341:11: ( ( 'i' | 'I' ) )
-            # sdl92.g:1341:12: ( 'i' | 'I' )
+            # sdl92.g:1348:11: ( ( 'i' | 'I' ) )
+            # sdl92.g:1348:12: ( 'i' | 'I' )
             pass 
             if self.input.LA(1) == 73 or self.input.LA(1) == 105:
                 self.input.consume()
@@ -4982,8 +4980,8 @@ class sdl92Lexer(Lexer):
     def mJ(self, ):
 
         try:
-            # sdl92.g:1342:11: ( ( 'j' | 'J' ) )
-            # sdl92.g:1342:12: ( 'j' | 'J' )
+            # sdl92.g:1349:11: ( ( 'j' | 'J' ) )
+            # sdl92.g:1349:12: ( 'j' | 'J' )
             pass 
             if self.input.LA(1) == 74 or self.input.LA(1) == 106:
                 self.input.consume()
@@ -5008,8 +5006,8 @@ class sdl92Lexer(Lexer):
     def mK(self, ):
 
         try:
-            # sdl92.g:1343:11: ( ( 'k' | 'K' ) )
-            # sdl92.g:1343:12: ( 'k' | 'K' )
+            # sdl92.g:1350:11: ( ( 'k' | 'K' ) )
+            # sdl92.g:1350:12: ( 'k' | 'K' )
             pass 
             if self.input.LA(1) == 75 or self.input.LA(1) == 107:
                 self.input.consume()
@@ -5034,8 +5032,8 @@ class sdl92Lexer(Lexer):
     def mL(self, ):
 
         try:
-            # sdl92.g:1344:11: ( ( 'l' | 'L' ) )
-            # sdl92.g:1344:12: ( 'l' | 'L' )
+            # sdl92.g:1351:11: ( ( 'l' | 'L' ) )
+            # sdl92.g:1351:12: ( 'l' | 'L' )
             pass 
             if self.input.LA(1) == 76 or self.input.LA(1) == 108:
                 self.input.consume()
@@ -5060,8 +5058,8 @@ class sdl92Lexer(Lexer):
     def mM(self, ):
 
         try:
-            # sdl92.g:1345:11: ( ( 'm' | 'M' ) )
-            # sdl92.g:1345:12: ( 'm' | 'M' )
+            # sdl92.g:1352:11: ( ( 'm' | 'M' ) )
+            # sdl92.g:1352:12: ( 'm' | 'M' )
             pass 
             if self.input.LA(1) == 77 or self.input.LA(1) == 109:
                 self.input.consume()
@@ -5086,8 +5084,8 @@ class sdl92Lexer(Lexer):
     def mN(self, ):
 
         try:
-            # sdl92.g:1346:11: ( ( 'n' | 'N' ) )
-            # sdl92.g:1346:12: ( 'n' | 'N' )
+            # sdl92.g:1353:11: ( ( 'n' | 'N' ) )
+            # sdl92.g:1353:12: ( 'n' | 'N' )
             pass 
             if self.input.LA(1) == 78 or self.input.LA(1) == 110:
                 self.input.consume()
@@ -5112,8 +5110,8 @@ class sdl92Lexer(Lexer):
     def mO(self, ):
 
         try:
-            # sdl92.g:1347:11: ( ( 'o' | 'O' ) )
-            # sdl92.g:1347:12: ( 'o' | 'O' )
+            # sdl92.g:1354:11: ( ( 'o' | 'O' ) )
+            # sdl92.g:1354:12: ( 'o' | 'O' )
             pass 
             if self.input.LA(1) == 79 or self.input.LA(1) == 111:
                 self.input.consume()
@@ -5138,8 +5136,8 @@ class sdl92Lexer(Lexer):
     def mP(self, ):
 
         try:
-            # sdl92.g:1348:11: ( ( 'p' | 'P' ) )
-            # sdl92.g:1348:12: ( 'p' | 'P' )
+            # sdl92.g:1355:11: ( ( 'p' | 'P' ) )
+            # sdl92.g:1355:12: ( 'p' | 'P' )
             pass 
             if self.input.LA(1) == 80 or self.input.LA(1) == 112:
                 self.input.consume()
@@ -5164,8 +5162,8 @@ class sdl92Lexer(Lexer):
     def mQ(self, ):
 
         try:
-            # sdl92.g:1349:11: ( ( 'q' | 'Q' ) )
-            # sdl92.g:1349:12: ( 'q' | 'Q' )
+            # sdl92.g:1356:11: ( ( 'q' | 'Q' ) )
+            # sdl92.g:1356:12: ( 'q' | 'Q' )
             pass 
             if self.input.LA(1) == 81 or self.input.LA(1) == 113:
                 self.input.consume()
@@ -5190,8 +5188,8 @@ class sdl92Lexer(Lexer):
     def mR(self, ):
 
         try:
-            # sdl92.g:1350:11: ( ( 'r' | 'R' ) )
-            # sdl92.g:1350:12: ( 'r' | 'R' )
+            # sdl92.g:1357:11: ( ( 'r' | 'R' ) )
+            # sdl92.g:1357:12: ( 'r' | 'R' )
             pass 
             if self.input.LA(1) == 82 or self.input.LA(1) == 114:
                 self.input.consume()
@@ -5216,8 +5214,8 @@ class sdl92Lexer(Lexer):
     def mS(self, ):
 
         try:
-            # sdl92.g:1351:11: ( ( 's' | 'S' ) )
-            # sdl92.g:1351:12: ( 's' | 'S' )
+            # sdl92.g:1358:11: ( ( 's' | 'S' ) )
+            # sdl92.g:1358:12: ( 's' | 'S' )
             pass 
             if self.input.LA(1) == 83 or self.input.LA(1) == 115:
                 self.input.consume()
@@ -5242,8 +5240,8 @@ class sdl92Lexer(Lexer):
     def mT(self, ):
 
         try:
-            # sdl92.g:1352:11: ( ( 't' | 'T' ) )
-            # sdl92.g:1352:12: ( 't' | 'T' )
+            # sdl92.g:1359:11: ( ( 't' | 'T' ) )
+            # sdl92.g:1359:12: ( 't' | 'T' )
             pass 
             if self.input.LA(1) == 84 or self.input.LA(1) == 116:
                 self.input.consume()
@@ -5268,8 +5266,8 @@ class sdl92Lexer(Lexer):
     def mU(self, ):
 
         try:
-            # sdl92.g:1353:11: ( ( 'u' | 'U' ) )
-            # sdl92.g:1353:12: ( 'u' | 'U' )
+            # sdl92.g:1360:11: ( ( 'u' | 'U' ) )
+            # sdl92.g:1360:12: ( 'u' | 'U' )
             pass 
             if self.input.LA(1) == 85 or self.input.LA(1) == 117:
                 self.input.consume()
@@ -5294,8 +5292,8 @@ class sdl92Lexer(Lexer):
     def mV(self, ):
 
         try:
-            # sdl92.g:1354:11: ( ( 'v' | 'V' ) )
-            # sdl92.g:1354:12: ( 'v' | 'V' )
+            # sdl92.g:1361:11: ( ( 'v' | 'V' ) )
+            # sdl92.g:1361:12: ( 'v' | 'V' )
             pass 
             if self.input.LA(1) == 86 or self.input.LA(1) == 118:
                 self.input.consume()
@@ -5320,8 +5318,8 @@ class sdl92Lexer(Lexer):
     def mW(self, ):
 
         try:
-            # sdl92.g:1355:11: ( ( 'w' | 'W' ) )
-            # sdl92.g:1355:12: ( 'w' | 'W' )
+            # sdl92.g:1362:11: ( ( 'w' | 'W' ) )
+            # sdl92.g:1362:12: ( 'w' | 'W' )
             pass 
             if self.input.LA(1) == 87 or self.input.LA(1) == 119:
                 self.input.consume()
@@ -5346,8 +5344,8 @@ class sdl92Lexer(Lexer):
     def mX(self, ):
 
         try:
-            # sdl92.g:1356:11: ( ( 'x' | 'X' ) )
-            # sdl92.g:1356:12: ( 'x' | 'X' )
+            # sdl92.g:1363:11: ( ( 'x' | 'X' ) )
+            # sdl92.g:1363:12: ( 'x' | 'X' )
             pass 
             if self.input.LA(1) == 88 or self.input.LA(1) == 120:
                 self.input.consume()
@@ -5372,8 +5370,8 @@ class sdl92Lexer(Lexer):
     def mY(self, ):
 
         try:
-            # sdl92.g:1357:11: ( ( 'y' | 'Y' ) )
-            # sdl92.g:1357:12: ( 'y' | 'Y' )
+            # sdl92.g:1364:11: ( ( 'y' | 'Y' ) )
+            # sdl92.g:1364:12: ( 'y' | 'Y' )
             pass 
             if self.input.LA(1) == 89 or self.input.LA(1) == 121:
                 self.input.consume()
@@ -5398,8 +5396,8 @@ class sdl92Lexer(Lexer):
     def mZ(self, ):
 
         try:
-            # sdl92.g:1358:11: ( ( 'z' | 'Z' ) )
-            # sdl92.g:1358:12: ( 'z' | 'Z' )
+            # sdl92.g:1365:11: ( ( 'z' | 'Z' ) )
+            # sdl92.g:1365:12: ( 'z' | 'Z' )
             pass 
             if self.input.LA(1) == 90 or self.input.LA(1) == 122:
                 self.input.consume()
@@ -5421,827 +5419,827 @@ class sdl92Lexer(Lexer):
 
 
     def mTokens(self):
-        # sdl92.g:1:8: ( T__214 | T__215 | T__216 | T__217 | T__218 | T__219 | T__220 | BitStringLiteral | OctetStringLiteral | ASSIG_OP | L_BRACKET | R_BRACKET | L_PAREN | R_PAREN | COMMA | SEMI | DASH | ANY | ASTERISK | DCL | END | KEEP | PARAMNAMES | SPECIFIC | GEODE | HYPERLINK | ENDTEXT | RETURN | TIMER | PROCESS | ENDPROCESS | START | STATE | TEXT | PROCEDURE | ENDPROCEDURE | PROCEDURE_CALL | ENDSTATE | INPUT | PROVIDED | PRIORITY | SAVE | NONE | FOR | ENDFOR | RANGE | NEXTSTATE | ANSWER | COMMENT | LABEL | STOP | IF | THEN | ELSE | FI | CREATE | OUTPUT | CALL | THIS | SET | RESET | ENDALTERNATIVE | ALTERNATIVE | DECISION | ENDDECISION | EXPORT | EXTERNAL | REFERENCED | CONNECTION | ENDCONNECTION | FROM | TO | WITH | VIA | ALL | TASK | JOIN | PLUS | DOT | APPEND | IN | OUT | INOUT | SUBSTRUCTURE | ENDSUBSTRUCTURE | FPAR | PARAM | EQ | NEQ | GT | GE | LT | LE | NOT | OR | XOR | AND | IMPLIES | DIV | MOD | REM | TRUE | FALSE | ASNFILENAME | NULL | PLUS_INFINITY | MINUS_INFINITY | MANTISSA | EXPONENT | BASE | SYSTEM | ENDSYSTEM | CHANNEL | ENDCHANNEL | USE | SIGNAL | BLOCK | ENDBLOCK | SIGNALROUTE | CONNECT | SYNTYPE | ENDSYNTYPE | NEWTYPE | ENDNEWTYPE | ARRAY | CONSTANTS | STRUCT | SYNONYM | IMPORT | VIEW | ACTIVE | StringLiteral | ID | INT | FloatingPointLiteral | WS | COMMENT2 )
+        # sdl92.g:1:8: ( T__212 | T__213 | T__214 | T__215 | T__216 | T__217 | T__218 | ASSIG_OP | L_BRACKET | R_BRACKET | L_PAREN | R_PAREN | COMMA | SEMI | DASH | ANY | ASTERISK | DCL | END | KEEP | PARAMNAMES | SPECIFIC | GEODE | HYPERLINK | ENDTEXT | RETURN | TIMER | PROCESS | ENDPROCESS | START | STATE | TEXT | PROCEDURE | ENDPROCEDURE | PROCEDURE_CALL | ENDSTATE | INPUT | PROVIDED | PRIORITY | SAVE | NONE | FOR | ENDFOR | RANGE | NEXTSTATE | ANSWER | COMMENT | LABEL | STOP | IF | THEN | ELSE | FI | CREATE | OUTPUT | CALL | THIS | SET | RESET | ENDALTERNATIVE | ALTERNATIVE | DECISION | ENDDECISION | EXPORT | EXTERNAL | REFERENCED | CONNECTION | ENDCONNECTION | FROM | TO | WITH | VIA | ALL | TASK | JOIN | PLUS | DOT | APPEND | IN | OUT | INOUT | SUBSTRUCTURE | ENDSUBSTRUCTURE | FPAR | PARAM | EQ | NEQ | GT | GE | LT | LE | NOT | OR | XOR | AND | IMPLIES | DIV | MOD | REM | TRUE | FALSE | ASNFILENAME | NULL | PLUS_INFINITY | MINUS_INFINITY | MANTISSA | EXPONENT | BASE | SYSTEM | ENDSYSTEM | CHANNEL | ENDCHANNEL | USE | SIGNAL | BLOCK | ENDBLOCK | SIGNALROUTE | CONNECT | SYNTYPE | ENDSYNTYPE | NEWTYPE | ENDNEWTYPE | ARRAY | CONSTANTS | STRUCT | SYNONYM | IMPORT | VIEW | ACTIVE | STRING | BITSTR | OCTSTR | ID | INT | FLOAT | WS | COMMENT2 )
         alt20 = 137
         alt20 = self.dfa20.predict(self.input)
         if alt20 == 1:
-            # sdl92.g:1:10: T__214
+            # sdl92.g:1:10: T__212
+            pass 
+            self.mT__212()
+
+
+        elif alt20 == 2:
+            # sdl92.g:1:17: T__213
+            pass 
+            self.mT__213()
+
+
+        elif alt20 == 3:
+            # sdl92.g:1:24: T__214
             pass 
             self.mT__214()
 
 
-        elif alt20 == 2:
-            # sdl92.g:1:17: T__215
+        elif alt20 == 4:
+            # sdl92.g:1:31: T__215
             pass 
             self.mT__215()
 
 
-        elif alt20 == 3:
-            # sdl92.g:1:24: T__216
+        elif alt20 == 5:
+            # sdl92.g:1:38: T__216
             pass 
             self.mT__216()
 
 
-        elif alt20 == 4:
-            # sdl92.g:1:31: T__217
+        elif alt20 == 6:
+            # sdl92.g:1:45: T__217
             pass 
             self.mT__217()
 
 
-        elif alt20 == 5:
-            # sdl92.g:1:38: T__218
+        elif alt20 == 7:
+            # sdl92.g:1:52: T__218
             pass 
             self.mT__218()
 
 
-        elif alt20 == 6:
-            # sdl92.g:1:45: T__219
-            pass 
-            self.mT__219()
-
-
-        elif alt20 == 7:
-            # sdl92.g:1:52: T__220
-            pass 
-            self.mT__220()
-
-
         elif alt20 == 8:
-            # sdl92.g:1:59: BitStringLiteral
-            pass 
-            self.mBitStringLiteral()
-
-
-        elif alt20 == 9:
-            # sdl92.g:1:76: OctetStringLiteral
-            pass 
-            self.mOctetStringLiteral()
-
-
-        elif alt20 == 10:
-            # sdl92.g:1:95: ASSIG_OP
+            # sdl92.g:1:59: ASSIG_OP
             pass 
             self.mASSIG_OP()
 
 
-        elif alt20 == 11:
-            # sdl92.g:1:104: L_BRACKET
+        elif alt20 == 9:
+            # sdl92.g:1:68: L_BRACKET
             pass 
             self.mL_BRACKET()
 
 
-        elif alt20 == 12:
-            # sdl92.g:1:114: R_BRACKET
+        elif alt20 == 10:
+            # sdl92.g:1:78: R_BRACKET
             pass 
             self.mR_BRACKET()
 
 
-        elif alt20 == 13:
-            # sdl92.g:1:124: L_PAREN
+        elif alt20 == 11:
+            # sdl92.g:1:88: L_PAREN
             pass 
             self.mL_PAREN()
 
 
-        elif alt20 == 14:
-            # sdl92.g:1:132: R_PAREN
+        elif alt20 == 12:
+            # sdl92.g:1:96: R_PAREN
             pass 
             self.mR_PAREN()
 
 
-        elif alt20 == 15:
-            # sdl92.g:1:140: COMMA
+        elif alt20 == 13:
+            # sdl92.g:1:104: COMMA
             pass 
             self.mCOMMA()
 
 
-        elif alt20 == 16:
-            # sdl92.g:1:146: SEMI
+        elif alt20 == 14:
+            # sdl92.g:1:110: SEMI
             pass 
             self.mSEMI()
 
 
-        elif alt20 == 17:
-            # sdl92.g:1:151: DASH
+        elif alt20 == 15:
+            # sdl92.g:1:115: DASH
             pass 
             self.mDASH()
 
 
-        elif alt20 == 18:
-            # sdl92.g:1:156: ANY
+        elif alt20 == 16:
+            # sdl92.g:1:120: ANY
             pass 
             self.mANY()
 
 
-        elif alt20 == 19:
-            # sdl92.g:1:160: ASTERISK
+        elif alt20 == 17:
+            # sdl92.g:1:124: ASTERISK
             pass 
             self.mASTERISK()
 
 
-        elif alt20 == 20:
-            # sdl92.g:1:169: DCL
+        elif alt20 == 18:
+            # sdl92.g:1:133: DCL
             pass 
             self.mDCL()
 
 
-        elif alt20 == 21:
-            # sdl92.g:1:173: END
+        elif alt20 == 19:
+            # sdl92.g:1:137: END
             pass 
             self.mEND()
 
 
-        elif alt20 == 22:
-            # sdl92.g:1:177: KEEP
+        elif alt20 == 20:
+            # sdl92.g:1:141: KEEP
             pass 
             self.mKEEP()
 
 
-        elif alt20 == 23:
-            # sdl92.g:1:182: PARAMNAMES
+        elif alt20 == 21:
+            # sdl92.g:1:146: PARAMNAMES
             pass 
             self.mPARAMNAMES()
 
 
-        elif alt20 == 24:
-            # sdl92.g:1:193: SPECIFIC
+        elif alt20 == 22:
+            # sdl92.g:1:157: SPECIFIC
             pass 
             self.mSPECIFIC()
 
 
-        elif alt20 == 25:
-            # sdl92.g:1:202: GEODE
+        elif alt20 == 23:
+            # sdl92.g:1:166: GEODE
             pass 
             self.mGEODE()
 
 
-        elif alt20 == 26:
-            # sdl92.g:1:208: HYPERLINK
+        elif alt20 == 24:
+            # sdl92.g:1:172: HYPERLINK
             pass 
             self.mHYPERLINK()
 
 
-        elif alt20 == 27:
-            # sdl92.g:1:218: ENDTEXT
+        elif alt20 == 25:
+            # sdl92.g:1:182: ENDTEXT
             pass 
             self.mENDTEXT()
 
 
-        elif alt20 == 28:
-            # sdl92.g:1:226: RETURN
+        elif alt20 == 26:
+            # sdl92.g:1:190: RETURN
             pass 
             self.mRETURN()
 
 
-        elif alt20 == 29:
-            # sdl92.g:1:233: TIMER
+        elif alt20 == 27:
+            # sdl92.g:1:197: TIMER
             pass 
             self.mTIMER()
 
 
-        elif alt20 == 30:
-            # sdl92.g:1:239: PROCESS
+        elif alt20 == 28:
+            # sdl92.g:1:203: PROCESS
             pass 
             self.mPROCESS()
 
 
-        elif alt20 == 31:
-            # sdl92.g:1:247: ENDPROCESS
+        elif alt20 == 29:
+            # sdl92.g:1:211: ENDPROCESS
             pass 
             self.mENDPROCESS()
 
 
-        elif alt20 == 32:
-            # sdl92.g:1:258: START
+        elif alt20 == 30:
+            # sdl92.g:1:222: START
             pass 
             self.mSTART()
 
 
-        elif alt20 == 33:
-            # sdl92.g:1:264: STATE
+        elif alt20 == 31:
+            # sdl92.g:1:228: STATE
             pass 
             self.mSTATE()
 
 
-        elif alt20 == 34:
-            # sdl92.g:1:270: TEXT
+        elif alt20 == 32:
+            # sdl92.g:1:234: TEXT
             pass 
             self.mTEXT()
 
 
-        elif alt20 == 35:
-            # sdl92.g:1:275: PROCEDURE
+        elif alt20 == 33:
+            # sdl92.g:1:239: PROCEDURE
             pass 
             self.mPROCEDURE()
 
 
-        elif alt20 == 36:
-            # sdl92.g:1:285: ENDPROCEDURE
+        elif alt20 == 34:
+            # sdl92.g:1:249: ENDPROCEDURE
             pass 
             self.mENDPROCEDURE()
 
 
-        elif alt20 == 37:
-            # sdl92.g:1:298: PROCEDURE_CALL
+        elif alt20 == 35:
+            # sdl92.g:1:262: PROCEDURE_CALL
             pass 
             self.mPROCEDURE_CALL()
 
 
-        elif alt20 == 38:
-            # sdl92.g:1:313: ENDSTATE
+        elif alt20 == 36:
+            # sdl92.g:1:277: ENDSTATE
             pass 
             self.mENDSTATE()
 
 
-        elif alt20 == 39:
-            # sdl92.g:1:322: INPUT
+        elif alt20 == 37:
+            # sdl92.g:1:286: INPUT
             pass 
             self.mINPUT()
 
 
-        elif alt20 == 40:
-            # sdl92.g:1:328: PROVIDED
+        elif alt20 == 38:
+            # sdl92.g:1:292: PROVIDED
             pass 
             self.mPROVIDED()
 
 
-        elif alt20 == 41:
-            # sdl92.g:1:337: PRIORITY
+        elif alt20 == 39:
+            # sdl92.g:1:301: PRIORITY
             pass 
             self.mPRIORITY()
 
 
-        elif alt20 == 42:
-            # sdl92.g:1:346: SAVE
+        elif alt20 == 40:
+            # sdl92.g:1:310: SAVE
             pass 
             self.mSAVE()
 
 
-        elif alt20 == 43:
-            # sdl92.g:1:351: NONE
+        elif alt20 == 41:
+            # sdl92.g:1:315: NONE
             pass 
             self.mNONE()
 
 
-        elif alt20 == 44:
-            # sdl92.g:1:356: FOR
+        elif alt20 == 42:
+            # sdl92.g:1:320: FOR
             pass 
             self.mFOR()
 
 
-        elif alt20 == 45:
-            # sdl92.g:1:360: ENDFOR
+        elif alt20 == 43:
+            # sdl92.g:1:324: ENDFOR
             pass 
             self.mENDFOR()
 
 
-        elif alt20 == 46:
-            # sdl92.g:1:367: RANGE
+        elif alt20 == 44:
+            # sdl92.g:1:331: RANGE
             pass 
             self.mRANGE()
 
 
-        elif alt20 == 47:
-            # sdl92.g:1:373: NEXTSTATE
+        elif alt20 == 45:
+            # sdl92.g:1:337: NEXTSTATE
             pass 
             self.mNEXTSTATE()
 
 
-        elif alt20 == 48:
-            # sdl92.g:1:383: ANSWER
+        elif alt20 == 46:
+            # sdl92.g:1:347: ANSWER
             pass 
             self.mANSWER()
 
 
-        elif alt20 == 49:
-            # sdl92.g:1:390: COMMENT
+        elif alt20 == 47:
+            # sdl92.g:1:354: COMMENT
             pass 
             self.mCOMMENT()
 
 
-        elif alt20 == 50:
-            # sdl92.g:1:398: LABEL
+        elif alt20 == 48:
+            # sdl92.g:1:362: LABEL
             pass 
             self.mLABEL()
 
 
-        elif alt20 == 51:
-            # sdl92.g:1:404: STOP
+        elif alt20 == 49:
+            # sdl92.g:1:368: STOP
             pass 
             self.mSTOP()
 
 
-        elif alt20 == 52:
-            # sdl92.g:1:409: IF
+        elif alt20 == 50:
+            # sdl92.g:1:373: IF
             pass 
             self.mIF()
 
 
-        elif alt20 == 53:
-            # sdl92.g:1:412: THEN
+        elif alt20 == 51:
+            # sdl92.g:1:376: THEN
             pass 
             self.mTHEN()
 
 
-        elif alt20 == 54:
-            # sdl92.g:1:417: ELSE
+        elif alt20 == 52:
+            # sdl92.g:1:381: ELSE
             pass 
             self.mELSE()
 
 
-        elif alt20 == 55:
-            # sdl92.g:1:422: FI
+        elif alt20 == 53:
+            # sdl92.g:1:386: FI
             pass 
             self.mFI()
 
 
-        elif alt20 == 56:
-            # sdl92.g:1:425: CREATE
+        elif alt20 == 54:
+            # sdl92.g:1:389: CREATE
             pass 
             self.mCREATE()
 
 
-        elif alt20 == 57:
-            # sdl92.g:1:432: OUTPUT
+        elif alt20 == 55:
+            # sdl92.g:1:396: OUTPUT
             pass 
             self.mOUTPUT()
 
 
-        elif alt20 == 58:
-            # sdl92.g:1:439: CALL
+        elif alt20 == 56:
+            # sdl92.g:1:403: CALL
             pass 
             self.mCALL()
 
 
-        elif alt20 == 59:
-            # sdl92.g:1:444: THIS
+        elif alt20 == 57:
+            # sdl92.g:1:408: THIS
             pass 
             self.mTHIS()
 
 
-        elif alt20 == 60:
-            # sdl92.g:1:449: SET
+        elif alt20 == 58:
+            # sdl92.g:1:413: SET
             pass 
             self.mSET()
 
 
-        elif alt20 == 61:
-            # sdl92.g:1:453: RESET
+        elif alt20 == 59:
+            # sdl92.g:1:417: RESET
             pass 
             self.mRESET()
 
 
-        elif alt20 == 62:
-            # sdl92.g:1:459: ENDALTERNATIVE
+        elif alt20 == 60:
+            # sdl92.g:1:423: ENDALTERNATIVE
             pass 
             self.mENDALTERNATIVE()
 
 
-        elif alt20 == 63:
-            # sdl92.g:1:474: ALTERNATIVE
+        elif alt20 == 61:
+            # sdl92.g:1:438: ALTERNATIVE
             pass 
             self.mALTERNATIVE()
 
 
-        elif alt20 == 64:
-            # sdl92.g:1:486: DECISION
+        elif alt20 == 62:
+            # sdl92.g:1:450: DECISION
             pass 
             self.mDECISION()
 
 
-        elif alt20 == 65:
-            # sdl92.g:1:495: ENDDECISION
+        elif alt20 == 63:
+            # sdl92.g:1:459: ENDDECISION
             pass 
             self.mENDDECISION()
 
 
-        elif alt20 == 66:
-            # sdl92.g:1:507: EXPORT
+        elif alt20 == 64:
+            # sdl92.g:1:471: EXPORT
             pass 
             self.mEXPORT()
 
 
-        elif alt20 == 67:
-            # sdl92.g:1:514: EXTERNAL
+        elif alt20 == 65:
+            # sdl92.g:1:478: EXTERNAL
             pass 
             self.mEXTERNAL()
 
 
-        elif alt20 == 68:
-            # sdl92.g:1:523: REFERENCED
+        elif alt20 == 66:
+            # sdl92.g:1:487: REFERENCED
             pass 
             self.mREFERENCED()
 
 
-        elif alt20 == 69:
-            # sdl92.g:1:534: CONNECTION
+        elif alt20 == 67:
+            # sdl92.g:1:498: CONNECTION
             pass 
             self.mCONNECTION()
 
 
-        elif alt20 == 70:
-            # sdl92.g:1:545: ENDCONNECTION
+        elif alt20 == 68:
+            # sdl92.g:1:509: ENDCONNECTION
             pass 
             self.mENDCONNECTION()
 
 
-        elif alt20 == 71:
-            # sdl92.g:1:559: FROM
+        elif alt20 == 69:
+            # sdl92.g:1:523: FROM
             pass 
             self.mFROM()
 
 
-        elif alt20 == 72:
-            # sdl92.g:1:564: TO
+        elif alt20 == 70:
+            # sdl92.g:1:528: TO
             pass 
             self.mTO()
 
 
-        elif alt20 == 73:
-            # sdl92.g:1:567: WITH
+        elif alt20 == 71:
+            # sdl92.g:1:531: WITH
             pass 
             self.mWITH()
 
 
-        elif alt20 == 74:
-            # sdl92.g:1:572: VIA
+        elif alt20 == 72:
+            # sdl92.g:1:536: VIA
             pass 
             self.mVIA()
 
 
-        elif alt20 == 75:
-            # sdl92.g:1:576: ALL
+        elif alt20 == 73:
+            # sdl92.g:1:540: ALL
             pass 
             self.mALL()
 
 
-        elif alt20 == 76:
-            # sdl92.g:1:580: TASK
+        elif alt20 == 74:
+            # sdl92.g:1:544: TASK
             pass 
             self.mTASK()
 
 
-        elif alt20 == 77:
-            # sdl92.g:1:585: JOIN
+        elif alt20 == 75:
+            # sdl92.g:1:549: JOIN
             pass 
             self.mJOIN()
 
 
-        elif alt20 == 78:
-            # sdl92.g:1:590: PLUS
+        elif alt20 == 76:
+            # sdl92.g:1:554: PLUS
             pass 
             self.mPLUS()
 
 
-        elif alt20 == 79:
-            # sdl92.g:1:595: DOT
+        elif alt20 == 77:
+            # sdl92.g:1:559: DOT
             pass 
             self.mDOT()
 
 
-        elif alt20 == 80:
-            # sdl92.g:1:599: APPEND
+        elif alt20 == 78:
+            # sdl92.g:1:563: APPEND
             pass 
             self.mAPPEND()
 
 
-        elif alt20 == 81:
-            # sdl92.g:1:606: IN
+        elif alt20 == 79:
+            # sdl92.g:1:570: IN
             pass 
             self.mIN()
 
 
-        elif alt20 == 82:
-            # sdl92.g:1:609: OUT
+        elif alt20 == 80:
+            # sdl92.g:1:573: OUT
             pass 
             self.mOUT()
 
 
-        elif alt20 == 83:
-            # sdl92.g:1:613: INOUT
+        elif alt20 == 81:
+            # sdl92.g:1:577: INOUT
             pass 
             self.mINOUT()
 
 
-        elif alt20 == 84:
-            # sdl92.g:1:619: SUBSTRUCTURE
+        elif alt20 == 82:
+            # sdl92.g:1:583: SUBSTRUCTURE
             pass 
             self.mSUBSTRUCTURE()
 
 
-        elif alt20 == 85:
-            # sdl92.g:1:632: ENDSUBSTRUCTURE
+        elif alt20 == 83:
+            # sdl92.g:1:596: ENDSUBSTRUCTURE
             pass 
             self.mENDSUBSTRUCTURE()
 
 
-        elif alt20 == 86:
-            # sdl92.g:1:648: FPAR
+        elif alt20 == 84:
+            # sdl92.g:1:612: FPAR
             pass 
             self.mFPAR()
 
 
-        elif alt20 == 87:
-            # sdl92.g:1:653: PARAM
+        elif alt20 == 85:
+            # sdl92.g:1:617: PARAM
             pass 
             self.mPARAM()
 
 
-        elif alt20 == 88:
-            # sdl92.g:1:659: EQ
+        elif alt20 == 86:
+            # sdl92.g:1:623: EQ
             pass 
             self.mEQ()
 
 
-        elif alt20 == 89:
-            # sdl92.g:1:662: NEQ
+        elif alt20 == 87:
+            # sdl92.g:1:626: NEQ
             pass 
             self.mNEQ()
 
 
-        elif alt20 == 90:
-            # sdl92.g:1:666: GT
+        elif alt20 == 88:
+            # sdl92.g:1:630: GT
             pass 
             self.mGT()
 
 
-        elif alt20 == 91:
-            # sdl92.g:1:669: GE
+        elif alt20 == 89:
+            # sdl92.g:1:633: GE
             pass 
             self.mGE()
 
 
-        elif alt20 == 92:
-            # sdl92.g:1:672: LT
+        elif alt20 == 90:
+            # sdl92.g:1:636: LT
             pass 
             self.mLT()
 
 
-        elif alt20 == 93:
-            # sdl92.g:1:675: LE
+        elif alt20 == 91:
+            # sdl92.g:1:639: LE
             pass 
             self.mLE()
 
 
-        elif alt20 == 94:
-            # sdl92.g:1:678: NOT
+        elif alt20 == 92:
+            # sdl92.g:1:642: NOT
             pass 
             self.mNOT()
 
 
-        elif alt20 == 95:
-            # sdl92.g:1:682: OR
+        elif alt20 == 93:
+            # sdl92.g:1:646: OR
             pass 
             self.mOR()
 
 
-        elif alt20 == 96:
-            # sdl92.g:1:685: XOR
+        elif alt20 == 94:
+            # sdl92.g:1:649: XOR
             pass 
             self.mXOR()
 
 
-        elif alt20 == 97:
-            # sdl92.g:1:689: AND
+        elif alt20 == 95:
+            # sdl92.g:1:653: AND
             pass 
             self.mAND()
 
 
-        elif alt20 == 98:
-            # sdl92.g:1:693: IMPLIES
+        elif alt20 == 96:
+            # sdl92.g:1:657: IMPLIES
             pass 
             self.mIMPLIES()
 
 
-        elif alt20 == 99:
-            # sdl92.g:1:701: DIV
+        elif alt20 == 97:
+            # sdl92.g:1:665: DIV
             pass 
             self.mDIV()
 
 
-        elif alt20 == 100:
-            # sdl92.g:1:705: MOD
+        elif alt20 == 98:
+            # sdl92.g:1:669: MOD
             pass 
             self.mMOD()
 
 
-        elif alt20 == 101:
-            # sdl92.g:1:709: REM
+        elif alt20 == 99:
+            # sdl92.g:1:673: REM
             pass 
             self.mREM()
 
 
-        elif alt20 == 102:
-            # sdl92.g:1:713: TRUE
+        elif alt20 == 100:
+            # sdl92.g:1:677: TRUE
             pass 
             self.mTRUE()
 
 
-        elif alt20 == 103:
-            # sdl92.g:1:718: FALSE
+        elif alt20 == 101:
+            # sdl92.g:1:682: FALSE
             pass 
             self.mFALSE()
 
 
-        elif alt20 == 104:
-            # sdl92.g:1:724: ASNFILENAME
+        elif alt20 == 102:
+            # sdl92.g:1:688: ASNFILENAME
             pass 
             self.mASNFILENAME()
 
 
-        elif alt20 == 105:
-            # sdl92.g:1:736: NULL
+        elif alt20 == 103:
+            # sdl92.g:1:700: NULL
             pass 
             self.mNULL()
 
 
-        elif alt20 == 106:
-            # sdl92.g:1:741: PLUS_INFINITY
+        elif alt20 == 104:
+            # sdl92.g:1:705: PLUS_INFINITY
             pass 
             self.mPLUS_INFINITY()
 
 
-        elif alt20 == 107:
-            # sdl92.g:1:755: MINUS_INFINITY
+        elif alt20 == 105:
+            # sdl92.g:1:719: MINUS_INFINITY
             pass 
             self.mMINUS_INFINITY()
 
 
-        elif alt20 == 108:
-            # sdl92.g:1:770: MANTISSA
+        elif alt20 == 106:
+            # sdl92.g:1:734: MANTISSA
             pass 
             self.mMANTISSA()
 
 
-        elif alt20 == 109:
-            # sdl92.g:1:779: EXPONENT
+        elif alt20 == 107:
+            # sdl92.g:1:743: EXPONENT
             pass 
             self.mEXPONENT()
 
 
-        elif alt20 == 110:
-            # sdl92.g:1:788: BASE
+        elif alt20 == 108:
+            # sdl92.g:1:752: BASE
             pass 
             self.mBASE()
 
 
-        elif alt20 == 111:
-            # sdl92.g:1:793: SYSTEM
+        elif alt20 == 109:
+            # sdl92.g:1:757: SYSTEM
             pass 
             self.mSYSTEM()
 
 
-        elif alt20 == 112:
-            # sdl92.g:1:800: ENDSYSTEM
+        elif alt20 == 110:
+            # sdl92.g:1:764: ENDSYSTEM
             pass 
             self.mENDSYSTEM()
 
 
-        elif alt20 == 113:
-            # sdl92.g:1:810: CHANNEL
+        elif alt20 == 111:
+            # sdl92.g:1:774: CHANNEL
             pass 
             self.mCHANNEL()
 
 
-        elif alt20 == 114:
-            # sdl92.g:1:818: ENDCHANNEL
+        elif alt20 == 112:
+            # sdl92.g:1:782: ENDCHANNEL
             pass 
             self.mENDCHANNEL()
 
 
-        elif alt20 == 115:
-            # sdl92.g:1:829: USE
+        elif alt20 == 113:
+            # sdl92.g:1:793: USE
             pass 
             self.mUSE()
 
 
-        elif alt20 == 116:
-            # sdl92.g:1:833: SIGNAL
+        elif alt20 == 114:
+            # sdl92.g:1:797: SIGNAL
             pass 
             self.mSIGNAL()
 
 
-        elif alt20 == 117:
-            # sdl92.g:1:840: BLOCK
+        elif alt20 == 115:
+            # sdl92.g:1:804: BLOCK
             pass 
             self.mBLOCK()
 
 
-        elif alt20 == 118:
-            # sdl92.g:1:846: ENDBLOCK
+        elif alt20 == 116:
+            # sdl92.g:1:810: ENDBLOCK
             pass 
             self.mENDBLOCK()
 
 
-        elif alt20 == 119:
-            # sdl92.g:1:855: SIGNALROUTE
+        elif alt20 == 117:
+            # sdl92.g:1:819: SIGNALROUTE
             pass 
             self.mSIGNALROUTE()
 
 
-        elif alt20 == 120:
-            # sdl92.g:1:867: CONNECT
+        elif alt20 == 118:
+            # sdl92.g:1:831: CONNECT
             pass 
             self.mCONNECT()
 
 
-        elif alt20 == 121:
-            # sdl92.g:1:875: SYNTYPE
+        elif alt20 == 119:
+            # sdl92.g:1:839: SYNTYPE
             pass 
             self.mSYNTYPE()
 
 
-        elif alt20 == 122:
-            # sdl92.g:1:883: ENDSYNTYPE
+        elif alt20 == 120:
+            # sdl92.g:1:847: ENDSYNTYPE
             pass 
             self.mENDSYNTYPE()
 
 
-        elif alt20 == 123:
-            # sdl92.g:1:894: NEWTYPE
+        elif alt20 == 121:
+            # sdl92.g:1:858: NEWTYPE
             pass 
             self.mNEWTYPE()
 
 
-        elif alt20 == 124:
-            # sdl92.g:1:902: ENDNEWTYPE
+        elif alt20 == 122:
+            # sdl92.g:1:866: ENDNEWTYPE
             pass 
             self.mENDNEWTYPE()
 
 
-        elif alt20 == 125:
-            # sdl92.g:1:913: ARRAY
+        elif alt20 == 123:
+            # sdl92.g:1:877: ARRAY
             pass 
             self.mARRAY()
 
 
-        elif alt20 == 126:
-            # sdl92.g:1:919: CONSTANTS
+        elif alt20 == 124:
+            # sdl92.g:1:883: CONSTANTS
             pass 
             self.mCONSTANTS()
 
 
-        elif alt20 == 127:
-            # sdl92.g:1:929: STRUCT
+        elif alt20 == 125:
+            # sdl92.g:1:893: STRUCT
             pass 
             self.mSTRUCT()
 
 
-        elif alt20 == 128:
-            # sdl92.g:1:936: SYNONYM
+        elif alt20 == 126:
+            # sdl92.g:1:900: SYNONYM
             pass 
             self.mSYNONYM()
 
 
-        elif alt20 == 129:
-            # sdl92.g:1:944: IMPORT
+        elif alt20 == 127:
+            # sdl92.g:1:908: IMPORT
             pass 
             self.mIMPORT()
 
 
-        elif alt20 == 130:
-            # sdl92.g:1:951: VIEW
+        elif alt20 == 128:
+            # sdl92.g:1:915: VIEW
             pass 
             self.mVIEW()
 
 
-        elif alt20 == 131:
-            # sdl92.g:1:956: ACTIVE
+        elif alt20 == 129:
+            # sdl92.g:1:920: ACTIVE
             pass 
             self.mACTIVE()
 
 
-        elif alt20 == 132:
-            # sdl92.g:1:963: StringLiteral
+        elif alt20 == 130:
+            # sdl92.g:1:927: STRING
             pass 
-            self.mStringLiteral()
+            self.mSTRING()
+
+
+        elif alt20 == 131:
+            # sdl92.g:1:934: BITSTR
+            pass 
+            self.mBITSTR()
+
+
+        elif alt20 == 132:
+            # sdl92.g:1:941: OCTSTR
+            pass 
+            self.mOCTSTR()
 
 
         elif alt20 == 133:
-            # sdl92.g:1:977: ID
+            # sdl92.g:1:948: ID
             pass 
             self.mID()
 
 
         elif alt20 == 134:
-            # sdl92.g:1:980: INT
+            # sdl92.g:1:951: INT
             pass 
             self.mINT()
 
 
         elif alt20 == 135:
-            # sdl92.g:1:984: FloatingPointLiteral
+            # sdl92.g:1:955: FLOAT
             pass 
-            self.mFloatingPointLiteral()
+            self.mFLOAT()
 
 
         elif alt20 == 136:
-            # sdl92.g:1:1005: WS
+            # sdl92.g:1:961: WS
             pass 
             self.mWS()
 
 
         elif alt20 == 137:
-            # sdl92.g:1:1008: COMMENT2
+            # sdl92.g:1:964: COMMENT2
             pass 
             self.mCOMMENT2()
 
@@ -6297,44 +6295,43 @@ class sdl92Lexer(Lexer):
     # lookup tables for DFA #20
 
     DFA20_eot = DFA.unpack(
-        u"\1\uffff\1\106\1\uffff\1\110\1\112\1\101\1\125\1\127\6\uffff\1"
-        u"\134\23\101\1\uffff\1\u00c0\1\u00c2\1\u00c4\4\101\1\uffff\26\101"
-        u"\1\uffff\2\u00d3\7\uffff\7\101\13\uffff\56\101\1\u0124\2\101\1"
-        u"\u0124\7\101\1\u012f\1\u0130\1\101\1\u012f\1\u0130\12\101\2\u0142"
-        u"\17\101\1\u0155\1\101\1\u0155\6\101\6\uffff\16\101\2\uffff\1\u00d3"
-        u"\1\101\2\u016d\6\101\1\uffff\2\u0186\10\101\1\u018f\1\u0190\1\101"
-        u"\1\u018f\1\u0190\1\101\2\u0193\32\101\2\u01b4\12\101\1\u01c1\3"
-        u"\101\1\u01c1\7\101\1\uffff\12\101\2\uffff\1\101\1\uffff\3\101\2"
-        u"\u01d8\10\101\2\u01e1\1\uffff\20\101\2\u01f4\1\uffff\2\101\1\u01f9"
-        u"\1\101\1\u01f9\3\101\2\u01fe\2\101\2\u0201\6\101\2\u0208\1\101"
-        u"\1\uffff\26\101\2\u0228\1\uffff\10\101\2\uffff\2\101\1\uffff\2"
-        u"\101\2\u0235\22\101\2\u0247\10\101\1\uffff\2\101\2\u0252\10\101"
-        u"\1\uffff\4\101\2\u025f\2\u0260\2\101\2\u0263\2\u0264\2\u0265\4"
-        u"\101\2\u026a\1\uffff\4\101\2\u026f\2\101\1\uffff\2\u0272\2\u0273"
-        u"\12\101\2\u027e\2\101\1\uffff\2\101\2\u0283\1\uffff\2\u0284\2\u0285"
-        u"\1\uffff\2\101\1\uffff\2\101\2\u028a\2\101\1\uffff\1\u028d\36\101"
-        u"\1\uffff\6\101\2\u02b4\4\101\1\uffff\6\101\2\u02c1\1\uffff\4\101"
-        u"\2\u02c8\2\u02c9\1\uffff\12\101\1\uffff\2\u02d4\6\101\2\u02db\2"
-        u"\u02dc\2\uffff\2\u02dd\3\uffff\2\101\2\u02e0\1\uffff\4\101\1\uffff"
-        u"\2\u02e5\2\uffff\12\101\1\uffff\2\u02f0\2\101\3\uffff\4\101\1\uffff"
-        u"\2\u02f6\1\uffff\22\101\2\u0309\10\101\2\u0312\6\101\2\u0319\1"
-        u"\uffff\2\u031a\12\101\1\uffff\2\101\2\u0327\2\u032a\2\uffff\4\101"
-        u"\2\u032f\4\101\1\uffff\4\101\2\u0338\3\uffff\2\u0339\1\uffff\4"
-        u"\101\1\uffff\10\101\2\u0346\1\uffff\2\u0347\2\101\2\uffff\2\u034a"
-        u"\20\101\1\uffff\10\101\1\uffff\6\101\2\uffff\4\101\2\u036d\6\101"
-        u"\1\uffff\2\101\1\uffff\2\u0376\2\u0377\1\uffff\10\101\2\uffff\2"
-        u"\101\2\u0382\2\u0383\2\u0384\2\101\2\u0389\2\uffff\2\101\1\uffff"
-        u"\6\101\2\u0392\2\u0393\14\101\2\u03a2\2\u03a3\4\101\2\u03a8\2\101"
-        u"\1\uffff\2\u03ab\2\u03ac\4\101\2\uffff\2\u03b1\10\101\3\uffff\4"
-        u"\101\1\uffff\2\u03be\4\101\2\u03c3\2\uffff\16\101\2\uffff\4\101"
-        u"\1\uffff\2\u03d6\2\uffff\4\101\1\uffff\2\101\2\u03df\2\101\2\u03e2"
-        u"\2\101\2\u03e5\1\uffff\2\101\2\u03e8\1\uffff\2\101\2\u03eb\4\101"
-        u"\2\u03f0\2\101\2\u03f3\4\101\1\uffff\2\101\2\u03fa\4\101\1\uffff"
-        u"\2\u03ff\1\uffff\2\u0400\1\uffff\2\101\1\uffff\2\101\1\uffff\4"
-        u"\101\1\uffff\2\u0409\1\uffff\2\u040a\2\u040b\2\101\1\uffff\2\u040e"
-        u"\2\101\2\uffff\6\101\2\u0417\3\uffff\2\101\1\uffff\2\u041a\4\101"
-        u"\2\u041f\1\uffff\2\u0420\1\uffff\2\101\2\u0423\2\uffff\2\u0424"
-        u"\2\uffff"
+        u"\1\uffff\1\106\1\uffff\1\110\1\112\1\101\1\125\1\127\5\uffff\1"
+        u"\131\23\101\1\uffff\1\u00bd\1\u00bf\1\u00c1\4\101\2\uffff\26\101"
+        u"\1\uffff\2\u00d3\7\uffff\7\101\10\uffff\56\101\1\u0123\3\101\1"
+        u"\u0123\5\101\1\u012c\1\u0130\1\u012c\1\u0130\16\101\2\u0143\14"
+        u"\101\2\u0152\10\101\6\uffff\16\101\5\uffff\1\u00d3\1\101\2\u016d"
+        u"\10\101\2\u0188\2\101\1\u018b\1\u018c\1\u018b\1\u018c\10\101\2"
+        u"\u0195\30\101\2\u01b4\16\101\2\u01c3\6\101\1\uffff\10\101\1\uffff"
+        u"\1\101\1\uffff\1\101\1\uffff\4\101\2\u01d8\12\101\2\u01e3\1\uffff"
+        u"\16\101\1\uffff\2\u01f4\4\101\2\u01fb\2\101\2\u01fe\2\101\2\u0201"
+        u"\6\101\2\u0208\1\uffff\1\101\1\uffff\26\101\2\u0228\2\101\1\uffff"
+        u"\2\101\2\uffff\10\101\1\uffff\2\u0235\16\101\2\u0243\14\101\1\uffff"
+        u"\2\u0250\14\101\1\uffff\4\101\2\u0261\2\u0262\2\u0263\2\u0264\2"
+        u"\u0265\4\101\2\u026a\1\uffff\4\101\2\u026f\2\u0270\2\101\1\uffff"
+        u"\2\u0273\12\101\2\u027e\2\101\1\uffff\2\101\2\u0283\2\u0284\1\uffff"
+        u"\2\u0285\1\uffff\2\101\1\uffff\4\101\2\u028c\1\uffff\1\u028d\36"
+        u"\101\1\uffff\10\101\2\u02b6\2\101\1\uffff\2\u02b9\6\101\1\uffff"
+        u"\2\u02c4\2\u02c5\1\uffff\14\101\1\uffff\2\101\2\u02d4\6\101\2\u02db"
+        u"\2\u02dc\2\u02dd\5\uffff\2\u02de\2\101\1\uffff\4\101\2\uffff\2"
+        u"\u02e5\1\uffff\12\101\1\uffff\2\u02f0\2\101\3\uffff\4\101\2\u02f6"
+        u"\2\uffff\16\101\2\u0305\14\101\2\u0312\6\101\2\u0319\2\u031a\1"
+        u"\uffff\2\101\1\uffff\12\101\2\uffff\2\u0327\2\u0328\4\101\2\u032f"
+        u"\4\101\1\uffff\2\101\2\u0336\2\101\4\uffff\2\u0339\4\101\1\uffff"
+        u"\10\101\2\u0346\1\uffff\2\u0347\1\uffff\2\101\1\uffff\4\101\2\u034e"
+        u"\10\101\1\uffff\14\101\1\uffff\6\101\2\uffff\10\101\2\u0371\2\101"
+        u"\2\uffff\2\101\2\u0376\2\u0377\1\uffff\6\101\1\uffff\2\101\1\uffff"
+        u"\2\u0380\2\101\2\u0383\2\u0384\2\101\2\u0389\2\uffff\4\101\2\u038e"
+        u"\1\uffff\10\101\2\u0399\10\101\2\u03a2\2\u03a3\4\101\2\u03a8\2"
+        u"\101\2\u03ab\2\101\1\uffff\2\u03ae\2\101\2\uffff\2\u03b1\6\101"
+        u"\1\uffff\2\101\2\uffff\4\101\1\uffff\2\u03be\2\101\1\uffff\12\101"
+        u"\1\uffff\2\u03cb\6\101\2\uffff\4\101\1\uffff\2\101\1\uffff\2\u03d8"
+        u"\1\uffff\2\101\1\uffff\2\101\2\u03df\2\101\2\u03e2\2\101\2\u03e5"
+        u"\1\uffff\2\u03e6\2\101\2\u03e9\2\101\2\u03ec\2\101\1\uffff\2\u03ef"
+        u"\10\101\2\u03f8\1\uffff\6\101\1\uffff\2\u03ff\1\uffff\2\u0400\2"
+        u"\uffff\2\101\1\uffff\2\101\1\uffff\2\101\1\uffff\2\101\2\u0409"
+        u"\2\u040a\2\u040b\1\uffff\2\101\2\u040e\2\101\2\uffff\2\101\2\u0413"
+        u"\4\101\3\uffff\2\101\1\uffff\2\u041a\2\101\1\uffff\2\u041d\2\101"
+        u"\2\u0420\1\uffff\2\u0421\1\uffff\2\101\2\uffff\2\u0424\1\uffff"
         )
 
     DFA20_eof = DFA.unpack(
@@ -6342,153 +6339,153 @@ class sdl92Lexer(Lexer):
         )
 
     DFA20_min = DFA.unpack(
-        u"\1\11\1\75\1\uffff\1\56\1\51\1\114\1\52\1\57\1\11\5\uffff\1\55"
-        u"\2\103\1\114\1\105\2\101\1\105\1\131\2\101\1\106\1\105\3\101\1"
-        u"\122\2\111\1\117\1\uffff\1\76\2\75\1\117\2\101\1\123\1\uffff\2"
-        u"\103\1\105\2\101\1\105\1\131\2\101\1\106\1\105\3\101\1\122\2\111"
-        u"\2\117\2\101\1\123\1\uffff\2\56\7\uffff\1\122\1\104\1\120\1\123"
-        u"\1\104\1\120\1\123\6\uffff\1\11\1\102\3\uffff\1\114\1\116\1\124"
-        u"\1\114\1\116\1\124\2\122\2\104\2\114\2\103\2\105\1\111\1\122\1"
-        u"\111\1\122\2\125\1\107\1\101\1\107\1\101\2\116\2\105\2\124\2\102"
-        u"\2\126\2\117\2\120\2\106\2\116\1\125\1\123\1\60\1\125\1\123\1\60"
-        u"\2\115\2\105\2\130\1\120\1\60\1\57\1\120\1\60\1\57\1\116\1\127"
-        u"\1\114\1\116\1\127\3\114\2\122\2\60\2\117\3\101\1\115\1\101\1\115"
-        u"\2\105\2\114\2\102\1\124\1\60\1\124\1\60\2\124\2\101\2\111\6\uffff"
-        u"\2\122\2\116\2\104\2\116\2\123\2\117\2\105\2\uffff\1\56\1\117\2"
-        u"\60\1\117\1\105\1\117\3\105\1\uffff\2\60\2\105\2\106\2\111\2\101"
-        u"\2\60\1\127\2\60\1\127\2\60\2\111\2\120\1\103\1\117\1\103\1\117"
-        u"\2\101\2\123\2\116\1\125\1\122\1\120\1\125\1\122\1\120\2\117\2"
-        u"\124\2\103\2\60\2\123\2\105\2\104\3\105\1\125\1\60\2\105\1\125"
-        u"\1\60\1\105\2\107\2\105\2\113\1\uffff\2\105\1\123\1\116\1\123\1"
-        u"\116\2\124\2\117\2\uffff\1\125\1\uffff\1\125\2\105\2\60\4\124\2"
-        u"\114\2\123\2\60\1\uffff\2\115\2\122\4\116\2\115\2\101\2\114\2\105"
-        u"\2\60\1\uffff\2\110\1\60\1\127\1\60\1\127\2\116\2\60\2\124\2\60"
-        u"\2\125\2\105\2\103\2\60\1\122\1\uffff\1\105\1\124\2\114\1\105\1"
-        u"\124\2\114\2\110\2\117\2\122\4\105\2\116\2\122\2\60\1\uffff\2\122"
-        u"\2\111\2\126\2\131\2\uffff\2\105\1\uffff\2\123\2\60\1\105\1\111"
-        u"\1\105\1\111\2\122\2\115\2\55\2\101\2\103\2\105\2\124\2\60\1\131"
-        u"\1\116\1\131\1\116\2\105\2\111\1\uffff\2\124\2\60\2\105\6\122\1"
-        u"\uffff\2\124\2\105\4\60\2\122\6\60\2\122\2\124\2\60\1\uffff\2\123"
-        u"\2\131\2\60\2\105\1\uffff\4\60\2\116\1\105\1\124\1\105\1\124\2"
-        u"\105\2\124\2\60\2\114\1\uffff\2\125\2\60\1\uffff\4\60\1\uffff\2"
-        u"\111\1\uffff\2\123\2\60\2\113\1\uffff\1\60\2\130\1\102\1\116\1"
-        u"\101\1\102\1\116\1\101\2\117\2\124\2\101\2\116\2\122\2\117\2\103"
-        u"\2\127\1\105\1\124\1\105\1\124\2\116\1\uffff\2\116\2\114\2\105"
-        u"\2\60\2\122\2\111\1\uffff\4\104\2\111\2\60\1\uffff\2\114\2\124"
-        u"\4\60\1\uffff\2\120\2\131\2\115\2\106\2\122\1\uffff\2\60\2\114"
-        u"\2\105\2\116\4\60\2\uffff\2\60\3\uffff\2\124\2\60\1\uffff\2\124"
-        u"\2\120\1\uffff\2\60\2\uffff\2\105\2\103\2\101\2\116\2\105\1\uffff"
-        u"\2\60\2\124\3\uffff\2\123\2\55\1\uffff\2\60\1\uffff\2\124\2\123"
-        u"\6\124\2\103\2\105\4\116\2\60\2\103\2\111\2\124\2\116\2\60\4\101"
-        u"\2\105\2\60\1\uffff\2\60\2\117\2\125\2\123\2\105\2\124\1\uffff"
-        u"\2\101\4\60\2\uffff\2\105\2\115\2\60\2\111\2\125\1\uffff\2\111"
-        u"\2\116\2\60\3\uffff\2\60\1\uffff\2\101\2\105\1\uffff\2\114\2\124"
-        u"\2\116\2\124\2\60\1\uffff\2\60\2\123\2\uffff\2\60\2\124\2\131\4"
-        u"\105\2\113\2\122\2\116\2\105\1\uffff\2\105\2\123\2\131\2\124\1"
-        u"\uffff\2\114\2\124\2\116\2\uffff\2\116\2\122\2\60\2\104\2\131\2"
-        u"\115\1\uffff\2\117\1\uffff\4\60\1\uffff\4\103\2\116\2\103\2\uffff"
-        u"\2\124\6\60\2\124\2\60\2\uffff\2\101\1\uffff\2\122\2\120\2\115"
-        u"\4\60\2\116\2\105\2\103\2\104\2\111\2\120\4\60\2\111\2\101\2\60"
-        u"\2\105\1\uffff\4\60\2\105\2\125\2\uffff\2\60\2\124\2\113\4\105"
-        u"\3\uffff\2\117\2\123\1\uffff\2\60\2\125\2\105\2\60\2\uffff\2\101"
-        u"\2\114\2\124\2\125\2\123\2\117\2\105\2\uffff\2\126\2\115\1\uffff"
-        u"\2\60\2\uffff\2\123\2\124\1\uffff\2\125\2\60\2\104\2\60\2\116\2"
-        u"\60\1\uffff\2\103\2\60\1\uffff\2\124\2\60\2\111\2\122\2\60\2\116"
-        u"\2\60\4\105\1\uffff\2\101\2\60\2\105\2\122\1\uffff\2\60\1\uffff"
-        u"\2\60\1\uffff\2\124\1\uffff\2\111\1\uffff\2\117\2\105\1\uffff\2"
-        u"\60\1\uffff\4\60\2\114\1\uffff\2\60\2\105\2\uffff\2\125\2\126\2"
-        u"\116\2\60\3\uffff\2\114\1\uffff\2\60\2\122\2\105\2\60\1\uffff\2"
-        u"\60\1\uffff\2\105\2\60\2\uffff\2\60\2\uffff"
+        u"\1\11\1\75\1\uffff\1\56\1\51\1\114\1\52\1\57\5\uffff\1\55\2\103"
+        u"\1\114\1\105\2\101\1\105\1\131\2\101\1\106\1\105\3\101\1\122\2"
+        u"\111\1\117\1\uffff\1\76\2\75\1\117\2\101\1\123\1\uffff\1\11\2\103"
+        u"\1\105\2\101\1\105\1\131\2\101\1\106\1\105\3\101\1\122\2\111\2"
+        u"\117\2\101\1\123\1\uffff\2\56\7\uffff\1\122\1\104\1\120\1\104\1"
+        u"\120\2\123\10\uffff\1\114\1\116\1\104\1\114\1\116\1\104\2\124\2"
+        u"\122\2\103\2\114\2\105\1\122\1\111\1\122\1\111\2\125\1\101\1\107"
+        u"\1\101\1\107\2\116\2\105\2\124\2\126\2\102\2\117\2\120\1\106\1"
+        u"\116\1\106\1\116\1\115\1\125\1\60\1\123\1\115\1\125\1\60\1\123"
+        u"\2\105\2\130\1\57\1\60\1\57\1\60\2\120\1\116\1\127\1\116\1\127"
+        u"\2\114\1\101\1\114\1\101\1\114\2\122\2\60\2\117\1\101\1\115\1\101"
+        u"\1\115\2\105\2\114\2\102\2\60\4\124\2\101\2\111\6\uffff\2\122\1"
+        u"\116\1\104\1\116\1\104\2\116\2\117\2\123\2\105\1\11\1\102\3\uffff"
+        u"\1\56\1\117\2\60\2\117\6\105\2\60\2\106\4\60\2\127\2\111\2\101"
+        u"\2\111\2\60\2\120\2\101\1\117\1\103\1\117\1\103\2\123\1\122\1\120"
+        u"\1\122\1\120\2\125\2\116\1\117\1\124\1\117\1\124\2\103\2\60\2\105"
+        u"\2\123\2\104\2\105\1\125\2\105\1\125\2\105\2\60\2\107\4\105\1\uffff"
+        u"\2\113\2\123\2\116\2\124\1\uffff\1\125\1\uffff\1\125\1\uffff\2"
+        u"\117\2\105\2\60\4\124\2\114\2\122\2\123\2\60\1\uffff\2\115\4\116"
+        u"\2\115\2\101\2\114\2\105\1\uffff\2\60\2\110\2\127\2\60\2\116\2"
+        u"\60\2\125\2\60\2\124\2\103\2\105\2\60\1\uffff\1\122\1\uffff\1\105"
+        u"\1\114\1\105\1\114\1\122\1\105\1\114\1\105\1\114\1\122\2\110\2"
+        u"\117\2\124\2\105\2\116\2\122\2\60\2\122\1\uffff\2\111\2\uffff\2"
+        u"\105\2\126\2\131\2\123\1\uffff\2\60\2\115\2\122\2\105\2\111\2\55"
+        u"\2\124\2\105\2\60\2\103\2\101\2\131\2\116\2\105\2\111\1\uffff\2"
+        u"\60\2\124\2\105\6\122\2\124\1\uffff\2\105\2\122\12\60\2\124\2\122"
+        u"\2\60\1\uffff\2\131\2\123\4\60\2\105\1\uffff\2\60\2\116\1\105\1"
+        u"\124\1\105\1\124\2\105\2\124\2\60\2\114\1\uffff\2\125\4\60\1\uffff"
+        u"\2\60\1\uffff\2\123\1\uffff\2\111\2\113\2\60\1\uffff\1\60\2\127"
+        u"\2\117\2\130\2\124\2\117\2\101\2\116\2\122\1\101\1\116\1\101\1"
+        u"\116\2\102\2\103\1\105\1\124\1\105\1\124\2\116\1\uffff\2\116\2"
+        u"\114\2\122\2\105\2\60\2\111\1\uffff\2\60\2\111\4\104\1\uffff\4"
+        u"\60\1\uffff\2\124\2\114\2\120\2\131\2\115\2\106\1\uffff\2\122\2"
+        u"\60\2\114\2\116\2\105\6\60\5\uffff\2\60\2\124\1\uffff\2\120\2\124"
+        u"\2\uffff\2\60\1\uffff\2\105\2\103\2\101\2\116\2\105\1\uffff\2\60"
+        u"\2\124\3\uffff\2\55\2\123\2\60\2\uffff\2\124\2\103\2\124\2\105"
+        u"\2\103\4\116\2\60\6\124\2\123\2\111\2\116\2\60\4\101\2\105\4\60"
+        u"\1\uffff\2\117\1\uffff\2\101\2\124\2\125\2\123\2\105\2\uffff\4"
+        u"\60\2\105\2\115\2\60\2\111\2\125\1\uffff\2\111\2\60\2\116\4\uffff"
+        u"\2\60\2\105\2\101\1\uffff\2\114\2\124\2\116\2\124\2\60\1\uffff"
+        u"\2\60\1\uffff\2\123\1\uffff\2\131\2\113\2\60\2\122\2\105\2\116"
+        u"\2\105\1\uffff\4\105\2\131\2\124\2\123\2\124\1\uffff\2\114\2\124"
+        u"\2\116\2\uffff\2\116\2\115\2\131\2\122\2\60\2\104\2\uffff\2\117"
+        u"\4\60\1\uffff\4\103\2\116\1\uffff\2\103\1\uffff\2\60\2\124\4\60"
+        u"\2\124\2\60\2\uffff\2\101\2\120\2\60\1\uffff\2\116\2\104\2\105"
+        u"\2\103\2\60\2\115\2\120\2\122\2\111\4\60\2\111\2\101\2\60\2\105"
+        u"\2\60\2\105\1\uffff\2\60\2\125\2\uffff\2\60\2\124\2\113\2\105\1"
+        u"\uffff\2\105\2\uffff\2\117\2\123\1\uffff\2\60\2\105\1\uffff\2\101"
+        u"\1\123\1\125\1\123\1\125\2\114\2\124\1\uffff\2\60\2\105\2\125\2"
+        u"\117\2\uffff\2\126\2\115\1\uffff\2\123\1\uffff\2\60\1\uffff\2\124"
+        u"\1\uffff\2\125\2\60\2\104\2\60\2\116\2\60\1\uffff\2\60\2\124\2"
+        u"\60\2\122\2\60\2\111\1\uffff\2\60\2\103\2\116\4\105\2\60\1\uffff"
+        u"\2\101\2\105\2\122\1\uffff\2\60\1\uffff\2\60\2\uffff\2\111\1\uffff"
+        u"\2\105\1\uffff\2\117\1\uffff\2\124\6\60\1\uffff\2\114\2\60\2\105"
+        u"\2\uffff\2\126\2\60\2\116\2\125\3\uffff\2\114\1\uffff\2\60\2\105"
+        u"\1\uffff\2\60\2\122\2\60\1\uffff\2\60\1\uffff\2\105\2\uffff\2\60"
+        u"\1\uffff"
         )
 
     DFA20_max = DFA.unpack(
-        u"\1\175\1\75\1\uffff\1\56\1\51\1\170\1\75\1\57\1\146\5\uffff\1\71"
-        u"\1\163\1\145\1\170\1\145\1\162\1\171\1\145\1\171\1\145\1\162\1"
-        u"\156\1\165\2\162\1\141\1\165\2\151\1\157\1\uffff\1\76\2\75\2\157"
-        u"\1\154\1\163\1\uffff\1\163\2\145\1\162\1\171\1\145\1\171\1\145"
+        u"\1\175\1\75\1\uffff\1\56\1\51\1\170\1\75\1\57\5\uffff\1\71\1\163"
+        u"\1\145\1\170\1\145\1\162\1\171\1\145\1\171\1\145\1\162\1\156\1"
+        u"\165\2\162\1\141\1\165\2\151\1\157\1\uffff\1\76\2\75\2\157\1\154"
+        u"\1\163\1\uffff\1\146\1\163\2\145\1\162\1\171\1\145\1\171\1\145"
         u"\1\162\1\156\1\165\2\162\1\141\1\165\2\151\3\157\1\154\1\163\1"
-        u"\uffff\1\56\1\71\7\uffff\1\122\1\144\1\164\1\163\1\144\1\164\1"
-        u"\163\6\uffff\1\146\1\110\3\uffff\1\164\1\156\2\164\1\156\1\164"
-        u"\2\162\2\171\2\154\2\143\2\145\1\157\1\162\1\157\1\162\2\165\1"
-        u"\147\1\162\1\147\1\162\2\163\2\145\2\164\2\142\2\166\2\157\2\160"
-        u"\2\164\2\156\1\165\1\163\1\172\1\165\1\163\1\172\2\155\2\151\2"
-        u"\170\1\160\2\172\1\160\2\172\1\164\1\170\1\154\1\164\1\170\3\154"
-        u"\2\162\2\172\2\157\3\141\1\156\1\141\1\156\2\145\2\154\2\142\1"
-        u"\164\1\172\1\164\1\172\2\164\2\145\2\151\6\uffff\2\162\2\156\2"
-        u"\144\2\156\2\163\2\157\2\145\2\uffff\1\71\1\117\2\172\1\157\1\145"
-        u"\1\157\3\145\1\uffff\2\172\2\145\2\146\2\151\2\141\2\172\1\167"
-        u"\2\172\1\167\2\172\2\151\2\160\1\166\1\157\1\166\1\157\2\141\2"
-        u"\163\2\156\1\165\1\164\1\160\1\165\1\164\1\160\4\164\2\143\2\172"
-        u"\2\163\2\145\2\144\3\145\1\165\1\172\2\145\1\165\1\172\1\145\2"
-        u"\147\2\145\2\153\1\uffff\2\145\1\163\1\156\1\163\1\156\2\164\2"
-        u"\157\2\uffff\1\165\1\uffff\1\165\2\145\2\172\4\164\2\154\2\163"
-        u"\2\172\1\uffff\2\155\2\162\2\156\2\163\2\155\2\141\2\154\2\145"
-        u"\2\172\1\uffff\2\150\1\172\1\167\1\172\1\167\2\156\2\172\2\164"
-        u"\2\172\2\165\2\145\2\143\2\172\1\122\1\uffff\1\145\1\171\2\154"
-        u"\1\145\1\171\2\154\4\157\2\162\4\145\4\162\2\172\1\uffff\2\162"
-        u"\2\151\2\166\2\171\2\uffff\2\145\1\uffff\2\163\2\172\1\145\1\151"
-        u"\1\145\1\151\2\162\2\155\2\55\2\141\2\143\2\145\2\164\2\172\1\171"
-        u"\1\156\1\171\1\156\2\145\2\151\1\uffff\2\164\2\172\2\145\6\162"
-        u"\1\uffff\2\164\2\145\4\172\2\162\6\172\2\162\2\164\2\172\1\uffff"
-        u"\2\163\2\171\2\172\2\145\1\uffff\4\172\2\156\1\145\1\164\1\145"
-        u"\1\164\2\145\2\164\2\172\2\154\1\uffff\2\165\2\172\1\uffff\4\172"
-        u"\1\uffff\2\151\1\uffff\2\163\2\172\2\153\1\uffff\1\172\2\170\1"
-        u"\142\1\163\1\141\1\142\1\163\1\141\2\157\2\164\2\141\2\156\2\162"
-        u"\2\157\2\143\2\167\1\145\1\164\1\145\1\164\2\156\1\uffff\2\156"
-        u"\2\154\2\145\2\172\2\162\2\151\1\uffff\2\163\2\144\2\151\2\172"
-        u"\1\uffff\2\154\2\164\4\172\1\uffff\2\160\2\171\2\155\2\146\2\162"
-        u"\1\uffff\2\172\2\154\2\145\2\156\4\172\2\uffff\2\172\3\uffff\2"
-        u"\164\2\172\1\uffff\2\164\2\160\1\uffff\2\172\2\uffff\2\145\2\143"
-        u"\2\141\2\156\2\145\1\uffff\2\172\2\164\3\uffff\2\163\2\55\1\uffff"
-        u"\2\172\1\uffff\2\164\2\163\6\164\2\143\2\145\4\156\2\172\2\143"
-        u"\2\151\2\164\2\156\2\172\4\141\2\145\2\172\1\uffff\2\172\2\157"
-        u"\2\165\2\163\2\145\2\164\1\uffff\2\141\4\172\2\uffff\2\145\2\155"
-        u"\2\172\2\151\2\165\1\uffff\2\151\2\156\2\172\3\uffff\2\172\1\uffff"
-        u"\2\141\2\145\1\uffff\2\154\2\164\2\156\2\164\2\172\1\uffff\2\172"
-        u"\2\163\2\uffff\2\172\2\164\2\171\4\145\2\153\2\162\2\156\2\145"
-        u"\1\uffff\2\145\2\163\2\171\2\164\1\uffff\2\154\2\164\2\156\2\uffff"
-        u"\2\156\2\162\2\172\2\144\2\171\2\155\1\uffff\2\157\1\uffff\4\172"
-        u"\1\uffff\4\143\2\156\2\143\2\uffff\2\164\6\172\2\164\2\172\2\uffff"
-        u"\2\141\1\uffff\2\162\2\160\2\155\4\172\2\156\2\145\2\143\2\163"
-        u"\2\151\2\160\4\172\2\151\2\141\2\172\2\145\1\uffff\4\172\2\145"
-        u"\2\165\2\uffff\2\172\2\164\2\153\4\145\3\uffff\2\157\2\163\1\uffff"
-        u"\2\172\2\165\2\145\2\172\2\uffff\2\141\2\154\2\164\2\165\2\163"
-        u"\2\157\2\145\2\uffff\2\166\2\155\1\uffff\2\172\2\uffff\2\163\2"
-        u"\164\1\uffff\2\165\2\172\2\144\2\172\2\156\2\172\1\uffff\2\143"
-        u"\2\172\1\uffff\2\164\2\172\2\151\2\162\2\172\2\156\2\172\4\145"
-        u"\1\uffff\2\141\2\172\2\145\2\162\1\uffff\2\172\1\uffff\2\172\1"
-        u"\uffff\2\164\1\uffff\2\151\1\uffff\2\157\2\145\1\uffff\2\172\1"
-        u"\uffff\4\172\2\154\1\uffff\2\172\2\145\2\uffff\2\165\2\166\2\156"
-        u"\2\172\3\uffff\2\154\1\uffff\2\172\2\162\2\145\2\172\1\uffff\2"
-        u"\172\1\uffff\2\145\2\172\2\uffff\2\172\2\uffff"
+        u"\uffff\1\56\1\71\7\uffff\1\122\1\144\1\164\1\144\1\164\2\163\10"
+        u"\uffff\1\164\1\156\1\171\1\164\1\156\1\171\2\164\2\162\2\143\2"
+        u"\154\2\145\1\162\1\157\1\162\1\157\2\165\1\162\1\147\1\162\1\147"
+        u"\2\163\2\145\2\164\2\166\2\142\2\157\2\160\1\164\1\156\1\164\1"
+        u"\156\1\155\1\165\1\172\1\163\1\155\1\165\1\172\1\163\2\151\2\170"
+        u"\4\172\2\160\1\164\1\170\1\164\1\170\2\154\1\141\1\154\1\141\1"
+        u"\154\2\162\2\172\2\157\1\141\1\156\1\141\1\156\2\145\2\154\2\142"
+        u"\2\172\4\164\2\145\2\151\6\uffff\2\162\1\156\1\144\1\156\1\144"
+        u"\2\156\2\157\2\163\2\145\1\146\1\110\3\uffff\1\71\1\117\2\172\2"
+        u"\157\6\145\2\172\2\146\4\172\2\167\2\151\2\141\2\151\2\172\2\160"
+        u"\2\141\1\157\1\166\1\157\1\166\2\163\1\164\1\160\1\164\1\160\2"
+        u"\165\2\156\4\164\2\143\2\172\2\145\2\163\2\144\2\145\1\165\2\145"
+        u"\1\165\2\145\2\172\2\147\4\145\1\uffff\2\153\2\163\2\156\2\164"
+        u"\1\uffff\1\165\1\uffff\1\165\1\uffff\2\157\2\145\2\172\4\164\2"
+        u"\154\2\162\2\163\2\172\1\uffff\2\155\2\156\2\163\2\155\2\141\2"
+        u"\154\2\145\1\uffff\2\172\2\150\2\167\2\172\2\156\2\172\2\165\2"
+        u"\172\2\164\2\143\2\145\2\172\1\uffff\1\122\1\uffff\1\145\1\154"
+        u"\1\145\1\154\1\162\1\145\1\154\1\145\1\154\1\162\4\157\2\171\2"
+        u"\145\4\162\2\172\2\162\1\uffff\2\151\2\uffff\2\145\2\166\2\171"
+        u"\2\163\1\uffff\2\172\2\155\2\162\2\145\2\151\2\55\2\164\2\145\2"
+        u"\172\2\143\2\141\2\171\2\156\2\145\2\151\1\uffff\2\172\2\164\2"
+        u"\145\6\162\2\164\1\uffff\2\145\2\162\12\172\2\164\2\162\2\172\1"
+        u"\uffff\2\171\2\163\4\172\2\145\1\uffff\2\172\2\156\1\145\1\164"
+        u"\1\145\1\164\2\145\2\164\2\172\2\154\1\uffff\2\165\4\172\1\uffff"
+        u"\2\172\1\uffff\2\163\1\uffff\2\151\2\153\2\172\1\uffff\1\172\2"
+        u"\167\2\157\2\170\2\164\2\157\2\141\2\156\2\162\1\141\1\163\1\141"
+        u"\1\163\2\142\2\143\1\145\1\164\1\145\1\164\2\156\1\uffff\2\156"
+        u"\2\154\2\162\2\145\2\172\2\151\1\uffff\2\172\2\151\2\163\2\144"
+        u"\1\uffff\4\172\1\uffff\2\164\2\154\2\160\2\171\2\155\2\146\1\uffff"
+        u"\2\162\2\172\2\154\2\156\2\145\6\172\5\uffff\2\172\2\164\1\uffff"
+        u"\2\160\2\164\2\uffff\2\172\1\uffff\2\145\2\143\2\141\2\156\2\145"
+        u"\1\uffff\2\172\2\164\3\uffff\2\55\2\163\2\172\2\uffff\2\164\2\143"
+        u"\2\164\2\145\2\143\4\156\2\172\6\164\2\163\2\151\2\156\2\172\4"
+        u"\141\2\145\4\172\1\uffff\2\157\1\uffff\2\141\2\164\2\165\2\163"
+        u"\2\145\2\uffff\4\172\2\145\2\155\2\172\2\151\2\165\1\uffff\2\151"
+        u"\2\172\2\156\4\uffff\2\172\2\145\2\141\1\uffff\2\154\2\164\2\156"
+        u"\2\164\2\172\1\uffff\2\172\1\uffff\2\163\1\uffff\2\171\2\153\2"
+        u"\172\2\162\2\145\2\156\2\145\1\uffff\4\145\2\171\2\164\2\163\2"
+        u"\164\1\uffff\2\154\2\164\2\156\2\uffff\2\156\2\155\2\171\2\162"
+        u"\2\172\2\144\2\uffff\2\157\4\172\1\uffff\4\143\2\156\1\uffff\2"
+        u"\143\1\uffff\2\172\2\164\4\172\2\164\2\172\2\uffff\2\141\2\160"
+        u"\2\172\1\uffff\2\156\2\163\2\145\2\143\2\172\2\155\2\160\2\162"
+        u"\2\151\4\172\2\151\2\141\2\172\2\145\2\172\2\145\1\uffff\2\172"
+        u"\2\165\2\uffff\2\172\2\164\2\153\2\145\1\uffff\2\145\2\uffff\2"
+        u"\157\2\163\1\uffff\2\172\2\145\1\uffff\2\141\1\163\1\165\1\163"
+        u"\1\165\2\154\2\164\1\uffff\2\172\2\145\2\165\2\157\2\uffff\2\166"
+        u"\2\155\1\uffff\2\163\1\uffff\2\172\1\uffff\2\164\1\uffff\2\165"
+        u"\2\172\2\144\2\172\2\156\2\172\1\uffff\2\172\2\164\2\172\2\162"
+        u"\2\172\2\151\1\uffff\2\172\2\143\2\156\4\145\2\172\1\uffff\2\141"
+        u"\2\145\2\162\1\uffff\2\172\1\uffff\2\172\2\uffff\2\151\1\uffff"
+        u"\2\145\1\uffff\2\157\1\uffff\2\164\6\172\1\uffff\2\154\2\172\2"
+        u"\145\2\uffff\2\166\2\172\2\156\2\165\3\uffff\2\154\1\uffff\2\172"
+        u"\2\145\1\uffff\2\172\2\162\2\172\1\uffff\2\172\1\uffff\2\145\2"
+        u"\uffff\2\172\1\uffff"
         )
 
     DFA20_accept = DFA.unpack(
-        u"\2\uffff\1\2\6\uffff\1\13\1\14\1\16\1\17\1\20\24\uffff\1\116\7"
-        u"\uffff\1\u0084\26\uffff\1\u0085\2\uffff\1\u0088\1\12\1\1\1\3\1"
-        u"\15\1\4\1\117\7\uffff\1\6\1\120\1\131\1\143\1\7\1\23\2\uffff\1"
-        u"\11\1\u0089\1\21\142\uffff\1\142\1\130\1\133\1\132\1\135\1\134"
-        u"\16\uffff\1\u0086\1\u0087\12\uffff\1\10\104\uffff\1\110\12\uffff"
-        u"\1\64\1\121\1\uffff\1\123\17\uffff\1\67\22\uffff\1\137\27\uffff"
-        u"\1\25\30\uffff\1\113\10\uffff\1\22\1\141\2\uffff\1\24\40\uffff"
-        u"\1\74\14\uffff\1\145\26\uffff\1\136\10\uffff\1\54\22\uffff\1\122"
-        u"\4\uffff\1\112\4\uffff\1\140\2\uffff\1\144\6\uffff\1\163\37\uffff"
-        u"\1\66\14\uffff\1\26\10\uffff\1\152\10\uffff\1\63\12\uffff\1\52"
-        u"\14\uffff\1\146\1\114\2\uffff\1\73\1\65\1\42\4\uffff\1\53\4\uffff"
-        u"\1\151\2\uffff\1\107\1\126\12\uffff\1\72\4\uffff\1\111\1\u0082"
-        u"\1\115\4\uffff\1\156\2\uffff\1\5\46\uffff\1\175\14\uffff\1\127"
-        u"\6\uffff\1\41\1\40\12\uffff\1\31\6\uffff\1\75\1\56\1\35\2\uffff"
-        u"\1\47\4\uffff\1\147\12\uffff\1\62\4\uffff\1\153\1\165\22\uffff"
-        u"\1\55\10\uffff\1\102\6\uffff\1\u0083\1\60\14\uffff\1\164\2\uffff"
-        u"\1\177\4\uffff\1\157\10\uffff\1\34\1\u0081\14\uffff\1\70\1\71\2"
-        u"\uffff\1\33\42\uffff\1\36\10\uffff\1\171\1\u0080\12\uffff\1\173"
-        u"\1\161\1\170\4\uffff\1\61\10\uffff\1\46\1\166\16\uffff\1\155\1"
-        u"\103\4\uffff\1\100\2\uffff\1\50\1\51\4\uffff\1\30\14\uffff\1\154"
-        u"\4\uffff\1\160\22\uffff\1\43\10\uffff\1\32\2\uffff\1\57\2\uffff"
-        u"\1\176\2\uffff\1\172\2\uffff\1\162\4\uffff\1\37\2\uffff\1\174\6"
-        u"\uffff\1\27\4\uffff\1\104\1\105\10\uffff\1\101\1\77\1\150\2\uffff"
-        u"\1\167\10\uffff\1\44\2\uffff\1\124\4\uffff\1\106\1\45\2\uffff\1"
-        u"\76\1\125"
+        u"\2\uffff\1\2\5\uffff\1\11\1\12\1\14\1\15\1\16\24\uffff\1\114\7"
+        u"\uffff\1\u0082\27\uffff\1\u0085\2\uffff\1\u0088\1\10\1\1\1\3\1"
+        u"\13\1\4\1\115\7\uffff\1\6\1\116\1\127\1\141\1\7\1\21\1\u0089\1"
+        u"\17\142\uffff\1\140\1\126\1\131\1\130\1\133\1\132\20\uffff\1\u0084"
+        u"\1\u0086\1\u0087\116\uffff\1\106\10\uffff\1\117\1\uffff\1\121\1"
+        u"\uffff\1\62\22\uffff\1\65\16\uffff\1\135\30\uffff\1\u0083\1\uffff"
+        u"\1\23\32\uffff\1\111\2\uffff\1\137\1\20\10\uffff\1\22\36\uffff"
+        u"\1\72\16\uffff\1\143\24\uffff\1\134\12\uffff\1\52\20\uffff\1\120"
+        u"\6\uffff\1\110\2\uffff\1\136\2\uffff\1\142\6\uffff\1\161\37\uffff"
+        u"\1\64\14\uffff\1\24\10\uffff\1\150\4\uffff\1\61\14\uffff\1\50\20"
+        u"\uffff\1\144\1\112\1\71\1\63\1\40\4\uffff\1\51\4\uffff\1\147\1"
+        u"\124\2\uffff\1\105\12\uffff\1\70\4\uffff\1\107\1\u0080\1\113\6"
+        u"\uffff\1\154\1\5\50\uffff\1\173\2\uffff\1\125\12\uffff\1\36\1\37"
+        u"\16\uffff\1\27\6\uffff\1\73\1\54\1\33\1\45\6\uffff\1\145\12\uffff"
+        u"\1\60\2\uffff\1\151\2\uffff\1\163\16\uffff\1\53\14\uffff\1\100"
+        u"\6\uffff\1\56\1\u0081\14\uffff\1\175\1\162\6\uffff\1\155\6\uffff"
+        u"\1\32\2\uffff\1\177\14\uffff\1\66\1\67\6\uffff\1\31\42\uffff\1"
+        u"\34\4\uffff\1\167\1\176\10\uffff\1\171\2\uffff\1\157\1\166\4\uffff"
+        u"\1\57\4\uffff\1\164\12\uffff\1\44\10\uffff\1\153\1\101\4\uffff"
+        u"\1\76\2\uffff\1\47\2\uffff\1\46\2\uffff\1\26\14\uffff\1\152\14"
+        u"\uffff\1\156\14\uffff\1\41\6\uffff\1\30\2\uffff\1\55\2\uffff\1"
+        u"\174\1\172\2\uffff\1\35\2\uffff\1\160\2\uffff\1\170\10\uffff\1"
+        u"\25\6\uffff\1\102\1\103\10\uffff\1\77\1\75\1\146\2\uffff\1\165"
+        u"\4\uffff\1\42\6\uffff\1\122\2\uffff\1\104\2\uffff\1\43\1\74\2\uffff"
+        u"\1\123"
         )
 
     DFA20_special = DFA.unpack(
@@ -6497,114 +6494,114 @@ class sdl92Lexer(Lexer):
 
             
     DFA20_transition = [
-        DFA.unpack(u"\2\104\2\uffff\1\104\22\uffff\1\104\1\2\1\10\4\uffff"
-        u"\1\52\1\3\1\13\1\7\1\42\1\14\1\16\1\4\1\6\1\102\11\103\1\1\1\15"
-        u"\1\45\1\43\1\44\2\uffff\1\53\1\77\1\67\1\54\1\5\1\66\1\60\1\61"
+        DFA.unpack(u"\2\104\2\uffff\1\104\22\uffff\1\104\1\2\1\52\4\uffff"
+        u"\1\51\1\3\1\12\1\7\1\41\1\13\1\15\1\4\1\6\1\102\11\103\1\1\1\14"
+        u"\1\44\1\42\1\43\2\uffff\1\53\1\77\1\67\1\54\1\5\1\66\1\60\1\61"
         u"\1\64\1\74\1\55\1\70\1\76\1\65\1\71\1\56\1\101\1\62\1\57\1\63\1"
-        u"\100\1\73\1\72\1\75\2\101\6\uffff\1\17\1\50\1\34\1\20\1\21\1\33"
-        u"\1\25\1\26\1\31\1\41\1\22\1\35\1\47\1\32\1\36\1\23\1\101\1\27\1"
-        u"\24\1\30\1\51\1\40\1\37\1\46\2\101\1\11\1\uffff\1\12"),
+        u"\100\1\73\1\72\1\75\2\101\6\uffff\1\16\1\47\1\33\1\17\1\20\1\32"
+        u"\1\24\1\25\1\30\1\40\1\21\1\34\1\46\1\31\1\35\1\22\1\101\1\26\1"
+        u"\23\1\27\1\50\1\37\1\36\1\45\2\101\1\10\1\uffff\1\11"),
         DFA.unpack(u"\1\105"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\107"),
         DFA.unpack(u"\1\111"),
-        DFA.unpack(u"\1\121\1\uffff\1\117\3\uffff\1\113\5\uffff\1\120\23"
-        u"\uffff\1\116\1\uffff\1\114\11\uffff\1\115"),
+        DFA.unpack(u"\1\121\1\uffff\1\116\3\uffff\1\113\5\uffff\1\117\23"
+        u"\uffff\1\120\1\uffff\1\114\11\uffff\1\115"),
         DFA.unpack(u"\1\122\4\uffff\1\123\15\uffff\1\124"),
         DFA.unpack(u"\1\126"),
-        DFA.unpack(u"\2\130\2\uffff\1\130\22\uffff\1\130\1\uffff\1\131\15"
-        u"\uffff\2\130\10\132\7\uffff\6\132\32\uffff\6\132"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\133\2\uffff\1\102\11\103"),
-        DFA.unpack(u"\1\142\10\uffff\1\140\1\uffff\1\146\3\uffff\1\144\1"
-        u"\141\17\uffff\1\137\10\uffff\1\135\1\uffff\1\145\3\uffff\1\143"
-        u"\1\136"),
-        DFA.unpack(u"\1\150\1\uffff\1\152\35\uffff\1\147\1\uffff\1\151"),
-        DFA.unpack(u"\1\121\1\uffff\1\117\11\uffff\1\120\23\uffff\1\116"
+        DFA.unpack(u"\1\130\2\uffff\1\102\11\103"),
+        DFA.unpack(u"\1\141\10\uffff\1\135\1\uffff\1\137\3\uffff\1\143\1"
+        u"\136\17\uffff\1\140\10\uffff\1\132\1\uffff\1\134\3\uffff\1\142"
+        u"\1\133"),
+        DFA.unpack(u"\1\147\1\uffff\1\145\35\uffff\1\146\1\uffff\1\144"),
+        DFA.unpack(u"\1\121\1\uffff\1\116\11\uffff\1\117\23\uffff\1\120"
         u"\1\uffff\1\114\11\uffff\1\115"),
-        DFA.unpack(u"\1\154\37\uffff\1\153"),
-        DFA.unpack(u"\1\160\12\uffff\1\162\5\uffff\1\157\16\uffff\1\156"
-        u"\12\uffff\1\161\5\uffff\1\155"),
-        DFA.unpack(u"\1\u0080\3\uffff\1\174\3\uffff\1\165\6\uffff\1\172"
-        u"\3\uffff\1\166\1\176\3\uffff\1\170\7\uffff\1\177\3\uffff\1\173"
-        u"\3\uffff\1\163\6\uffff\1\171\3\uffff\1\164\1\175\3\uffff\1\167"),
-        DFA.unpack(u"\1\u0082\37\uffff\1\u0081"),
-        DFA.unpack(u"\1\u0084\37\uffff\1\u0083"),
-        DFA.unpack(u"\1\u0088\3\uffff\1\u0086\33\uffff\1\u0087\3\uffff\1"
-        u"\u0085"),
-        DFA.unpack(u"\1\u008d\3\uffff\1\u0094\2\uffff\1\u0092\1\u0090\5"
-        u"\uffff\1\u008e\2\uffff\1\u008c\16\uffff\1\u008a\3\uffff\1\u0093"
-        u"\2\uffff\1\u0091\1\u008f\5\uffff\1\u008b\2\uffff\1\u0089"),
-        DFA.unpack(u"\1\u0099\6\uffff\1\u0098\1\u009a\27\uffff\1\u0096\6"
-        u"\uffff\1\u0095\1\u0097"),
-        DFA.unpack(u"\1\u009f\11\uffff\1\u009e\5\uffff\1\u00a0\17\uffff"
-        u"\1\u009c\11\uffff\1\u009b\5\uffff\1\u009d"),
-        DFA.unpack(u"\1\u00a2\7\uffff\1\u00a6\5\uffff\1\u00a4\1\u00aa\1"
-        u"\uffff\1\u00a8\16\uffff\1\u00a1\7\uffff\1\u00a5\5\uffff\1\u00a3"
-        u"\1\u00a9\1\uffff\1\u00a7"),
-        DFA.unpack(u"\1\u00b2\6\uffff\1\u00ad\6\uffff\1\u00ae\2\uffff\1"
-        u"\u00b0\16\uffff\1\u00b1\6\uffff\1\u00ab\6\uffff\1\u00ac\2\uffff"
-        u"\1\u00af"),
-        DFA.unpack(u"\1\u00b4\37\uffff\1\u00b3"),
-        DFA.unpack(u"\1\u00b8\2\uffff\1\u00b7\34\uffff\1\u00b6\2\uffff\1"
-        u"\u00b5"),
-        DFA.unpack(u"\1\u00ba\37\uffff\1\u00b9"),
-        DFA.unpack(u"\1\u00bc\37\uffff\1\u00bb"),
-        DFA.unpack(u"\1\u00be\37\uffff\1\u00bd"),
+        DFA.unpack(u"\1\151\37\uffff\1\150"),
+        DFA.unpack(u"\1\154\12\uffff\1\157\5\uffff\1\155\16\uffff\1\152"
+        u"\12\uffff\1\156\5\uffff\1\153"),
+        DFA.unpack(u"\1\173\3\uffff\1\171\3\uffff\1\163\6\uffff\1\167\3"
+        u"\uffff\1\162\1\175\3\uffff\1\165\7\uffff\1\172\3\uffff\1\170\3"
+        u"\uffff\1\161\6\uffff\1\166\3\uffff\1\160\1\174\3\uffff\1\164"),
+        DFA.unpack(u"\1\177\37\uffff\1\176"),
+        DFA.unpack(u"\1\u0081\37\uffff\1\u0080"),
+        DFA.unpack(u"\1\u0085\3\uffff\1\u0084\33\uffff\1\u0083\3\uffff\1"
+        u"\u0082"),
+        DFA.unpack(u"\1\u008d\3\uffff\1\u0091\2\uffff\1\u008f\1\u008a\5"
+        u"\uffff\1\u008c\2\uffff\1\u008b\16\uffff\1\u0089\3\uffff\1\u0090"
+        u"\2\uffff\1\u008e\1\u0086\5\uffff\1\u0088\2\uffff\1\u0087"),
+        DFA.unpack(u"\1\u0095\6\uffff\1\u0097\1\u0094\27\uffff\1\u0093\6"
+        u"\uffff\1\u0096\1\u0092"),
+        DFA.unpack(u"\1\u009b\11\uffff\1\u009a\5\uffff\1\u009d\17\uffff"
+        u"\1\u0099\11\uffff\1\u0098\5\uffff\1\u009c"),
+        DFA.unpack(u"\1\u00a1\7\uffff\1\u00a5\5\uffff\1\u00a3\1\u00a0\1"
+        u"\uffff\1\u00a7\16\uffff\1\u009f\7\uffff\1\u00a4\5\uffff\1\u00a2"
+        u"\1\u009e\1\uffff\1\u00a6"),
+        DFA.unpack(u"\1\u00af\6\uffff\1\u00aa\6\uffff\1\u00ab\2\uffff\1"
+        u"\u00ad\16\uffff\1\u00ae\6\uffff\1\u00a8\6\uffff\1\u00a9\2\uffff"
+        u"\1\u00ac"),
+        DFA.unpack(u"\1\u00b1\37\uffff\1\u00b0"),
+        DFA.unpack(u"\1\u00b3\2\uffff\1\u00b5\34\uffff\1\u00b2\2\uffff\1"
+        u"\u00b4"),
+        DFA.unpack(u"\1\u00b7\37\uffff\1\u00b6"),
+        DFA.unpack(u"\1\u00b9\37\uffff\1\u00b8"),
+        DFA.unpack(u"\1\u00bb\37\uffff\1\u00ba"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u00bf"),
-        DFA.unpack(u"\1\u00c1"),
-        DFA.unpack(u"\1\u00c3"),
-        DFA.unpack(u"\1\u00c6\37\uffff\1\u00c5"),
-        DFA.unpack(u"\1\u00c8\7\uffff\1\u00cc\5\uffff\1\u00ca\21\uffff\1"
-        u"\u00c7\7\uffff\1\u00cb\5\uffff\1\u00c9"),
-        DFA.unpack(u"\1\u00ce\12\uffff\1\u00d0\24\uffff\1\u00cd\12\uffff"
-        u"\1\u00cf"),
-        DFA.unpack(u"\1\u00d2\37\uffff\1\u00d1"),
+        DFA.unpack(u"\1\u00bc"),
+        DFA.unpack(u"\1\u00be"),
+        DFA.unpack(u"\1\u00c0"),
+        DFA.unpack(u"\1\u00c3\37\uffff\1\u00c2"),
+        DFA.unpack(u"\1\u00c9\7\uffff\1\u00c6\5\uffff\1\u00c7\21\uffff\1"
+        u"\u00c8\7\uffff\1\u00c4\5\uffff\1\u00c5"),
+        DFA.unpack(u"\1\u00cd\12\uffff\1\u00cb\24\uffff\1\u00cc\12\uffff"
+        u"\1\u00ca"),
+        DFA.unpack(u"\1\u00cf\37\uffff\1\u00ce"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\142\10\uffff\1\140\1\uffff\1\146\3\uffff\1\144\1"
-        u"\141\17\uffff\1\137\10\uffff\1\135\1\uffff\1\145\3\uffff\1\143"
-        u"\1\136"),
-        DFA.unpack(u"\1\150\1\uffff\1\152\35\uffff\1\147\1\uffff\1\151"),
-        DFA.unpack(u"\1\154\37\uffff\1\153"),
-        DFA.unpack(u"\1\160\12\uffff\1\162\5\uffff\1\157\16\uffff\1\156"
-        u"\12\uffff\1\161\5\uffff\1\155"),
-        DFA.unpack(u"\1\u0080\3\uffff\1\174\3\uffff\1\165\6\uffff\1\172"
-        u"\3\uffff\1\166\1\176\3\uffff\1\170\7\uffff\1\177\3\uffff\1\173"
-        u"\3\uffff\1\163\6\uffff\1\171\3\uffff\1\164\1\175\3\uffff\1\167"),
-        DFA.unpack(u"\1\u0082\37\uffff\1\u0081"),
-        DFA.unpack(u"\1\u0084\37\uffff\1\u0083"),
-        DFA.unpack(u"\1\u0088\3\uffff\1\u0086\33\uffff\1\u0087\3\uffff\1"
-        u"\u0085"),
-        DFA.unpack(u"\1\u008d\3\uffff\1\u0094\2\uffff\1\u0092\1\u0090\5"
-        u"\uffff\1\u008e\2\uffff\1\u008c\16\uffff\1\u008a\3\uffff\1\u0093"
-        u"\2\uffff\1\u0091\1\u008f\5\uffff\1\u008b\2\uffff\1\u0089"),
-        DFA.unpack(u"\1\u0099\6\uffff\1\u0098\1\u009a\27\uffff\1\u0096\6"
-        u"\uffff\1\u0095\1\u0097"),
-        DFA.unpack(u"\1\u009f\11\uffff\1\u009e\5\uffff\1\u00a0\17\uffff"
-        u"\1\u009c\11\uffff\1\u009b\5\uffff\1\u009d"),
-        DFA.unpack(u"\1\u00a2\7\uffff\1\u00a6\5\uffff\1\u00a4\1\u00aa\1"
-        u"\uffff\1\u00a8\16\uffff\1\u00a1\7\uffff\1\u00a5\5\uffff\1\u00a3"
-        u"\1\u00a9\1\uffff\1\u00a7"),
-        DFA.unpack(u"\1\u00b2\6\uffff\1\u00ad\6\uffff\1\u00ae\2\uffff\1"
-        u"\u00b0\16\uffff\1\u00b1\6\uffff\1\u00ab\6\uffff\1\u00ac\2\uffff"
-        u"\1\u00af"),
-        DFA.unpack(u"\1\u00b4\37\uffff\1\u00b3"),
-        DFA.unpack(u"\1\u00b8\2\uffff\1\u00b7\34\uffff\1\u00b6\2\uffff\1"
-        u"\u00b5"),
-        DFA.unpack(u"\1\u00ba\37\uffff\1\u00b9"),
-        DFA.unpack(u"\1\u00bc\37\uffff\1\u00bb"),
-        DFA.unpack(u"\1\u00be\37\uffff\1\u00bd"),
-        DFA.unpack(u"\1\u00c6\37\uffff\1\u00c5"),
-        DFA.unpack(u"\1\u00c8\7\uffff\1\u00cc\5\uffff\1\u00ca\21\uffff\1"
-        u"\u00c7\7\uffff\1\u00cb\5\uffff\1\u00c9"),
-        DFA.unpack(u"\1\u00ce\12\uffff\1\u00d0\24\uffff\1\u00cd\12\uffff"
-        u"\1\u00cf"),
-        DFA.unpack(u"\1\u00d2\37\uffff\1\u00d1"),
+        DFA.unpack(u"\2\u00d0\2\uffff\1\u00d0\22\uffff\1\u00d0\1\uffff\1"
+        u"\u00d1\15\uffff\2\u00d0\10\u00d2\7\uffff\6\u00d2\32\uffff\6\u00d2"),
+        DFA.unpack(u"\1\141\10\uffff\1\135\1\uffff\1\137\3\uffff\1\143\1"
+        u"\136\17\uffff\1\140\10\uffff\1\132\1\uffff\1\134\3\uffff\1\142"
+        u"\1\133"),
+        DFA.unpack(u"\1\147\1\uffff\1\145\35\uffff\1\146\1\uffff\1\144"),
+        DFA.unpack(u"\1\151\37\uffff\1\150"),
+        DFA.unpack(u"\1\154\12\uffff\1\157\5\uffff\1\155\16\uffff\1\152"
+        u"\12\uffff\1\156\5\uffff\1\153"),
+        DFA.unpack(u"\1\173\3\uffff\1\171\3\uffff\1\163\6\uffff\1\167\3"
+        u"\uffff\1\162\1\175\3\uffff\1\165\7\uffff\1\172\3\uffff\1\170\3"
+        u"\uffff\1\161\6\uffff\1\166\3\uffff\1\160\1\174\3\uffff\1\164"),
+        DFA.unpack(u"\1\177\37\uffff\1\176"),
+        DFA.unpack(u"\1\u0081\37\uffff\1\u0080"),
+        DFA.unpack(u"\1\u0085\3\uffff\1\u0084\33\uffff\1\u0083\3\uffff\1"
+        u"\u0082"),
+        DFA.unpack(u"\1\u008d\3\uffff\1\u0091\2\uffff\1\u008f\1\u008a\5"
+        u"\uffff\1\u008c\2\uffff\1\u008b\16\uffff\1\u0089\3\uffff\1\u0090"
+        u"\2\uffff\1\u008e\1\u0086\5\uffff\1\u0088\2\uffff\1\u0087"),
+        DFA.unpack(u"\1\u0095\6\uffff\1\u0097\1\u0094\27\uffff\1\u0093\6"
+        u"\uffff\1\u0096\1\u0092"),
+        DFA.unpack(u"\1\u009b\11\uffff\1\u009a\5\uffff\1\u009d\17\uffff"
+        u"\1\u0099\11\uffff\1\u0098\5\uffff\1\u009c"),
+        DFA.unpack(u"\1\u00a1\7\uffff\1\u00a5\5\uffff\1\u00a3\1\u00a0\1"
+        u"\uffff\1\u00a7\16\uffff\1\u009f\7\uffff\1\u00a4\5\uffff\1\u00a2"
+        u"\1\u009e\1\uffff\1\u00a6"),
+        DFA.unpack(u"\1\u00af\6\uffff\1\u00aa\6\uffff\1\u00ab\2\uffff\1"
+        u"\u00ad\16\uffff\1\u00ae\6\uffff\1\u00a8\6\uffff\1\u00a9\2\uffff"
+        u"\1\u00ac"),
+        DFA.unpack(u"\1\u00b1\37\uffff\1\u00b0"),
+        DFA.unpack(u"\1\u00b3\2\uffff\1\u00b5\34\uffff\1\u00b2\2\uffff\1"
+        u"\u00b4"),
+        DFA.unpack(u"\1\u00b7\37\uffff\1\u00b6"),
+        DFA.unpack(u"\1\u00b9\37\uffff\1\u00b8"),
+        DFA.unpack(u"\1\u00bb\37\uffff\1\u00ba"),
+        DFA.unpack(u"\1\u00c3\37\uffff\1\u00c2"),
+        DFA.unpack(u"\1\u00c9\7\uffff\1\u00c6\5\uffff\1\u00c7\21\uffff\1"
+        u"\u00c8\7\uffff\1\u00c4\5\uffff\1\u00c5"),
+        DFA.unpack(u"\1\u00cd\12\uffff\1\u00cb\24\uffff\1\u00cc\12\uffff"
+        u"\1\u00ca"),
+        DFA.unpack(u"\1\u00cf\37\uffff\1\u00ce"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\u00d4"),
         DFA.unpack(u"\1\u00d4\1\uffff\12\u00d5"),
@@ -6617,12 +6614,12 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u"\1\u00d6"),
         DFA.unpack(u"\1\u00d8\37\uffff\1\u00d7"),
-        DFA.unpack(u"\1\u00db\3\uffff\1\u00dc\33\uffff\1\u00d9\3\uffff\1"
-        u"\u00da"),
-        DFA.unpack(u"\1\u00de\37\uffff\1\u00dd"),
+        DFA.unpack(u"\1\u00da\3\uffff\1\u00dc\33\uffff\1\u00d9\3\uffff\1"
+        u"\u00db"),
         DFA.unpack(u"\1\u00d8\37\uffff\1\u00d7"),
-        DFA.unpack(u"\1\u00db\3\uffff\1\u00dc\33\uffff\1\u00d9\3\uffff\1"
-        u"\u00da"),
+        DFA.unpack(u"\1\u00da\3\uffff\1\u00dc\33\uffff\1\u00d9\3\uffff\1"
+        u"\u00db"),
+        DFA.unpack(u"\1\u00de\37\uffff\1\u00dd"),
         DFA.unpack(u"\1\u00de\37\uffff\1\u00dd"),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -6630,216 +6627,215 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\2\130\2\uffff\1\130\22\uffff\1\130\1\uffff\1\131\15"
-        u"\uffff\2\130\10\132\7\uffff\6\132\32\uffff\6\132"),
-        DFA.unpack(u"\1\u00df\5\uffff\1\132"),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u""),
-        DFA.unpack(u"\1\u00e1\7\uffff\1\u00e3\27\uffff\1\u00e0\7\uffff\1"
-        u"\u00e2"),
-        DFA.unpack(u"\1\u00e5\37\uffff\1\u00e4"),
-        DFA.unpack(u"\1\u00e7\37\uffff\1\u00e6"),
-        DFA.unpack(u"\1\u00e1\7\uffff\1\u00e3\27\uffff\1\u00e0\7\uffff\1"
-        u"\u00e2"),
-        DFA.unpack(u"\1\u00e5\37\uffff\1\u00e4"),
-        DFA.unpack(u"\1\u00e7\37\uffff\1\u00e6"),
-        DFA.unpack(u"\1\u00e9\37\uffff\1\u00e8"),
-        DFA.unpack(u"\1\u00e9\37\uffff\1\u00e8"),
-        DFA.unpack(u"\1\u00ee\16\uffff\1\u00ef\5\uffff\1\u00ed\12\uffff"
-        u"\1\u00eb\16\uffff\1\u00ec\5\uffff\1\u00ea"),
-        DFA.unpack(u"\1\u00ee\16\uffff\1\u00ef\5\uffff\1\u00ed\12\uffff"
-        u"\1\u00eb\16\uffff\1\u00ec\5\uffff\1\u00ea"),
-        DFA.unpack(u"\1\u00f1\37\uffff\1\u00f0"),
-        DFA.unpack(u"\1\u00f1\37\uffff\1\u00f0"),
-        DFA.unpack(u"\1\u00f3\37\uffff\1\u00f2"),
-        DFA.unpack(u"\1\u00f3\37\uffff\1\u00f2"),
-        DFA.unpack(u"\1\u00f5\37\uffff\1\u00f4"),
-        DFA.unpack(u"\1\u00f5\37\uffff\1\u00f4"),
-        DFA.unpack(u"\1\u00f9\5\uffff\1\u00f8\31\uffff\1\u00f7\5\uffff\1"
-        u"\u00f6"),
-        DFA.unpack(u"\1\u00fb\37\uffff\1\u00fa"),
-        DFA.unpack(u"\1\u00f9\5\uffff\1\u00f8\31\uffff\1\u00f7\5\uffff\1"
-        u"\u00f6"),
-        DFA.unpack(u"\1\u00fb\37\uffff\1\u00fa"),
-        DFA.unpack(u"\1\u00fd\37\uffff\1\u00fc"),
-        DFA.unpack(u"\1\u00fd\37\uffff\1\u00fc"),
-        DFA.unpack(u"\1\u00ff\37\uffff\1\u00fe"),
-        DFA.unpack(u"\1\u0104\15\uffff\1\u0105\2\uffff\1\u0103\16\uffff"
-        u"\1\u0101\15\uffff\1\u0102\2\uffff\1\u0100"),
-        DFA.unpack(u"\1\u00ff\37\uffff\1\u00fe"),
-        DFA.unpack(u"\1\u0104\15\uffff\1\u0105\2\uffff\1\u0103\16\uffff"
-        u"\1\u0101\15\uffff\1\u0102\2\uffff\1\u0100"),
-        DFA.unpack(u"\1\u0107\4\uffff\1\u0109\32\uffff\1\u0106\4\uffff\1"
-        u"\u0108"),
-        DFA.unpack(u"\1\u0107\4\uffff\1\u0109\32\uffff\1\u0106\4\uffff\1"
-        u"\u0108"),
-        DFA.unpack(u"\1\u010b\37\uffff\1\u010a"),
-        DFA.unpack(u"\1\u010b\37\uffff\1\u010a"),
-        DFA.unpack(u"\1\u010d\37\uffff\1\u010c"),
-        DFA.unpack(u"\1\u010d\37\uffff\1\u010c"),
-        DFA.unpack(u"\1\u010f\37\uffff\1\u010e"),
-        DFA.unpack(u"\1\u010f\37\uffff\1\u010e"),
-        DFA.unpack(u"\1\u0111\37\uffff\1\u0110"),
-        DFA.unpack(u"\1\u0111\37\uffff\1\u0110"),
-        DFA.unpack(u"\1\u0113\37\uffff\1\u0112"),
-        DFA.unpack(u"\1\u0113\37\uffff\1\u0112"),
-        DFA.unpack(u"\1\u0115\37\uffff\1\u0114"),
-        DFA.unpack(u"\1\u0115\37\uffff\1\u0114"),
-        DFA.unpack(u"\1\u011a\6\uffff\1\u011c\5\uffff\1\u011d\1\u011b\21"
-        u"\uffff\1\u0116\6\uffff\1\u0118\5\uffff\1\u0119\1\u0117"),
-        DFA.unpack(u"\1\u011a\6\uffff\1\u011c\5\uffff\1\u011d\1\u011b\21"
-        u"\uffff\1\u0116\6\uffff\1\u0118\5\uffff\1\u0119\1\u0117"),
-        DFA.unpack(u"\1\u011f\37\uffff\1\u011e"),
-        DFA.unpack(u"\1\u011f\37\uffff\1\u011e"),
-        DFA.unpack(u"\1\u0121\37\uffff\1\u0120"),
-        DFA.unpack(u"\1\u0123\37\uffff\1\u0122"),
+        DFA.unpack(u"\1\u00e2\7\uffff\1\u00e0\27\uffff\1\u00e1\7\uffff\1"
+        u"\u00df"),
+        DFA.unpack(u"\1\u00e4\37\uffff\1\u00e3"),
+        DFA.unpack(u"\1\u00e7\16\uffff\1\u00ea\5\uffff\1\u00e8\12\uffff"
+        u"\1\u00e5\16\uffff\1\u00e9\5\uffff\1\u00e6"),
+        DFA.unpack(u"\1\u00e2\7\uffff\1\u00e0\27\uffff\1\u00e1\7\uffff\1"
+        u"\u00df"),
+        DFA.unpack(u"\1\u00e4\37\uffff\1\u00e3"),
+        DFA.unpack(u"\1\u00e7\16\uffff\1\u00ea\5\uffff\1\u00e8\12\uffff"
+        u"\1\u00e5\16\uffff\1\u00e9\5\uffff\1\u00e6"),
+        DFA.unpack(u"\1\u00ec\37\uffff\1\u00eb"),
+        DFA.unpack(u"\1\u00ec\37\uffff\1\u00eb"),
+        DFA.unpack(u"\1\u00ee\37\uffff\1\u00ed"),
+        DFA.unpack(u"\1\u00ee\37\uffff\1\u00ed"),
+        DFA.unpack(u"\1\u00f0\37\uffff\1\u00ef"),
+        DFA.unpack(u"\1\u00f0\37\uffff\1\u00ef"),
+        DFA.unpack(u"\1\u00f2\37\uffff\1\u00f1"),
+        DFA.unpack(u"\1\u00f2\37\uffff\1\u00f1"),
+        DFA.unpack(u"\1\u00f4\37\uffff\1\u00f3"),
+        DFA.unpack(u"\1\u00f4\37\uffff\1\u00f3"),
+        DFA.unpack(u"\1\u00f6\37\uffff\1\u00f5"),
+        DFA.unpack(u"\1\u00f9\5\uffff\1\u00fa\31\uffff\1\u00f7\5\uffff\1"
+        u"\u00f8"),
+        DFA.unpack(u"\1\u00f6\37\uffff\1\u00f5"),
+        DFA.unpack(u"\1\u00f9\5\uffff\1\u00fa\31\uffff\1\u00f7\5\uffff\1"
+        u"\u00f8"),
+        DFA.unpack(u"\1\u00fc\37\uffff\1\u00fb"),
+        DFA.unpack(u"\1\u00fc\37\uffff\1\u00fb"),
+        DFA.unpack(u"\1\u00ff\15\uffff\1\u0100\2\uffff\1\u0102\16\uffff"
+        u"\1\u00fd\15\uffff\1\u00fe\2\uffff\1\u0101"),
+        DFA.unpack(u"\1\u0104\37\uffff\1\u0103"),
+        DFA.unpack(u"\1\u00ff\15\uffff\1\u0100\2\uffff\1\u0102\16\uffff"
+        u"\1\u00fd\15\uffff\1\u00fe\2\uffff\1\u0101"),
+        DFA.unpack(u"\1\u0104\37\uffff\1\u0103"),
+        DFA.unpack(u"\1\u0107\4\uffff\1\u0108\32\uffff\1\u0105\4\uffff\1"
+        u"\u0106"),
+        DFA.unpack(u"\1\u0107\4\uffff\1\u0108\32\uffff\1\u0105\4\uffff\1"
+        u"\u0106"),
+        DFA.unpack(u"\1\u010a\37\uffff\1\u0109"),
+        DFA.unpack(u"\1\u010a\37\uffff\1\u0109"),
+        DFA.unpack(u"\1\u010c\37\uffff\1\u010b"),
+        DFA.unpack(u"\1\u010c\37\uffff\1\u010b"),
+        DFA.unpack(u"\1\u010e\37\uffff\1\u010d"),
+        DFA.unpack(u"\1\u010e\37\uffff\1\u010d"),
+        DFA.unpack(u"\1\u0110\37\uffff\1\u010f"),
+        DFA.unpack(u"\1\u0110\37\uffff\1\u010f"),
+        DFA.unpack(u"\1\u0112\37\uffff\1\u0111"),
+        DFA.unpack(u"\1\u0112\37\uffff\1\u0111"),
+        DFA.unpack(u"\1\u0114\37\uffff\1\u0113"),
+        DFA.unpack(u"\1\u0114\37\uffff\1\u0113"),
+        DFA.unpack(u"\1\u0119\6\uffff\1\u011c\5\uffff\1\u011a\1\u0118\21"
+        u"\uffff\1\u0116\6\uffff\1\u011b\5\uffff\1\u0117\1\u0115"),
+        DFA.unpack(u"\1\u011e\37\uffff\1\u011d"),
+        DFA.unpack(u"\1\u0119\6\uffff\1\u011c\5\uffff\1\u011a\1\u0118\21"
+        u"\uffff\1\u0116\6\uffff\1\u011b\5\uffff\1\u0117\1\u0115"),
+        DFA.unpack(u"\1\u011e\37\uffff\1\u011d"),
+        DFA.unpack(u"\1\u0120\37\uffff\1\u011f"),
+        DFA.unpack(u"\1\u0122\37\uffff\1\u0121"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0121\37\uffff\1\u0120"),
-        DFA.unpack(u"\1\u0123\37\uffff\1\u0122"),
+        DFA.unpack(u"\1\u0125\37\uffff\1\u0124"),
+        DFA.unpack(u"\1\u0120\37\uffff\1\u011f"),
+        DFA.unpack(u"\1\u0122\37\uffff\1\u0121"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0126\37\uffff\1\u0125"),
-        DFA.unpack(u"\1\u0126\37\uffff\1\u0125"),
-        DFA.unpack(u"\1\u012a\3\uffff\1\u0129\33\uffff\1\u0128\3\uffff\1"
-        u"\u0127"),
-        DFA.unpack(u"\1\u012a\3\uffff\1\u0129\33\uffff\1\u0128\3\uffff\1"
-        u"\u0127"),
-        DFA.unpack(u"\1\u012c\37\uffff\1\u012b"),
-        DFA.unpack(u"\1\u012c\37\uffff\1\u012b"),
-        DFA.unpack(u"\1\u012e\37\uffff\1\u012d"),
+        DFA.unpack(u"\1\u0125\37\uffff\1\u0124"),
+        DFA.unpack(u"\1\u0129\3\uffff\1\u0127\33\uffff\1\u0128\3\uffff\1"
+        u"\u0126"),
+        DFA.unpack(u"\1\u0129\3\uffff\1\u0127\33\uffff\1\u0128\3\uffff\1"
+        u"\u0126"),
+        DFA.unpack(u"\1\u012b\37\uffff\1\u012a"),
+        DFA.unpack(u"\1\u012b\37\uffff\1\u012a"),
+        DFA.unpack(u"\1\u012e\12\101\7\uffff\17\101\1\u012f\12\101\4\uffff"
+        u"\1\101\1\uffff\17\101\1\u012d\12\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0132\12\101\7\uffff\17\101\1\u0133\12\101\4\uffff"
-        u"\1\101\1\uffff\17\101\1\u0131\12\101"),
-        DFA.unpack(u"\1\u012e\37\uffff\1\u012d"),
+        DFA.unpack(u"\1\u012e\12\101\7\uffff\17\101\1\u012f\12\101\4\uffff"
+        u"\1\101\1\uffff\17\101\1\u012d\12\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0132\12\101\7\uffff\17\101\1\u0133\12\101\4\uffff"
-        u"\1\101\1\uffff\17\101\1\u0131\12\101"),
-        DFA.unpack(u"\1\u0135\5\uffff\1\u0137\31\uffff\1\u0134\5\uffff\1"
-        u"\u0136"),
-        DFA.unpack(u"\1\u013b\1\u0139\36\uffff\1\u013a\1\u0138"),
-        DFA.unpack(u"\1\u013d\37\uffff\1\u013c"),
-        DFA.unpack(u"\1\u0135\5\uffff\1\u0137\31\uffff\1\u0134\5\uffff\1"
-        u"\u0136"),
-        DFA.unpack(u"\1\u013b\1\u0139\36\uffff\1\u013a\1\u0138"),
-        DFA.unpack(u"\1\u013d\37\uffff\1\u013c"),
-        DFA.unpack(u"\1\u013f\37\uffff\1\u013e"),
-        DFA.unpack(u"\1\u013f\37\uffff\1\u013e"),
-        DFA.unpack(u"\1\u0141\37\uffff\1\u0140"),
-        DFA.unpack(u"\1\u0141\37\uffff\1\u0140"),
+        DFA.unpack(u"\1\u0132\37\uffff\1\u0131"),
+        DFA.unpack(u"\1\u0132\37\uffff\1\u0131"),
+        DFA.unpack(u"\1\u0134\5\uffff\1\u0136\31\uffff\1\u0133\5\uffff\1"
+        u"\u0135"),
+        DFA.unpack(u"\1\u0138\1\u013a\36\uffff\1\u0137\1\u0139"),
+        DFA.unpack(u"\1\u0134\5\uffff\1\u0136\31\uffff\1\u0133\5\uffff\1"
+        u"\u0135"),
+        DFA.unpack(u"\1\u0138\1\u013a\36\uffff\1\u0137\1\u0139"),
+        DFA.unpack(u"\1\u013c\37\uffff\1\u013b"),
+        DFA.unpack(u"\1\u013c\37\uffff\1\u013b"),
+        DFA.unpack(u"\1\u013e\37\uffff\1\u013d"),
+        DFA.unpack(u"\1\u0140\37\uffff\1\u013f"),
+        DFA.unpack(u"\1\u013e\37\uffff\1\u013d"),
+        DFA.unpack(u"\1\u0140\37\uffff\1\u013f"),
+        DFA.unpack(u"\1\u0142\37\uffff\1\u0141"),
+        DFA.unpack(u"\1\u0142\37\uffff\1\u0141"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0144\37\uffff\1\u0143"),
-        DFA.unpack(u"\1\u0144\37\uffff\1\u0143"),
-        DFA.unpack(u"\1\u0146\37\uffff\1\u0145"),
-        DFA.unpack(u"\1\u0146\37\uffff\1\u0145"),
-        DFA.unpack(u"\1\u0148\37\uffff\1\u0147"),
-        DFA.unpack(u"\1\u014c\1\u014a\36\uffff\1\u014b\1\u0149"),
-        DFA.unpack(u"\1\u0148\37\uffff\1\u0147"),
-        DFA.unpack(u"\1\u014c\1\u014a\36\uffff\1\u014b\1\u0149"),
-        DFA.unpack(u"\1\u014e\37\uffff\1\u014d"),
-        DFA.unpack(u"\1\u014e\37\uffff\1\u014d"),
-        DFA.unpack(u"\1\u0150\37\uffff\1\u014f"),
-        DFA.unpack(u"\1\u0150\37\uffff\1\u014f"),
-        DFA.unpack(u"\1\u0152\37\uffff\1\u0151"),
-        DFA.unpack(u"\1\u0152\37\uffff\1\u0151"),
-        DFA.unpack(u"\1\u0154\37\uffff\1\u0153"),
+        DFA.unpack(u"\1\u0145\37\uffff\1\u0144"),
+        DFA.unpack(u"\1\u0145\37\uffff\1\u0144"),
+        DFA.unpack(u"\1\u0147\37\uffff\1\u0146"),
+        DFA.unpack(u"\1\u014b\1\u0149\36\uffff\1\u014a\1\u0148"),
+        DFA.unpack(u"\1\u0147\37\uffff\1\u0146"),
+        DFA.unpack(u"\1\u014b\1\u0149\36\uffff\1\u014a\1\u0148"),
+        DFA.unpack(u"\1\u014d\37\uffff\1\u014c"),
+        DFA.unpack(u"\1\u014d\37\uffff\1\u014c"),
+        DFA.unpack(u"\1\u014f\37\uffff\1\u014e"),
+        DFA.unpack(u"\1\u014f\37\uffff\1\u014e"),
+        DFA.unpack(u"\1\u0151\37\uffff\1\u0150"),
+        DFA.unpack(u"\1\u0151\37\uffff\1\u0150"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u0154\37\uffff\1\u0153"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0157\37\uffff\1\u0156"),
-        DFA.unpack(u"\1\u0157\37\uffff\1\u0156"),
-        DFA.unpack(u"\1\u015a\3\uffff\1\u015b\33\uffff\1\u0158\3\uffff\1"
-        u"\u0159"),
-        DFA.unpack(u"\1\u015a\3\uffff\1\u015b\33\uffff\1\u0158\3\uffff\1"
-        u"\u0159"),
-        DFA.unpack(u"\1\u015d\37\uffff\1\u015c"),
-        DFA.unpack(u"\1\u015d\37\uffff\1\u015c"),
+        DFA.unpack(u"\1\u0154\37\uffff\1\u0153"),
+        DFA.unpack(u"\1\u0156\37\uffff\1\u0155"),
+        DFA.unpack(u"\1\u0156\37\uffff\1\u0155"),
+        DFA.unpack(u"\1\u015a\3\uffff\1\u0158\33\uffff\1\u0159\3\uffff\1"
+        u"\u0157"),
+        DFA.unpack(u"\1\u015a\3\uffff\1\u0158\33\uffff\1\u0159\3\uffff\1"
+        u"\u0157"),
+        DFA.unpack(u"\1\u015c\37\uffff\1\u015b"),
+        DFA.unpack(u"\1\u015c\37\uffff\1\u015b"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u015f\37\uffff\1\u015e"),
-        DFA.unpack(u"\1\u015f\37\uffff\1\u015e"),
-        DFA.unpack(u"\1\u0161\37\uffff\1\u0160"),
-        DFA.unpack(u"\1\u0161\37\uffff\1\u0160"),
-        DFA.unpack(u"\1\u0163\37\uffff\1\u0162"),
-        DFA.unpack(u"\1\u0163\37\uffff\1\u0162"),
-        DFA.unpack(u"\1\u0165\37\uffff\1\u0164"),
-        DFA.unpack(u"\1\u0165\37\uffff\1\u0164"),
-        DFA.unpack(u"\1\u0167\37\uffff\1\u0166"),
-        DFA.unpack(u"\1\u0167\37\uffff\1\u0166"),
-        DFA.unpack(u"\1\u0169\37\uffff\1\u0168"),
-        DFA.unpack(u"\1\u0169\37\uffff\1\u0168"),
-        DFA.unpack(u"\1\u016b\37\uffff\1\u016a"),
-        DFA.unpack(u"\1\u016b\37\uffff\1\u016a"),
+        DFA.unpack(u"\1\u015e\37\uffff\1\u015d"),
+        DFA.unpack(u"\1\u015e\37\uffff\1\u015d"),
+        DFA.unpack(u"\1\u0160\37\uffff\1\u015f"),
+        DFA.unpack(u"\1\u0162\37\uffff\1\u0161"),
+        DFA.unpack(u"\1\u0160\37\uffff\1\u015f"),
+        DFA.unpack(u"\1\u0162\37\uffff\1\u0161"),
+        DFA.unpack(u"\1\u0164\37\uffff\1\u0163"),
+        DFA.unpack(u"\1\u0164\37\uffff\1\u0163"),
+        DFA.unpack(u"\1\u0166\37\uffff\1\u0165"),
+        DFA.unpack(u"\1\u0166\37\uffff\1\u0165"),
+        DFA.unpack(u"\1\u0168\37\uffff\1\u0167"),
+        DFA.unpack(u"\1\u0168\37\uffff\1\u0167"),
+        DFA.unpack(u"\1\u016a\37\uffff\1\u0169"),
+        DFA.unpack(u"\1\u016a\37\uffff\1\u0169"),
+        DFA.unpack(u"\2\u00d0\2\uffff\1\u00d0\22\uffff\1\u00d0\1\uffff\1"
+        u"\u00d1\15\uffff\2\u00d0\10\u00d2\7\uffff\6\u00d2\32\uffff\6\u00d2"),
+        DFA.unpack(u"\1\u016b\5\uffff\1\u00d2"),
+        DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\u00d4\1\uffff\12\u00d5"),
         DFA.unpack(u"\1\u016c"),
-        DFA.unpack(u"\12\101\7\uffff\1\u0175\1\u0174\1\u0177\1\u017d\1\101"
-        u"\1\u0179\7\101\1\u017f\1\101\1\u017b\2\101\1\u0173\1\u0172\6\101"
-        u"\4\uffff\1\101\1\uffff\1\u0171\1\u0170\1\u0176\1\u017c\1\101\1"
-        u"\u0178\7\101\1\u017e\1\101\1\u017a\2\101\1\u016f\1\u016e\6\101"),
-        DFA.unpack(u"\12\101\7\uffff\1\u0175\1\u0174\1\u0177\1\u017d\1\101"
-        u"\1\u0179\7\101\1\u017f\1\101\1\u017b\2\101\1\u0173\1\u0172\6\101"
-        u"\4\uffff\1\101\1\uffff\1\u0171\1\u0170\1\u0176\1\u017c\1\101\1"
-        u"\u0178\7\101\1\u017e\1\101\1\u017a\2\101\1\u016f\1\u016e\6\101"),
+        DFA.unpack(u"\12\101\7\uffff\1\u0176\1\u0174\1\u0179\1\u017f\1\101"
+        u"\1\u017b\7\101\1\u0173\1\101\1\u0177\2\101\1\u017d\1\u0175\6\101"
+        u"\4\uffff\1\101\1\uffff\1\u0171\1\u016f\1\u0178\1\u017e\1\101\1"
+        u"\u017a\7\101\1\u016e\1\101\1\u0172\2\101\1\u017c\1\u0170\6\101"),
+        DFA.unpack(u"\12\101\7\uffff\1\u0176\1\u0174\1\u0179\1\u017f\1\101"
+        u"\1\u017b\7\101\1\u0173\1\101\1\u0177\2\101\1\u017d\1\u0175\6\101"
+        u"\4\uffff\1\101\1\uffff\1\u0171\1\u016f\1\u0178\1\u017e\1\101\1"
+        u"\u017a\7\101\1\u016e\1\101\1\u0172\2\101\1\u017c\1\u0170\6\101"),
+        DFA.unpack(u"\1\u0181\37\uffff\1\u0180"),
         DFA.unpack(u"\1\u0181\37\uffff\1\u0180"),
         DFA.unpack(u"\1\u0183\37\uffff\1\u0182"),
-        DFA.unpack(u"\1\u0181\37\uffff\1\u0180"),
         DFA.unpack(u"\1\u0183\37\uffff\1\u0182"),
         DFA.unpack(u"\1\u0185\37\uffff\1\u0184"),
         DFA.unpack(u"\1\u0185\37\uffff\1\u0184"),
-        DFA.unpack(u""),
+        DFA.unpack(u"\1\u0187\37\uffff\1\u0186"),
+        DFA.unpack(u"\1\u0187\37\uffff\1\u0186"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0188\37\uffff\1\u0187"),
-        DFA.unpack(u"\1\u0188\37\uffff\1\u0187"),
         DFA.unpack(u"\1\u018a\37\uffff\1\u0189"),
         DFA.unpack(u"\1\u018a\37\uffff\1\u0189"),
-        DFA.unpack(u"\1\u018c\37\uffff\1\u018b"),
-        DFA.unpack(u"\1\u018c\37\uffff\1\u018b"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u018e\37\uffff\1\u018d"),
         DFA.unpack(u"\1\u018e\37\uffff\1\u018d"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0190\37\uffff\1\u018f"),
+        DFA.unpack(u"\1\u0190\37\uffff\1\u018f"),
         DFA.unpack(u"\1\u0192\37\uffff\1\u0191"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u0192\37\uffff\1\u0191"),
+        DFA.unpack(u"\1\u0194\37\uffff\1\u0193"),
+        DFA.unpack(u"\1\u0194\37\uffff\1\u0193"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0195\37\uffff\1\u0194"),
-        DFA.unpack(u"\1\u0195\37\uffff\1\u0194"),
         DFA.unpack(u"\1\u0197\37\uffff\1\u0196"),
         DFA.unpack(u"\1\u0197\37\uffff\1\u0196"),
-        DFA.unpack(u"\1\u019a\22\uffff\1\u019b\14\uffff\1\u0198\22\uffff"
-        u"\1\u0199"),
-        DFA.unpack(u"\1\u019d\37\uffff\1\u019c"),
-        DFA.unpack(u"\1\u019a\22\uffff\1\u019b\14\uffff\1\u0198\22\uffff"
-        u"\1\u0199"),
-        DFA.unpack(u"\1\u019d\37\uffff\1\u019c"),
-        DFA.unpack(u"\1\u019f\37\uffff\1\u019e"),
-        DFA.unpack(u"\1\u019f\37\uffff\1\u019e"),
+        DFA.unpack(u"\1\u0199\37\uffff\1\u0198"),
+        DFA.unpack(u"\1\u0199\37\uffff\1\u0198"),
+        DFA.unpack(u"\1\u019b\37\uffff\1\u019a"),
+        DFA.unpack(u"\1\u019d\22\uffff\1\u019f\14\uffff\1\u019c\22\uffff"
+        u"\1\u019e"),
+        DFA.unpack(u"\1\u019b\37\uffff\1\u019a"),
+        DFA.unpack(u"\1\u019d\22\uffff\1\u019f\14\uffff\1\u019c\22\uffff"
+        u"\1\u019e"),
         DFA.unpack(u"\1\u01a1\37\uffff\1\u01a0"),
         DFA.unpack(u"\1\u01a1\37\uffff\1\u01a0"),
-        DFA.unpack(u"\1\u01a3\37\uffff\1\u01a2"),
-        DFA.unpack(u"\1\u01a3\37\uffff\1\u01a2"),
-        DFA.unpack(u"\1\u01a5\37\uffff\1\u01a4"),
-        DFA.unpack(u"\1\u01a9\1\uffff\1\u01a7\35\uffff\1\u01a8\1\uffff\1"
-        u"\u01a6"),
+        DFA.unpack(u"\1\u01a3\1\uffff\1\u01a5\35\uffff\1\u01a2\1\uffff\1"
+        u"\u01a4"),
+        DFA.unpack(u"\1\u01a7\37\uffff\1\u01a6"),
+        DFA.unpack(u"\1\u01a3\1\uffff\1\u01a5\35\uffff\1\u01a2\1\uffff\1"
+        u"\u01a4"),
+        DFA.unpack(u"\1\u01a7\37\uffff\1\u01a6"),
+        DFA.unpack(u"\1\u01a9\37\uffff\1\u01a8"),
+        DFA.unpack(u"\1\u01a9\37\uffff\1\u01a8"),
         DFA.unpack(u"\1\u01ab\37\uffff\1\u01aa"),
-        DFA.unpack(u"\1\u01a5\37\uffff\1\u01a4"),
-        DFA.unpack(u"\1\u01a9\1\uffff\1\u01a7\35\uffff\1\u01a8\1\uffff\1"
-        u"\u01a6"),
         DFA.unpack(u"\1\u01ab\37\uffff\1\u01aa"),
-        DFA.unpack(u"\1\u01af\4\uffff\1\u01ae\32\uffff\1\u01ad\4\uffff\1"
-        u"\u01ac"),
-        DFA.unpack(u"\1\u01af\4\uffff\1\u01ae\32\uffff\1\u01ad\4\uffff\1"
+        DFA.unpack(u"\1\u01af\4\uffff\1\u01ad\32\uffff\1\u01ae\4\uffff\1"
         u"\u01ac"),
         DFA.unpack(u"\1\u01b1\37\uffff\1\u01b0"),
+        DFA.unpack(u"\1\u01af\4\uffff\1\u01ad\32\uffff\1\u01ae\4\uffff\1"
+        u"\u01ac"),
         DFA.unpack(u"\1\u01b1\37\uffff\1\u01b0"),
         DFA.unpack(u"\1\u01b3\37\uffff\1\u01b2"),
         DFA.unpack(u"\1\u01b3\37\uffff\1\u01b2"),
@@ -6855,12 +6851,12 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u01bc\37\uffff\1\u01bb"),
         DFA.unpack(u"\1\u01be\37\uffff\1\u01bd"),
         DFA.unpack(u"\1\u01c0\37\uffff\1\u01bf"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u01c3\37\uffff\1\u01c2"),
+        DFA.unpack(u"\1\u01c2\37\uffff\1\u01c1"),
         DFA.unpack(u"\1\u01be\37\uffff\1\u01bd"),
         DFA.unpack(u"\1\u01c0\37\uffff\1\u01bf"),
+        DFA.unpack(u"\1\u01c2\37\uffff\1\u01c1"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u01c3\37\uffff\1\u01c2"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u01c5\37\uffff\1\u01c4"),
         DFA.unpack(u"\1\u01c5\37\uffff\1\u01c4"),
         DFA.unpack(u"\1\u01c7\37\uffff\1\u01c6"),
@@ -6871,17 +6867,17 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u01cb\37\uffff\1\u01ca"),
         DFA.unpack(u"\1\u01cb\37\uffff\1\u01ca"),
         DFA.unpack(u"\1\u01cd\37\uffff\1\u01cc"),
-        DFA.unpack(u"\1\u01cf\37\uffff\1\u01ce"),
         DFA.unpack(u"\1\u01cd\37\uffff\1\u01cc"),
         DFA.unpack(u"\1\u01cf\37\uffff\1\u01ce"),
+        DFA.unpack(u"\1\u01cf\37\uffff\1\u01ce"),
         DFA.unpack(u"\1\u01d1\37\uffff\1\u01d0"),
         DFA.unpack(u"\1\u01d1\37\uffff\1\u01d0"),
-        DFA.unpack(u"\1\u01d3\37\uffff\1\u01d2"),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u01d3\37\uffff\1\u01d2"),
         DFA.unpack(u""),
+        DFA.unpack(u"\1\u01d3\37\uffff\1\u01d2"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\u01d5\37\uffff\1\u01d4"),
-        DFA.unpack(u""),
         DFA.unpack(u"\1\u01d5\37\uffff\1\u01d4"),
         DFA.unpack(u"\1\u01d7\37\uffff\1\u01d6"),
         DFA.unpack(u"\1\u01d7\37\uffff\1\u01d6"),
@@ -6895,11 +6891,11 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u01de\37\uffff\1\u01dd"),
         DFA.unpack(u"\1\u01e0\37\uffff\1\u01df"),
         DFA.unpack(u"\1\u01e0\37\uffff\1\u01df"),
+        DFA.unpack(u"\1\u01e2\37\uffff\1\u01e1"),
+        DFA.unpack(u"\1\u01e2\37\uffff\1\u01e1"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u01e3\37\uffff\1\u01e2"),
-        DFA.unpack(u"\1\u01e3\37\uffff\1\u01e2"),
         DFA.unpack(u"\1\u01e5\37\uffff\1\u01e4"),
         DFA.unpack(u"\1\u01e5\37\uffff\1\u01e4"),
         DFA.unpack(u"\1\u01e7\37\uffff\1\u01e6"),
@@ -6916,17 +6912,17 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u01f1\37\uffff\1\u01f0"),
         DFA.unpack(u"\1\u01f3\37\uffff\1\u01f2"),
         DFA.unpack(u"\1\u01f3\37\uffff\1\u01f2"),
-        DFA.unpack(u"\12\101\7\uffff\17\101\1\u01f6\12\101\4\uffff\1\101"
-        u"\1\uffff\17\101\1\u01f5\12\101"),
-        DFA.unpack(u"\12\101\7\uffff\17\101\1\u01f6\12\101\4\uffff\1\101"
-        u"\1\uffff\17\101\1\u01f5\12\101"),
         DFA.unpack(u""),
+        DFA.unpack(u"\12\101\7\uffff\17\101\1\u01f6\12\101\4\uffff\1\101"
+        u"\1\uffff\17\101\1\u01f5\12\101"),
+        DFA.unpack(u"\12\101\7\uffff\17\101\1\u01f6\12\101\4\uffff\1\101"
+        u"\1\uffff\17\101\1\u01f5\12\101"),
         DFA.unpack(u"\1\u01f8\37\uffff\1\u01f7"),
         DFA.unpack(u"\1\u01f8\37\uffff\1\u01f7"),
+        DFA.unpack(u"\1\u01fa\37\uffff\1\u01f9"),
+        DFA.unpack(u"\1\u01fa\37\uffff\1\u01f9"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u01fb\37\uffff\1\u01fa"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u01fb\37\uffff\1\u01fa"),
         DFA.unpack(u"\1\u01fd\37\uffff\1\u01fc"),
         DFA.unpack(u"\1\u01fd\37\uffff\1\u01fc"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
@@ -6943,28 +6939,29 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0207\37\uffff\1\u0206"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u0209"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\u020b\37\uffff\1\u020a"),
-        DFA.unpack(u"\1\u0211\1\u020f\3\uffff\1\u0210\32\uffff\1\u020e\1"
-        u"\u020c\3\uffff\1\u020d"),
+        DFA.unpack(u"\1\u020d\37\uffff\1\u020c"),
+        DFA.unpack(u"\1\u020f\37\uffff\1\u020e"),
+        DFA.unpack(u"\1\u0211\37\uffff\1\u0210"),
         DFA.unpack(u"\1\u0213\37\uffff\1\u0212"),
-        DFA.unpack(u"\1\u0215\37\uffff\1\u0214"),
         DFA.unpack(u"\1\u020b\37\uffff\1\u020a"),
-        DFA.unpack(u"\1\u0211\1\u020f\3\uffff\1\u0210\32\uffff\1\u020e\1"
-        u"\u020c\3\uffff\1\u020d"),
+        DFA.unpack(u"\1\u020d\37\uffff\1\u020c"),
+        DFA.unpack(u"\1\u020f\37\uffff\1\u020e"),
+        DFA.unpack(u"\1\u0211\37\uffff\1\u0210"),
         DFA.unpack(u"\1\u0213\37\uffff\1\u0212"),
-        DFA.unpack(u"\1\u0215\37\uffff\1\u0214"),
-        DFA.unpack(u"\1\u0217\6\uffff\1\u0219\30\uffff\1\u0216\6\uffff\1"
-        u"\u0218"),
-        DFA.unpack(u"\1\u0217\6\uffff\1\u0219\30\uffff\1\u0216\6\uffff\1"
-        u"\u0218"),
-        DFA.unpack(u"\1\u021b\37\uffff\1\u021a"),
-        DFA.unpack(u"\1\u021b\37\uffff\1\u021a"),
-        DFA.unpack(u"\1\u021d\37\uffff\1\u021c"),
-        DFA.unpack(u"\1\u021d\37\uffff\1\u021c"),
-        DFA.unpack(u"\1\u021f\37\uffff\1\u021e"),
-        DFA.unpack(u"\1\u021f\37\uffff\1\u021e"),
+        DFA.unpack(u"\1\u0215\6\uffff\1\u0217\30\uffff\1\u0214\6\uffff\1"
+        u"\u0216"),
+        DFA.unpack(u"\1\u0215\6\uffff\1\u0217\30\uffff\1\u0214\6\uffff\1"
+        u"\u0216"),
+        DFA.unpack(u"\1\u0219\37\uffff\1\u0218"),
+        DFA.unpack(u"\1\u0219\37\uffff\1\u0218"),
+        DFA.unpack(u"\1\u021c\1\u021f\3\uffff\1\u021d\32\uffff\1\u021a\1"
+        u"\u021e\3\uffff\1\u021b"),
+        DFA.unpack(u"\1\u021c\1\u021f\3\uffff\1\u021d\32\uffff\1\u021a\1"
+        u"\u021e\3\uffff\1\u021b"),
         DFA.unpack(u"\1\u0221\37\uffff\1\u0220"),
         DFA.unpack(u"\1\u0221\37\uffff\1\u0220"),
         DFA.unpack(u"\1\u0224\3\uffff\1\u0225\33\uffff\1\u0222\3\uffff\1"
@@ -6975,27 +6972,27 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0227\37\uffff\1\u0226"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u022a\37\uffff\1\u0229"),
+        DFA.unpack(u"\1\u022a\37\uffff\1\u0229"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u022a\37\uffff\1\u0229"),
-        DFA.unpack(u"\1\u022a\37\uffff\1\u0229"),
         DFA.unpack(u"\1\u022c\37\uffff\1\u022b"),
         DFA.unpack(u"\1\u022c\37\uffff\1\u022b"),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u022e\37\uffff\1\u022d"),
         DFA.unpack(u"\1\u022e\37\uffff\1\u022d"),
         DFA.unpack(u"\1\u0230\37\uffff\1\u022f"),
         DFA.unpack(u"\1\u0230\37\uffff\1\u022f"),
-        DFA.unpack(u""),
-        DFA.unpack(u""),
         DFA.unpack(u"\1\u0232\37\uffff\1\u0231"),
         DFA.unpack(u"\1\u0232\37\uffff\1\u0231"),
+        DFA.unpack(u"\1\u0234\37\uffff\1\u0233"),
+        DFA.unpack(u"\1\u0234\37\uffff\1\u0233"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u0234\37\uffff\1\u0233"),
-        DFA.unpack(u"\1\u0234\37\uffff\1\u0233"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0237\37\uffff\1\u0236"),
         DFA.unpack(u"\1\u0237\37\uffff\1\u0236"),
         DFA.unpack(u"\1\u0239\37\uffff\1\u0238"),
-        DFA.unpack(u"\1\u0237\37\uffff\1\u0236"),
         DFA.unpack(u"\1\u0239\37\uffff\1\u0238"),
         DFA.unpack(u"\1\u023b\37\uffff\1\u023a"),
         DFA.unpack(u"\1\u023b\37\uffff\1\u023a"),
@@ -7007,25 +7004,25 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0240\37\uffff\1\u023f"),
         DFA.unpack(u"\1\u0242\37\uffff\1\u0241"),
         DFA.unpack(u"\1\u0242\37\uffff\1\u0241"),
-        DFA.unpack(u"\1\u0244\37\uffff\1\u0243"),
-        DFA.unpack(u"\1\u0244\37\uffff\1\u0243"),
-        DFA.unpack(u"\1\u0246\37\uffff\1\u0245"),
-        DFA.unpack(u"\1\u0246\37\uffff\1\u0245"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0245\37\uffff\1\u0244"),
+        DFA.unpack(u"\1\u0245\37\uffff\1\u0244"),
+        DFA.unpack(u"\1\u0247\37\uffff\1\u0246"),
+        DFA.unpack(u"\1\u0247\37\uffff\1\u0246"),
+        DFA.unpack(u"\1\u0249\37\uffff\1\u0248"),
         DFA.unpack(u"\1\u0249\37\uffff\1\u0248"),
         DFA.unpack(u"\1\u024b\37\uffff\1\u024a"),
-        DFA.unpack(u"\1\u0249\37\uffff\1\u0248"),
         DFA.unpack(u"\1\u024b\37\uffff\1\u024a"),
         DFA.unpack(u"\1\u024d\37\uffff\1\u024c"),
         DFA.unpack(u"\1\u024d\37\uffff\1\u024c"),
         DFA.unpack(u"\1\u024f\37\uffff\1\u024e"),
         DFA.unpack(u"\1\u024f\37\uffff\1\u024e"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u0251\37\uffff\1\u0250"),
-        DFA.unpack(u"\1\u0251\37\uffff\1\u0250"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0252\37\uffff\1\u0251"),
+        DFA.unpack(u"\1\u0252\37\uffff\1\u0251"),
         DFA.unpack(u"\1\u0254\37\uffff\1\u0253"),
         DFA.unpack(u"\1\u0254\37\uffff\1\u0253"),
         DFA.unpack(u"\1\u0256\37\uffff\1\u0255"),
@@ -7034,17 +7031,17 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0258\37\uffff\1\u0257"),
         DFA.unpack(u"\1\u025a\37\uffff\1\u0259"),
         DFA.unpack(u"\1\u025a\37\uffff\1\u0259"),
+        DFA.unpack(u"\1\u025c\37\uffff\1\u025b"),
+        DFA.unpack(u"\1\u025c\37\uffff\1\u025b"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u025c\37\uffff\1\u025b"),
-        DFA.unpack(u"\1\u025c\37\uffff\1\u025b"),
         DFA.unpack(u"\1\u025e\37\uffff\1\u025d"),
         DFA.unpack(u"\1\u025e\37\uffff\1\u025d"),
+        DFA.unpack(u"\1\u0260\37\uffff\1\u025f"),
+        DFA.unpack(u"\1\u0260\37\uffff\1\u025f"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0262\37\uffff\1\u0261"),
-        DFA.unpack(u"\1\u0262\37\uffff\1\u0261"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
@@ -7064,11 +7061,11 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u026e\37\uffff\1\u026d"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0271\37\uffff\1\u0270"),
-        DFA.unpack(u"\1\u0271\37\uffff\1\u0270"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0272\37\uffff\1\u0271"),
+        DFA.unpack(u"\1\u0272\37\uffff\1\u0271"),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u0275\37\uffff\1\u0274"),
@@ -7090,9 +7087,9 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0282\37\uffff\1\u0281"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
@@ -7101,21 +7098,21 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u"\1\u0289\37\uffff\1\u0288"),
         DFA.unpack(u"\1\u0289\37\uffff\1\u0288"),
+        DFA.unpack(u"\1\u028b\37\uffff\1\u028a"),
+        DFA.unpack(u"\1\u028b\37\uffff\1\u028a"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u028c\37\uffff\1\u028b"),
-        DFA.unpack(u"\1\u028c\37\uffff\1\u028b"),
         DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u028f\37\uffff\1\u028e"),
         DFA.unpack(u"\1\u028f\37\uffff\1\u028e"),
         DFA.unpack(u"\1\u0291\37\uffff\1\u0290"),
-        DFA.unpack(u"\1\u0293\4\uffff\1\u0295\32\uffff\1\u0292\4\uffff\1"
-        u"\u0294"),
-        DFA.unpack(u"\1\u0297\37\uffff\1\u0296"),
         DFA.unpack(u"\1\u0291\37\uffff\1\u0290"),
-        DFA.unpack(u"\1\u0293\4\uffff\1\u0295\32\uffff\1\u0292\4\uffff\1"
-        u"\u0294"),
+        DFA.unpack(u"\1\u0293\37\uffff\1\u0292"),
+        DFA.unpack(u"\1\u0293\37\uffff\1\u0292"),
+        DFA.unpack(u"\1\u0295\37\uffff\1\u0294"),
+        DFA.unpack(u"\1\u0295\37\uffff\1\u0294"),
+        DFA.unpack(u"\1\u0297\37\uffff\1\u0296"),
         DFA.unpack(u"\1\u0297\37\uffff\1\u0296"),
         DFA.unpack(u"\1\u0299\37\uffff\1\u0298"),
         DFA.unpack(u"\1\u0299\37\uffff\1\u0298"),
@@ -7124,11 +7121,11 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u029d\37\uffff\1\u029c"),
         DFA.unpack(u"\1\u029d\37\uffff\1\u029c"),
         DFA.unpack(u"\1\u029f\37\uffff\1\u029e"),
+        DFA.unpack(u"\1\u02a3\4\uffff\1\u02a1\32\uffff\1\u02a2\4\uffff\1"
+        u"\u02a0"),
         DFA.unpack(u"\1\u029f\37\uffff\1\u029e"),
-        DFA.unpack(u"\1\u02a1\37\uffff\1\u02a0"),
-        DFA.unpack(u"\1\u02a1\37\uffff\1\u02a0"),
-        DFA.unpack(u"\1\u02a3\37\uffff\1\u02a2"),
-        DFA.unpack(u"\1\u02a3\37\uffff\1\u02a2"),
+        DFA.unpack(u"\1\u02a3\4\uffff\1\u02a1\32\uffff\1\u02a2\4\uffff\1"
+        u"\u02a0"),
         DFA.unpack(u"\1\u02a5\37\uffff\1\u02a4"),
         DFA.unpack(u"\1\u02a5\37\uffff\1\u02a4"),
         DFA.unpack(u"\1\u02a7\37\uffff\1\u02a6"),
@@ -7146,35 +7143,35 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u02b1\37\uffff\1\u02b0"),
         DFA.unpack(u"\1\u02b3\37\uffff\1\u02b2"),
         DFA.unpack(u"\1\u02b3\37\uffff\1\u02b2"),
+        DFA.unpack(u"\1\u02b5\37\uffff\1\u02b4"),
+        DFA.unpack(u"\1\u02b5\37\uffff\1\u02b4"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u02b6\37\uffff\1\u02b5"),
-        DFA.unpack(u"\1\u02b6\37\uffff\1\u02b5"),
         DFA.unpack(u"\1\u02b8\37\uffff\1\u02b7"),
         DFA.unpack(u"\1\u02b8\37\uffff\1\u02b7"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u02ba\16\uffff\1\u02bc\20\uffff\1\u02b9\16\uffff"
-        u"\1\u02bb"),
-        DFA.unpack(u"\1\u02ba\16\uffff\1\u02bc\20\uffff\1\u02b9\16\uffff"
-        u"\1\u02bb"),
-        DFA.unpack(u"\1\u02be\37\uffff\1\u02bd"),
-        DFA.unpack(u"\1\u02be\37\uffff\1\u02bd"),
-        DFA.unpack(u"\1\u02c0\37\uffff\1\u02bf"),
-        DFA.unpack(u"\1\u02c0\37\uffff\1\u02bf"),
-        DFA.unpack(u"\12\101\7\uffff\15\101\1\u02c3\14\101\4\uffff\1\101"
-        u"\1\uffff\15\101\1\u02c2\14\101"),
-        DFA.unpack(u"\12\101\7\uffff\15\101\1\u02c3\14\101\4\uffff\1\101"
-        u"\1\uffff\15\101\1\u02c2\14\101"),
+        DFA.unpack(u"\12\101\7\uffff\15\101\1\u02bb\14\101\4\uffff\1\101"
+        u"\1\uffff\15\101\1\u02ba\14\101"),
+        DFA.unpack(u"\12\101\7\uffff\15\101\1\u02bb\14\101\4\uffff\1\101"
+        u"\1\uffff\15\101\1\u02ba\14\101"),
+        DFA.unpack(u"\1\u02bd\37\uffff\1\u02bc"),
+        DFA.unpack(u"\1\u02bd\37\uffff\1\u02bc"),
+        DFA.unpack(u"\1\u02bf\16\uffff\1\u02c1\20\uffff\1\u02be\16\uffff"
+        u"\1\u02c0"),
+        DFA.unpack(u"\1\u02bf\16\uffff\1\u02c1\20\uffff\1\u02be\16\uffff"
+        u"\1\u02c0"),
+        DFA.unpack(u"\1\u02c3\37\uffff\1\u02c2"),
+        DFA.unpack(u"\1\u02c3\37\uffff\1\u02c2"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u02c5\37\uffff\1\u02c4"),
-        DFA.unpack(u"\1\u02c5\37\uffff\1\u02c4"),
-        DFA.unpack(u"\1\u02c7\37\uffff\1\u02c6"),
-        DFA.unpack(u"\1\u02c7\37\uffff\1\u02c6"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
+        DFA.unpack(u"\1\u02c7\37\uffff\1\u02c6"),
+        DFA.unpack(u"\1\u02c7\37\uffff\1\u02c6"),
+        DFA.unpack(u"\1\u02c9\37\uffff\1\u02c8"),
+        DFA.unpack(u"\1\u02c9\37\uffff\1\u02c8"),
         DFA.unpack(u"\1\u02cb\37\uffff\1\u02ca"),
         DFA.unpack(u"\1\u02cb\37\uffff\1\u02ca"),
         DFA.unpack(u"\1\u02cd\37\uffff\1\u02cc"),
@@ -7183,9 +7180,9 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u02cf\37\uffff\1\u02ce"),
         DFA.unpack(u"\1\u02d1\37\uffff\1\u02d0"),
         DFA.unpack(u"\1\u02d1\37\uffff\1\u02d0"),
-        DFA.unpack(u"\1\u02d3\37\uffff\1\u02d2"),
-        DFA.unpack(u"\1\u02d3\37\uffff\1\u02d2"),
         DFA.unpack(u""),
+        DFA.unpack(u"\1\u02d3\37\uffff\1\u02d2"),
+        DFA.unpack(u"\1\u02d3\37\uffff\1\u02d2"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u02d6\37\uffff\1\u02d5"),
@@ -7198,26 +7195,26 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u""),
-        DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u02df\37\uffff\1\u02de"),
-        DFA.unpack(u"\1\u02df\37\uffff\1\u02de"),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u02e0\37\uffff\1\u02df"),
+        DFA.unpack(u"\1\u02e0\37\uffff\1\u02df"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\u02e2\37\uffff\1\u02e1"),
         DFA.unpack(u"\1\u02e2\37\uffff\1\u02e1"),
         DFA.unpack(u"\1\u02e4\37\uffff\1\u02e3"),
         DFA.unpack(u"\1\u02e4\37\uffff\1\u02e3"),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\u02e7\37\uffff\1\u02e6"),
         DFA.unpack(u"\1\u02e7\37\uffff\1\u02e6"),
@@ -7237,13 +7234,13 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u02f4\37\uffff\1\u02f3"),
-        DFA.unpack(u"\1\u02f4\37\uffff\1\u02f3"),
-        DFA.unpack(u"\1\u02f5"),
-        DFA.unpack(u"\1\u02f5"),
+        DFA.unpack(u"\1\u02f3"),
+        DFA.unpack(u"\1\u02f3"),
+        DFA.unpack(u"\1\u02f5\37\uffff\1\u02f4"),
+        DFA.unpack(u"\1\u02f5\37\uffff\1\u02f4"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\u02f8\37\uffff\1\u02f7"),
         DFA.unpack(u"\1\u02f8\37\uffff\1\u02f7"),
@@ -7259,12 +7256,12 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0302\37\uffff\1\u0301"),
         DFA.unpack(u"\1\u0304\37\uffff\1\u0303"),
         DFA.unpack(u"\1\u0304\37\uffff\1\u0303"),
-        DFA.unpack(u"\1\u0306\37\uffff\1\u0305"),
-        DFA.unpack(u"\1\u0306\37\uffff\1\u0305"),
-        DFA.unpack(u"\1\u0308\37\uffff\1\u0307"),
-        DFA.unpack(u"\1\u0308\37\uffff\1\u0307"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0307\37\uffff\1\u0306"),
+        DFA.unpack(u"\1\u0307\37\uffff\1\u0306"),
+        DFA.unpack(u"\1\u0309\37\uffff\1\u0308"),
+        DFA.unpack(u"\1\u0309\37\uffff\1\u0308"),
         DFA.unpack(u"\1\u030b\37\uffff\1\u030a"),
         DFA.unpack(u"\1\u030b\37\uffff\1\u030a"),
         DFA.unpack(u"\1\u030d\37\uffff\1\u030c"),
@@ -7283,11 +7280,12 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0318\37\uffff\1\u0317"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u031c\37\uffff\1\u031b"),
         DFA.unpack(u"\1\u031c\37\uffff\1\u031b"),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u031e\37\uffff\1\u031d"),
         DFA.unpack(u"\1\u031e\37\uffff\1\u031d"),
         DFA.unpack(u"\1\u0320\37\uffff\1\u031f"),
@@ -7296,17 +7294,16 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0322\37\uffff\1\u0321"),
         DFA.unpack(u"\1\u0324\37\uffff\1\u0323"),
         DFA.unpack(u"\1\u0324\37\uffff\1\u0323"),
-        DFA.unpack(u""),
         DFA.unpack(u"\1\u0326\37\uffff\1\u0325"),
         DFA.unpack(u"\1\u0326\37\uffff\1\u0325"),
-        DFA.unpack(u"\12\101\7\uffff\21\101\1\u0329\10\101\4\uffff\1\101"
-        u"\1\uffff\21\101\1\u0328\10\101"),
-        DFA.unpack(u"\12\101\7\uffff\21\101\1\u0329\10\101\4\uffff\1\101"
-        u"\1\uffff\21\101\1\u0328\10\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
         DFA.unpack(u""),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\21\101\1\u032a\10\101\4\uffff\1\101"
+        u"\1\uffff\21\101\1\u0329\10\101"),
+        DFA.unpack(u"\12\101\7\uffff\21\101\1\u032a\10\101\4\uffff\1\101"
+        u"\1\uffff\21\101\1\u0329\10\101"),
         DFA.unpack(u"\1\u032c\37\uffff\1\u032b"),
         DFA.unpack(u"\1\u032c\37\uffff\1\u032b"),
         DFA.unpack(u"\1\u032e\37\uffff\1\u032d"),
@@ -7320,16 +7317,16 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u"\1\u0335\37\uffff\1\u0334"),
         DFA.unpack(u"\1\u0335\37\uffff\1\u0334"),
-        DFA.unpack(u"\1\u0337\37\uffff\1\u0336"),
-        DFA.unpack(u"\1\u0337\37\uffff\1\u0336"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0338\37\uffff\1\u0337"),
+        DFA.unpack(u"\1\u0338\37\uffff\1\u0337"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u033b\37\uffff\1\u033a"),
         DFA.unpack(u"\1\u033b\37\uffff\1\u033a"),
         DFA.unpack(u"\1\u033d\37\uffff\1\u033c"),
@@ -7348,16 +7345,16 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u0349\37\uffff\1\u0348"),
         DFA.unpack(u"\1\u0349\37\uffff\1\u0348"),
         DFA.unpack(u""),
-        DFA.unpack(u""),
+        DFA.unpack(u"\1\u034b\37\uffff\1\u034a"),
+        DFA.unpack(u"\1\u034b\37\uffff\1\u034a"),
+        DFA.unpack(u"\1\u034d\37\uffff\1\u034c"),
+        DFA.unpack(u"\1\u034d\37\uffff\1\u034c"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u034c\37\uffff\1\u034b"),
-        DFA.unpack(u"\1\u034c\37\uffff\1\u034b"),
-        DFA.unpack(u"\1\u034e\37\uffff\1\u034d"),
-        DFA.unpack(u"\1\u034e\37\uffff\1\u034d"),
         DFA.unpack(u"\1\u0350\37\uffff\1\u034f"),
         DFA.unpack(u"\1\u0350\37\uffff\1\u034f"),
         DFA.unpack(u"\1\u0352\37\uffff\1\u0351"),
@@ -7366,11 +7363,11 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u0354\37\uffff\1\u0353"),
         DFA.unpack(u"\1\u0356\37\uffff\1\u0355"),
         DFA.unpack(u"\1\u0356\37\uffff\1\u0355"),
-        DFA.unpack(u"\1\u0358\37\uffff\1\u0357"),
-        DFA.unpack(u"\1\u0358\37\uffff\1\u0357"),
-        DFA.unpack(u"\1\u035a\37\uffff\1\u0359"),
-        DFA.unpack(u"\1\u035a\37\uffff\1\u0359"),
         DFA.unpack(u""),
+        DFA.unpack(u"\1\u0358\37\uffff\1\u0357"),
+        DFA.unpack(u"\1\u0358\37\uffff\1\u0357"),
+        DFA.unpack(u"\1\u035a\37\uffff\1\u0359"),
+        DFA.unpack(u"\1\u035a\37\uffff\1\u0359"),
         DFA.unpack(u"\1\u035c\37\uffff\1\u035b"),
         DFA.unpack(u"\1\u035c\37\uffff\1\u035b"),
         DFA.unpack(u"\1\u035e\37\uffff\1\u035d"),
@@ -7392,18 +7389,18 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u036a\37\uffff\1\u0369"),
         DFA.unpack(u"\1\u036c\37\uffff\1\u036b"),
         DFA.unpack(u"\1\u036c\37\uffff\1\u036b"),
+        DFA.unpack(u"\1\u036e\37\uffff\1\u036d"),
+        DFA.unpack(u"\1\u036e\37\uffff\1\u036d"),
+        DFA.unpack(u"\1\u0370\37\uffff\1\u036f"),
+        DFA.unpack(u"\1\u0370\37\uffff\1\u036f"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u036f\37\uffff\1\u036e"),
-        DFA.unpack(u"\1\u036f\37\uffff\1\u036e"),
-        DFA.unpack(u"\1\u0371\37\uffff\1\u0370"),
-        DFA.unpack(u"\1\u0371\37\uffff\1\u0370"),
         DFA.unpack(u"\1\u0373\37\uffff\1\u0372"),
         DFA.unpack(u"\1\u0373\37\uffff\1\u0372"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u0375\37\uffff\1\u0374"),
-        DFA.unpack(u"\1\u0375\37\uffff\1\u0374"),
         DFA.unpack(u""),
+        DFA.unpack(u"\1\u0375\37\uffff\1\u0374"),
+        DFA.unpack(u"\1\u0375\37\uffff\1\u0374"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
@@ -7415,14 +7412,14 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u037b\37\uffff\1\u037a"),
         DFA.unpack(u"\1\u037d\37\uffff\1\u037c"),
         DFA.unpack(u"\1\u037d\37\uffff\1\u037c"),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u037f\37\uffff\1\u037e"),
         DFA.unpack(u"\1\u037f\37\uffff\1\u037e"),
         DFA.unpack(u""),
-        DFA.unpack(u""),
-        DFA.unpack(u"\1\u0381\37\uffff\1\u0380"),
-        DFA.unpack(u"\1\u0381\37\uffff\1\u0380"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0382\37\uffff\1\u0381"),
+        DFA.unpack(u"\1\u0382\37\uffff\1\u0381"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\10\101\1\u0386\21\101\4\uffff\1\101"
@@ -7437,27 +7434,27 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u"\1\u038b\37\uffff\1\u038a"),
         DFA.unpack(u"\1\u038b\37\uffff\1\u038a"),
+        DFA.unpack(u"\1\u038d\37\uffff\1\u038c"),
+        DFA.unpack(u"\1\u038d\37\uffff\1\u038c"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u038d\37\uffff\1\u038c"),
-        DFA.unpack(u"\1\u038d\37\uffff\1\u038c"),
-        DFA.unpack(u"\1\u038f\37\uffff\1\u038e"),
-        DFA.unpack(u"\1\u038f\37\uffff\1\u038e"),
-        DFA.unpack(u"\1\u0391\37\uffff\1\u0390"),
-        DFA.unpack(u"\1\u0391\37\uffff\1\u0390"),
+        DFA.unpack(u"\1\u0390\37\uffff\1\u038f"),
+        DFA.unpack(u"\1\u0390\37\uffff\1\u038f"),
+        DFA.unpack(u"\1\u0394\16\uffff\1\u0393\20\uffff\1\u0392\16\uffff"
+        u"\1\u0391"),
+        DFA.unpack(u"\1\u0394\16\uffff\1\u0393\20\uffff\1\u0392\16\uffff"
+        u"\1\u0391"),
+        DFA.unpack(u"\1\u0396\37\uffff\1\u0395"),
+        DFA.unpack(u"\1\u0396\37\uffff\1\u0395"),
+        DFA.unpack(u"\1\u0398\37\uffff\1\u0397"),
+        DFA.unpack(u"\1\u0398\37\uffff\1\u0397"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u0395\37\uffff\1\u0394"),
-        DFA.unpack(u"\1\u0395\37\uffff\1\u0394"),
-        DFA.unpack(u"\1\u0397\37\uffff\1\u0396"),
-        DFA.unpack(u"\1\u0397\37\uffff\1\u0396"),
-        DFA.unpack(u"\1\u0399\37\uffff\1\u0398"),
-        DFA.unpack(u"\1\u0399\37\uffff\1\u0398"),
-        DFA.unpack(u"\1\u039b\16\uffff\1\u039d\20\uffff\1\u039a\16\uffff"
-        u"\1\u039c"),
-        DFA.unpack(u"\1\u039b\16\uffff\1\u039d\20\uffff\1\u039a\16\uffff"
-        u"\1\u039c"),
+        DFA.unpack(u"\1\u039b\37\uffff\1\u039a"),
+        DFA.unpack(u"\1\u039b\37\uffff\1\u039a"),
+        DFA.unpack(u"\1\u039d\37\uffff\1\u039c"),
+        DFA.unpack(u"\1\u039d\37\uffff\1\u039c"),
         DFA.unpack(u"\1\u039f\37\uffff\1\u039e"),
         DFA.unpack(u"\1\u039f\37\uffff\1\u039e"),
         DFA.unpack(u"\1\u03a1\37\uffff\1\u03a0"),
@@ -7474,13 +7471,13 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u03aa\37\uffff\1\u03a9"),
         DFA.unpack(u"\1\u03aa\37\uffff\1\u03a9"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u03ad\37\uffff\1\u03ac"),
+        DFA.unpack(u"\1\u03ad\37\uffff\1\u03ac"),
         DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u03ae\37\uffff\1\u03ad"),
-        DFA.unpack(u"\1\u03ae\37\uffff\1\u03ad"),
         DFA.unpack(u"\1\u03b0\37\uffff\1\u03af"),
         DFA.unpack(u"\1\u03b0\37\uffff\1\u03af"),
         DFA.unpack(u""),
@@ -7493,9 +7490,9 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u03b5\37\uffff\1\u03b4"),
         DFA.unpack(u"\1\u03b7\37\uffff\1\u03b6"),
         DFA.unpack(u"\1\u03b7\37\uffff\1\u03b6"),
-        DFA.unpack(u"\1\u03b9\37\uffff\1\u03b8"),
-        DFA.unpack(u"\1\u03b9\37\uffff\1\u03b8"),
         DFA.unpack(u""),
+        DFA.unpack(u"\1\u03b9\37\uffff\1\u03b8"),
+        DFA.unpack(u"\1\u03b9\37\uffff\1\u03b8"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\u03bb\37\uffff\1\u03ba"),
@@ -7507,20 +7504,20 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u03c0\37\uffff\1\u03bf"),
         DFA.unpack(u"\1\u03c0\37\uffff\1\u03bf"),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u03c2\37\uffff\1\u03c1"),
         DFA.unpack(u"\1\u03c2\37\uffff\1\u03c1"),
+        DFA.unpack(u"\1\u03c4\37\uffff\1\u03c3"),
+        DFA.unpack(u"\1\u03c6\37\uffff\1\u03c5"),
+        DFA.unpack(u"\1\u03c4\37\uffff\1\u03c3"),
+        DFA.unpack(u"\1\u03c6\37\uffff\1\u03c5"),
+        DFA.unpack(u"\1\u03c8\37\uffff\1\u03c7"),
+        DFA.unpack(u"\1\u03c8\37\uffff\1\u03c7"),
+        DFA.unpack(u"\1\u03ca\37\uffff\1\u03c9"),
+        DFA.unpack(u"\1\u03ca\37\uffff\1\u03c9"),
+        DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u""),
-        DFA.unpack(u""),
-        DFA.unpack(u"\1\u03c5\37\uffff\1\u03c4"),
-        DFA.unpack(u"\1\u03c5\37\uffff\1\u03c4"),
-        DFA.unpack(u"\1\u03c7\37\uffff\1\u03c6"),
-        DFA.unpack(u"\1\u03c7\37\uffff\1\u03c6"),
-        DFA.unpack(u"\1\u03c9\37\uffff\1\u03c8"),
-        DFA.unpack(u"\1\u03c9\37\uffff\1\u03c8"),
-        DFA.unpack(u"\1\u03cb\37\uffff\1\u03ca"),
-        DFA.unpack(u"\1\u03cb\37\uffff\1\u03ca"),
         DFA.unpack(u"\1\u03cd\37\uffff\1\u03cc"),
         DFA.unpack(u"\1\u03cd\37\uffff\1\u03cc"),
         DFA.unpack(u"\1\u03cf\37\uffff\1\u03ce"),
@@ -7534,14 +7531,14 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\1\u03d5\37\uffff\1\u03d4"),
         DFA.unpack(u"\1\u03d5\37\uffff\1\u03d4"),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\101\7\uffff\2\101\1\u03d8\27\101\4\uffff\1\101"
-        u"\1\uffff\2\101\1\u03d7\27\101"),
-        DFA.unpack(u"\12\101\7\uffff\2\101\1\u03d8\27\101\4\uffff\1\101"
-        u"\1\uffff\2\101\1\u03d7\27\101"),
+        DFA.unpack(u"\1\u03d7\37\uffff\1\u03d6"),
+        DFA.unpack(u"\1\u03d7\37\uffff\1\u03d6"),
         DFA.unpack(u""),
+        DFA.unpack(u"\12\101\7\uffff\2\101\1\u03da\27\101\4\uffff\1\101"
+        u"\1\uffff\2\101\1\u03d9\27\101"),
+        DFA.unpack(u"\12\101\7\uffff\2\101\1\u03da\27\101\4\uffff\1\101"
+        u"\1\uffff\2\101\1\u03d9\27\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u03da\37\uffff\1\u03d9"),
-        DFA.unpack(u"\1\u03da\37\uffff\1\u03d9"),
         DFA.unpack(u"\1\u03dc\37\uffff\1\u03db"),
         DFA.unpack(u"\1\u03dc\37\uffff\1\u03db"),
         DFA.unpack(u""),
@@ -7558,34 +7555,34 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u03e7\37\uffff\1\u03e6"),
-        DFA.unpack(u"\1\u03e7\37\uffff\1\u03e6"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u03e8\37\uffff\1\u03e7"),
+        DFA.unpack(u"\1\u03e8\37\uffff\1\u03e7"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u03eb\37\uffff\1\u03ea"),
+        DFA.unpack(u"\1\u03eb\37\uffff\1\u03ea"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u03ee\37\uffff\1\u03ed"),
+        DFA.unpack(u"\1\u03ee\37\uffff\1\u03ed"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u03ea\37\uffff\1\u03e9"),
-        DFA.unpack(u"\1\u03ea\37\uffff\1\u03e9"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u03ed\37\uffff\1\u03ec"),
-        DFA.unpack(u"\1\u03ed\37\uffff\1\u03ec"),
-        DFA.unpack(u"\1\u03ef\37\uffff\1\u03ee"),
-        DFA.unpack(u"\1\u03ef\37\uffff\1\u03ee"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\1\u03f2\37\uffff\1\u03f1"),
-        DFA.unpack(u"\1\u03f2\37\uffff\1\u03f1"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u03f1\37\uffff\1\u03f0"),
+        DFA.unpack(u"\1\u03f1\37\uffff\1\u03f0"),
+        DFA.unpack(u"\1\u03f3\37\uffff\1\u03f2"),
+        DFA.unpack(u"\1\u03f3\37\uffff\1\u03f2"),
         DFA.unpack(u"\1\u03f5\37\uffff\1\u03f4"),
         DFA.unpack(u"\1\u03f5\37\uffff\1\u03f4"),
         DFA.unpack(u"\1\u03f7\37\uffff\1\u03f6"),
         DFA.unpack(u"\1\u03f7\37\uffff\1\u03f6"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u03f9\37\uffff\1\u03f8"),
-        DFA.unpack(u"\1\u03f9\37\uffff\1\u03f8"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u03fa\37\uffff\1\u03f9"),
+        DFA.unpack(u"\1\u03fa\37\uffff\1\u03f9"),
         DFA.unpack(u"\1\u03fc\37\uffff\1\u03fb"),
         DFA.unpack(u"\1\u03fc\37\uffff\1\u03fb"),
         DFA.unpack(u"\1\u03fe\37\uffff\1\u03fd"),
@@ -7597,6 +7594,7 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u0402\37\uffff\1\u0401"),
         DFA.unpack(u"\1\u0402\37\uffff\1\u0401"),
         DFA.unpack(u""),
@@ -7605,19 +7603,18 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u"\1\u0406\37\uffff\1\u0405"),
         DFA.unpack(u"\1\u0406\37\uffff\1\u0405"),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\u0408\37\uffff\1\u0407"),
         DFA.unpack(u"\1\u0408\37\uffff\1\u0407"),
-        DFA.unpack(u""),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u040d\37\uffff\1\u040c"),
         DFA.unpack(u"\1\u040d\37\uffff\1\u040c"),
-        DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u0410\37\uffff\1\u040f"),
@@ -7626,12 +7623,12 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u""),
         DFA.unpack(u"\1\u0412\37\uffff\1\u0411"),
         DFA.unpack(u"\1\u0412\37\uffff\1\u0411"),
-        DFA.unpack(u"\1\u0414\37\uffff\1\u0413"),
-        DFA.unpack(u"\1\u0414\37\uffff\1\u0413"),
-        DFA.unpack(u"\1\u0416\37\uffff\1\u0415"),
-        DFA.unpack(u"\1\u0416\37\uffff\1\u0415"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0415\37\uffff\1\u0414"),
+        DFA.unpack(u"\1\u0415\37\uffff\1\u0414"),
+        DFA.unpack(u"\1\u0417\37\uffff\1\u0416"),
+        DFA.unpack(u"\1\u0417\37\uffff\1\u0416"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -7642,23 +7639,23 @@ class sdl92Lexer(Lexer):
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\1\u041c\37\uffff\1\u041b"),
         DFA.unpack(u"\1\u041c\37\uffff\1\u041b"),
-        DFA.unpack(u"\1\u041e\37\uffff\1\u041d"),
-        DFA.unpack(u"\1\u041e\37\uffff\1\u041d"),
+        DFA.unpack(u""),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u041f\37\uffff\1\u041e"),
+        DFA.unpack(u"\1\u041f\37\uffff\1\u041e"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\u0422\37\uffff\1\u0421"),
-        DFA.unpack(u"\1\u0422\37\uffff\1\u0421"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
+        DFA.unpack(u"\1\u0423\37\uffff\1\u0422"),
+        DFA.unpack(u"\1\u0423\37\uffff\1\u0422"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
         DFA.unpack(u"\12\101\7\uffff\32\101\4\uffff\1\101\1\uffff\32\101"),
-        DFA.unpack(u""),
         DFA.unpack(u"")
     ]
 

@@ -49,8 +49,9 @@ def parse_scene(scene):
     composite = set(scene.composite_states.keys())
     for each in scene.states:
         if each.is_composite():
+            statename = unicode(each).split()[0].lower()  # Ignore via clause
             try:
-                composite.remove(unicode(each).lower())
+                composite.remove(statename)
                 sub_state = generate(each, composite=True, nextstate=False)
                 if sub_state:
                     sub_state.reverse()
@@ -105,8 +106,9 @@ def recursive_aligned(symbol):
 def generate(symbol, *args, **kwargs):
     ''' Generate text for a symbol, recursively or not - return a list of
         strings '''
-    _, _ = symbol, recursive
-    raise NotImplementedError('[PR Generator] Unsupported AST construct')
+    _ = symbol
+    raise NotImplementedError('Unsupported AST construct: {}'
+                              .format(type(symbol)))
     return Indent()
 
 
@@ -267,8 +269,8 @@ def _state(symbol, recursive=True, nextstate=True, composite=False, **kwargs):
     else:
         # Generate code for a nested state
         result = Indent()
-        result.extend(['STATE {};'.format(unicode(symbol)),
-                  'SUBSTRUCTURE'])
+        result.append('STATE {};'.format(unicode(symbol).split()[0]))
+        result.append('SUBSTRUCTURE')
         Indent.indent += 1
         entry_points, exit_points = [], []
         for each in symbol.nested_scene.start:

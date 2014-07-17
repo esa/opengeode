@@ -3,8 +3,10 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#include "dataview-uniq.h"
+
 extern void adainit();
-extern void myfunction_start_something(long long *);
+extern void myfunction_start_something(asn1SccT_Int32 *);
 extern void myfunction_mytimer();
 
 volatile sig_atomic_t keep_going = 1;
@@ -14,7 +16,7 @@ void myfunction_RI_result_data(long long *val)
     printf("[C] result_data: %lld\n", *val);
 }
 
-void myfunction_RI_set_mytimer(long long *val)
+void myfunction_RI_set_mytimer(asn1SccT_Int32 *val)
 {
     printf("[C] SET MyTimer: %lld\n", *val);
     alarm(((int)*val) / 1000);
@@ -35,7 +37,7 @@ void myfunction_RI_reset_mytimer()
 
 int main()
 {
-    long long test = 5;
+    asn1SccT_Int32 test = 5;
     signal(SIGALRM, timer_expired);
 
     printf("[C Code] Running test\n");

@@ -30,6 +30,7 @@ from itertools import chain
 # Added to please py2exe - NOQA makes flake8 ignore the following lines:
 # pylint: disable=W0611
 import enum  # NOQA
+import fnmatch  # NOQA
 import operator  # NOQA
 import subprocess  # NOQA
 import distutils  # NOQA
@@ -97,7 +98,7 @@ except ImportError:
     pass
 
 __all__ = ['opengeode']
-__version__ = '0.992'
+__version__ = '0.993'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -376,7 +377,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         for each in self.states:
             if each.is_composite() and \
                   each.nested_scene not in self._composite_states.viewvalues():
-                self._composite_states[unicode(each).lower()] = \
+                self._composite_states[unicode(each).split()[0].lower()] = \
                                                             each.nested_scene
         return self._composite_states
 
@@ -1649,7 +1650,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                         types.append(file_handler.read())
                 if types:
                     self.asn1_area.text.setPlainText('\n'.join(types))
+                    # ASN.1 text area is read-only:
+                    self.asn1_area.text.setTextInteractionFlags(
+                                            QtCore.Qt.TextBrowserInteraction)
                     self.asn1_area.text.try_resize()
+
             except IOError as err:
                 LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
             except AttributeError:
