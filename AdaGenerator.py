@@ -316,7 +316,7 @@ package {process_name} is'''.format(process_name=process_name,
     for timer in process.timers:
         ads_template.append(
                 u'--  Timer {} SET and RESET functions'.format(timer))
-        ads_template.append(u'procedure SET_{}(val: access Asn1Int);'
+        ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
                 .format(timer))
         ads_template.append(
                 u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
@@ -520,7 +520,7 @@ def _call_external_function(output):
             local_decl.extend(p_local)
             # Use a temporary variable to store the timer value
             tmp_id = 'tmp' + str(out['tmpVars'][0])
-            local_decl.append('{} : aliased Asn1Int;'
+            local_decl.append('{} : aliased asn1SccT_UInt32;'
                               .format(tmp_id))
             code.append('{tmp} := {val};'.format(tmp=tmp_id, val=t_val))
             code.append("SET_{timer}({value}'access);"
@@ -741,8 +741,7 @@ def _prim_call(prim):
         ada_string += '{op}({param})'.format(
                 param=param_str,
                 op='abs' if ident == 'abs' else
-                'Asn1Int' if ident == 'fix'
-                else 'adaasn1rtl.Asn1Real'
+                'Asn1Int' if ident == 'fix' else 'Asn1Real'
                 if ident == 'float' else 'ERROR')
     elif ident == 'power':
         operands = [None, None]
