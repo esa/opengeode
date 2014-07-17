@@ -368,7 +368,8 @@ def fix_special_operators(op_name, expr_list, context):
             raise TypeError('Length operator works only on strings/lists')
         elif op_name.lower() == 'present' and basic.kind != 'ChoiceType':
             raise TypeError('Present operator works only on CHOICE types')
-        elif op_name.lower() in ('abs', 'float', 'fix') and not is_numeric(basic):
+        elif op_name.lower() in ('abs', 'float', 'fix') \
+                and not is_numeric(basic):
             raise TypeError('"{}" operator needs a numerical parameter'.format(
                 op_name))
     elif op_name.lower() == 'power':
@@ -1294,23 +1295,32 @@ def primary_call(root, context):
     params_bty = [find_basic_type(p.exprType) for p in params]
 
     if ident == 'present':
-        node.exprType = type('present', (object,), {
-            'kind': 'ChoiceEnumeratedType',
-            'EnumValues': params_bty[0].Children
-        })
+        try:
+            node.exprType = type('present', (object,), {
+                'kind': 'ChoiceEnumeratedType',
+                'EnumValues': params_bty[0].Children
+            })
+        except AttributeError:
+            errors.append(error(root, 'Parameter type is not a CHOICE'))
 
     elif ident in ('length', 'fix'):
         # result is an integer type with range of the param type
-        node.exprType = type('fix', (INTEGER,), {
-            'Min': params_bty[0].Min,
-            'Max': params_bty[0].Max
-        })
+        try:
+            node.exprType = type('fix', (INTEGER,), {
+                'Min': params_bty[0].Min,
+                'Max': params_bty[0].Max
+            })
+        except AttributeError:
+            errors.append(error(root, 'Parameter type has no range'))
 
     elif ident == 'float':
-        node.exprType = type('float_op', (REAL,), {
-            'Min': params_bty[0].Min,
-            'Max': params_bty[0].Max
-        })
+        try:
+            node.exprType = type('float_op', (REAL,), {
+                'Min': params_bty[0].Min,
+                'Max': params_bty[0].Max
+            })
+        except AttributeError:
+            errors.append(error(root, 'Parameter type has no range'))
 
     elif ident == 'power':
         try:
@@ -1322,12 +1332,18 @@ def primary_call(root, context):
             })
         except OverflowError:
             errors.append(error(root, 'Result can exceeds 64-bits'))
+        except AttributeError:
+            errors.append(error(root, 'Parameter type has no range'))
 
     elif ident == 'abs':
-        node.exprType = type('Abs', (params_bty[0],), {
-            'Min': str(max(float(params_bty[0].Min), 0)),
-            'Max': str(max(float(params_bty[0].Max), 0))
-        })
+        try:
+            node.exprType = type('Abs', (params_bty[0],), {
+                'Min': str(max(float(params_bty[0].Min), 0)),
+                'Max': str(max(float(params_bty[0].Max), 0))
+            })
+        except AttributeError:
+            msg = 'Type Error, check the parameter'
+            errors.append(error(root, '"Abs" parameter type has no range'))
 
     return node, errors, warnings
 
