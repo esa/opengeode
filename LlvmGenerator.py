@@ -738,54 +738,49 @@ def generate_for_iterable(loop):
 
 @singledispatch
 def reference(prim):
-    ''' Generate a variable reference '''
+    ''' Generate a reference '''
     raise TypeError('Unsupported reference: ' + str(prim))
 
 
 @reference.register(ogAST.PrimVariable)
 def _prim_var_reference(prim):
-    ''' Generate a primary variable reference '''
+    ''' Generate a variable reference '''
     return ctx.scope.resolve(str(prim.value[0]))
 
 
-@reference.register(ogAST.PrimPath)
-def _prim_path_reference(prim):
-    ''' Generate a primary path reference '''
-    var_name = prim.value[0].lower()
-    var_ptr = ctx.scope.resolve(str(var_name))
+@reference.register(ogAST.PrimSelector)
+def _prim_selector_reference(prim):
+    ''' Generate a field selector referece '''
+    receiver_ptr = reference(prim.value[0])
+    field_name = prim.value[1]
 
-    if not prim.value:
-        return var_ptr
+    if receiver_ptr.type.pointee.name in ctx.structs:
+        struct = ctx.structs[receiver_ptr.type.pointee.name]
+        field_idx_cons = core.Constant.int(ctx.i32, struct.idx(field_name))
+        return ctx.builder.gep(receiver_ptr, [ctx.zero, field_idx_cons])
 
-    for elem in prim.value[1:]:
-        if type(elem) == dict:
-            if 'index' in elem:
-                idx_val = expression(elem['index'][0])
-                array_ptr = ctx.builder.gep(var_ptr, [ctx.zero, ctx.zero])
-                # TODO: Refactor this
-                if array_ptr.type.pointee.kind != core.TYPE_ARRAY:
-                    # If is not an array this is a pointer to a variable size SeqOf
-                    # The array is in the second field of the struct
-                    var_ptr = ctx.builder.gep(var_ptr, [ctx.zero, ctx.one, idx_val])
-                else:
-                    var_ptr = ctx.builder.gep(var_ptr, [ctx.zero, ctx.zero, idx_val])
-            else:
-                raise NotImplementedError
-        else:
-            var_ty = var_ptr.type
-            if var_ty.pointee.name in ctx.structs:
-                struct = ctx.structs[var_ty.pointee.name]
-                field_idx_cons = core.Constant.int(ctx.i32, struct.idx(elem))
-                field_ptr = ctx.builder.gep(var_ptr, [ctx.zero, field_idx_cons])
-                var_ptr = field_ptr
-            elif var_ty.pointee.name in ctx.unions:
-                union = ctx.unions[var_ty.pointee.name]
-                _, field_ty = union.kind(elem)
-                field_ptr = ctx.builder.gep(var_ptr, [ctx.zero, ctx.one])
-                var_ptr = ctx.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
-            else:
-                raise NotImplementedError
-    return var_ptr
+    else:
+        union = ctx.unions[receiver_ptr.type.pointee.name]
+        _, field_ty = union.kind(field_name)
+        field_ptr = ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.one])
+        return ctx.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
+
+
+@reference.register(ogAST.PrimIndex)
+def _prim_index_reference(prim):
+    ''' Generate an index reference '''
+    receiver_ptr = reference(prim.value[0])
+    idx_val = expression(prim.value[1]['index'][0])
+
+    array_ptr = ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.zero])
+
+    # TODO: Refactor this
+    if array_ptr.type.pointee.kind != core.TYPE_ARRAY:
+        # If is not an array this is a pointer to a variable size SeqOf
+        # The array is in the second field of the struct
+        return ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.one, idx_val])
+    else:
+        return ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.zero, idx_val])
 
 
 @singledispatch
@@ -801,30 +796,44 @@ def _primary_variable(prim):
     return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
 
 
-@expression.register(ogAST.PrimPath)
-def _prim_path(prim):
-    ''' Generate the code for an of path expression '''
-    specops_generators = {
-        'length': generate_length,
-        'present': generate_present,
-        'abs': generate_abs,
-        'fix': generate_fix,
-        'float': generate_float,
-        'power': generate_power
-    }
-
-    name = prim.value[0].lower()
-    if name in specops_generators:
-        generator = specops_generators[name]
-        return generator(prim.value[1]['procParams'])
-
-    return generate_access(prim)
-
-
-def generate_access(prim):
-    ''' Generate the code for an access '''
+@expression.register(ogAST.PrimSelector)
+def _primary_selector(prim):
+    ''' Generate the code for a Selector expression '''
     var_ptr = reference(prim)
     return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
+
+
+@expression.register(ogAST.PrimIndex)
+def _primary_index(prim):
+    ''' Generate the code for an Index expression '''
+    var_ptr = reference(prim)
+    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
+
+
+@expression.register(ogAST.PrimSubstring)
+def _primary_substring(prim):
+    ''' Generate the code for a Substring expression '''
+    raise NotImplementedError
+
+
+@expression.register(ogAST.PrimCall)
+def _primary_call(prim):
+    ''' Generate the code for a builtin call expression '''
+    name = prim.value[0].lower()
+    args = prim.value[1]['procParams']
+
+    if name == 'length':
+        return generate_length(args)
+    elif name == 'present':
+        return generate_present(args)
+    elif name == 'abs':
+        return generate_abs(args)
+    elif name == 'fix':
+        return generate_fix(args)
+    elif name == 'float':
+        return generate_float(args)
+    elif name == 'power':
+        return generate_power(args)
 
 
 def generate_length(params):
