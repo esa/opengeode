@@ -145,6 +145,9 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+0.994 (07/2014)
+     - Maintenance release, minor fixes
+
 0.993 (07/2014)
      - Parser bugfixes
      - Better support for nested states

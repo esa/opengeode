@@ -249,7 +249,7 @@ package {process_name} is'''.format(process_name=process_name,
             while state_tree:
                 current = current + state_tree.pop(0)
                 for comp in context.composite_states:
-                    if current == comp.statename.lower():
+                    if current.lower() == comp.statename.lower():
                         if comp.exit_procedure:
                             exitlist.append(current)
                         context = comp

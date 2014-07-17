@@ -98,7 +98,7 @@ except ImportError:
     pass
 
 __all__ = ['opengeode']
-__version__ = '0.993'
+__version__ = '0.994'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
