@@ -1,42 +1,64 @@
+/* CIF PROCESS (250, 150), (150, 75) */
 PROCESS orchestrator;
-/* CIF TEXT (-957, 11), (297, 233) */
--- Test case covering FOR loops
+    /* CIF TEXT (0, 11), (297, 233) */
+    -- Test case covering FOR loops
 
 dcl foo t_quAT_FLOAT32 := {1.0, 2.0, 3.0, 4.0};
 
 dcl gnc_out T_GNC_LV_SIM_INPUTS;
 
 dcl toto T_UInt8 := 2;
-/* CIF ENDTEXT */
-/* CIF START (-564, 36), (81, 37) */
-START;
-/* CIF PROCEDURECALL (-590, 88), (133, 44) */
-CALL writeln
+    /* CIF ENDTEXT */
+    /* CIF START (393, 36), (81, 37) */
+    START;
+        /* CIF PROCEDURECALL (367, 88), (133, 44) */
+        CALL writeln
 ('[SDL] Startup');
-/* CIF TASK (-630, 147), (214, 68) */
-TASK for x in range(1,3,2):
+        /* CIF TASK (326, 147), (214, 68) */
+        TASK for x in range(1,3,2):
     call writeln('Hello ',foo(x));
     call writeln(x, foo(1));
-endfor;
-/* CIF TASK (-650, 230), (254, 68) */
-TASK for x in range(length(foo)):
+endfor
+        /* CIF COMMENT (575, 141), (256, 78) */
+        COMMENT 'this range should iterate only ONCE
+expected output:
+Hello 2.0 (array index start at 0)
+1 2.0';
+        /* CIF TASK (306, 230), (254, 68) */
+        TASK for x in range(length(foo)):
     call writeln(foo(x));
     output vesat_one_step(gnc_out);
-endfor;
-/* CIF TASK (-593, 313), (140, 53) */
-TASK for x in foo:
+endfor
+        /* CIF COMMENT (584, 221), (412, 98) */
+        COMMENT 'length(foo) = 4 -> should iterate 4 times
+expected output (in addition to the printf in vesat_one_step):
+1.0 
+2.0
+3.0
+4.0';
+        /* CIF TASK (363, 379), (140, 53) */
+        TASK for x in foo:
     call writeln(x);
-endfor;
-/* CIF TASK (-593, 381), (140, 53) */
-TASK for x in foo(1,2):
+endfor
+        /* CIF COMMENT (534, 359), (146, 93) */
+        COMMENT 'expected output:
+ 1.0
+ 2.0
+ 3.0
+ 4.0';
+        /* CIF TASK (363, 516), (140, 53) */
+        TASK for x in foo(1,2):
     call writeln(x);
-endfor;
-/* CIF TASK (-582, 449), (118, 35) */
-TASK toto := (toto);
-/* CIF NEXTSTATE (-569, 499), (91, 39) */
-NEXTSTATE Stopped;
-/* CIF STATE (-340, 38), (91, 35) */
-STATE Stopped;
-ENDSTATE;
-
+endfor
+        /* CIF COMMENT (525, 503), (146, 63) */
+        COMMENT 'expected output:
+ 2.0
+ 3.0';
+        /* CIF TASK (374, 584), (118, 35) */
+        TASK toto := (toto);
+        /* CIF NEXTSTATE (388, 634), (91, 39) */
+        NEXTSTATE Stopped;
+    /* CIF STATE (617, 38), (91, 35) */
+    STATE Stopped;
+    ENDSTATE;
 ENDPROCESS orchestrator;

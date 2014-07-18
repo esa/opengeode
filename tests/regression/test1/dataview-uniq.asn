@@ -26,6 +26,9 @@ Type1 ::= INTEGER(0..1)
 Type2 ::= BOOLEAN
 
 Toto ::= SEQUENCE { elem-1 Type1, elem-2 Type2 }
+
+SeqBool ::= SEQUENCE(SIZE(1..5)) OF BOOLEAN
+
 default-seqof SeqOf ::= {4,7,9}
 default-str My-OctStr ::= 'DEADBEEF'H
 
