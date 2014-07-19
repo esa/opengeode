@@ -1,9 +1,9 @@
 /* CIF PROCESS (288, 143), (150, 75) */
 PROCESS trafficlight;
-STATE Maintenance;
-SUBSTRUCTURE
-STATE YellowOff;
-SUBSTRUCTURE
+    STATE Maintenance;
+    SUBSTRUCTURE
+            STATE YellowOff;
+            SUBSTRUCTURE
                     /* CIF PROCEDURE (239, 367), (73, 35) */
                     PROCEDURE entry;
                         /* CIF START (180, 35), (70, 35) */
@@ -23,8 +23,8 @@ SUBSTRUCTURE
                     STATE idle;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
-STATE YellowOn;
-SUBSTRUCTURE
+            STATE YellowOn;
+            SUBSTRUCTURE
                     /* CIF PROCEDURE (291, 312), (73, 35) */
                     PROCEDURE entry;
                         /* CIF START (292, 124), (70, 35) */
@@ -65,13 +65,13 @@ SUBSTRUCTURE
                     NEXTSTATE YellowOff;
             ENDSTATE;
     ENDSUBSTRUCTURE;
-STATE on;
-SUBSTRUCTURE
-STATE PedWaiting;
-SUBSTRUCTURE
+    STATE on;
+    SUBSTRUCTURE
+            STATE PedWaiting;
+            SUBSTRUCTURE
                 out (counter_expired);
-STATE waitOn;
-SUBSTRUCTURE
+                    STATE waitOn;
+                    SUBSTRUCTURE
                             /* CIF PROCEDURE (548, 222), (73, 35) */
                             PROCEDURE entry;
                                 /* CIF START (185, 47), (70, 35) */
@@ -81,7 +81,7 @@ SUBSTRUCTURE
                                     /* CIF RETURN (202, 147), (35, 35) */
                                     RETURN ;
                             ENDPROCEDURE;
-                            /* CIF PROCEDURE (560, 288), (70, 35) */
+                            /* CIF PROCEDURE (560, 289), (70, 35) */
                             PROCEDURE exit;
                                 /* CIF START (280, 159), (70, 35) */
                                 START;
