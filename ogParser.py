@@ -1151,7 +1151,11 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    # TODO: Check types
+    for bty in (find_basic_type(expr.left.exprType), find_basic_type(expr.right.exprType)):
+        if bty.kind != 'SequenceOfType' and not is_string(bty):
+            msg = 'Append can only be applied to types SequenceOf or String'
+            errors.append(error(root, msg))
+            break
 
     expr.exprType = expr.left.exprType
     return expr, errors, warnings
