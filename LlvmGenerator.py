@@ -565,9 +565,10 @@ def generate_write(params):
             str_ptr = ctx.builder.select(expr_val, true_str_ptr, false_str_ptr)
             ctx.builder.call(ctx.funcs['printf'], [str_ptr])
         elif basic_ty.kind in ['StringType', 'OctetStringType']:
-            fmt_str_ptr = ctx.string_ptr('%s')
+            fmt_str_ptr = ctx.string_ptr('%.*s')
+            count_val = ctx.builder.load(ctx.builder.gep(expr_val, [ctx.zero, ctx.zero]))
             arr_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.one])
-            ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, arr_ptr])
+            ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, count_val, arr_ptr])
         else:
             raise NotImplementedError
 
@@ -1284,7 +1285,7 @@ def _string_literal(primary):
     str_ptr = ctx.string_ptr(str(primary.value[1:-1]))
 
     # Allocate anonymous OctetString struct
-    str_len = len(str(primary.value[1:-1])) + 1
+    str_len = len(str(primary.value[1:-1]))
     str_len_val = core.Constant.int(ctx.i32, str_len)
     arr_ty = core.Type.array(ctx.i8, str_len)
     struct = ctx.decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty])
