@@ -1119,7 +1119,7 @@ def _append(expr):
     ''' Generate code for the APPEND construct: a // b '''
     bty = find_basic_type(expr.exprType)
 
-    if bty.kind == 'SequenceOfType':
+    if bty.kind in ('SequenceOfType', 'StringType', 'OctetStringType'):
         func = ctx.builder.basic_block.function
 
         body_block = func.append_basic_block('append:body')
