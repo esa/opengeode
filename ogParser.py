@@ -706,39 +706,47 @@ def compare_types(type_a, type_b):
        otherwise raise TypeError
     '''
     LOG.debug('[compare_types]' + str(type_a) + ' and ' + str(type_b) + ': ')
+
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
+
     if type_a == type_b:
         return
+
     # Check if both types have basic compatibility
-    simple_types = [elem for elem in (type_a, type_b) if elem.kind in
-                       ('IntegerType', 'BooleanType', 'RealType', 'StringType',
-                        'SequenceOfType', 'Integer32Type', 'OctetStringType')]
-    if len(simple_types) < 2:
-        # Either A or B is not a basic type - cannot be compatible
-        raise TypeError('One of the types is not a basic type: '
-                + type_name(type_a) + ' or ' + type_name(type_b))
-    elif type_a.kind == type_b.kind:
+
+    simple_types = (
+        'IntegerType',
+        'BooleanType',
+        'RealType',
+        'StringType',
+        'SequenceOfType',
+        'Integer32Type',
+        'OctetStringType'
+    )
+
+    for ty in (type_a, type_b):
+        if ty.kind not in simple_types:
+            raise TypeError('Type {} is not a basic type'.format(type_name(ty)))
+
+    if type_a.kind == type_b.kind:
         if type_a.kind == 'SequenceOfType':
             if type_a.Min == type_b.Min and type_a.Max == type_b.Max:
                 compare_types(type_a.type, type_b.type)
                 return
             else:
                 raise TypeError('Incompatible arrays')
+        # TODO: Check that OctetString types have compatible range
         return
-    elif type_a.kind.endswith('StringType') and type_b.kind.endswith('StringType'):
-        # Allow Octet String values to be printable strings.. for convenience
+    elif is_string(type_a) and is_string(type_b):
         return
-    elif not(type_a.kind in ('IntegerType', 'Integer32Type') and
-             type_b.kind in ('IntegerType', 'Integer32Type')):
-        raise TypeError('One type is an integer, not the other one')
-    elif any(side.kind == 'RealType' for side in (type_a, type_b)):
-        raise TypeError('One type is an REAL, not the other one')
-    elif all(side.kind.startswith('Integer') for side in (type_a, type_b)) \
-            or all(side.kind == 'RealType' for side in (type_a, type_b)):
-        pass
+    elif is_integer(type_a) and is_integer(type_b):
+        return
     else:
-        return
+        raise TypeError('Incompatible types {} and {}'.format(
+            type_name(type_a),
+            type_name(type_b)
+        ))
 
 
 def find_variable(var, context):
