@@ -1343,7 +1343,7 @@ def primary_index(root, context):
     if receiver_bty.kind == 'SequenceOfType':
         node.exprType = receiver_bty.type
     else:
-        msg = 'Element {} cannot have an index'.format(receiver)
+        msg = 'Index can only be applied to type SequenceOf'
         errors.append(error(root, msg))
 
     return node, errors, warnings
@@ -1371,7 +1371,7 @@ def primary_substring(root, context):
     if receiver_bty.kind == 'SequenceOfType' or receiver_bty.kind.endswith('StringType'):
         node.exprType = receiver.exprType
     else:
-        msg = 'Element {} cannot have a substring'.format(receiver)
+        msg = 'Substring can only be applied to types SequenceOf or String'
         errors.append(error(root, msg))
 
     return node, errors, warnings
@@ -3076,7 +3076,7 @@ def assign(root, context):
             expr.left.inputString + ', type= ' +
             type_name(expr.left.exprType) + '), right (' +
             expr.right.inputString + ', type= ' +
-            (type_name(expr.right.exprType) 
+            (type_name(expr.right.exprType)
                 if expr.right.exprType else 'Unknown') + ') ' + str(err))
     else:
         expr.right.exprType = expr.left.exprType
