@@ -7,8 +7,8 @@ PROCESS sequences;
 
 DCL p1 Point;
 DCL p2 Point;
-DCL l1 List;
-DCL l2 List;
+DCL l1 IntList;
+DCL l2 IntList;
 DCL nested Nested;
 DCL bl1 BoolList;
 DCL vl1 VarIntList;
