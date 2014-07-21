@@ -174,6 +174,8 @@ def _process(process):
 with System.IO;
 use System.IO;
 
+with Ada.Unchecked_Conversion;
+
 {dataview}
 
 with Interfaces;
@@ -200,13 +202,6 @@ package {process_name} is'''.format(process_name=process_name,
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
-
-    # Generate the code for the start procedure
-    #taste_template.extend([
-    #    'procedure state_start is',
-    #    'begin',
-    #        'null;',
-    #    'end state_start;', ''])
 
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
@@ -355,7 +350,7 @@ package {process_name} is'''.format(process_name=process_name,
 
     # Declare the local variables needed by the transitions in the template
     decl = [u'{line}'.format(line=l)
-            for l in local_decl_transitions]
+            for l in set(local_decl_transitions)]
     taste_template.extend(decl)
     taste_template.append('begin')
 
@@ -798,10 +793,11 @@ def _prim_call(prim):
                 (getattr(exp.exprType, 'ReferencedTypeName', None)
                         or exp.exprType.kind).replace('-', '_')
         param_stmts, param_str, local_var = expression(exp)
+        local_decl.append('function num_{t} is new Ada.Unchecked_Conversion'
+                          '(asn1scc{t}, Asn1Int);'.format(t=exp_typename))
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += ("asn1Scc{t}'Pos({e})".format(t=exp_typename,
-                                                    e=param_str))
+        ada_string += ('num_{t}({p})'.format(t=exp_typename, p=param_str))
     else:
         ada_string += '('
         # Take all params and join them with commas
