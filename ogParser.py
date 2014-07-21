@@ -98,6 +98,7 @@ CHOICE = type('ChoiceType', (object,), {'kind': 'ChoiceType'})
 BOOLEAN = type('BooleanType', (object,), {'kind': 'BooleanType'})
 RAWSTRING = type('RawString', (object,), {'kind': 'StandardStringType'})
 OCTETSTRING = type('OctetString', (object,), {'kind': 'OctetStringType'})
+ENUMERATED = type('EnumeratedType', (object,), {'kind': 'EnumeratedType'})
 
 UNKNOWN_TYPE = type('UnknownType', (object,), {'kind': 'UnknownType'})
 
@@ -110,6 +111,7 @@ SPECIAL_OPERATORS = {'length': [LIST],
                      'set_timer': [INTEGER, TIMER],
                      'reset_timer': [TIMER],
                      'abs': [NUMERICAL],
+                     'num': [ENUMERATED],
                      'float': [NUMERICAL],
                      'fix': [NUMERICAL],
                      'power': [NUMERICAL, INTEGER]}
@@ -354,7 +356,7 @@ def is_constant(var):
 
 def fix_special_operators(op_name, expr_list, context):
     ''' Verify/fix type of special operators parameters '''
-    if op_name.lower() in ('length', 'present', 'abs', 'float', 'fix'):
+    if op_name.lower() in ('length', 'present', 'abs', 'float', 'fix', 'num'):
         if len(expr_list) != 1:
             raise AttributeError('Only one parameter for the {} operator'
                                  .format(op_name))
@@ -372,6 +374,8 @@ def fix_special_operators(op_name, expr_list, context):
                 and not is_numeric(basic):
             raise TypeError('"{}" operator needs a numerical parameter'.format(
                 op_name))
+        elif op_name.lower() == 'num' and basic.kind != 'EnumeratedType':
+            raise TypeError('Num operaror works only with enumerations')
     elif op_name.lower() == 'power':
         if len(expr_list) != 2:
             raise AttributeError('The "power" operator takes two parameters')
@@ -1342,8 +1346,19 @@ def primary_call(root, context):
                 'Max': str(max(float(params_bty[0].Max), 0))
             })
         except AttributeError:
-            msg = 'Type Error, check the parameter'
             errors.append(error(root, '"Abs" parameter type has no range'))
+    elif ident == 'num':
+        try:
+            enum_values = [int(each.IntValue)
+                           for each in params_bty[0].EnumValues.viewvalues()]
+
+            node.exprType = type('Num', (INTEGER,), {
+                'Min': str(min(enum_values)),
+                'Max': str(max(enum_values))
+            })
+        except AttributeError:
+            msg = 'Type Error, check the parameter'
+            errors.append(error(root, '"Num" parameter error'))
 
     return node, errors, warnings
 
@@ -3263,6 +3278,8 @@ def task_body(root, context):
         else:
             warnings.append('Unsupported child type in task body: ' +
                     str(child.type))
+    if not body:
+        body = ogAST.TaskAssign()
     return body, errors, warnings
 
 

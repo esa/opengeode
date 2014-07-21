@@ -789,6 +789,19 @@ def _prim_call(prim):
         local_decl.extend(local_var)
         ada_string += ('asn1Scc{t}_Kind({e})'.format(
             t=exp_typename, e=param_str))
+    elif ident == 'num':
+        # User wants to get an enumerated corresponding integer value
+        exp = params[0]
+        exp_type = find_basic_type(exp.exprType)
+        # Get the ASN.1 type name as it is needed to build the Ada expression
+        exp_typename = \
+                (getattr(exp.exprType, 'ReferencedTypeName', None)
+                        or exp.exprType.kind).replace('-', '_')
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        ada_string += ("asn1Scc{t}'Pos({e})".format(t=exp_typename,
+                                                    e=param_str))
     else:
         ada_string += '('
         # Take all params and join them with commas

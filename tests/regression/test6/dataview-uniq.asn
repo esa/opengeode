@@ -25,7 +25,7 @@ MyInteger   ::= T-UInt8
 MyReal	    ::= REAL (0.0 .. 1000.0)
 LargerReal  ::= REAL (0.0 .. 1000000000)
 
-MyEnum	    ::= ENUMERATED { hello, world, howareyou }
+MyEnum	    ::= ENUMERATED { hello(12), world(13), howareyou(111) }
 
 MySeq	    ::= SEQUENCE {
 		    a MyInteger,

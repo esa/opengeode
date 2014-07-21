@@ -1,6 +1,6 @@
 /* CIF PROCESS (200, 143), (150, 75) */
 PROCESS myfunction;
-    /* CIF TEXT (0, 17), (296, 428) */
+    /* CIF TEXT (0, 17), (296, 458) */
     -- Timers defined in the interface view
 -- Use SET_TIMER (value, timer name)
 -- and RESET_TIMER (timer name) in a
@@ -29,6 +29,8 @@ dcl variable_str String := 'Hello!';
 dcl other String := 'World';
 
 dcl bar SeqInt := { 1,1 };
+
+dcl testenum MyEnum := world;
     /* CIF ENDTEXT */
     /* CIF PROCEDURE (1172, 490), (91, 35) */
     PROCEDURE factorial;
@@ -114,61 +116,72 @@ should display FALSE';
         COMMENT 'test op_not with variable';
         /* CIF TASK (480, 820), (321, 35) */
         TASK someInt := if someint = 0 then someint else 0 fi;
-        /* CIF DECISION (504, 870), (273, 87) */
+        /* CIF TASK (542, 870), (197, 35) */
+        TASK otherint := num(testenum);
+        /* CIF PROCEDURECALL (513, 920), (256, 35) */
+        CALL writeln(otherint, num(testenum)+1)
+        /* CIF COMMENT (789, 890), (401, 98) */
+        COMMENT 'Will display 1 2 with the Ada generator
+* even if the ASN.1 model specifies explicit values *
+because Ada has no operator to get the explicit value,
+even if it is set as representation clause. Enumerated values
+are logical states, not integers in Ada - as in ASN.1
+';
+        /* CIF DECISION (504, 996), (273, 87) */
         DECISION someint /=0 and then (10 / someInt > 0)
 or else someint = 0
-        /* CIF COMMENT (793, 879), (179, 68) */
+        /* CIF COMMENT (793, 1005), (179, 68) */
         COMMENT 'Using "and else" is the
 short-circuit form. The
 second part should not
 be evaluated.';
-                /* CIF ANSWER (561, 977), (70, 23) */
+                /* CIF ANSWER (561, 1103), (70, 23) */
                 (true):
-                    /* CIF TASK (541, 1015), (110, 35) */
+                    /* CIF TASK (541, 1141), (110, 35) */
                     TASK someInt := 2;
-                    /* CIF PROCEDURECALL (537, 1065), (117, 38) */
+                    /* CIF PROCEDURECALL (537, 1191), (117, 38) */
                     CALL writeln('OK');
-                /* CIF ANSWER (664, 977), (70, 23) */
+                /* CIF ANSWER (664, 1103), (70, 23) */
                 (false):
         ENDDECISION;
-        /* CIF NEXTSTATE (608, 1118), (65, 33) */
+        /* CIF NEXTSTATE (608, 1244), (65, 33) */
         NEXTSTATE Wait;
-    /* CIF STATE (608, 1118), (65, 33) */
+    /* CIF STATE (608, 1244), (65, 33) */
     STATE Wait;
-        /* CIF INPUT (865, 1171), (89, 33) */
+        /* CIF INPUT (865, 1297), (89, 33) */
         INPUT mytimer;
-            /* CIF PROCEDURECALL (818, 1219), (182, 33) */
+            /* CIF PROCEDURECALL (818, 1345), (182, 33) */
             CALL writeln('timer expired');
-            /* CIF PROCEDURECALL (829, 1267), (160, 33) */
+            /* CIF PROCEDURECALL (829, 1393), (160, 33) */
             CALL factorial(3, someint);
-            /* CIF NEXTSTATE (877, 1315), (65, 33) */
+            /* CIF NEXTSTATE (877, 1441), (65, 33) */
             NEXTSTATE Wait;
-        /* CIF INPUT (421, 1171), (181, 33) */
+        /* CIF INPUT (421, 1297), (181, 33) */
         INPUT start_something (toto);
-            /* CIF OUTPUT (376, 1219), (270, 33) */
+            /* CIF OUTPUT (376, 1345), (270, 33) */
             OUTPUT result_data((toto+1) mod 2147483647);
-            /* CIF PROCEDURECALL (436, 1267), (150, 48) */
+            /* CIF PROCEDURECALL (436, 1393), (150, 48) */
             CALL writeln
 ('Hello Toto', toto);
-            /* CIF PROCEDURECALL (413, 1330), (196, 33) */
+            /* CIF PROCEDURECALL (413, 1456), (196, 33) */
             CALL set_timer(1000, myTimer);
-            /* CIF TASK (346, 1378), (330, 35) */
+            /* CIF TASK (346, 1504), (330, 35) */
             TASK largeReal := power(someReal, 2);
-            /* CIF PROCEDURECALL (282, 1428), (458, 35) */
+            /* CIF PROCEDURECALL (282, 1554), (458, 35) */
             CALL writeln(someReal, ' ** 2' , ' == ', largeReal, ' (should be 2.25 )');
-            /* CIF TASK (411, 1478), (201, 35) */
+            /* CIF TASK (411, 1604), (201, 35) */
             TASK someReal := float(someInt);
-            /* CIF TASK (391, 1528), (241, 35) */
+            /* CIF TASK (391, 1654), (241, 35) */
             TASK someInt := fix(someReal) mod 255;
-            /* CIF TASK (435, 1578), (152, 35) */
+            /* CIF TASK (435, 1704), (152, 35) */
             TASK opnot := not opnot;
-            /* CIF TASK (430, 1628), (163, 35) */
+            /* CIF TASK (430, 1754), (163, 35) */
             TASK 'someint := -someint'
-            /* CIF COMMENT (613, 1628), (196, 35) */
+            /* CIF COMMENT (613, 1754), (196, 35) */
             COMMENT 'XXX should raise an error!';
-            /* CIF TASK (429, 1678), (164, 35) */
+            /* CIF TASK (429, 1804), (164, 35) */
             TASK someint := (-8) mod 5;
-            /* CIF NEXTSTATE (480, 1728), (63, 33) */
+            /* CIF NEXTSTATE (480, 1854), (63, 33) */
             NEXTSTATE wait;
     ENDSTATE;
 ENDPROCESS myfunction;
