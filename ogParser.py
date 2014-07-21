@@ -2850,6 +2850,7 @@ def decision(root, parent, context):
     warnings = []
     dec = ogAST.Decision()
     dec.tmpVar = tmp()
+    has_else = False
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -2898,10 +2899,13 @@ def decision(root, parent, context):
                     a.hyperlink = child.getChild(0).toString()[1:-1]
             a.kind = 'else'
             dec.answers.append(a)
+            has_else = True
         else:
             warnings.append(['Unsupported DECISION child type: ' +
                 str(child.type), [dec.pos_x, dec.pos_y]])
     # Make type checks to be sure that question and answers are compatible
+    covered_ranges = []
+    need_else = False
     for ans in dec.answers:
         if ans.kind in ('constant', 'open_range'):
             expr = ans.openRangeOp()
@@ -2912,6 +2916,63 @@ def decision(root, parent, context):
                 if dec.question.exprType == UNKNOWN_TYPE:
                     dec.question = expr.left
                 ans.constant = expr.right
+                q_basic = find_basic_type(dec.question.exprType)
+                a_basic = find_basic_type(ans.constant.exprType)
+                if not q_basic.kind.startswith('Integer'):
+                    continue
+                # numeric type -> find the range covered by this answer
+                if a_basic.Min != a_basic.Max:
+                    # Not a constant or a raw number, range is not fix
+                    need_else = True
+                    continue
+                val_a = int(a_basic.Min)
+                qmin, qmax = int(float(q_basic.Min)), int(float(q_basic.Max))
+                # Check the operator to compute the range
+                if ans.openRangeOp == ogAST.ExprLe:
+                    if qmin <= val_a:
+                        covered_ranges.append([qmin, val_a])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprLt:
+                    if qmin < val_a:
+                        covered_ranges.append([qmin, val_a - 1])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprGt:
+                    if qmax > val_a:
+                        covered_ranges.append([val_a + 1, qmax])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprGe:
+                    if qmax >= val_a:
+                        covered_ranges.append([val_a, qmax])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprEq:
+                    if qmin <= val_a <= qmax:
+                        covered_ranges.append([val_a, val_a])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprNeq:
+                    if qmin == val_a:
+                        covered_ranges.append([qmin + 1, qmax])
+                    elif qmax == val_a:
+                        covered_ranges.append([qmin, qmax - 1])
+                    elif q_basic.Min < a_basic.Max < q_basic.Max:
+                        covered_ranges.append([q_basic.Min, a_basic.Max - 1])
+                        covered_ranges.append([a_basic.Max + 1, q_basic.Max])
+                    else:
+                        warnings.append('Condition is always true: {} /= {}'
+                                        .format(dec.inputString,
+                                                ans.inputString))
+                else:
+                    warnings.append('Unsupported range expression')
+                print 'RANGE OF QUESTION: [{} .. {}]'.format(qmin, qmax)
             except (AttributeError, TypeError) as err:
                 errors.append('Types are incompatible in DECISION: '
                     'question (' + expr.left.inputString + ', type= ' +
@@ -2937,6 +2998,22 @@ def decision(root, parent, context):
                         type_name(expr.left.exprType) + '), answer (' +
                         expr.right.inputString + ', type= ' +
                         type_name(expr.right.exprType) + ') ' + str(err))
+            q_basic = find_basic_type(dec.question.exprType)
+            if not q_basic.kind.startswith('Integer'):
+                continue
+            # numeric type -> find the range covered by this answer
+            a0_basic = find_basic_type(ans.closedRange[0].exprType)
+            a1_basic = find_basic_type(ans.closedRange[1].exprType)
+            if a0_basic.Min != a0_basic.Max or a1_basic.Min != a1_basic.Max:
+                # Not a constant or a raw number, range is not fix
+                need_else = True
+                continue
+            covered_ranges.append([int(float(a0_basic.Min)),
+                                   int(float(a1_basic.Max))])
+        for each in covered_ranges:
+            print each
+        if need_else and not has_else:
+            warnings.append('Missing ELSE branch in decision')
 
     return dec, errors, warnings
 
