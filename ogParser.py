@@ -98,6 +98,7 @@ CHOICE = type('ChoiceType', (object,), {'kind': 'ChoiceType'})
 BOOLEAN = type('BooleanType', (object,), {'kind': 'BooleanType'})
 RAWSTRING = type('RawString', (object,), {'kind': 'StandardStringType'})
 OCTETSTRING = type('OctetString', (object,), {'kind': 'OctetStringType'})
+ENUMERATED = type('EnumeratedType', (object,), {'kind': 'EnumeratedType'})
 
 UNKNOWN_TYPE = type('UnknownType', (object,), {'kind': 'UnknownType'})
 
@@ -110,6 +111,7 @@ SPECIAL_OPERATORS = {'length': [LIST],
                      'set_timer': [INTEGER, TIMER],
                      'reset_timer': [TIMER],
                      'abs': [NUMERICAL],
+                     'num': [ENUMERATED],
                      'float': [NUMERICAL],
                      'fix': [NUMERICAL],
                      'power': [NUMERICAL, INTEGER]}
@@ -354,7 +356,7 @@ def is_constant(var):
 
 def fix_special_operators(op_name, expr_list, context):
     ''' Verify/fix type of special operators parameters '''
-    if op_name.lower() in ('length', 'present', 'abs', 'float', 'fix'):
+    if op_name.lower() in ('length', 'present', 'abs', 'float', 'fix', 'num'):
         if len(expr_list) != 1:
             raise AttributeError('Only one parameter for the {} operator'
                                  .format(op_name))
@@ -372,6 +374,8 @@ def fix_special_operators(op_name, expr_list, context):
                 and not is_numeric(basic):
             raise TypeError('"{}" operator needs a numerical parameter'.format(
                 op_name))
+        elif op_name.lower() == 'num' and basic.kind != 'EnumeratedType':
+            raise TypeError('Num operaror works only with enumerations')
     elif op_name.lower() == 'power':
         if len(expr_list) != 2:
             raise AttributeError('The "power" operator takes two parameters')
@@ -707,39 +711,47 @@ def compare_types(type_a, type_b):
        otherwise raise TypeError
     '''
     LOG.debug('[compare_types]' + str(type_a) + ' and ' + str(type_b) + ': ')
+
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
+
     if type_a == type_b:
         return
+
     # Check if both types have basic compatibility
-    simple_types = [elem for elem in (type_a, type_b) if elem.kind in
-                       ('IntegerType', 'BooleanType', 'RealType', 'StringType',
-                        'SequenceOfType', 'Integer32Type', 'OctetStringType')]
-    if len(simple_types) < 2:
-        # Either A or B is not a basic type - cannot be compatible
-        raise TypeError('One of the types is not a basic type: '
-                + type_name(type_a) + ' or ' + type_name(type_b))
-    elif type_a.kind == type_b.kind:
+
+    simple_types = (
+        'IntegerType',
+        'BooleanType',
+        'RealType',
+        'StringType',
+        'SequenceOfType',
+        'Integer32Type',
+        'OctetStringType'
+    )
+
+    for ty in (type_a, type_b):
+        if ty.kind not in simple_types:
+            raise TypeError('Type {} is not a basic type'.format(type_name(ty)))
+
+    if type_a.kind == type_b.kind:
         if type_a.kind == 'SequenceOfType':
             if type_a.Min == type_b.Min and type_a.Max == type_b.Max:
                 compare_types(type_a.type, type_b.type)
                 return
             else:
                 raise TypeError('Incompatible arrays')
+        # TODO: Check that OctetString types have compatible range
         return
-    elif type_a.kind.endswith('StringType') and type_b.kind.endswith('StringType'):
-        # Allow Octet String values to be printable strings.. for convenience
+    elif is_string(type_a) and is_string(type_b):
         return
-    elif not(type_a.kind in ('IntegerType', 'Integer32Type') and
-             type_b.kind in ('IntegerType', 'Integer32Type')):
-        raise TypeError('One type is an integer, not the other one')
-    elif any(side.kind == 'RealType' for side in (type_a, type_b)):
-        raise TypeError('One type is an REAL, not the other one')
-    elif all(side.kind.startswith('Integer') for side in (type_a, type_b)) \
-            or all(side.kind == 'RealType' for side in (type_a, type_b)):
-        pass
+    elif is_integer(type_a) and is_integer(type_b):
+        return
     else:
-        return
+        raise TypeError('Incompatible types {} and {}'.format(
+            type_name(type_a),
+            type_name(type_b)
+        ))
 
 
 def find_variable(var, context):
@@ -1034,17 +1046,23 @@ def logic_expression(root, context):
 
     left_bty = find_basic_type(expr.left.exprType)
     right_bty = find_basic_type(expr.right.exprType)
+
     for bty in left_bty, right_bty:
+        if shortcircuit and bty.kind != 'BooleanType':
+            msg = 'Shortcircuit operators only work with type Boolean'
+            errors.append(error(root, msg))
+            break
+
         if bty.kind in ('BooleanType', 'BitStringType'):
             continue
         elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
             continue
         else:
-            msg = 'Bitwise operators only work with booleans '\
-                  'and arrays of booleans'
+            msg = 'Bitwise operators only work with Booleans, ' \
+                  'SequenceOf Booleans or BitStrings'
             errors.append(error(root, msg))
+            break
 
-    # TODO: Is this correct?
     if left_bty.kind == right_bty.kind == 'BooleanType':
         expr.exprType = BOOLEAN
     else:
@@ -1157,7 +1175,11 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    # TODO: Check types
+    for bty in (find_basic_type(expr.left.exprType), find_basic_type(expr.right.exprType)):
+        if bty.kind != 'SequenceOfType' and not is_string(bty):
+            msg = 'Append can only be applied to types SequenceOf or String'
+            errors.append(error(root, msg))
+            break
 
     expr.exprType = expr.left.exprType
     return expr, errors, warnings
@@ -1342,8 +1364,19 @@ def primary_call(root, context):
                 'Max': str(max(float(params_bty[0].Max), 0))
             })
         except AttributeError:
-            msg = 'Type Error, check the parameter'
             errors.append(error(root, '"Abs" parameter type has no range'))
+    elif ident == 'num':
+        try:
+            enum_values = [int(each.IntValue)
+                           for each in params_bty[0].EnumValues.viewvalues()]
+
+            node.exprType = type('Num', (INTEGER,), {
+                'Min': str(min(enum_values)),
+                'Max': str(max(enum_values))
+            })
+        except AttributeError:
+            msg = 'Type Error, check the parameter'
+            errors.append(error(root, '"Num" parameter error'))
 
     return node, errors, warnings
 
@@ -1372,7 +1405,7 @@ def primary_index(root, context):
     if receiver_bty.kind == 'SequenceOfType':
         node.exprType = receiver_bty.type
     else:
-        msg = 'Element {} cannot have an index'.format(receiver)
+        msg = 'Index can only be applied to type SequenceOf'
         errors.append(error(root, msg))
 
     return node, errors, warnings
@@ -1417,7 +1450,7 @@ def primary_substring(root, context):
                     min0, max1, basic.Min, basic.Max)
             errors.append(error(root, msg))
     else:
-        msg = 'Element {} cannot have a substring'.format(receiver)
+        msg = 'Substring can only be applied to types SequenceOf or String'
         errors.append(error(root, msg))
 
     return node, errors, warnings
@@ -2779,8 +2812,13 @@ def alternative_part(root, parent, context):
             coord = True
         elif child.type == lexer.CLOSED_RANGE:
             ans.kind = 'closed_range'
-            ans.closedRange = [float(child.getChild(0).toString()),
-                              float(child.getChild(1).toString())]
+            cl0, err0, warn0 = expression(child.getChild(0), context)
+            cl1, err1, warn1 = expression(child.getChild(1), context)
+            errors.extend(err0)
+            errors.extend(err1)
+            warnings.extend(warn0)
+            warnings.extend(warn1)
+            ans.closedRange = [cl0, cl1]
         elif child.type == lexer.CONSTANT:
             ans.kind = 'constant'
             ans.constant, err, warn = expression(
@@ -2830,6 +2868,7 @@ def decision(root, parent, context):
     warnings = []
     dec = ogAST.Decision()
     dec.tmpVar = tmp()
+    has_else = False
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -2878,26 +2917,122 @@ def decision(root, parent, context):
                     a.hyperlink = child.getChild(0).toString()[1:-1]
             a.kind = 'else'
             dec.answers.append(a)
+            has_else = True
         else:
             warnings.append(['Unsupported DECISION child type: ' +
                 str(child.type), [dec.pos_x, dec.pos_y]])
-        # Make type checks to be sure that question and answers are compatible
-        for ans in dec.answers:
-            if ans.kind in ('constant', 'open_range'):
-                expr = ans.openRangeOp()
+    # Make type checks to be sure that question and answers are compatible
+    covered_ranges = []
+    need_else = False
+    for ans in dec.answers:
+        if ans.kind in ('constant', 'open_range'):
+            expr = ans.openRangeOp()
+            expr.left = dec.question
+            expr.right = ans.constant
+            try:
+                fix_expression_types(expr, context)
+                if dec.question.exprType == UNKNOWN_TYPE:
+                    dec.question = expr.left
+                ans.constant = expr.right
+                q_basic = find_basic_type(dec.question.exprType)
+                a_basic = find_basic_type(ans.constant.exprType)
+                if not q_basic.kind.startswith('Integer'):
+                    continue
+                # numeric type -> find the range covered by this answer
+                if a_basic.Min != a_basic.Max:
+                    # Not a constant or a raw number, range is not fix
+                    need_else = True
+                    continue
+                val_a = int(a_basic.Min)
+                qmin, qmax = int(float(q_basic.Min)), int(float(q_basic.Max))
+                # Check the operator to compute the range
+                if ans.openRangeOp == ogAST.ExprLe:
+                    if qmin <= val_a:
+                        covered_ranges.append([qmin, val_a])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprLt:
+                    if qmin < val_a:
+                        covered_ranges.append([qmin, val_a - 1])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprGt:
+                    if qmax > val_a:
+                        covered_ranges.append([val_a + 1, qmax])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprGe:
+                    if qmax >= val_a:
+                        covered_ranges.append([val_a, qmax])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprEq:
+                    if qmin <= val_a <= qmax:
+                        covered_ranges.append([val_a, val_a])
+                    else:
+                        warnings.append('Unreachable branch - '
+                                        + ans.inputString)
+                elif ans.openRangeOp == ogAST.ExprNeq:
+                    if qmin == val_a:
+                        covered_ranges.append([qmin + 1, qmax])
+                    elif qmax == val_a:
+                        covered_ranges.append([qmin, qmax - 1])
+                    elif q_basic.Min < a_basic.Max < q_basic.Max:
+                        covered_ranges.append([q_basic.Min, a_basic.Max - 1])
+                        covered_ranges.append([a_basic.Max + 1, q_basic.Max])
+                    else:
+                        warnings.append('Condition is always true: {} /= {}'
+                                        .format(dec.inputString,
+                                                ans.inputString))
+                else:
+                    warnings.append('Unsupported range expression')
+                print 'RANGE OF QUESTION: [{} .. {}]'.format(qmin, qmax)
+            except (AttributeError, TypeError) as err:
+                errors.append('Types are incompatible in DECISION: '
+                    'question (' + expr.left.inputString + ', type= ' +
+                    type_name(expr.left.exprType) + '), answer (' +
+                    expr.right.inputString + ', type= ' +
+                    type_name(expr.right.exprType) + ') ' + str(err))
+        elif ans.kind == 'closed_range':
+            if not is_numeric(dec.question.exprType):
+                errors.append('Closed range are only for numerical types')
+                continue
+            for ast_type, idx in zip((ogAST.ExprGe, ogAST.ExprLe), (0, 1)):
+                expr = ast_type()
                 expr.left = dec.question
-                expr.right = ans.constant
+                expr.right = ans.closedRange[idx]
                 try:
                     fix_expression_types(expr, context)
                     if dec.question.exprType == UNKNOWN_TYPE:
                         dec.question = expr.left
-                    ans.constant = expr.right
+                    ans.closedRange[idx] = expr.right
                 except (AttributeError, TypeError) as err:
                     errors.append('Types are incompatible in DECISION: '
                         'question (' + expr.left.inputString + ', type= ' +
                         type_name(expr.left.exprType) + '), answer (' +
                         expr.right.inputString + ', type= ' +
                         type_name(expr.right.exprType) + ') ' + str(err))
+            q_basic = find_basic_type(dec.question.exprType)
+            if not q_basic.kind.startswith('Integer'):
+                continue
+            # numeric type -> find the range covered by this answer
+            a0_basic = find_basic_type(ans.closedRange[0].exprType)
+            a1_basic = find_basic_type(ans.closedRange[1].exprType)
+            if a0_basic.Min != a0_basic.Max or a1_basic.Min != a1_basic.Max:
+                # Not a constant or a raw number, range is not fix
+                need_else = True
+                continue
+            covered_ranges.append([int(float(a0_basic.Min)),
+                                   int(float(a1_basic.Max))])
+        for each in covered_ranges:
+            print each
+        if need_else and not has_else:
+            warnings.append('Missing ELSE branch in decision')
+
     return dec, errors, warnings
 
 
@@ -3129,7 +3264,7 @@ def assign(root, context):
             expr.left.inputString + ', type= ' +
             type_name(expr.left.exprType) + '), right (' +
             expr.right.inputString + ', type= ' +
-            (type_name(expr.right.exprType) 
+            (type_name(expr.right.exprType)
                 if expr.right.exprType else 'Unknown') + ') ' + str(err))
     else:
         expr.right.exprType = expr.left.exprType
@@ -3263,6 +3398,8 @@ def task_body(root, context):
         else:
             warnings.append('Unsupported child type in task body: ' +
                     str(child.type))
+    if not body:
+        body = ogAST.TaskAssign()
     return body, errors, warnings
 
 

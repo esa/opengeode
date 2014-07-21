@@ -16,67 +16,71 @@ dcl foo MyInteger := 3;
 
 dcl alwaysTrue Type2 := 3 in {1,2,3};
 dcl alwaysFalse Type2 := 0 in {1,2,3};
+
+dcl seqofbool seqBool := { true, true};
     /* CIF ENDTEXT */
     /* CIF START (427, 26), (100, 50) */
     START;
-        /* CIF TASK (393, 91), (168, 83) */
+        /* CIF TASK (370, 91), (214, 83) */
         TASK test := 5,
 test := power(test, 1),
 test := abs(-4+1),
 test := abs(test)
-        /* CIF COMMENT (581, 114), (183, 35) */
+        /* CIF COMMENT (603, 114), (183, 35) */
         COMMENT 'Task with unicode: voilà!';
         /* CIF TASK (375, 189), (204, 50) */
         TASK first_msg := 'Say hello first!'
         /* CIF COMMENT (599, 189), (148, 50) */
         COMMENT 'String assignment';
-        /* CIF PROCEDURECALL (402, 254), (149, 35) */
-        CALL writeln(first_msg);
-        /* CIF TASK (394, 304), (165, 50) */
+        /* CIF PROCEDURECALL (390, 254), (173, 35) */
+        CALL writeln( first_msg);
+        /* CIF PROCEDURECALL (373, 304), (207, 35) */
+        CALL writeln( not (not not true));
+        /* CIF TASK (394, 354), (165, 50) */
         TASK seq := default_seqof,
 seq := {1,2,3}
-        /* CIF COMMENT (579, 304), (204, 50) */
+        /* CIF COMMENT (579, 354), (204, 50) */
         COMMENT 'default_seqof is a constant
 defined in the ASN.1 model';
-        /* CIF TASK (345, 369), (263, 50) */
+        /* CIF TASK (345, 419), (263, 50) */
         TASK seq := seq // {4, test} // default_seqof
-        /* CIF COMMENT (629, 369), (156, 50) */
+        /* CIF COMMENT (629, 419), (156, 50) */
         COMMENT 'Concatenate
 two SEQUENCE OF';
-        /* CIF TASK (408, 434), (137, 50) */
+        /* CIF TASK (408, 484), (137, 50) */
         TASK 'seq(1) := seq(2)';
-        /* CIF TASK (380, 499), (193, 50) */
+        /* CIF TASK (380, 549), (193, 50) */
         TASK seq := seq(1,2) // seq(4,5)
-        /* CIF COMMENT (593, 499), (166, 50) */
+        /* CIF COMMENT (593, 549), (166, 50) */
         COMMENT 'Remove 3rd element';
-        /* CIF DECISION (425, 564), (104, 70) */
+        /* CIF DECISION (425, 614), (104, 70) */
         DECISION test in seq
-        /* CIF COMMENT (549, 579), (170, 39) */
+        /* CIF COMMENT (549, 629), (170, 39) */
         COMMENT 'Test the "in" operator
 Unicode test: Ï';
-                /* CIF ANSWER (335, 654), (100, 35) */
+                /* CIF ANSWER (335, 704), (100, 35) */
                 (TRUE):
-                    /* CIF PROCEDURECALL (308, 704), (154, 50) */
+                    /* CIF PROCEDURECALL (308, 754), (154, 50) */
                     CALL writeln('All OK (1)');
-                /* CIF ANSWER (498, 654), (100, 35) */
+                /* CIF ANSWER (498, 704), (100, 35) */
                 (FALSE):
-                    /* CIF PROCEDURECALL (466, 704), (164, 50) */
+                    /* CIF PROCEDURECALL (466, 754), (164, 50) */
                     CALL writeln('NOT OK (1)')
-                    /* CIF COMMENT (650, 711), (117, 35) */
+                    /* CIF COMMENT (650, 761), (117, 35) */
                     COMMENT 'Call UnicÔDË';
         ENDDECISION;
-        /* CIF DECISION (427, 769), (100, 70) */
+        /* CIF DECISION (427, 819), (100, 70) */
         DECISION 3 in seq;
-                /* CIF ANSWER (341, 859), (100, 35) */
+                /* CIF ANSWER (341, 909), (100, 35) */
                 (TRUE):
-                    /* CIF PROCEDURECALL (309, 909), (164, 50) */
+                    /* CIF PROCEDURECALL (309, 959), (164, 50) */
                     CALL writeln('NOT OK (2)');
-                /* CIF ANSWER (513, 859), (100, 35) */
+                /* CIF ANSWER (513, 909), (100, 35) */
                 (FALSE):
-                    /* CIF PROCEDURECALL (482, 909), (161, 50) */
+                    /* CIF PROCEDURECALL (482, 959), (161, 50) */
                     CALL writeln('All OK (2)');
         ENDDECISION;
-        /* CIF NEXTSTATE (427, 974), (100, 50) */
+        /* CIF NEXTSTATE (427, 1024), (100, 50) */
         NEXTSTATE Wait;
     /* CIF STATE (1204, 151), (100, 50) */
     STATE Running;
@@ -136,47 +140,47 @@ against current Length';
                         NEXTSTATE Running;
             ENDDECISION;
     ENDSTATE;
-    /* CIF STATE (427, 974), (100, 50) */
+    /* CIF STATE (427, 1024), (100, 50) */
     STATE Wait;
-        /* CIF INPUT (427, 1044), (100, 50) */
+        /* CIF INPUT (427, 1094), (100, 50) */
         INPUT go(msg)
-        /* CIF COMMENT (547, 1051), (120, 35) */
+        /* CIF COMMENT (547, 1101), (120, 35) */
         COMMENT 'Ïñpût unicode';
-            /* CIF DECISION (420, 1109), (114, 70) */
+            /* CIF DECISION (420, 1159), (114, 70) */
             DECISION msg = 'hello'
-            /* CIF COMMENT (554, 1119), (128, 50) */
+            /* CIF COMMENT (554, 1169), (128, 50) */
             COMMENT 'Boolean test
 on string value';
-                    /* CIF ANSWER (638, 1199), (100, 35) */
+                    /* CIF ANSWER (638, 1249), (100, 35) */
                     (FALSE):
-                        /* CIF OUTPUT (618, 1249), (139, 50) */
+                        /* CIF OUTPUT (618, 1299), (139, 50) */
                         OUTPUT rezult(first_msg)
-                        /* CIF COMMENT (777, 1256), (85, 35) */
+                        /* CIF COMMENT (777, 1306), (85, 35) */
                         COMMENT 'OûtpUT';
-                        /* CIF NEXTSTATE (638, 1314), (100, 50) */
+                        /* CIF NEXTSTATE (638, 1364), (100, 50) */
                         NEXTSTATE Wait;
-                    /* CIF ANSWER (367, 1199), (100, 35) */
+                    /* CIF ANSWER (367, 1249), (100, 35) */
                     (TRUE):
-                        /* CIF OUTPUT (344, 1249), (145, 50) */
+                        /* CIF OUTPUT (344, 1299), (145, 50) */
                         OUTPUT rezult('Welcome')
-                        /* CIF COMMENT (509, 1249), (95, 50) */
+                        /* CIF COMMENT (509, 1299), (95, 50) */
                         COMMENT 'Send raw
 string';
-                        /* CIF DECISION (368, 1314), (98, 50) */
+                        /* CIF DECISION (368, 1364), (98, 50) */
                         DECISION 3 in {1,2,3};
-                                /* CIF ANSWER (328, 1384), (88, 23) */
+                                /* CIF ANSWER (328, 1434), (88, 23) */
                                 (1 in {1,2}):
-                                /* CIF ANSWER (418, 1384), (88, 23) */
+                                /* CIF ANSWER (418, 1434), (88, 23) */
                                 (0 in {1,2}):
                         ENDDECISION;
-                        /* CIF DECISION (368, 1462), (98, 50) */
+                        /* CIF DECISION (368, 1472), (98, 50) */
                         DECISION 4 in {1,2,3};
-                                /* CIF ANSWER (337, 1532), (70, 23) */
+                                /* CIF ANSWER (337, 1542), (70, 23) */
                                 (true):
-                                /* CIF ANSWER (427, 1532), (70, 23) */
+                                /* CIF ANSWER (427, 1542), (70, 23) */
                                 (false):
                         ENDDECISION;
-                        /* CIF NEXTSTATE (367, 1585), (100, 50) */
+                        /* CIF NEXTSTATE (367, 1580), (100, 50) */
                         NEXTSTATE Running;
             ENDDECISION;
     ENDSTATE;

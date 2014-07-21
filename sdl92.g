@@ -670,7 +670,7 @@ range_condition
 
 
 closed_range
-        :       a=INT ':' b=INT
+        :       a=expression ':' b=expression
         ->      ^(CLOSED_RANGE $a $b);
 
 

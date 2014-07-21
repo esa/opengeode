@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-07-16 18:29:58
+# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2014-07-21 13:25:45
 
 import sys
 from antlr3 import *
@@ -510,6 +510,17 @@ class sdl92Parser(Parser):
             transition = self.DFA113_transition
             )
 
+        self.dfa119 = self.DFA119(
+            self, 119,
+            eot = self.DFA119_eot,
+            eof = self.DFA119_eof,
+            min = self.DFA119_min,
+            max = self.DFA119_max,
+            accept = self.DFA119_accept,
+            special = self.DFA119_special,
+            transition = self.DFA119_transition
+            )
+
         self.dfa152 = self.DFA152(
             self, 152,
             eot = self.DFA152_eot,
@@ -626,10 +637,10 @@ class sdl92Parser(Parser):
                     if LA1 == 217:
                         LA1_2 = self.input.LA(2)
 
-                        if (LA1_2 == ANSWER or LA1_2 == COMMENT or LA1_2 == CONNECT or LA1_2 == DECISION or LA1_2 == INPUT or (JOIN <= LA1_2 <= LABEL) or LA1_2 == NEXTSTATE or LA1_2 == OUTPUT or (PROCEDURE <= LA1_2 <= PROCEDURE_CALL) or (PROCESS <= LA1_2 <= PROVIDED) or LA1_2 == RETURN or LA1_2 == STATE or LA1_2 == STOP or LA1_2 == TASK or LA1_2 == TEXT or LA1_2 == START) :
-                            alt1 = 3
-                        elif (LA1_2 == KEEP) :
+                        if (LA1_2 == KEEP) :
                             alt1 = 1
+                        elif (LA1_2 == ANSWER or LA1_2 == COMMENT or LA1_2 == CONNECT or LA1_2 == DECISION or LA1_2 == INPUT or (JOIN <= LA1_2 <= LABEL) or LA1_2 == NEXTSTATE or LA1_2 == OUTPUT or (PROCEDURE <= LA1_2 <= PROCEDURE_CALL) or (PROCESS <= LA1_2 <= PROVIDED) or LA1_2 == RETURN or LA1_2 == STATE or LA1_2 == STOP or LA1_2 == TASK or LA1_2 == TEXT or LA1_2 == START) :
+                            alt1 = 3
 
 
                     elif LA1 == USE:
@@ -814,7 +825,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end10.tree)
 
                 # AST Rewrite
-                # elements: SYSTEM, entity_in_system, system_name
+                # elements: SYSTEM, system_name, entity_in_system
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -942,7 +953,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end14.tree)
 
                 # AST Rewrite
-                # elements: use_asn1, package_name, USE
+                # elements: USE, use_asn1, package_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1035,10 +1046,10 @@ class sdl92Parser(Parser):
                 if LA5 == 217:
                     LA5_1 = self.input.LA(2)
 
-                    if (LA5_1 == ANSWER or LA5_1 == COMMENT or LA5_1 == CONNECT or LA5_1 == DECISION or LA5_1 == INPUT or (JOIN <= LA5_1 <= LABEL) or LA5_1 == NEXTSTATE or LA5_1 == OUTPUT or (PROCEDURE <= LA5_1 <= PROCEDURE_CALL) or (PROCESS <= LA5_1 <= PROVIDED) or LA5_1 == RETURN or LA5_1 == STATE or LA5_1 == STOP or LA5_1 == TASK or LA5_1 == TEXT or LA5_1 == START) :
-                        alt5 = 2
-                    elif (LA5_1 == KEEP) :
+                    if (LA5_1 == KEEP) :
                         alt5 = 1
+                    elif (LA5_1 == ANSWER or LA5_1 == COMMENT or LA5_1 == CONNECT or LA5_1 == DECISION or LA5_1 == INPUT or (JOIN <= LA5_1 <= LABEL) or LA5_1 == NEXTSTATE or LA5_1 == OUTPUT or (PROCEDURE <= LA5_1 <= PROCEDURE_CALL) or (PROCESS <= LA5_1 <= PROVIDED) or LA5_1 == RETURN or LA5_1 == STATE or LA5_1 == STOP or LA5_1 == TASK or LA5_1 == TEXT or LA5_1 == START) :
+                        alt5 = 2
                     else:
                         if self._state.backtracking > 0:
                             raise BacktrackingFailed
@@ -1226,7 +1237,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end23.tree)
 
                 # AST Rewrite
-                # elements: input_params, paramnames, SIGNAL, signal_id
+                # elements: input_params, SIGNAL, signal_id, paramnames
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1380,7 +1391,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end28.tree)
 
                 # AST Rewrite
-                # elements: route, CHANNEL, channel_id
+                # elements: channel_id, route, CHANNEL
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1550,7 +1561,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end37.tree)
 
                 # AST Rewrite
-                # elements: source_id, signal_id, dest_id
+                # elements: signal_id, source_id, dest_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1700,7 +1711,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end43.tree)
 
                 # AST Rewrite
-                # elements: entity_in_block, BLOCK, block_id
+                # elements: block_id, BLOCK, entity_in_block
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1985,7 +1996,7 @@ class sdl92Parser(Parser):
                     cnt12 += 1
 
                 # AST Rewrite
-                # elements: SIGNALROUTE, route_id, route
+                # elements: route, SIGNALROUTE, route_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -2110,7 +2121,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end56.tree)
 
                 # AST Rewrite
-                # elements: channel_id, route_id
+                # elements: route_id, channel_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -2272,7 +2283,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end61.tree)
 
                     # AST Rewrite
-                    # elements: number_of_instances, process_id, REFERENCED, PROCESS
+                    # elements: PROCESS, REFERENCED, process_id, number_of_instances
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2474,7 +2485,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end73.tree)
 
                     # AST Rewrite
-                    # elements: processBody, PROCESS, composite_state, end, number_of_instances, process_id, cif, procedure, text_area
+                    # elements: cif, end, PROCESS, process_id, composite_state, text_area, number_of_instances, procedure, processBody
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2805,7 +2816,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end85.tree)
 
                 # AST Rewrite
-                # elements: processBody, cif, procedure, fpar, EXTERNAL, end, PROCEDURE, text_area, procedure_id
+                # elements: text_area, processBody, end, procedure, procedure_id, PROCEDURE, EXTERNAL, fpar, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -2978,7 +2989,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end90.tree)
 
                 # AST Rewrite
-                # elements: formal_variable_param, FPAR
+                # elements: FPAR, formal_variable_param
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3142,7 +3153,7 @@ class sdl92Parser(Parser):
                     stream_sort.add(sort96.tree)
 
                 # AST Rewrite
-                # elements: variable_id, sort, IN, INOUT
+                # elements: sort, IN, variable_id, INOUT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3284,7 +3295,7 @@ class sdl92Parser(Parser):
                     stream_cif_end_text.add(cif_end_text99.tree)
 
                 # AST Rewrite
-                # elements: cif, cif_end_text, content
+                # elements: cif, content, cif_end_text
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3472,7 +3483,7 @@ class sdl92Parser(Parser):
                         break #loop30
 
                 # AST Rewrite
-                # elements: synonym_definition, fpar, variable_definition, newtype_definition, syntype_definition, procedure, timer_declaration
+                # elements: procedure, variable_definition, syntype_definition, fpar, synonym_definition, timer_declaration, newtype_definition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3644,7 +3655,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end111.tree)
 
                 # AST Rewrite
-                # elements: TIMER, timer_id
+                # elements: timer_id, TIMER
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3857,7 +3868,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end122.tree)
 
                 # AST Rewrite
-                # elements: range_condition, syntype_name, parent_sort, SYNTYPE
+                # elements: range_condition, SYNTYPE, parent_sort, syntype_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4142,7 +4153,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end131.tree)
 
                 # AST Rewrite
-                # elements: NEWTYPE, structure_definition, type_name, array_definition
+                # elements: array_definition, type_name, structure_definition, NEWTYPE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4329,7 +4340,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(char_literal138)
 
                 # AST Rewrite
-                # elements: ARRAY, sort, sort
+                # elements: sort, sort, ARRAY
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4431,7 +4442,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end141.tree)
 
                 # AST Rewrite
-                # elements: field_list, STRUCT
+                # elements: STRUCT, field_list
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4818,7 +4829,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end153.tree)
 
                 # AST Rewrite
-                # elements: DCL, variables_of_sort
+                # elements: variables_of_sort, DCL
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5131,7 +5142,7 @@ class sdl92Parser(Parser):
                     stream_ground_expression.add(ground_expression163.tree)
 
                 # AST Rewrite
-                # elements: sort, ground_expression, sort
+                # elements: ground_expression, sort, sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5285,7 +5296,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: variable_id, ground_expression, sort
+                # elements: ground_expression, sort, variable_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5770,7 +5781,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: name, hyperlink, cif, end, transition, START
+                # elements: end, transition, START, cif, name, hyperlink
                 # token labels: 
                 # rule labels: retval, name
                 # token list labels: 
@@ -6007,7 +6018,7 @@ class sdl92Parser(Parser):
                     stream_SEMI.add(SEMI190)
 
                 # AST Rewrite
-                # elements: hyperlink, connector_name, transition, cif
+                # elements: connector_name, cif, transition, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -6231,7 +6242,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: e, cif, STATE, state_part, statelist, hyperlink
+                # elements: hyperlink, statelist, cif, state_part, e, STATE
                 # token labels: 
                 # rule labels: retval, e
                 # token list labels: 
@@ -6785,7 +6796,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: e, connection_points, statename, body
+                # elements: e, statename, connection_points, body
                 # token labels: 
                 # rule labels: body, retval, e
                 # token list labels: 
@@ -6991,7 +7002,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end219.tree)
 
                     # AST Rewrite
-                    # elements: state_entry_exit_points, OUT, end
+                    # elements: OUT, state_entry_exit_points, end
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -7585,7 +7596,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: transition, hyperlink, end, cif, connect_list, CONNECT
+                # elements: transition, end, connect_list, CONNECT, hyperlink, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -7935,7 +7946,7 @@ class sdl92Parser(Parser):
                     stream_transition.add(transition252.tree)
 
                 # AST Rewrite
-                # elements: cif, transition, hyperlink
+                # elements: transition, hyperlink, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -8048,7 +8059,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end255.tree)
 
                 # AST Rewrite
-                # elements: expression, PROVIDED
+                # elements: PROVIDED, expression
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -8190,7 +8201,7 @@ class sdl92Parser(Parser):
                     stream_transition.add(transition261.tree)
 
                 # AST Rewrite
-                # elements: integer_literal_name, PROVIDED, transition, expression
+                # elements: PROVIDED, transition, expression, integer_literal_name
                 # token labels: integer_literal_name
                 # rule labels: retval
                 # token list labels: 
@@ -8299,7 +8310,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end264.tree)
 
                 # AST Rewrite
-                # elements: SAVE, save_list
+                # elements: save_list, SAVE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -8806,7 +8817,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: INPUT, enabling_condition, cif, hyperlink, end, transition, inputlist
+                # elements: transition, enabling_condition, cif, inputlist, end, hyperlink, INPUT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -9357,7 +9368,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: label, terminator_statement, action
+                    # elements: action, label, terminator_statement
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -9915,7 +9926,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end316.tree)
 
                 # AST Rewrite
-                # elements: procedure_call_body, cif, end, hyperlink
+                # elements: cif, end, procedure_call_body, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10706,7 +10717,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: ALTERNATIVE, alternative_part, answer_part
+                # elements: alternative_part, ALTERNATIVE, answer_part
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10846,7 +10857,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: answer_part, else_part
+                    # elements: else_part, answer_part
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -11199,7 +11210,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: question, hyperlink, alternative_part, answer_part, cif, e, DECISION
+                # elements: e, alternative_part, cif, DECISION, hyperlink, answer_part, question
                 # token labels: 
                 # rule labels: retval, e
                 # token list labels: 
@@ -11402,7 +11413,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: cif, hyperlink, transition, answer
+                # elements: answer, transition, cif, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -11675,7 +11686,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: hyperlink, ELSE, transition, cif
+                # elements: ELSE, transition, hyperlink, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -11970,33 +11981,7 @@ class sdl92Parser(Parser):
 
                 # sdl92.g:668:17: ( closed_range | open_range )
                 alt119 = 2
-                LA119_0 = self.input.LA(1)
-
-                if (LA119_0 == INT) :
-                    LA119_1 = self.input.LA(2)
-
-                    if (LA119_1 == 212) :
-                        alt119 = 1
-                    elif (LA119_1 == EOF or LA119_1 == ENDSYNTYPE or LA119_1 == IN or LA119_1 == AND or LA119_1 == ASTERISK or (R_PAREN <= LA119_1 <= COMMA) or (EQ <= LA119_1 <= GE) or (IMPLIES <= LA119_1 <= REM)) :
-                        alt119 = 2
-                    else:
-                        if self._state.backtracking > 0:
-                            raise BacktrackingFailed
-
-                        nvae = NoViableAltException("", 119, 1, self.input)
-
-                        raise nvae
-
-                elif (LA119_0 == BITSTR or LA119_0 == FLOAT or LA119_0 == IF or LA119_0 == OCTSTR or LA119_0 == STRING or LA119_0 == L_PAREN or (EQ <= LA119_0 <= GE) or LA119_0 == ID or LA119_0 == DASH or (NOT <= LA119_0 <= MINUS_INFINITY) or LA119_0 == L_BRACKET) :
-                    alt119 = 2
-                else:
-                    if self._state.backtracking > 0:
-                        raise BacktrackingFailed
-
-                    nvae = NoViableAltException("", 119, 0, self.input)
-
-                    raise nvae
-
+                alt119 = self.dfa119.predict(self.input)
                 if alt119 == 1:
                     # sdl92.g:668:18: closed_range
                     pass 
@@ -12052,7 +12037,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "closed_range"
-    # sdl92.g:672:1: closed_range : a= INT ':' b= INT -> ^( CLOSED_RANGE $a $b) ;
+    # sdl92.g:672:1: closed_range : a= expression ':' b= expression -> ^( CLOSED_RANGE $a $b) ;
     def closed_range(self, ):
 
         retval = self.closed_range_return()
@@ -12060,48 +12045,63 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-        a = None
-        b = None
         char_literal374 = None
+        a = None
 
-        a_tree = None
-        b_tree = None
+        b = None
+
+
         char_literal374_tree = None
         stream_212 = RewriteRuleTokenStream(self._adaptor, "token 212")
-        stream_INT = RewriteRuleTokenStream(self._adaptor, "token INT")
-
+        stream_expression = RewriteRuleSubtreeStream(self._adaptor, "rule expression")
         try:
             try:
-                # sdl92.g:673:9: (a= INT ':' b= INT -> ^( CLOSED_RANGE $a $b) )
-                # sdl92.g:673:17: a= INT ':' b= INT
+                # sdl92.g:673:9: (a= expression ':' b= expression -> ^( CLOSED_RANGE $a $b) )
+                # sdl92.g:673:17: a= expression ':' b= expression
                 pass 
-                a=self.match(self.input, INT, self.FOLLOW_INT_in_closed_range7759) 
+                self._state.following.append(self.FOLLOW_expression_in_closed_range7759)
+                a = self.expression()
+
+                self._state.following.pop()
                 if self._state.backtracking == 0:
-                    stream_INT.add(a)
+                    stream_expression.add(a.tree)
                 char_literal374=self.match(self.input, 212, self.FOLLOW_212_in_closed_range7761) 
                 if self._state.backtracking == 0:
                     stream_212.add(char_literal374)
-                b=self.match(self.input, INT, self.FOLLOW_INT_in_closed_range7765) 
+                self._state.following.append(self.FOLLOW_expression_in_closed_range7765)
+                b = self.expression()
+
+                self._state.following.pop()
                 if self._state.backtracking == 0:
-                    stream_INT.add(b)
+                    stream_expression.add(b.tree)
 
                 # AST Rewrite
                 # elements: b, a
-                # token labels: b, a
-                # rule labels: retval
+                # token labels: 
+                # rule labels: retval, b, a
                 # token list labels: 
                 # rule list labels: 
                 # wildcard labels: 
                 if self._state.backtracking == 0:
 
                     retval.tree = root_0
-                    stream_b = RewriteRuleTokenStream(self._adaptor, "token b", b)
-                    stream_a = RewriteRuleTokenStream(self._adaptor, "token a", a)
 
                     if retval is not None:
                         stream_retval = RewriteRuleSubtreeStream(self._adaptor, "rule retval", retval.tree)
                     else:
                         stream_retval = RewriteRuleSubtreeStream(self._adaptor, "token retval", None)
+
+
+                    if b is not None:
+                        stream_b = RewriteRuleSubtreeStream(self._adaptor, "rule b", b.tree)
+                    else:
+                        stream_b = RewriteRuleSubtreeStream(self._adaptor, "token b", None)
+
+
+                    if a is not None:
+                        stream_a = RewriteRuleSubtreeStream(self._adaptor, "rule a", a.tree)
+                    else:
+                        stream_a = RewriteRuleSubtreeStream(self._adaptor, "token a", None)
 
 
                     root_0 = self._adaptor.nil()
@@ -12110,8 +12110,8 @@ class sdl92Parser(Parser):
                     root_1 = self._adaptor.nil()
                     root_1 = self._adaptor.becomeRoot(self._adaptor.createFromType(CLOSED_RANGE, "CLOSED_RANGE"), root_1)
 
-                    self._adaptor.addChild(root_1, stream_a.nextNode())
-                    self._adaptor.addChild(root_1, stream_b.nextNode())
+                    self._adaptor.addChild(root_1, stream_a.nextTree())
+                    self._adaptor.addChild(root_1, stream_b.nextTree())
 
                     self._adaptor.addChild(root_0, root_1)
 
@@ -12325,7 +12325,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: GE, constant, NEQ, EQ, LT, LE, GT
+                    # elements: LE, constant, GE, NEQ, LT, GT, EQ
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -12568,7 +12568,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end387.tree)
 
                 # AST Rewrite
-                # elements: actual_parameters, createbody, CREATE
+                # elements: createbody, CREATE, actual_parameters
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -12807,7 +12807,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end394.tree)
 
                 # AST Rewrite
-                # elements: end, hyperlink, outputbody, OUTPUT, cif
+                # elements: cif, hyperlink, end, OUTPUT, outputbody
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13151,7 +13151,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: destination, TO
+                # elements: TO, destination
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13956,7 +13956,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end423.tree)
 
                 # AST Rewrite
-                # elements: TASK, task_body, end, hyperlink, cif
+                # elements: end, hyperlink, task_body, TASK, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -14477,7 +14477,7 @@ class sdl92Parser(Parser):
                     stream_ENDFOR.add(ENDFOR440)
 
                 # AST Rewrite
-                # elements: variable, transition, variable_id, range, FOR
+                # elements: transition, variable_id, variable, FOR, range
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -14656,7 +14656,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(R_PAREN445)
 
                 # AST Rewrite
-                # elements: step, RANGE, b, a
+                # elements: step, a, RANGE, b
                 # token labels: step
                 # rule labels: retval, b, a
                 # token list labels: 
@@ -14782,7 +14782,7 @@ class sdl92Parser(Parser):
                     stream_expression.add(expression448.tree)
 
                 # AST Rewrite
-                # elements: expression, variable
+                # elements: variable, expression
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -16946,7 +16946,7 @@ class sdl92Parser(Parser):
                         stream_R_BRACKET.add(char_literal524)
 
                     # AST Rewrite
-                    # elements: mant, bas, exp
+                    # elements: bas, mant, exp
                     # token labels: exp, mant, bas
                     # rule labels: retval
                     # token list labels: 
@@ -17796,10 +17796,10 @@ class sdl92Parser(Parser):
                 if LA164 == ID:
                     LA164_1 = self.input.LA(2)
 
-                    if (LA164_1 == L_PAREN) :
-                        alt164 = 2
-                    elif ((R_PAREN <= LA164_1 <= COMMA)) :
+                    if ((R_PAREN <= LA164_1 <= COMMA)) :
                         alt164 = 1
+                    elif (LA164_1 == L_PAREN) :
+                        alt164 = 2
                     else:
                         if self._state.backtracking > 0:
                             raise BacktrackingFailed
@@ -19106,7 +19106,7 @@ class sdl92Parser(Parser):
                     stream_FI.add(FI611)
 
                 # AST Rewrite
-                # elements: thenexpr, ifexpr, elseexpr
+                # elements: elseexpr, ifexpr, thenexpr
                 # token labels: 
                 # rule labels: elseexpr, retval, ifexpr, thenexpr
                 # token list labels: 
@@ -19402,7 +19402,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end619.tree)
 
                 # AST Rewrite
-                # elements: terminator, cif, label, end, hyperlink
+                # elements: end, hyperlink, terminator, cif, label
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -19539,7 +19539,7 @@ class sdl92Parser(Parser):
                     stream_212.add(char_literal622)
 
                 # AST Rewrite
-                # elements: connector_name, cif
+                # elements: cif, connector_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -19757,7 +19757,7 @@ class sdl92Parser(Parser):
                     stream_connector_name.add(connector_name628.tree)
 
                 # AST Rewrite
-                # elements: connector_name, JOIN
+                # elements: JOIN, connector_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -19918,7 +19918,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: expression, RETURN
+                # elements: RETURN, expression
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -20214,7 +20214,7 @@ class sdl92Parser(Parser):
                     stream_state_entry_point_name.add(state_entry_point_name638.tree)
 
                 # AST Rewrite
-                # elements: VIA, state_entry_point_name
+                # elements: state_entry_point_name, VIA
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -20366,7 +20366,7 @@ class sdl92Parser(Parser):
                     stream_SEMI.add(SEMI643)
 
                 # AST Rewrite
-                # elements: COMMENT, STRING, hyperlink, cif
+                # elements: hyperlink, COMMENT, STRING, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -20385,7 +20385,7 @@ class sdl92Parser(Parser):
                     root_0 = self._adaptor.nil()
                     # 1047:9: -> ( ^( COMMENT ( cif )? ( hyperlink )? STRING ) )?
                     # sdl92.g:1047:12: ( ^( COMMENT ( cif )? ( hyperlink )? STRING ) )?
-                    if stream_COMMENT.hasNext() or stream_STRING.hasNext() or stream_hyperlink.hasNext() or stream_cif.hasNext():
+                    if stream_hyperlink.hasNext() or stream_COMMENT.hasNext() or stream_STRING.hasNext() or stream_cif.hasNext():
                         # sdl92.g:1047:12: ^( COMMENT ( cif )? ( hyperlink )? STRING )
                         root_1 = self._adaptor.nil()
                         root_1 = self._adaptor.becomeRoot(stream_COMMENT.nextNode(), root_1)
@@ -20407,9 +20407,9 @@ class sdl92Parser(Parser):
                         self._adaptor.addChild(root_0, root_1)
 
 
+                    stream_hyperlink.reset();
                     stream_COMMENT.reset();
                     stream_STRING.reset();
-                    stream_hyperlink.reset();
                     stream_cif.reset();
 
 
@@ -20549,7 +20549,7 @@ class sdl92Parser(Parser):
                     stream_cif_end.add(cif_end653.tree)
 
                 # AST Rewrite
-                # elements: x, y, height, width
+                # elements: x, width, height, y
                 # token labels: height, width, y, x
                 # rule labels: retval
                 # token list labels: 
@@ -20835,7 +20835,7 @@ class sdl92Parser(Parser):
                     stream_cif_end.add(cif_end667.tree)
 
                 # AST Rewrite
-                # elements: PARAMNAMES, field_name
+                # elements: field_name, PARAMNAMES
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -23865,6 +23865,21 @@ class sdl92Parser(Parser):
 
 
 
+    # $ANTLR start "synpred153_sdl92"
+    def synpred153_sdl92_fragment(self, ):
+        # sdl92.g:668:18: ( closed_range )
+        # sdl92.g:668:18: closed_range
+        pass 
+        self._state.following.append(self.FOLLOW_closed_range_in_synpred153_sdl927712)
+        self.closed_range()
+
+        self._state.following.pop()
+
+
+    # $ANTLR end "synpred153_sdl92"
+
+
+
     # $ANTLR start "synpred182_sdl92"
     def synpred182_sdl92_fragment(self, ):
         # sdl92.g:783:18: ( COMMA b= ground_expression )
@@ -24133,6 +24148,107 @@ class sdl92Parser(Parser):
 
 
 
+    # $ANTLR start "synpred223_sdl92"
+    def synpred223_sdl92_fragment(self, ):
+        # sdl92.g:854:17: ( ID ':' expression )
+        # sdl92.g:854:17: ID ':' expression
+        pass 
+        self.match(self.input, ID, self.FOLLOW_ID_in_synpred223_sdl9210164)
+        self.match(self.input, 212, self.FOLLOW_212_in_synpred223_sdl9210166)
+        self._state.following.append(self.FOLLOW_expression_in_synpred223_sdl9210168)
+        self.expression()
+
+        self._state.following.pop()
+
+
+    # $ANTLR end "synpred223_sdl92"
+
+
+
+    # $ANTLR start "synpred224_sdl92"
+    def synpred224_sdl92_fragment(self, ):
+        # sdl92.g:855:17: ( ID )
+        # sdl92.g:855:17: ID
+        pass 
+        self.match(self.input, ID, self.FOLLOW_ID_in_synpred224_sdl9210206)
+
+
+    # $ANTLR end "synpred224_sdl92"
+
+
+
+    # $ANTLR start "synpred225_sdl92"
+    def synpred225_sdl92_fragment(self, ):
+        # sdl92.g:856:17: ( '{' '}' )
+        # sdl92.g:856:17: '{' '}'
+        pass 
+        self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_synpred225_sdl9210257)
+        self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_synpred225_sdl9210259)
+
+
+    # $ANTLR end "synpred225_sdl92"
+
+
+
+    # $ANTLR start "synpred226_sdl92"
+    def synpred226_sdl92_fragment(self, ):
+        # sdl92.g:857:17: ( '{' MANTISSA mant= INT COMMA BASE bas= INT COMMA EXPONENT exp= INT '}' )
+        # sdl92.g:857:17: '{' MANTISSA mant= INT COMMA BASE bas= INT COMMA EXPONENT exp= INT '}'
+        pass 
+        self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_synpred226_sdl9210303)
+        self.match(self.input, MANTISSA, self.FOLLOW_MANTISSA_in_synpred226_sdl9210321)
+        mant=self.match(self.input, INT, self.FOLLOW_INT_in_synpred226_sdl9210325)
+        self.match(self.input, COMMA, self.FOLLOW_COMMA_in_synpred226_sdl9210327)
+        self.match(self.input, BASE, self.FOLLOW_BASE_in_synpred226_sdl9210345)
+        bas=self.match(self.input, INT, self.FOLLOW_INT_in_synpred226_sdl9210349)
+        self.match(self.input, COMMA, self.FOLLOW_COMMA_in_synpred226_sdl9210351)
+        self.match(self.input, EXPONENT, self.FOLLOW_EXPONENT_in_synpred226_sdl9210369)
+        exp=self.match(self.input, INT, self.FOLLOW_INT_in_synpred226_sdl9210373)
+        self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_synpred226_sdl9210391)
+
+
+    # $ANTLR end "synpred226_sdl92"
+
+
+
+    # $ANTLR start "synpred228_sdl92"
+    def synpred228_sdl92_fragment(self, ):
+        # sdl92.g:862:17: ( '{' named_value ( COMMA named_value )* '}' )
+        # sdl92.g:862:17: '{' named_value ( COMMA named_value )* '}'
+        pass 
+        self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_synpred228_sdl9210448)
+        self._state.following.append(self.FOLLOW_named_value_in_synpred228_sdl9210466)
+        self.named_value()
+
+        self._state.following.pop()
+        # sdl92.g:863:29: ( COMMA named_value )*
+        while True: #loop201
+            alt201 = 2
+            LA201_0 = self.input.LA(1)
+
+            if (LA201_0 == COMMA) :
+                alt201 = 1
+
+
+            if alt201 == 1:
+                # sdl92.g:863:30: COMMA named_value
+                pass 
+                self.match(self.input, COMMA, self.FOLLOW_COMMA_in_synpred228_sdl9210469)
+                self._state.following.append(self.FOLLOW_named_value_in_synpred228_sdl9210471)
+                self.named_value()
+
+                self._state.following.pop()
+
+
+            else:
+                break #loop201
+        self.match(self.input, R_BRACKET, self.FOLLOW_R_BRACKET_in_synpred228_sdl9210491)
+
+
+    # $ANTLR end "synpred228_sdl92"
+
+
+
 
     # Delegated rules
 
@@ -24253,11 +24369,37 @@ class sdl92Parser(Parser):
         self._state.backtracking -= 1
         return success
 
+    def synpred153_sdl92(self):
+        self._state.backtracking += 1
+        start = self.input.mark()
+        try:
+            self.synpred153_sdl92_fragment()
+        except BacktrackingFailed:
+            success = False
+        else:
+            success = True
+        self.input.rewind(start)
+        self._state.backtracking -= 1
+        return success
+
     def synpred201_sdl92(self):
         self._state.backtracking += 1
         start = self.input.mark()
         try:
             self.synpred201_sdl92_fragment()
+        except BacktrackingFailed:
+            success = False
+        else:
+            success = True
+        self.input.rewind(start)
+        self._state.backtracking -= 1
+        return success
+
+    def synpred223_sdl92(self):
+        self._state.backtracking += 1
+        start = self.input.mark()
+        try:
+            self.synpred223_sdl92_fragment()
         except BacktrackingFailed:
             success = False
         else:
@@ -24409,6 +24551,19 @@ class sdl92Parser(Parser):
         self._state.backtracking -= 1
         return success
 
+    def synpred224_sdl92(self):
+        self._state.backtracking += 1
+        start = self.input.mark()
+        try:
+            self.synpred224_sdl92_fragment()
+        except BacktrackingFailed:
+            success = False
+        else:
+            success = True
+        self.input.rewind(start)
+        self._state.backtracking -= 1
+        return success
+
     def synpred115_sdl92(self):
         self._state.backtracking += 1
         start = self.input.mark()
@@ -24422,11 +24577,50 @@ class sdl92Parser(Parser):
         self._state.backtracking -= 1
         return success
 
+    def synpred228_sdl92(self):
+        self._state.backtracking += 1
+        start = self.input.mark()
+        try:
+            self.synpred228_sdl92_fragment()
+        except BacktrackingFailed:
+            success = False
+        else:
+            success = True
+        self.input.rewind(start)
+        self._state.backtracking -= 1
+        return success
+
+    def synpred225_sdl92(self):
+        self._state.backtracking += 1
+        start = self.input.mark()
+        try:
+            self.synpred225_sdl92_fragment()
+        except BacktrackingFailed:
+            success = False
+        else:
+            success = True
+        self.input.rewind(start)
+        self._state.backtracking -= 1
+        return success
+
     def synpred86_sdl92(self):
         self._state.backtracking += 1
         start = self.input.mark()
         try:
             self.synpred86_sdl92_fragment()
+        except BacktrackingFailed:
+            success = False
+        else:
+            success = True
+        self.input.rewind(start)
+        self._state.backtracking -= 1
+        return success
+
+    def synpred226_sdl92(self):
+        self._state.backtracking += 1
+        start = self.input.mark()
+        try:
+            self.synpred226_sdl92_fragment()
         except BacktrackingFailed:
             success = False
         else:
@@ -24621,7 +24815,7 @@ class sdl92Parser(Parser):
         )
 
     DFA37_eof = DFA.unpack(
-        u"\3\uffff\1\7\27\uffff"
+        u"\3\uffff\1\10\27\uffff"
         )
 
     DFA37_min = DFA.unpack(
@@ -24637,7 +24831,7 @@ class sdl92Parser(Parser):
         )
 
     DFA37_accept = DFA.unpack(
-        u"\7\uffff\1\2\1\1\22\uffff"
+        u"\7\uffff\1\1\1\2\22\uffff"
         )
 
     DFA37_special = DFA.unpack(
@@ -24652,7 +24846,7 @@ class sdl92Parser(Parser):
         u"\5\3\uffff\1\5\11\uffff\1\5\2\uffff\1\5\6\uffff\1\5\2\uffff\1\5"
         u"\27\uffff\1\5\57\uffff\1\4"),
         DFA.unpack(u"\1\6"),
-        DFA.unpack(u"\1\7\170\uffff\1\10"),
+        DFA.unpack(u"\1\10\170\uffff\1\7"),
         DFA.unpack(u"\1\11"),
         DFA.unpack(u"\1\12"),
         DFA.unpack(u"\1\3"),
@@ -24695,15 +24889,15 @@ class sdl92Parser(Parser):
         )
 
     DFA43_min = DFA.unpack(
-        u"\1\24\1\7\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088\1\54\1"
-        u"\173\1\133\1\u0087\1\u00da\1\u0088\1\24\1\u0086\1\173\1\u0088\1"
+        u"\1\24\1\7\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1\u0088\1"
+        u"\133\1\173\1\u00da\1\u0087\1\24\1\u0088\1\u0086\1\173\1\u0088\1"
         u"\173\1\u0087\1\u00da\1\24\1\u00ac"
         )
 
     DFA43_max = DFA.unpack(
-        u"\1\u00d9\1\u00ac\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088"
-        u"\1\54\1\173\1\133\1\u0087\1\u00da\1\u0088\1\174\1\u0086\1\173\1"
-        u"\u0088\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
+        u"\1\u00d9\1\u00ac\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1\u0088"
+        u"\1\133\1\173\1\u00da\1\u0087\1\174\1\u0088\1\u0086\1\173\1\u0088"
+        u"\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
         )
 
     DFA43_accept = DFA.unpack(
@@ -24718,10 +24912,10 @@ class sdl92Parser(Parser):
     DFA43_transition = [
         DFA.unpack(u"\1\3\102\uffff\1\3\41\uffff\2\3\1\uffff\1\2\134\uffff"
         u"\1\1"),
-        DFA.unpack(u"\1\4\11\uffff\1\4\1\uffff\1\4\4\uffff\1\4\31\uffff"
-        u"\1\4\2\uffff\2\4\3\uffff\1\4\3\uffff\1\4\6\uffff\2\4\1\uffff\2"
-        u"\4\3\uffff\1\4\11\uffff\1\4\2\uffff\1\4\6\uffff\1\4\2\uffff\1\4"
-        u"\27\uffff\1\4\57\uffff\1\5"),
+        DFA.unpack(u"\1\5\11\uffff\1\5\1\uffff\1\5\4\uffff\1\5\31\uffff"
+        u"\1\5\2\uffff\2\5\3\uffff\1\5\3\uffff\1\5\6\uffff\2\5\1\uffff\2"
+        u"\5\3\uffff\1\5\11\uffff\1\5\2\uffff\1\5\6\uffff\1\5\2\uffff\1\5"
+        u"\27\uffff\1\5\57\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -24734,8 +24928,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\3\102\uffff\1\3\44\uffff\1\2"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
@@ -24743,7 +24937,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\3\102\uffff\1\3\44\uffff\1\2\134\uffff\1\27"),
-        DFA.unpack(u"\1\5")
+        DFA.unpack(u"\1\4")
     ]
 
     # class definition for DFA #43
@@ -24763,14 +24957,14 @@ class sdl92Parser(Parser):
         )
 
     DFA44_min = DFA.unpack(
-        u"\1\24\1\uffff\1\7\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088"
-        u"\1\54\1\173\1\133\1\u0087\1\u00da\1\u0088\1\24\1\u0086\1\173\1"
+        u"\1\24\1\uffff\1\7\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1"
+        u"\u0088\1\133\1\173\1\u00da\1\u0087\1\24\1\u0088\1\u0086\1\173\1"
         u"\u0088\1\173\1\u0087\1\u00da\1\24\1\u00ac"
         )
 
     DFA44_max = DFA.unpack(
-        u"\1\u00d9\1\uffff\1\u00ac\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae"
-        u"\1\u0088\1\54\1\173\1\133\1\u0087\1\u00da\1\u0088\1\127\1\u0086"
+        u"\1\u00d9\1\uffff\1\u00ac\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173"
+        u"\1\54\1\u0088\1\133\1\173\1\u00da\1\u0087\1\127\1\u0088\1\u0086"
         u"\1\173\1\u0088\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
         )
 
@@ -24786,10 +24980,10 @@ class sdl92Parser(Parser):
     DFA44_transition = [
         DFA.unpack(u"\1\4\102\uffff\1\3\41\uffff\2\1\136\uffff\1\2"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\5\11\uffff\1\5\1\uffff\1\5\4\uffff\1\5\31\uffff"
-        u"\1\5\2\uffff\2\5\3\uffff\1\5\3\uffff\1\5\6\uffff\2\5\1\uffff\2"
-        u"\5\3\uffff\1\5\11\uffff\1\5\2\uffff\1\5\6\uffff\1\5\2\uffff\1\5"
-        u"\27\uffff\1\5\57\uffff\1\6"),
+        DFA.unpack(u"\1\6\11\uffff\1\6\1\uffff\1\6\4\uffff\1\6\31\uffff"
+        u"\1\6\2\uffff\2\6\3\uffff\1\6\3\uffff\1\6\6\uffff\2\6\1\uffff\2"
+        u"\6\3\uffff\1\6\11\uffff\1\6\2\uffff\1\6\6\uffff\1\6\2\uffff\1\6"
+        u"\27\uffff\1\6\57\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\7"),
@@ -24802,8 +24996,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
         DFA.unpack(u"\1\20"),
-        DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\4\102\uffff\1\3"),
+        DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
         DFA.unpack(u"\1\24"),
@@ -24811,7 +25005,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\27"),
         DFA.unpack(u"\1\4\102\uffff\1\3\u0081\uffff\1\30"),
-        DFA.unpack(u"\1\6")
+        DFA.unpack(u"\1\5")
     ]
 
     # class definition for DFA #44
@@ -24831,15 +25025,15 @@ class sdl92Parser(Parser):
         )
 
     DFA48_min = DFA.unpack(
-        u"\1\6\1\7\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088\1\54\1\173"
-        u"\1\133\1\u0087\1\u00da\1\u0088\1\24\1\u0086\1\173\1\u0088\1\173"
+        u"\1\6\1\7\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1\u0088\1\133"
+        u"\1\173\1\u00da\1\u0087\1\24\1\u0088\1\u0086\1\173\1\u0088\1\173"
         u"\1\u0087\1\u00da\1\24\1\u00ac"
         )
 
     DFA48_max = DFA.unpack(
-        u"\1\u00d9\1\u00ac\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088"
-        u"\1\54\1\173\1\133\1\u0087\1\u00da\1\u0088\1\u0089\1\u0086\1\173"
-        u"\1\u0088\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
+        u"\1\u00d9\1\u00ac\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1\u0088"
+        u"\1\133\1\173\1\u00da\1\u0087\1\u0089\1\u0088\1\u0086\1\173\1\u0088"
+        u"\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
         )
 
     DFA48_accept = DFA.unpack(
@@ -24856,10 +25050,10 @@ class sdl92Parser(Parser):
         u"\2\13\uffff\1\2\4\uffff\1\2\3\uffff\1\2\15\uffff\2\2\5\uffff\1"
         u"\2\3\uffff\1\3\2\uffff\2\2\5\uffff\1\2\27\uffff\2\3\1\uffff\1\3"
         u"\5\uffff\1\3\6\uffff\1\2\11\uffff\1\2\1\uffff\1\2\103\uffff\1\1"),
-        DFA.unpack(u"\1\4\11\uffff\1\4\1\uffff\1\4\4\uffff\1\4\31\uffff"
-        u"\1\4\2\uffff\2\4\3\uffff\1\4\3\uffff\1\4\6\uffff\2\4\1\uffff\2"
-        u"\4\3\uffff\1\4\11\uffff\1\4\2\uffff\1\4\6\uffff\1\4\2\uffff\1\4"
-        u"\27\uffff\1\4\57\uffff\1\5"),
+        DFA.unpack(u"\1\5\11\uffff\1\5\1\uffff\1\5\4\uffff\1\5\31\uffff"
+        u"\1\5\2\uffff\2\5\3\uffff\1\5\3\uffff\1\5\6\uffff\2\5\1\uffff\2"
+        u"\5\3\uffff\1\5\11\uffff\1\5\2\uffff\1\5\6\uffff\1\5\2\uffff\1\5"
+        u"\27\uffff\1\5\57\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -24872,10 +25066,10 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\3\3\uffff\1\2\34\uffff\1\2\4\uffff\1\2\3\uffff\1"
         u"\2\16\uffff\1\2\11\uffff\1\3\2\uffff\1\2\6\uffff\1\2\32\uffff\1"
         u"\3\14\uffff\1\2"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
@@ -24885,7 +25079,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\3\3\uffff\1\2\34\uffff\1\2\4\uffff\1\2\3\uffff\1"
         u"\2\16\uffff\1\2\11\uffff\1\3\2\uffff\1\2\6\uffff\1\2\32\uffff\1"
         u"\3\14\uffff\1\2\13\uffff\1\2\103\uffff\1\27"),
-        DFA.unpack(u"\1\5")
+        DFA.unpack(u"\1\4")
     ]
 
     # class definition for DFA #48
@@ -25286,15 +25480,15 @@ class sdl92Parser(Parser):
         )
 
     DFA84_min = DFA.unpack(
-        u"\1\6\1\7\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088\1\54\1\173"
-        u"\1\133\1\u0087\1\u00da\1\u0088\1\23\1\u0086\1\173\1\u0088\1\173"
+        u"\1\6\1\7\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1\u0088\1\133"
+        u"\1\173\1\u00da\1\u0087\1\23\1\u0088\1\u0086\1\173\1\u0088\1\173"
         u"\1\u0087\1\u00da\1\23\1\u00ac"
         )
 
     DFA84_max = DFA.unpack(
-        u"\1\u00d9\1\u00ac\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088"
-        u"\1\54\1\173\1\133\1\u0087\1\u00da\1\u0088\1\u0089\1\u0086\1\173"
-        u"\1\u0088\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
+        u"\1\u00d9\1\u00ac\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1\u0088"
+        u"\1\133\1\173\1\u00da\1\u0087\1\u0089\1\u0088\1\u0086\1\173\1\u0088"
+        u"\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
         )
 
     DFA84_accept = DFA.unpack(
@@ -25312,10 +25506,10 @@ class sdl92Parser(Parser):
         u"\3\2\uffff\2\2\1\uffff\1\3\3\uffff\1\2\6\uffff\2\2\5\uffff\1\2"
         u"\35\uffff\1\3\11\uffff\1\2\11\uffff\1\2\1\uffff\1\2\103\uffff\1"
         u"\1"),
-        DFA.unpack(u"\1\4\11\uffff\1\4\1\uffff\1\4\4\uffff\1\4\31\uffff"
-        u"\1\4\2\uffff\2\4\3\uffff\1\4\3\uffff\1\4\6\uffff\2\4\1\uffff\2"
-        u"\4\3\uffff\1\4\11\uffff\1\4\2\uffff\1\4\6\uffff\1\4\2\uffff\1\4"
-        u"\27\uffff\1\4\57\uffff\1\5"),
+        DFA.unpack(u"\1\5\11\uffff\1\5\1\uffff\1\5\4\uffff\1\5\31\uffff"
+        u"\1\5\2\uffff\2\5\3\uffff\1\5\3\uffff\1\5\6\uffff\2\5\1\uffff\2"
+        u"\5\3\uffff\1\5\11\uffff\1\5\2\uffff\1\5\6\uffff\1\5\2\uffff\1\5"
+        u"\27\uffff\1\5\57\uffff\1\4"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -25328,10 +25522,10 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
-        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\3\4\uffff\1\2\31\uffff\1\3\2\uffff\1\2\4\uffff\1"
         u"\2\3\uffff\1\2\16\uffff\1\2\14\uffff\1\2\6\uffff\1\2\47\uffff\1"
         u"\2"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
@@ -25341,7 +25535,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\3\4\uffff\1\2\31\uffff\1\3\2\uffff\1\2\4\uffff\1"
         u"\2\3\uffff\1\2\16\uffff\1\2\14\uffff\1\2\6\uffff\1\2\47\uffff\1"
         u"\2\13\uffff\1\2\103\uffff\1\27"),
-        DFA.unpack(u"\1\5")
+        DFA.unpack(u"\1\4")
     ]
 
     # class definition for DFA #84
@@ -25361,18 +25555,18 @@ class sdl92Parser(Parser):
         )
 
     DFA92_min = DFA.unpack(
-        u"\1\6\1\7\1\u0086\2\uffff\1\u0086\1\u00ad\1\6\1\173\1\u00ae\1\7"
-        u"\1\u0088\1\54\1\u0086\1\173\1\133\1\173\1\u0087\1\u00da\2\u0088"
-        u"\1\30\1\173\1\u0086\1\u0087\1\173\2\u0088\1\u0086\2\173\1\u0087"
-        u"\1\u0088\1\u00da\1\173\1\30\1\u0087\1\u00ac\1\u00d4\1\u00da\1\30"
+        u"\1\6\1\7\1\u0086\2\uffff\1\u00ad\1\u0086\1\6\1\u00ae\1\173\1\7"
+        u"\1\54\1\u0088\1\u0086\1\133\2\173\1\u00da\1\u0087\1\u0088\1\30"
+        u"\1\u0088\1\173\1\u0086\1\u0087\1\173\2\u0088\1\u0086\2\173\1\u0087"
+        u"\1\u0088\1\u00da\1\173\1\30\1\u0087\1\u00d4\1\u00ac\1\u00da\1\30"
         )
 
     DFA92_max = DFA.unpack(
-        u"\1\u00d9\1\u00ac\1\u00d5\2\uffff\1\u0086\1\u00ad\1\u00d9\1\173"
-        u"\1\u00ae\1\u00ac\1\u0088\1\54\1\u0086\1\173\1\133\1\173\1\u0087"
-        u"\1\u00da\2\u0088\1\u0089\1\173\1\u0086\1\u0087\1\173\2\u0088\1"
-        u"\u0086\2\173\1\u0087\1\u0088\1\u00da\1\173\1\u00d9\1\u0087\1\u00ac"
-        u"\1\u00d4\1\u00da\1\u00d9"
+        u"\1\u00d9\1\u00ac\1\u00d5\2\uffff\1\u00ad\1\u0086\1\u00d9\1\u00ae"
+        u"\1\173\1\u00ac\1\54\1\u0088\1\u0086\1\133\2\173\1\u00da\1\u0087"
+        u"\1\u0088\1\u0089\1\u0088\1\173\1\u0086\1\u0087\1\173\2\u0088\1"
+        u"\u0086\2\173\1\u0087\1\u0088\1\u00da\1\173\1\u00d9\1\u0087\1\u00d4"
+        u"\1\u00ac\1\u00da\1\u00d9"
         )
 
     DFA92_accept = DFA.unpack(
@@ -25389,10 +25583,10 @@ class sdl92Parser(Parser):
         u"\1\4\4\uffff\1\4\3\uffff\1\3\15\uffff\1\3\1\4\5\uffff\1\3\6\uffff"
         u"\1\4\1\3\5\uffff\1\3\47\uffff\1\3\11\uffff\1\3\1\uffff\1\2\103"
         u"\uffff\1\1"),
-        DFA.unpack(u"\1\5\11\uffff\1\5\1\uffff\1\5\4\uffff\1\5\31\uffff"
-        u"\1\5\2\uffff\2\5\3\uffff\1\5\3\uffff\1\5\6\uffff\2\5\1\uffff\2"
-        u"\5\3\uffff\1\5\11\uffff\1\5\2\uffff\1\5\6\uffff\1\5\2\uffff\1\5"
-        u"\27\uffff\1\5\57\uffff\1\6"),
+        DFA.unpack(u"\1\6\11\uffff\1\6\1\uffff\1\6\4\uffff\1\6\31\uffff"
+        u"\1\6\2\uffff\2\6\3\uffff\1\6\3\uffff\1\6\6\uffff\2\6\1\uffff\2"
+        u"\6\3\uffff\1\6\11\uffff\1\6\2\uffff\1\6\6\uffff\1\6\2\uffff\1\6"
+        u"\27\uffff\1\6\57\uffff\1\5"),
         DFA.unpack(u"\1\3\52\uffff\1\3\42\uffff\1\7\1\3"),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -25407,7 +25601,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15\11\uffff\1\15\1\uffff\1\15\4\uffff\1\15\31\uffff"
         u"\1\15\2\uffff\2\15\3\uffff\1\15\3\uffff\1\15\6\uffff\2\15\1\uffff"
         u"\2\15\3\uffff\1\15\11\uffff\1\15\2\uffff\1\15\6\uffff\1\15\2\uffff"
-        u"\1\15\27\uffff\1\15\57\uffff\1\6"),
+        u"\1\15\27\uffff\1\15\57\uffff\1\5"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
         DFA.unpack(u"\1\20"),
@@ -25417,9 +25611,9 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u"\1\26"),
-        DFA.unpack(u"\1\27"),
         DFA.unpack(u"\1\3\34\uffff\1\4\4\uffff\1\4\3\uffff\1\3\16\uffff"
         u"\1\4\14\uffff\1\4\6\uffff\1\3\47\uffff\1\3"),
+        DFA.unpack(u"\1\27"),
         DFA.unpack(u"\1\30"),
         DFA.unpack(u"\1\31"),
         DFA.unpack(u"\1\32"),
@@ -25434,14 +25628,14 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\43"),
         DFA.unpack(u"\1\44"),
         DFA.unpack(u"\1\3\34\uffff\1\4\4\uffff\1\4\3\uffff\1\3\16\uffff"
-        u"\1\4\14\uffff\1\4\6\uffff\1\3\47\uffff\1\3\13\uffff\1\46\103\uffff"
-        u"\1\45"),
+        u"\1\4\14\uffff\1\4\6\uffff\1\3\47\uffff\1\3\13\uffff\1\45\103\uffff"
+        u"\1\46"),
         DFA.unpack(u"\1\47"),
-        DFA.unpack(u"\1\6"),
         DFA.unpack(u"\1\7"),
+        DFA.unpack(u"\1\5"),
         DFA.unpack(u"\1\50"),
         DFA.unpack(u"\1\3\34\uffff\1\4\4\uffff\1\4\3\uffff\1\3\16\uffff"
-        u"\1\4\14\uffff\1\4\6\uffff\1\3\47\uffff\1\3\117\uffff\1\45")
+        u"\1\4\14\uffff\1\4\6\uffff\1\3\47\uffff\1\3\117\uffff\1\46")
     ]
 
     # class definition for DFA #92
@@ -26020,15 +26214,15 @@ class sdl92Parser(Parser):
         )
 
     DFA113_min = DFA.unpack(
-        u"\1\6\1\7\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1\u0088\1\133"
-        u"\1\173\1\u00da\1\u0087\1\30\1\u0088\1\u0086\1\173\1\u0088\1\173"
+        u"\1\6\1\7\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088\1\54\1\173"
+        u"\1\133\1\u0087\1\u00da\1\u0088\1\30\1\u0086\1\173\1\u0088\1\173"
         u"\1\u0087\1\u00da\1\30\1\u00ac"
         )
 
     DFA113_max = DFA.unpack(
-        u"\1\u00d9\1\u00ac\2\uffff\1\u00ad\1\u0086\1\u00ae\1\173\1\54\1\u0088"
-        u"\1\133\1\173\1\u00da\1\u0087\1\u0089\1\u0088\1\u0086\1\173\1\u0088"
-        u"\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
+        u"\1\u00d9\1\u00ac\2\uffff\1\u0086\1\u00ad\1\173\1\u00ae\1\u0088"
+        u"\1\54\1\173\1\133\1\u0087\1\u00da\1\u0088\1\u0089\1\u0086\1\173"
+        u"\1\u0088\1\173\1\u0087\1\u00da\1\u00d9\1\u00ac"
         )
 
     DFA113_accept = DFA.unpack(
@@ -26045,10 +26239,10 @@ class sdl92Parser(Parser):
         u"\2\13\uffff\1\2\4\uffff\1\2\3\uffff\1\2\15\uffff\2\2\5\uffff\1"
         u"\2\6\uffff\2\2\5\uffff\1\2\44\uffff\1\3\2\uffff\1\2\2\3\7\uffff"
         u"\1\2\1\uffff\1\2\103\uffff\1\1"),
-        DFA.unpack(u"\1\5\11\uffff\1\5\1\uffff\1\5\4\uffff\1\5\31\uffff"
-        u"\1\5\2\uffff\2\5\3\uffff\1\5\3\uffff\1\5\6\uffff\2\5\1\uffff\2"
-        u"\5\3\uffff\1\5\11\uffff\1\5\2\uffff\1\5\6\uffff\1\5\2\uffff\1\5"
-        u"\27\uffff\1\5\57\uffff\1\4"),
+        DFA.unpack(u"\1\4\11\uffff\1\4\1\uffff\1\4\4\uffff\1\4\31\uffff"
+        u"\1\4\2\uffff\2\4\3\uffff\1\4\3\uffff\1\4\6\uffff\2\4\1\uffff\2"
+        u"\4\3\uffff\1\4\11\uffff\1\4\2\uffff\1\4\6\uffff\1\4\2\uffff\1\4"
+        u"\27\uffff\1\4\57\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\6"),
@@ -26061,10 +26255,10 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\15"),
         DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\2\1\uffff\1\3\32\uffff\1\2\4\uffff\1\2\3\uffff\1"
         u"\2\16\uffff\1\2\14\uffff\1\2\6\uffff\1\2\44\uffff\1\3\2\uffff\1"
         u"\2"),
-        DFA.unpack(u"\1\20"),
         DFA.unpack(u"\1\21"),
         DFA.unpack(u"\1\22"),
         DFA.unpack(u"\1\23"),
@@ -26074,7 +26268,7 @@ class sdl92Parser(Parser):
         DFA.unpack(u"\1\2\1\uffff\1\3\32\uffff\1\2\4\uffff\1\2\3\uffff\1"
         u"\2\16\uffff\1\2\14\uffff\1\2\6\uffff\1\2\44\uffff\1\3\2\uffff\1"
         u"\2\13\uffff\1\2\103\uffff\1\27"),
-        DFA.unpack(u"\1\4")
+        DFA.unpack(u"\1\5")
     ]
 
     # class definition for DFA #113
@@ -26083,6 +26277,357 @@ class sdl92Parser(Parser):
         pass
 
 
+    # lookup tables for DFA #119
+
+    DFA119_eot = DFA.unpack(
+        u"\30\uffff"
+        )
+
+    DFA119_eof = DFA.unpack(
+        u"\30\uffff"
+        )
+
+    DFA119_min = DFA.unpack(
+        u"\1\13\20\0\7\uffff"
+        )
+
+    DFA119_max = DFA.unpack(
+        u"\1\u00b2\20\0\7\uffff"
+        )
+
+    DFA119_accept = DFA.unpack(
+        u"\21\uffff\1\2\5\uffff\1\1"
+        )
+
+    DFA119_special = DFA.unpack(
+        u"\1\uffff\1\0\1\1\1\2\1\3\1\4\1\5\1\6\1\7\1\10\1\11\1\12\1\13\1"
+        u"\14\1\15\1\16\1\17\7\uffff"
+        )
+
+            
+    DFA119_transition = [
+        DFA.unpack(u"\1\2\33\uffff\1\13\5\uffff\1\16\16\uffff\1\3\36\uffff"
+        u"\1\6\37\uffff\1\12\12\uffff\1\15\6\uffff\6\21\2\uffff\1\1\5\uffff"
+        u"\1\20\4\uffff\1\17\1\4\1\5\1\7\1\10\1\11\14\uffff\1\14"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
+        DFA.unpack(u"")
+    ]
+
+    # class definition for DFA #119
+
+    class DFA119(DFA):
+        pass
+
+
+        def specialStateTransition(self_, s, input):
+            # convince pylint that my self_ magic is ok ;)
+            # pylint: disable-msg=E0213
+
+            # pretend we are a member of the recognizer
+            # thus semantic predicates can be evaluated
+            self = self_.recognizer
+
+            _s = s
+
+            if s == 0: 
+                LA119_1 = input.LA(1)
+
+                 
+                index119_1 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_1)
+                if s >= 0:
+                    return s
+            elif s == 1: 
+                LA119_2 = input.LA(1)
+
+                 
+                index119_2 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_2)
+                if s >= 0:
+                    return s
+            elif s == 2: 
+                LA119_3 = input.LA(1)
+
+                 
+                index119_3 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_3)
+                if s >= 0:
+                    return s
+            elif s == 3: 
+                LA119_4 = input.LA(1)
+
+                 
+                index119_4 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_4)
+                if s >= 0:
+                    return s
+            elif s == 4: 
+                LA119_5 = input.LA(1)
+
+                 
+                index119_5 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_5)
+                if s >= 0:
+                    return s
+            elif s == 5: 
+                LA119_6 = input.LA(1)
+
+                 
+                index119_6 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_6)
+                if s >= 0:
+                    return s
+            elif s == 6: 
+                LA119_7 = input.LA(1)
+
+                 
+                index119_7 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_7)
+                if s >= 0:
+                    return s
+            elif s == 7: 
+                LA119_8 = input.LA(1)
+
+                 
+                index119_8 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_8)
+                if s >= 0:
+                    return s
+            elif s == 8: 
+                LA119_9 = input.LA(1)
+
+                 
+                index119_9 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_9)
+                if s >= 0:
+                    return s
+            elif s == 9: 
+                LA119_10 = input.LA(1)
+
+                 
+                index119_10 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_10)
+                if s >= 0:
+                    return s
+            elif s == 10: 
+                LA119_11 = input.LA(1)
+
+                 
+                index119_11 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_11)
+                if s >= 0:
+                    return s
+            elif s == 11: 
+                LA119_12 = input.LA(1)
+
+                 
+                index119_12 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_12)
+                if s >= 0:
+                    return s
+            elif s == 12: 
+                LA119_13 = input.LA(1)
+
+                 
+                index119_13 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_13)
+                if s >= 0:
+                    return s
+            elif s == 13: 
+                LA119_14 = input.LA(1)
+
+                 
+                index119_14 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_14)
+                if s >= 0:
+                    return s
+            elif s == 14: 
+                LA119_15 = input.LA(1)
+
+                 
+                index119_15 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_15)
+                if s >= 0:
+                    return s
+            elif s == 15: 
+                LA119_16 = input.LA(1)
+
+                 
+                index119_16 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred153_sdl92()):
+                    s = 23
+
+                elif (True):
+                    s = 17
+
+                 
+                input.seek(index119_16)
+                if s >= 0:
+                    return s
+
+            if self._state.backtracking >0:
+                raise BacktrackingFailed
+            nvae = NoViableAltException(self_.getDescription(), 119, _s, input)
+            self_.error(nvae)
+            raise nvae
     # lookup tables for DFA #152
 
     DFA152_eot = DFA.unpack(
@@ -26106,7 +26651,7 @@ class sdl92Parser(Parser):
         )
 
     DFA152_special = DFA.unpack(
-        u"\2\uffff\1\4\1\0\1\5\1\2\1\6\1\3\1\1\1\uffff"
+        u"\2\uffff\1\4\1\1\1\6\1\3\1\5\1\2\1\0\1\uffff"
         )
 
             
@@ -26117,7 +26662,7 @@ class sdl92Parser(Parser):
         u"\uffff\2\1\1\uffff\1\1\3\uffff\1\1\3\uffff\1\1\2\uffff\2\1\5\uffff"
         u"\1\1\5\uffff\1\1\17\uffff\1\1\1\uffff\2\1\1\uffff\5\1\1\uffff\1"
         u"\1\3\uffff\6\1\1\uffff\1\2\1\3\1\4\1\6\1\7\1\5\1\1\1\uffff\13\1"
-        u"\23\uffff\1\1\30\uffff\1\1\10\uffff\1\1\1\uffff\1\1\1\uffff\1\1"),
+        u"\23\uffff\1\1\30\uffff\1\1\7\uffff\2\1\1\uffff\1\1\1\uffff\1\1"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\uffff"),
         DFA.unpack(u"\1\uffff"),
@@ -26146,23 +26691,6 @@ class sdl92Parser(Parser):
             _s = s
 
             if s == 0: 
-                LA152_3 = input.LA(1)
-
-                 
-                index152_3 = input.index()
-                input.rewind()
-                s = -1
-                if (self.synpred198_sdl92()):
-                    s = 9
-
-                elif (True):
-                    s = 1
-
-                 
-                input.seek(index152_3)
-                if s >= 0:
-                    return s
-            elif s == 1: 
                 LA152_8 = input.LA(1)
 
                  
@@ -26179,11 +26707,11 @@ class sdl92Parser(Parser):
                 input.seek(index152_8)
                 if s >= 0:
                     return s
-            elif s == 2: 
-                LA152_5 = input.LA(1)
+            elif s == 1: 
+                LA152_3 = input.LA(1)
 
                  
-                index152_5 = input.index()
+                index152_3 = input.index()
                 input.rewind()
                 s = -1
                 if (self.synpred198_sdl92()):
@@ -26193,10 +26721,10 @@ class sdl92Parser(Parser):
                     s = 1
 
                  
-                input.seek(index152_5)
+                input.seek(index152_3)
                 if s >= 0:
                     return s
-            elif s == 3: 
+            elif s == 2: 
                 LA152_7 = input.LA(1)
 
                  
@@ -26211,6 +26739,23 @@ class sdl92Parser(Parser):
 
                  
                 input.seek(index152_7)
+                if s >= 0:
+                    return s
+            elif s == 3: 
+                LA152_5 = input.LA(1)
+
+                 
+                index152_5 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred198_sdl92()):
+                    s = 9
+
+                elif (True):
+                    s = 1
+
+                 
+                input.seek(index152_5)
                 if s >= 0:
                     return s
             elif s == 4: 
@@ -26231,23 +26776,6 @@ class sdl92Parser(Parser):
                 if s >= 0:
                     return s
             elif s == 5: 
-                LA152_4 = input.LA(1)
-
-                 
-                index152_4 = input.index()
-                input.rewind()
-                s = -1
-                if (self.synpred198_sdl92()):
-                    s = 9
-
-                elif (True):
-                    s = 1
-
-                 
-                input.seek(index152_4)
-                if s >= 0:
-                    return s
-            elif s == 6: 
                 LA152_6 = input.LA(1)
 
                  
@@ -26262,6 +26790,23 @@ class sdl92Parser(Parser):
 
                  
                 input.seek(index152_6)
+                if s >= 0:
+                    return s
+            elif s == 6: 
+                LA152_4 = input.LA(1)
+
+                 
+                index152_4 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred198_sdl92()):
+                    s = 9
+
+                elif (True):
+                    s = 1
+
+                 
+                input.seek(index152_4)
                 if s >= 0:
                     return s
 
@@ -26523,28 +27068,28 @@ class sdl92Parser(Parser):
     # lookup tables for DFA #162
 
     DFA162_eot = DFA.unpack(
-        u"\24\uffff"
+        u"\23\uffff"
         )
 
     DFA162_eof = DFA.unpack(
-        u"\13\uffff\1\16\10\uffff"
+        u"\23\uffff"
         )
 
     DFA162_min = DFA.unpack(
-        u"\1\13\12\uffff\1\6\1\13\4\uffff\1\13\2\uffff"
+        u"\1\13\12\uffff\2\0\6\uffff"
         )
 
     DFA162_max = DFA.unpack(
-        u"\1\u00b2\12\uffff\1\u00d9\1\u00b3\4\uffff\1\u00d4\2\uffff"
+        u"\1\u00b2\12\uffff\2\0\6\uffff"
         )
 
     DFA162_accept = DFA.unpack(
         u"\1\uffff\1\1\1\2\1\3\1\4\1\5\1\6\1\7\1\10\1\11\1\12\2\uffff\1\13"
-        u"\1\14\1\15\1\16\1\uffff\1\20\1\17"
+        u"\1\14\1\15\1\16\1\17\1\20"
         )
 
     DFA162_special = DFA.unpack(
-        u"\24\uffff"
+        u"\13\uffff\1\0\1\1\6\uffff"
         )
 
             
@@ -26561,22 +27106,12 @@ class sdl92Parser(Parser):
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\16\12\uffff\1\16\1\uffff\2\16\3\uffff\1\16\1\uffff"
-        u"\1\16\2\uffff\1\16\1\uffff\1\16\2\uffff\1\16\6\uffff\1\16\5\uffff"
-        u"\1\16\2\uffff\1\16\2\uffff\1\16\4\uffff\1\16\3\uffff\1\16\12\uffff"
-        u"\1\16\2\uffff\2\16\1\uffff\1\16\3\uffff\1\16\3\uffff\1\16\2\uffff"
-        u"\2\16\5\uffff\1\16\5\uffff\1\16\17\uffff\1\16\1\uffff\2\16\1\uffff"
-        u"\5\16\1\uffff\1\16\3\uffff\6\16\1\uffff\7\16\1\uffff\13\16\23\uffff"
-        u"\1\16\30\uffff\1\16\7\uffff\1\15\1\16\1\uffff\1\16\1\uffff\1\16"),
-        DFA.unpack(u"\1\22\33\uffff\1\22\24\uffff\1\22\36\uffff\1\22\37"
-        u"\uffff\1\22\31\uffff\1\21\13\uffff\5\22\1\20\13\uffff\1\22\1\17"),
+        DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u"\1\uffff"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\23\33\uffff\1\23\5\uffff\1\23\16\uffff\1\23\36\uffff"
-        u"\1\23\37\uffff\1\23\12\uffff\1\23\1\uffff\1\22\14\uffff\1\23\5"
-        u"\uffff\1\23\4\uffff\6\23\14\uffff\1\23\1\22\40\uffff\1\22"),
         DFA.unpack(u""),
         DFA.unpack(u"")
     ]
@@ -26587,6 +27122,62 @@ class sdl92Parser(Parser):
         pass
 
 
+        def specialStateTransition(self_, s, input):
+            # convince pylint that my self_ magic is ok ;)
+            # pylint: disable-msg=E0213
+
+            # pretend we are a member of the recognizer
+            # thus semantic predicates can be evaluated
+            self = self_.recognizer
+
+            _s = s
+
+            if s == 0: 
+                LA162_11 = input.LA(1)
+
+                 
+                index162_11 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred223_sdl92()):
+                    s = 13
+
+                elif (self.synpred224_sdl92()):
+                    s = 14
+
+                 
+                input.seek(index162_11)
+                if s >= 0:
+                    return s
+            elif s == 1: 
+                LA162_12 = input.LA(1)
+
+                 
+                index162_12 = input.index()
+                input.rewind()
+                s = -1
+                if (self.synpred225_sdl92()):
+                    s = 15
+
+                elif (self.synpred226_sdl92()):
+                    s = 16
+
+                elif (self.synpred228_sdl92()):
+                    s = 17
+
+                elif (True):
+                    s = 18
+
+                 
+                input.seek(index162_12)
+                if s >= 0:
+                    return s
+
+            if self._state.backtracking >0:
+                raise BacktrackingFailed
+            nvae = NoViableAltException(self_.getDescription(), 162, _s, input)
+            self_.error(nvae)
+            raise nvae
     # lookup tables for DFA #171
 
     DFA171_eot = DFA.unpack(
@@ -27035,9 +27626,9 @@ class sdl92Parser(Parser):
     FOLLOW_ANY_in_question7669 = frozenset([1])
     FOLLOW_closed_range_in_range_condition7712 = frozenset([1])
     FOLLOW_open_range_in_range_condition7716 = frozenset([1])
-    FOLLOW_INT_in_closed_range7759 = frozenset([212])
-    FOLLOW_212_in_closed_range7761 = frozenset([123])
-    FOLLOW_INT_in_closed_range7765 = frozenset([1])
+    FOLLOW_expression_in_closed_range7759 = frozenset([212])
+    FOLLOW_212_in_closed_range7761 = frozenset([11, 39, 45, 60, 91, 123, 134, 149, 155, 160, 161, 162, 163, 164, 165, 178])
+    FOLLOW_expression_in_closed_range7765 = frozenset([1])
     FOLLOW_constant_in_open_range7813 = frozenset([1])
     FOLLOW_EQ_in_open_range7853 = frozenset([11, 39, 45, 60, 91, 123, 134, 149, 155, 160, 161, 162, 163, 164, 165, 178])
     FOLLOW_NEQ_in_open_range7855 = frozenset([11, 39, 45, 60, 91, 123, 134, 149, 155, 160, 161, 162, 163, 164, 165, 178])
@@ -27440,6 +28031,7 @@ class sdl92Parser(Parser):
     FOLLOW_range_condition_in_synpred147_sdl927454 = frozenset([1])
     FOLLOW_expression_in_synpred151_sdl927591 = frozenset([1])
     FOLLOW_informal_text_in_synpred152_sdl927632 = frozenset([1])
+    FOLLOW_closed_range_in_synpred153_sdl927712 = frozenset([1])
     FOLLOW_COMMA_in_synpred182_sdl929088 = frozenset([11, 39, 45, 60, 91, 123, 134, 149, 155, 160, 161, 162, 163, 164, 165, 178])
     FOLLOW_ground_expression_in_synpred182_sdl929092 = frozenset([1])
     FOLLOW_IMPLIES_in_synpred186_sdl929352 = frozenset([11, 39, 45, 60, 91, 123, 134, 149, 155, 160, 161, 162, 163, 164, 165, 178])
@@ -27464,6 +28056,27 @@ class sdl92Parser(Parser):
     FOLLOW_R_PAREN_in_synpred209_sdl929751 = frozenset([1])
     FOLLOW_213_in_synpred210_sdl929789 = frozenset([149])
     FOLLOW_field_name_in_synpred210_sdl929791 = frozenset([1])
+    FOLLOW_ID_in_synpred223_sdl9210164 = frozenset([212])
+    FOLLOW_212_in_synpred223_sdl9210166 = frozenset([11, 39, 45, 60, 91, 123, 134, 149, 155, 160, 161, 162, 163, 164, 165, 178])
+    FOLLOW_expression_in_synpred223_sdl9210168 = frozenset([1])
+    FOLLOW_ID_in_synpred224_sdl9210206 = frozenset([1])
+    FOLLOW_L_BRACKET_in_synpred225_sdl9210257 = frozenset([179])
+    FOLLOW_R_BRACKET_in_synpred225_sdl9210259 = frozenset([1])
+    FOLLOW_L_BRACKET_in_synpred226_sdl9210303 = frozenset([166])
+    FOLLOW_MANTISSA_in_synpred226_sdl9210321 = frozenset([123])
+    FOLLOW_INT_in_synpred226_sdl9210325 = frozenset([136])
+    FOLLOW_COMMA_in_synpred226_sdl9210327 = frozenset([167])
+    FOLLOW_BASE_in_synpred226_sdl9210345 = frozenset([123])
+    FOLLOW_INT_in_synpred226_sdl9210349 = frozenset([136])
+    FOLLOW_COMMA_in_synpred226_sdl9210351 = frozenset([168])
+    FOLLOW_EXPONENT_in_synpred226_sdl9210369 = frozenset([123])
+    FOLLOW_INT_in_synpred226_sdl9210373 = frozenset([179])
+    FOLLOW_R_BRACKET_in_synpred226_sdl9210391 = frozenset([1])
+    FOLLOW_L_BRACKET_in_synpred228_sdl9210448 = frozenset([149])
+    FOLLOW_named_value_in_synpred228_sdl9210466 = frozenset([136, 179])
+    FOLLOW_COMMA_in_synpred228_sdl9210469 = frozenset([149])
+    FOLLOW_named_value_in_synpred228_sdl9210471 = frozenset([136, 179])
+    FOLLOW_R_BRACKET_in_synpred228_sdl9210491 = frozenset([1])
 
 
 

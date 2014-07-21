@@ -98,7 +98,7 @@ except ImportError:
     pass
 
 __all__ = ['opengeode']
-__version__ = '0.993'
+__version__ = '0.994'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -284,6 +284,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             process, procedure or composite state
         '''
         super(SDL_Scene, self).__init__()
+        # Reference to the parent scene
+        self.parent_scene = None
         self.mode = 'idle'
         self.context = context
         self.allowed_symbols = ACTIONS[context]
@@ -401,6 +403,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def render_everything(self, ast):
         ''' Render a process and its children scenes, recursively '''
+        already_created = []
         def recursive_render(content, dest_scene):
             ''' Process the rendering in scenes and nested scenes '''
             if isinstance(content, ogAST.Process):
@@ -417,11 +420,16 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # Render nested scenes, recursively:
             for each in (item for item in dest_scene.visible_symb
                          if item.nested_scene):
+                if isinstance(each.nested_scene, ogAST.CompositeState) \
+                        and (not each.nested_scene.statename
+                             or each.nested_scene in already_created):
+                    # Ignore nested state scenes that already exist
+                    continue
                 subscene = \
                         self.create_subscene(each.__class__.__name__.lower())
-                #subscene = SDL_Scene(context=each.__class__.__name__.lower())
-                #subscene.messages_window = self.messages_window
+                already_created.append(each.nested_scene)
                 subscene.name = unicode(each)
+                LOG.debug('Created scene: {}'.format(subscene.name))
                 recursive_render(each.nested_scene.content, subscene)
                 each.nested_scene = subscene
 
@@ -429,8 +437,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # (Needed for the symbol shape to have dashed lines)
             for each in dest_scene.states:
                 if unicode(each).lower() in \
-                        dest_scene.composite_states.viewkeys() and not \
-                        each.nested_scene:
+                        dest_scene.composite_states.viewkeys():
                     each.nested_scene = dest_scene.composite_states[
                                                          unicode(each).lower()]
 
@@ -986,6 +993,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         ''' Create a new SDL scene, e.g. for nested symbols '''
         subscene = SDL_Scene(context=context)
         subscene.messages_window = self.messages_window
+        subscene.parent_scene = self
         return subscene
 
 
