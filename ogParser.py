@@ -711,39 +711,47 @@ def compare_types(type_a, type_b):
        otherwise raise TypeError
     '''
     LOG.debug('[compare_types]' + str(type_a) + ' and ' + str(type_b) + ': ')
+
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
+
     if type_a == type_b:
         return
+
     # Check if both types have basic compatibility
-    simple_types = [elem for elem in (type_a, type_b) if elem.kind in
-                       ('IntegerType', 'BooleanType', 'RealType', 'StringType',
-                        'SequenceOfType', 'Integer32Type', 'OctetStringType')]
-    if len(simple_types) < 2:
-        # Either A or B is not a basic type - cannot be compatible
-        raise TypeError('One of the types is not a basic type: '
-                + type_name(type_a) + ' or ' + type_name(type_b))
-    elif type_a.kind == type_b.kind:
+
+    simple_types = (
+        'IntegerType',
+        'BooleanType',
+        'RealType',
+        'StringType',
+        'SequenceOfType',
+        'Integer32Type',
+        'OctetStringType'
+    )
+
+    for ty in (type_a, type_b):
+        if ty.kind not in simple_types:
+            raise TypeError('Type {} is not a basic type'.format(type_name(ty)))
+
+    if type_a.kind == type_b.kind:
         if type_a.kind == 'SequenceOfType':
             if type_a.Min == type_b.Min and type_a.Max == type_b.Max:
                 compare_types(type_a.type, type_b.type)
                 return
             else:
                 raise TypeError('Incompatible arrays')
+        # TODO: Check that OctetString types have compatible range
         return
-    elif type_a.kind.endswith('StringType') and type_b.kind.endswith('StringType'):
-        # Allow Octet String values to be printable strings.. for convenience
+    elif is_string(type_a) and is_string(type_b):
         return
-    elif not(type_a.kind in ('IntegerType', 'Integer32Type') and
-             type_b.kind in ('IntegerType', 'Integer32Type')):
-        raise TypeError('One type is an integer, not the other one')
-    elif any(side.kind == 'RealType' for side in (type_a, type_b)):
-        raise TypeError('One type is an REAL, not the other one')
-    elif all(side.kind.startswith('Integer') for side in (type_a, type_b)) \
-            or all(side.kind == 'RealType' for side in (type_a, type_b)):
-        pass
+    elif is_integer(type_a) and is_integer(type_b):
+        return
     else:
-        return
+        raise TypeError('Incompatible types {} and {}'.format(
+            type_name(type_a),
+            type_name(type_b)
+        ))
 
 
 def find_variable(var, context):
@@ -1038,17 +1046,23 @@ def logic_expression(root, context):
 
     left_bty = find_basic_type(expr.left.exprType)
     right_bty = find_basic_type(expr.right.exprType)
+
     for bty in left_bty, right_bty:
+        if shortcircuit and bty.kind != 'BooleanType':
+            msg = 'Shortcircuit operators only work with type Boolean'
+            errors.append(error(root, msg))
+            break
+
         if bty.kind in ('BooleanType', 'BitStringType'):
             continue
         elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
             continue
         else:
-            msg = 'Bitwise operators only work with booleans '\
-                  'and arrays of booleans'
+            msg = 'Bitwise operators only work with Booleans, ' \
+                  'SequenceOf Booleans or BitStrings'
             errors.append(error(root, msg))
+            break
 
-    # TODO: Is this correct?
     if left_bty.kind == right_bty.kind == 'BooleanType':
         expr.exprType = BOOLEAN
     else:
@@ -1161,7 +1175,11 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    # TODO: Check types
+    for bty in (find_basic_type(expr.left.exprType), find_basic_type(expr.right.exprType)):
+        if bty.kind != 'SequenceOfType' and not is_string(bty):
+            msg = 'Append can only be applied to types SequenceOf or String'
+            errors.append(error(root, msg))
+            break
 
     expr.exprType = expr.left.exprType
     return expr, errors, warnings
@@ -1387,7 +1405,7 @@ def primary_index(root, context):
     if receiver_bty.kind == 'SequenceOfType':
         node.exprType = receiver_bty.type
     else:
-        msg = 'Element {} cannot have an index'.format(receiver)
+        msg = 'Index can only be applied to type SequenceOf'
         errors.append(error(root, msg))
 
     return node, errors, warnings
@@ -1432,7 +1450,7 @@ def primary_substring(root, context):
                     min0, max1, basic.Min, basic.Max)
             errors.append(error(root, msg))
     else:
-        msg = 'Element {} cannot have a substring'.format(receiver)
+        msg = 'Substring can only be applied to types SequenceOf or String'
         errors.append(error(root, msg))
 
     return node, errors, warnings
@@ -3246,7 +3264,7 @@ def assign(root, context):
             expr.left.inputString + ', type= ' +
             type_name(expr.left.exprType) + '), right (' +
             expr.right.inputString + ', type= ' +
-            (type_name(expr.right.exprType) 
+            (type_name(expr.right.exprType)
                 if expr.right.exprType else 'Unknown') + ') ' + str(err))
     else:
         expr.right.exprType = expr.left.exprType
