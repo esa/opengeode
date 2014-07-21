@@ -866,6 +866,8 @@ def _primary_call(prim):
         return generate_float(args)
     elif name == 'power':
         return generate_power(args)
+    elif name == 'num':
+        return generate_num(args)
 
 
 def generate_length(params):
@@ -921,6 +923,11 @@ def generate_power(params):
         return ctx.builder.fptosi(res_val, ctx.i64)
     else:
         return ctx.builder.call(ctx.funcs['powi'], [left_val, right_conv])
+
+
+def generate_num(params):
+    ''' Generate the code for the built-in num operation'''
+    return expression(params[0])
 
 
 @expression.register(ogAST.ExprPlus)
