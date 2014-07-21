@@ -2794,8 +2794,13 @@ def alternative_part(root, parent, context):
             coord = True
         elif child.type == lexer.CLOSED_RANGE:
             ans.kind = 'closed_range'
-            ans.closedRange = [float(child.getChild(0).toString()),
-                              float(child.getChild(1).toString())]
+            cl0, err0, warn0 = expression(child.getChild(0), context)
+            cl1, err1, warn1 = expression(child.getChild(1), context)
+            errors.extend(err0)
+            errors.extend(err1)
+            warnings.extend(warn0)
+            warnings.extend(warn1)
+            ans.closedRange = [cl0, cl1]
         elif child.type == lexer.CONSTANT:
             ans.kind = 'constant'
             ans.constant, err, warn = expression(
@@ -2896,23 +2901,43 @@ def decision(root, parent, context):
         else:
             warnings.append(['Unsupported DECISION child type: ' +
                 str(child.type), [dec.pos_x, dec.pos_y]])
-        # Make type checks to be sure that question and answers are compatible
-        for ans in dec.answers:
-            if ans.kind in ('constant', 'open_range'):
-                expr = ans.openRangeOp()
+    # Make type checks to be sure that question and answers are compatible
+    for ans in dec.answers:
+        if ans.kind in ('constant', 'open_range'):
+            expr = ans.openRangeOp()
+            expr.left = dec.question
+            expr.right = ans.constant
+            try:
+                fix_expression_types(expr, context)
+                if dec.question.exprType == UNKNOWN_TYPE:
+                    dec.question = expr.left
+                ans.constant = expr.right
+            except (AttributeError, TypeError) as err:
+                errors.append('Types are incompatible in DECISION: '
+                    'question (' + expr.left.inputString + ', type= ' +
+                    type_name(expr.left.exprType) + '), answer (' +
+                    expr.right.inputString + ', type= ' +
+                    type_name(expr.right.exprType) + ') ' + str(err))
+        elif ans.kind == 'closed_range':
+            if not is_numeric(dec.question.exprType):
+                errors.append('Closed range are only for numerical types')
+                continue
+            for ast_type, idx in zip((ogAST.ExprGe, ogAST.ExprLe), (0, 1)):
+                expr = ast_type()
                 expr.left = dec.question
-                expr.right = ans.constant
+                expr.right = ans.closedRange[idx]
                 try:
                     fix_expression_types(expr, context)
                     if dec.question.exprType == UNKNOWN_TYPE:
                         dec.question = expr.left
-                    ans.constant = expr.right
+                    ans.closedRange[idx] = expr.right
                 except (AttributeError, TypeError) as err:
                     errors.append('Types are incompatible in DECISION: '
                         'question (' + expr.left.inputString + ', type= ' +
                         type_name(expr.left.exprType) + '), answer (' +
                         expr.right.inputString + ', type= ' +
                         type_name(expr.right.exprType) + ') ' + str(err))
+
     return dec, errors, warnings
 
 

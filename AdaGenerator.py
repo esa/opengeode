@@ -1374,9 +1374,22 @@ def _decision(dec):
             code.extend(stmt)
             local_decl.extend(tr_decl)
             sep = 'elsif '
-        elif a.kind == 'close_range':
+        elif a.kind == 'closed_range':
+            cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0])
+            cl1_stmts, cl1_str, cl1_decl = expression(a.closedRange[1])
+            code.extend(cl0_stmts)
+            local_decl.extend(cl0_decl)
+            code.extend(cl1_stmts)
+            local_decl.extend(cl1_decl)
+            code.append('{sep} {dec} >= {cl0} and {dec} <= {cl1} then'
+                        .format(sep=sep, dec=q_str, cl0=cl0_str, cl1=cl1_str))
+            if a.transition:
+                stmt, tr_decl = generate(a.transition)
+            else:
+                stmt, tr_decl = ['null;'], []
+            code.extend(stmt)
+            local_decl.extend(tr_decl)
             sep = 'elsif '
-            # TODO support close_range
         elif a.kind == 'informal_text':
             continue
         elif a.kind == 'else':
