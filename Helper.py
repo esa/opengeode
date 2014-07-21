@@ -90,7 +90,7 @@ def flatten(process, sep=u'_'):
         elif term.inputString.strip() == '-':
             term.candidate_id = defaultdict(list)
             for each in term.possible_states:
-                if each in (st.statename.lower()
+                if each.lower() in (st.statename.lower()
                             for st in context.composite_states):
                     term.candidate_id[each + sep + u'START'] = \
                                        [st for st in process.mapping.viewkeys()

@@ -8,7 +8,7 @@ test-ada:
 
 flake8:
 	@echo Generating flake8_report file
-	flake8 opengeode.py sdlSymbols.py genericSymbols.py ogParser.py AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py undoCommands.py  Connectors.py Asn1scc.py Helper.py Statechart.py >flake8_report
+	flake8 opengeode.py Pr.py sdlSymbols.py genericSymbols.py ogParser.py AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py undoCommands.py  Connectors.py Asn1scc.py Helper.py Statechart.py >flake8_report
 
 coverage:
 	make -C tests/regression coverage
@@ -20,7 +20,7 @@ compile-all:
 
 install: compile-all
 	mkdir -p opengeode
-	for f in AdaGenerator.py __init__.py genericSymbols.py icons.py ogAST.py ogParser.py opengeode.py Renderer.py samnmax.py sdl92Lexer.py sdl92Parser.py sdlSymbols.py undoCommands.py Clipboard.py Statechart.py LlvmGenerator.py Lander.py Helper.py Connectors.py Asn1scc.py; do echo Installing $$f && cp $$f opengeode; done
+	for f in AdaGenerator.py __init__.py Pr.py genericSymbols.py icons.py ogAST.py ogParser.py opengeode.py Renderer.py samnmax.py sdl92Lexer.py sdl92Parser.py sdlSymbols.py undoCommands.py Clipboard.py Statechart.py LlvmGenerator.py Lander.py Helper.py Connectors.py Asn1scc.py; do echo Installing $$f && cp $$f opengeode; done
 	python setup.py install
 
 publish: install
