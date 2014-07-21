@@ -1159,57 +1159,46 @@ def _append(expr):
     bty = find_basic_type(expr.exprType)
 
     if bty.kind in ('SequenceOfType', 'StringType', 'OctetStringType'):
-        func = ctx.builder.basic_block.function
+        res_ty = ctx.type_of(expr.exprType)
+        elem_ty = res_ty.elements[1].element
+        elem_size_val = core.Constant.sizeof(elem_ty)
 
-        body_block = func.append_basic_block('append:body')
-        next_block = func.append_basic_block('append:next')
-        end_block = func.append_basic_block('append:end')
+        res_ptr = ctx.builder.alloca(res_ty)
+        res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
+        res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
 
-        res_struct_ptr = ctx.builder.alloca(ctx.type_of(expr.exprType))
-        left_struct_ptr = expression(expr.left)
-        right_struct_ptr = expression(expr.right)
-
-        generate_assign(res_struct_ptr, left_struct_ptr)
-
-        left_len_ptr = ctx.builder.gep(left_struct_ptr, [ctx.zero, ctx.zero])
+        left_ptr = expression(expr.left)
+        left_len_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.zero])
+        left_arr_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.one])
         left_len_val = ctx.builder.load(left_len_ptr)
-        right_len_ptr = ctx.builder.gep(right_struct_ptr, [ctx.zero, ctx.zero])
+
+        right_ptr = expression(expr.right)
+        right_len_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero])
+        right_arr_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.one])
         right_len_val = ctx.builder.load(right_len_ptr)
 
-        res_len_ptr = ctx.builder.gep(res_struct_ptr, [ctx.zero, ctx.zero])
         res_len_val = ctx.builder.add(left_len_val, right_len_val)
         ctx.builder.store(res_len_val, res_len_ptr)
 
-        right_idx_ptr = ctx.builder.alloca(ctx.i32)
-        ctx.builder.store(ctx.zero, right_idx_ptr)
+        ctx.builder.call(ctx.funcs['memcpy'], [
+            ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
+            ctx.builder.bitcast(left_arr_ptr, ctx.i8_ptr),
+            ctx.builder.mul(elem_size_val, ctx.builder.zext(left_len_val, ctx.i64)),
+            core.Constant.int(ctx.i32, 0),
+            core.Constant.int(ctx.i1, 0)
+        ])
 
-        ctx.builder.branch(body_block)
+        res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one, left_len_val])
 
-        # body block
-        ctx.builder.position_at_end(body_block)
+        ctx.builder.call(ctx.funcs['memcpy'], [
+            ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
+            ctx.builder.bitcast(right_arr_ptr, ctx.i8_ptr),
+            ctx.builder.mul(elem_size_val, ctx.builder.zext(right_len_val, ctx.i64)),
+            core.Constant.int(ctx.i32, 0),
+            core.Constant.int(ctx.i1, 0)
+        ])
 
-        right_idx_val = ctx.builder.load(right_idx_ptr)
-        right_elem_ptr = ctx.builder.gep(right_struct_ptr, [ctx.zero, ctx.one, right_idx_val])
-        right_elem_val = ctx.builder.load(right_elem_ptr)
-
-        res_idx_val = ctx.builder.add(left_len_val, right_idx_val)
-        res_elem_ptr = ctx.builder.gep(res_struct_ptr, [ctx.zero, ctx.one, res_idx_val])
-        ctx.builder.store(right_elem_val, res_elem_ptr)
-
-        ctx.builder.branch(next_block)
-
-        # next block
-        ctx.builder.position_at_end(next_block)
-
-        right_idx_tmp_val = ctx.builder.add(right_idx_val, ctx.one)
-        ctx.builder.store(right_idx_tmp_val, right_idx_ptr)
-        end_cond_val = ctx.builder.icmp(core.ICMP_SGE, right_idx_tmp_val, right_len_val)
-
-        ctx.builder.cbranch(end_cond_val, end_block, body_block)
-
-        # end block
-        ctx.builder.position_at_end(end_block)
-        return res_struct_ptr
+        return res_ptr
 
     else:
         raise NotImplementedError
