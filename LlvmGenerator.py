@@ -814,7 +814,38 @@ def _primary_index(prim):
 @expression.register(ogAST.PrimSubstring)
 def _primary_substring(prim):
     ''' Generate the code for a Substring expression '''
-    raise NotImplementedError
+    bty = find_basic_type(prim.exprType)
+    if bty.Min == bty.Max:
+        raise NotImplementedError
+
+    range_l_val = expression(prim.value[1]['substring'][0])
+    range_r_val = expression(prim.value[1]['substring'][1])
+    len_val = ctx.builder.sub(range_r_val, range_l_val)
+
+    recvr_ptr = expression(prim.value[0])
+    recvr_arr_ptr = ctx.builder.gep(recvr_ptr, [ctx.zero, ctx.one, range_l_val])
+
+    recvr_ty = recvr_ptr.type.pointee
+    elem_ty = recvr_ty.elements[1].element
+
+    res_ptr = ctx.builder.alloca(recvr_ty)
+    res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
+    res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
+
+    ctx.builder.store(ctx.builder.trunc(len_val, ctx.i32), res_len_ptr)
+
+    elem_size_val = core.Constant.sizeof(elem_ty)
+
+    size = ctx.builder.mul(elem_size_val, len_val)
+    align = core.Constant.int(ctx.i32, 0)
+    volatile = core.Constant.int(ctx.i1, 0)
+
+    recvr_arr_ptr = ctx.builder.bitcast(recvr_arr_ptr, ctx.i8_ptr)
+    res_arr_ptr = ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr)
+
+    ctx.builder.call(ctx.funcs['memcpy'], [res_arr_ptr, recvr_arr_ptr, size, align, volatile])
+
+    return res_ptr
 
 
 @expression.register(ogAST.PrimCall)
