@@ -1040,16 +1040,22 @@ def logic_expression(root, context):
 
     left_bty = find_basic_type(expr.left.exprType)
     right_bty = find_basic_type(expr.right.exprType)
+
     for bty in left_bty, right_bty:
+        if shortcircuit and bty.kind != 'BooleanType':
+            msg = 'Shortcircuit operators only work with type Boolean'
+            errors.append(error(root, msg))
+            break
+
         if bty.kind in ('BooleanType', 'BitStringType'):
             continue
         elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
             continue
         else:
-            msg = 'Bitwise operators only work with booleans and arrays of booleans'
+            msg = 'Bitwise operators only work with Booleans, SequenceOf Booleans or BitStrings'
             errors.append(error(root, msg))
+            break
 
-    # TODO: Is this correct?
     if left_bty.kind == right_bty.kind == 'BooleanType':
         expr.exprType = BOOLEAN
     else:
