@@ -533,7 +533,7 @@ def check_type_compatibility(primary, typeRef, context):
         return
     actual_type = find_basic_type(typeRef)
     LOG.debug("[check_type_compatibility] "
-              "checking if {value} is of type {typeref}: "
+              "checking if {value} is of type {typeref}"
               .format(value=primary.inputString, typeref=type_name(typeRef)))
 
     if (isinstance(primary, ogAST.PrimEnumeratedValue)
@@ -785,23 +785,44 @@ def find_variable(var, context):
     raise AttributeError('Variable {var} not defined'.format(var=var))
 
 
+def fix_enumerated_and_choice(expr_enum, context):
+    ''' If left side of the expression is of Enumerated or Choice type,
+        check if right side is a literal of that sort, and update type '''
+    kind = find_basic_type(expr_enum.left.exprType).kind
+    if kind == 'EnumeratedType':
+        prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right)
+    elif kind == 'ChoiceEnumeratedType':
+        prim = ogAST.PrimChoiceDeterminant(primary=expr_enum.right)
+    try:
+        check_type_compatibility(prim, expr_enum.left.exprType, context)
+        expr_enum.right = prim
+        expr_enum.right.exprType = expr_enum.left.exprType
+    except (UnboundLocalError, AttributeError, TypeError):
+        pass
+    else:
+        LOG.debug('Fixed enumerated/choice: {}'.format(expr_enum.inputString))
+
+
 def fix_expression_types(expr, context):
     ''' Check/ensure type consistency in binary expressions '''
-    # If a side of the expression is of Enumerated or Choice type, check if
-    # the other side is a literal of that sort, and change type accordingly
-    for side in permutations(('left', 'right')):
-        side_type = find_basic_type(getattr(expr, side[0]).exprType).kind
-        if side_type == 'EnumeratedType':
-            prim = ogAST.PrimEnumeratedValue(primary=getattr(expr, side[1]))
-        elif side_type == 'ChoiceEnumeratedType':
-            prim = ogAST.PrimChoiceDeterminant(primary=getattr(expr, side[1]))
-        try:
-            check_type_compatibility(prim, getattr(expr, side[0]).exprType,
-                                     context)
-            setattr(expr, side[1], prim)
-            getattr(expr, side[1]).exprType = getattr(expr, side[0]).exprType
-        except (UnboundLocalError, AttributeError, TypeError):
-            pass
+    for _ in range(2):
+        # Check if an raw enumerated value is of a reference type
+        fix_enumerated_and_choice(expr, context)
+        expr.right, expr.left = expr.left, expr.right
+
+#   for side in permutations(('left', 'right')):
+#       side_type = find_basic_type(getattr(expr, side[0]).exprType).kind
+#       if side_type == 'EnumeratedType':
+#           prim = ogAST.PrimEnumeratedValue(primary=getattr(expr, side[1]))
+#       elif side_type == 'ChoiceEnumeratedType':
+#           prim = ogAST.PrimChoiceDeterminant(primary=getattr(expr, side[1]))
+#       try:
+#           check_type_compatibility(prim, getattr(expr, side[0]).exprType,
+#                                    context)
+#           setattr(expr, side[1], prim)
+#           getattr(expr, side[1]).exprType = getattr(expr, side[0]).exprType
+#       except (UnboundLocalError, AttributeError, TypeError):
+#           pass
 
     # If a side type remains unknown, check if it is an ASN.1 constant
     for side in permutations(('left', 'right')):
@@ -845,6 +866,7 @@ def fix_expression_types(expr, context):
         unknown = [uk_expr for uk_expr in expr.right, expr.left
                    if uk_expr.exprType == UNKNOWN_TYPE]
         if unknown:
+            #print traceback.print_stack()
             raise TypeError('Cannot resolve type of "{}"'
                             .format(unknown[0].inputString))
 
@@ -950,7 +972,7 @@ def primary_variable(root, context):
 
 
 def binary_expression(root, context):
-    ''' Binary expression analysys '''
+    ''' Binary expression analysis '''
     errors, warnings = [], []
 
     ExprNode = EXPR_NODE[root.type]
@@ -1140,6 +1162,7 @@ def in_expression(root, context):
     expr.exprType = BOOLEAN
 
     # check that left part is a SEQUENCE OF or a string
+    left_type = expr.left.exprType
     container_basic_type = find_basic_type(expr.left.exprType)
     if container_basic_type.kind == 'SequenceOfType':
         ref_type = container_basic_type.type
@@ -1149,8 +1172,18 @@ def in_expression(root, context):
         msg = 'IN expression: right part must be a list'
         errors.append(error(root, msg))
         return expr, errors, warnings
+    expr.left.exprType = ref_type
 
-    compare_types(expr.right.exprType, ref_type)
+    if find_basic_type(ref_type).kind == 'EnumeratedType':
+        fix_enumerated_and_choice(expr, context)
+
+    expr.left.exprType = left_type
+
+    try:
+        compare_types(expr.right.exprType, ref_type)
+    except TypeError as err:
+        errors.append(error(root, str(err)))
+
     if expr.right.is_raw and expr.left.is_raw:
         # If both sides are raw (e.g. "3 in {1,2,3}"), evaluate expression
         bool_expr = ogAST.PrimBoolean()
@@ -1175,7 +1208,8 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    for bty in (find_basic_type(expr.left.exprType), find_basic_type(expr.right.exprType)):
+    for bty in (find_basic_type(expr.left.exprType),
+                find_basic_type(expr.right.exprType)):
         if bty.kind != 'SequenceOfType' and not is_string(bty):
             msg = 'Append can only be applied to types SequenceOf or String'
             errors.append(error(root, msg))

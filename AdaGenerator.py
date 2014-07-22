@@ -430,23 +430,19 @@ def write_statement(param, newline):
                 localstr = u'tmp{}{}str'.format(str(param.tmpVar), sep)
                 local.append(u'{} : String(1 .. {});'
                              .format(localstr, basic_type.Max))
-                range_len = u"{}.Data'Range".format(string) \
-                                if basic_type.Min == basic_type.Max \
-                                else "1 .. {}.Length".format(string)
-                code.extend([u"for i in {} loop".format(range_len),
-                             u"{tmp}(i) := Character'Val({st}.Data(i));"
+                if isinstance(param, ogAST.PrimSubstring):
+                    range_str = u"{}'Range".format(string)
+                elif basic_type.Min == basic_type.Max:
+                    range_str = u"{}.Data'Range".format(string)
+                    string += u".Data"
+                else:
+                    range_str = u"1 .. {}.Length".format(string)
+                    string += u".Data"
+                code.extend([u"for i in {} loop".format(range_str),
+                             u"{tmp}(i) := Character'Val({st}(i));"
                              .format(tmp=localstr, st=string, sep=sep),
                              u"end loop;"])
-#               if basic_type.Min != basic_type.Max:
-#                       code.extend(["if {string}.Length < {to} then"
-#                                    .format(string=string, to=basic_type.Max),
-#                        u"{tmp}({string}.Length + 1 .. {to}) "
-#                        u":= (others=>Character'Val(0));"
-#                                .format(tmp=localstr,
-#                                        string=string,
-#                                        to=basic_type.Max),
-#                                "end if;"])
-                string = u'{}({})'.format(localstr, range_len)
+                string = u'{}({})'.format(localstr, range_str)
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
@@ -664,9 +660,11 @@ def _task_forloop(task):
             list_stmt, list_str, list_local = expression(loop['list'])
             basic_type = find_basic_type(loop['list'].exprType)
             list_payload = list_str + string_payload(loop['list'], list_str)
-            range_cond = "{}'Range".format(list_payload)\
-                    if basic_type.Min == basic_type.Max\
-                    else "1..{}.Length".format(list_str)
+            if isinstance(loop['list'], ogAST.PrimSubstring) or \
+                    basic_type.Min == basic_type.Max:
+                range_str = u"{}'Range".format(list_payload)
+            else:
+                range_str = u"1 .. {}.Length".format(list_str)
             stmt.extend(list_stmt)
             local_decl.extend(list_local)
             stmt.extend(['declare',
@@ -675,7 +673,7 @@ def _task_forloop(task):
                          '',
                          'begin',
                          'for {it}_idx in {rc} loop'.format(it=loop['var'],
-                                                            rc=range_cond),
+                                                            rc=range_str),
                          '{it} := {var}({it}_idx);'.format(it=loop['var'],
                                                           var=list_payload)])
         try:
@@ -764,7 +762,11 @@ def _prim_call(prim):
         if min_length == max_length:
             ada_string += min_length
         else:
-            ada_string += ('Asn1Int({e}.Length)'.format(e=param_str))
+            if isinstance(exp, ogAST.PrimSubstring):
+                range_str = u"{}'Length".format(param_str)
+            else:
+                range_str = u"{}.Length".format(param_str)
+            ada_string += ('Asn1Int({})'.format(range_str))
     elif ident == 'present':
         # User wants to know what CHOICE element is present
         exp = params[0]
@@ -868,31 +870,6 @@ def _prim_substring(prim):
     stmts.extend(r2_stmts)
     local_decl.extend(r1_local)
     local_decl.extend(r2_local)
-
-#   # should we add 1 in case of numerical values? (see index)
-#   ada_string += '.Data({r1}..{r2})'.format(r1=r1_string, r2=r2_string)
-#   stmts.extend(r1_stmts)
-#   stmts.extend(r2_stmts)
-#   local_decl.extend(r1_local)
-#   local_decl.extend(r2_local)
-#
-#   local_decl.append('tmp{idx} : aliased asn1Scc{parent_type};'.format(
-#           idx=prim.value[1]['tmpVar'], parent_type=receiver_ty_name))
-#
-#   # XXX types with fixed length: substrings will not work
-#   if unicode.isnumeric(r1_string) and unicode.isnumeric(r2_string):
-#       length = int(r2_string) - int(r1_string) + 1
-#   else:
-#       length = ('{r2} - {r1} + 1'.format(r2=r2_string, r1=r1_string))
-#
-#   prim_basic = find_basic_type(prim.exprType)
-#   if int(prim_basic.Min) != int(prim_basic.Max):
-#       stmts.append('tmp{idx}.Length := {length};'.format(
-#           idx=prim.value[1]['tmpVar'], length=length))
-#
-#   stmts.append('tmp{idx}.Data(1..{length}) := {data};'.format(
-#       idx=prim.value[1]['tmpVar'], length=length, data=ada_string))
-#   ada_string = 'tmp{idx}'.format(idx=prim.value[1]['tmpVar'])
 
     return stmts, unicode(ada_string), local_decl
 
@@ -1082,7 +1059,7 @@ def _append(expr):
         length = unicode(int(expr.left.slen) + int(expr.right.slen))
     else:
         length = '{} + {}'.format(expr.left.slen, expr.right.slen)
-    stmts.append('{res}.Data(1..{length}) := {lid} & {rid};'
+    stmts.append('{res}.Data(1 .. {length}) := {lid} & {rid};'
                  .format(length=length,
                          res=ada_string,
                          lid=left_payload,
@@ -1110,12 +1087,16 @@ def _expr_in(expr):
     local_decl.extend(right_local)
     stmts.append("in_loop_{}:".format(ada_string))
     left_type = find_basic_type(expr.left.exprType)
-    if left_type.Min != left_type.Max:
-        stmts.append("for elem in 1..Integer({}.Length) loop"
-                     .format(left_str))
+    if isinstance(expr.left, ogAST.PrimSubstring):
+        len_str = u"{}'Length".format(left_str)
     else:
-        stmts.append("for elem in {}.Data'Range loop".format(left_str))
-    stmts.append("if {container}.Data(elem) = {pattern} then".format
+        len_str = u"{}.Length".format(left_str)
+        left_str += u".Data"
+    if left_type.Min != left_type.Max:
+        stmts.append("for elem in 1..{} loop".format(len_str))
+    else:
+        stmts.append("for elem in {}'Range loop".format(left_str))
+    stmts.append("if {container}(elem) = {pattern} then".format
             (container=left_str, pattern=right_str))
     stmts.append("{} := True;".format(ada_string))
     stmts.append("end if;")
@@ -1210,6 +1191,7 @@ def _if_then_else(ifThenElse):
     if resType.kind.startswith('Integer'):
         tmp_type = 'Asn1Int'
     elif resType.kind == 'StandardStringType':
+        print ifThenElse.value['then'].value
         then_str = ifThenElse.value['then'].value.replace("'", '"')
         else_str = ifThenElse.value['else'].value.replace("'", '"')
         lens = [len(then_str), len(else_str)]
