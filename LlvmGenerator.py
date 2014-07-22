@@ -1076,20 +1076,74 @@ def _logical(expr):
 
         ctx.builder.position_at_end(end_block)
         return ctx.builder.load(res_ptr)
+
     else:
-        left_val = expression(expr.left)
-        right_val = expression(expr.right)
+        bty = find_basic_type(expr.exprType)
 
-        ty = find_basic_type(expr.exprType)
-        if ty.kind != 'BooleanType':
-            raise NotImplementedError
+        if bty.kind == 'BooleanType':
+            left_val = expression(expr.left)
+            right_val = expression(expr.right)
+            if expr.operand == 'and':
+                return ctx.builder.and_(left_val, right_val)
+            elif expr.operand == 'or':
+                return ctx.builder.or_(left_val, right_val)
+            else:
+                return ctx.builder.xor(left_val, right_val)
 
-        if expr.operand == 'and':
-            return ctx.builder.and_(left_val, right_val)
-        elif expr.operand == 'or':
-            return ctx.builder.or_(left_val, right_val)
+        elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
+            func = ctx.builder.basic_block.function
+
+            body_block = func.append_basic_block('%s:body' % expr.operand)
+            next_block = func.append_basic_block('%s:next' % expr.operand)
+            end_block = func.append_basic_block('%s:end' % expr.operand)
+
+            left_ptr = expression(expr.left)
+            right_ptr = expression(expr.right)
+            res_ptr = ctx.builder.alloca(left_ptr.type.pointee)
+
+            array_ty = res_ptr.type.pointee.elements[0]
+            len_val = core.Constant.int(ctx.i32, array_ty.count)
+
+            idx_ptr = ctx.builder.alloca(ctx.i32)
+            ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
+
+            ctx.builder.branch(body_block)
+
+            # body block
+            ctx.builder.position_at_end(body_block)
+            idx_val = ctx.builder.load(idx_ptr)
+
+            left_elem_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.zero, idx_val])
+            left_elem_val = ctx.builder.load(left_elem_ptr)
+
+            right_elem_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero, idx_val])
+            right_elem_val = ctx.builder.load(right_elem_ptr)
+
+            if expr.operand == 'and':
+                res_elem_val = ctx.builder.and_(left_elem_val, right_elem_val)
+            elif expr.operand == 'or':
+                res_elem_val = ctx.builder.or_(left_elem_val, right_elem_val)
+            else:
+                res_elem_val = ctx.builder.xor(left_elem_val, right_elem_val)
+
+            res_elem_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero, idx_val])
+            ctx.builder.store(res_elem_val, res_elem_ptr)
+
+            ctx.builder.branch(next_block)
+
+            # next block
+            ctx.builder.position_at_end(next_block)
+            idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
+            ctx.builder.store(idx_tmp_val, idx_ptr)
+            end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, len_val)
+            ctx.builder.cbranch(end_cond_val, end_block, body_block)
+
+            # end block
+            ctx.builder.position_at_end(end_block)
+            return res_ptr
+
         else:
-            return ctx.builder.xor(left_val, right_val)
+            raise NotImplementedError
 
 
 @expression.register(ogAST.ExprNot)
