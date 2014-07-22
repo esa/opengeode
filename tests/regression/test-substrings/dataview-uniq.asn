@@ -39,6 +39,8 @@ MyChoice    ::= CHOICE {
 
 MySeqOf	    ::= SEQUENCE (SIZE (2)) OF MyEnum
 SeqInt      ::= SEQUENCE (SIZE(1..2)) OF T-UInt8
+SeqBool     ::= SEQUENCE (SIZE(2)) OF BOOLEAN
+SeqBool2    ::= SEQUENCE (SIZE(1..2)) OF BOOLEAN
 MyOctStr    ::= OCTET STRING (SIZE (3))
 String      ::= OCTET STRING (SIZE(0..100))
 
