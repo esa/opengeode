@@ -19,9 +19,19 @@ test-ada:
 	gnatlink -o testcase test.o myfunction.ali -lgnat
 	./testcase | diff expected -
 
+test-llvm:
+	../../../opengeode.py myfunction.pr system_structure.pr --check --llvm
+	asn1.exe -c dataview-uniq.asn -equal
+	llc myfunction.ll
+	clang -c myfunction.s
+	clang -c dataview-uniq.c
+	clang -c test_llvm.c
+	clang myfunction.o dataview-uniq.o test_llvm.o -o testcase
+	./testcase | diff expected -
+
 coverage:
 	coverage run  -p ../../../opengeode.py myfunction.pr system_structure.pr --toAda
 
-
 clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner bin *.wrn *.gpr datav*.? ber.c xer.c asn1crt.? acn.c real.c
+	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
+	bin *.wrn *.gpr datav*.? ber.c xer.c asn1crt.? acn.c real.c *.ll *.s testcase
