@@ -22,6 +22,7 @@ paths = [
     'regression/test13',
     'regression/test14',
     'regression/test15',
+    'regression/test-substrings',
 ]
 
 
