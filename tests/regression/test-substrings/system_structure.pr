@@ -1,0 +1,28 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM myfunction;
+
+	/* CIF Keep Specific Geode PARAMNAMES tutu */
+	SIGNAL start_something (T_Int32);
+
+	/* CIF Keep Specific Geode PARAMNAMES titi */
+	SIGNAL result_data (T_Int32);
+
+	CHANNEL c
+		FROM ENV TO myfunction WITH start_something;
+		FROM myfunction TO ENV WITH result_data;
+	ENDCHANNEL;
+
+	BLOCK myfunction;
+
+		SIGNALROUTE r
+			FROM ENV TO myfunction WITH start_something;
+			FROM myfunction TO ENV WITH result_data;
+
+		CONNECT c and r;
+
+		PROCESS myfunction REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;
