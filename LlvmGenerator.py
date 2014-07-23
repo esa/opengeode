@@ -128,7 +128,7 @@ class Context():
             llty = self._type_of_choice(name, basic_asn1ty)
         elif basic_asn1ty.kind == 'OctetStringType':
             llty = self._type_of_octetstring(name, basic_asn1ty)
-        elif basic_asn1ty.kind == 'StringType':
+        elif basic_asn1ty.kind in ('StringType', 'StandardStringType'):
             llty = ctx.i8_ptr
         else:
             raise NotImplementedError
@@ -502,7 +502,7 @@ def generate_input_signal(signal, inputs):
         if input:
             for var_name in input.parameters:
                 var_ptr = ctx.scope.resolve(str(var_name))
-                if is_struct_ptr(var_ptr):
+                if is_struct_ptr(var_ptr) or is_array_ptr(var_ptr):
                     generate_assign(var_ptr, func.args[0])
                 else:
                     generate_assign(var_ptr, ctx.builder.load(func.args[0]))
@@ -573,7 +573,7 @@ def generate_write(params):
             false_str_ptr = ctx.string_ptr('FALSE')
             str_ptr = ctx.builder.select(expr_val, true_str_ptr, false_str_ptr)
             ctx.builder.call(ctx.funcs['printf'], [str_ptr])
-        elif basic_ty.kind == 'StringType':
+        elif basic_ty.kind in ('StringType', 'StandardStringType'):
             fmt_str_ptr = ctx.string_ptr('%s')
             ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, expr_val])
         elif basic_ty.kind == 'OctetStringType':
@@ -1050,7 +1050,7 @@ def generate_assign(left, right):
     ''' Generate code for an assign from two LLVM values'''
     # This is extracted as an standalone function because is used by
     # multiple generation rules
-    if is_struct_ptr(left):
+    if is_struct_ptr(left) or is_array_ptr(left):
         size = core.Constant.sizeof(left.type.pointee)
         align = core.Constant.int(ctx.i32, 0)
         volatile = core.Constant.int(ctx.i1, 0)
@@ -1228,7 +1228,7 @@ def _append(expr):
     ''' Generate code for the APPEND construct: a // b '''
     bty = find_basic_type(expr.exprType)
 
-    if bty.kind in ('SequenceOfType', 'StringType', 'OctetStringType'):
+    if bty.kind in ('SequenceOfType', 'OctetStringType'):
         res_ty = ctx.type_of(expr.exprType)
         elem_ty = res_ty.elements[1].element
         elem_size_val = core.Constant.sizeof(elem_ty)
@@ -1384,7 +1384,7 @@ def _string_literal(primary):
     str_len = len(str(primary.value[1:-1]))
     str_ptr = ctx.string_ptr(str(primary.value[1:-1]))
 
-    if bty.kind == 'StringType':
+    if bty.kind in ('StringType', 'StandardStringType'):
         return str_ptr
 
     llty = ctx.type_of(primary.exprType)
@@ -1448,7 +1448,10 @@ def _if_then_else(ifthen):
 
     ctx.builder.position_at_end(end_block)
 
-    return res_ptr if is_struct_ptr(res_ptr) else ctx.builder.load(res_ptr)
+    if is_struct_ptr(res_ptr) or is_array_ptr(res_ptr):
+        return res_ptr
+    else:
+        return ctx.builder.load(res_ptr)
 
 
 @expression.register(ogAST.PrimSequence)
@@ -1723,6 +1726,10 @@ def _inner_procedure(proc):
 
 def is_struct_ptr(val):
     return val.type.kind == core.TYPE_POINTER and val.type.pointee.kind == core.TYPE_STRUCT
+
+
+def is_array_ptr(val):
+    return val.type.kind == core.TYPE_POINTER and val.type.pointee.kind == core.TYPE_ARRAY
 
 
 # TODO: Refactor this into the helper module
