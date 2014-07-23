@@ -1066,8 +1066,8 @@ def generate_assign(left, right):
 @expression.register(ogAST.ExprOr)
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
-def _logical(expr):
-    ''' Generate the code for a logical expression '''
+def _logic(expr):
+    ''' Generate the code for a logic expression '''
     if expr.shortcircuit:
         func = ctx.builder.basic_block.function
 
