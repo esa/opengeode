@@ -1519,32 +1519,27 @@ def _decision(dec):
     ''' Generate the code for a decision '''
     func = ctx.builder.basic_block.function
 
-    ans_cond_blocks = [func.append_basic_block('ans_cond') for ans in dec.answers]
-    end_block = func.append_basic_block('end')
+    ans_cond_blocks = [func.append_basic_block('dec:ans:cond') for ans in dec.answers]
+    end_block = func.append_basic_block('dec:end')
 
     ctx.builder.branch(ans_cond_blocks[0])
 
     for idx, ans in enumerate(dec.answers):
         ans_cond_block = ans_cond_blocks[idx]
-        if ans.transition:
-            ans_tr_block = func.append_basic_block('ans_tr')
+        true_block = func.append_basic_block('dec:ans:tr') if ans.transition else end_block
+        false_block = ans_cond_blocks[idx + 1] if idx < len(ans_cond_blocks) - 1 else end_block
+
         ctx.builder.position_at_end(ans_cond_block)
 
         if ans.kind in ['constant', 'open_range']:
-            next_block = ans_cond_blocks[idx + 1] if idx < len(ans_cond_blocks) - 1 else end_block
-
             expr = ans.openRangeOp()
             expr.left = dec.question
             expr.right = ans.constant
             expr_val = expression(expr)
 
-            true_cons = core.Constant.int(ctx.i1, 1)
-            cond_val = ctx.builder.icmp(core.ICMP_EQ, expr_val, true_cons)
-            ctx.builder.cbranch(cond_val, ans_tr_block if ans.transition else end_block, next_block)
+            ctx.builder.cbranch(expr_val, true_block, false_block)
 
         elif ans.kind == 'closed_range':
-            next_block = ans_cond_blocks[idx + 1] if idx < len(ans_cond_blocks) - 1 else end_block
-
             question_val = expression(dec.question)
             range_l_val = expression(ans.closedRange[0])
             range_r_val = expression(ans.closedRange[1])
@@ -1557,19 +1552,16 @@ def _decision(dec):
                 range_r_cond_val = ctx.builder.fcmp(core.FCMP_OGE, question_val, range_r_val)
 
             ans_cond_val = ctx.builder.and_(range_l_cond_val, range_r_cond_val)
-            ctx.builder.cbranch(ans_cond_val, ans_tr_block if ans.transition else end_block, next_block)
+            ctx.builder.cbranch(ans_cond_val, true_block, false_block)
 
         elif ans.kind == 'else':
-            if ans.transition:
-                ctx.builder.branch(ans_tr_block)
-            else:
-                ctx.builder.branch(end_block)
+            ctx.builder.branch(true_block)
 
         else:
             raise NotImplementedError
 
         if ans.transition:
-            ctx.builder.position_at_end(ans_tr_block)
+            ctx.builder.position_at_end(true_block)
             generate(ans.transition)
             if not ctx.builder.basic_block.terminator:
                 ctx.builder.branch(end_block)
