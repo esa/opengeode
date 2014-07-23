@@ -1541,11 +1541,30 @@ def _decision(dec):
             true_cons = core.Constant.int(ctx.i1, 1)
             cond_val = ctx.builder.icmp(core.ICMP_EQ, expr_val, true_cons)
             ctx.builder.cbranch(cond_val, ans_tr_block if ans.transition else end_block, next_block)
+
+        elif ans.kind == 'closed_range':
+            next_block = ans_cond_blocks[idx + 1] if idx < len(ans_cond_blocks) - 1 else end_block
+
+            question_val = expression(dec.question)
+            range_l_val = expression(ans.closedRange[0])
+            range_r_val = expression(ans.closedRange[1])
+
+            if question_val.type.kind == core.TYPE_INTEGER:
+                range_l_cond_val = ctx.builder.icmp(core.ICMP_SGE, question_val, range_l_val)
+                range_r_cond_val = ctx.builder.icmp(core.ICMP_SLE, question_val, range_r_val)
+            else:
+                range_l_cond_val = ctx.builder.fcmp(core.FCMP_OLE, question_val, range_l_val)
+                range_r_cond_val = ctx.builder.fcmp(core.FCMP_OGE, question_val, range_r_val)
+
+            ans_cond_val = ctx.builder.and_(range_l_cond_val, range_r_cond_val)
+            ctx.builder.cbranch(ans_cond_val, ans_tr_block if ans.transition else end_block, next_block)
+
         elif ans.kind == 'else':
             if ans.transition:
                 ctx.builder.branch(ans_tr_block)
             else:
                 ctx.builder.branch(end_block)
+
         else:
             raise NotImplementedError
 
