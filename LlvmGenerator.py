@@ -943,7 +943,8 @@ def generate_power(params):
 
 def generate_num(params):
     ''' Generate the code for the built-in num operation'''
-    return expression(params[0])
+    enum_val = expression(params[0])
+    return ctx.builder.sext(enum_val, ctx.i64)
 
 
 @expression.register(ogAST.ExprPlus)
