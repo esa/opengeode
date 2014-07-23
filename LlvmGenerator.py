@@ -1448,7 +1448,7 @@ def _if_then_else(ifthen):
 
     ctx.builder.position_at_end(end_block)
 
-    return ctx.builder.load(res_ptr)
+    return res_ptr if is_struct_ptr(res_ptr) else ctx.builder.load(res_ptr)
 
 
 @expression.register(ogAST.PrimSequence)
