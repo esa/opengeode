@@ -32,7 +32,8 @@ import re
 import fnmatch
 import logging
 import traceback
-from itertools import chain, permutations
+from itertools import chain, permutations, combinations
+from collections import defaultdict
 import antlr3
 import antlr3.tree
 
@@ -2956,7 +2957,7 @@ def decision(root, parent, context):
             warnings.append(['Unsupported DECISION child type: ' +
                 str(child.type), [dec.pos_x, dec.pos_y]])
     # Make type checks to be sure that question and answers are compatible
-    covered_ranges = []
+    covered_ranges = defaultdict(list)
     need_else = False
     for ans in dec.answers:
         if ans.kind in ('constant', 'open_range'):
@@ -2977,54 +2978,54 @@ def decision(root, parent, context):
                     # Not a constant or a raw number, range is not fix
                     need_else = True
                     continue
-                val_a = int(a_basic.Min)
+                val_a = int(float(a_basic.Min))
                 qmin, qmax = int(float(q_basic.Min)), int(float(q_basic.Max))
                 # Check the operator to compute the range
+                reachable = True
                 if ans.openRangeOp == ogAST.ExprLe:
                     if qmin <= val_a:
-                        covered_ranges.append([qmin, val_a])
+                        covered_ranges[ans].append((qmin, val_a))
                     else:
-                        warnings.append('Unreachable branch - '
-                                        + ans.inputString)
+                        reachable = False
                 elif ans.openRangeOp == ogAST.ExprLt:
                     if qmin < val_a:
-                        covered_ranges.append([qmin, val_a - 1])
+                        covered_ranges[ans].append((qmin, val_a - 1))
                     else:
-                        warnings.append('Unreachable branch - '
-                                        + ans.inputString)
+                        reachable = False
                 elif ans.openRangeOp == ogAST.ExprGt:
                     if qmax > val_a:
-                        covered_ranges.append([val_a + 1, qmax])
+                        covered_ranges[ans].append((val_a + 1, qmax))
                     else:
-                        warnings.append('Unreachable branch - '
-                                        + ans.inputString)
+                        reachable = False
                 elif ans.openRangeOp == ogAST.ExprGe:
                     if qmax >= val_a:
-                        covered_ranges.append([val_a, qmax])
+                        covered_ranges[ans].append((val_a, qmax))
                     else:
-                        warnings.append('Unreachable branch - '
-                                        + ans.inputString)
+                        reachable = False
                 elif ans.openRangeOp == ogAST.ExprEq:
                     if qmin <= val_a <= qmax:
-                        covered_ranges.append([val_a, val_a])
+                        covered_ranges[ans].append((val_a, val_a))
                     else:
-                        warnings.append('Unreachable branch - '
-                                        + ans.inputString)
+                        reachable = False
                 elif ans.openRangeOp == ogAST.ExprNeq:
                     if qmin == val_a:
-                        covered_ranges.append([qmin + 1, qmax])
+                        covered_ranges[ans].append((qmin + 1, qmax))
                     elif qmax == val_a:
-                        covered_ranges.append([qmin, qmax - 1])
-                    elif q_basic.Min < a_basic.Max < q_basic.Max:
-                        covered_ranges.append([q_basic.Min, a_basic.Max - 1])
-                        covered_ranges.append([a_basic.Max + 1, q_basic.Max])
+                        covered_ranges[ans].append((qmin, qmax - 1))
+                    elif qmin < val_a < qmax:
+                        covered_ranges[ans].append((qmin, val_a - 1))
+                        covered_ranges[ans].append((val_a + 1, qmax))
                     else:
                         warnings.append('Condition is always true: {} /= {}'
                                         .format(dec.inputString,
                                                 ans.inputString))
                 else:
                     warnings.append('Unsupported range expression')
-                print 'RANGE OF QUESTION: [{} .. {}]'.format(qmin, qmax)
+                if not reachable:
+                        warnings.append('Decision "{}": '
+                                        'Unreachable branch "{}"'
+                                        .format(dec.inputString,
+                                                ans.inputString))
             except (AttributeError, TypeError) as err:
                 errors.append('Types are incompatible in DECISION: '
                     'question (' + expr.left.inputString + ', type= ' +
@@ -3060,12 +3061,46 @@ def decision(root, parent, context):
                 # Not a constant or a raw number, range is not fix
                 need_else = True
                 continue
-            covered_ranges.append([int(float(a0_basic.Min)),
-                                   int(float(a1_basic.Max))])
-        for each in covered_ranges:
-            print each
-        if need_else and not has_else:
-            warnings.append('Missing ELSE branch in decision')
+            qmin, qmax = int(float(q_basic.Min)), int(float(q_basic.Max))
+            a0_val = int(float(a0_basic.Min))
+            a1_val = int(float(a1_basic.Max))
+            if a0_val <  qmin:
+                warnings.append('Decision "{dec}": '
+                                'Range [{a0} .. {qmin}] is unreachable'
+                                .format(a0=a0_val, qmin=qmin - 1,
+                                        dec=dec.inputString))
+            if a1_val > qmax:
+                warnings.append('Decision "{dec}": '
+                                'Range [{qmax} .. {a1}] is unreachable'
+                                .format(qmax=qmax + 1, a1=a1_val,
+                                        dec=dec.inputString))
+            if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
+                                                     a1_val > qmax):
+                warnings.append('Decision "{dec}": Unreachable branch'
+                                .format(dec=dec.inputString))
+            covered_ranges[ans].append((int(float(a0_basic.Min)),
+                                        int(float(a1_basic.Max))))
+    # Check the following:
+    # (1) no overlap between covered ranges in decision answers
+    # (2) no gap in the coverage of the decision possible values
+    # (3) ELSE branch, if present, can be reached
+    for each in combinations(covered_ranges.viewitems(), 2):
+        for comb in combinations(
+                chain.from_iterable(val[1] for val in each), 2):
+            comb_overlap = (max(comb[0][0], comb[1][0]),
+                            min(comb[0][1], comb[1][1]))
+            if comb_overlap[0] <= comb_overlap[1]:
+                errors.append('Non-determinism in decision "{d}": '
+                              'answers {a1} and {a2} '
+                              'are overlapping in range [{o1} .. {o2}]'
+                              .format(d=dec.inputString,
+                                      a1=each[0][0].inputString,
+                                      a2=each[1][0].inputString,
+                                      o1=comb_overlap[0],
+                                      o2=comb_overlap[1]))
+    if need_else and not has_else:
+        warnings.append('Missing ELSE branch in decision {}'
+                        .format(dec.inputString))
 
     return dec, errors, warnings
 

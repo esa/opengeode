@@ -1,0 +1,44 @@
+/* CIF PROCESS (200, 143), (150, 75) */
+PROCESS myfunction;
+    /* CIF TEXT (0, 142), (282, 128) */
+    dcl var1 t_Int32 := 0;
+
+dcl var2 t_uint8 := 0;
+    /* CIF ENDTEXT */
+    /* CIF TEXT (36, 43), (360, 41) */
+    -- Test the branch coverage checker in decision answers
+    /* CIF ENDTEXT */
+    /* CIF START (243, 292), (70, 35) */
+    START;
+        /* CIF DECISION (243, 342), (70, 50) */
+        DECISION var1
+        /* CIF COMMENT (333, 349), (191, 35) */
+        COMMENT 'Check range overlapping';
+                /* CIF ANSWER (99, 412), (88, 23) */
+                (-500:500):
+                /* CIF ANSWER (198, 412), (70, 23) */
+                (=0):
+                /* CIF ANSWER (288, 412), (70, 23) */
+                (/=1):
+                /* CIF ANSWER (378, 412), (70, 23) */
+                (>0):
+        ENDDECISION;
+        /* CIF DECISION (243, 460), (70, 50) */
+        DECISION var2
+        /* CIF COMMENT (333, 467), (241, 35) */
+        COMMENT 'Check unreachable branch check';
+                /* CIF ANSWER (117, 530), (52, 33) */
+                (<0):
+                /* CIF ANSWER (200, 530), (66, 33) */
+                (>300):
+                /* CIF ANSWER (286, 530), (72, 33) */
+                (-10:-5):
+                /* CIF ANSWER (372, 530), (83, 23) */
+                (256:300):
+        ENDDECISION;
+        /* CIF NEXTSTATE (243, 588), (70, 35) */
+        NEXTSTATE wait;
+    /* CIF STATE (868, 313), (70, 35) */
+    STATE wait;
+    ENDSTATE;
+ENDPROCESS myfunction;
