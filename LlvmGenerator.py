@@ -128,6 +128,8 @@ class Context():
             llty = self._type_of_choice(name, basic_asn1ty)
         elif basic_asn1ty.kind == 'OctetStringType':
             llty = self._type_of_octetstring(name, basic_asn1ty)
+        elif basic_asn1ty.kind == 'StringType':
+            llty = ctx.i8_ptr
         else:
             raise NotImplementedError
 
@@ -192,9 +194,16 @@ class Context():
 
     def _type_of_octetstring(self, name, octetstring_ty):
         ''' Return the equivalent LL type of a OcterString ASN.1 type '''
+        min_size = int(octetstring_ty.Min)
         max_size = int(octetstring_ty.Max)
-        arr_ty = core.Type.array(ctx.i8, max_size)
-        struct = self.decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty], name)
+        is_variable_size = min_size != max_size
+
+        array_ty = core.Type.array(ctx.i8, max_size)
+
+        if is_variable_size:
+            struct = self.decl_struct(['nCount', 'arr'], [ctx.i32, array_ty], name)
+        else:
+            struct = self.decl_struct(['arr'], [array_ty], name)
 
         struct_ptr = core.Type.pointer(struct.ty)
         self.decl_func("%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
@@ -564,10 +573,17 @@ def generate_write(params):
             false_str_ptr = ctx.string_ptr('FALSE')
             str_ptr = ctx.builder.select(expr_val, true_str_ptr, false_str_ptr)
             ctx.builder.call(ctx.funcs['printf'], [str_ptr])
-        elif basic_ty.kind in ['StringType', 'OctetStringType']:
+        elif basic_ty.kind == 'StringType':
+            fmt_str_ptr = ctx.string_ptr('%s')
+            ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, expr_val])
+        elif basic_ty.kind == 'OctetStringType':
             fmt_str_ptr = ctx.string_ptr('%.*s')
-            count_val = ctx.builder.load(ctx.builder.gep(expr_val, [ctx.zero, ctx.zero]))
-            arr_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.one])
+            if basic_ty.Min == basic_ty.Max:
+                arr_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.zero])
+                count_val = core.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
+            else:
+                count_val = ctx.builder.load(ctx.builder.gep(expr_val, [ctx.zero, ctx.zero]))
+                arr_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.one])
             ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, count_val, arr_ptr])
         else:
             raise NotImplementedError
@@ -1362,23 +1378,29 @@ def _empty_string(primary):
 
 @expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary):
-    ''' Generate code for a string (Octet String) '''
+    ''' Generate code for a string'''
+    bty = find_basic_type(primary.exprType)
+
+    str_len = len(str(primary.value[1:-1]))
     str_ptr = ctx.string_ptr(str(primary.value[1:-1]))
 
-    # Allocate anonymous OctetString struct
-    str_len = len(str(primary.value[1:-1]))
-    str_len_val = core.Constant.int(ctx.i32, str_len)
-    arr_ty = core.Type.array(ctx.i8, str_len)
-    struct = ctx.decl_struct(['nCount', 'arr'], [ctx.i32, arr_ty])
-    octectstr_ptr = ctx.builder.alloca(struct.ty)
+    if bty.kind == 'StringType':
+        return str_ptr
 
-    # Copy length
-    count_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
-    ctx.builder.store(str_len_val, count_ptr)
+    llty = ctx.type_of(primary.exprType)
+    octectstr_ptr = ctx.builder.alloca(llty)
+
+    if bty.Min == bty.Max:
+        arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
+    else:
+        arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.one])
+
+        # Copy length
+        str_len_val = core.Constant.int(ctx.i32, str_len)
+        count_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
+        ctx.builder.store(str_len_val, count_ptr)
 
     # Copy constant string
-    arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.one])
-
     casted_arr_ptr = ctx.builder.bitcast(arr_ptr, ctx.i8_ptr)
     casted_str_ptr = ctx.builder.bitcast(str_ptr, ctx.i8_ptr)
 
