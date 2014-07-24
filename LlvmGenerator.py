@@ -351,7 +351,7 @@ def _process(process):
         global_var.initializer = core.Constant.null(var_ty)
         ctx.scope.define(str(name).lower(), global_var)
 
-    # Declare timer set/reset functions
+    # Declare set/reset timer functions
     for timer in process.timers:
         # TODO: Should be uint?
         ctx.decl_func("set_%s" % str(timer), ctx.void, [ctx.i64_ptr], True)
@@ -381,6 +381,10 @@ def _process(process):
     # Generate input signals
     for signal in process.input_signals:
         generate_input_signal(signal, mapping[signal['name']])
+
+    # Generate timer signal
+    for timer in process.timers:
+        generate_input_signal({'name': timer.lower()}, mapping[timer])
 
     ctx.module.verify()
 
