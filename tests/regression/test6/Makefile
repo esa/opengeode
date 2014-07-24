@@ -14,11 +14,13 @@ test-ada:
 	./testcase | diff expected -
 
 test-llvm:
-	../../../opengeode.py myfunction.pr system_structure.pr --llvm
+	../../../opengeode.py myfunction.pr system_structure.pr --check --llvm
+	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
 	llc myfunction.ll
-	gcc -c myfunction.s
-	gcc -c test_llvm.c
-	gcc myfunction.o test_llvm.o -o testcase
+	clang -c myfunction.s
+	clang -c dataview-uniq.c
+	clang -c test_llvm.c
+	clang myfunction.o dataview-uniq.o test_llvm.o -o testcase
 	./testcase | diff expected -
 
 coverage:
