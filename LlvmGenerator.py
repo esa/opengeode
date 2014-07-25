@@ -1726,6 +1726,9 @@ def _inner_procedure(proc):
 
     ctx.close_scope()
 
+    if not ctx.builder.basic_block.terminator:
+        ctx.builder.ret_void()
+
     func.verify()
 
 
