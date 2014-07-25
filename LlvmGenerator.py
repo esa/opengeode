@@ -420,7 +420,7 @@ def generate_runtr_func(process):
 
     # body
     ctx.builder.position_at_end(body_block)
-    switch = ctx.builder.switch(func.args[0], exit_block)
+    switch = ctx.builder.switch(id_val, exit_block)
 
     # transitions
     for idx, tr in enumerate(process.transitions):
