@@ -340,9 +340,9 @@ def _process(process):
             ctx.states[name.lower()] = cons_val
 
     # Generate state var
-    state_cons = ctx.module.add_global_variable(ctx.i32, 'state')
+    state_cons = ctx.module.add_global_variable(ctx.i32, '.state')
     state_cons.initializer = core.Constant.int(ctx.i32, -1)
-    ctx.scope.define('state', state_cons)
+    ctx.scope.define('.state', state_cons)
 
     # Generare process-level vars
     for name, (ty, expr) in process.variables.viewitems():
@@ -490,7 +490,7 @@ def generate_input_signal(signal, inputs):
     exit_block = func.append_basic_block('exit')
     ctx.builder = core.Builder.new(entry_block)
 
-    g_state_val = ctx.builder.load(ctx.global_scope.resolve('state'))
+    g_state_val = ctx.builder.load(ctx.global_scope.resolve('.state'))
     switch = ctx.builder.switch(g_state_val, exit_block)
 
     for state_name, state_id in ctx.states.iteritems():
@@ -1617,7 +1617,7 @@ def generate_next_state_terminator(term):
         if type(term.next_id) is int:
             next_id_val = core.Constant.int(ctx.i32, term.next_id)
             if term.next_id == -1:
-                ctx.builder.store(ctx.states[state.lower()], ctx.global_scope.resolve('state'))
+                ctx.builder.store(ctx.states[state.lower()], ctx.global_scope.resolve('.state'))
         else:
             next_id_val = ctx.states[term.next_id.lower()]
         ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
@@ -1626,7 +1626,7 @@ def generate_next_state_terminator(term):
         if nexts:
             # Calculate next transition id in base of the current state
             func = ctx.builder.basic_block.function
-            curr_state_val = ctx.builder.load(ctx.global_scope.resolve('state'))
+            curr_state_val = ctx.builder.load(ctx.global_scope.resolve('.state'))
             default_case_block = func.append_basic_block('')
             end_block = func.append_basic_block('')
             switch = ctx.builder.switch(curr_state_val, default_case_block)
