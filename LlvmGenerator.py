@@ -334,10 +334,10 @@ def _process(process):
     for name, val in process.mapping.viewitems():
         if not name.endswith('START'):
             cons_val = core.Constant.int(ctx.i32, len(ctx.states))
-            ctx.states[name] = cons_val
+            ctx.states[name.lower()] = cons_val
         elif name != 'START':
             cons_val = core.Constant.int(ctx.i32, val)
-            ctx.states[name] = cons_val
+            ctx.states[name.lower()] = cons_val
 
     # Generate state var
     state_cons = ctx.module.add_global_variable(ctx.i32, 'state')
@@ -494,7 +494,7 @@ def generate_input_signal(signal, inputs):
     switch = ctx.builder.switch(g_state_val, exit_block)
 
     for state_name, state_id in ctx.states.iteritems():
-        if state_name.endswith('START'):
+        if state_name.endswith('start'):
             continue
         state_block = func.append_basic_block('state_%s' % str(state_name))
         switch.add_case(state_id, state_block)
@@ -1614,13 +1614,13 @@ def generate_next_state_terminator(term):
     ''' Generate the code for a next state transition terminator '''
     state = term.inputString.lower()
     if state.strip() != '-':
-        if term.next_id in ctx.states:
-            next_id_val = ctx.states[term.next_id]
-        else:
+        if type(term.next_id) is int:
             next_id_val = core.Constant.int(ctx.i32, term.next_id)
+            if term.next_id == -1:
+                ctx.builder.store(ctx.states[state.lower()], ctx.global_scope.resolve('state'))
+        else:
+            next_id_val = ctx.states[term.next_id.lower()]
         ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
-        if term.next_id == -1:
-            ctx.builder.store(ctx.states[state], ctx.global_scope.resolve('state'))
     else:
         nexts = [(n, s) for (n, s) in term.candidate_id.viewitems() if n != -1]
         if nexts:
@@ -1632,10 +1632,10 @@ def generate_next_state_terminator(term):
             switch = ctx.builder.switch(curr_state_val, default_case_block)
 
             for next_state, states in nexts:
-                next_id_val = ctx.states[next_state]
+                next_id_val = ctx.states[next_state.lower()]
                 for state in states:
                     case_block = func.append_basic_block('')
-                    switch.add_case(ctx.states[state], case_block)
+                    switch.add_case(ctx.states[state.lower()], case_block)
                     ctx.builder.position_at_end(case_block)
                     ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
                     ctx.builder.branch(end_block)
