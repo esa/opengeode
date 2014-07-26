@@ -1,5 +1,8 @@
 all: test-ada
 
+edit:
+	../../../opengeode.py og.pr system_structure.pr
+
 test-parse:
 	../../../opengeode.py og.pr system_structure.pr --check
 

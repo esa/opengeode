@@ -2958,6 +2958,7 @@ def decision(root, parent, context):
                 str(child.type), [dec.pos_x, dec.pos_y]])
     # Make type checks to be sure that question and answers are compatible
     covered_ranges = defaultdict(list)
+    qmin, qmax = 0, 0
     need_else = False
     for ans in dec.answers:
         if ans.kind in ('constant', 'open_range'):
@@ -3076,30 +3077,61 @@ def decision(root, parent, context):
                                         dec=dec.inputString))
             if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
                                                      a1_val > qmax):
-                warnings.append('Decision "{dec}": Unreachable branch'
-                                .format(dec=dec.inputString))
+                warnings.append('Decision "{dec}": Unreachable branch {l}:{h}'
+                                .format(dec=dec.inputString,
+                                        l=a0_val, h=a1_val))
             covered_ranges[ans].append((int(float(a0_basic.Min)),
                                         int(float(a1_basic.Max))))
     # Check the following:
     # (1) no overlap between covered ranges in decision answers
     # (2) no gap in the coverage of the decision possible values
     # (3) ELSE branch, if present, can be reached
+    # (4) if an answer uses a non-ground expression an ELSE is there
+
+    q_ranges = [(qmin, qmax)] if is_numeric(dec.question.exprType) else []
     for each in combinations(covered_ranges.viewitems(), 2):
         for comb in combinations(
                 chain.from_iterable(val[1] for val in each), 2):
             comb_overlap = (max(comb[0][0], comb[1][0]),
                             min(comb[0][1], comb[1][1]))
             if comb_overlap[0] <= comb_overlap[1]:
-                errors.append('Non-determinism in decision "{d}": '
-                              'answers {a1} and {a2} '
+                # (1) - check for overlaps
+                errors.append('Decision "{d}": answers {a1} and {a2} '
                               'are overlapping in range [{o1} .. {o2}]'
                               .format(d=dec.inputString,
                                       a1=each[0][0].inputString,
                                       a2=each[1][0].inputString,
                                       o1=comb_overlap[0],
                                       o2=comb_overlap[1]))
+    new_q_ranges = []
+#   for minq, maxq in q_ranges:
+    # (2) Check that decision range is fully covered
+    for ans_ref, ranges in covered_ranges.viewitems():
+        for mina, maxa in ranges:
+            for minq, maxq in q_ranges:
+                left = (minq, min(maxq, mina - 1))
+                right = (max(minq, maxa + 1), maxq)
+                if mina > minq and maxa < maxq:
+                    new_q_ranges.extend([left, right])
+                elif mina <= minq and maxa >= maxq:
+                    pass
+                elif mina <= minq:
+                    new_q_ranges.append(right)
+                elif maxa >= maxq:
+                    new_q_ranges.append(left)
+            q_ranges, new_q_ranges = new_q_ranges, []
+    if not has_else:
+        for minq, maxq in q_ranges:
+            errors.append('Decision "{}": No answer to cover range [{} .. {}]'
+                          .format(dec.inputString, minq, maxq))
+    elif has_else and is_numeric(dec.question.exprType) and not q_ranges:
+        # (3) Check that ELSE branch is reachable
+        warnings.append('Decision "{}": ELSE branch is unreachable'
+                        .format(dec.inputString))
+
     if need_else and not has_else:
-        warnings.append('Missing ELSE branch in decision {}'
+        # (4) Answers use non-ground expression -> there should be an ELSE
+        warnings.append('Decision "{}": Missing ELSE branch'
                         .format(dec.inputString))
 
     return dec, errors, warnings
