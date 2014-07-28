@@ -1408,7 +1408,6 @@ def primary_call(root, context):
                 'Max': str(max(enum_values))
             })
         except AttributeError:
-            msg = 'Type Error, check the parameter'
             errors.append(error(root, '"Num" parameter error'))
 
     return node, errors, warnings
