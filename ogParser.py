@@ -28,8 +28,6 @@ __author__ = 'Maxime Perrotin'
 
 import sys
 import os
-import re
-import fnmatch
 import logging
 import traceback
 from itertools import chain, permutations, combinations
