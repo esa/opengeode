@@ -32,8 +32,8 @@ test := abs(test)
         TASK first_msg := 'Say hello first!'
         /* CIF COMMENT (599, 189), (148, 50) */
         COMMENT 'String assignment';
-        /* CIF PROCEDURECALL (390, 254), (173, 35) */
-        CALL writeln( first_msg);
+        /* CIF PROCEDURECALL (388, 254), (177, 35) */
+        CALL writeln( first_msg(1,2));
         /* CIF PROCEDURECALL (373, 304), (207, 35) */
         CALL writeln( not (not not true));
         /* CIF TASK (394, 354), (165, 50) */
@@ -173,14 +173,14 @@ string';
                                 /* CIF ANSWER (418, 1434), (88, 23) */
                                 (0 in {1,2}):
                         ENDDECISION;
-                        /* CIF DECISION (368, 1472), (98, 50) */
+                        /* CIF DECISION (368, 1477), (98, 50) */
                         DECISION 4 in {1,2,3};
-                                /* CIF ANSWER (337, 1542), (70, 23) */
+                                /* CIF ANSWER (337, 1547), (70, 23) */
                                 (true):
-                                /* CIF ANSWER (427, 1542), (70, 23) */
+                                /* CIF ANSWER (427, 1547), (70, 23) */
                                 (false):
                         ENDDECISION;
-                        /* CIF NEXTSTATE (367, 1580), (100, 50) */
+                        /* CIF NEXTSTATE (367, 1590), (100, 50) */
                         NEXTSTATE Running;
             ENDDECISION;
     ENDSTATE;

@@ -1024,20 +1024,20 @@ def _append(expr):
     # If right or left is raw, declare a temporary variable for it, too
     for sexp, sid in zip((expr.right, expr.left), (right_str, left_str)):
         if sexp.is_raw:
-            local_decl.append('tmp{idx} : aliased asn1Scc{eType};'.format(
+            local_decl.append(u'tmp{idx} : aliased asn1Scc{eType};'.format(
                     idx=sexp.tmpVar,
                     eType=sexp.exprType.ReferencedTypeName
                     .replace('-', '_')))
-            stmts.append('tmp{idx} := {s_id};'.format(
+            stmts.append(u'tmp{idx} := {s_id};'.format(
                 idx=sexp.tmpVar, s_id=sid))
-            sexp.sid = 'tmp' + str(sexp.tmpVar)
+            sexp.sid = u'tmp' + unicode(sexp.tmpVar)
             # Length of raw string - update for sequence of
             if isinstance(sexp, ogAST.PrimStringLiteral):
-                sexp.slen = len(sexp.value[1:-1])
+                sexp.slen = unicode(len(sexp.value[1:-1]))
             elif isinstance(sexp, ogAST.PrimEmptyString):
-                sexp.slen = 0
+                sexp.slen = u'0'
             elif isinstance(sexp, ogAST.PrimSequenceOf):
-                sexp.slen = len(sexp.value)
+                sexp.slen = unicode(len(sexp.value))
             else:
                 raise TypeError('Not a string/Sequence in APPEND')
         else:
@@ -1045,7 +1045,7 @@ def _append(expr):
             basic = find_basic_type(sexp.exprType)
             if basic.Min == basic.Max:
                 # Fixed-size string
-                sexp.slen = basic.Max
+                sexp.slen = unicode(basic.Max)
             else:
                 # Variable-size types have a Length field
                 if isinstance(sexp, ogAST.PrimSubstring):
@@ -1058,8 +1058,8 @@ def _append(expr):
             and unicode.isnumeric(expr.right.slen):
         length = unicode(int(expr.left.slen) + int(expr.right.slen))
     else:
-        length = '{} + {}'.format(expr.left.slen, expr.right.slen)
-    stmts.append('{res}.Data(1 .. {length}) := {lid} & {rid};'
+        length = u'{} + {}'.format(expr.left.slen, expr.right.slen)
+    stmts.append(u'{res}.Data(1 .. {length}) := {lid} & {rid};'
                  .format(length=length,
                          res=ada_string,
                          lid=left_payload,
@@ -1067,7 +1067,7 @@ def _append(expr):
     basic_tmp = find_basic_type(expr.exprType)
     if basic_tmp.Min != basic_tmp.Max:
         # Update lenght field of resulting variable (if variable size)
-        stmts.append('{}.Length := {};'.format(ada_string, length))
+        stmts.append(u'{}.Length := {};'.format(ada_string, length))
     return stmts, unicode(ada_string), local_decl
 
 

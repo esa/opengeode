@@ -1,150 +1,145 @@
 /* CIF PROCESS (252, 216), (150, 75) */
 PROCESS og;
-STATE all_done;
-SUBSTRUCTURE
-STATE Bonjour;
-SUBSTRUCTURE
-/* CIF PROCEDURE (72, 110), (73, 35) */
-PROCEDURE entry;
-/* CIF START (258, 113), (70, 35) */
-START;
-/* CIF PROCEDURECALL (202, 163), (181, 35) */
-CALL writeln('bonjour entry');
-/* CIF RETURN (275, 213), (35, 35) */
-RETURN ;
-ENDPROCEDURE;
-/* CIF START (190, 52), (70, 35) */
-START;
-/* CIF NEXTSTATE (189, 102), (72, 35) */
-NEXTSTATE dumb;
-/* CIF STATE (312, 42), (72, 35) */
-STATE dumb;
-ENDSTATE;
-
-ENDSUBSTRUCTURE;
-/* CIF TEXT (118, 110), (298, 140) */
--- Declare your variables
+    STATE all_done;
+    SUBSTRUCTURE
+            STATE Bonjour;
+            SUBSTRUCTURE
+                    /* CIF PROCEDURE (72, 110), (73, 35) */
+                    PROCEDURE entry;
+                        /* CIF START (258, 113), (70, 35) */
+                        START;
+                            /* CIF PROCEDURECALL (202, 163), (181, 35) */
+                            CALL writeln('bonjour entry');
+                            /* CIF RETURN (275, 213), (35, 35) */
+                            RETURN ;
+                    ENDPROCEDURE;
+                    /* CIF START (190, 52), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (189, 102), (72, 35) */
+                        NEXTSTATE dumb;
+                    /* CIF STATE (312, 42), (72, 35) */
+                    STATE dumb;
+                    ENDSTATE;
+            ENDSUBSTRUCTURE;
+            /* CIF TEXT (118, 110), (298, 140) */
+            -- Declare your variables
 
 -- Syntax: DCL <variable name> <type name>;
 
 dcl tmp my_OctStr;
-/* CIF ENDTEXT */
-/* CIF PROCEDURE (298, 308), (73, 35) */
-PROCEDURE entry;
-/* CIF START (171, 108), (70, 35) */
-START;
-/* CIF PROCEDURECALL (131, 158), (149, 35) */
-CALL writeln('All done');
-/* CIF RETURN (188, 208), (35, 35) */
-RETURN ;
-ENDPROCEDURE;
-/* CIF START (473, 144), (70, 35) */
-START;
-/* CIF NEXTSTATE (466, 194), (84, 35) */
-NEXTSTATE Bonjour;
-
-/* CIF STATE (564, 193), (125, 35) */
-STATE Dumb, Bonjour;
-/* CIF INPUT (583, 248), (87, 35) */
-INPUT go(tmp);
-/* CIF PROCEDURECALL (545, 298), (162, 35) */
-CALL writeln('TEST');
-/* CIF NEXTSTATE (591, 348), (70, 35) */
-NEXTSTATE -;
-ENDSTATE;
-/* CIF STATE (459, 366), (84, 35) */
-STATE Bonjour;
-ENDSTATE;
-
-ENDSUBSTRUCTURE;
-/* CIF TEXT (0, 0), (229, 98) */
--- Testing decisions
+            /* CIF ENDTEXT */
+            /* CIF PROCEDURE (298, 308), (73, 35) */
+            PROCEDURE entry;
+                /* CIF START (171, 108), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (131, 158), (149, 35) */
+                    CALL writeln('All done');
+                    /* CIF RETURN (188, 208), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF START (473, 144), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (466, 194), (84, 35) */
+                NEXTSTATE Bonjour;
+            /* CIF STATE (459, 366), (84, 35) */
+            STATE Bonjour;
+            ENDSTATE;
+            /* CIF STATE (564, 193), (125, 35) */
+            STATE Dumb, Bonjour;
+                /* CIF INPUT (583, 248), (87, 35) */
+                INPUT go(tmp);
+                    /* CIF PROCEDURECALL (545, 298), (162, 35) */
+                    CALL writeln('TEST');
+                    /* CIF NEXTSTATE (591, 348), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+    ENDSUBSTRUCTURE;
+    /* CIF TEXT (0, 0), (229, 98) */
+    -- Testing decisions
 
 dcl test myInteger := 3;
-/* CIF ENDTEXT */
-/* CIF START (342, 35), (70, 35) */
-START;
-/* CIF LABEL (334, 85), (85, 35) */
-again:
-/* CIF DECISION (342, 135), (70, 50) */
-DECISION test;
-/* CIF ANSWER (-7, 205), (70, 23) */
-(3):
-/* CIF PROCEDURECALL (-25, 243), (106, 35) */
-CALL writeln('1');
-/* CIF TASK (-15, 293), (87, 35) */
-TASK test := 5;
-/* CIF JOIN (10, 343), (35, 35) */
-JOIN again;
-/* CIF ANSWER (486, 205), (70, 23) */
-(>5):
-/* CIF PROCEDURECALL (464, 243), (113, 35) */
-CALL writeln('4');
-/* CIF TASK (477, 293), (87, 35) */
-TASK test := 7;
-/* CIF LABEL (472, 343), (98, 35) */
-and_again:
-/* CIF DECISION (486, 393), (70, 50) */
-DECISION test;
-/* CIF ANSWER (585, 463), (70, 23) */
-(<=5):
-/* CIF DECISION (585, 501), (70, 50) */
-DECISION test;
-/* CIF ANSWER (480, 571), (70, 23) */
-(>=5):
-/* CIF PROCEDURECALL (449, 609), (132, 35) */
-CALL writeln('6');
-/* CIF ANSWER (650, 571), (70, 23) */
-else:
-/* CIF PROCEDURECALL (611, 609), (148, 35) */
-CALL writeln('[ERROR]');
-ENDDECISION;
-/* CIF ANSWER (348, 463), (70, 23) */
-(/=5):
-/* CIF PROCEDURECALL (326, 501), (113, 35) */
-CALL writeln('5');
-/* CIF TASK (339, 551), (87, 35) */
-TASK test := 5;
-/* CIF JOIN (365, 601), (35, 35) */
-JOIN and_again;
-ENDDECISION;
-/* CIF ANSWER (225, 205), (70, 23) */
-(<5):
-/* CIF PROCEDURECALL (203, 243), (113, 35) */
-CALL writeln('3');
-/* CIF TASK (213, 293), (94, 35) */
-TASK test := 6;
-/* CIF JOIN (242, 343), (35, 35) */
-JOIN again;
-/* CIF ANSWER (106, 205), (70, 23) */
-(=5):
-/* CIF PROCEDURECALL (88, 243), (106, 35) */
-CALL writeln('2');
-/* CIF TASK (94, 293), (94, 35) */
-TASK test := 4;
-/* CIF JOIN (123, 343), (35, 35) */
-JOIN again;
-/* CIF ANSWER (808, 205), (70, 23) */
-else:
-/* CIF PROCEDURECALL (769, 243), (148, 35) */
-CALL writeln('[ERROR]');
-ENDDECISION;
-/* CIF PROCEDURECALL (293, 689), (167, 35) */
-CALL writeln('end of test');
-/* CIF NEXTSTATE (332, 739), (90, 35) */
-NEXTSTATE all_done;
-
-/* CIF STATE (927, 81), (124, 35) */
-STATE toto, all_done;
-/* CIF INPUT (954, 136), (70, 35) */
-INPUT bye;
-/* CIF PROCEDURECALL (928, 186), (122, 35) */
-CALL writeln('Bye');
-/* CIF NEXTSTATE (954, 236), (70, 35) */
-NEXTSTATE -;
-ENDSTATE;
-/* CIF STATE (1061, 79), (90, 35) */
-STATE all_done;
-ENDSTATE;
-
+    /* CIF ENDTEXT */
+    /* CIF START (342, 35), (70, 35) */
+    START;
+        /* CIF LABEL (334, 85), (85, 35) */
+        again:
+        /* CIF DECISION (342, 135), (70, 50) */
+        DECISION test;
+                /* CIF ANSWER (-7, 205), (70, 23) */
+                (3):
+                    /* CIF PROCEDURECALL (-25, 243), (106, 35) */
+                    CALL writeln('1');
+                    /* CIF TASK (-15, 293), (87, 35) */
+                    TASK test := 5;
+                    /* CIF JOIN (10, 343), (35, 35) */
+                    JOIN again;
+                /* CIF ANSWER (486, 205), (70, 23) */
+                (>5):
+                    /* CIF PROCEDURECALL (464, 243), (113, 35) */
+                    CALL writeln('4');
+                    /* CIF TASK (477, 293), (87, 35) */
+                    TASK test := 7;
+                    /* CIF LABEL (472, 343), (98, 35) */
+                    and_again:
+                    /* CIF DECISION (486, 393), (70, 50) */
+                    DECISION test;
+                            /* CIF ANSWER (585, 463), (70, 23) */
+                            (=5):
+                                /* CIF DECISION (585, 501), (70, 50) */
+                                DECISION test;
+                                        /* CIF ANSWER (480, 571), (70, 23) */
+                                        (>=5):
+                                            /* CIF PROCEDURECALL (449, 609), (132, 35) */
+                                            CALL writeln('6');
+                                        /* CIF ANSWER (650, 571), (70, 23) */
+                                        else:
+                                            /* CIF PROCEDURECALL (611, 609), (148, 35) */
+                                            CALL writeln('[ERROR]');
+                                ENDDECISION;
+                            /* CIF ANSWER (348, 463), (70, 23) */
+                            (/=5):
+                                /* CIF PROCEDURECALL (326, 501), (113, 35) */
+                                CALL writeln('5');
+                                /* CIF TASK (339, 551), (87, 35) */
+                                TASK test := 5;
+                                /* CIF JOIN (365, 601), (35, 35) */
+                                JOIN and_again;
+                    ENDDECISION;
+                /* CIF ANSWER (225, 205), (70, 23) */
+                (4:4):
+                    /* CIF PROCEDURECALL (203, 243), (113, 35) */
+                    CALL writeln('3');
+                    /* CIF TASK (213, 293), (94, 35) */
+                    TASK test := 6;
+                    /* CIF JOIN (242, 343), (35, 35) */
+                    JOIN again;
+                /* CIF ANSWER (106, 205), (70, 23) */
+                (=5):
+                    /* CIF PROCEDURECALL (88, 243), (106, 35) */
+                    CALL writeln('2');
+                    /* CIF TASK (94, 293), (94, 35) */
+                    TASK test := 4;
+                    /* CIF JOIN (123, 343), (35, 35) */
+                    JOIN again;
+                /* CIF ANSWER (808, 205), (70, 23) */
+                else:
+                    /* CIF PROCEDURECALL (769, 243), (148, 35) */
+                    CALL writeln('[ERROR]');
+        ENDDECISION;
+        /* CIF PROCEDURECALL (293, 689), (167, 35) */
+        CALL writeln('end of test');
+        /* CIF NEXTSTATE (332, 739), (90, 35) */
+        NEXTSTATE all_done;
+    /* CIF STATE (1061, 79), (90, 35) */
+    STATE all_done;
+    ENDSTATE;
+    /* CIF STATE (927, 81), (124, 35) */
+    STATE toto, all_done;
+        /* CIF INPUT (954, 136), (70, 35) */
+        INPUT bye;
+            /* CIF PROCEDURECALL (928, 186), (122, 35) */
+            CALL writeln('Bye');
+            /* CIF NEXTSTATE (954, 236), (70, 35) */
+            NEXTSTATE -;
+    ENDSTATE;
 ENDPROCESS og;
