@@ -632,7 +632,7 @@ def check_type_compatibility(primary, typeRef, context):
                         # Compare the types for semantic equivalence
                         try:
                             compare_types(
-                                  primary.value[ufield].exprType, fd_data.type)
+                                primary.value[ufield].exprType, fd_data.type)
                         except TypeError as err:
                             raise TypeError('Field ' + ufield +
                                         ' is not of the proper type, i.e. ' +
@@ -1617,7 +1617,7 @@ def primary(root, context):
     elif root.type == lexer.OCTSTR:
         prim = ogAST.PrimOctetStringLiteral()
         warnings.append(
-                       warning(root, 'Octet string literal not supported yet'))
+            warning(root, 'Octet string literal not supported yet'))
     else:
         # TODO: return error message
         raise NotImplementedError
@@ -2561,9 +2561,9 @@ def state(root, parent, context):
                 else:
                     asterisk_input = inp
         elif child.type == lexer.CONNECT:
+            comp_states = (comp.statename for comp in context.composite_states)
             if asterisk_state or len(state_def.statelist) != 1 \
-                 or (state_def.statelist[0].lower()
-                 not in (comp.statename for comp in context.composite_states)):
+                    or state_def.statelist[0].lower() not in comp_states:
                 errors.append('State {} is not a composite state and cannot '
                               'be followed by a connect statement'
                               .format(state_def.statelist[0]))
@@ -3062,7 +3062,7 @@ def decision(root, parent, context):
             qmin, qmax = int(float(q_basic.Min)), int(float(q_basic.Max))
             a0_val = int(float(a0_basic.Min))
             a1_val = int(float(a1_basic.Max))
-            if a0_val <  qmin:
+            if a0_val < qmin:
                 warnings.append('Decision "{dec}": '
                                 'Range [{a0} .. {qmin}] is unreachable'
                                 .format(a0=a0_val, qmin=qmin - 1,
