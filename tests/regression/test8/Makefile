@@ -17,4 +17,5 @@ coverage:
 	coverage run -p ../../../opengeode.py orchestrator.pr system_structure.pr --toAda
 
 clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner bin *.wrn *.gpr datav*.? ber.c xer.c asn1crt.? acn.c real.c
+	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
+	bin *.wrn *.gpr datav*.? ber.c xer.c asn1crt.? acn.c real.c testcase
