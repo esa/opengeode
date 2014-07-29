@@ -66,7 +66,6 @@ EXPR_NODE = {
     lexer.NOT: ogAST.ExprNot,
     lexer.NEG: ogAST.ExprNeg,
     lexer.PRIMARY: ogAST.Primary,
-    lexer.IFTHENELSE: ogAST.PrimIfThenElse,
 }
 
 # Insert current path in the search list for importing modules
@@ -545,7 +544,7 @@ def check_type_compatibility(primary, typeRef, context):
                    '" not in this enumeration: ' +
                    str(actual_type.EnumValues.keys()))
             raise TypeError(err)
-    elif isinstance(primary, ogAST.PrimIfThenElse) \
+    elif isinstance(primary, ogAST.PrimConditional) \
             or isinstance(primary, ogAST.PrimVariable):
         try:
             compare_types(primary.exprType, typeRef)
@@ -1004,7 +1003,7 @@ def expression(root, context):
         return neg_expression(root, context)
     elif root.type == lexer.PAREN:
         return expression(root.children[0], context)
-    elif root.type == lexer.IFTHENELSE:
+    elif root.type == lexer.CONDITIONAL:
         return conditional_expression(root, context)
     elif root.type == lexer.PRIMARY:
         return primary(root.children[0], context)
@@ -1228,7 +1227,7 @@ def conditional_expression(root, context):
     ''' Conditional expression analysis '''
     errors, warnings = [], []
 
-    expr = ogAST.PrimIfThenElse(
+    expr = ogAST.PrimConditional(
         get_input_string(root),
         root.getLine(),
         root.getCharPositionInLine()
