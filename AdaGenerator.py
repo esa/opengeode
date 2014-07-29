@@ -1188,10 +1188,14 @@ def _conditional(cond):
     ''' Return string and statements for conditional expressions '''
     resType = cond.exprType
     stmts = []
-    if resType.kind.startswith('Integer'):
+
+    if resType.kind in ('IntegerType', 'Integer32Type'):
         tmp_type = 'Asn1Int'
+    elif resType.kind == 'RealType':
+        tmp_type = 'Asn1Real'
+    elif resType.kind == 'BooleanType':
+        tmp_type = 'Boolean'
     elif resType.kind == 'StringType':
-        print cond.value['then'].value
         then_str = cond.value['then'].value.replace("'", '"')
         else_str = cond.value['else'].value.replace("'", '"')
         lens = [len(then_str), len(else_str)]
@@ -1203,6 +1207,7 @@ def _conditional(cond):
             else_str = else_str[0:-1] + ' ' * (lens[0] - lens[1]) + '"'
     else:
         tmp_type = 'asn1Scc' + resType.ReferencedTypeName.replace('-', '_')
+
     local_decl = ['tmp{idx} : {tmpType};'.format(
                                                 idx=cond.value['tmpVar'],
                                                 tmpType=tmp_type)]
