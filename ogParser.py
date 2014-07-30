@@ -1056,13 +1056,16 @@ def logic_expression(root, context):
             errors.append(error(root, msg))
             break
 
-        if bty.kind in ('BooleanType', 'BitStringType'):
+        if bty.kind == 'BooleanType':
             continue
-        elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
+        elif bty.kind == 'BitStringType' and bty.Min == bty.Max:
+            continue
+        elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType'\
+                and bty.Min == bty.Max:
             continue
         else:
             msg = 'Bitwise operators only work with Booleans, ' \
-                  'SequenceOf Booleans or BitStrings'
+                  'fixed size SequenceOf Booleans or fixed size BitStrings'
             errors.append(error(root, msg))
             break
 
