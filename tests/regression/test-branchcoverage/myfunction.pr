@@ -1,9 +1,9 @@
 /* CIF PROCESS (200, 143), (150, 75) */
 PROCESS myfunction;
-    /* CIF TEXT (36, 43), (360, 41) */
+    /* CIF TEXT (0, 43), (360, 41) */
     -- Test the branch coverage checker in decision answers
     /* CIF ENDTEXT */
-    /* CIF TEXT (0, 142), (282, 152) */
+    /* CIF TEXT (78, 142), (282, 184) */
     dcl var1 t_Int32 := 0;
 
 dcl var2 t_uint8 := 0;
@@ -13,75 +13,103 @@ dcl var3 t_uInt8 := 0;
 dcl var4 mychoice := a: false;
 
 dcl var5 myenum := hello;
+
+dcl VAR5 mychoice;
     /* CIF ENDTEXT */
-    /* CIF START (439, 292), (70, 35) */
+    /* CIF START (525, 71), (70, 35) */
     START;
-        /* CIF DECISION (439, 342), (70, 50) */
+        /* CIF DECISION (525, 121), (70, 50) */
         DECISION var1
-        /* CIF COMMENT (529, 349), (191, 35) */
+        /* CIF COMMENT (615, 128), (191, 35) */
         COMMENT 'Check range overlapping';
-                /* CIF ANSWER (289, 412), (90, 24) */
+                /* CIF ANSWER (370, 191), (90, 24) */
                 (-500:500):
-                /* CIF ANSWER (394, 412), (70, 24) */
+                /* CIF ANSWER (480, 191), (70, 24) */
                 (=0):
-                /* CIF ANSWER (484, 412), (70, 24) */
+                /* CIF ANSWER (570, 191), (70, 24) */
                 (/=1):
-                /* CIF ANSWER (574, 412), (70, 24) */
+                /* CIF ANSWER (660, 191), (70, 24) */
                 (>0):
         ENDDECISION;
-        /* CIF DECISION (439, 490), (70, 50) */
+        /* CIF DECISION (525, 245), (70, 50) */
         DECISION var2
-        /* CIF COMMENT (529, 497), (241, 35) */
+        /* CIF COMMENT (615, 252), (241, 35) */
         COMMENT 'Check unreachable branch check';
-                /* CIF ANSWER (308, 560), (53, 33) */
+                /* CIF ANSWER (389, 315), (53, 33) */
                 (<0):
-                /* CIF ANSWER (390, 560), (68, 33) */
+                /* CIF ANSWER (471, 315), (68, 33) */
                 (>300):
-                /* CIF ANSWER (482, 560), (72, 33) */
+                /* CIF ANSWER (568, 315), (72, 33) */
                 (-10:-5):
-                /* CIF ANSWER (561, 560), (86, 24) */
+                /* CIF ANSWER (642, 315), (86, 24) */
                 (256:300):
         ENDDECISION;
-        /* CIF DECISION (438, 622), (71, 50) */
+        /* CIF DECISION (525, 405), (71, 50) */
         DECISION var3;
-                /* CIF ANSWER (389, 692), (71, 24) */
+                /* CIF ANSWER (470, 475), (71, 24) */
                 (10:20):
-                /* CIF ANSWER (484, 692), (70, 24) */
+                /* CIF ANSWER (570, 475), (70, 24) */
                 (/=50):
         ENDDECISION;
-        /* CIF DECISION (412, 746), (123, 50) */
+        /* CIF DECISION (499, 529), (123, 50) */
         DECISION present(var4)
-        /* CIF COMMENT (555, 753), (252, 35) */
+        /* CIF COMMENT (643, 536), (252, 35) */
         COMMENT 'Check coverage of CHOICE answers';
-                /* CIF ANSWER (441, 816), (66, 34) */
+                /* CIF ANSWER (527, 599), (66, 34) */
                 (a):
         ENDDECISION;
-        /* CIF DECISION (437, 880), (74, 50) */
+        /* CIF DECISION (523, 693), (74, 50) */
         DECISION var5
-        /* CIF COMMENT (525, 878), (241, 50) */
+        /* CIF COMMENT (611, 691), (241, 50) */
         COMMENT 'Check duplicates and 
 coverage of ENUMERATED values';
-                /* CIF ANSWER (304, 950), (70, 24) */
+                /* CIF ANSWER (390, 763), (70, 24) */
                 (hello):
-                /* CIF ANSWER (389, 950), (72, 24) */
+                /* CIF ANSWER (470, 763), (72, 24) */
                 (world):
-                /* CIF ANSWER (481, 950), (72, 24) */
+                /* CIF ANSWER (562, 763), (72, 24) */
                 (world):
-                /* CIF ANSWER (575, 950), (70, 24) */
+                /* CIF ANSWER (661, 763), (70, 24) */
                 (hello):
         ENDDECISION;
-        /* CIF DECISION (439, 989), (70, 50) */
+        /* CIF DECISION (525, 837), (70, 50) */
         DECISION var5
-        /* CIF COMMENT (529, 996), (224, 35) */
+        /* CIF COMMENT (615, 844), (224, 35) */
         COMMENT 'should be no error due to ELSE';
-                /* CIF ANSWER (331, 1059), (105, 24) */
+                /* CIF ANSWER (412, 907), (105, 24) */
                 (howareyou):
-                /* CIF ANSWER (522, 1059), (70, 24) */
+                /* CIF ANSWER (608, 907), (70, 24) */
                 else:
         ENDDECISION;
-        /* CIF NEXTSTATE (439, 1098), (70, 35) */
+        /* CIF NEXTSTATE (525, 981), (70, 35) */
         NEXTSTATE wait;
-    /* CIF STATE (868, 313), (70, 35) */
+    /* CIF STATE (1324, 193), (80, 35) */
+    STATE *(wait);
+        /* CIF INPUT (1277, 248), (173, 35) */
+        INPUT start_something(var2);
+            /* CIF NEXTSTATE (1329, 298), (70, 35) */
+            NEXTSTATE -;
+    ENDSTATE;
+    /* CIF STATE (1215, 52), (70, 35) */
     STATE wait;
+        /* CIF INPUT (1166, 107), (137, 40) */
+        INPUT start_something
+(var2);
+            /* CIF NEXTSTATE (1203, 162), (70, 35) */
+            NEXTSTATE -;
+    ENDSTATE;
+    /* CIF STATE (958, 325), (70, 35) */
+    STATE *;
+        /* CIF INPUT (905, 380), (173, 35) */
+        INPUT start_something(var2);
+            /* CIF NEXTSTATE (958, 430), (70, 35) */
+            NEXTSTATE wait;
+    ENDSTATE;
+    /* CIF STATE (1129, 294), (97, 35) */
+    STATE wait, toto;
+        /* CIF INPUT (1089, 349), (178, 35) */
+        INPUT start_something (var2);
+            /* CIF NEXTSTATE (1144, 399), (70, 35) */
+            NEXTSTATE -;
     ENDSTATE;
 ENDPROCESS myfunction;

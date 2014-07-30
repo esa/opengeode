@@ -1680,8 +1680,13 @@ def variables(root, ta_ast, context):
                     str(child.type))
     for variable in var:
         # Add to the context and text area AST entries
-        context.variables[variable] = (asn1_sort, def_value)
-        ta_ast.variables[variable] = (asn1_sort, def_value)
+        if variable.lower() in context.variables \
+                or variable.lower() in ta_ast.variables:
+            errors.append('Variable "{}" is declared more than once'
+                          .format(variable))
+        else:
+            context.variables[variable.lower()] = (asn1_sort, def_value)
+            ta_ast.variables[variable.lower()] = (asn1_sort, def_value)
     if not DV:
         errors.append('Cannot do semantic checks on variable declarations')
     return errors, warnings
@@ -2543,7 +2548,7 @@ def state(root, parent, context):
             state_def.charPositionInLine = child.getCharPositionInLine()
             exceptions = [c.toString() for c in child.getChildren()]
             for st in context.mapping:
-                if st not in (exceptions, 'START'):
+                if st not in exceptions + ['START']:
                     state_def.statelist.append(st)
         elif child.type == lexer.INPUT:
             # A transition triggered by an INPUT
@@ -2553,6 +2558,19 @@ def state(root, parent, context):
             warnings.extend(warn)
             try:
                 for statename in state_def.statelist:
+                    # check that input is not already defined
+                    existing = context.mapping.get(statename.lower(), [])
+                    dupl = set()
+                    for each in inp.inputlist:
+                        for ex_input in (name for i in existing
+                                         for name in i.inputlist):
+                            if unicode(each) == unicode(ex_input):
+                                dupl.add(each)
+                    for each in dupl:
+                        errors.append('Input "{}" is defined more '
+                                      'than once for state "{}"'
+                                      .format(each, statename.lower()))
+                    # then update the mapping state-input
                     context.mapping[statename.lower()].append(inp)
             except KeyError:
                 warnings.append('State definition missing')
