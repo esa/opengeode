@@ -239,7 +239,6 @@ class PrimConditional(Primary):
         tmpVar can be used if the backend needs a temporary variable
         to process the ifThenElse
     '''
-    is_raw = False
     pass
 
 

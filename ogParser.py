@@ -544,8 +544,16 @@ def check_type_compatibility(primary, typeRef, context):
                    '" not in this enumeration: ' +
                    str(actual_type.EnumValues.keys()))
             raise TypeError(err)
-    elif isinstance(primary, ogAST.PrimConditional) \
-            or isinstance(primary, ogAST.PrimVariable):
+    elif isinstance(primary, ogAST.PrimConditional):
+        then_expr = primary.value['then']
+        else_expr = primary.value['else']
+
+        for expr in (then_expr, else_expr):
+            if expr.is_raw:
+                check_type_compatibility(expr, typeRef, context)
+        return
+
+    elif isinstance(primary, ogAST.PrimVariable):
         try:
             compare_types(primary.exprType, typeRef)
         except TypeError as err:
@@ -885,6 +893,15 @@ def fix_expression_types(expr, context):
             check_expr.right = expr.right.value['value']
             fix_expression_types(check_expr, context)
             expr.right.value['value'] = check_expr.right
+    elif isinstance(expr.right, ogAST.PrimConditional):
+        for det in ('then', 'else'):
+            # Recursively fix possibly missing types in the expression
+            check_expr = ogAST.ExprAssign()
+            check_expr.left = ogAST.PrimVariable()
+            check_expr.left.exprType = expr.left.exprType
+            check_expr.right = expr.right.value[det]
+            fix_expression_types(check_expr, context)
+            expr.right.value[det] = check_expr.right
 
     if expr.right.is_raw != expr.left.is_raw:
         check_type_compatibility(raw_expr, ref_type, context)
@@ -1254,14 +1271,14 @@ def conditional_expression(root, context):
         errors.append(error(root, msg))
 
     # TODO: Refactor this
-    check_expr = ogAST.ExprEq()
-    check_expr.left = then_expr
-    check_expr.right = else_expr
     try:
-        fix_expression_types(check_expr, context)
-        expr.exprType = check_expr.left.exprType
+        expr.left = then_expr
+        expr.right = else_expr
+        fix_expression_types(expr, context)
+        expr.exprType = then_expr.exprType
     except (AttributeError, TypeError) as err:
-        errors.append(error(root, str(err)))
+        if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
+            errors.append(error(root, str(err)))
 
     expr.value = {
         'if': if_expr,
