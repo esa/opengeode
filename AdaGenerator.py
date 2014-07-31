@@ -589,7 +589,6 @@ def _call_external_function(output):
 def _task_assign(task):
     ''' A list of assignments in a task symbol '''
     code, local_decl = [], []
-    ada_string = ''
     if task.comment:
         code.extend(traceability(task.comment))
     for expr in task.elems:
@@ -850,8 +849,6 @@ def _prim_substring(prim):
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    receiver_ty_name = receiver.exprType.ReferencedTypeName.replace('-', '_')
-
     r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0])
     r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1])
 
@@ -923,6 +920,7 @@ def _basic_operators(expr):
     local_decl.extend(right_local)
     return code, unicode(ada_string), local_decl
 
+
 @expression.register(ogAST.ExprAssign)
 def _assign_expression(expr):
     ''' Assignment: almost the same a basic operators, except for strings '''
@@ -948,6 +946,7 @@ def _assign_expression(expr):
     local_decl.extend(left_local)
     local_decl.extend(right_local)
     return code, '', local_decl
+
 
 @expression.register(ogAST.ExprOr)
 @expression.register(ogAST.ExprAnd)
@@ -993,12 +992,29 @@ def _bitwise_operators(expr):
 
 
 @expression.register(ogAST.ExprNot)
-@expression.register(ogAST.ExprNeg)
-def _unary_operator(expr):
-    ''' Generate the code for an unary expression '''
+def _not_expression(expr):
+    ''' Generate the code for a not expression '''
     code, local_decl = [], []
     expr_stmts, expr_str, expr_local = expression(expr.expr)
-    ada_string = u'({op} {expr})'.format(op=expr.operand, expr=expr_str)
+
+    basic_type = find_basic_type(expr.exprType)
+    if basic_type.kind != 'BooleanType':
+        expr_payload = expr_str + string_payload(expr.expr, expr_str)
+        ada_string = u'(Data => (not {expr}))'.format(expr=expr_payload)
+    else:
+        ada_string = u'(not {expr})'.format(expr=expr_str)
+
+    code.extend(expr_stmts)
+    local_decl.extend(expr_local)
+    return code, unicode(ada_string), local_decl
+
+
+@expression.register(ogAST.ExprNeg)
+def _neg_expression(expr):
+    ''' Generate the code for a negative expression '''
+    code, local_decl = [], []
+    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    ada_string = u'(-{expr})'.format(op=expr.operand, expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
     return code, unicode(ada_string), local_decl
@@ -1581,13 +1597,11 @@ def string_payload(prim, ada_string):
     prim_basic = find_basic_type(prim.exprType)
     payload = ''
     if prim_basic.kind in ('SequenceOfType', 'OctetStringType'):
-        range_string = ''
         if int(prim_basic.Min) != int(prim_basic.Max):
             payload = u'.Data(1..{}.Length)'.format(ada_string)
         else:
             payload = u'.Data'
     return payload
-
 
 
 def find_basic_type(a_type):
