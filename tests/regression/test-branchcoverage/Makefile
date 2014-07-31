@@ -10,7 +10,7 @@ test-parse:
 	../../../opengeode.py myfunction.pr system_structure.pr --check
 
 test-ada:
-	../../../opengeode.py --toAda myfunction.pr system_structure.pr 2>&1 | diff expected - || exit 0
+	../../../opengeode.py --toAda myfunction.pr system_structure.pr 2>&1 | sort | diff expected - || exit 0
 
 coverage:
 	coverage run  -p ../../../opengeode.py myfunction.pr system_structure.pr --toAda

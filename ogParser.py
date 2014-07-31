@@ -31,7 +31,7 @@ import os
 import logging
 import traceback
 from itertools import chain, permutations, combinations
-from collections import defaultdict
+from collections import defaultdict, Counter
 import antlr3
 import antlr3.tree
 
@@ -1675,8 +1675,13 @@ def variables(root, ta_ast, context):
                     str(child.type))
     for variable in var:
         # Add to the context and text area AST entries
-        context.variables[variable] = (asn1_sort, def_value)
-        ta_ast.variables[variable] = (asn1_sort, def_value)
+        if variable.lower() in context.variables \
+                or variable.lower() in ta_ast.variables:
+            errors.append('Variable "{}" is declared more than once'
+                          .format(variable))
+        else:
+            context.variables[variable.lower()] = (asn1_sort, def_value)
+            ta_ast.variables[variable.lower()] = (asn1_sort, def_value)
     if not DV:
         errors.append('Cannot do semantic checks on variable declarations')
     return errors, warnings
@@ -2538,7 +2543,7 @@ def state(root, parent, context):
             state_def.charPositionInLine = child.getCharPositionInLine()
             exceptions = [c.toString() for c in child.getChildren()]
             for st in context.mapping:
-                if st not in (exceptions, 'START'):
+                if st not in exceptions + ['START']:
                     state_def.statelist.append(st)
         elif child.type == lexer.INPUT:
             # A transition triggered by an INPUT
@@ -2548,6 +2553,19 @@ def state(root, parent, context):
             warnings.extend(warn)
             try:
                 for statename in state_def.statelist:
+                    # check that input is not already defined
+                    existing = context.mapping.get(statename.lower(), [])
+                    dupl = set()
+                    for each in inp.inputlist:
+                        for ex_input in (name for i in existing
+                                         for name in i.inputlist):
+                            if unicode(each) == unicode(ex_input):
+                                dupl.add(each)
+                    for each in dupl:
+                        errors.append('Input "{}" is defined more '
+                                      'than once for state "{}"'
+                                      .format(each, statename.lower()))
+                    # then update the mapping state-input
                     context.mapping[statename.lower()].append(inp)
             except KeyError:
                 warnings.append('State definition missing')
@@ -2955,6 +2973,7 @@ def decision(root, parent, context):
     covered_ranges = defaultdict(list)
     qmin, qmax = 0, 0
     need_else = False
+    is_enum = False
     for ans in dec.answers:
         if ans.kind in ('constant', 'open_range'):
             expr = ans.openRangeOp()
@@ -2967,6 +2986,13 @@ def decision(root, parent, context):
                 ans.constant = expr.right
                 q_basic = find_basic_type(dec.question.exprType)
                 a_basic = find_basic_type(ans.constant.exprType)
+                if q_basic.kind.endswith('EnumeratedType'):
+                    if not ans.constant.is_raw:
+                        # Ref to a variable -> can't guarantee coverage
+                        need_else = True
+                        continue
+                    covered_ranges[ans].append(ans.inputString)
+                    is_enum = True
                 if not q_basic.kind.startswith('Integer'):
                     continue
                 # numeric type -> find the range covered by this answer
@@ -3077,14 +3103,17 @@ def decision(root, parent, context):
                                         l=a0_val, h=a1_val))
             covered_ranges[ans].append((int(float(a0_basic.Min)),
                                         int(float(a1_basic.Max))))
-    # Check the following:
+    # Check the following
     # (1) no overlap between covered ranges in decision answers
     # (2) no gap in the coverage of the decision possible values
     # (3) ELSE branch, if present, can be reached
     # (4) if an answer uses a non-ground expression an ELSE is there
+    # (5) present() operator and enumerated question are fully covered
 
     q_ranges = [(qmin, qmax)] if is_numeric(dec.question.exprType) else []
     for each in combinations(covered_ranges.viewitems(), 2):
+        if not q_ranges:
+            continue
         for comb in combinations(
                 chain.from_iterable(val[1] for val in each), 2):
             comb_overlap = (max(comb[0][0], comb[1][0]),
@@ -3099,9 +3128,10 @@ def decision(root, parent, context):
                                       o1=comb_overlap[0],
                                       o2=comb_overlap[1]))
     new_q_ranges = []
-#   for minq, maxq in q_ranges:
     # (2) Check that decision range is fully covered
     for ans_ref, ranges in covered_ranges.viewitems():
+        if is_enum:
+            continue
         for mina, maxa in ranges:
             for minq, maxq in q_ranges:
                 left = (minq, min(maxq, mina - 1))
@@ -3128,6 +3158,21 @@ def decision(root, parent, context):
         # (4) Answers use non-ground expression -> there should be an ELSE
         warnings.append('Decision "{}": Missing ELSE branch'
                         .format(dec.inputString))
+
+    # (5) check coverage of enumerated types
+    if is_enum:
+        # check duplicate answers
+        answers = list(chain.from_iterable(covered_ranges.viewvalues()))
+        dupl = [a for a, v in Counter(answers).items() if v > 1]
+        if dupl:
+            errors.append('Decision "{}": duplicate answers "{}"'
+                          .format(dec.inputString, '", "'.join(dupl)))
+        enumerants = [en.replace('-', '_') for en in q_basic.EnumValues.keys()]
+        # check for missing answers
+        if set(answers) != set(enumerants) and not has_else:
+            errors.append('Decision "{}": Missing branches for answer(s) "{}"'
+                          .format(dec.inputString,
+                                  '", "'.join(set(enumerants) - set(answers))))
 
     return dec, errors, warnings
 

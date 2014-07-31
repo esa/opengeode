@@ -1,5 +1,14 @@
 /* CIF PROCESS (150, 150), (150, 75) */
 PROCESS challenge;
+    /* CIF TEXT (922, 91), (298, 120) */
+    dcl count, actual_count CountTab;
+dcl pow_value T_UInt32 := 0;
+dcl check T_UInt8;
+
+dcl bitwise SeqBit;
+dcl bitwise2 SeqBit2;
+dcl boolwise t_Boolean;
+    /* CIF ENDTEXT */
     /* CIF TEXT (0, 26), (502, 179) */
     procedure test;
 fpar  in first t_UInt8,
@@ -11,18 +20,9 @@ dcl testvalue t_boolean := true;
 
 dcl nested Nested := {a {b {c {p {x 1, y 2}, l {3, 4}}}}};
     /* CIF ENDTEXT */
-    /* CIF TEXT (922, 91), (298, 120) */
-    dcl count, actual_count CountTab;
-dcl pow_value T_UInt32 := 0;
-dcl check T_UInt8;
-
-dcl bitwise SeqBit;
-dcl bitwise2 SeqBit2;
-dcl boolwise t_Boolean;
-    /* CIF ENDTEXT */
     /* CIF START (672, 14), (68, 37) */
     START;
-        /* CIF TASK (614, 66), (184, 72) */
+        /* CIF TASK (613, 66), (184, 72) */
         TASK for x in count:
     count(x) := count_max
     actual_count(x) := 0
@@ -31,23 +31,23 @@ endfor;
         TASK nested := {a {b {c {p {x 1, y 2}, l {3, 4}}}}};
         /* CIF NEXTSTATE (671, 203), (70, 35) */
         NEXTSTATE Wait;
-    /* CIF STATE (760, 11), (68, 35) */
+    /* CIF STATE (759, 11), (68, 35) */
     STATE Wait;
     ENDSTATE;
     /* CIF STATE (671, 203), (70, 35) */
     STATE Wait;
         /* CIF INPUT (671, 258), (70, 35) */
         INPUT run;
-            /* CIF PROCEDURECALL (623, 308), (166, 35) */
+            /* CIF PROCEDURECALL (622, 308), (166, 35) */
             CALL writeln('Computing');
-            /* CIF TASK (500, 358), (412, 216) */
+            /* CIF TASK (499, 358), (412, 216) */
             TASK for x in range(exceed_nb):
     for n in range(nb_bit):
         call pow(2, n, pow_value);
         check := if val_max - x>0 and pow_value>0 then 1 else 0 fi
         bitwise := bitwise and bitwise
-        bitwise2 := bitwise2 xor {true, false}
-        bitwise2 := bitwise2 and bitwise2
+        -- bitwise2 := bitwise2 xor {true, false}
+        -- bitwise2 := bitwise2 and bitwise2
         boolwise := boolwise and boolwise
         check := if (check=0) and pow_value>1  then 1 else 0 fi
         count(n) := count(n) - check
