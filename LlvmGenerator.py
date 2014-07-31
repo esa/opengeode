@@ -153,7 +153,7 @@ class Context():
             struct = self.decl_struct(['arr'], [array_ty], name)
 
         struct_ptr = core.Type.pointer(struct.ty)
-        self.decl_func("%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
+        self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
         return struct.ty
 
@@ -169,7 +169,7 @@ class Context():
         struct = self.decl_struct(field_names, field_types, name)
 
         struct_ptr = core.Type.pointer(struct.ty)
-        self.decl_func("%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
+        self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
         return struct.ty
 
@@ -188,7 +188,7 @@ class Context():
         union = self.decl_union(field_names, field_types, name)
 
         union_ptr = core.Type.pointer(union.ty)
-        self.decl_func("%s_Equal" % name, self.i1, [union_ptr, union_ptr])
+        self.decl_func("asn1Scc%s_Equal" % name, self.i1, [union_ptr, union_ptr])
 
         return union.ty
 
@@ -206,7 +206,7 @@ class Context():
             struct = self.decl_struct(['arr'], [array_ty], name)
 
         struct_ptr = core.Type.pointer(struct.ty)
-        self.decl_func("%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
+        self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
         return struct.ty
 
@@ -1030,7 +1030,7 @@ def _basic(expr):
     elif is_struct_ptr(lefttmp):
         if expr.operand in ['=', '/=']:
             type_name = expr.left.exprType.ReferencedTypeName.replace('-', '_').lower()
-            func = ctx.funcs["%s_equal" % type_name]
+            func = ctx.funcs["asn1scc%s_equal" % type_name]
             res_val = ctx.builder.call(func, [lefttmp, righttmp])
             return ctx.builder.not_(res_val) if expr.operand == '/=' else res_val
         else:
