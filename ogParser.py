@@ -28,8 +28,6 @@ __author__ = 'Maxime Perrotin'
 
 import sys
 import os
-import re
-import fnmatch
 import logging
 import traceback
 from itertools import chain, permutations, combinations
@@ -68,7 +66,6 @@ EXPR_NODE = {
     lexer.NOT: ogAST.ExprNot,
     lexer.NEG: ogAST.ExprNeg,
     lexer.PRIMARY: ogAST.Primary,
-    lexer.IFTHENELSE: ogAST.PrimIfThenElse,
 }
 
 # Insert current path in the search list for importing modules
@@ -394,11 +391,7 @@ def fix_special_operators(op_name, expr_list, context):
                 for each in (INTEGER, REAL, BOOLEAN, RAWSTRING, OCTETSTRING):
                     try:
                         check_type_compatibility(param, each, context)
-                        if each is OCTETSTRING and isinstance(param,
-                                                         ogAST.PrimIfThenElse):
-                            param.exprType = param.value['then'].exprType
-                        else:
-                            param.exprType = each
+                        param.exprType = each
                         break
                     except TypeError:
                         continue
@@ -551,28 +544,15 @@ def check_type_compatibility(primary, typeRef, context):
                    '" not in this enumeration: ' +
                    str(actual_type.EnumValues.keys()))
             raise TypeError(err)
-    elif isinstance(primary, ogAST.PrimIfThenElse):
-        # check that IF expr returns BOOL, and that Then and Else expressions
-        # are compatible with actual_type
-        if_expr = primary.value['if']
+    elif isinstance(primary, ogAST.PrimConditional):
         then_expr = primary.value['then']
         else_expr = primary.value['else']
-        if if_expr.exprType.kind != 'BooleanType':
-            raise TypeError('IF expression does not return a boolean')
-        else:
-            for expr in (then_expr, else_expr):
-                if expr.is_raw:
-                    check_type_compatibility(expr, typeRef, context)
-                # compare the types for semantic equivalence:
-                else:
-                    if expr.exprType is UNKNOWN_TYPE:
-                        # If it was not resolved before, it must be a variable
-                        # this can happen in the context of a special operator
-                        # (write), where at no point before where the type
-                        # could be compared to another type
-                        expr.exprType = find_variable(expr.value[0], context)
-                    compare_types(expr.exprType, typeRef)
+
+        for expr in (then_expr, else_expr):
+            if expr.is_raw:
+                check_type_compatibility(expr, typeRef, context)
         return
+
     elif isinstance(primary, ogAST.PrimVariable):
         try:
             compare_types(primary.exprType, typeRef)
@@ -634,7 +614,7 @@ def check_type_compatibility(primary, typeRef, context):
                         # Compare the types for semantic equivalence
                         try:
                             compare_types(
-                                  primary.value[ufield].exprType, fd_data.type)
+                                primary.value[ufield].exprType, fd_data.type)
                         except TypeError as err:
                             raise TypeError('Field ' + ufield +
                                         ' is not of the proper type, i.e. ' +
@@ -871,7 +851,7 @@ def fix_expression_types(expr, context):
             raise TypeError('Cannot resolve type of "{}"'
                             .format(unknown[0].inputString))
 
-    # In Sequence, Choice, SEQUENCE OF, and IfThenElse expressions,
+    # In Sequence, Choice and SEQUENCE OF expressions,
     # we must fix missing inner types
     # (due to similarities, the following should be refactored FIXME)
     if isinstance(expr.right, ogAST.PrimSequence):
@@ -913,7 +893,7 @@ def fix_expression_types(expr, context):
             check_expr.right = expr.right.value['value']
             fix_expression_types(check_expr, context)
             expr.right.value['value'] = check_expr.right
-    elif isinstance(expr.right, ogAST.PrimIfThenElse):
+    elif isinstance(expr.right, ogAST.PrimConditional):
         for det in ('then', 'else'):
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
@@ -1040,8 +1020,8 @@ def expression(root, context):
         return neg_expression(root, context)
     elif root.type == lexer.PAREN:
         return expression(root.children[0], context)
-    elif root.type == lexer.IFTHENELSE:
-        return if_then_else_expression(root, context)
+    elif root.type == lexer.CONDITIONAL:
+        return conditional_expression(root, context)
     elif root.type == lexer.PRIMARY:
         return primary(root.children[0], context)
     elif root.type == lexer.CALL:
@@ -1076,13 +1056,16 @@ def logic_expression(root, context):
             errors.append(error(root, msg))
             break
 
-        if bty.kind in ('BooleanType', 'BitStringType'):
+        if bty.kind == 'BooleanType':
             continue
-        elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
+        elif bty.kind == 'BitStringType' and bty.Min == bty.Max:
+            continue
+        elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType'\
+                and bty.Min == bty.Max:
             continue
         else:
             msg = 'Bitwise operators only work with Booleans, ' \
-                  'SequenceOf Booleans or BitStrings'
+                  'fixed size SequenceOf Booleans or fixed size BitStrings'
             errors.append(error(root, msg))
             break
 
@@ -1260,11 +1243,11 @@ def neg_expression(root, context):
     return expr, errors, warnings
 
 
-def if_then_else_expression(root, context):
-    ''' If Then Else expression analysis '''
+def conditional_expression(root, context):
+    ''' Conditional expression analysis '''
     errors, warnings = [], []
 
-    expr = ogAST.PrimIfThenElse(
+    expr = ogAST.PrimConditional(
         get_input_string(root),
         root.getLine(),
         root.getCharPositionInLine()
@@ -1286,7 +1269,20 @@ def if_then_else_expression(root, context):
     errors.extend(err)
     warnings.extend(warn)
 
+    if find_basic_type(if_expr.exprType).kind != 'BooleanType':
+        msg = 'Conditions in conditional expressions must be of type Boolean'
+        errors.append(error(root, msg))
+
     # TODO: Refactor this
+    try:
+        expr.left = then_expr
+        expr.right = else_expr
+        fix_expression_types(expr, context)
+        expr.exprType = then_expr.exprType
+    except (AttributeError, TypeError) as err:
+        if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
+            errors.append(error(root, str(err)))
+
     expr.value = {
         'if': if_expr,
         'then': then_expr,
@@ -1410,7 +1406,6 @@ def primary_call(root, context):
                 'Max': str(max(enum_values))
             })
         except AttributeError:
-            msg = 'Type Error, check the parameter'
             errors.append(error(root, '"Num" parameter error'))
 
     return node, errors, warnings
@@ -1620,7 +1615,7 @@ def primary(root, context):
     elif root.type == lexer.OCTSTR:
         prim = ogAST.PrimOctetStringLiteral()
         warnings.append(
-                       warning(root, 'Octet string literal not supported yet'))
+            warning(root, 'Octet string literal not supported yet'))
     else:
         # TODO: return error message
         raise NotImplementedError
@@ -2582,9 +2577,9 @@ def state(root, parent, context):
                 else:
                     asterisk_input = inp
         elif child.type == lexer.CONNECT:
+            comp_states = (comp.statename for comp in context.composite_states)
             if asterisk_state or len(state_def.statelist) != 1 \
-                 or (state_def.statelist[0].lower()
-                 not in (comp.statename for comp in context.composite_states)):
+                    or state_def.statelist[0].lower() not in comp_states:
                 errors.append('State {} is not a composite state and cannot '
                               'be followed by a connect statement'
                               .format(state_def.statelist[0]))
@@ -3091,7 +3086,7 @@ def decision(root, parent, context):
             qmin, qmax = int(float(q_basic.Min)), int(float(q_basic.Max))
             a0_val = int(float(a0_basic.Min))
             a1_val = int(float(a1_basic.Max))
-            if a0_val <  qmin:
+            if a0_val < qmin:
                 warnings.append('Decision "{dec}": '
                                 'Range [{a0} .. {qmin}] is unreachable'
                                 .format(a0=a0_val, qmin=qmin - 1,

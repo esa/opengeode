@@ -248,8 +248,8 @@ def _mantissa_base_exp(primary):
     pass
 
 
-@expression.register(ogAST.PrimIfThenElse)
-def _if_then_else(ifThenElse):
+@expression.register(ogAST.PrimConditional)
+def _conditional(cond):
     ''' Return string and statements for ternary operator '''
     pass
 

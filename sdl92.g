@@ -33,6 +33,7 @@ tokens {
         CLOSED_RANGE;
         COMMENT;
         COMPOSITE_STATE;
+        CONDITIONAL;
         CONNECT;
         CONNECTION;
         CONSTANT;
@@ -836,7 +837,7 @@ postfix_expression
 primary_expression
         :       primary                       -> ^(PRIMARY primary)
         |       '(' expression ')'            -> ^(PAREN expression)
-        |       conditional_ground_expression
+        |       conditional_expression
         ;
 
 
@@ -966,31 +967,19 @@ operator_application
 active_expression_list
         :       active_expression (',' expression_list)?;/* |
                 ground_expression ',' active_expression_list;*/   // Will not work (recursion)
-/*
-conditional_expression
-        :       IF boolean_active_expression THEN consequence_expression ELSE alternative_expression FI |
-                IF boolean_expression THEN active_consequence_expression ELSE alternative_expression FI |
-                IF boolean_expression THEN consequence_expression ELSE active_alternative_expression FI;
-*/
-
-
-// Simpler version, the rest will is checked by semantic analysis
-conditional_expression
-        :       IF expression THEN expression ELSE expression FI;
 
 
 //synonym :       ID; // synonym_id | external_synonym;
-
 
 external_synonym
         :       external_synonym_id;
 
 
-conditional_ground_expression
+conditional_expression
         :       IF ifexpr=expression
                 THEN thenexpr=expression
                 ELSE elseexpr=expression FI
-        ->      ^(IFTHENELSE $ifexpr $thenexpr $elseexpr);
+        ->      ^(CONDITIONAL $ifexpr $thenexpr $elseexpr);
 
 
 expression_list
