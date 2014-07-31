@@ -993,12 +993,29 @@ def _bitwise_operators(expr):
 
 
 @expression.register(ogAST.ExprNot)
-@expression.register(ogAST.ExprNeg)
-def _unary_operator(expr):
-    ''' Generate the code for an unary expression '''
+def _not_expression(expr):
+    ''' Generate the code for a not expression '''
     code, local_decl = [], []
     expr_stmts, expr_str, expr_local = expression(expr.expr)
-    ada_string = u'({op} {expr})'.format(op=expr.operand, expr=expr_str)
+
+    basic_type = find_basic_type(expr.exprType)
+    if basic_type.kind != 'BooleanType':
+        expr_payload = expr_str + string_payload(expr.expr, expr_str)
+        ada_string = u'(Data => (not {expr}))'.format(expr=expr_payload)
+    else:
+        ada_string = u'(not {expr})'.format(expr=expr_str)
+
+    code.extend(expr_stmts)
+    local_decl.extend(expr_local)
+    return code, unicode(ada_string), local_decl
+
+
+@expression.register(ogAST.ExprNeg)
+def _neg_expression(expr):
+    ''' Generate the code for a negative expression '''
+    code, local_decl = [], []
+    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    ada_string = u'(-{expr})'.format(op=expr.operand, expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
     return code, unicode(ada_string), local_decl
