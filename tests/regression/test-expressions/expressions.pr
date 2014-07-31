@@ -1,16 +1,19 @@
 /* CIF PROCESS (145, 158), (150, 75) */
 PROCESS expressions;
-    /* CIF TEXT (358, 168), (303, 168) */
+    /* CIF TEXT (350, 175), (303, 216) */
     DCL i Integer;
 DCL f Real;
 DCL b Boolean;
 DCL s CharString;
-DCL fixSeqOf1 IntegerFixSeqof;
-DCL fixSeqOf2 IntegerFixSeqof;
-DCL varSeqOf1 IntegerVarSeqof;
-DCL varSeqOf2 IntegerVarSeqof;
+DCL fixSeqOf1 FixSeqof;
+DCL fixSeqOf2 FixSeqof;
+DCL varSeqOf1 VarSeqof;
+DCL varSeqOf2 VarSeqof;
 DCL seq Seq;
 DCL nestedSeq NestedSeq;
+DCL boolSeqOf1 BoolSeqOf;
+DCL boolSeqOf2 BoolSeqOf;
+DCL boolSeqOf3 BoolSeqOf;
     /* CIF ENDTEXT */
     /* CIF START (0, 0), (100, 50) */
     START;
@@ -122,51 +125,73 @@ DCL nestedSeq NestedSeq;
             TASK s := 'HELLO';
             /* CIF PROCEDURECALL (-191, 2700), (484, 35) */
             CALL assert(s // s // s = 'HELLOHELLOHELLO', 's // s // s = "HELLOHELLOHELLO"');
-            /* CIF TASK (-148, 2750), (399, 35) */
+            /* CIF TASK (-66, 2750), (235, 35) */
+            TASK boolSeqOf1 := {true, false};
+            /* CIF TASK (-66, 2800), (235, 35) */
+            TASK boolSeqOf2 := {false, true};
+            /* CIF TASK (-99, 2850), (301, 35) */
+            TASK boolSeqOf3 := boolSeqOf1 and boolSeqOf2;
+            /* CIF PROCEDURECALL (-98, 2900), (298, 35) */
+            CALL assert(not boolSeqOf3(0), 'boolSeqOf3(0)');
+            /* CIF PROCEDURECALL (-110, 2950), (322, 35) */
+            CALL assert(not boolSeqOf3(1),'not boolSeqOf3(1)');
+            /* CIF TASK (-99, 3000), (301, 35) */
+            TASK boolSeqOf3 := boolSeqOf1 or boolSeqOf2;
+            /* CIF PROCEDURECALL (-86, 3050), (274, 35) */
+            CALL assert(boolSeqOf3(0), 'boolSeqOf3(0)');
+            /* CIF PROCEDURECALL (-86, 3100), (274, 35) */
+            CALL assert(boolSeqOf3(1), 'boolSeqOf3(1)');
+            /* CIF TASK (-99, 3150), (301, 35) */
+            TASK boolSeqOf3 := boolSeqOf1 xor boolSeqOf2;
+            /* CIF PROCEDURECALL (-86, 3200), (274, 35) */
+            CALL assert(boolSeqOf3(0), 'boolSeqOf3(0)');
+            /* CIF PROCEDURECALL (-86, 3250), (274, 35) */
+            CALL assert(boolSeqOf3(1), 'boolSeqOf3(1)');
+            /* CIF TASK (-148, 3300), (399, 35) */
             TASK '------------------------------- Unary expressions -------------------------------';
-            /* CIF TASK (3, 2800), (95, 35) */
+            /* CIF TASK (3, 3350), (95, 35) */
             TASK b := false;
-            /* CIF PROCEDURECALL (-29, 2850), (160, 35) */
+            /* CIF PROCEDURECALL (-29, 3400), (160, 35) */
             CALL assert(not b, 'not b');
-            /* CIF TASK (14, 2900), (73, 35) */
+            /* CIF TASK (14, 3450), (73, 35) */
             TASK i := 10;
-            /* CIF PROCEDURECALL (-37, 2950), (177, 35) */
+            /* CIF PROCEDURECALL (-37, 3500), (177, 35) */
             CALL assert(-i = -10, '-i = -10');
-            /* CIF TASK (-151, 3000), (405, 35) */
+            /* CIF TASK (-151, 3550), (405, 35) */
             TASK '------------------------------- Primary Expression -------------------------------';
-            /* CIF PROCEDURECALL (-84, 3050), (271, 35) */
+            /* CIF PROCEDURECALL (-84, 3600), (271, 35) */
             CALL assert(((1 + 1) * 4) = 8, '((1 + 1) * 4) = 8');
-            /* CIF PROCEDURECALL (-157, 3100), (417, 35) */
+            /* CIF PROCEDURECALL (-157, 3650), (417, 35) */
             CALL assert(if true then 1 else 2 fi = 1, 'if true then 1 else 2 fi = 1');
-            /* CIF PROCEDURECALL (-183, 3150), (468, 35) */
+            /* CIF PROCEDURECALL (-183, 3700), (468, 35) */
             CALL assert(if false then 1.0 else 2.0 fi = 2.0, 'if false then 1.0 else 2.0 fi = 2.0');
-            /* CIF PROCEDURECALL (-475, 3200), (1052, 35) */
+            /* CIF PROCEDURECALL (-475, 3750), (1052, 35) */
             CALL assert(if false then false else (if true then (if false then false else true fi) else false fi) fi, 'if false then false else (if true then (if false then false else true fi) else false fi) fi');
-            /* CIF TASK (-183, 3250), (468, 35) */
+            /* CIF TASK (-183, 3800), (468, 35) */
             TASK '------------------------------- Extended Primary Expressions -------------------------------';
-            /* CIF TASK (-30, 3300), (163, 35) */
+            /* CIF TASK (-30, 3850), (163, 35) */
             TASK fixSeqOf1 := {2, 3, 4};
-            /* CIF PROCEDURECALL (-95, 3350), (293, 35) */
+            /* CIF PROCEDURECALL (-95, 3900), (293, 35) */
             CALL assert(fixSeqOf1(1) = 3, 'fixSeqOf1(1) = 3');
-            /* CIF TASK (-31, 3400), (164, 35) */
+            /* CIF TASK (-31, 3950), (164, 35) */
             TASK varSeqOf1 := {2, 3, 4};
-            /* CIF PROCEDURECALL (-99, 3450), (300, 35) */
+            /* CIF PROCEDURECALL (-99, 4000), (300, 35) */
             CALL assert(varSeqOf1(1) = 3, 'varSeqOf1(1) = 3');
-            /* CIF TASK (-68, 3500), (239, 35) */
+            /* CIF TASK (-68, 4050), (239, 35) */
             TASK seq := {i 1, b true, f 1.0, s 'HELLO'};
-            /* CIF PROCEDURECALL (-47, 3550), (196, 35) */
+            /* CIF PROCEDURECALL (-47, 4100), (196, 35) */
             CALL assert(seq!i = 1, 'seq!i = 1');
-            /* CIF PROCEDURECALL (-69, 3600), (241, 35) */
+            /* CIF PROCEDURECALL (-69, 4150), (241, 35) */
             CALL assert(seq!b = true, 'seq!b = true');
-            /* CIF PROCEDURECALL (-59, 3650), (221, 35) */
+            /* CIF PROCEDURECALL (-59, 4200), (221, 35) */
             CALL assert(seq!f = 1.0, 'seq!f = 1.0');
-            /* CIF PROCEDURECALL (-93, 3700), (289, 35) */
+            /* CIF PROCEDURECALL (-93, 4250), (289, 35) */
             CALL assert(seq!s = 'HELLO', 'seq!s = "HELLO"');
-            /* CIF TASK (-51, 3750), (204, 35) */
+            /* CIF TASK (-51, 4300), (204, 35) */
             TASK nestedSeq := {a {b {c {d 9}}}};
-            /* CIF PROCEDURECALL (-126, 3800), (354, 35) */
+            /* CIF PROCEDURECALL (-126, 4350), (354, 35) */
             CALL assert(nestedSeq!a!b!c!d = 9, 'nestedSeq!a!b!c!d = 9');
-            /* CIF NEXTSTATE (1, 3850), (100, 50) */
+            /* CIF NEXTSTATE (1, 4400), (100, 50) */
             NEXTSTATE Wait;
     ENDSTATE;
 ENDPROCESS expressions;

@@ -1060,8 +1060,8 @@ def logic_expression(root, context):
             continue
         elif bty.kind == 'BitStringType' and bty.Min == bty.Max:
             continue
-        elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType'\
-                and bty.Min == bty.Max:
+        elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max \
+                and find_basic_type(bty.type).kind == 'BooleanType':
             continue
         else:
             msg = 'Bitwise operators only work with Booleans, ' \
