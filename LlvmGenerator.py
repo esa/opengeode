@@ -307,6 +307,10 @@ class Scope:
         return label_block
 
 
+class CompileError(Exception):
+    pass
+
+
 @singledispatch
 def generate(ast):
     ''' Generate the code for an item of the AST '''
@@ -1075,7 +1079,13 @@ def generate_assign(left, right):
 @expression.register(ogAST.ExprXor)
 def _logic(expr):
     ''' Generate the code for a logic expression '''
+    bty = find_basic_type(expr.exprType)
+
     if expr.shortcircuit:
+        if bty.kind != 'BooleanType':
+            raise CompileError('Type "%s" not supported in shortcircuit expressions'
+                % bty.kind)
+
         func = ctx.builder.basic_block.function
 
         right_block = func.append_basic_block('')
@@ -1090,7 +1100,7 @@ def _logic(expr):
         elif expr.operand == 'or':
             ctx.builder.cbranch(left_val, end_block, right_block)
         else:
-            raise NotImplementedError
+            raise CompileError('Unknown shortcircuit operator "%s"' % expr.operand)
 
         ctx.builder.position_at_end(right_block)
         right_val = expression(expr.right)
@@ -1100,73 +1110,72 @@ def _logic(expr):
         ctx.builder.position_at_end(end_block)
         return ctx.builder.load(res_ptr)
 
-    else:
-        bty = find_basic_type(expr.exprType)
+    elif bty.kind == 'BooleanType':
+        left_val = expression(expr.left)
+        right_val = expression(expr.right)
+        if expr.operand == 'and':
+            return ctx.builder.and_(left_val, right_val)
+        elif expr.operand == 'or':
+            return ctx.builder.or_(left_val, right_val)
+        elif expr.operand == 'xor':
+            return ctx.builder.xor(left_val, right_val)
+        raise CompileError('Unknown bitwise operator "%s"' % expr.operand)
 
-        if bty.kind == 'BooleanType':
-            left_val = expression(expr.left)
-            right_val = expression(expr.right)
-            if expr.operand == 'and':
-                return ctx.builder.and_(left_val, right_val)
-            elif expr.operand == 'or':
-                return ctx.builder.or_(left_val, right_val)
-            else:
-                return ctx.builder.xor(left_val, right_val)
+    elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
+        func = ctx.builder.basic_block.function
 
-        elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
-            func = ctx.builder.basic_block.function
+        body_block = func.append_basic_block('%s:body' % expr.operand)
+        next_block = func.append_basic_block('%s:next' % expr.operand)
+        end_block = func.append_basic_block('%s:end' % expr.operand)
 
-            body_block = func.append_basic_block('%s:body' % expr.operand)
-            next_block = func.append_basic_block('%s:next' % expr.operand)
-            end_block = func.append_basic_block('%s:end' % expr.operand)
+        left_ptr = expression(expr.left)
+        right_ptr = expression(expr.right)
+        res_ptr = ctx.builder.alloca(left_ptr.type.pointee)
 
-            left_ptr = expression(expr.left)
-            right_ptr = expression(expr.right)
-            res_ptr = ctx.builder.alloca(left_ptr.type.pointee)
+        array_ty = res_ptr.type.pointee.elements[0]
+        len_val = core.Constant.int(ctx.i32, array_ty.count)
 
-            array_ty = res_ptr.type.pointee.elements[0]
-            len_val = core.Constant.int(ctx.i32, array_ty.count)
+        idx_ptr = ctx.builder.alloca(ctx.i32)
+        ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
 
-            idx_ptr = ctx.builder.alloca(ctx.i32)
-            ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
+        ctx.builder.branch(body_block)
 
-            ctx.builder.branch(body_block)
+        # body block
+        ctx.builder.position_at_end(body_block)
+        idx_val = ctx.builder.load(idx_ptr)
 
-            # body block
-            ctx.builder.position_at_end(body_block)
-            idx_val = ctx.builder.load(idx_ptr)
+        left_elem_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.zero, idx_val])
+        left_elem_val = ctx.builder.load(left_elem_ptr)
 
-            left_elem_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.zero, idx_val])
-            left_elem_val = ctx.builder.load(left_elem_ptr)
+        right_elem_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero, idx_val])
+        right_elem_val = ctx.builder.load(right_elem_ptr)
 
-            right_elem_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero, idx_val])
-            right_elem_val = ctx.builder.load(right_elem_ptr)
-
-            if expr.operand == 'and':
-                res_elem_val = ctx.builder.and_(left_elem_val, right_elem_val)
-            elif expr.operand == 'or':
-                res_elem_val = ctx.builder.or_(left_elem_val, right_elem_val)
-            else:
-                res_elem_val = ctx.builder.xor(left_elem_val, right_elem_val)
-
-            res_elem_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero, idx_val])
-            ctx.builder.store(res_elem_val, res_elem_ptr)
-
-            ctx.builder.branch(next_block)
-
-            # next block
-            ctx.builder.position_at_end(next_block)
-            idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
-            ctx.builder.store(idx_tmp_val, idx_ptr)
-            end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, len_val)
-            ctx.builder.cbranch(end_cond_val, end_block, body_block)
-
-            # end block
-            ctx.builder.position_at_end(end_block)
-            return res_ptr
-
+        if expr.operand == 'and':
+            res_elem_val = ctx.builder.and_(left_elem_val, right_elem_val)
+        elif expr.operand == 'or':
+            res_elem_val = ctx.builder.or_(left_elem_val, right_elem_val)
+        elif expr.operand == 'xor':
+            res_elem_val = ctx.builder.xor(left_elem_val, right_elem_val)
         else:
-            raise NotImplementedError
+            raise CompileError('Unknown bitwise operator "%s"' % expr.operand)
+
+        res_elem_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero, idx_val])
+        ctx.builder.store(res_elem_val, res_elem_ptr)
+
+        ctx.builder.branch(next_block)
+
+        # next block
+        ctx.builder.position_at_end(next_block)
+        idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
+        ctx.builder.store(idx_tmp_val, idx_ptr)
+        end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, len_val)
+        ctx.builder.cbranch(end_cond_val, end_block, body_block)
+
+        # end block
+        ctx.builder.position_at_end(end_block)
+        return res_ptr
+
+    raise CompileError('Type "%s" not supported in bitwise expressions' % bty.kind)
 
 
 @expression.register(ogAST.ExprNot)
@@ -1177,7 +1186,7 @@ def _not(expr):
     if bty.kind == 'BooleanType':
         return ctx.builder.not_(expression(expr.expr))
 
-    elif bty.kind == 'SequenceOfType':
+    elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
         func = ctx.builder.basic_block.function
 
         not_block = func.append_basic_block('not:not')
@@ -1190,24 +1199,15 @@ def _not(expr):
         struct_ptr = expression(expr.expr)
         res_struct_ptr = ctx.builder.alloca(struct_ptr.type.pointee)
 
-        if bty.Min != bty.Max:
-            len_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
-            len_val = ctx.builder.load(len_ptr)
-            res_len_ptr = ctx.builder.gep(res_struct_ptr, [ctx.zero, ctx.zero])
-            ctx.builder.store(len_val, res_len_ptr)
-        else:
-            array_ty = struct_ptr.type.pointee.elements[0]
-            len_val = core.Constant.int(ctx.i32, array_ty.count)
+        array_ty = struct_ptr.type.pointee.elements[0]
+        len_val = core.Constant.int(ctx.i32, array_ty.count)
 
         ctx.builder.branch(not_block)
 
         ctx.builder.position_at_end(not_block)
         idx_val = ctx.builder.load(idx_ptr)
 
-        if bty.Min != bty.Max:
-            elem_idxs = [ctx.zero, ctx.one, idx_val]
-        else:
-            elem_idxs = [ctx.zero, ctx.zero, idx_val]
+        elem_idxs = [ctx.zero, ctx.zero, idx_val]
 
         elem_ptr = ctx.builder.gep(struct_ptr, elem_idxs)
         elem_val = ctx.builder.load(elem_ptr)
@@ -1226,8 +1226,7 @@ def _not(expr):
         ctx.builder.position_at_end(end_block)
         return res_struct_ptr
 
-    else:
-        raise NotImplementedError
+    raise CompileError('Type "%s" not supported in bitwise expressions' % bty.kind)
 
 
 @expression.register(ogAST.ExprAppend)
