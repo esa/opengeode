@@ -893,12 +893,14 @@ def _primary_call(prim):
 def generate_length(params):
     ''' Generate the code for the built-in length operation'''
     seq_ptr = reference(params[0])
-    arr_ty = seq_ptr.type.pointee.elements[0]
-    if arr_ty.kind != core.TYPE_ARRAY:
-        # If is not an array this is a pointer to a variable size SeqOf
-        # The array is in the second field of the struct
-        arr_ty = seq_ptr.type.pointee.elements[1]
-    return core.Constant.int(ctx.i64, arr_ty.count)
+
+    bty = find_basic_type(params[0].exprType)
+    if bty.Min != bty.Max:
+        len_ptr = ctx.builder.gep(seq_ptr, [ctx.zero, ctx.zero])
+        return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
+    else:
+        arr_ty = seq_ptr.type.pointee.elements[0]
+        return core.Constant.int(ctx.i64, arr_ty.count)
 
 
 def generate_present(params):
