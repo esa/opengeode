@@ -814,149 +814,6 @@ def expression(expr):
     raise TypeError('Unsupported expression: ' + str(expr))
 
 
-@expression.register(ogAST.PrimVariable)
-def _primary_variable(prim):
-    ''' Generate the code for a variable expression '''
-    var_ptr = reference(prim)
-    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
-
-
-@expression.register(ogAST.PrimSelector)
-def _primary_selector(prim):
-    ''' Generate the code for a Selector expression '''
-    var_ptr = reference(prim)
-    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
-
-
-@expression.register(ogAST.PrimIndex)
-def _primary_index(prim):
-    ''' Generate the code for an Index expression '''
-    var_ptr = reference(prim)
-    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
-
-
-@expression.register(ogAST.PrimSubstring)
-def _primary_substring(prim):
-    ''' Generate the code for a Substring expression '''
-    bty = find_basic_type(prim.exprType)
-    if bty.Min == bty.Max:
-        raise NotImplementedError
-
-    range_l_val = expression(prim.value[1]['substring'][0])
-    range_r_val = expression(prim.value[1]['substring'][1])
-    len_val = ctx.builder.sub(range_r_val, range_l_val)
-
-    recvr_ptr = expression(prim.value[0])
-    recvr_arr_ptr = ctx.builder.gep(recvr_ptr, [ctx.zero, ctx.one, range_l_val])
-
-    recvr_ty = recvr_ptr.type.pointee
-    elem_ty = recvr_ty.elements[1].element
-
-    res_ptr = ctx.builder.alloca(recvr_ty)
-    res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
-    res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
-
-    ctx.builder.store(ctx.builder.trunc(len_val, ctx.i32), res_len_ptr)
-
-    elem_size_val = core.Constant.sizeof(elem_ty)
-
-    size = ctx.builder.mul(elem_size_val, len_val)
-    align = core.Constant.int(ctx.i32, 0)
-    volatile = core.Constant.int(ctx.i1, 0)
-
-    recvr_arr_ptr = ctx.builder.bitcast(recvr_arr_ptr, ctx.i8_ptr)
-    res_arr_ptr = ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr)
-
-    ctx.builder.call(ctx.funcs['memcpy'], [res_arr_ptr, recvr_arr_ptr, size, align, volatile])
-
-    return res_ptr
-
-
-@expression.register(ogAST.PrimCall)
-def _primary_call(prim):
-    ''' Generate the code for a builtin call expression '''
-    name = prim.value[0].lower()
-    args = prim.value[1]['procParams']
-
-    if name == 'length':
-        return generate_length(args)
-    elif name == 'present':
-        return generate_present(args)
-    elif name == 'abs':
-        return generate_abs(args)
-    elif name == 'fix':
-        return generate_fix(args)
-    elif name == 'float':
-        return generate_float(args)
-    elif name == 'power':
-        return generate_power(args)
-    elif name == 'num':
-        return generate_num(args)
-
-
-def generate_length(params):
-    ''' Generate the code for the built-in length operation'''
-    seq_ptr = reference(params[0])
-
-    bty = find_basic_type(params[0].exprType)
-    if bty.Min != bty.Max:
-        len_ptr = ctx.builder.gep(seq_ptr, [ctx.zero, ctx.zero])
-        return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
-    else:
-        arr_ty = seq_ptr.type.pointee.elements[0]
-        return core.Constant.int(ctx.i64, arr_ty.count)
-
-
-def generate_present(params):
-    ''' Generate the code for the built-in present operation'''
-    expr_val = expression(params[0])
-    kind_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.zero])
-    return ctx.builder.load(kind_ptr)
-
-
-def generate_abs(params):
-    ''' Generate the code for the built-in abs operation'''
-    expr_val = expression(params[0])
-
-    if expr_val.type.kind == core.TYPE_INTEGER:
-        expr_conv = ctx.builder.sitofp(expr_val, ctx.double)
-        res_val = ctx.builder.call(ctx.funcs['fabs'], [expr_conv])
-        return ctx.builder.fptosi(res_val, ctx.i64)
-    else:
-        return ctx.builder.call(ctx.funcs['fabs'], [expr_val])
-
-
-def generate_fix(params):
-    ''' Generate the code for the built-in fix operation'''
-    expr_val = expression(params[0])
-    return ctx.builder.fptosi(expr_val, ctx.i64)
-
-
-def generate_float(params):
-    ''' Generate the code for the built-in float operation'''
-    expr_val = expression(params[0])
-    return ctx.builder.sitofp(expr_val, ctx.double)
-
-
-def generate_power(params):
-    ''' Generate the code for the built-in power operation'''
-    left_val = expression(params[0])
-    right_val = expression(params[1])
-    right_conv = ctx.builder.trunc(right_val, ctx.i32)
-    if left_val.type.kind == core.TYPE_INTEGER:
-        left_conv = ctx.builder.sitofp(left_val, ctx.double)
-        res_val = ctx.builder.call(ctx.funcs['powi'], [left_conv, right_conv])
-        return ctx.builder.fptosi(res_val, ctx.i64)
-    else:
-        return ctx.builder.call(ctx.funcs['powi'], [left_val, right_conv])
-
-
-def generate_num(params):
-    ''' Generate the code for the built-in num operation'''
-    enum_val = expression(params[0])
-    return ctx.builder.sext(enum_val, ctx.i64)
-
-
 @expression.register(ogAST.ExprPlus)
 @expression.register(ogAST.ExprMul)
 @expression.register(ogAST.ExprMinus)
@@ -969,8 +826,8 @@ def generate_num(params):
 @expression.register(ogAST.ExprDiv)
 @expression.register(ogAST.ExprMod)
 @expression.register(ogAST.ExprRem)
-def _basic(expr):
-    ''' Generate the code for an arithmetic of relational expression '''
+def _expr_basic(expr):
+    ''' Generate the code for an arithmetic or relational expression '''
     lefttmp = expression(expr.left)
     righttmp = expression(expr.right)
 
@@ -1040,7 +897,7 @@ def _basic(expr):
 
 
 @expression.register(ogAST.ExprNeg)
-def _neg(expr):
+def _expr_neg(expr):
     ''' Generate the code for a negative expression '''
     expr_val = expression(expr.expr)
     if expr_val.type.kind == core.TYPE_INTEGER:
@@ -1052,7 +909,7 @@ def _neg(expr):
 
 
 @expression.register(ogAST.ExprAssign)
-def _assign(expr):
+def _expr_assign(expr):
     ''' Generate the code for an assign expression '''
     generate_assign(reference(expr.left), expression(expr.right))
 
@@ -1077,7 +934,7 @@ def generate_assign(left, right):
 @expression.register(ogAST.ExprOr)
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
-def _logic(expr):
+def _expr_logic(expr):
     ''' Generate the code for a logic expression '''
     bty = find_basic_type(expr.exprType)
 
@@ -1179,7 +1036,7 @@ def _logic(expr):
 
 
 @expression.register(ogAST.ExprNot)
-def _not(expr):
+def _expr_not(expr):
     ''' Generate the code for a not expression '''
     bty = find_basic_type(expr.exprType)
 
@@ -1230,8 +1087,8 @@ def _not(expr):
 
 
 @expression.register(ogAST.ExprAppend)
-def _append(expr):
-    ''' Generate code for the APPEND construct: a // b '''
+def _expr_append(expr):
+    ''' Generate code for a append expression '''
     bty = find_basic_type(expr.exprType)
 
     if bty.kind in ('SequenceOfType', 'OctetStringType'):
@@ -1336,64 +1193,207 @@ def _expr_in(expr):
     return cond_val
 
 
+@expression.register(ogAST.PrimVariable)
+def _prim_variable(prim):
+    ''' Generate the code for a variable expression '''
+    var_ptr = reference(prim)
+    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
+
+
+@expression.register(ogAST.PrimSelector)
+def _prim_selector(prim):
+    ''' Generate the code for a Selector expression '''
+    var_ptr = reference(prim)
+    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
+
+
+@expression.register(ogAST.PrimIndex)
+def _prim_index(prim):
+    ''' Generate the code for an Index expression '''
+    var_ptr = reference(prim)
+    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
+
+
+@expression.register(ogAST.PrimSubstring)
+def _prim_substring(prim):
+    ''' Generate the code for a Substring expression '''
+    bty = find_basic_type(prim.exprType)
+    if bty.Min == bty.Max:
+        raise NotImplementedError
+
+    range_l_val = expression(prim.value[1]['substring'][0])
+    range_r_val = expression(prim.value[1]['substring'][1])
+    len_val = ctx.builder.sub(range_r_val, range_l_val)
+
+    recvr_ptr = expression(prim.value[0])
+    recvr_arr_ptr = ctx.builder.gep(recvr_ptr, [ctx.zero, ctx.one, range_l_val])
+
+    recvr_ty = recvr_ptr.type.pointee
+    elem_ty = recvr_ty.elements[1].element
+
+    res_ptr = ctx.builder.alloca(recvr_ty)
+    res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
+    res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
+
+    ctx.builder.store(ctx.builder.trunc(len_val, ctx.i32), res_len_ptr)
+
+    elem_size_val = core.Constant.sizeof(elem_ty)
+
+    size = ctx.builder.mul(elem_size_val, len_val)
+    align = core.Constant.int(ctx.i32, 0)
+    volatile = core.Constant.int(ctx.i1, 0)
+
+    recvr_arr_ptr = ctx.builder.bitcast(recvr_arr_ptr, ctx.i8_ptr)
+    res_arr_ptr = ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr)
+
+    ctx.builder.call(ctx.funcs['memcpy'], [res_arr_ptr, recvr_arr_ptr, size, align, volatile])
+
+    return res_ptr
+
+
+@expression.register(ogAST.PrimCall)
+def _prim_call(prim):
+    ''' Generate the code for a builtin call expression '''
+    name = prim.value[0].lower()
+    args = prim.value[1]['procParams']
+
+    if name == 'length':
+        return generate_length(args)
+    elif name == 'present':
+        return generate_present(args)
+    elif name == 'abs':
+        return generate_abs(args)
+    elif name == 'fix':
+        return generate_fix(args)
+    elif name == 'float':
+        return generate_float(args)
+    elif name == 'power':
+        return generate_power(args)
+    elif name == 'num':
+        return generate_num(args)
+
+
+def generate_length(params):
+    ''' Generate the code for the built-in length operation'''
+    seq_ptr = reference(params[0])
+
+    bty = find_basic_type(params[0].exprType)
+    if bty.Min != bty.Max:
+        len_ptr = ctx.builder.gep(seq_ptr, [ctx.zero, ctx.zero])
+        return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
+    else:
+        arr_ty = seq_ptr.type.pointee.elements[0]
+        return core.Constant.int(ctx.i64, arr_ty.count)
+
+
+def generate_present(params):
+    ''' Generate the code for the built-in present operation'''
+    expr_val = expression(params[0])
+    kind_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.zero])
+    return ctx.builder.load(kind_ptr)
+
+
+def generate_abs(params):
+    ''' Generate the code for the built-in abs operation'''
+    expr_val = expression(params[0])
+
+    if expr_val.type.kind == core.TYPE_INTEGER:
+        expr_conv = ctx.builder.sitofp(expr_val, ctx.double)
+        res_val = ctx.builder.call(ctx.funcs['fabs'], [expr_conv])
+        return ctx.builder.fptosi(res_val, ctx.i64)
+    else:
+        return ctx.builder.call(ctx.funcs['fabs'], [expr_val])
+
+
+def generate_fix(params):
+    ''' Generate the code for the built-in fix operation'''
+    expr_val = expression(params[0])
+    return ctx.builder.fptosi(expr_val, ctx.i64)
+
+
+def generate_float(params):
+    ''' Generate the code for the built-in float operation'''
+    expr_val = expression(params[0])
+    return ctx.builder.sitofp(expr_val, ctx.double)
+
+
+def generate_power(params):
+    ''' Generate the code for the built-in power operation'''
+    left_val = expression(params[0])
+    right_val = expression(params[1])
+    right_conv = ctx.builder.trunc(right_val, ctx.i32)
+    if left_val.type.kind == core.TYPE_INTEGER:
+        left_conv = ctx.builder.sitofp(left_val, ctx.double)
+        res_val = ctx.builder.call(ctx.funcs['powi'], [left_conv, right_conv])
+        return ctx.builder.fptosi(res_val, ctx.i64)
+    else:
+        return ctx.builder.call(ctx.funcs['powi'], [left_val, right_conv])
+
+
+def generate_num(params):
+    ''' Generate the code for the built-in num operation'''
+    enum_val = expression(params[0])
+    return ctx.builder.sext(enum_val, ctx.i64)
+
+
 @expression.register(ogAST.PrimEnumeratedValue)
-def _enumerated_value(primary):
+def _prim_enumerated_value(prim):
     ''' Generate code for an enumerated value '''
-    enumerant = primary.value[0].replace('_', '-')
-    basic_ty = find_basic_type(primary.exprType)
+    enumerant = prim.value[0].replace('_', '-')
+    basic_ty = find_basic_type(prim.exprType)
     return core.Constant.int(ctx.i32, basic_ty.EnumValues[enumerant].IntValue)
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
-def _choice_determinant(primary):
+def _prim_choice_determinant(prim):
     ''' Generate code for a choice determinant (enumerated) '''
-    enumerant = primary.value[0].replace('-', '_')
+    enumerant = prim.value[0].replace('-', '_')
     return ctx.enums[enumerant]
 
 
 @expression.register(ogAST.PrimInteger)
-def _integer(primary):
-    ''' Generate code for a raw integer value  '''
-    return core.Constant.int(ctx.i64, primary.value[0])
+def _prim_integer(prim):
+    ''' Generate code for a raw integer value '''
+    return core.Constant.int(ctx.i64, prim.value[0])
 
 
 @expression.register(ogAST.PrimReal)
-def _real(primary):
-    ''' Generate code for a raw real value  '''
-    return core.Constant.real(ctx.double, primary.value[0])
+def _prim_real(prim):
+    ''' Generate code for a raw real value '''
+    return core.Constant.real(ctx.double, prim.value[0])
 
 
 @expression.register(ogAST.PrimBoolean)
-def _boolean(primary):
-    ''' Generate code for a raw boolean value  '''
-    if primary.value[0].lower() == 'true':
+def _prim_boolean(prim):
+    ''' Generate code for a raw boolean value '''
+    if prim.value[0].lower() == 'true':
         return core.Constant.int(ctx.i1, 1)
     else:
         return core.Constant.int(ctx.i1, 0)
 
 
 @expression.register(ogAST.PrimEmptyString)
-def _empty_string(primary):
+def _prim_empty_string(prim):
     ''' Generate code for an empty SEQUENCE OF: {} '''
     # TODO: Why is this named string if it's not an string?
-    struct_ty = ctx.type_of(primary.exprType)
+    struct_ty = ctx.type_of(prim.exprType)
     struct_ptr = ctx.builder.alloca(struct_ty)
     ctx.builder.store(core.Constant.null(struct_ty), struct_ptr)
     return struct_ptr
 
 
 @expression.register(ogAST.PrimStringLiteral)
-def _string_literal(primary):
+def _prim_string_literal(prim):
     ''' Generate code for a string'''
-    bty = find_basic_type(primary.exprType)
+    bty = find_basic_type(prim.exprType)
 
-    str_len = len(str(primary.value[1:-1]))
-    str_ptr = ctx.string_ptr(str(primary.value[1:-1]))
+    str_len = len(str(prim.value[1:-1]))
+    str_ptr = ctx.string_ptr(str(prim.value[1:-1]))
 
     if bty.kind in ('StringType', 'StandardStringType'):
         return str_ptr
 
-    llty = ctx.type_of(primary.exprType)
+    llty = ctx.type_of(prim.exprType)
     octectstr_ptr = ctx.builder.alloca(llty)
 
     if bty.Min == bty.Max:
@@ -1420,19 +1420,19 @@ def _string_literal(primary):
 
 
 @expression.register(ogAST.PrimConstant)
-def _constant(primary):
+def _prim_constant(prim):
     ''' Generate code for a reference to an ASN.1 constant '''
     raise NotImplementedError
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
-def _mantissa_base_exp(primary):
+def _prim_mantissa_base_exp(prim):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
     raise NotImplementedError
 
 
 @expression.register(ogAST.PrimConditional)
-def _if_then_else(ifthen):
+def _prim_conditional(prim):
     ''' Generate the code for ternary operator '''
     func = ctx.builder.basic_block.function
 
@@ -1440,16 +1440,16 @@ def _if_then_else(ifthen):
     false_block = func.append_basic_block('cond:false')
     end_block = func.append_basic_block('cond:end')
 
-    res_ptr = ctx.builder.alloca(ctx.type_of(ifthen.exprType))
-    cond_val = expression(ifthen.value['if'])
+    res_ptr = ctx.builder.alloca(ctx.type_of(prim.exprType))
+    cond_val = expression(prim.value['if'])
     ctx.builder.cbranch(cond_val, true_block, false_block)
 
     ctx.builder.position_at_end(true_block)
-    generate_assign(res_ptr, expression(ifthen.value['then']))
+    generate_assign(res_ptr, expression(prim.value['then']))
     ctx.builder.branch(end_block)
 
     ctx.builder.position_at_end(false_block)
-    generate_assign(res_ptr, expression(ifthen.value['else']))
+    generate_assign(res_ptr, expression(prim.value['else']))
     ctx.builder.branch(end_block)
 
     ctx.builder.position_at_end(end_block)
@@ -1461,14 +1461,14 @@ def _if_then_else(ifthen):
 
 
 @expression.register(ogAST.PrimSequence)
-def _sequence(seq):
+def _prim_sequence(prim):
     ''' Generate the code for an ASN.1 SEQUENCE '''
-    struct = ctx.resolve_struct(seq.exprType.ReferencedTypeName)
+    struct = ctx.resolve_struct(prim.exprType.ReferencedTypeName)
     struct_ptr = ctx.builder.alloca(struct.ty)
 
-    seq_asn1ty = ctx.dataview[seq.exprType.ReferencedTypeName]
+    seq_asn1ty = ctx.dataview[prim.exprType.ReferencedTypeName]
 
-    for field_name, field_expr in seq.value.viewitems():
+    for field_name, field_expr in prim.value.viewitems():
         # Workarround for unknown types in nested sequences
         field_expr.exprType = seq_asn1ty.type.Children[field_name.replace('_', '-')].type
 
@@ -1480,22 +1480,22 @@ def _sequence(seq):
 
 
 @expression.register(ogAST.PrimSequenceOf)
-def _sequence_of(seqof):
+def _prim_sequence_of(prim):
     ''' Generate the code for an ASN.1 SEQUENCE OF '''
-    basic_ty = find_basic_type(seqof.exprType)
-    ty = ctx.type_of(seqof.exprType)
+    basic_ty = find_basic_type(prim.exprType)
+    ty = ctx.type_of(prim.exprType)
     struct_ptr = ctx.builder.alloca(ty)
 
     is_variable_size = basic_ty.Min != basic_ty.Max
 
     if is_variable_size:
-        size_val = core.Constant.int(ctx.i32, len(seqof.value))
+        size_val = core.Constant.int(ctx.i32, len(prim.value))
         ctx.builder.store(size_val, ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero]))
         array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one])
     else:
         array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
 
-    for idx, expr in enumerate(seqof.value):
+    for idx, expr in enumerate(prim.value):
         idx_cons = core.Constant.int(ctx.i32, idx)
         expr_val = expression(expr)
         pos_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_cons])
@@ -1505,13 +1505,13 @@ def _sequence_of(seqof):
 
 
 @expression.register(ogAST.PrimChoiceItem)
-def _choiceitem(choice):
+def _prim_choiceitem(prim):
     ''' Generate the code for a CHOICE expression '''
-    union = ctx.resolve_union(choice.exprType.ReferencedTypeName)
+    union = ctx.resolve_union(prim.exprType.ReferencedTypeName)
     union_ptr = ctx.builder.alloca(union.ty)
 
-    expr_val = expression(choice.value['value'])
-    kind_idx, field_ty = union.kind(choice.value['choice'])
+    expr_val = expression(prim.value['value'])
+    kind_idx, field_ty = union.kind(prim.value['choice'])
 
     kind_ptr = ctx.builder.gep(union_ptr, [ctx.zero, ctx.zero])
     ctx.builder.store(core.Constant.int(ctx.i32, kind_idx), kind_ptr)
