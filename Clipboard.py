@@ -69,11 +69,9 @@ def copy_branch(top_level_item):
                                     nextstate=False, recursive=True))
     item_ast, terminators = top_level_item.get_ast(pr_text)
     LOG.debug('COPY ' + str(item_ast))
-
-    # Set absolute (scene) coordinates of top level item
-    scene_pos = top_level_item.scenePos()
-    item_ast.abs_x = scene_pos.x()
-    item_ast.abs_y = scene_pos.y()
+    if not item_ast:
+        LOG.error('ERROR - copy failed')
+        return
 
     branch = [item_ast]
 

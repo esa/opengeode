@@ -1503,14 +1503,18 @@ def selector_expression(root, context):
     warnings.extend(receiver_warn)
 
     field_name = root.children[1].text.replace('_', '-').lower()
-
-    for n, f in receiver_bty.Children.viewitems():
-        if n.lower() == field_name:
-            node.exprType = f.type
-            break
-    else:
-        msg = 'Field "{}" not found in expression {}'.format(field_name)
-        errors.append(error(root, msg))
+    try:
+        for n, f in receiver_bty.Children.viewitems():
+            if n.lower() == field_name:
+                node.exprType = f.type
+                break
+        else:
+            msg = 'Field "{}" not found in expression {}'.format(field_name)
+            errors.append(error(root, msg))
+    except AttributeError:
+        # When parsing for syntax or copy-paste, receiver_bty may
+        # not be found
+        pass
 
     node.value = [receiver, field_name.replace('-', '_').lower()]
 
