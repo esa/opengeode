@@ -302,7 +302,7 @@ class Scope:
         label_block = self.labels.get(name)
         if not label_block:
             func = ctx.builder.basic_block.function
-            label_block = func.append_basic_block(name)
+            label_block = func.append_basic_block('label:%s' % name)
             self.labels[name] = label_block
         return label_block
 
@@ -402,10 +402,10 @@ def generate_runtr_func(process):
 
     ctx.open_scope()
 
-    entry_block = func.append_basic_block('entry')
-    cond_block = func.append_basic_block('cond')
-    body_block = func.append_basic_block('body')
-    exit_block = func.append_basic_block('exit')
+    entry_block = func.append_basic_block('runtr:entry')
+    cond_block = func.append_basic_block('runtr:cond')
+    body_block = func.append_basic_block('runtr:body')
+    exit_block = func.append_basic_block('runtr:exit')
 
     ctx.builder = core.Builder.new(entry_block)
 
@@ -428,7 +428,7 @@ def generate_runtr_func(process):
 
     # transitions
     for idx, tr in enumerate(process.transitions):
-        tr_block = func.append_basic_block('tr%d' % idx)
+        tr_block = func.append_basic_block('runtr:tr%d' % idx)
         const = core.Constant.int(ctx.i32, idx)
         switch.add_case(const, tr_block)
         ctx.builder.position_at_end(tr_block)
@@ -461,7 +461,7 @@ def generate_startup_func(process):
 
     ctx.open_scope()
 
-    entry_block = func.append_basic_block('entry')
+    entry_block = func.append_basic_block('startup:entry')
     ctx.builder = core.Builder.new(entry_block)
 
     # Initialize process level variables
@@ -490,8 +490,8 @@ def generate_input_signal(signal, inputs):
 
     ctx.open_scope()
 
-    entry_block = func.append_basic_block('entry')
-    exit_block = func.append_basic_block('exit')
+    entry_block = func.append_basic_block('input:entry')
+    exit_block = func.append_basic_block('input:exit')
     ctx.builder = core.Builder.new(entry_block)
 
     g_state_val = ctx.builder.load(ctx.global_scope.resolve('.state'))
@@ -500,7 +500,7 @@ def generate_input_signal(signal, inputs):
     for state_name, state_id in ctx.states.iteritems():
         if state_name.endswith('start'):
             continue
-        state_block = func.append_basic_block('state_%s' % str(state_name))
+        state_block = func.append_basic_block('input:state_%s' % str(state_name))
         switch.add_case(state_id, state_block)
         ctx.builder.position_at_end(state_block)
 
@@ -657,7 +657,7 @@ def generate_for_range(loop):
     cond_block = func.append_basic_block('for:cond')
     body_block = func.append_basic_block('for:body')
     inc_block = func.append_basic_block('for:inc')
-    end_block = func.append_basic_block('')
+    end_block = func.append_basic_block('for:end')
 
     ctx.open_scope()
 
@@ -708,7 +708,7 @@ def generate_for_iterable(loop):
     body_block = func.append_basic_block('forin:body')
     # block for checking if should loop again or terminate
     cond_block = func.append_basic_block('forin:cond')
-    end_block = func.append_basic_block('')
+    end_block = func.append_basic_block('forin:end')
 
     ctx.open_scope()
 
@@ -1088,8 +1088,8 @@ def _logic(expr):
 
         func = ctx.builder.basic_block.function
 
-        right_block = func.append_basic_block('')
-        end_block = func.append_basic_block('')
+        right_block = func.append_basic_block('%s:right' % expr.operand)
+        end_block = func.append_basic_block('%s:end' % expr.operand)
 
         res_ptr = ctx.builder.alloca(ctx.i1)
         left_val = expression(expr.left)
@@ -1189,7 +1189,7 @@ def _not(expr):
     elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
         func = ctx.builder.basic_block.function
 
-        not_block = func.append_basic_block('not:not')
+        body_block = func.append_basic_block('not:body')
         next_block = func.append_basic_block('not:next')
         end_block = func.append_basic_block('not:end')
 
@@ -1202,9 +1202,9 @@ def _not(expr):
         array_ty = struct_ptr.type.pointee.elements[0]
         len_val = core.Constant.int(ctx.i32, array_ty.count)
 
-        ctx.builder.branch(not_block)
+        ctx.builder.branch(body_block)
 
-        ctx.builder.position_at_end(not_block)
+        ctx.builder.position_at_end(body_block)
         idx_val = ctx.builder.load(idx_ptr)
 
         elem_idxs = [ctx.zero, ctx.zero, idx_val]
@@ -1221,7 +1221,7 @@ def _not(expr):
         idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
         ctx.builder.store(idx_tmp_val, idx_ptr)
         end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, len_val)
-        ctx.builder.cbranch(end_cond_val, end_block, not_block)
+        ctx.builder.cbranch(end_cond_val, end_block, body_block)
 
         ctx.builder.position_at_end(end_block)
         return res_struct_ptr
@@ -1436,19 +1436,19 @@ def _if_then_else(ifthen):
     ''' Generate the code for ternary operator '''
     func = ctx.builder.basic_block.function
 
-    if_block = func.append_basic_block('ternary:if')
-    else_block = func.append_basic_block('ternary:else')
-    end_block = func.append_basic_block('')
+    true_block = func.append_basic_block('cond:true')
+    false_block = func.append_basic_block('cond:false')
+    end_block = func.append_basic_block('cond:end')
 
     res_ptr = ctx.builder.alloca(ctx.type_of(ifthen.exprType))
     cond_val = expression(ifthen.value['if'])
-    ctx.builder.cbranch(cond_val, if_block, else_block)
+    ctx.builder.cbranch(cond_val, true_block, false_block)
 
-    ctx.builder.position_at_end(if_block)
+    ctx.builder.position_at_end(true_block)
     generate_assign(res_ptr, expression(ifthen.value['then']))
     ctx.builder.branch(end_block)
 
-    ctx.builder.position_at_end(else_block)
+    ctx.builder.position_at_end(false_block)
     generate_assign(res_ptr, expression(ifthen.value['else']))
     ctx.builder.branch(end_block)
 
@@ -1628,14 +1628,14 @@ def generate_next_state_terminator(term):
             # Calculate next transition id in base of the current state
             func = ctx.builder.basic_block.function
             curr_state_val = ctx.builder.load(ctx.global_scope.resolve('.state'))
-            default_case_block = func.append_basic_block('')
-            end_block = func.append_basic_block('')
+            default_case_block = func.append_basic_block('term:default')
+            end_block = func.append_basic_block('term:end')
             switch = ctx.builder.switch(curr_state_val, default_case_block)
 
             for next_state, states in nexts:
                 next_id_val = ctx.states[next_state.lower()]
                 for state in states:
-                    case_block = func.append_basic_block('')
+                    case_block = func.append_basic_block('term:case:%s' % str(state))
                     switch.add_case(ctx.states[state.lower()], case_block)
                     ctx.builder.position_at_end(case_block)
                     ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
@@ -1705,7 +1705,7 @@ def _inner_procedure(proc):
     for arg, param in zip(func.args, proc.fpar):
         ctx.scope.define(str(param['name']), arg)
 
-    entry_block = func.append_basic_block('entry')
+    entry_block = func.append_basic_block('proc:entry')
     ctx.builder = core.Builder.new(entry_block)
 
     for name, (ty, expr) in proc.variables.viewitems():
