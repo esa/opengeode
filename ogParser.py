@@ -1212,7 +1212,8 @@ def not_expression(root, context):
         expr.exprType = BOOLEAN
     elif bty.kind == 'BitStringType':
         expr.exprType = expr.expr.exprType
-    elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
+    elif bty.kind == 'SequenceOfType' and \
+            find_basic_type(bty.type).kind == 'BooleanType':
         expr.exprType = expr.expr.exprType
     else:
         msg = 'Bitwise operators only work with booleans '\
