@@ -65,7 +65,7 @@ def copy(selection):
 def copy_branch(top_level_item):
     ''' Copy branches (recursively) '''
     res_terminators = []
-    pr_text = '\n'.join(Pr.generate(top_level_item,
+    pr_text = '\n'.join(Pr.generate(top_level_item, cpy=True,
                                     nextstate=False, recursive=True))
     item_ast, terminators = top_level_item.get_ast(pr_text)
     LOG.debug('COPY ' + str(item_ast))

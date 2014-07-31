@@ -694,6 +694,13 @@ class State(VerticalSymbol):
         ast, _, _, _, terminators = self.parser.parseSingleElement('state',
                                                                    pr_text)
         return ast, terminators
+    
+    def check_syntax(self, pr_text):
+        ''' Redefinition of the check syntax function for the state '''
+        name = self.common_name if self.hasParent else 'state'
+        _, err, _, _, _ = \
+                self.parser.parseSingleElement(name, pr_text)
+        return err
 
 
 class Process(HorizontalSymbol):

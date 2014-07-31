@@ -247,11 +247,12 @@ def _label(symbol, recursive=True, **kwargs):
 
 
 @generate.register(sdlSymbols.State)
-def _state(symbol, recursive=True, nextstate=True, composite=False, **kwargs):
+def _state(symbol, recursive=True, nextstate=True, composite=False, cpy=False,
+           **kwargs):
     ''' State/Nextstate symbol or branch if recursive is set '''
-    if nextstate:
+    if nextstate and symbol.hasParent:
         result = common('NEXTSTATE', symbol)
-    elif not composite and symbol.hasParent \
+    elif not composite and symbol.hasParent and not cpy \
             and not [each for each in symbol.childSymbols()
             if not isinstance(each, genericSymbols.Comment)]:
         # If nextstate has no child, don't generate anything
