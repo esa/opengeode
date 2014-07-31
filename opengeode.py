@@ -95,7 +95,8 @@ try:
     import LlvmGenerator
 except ImportError:
     # not sure if LLVM is available on the Windows platform
-    pass
+    LlvmGenerator = None
+    print 'LLVM is not available'
 
 __all__ = ['opengeode']
 __version__ = '0.994'
@@ -1799,9 +1800,9 @@ def init_logging(options):
         for module in modules:
             module.LOG.addHandler(handler_console)
             module.LOG.setLevel(level)
-    except NameError:
+    except (NameError, AttributeError) as err:
         # Some modules may not be loaded (like llvm on Windows)
-        pass;
+        LOG.info(str(err))
 
 
 def parse(files):

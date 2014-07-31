@@ -387,9 +387,9 @@ def _rename_path(ast, from_name, to_name):
         ast.value[0] = to_name
 
 
-@rename_everything.register(ogAST.PrimIfThenElse)
+@rename_everything.register(ogAST.PrimConditional)
 def _rename_ifhthenelse(ast, from_name, to_name):
-    ''' Rename expressions in If-Then-Else-Fi construct '''
+    ''' Rename expressions in Conditional expression construct '''
     for expr in ('if', 'then', 'else'):
         rename_everything(ast.value[expr], from_name, to_name)
 

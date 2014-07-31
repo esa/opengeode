@@ -1430,7 +1430,7 @@ def _mantissa_base_exp(primary):
     raise NotImplementedError
 
 
-@expression.register(ogAST.PrimIfThenElse)
+@expression.register(ogAST.PrimConditional)
 def _if_then_else(ifthen):
     ''' Generate the code for ternary operator '''
     func = ctx.builder.basic_block.function

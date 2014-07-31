@@ -30,5 +30,6 @@ publish: install
 	python setup.py sdist upload
 
 clean:
+	make -C tests/regression clean
 	find . -name '*~' | xargs rm -f
 	find . -name '*.o' | xargs rm -f

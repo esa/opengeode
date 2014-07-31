@@ -1183,17 +1183,21 @@ def _mantissa_base_exp(primary):
     return [], u'', []
 
 
-@expression.register(ogAST.PrimIfThenElse)
-def _if_then_else(ifThenElse):
-    ''' Return string and statements for ternary operator '''
-    resType = ifThenElse.exprType
+@expression.register(ogAST.PrimConditional)
+def _conditional(cond):
+    ''' Return string and statements for conditional expressions '''
+    resType = cond.exprType
     stmts = []
-    if resType.kind.startswith('Integer'):
+
+    if resType.kind in ('IntegerType', 'Integer32Type'):
         tmp_type = 'Asn1Int'
-    elif resType.kind == 'StandardStringType':
-        print ifThenElse.value['then'].value
-        then_str = ifThenElse.value['then'].value.replace("'", '"')
-        else_str = ifThenElse.value['else'].value.replace("'", '"')
+    elif resType.kind == 'RealType':
+        tmp_type = 'Asn1Real'
+    elif resType.kind == 'BooleanType':
+        tmp_type = 'Boolean'
+    elif resType.kind == 'StringType':
+        then_str = cond.value['then'].value.replace("'", '"')
+        else_str = cond.value['else'].value.replace("'", '"')
         lens = [len(then_str), len(else_str)]
         tmp_type = 'String(1 .. {})'.format(max(lens) - 2)
         # Ada require fixed-length strings, adjust with spaces
@@ -1203,29 +1207,30 @@ def _if_then_else(ifThenElse):
             else_str = else_str[0:-1] + ' ' * (lens[0] - lens[1]) + '"'
     else:
         tmp_type = 'asn1Scc' + resType.ReferencedTypeName.replace('-', '_')
+
     local_decl = ['tmp{idx} : {tmpType};'.format(
-                                                idx=ifThenElse.value['tmpVar'],
+                                                idx=cond.value['tmpVar'],
                                                 tmpType=tmp_type)]
-    if_stmts, if_str, if_local = expression(ifThenElse.value['if'])
+    if_stmts, if_str, if_local = expression(cond.value['if'])
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
-    if resType.kind != 'StandardStringType':
-        then_stmts, then_str, then_local = expression(ifThenElse.value['then'])
-        else_stmts, else_str, else_local = expression(ifThenElse.value['else'])
+    if resType.kind != 'StringType':
+        then_stmts, then_str, then_local = expression(cond.value['then'])
+        else_stmts, else_str, else_local = expression(cond.value['else'])
         stmts.extend(then_stmts)
         stmts.extend(else_stmts)
         local_decl.extend(then_local)
         local_decl.extend(else_local)
     stmts.append(u'if {if_str} then'.format(if_str=if_str))
     stmts.append(u'tmp{idx} := {then_str};'.format(
-                                                idx=ifThenElse.value['tmpVar'],
+                                                idx=cond.value['tmpVar'],
                                                 then_str=then_str))
     stmts.append('else')
     stmts.append(u'tmp{idx} := {else_str};'.format(
-                                                idx=ifThenElse.value['tmpVar'],
+                                                idx=cond.value['tmpVar'],
                                                 else_str=else_str))
     stmts.append('end if;')
-    ada_string = u'tmp{idx}'.format(idx=ifThenElse.value['tmpVar'])
+    ada_string = u'tmp{idx}'.format(idx=cond.value['tmpVar'])
     return stmts, unicode(ada_string), local_decl
 
 

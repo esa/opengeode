@@ -232,7 +232,7 @@ class PrimOctetStringLiteral(Primary):
     pass
 
 
-class PrimIfThenElse(Primary):
+class PrimConditional(Primary):
     ''' value is a dictionnary:
         { 'if': Expression, 'then': Expression,
         'else': Expression, 'tmpVar': integer}

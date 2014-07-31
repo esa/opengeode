@@ -28,12 +28,10 @@ __author__ = 'Maxime Perrotin'
 
 import sys
 import os
-import re
-import fnmatch
 import logging
 import traceback
 from itertools import chain, permutations, combinations
-from collections import defaultdict
+from collections import defaultdict, Counter
 import antlr3
 import antlr3.tree
 
@@ -68,7 +66,6 @@ EXPR_NODE = {
     lexer.NOT: ogAST.ExprNot,
     lexer.NEG: ogAST.ExprNeg,
     lexer.PRIMARY: ogAST.Primary,
-    lexer.IFTHENELSE: ogAST.PrimIfThenElse,
 }
 
 # Insert current path in the search list for importing modules
@@ -394,11 +391,7 @@ def fix_special_operators(op_name, expr_list, context):
                 for each in (INTEGER, REAL, BOOLEAN, RAWSTRING, OCTETSTRING):
                     try:
                         check_type_compatibility(param, each, context)
-                        if each is OCTETSTRING and isinstance(param,
-                                                         ogAST.PrimIfThenElse):
-                            param.exprType = param.value['then'].exprType
-                        else:
-                            param.exprType = each
+                        param.exprType = each
                         break
                     except TypeError:
                         continue
@@ -551,28 +544,15 @@ def check_type_compatibility(primary, typeRef, context):
                    '" not in this enumeration: ' +
                    str(actual_type.EnumValues.keys()))
             raise TypeError(err)
-    elif isinstance(primary, ogAST.PrimIfThenElse):
-        # check that IF expr returns BOOL, and that Then and Else expressions
-        # are compatible with actual_type
-        if_expr = primary.value['if']
+    elif isinstance(primary, ogAST.PrimConditional):
         then_expr = primary.value['then']
         else_expr = primary.value['else']
-        if if_expr.exprType.kind != 'BooleanType':
-            raise TypeError('IF expression does not return a boolean')
-        else:
-            for expr in (then_expr, else_expr):
-                if expr.is_raw:
-                    check_type_compatibility(expr, typeRef, context)
-                # compare the types for semantic equivalence:
-                else:
-                    if expr.exprType is UNKNOWN_TYPE:
-                        # If it was not resolved before, it must be a variable
-                        # this can happen in the context of a special operator
-                        # (write), where at no point before where the type
-                        # could be compared to another type
-                        expr.exprType = find_variable(expr.value[0], context)
-                    compare_types(expr.exprType, typeRef)
+
+        for expr in (then_expr, else_expr):
+            if expr.is_raw:
+                check_type_compatibility(expr, typeRef, context)
         return
+
     elif isinstance(primary, ogAST.PrimVariable):
         try:
             compare_types(primary.exprType, typeRef)
@@ -634,7 +614,7 @@ def check_type_compatibility(primary, typeRef, context):
                         # Compare the types for semantic equivalence
                         try:
                             compare_types(
-                                  primary.value[ufield].exprType, fd_data.type)
+                                primary.value[ufield].exprType, fd_data.type)
                         except TypeError as err:
                             raise TypeError('Field ' + ufield +
                                         ' is not of the proper type, i.e. ' +
@@ -871,7 +851,7 @@ def fix_expression_types(expr, context):
             raise TypeError('Cannot resolve type of "{}"'
                             .format(unknown[0].inputString))
 
-    # In Sequence, Choice, SEQUENCE OF, and IfThenElse expressions,
+    # In Sequence, Choice and SEQUENCE OF expressions,
     # we must fix missing inner types
     # (due to similarities, the following should be refactored FIXME)
     if isinstance(expr.right, ogAST.PrimSequence):
@@ -913,7 +893,7 @@ def fix_expression_types(expr, context):
             check_expr.right = expr.right.value['value']
             fix_expression_types(check_expr, context)
             expr.right.value['value'] = check_expr.right
-    elif isinstance(expr.right, ogAST.PrimIfThenElse):
+    elif isinstance(expr.right, ogAST.PrimConditional):
         for det in ('then', 'else'):
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
@@ -1040,8 +1020,8 @@ def expression(root, context):
         return neg_expression(root, context)
     elif root.type == lexer.PAREN:
         return expression(root.children[0], context)
-    elif root.type == lexer.IFTHENELSE:
-        return if_then_else_expression(root, context)
+    elif root.type == lexer.CONDITIONAL:
+        return conditional_expression(root, context)
     elif root.type == lexer.PRIMARY:
         return primary(root.children[0], context)
     elif root.type == lexer.CALL:
@@ -1076,13 +1056,16 @@ def logic_expression(root, context):
             errors.append(error(root, msg))
             break
 
-        if bty.kind in ('BooleanType', 'BitStringType'):
+        if bty.kind == 'BooleanType':
             continue
-        elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType':
+        elif bty.kind == 'BitStringType' and bty.Min == bty.Max:
+            continue
+        elif bty.kind == 'SequenceOfType' and bty.type.kind == 'BooleanType'\
+                and bty.Min == bty.Max:
             continue
         else:
             msg = 'Bitwise operators only work with Booleans, ' \
-                  'SequenceOf Booleans or BitStrings'
+                  'fixed size SequenceOf Booleans or fixed size BitStrings'
             errors.append(error(root, msg))
             break
 
@@ -1260,11 +1243,11 @@ def neg_expression(root, context):
     return expr, errors, warnings
 
 
-def if_then_else_expression(root, context):
-    ''' If Then Else expression analysis '''
+def conditional_expression(root, context):
+    ''' Conditional expression analysis '''
     errors, warnings = [], []
 
-    expr = ogAST.PrimIfThenElse(
+    expr = ogAST.PrimConditional(
         get_input_string(root),
         root.getLine(),
         root.getCharPositionInLine()
@@ -1286,7 +1269,20 @@ def if_then_else_expression(root, context):
     errors.extend(err)
     warnings.extend(warn)
 
+    if find_basic_type(if_expr.exprType).kind != 'BooleanType':
+        msg = 'Conditions in conditional expressions must be of type Boolean'
+        errors.append(error(root, msg))
+
     # TODO: Refactor this
+    try:
+        expr.left = then_expr
+        expr.right = else_expr
+        fix_expression_types(expr, context)
+        expr.exprType = then_expr.exprType
+    except (AttributeError, TypeError) as err:
+        if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
+            errors.append(error(root, str(err)))
+
     expr.value = {
         'if': if_expr,
         'then': then_expr,
@@ -1410,7 +1406,6 @@ def primary_call(root, context):
                 'Max': str(max(enum_values))
             })
         except AttributeError:
-            msg = 'Type Error, check the parameter'
             errors.append(error(root, '"Num" parameter error'))
 
     return node, errors, warnings
@@ -1620,7 +1615,7 @@ def primary(root, context):
     elif root.type == lexer.OCTSTR:
         prim = ogAST.PrimOctetStringLiteral()
         warnings.append(
-                       warning(root, 'Octet string literal not supported yet'))
+            warning(root, 'Octet string literal not supported yet'))
     else:
         # TODO: return error message
         raise NotImplementedError
@@ -1680,8 +1675,13 @@ def variables(root, ta_ast, context):
                     str(child.type))
     for variable in var:
         # Add to the context and text area AST entries
-        context.variables[variable] = (asn1_sort, def_value)
-        ta_ast.variables[variable] = (asn1_sort, def_value)
+        if variable.lower() in context.variables \
+                or variable.lower() in ta_ast.variables:
+            errors.append('Variable "{}" is declared more than once'
+                          .format(variable))
+        else:
+            context.variables[variable.lower()] = (asn1_sort, def_value)
+            ta_ast.variables[variable.lower()] = (asn1_sort, def_value)
     if not DV:
         errors.append('Cannot do semantic checks on variable declarations')
     return errors, warnings
@@ -2543,7 +2543,7 @@ def state(root, parent, context):
             state_def.charPositionInLine = child.getCharPositionInLine()
             exceptions = [c.toString() for c in child.getChildren()]
             for st in context.mapping:
-                if st not in (exceptions, 'START'):
+                if st not in exceptions + ['START']:
                     state_def.statelist.append(st)
         elif child.type == lexer.INPUT:
             # A transition triggered by an INPUT
@@ -2553,6 +2553,19 @@ def state(root, parent, context):
             warnings.extend(warn)
             try:
                 for statename in state_def.statelist:
+                    # check that input is not already defined
+                    existing = context.mapping.get(statename.lower(), [])
+                    dupl = set()
+                    for each in inp.inputlist:
+                        for ex_input in (name for i in existing
+                                         for name in i.inputlist):
+                            if unicode(each) == unicode(ex_input):
+                                dupl.add(each)
+                    for each in dupl:
+                        errors.append('Input "{}" is defined more '
+                                      'than once for state "{}"'
+                                      .format(each, statename.lower()))
+                    # then update the mapping state-input
                     context.mapping[statename.lower()].append(inp)
             except KeyError:
                 warnings.append('State definition missing')
@@ -2564,9 +2577,9 @@ def state(root, parent, context):
                 else:
                     asterisk_input = inp
         elif child.type == lexer.CONNECT:
+            comp_states = (comp.statename for comp in context.composite_states)
             if asterisk_state or len(state_def.statelist) != 1 \
-                 or (state_def.statelist[0].lower()
-                 not in (comp.statename for comp in context.composite_states)):
+                    or state_def.statelist[0].lower() not in comp_states:
                 errors.append('State {} is not a composite state and cannot '
                               'be followed by a connect statement'
                               .format(state_def.statelist[0]))
@@ -2960,6 +2973,7 @@ def decision(root, parent, context):
     covered_ranges = defaultdict(list)
     qmin, qmax = 0, 0
     need_else = False
+    is_enum = False
     for ans in dec.answers:
         if ans.kind in ('constant', 'open_range'):
             expr = ans.openRangeOp()
@@ -2972,6 +2986,13 @@ def decision(root, parent, context):
                 ans.constant = expr.right
                 q_basic = find_basic_type(dec.question.exprType)
                 a_basic = find_basic_type(ans.constant.exprType)
+                if q_basic.kind.endswith('EnumeratedType'):
+                    if not ans.constant.is_raw:
+                        # Ref to a variable -> can't guarantee coverage
+                        need_else = True
+                        continue
+                    covered_ranges[ans].append(ans.inputString)
+                    is_enum = True
                 if not q_basic.kind.startswith('Integer'):
                     continue
                 # numeric type -> find the range covered by this answer
@@ -3065,7 +3086,7 @@ def decision(root, parent, context):
             qmin, qmax = int(float(q_basic.Min)), int(float(q_basic.Max))
             a0_val = int(float(a0_basic.Min))
             a1_val = int(float(a1_basic.Max))
-            if a0_val <  qmin:
+            if a0_val < qmin:
                 warnings.append('Decision "{dec}": '
                                 'Range [{a0} .. {qmin}] is unreachable'
                                 .format(a0=a0_val, qmin=qmin - 1,
@@ -3082,14 +3103,17 @@ def decision(root, parent, context):
                                         l=a0_val, h=a1_val))
             covered_ranges[ans].append((int(float(a0_basic.Min)),
                                         int(float(a1_basic.Max))))
-    # Check the following:
+    # Check the following
     # (1) no overlap between covered ranges in decision answers
     # (2) no gap in the coverage of the decision possible values
     # (3) ELSE branch, if present, can be reached
     # (4) if an answer uses a non-ground expression an ELSE is there
+    # (5) present() operator and enumerated question are fully covered
 
     q_ranges = [(qmin, qmax)] if is_numeric(dec.question.exprType) else []
     for each in combinations(covered_ranges.viewitems(), 2):
+        if not q_ranges:
+            continue
         for comb in combinations(
                 chain.from_iterable(val[1] for val in each), 2):
             comb_overlap = (max(comb[0][0], comb[1][0]),
@@ -3104,9 +3128,10 @@ def decision(root, parent, context):
                                       o1=comb_overlap[0],
                                       o2=comb_overlap[1]))
     new_q_ranges = []
-#   for minq, maxq in q_ranges:
     # (2) Check that decision range is fully covered
     for ans_ref, ranges in covered_ranges.viewitems():
+        if is_enum:
+            continue
         for mina, maxa in ranges:
             for minq, maxq in q_ranges:
                 left = (minq, min(maxq, mina - 1))
@@ -3133,6 +3158,21 @@ def decision(root, parent, context):
         # (4) Answers use non-ground expression -> there should be an ELSE
         warnings.append('Decision "{}": Missing ELSE branch'
                         .format(dec.inputString))
+
+    # (5) check coverage of enumerated types
+    if is_enum:
+        # check duplicate answers
+        answers = list(chain.from_iterable(covered_ranges.viewvalues()))
+        dupl = [a for a, v in Counter(answers).items() if v > 1]
+        if dupl:
+            errors.append('Decision "{}": duplicate answers "{}"'
+                          .format(dec.inputString, '", "'.join(dupl)))
+        enumerants = [en.replace('-', '_') for en in q_basic.EnumValues.keys()]
+        # check for missing answers
+        if set(answers) != set(enumerants) and not has_else:
+            errors.append('Decision "{}": Missing branches for answer(s) "{}"'
+                          .format(dec.inputString,
+                                  '", "'.join(set(enumerants) - set(answers))))
 
     return dec, errors, warnings
 
