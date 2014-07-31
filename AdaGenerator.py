@@ -589,7 +589,6 @@ def _call_external_function(output):
 def _task_assign(task):
     ''' A list of assignments in a task symbol '''
     code, local_decl = [], []
-    ada_string = ''
     if task.comment:
         code.extend(traceability(task.comment))
     for expr in task.elems:
@@ -850,8 +849,6 @@ def _prim_substring(prim):
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    receiver_ty_name = receiver.exprType.ReferencedTypeName.replace('-', '_')
-
     r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0])
     r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1])
 
@@ -923,6 +920,7 @@ def _basic_operators(expr):
     local_decl.extend(right_local)
     return code, unicode(ada_string), local_decl
 
+
 @expression.register(ogAST.ExprAssign)
 def _assign_expression(expr):
     ''' Assignment: almost the same a basic operators, except for strings '''
@@ -948,6 +946,7 @@ def _assign_expression(expr):
     local_decl.extend(left_local)
     local_decl.extend(right_local)
     return code, '', local_decl
+
 
 @expression.register(ogAST.ExprOr)
 @expression.register(ogAST.ExprAnd)
@@ -1598,13 +1597,11 @@ def string_payload(prim, ada_string):
     prim_basic = find_basic_type(prim.exprType)
     payload = ''
     if prim_basic.kind in ('SequenceOfType', 'OctetStringType'):
-        range_string = ''
         if int(prim_basic.Min) != int(prim_basic.Max):
             payload = u'.Data(1..{}.Length)'.format(ada_string)
         else:
             payload = u'.Data'
     return payload
-
 
 
 def find_basic_type(a_type):
