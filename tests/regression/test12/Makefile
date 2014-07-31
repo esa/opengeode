@@ -1,5 +1,8 @@
 all: test-ada
 
+edit:
+	../../../opengeode.py trafficlight.pr system_structure.pr
+
 test-parse:
 	../../../opengeode.py trafficlight.pr system_structure.pr --check
 
