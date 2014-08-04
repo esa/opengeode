@@ -313,8 +313,8 @@ class CompileError(Exception):
 
 @singledispatch
 def generate(ast):
-    ''' Generate the code for an item of the AST '''
-    raise TypeError('[Backend] Unsupported AST construct')
+    ''' Generate the code for an ast Node '''
+    raise CompileError('Unsupported AST construct "%s"' % ast.__class__.__name__)
 
 
 # Processing of the AST
@@ -764,7 +764,7 @@ def generate_for_iterable(loop):
 @singledispatch
 def reference(prim):
     ''' Generate a reference '''
-    raise TypeError('Unsupported reference: ' + str(prim))
+    raise CompileError('Unsupported reference "%s"' % prim.__class__.__name__)
 
 
 @reference.register(ogAST.PrimVariable)
@@ -810,8 +810,8 @@ def _prim_index_reference(prim):
 
 @singledispatch
 def expression(expr):
-    ''' Generate the code for Expression-classes '''
-    raise TypeError('Unsupported expression: ' + str(expr))
+    ''' Generate the code for an expression node '''
+    raise CompileError('Unsupported expression "%s"' % expr.__class__.__name__)
 
 
 @expression.register(ogAST.ExprPlus)
@@ -960,6 +960,7 @@ def _expr_neg(expr):
 @expression.register(ogAST.ExprAssign)
 def _expr_assign(expr):
     ''' Generate the code for an assign expression '''
+    generate(expr)
     generate_assign(reference(expr.left), expression(expr.right))
 
 
@@ -1320,6 +1321,8 @@ def _prim_call(prim):
         return generate_power(args)
     elif name == 'num':
         return generate_num(args)
+    else:
+        raise NotImplementedError
 
 
 def generate_length(params):
