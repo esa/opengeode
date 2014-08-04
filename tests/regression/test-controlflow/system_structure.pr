@@ -1,0 +1,32 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM controlflow;
+
+    SIGNAL run;
+
+    PROCEDURE assert;
+        FPAR
+            IN res Boolean,
+            IN msg CharString;
+    EXTERNAL;
+
+    PROCEDURE fail;
+        FPAR
+            IN msg CharString;
+    EXTERNAL;
+
+    CHANNEL c
+        FROM ENV TO controlflow WITH run;
+    ENDCHANNEL;
+
+    BLOCK basic;
+
+        SIGNALROUTE r
+            FROM ENV TO controlflow WITH run;
+        CONNECT c and r;
+
+        PROCESS controlflow REFERENCED;
+
+    ENDBLOCK;
+
+ENDSYSTEM;
