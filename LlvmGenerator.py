@@ -193,7 +193,7 @@ class Context():
         return union.ty
 
     def _type_of_octetstring(self, name, octetstring_ty):
-        ''' Return the equivalent LL type of a OcterString ASN.1 type '''
+        ''' Return the equivalent LL type of a OctetString ASN.1 type '''
         min_size = int(octetstring_ty.Min)
         max_size = int(octetstring_ty.Max)
         is_variable_size = min_size != max_size
@@ -313,14 +313,14 @@ class CompileError(Exception):
 
 @singledispatch
 def generate(ast):
-    ''' Generate the code for an ast Node '''
+    ''' Generate the IR for an AST node '''
     raise CompileError('Unsupported AST construct "%s"' % ast.__class__.__name__)
 
 
 # Processing of the AST
 @generate.register(ogAST.Process)
 def _process(process):
-    ''' Generate LLVM IR code '''
+    ''' Generate the IR for a process '''
     process_name = str(process.processName)
     LOG.info('Generating LLVM IR code for process ' + process_name)
 
@@ -397,7 +397,7 @@ def _process(process):
 
 
 def generate_runtr_func(process):
-    ''' Generate code for the run_transition function '''
+    ''' Generate the IR for the run_transition function '''
     func = ctx.decl_func('run_transition', ctx.void, [ctx.i32])
 
     ctx.open_scope()
@@ -456,7 +456,7 @@ def generate_runtr_func(process):
 
 
 def generate_startup_func(process):
-    ''' Generate code for the startup function '''
+    ''' Generate the IR for the startup function '''
     func = ctx.decl_func(ctx.name + '_startup', ctx.void, [])
 
     ctx.open_scope()
@@ -480,7 +480,7 @@ def generate_startup_func(process):
 
 
 def generate_input_signal(signal, inputs):
-    ''' Generate code for an input signal '''
+    ''' Generate the IR for an input signal '''
     func_name = ctx.name + "_" + str(signal['name'])
     param_tys = []
     if 'type' in signal:
@@ -531,7 +531,7 @@ def generate_input_signal(signal, inputs):
 @generate.register(ogAST.Output)
 @generate.register(ogAST.ProcedureCall)
 def _call_external_function(output):
-    ''' Generate the code of a set of output or procedure call statement '''
+    ''' Generate the IR for an output or procedure call '''
     for out in output.output:
         name = out['outputName'].lower()
 
@@ -565,7 +565,7 @@ def _call_external_function(output):
 
 
 def generate_write(params):
-    ''' Generate the code for the write operator '''
+    ''' Generate the IR for the write operator '''
     for param in params:
         basic_ty = find_basic_type(param.exprType)
         expr_val = expression(param)
@@ -598,7 +598,7 @@ def generate_write(params):
 
 
 def generate_writeln(params):
-    ''' Generate the code for the writeln operator '''
+    ''' Generate the IR for the writeln operator '''
     generate_write(params)
 
     str_ptr = ctx.string_ptr('\n')
@@ -606,7 +606,7 @@ def generate_writeln(params):
 
 
 def generate_reset_timer(params):
-    ''' Generate the code for the reset timer operator '''
+    ''' Generate the IR for the reset timer operator '''
     timer_id = params[0]
     reset_func_name = 'reset_%s' % timer_id.value[0]
     reset_func = ctx.funcs[reset_func_name.lower()]
@@ -615,7 +615,7 @@ def generate_reset_timer(params):
 
 
 def generate_set_timer(params):
-    ''' Generate the code for the set timer operator '''
+    ''' Generate the IR for the set timer operator '''
     timer_expr, timer_id = params
     set_func_name = 'set_%s' % timer_id.value[0]
     set_func = ctx.funcs[set_func_name.lower()]
@@ -630,7 +630,7 @@ def generate_set_timer(params):
 
 @generate.register(ogAST.TaskAssign)
 def _task_assign(task):
-    ''' Generate the code of a list of assignments '''
+    ''' Generate the IR for a list of assignments '''
     for expr in task.elems:
         expression(expr)
 
@@ -643,7 +643,7 @@ def _task_informal_text(task):
 
 @generate.register(ogAST.TaskForLoop)
 def _task_forloop(task):
-    ''' Generate the code for a for loop '''
+    ''' Generate the IRfor a for loop '''
     for loop in task.elems:
         if loop['range']:
             generate_for_range(loop)
@@ -652,7 +652,7 @@ def _task_forloop(task):
 
 
 def generate_for_range(loop):
-    ''' Generate the code for a for x in range loop '''
+    ''' Generate the IR for a for x in range loop '''
     func = ctx.builder.basic_block.function
     cond_block = func.append_basic_block('for:cond')
     body_block = func.append_basic_block('for:body')
@@ -695,7 +695,7 @@ def generate_for_range(loop):
 
 
 def generate_for_iterable(loop):
-    ''' Generate the code for a for x in iterable loop'''
+    ''' Generate the IR for a for x in iterable loop '''
     seqof_asn1ty = find_basic_type(loop['list'].exprType)
     is_variable_size = seqof_asn1ty.Min != seqof_asn1ty.Max
 
@@ -763,19 +763,19 @@ def generate_for_iterable(loop):
 
 @singledispatch
 def reference(prim):
-    ''' Generate a reference '''
+    ''' Generate the IR for a reference '''
     raise CompileError('Unsupported reference "%s"' % prim.__class__.__name__)
 
 
 @reference.register(ogAST.PrimVariable)
 def _prim_var_reference(prim):
-    ''' Generate a variable reference '''
+    ''' Generate the IR for a variable reference '''
     return ctx.scope.resolve(str(prim.value[0]))
 
 
 @reference.register(ogAST.PrimSelector)
 def _prim_selector_reference(prim):
-    ''' Generate a field selector referece '''
+    ''' Generate the IR for a field selector referece '''
     receiver_ptr = reference(prim.value[0])
     field_name = prim.value[1]
 
@@ -793,7 +793,7 @@ def _prim_selector_reference(prim):
 
 @reference.register(ogAST.PrimIndex)
 def _prim_index_reference(prim):
-    ''' Generate an index reference '''
+    ''' Generate the IR for an index reference '''
     receiver_ptr = reference(prim.value[0])
     idx_val = expression(prim.value[1]['index'][0])
 
@@ -810,7 +810,7 @@ def _prim_index_reference(prim):
 
 @singledispatch
 def expression(expr):
-    ''' Generate the code for an expression node '''
+    ''' Generate the IR for an expression node '''
     raise CompileError('Unsupported expression "%s"' % expr.__class__.__name__)
 
 
@@ -821,7 +821,7 @@ def expression(expr):
 @expression.register(ogAST.ExprMod)
 @expression.register(ogAST.ExprRem)
 def _expr_arith(expr):
-    ''' Generate the code for an arithmetic expression '''
+    ''' Generate the IR for an arithmetic expression '''
     left_val = expression(expr.left)
     right_val = expression(expr.right)
 
@@ -869,7 +869,7 @@ def _expr_arith(expr):
 @expression.register(ogAST.ExprLt)
 @expression.register(ogAST.ExprLe)
 def _expr_rel(expr):
-    ''' Generate the code for a relational expression '''
+    ''' Generate the IR for a relational expression '''
     left_val = expression(expr.left)
     right_val = expression(expr.right)
 
@@ -947,7 +947,7 @@ def _expr_rel(expr):
 
 @expression.register(ogAST.ExprNeg)
 def _expr_neg(expr):
-    ''' Generate the code for a negative expression '''
+    ''' Generate the IR for a negative expression '''
     expr_val = expression(expr.expr)
     if expr_val.type.kind == core.TYPE_INTEGER:
         zero_val = core.Constant.int(ctx.i64, 0)
@@ -959,13 +959,12 @@ def _expr_neg(expr):
 
 @expression.register(ogAST.ExprAssign)
 def _expr_assign(expr):
-    ''' Generate the code for an assign expression '''
-    generate(expr)
+    ''' Generate the IR for an assign expression '''
     generate_assign(reference(expr.left), expression(expr.right))
 
 
 def generate_assign(left, right):
-    ''' Generate code for an assign from two LLVM values'''
+    ''' Generate the IR for an assign from two LLVM values '''
     # This is extracted as an standalone function because is used by
     # multiple generation rules
     if is_struct_ptr(left) or is_array_ptr(left):
@@ -985,7 +984,7 @@ def generate_assign(left, right):
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
 def _expr_logic(expr):
-    ''' Generate the code for a logic expression '''
+    ''' Generate the IR for a logic expression '''
     bty = find_basic_type(expr.exprType)
 
     if expr.shortcircuit:
@@ -1087,7 +1086,7 @@ def _expr_logic(expr):
 
 @expression.register(ogAST.ExprNot)
 def _expr_not(expr):
-    ''' Generate the code for a not expression '''
+    ''' Generate the IR for a not expression '''
     bty = find_basic_type(expr.exprType)
 
     if bty.kind == 'BooleanType':
@@ -1138,7 +1137,7 @@ def _expr_not(expr):
 
 @expression.register(ogAST.ExprAppend)
 def _expr_append(expr):
-    ''' Generate code for a append expression '''
+    ''' Generate the IR for a append expression '''
     bty = find_basic_type(expr.exprType)
 
     if bty.kind in ('SequenceOfType', 'OctetStringType'):
@@ -1189,7 +1188,7 @@ def _expr_append(expr):
 
 @expression.register(ogAST.ExprIn)
 def _expr_in(expr):
-    ''' Generate the code for an in expression '''
+    ''' Generate the IR for an in expression '''
     func = ctx.builder.basic_block.function
 
     next_block = func.append_basic_block('in:next')
@@ -1245,28 +1244,28 @@ def _expr_in(expr):
 
 @expression.register(ogAST.PrimVariable)
 def _prim_variable(prim):
-    ''' Generate the code for a variable expression '''
+    ''' Generate the IR for a variable expression '''
     var_ptr = reference(prim)
     return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
 
 
 @expression.register(ogAST.PrimSelector)
 def _prim_selector(prim):
-    ''' Generate the code for a Selector expression '''
+    ''' Generate the IR for a selector expression '''
     var_ptr = reference(prim)
     return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
 
 
 @expression.register(ogAST.PrimIndex)
 def _prim_index(prim):
-    ''' Generate the code for an Index expression '''
+    ''' Generate the IR for an index expression '''
     var_ptr = reference(prim)
     return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
 
 
 @expression.register(ogAST.PrimSubstring)
 def _prim_substring(prim):
-    ''' Generate the code for a Substring expression '''
+    ''' Generate the IR for a substring expression '''
     bty = find_basic_type(prim.exprType)
     if bty.Min == bty.Max:
         raise NotImplementedError
@@ -1303,7 +1302,7 @@ def _prim_substring(prim):
 
 @expression.register(ogAST.PrimCall)
 def _prim_call(prim):
-    ''' Generate the code for a builtin call expression '''
+    ''' Generate the IR for a call expression '''
     name = prim.value[0].lower()
     args = prim.value[1]['procParams']
 
@@ -1326,7 +1325,7 @@ def _prim_call(prim):
 
 
 def generate_length(params):
-    ''' Generate the code for the built-in length operation'''
+    ''' Generate the IR for the length operator '''
     seq_ptr = reference(params[0])
 
     bty = find_basic_type(params[0].exprType)
@@ -1339,14 +1338,14 @@ def generate_length(params):
 
 
 def generate_present(params):
-    ''' Generate the code for the built-in present operation'''
+    ''' Generate the IR for the present operator '''
     expr_val = expression(params[0])
     kind_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.zero])
     return ctx.builder.load(kind_ptr)
 
 
 def generate_abs(params):
-    ''' Generate the code for the built-in abs operation'''
+    ''' Generate the IR for the abs operator '''
     expr_val = expression(params[0])
 
     if expr_val.type.kind == core.TYPE_INTEGER:
@@ -1358,19 +1357,19 @@ def generate_abs(params):
 
 
 def generate_fix(params):
-    ''' Generate the code for the built-in fix operation'''
+    ''' Generate the IR for the fix operator '''
     expr_val = expression(params[0])
     return ctx.builder.fptosi(expr_val, ctx.i64)
 
 
 def generate_float(params):
-    ''' Generate the code for the built-in float operation'''
+    ''' Generate the IR for the float operator '''
     expr_val = expression(params[0])
     return ctx.builder.sitofp(expr_val, ctx.double)
 
 
 def generate_power(params):
-    ''' Generate the code for the built-in power operation'''
+    ''' Generate the IR for the power operator '''
     left_val = expression(params[0])
     right_val = expression(params[1])
     right_conv = ctx.builder.trunc(right_val, ctx.i32)
@@ -1383,14 +1382,14 @@ def generate_power(params):
 
 
 def generate_num(params):
-    ''' Generate the code for the built-in num operation'''
+    ''' Generate the IR for the num operator'''
     enum_val = expression(params[0])
     return ctx.builder.sext(enum_val, ctx.i64)
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
 def _prim_enumerated_value(prim):
-    ''' Generate code for an enumerated value '''
+    ''' Generate the IR for an enumerated value '''
     enumerant = prim.value[0].replace('_', '-')
     basic_ty = find_basic_type(prim.exprType)
     return core.Constant.int(ctx.i32, basic_ty.EnumValues[enumerant].IntValue)
@@ -1398,26 +1397,26 @@ def _prim_enumerated_value(prim):
 
 @expression.register(ogAST.PrimChoiceDeterminant)
 def _prim_choice_determinant(prim):
-    ''' Generate code for a choice determinant (enumerated) '''
+    ''' Generate the IR for a choice determinant (enumerated) '''
     enumerant = prim.value[0].replace('-', '_')
     return ctx.enums[enumerant]
 
 
 @expression.register(ogAST.PrimInteger)
 def _prim_integer(prim):
-    ''' Generate code for a raw integer value '''
+    ''' Generate the IR for a raw integer value '''
     return core.Constant.int(ctx.i64, prim.value[0])
 
 
 @expression.register(ogAST.PrimReal)
 def _prim_real(prim):
-    ''' Generate code for a raw real value '''
+    ''' Generate the IR for a raw real value '''
     return core.Constant.real(ctx.double, prim.value[0])
 
 
 @expression.register(ogAST.PrimBoolean)
 def _prim_boolean(prim):
-    ''' Generate code for a raw boolean value '''
+    ''' Generate the IR for a raw boolean value '''
     if prim.value[0].lower() == 'true':
         return core.Constant.int(ctx.i1, 1)
     else:
@@ -1426,7 +1425,7 @@ def _prim_boolean(prim):
 
 @expression.register(ogAST.PrimEmptyString)
 def _prim_empty_string(prim):
-    ''' Generate code for an empty SEQUENCE OF: {} '''
+    ''' Generate the IR for an empty SEQUENCE OF '''
     # TODO: Why is this named string if it's not an string?
     struct_ty = ctx.type_of(prim.exprType)
     struct_ptr = ctx.builder.alloca(struct_ty)
@@ -1436,7 +1435,7 @@ def _prim_empty_string(prim):
 
 @expression.register(ogAST.PrimStringLiteral)
 def _prim_string_literal(prim):
-    ''' Generate code for a string'''
+    ''' Generate the IR for a string'''
     bty = find_basic_type(prim.exprType)
 
     str_len = len(str(prim.value[1:-1]))
@@ -1473,19 +1472,19 @@ def _prim_string_literal(prim):
 
 @expression.register(ogAST.PrimConstant)
 def _prim_constant(prim):
-    ''' Generate code for a reference to an ASN.1 constant '''
+    ''' Generate the IR for a reference to an ASN.1 constant '''
     raise NotImplementedError
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
 def _prim_mantissa_base_exp(prim):
-    ''' Generate code for a Real with Mantissa-base-Exponent representation '''
+    ''' Generate the IR for a Real with Mantissa-base-Exponent representation '''
     raise NotImplementedError
 
 
 @expression.register(ogAST.PrimConditional)
 def _prim_conditional(prim):
-    ''' Generate the code for ternary operator '''
+    ''' Generate the IR for conditional expression '''
     func = ctx.builder.basic_block.function
 
     true_block = func.append_basic_block('cond:true')
@@ -1514,7 +1513,7 @@ def _prim_conditional(prim):
 
 @expression.register(ogAST.PrimSequence)
 def _prim_sequence(prim):
-    ''' Generate the code for an ASN.1 SEQUENCE '''
+    ''' Generate the IR for an ASN.1 SEQUENCE '''
     struct = ctx.resolve_struct(prim.exprType.ReferencedTypeName)
     struct_ptr = ctx.builder.alloca(struct.ty)
 
@@ -1533,7 +1532,7 @@ def _prim_sequence(prim):
 
 @expression.register(ogAST.PrimSequenceOf)
 def _prim_sequence_of(prim):
-    ''' Generate the code for an ASN.1 SEQUENCE OF '''
+    ''' Generate the IR for an ASN.1 SEQUENCE OF '''
     basic_ty = find_basic_type(prim.exprType)
     ty = ctx.type_of(prim.exprType)
     struct_ptr = ctx.builder.alloca(ty)
@@ -1558,7 +1557,7 @@ def _prim_sequence_of(prim):
 
 @expression.register(ogAST.PrimChoiceItem)
 def _prim_choiceitem(prim):
-    ''' Generate the code for a CHOICE expression '''
+    ''' Generate the IR for a CHOICE expression '''
     union = ctx.resolve_union(prim.exprType.ReferencedTypeName)
     union_ptr = ctx.builder.alloca(union.ty)
 
@@ -1577,7 +1576,7 @@ def _prim_choiceitem(prim):
 
 @generate.register(ogAST.Decision)
 def _decision(dec):
-    ''' Generate the code for a decision '''
+    ''' Generate the IR for a decision '''
     func = ctx.builder.basic_block.function
 
     ans_cond_blocks = [func.append_basic_block('dec:ans:cond') for ans in dec.answers]
@@ -1632,14 +1631,14 @@ def _decision(dec):
 
 @generate.register(ogAST.Label)
 def _label(label):
-    ''' Generate the code for a Label '''
+    ''' Generate the IR for a label '''
     label_block = ctx.scope.label(str(label.inputString))
     ctx.builder.branch(label_block)
 
 
 @generate.register(ogAST.Transition)
 def _transition(tr):
-    ''' Generate the code for a transition '''
+    ''' Generate the IR for a transition '''
     for action in tr.actions:
         generate(action)
         if isinstance(action, ogAST.Label):
@@ -1649,7 +1648,7 @@ def _transition(tr):
 
 
 def generate_terminator(term):
-    ''' Generate the code for a transition terminator '''
+    ''' Generate the IR for a transition terminator '''
     if term.label:
         raise NotImplementedError
 
@@ -1664,7 +1663,7 @@ def generate_terminator(term):
 
 
 def generate_next_state_terminator(term):
-    ''' Generate the code for a next state transition terminator '''
+    ''' Generate the IR for a next state transition terminator '''
     state = term.inputString.lower()
     if state.strip() != '-':
         if type(term.next_id) is int:
@@ -1707,18 +1706,18 @@ def generate_next_state_terminator(term):
 
 
 def generate_join_terminator(term):
-    ''' Generate the code for a join transition terminator '''
+    ''' Generate the IR for a join transition terminator '''
     label_block = ctx.scope.label(str(term.inputString))
     ctx.builder.branch(label_block)
 
 
 def generate_stop_terminator(term):
-    ''' Generate the code for a stop transition terminator '''
+    ''' Generate the IR for a stop transition terminator '''
     raise NotImplementedError
 
 
 def generate_return_terminator(term):
-    ''' Generate the code for a return transition terminator '''
+    ''' Generate the IR for a return transition terminator '''
     if term.next_id == -1 and term.return_expr:
         ctx.builder.ret(expression(term.return_expr))
     elif term.next_id == -1:
@@ -1731,7 +1730,7 @@ def generate_return_terminator(term):
 
 @generate.register(ogAST.Floating_label)
 def _floating_label(label):
-    ''' Generate the code for a floating label '''
+    ''' Generate the IR for a floating label '''
     label_block = ctx.scope.label(str(label.inputString))
     if not ctx.builder.basic_block.terminator:
         ctx.builder.branch(label_block)
@@ -1744,8 +1743,8 @@ def _floating_label(label):
 
 
 @generate.register(ogAST.Procedure)
-def _inner_procedure(proc):
-    ''' Generate the code for a procedure '''
+def _procedure(proc):
+    ''' Generate the IR for a procedure '''
     param_tys = [core.Type.pointer(ctx.type_of(p['type'])) for p in proc.fpar]
     func = ctx.decl_func(str(proc.inputString), ctx.void, param_tys)
 
