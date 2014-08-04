@@ -603,22 +603,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             except StopIteration:
                 LOG.info('Pattern not found')
 
-    def show_item(self, item):
-        '''
-            Select an item and make sure it is visible
-            (used when user clicks on a warning or error to locate the symbol)
-        '''
-        abs_coordinates = item.data(Qt.UserRole)
-        if not abs_coordinates:
-            LOG.info('Corresponding symbol not found')
-            return
-        item = self.itemAt(*abs_coordinates)
-        if item:
-            self.clearSelection()
-            self.clear_focus()
-            item.setSelected(True)
-            item.ensureVisible()
-
     def delete_selected_symbols(self):
         '''
             Remove selected symbols from the scene, with proper re-connections
@@ -1485,6 +1469,25 @@ class SDL_View(QtGui.QGraphicsView, object):
                                                     string=pr_data)
             self.log_errors(errors, warnings)
 
+    def show_item(self, item):
+        '''
+           Select an item and make sure it is visible - change scene if needed
+           Used when user clicks on a warning or error to locate the symbol
+        '''
+        abs_coordinates = item.data(Qt.UserRole)
+        if not abs_coordinates:
+            LOG.info('Corresponding symbol not found (no coordinates)')
+            return
+        item = self.scene().itemAt(*abs_coordinates)
+        if item:
+            self.scene().clearSelection()
+            self.scene().clear_focus()
+            item.setSelected(True)
+            item.ensureVisible()
+        else:
+            LOG.info('No symbol at given coordinates in the current scene')
+
+
     def generate_ada(self):
         ''' Generate Ada code '''
         # If the current scene is a nested one, save the top parent
@@ -1611,7 +1614,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         messages.addItem('Welcome to OpenGEODE.')
         self.view.messages_window = messages
         self.scene.messages_window = messages
-        messages.itemClicked.connect(self.scene.show_item)
+        messages.itemClicked.connect(self.view.show_item)
 
         statechart_dock = self.findChild(QtGui.QDockWidget, 'statechart_dock')
         #statechart_dock.setWindowTitle('Statechart view - F4 to update')

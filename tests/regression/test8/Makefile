@@ -1,5 +1,8 @@
 all: test-ada
 
+edit:
+	../../../opengeode.py orchestrator.pr system_structure.pr
+
 test-parse:
 	../../../opengeode.py --check orchestrator.pr system_structure.pr
 
