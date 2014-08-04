@@ -5,7 +5,7 @@
 extern void expressions_startup();
 extern void expressions_run();
 
-void expressions_RI_assert(Boolean *res, CharString *msg) {
+void expressions_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
     if (!*res) {
         fprintf(stderr, "%.*s\n", (int)msg->nCount, msg->arr);
         exit(1);
