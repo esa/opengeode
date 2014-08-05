@@ -1478,8 +1478,12 @@ def _prim_constant(prim):
 
 @expression.register(ogAST.PrimMantissaBaseExp)
 def _prim_mantissa_base_exp(prim):
-    ''' Generate the IR for a Real with Mantissa-base-Exponent representation '''
-    raise NotImplementedError
+    ''' Generate the IR for a Real with Mantissa-Base-Exponent representation '''
+    mantissa = int(prim.value['mantissa'])
+    base = int(prim.value['base'])
+    exponent = int(prim.value['exponent'])
+
+    return core.Constant.real(ctx.double, (mantissa * base) ** exponent)
 
 
 @expression.register(ogAST.PrimConditional)
