@@ -570,25 +570,25 @@ def _call_external_function(output, ctx):
 
         func = ctx.funcs[str(name).lower()]
 
-        params = []
-        for p in out.get('params', []):
-            p_val = expression(p, ctx)
+        args = []
+        for arg in out.get('params', []):
+            arg_val = expression(arg, ctx)
             # Pass by reference
-            if p_val.type.kind != core.TYPE_POINTER:
-                p_var = ctx.builder.alloca(p_val.type, None)
-                ctx.builder.store(p_val, p_var)
-                params.append(p_var)
+            if arg_val.type.kind != core.TYPE_POINTER:
+                arg_var = ctx.builder.alloca(arg_val.type, None)
+                ctx.builder.store(arg_val, arg_var)
+                args.append(arg_var)
             else:
-                params.append(p_val)
+                args.append(arg_val)
 
-        ctx.builder.call(func, params)
+        ctx.builder.call(func, args)
 
 
-def generate_write(params, ctx):
+def generate_write(args, ctx):
     ''' Generate the IR for the write operator '''
-    for param in params:
-        basic_ty = ctx.basic_type_of(param.exprType)
-        expr_val = expression(param, ctx)
+    for arg in args:
+        basic_ty = ctx.basic_type_of(arg.exprType)
+        expr_val = expression(arg, ctx)
 
         if basic_ty.kind in ['IntegerType', 'Integer32Type']:
             fmt_str_ptr = ctx.string_ptr('% d')
@@ -617,26 +617,26 @@ def generate_write(params, ctx):
             raise NotImplementedError
 
 
-def generate_writeln(params, ctx):
+def generate_writeln(args, ctx):
     ''' Generate the IR for the writeln operator '''
-    generate_write(params, ctx)
+    generate_write(args, ctx)
 
     str_ptr = ctx.string_ptr('\n')
     ctx.builder.call(ctx.funcs['printf'], [str_ptr])
 
 
-def generate_reset_timer(params, ctx):
+def generate_reset_timer(args, ctx):
     ''' Generate the IR for the reset timer operator '''
-    timer_id = params[0]
+    timer_id = args[0]
     reset_func_name = 'reset_%s' % timer_id.value[0]
     reset_func = ctx.funcs[reset_func_name.lower()]
 
     ctx.builder.call(reset_func, [])
 
 
-def generate_set_timer(params, ctx):
+def generate_set_timer(args, ctx):
     ''' Generate the IR for the set timer operator '''
-    timer_expr, timer_id = params
+    timer_expr, timer_id = args
     set_func_name = 'set_%s' % timer_id.value[0]
     set_func = ctx.funcs[set_func_name.lower()]
 
@@ -1346,11 +1346,11 @@ def _prim_call(prim, ctx):
         raise NotImplementedError
 
 
-def generate_length(params, ctx):
+def generate_length(args, ctx):
     ''' Generate the IR for the length operator '''
-    seq_ptr = reference(params[0], ctx)
+    seq_ptr = reference(args[0], ctx)
 
-    bty = ctx.basic_type_of(params[0].exprType)
+    bty = ctx.basic_type_of(args[0].exprType)
     if bty.Min != bty.Max:
         len_ptr = ctx.builder.gep(seq_ptr, [ctx.zero, ctx.zero])
         return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
@@ -1359,16 +1359,16 @@ def generate_length(params, ctx):
         return core.Constant.int(ctx.i64, arr_ty.count)
 
 
-def generate_present(params, ctx):
+def generate_present(args, ctx):
     ''' Generate the IR for the present operator '''
-    expr_val = expression(params[0], ctx)
+    expr_val = expression(args[0], ctx)
     kind_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.zero])
     return ctx.builder.load(kind_ptr)
 
 
-def generate_abs(params, ctx):
+def generate_abs(args, ctx):
     ''' Generate the IR for the abs operator '''
-    expr_val = expression(params[0], ctx)
+    expr_val = expression(args[0], ctx)
 
     if expr_val.type.kind == core.TYPE_INTEGER:
         expr_conv = ctx.builder.sitofp(expr_val, ctx.double)
@@ -1378,22 +1378,22 @@ def generate_abs(params, ctx):
         return ctx.builder.call(ctx.funcs['fabs'], [expr_val])
 
 
-def generate_fix(params, ctx):
+def generate_fix(args, ctx):
     ''' Generate the IR for the fix operator '''
-    expr_val = expression(params[0], ctx)
+    expr_val = expression(args[0], ctx)
     return ctx.builder.fptosi(expr_val, ctx.i64)
 
 
-def generate_float(params, ctx):
+def generate_float(args, ctx):
     ''' Generate the IR for the float operator '''
-    expr_val = expression(params[0], ctx)
+    expr_val = expression(args[0], ctx)
     return ctx.builder.sitofp(expr_val, ctx.double)
 
 
-def generate_power(params, ctx):
+def generate_power(args, ctx):
     ''' Generate the IR for the power operator '''
-    left_val = expression(params[0], ctx)
-    right_val = expression(params[1], ctx)
+    left_val = expression(args[0], ctx)
+    right_val = expression(args[1], ctx)
     right_conv = ctx.builder.trunc(right_val, ctx.i32)
     if left_val.type.kind == core.TYPE_INTEGER:
         left_conv = ctx.builder.sitofp(left_val, ctx.double)
