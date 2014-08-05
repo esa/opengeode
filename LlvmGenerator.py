@@ -46,6 +46,7 @@ class Context():
         self.strings = {}
         self.funcs = {}
         self.lltypes = {}
+        self.basic_types = {}
 
         # Initialize built-in types
         self.i1 = core.Type.int(1)
@@ -96,13 +97,25 @@ class Context():
 
     def basic_type_of(self, asn1ty):
         ''' Return the ASN.1 basic type of a type '''
+        if asn1ty.kind != 'ReferenceType':
+            return asn1ty
+
+        asn1ty_name = asn1ty.ReferencedTypeName.lower()
+
+        # return the basic type if its cached
+        if asn1ty_name in self.basic_types:
+            return self.basic_types[asn1ty_name]
+
         basic_type = asn1ty
         while basic_type.kind == 'ReferenceType':
-            # Find type with proper case in the data view
             for typename in self.dataview.viewkeys():
                 if typename.lower() == basic_type.ReferencedTypeName.lower():
                     basic_type = self.dataview[typename].type
                     break
+
+        # cache the basic type
+        self.basic_types[asn1ty_name] = basic_type
+
         return basic_type
 
     def type_of(self, asn1ty):
