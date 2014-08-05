@@ -584,45 +584,62 @@ def _call_external_function(output, ctx):
         ctx.builder.call(func, args)
 
 
-def generate_write(args, ctx):
+def generate_write(args, ctx, newline=False):
     ''' Generate the IR for the write operator '''
+    fmt = ""
+    arg_values = []
+
     for arg in args:
         basic_ty = ctx.basic_type_of(arg.exprType)
-        expr_val = expression(arg, ctx)
+        arg_val = expression(arg, ctx)
 
         if basic_ty.kind in ['IntegerType', 'Integer32Type']:
-            fmt_str_ptr = ctx.string_ptr('% d')
-            ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, expr_val])
+            fmt += '% d'
+            arg_values.append(arg_val)
+
         elif basic_ty.kind == 'RealType':
-            fmt_str_ptr = ctx.string_ptr('% .14E')
-            ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, expr_val])
+            fmt += '% .14E'
+            arg_values.append(arg_val)
+
         elif basic_ty.kind == 'BooleanType':
+            fmt += '%s'
+
             true_str_ptr = ctx.string_ptr('TRUE')
             false_str_ptr = ctx.string_ptr('FALSE')
-            str_ptr = ctx.builder.select(expr_val, true_str_ptr, false_str_ptr)
-            ctx.builder.call(ctx.funcs['printf'], [str_ptr])
+            str_ptr = ctx.builder.select(arg_val, true_str_ptr, false_str_ptr)
+
+            arg_values.append(str_ptr)
+
         elif basic_ty.kind in ('StringType', 'StandardStringType'):
-            fmt_str_ptr = ctx.string_ptr('%s')
-            ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, expr_val])
+            fmt += '%s'
+            arg_values.append(arg_val)
+
         elif basic_ty.kind == 'OctetStringType':
-            fmt_str_ptr = ctx.string_ptr('%.*s')
+            fmt += '%.*s'
+
             if basic_ty.Min == basic_ty.Max:
-                arr_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.zero])
+                arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
                 count_val = core.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
             else:
-                count_val = ctx.builder.load(ctx.builder.gep(expr_val, [ctx.zero, ctx.zero]))
-                arr_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.one])
-            ctx.builder.call(ctx.funcs['printf'], [fmt_str_ptr, count_val, arr_ptr])
+                count_val = ctx.builder.load(ctx.builder.gep(arg_val, [ctx.zero, ctx.zero]))
+                arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.one])
+
+            arg_values.append(count_val)
+            arg_values.append(arr_ptr)
+
         else:
-            raise NotImplementedError
+            raise CompileError('Type "%s" not supported in write/writeln operators')
+
+    if newline:
+        fmt += '\n'
+
+    arg_values.insert(0, ctx.string_ptr(fmt))
+    ctx.builder.call(ctx.funcs['printf'], arg_values)
 
 
 def generate_writeln(args, ctx):
     ''' Generate the IR for the writeln operator '''
-    generate_write(args, ctx)
-
-    str_ptr = ctx.string_ptr('\n')
-    ctx.builder.call(ctx.funcs['printf'], [str_ptr])
+    generate_write(args, ctx, True)
 
 
 def generate_reset_timer(args, ctx):
@@ -1403,9 +1420,9 @@ def generate_power(args, ctx):
         return ctx.builder.call(ctx.funcs['powi'], [left_val, right_conv])
 
 
-def generate_num(params, ctx):
+def generate_num(args, ctx):
     ''' Generate the IR for the num operator'''
-    enum_val = expression(params[0], ctx)
+    enum_val = expression(args[0], ctx)
     return ctx.builder.sext(enum_val, ctx.i64)
 
 
