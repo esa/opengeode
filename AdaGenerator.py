@@ -929,12 +929,13 @@ def _equality(expr):
     actual_type = getattr(expr.left.exprType,
                           'ReferencedTypeName',
                           None) or expr.left.exprType.kind
-    basic = find_basic_type(expr.left.exprType) in ('IntegerType',
-                                                    'Integer32Type',
-                                                    'BooleanType',
-                                                    'RealType',
-                                                    'EnumeratedType',
-                                                    'ChoiceEnumeratedType')
+    actual_type = actual_type.replace('-', '_')
+    basic = find_basic_type(expr.left.exprType).kind in ('IntegerType',
+                                                         'Integer32Type',
+                                                         'BooleanType',
+                                                         'RealType',
+                                                         'EnumeratedType',
+                                                        'ChoiceEnumeratedType')
     if basic:
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)

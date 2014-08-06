@@ -1954,6 +1954,7 @@ def floating_label(root, parent, context):
     errors = []
     warnings = []
     lab = ogAST.Floating_label()
+    lab_x, lab_y = 0, 0
     # Keep track of the number of terminator statements following the label
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
@@ -1965,6 +1966,7 @@ def floating_label(root, parent, context):
         elif child.type == lexer.CIF:
             # Get symbol coordinates
             lab.pos_x, lab.pos_y, lab.width, lab.height = cif(child)
+            lab_x, lab_y = lab.pos_x, lab.pos_y
         elif child.type == lexer.HYPERLINK:
             lab.hyperlink = child.getChild(0).text[1:-1]
         elif child.type == lexer.TRANSITION:
@@ -1975,11 +1977,11 @@ def floating_label(root, parent, context):
             lab.transition = trans
         else:
             warnings.append(
-                    'Unsupported construct in floating label: ' +
-                    str(child.type))
+                    ['Unsupported construct in floating label: ' +
+                    str(child.type), [lab_x, lab_y], []])
     if not lab.transition:
-        warnings.append('Floating labels not followed by a transition: ' +
-                        str(lab.inputString))
+        warnings.append(['Floating labels not followed by a transition: ' +
+                        str(lab.inputString), [lab_x, lab_y], []])
     # At the end of the label parsing, get the the list of terminators that
     # the transition contains by making a diff with the list at context
     # level (we counted the number of terminators before parsing the item)
