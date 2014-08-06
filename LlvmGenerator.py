@@ -867,35 +867,37 @@ def _expr_arith(expr, ctx):
     expr_bty = ctx.basic_type_of(expr.exprType)
 
     if expr_bty.kind in ('IntegerType', 'Integer32Type'):
-        if expr.operand == '+':
+        if isinstance(expr, ogAST.ExprPlus):
             return ctx.builder.add(left_val, right_val)
-        elif expr.operand == '-':
+        elif isinstance(expr, ogAST.ExprMinus):
             return ctx.builder.sub(left_val, right_val)
-        elif expr.operand == '*':
+        elif isinstance(expr, ogAST.ExprMul):
             return ctx.builder.mul(left_val, right_val)
-        elif expr.operand == '/':
+        elif isinstance(expr, ogAST.ExprDiv):
             return ctx.builder.sdiv(left_val, right_val)
-        elif expr.operand == 'mod':
+        elif isinstance(expr, ogAST.ExprMod):
             # l mod r == (((l rem r) + r) rem r)
             rem_val = ctx.builder.srem(left_val, right_val)
             add_val = ctx.builder.add(rem_val, right_val)
             return ctx.builder.srem(add_val, right_val)
-        elif expr.operand == 'rem':
+        elif isinstance(expr, ogAST.ExprRem):
             return ctx.builder.srem(left_val, right_val)
         raise CompileError(
-            'Operator "%s" not supported for Integer types' % expr.operand)
+            'Expression "%s" not supported for Integer types'
+            % expr.__class__.__name__)
 
     elif expr_bty.kind == 'RealType':
-        if expr.operand == '+':
+        if isinstance(expr, ogAST.ExprPlus):
             return ctx.builder.fadd(left_val, right_val)
-        elif expr.operand == '-':
+        elif isinstance(expr, ogAST.ExprMinus):
             return ctx.builder.fsub(left_val, right_val)
-        elif expr.operand == '*':
+        elif isinstance(expr, ogAST.ExprMul):
             return ctx.builder.fmul(left_val, right_val)
-        elif expr.operand == '/':
+        elif isinstance(expr, ogAST.ExprDiv):
             return ctx.builder.fdiv(left_val, right_val)
         raise CompileError(
-            'Operator "%s" not supported for Real types' % expr.operand)
+            'Expression "%s" not supported for Real types'
+            % expr.__class__.__name__)
 
     raise CompileError(
         'Type "%s" not supported in arithmetic expressions' % expr_bty.kind)
@@ -903,10 +905,10 @@ def _expr_arith(expr, ctx):
 
 @expression.register(ogAST.ExprEq)
 @expression.register(ogAST.ExprNeq)
-@expression.register(ogAST.ExprGt)
-@expression.register(ogAST.ExprGe)
 @expression.register(ogAST.ExprLt)
 @expression.register(ogAST.ExprLe)
+@expression.register(ogAST.ExprGe)
+@expression.register(ogAST.ExprGt)
 def _expr_rel(expr, ctx):
     ''' Generate the IR for a relational expression '''
     left_val = expression(expr.left, ctx)
@@ -915,73 +917,81 @@ def _expr_rel(expr, ctx):
     operands_bty = ctx.basic_type_of(expr.left.exprType)
 
     if operands_bty.kind in ('IntegerType', 'Integer32Type'):
-        if expr.operand == '<':
-            return ctx.builder.icmp(core.ICMP_SLT, left_val, right_val)
-        elif expr.operand == '<=':
-            return ctx.builder.icmp(core.ICMP_SLE, left_val, right_val)
-        elif expr.operand == '=':
+        if isinstance(expr, ogAST.ExprEq):
             return ctx.builder.icmp(core.ICMP_EQ, left_val, right_val)
-        elif expr.operand == '/=':
+        elif isinstance(expr, ogAST.ExprNeq):
             return ctx.builder.icmp(core.ICMP_NE, left_val, right_val)
-        elif expr.operand == '>=':
+        elif isinstance(expr, ogAST.ExprLt):
+            return ctx.builder.icmp(core.ICMP_SLT, left_val, right_val)
+        elif isinstance(expr, ogAST.ExprLe):
+            return ctx.builder.icmp(core.ICMP_SLE, left_val, right_val)
+        elif isinstance(expr, ogAST.ExprGe):
             return ctx.builder.icmp(core.ICMP_SGE, left_val, right_val)
-        elif expr.operand == '>':
+        elif isinstance(expr, ogAST.ExprGt):
             return ctx.builder.icmp(core.ICMP_SGT, left_val, right_val)
         raise CompileError(
-            'Operator "%s" not supported for Integer types' % expr.operand)
+            'Expression "%s" not supported for Integer types'
+            % expr.__class__.__name__)
 
     elif operands_bty.kind == 'RealType':
-        if expr.operand == '<':
-            return ctx.builder.fcmp(core.FCMP_OLT, left_val, right_val)
-        elif expr.operand == '<=':
-            return ctx.builder.fcmp(core.FCMP_OLE, left_val, right_val)
-        elif expr.operand == '=':
+        if isinstance(expr, ogAST.ExprEq):
             return ctx.builder.fcmp(core.FCMP_OEQ, left_val, right_val)
-        elif expr.operand == '/=':
+        elif isinstance(expr, ogAST.ExprNeq):
             return ctx.builder.fcmp(core.FCMP_ONE, left_val, right_val)
-        elif expr.operand == '>=':
+        elif isinstance(expr, ogAST.ExprLt):
+            return ctx.builder.fcmp(core.FCMP_OLT, left_val, right_val)
+        elif isinstance(expr, ogAST.ExprLe):
+            return ctx.builder.fcmp(core.FCMP_OLE, left_val, right_val)
+        elif isinstance(expr, ogAST.ExprGe):
             return ctx.builder.fcmp(core.FCMP_OGE, left_val, right_val)
-        elif expr.operand == '>':
+        elif isinstance(expr, ogAST.ExprGt):
             return ctx.builder.fcmp(core.FCMP_OGT, left_val, right_val)
         raise CompileError(
-            'Operator "%s" not supported for Real types' % expr.operand)
+            'Expression "%s" not supported for Real types'
+            % expr.__class__.__name__)
 
     elif operands_bty.kind == 'BooleanType':
-        if expr.operand == '=':
+        if isinstance(expr, ogAST.ExprEq):
             return ctx.builder.icmp(core.ICMP_EQ, left_val, right_val)
-        elif expr.operand == '/=':
+        elif isinstance(expr, ogAST.ExprNeq):
             return ctx.builder.icmp(core.ICMP_NE, left_val, right_val)
         raise CompileError(
-            'Operator "%s" not supported for Boolean types' % expr.operand)
+            'Expression "%s" not supported for Boolean types'
+            % expr.__class__.__name__)
 
     elif operands_bty.kind == 'EnumeratedType':
-        if expr.operand == '=':
+        if isinstance(expr, ogAST.ExprEq):
             return ctx.builder.icmp(core.ICMP_EQ, left_val, right_val)
-        elif expr.operand == '/=':
+        elif isinstance(expr, ogAST.ExprNeq):
             return ctx.builder.icmp(core.ICMP_NE, left_val, right_val)
         raise CompileError(
-            'Operator "%s" not supported for Enumerated types' % expr.operand)
+            'Expression "%s" not supported for Enumerated types'
+            % expr.__class__.__name__)
 
     elif operands_bty.kind == 'ChoiceEnumeratedType':
-        if expr.operand == '=':
+        if isinstance(expr, ogAST.ExprEq):
             return ctx.builder.icmp(core.ICMP_EQ, left_val, right_val)
-        elif expr.operand == '/=':
+        elif isinstance(expr, ogAST.ExprNeq):
             return ctx.builder.icmp(core.ICMP_NE, left_val, right_val)
         raise CompileError(
-            'Operator "%s" not supported for Choice Enumerated types' % expr.operand)
+            'Expression "%s" not supported for Choice Enumerated types'
+            % expr.__class__.__name__)
 
     try:
         type_name = expr.left.exprType.ReferencedTypeName.replace('-', '_').lower()
     except AttributeError:
         raise CompileError(
-            'Operator "%s" not supported for %s' % (expr.operand, operands_bty.kind))
+            'Expression "%s" not supported for %s'
+            % (expr.__class__.__name__, operands_bty.kind))
 
-    if expr.operand in ['=', '/=']:
+    if isinstance(expr, ogAST.ExprEq) or isinstance(expr, ogAST.ExprNeq):
         func = ctx.funcs["asn1scc%s_equal" % type_name]
         res_val = ctx.builder.call(func, [left_val, right_val])
         return ctx.builder.not_(res_val) if expr.operand == '/=' else res_val
+
     raise CompileError(
-        'Operator "%s" not supported for %s' % (expr.operand, type_name))
+        'Expression "%s" not supported for %s'
+        % (expr.__class__.__name__, type_name))
 
 
 @expression.register(ogAST.ExprNeg)
