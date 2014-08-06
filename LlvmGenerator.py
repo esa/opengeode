@@ -1022,6 +1022,7 @@ def generate_assign(left, right, ctx):
 @expression.register(ogAST.ExprOr)
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
+@expression.register(ogAST.ExprImplies)
 def _expr_logic(expr, ctx):
     ''' Generate the IR for a logic expression '''
     bty = ctx.basic_type_of(expr.exprType)
@@ -1040,9 +1041,9 @@ def _expr_logic(expr, ctx):
         left_val = expression(expr.left, ctx)
         ctx.builder.store(left_val, res_ptr)
 
-        if expr.operand == 'and':
+        if isinstance(expr, ogAST.ExprAnd):
             ctx.builder.cbranch(left_val, right_block, end_block)
-        elif expr.operand == 'or':
+        elif isinstance(expr, ogAST.ExprOr):
             ctx.builder.cbranch(left_val, end_block, right_block)
         else:
             raise CompileError('Unknown shortcircuit operator "%s"' % expr.operand)
@@ -1058,13 +1059,16 @@ def _expr_logic(expr, ctx):
     elif bty.kind == 'BooleanType':
         left_val = expression(expr.left, ctx)
         right_val = expression(expr.right, ctx)
-        if expr.operand == 'and':
+
+        if isinstance(expr, ogAST.ExprAnd):
             return ctx.builder.and_(left_val, right_val)
-        elif expr.operand == 'or':
+        elif isinstance(expr, ogAST.ExprOr):
             return ctx.builder.or_(left_val, right_val)
-        elif expr.operand == 'xor':
+        elif isinstance(expr, ogAST.ExprXor):
             return ctx.builder.xor(left_val, right_val)
-        raise CompileError('Unknown bitwise operator "%s"' % expr.operand)
+        else:
+            tmp_val = ctx.builder.and_(left_val, right_val)
+            return ctx.builder.or_(tmp_val, ctx.builder.not_(left_val))
 
     elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
         func = ctx.builder.basic_block.function
@@ -1095,14 +1099,15 @@ def _expr_logic(expr, ctx):
         right_elem_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero, idx_val])
         right_elem_val = ctx.builder.load(right_elem_ptr)
 
-        if expr.operand == 'and':
+        if isinstance(expr, ogAST.ExprAnd):
             res_elem_val = ctx.builder.and_(left_elem_val, right_elem_val)
-        elif expr.operand == 'or':
+        elif isinstance(expr, ogAST.ExprOr):
             res_elem_val = ctx.builder.or_(left_elem_val, right_elem_val)
-        elif expr.operand == 'xor':
+        elif isinstance(expr, ogAST.ExprXOr):
             res_elem_val = ctx.builder.xor(left_elem_val, right_elem_val)
         else:
-            raise CompileError('Unknown bitwise operator "%s"' % expr.operand)
+            tmp_val = ctx.builder.and_(left_elem_val, right_elem_val)
+            res_elem_val = ctx.builder.or_(tmp_val, ctx.builder.not_(left_elem_val))
 
         res_elem_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero, idx_val])
         ctx.builder.store(res_elem_val, res_elem_ptr)
