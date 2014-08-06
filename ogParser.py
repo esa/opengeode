@@ -999,7 +999,7 @@ def unary_expression(root, context):
 
 def expression(root, context):
     ''' Expression analysis (e.g. 5+5*hello(world)!foo) '''
-    logic = (lexer.OR, lexer.AND, lexer.XOR)
+    logic = (lexer.OR, lexer.AND, lexer.XOR, lexer.IMPLIES)
     arithmetic = (lexer.PLUS, lexer.ASTERISK, lexer.DASH,
                   lexer.DIV, lexer.MOD, lexer.REM)
     relational = (lexer.EQ, lexer.NEQ, lexer.GT, lexer.GE, lexer.LT, lexer.LE)
