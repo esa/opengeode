@@ -951,6 +951,7 @@ def _assign_expression(expr):
 @expression.register(ogAST.ExprOr)
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
+@expression.register(ogAST.ExprImplies)
 def _bitwise_operators(expr):
     ''' Logical operators '''
     code, local_decl = [], []
@@ -973,11 +974,19 @@ def _bitwise_operators(expr):
         else:
             right_payload = right_str + string_payload(expr.right, right_str)
         left_payload = left_str + string_payload(expr.left, left_str)
-        ada_string = u'(Data => ({left} {op} {right})'.format(
+
+        if isinstance(expr, ogAST.ExprImplies):
+            ada_string = u'(Data => (({left} and {right}) or not {left}))'\
+                .format(left=left_payload, right=right_payload)
+        else:
+            ada_string = u'(Data => ({left} {op} {right}))'.format(
                 left=left_payload, op=expr.operand, right=right_payload)
-        if basic_type.Min != basic_type.Max:
-            ada_string += u", Length => {left}.Length".format(left=left_str)
-        ada_string += u')'
+
+    elif isinstance(expr, ogAST.ExprImplies):
+        ada_string = u'(({left} and {right}) or not {left})'.format(
+                                left=left_str,
+                                right=right_str)
+
     else:
         ada_string = u'({left} {op}{short} {right})'.format(
                                 left=left_str,

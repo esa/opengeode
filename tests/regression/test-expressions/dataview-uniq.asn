@@ -26,6 +26,6 @@ NestedSeq ::= SEQUENCE {
     }
 }
 
-BoolSeqOf ::= SEQUENCE (SIZE(2)) OF Boolean
+BoolSeqOf ::= SEQUENCE (SIZE(4)) OF Boolean
 
 END
