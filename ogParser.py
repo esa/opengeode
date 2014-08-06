@@ -264,7 +264,7 @@ def get_interfaces(ast, process_name):
             process_parent = ast
         else:
             raise TypeError('Process ' + process_name +
-                        ' is defined but not not declared in a system')
+                        ' is defined but not declared in a system')
     # Find in and out signals names using the signalroutes
     for signalroute in process_parent.signalroutes:
         for route in signalroute['routes']:
@@ -1847,6 +1847,8 @@ def composite_state(root, parent=None, context=None):
                 comp.mapping.viewkeys()] + ['-']:
             errors.append('In composite state "{}": missing definition '
                          'of substate "{}"'.format(comp.statename, ns.upper()))
+    for each in chain(errors, warnings):
+        each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
 
 
@@ -1942,6 +1944,8 @@ def procedure(root, parent=None, context=None):
                           + proc.inputString)
         else:
             continue
+    for each in chain(errors, warnings):
+        each[2].insert(0, 'PROCEDURE {}'.format(proc.inputString))
     return proc, errors, warnings
 
 
@@ -2197,8 +2201,8 @@ def text_area(root, parent=None, context=None):
                     str(child.type))
     # Report errors with symbol coordinates
     if coord:
-        errors = [[e, [ta.pos_x, ta.pos_y]] for e in errors]
-        warnings = [[w, [ta.pos_x, ta.pos_y]] for w in warnings]
+        errors = [[e, [ta.pos_x, ta.pos_y], []] for e in errors]
+        warnings = [[w, [ta.pos_x, ta.pos_y], []] for w in warnings]
     return ta, errors, warnings
 
 
@@ -2326,12 +2330,11 @@ def system_definition(root, parent):
 
 def process_definition(root, parent=None, context=None):
     ''' Process definition analysis '''
-    errors = []
-    warnings = []
+    errors, warnings, perr, pwarn = [], [], [], []
     process = ogAST.Process()
     process.filename = node_filename(root)
     process.parent = parent
-    coord = False
+    proc_x, proc_y = 0, 0
     # Prepare the transition/state mapping
     process.mapping = {name: [] for name in get_state_list(root)}
     for child in root.getChildren():
@@ -2339,7 +2342,7 @@ def process_definition(root, parent=None, context=None):
             # Get symbol coordinates
             process.pos_x, process.pos_y, process.width, process.height =\
                     cif(child)
-            coord = True
+            proc_x, proc_y = process.pos_x, process.pos_y
         elif child.type == lexer.ID:
             # Get process (taste function) name
             process.processName = child.text
@@ -2354,13 +2357,9 @@ def process_definition(root, parent=None, context=None):
             except AttributeError as err:
                 # No interface because process is defined standalone
                 LOG.debug('Discarding process ' + child.text + ' ' + str(err))
-            except TypeError as error:
-                LOG.debug(str(error))
-                errors.append(str(error))
-            if coord:
-                errors = [[e, [process.pos_x, process.pos_y]] for e in errors]
-                warnings = [[w, [process.pos_x, process.pos_y]]
-                             for w in warnings]
+            except TypeError as err:
+                perr.append(str(err))
+            perr = [[e, [proc_x, proc_y], []] for e in perr]
         elif child.type == lexer.TEXTAREA:
             # Text zone where variables and operators are declared
             textarea, err, warn = text_area(child, context=process)
@@ -2412,6 +2411,9 @@ def process_definition(root, parent=None, context=None):
             warnings.append('Unsupported process definition child: ' +
                              sdl92Parser.tokenNames[child.type] +
                             ' - line ' + str(child.getLine()))
+    for each in chain(errors, warnings):
+        each[2].insert(0, 'PROCESS {}'.format(process.processName))
+    errors.extend(perr)
     return process, errors, warnings
 
 
@@ -2482,8 +2484,8 @@ def input_part(root, parent, context):
 
             # Report errors with symbol coordinates
             if coord:
-                errors = [[e, [i.pos_x, i.pos_y]] for e in errors]
-                warnings = [[w, [i.pos_x, i.pos_y]] for w in warnings]
+                errors = [[e, [i.pos_x, i.pos_y], []] for e in errors]
+                warnings = [[w, [i.pos_x, i.pos_y], []] for w in warnings]
         elif child.type == lexer.ASTERISK:
             # Asterisk means: all inputs not processed explicitely
             # Here we do not set the input list - it is set after
@@ -2524,16 +2526,17 @@ def state(root, parent, context):
         "parent" is used to compute absolute coordinates
         "context" is the AST used to store global data (process/procedure)
     '''
-    errors = []
-    warnings = []
+    errors, warnings, sterr, stwarn = [], [], [], []
     state_def = ogAST.State()
     asterisk_state = False
     asterisk_input = None
+    st_x, st_y = 0, 0
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
             (state_def.pos_x, state_def.pos_y,
             state_def.width, state_def.height) = cif(child)
+            st_x, st_y = state_def.pos_x, state_def.pos_y
         elif child.type == lexer.STATELIST:
             # State name(state_def)
             state_def.inputString = get_input_string(child)
@@ -2567,27 +2570,27 @@ def state(root, parent, context):
                             if unicode(each) == unicode(ex_input):
                                 dupl.add(each)
                     for each in dupl:
-                        errors.append('Input "{}" is defined more '
-                                      'than once for state "{}"'
-                                      .format(each, statename.lower()))
+                        sterr.append('Input "{}" is defined more '
+                                     'than once for state "{}"'
+                                     .format(each, statename.lower()))
                     # then update the mapping state-input
                     context.mapping[statename.lower()].append(inp)
             except KeyError:
-                warnings.append('State definition missing')
+                stwarn.append('State definition missing')
             state_def.inputs.append(inp)
             if inp.inputString.strip() == '*':
                 if asterisk_input:
-                    errors.append('Multiple asterisk inputs under state ' +
-                            str(state_def.inputString))
+                    sterr.append('Multiple asterisk inputs under state ' +
+                                  str(state_def.inputString))
                 else:
                     asterisk_input = inp
         elif child.type == lexer.CONNECT:
             comp_states = (comp.statename for comp in context.composite_states)
             if asterisk_state or len(state_def.statelist) != 1 \
                     or state_def.statelist[0].lower() not in comp_states:
-                errors.append('State {} is not a composite state and cannot '
-                              'be followed by a connect statement'
-                              .format(state_def.statelist[0]))
+                sterr.append('State {} is not a composite state and cannot '
+                             'be followed by a connect statement'
+                             .format(state_def.statelist[0]))
             conn_part, err, warn = connect_part(child, state_def, context)
             state_def.connects.append(conn_part)
             warnings.extend(warn)
@@ -2597,8 +2600,8 @@ def state(root, parent, context):
         elif child.type == lexer.HYPERLINK:
             state_def.hyperlink = child.getChild(0).toString()[1:-1]
         else:
-            warnings.append('Unsupported STATE definition child type: ' +
-                str(child.type))
+            stwarn.append('Unsupported STATE definition child type: ' +
+                           str(child.type))
     # post-processing: if state is followed by an ASTERISK input, the exact
     # list of inputs can be updated. Possible only if context has signals
     if context.input_signals and asterisk_input:
@@ -2614,7 +2617,10 @@ def state(root, parent, context):
         for each in context.composite_states:
             if each.statename.lower() == state_def.statelist[0].lower():
                 state_def.composite = each
-
+    for each in sterr:
+        errors.append([each, [st_x, st_y], []])
+    for each in stwarn:
+        warnings.append([each, [st_x, st_y], []])
     return state_def, errors, warnings
 
 
@@ -2696,8 +2702,8 @@ def connect_part(root, parent, context):
     conn.terminators = list(context.terminators[terms:])
     # Report errors with symbol coordinates
     if coord:
-        errors = [[e, [conn.pos_x, conn.pos_y]] for e in errors]
-        warnings = [[w, [conn.pos_x, conn.pos_y]] for w in warnings]
+        errors = [[e, [conn.pos_x, conn.pos_y], []] for e in errors]
+        warnings = [[w, [conn.pos_x, conn.pos_y], []] for w in warnings]
     return conn, errors, warnings
 
 
@@ -2847,8 +2853,8 @@ def output(root, parent, out_ast=None, context=None):
                     str(child.type))
     # Report errors with symbol coordinates
     if coord:
-        errors = [[e, [out_ast.pos_x, out_ast.pos_y]] for e in errors]
-        warnings = [[w, [out_ast.pos_x, out_ast.pos_y]] for w in warnings]
+        errors = [[e, [out_ast.pos_x, out_ast.pos_y], []] for e in errors]
+        warnings = [[w, [out_ast.pos_x, out_ast.pos_y], []] for w in warnings]
     return out_ast, errors, warnings
 
 
@@ -2909,32 +2915,28 @@ def alternative_part(root, parent, context):
             ans.line = child.getLine()
             ans.charPositionInLine = child.getCharPositionInLine()
             # Report errors with symbol coordinates
+            x, y = (ans.pos_x, ans.pos_y) if coord else (0, 0)
             if coord:
-                errors = [[e, [ans.pos_x, ans.pos_y]] for e in errors]
-                warnings = [[w, [ans.pos_x, ans.pos_y]] for w in warnings]
+                errors = [[e, [x, y], []] for e in errors]
+                warnings = [[w, [x, y], []] for w in warnings]
     return ans, errors, warnings
 
 
 def decision(root, parent, context):
     ''' Parse a DECISION '''
-    errors = []
-    warnings = []
+    errors, warnings, qerr, qwarn = [], [], [], []
     dec = ogAST.Decision()
     dec.tmpVar = tmp()
     has_else = False
+    dec_x, dec_y = 0, 0
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
             dec.pos_x, dec.pos_y, dec.width, dec.height = cif(child)
+            dec_x, dec_y = dec.pos_x, dec.pos_y
         elif child.type == lexer.QUESTION:
             dec.kind = 'question'
-            decisionExpr, err, warn = expression(
-                                        child.getChild(0), context)
-            for e in err:
-                errors.append([e, [dec.pos_x, dec.pos_y]])
-            for w in warn:
-                warnings.append([w, [dec.pos_x, dec.pos_y]])
-            dec.question = decisionExpr
+            dec.question, qerr, qwarn = expression(child.getChild(0), context)
             dec.inputString = dec.question.inputString
             dec.line = dec.question.line
             dec.charPositionInLine = dec.question.charPositionInLine
@@ -2973,13 +2975,14 @@ def decision(root, parent, context):
             has_else = True
         else:
             warnings.append(['Unsupported DECISION child type: ' +
-                str(child.type), [dec.pos_x, dec.pos_y]])
+                str(child.type), [dec.pos_x, dec.pos_y], []])
     # Make type checks to be sure that question and answers are compatible
     covered_ranges = defaultdict(list)
     qmin, qmax = 0, 0
     need_else = False
     is_enum = False
     for ans in dec.answers:
+        ans_x, ans_y = ans.pos_x, ans.pos_y
         if ans.kind in ('constant', 'open_range'):
             expr = ans.openRangeOp()
             expr.left = dec.question
@@ -3043,25 +3046,29 @@ def decision(root, parent, context):
                         covered_ranges[ans].append((qmin, val_a - 1))
                         covered_ranges[ans].append((val_a + 1, qmax))
                     else:
-                        warnings.append('Condition is always true: {} /= {}'
+                        warnings.append(['Condition is always true: {} /= {}'
                                         .format(dec.inputString,
-                                                ans.inputString))
+                                                ans.inputString),
+                                        [ans_x, ans_y], []])
                 else:
                     warnings.append('Unsupported range expression')
                 if not reachable:
-                        warnings.append('Decision "{}": '
+                        warnings.append(['Decision "{}": '
                                         'Unreachable branch "{}"'
                                         .format(dec.inputString,
-                                                ans.inputString))
+                                                ans.inputString),
+                                        [ans_x, ans_y], []])
             except (AttributeError, TypeError) as err:
-                errors.append('Types are incompatible in DECISION: '
+                errors.append(['Type mismatch: '
                     'question (' + expr.left.inputString + ', type= ' +
                     type_name(expr.left.exprType) + '), answer (' +
                     expr.right.inputString + ', type= ' +
-                    type_name(expr.right.exprType) + ') ' + str(err))
+                    type_name(expr.right.exprType) + ') ' + str(err),
+                    [ans_x, ans_y], []])
         elif ans.kind == 'closed_range':
             if not is_numeric(dec.question.exprType):
-                errors.append('Closed range are only for numerical types')
+                errors.append(['Closed range are only for numerical types',
+                              [ans_x, ans_y], []])
                 continue
             for ast_type, idx in zip((ogAST.ExprGe, ogAST.ExprLe), (0, 1)):
                 expr = ast_type()
@@ -3073,11 +3080,12 @@ def decision(root, parent, context):
                         dec.question = expr.left
                     ans.closedRange[idx] = expr.right
                 except (AttributeError, TypeError) as err:
-                    errors.append('Types are incompatible in DECISION: '
+                    errors.append(['Type mismatch in decision: '
                         'question (' + expr.left.inputString + ', type= ' +
                         type_name(expr.left.exprType) + '), answer (' +
                         expr.right.inputString + ', type= ' +
-                        type_name(expr.right.exprType) + ') ' + str(err))
+                        type_name(expr.right.exprType) + ') ' + str(err),
+                        [ans_x, ans_y], []])
             q_basic = find_basic_type(dec.question.exprType)
             if not q_basic.kind.startswith('Integer'):
                 continue
@@ -3092,20 +3100,21 @@ def decision(root, parent, context):
             a0_val = int(float(a0_basic.Min))
             a1_val = int(float(a1_basic.Max))
             if a0_val < qmin:
-                warnings.append('Decision "{dec}": '
+                qwarn.append('Decision "{dec}": '
                                 'Range [{a0} .. {qmin}] is unreachable'
                                 .format(a0=a0_val, qmin=qmin - 1,
                                         dec=dec.inputString))
             if a1_val > qmax:
-                warnings.append('Decision "{dec}": '
+                qwarn.append('Decision "{dec}": '
                                 'Range [{qmax} .. {a1}] is unreachable'
                                 .format(qmax=qmax + 1, a1=a1_val,
                                         dec=dec.inputString))
             if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
                                                      a1_val > qmax):
-                warnings.append('Decision "{dec}": Unreachable branch {l}:{h}'
+                warnings.append(['Decision "{dec}": Unreachable branch {l}:{h}'
                                 .format(dec=dec.inputString,
-                                        l=a0_val, h=a1_val))
+                                        l=a0_val, h=a1_val),
+                                [ans_x, ans_y], []])
             covered_ranges[ans].append((int(float(a0_basic.Min)),
                                         int(float(a1_basic.Max))))
     # Check the following
@@ -3125,7 +3134,7 @@ def decision(root, parent, context):
                             min(comb[0][1], comb[1][1]))
             if comb_overlap[0] <= comb_overlap[1]:
                 # (1) - check for overlaps
-                errors.append('Decision "{d}": answers {a1} and {a2} '
+                qerr.append('Decision "{d}": answers {a1} and {a2} '
                               'are overlapping in range [{o1} .. {o2}]'
                               .format(d=dec.inputString,
                                       a1=each[0][0].inputString,
@@ -3152,16 +3161,16 @@ def decision(root, parent, context):
             q_ranges, new_q_ranges = new_q_ranges, []
     if not has_else:
         for minq, maxq in q_ranges:
-            errors.append('Decision "{}": No answer to cover range [{} .. {}]'
+            qerr.append('Decision "{}": No answer to cover range [{} .. {}]'
                           .format(dec.inputString, minq, maxq))
     elif has_else and is_numeric(dec.question.exprType) and not q_ranges:
         # (3) Check that ELSE branch is reachable
-        warnings.append('Decision "{}": ELSE branch is unreachable'
+        qwarn.append('Decision "{}": ELSE branch is unreachable'
                         .format(dec.inputString))
 
     if need_else and not has_else:
         # (4) Answers use non-ground expression -> there should be an ELSE
-        warnings.append('Decision "{}": Missing ELSE branch'
+        qwarn.append('Decision "{}": Missing ELSE branch'
                         .format(dec.inputString))
 
     # (5) check coverage of enumerated types
@@ -3170,15 +3179,18 @@ def decision(root, parent, context):
         answers = list(chain.from_iterable(covered_ranges.viewvalues()))
         dupl = [a for a, v in Counter(answers).items() if v > 1]
         if dupl:
-            errors.append('Decision "{}": duplicate answers "{}"'
+            qerr.append('Decision "{}": duplicate answers "{}"'
                           .format(dec.inputString, '", "'.join(dupl)))
         enumerants = [en.replace('-', '_') for en in q_basic.EnumValues.keys()]
         # check for missing answers
         if set(answers) != set(enumerants) and not has_else:
-            errors.append('Decision "{}": Missing branches for answer(s) "{}"'
+            qerr.append('Decision "{}": Missing branches for answer(s) "{}"'
                           .format(dec.inputString,
                                   '", "'.join(set(enumerants) - set(answers))))
-
+    qerr = [[e, [dec_x, dec_y], []] for e in qerr]
+    qwarn = [[w, [dec_x, dec_y], []] for w in qwarn]
+    errors.extend(qerr)
+    warnings.extend(qwarn)
     return dec, errors, warnings
 
 
@@ -3293,8 +3305,8 @@ def terminator_statement(root, parent, context):
                     str(term.type))
     # Report errors with symbol coordinates
     if coord:
-        errors = [[e, [t.pos_x, t.pos_y]] for e in errors]
-        warnings = [[w, [t.pos_x, t.pos_y]] for w in warnings]
+        errors = [[e, [t.pos_x, t.pos_y], []] for e in errors]
+        warnings = [[w, [t.pos_x, t.pos_y], []] for w in warnings]
     return t, errors, warnings
 
 
@@ -3578,8 +3590,8 @@ def task(root, parent=None, context=None):
     if coord and body:
         body.pos_x, body.pos_y, body.width, body.height = \
                 pos_x, pos_y, width, height
-        errors = [[e, [pos_x, pos_y]] for e in errors]
-        warnings = [[w, [pos_x, pos_y]] for w in warnings]
+        errors = [[e, [pos_x, pos_y], []] for e in errors]
+        warnings = [[w, [pos_x, pos_y], []] for w in warnings]
     if body:
         body.comment = comment
     else:
@@ -3611,8 +3623,8 @@ def label(root, parent, context=None):
                     str(child.type))
     # Report errors with symbol coordinates
     if coord:
-        errors = [[e, [lab.pos_x, lab.pos_y]] for e in errors]
-        warnings = [[w, [lab.pos_x, lab.pos_y]] for w in warnings]
+        errors = [[e, [lab.pos_x, lab.pos_y], []] for e in errors]
+        warnings = [[w, [lab.pos_x, lab.pos_y], []] for w in warnings]
     return lab, errors, warnings
 
 
@@ -3772,7 +3784,10 @@ def parse_pr(files=None, string=None):
                 if t.kind == 'next_state']:
             if not ns in [s.lower() for s in
                     process.mapping.viewkeys()] + ['-']:
-                errors.append(['State definition missing: ' + ns.upper()])
+                t_x, t_y = t.pos_x or 0, t.pos_y or 0
+                errors.append(['State definition missing: ' + ns.upper(),
+                              [t_x, t_y],
+                              ['PROCESS {}'.format(process.processName)]])
         # TODO: do the same with JOIN/LABEL
     return og_ast, warnings, errors
 
