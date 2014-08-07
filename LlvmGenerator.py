@@ -1068,9 +1068,9 @@ def _expr_logic(expr, ctx):
     elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
         func = ctx.builder.basic_block.function
 
-        body_block = func.append_basic_block('%s:body' % expr.operand)
-        next_block = func.append_basic_block('%s:next' % expr.operand)
-        end_block = func.append_basic_block('%s:end' % expr.operand)
+        body_block = func.append_basic_block('bitwise:body')
+        next_block = func.append_basic_block('bitwise:next')
+        end_block = func.append_basic_block('bitwise:end')
 
         left_ptr = expression(expr.left, ctx)
         right_ptr = expression(expr.right, ctx)
