@@ -1098,7 +1098,7 @@ def _expr_logic(expr, ctx):
             res_elem_val = ctx.builder.and_(left_elem_val, right_elem_val)
         elif isinstance(expr, ogAST.ExprOr):
             res_elem_val = ctx.builder.or_(left_elem_val, right_elem_val)
-        elif isinstance(expr, ogAST.ExprXOr):
+        elif isinstance(expr, ogAST.ExprXor):
             res_elem_val = ctx.builder.xor(left_elem_val, right_elem_val)
         else:
             tmp_val = ctx.builder.and_(left_elem_val, right_elem_val)
