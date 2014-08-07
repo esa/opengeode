@@ -57,7 +57,7 @@ import Connectors  # NOQA
 #from PySide import phonon
 
 from PySide import QtGui, QtCore
-from PySide.QtCore import Qt, QSize, QFile, QIODevice, QRectF, QTimer
+from PySide.QtCore import Qt, QSize, QFile, QIODevice, QRectF, QTimer, QPoint
 
 from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
@@ -343,6 +343,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 not isinstance(it, Procedure))
 
     @property
+    def procedures(self):
+        ''' Return visible procedures components of the scene '''
+        return (it for it in self.visible_symb if isinstance(it, Procedure))
+
+    @property
     def states(self):
         ''' Return visible state components of the scene '''
         return (it for it in self.visible_symb if isinstance(it, State))
@@ -602,22 +607,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 item.ensureVisible()
             except StopIteration:
                 LOG.info('Pattern not found')
-
-    def show_item(self, item):
-        '''
-            Select an item and make sure it is visible
-            (used when user clicks on a warning or error to locate the symbol)
-        '''
-        abs_coordinates = item.data(Qt.UserRole)
-        if not abs_coordinates:
-            LOG.info('Corresponding symbol not found')
-            return
-        item = self.itemAt(*abs_coordinates)
-        if item:
-            self.clearSelection()
-            self.clear_focus()
-            item.setSelected(True)
-            item.ensureVisible()
 
     def delete_selected_symbols(self):
         '''
@@ -1457,15 +1446,21 @@ class SDL_View(QtGui.QGraphicsView, object):
                 error[0] = 'Internal error - ' + str(error[0])
             LOG.error(error[0])
             item = QtGui.QListWidgetItem(u'[ERROR] ' + error[0])
-            if len(error) == 2:
+            if len(error) == 3:
                 item.setData(Qt.UserRole, error[1])
+                #found = self.scene().symbol_near(QPoint(*error[1]), 1)
+                # Pyside bug: setData cannot store 'found' directly
+                #item.setData(Qt.UserRole + 1, id(found))
+                item.setData(Qt.UserRole + 1, error[2])
             if self.messages_window:
                 self.messages_window.addItem(item)
         for warning in warnings:
             LOG.warning(warning[0])
             item = QtGui.QListWidgetItem(u'[WARNING] ' + str(warning[0]))
-            if len(warning) == 2:
+            if len(warning) == 3:
                 item.setData(Qt.UserRole, warning[1])
+                item.setData(Qt.UserRole + 1, warning[2])
+                #found = self.scene().symbol_near(QPoint(*warning[1]), 1)
             if self.messages_window:
                 self.messages_window.addItem(item)
         if not errors and not warnings and self.messages_window:
@@ -1484,6 +1479,59 @@ class SDL_View(QtGui.QGraphicsView, object):
             _, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                     string=pr_data)
             self.log_errors(errors, warnings)
+
+    def show_item(self, item):
+        '''
+           Select an item and make sure it is visible - change scene if needed
+           Used when user clicks on a warning or error to locate the symbol
+        '''
+        coord = item.data(Qt.UserRole)
+        path = item.data(Qt.UserRole + 1)
+        if not coord:
+            LOG.debug('Corresponding symbol not found (no coordinates)')
+            return
+
+        # Find the scene containing the symbol
+        while self.up_button.isEnabled():
+            self.go_up()
+
+        for each in path:
+            kind, name = each.split()
+            name = unicode(name).lower()
+            if kind == 'PROCESS':
+                for process in self.scene().processes:
+                    if unicode(process).lower() == name:
+                        self.go_down(process.nested_scene,
+                                     name=u'process {}'.format(name))
+                        break
+                else:
+                    LOG.error('Process {} not found'.format(name))
+            elif kind == 'STATE':
+                for state in self.scene().states:
+                    if unicode(state).lower() == name:
+                        self.go_down(state.nested_scene,
+                                     name=u'state {}'.format(name))
+                        break
+                else:
+                    LOG.error('Composite state {} not found'.format(name))
+            elif kind == 'PROCEDURE':
+                for proc in self.scene().procedures:
+                    if unicode(proc).lower() == name:
+                        self.go_down(proc.nested_scene,
+                                     name=u'procedure {}'.format(name))
+                        break
+                else:
+                    LOG.error('Procedure {} not found'.format(name))
+
+        pos = QPoint(*coord)
+        symbol = self.scene().symbol_near(pos=pos, dist=1)
+        if symbol:
+            self.scene().clearSelection()
+            self.scene().clear_focus()
+            symbol.select()
+            symbol.ensureVisible()
+        else:
+            LOG.info('No symbol at given coordinates in the current scene')
 
     def generate_ada(self):
         ''' Generate Ada code '''
@@ -1611,7 +1659,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         messages.addItem('Welcome to OpenGEODE.')
         self.view.messages_window = messages
         self.scene.messages_window = messages
-        messages.itemClicked.connect(self.scene.show_item)
+        messages.itemClicked.connect(self.view.show_item)
 
         statechart_dock = self.findChild(QtGui.QDockWidget, 'statechart_dock')
         #statechart_dock.setWindowTitle('Statechart view - F4 to update')

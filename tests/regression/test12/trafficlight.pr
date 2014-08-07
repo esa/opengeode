@@ -1,70 +1,5 @@
-/* CIF PROCESS (288, 143), (150, 75) */
+/* CIF PROCESS (285, 143), (150, 75) */
 PROCESS trafficlight;
-    STATE Maintenance;
-    SUBSTRUCTURE
-            STATE YellowOff;
-            SUBSTRUCTURE
-                    /* CIF PROCEDURE (239, 367), (73, 35) */
-                    PROCEDURE entry;
-                        /* CIF START (180, 35), (70, 35) */
-                        START;
-                            /* CIF PROCEDURECALL (122, 85), (186, 35) */
-                            CALL set_timer(500, timeout);
-                            /* CIF OUTPUT (109, 135), (211, 35) */
-                            OUTPUT SetTrafficLightColor(all_off);
-                            /* CIF RETURN (197, 185), (35, 35) */
-                            RETURN ;
-                    ENDPROCEDURE;
-                    /* CIF START (348, 437), (70, 35) */
-                    START;
-                        /* CIF NEXTSTATE (348, 487), (70, 35) */
-                        NEXTSTATE idle;
-                    /* CIF STATE (558, 458), (70, 35) */
-                    STATE idle;
-                    ENDSTATE;
-            ENDSUBSTRUCTURE;
-            STATE YellowOn;
-            SUBSTRUCTURE
-                    /* CIF PROCEDURE (291, 312), (73, 35) */
-                    PROCEDURE entry;
-                        /* CIF START (292, 124), (70, 35) */
-                        START;
-                            /* CIF PROCEDURECALL (234, 174), (186, 35) */
-                            CALL set_timer(500, timeout);
-                            /* CIF OUTPUT (221, 224), (211, 35) */
-                            OUTPUT SetTrafficLightColor(yellow);
-                            /* CIF RETURN (309, 274), (35, 35) */
-                            RETURN ;
-                    ENDPROCEDURE;
-                    /* CIF START (495, 331), (70, 35) */
-                    START;
-                        /* CIF NEXTSTATE (489, 381), (81, 35) */
-                        NEXTSTATE idle;
-                    /* CIF STATE (696, 342), (67, 35) */
-                    STATE idle;
-                    ENDSTATE;
-            ENDSUBSTRUCTURE;
-            /* CIF START (752, 254), (70, 35) */
-            START;
-                /* CIF PROCEDURECALL (671, 304), (231, 35) */
-                CALL writeln('Entering Maintenance');
-                /* CIF NEXTSTATE (740, 354), (94, 35) */
-                NEXTSTATE YellowOn;
-            /* CIF STATE (738, 459), (97, 35) */
-            STATE YellowOff;
-                /* CIF INPUT (743, 514), (87, 35) */
-                INPUT timeout;
-                    /* CIF NEXTSTATE (736, 564), (102, 35) */
-                    NEXTSTATE YellowOn;
-            ENDSTATE;
-            /* CIF STATE (740, 354), (94, 35) */
-            STATE YellowOn;
-                /* CIF INPUT (743, 409), (87, 35) */
-                INPUT timeout;
-                    /* CIF NEXTSTATE (738, 459), (97, 35) */
-                    NEXTSTATE YellowOff;
-            ENDSTATE;
-    ENDSUBSTRUCTURE;
     STATE on;
     SUBSTRUCTURE
             STATE PedWaiting;
@@ -72,15 +7,6 @@ PROCESS trafficlight;
                 out (counter_expired);
                     STATE waitOn;
                     SUBSTRUCTURE
-                            /* CIF PROCEDURE (548, 222), (73, 35) */
-                            PROCEDURE entry;
-                                /* CIF START (185, 47), (70, 35) */
-                                START;
-                                    /* CIF PROCEDURECALL (125, 97), (189, 35) */
-                                    CALL set_timer(500, timeout);
-                                    /* CIF RETURN (202, 147), (35, 35) */
-                                    RETURN ;
-                            ENDPROCEDURE;
                             /* CIF PROCEDURE (560, 289), (70, 35) */
                             PROCEDURE exit;
                                 /* CIF START (280, 159), (70, 35) */
@@ -88,6 +14,15 @@ PROCESS trafficlight;
                                     /* CIF TASK (198, 209), (233, 35) */
                                     TASK counter := (counter + 1) mod 255;
                                     /* CIF RETURN (297, 259), (35, 35) */
+                                    RETURN ;
+                            ENDPROCEDURE;
+                            /* CIF PROCEDURE (548, 222), (73, 35) */
+                            PROCEDURE entry;
+                                /* CIF START (185, 47), (70, 35) */
+                                START;
+                                    /* CIF PROCEDURECALL (125, 97), (189, 35) */
+                                    CALL set_timer(500, timeout);
+                                    /* CIF RETURN (202, 147), (35, 35) */
                                     RETURN ;
                             ENDPROCEDURE;
                             /* CIF START (371, 56), (70, 35) */
@@ -220,6 +155,71 @@ dcl color Light;
                     NEXTSTATE PedWaiting;
             ENDSTATE;
     ENDSUBSTRUCTURE;
+    STATE Maintenance;
+    SUBSTRUCTURE
+            STATE YellowOff;
+            SUBSTRUCTURE
+                    /* CIF PROCEDURE (239, 367), (73, 35) */
+                    PROCEDURE entry;
+                        /* CIF START (180, 35), (70, 35) */
+                        START;
+                            /* CIF PROCEDURECALL (122, 85), (186, 35) */
+                            CALL set_timer(500, timeout);
+                            /* CIF OUTPUT (109, 135), (211, 35) */
+                            OUTPUT SetTrafficLightColor(all_off);
+                            /* CIF RETURN (197, 185), (35, 35) */
+                            RETURN ;
+                    ENDPROCEDURE;
+                    /* CIF START (348, 437), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (348, 487), (70, 35) */
+                        NEXTSTATE idle;
+                    /* CIF STATE (558, 458), (70, 35) */
+                    STATE idle;
+                    ENDSTATE;
+            ENDSUBSTRUCTURE;
+            STATE YellowOn;
+            SUBSTRUCTURE
+                    /* CIF PROCEDURE (291, 312), (73, 35) */
+                    PROCEDURE entry;
+                        /* CIF START (292, 124), (70, 35) */
+                        START;
+                            /* CIF PROCEDURECALL (234, 174), (186, 35) */
+                            CALL set_timer(500, timeout);
+                            /* CIF OUTPUT (221, 224), (211, 35) */
+                            OUTPUT SetTrafficLightColor(yellow);
+                            /* CIF RETURN (309, 274), (35, 35) */
+                            RETURN ;
+                    ENDPROCEDURE;
+                    /* CIF START (495, 331), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (489, 381), (81, 35) */
+                        NEXTSTATE idle;
+                    /* CIF STATE (696, 342), (67, 35) */
+                    STATE idle;
+                    ENDSTATE;
+            ENDSUBSTRUCTURE;
+            /* CIF START (752, 254), (70, 35) */
+            START;
+                /* CIF PROCEDURECALL (671, 304), (231, 35) */
+                CALL writeln('Entering Maintenance');
+                /* CIF NEXTSTATE (740, 354), (94, 35) */
+                NEXTSTATE YellowOn;
+            /* CIF STATE (738, 459), (97, 35) */
+            STATE YellowOff;
+                /* CIF INPUT (743, 514), (87, 35) */
+                INPUT timeout;
+                    /* CIF NEXTSTATE (736, 564), (102, 35) */
+                    NEXTSTATE YellowOn;
+            ENDSTATE;
+            /* CIF STATE (740, 354), (94, 35) */
+            STATE YellowOn;
+                /* CIF INPUT (743, 409), (87, 35) */
+                INPUT timeout;
+                    /* CIF NEXTSTATE (738, 459), (97, 35) */
+                    NEXTSTATE YellowOff;
+            ENDSTATE;
+    ENDSUBSTRUCTURE;
     /* CIF TEXT (0, 10), (271, 250) */
     TIMER timeout;
 
@@ -231,12 +231,6 @@ dcl request T_Boolean;
     START;
         /* CIF NEXTSTATE (300, 100), (70, 35) */
         NEXTSTATE Off;
-    /* CIF STATE (696, 56), (70, 35) */
-    STATE on;
-    ENDSTATE;
-    /* CIF STATE (556, 53), (116, 35) */
-    STATE Maintenance;
-    ENDSTATE;
     /* CIF STATE (382, 54), (160, 35) */
     STATE off, maintenance, on;
         /* CIF INPUT (410, 109), (104, 48) */
@@ -257,5 +251,11 @@ dcl request T_Boolean;
                         /* CIF NEXTSTATE (529, 290), (116, 35) */
                         NEXTSTATE Maintenance;
             ENDDECISION;
+    ENDSTATE;
+    /* CIF STATE (556, 53), (116, 35) */
+    STATE Maintenance;
+    ENDSTATE;
+    /* CIF STATE (696, 56), (70, 35) */
+    STATE on;
     ENDSTATE;
 ENDPROCESS trafficlight;
