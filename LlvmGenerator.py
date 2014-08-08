@@ -950,33 +950,42 @@ def _expr_rel(expr, ctx):
 def _expr_eq(expr, ctx):
     ''' Generate the code for a equality expression '''
     left_val = expression(expr.left, ctx)
+    left_ty = expr.left.exprType
     right_val = expression(expr.right, ctx)
+    right_ty = expr.right.exprType
 
-    operands_bty = ctx.basic_type_of(expr.left.exprType)
+    if isinstance(expr, ogAST.ExprEq):
+        return sdl_equals((left_val, left_ty), (right_val, right_ty), ctx)
+    else:
+        return sdl_not_equals((left_val, left_ty), (right_val, right_ty), ctx)
 
-    if operands_bty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
+
+def sdl_equals(a, b, ctx):
+    ''' Generate the code for the Equal operator '''
+    a_val, a_ty = a
+    b_val, b_ty = b
+    res_bty = ctx.basic_type_of(a_ty)
+
+    if res_bty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
             'EnumeratedType', 'ChoiceEnumeratedType'):
-        if isinstance(expr, ogAST.ExprEq):
-            return ctx.builder.icmp(core.ICMP_EQ, left_val, right_val)
-        else:
-            return ctx.builder.icmp(core.ICMP_NE, left_val, right_val)
+        return ctx.builder.icmp(core.ICMP_EQ, a_val, b_val)
 
-    elif operands_bty.kind == 'RealType':
-        if isinstance(expr, ogAST.ExprEq):
-            return ctx.builder.fcmp(core.FCMP_OEQ, left_val, right_val)
-        else:
-            return ctx.builder.fcmp(core.FCMP_ONE, left_val, right_val)
+    elif res_bty.kind == 'RealType':
+        return ctx.builder.fcmp(core.FCMP_OEQ, a_val, b_val)
 
     try:
-        type_name = expr.left.exprType.ReferencedTypeName.replace('-', '_').lower()
+        type_name = a_ty.ReferencedTypeName.replace('-', '_').lower()
     except AttributeError:
         raise CompileError(
-            'Expression "%s" not supported for type "%s"'
-            % (expr.__class__.__name__, operands_bty.kind))
+            'Equals operator not supported for type "%s"' % res_bty.kind)
 
     func = ctx.funcs["asn1scc%s_equal" % type_name]
-    res_val = ctx.builder.call(func, [left_val, right_val])
-    return ctx.builder.not_(res_val) if isinstance(expr, ogAST.ExprNeg) else res_val
+    return ctx.builder.call(func, [a_val, b_val])
+
+
+def sdl_not_equals(a, b, ctx):
+    ''' Generate the code for the Not Equal operator '''
+    return ctx.builder.not_(sdl_equals(a, b, ctx))
 
 
 @expression.register(ogAST.ExprNeg)
@@ -1234,9 +1243,11 @@ def _expr_in(expr, ctx):
     check_block = func.append_basic_block('in:check')
     end_block = func.append_basic_block('in:end')
 
-    seq_asn1_ty = ctx.basic_type_of(expr.left.exprType)
+    seq_bty = ctx.basic_type_of(expr.left.exprType)
+    value_ty = seq_bty.type
+    elem_ty = seq_bty.type
 
-    is_variable_size = seq_asn1_ty.Min != seq_asn1_ty.Max
+    is_variable_size = seq_bty.Min != seq_bty.Max
 
     idx_ptr = ctx.builder.alloca(ctx.i32)
     ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
@@ -1258,17 +1269,16 @@ def _expr_in(expr, ctx):
     idx_val = ctx.builder.load(idx_ptr)
 
     if is_variable_size:
-        # The array values are in the second field in variable size arrays
-        elem_val = ctx.builder.load(ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one, idx_val]))
+        elem_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one, idx_val])
     else:
-        elem_val = ctx.builder.load(ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero, idx_val]))
+        elem_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero, idx_val])
 
-    if value_val.type.kind == core.TYPE_INTEGER:
-        cond_val = ctx.builder.icmp(core.ICMP_EQ, value_val, elem_val)
-    elif value_val.type.kind == core.TYPE_DOUBLE:
-        cond_val = ctx.builder.fcmp(core.FCMP_OEQ, value_val, elem_val)
+    if is_struct_ptr(elem_ptr):
+        cond_val = sdl_equals((value_val, value_ty), (elem_ptr, elem_ty), ctx)
     else:
-        raise NotImplementedError
+        elem_val = ctx.builder.load(elem_ptr)
+        cond_val = sdl_equals((value_val, value_ty), (elem_val, elem_ty), ctx)
+
     ctx.builder.cbranch(cond_val, end_block, next_block)
 
     ctx.builder.position_at_end(next_block)
