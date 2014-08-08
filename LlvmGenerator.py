@@ -488,7 +488,7 @@ def generate_startup_func(process, ctx):
     for name, (ty, expr) in process.variables.viewitems():
         if expr:
             global_var = ctx.scope.resolve(str(name))
-            generate_assign(global_var, expression(expr, ctx), ctx)
+            sdl_assign(global_var, expression(expr, ctx), ctx)
 
     ctx.builder.call(ctx.funcs['run_transition'], [core.Constant.int(ctx.i32, 0)])
     ctx.builder.ret_void()
@@ -531,9 +531,9 @@ def generate_input_signal(signal, inputs, ctx):
             for var_name in input.parameters:
                 var_ptr = ctx.scope.resolve(str(var_name))
                 if is_struct_ptr(var_ptr) or is_array_ptr(var_ptr):
-                    generate_assign(var_ptr, func.args[0], ctx)
+                    sdl_assign(var_ptr, func.args[0], ctx)
                 else:
-                    generate_assign(var_ptr, ctx.builder.load(func.args[0]), ctx)
+                    sdl_assign(var_ptr, ctx.builder.load(func.args[0]), ctx)
             if input.transition:
                 id_val = core.Constant.int(ctx.i32, input.transition_id)
                 ctx.builder.call(ctx.funcs['run_transition'], [id_val])
@@ -777,10 +777,10 @@ def generate_for_iterable(loop, ctx):
     idx_var = ctx.builder.load(idx_ptr)
     if element_typ.kind == core.TYPE_STRUCT:
         elem_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_var])
-        generate_assign(var_ptr, elem_ptr, ctx)
+        sdl_assign(var_ptr, elem_ptr, ctx)
     else:
         elem_val = ctx.builder.load(ctx.builder.gep(array_ptr, [ctx.zero, idx_var]))
-        generate_assign(var_ptr, elem_val, ctx)
+        sdl_assign(var_ptr, elem_val, ctx)
     ctx.builder.branch(body_block)
 
     # body block
@@ -950,42 +950,13 @@ def _expr_rel(expr, ctx):
 def _expr_eq(expr, ctx):
     ''' Generate the code for a equality expression '''
     left_val = expression(expr.left, ctx)
-    left_ty = expr.left.exprType
     right_val = expression(expr.right, ctx)
-    right_ty = expr.right.exprType
+    sdl_ty = expr.left.exprType
 
     if isinstance(expr, ogAST.ExprEq):
-        return sdl_equals((left_val, left_ty), (right_val, right_ty), ctx)
+        return sdl_equals(left_val, right_val, sdl_ty, ctx)
     else:
-        return sdl_not_equals((left_val, left_ty), (right_val, right_ty), ctx)
-
-
-def sdl_equals(a, b, ctx):
-    ''' Generate the code for the Equal operator '''
-    a_val, a_ty = a
-    b_val, b_ty = b
-    res_bty = ctx.basic_type_of(a_ty)
-
-    if res_bty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
-            'EnumeratedType', 'ChoiceEnumeratedType'):
-        return ctx.builder.icmp(core.ICMP_EQ, a_val, b_val)
-
-    elif res_bty.kind == 'RealType':
-        return ctx.builder.fcmp(core.FCMP_OEQ, a_val, b_val)
-
-    try:
-        type_name = a_ty.ReferencedTypeName.replace('-', '_').lower()
-    except AttributeError:
-        raise CompileError(
-            'Equals operator not supported for type "%s"' % res_bty.kind)
-
-    func = ctx.funcs["asn1scc%s_equal" % type_name]
-    return ctx.builder.call(func, [a_val, b_val])
-
-
-def sdl_not_equals(a, b, ctx):
-    ''' Generate the code for the Not Equal operator '''
-    return ctx.builder.not_(sdl_equals(a, b, ctx))
+        return sdl_not_equals(left_val, right_val, sdl_ty, ctx)
 
 
 @expression.register(ogAST.ExprNeg)
@@ -1003,24 +974,7 @@ def _expr_neg(expr, ctx):
 @expression.register(ogAST.ExprAssign)
 def _expr_assign(expr, ctx):
     ''' Generate the IR for an assign expression '''
-    generate_assign(reference(expr.left, ctx), expression(expr.right, ctx), ctx)
-
-
-def generate_assign(left, right, ctx):
-    ''' Generate the IR for an assign from two LLVM values '''
-    # This is extracted as an standalone function because is used by
-    # multiple generation rules
-    if is_struct_ptr(left) or is_array_ptr(left):
-        size = core.Constant.sizeof(left.type.pointee)
-        align = core.Constant.int(ctx.i32, 0)
-        volatile = core.Constant.int(ctx.i1, 0)
-
-        right_ptr = ctx.builder.bitcast(right, ctx.i8_ptr)
-        left_ptr = ctx.builder.bitcast(left, ctx.i8_ptr)
-
-        ctx.builder.call(ctx.funcs['memcpy'], [left_ptr, right_ptr, size, align, volatile])
-    else:
-        ctx.builder.store(right, left)
+    sdl_assign(reference(expr.left, ctx), expression(expr.right, ctx), ctx)
 
 
 @expression.register(ogAST.ExprOr)
@@ -1244,7 +1198,6 @@ def _expr_in(expr, ctx):
     end_block = func.append_basic_block('in:end')
 
     seq_bty = ctx.basic_type_of(expr.left.exprType)
-    value_ty = seq_bty.type
     elem_ty = seq_bty.type
 
     is_variable_size = seq_bty.Min != seq_bty.Max
@@ -1252,7 +1205,6 @@ def _expr_in(expr, ctx):
     idx_ptr = ctx.builder.alloca(ctx.i32)
     ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
 
-    # TODO: Should be 'left' in 'right'?
     value_val = expression(expr.right, ctx)
     struct_ptr = expression(expr.left, ctx)
 
@@ -1274,10 +1226,10 @@ def _expr_in(expr, ctx):
         elem_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero, idx_val])
 
     if is_struct_ptr(elem_ptr):
-        cond_val = sdl_equals((value_val, value_ty), (elem_ptr, elem_ty), ctx)
+        cond_val = sdl_equals(value_val, elem_ptr, elem_ty, ctx)
     else:
         elem_val = ctx.builder.load(elem_ptr)
-        cond_val = sdl_equals((value_val, value_ty), (elem_val, elem_ty), ctx)
+        cond_val = sdl_equals(value_val, elem_val, elem_ty, ctx)
 
     ctx.builder.cbranch(cond_val, end_block, next_block)
 
@@ -1354,86 +1306,24 @@ def _prim_call(prim, ctx):
     ''' Generate the IR for a call expression '''
     name = prim.value[0].lower()
     args = prim.value[1]['procParams']
+    arg_vals = [expression(arg, ctx) for arg in args]
 
     if name == 'length':
-        return generate_length(args, ctx)
+        return sdl_length(arg_vals[0], args[0].exprType, ctx)
     elif name == 'present':
-        return generate_present(args, ctx)
+        return sdl_present(arg_vals[0], ctx)
     elif name == 'abs':
-        return generate_abs(args, ctx)
+        return sdl_abs(arg_vals[0], ctx)
     elif name == 'fix':
-        return generate_fix(args, ctx)
+        return sdl_fix(arg_vals[0], ctx)
     elif name == 'float':
-        return generate_float(args, ctx)
+        return sdl_float(arg_vals[0], ctx)
     elif name == 'power':
-        return generate_power(args, ctx)
+        return sdl_power(arg_vals[0], arg_vals[1], ctx)
     elif name == 'num':
-        return generate_num(args, ctx)
-    else:
-        raise NotImplementedError
+        return sdl_num(arg_vals[0], ctx)
 
-
-def generate_length(args, ctx):
-    ''' Generate the IR for the length operator '''
-    seq_ptr = reference(args[0], ctx)
-
-    bty = ctx.basic_type_of(args[0].exprType)
-    if bty.Min != bty.Max:
-        len_ptr = ctx.builder.gep(seq_ptr, [ctx.zero, ctx.zero])
-        return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
-    else:
-        arr_ty = seq_ptr.type.pointee.elements[0]
-        return core.Constant.int(ctx.i64, arr_ty.count)
-
-
-def generate_present(args, ctx):
-    ''' Generate the IR for the present operator '''
-    expr_val = expression(args[0], ctx)
-    kind_ptr = ctx.builder.gep(expr_val, [ctx.zero, ctx.zero])
-    return ctx.builder.load(kind_ptr)
-
-
-def generate_abs(args, ctx):
-    ''' Generate the IR for the abs operator '''
-    expr_val = expression(args[0], ctx)
-
-    if expr_val.type.kind == core.TYPE_INTEGER:
-        expr_conv = ctx.builder.sitofp(expr_val, ctx.double)
-        res_val = ctx.builder.call(ctx.funcs['fabs'], [expr_conv])
-        return ctx.builder.fptosi(res_val, ctx.i64)
-    else:
-        return ctx.builder.call(ctx.funcs['fabs'], [expr_val])
-
-
-def generate_fix(args, ctx):
-    ''' Generate the IR for the fix operator '''
-    expr_val = expression(args[0], ctx)
-    return ctx.builder.fptosi(expr_val, ctx.i64)
-
-
-def generate_float(args, ctx):
-    ''' Generate the IR for the float operator '''
-    expr_val = expression(args[0], ctx)
-    return ctx.builder.sitofp(expr_val, ctx.double)
-
-
-def generate_power(args, ctx):
-    ''' Generate the IR for the power operator '''
-    left_val = expression(args[0], ctx)
-    right_val = expression(args[1], ctx)
-    right_conv = ctx.builder.trunc(right_val, ctx.i32)
-    if left_val.type.kind == core.TYPE_INTEGER:
-        left_conv = ctx.builder.sitofp(left_val, ctx.double)
-        res_val = ctx.builder.call(ctx.funcs['powi'], [left_conv, right_conv])
-        return ctx.builder.fptosi(res_val, ctx.i64)
-    else:
-        return ctx.builder.call(ctx.funcs['powi'], [left_val, right_conv])
-
-
-def generate_num(args, ctx):
-    ''' Generate the IR for the num operator'''
-    enum_val = expression(args[0], ctx)
-    return ctx.builder.sext(enum_val, ctx.i64)
+    raise CompileError('Unknown operator %s' % name)
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
@@ -1549,11 +1439,11 @@ def _prim_conditional(prim, ctx):
     ctx.builder.cbranch(cond_val, true_block, false_block)
 
     ctx.builder.position_at_end(true_block)
-    generate_assign(res_ptr, expression(prim.value['then'], ctx), ctx)
+    sdl_assign(res_ptr, expression(prim.value['then'], ctx), ctx)
     ctx.builder.branch(end_block)
 
     ctx.builder.position_at_end(false_block)
-    generate_assign(res_ptr, expression(prim.value['else'], ctx), ctx)
+    sdl_assign(res_ptr, expression(prim.value['else'], ctx), ctx)
     ctx.builder.branch(end_block)
 
     ctx.builder.position_at_end(end_block)
@@ -1578,7 +1468,7 @@ def _prim_sequence(prim, ctx):
 
         field_idx_cons = core.Constant.int(ctx.i32, struct.idx(field_name))
         field_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, field_idx_cons])
-        generate_assign(field_ptr, expression(field_expr, ctx), ctx)
+        sdl_assign(field_ptr, expression(field_expr, ctx), ctx)
 
     return struct_ptr
 
@@ -1603,7 +1493,7 @@ def _prim_sequence_of(prim, ctx):
         idx_cons = core.Constant.int(ctx.i32, idx)
         expr_val = expression(expr, ctx)
         pos_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_cons])
-        generate_assign(pos_ptr, expr_val, ctx)
+        sdl_assign(pos_ptr, expr_val, ctx)
 
     return struct_ptr
 
@@ -1622,7 +1512,7 @@ def _prim_choiceitem(prim, ctx):
 
     field_ptr = ctx.builder.gep(union_ptr, [ctx.zero, ctx.one])
     field_ptr = ctx.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
-    generate_assign(field_ptr, expr_val, ctx)
+    sdl_assign(field_ptr, expr_val, ctx)
 
     return union_ptr
 
@@ -1818,7 +1708,7 @@ def _procedure(proc, ctx):
         ctx.scope.define(name, var_ptr)
         if expr:
             expr_val = expression(expr, ctx)
-            generate_assign(var_ptr, expr_val, ctx)
+            sdl_assign(var_ptr, expr_val, ctx)
         else:
             ctx.builder.store(core.Constant.null(var_ty), var_ptr)
 
@@ -1843,3 +1733,101 @@ def is_struct_ptr(val):
 
 def is_array_ptr(val):
     return val.type.kind == core.TYPE_POINTER and val.type.pointee.kind == core.TYPE_ARRAY
+
+
+################################################################################
+# Operators
+
+
+def sdl_assign(a_ptr, b_val, ctx):
+    ''' Generate the IR for an Assign operation '''
+    if is_struct_ptr(a_ptr) or is_array_ptr(a_ptr):
+        size = core.Constant.sizeof(a_ptr.type.pointee)
+        align = core.Constant.int(ctx.i32, 0)
+        volatile = core.Constant.int(ctx.i1, 0)
+
+        a_ptr = ctx.builder.bitcast(a_ptr, ctx.i8_ptr)
+        b_ptr = ctx.builder.bitcast(b_val, ctx.i8_ptr)
+
+        ctx.builder.call(ctx.funcs['memcpy'], [a_ptr, b_ptr, size, align, volatile])
+    else:
+        ctx.builder.store(b_val, a_ptr)
+
+
+def sdl_equals(a_val, b_val, sdlty, ctx):
+    ''' Generate the code for an Equal operation '''
+    sdlbty = ctx.basic_type_of(sdlty)
+
+    if sdlbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
+            'EnumeratedType', 'ChoiceEnumeratedType'):
+        return ctx.builder.icmp(core.ICMP_EQ, a_val, b_val)
+
+    elif sdlbty.kind == 'RealType':
+        return ctx.builder.fcmp(core.FCMP_OEQ, a_val, b_val)
+
+    try:
+        type_name = sdlty.ReferencedTypeName.replace('-', '_').lower()
+    except AttributeError:
+        raise CompileError(
+            'Equals operator not supported for type "%s"' % sdlbty.kind)
+
+    func = ctx.funcs["asn1scc%s_equal" % type_name]
+    return ctx.builder.call(func, [a_val, b_val])
+
+
+def sdl_not_equals(a_val, b_val, sdlty, ctx):
+    ''' Generate the code for a Not Equal operation '''
+    return ctx.builder.not_(sdl_equals(a_val, b_val, sdlty, ctx))
+
+
+def sdl_length(s_ptr, s_sdlty, ctx):
+    ''' Generate the IR for a length operation '''
+    s_sdlbty = ctx.basic_type_of(s_sdlty)
+    if s_sdlbty.Min != s_sdlbty.Max:
+        len_ptr = ctx.builder.gep(s_ptr, [ctx.zero, ctx.zero])
+        return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
+    else:
+        arr_ty = s_ptr.type.pointee.elements[0]
+        return core.Constant.int(ctx.i64, arr_ty.count)
+
+
+def sdl_present(s_ptr, ctx):
+    ''' Generate the IR for a present operation '''
+    kind_ptr = ctx.builder.gep(s_ptr, [ctx.zero, ctx.zero])
+    return ctx.builder.load(kind_ptr)
+
+
+def sdl_abs(x_val, ctx):
+    ''' Generate the IR for a abs operation '''
+    if x_val.type.kind == core.TYPE_INTEGER:
+        expr_conv = ctx.builder.sitofp(x_val, ctx.double)
+        res_val = ctx.builder.call(ctx.funcs['fabs'], [expr_conv])
+        return ctx.builder.fptosi(res_val, ctx.i64)
+    else:
+        return ctx.builder.call(ctx.funcs['fabs'], [x_val])
+
+
+def sdl_fix(x_val, ctx):
+    ''' Generate the IR for a fix operation '''
+    return ctx.builder.fptosi(x_val, ctx.i64)
+
+
+def sdl_float(x_val, ctx):
+    ''' Generate the IR for a float operation '''
+    return ctx.builder.sitofp(x_val, ctx.double)
+
+
+def sdl_power(x_val, y_val, ctx):
+    ''' Generate the IR for a power operation '''
+    y_val = ctx.builder.trunc(y_val, ctx.i32)
+    if x_val.type.kind == core.TYPE_INTEGER:
+        x_val = ctx.builder.sitofp(x_val, ctx.double)
+        res_val = ctx.builder.call(ctx.funcs['powi'], [x_val, y_val])
+        return ctx.builder.fptosi(res_val, ctx.i64)
+    else:
+        return ctx.builder.call(ctx.funcs['powi'], [x_val, y_val])
+
+
+def sdl_num(enum_val, ctx):
+    ''' Generate the IR for the num operation'''
+    return ctx.builder.sext(enum_val, ctx.i64)
