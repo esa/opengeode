@@ -554,115 +554,35 @@ def _call_external_function(output, ctx):
     ''' Generate the IR for an output or procedure call '''
     for out in output.output:
         name = out['outputName'].lower()
+        args = out.get('params', [])
 
-        if name == 'write':
-            generate_write(out['params'], ctx)
-            continue
-        elif name == 'writeln':
-            generate_writeln(out['params'], ctx)
+        if name == 'write' or name == 'writeln':
+            arg_vals = [expression(a, ctx) for a in args]
+            arg_sdltys = [a.exprType for a in args]
+            sdl_write(arg_vals, arg_sdltys, ctx, name == 'writeln')
             continue
         elif name == 'reset_timer':
-            generate_reset_timer(out['params'], ctx)
+            sdl_reset_timer(args[0].value[0], ctx)
             continue
         elif name == 'set_timer':
-            generate_set_timer(out['params'], ctx)
+            timer_expr, timer_id = args
+            sdl_set_timer(timer_id.value[0], expression(timer_expr, ctx), ctx)
             continue
 
         func = ctx.funcs[str(name).lower()]
 
-        args = []
-        for arg in out.get('params', []):
+        arg_vals = []
+        for arg in args:
             arg_val = expression(arg, ctx)
             # Pass by reference
             if arg_val.type.kind != core.TYPE_POINTER:
                 arg_var = ctx.builder.alloca(arg_val.type, None)
                 ctx.builder.store(arg_val, arg_var)
-                args.append(arg_var)
+                arg_vals.append(arg_var)
             else:
-                args.append(arg_val)
+                arg_vals.append(arg_val)
 
-        ctx.builder.call(func, args)
-
-
-def generate_write(args, ctx, newline=False):
-    ''' Generate the IR for the write operator '''
-    fmt = ""
-    arg_values = []
-
-    for arg in args:
-        basic_ty = ctx.basic_type_of(arg.exprType)
-        arg_val = expression(arg, ctx)
-
-        if basic_ty.kind in ['IntegerType', 'Integer32Type']:
-            fmt += '% d'
-            arg_values.append(arg_val)
-
-        elif basic_ty.kind == 'RealType':
-            fmt += '% .14E'
-            arg_values.append(arg_val)
-
-        elif basic_ty.kind == 'BooleanType':
-            fmt += '%s'
-
-            true_str_ptr = ctx.string_ptr('TRUE')
-            false_str_ptr = ctx.string_ptr('FALSE')
-            str_ptr = ctx.builder.select(arg_val, true_str_ptr, false_str_ptr)
-
-            arg_values.append(str_ptr)
-
-        elif basic_ty.kind in ('StringType', 'StandardStringType'):
-            fmt += '%s'
-            arg_values.append(arg_val)
-
-        elif basic_ty.kind == 'OctetStringType':
-            fmt += '%.*s'
-
-            if basic_ty.Min == basic_ty.Max:
-                arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
-                count_val = core.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
-            else:
-                count_val = ctx.builder.load(ctx.builder.gep(arg_val, [ctx.zero, ctx.zero]))
-                arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.one])
-
-            arg_values.append(count_val)
-            arg_values.append(arr_ptr)
-
-        else:
-            raise CompileError('Type "%s" not supported in write/writeln operators')
-
-    if newline:
-        fmt += '\n'
-
-    arg_values.insert(0, ctx.string_ptr(fmt))
-    ctx.builder.call(ctx.funcs['printf'], arg_values)
-
-
-def generate_writeln(args, ctx):
-    ''' Generate the IR for the writeln operator '''
-    generate_write(args, ctx, True)
-
-
-def generate_reset_timer(args, ctx):
-    ''' Generate the IR for the reset timer operator '''
-    timer_id = args[0]
-    reset_func_name = 'reset_%s' % timer_id.value[0]
-    reset_func = ctx.funcs[reset_func_name.lower()]
-
-    ctx.builder.call(reset_func, [])
-
-
-def generate_set_timer(args, ctx):
-    ''' Generate the IR for the set timer operator '''
-    timer_expr, timer_id = args
-    set_func_name = 'set_%s' % timer_id.value[0]
-    set_func = ctx.funcs[set_func_name.lower()]
-
-    expr_val = expression(timer_expr, ctx)
-
-    tmp_ptr = ctx.builder.alloca(expr_val.type)
-    ctx.builder.store(expr_val, tmp_ptr)
-
-    ctx.builder.call(set_func, [tmp_ptr])
+        ctx.builder.call(func, arg_vals)
 
 
 @generate.register(ogAST.TaskAssign)
@@ -1829,5 +1749,76 @@ def sdl_power(x_val, y_val, ctx):
 
 
 def sdl_num(enum_val, ctx):
-    ''' Generate the IR for the num operation'''
+    ''' Generate the IR for a num operation'''
     return ctx.builder.sext(enum_val, ctx.i64)
+
+
+def sdl_write(arg_vals, arg_sdltys, ctx, newline=False):
+    ''' Generate the IR for a write operation '''
+    fmt = ""
+    arg_values = []
+
+    for arg_val, arg_sdlty in zip(arg_vals, arg_sdltys):
+        basic_sdlty = ctx.basic_type_of(arg_sdlty)
+
+        if basic_sdlty.kind in ['IntegerType', 'Integer32Type']:
+            fmt += '% d'
+            arg_values.append(arg_val)
+
+        elif basic_sdlty.kind == 'RealType':
+            fmt += '% .14E'
+            arg_values.append(arg_val)
+
+        elif basic_sdlty.kind == 'BooleanType':
+            fmt += '%s'
+
+            true_str_ptr = ctx.string_ptr('TRUE')
+            false_str_ptr = ctx.string_ptr('FALSE')
+            str_ptr = ctx.builder.select(arg_val, true_str_ptr, false_str_ptr)
+
+            arg_values.append(str_ptr)
+
+        elif basic_sdlty.kind in ('StringType', 'StandardStringType'):
+            fmt += '%s'
+            arg_values.append(arg_val)
+
+        elif basic_sdlty.kind == 'OctetStringType':
+            fmt += '%.*s'
+
+            if basic_sdlty.Min == basic_sdlty.Max:
+                arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
+                count_val = core.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
+            else:
+                count_val = ctx.builder.load(ctx.builder.gep(arg_val, [ctx.zero, ctx.zero]))
+                arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.one])
+
+            arg_values.append(count_val)
+            arg_values.append(arr_ptr)
+
+        else:
+            raise CompileError('Type "%s" not supported in write/writeln operators')
+
+    if newline:
+        fmt += '\n'
+
+    arg_values.insert(0, ctx.string_ptr(fmt))
+    ctx.builder.call(ctx.funcs['printf'], arg_values)
+
+
+def sdl_reset_timer(name, ctx):
+    ''' Generate the IR a reset timer operation '''
+    reset_func_name = 'reset_%s' % name
+    reset_func = ctx.funcs[reset_func_name.lower()]
+
+    ctx.builder.call(reset_func, [])
+
+
+def sdl_set_timer(name, val, ctx):
+    ''' Generate the IR for a set timer operation '''
+    set_func_name = 'set_%s' % name
+    set_func = ctx.funcs[set_func_name.lower()]
+
+    tmp_ptr = ctx.builder.alloca(val.type)
+    ctx.builder.store(val, tmp_ptr)
+
+    ctx.builder.call(set_func, [tmp_ptr])
