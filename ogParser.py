@@ -133,6 +133,14 @@ type_name = lambda t: \
 types = lambda: getattr(DV, 'types', {})
 
 
+def substring_range(substring):
+    ''' Return the range of a substring '''
+    left, right = substring.value[1]['substring']
+    left_bty = find_basic_type(left.exprType)
+    right_bty = find_basic_type(right.exprType)
+    return left_bty.Min, right_bty.Max
+
+
 def is_integer(ty):
     ''' Return true if a type is an Integer Type '''
     return find_basic_type(ty).kind in (
@@ -1434,7 +1442,22 @@ def primary_index(root, context):
     node.value = [receiver, {'index': params}]
 
     if receiver_bty.kind == 'SequenceOfType':
+        # Range check
+        if isinstance(receiver, ogAST.PrimSubstring):
+            r_min, r_max = substring_range(receiver)
+        else:
+            r_min, r_max = receiver_bty.Min, receiver_bty.Max
         node.exprType = receiver_bty.type
+        idx_bty = find_basic_type(params[0].exprType)
+        if not is_integer(idx_bty):
+            errors.append(error(root, 'Index is not an integer'))
+        else:
+            if float(idx_bty.Min) < float(r_min) or\
+                    float(idx_bty.Max) >= float(r_max):
+                errors.append(error(root,
+                                    'Index outside of range [{} .. <{}]'
+                                    .format(r_min,
+                                            r_max)))
     else:
         msg = 'Index can only be applied to type SequenceOf'
         errors.append(error(root, msg))

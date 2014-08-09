@@ -1,6 +1,9 @@
-/* CIF PROCESS (200, 143), (150, 75) */
+/* CIF PROCESS (197, 146), (150, 75) */
 PROCESS myfunction;
-    /* CIF TEXT (0, 133), (282, 136) */
+    /* CIF TEXT (7, 43), (334, 41) */
+    -- Test substrings in various contexts and operators
+    /* CIF ENDTEXT */
+    /* CIF TEXT (0, 133), (282, 216) */
     dcl str MyOctStr := 'abc';
 dcl variable_str String := 'Hello!';
 
@@ -9,9 +12,10 @@ dcl seqof  MySeqOf := {hello, world};
 dcl seqint seqInt := {1};
 dcl seqbool seqBool := { true, false};
 dcl seqbool2 seqBool2 := { true, false};
-    /* CIF ENDTEXT */
-    /* CIF TEXT (7, 43), (334, 41) */
-    -- Test substrings in various contexts and operators
+
+dcl iseq IntSeq := {0,1,2,3};
+dcl fixedseq FixedIntSeq := {0,1,2,3,4};
+dcl n t_UInt8;
     /* CIF ENDTEXT */
     /* CIF PROCEDURE (1416, 490), (91, 35) */
     PROCEDURE factorial;
@@ -30,142 +34,169 @@ endfor;
             /* CIF RETURN (315, 201), (35, 35) */
             RETURN ;
     ENDPROCEDURE;
-    /* CIF START (104, 273), (65, 37) */
+    /* CIF START (353, 217), (65, 37) */
     START;
-        /* CIF TASK (60, 325), (151, 35) */
+        /* CIF TASK (319, 269), (131, 35) */
+        TASK n := iseq(0,2)(0);
+        /* CIF PROCEDURECALL (335, 319), (100, 35) */
+        CALL writeln(n)
+        /* CIF COMMENT (455, 319), (77, 35) */
+        COMMENT 'print 0';
+        /* CIF TASK (306, 369), (158, 40) */
+        TASK iseq := iseq(0,3)(0,2);
+        /* CIF TASK (316, 424), (138, 56) */
+        TASK for x in iseq:
+   call writeln(x);
+endfor
+        /* CIF COMMENT (494, 420), (81, 72) */
+        COMMENT 'print
+0
+1
+2';
+        /* CIF TASK (289, 495), (192, 35) */
+        TASK n := length(fixedseq(0,1));
+        /* CIF PROCEDURECALL (335, 545), (100, 35) */
+        CALL writeln(n)
+        /* CIF COMMENT (455, 545), (83, 35) */
+        COMMENT 'print 2';
+        /* CIF TASK (309, 595), (151, 35) */
         TASK seqof := seqof(0,1)
-        /* CIF COMMENT (232, 325), (208, 35) */
+        /* CIF COMMENT (482, 595), (208, 35) */
         COMMENT 'equivalent to seqof := seqof';
-        /* CIF DECISION (75, 375), (123, 50) */
+        /* CIF TASK (303, 645), (165, 35) */
+        TASK n := iseq(0,2)(0,1)(0);
+        /* CIF TASK (314, 695), (141, 35) */
+        TASK n := iseq(100- 1);
+        /* CIF DECISION (324, 745), (123, 50) */
         DECISION hello in seqof
-        /* CIF COMMENT (218, 376), (179, 53) */
+        /* CIF COMMENT (467, 746), (179, 53) */
         COMMENT 'Check IN operator with
 enumerated type';
-                /* CIF ANSWER (4, 445), (70, 24) */
+                /* CIF ANSWER (242, 815), (70, 24) */
                 (true):
-                    /* CIF PROCEDURECALL (-49, 484), (177, 35) */
+                    /* CIF PROCEDURECALL (188, 854), (177, 35) */
                     CALL writeln(hello in seqof)
-                    /* CIF COMMENT (148, 484), (114, 35) */
+                    /* CIF COMMENT (386, 854), (114, 35) */
                     COMMENT 'print "TRUE"';
-                /* CIF ANSWER (267, 445), (70, 24) */
+                /* CIF ANSWER (505, 815), (70, 24) */
                 (false):
         ENDDECISION;
-        /* CIF DECISION (59, 534), (155, 50) */
+        /* CIF DECISION (308, 904), (155, 50) */
         DECISION hello in seqof(0,0)
-        /* CIF COMMENT (242, 507), (236, 56) */
+        /* CIF COMMENT (479, 865), (236, 56) */
         COMMENT 'Check IN operator with
 list substring - first element only
 should go to branch TRUE';
-                /* CIF ANSWER (6, 567), (66, 33) */
+                /* CIF ANSWER (232, 929), (66, 33) */
                 (true):
-                    /* CIF PROCEDURECALL (-60, 615), (201, 35) */
+                    /* CIF PROCEDURECALL (165, 977), (201, 35) */
                     CALL writeln(hello in seqof(0,1))
-                    /* CIF COMMENT (162, 615), (114, 35) */
+                    /* CIF COMMENT (400, 977), (114, 35) */
                     COMMENT 'print "TRUE"';
-                /* CIF ANSWER (284, 568), (70, 24) */
+                /* CIF ANSWER (522, 929), (70, 24) */
                 (false):
         ENDDECISION;
-        /* CIF PROCEDURECALL (40, 665), (191, 35) */
+        /* CIF PROCEDURECALL (289, 1027), (191, 35) */
         CALL writeln(variable_str(0,4))
-        /* CIF COMMENT (243, 610), (113, 35) */
+        /* CIF COMMENT (496, 988), (113, 35) */
         COMMENT 'print "Hello"';
-        /* CIF TASK (48, 715), (176, 56) */
+        /* CIF TASK (297, 1077), (176, 56) */
         TASK for x in seqof:
     call writeln(num(x));
 endfor
-        /* CIF COMMENT (242, 668), (96, 56) */
+        /* CIF COMMENT (498, 1039), (96, 56) */
         COMMENT 'print:
 12
 13';
-        /* CIF TASK (46, 786), (180, 56) */
+        /* CIF TASK (295, 1148), (180, 56) */
         TASK for x in seqof(0,1):
     call writeln(-num(x));
 endfor
-        /* CIF COMMENT (244, 732), (96, 56) */
+        /* CIF COMMENT (502, 1116), (96, 56) */
         COMMENT 'print:
 -12
 -13';
-        /* CIF PROCEDURECALL (46, 857), (180, 35) */
+        /* CIF PROCEDURECALL (295, 1219), (180, 35) */
         CALL writeln(length(seqof))
-        /* CIF COMMENT (246, 817), (77, 35) */
+        /* CIF COMMENT (507, 1180), (77, 35) */
         COMMENT 'print 2';
-        /* CIF PROCEDURECALL (32, 907), (209, 35) */
+        /* CIF PROCEDURECALL (281, 1269), (209, 35) */
         CALL writeln(length(seqof(0,1)))
-        /* CIF COMMENT (261, 867), (77, 35) */
+        /* CIF COMMENT (516, 1237), (77, 35) */
         COMMENT 'print 2';
-        /* CIF LABEL (55, 957), (162, 35) */
+        /* CIF LABEL (304, 1319), (162, 35) */
         variable_length_seq:
-        /* CIF TASK (65, 1007), (142, 56) */
+        /* CIF TASK (314, 1369), (142, 56) */
         TASK for x in seqint:
     call writeln(x);
 endfor
-        /* CIF COMMENT (227, 953), (96, 53) */
+        /* CIF COMMENT (488, 1331), (96, 53) */
         COMMENT 'print:
 1';
-        /* CIF TASK (60, 1078), (152, 56) */
+        /* CIF TASK (309, 1440), (152, 56) */
         TASK for x in seqint(0,0):
     call writeln(x);
 endfor
-        /* CIF COMMENT (232, 1024), (96, 53) */
+        /* CIF COMMENT (473, 1412), (96, 53) */
         COMMENT 'print:
 1';
-        /* CIF DECISION (75, 1149), (123, 50) */
+        /* CIF DECISION (324, 1511), (123, 50) */
         DECISION 1 in seqint
-        /* CIF COMMENT (217, 1099), (179, 53) */
+        /* CIF COMMENT (470, 1470), (179, 53) */
         COMMENT 'Check IN operator with
 variable-length seqOf';
-                /* CIF ANSWER (5, 1191), (66, 33) */
+                /* CIF ANSWER (228, 1536), (66, 33) */
                 (true):
-                    /* CIF PROCEDURECALL (-49, 1239), (177, 35) */
+                    /* CIF PROCEDURECALL (173, 1584), (177, 35) */
                     CALL writeln(1 in seqint)
-                    /* CIF COMMENT (149, 1239), (114, 35) */
+                    /* CIF COMMENT (382, 1584), (114, 35) */
                     COMMENT 'print "TRUE"';
-                /* CIF ANSWER (265, 1191), (70, 24) */
+                /* CIF ANSWER (497, 1536), (70, 24) */
                 (false):
         ENDDECISION;
-        /* CIF DECISION (72, 1289), (128, 50) */
+        /* CIF DECISION (321, 1634), (128, 50) */
         DECISION 1 in seqint(0,0)
-        /* CIF COMMENT (219, 1239), (179, 53) */
+        /* CIF COMMENT (459, 1594), (179, 53) */
         COMMENT 'Check IN operator with
 variable-length seqOf';
-                /* CIF ANSWER (5, 1331), (70, 24) */
+                /* CIF ANSWER (234, 1659), (70, 24) */
                 (true):
-                    /* CIF PROCEDURECALL (-51, 1370), (182, 35) */
+                    /* CIF PROCEDURECALL (177, 1698), (182, 35) */
                     CALL writeln(1 in seqint(0,0))
-                    /* CIF COMMENT (151, 1370), (114, 35) */
+                    /* CIF COMMENT (382, 1698), (114, 35) */
                     COMMENT 'print "TRUE"';
-                /* CIF ANSWER (266, 1331), (70, 24) */
+                /* CIF ANSWER (497, 1659), (70, 24) */
                 (false):
         ENDDECISION;
-        /* CIF PROCEDURECALL (46, 1420), (180, 35) */
+        /* CIF PROCEDURECALL (295, 1748), (180, 35) */
         CALL writeln(length(seqint))
-        /* CIF COMMENT (246, 1380), (77, 35) */
+        /* CIF COMMENT (497, 1709), (77, 35) */
         COMMENT 'print 1';
-        /* CIF PROCEDURECALL (30, 1470), (212, 35) */
+        /* CIF PROCEDURECALL (279, 1798), (212, 35) */
         CALL writeln(length(seqint(0,0)))
-        /* CIF COMMENT (262, 1430), (77, 35) */
+        /* CIF COMMENT (516, 1764), (77, 35) */
         COMMENT 'print 1';
-        /* CIF TASK (54, 1520), (163, 35) */
+        /* CIF TASK (303, 1848), (163, 35) */
         TASK seqint := seqint // {2};
-        /* CIF TASK (41, 1570), (190, 35) */
+        /* CIF TASK (290, 1898), (190, 35) */
         TASK seqint := seqint(0,0) // {5};
-        /* CIF TASK (65, 1620), (142, 56) */
+        /* CIF TASK (314, 1948), (142, 56) */
         TASK for x in seqint:
     call writeln(x);
 endfor
-        /* CIF COMMENT (229, 1590), (96, 56) */
+        /* CIF COMMENT (494, 1911), (96, 56) */
         COMMENT 'print:
 1
 5';
-        /* CIF TASK (20, 1691), (233, 35) */
+        /* CIF TASK (269, 2019), (233, 35) */
         TASK seqbool := seqbool and seqbool
-        /* CIF COMMENT (273, 1675), (194, 35) */
+        /* CIF COMMENT (527, 1979), (194, 35) */
         COMMENT 'should not raise any error';
-        /* CIF TASK (7, 1741), (258, 38) */
+        /* CIF TASK (256, 2069), (258, 38) */
         TASK 'seqbool2 := seqbool2 and seqbool2'
-        /* CIF COMMENT (285, 1737), (213, 35) */
+        /* CIF COMMENT (537, 2033), (213, 35) */
         COMMENT 'Variable-length -> raise error';
-        /* CIF NEXTSTATE (101, 1794), (68, 33) */
+        /* CIF NEXTSTATE (339, 2122), (68, 33) */
         NEXTSTATE Wait;
     /* CIF STATE (839, 313), (70, 35) */
     STATE wait;

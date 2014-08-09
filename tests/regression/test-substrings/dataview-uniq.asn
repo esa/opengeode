@@ -44,6 +44,9 @@ SeqBool2    ::= SEQUENCE (SIZE(1..2)) OF BOOLEAN
 MyOctStr    ::= OCTET STRING (SIZE (3))
 String      ::= OCTET STRING (SIZE(0..100))
 
+IntSeq ::= SEQUENCE (SIZE(0..100)) OF T-UInt8
+FixedIntSeq ::= SEQUENCE (SIZE(5)) OF T-UInt8
+
 -- You can also declare variables (they will be visible in C, Ada and SDL)
 myVar	    MySeqOf	::= { hello, world }
 

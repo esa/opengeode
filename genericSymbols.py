@@ -899,9 +899,9 @@ class Symbol(QObject, QGraphicsPathItem, object):
             # Minimum size is the size of the text inside the symbol
             try:
                 height = max(user_height,
-                        self.text.boundingRect().height() + 10)
+                             self.text.boundingRect().height() + 10)
                 width = max(user_width,
-                        self.text.boundingRect().width() + 30)
+                            self.text.boundingRect().width() + 30)
             except AttributeError:
                 height = max(user_height, 15)
                 width = max(user_width, 30)
@@ -1327,6 +1327,8 @@ class HorizontalSymbol(Symbol, object):
         self.connection = self.connect_to_parent()
         self.updateConnectionPoints()
         self.cam(self.pos(), self.pos())
+        LOG.debug('{} positionned at {}'.format(unicode(self),
+                                         unicode(self.scenePos())))
 
     def update_connections(self):
         '''
@@ -1470,8 +1472,6 @@ class VerticalSymbol(Symbol, object):
             Determine the coordinates based on the position
             and size of the parent item, and make proper connections
         '''
-        LOG.debug('insert_symbol: ' + unicode(self) + ' at ' + unicode(x) +
-                  ', ' + unicode(y))
         if not parent:
             # Place standalone item on the scene at given coordinates
             # (e.g. floating state)
@@ -1533,11 +1533,12 @@ class VerticalSymbol(Symbol, object):
         # Create the connection with the parent symbol
         self.connection = self.connect_to_parent()
         self.update_position()
-        LOG.debug(unicode(self) + ' positionned at ' + unicode(self.pos()))
         self.updateConnectionPoints()
         if y is not None:
             self.setY(y)
         self.cam(self.pos(), self.pos())
+        LOG.debug('{} positionned at {}'.format(unicode(self),
+                                         unicode(self.scenePos())))
 
     def update_position(self):
         '''

@@ -242,6 +242,7 @@ class Decision(VerticalSymbol):
 
     def updateConnectionPointPosition(self):
         ''' Compute the joining point of decision branches '''
+        LOG.debug('UpdateConnectionPointPosition of {}'.format(unicode(self)))
         new_y = 0
         new_x = self.boundingRect().width() / 2.0
         answers = False

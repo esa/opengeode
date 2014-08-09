@@ -758,7 +758,8 @@ def _prim_call(prim):
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        if min_length == max_length:
+        if min_length == max_length \
+                and not isinstance(exp, ogAST.PrimSubstring):
             ada_string += min_length
         else:
             if isinstance(exp, ogAST.PrimSubstring):
@@ -830,7 +831,9 @@ def _prim_index(prim):
         idx_string = int(idx_string) + 1
     else:
         idx_string = '1+Integer({idx})'.format(idx=idx_string)
-    ada_string += '.Data({idx})'.format(idx=idx_string)
+    if not isinstance(receiver, ogAST.PrimSubstring):
+        ada_string += '.Data'
+    ada_string += '({idx})'.format(idx=idx_string)
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
 
@@ -862,7 +865,9 @@ def _prim_substring(prim):
     else:
         r2_string += ' + 1'
 
-    ada_string += '.Data({r1}..{r2})'.format(r1=r1_string, r2=r2_string)
+    if not isinstance(receiver, ogAST.PrimSubstring):
+        ada_string += '.Data'
+    ada_string += '({r1}..{r2})'.format(r1=r1_string, r2=r2_string)
     stmts.extend(r1_stmts)
     stmts.extend(r2_stmts)
     local_decl.extend(r1_local)
