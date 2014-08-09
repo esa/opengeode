@@ -279,8 +279,8 @@ def _decision(ast, scene, parent, states):
     if not parent:
         symbol.setPos(ast.pos_x, ast.pos_y)
     for branch in ast.answers:
-        render(branch,
-                      scene=scene, parent=symbol, states=states)
+        render(branch, scene=scene, parent=symbol, states=states)
+    symbol.updateConnectionPointPosition()
     return symbol
 
 
@@ -300,8 +300,7 @@ def _answer(ast, scene, parent, states):
     if not parent:
         symbol.setPos(ast.pos_x, ast.pos_y)
     if ast.transition:
-        render(ast.transition,
-                      scene=scene, parent=symbol, states=states)
+        render(ast.transition, scene=scene, parent=symbol, states=states)
     return symbol
 
 
