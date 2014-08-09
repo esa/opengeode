@@ -490,7 +490,7 @@ def generate_startup_func(process, ctx):
             global_var = ctx.scope.resolve(str(name))
             sdl_assign(global_var, expression(expr, ctx), ctx)
 
-    ctx.builder.call(ctx.funcs['run_transition'], [core.Constant.int(ctx.i32, 0)])
+    sdl_call('run_transition', [core.Constant.int(ctx.i32, 0)], ctx)
     ctx.builder.ret_void()
 
     ctx.close_scope()
@@ -536,7 +536,7 @@ def generate_input_signal(signal, inputs, ctx):
                     sdl_assign(var_ptr, ctx.builder.load(func.args[0]), ctx)
             if input.transition:
                 id_val = core.Constant.int(ctx.i32, input.transition_id)
-                ctx.builder.call(ctx.funcs['run_transition'], [id_val])
+                sdl_call('run_transition', [id_val], ctx)
 
         ctx.builder.ret_void()
 
@@ -569,8 +569,6 @@ def _call_external_function(output, ctx):
             sdl_set_timer(timer_id.value[0], expression(timer_expr, ctx), ctx)
             continue
 
-        func = ctx.funcs[str(name).lower()]
-
         arg_vals = []
         for arg in args:
             arg_val = expression(arg, ctx)
@@ -582,7 +580,7 @@ def _call_external_function(output, ctx):
             else:
                 arg_vals.append(arg_val)
 
-        ctx.builder.call(func, arg_vals)
+        sdl_call(str(name).lower(), arg_vals, ctx)
 
 
 @generate.register(ogAST.TaskAssign)
@@ -1084,23 +1082,23 @@ def _expr_append(expr, ctx):
         res_len_val = ctx.builder.add(left_len_val, right_len_val)
         ctx.builder.store(res_len_val, res_len_ptr)
 
-        ctx.builder.call(ctx.funcs['memcpy'], [
+        sdl_call('memcpy', [
             ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
             ctx.builder.bitcast(left_arr_ptr, ctx.i8_ptr),
             ctx.builder.mul(elem_size_val, ctx.builder.zext(left_len_val, ctx.i64)),
             core.Constant.int(ctx.i32, 0),
             core.Constant.int(ctx.i1, 0)
-        ])
+        ], ctx)
 
         res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one, left_len_val])
 
-        ctx.builder.call(ctx.funcs['memcpy'], [
+        sdl_call('memcpy', [
             ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
             ctx.builder.bitcast(right_arr_ptr, ctx.i8_ptr),
             ctx.builder.mul(elem_size_val, ctx.builder.zext(right_len_val, ctx.i64)),
             core.Constant.int(ctx.i32, 0),
             core.Constant.int(ctx.i1, 0)
-        ])
+        ], ctx)
 
         return res_ptr
 
@@ -1216,7 +1214,7 @@ def _prim_substring(prim, ctx):
     recvr_arr_ptr = ctx.builder.bitcast(recvr_arr_ptr, ctx.i8_ptr)
     res_arr_ptr = ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr)
 
-    ctx.builder.call(ctx.funcs['memcpy'], [res_arr_ptr, recvr_arr_ptr, size, align, volatile])
+    sdl_call('memcpy', [res_arr_ptr, recvr_arr_ptr, size, align, volatile], ctx)
 
     return res_ptr
 
@@ -1324,7 +1322,7 @@ def _prim_string_literal(prim, ctx):
     align = core.Constant.int(ctx.i32, 0)
     volatile = core.Constant.int(ctx.i1, 0)
 
-    ctx.builder.call(ctx.funcs['memcpy'], [casted_arr_ptr, casted_str_ptr, size, align, volatile])
+    sdl_call('memcpy', [casted_arr_ptr, casted_str_ptr, size, align, volatile], ctx)
 
     return octectstr_ptr
 
@@ -1669,7 +1667,7 @@ def sdl_assign(a_ptr, b_val, ctx):
         a_ptr = ctx.builder.bitcast(a_ptr, ctx.i8_ptr)
         b_ptr = ctx.builder.bitcast(b_val, ctx.i8_ptr)
 
-        ctx.builder.call(ctx.funcs['memcpy'], [a_ptr, b_ptr, size, align, volatile])
+        sdl_call('memcpy', [a_ptr, b_ptr, size, align, volatile], ctx)
     else:
         ctx.builder.store(b_val, a_ptr)
 
@@ -1691,8 +1689,7 @@ def sdl_equals(a_val, b_val, sdlty, ctx):
         raise CompileError(
             'Equals operator not supported for type "%s"' % sdlbty.kind)
 
-    func = ctx.funcs["asn1scc%s_equal" % type_name]
-    return ctx.builder.call(func, [a_val, b_val])
+    return sdl_call("asn1scc%s_equal" % type_name, [a_val, b_val], ctx)
 
 
 def sdl_not_equals(a_val, b_val, sdlty, ctx):
@@ -1721,10 +1718,10 @@ def sdl_abs(x_val, ctx):
     ''' Generate the IR for a abs operation '''
     if x_val.type.kind == core.TYPE_INTEGER:
         expr_conv = ctx.builder.sitofp(x_val, ctx.double)
-        res_val = ctx.builder.call(ctx.funcs['fabs'], [expr_conv])
+        res_val = sdl_call('fabs', [expr_conv], ctx)
         return ctx.builder.fptosi(res_val, ctx.i64)
     else:
-        return ctx.builder.call(ctx.funcs['fabs'], [x_val])
+        return sdl_call('fabs', [x_val])
 
 
 def sdl_fix(x_val, ctx):
@@ -1742,10 +1739,10 @@ def sdl_power(x_val, y_val, ctx):
     y_val = ctx.builder.trunc(y_val, ctx.i32)
     if x_val.type.kind == core.TYPE_INTEGER:
         x_val = ctx.builder.sitofp(x_val, ctx.double)
-        res_val = ctx.builder.call(ctx.funcs['powi'], [x_val, y_val])
+        res_val = sdl_call('powi', [x_val, y_val], ctx)
         return ctx.builder.fptosi(res_val, ctx.i64)
     else:
-        return ctx.builder.call(ctx.funcs['powi'], [x_val, y_val])
+        return sdl_call('powi', [x_val, y_val], ctx)
 
 
 def sdl_num(enum_val, ctx):
@@ -1802,23 +1799,26 @@ def sdl_write(arg_vals, arg_sdltys, ctx, newline=False):
         fmt += '\n'
 
     arg_values.insert(0, ctx.string_ptr(fmt))
-    ctx.builder.call(ctx.funcs['printf'], arg_values)
+    sdl_call('printf', arg_values, ctx)
 
 
 def sdl_reset_timer(name, ctx):
     ''' Generate the IR a reset timer operation '''
-    reset_func_name = 'reset_%s' % name
-    reset_func = ctx.funcs[reset_func_name.lower()]
+    reset_func_name = 'reset_%s' % name.lower()
 
-    ctx.builder.call(reset_func, [])
+    sdl_call(reset_func_name, [], ctx)
 
 
 def sdl_set_timer(name, val, ctx):
     ''' Generate the IR for a set timer operation '''
-    set_func_name = 'set_%s' % name
-    set_func = ctx.funcs[set_func_name.lower()]
+    set_func_name = 'set_%s' % name.lower()
 
     tmp_ptr = ctx.builder.alloca(val.type)
     ctx.builder.store(val, tmp_ptr)
 
-    ctx.builder.call(set_func, [tmp_ptr])
+    sdl_call(set_func_name, [tmp_ptr], ctx)
+
+
+def sdl_call(name, arg_vals, ctx):
+    ''' Generate the IR for a call operation '''
+    return ctx.builder.call(ctx.funcs[name], arg_vals)
