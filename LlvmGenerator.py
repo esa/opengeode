@@ -46,7 +46,7 @@ class Context():
         self.strings = {}
         self.funcs = {}
         self.lltypes = {}
-        self.basic_types = {}
+        self.basic_asn1types = {}
 
         # Initialize built-in types
         self.i1 = core.Type.int(1)
@@ -95,7 +95,7 @@ class Context():
         ''' Close the current scope '''
         self.scope = self.scope.parent
 
-    def basic_type_of(self, asn1ty):
+    def basic_asn1type_of(self, asn1ty):
         ''' Return the ASN.1 basic type of a type '''
         if asn1ty.kind != 'ReferenceType':
             return asn1ty
@@ -103,22 +103,22 @@ class Context():
         asn1ty_name = asn1ty.ReferencedTypeName.lower()
 
         # return the basic type if its cached
-        if asn1ty_name in self.basic_types:
-            return self.basic_types[asn1ty_name]
+        if asn1ty_name in self.basic_asn1types:
+            return self.basic_asn1types[asn1ty_name]
 
-        basic_type = asn1ty
-        while basic_type.kind == 'ReferenceType':
+        basic_asn1ty = asn1ty
+        while basic_asn1ty.kind == 'ReferenceType':
             for typename in self.dataview.viewkeys():
-                if typename.lower() == basic_type.ReferencedTypeName.lower():
-                    basic_type = self.dataview[typename].type
+                if typename.lower() == basic_asn1ty.ReferencedTypeName.lower():
+                    basic_asn1ty = self.dataview[typename].type
                     break
 
         # cache the basic type
-        self.basic_types[asn1ty_name] = basic_type
+        self.basic_asn1types[asn1ty_name] = basic_asn1ty
 
-        return basic_type
+        return basic_asn1ty
 
-    def type_of(self, asn1ty):
+    def lltype_of(self, asn1ty):
         ''' Return the LL type of a ASN.1 type '''
         try:
             name = asn1ty.ReferencedTypeName.replace('-', '_')
@@ -128,7 +128,7 @@ class Context():
         if name and name in self.lltypes:
             return self.lltypes[name]
 
-        basic_asn1ty = self.basic_type_of(asn1ty)
+        basic_asn1ty = self.basic_asn1type_of(asn1ty)
 
         if basic_asn1ty.kind == 'IntegerType':
             llty = self.i64
@@ -139,15 +139,15 @@ class Context():
         elif basic_asn1ty.kind == 'RealType':
             llty = self.double
         elif basic_asn1ty.kind == 'SequenceOfType':
-            llty = self._type_of_sequenceof(name, basic_asn1ty)
+            llty = self._lltype_of_sequenceof(name, basic_asn1ty)
         elif basic_asn1ty.kind == 'SequenceType':
-            llty = self._type_of_sequence(name, basic_asn1ty)
+            llty = self._lltype_of_sequence(name, basic_asn1ty)
         elif basic_asn1ty.kind == 'EnumeratedType':
             llty = self.i32
         elif basic_asn1ty.kind == 'ChoiceType':
-            llty = self._type_of_choice(name, basic_asn1ty)
+            llty = self._lltype_of_choice(name, basic_asn1ty)
         elif basic_asn1ty.kind == 'OctetStringType':
-            llty = self._type_of_octetstring(name, basic_asn1ty)
+            llty = self._lltype_of_octetstring(name, basic_asn1ty)
         elif basic_asn1ty.kind in ('StringType', 'StandardStringType'):
             llty = self.i8_ptr
         else:
@@ -158,77 +158,77 @@ class Context():
 
         return llty
 
-    def _type_of_sequenceof(self, name, sequenceof_ty):
+    def _lltype_of_sequenceof(self, name, asn1ty):
         ''' Return the LL type of a SequenceOf ASN.1 type '''
-        min_size = int(sequenceof_ty.Min)
-        max_size = int(sequenceof_ty.Max)
+        min_size = int(asn1ty.Min)
+        max_size = int(asn1ty.Max)
         is_variable_size = min_size != max_size
 
-        elem_ty = self.type_of(sequenceof_ty.type)
-        array_ty = core.Type.array(elem_ty, max_size)
+        elem_llty = self.lltype_of(asn1ty.type)
+        array_llty = core.Type.array(elem_llty, max_size)
 
         if is_variable_size:
-            struct = self.decl_struct(['nCount', 'arr'], [self.i32, array_ty], name)
+            struct = self.decl_struct(['nCount', 'arr'], [self.i32, array_llty], name)
         else:
-            struct = self.decl_struct(['arr'], [array_ty], name)
+            struct = self.decl_struct(['arr'], [array_llty], name)
 
-        struct_ptr = core.Type.pointer(struct.ty)
+        struct_ptr = core.Type.pointer(struct.llty)
         self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
-        return struct.ty
+        return struct.llty
 
-    def _type_of_sequence(self, name, sequence_ty):
+    def _lltype_of_sequence(self, name, asn1ty):
         ''' Return the LL type of a Sequence ASN.1 type '''
         field_names = []
-        field_types = []
+        field_lltys = []
 
-        for field_name in Helper.sorted_fields(sequence_ty):
+        for field_name in Helper.sorted_fields(asn1ty):
             field_names.append(field_name.replace('-', '_'))
-            field_types.append(self.type_of(sequence_ty.Children[field_name].type))
+            field_lltys.append(self.lltype_of(asn1ty.Children[field_name].type))
 
-        struct = self.decl_struct(field_names, field_types, name)
+        struct = self.decl_struct(field_names, field_lltys, name)
 
-        struct_ptr = core.Type.pointer(struct.ty)
+        struct_ptr = core.Type.pointer(struct.llty)
         self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
-        return struct.ty
+        return struct.llty
 
-    def _type_of_choice(self, name, choice_ty):
+    def _lltype_of_choice(self, name, asn1ty):
         ''' Return the equivalent LL type of a Choice ASN.1 type '''
         field_names = []
-        field_types = []
+        field_lltys = []
 
-        for idx, field_name in enumerate(Helper.sorted_fields(choice_ty)):
+        for idx, field_name in enumerate(Helper.sorted_fields(asn1ty)):
             # enum values used in choice determinant/present
             self.enums[field_name.replace('-', '_')] = core.Constant.int(self.i32, idx)
 
             field_names.append(field_name.replace('-', '_'))
-            field_types.append(self.type_of(choice_ty.Children[field_name].type))
+            field_lltys.append(self.lltype_of(asn1ty.Children[field_name].type))
 
-        union = self.decl_union(field_names, field_types, name)
+        union = self.decl_union(field_names, field_lltys, name)
 
-        union_ptr = core.Type.pointer(union.ty)
+        union_ptr = core.Type.pointer(union.llty)
         self.decl_func("asn1Scc%s_Equal" % name, self.i1, [union_ptr, union_ptr])
 
-        return union.ty
+        return union.llty
 
-    def _type_of_octetstring(self, name, octetstring_ty):
+    def _lltype_of_octetstring(self, name, asn1ty):
         ''' Return the equivalent LL type of a OctetString ASN.1 type '''
-        min_size = int(octetstring_ty.Min)
-        max_size = int(octetstring_ty.Max)
+        min_size = int(asn1ty.Min)
+        max_size = int(asn1ty.Max)
         is_variable_size = min_size != max_size
 
-        array_ty = core.Type.array(self.i8, max_size)
+        array_llty = core.Type.array(self.i8, max_size)
 
         if is_variable_size:
-            struct = self.decl_struct(['nCount', 'arr'], [self.i32, array_ty], name)
+            struct = self.decl_struct(['nCount', 'arr'], [self.i32, array_llty], name)
         else:
-            struct = self.decl_struct(['arr'], [array_ty], name)
+            struct = self.decl_struct(['arr'], [array_llty], name)
 
-        struct_ptr = core.Type.pointer(struct.ty)
+        struct_ptr = core.Type.pointer(struct.llty)
         self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
-        return struct.ty
+        return struct.llty
 
     def string_ptr(self, str):
         ''' Returns a pointer to a global string with the given value '''
@@ -242,19 +242,19 @@ class Context():
         self.strings[str] = var_ptr
         return var_ptr.gep([self.zero, self.zero])
 
-    def decl_func(self, name, return_ty, param_tys, extern=False):
+    def decl_func(self, name, return_llty, param_lltys, extern=False):
         ''' Declare a function '''
-        func_ty = core.Type.function(return_ty, param_tys)
+        func_llty = core.Type.function(return_llty, param_lltys)
         func_name = ("%s_RI_%s" % (self.name, name)) if extern else name
-        func = core.Function.new(self.module, func_ty, func_name)
+        func = core.Function.new(self.module, func_llty, func_name)
         self.funcs[name.lower()] = func
         return func
 
-    def decl_struct(self, field_names, field_types, name=None):
+    def decl_struct(self, field_names, field_lltys, name=None):
         ''' Declare a struct '''
         name = name if name else "struct.%s" % len(self.structs)
         name = name.replace('-', '_')
-        struct = StructType(name, field_names, field_types)
+        struct = StructType(name, field_names, field_lltys)
         self.structs[name] = struct
         return struct
 
@@ -262,10 +262,10 @@ class Context():
         ''' Return the struct associated to a name '''
         return self.structs[name.replace('-', '_')]
 
-    def decl_union(self, field_names, field_types, name=None):
+    def decl_union(self, field_names, field_lltys, name=None):
         name = name if name else "union.%s" % len(self.structs)
         name = name.replace('-', '_')
-        union = UnionType(name, field_names, field_types, self)
+        union = UnionType(name, field_names, field_lltys, self)
         self.unions[name] = union
         return union
 
@@ -275,28 +275,28 @@ class Context():
 
 
 class StructType():
-    def __init__(self, name, field_names, field_types):
+    def __init__(self, name, field_names, field_lltys):
         self.name = name
         self.field_names = field_names
-        self.ty = core.Type.struct(field_types, self.name)
+        self.llty = core.Type.struct(field_lltys, self.name)
 
     def idx(self, field_name):
         return self.field_names.index(field_name)
 
 
 class UnionType():
-    def __init__(self, name, field_names, field_types, ctx):
+    def __init__(self, name, field_names, field_lltys, ctx):
         self.name = name
         self.field_names = field_names
-        self.field_types = field_types
+        self.field_lltys = field_lltys
         # Unions are represented a struct with a field indicating the index of its type
         # and a byte array with the size of the biggest type in the union
-        self.size = max([ctx.target_data.size(ty) for ty in field_types])
-        self.ty = core.Type.struct([ctx.i32, core.Type.array(ctx.i8, self.size)], name)
+        self.size = max([ctx.target_data.size(ty) for ty in field_lltys])
+        self.llty = core.Type.struct([ctx.i32, core.Type.array(ctx.i8, self.size)], name)
 
     def kind(self, name):
         idx = self.field_names.index(name)
-        return (idx, self.field_types[idx])
+        return (idx, self.field_lltys[idx])
 
 
 class Scope:
@@ -369,10 +369,10 @@ def _process(process, ctx=None):
     ctx.scope.define('.state', state_cons)
 
     # Generare process-level vars
-    for name, (ty, expr) in process.variables.viewitems():
-        var_ty = ctx.type_of(ty)
-        global_var = ctx.module.add_global_variable(var_ty, str(name))
-        global_var.initializer = core.Constant.null(var_ty)
+    for name, (asn1ty, expr) in process.variables.viewitems():
+        var_llty = ctx.lltype_of(asn1ty)
+        global_var = ctx.module.add_global_variable(var_llty, str(name))
+        global_var.initializer = core.Constant.null(var_llty)
         ctx.scope.define(str(name).lower(), global_var)
 
     # Declare set/reset timer functions
@@ -384,15 +384,15 @@ def _process(process, ctx=None):
     # Declare output signal functions
     for signal in process.output_signals:
         if 'type' in signal:
-            param_tys = [core.Type.pointer(ctx.type_of(signal['type']))]
+            param_lltys = [core.Type.pointer(ctx.lltype_of(signal['type']))]
         else:
-            param_tys = []
-        ctx.decl_func(str(signal['name']), ctx.void, param_tys, True)
+            param_lltys = []
+        ctx.decl_func(str(signal['name']), ctx.void, param_lltys, True)
 
     # Declare external procedures functions
     for proc in [proc for proc in process.procedures if proc.external]:
-        param_tys = [core.Type.pointer(ctx.type_of(p['type'])) for p in proc.fpar]
-        ctx.decl_func(str(proc.inputString), ctx.void, param_tys, True)
+        param_lltys = [core.Type.pointer(ctx.lltype_of(p['type'])) for p in proc.fpar]
+        ctx.decl_func(str(proc.inputString), ctx.void, param_lltys, True)
 
     # Generate internal procedures
     for proc in process.content.inner_procedures:
@@ -502,11 +502,11 @@ def generate_startup_func(process, ctx):
 def generate_input_signal(signal, inputs, ctx):
     ''' Generate the IR for an input signal '''
     func_name = ctx.name + "_" + str(signal['name'])
-    param_tys = []
+    param_lltys = []
     if 'type' in signal:
-        param_tys.append(core.Type.pointer(ctx.type_of(signal['type'])))
+        param_lltys.append(core.Type.pointer(ctx.lltype_of(signal['type'])))
 
-    func = ctx.decl_func(func_name, ctx.void, param_tys)
+    func = ctx.decl_func(func_name, ctx.void, param_lltys)
 
     ctx.open_scope()
 
@@ -558,8 +558,8 @@ def _call_external_function(output, ctx):
 
         if name == 'write' or name == 'writeln':
             arg_vals = [expression(a, ctx) for a in args]
-            arg_sdltys = [a.exprType for a in args]
-            sdl_write(arg_vals, arg_sdltys, ctx, name == 'writeln')
+            arg_asn1tys = [a.exprType for a in args]
+            sdl_write(arg_vals, arg_asn1tys, ctx, name == 'writeln')
             continue
         elif name == 'reset_timer':
             sdl_reset_timer(args[0].value[0], ctx)
@@ -651,7 +651,7 @@ def generate_for_range(loop, ctx):
 
 def generate_for_iterable(loop, ctx):
     ''' Generate the IR for a for x in iterable loop '''
-    seqof_asn1ty = ctx.basic_type_of(loop['list'].exprType)
+    seqof_asn1ty = ctx.basic_asn1type_of(loop['list'].exprType)
     is_variable_size = seqof_asn1ty.Min != seqof_asn1ty.Max
 
     func = ctx.builder.basic_block.function
@@ -677,7 +677,7 @@ def generate_for_iterable(loop, ctx):
     else:
         array_ptr = ctx.builder.gep(seqof_struct_ptr, [ctx.zero, ctx.zero])
 
-    element_typ = array_ptr.type.pointee.element
+    elem_llty = array_ptr.type.pointee.element
 
     if is_variable_size:
         # load the current number of elements that is on the first field
@@ -685,7 +685,7 @@ def generate_for_iterable(loop, ctx):
     else:
         end_idx = core.Constant.int(ctx.i32, array_ptr.type.pointee.count)
 
-    var_ptr = ctx.builder.alloca(element_typ, None, str(loop['var']))
+    var_ptr = ctx.builder.alloca(elem_llty, None, str(loop['var']))
     ctx.scope.define(str(loop['var']), var_ptr)
 
     ctx.builder.branch(load_block)
@@ -693,7 +693,7 @@ def generate_for_iterable(loop, ctx):
     # load block
     ctx.builder.position_at_end(load_block)
     idx_var = ctx.builder.load(idx_ptr)
-    if element_typ.kind == core.TYPE_STRUCT:
+    if elem_llty.kind == core.TYPE_STRUCT:
         elem_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_var])
         sdl_assign(var_ptr, elem_ptr, ctx)
     else:
@@ -743,9 +743,9 @@ def _prim_selector_reference(prim, ctx):
 
     else:
         union = ctx.unions[receiver_ptr.type.pointee.name]
-        _, field_ty = union.kind(field_name)
+        _, field_llty = union.kind(field_name)
         field_ptr = ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.one])
-        return ctx.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
+        return ctx.builder.bitcast(field_ptr, core.Type.pointer(field_llty))
 
 
 @reference.register(ogAST.PrimIndex)
@@ -782,9 +782,9 @@ def _expr_arith(expr, ctx):
     left_val = expression(expr.left, ctx)
     right_val = expression(expr.right, ctx)
 
-    expr_bty = ctx.basic_type_of(expr.exprType)
+    basic_asn1ty = ctx.basic_asn1type_of(expr.exprType)
 
-    if expr_bty.kind in ('IntegerType', 'Integer32Type'):
+    if basic_asn1ty.kind in ('IntegerType', 'Integer32Type'):
         if isinstance(expr, ogAST.ExprPlus):
             return ctx.builder.add(left_val, right_val)
         elif isinstance(expr, ogAST.ExprMinus):
@@ -804,7 +804,7 @@ def _expr_arith(expr, ctx):
             'Expression "%s" not supported for Integer types'
             % expr.__class__.__name__)
 
-    elif expr_bty.kind == 'RealType':
+    elif basic_asn1ty.kind == 'RealType':
         if isinstance(expr, ogAST.ExprPlus):
             return ctx.builder.fadd(left_val, right_val)
         elif isinstance(expr, ogAST.ExprMinus):
@@ -818,7 +818,7 @@ def _expr_arith(expr, ctx):
             % expr.__class__.__name__)
 
     raise CompileError(
-        'Type "%s" not supported in arithmetic expressions' % expr_bty.kind)
+        'Type "%s" not supported in arithmetic expressions' % basic_asn1ty.kind)
 
 
 @expression.register(ogAST.ExprLt)
@@ -830,9 +830,9 @@ def _expr_rel(expr, ctx):
     left_val = expression(expr.left, ctx)
     right_val = expression(expr.right, ctx)
 
-    operands_bty = ctx.basic_type_of(expr.left.exprType)
+    basic_asn1ty = ctx.basic_asn1type_of(expr.left.exprType)
 
-    if operands_bty.kind in ('IntegerType', 'Integer32Type'):
+    if basic_asn1ty.kind in ('IntegerType', 'Integer32Type'):
         if isinstance(expr, ogAST.ExprLt):
             return ctx.builder.icmp(core.ICMP_SLT, left_val, right_val)
         elif isinstance(expr, ogAST.ExprLe):
@@ -845,7 +845,7 @@ def _expr_rel(expr, ctx):
             'Expression "%s" not supported for Integer types'
             % expr.__class__.__name__)
 
-    elif operands_bty.kind == 'RealType':
+    elif basic_asn1ty.kind == 'RealType':
         if isinstance(expr, ogAST.ExprLt):
             return ctx.builder.fcmp(core.FCMP_OLT, left_val, right_val)
         elif isinstance(expr, ogAST.ExprLe):
@@ -860,7 +860,7 @@ def _expr_rel(expr, ctx):
 
     raise CompileError(
         'Expression "%s" not supported for type "%s"'
-        % (expr.__class__.__name__, operands_bty.kind))
+        % (expr.__class__.__name__, basic_asn1ty.kind))
 
 
 @expression.register(ogAST.ExprEq)
@@ -869,12 +869,12 @@ def _expr_eq(expr, ctx):
     ''' Generate the code for a equality expression '''
     left_val = expression(expr.left, ctx)
     right_val = expression(expr.right, ctx)
-    sdl_ty = expr.left.exprType
+    asn1ty = expr.left.exprType
 
     if isinstance(expr, ogAST.ExprEq):
-        return sdl_equals(left_val, right_val, sdl_ty, ctx)
+        return sdl_equals(left_val, right_val, asn1ty, ctx)
     else:
-        return sdl_not_equals(left_val, right_val, sdl_ty, ctx)
+        return sdl_not_equals(left_val, right_val, asn1ty, ctx)
 
 
 @expression.register(ogAST.ExprNeg)
@@ -901,12 +901,12 @@ def _expr_assign(expr, ctx):
 @expression.register(ogAST.ExprImplies)
 def _expr_logic(expr, ctx):
     ''' Generate the IR for a logic expression '''
-    bty = ctx.basic_type_of(expr.exprType)
+    basic_asn1ty = ctx.basic_asn1type_of(expr.exprType)
 
     if expr.shortcircuit:
-        if bty.kind != 'BooleanType':
+        if basic_asn1ty.kind != 'BooleanType':
             raise CompileError('Type "%s" not supported in shortcircuit expressions'
-                % bty.kind)
+                % basic_asn1ty.kind)
 
         func = ctx.builder.basic_block.function
 
@@ -932,7 +932,7 @@ def _expr_logic(expr, ctx):
         ctx.builder.position_at_end(end_block)
         return ctx.builder.load(res_ptr)
 
-    elif bty.kind == 'BooleanType':
+    elif basic_asn1ty.kind == 'BooleanType':
         left_val = expression(expr.left, ctx)
         right_val = expression(expr.right, ctx)
 
@@ -946,7 +946,7 @@ def _expr_logic(expr, ctx):
             tmp_val = ctx.builder.and_(left_val, right_val)
             return ctx.builder.or_(tmp_val, ctx.builder.not_(left_val))
 
-    elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
+    elif basic_asn1ty.kind == 'SequenceOfType' and basic_asn1ty.Min == basic_asn1ty.Max:
         func = ctx.builder.basic_block.function
 
         body_block = func.append_basic_block('bitwise:body')
@@ -957,8 +957,8 @@ def _expr_logic(expr, ctx):
         right_ptr = expression(expr.right, ctx)
         res_ptr = ctx.builder.alloca(left_ptr.type.pointee)
 
-        array_ty = res_ptr.type.pointee.elements[0]
-        len_val = core.Constant.int(ctx.i32, array_ty.count)
+        array_llty = res_ptr.type.pointee.elements[0]
+        len_val = core.Constant.int(ctx.i32, array_llty.count)
 
         idx_ptr = ctx.builder.alloca(ctx.i32)
         ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
@@ -1001,18 +1001,18 @@ def _expr_logic(expr, ctx):
         ctx.builder.position_at_end(end_block)
         return res_ptr
 
-    raise CompileError('Type "%s" not supported in bitwise expressions' % bty.kind)
+    raise CompileError('Type "%s" not supported in bitwise expressions' % basic_asn1ty.kind)
 
 
 @expression.register(ogAST.ExprNot)
 def _expr_not(expr, ctx):
     ''' Generate the IR for a not expression '''
-    bty = ctx.basic_type_of(expr.exprType)
+    basic_asn1ty = ctx.basic_asn1type_of(expr.exprType)
 
-    if bty.kind == 'BooleanType':
+    if basic_asn1ty.kind == 'BooleanType':
         return ctx.builder.not_(expression(expr.expr, ctx))
 
-    elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max:
+    elif basic_asn1ty.kind == 'SequenceOfType' and basic_asn1ty.Min == basic_asn1ty.Max:
         func = ctx.builder.basic_block.function
 
         body_block = func.append_basic_block('not:body')
@@ -1025,8 +1025,8 @@ def _expr_not(expr, ctx):
         struct_ptr = expression(expr.expr, ctx)
         res_struct_ptr = ctx.builder.alloca(struct_ptr.type.pointee)
 
-        array_ty = struct_ptr.type.pointee.elements[0]
-        len_val = core.Constant.int(ctx.i32, array_ty.count)
+        array_llty = struct_ptr.type.pointee.elements[0]
+        len_val = core.Constant.int(ctx.i32, array_llty.count)
 
         ctx.builder.branch(body_block)
 
@@ -1052,20 +1052,20 @@ def _expr_not(expr, ctx):
         ctx.builder.position_at_end(end_block)
         return res_struct_ptr
 
-    raise CompileError('Type "%s" not supported in bitwise expressions' % bty.kind)
+    raise CompileError('Type "%s" not supported in bitwise expressions' % basic_asn1ty.kind)
 
 
 @expression.register(ogAST.ExprAppend)
 def _expr_append(expr, ctx):
     ''' Generate the IR for a append expression '''
-    bty = ctx.basic_type_of(expr.exprType)
+    basic_asn1ty = ctx.basic_asn1type_of(expr.exprType)
 
-    if bty.kind in ('SequenceOfType', 'OctetStringType'):
-        res_ty = ctx.type_of(expr.exprType)
-        elem_ty = res_ty.elements[1].element
-        elem_size_val = core.Constant.sizeof(elem_ty)
+    if basic_asn1ty.kind in ('SequenceOfType', 'OctetStringType'):
+        res_llty = ctx.lltype_of(expr.exprType)
+        elem_llty = res_llty.elements[1].element
+        elem_size_val = core.Constant.sizeof(elem_llty)
 
-        res_ptr = ctx.builder.alloca(res_ty)
+        res_ptr = ctx.builder.alloca(res_llty)
         res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
         res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
 
@@ -1115,10 +1115,10 @@ def _expr_in(expr, ctx):
     check_block = func.append_basic_block('in:check')
     end_block = func.append_basic_block('in:end')
 
-    seq_bty = ctx.basic_type_of(expr.left.exprType)
-    elem_ty = seq_bty.type
+    seq_basic_asn1ty = ctx.basic_asn1type_of(expr.left.exprType)
+    elem_asn1ty = seq_basic_asn1ty.type
 
-    is_variable_size = seq_bty.Min != seq_bty.Max
+    is_variable_size = seq_basic_asn1ty.Min != seq_basic_asn1ty.Max
 
     idx_ptr = ctx.builder.alloca(ctx.i32)
     ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
@@ -1130,8 +1130,8 @@ def _expr_in(expr, ctx):
         # load the current number of elements from the first field
         end_idx = ctx.builder.load(ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero]))
     else:
-        array_ty = struct_ptr.type.pointee.elements[0]
-        end_idx = core.Constant.int(ctx.i32, array_ty.count)
+        array_llty = struct_ptr.type.pointee.elements[0]
+        end_idx = core.Constant.int(ctx.i32, array_llty.count)
 
     ctx.builder.branch(check_block)
 
@@ -1144,10 +1144,10 @@ def _expr_in(expr, ctx):
         elem_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero, idx_val])
 
     if is_struct_ptr(elem_ptr):
-        cond_val = sdl_equals(value_val, elem_ptr, elem_ty, ctx)
+        cond_val = sdl_equals(value_val, elem_ptr, elem_asn1ty, ctx)
     else:
         elem_val = ctx.builder.load(elem_ptr)
-        cond_val = sdl_equals(value_val, elem_val, elem_ty, ctx)
+        cond_val = sdl_equals(value_val, elem_val, elem_asn1ty, ctx)
 
     ctx.builder.cbranch(cond_val, end_block, next_block)
 
@@ -1185,8 +1185,8 @@ def _prim_index(prim, ctx):
 @expression.register(ogAST.PrimSubstring)
 def _prim_substring(prim, ctx):
     ''' Generate the IR for a substring expression '''
-    bty = ctx.basic_type_of(prim.exprType)
-    if bty.Min == bty.Max:
+    basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
+    if basic_asn1ty.Min == basic_asn1ty.Max:
         raise NotImplementedError
 
     range_l_val = expression(prim.value[1]['substring'][0], ctx)
@@ -1196,16 +1196,16 @@ def _prim_substring(prim, ctx):
     recvr_ptr = expression(prim.value[0], ctx)
     recvr_arr_ptr = ctx.builder.gep(recvr_ptr, [ctx.zero, ctx.one, range_l_val])
 
-    recvr_ty = recvr_ptr.type.pointee
-    elem_ty = recvr_ty.elements[1].element
+    recvr_llty = recvr_ptr.type.pointee
+    elem_llty = recvr_llty.elements[1].element
 
-    res_ptr = ctx.builder.alloca(recvr_ty)
+    res_ptr = ctx.builder.alloca(recvr_llty)
     res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
     res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
 
     ctx.builder.store(ctx.builder.trunc(len_val, ctx.i32), res_len_ptr)
 
-    elem_size_val = core.Constant.sizeof(elem_ty)
+    elem_size_val = core.Constant.sizeof(elem_llty)
 
     size = ctx.builder.mul(elem_size_val, len_val)
     align = core.Constant.int(ctx.i32, 0)
@@ -1248,8 +1248,8 @@ def _prim_call(prim, ctx):
 def _prim_enumerated_value(prim, ctx):
     ''' Generate the IR for an enumerated value '''
     enumerant = prim.value[0].replace('_', '-')
-    basic_ty = ctx.basic_type_of(prim.exprType)
-    return core.Constant.int(ctx.i32, basic_ty.EnumValues[enumerant].IntValue)
+    basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
+    return core.Constant.int(ctx.i32, basic_asn1ty.EnumValues[enumerant].IntValue)
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
@@ -1284,27 +1284,27 @@ def _prim_boolean(prim, ctx):
 def _prim_empty_string(prim, ctx):
     ''' Generate the IR for an empty SEQUENCE OF '''
     # TODO: Why is this named string if it's not an string?
-    struct_ty = ctx.type_of(prim.exprType)
-    struct_ptr = ctx.builder.alloca(struct_ty)
-    ctx.builder.store(core.Constant.null(struct_ty), struct_ptr)
+    struct_llty = ctx.lltype_of(prim.exprType)
+    struct_ptr = ctx.builder.alloca(struct_llty)
+    ctx.builder.store(core.Constant.null(struct_llty), struct_ptr)
     return struct_ptr
 
 
 @expression.register(ogAST.PrimStringLiteral)
 def _prim_string_literal(prim, ctx):
     ''' Generate the IR for a string'''
-    bty = ctx.basic_type_of(prim.exprType)
+    basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
 
     str_len = len(str(prim.value[1:-1]))
     str_ptr = ctx.string_ptr(str(prim.value[1:-1]))
 
-    if bty.kind in ('StringType', 'StandardStringType'):
+    if basic_asn1ty.kind in ('StringType', 'StandardStringType'):
         return str_ptr
 
-    llty = ctx.type_of(prim.exprType)
+    llty = ctx.lltype_of(prim.exprType)
     octectstr_ptr = ctx.builder.alloca(llty)
 
-    if bty.Min == bty.Max:
+    if basic_asn1ty.Min == basic_asn1ty.Max:
         arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
     else:
         arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.one])
@@ -1352,7 +1352,7 @@ def _prim_conditional(prim, ctx):
     false_block = func.append_basic_block('cond:false')
     end_block = func.append_basic_block('cond:end')
 
-    res_ptr = ctx.builder.alloca(ctx.type_of(prim.exprType))
+    res_ptr = ctx.builder.alloca(ctx.lltype_of(prim.exprType))
     cond_val = expression(prim.value['if'], ctx)
     ctx.builder.cbranch(cond_val, true_block, false_block)
 
@@ -1376,7 +1376,7 @@ def _prim_conditional(prim, ctx):
 def _prim_sequence(prim, ctx):
     ''' Generate the IR for an ASN.1 SEQUENCE '''
     struct = ctx.resolve_struct(prim.exprType.ReferencedTypeName)
-    struct_ptr = ctx.builder.alloca(struct.ty)
+    struct_ptr = ctx.builder.alloca(struct.llty)
 
     seq_asn1ty = ctx.dataview[prim.exprType.ReferencedTypeName]
 
@@ -1394,11 +1394,11 @@ def _prim_sequence(prim, ctx):
 @expression.register(ogAST.PrimSequenceOf)
 def _prim_sequence_of(prim, ctx):
     ''' Generate the IR for an ASN.1 SEQUENCE OF '''
-    basic_ty = ctx.basic_type_of(prim.exprType)
-    ty = ctx.type_of(prim.exprType)
-    struct_ptr = ctx.builder.alloca(ty)
+    basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
+    llty = ctx.lltype_of(prim.exprType)
+    struct_ptr = ctx.builder.alloca(llty)
 
-    is_variable_size = basic_ty.Min != basic_ty.Max
+    is_variable_size = basic_asn1ty.Min != basic_asn1ty.Max
 
     if is_variable_size:
         size_val = core.Constant.int(ctx.i32, len(prim.value))
@@ -1420,16 +1420,16 @@ def _prim_sequence_of(prim, ctx):
 def _prim_choiceitem(prim, ctx):
     ''' Generate the IR for a CHOICE expression '''
     union = ctx.resolve_union(prim.exprType.ReferencedTypeName)
-    union_ptr = ctx.builder.alloca(union.ty)
+    union_ptr = ctx.builder.alloca(union.llty)
 
     expr_val = expression(prim.value['value'], ctx)
-    kind_idx, field_ty = union.kind(prim.value['choice'])
+    kind_idx, field_llty = union.kind(prim.value['choice'])
 
     kind_ptr = ctx.builder.gep(union_ptr, [ctx.zero, ctx.zero])
     ctx.builder.store(core.Constant.int(ctx.i32, kind_idx), kind_ptr)
 
     field_ptr = ctx.builder.gep(union_ptr, [ctx.zero, ctx.one])
-    field_ptr = ctx.builder.bitcast(field_ptr, core.Type.pointer(field_ty))
+    field_ptr = ctx.builder.bitcast(field_ptr, core.Type.pointer(field_llty))
     sdl_assign(field_ptr, expr_val, ctx)
 
     return union_ptr
@@ -1606,8 +1606,8 @@ def _floating_label(label, ctx):
 @generate.register(ogAST.Procedure)
 def _procedure(proc, ctx):
     ''' Generate the IR for a procedure '''
-    param_tys = [core.Type.pointer(ctx.type_of(p['type'])) for p in proc.fpar]
-    func = ctx.decl_func(str(proc.inputString), ctx.void, param_tys)
+    param_lltys = [core.Type.pointer(ctx.lltype_of(p['type'])) for p in proc.fpar]
+    func = ctx.decl_func(str(proc.inputString), ctx.void, param_lltys)
 
     if proc.external:
         return
@@ -1621,14 +1621,14 @@ def _procedure(proc, ctx):
     ctx.builder = core.Builder.new(entry_block)
 
     for name, (ty, expr) in proc.variables.viewitems():
-        var_ty = ctx.type_of(ty)
-        var_ptr = ctx.builder.alloca(var_ty)
+        var_llty = ctx.lltype_of(ty)
+        var_ptr = ctx.builder.alloca(var_llty)
         ctx.scope.define(name, var_ptr)
         if expr:
             expr_val = expression(expr, ctx)
             sdl_assign(var_ptr, expr_val, ctx)
         else:
-            ctx.builder.store(core.Constant.null(var_ty), var_ptr)
+            ctx.builder.store(core.Constant.null(var_llty), var_ptr)
 
     Helper.inner_labels_to_floating(proc)
 
@@ -1672,40 +1672,40 @@ def sdl_assign(a_ptr, b_val, ctx):
         ctx.builder.store(b_val, a_ptr)
 
 
-def sdl_equals(a_val, b_val, sdlty, ctx):
+def sdl_equals(a_val, b_val, asn1ty, ctx):
     ''' Generate the code for an Equal operation '''
-    sdlbty = ctx.basic_type_of(sdlty)
+    basic_asn1ty = ctx.basic_asn1type_of(asn1ty)
 
-    if sdlbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
+    if basic_asn1ty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
             'EnumeratedType', 'ChoiceEnumeratedType'):
         return ctx.builder.icmp(core.ICMP_EQ, a_val, b_val)
 
-    elif sdlbty.kind == 'RealType':
+    elif basic_asn1ty.kind == 'RealType':
         return ctx.builder.fcmp(core.FCMP_OEQ, a_val, b_val)
 
     try:
-        type_name = sdlty.ReferencedTypeName.replace('-', '_').lower()
+        type_name = asn1ty.ReferencedTypeName.replace('-', '_').lower()
     except AttributeError:
         raise CompileError(
-            'Equals operator not supported for type "%s"' % sdlbty.kind)
+            'Equals operator not supported for type "%s"' % basic_asn1ty.kind)
 
     return sdl_call("asn1scc%s_equal" % type_name, [a_val, b_val], ctx)
 
 
-def sdl_not_equals(a_val, b_val, sdlty, ctx):
+def sdl_not_equals(a_val, b_val, asn1ty, ctx):
     ''' Generate the code for a Not Equal operation '''
-    return ctx.builder.not_(sdl_equals(a_val, b_val, sdlty, ctx))
+    return ctx.builder.not_(sdl_equals(a_val, b_val, asn1ty, ctx))
 
 
-def sdl_length(s_ptr, s_sdlty, ctx):
+def sdl_length(s_ptr, s_asn1ty, ctx):
     ''' Generate the IR for a length operation '''
-    s_sdlbty = ctx.basic_type_of(s_sdlty)
-    if s_sdlbty.Min != s_sdlbty.Max:
+    s_basic_asn1ty = ctx.basic_asn1type_of(s_asn1ty)
+    if s_basic_asn1ty.Min != s_basic_asn1ty.Max:
         len_ptr = ctx.builder.gep(s_ptr, [ctx.zero, ctx.zero])
         return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
     else:
-        arr_ty = s_ptr.type.pointee.elements[0]
-        return core.Constant.int(ctx.i64, arr_ty.count)
+        arr_llty = s_ptr.type.pointee.elements[0]
+        return core.Constant.int(ctx.i64, arr_llty.count)
 
 
 def sdl_present(s_ptr, ctx):
@@ -1750,23 +1750,23 @@ def sdl_num(enum_val, ctx):
     return ctx.builder.sext(enum_val, ctx.i64)
 
 
-def sdl_write(arg_vals, arg_sdltys, ctx, newline=False):
+def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
     ''' Generate the IR for a write operation '''
     fmt = ""
     arg_values = []
 
-    for arg_val, arg_sdlty in zip(arg_vals, arg_sdltys):
-        basic_sdlty = ctx.basic_type_of(arg_sdlty)
+    for arg_val, arg_asn1ty in zip(arg_vals, arg_asn1tys):
+        basic_asn1ty = ctx.basic_asn1type_of(arg_asn1ty)
 
-        if basic_sdlty.kind in ['IntegerType', 'Integer32Type']:
+        if basic_asn1ty.kind in ['IntegerType', 'Integer32Type']:
             fmt += '% d'
             arg_values.append(arg_val)
 
-        elif basic_sdlty.kind == 'RealType':
+        elif basic_asn1ty.kind == 'RealType':
             fmt += '% .14E'
             arg_values.append(arg_val)
 
-        elif basic_sdlty.kind == 'BooleanType':
+        elif basic_asn1ty.kind == 'BooleanType':
             fmt += '%s'
 
             true_str_ptr = ctx.string_ptr('TRUE')
@@ -1775,14 +1775,14 @@ def sdl_write(arg_vals, arg_sdltys, ctx, newline=False):
 
             arg_values.append(str_ptr)
 
-        elif basic_sdlty.kind in ('StringType', 'StandardStringType'):
+        elif basic_asn1ty.kind in ('StringType', 'StandardStringType'):
             fmt += '%s'
             arg_values.append(arg_val)
 
-        elif basic_sdlty.kind == 'OctetStringType':
+        elif basic_asn1ty.kind == 'OctetStringType':
             fmt += '%.*s'
 
-            if basic_sdlty.Min == basic_sdlty.Max:
+            if basic_asn1ty.Min == basic_asn1ty.Max:
                 arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
                 count_val = core.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
             else:
