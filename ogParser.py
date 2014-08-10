@@ -1527,12 +1527,18 @@ def selector_expression(root, context):
 
     field_name = root.children[1].text.replace('_', '-').lower()
     try:
+        if receiver_bty.kind == 'ChoiceType':
+            errors.append(error(root, 'Wrong syntax for a CHOICE selector. '
+                                      'Use "var := {field}: value" instead of '
+                                      '"var!{field} := value"'
+                                      .format(field=field_name)))
         for n, f in receiver_bty.Children.viewitems():
             if n.lower() == field_name:
                 node.exprType = f.type
                 break
         else:
-            msg = 'Field "{}" not found in expression {}'.format(field_name)
+            msg = 'Field "{}" not found in expression {}'.format(field_name,
+                    receiver.inputString)
             errors.append(error(root, msg))
     except AttributeError:
         # When parsing for syntax or copy-paste, receiver_bty may
