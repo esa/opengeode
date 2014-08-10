@@ -1,14 +1,5 @@
 /* CIF PROCESS (150, 150), (150, 75) */
 PROCESS challenge;
-    /* CIF TEXT (922, 91), (298, 120) */
-    dcl count, actual_count CountTab;
-dcl pow_value T_UInt32 := 0;
-dcl check T_UInt8;
-
-dcl bitwise SeqBit;
-dcl bitwise2 SeqBit2;
-dcl boolwise t_Boolean;
-    /* CIF ENDTEXT */
     /* CIF TEXT (0, 26), (502, 179) */
     procedure test;
 fpar  in first t_UInt8,
@@ -20,10 +11,19 @@ dcl testvalue t_boolean := true;
 
 dcl nested Nested := {a {b {c {p {x 1, y 2}, l {3, 4}}}}};
     /* CIF ENDTEXT */
+    /* CIF TEXT (922, 91), (298, 120) */
+    dcl count, actual_count CountTab;
+dcl pow_value T_UInt32 := 0;
+dcl check T_UInt8;
+
+dcl bitwise SeqBit;
+dcl bitwise2 SeqBit2;
+dcl boolwise t_Boolean;
+    /* CIF ENDTEXT */
     /* CIF START (632, 24), (68, 37) */
     START;
-        /* CIF TASK (573, 76), (184, 72) */
-        TASK for x in range(count):
+        /* CIF TASK (556, 76), (218, 72) */
+        TASK for x in range(length(count)):
     count(x) := count_max
     actual_count(x) := 0
 endfor;
@@ -31,7 +31,7 @@ endfor;
         TASK nested := {a {b {c {p {x 1, y 2}, l {3, 4}}}}};
         /* CIF NEXTSTATE (631, 213), (70, 35) */
         NEXTSTATE Wait;
-    /* CIF STATE (757, 11), (68, 35) */
+    /* CIF STATE (756, 11), (68, 35) */
     STATE Wait;
     ENDSTATE;
     /* CIF STATE (631, 213), (70, 35) */
