@@ -1452,12 +1452,15 @@ def primary_index(root, context):
         if not is_integer(idx_bty):
             errors.append(error(root, 'Index is not an integer'))
         else:
-            if float(idx_bty.Min) < float(r_min) or\
-                    float(idx_bty.Max) >= float(r_max):
+            if float(idx_bty.Max) >= float(r_max):
                 errors.append(error(root,
-                                    'Index outside of range [{} .. <{}]'
-                                    .format(r_min,
-                                            r_max)))
+                                    'Index range [{id1} .. {id2}] '
+                                    'outside of range [0 .. <{r2}]'
+                                    .format(id1=idx_bty.Min, id2=idx_bty.Max,
+                                            r2=r_max)))
+            elif float(idx_bty.Min) > float(r_min):
+                warnings.append(warning(root,
+                                        'Index higher than range min value'))
     else:
         msg = 'Index can only be applied to type SequenceOf'
         errors.append(error(root, msg))
@@ -1528,7 +1531,7 @@ def selector_expression(root, context):
     field_name = root.children[1].text.replace('_', '-').lower()
     try:
         if receiver_bty.kind == 'ChoiceType':
-            errors.append(error(root, 'Wrong syntax for a CHOICE selector. '
+            warnings.append(error(root, 'Wrong syntax for a CHOICE selector. '
                                       'Use "var := {field}: value" instead of '
                                       '"var!{field} := value"'
                                       .format(field=field_name)))
@@ -3541,7 +3544,8 @@ def for_loop(root, context):
                     basic = find_basic_type(start_expr.exprType)
                     r_min = basic.Min if basic != UNKNOWN_TYPE else '0'
                 basic = find_basic_type(stop_expr.exprType)
-                r_max = basic.Max if basic != UNKNOWN_TYPE else '4294967295'
+                r_max = str(int(float(basic.Max) - 1)) \
+                        if basic != UNKNOWN_TYPE else '4294967295'
                 # basic may be UNKNOWN_TYPE if the expression is a
                 # reference to an ASN.1 constant - their values are not
                 # currently visible to the SDL parser
@@ -3714,6 +3718,9 @@ def pr_file(root):
         except (ImportError, NameError) as err:
             # Can happen if DataView.py is not there
             LOG.info('USE Clause did not contain ASN.1 filename')
+            LOG.debug(str(err))
+        except TypeError as err:
+            errors.append('ASN.1 compiler execution failed')
             LOG.debug(str(err))
 
     for child in systems:

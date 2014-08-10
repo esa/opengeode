@@ -57,7 +57,8 @@ Apart from pygraphviz, all of them exist for Linux, Windows, FreeBSD, and most l
 On Debian, Ubuntu, and probably other distributions:
 
 ```bash
-$ sudo apt-get install python-pyside pyside-tools graphviz pip gnat mono-runtime libmono-system-runtime4.0-cil
+$ sudo apt-get install python-pyside pyside-tools graphviz pip gnat mono-runtime libmono-system-runtime4.0-cil libmono-i18n-west2.0-cil libmono-posix2.0-cil libmono-security2.0-cil
+  libmono-system-runtime-serialization4.0-cil
 $ sudo pip install --upgrade graphviz enum34 singledispatch
 $ sudo pip install antlr_python_runtime --allow-external antlr_python_runtime --allow-unverified antlr_python_runtime
 ```
