@@ -2483,15 +2483,20 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.COMMENT:
             process.comment, _, _ = end(child)
         else:
-            warnings.append('Unsupported process definition child: ' +
+            warnings.append(['Unsupported process definition child: ' +
                              sdl92Parser.tokenNames[child.type] +
-                            ' - line ' + str(child.getLine()))
+                            ' - line ' + str(child.getLine()),
+                            [proc_x, proc_y], []])
     for proc, content in inner_proc:
         err, warn = procedure_post(proc, content, context=process)
         errors.extend(err)
         warnings.extend(warn)
     for each in chain(errors, warnings):
-        each[2].insert(0, 'PROCESS {}'.format(process.processName))
+        try:
+            each[2].insert(0, 'PROCESS {}'.format(process.processName))
+        except AttributeError as err:
+            LOG.debug(str(err))
+            LOG.error('Internal error - please report "{}"'.format(str(each)))
     errors.extend(perr)
     return process, errors, warnings
 
@@ -3476,6 +3481,9 @@ def assign(root, context):
         root.getCharPositionInLine()
     )
     expr.kind = 'assign'
+
+    if len(root.children) != 2:
+        errors.append('Syntax error: {}'.format(expr.inputString))
 
     if root.children[0].type == lexer.CALL:
         expr.left, err, warn = call_expression(root.children[0], context)
