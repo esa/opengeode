@@ -2948,6 +2948,9 @@ def alternative_part(root, parent, context):
     warnings = []
     ans = ogAST.Answer()
     coord = False
+    if root.type == lexer.ELSE:
+        # used when copy-pasting
+        ans.inputString = root.text
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
