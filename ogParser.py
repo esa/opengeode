@@ -1452,12 +1452,15 @@ def primary_index(root, context):
         if not is_integer(idx_bty):
             errors.append(error(root, 'Index is not an integer'))
         else:
-            if float(idx_bty.Min) < float(r_min) or\
-                    float(idx_bty.Max) >= float(r_max):
+            if float(idx_bty.Max) >= float(r_max):
                 errors.append(error(root,
-                                    'Index outside of range [{} .. <{}]'
-                                    .format(r_min,
-                                            r_max)))
+                                    'Index range [{id1} .. {id2}] '
+                                    'outside of range [0 .. <{r2}]'
+                                    .format(id1=idx_bty.Min, id2=idx_bty.Max,
+                                            r2=r_max)))
+            elif float(idx_bty.Min) > float(r_min):
+                warnings.append(warning(root,
+                                        'Index higher than range min value'))
     else:
         msg = 'Index can only be applied to type SequenceOf'
         errors.append(error(root, msg))
@@ -1527,12 +1530,18 @@ def selector_expression(root, context):
 
     field_name = root.children[1].text.replace('_', '-').lower()
     try:
+        if receiver_bty.kind == 'ChoiceType':
+            warnings.append(error(root, 'Wrong syntax for a CHOICE selector. '
+                                      'Use "var := {field}: value" instead of '
+                                      '"var!{field} := value"'
+                                      .format(field=field_name)))
         for n, f in receiver_bty.Children.viewitems():
             if n.lower() == field_name:
                 node.exprType = f.type
                 break
         else:
-            msg = 'Field "{}" not found in expression {}'.format(field_name)
+            msg = 'Field "{}" not found in expression {}'.format(field_name,
+                    receiver.inputString)
             errors.append(error(root, msg))
     except AttributeError:
         # When parsing for syntax or copy-paste, receiver_bty may
@@ -1782,6 +1791,7 @@ def composite_state(root, parent=None, context=None):
         comp.operators = dict(context.operators)
     except AttributeError:
         LOG.debug('Procedure context is undefined')
+    inner_proc = []
     # Gather the list of states defined in the composite state
     # and map a list of transitionsi to each state
     comp.mapping = {name: [] for name in get_state_list(root)}
@@ -1807,7 +1817,8 @@ def composite_state(root, parent=None, context=None):
             warnings.extend(warn)
             comp.content.textAreas.append(textarea)
         elif child.type == lexer.PROCEDURE:
-            new_proc, err, warn = procedure(child, context=comp)
+            new_proc, content, err, warn = procedure_pre(child, context=comp)
+            inner_proc.append((new_proc, content))
             errors.extend(err)
             warnings.extend(warn)
             if new_proc.inputString.strip().lower() == 'entry':
@@ -1855,6 +1866,11 @@ def composite_state(root, parent=None, context=None):
         errors.extend(err)
         warnings.extend(warn)
         comp.content.floating_labels.append(lab)
+    for proc, content in inner_proc:
+        # parse content of procedures - all scopes are set
+        err, warn = procedure_post(proc, content, context=comp)
+        errors.extend(err)
+        warnings.extend(warn)
     for each in states:
         # And parse the states after inner states to make sure all CONNECTS
         # are properly defined.
@@ -1875,9 +1891,49 @@ def composite_state(root, parent=None, context=None):
     return comp, errors, warnings
 
 
-def procedure(root, parent=None, context=None):
-    ''' Parse a procedure definition '''
+def procedure_pre(root, parent=None, context=None):
+    ''' Parse a procedure interface - the content has to be parsed after
+        all procedure interfaces are known, to prevent missing references '''
+    errors = []
+    warnings = []
     proc = ogAST.Procedure()
+    content = []
+
+    for child in root.getChildren():
+        if child.type == lexer.CIF:
+            # Get symbol coordinates
+            proc.pos_x, proc.pos_y, proc.width, proc.height = cif(child)
+        elif child.type == lexer.ID:
+            proc.line = child.getLine()
+            proc.charPositionInLine = child.getCharPositionInLine()
+            proc.inputString = child.toString()
+        elif child.type == lexer.COMMENT:
+            proc.comment, _, ___ = end(child)
+        elif child.type == lexer.TEXTAREA:
+            textarea, err, warn = text_area(child, context=proc)
+            errors.extend(err)
+            warnings.extend(warn)
+            proc.content.textAreas.append(textarea)
+        elif child.type == lexer.EXTERNAL:
+            proc.external = True
+        elif child.type == lexer.FPAR:
+            params, err, warn = fpar(child)
+            errors.extend(err)
+            warnings.extend(warn)
+            proc.fpar = params
+        elif child.type in (lexer.PROCEDURE, lexer.START,
+                            lexer.STATE, lexer.FLOATING_LABEL):
+            content.append(child)
+        else:
+            warnings.append(
+                    'Unsupported construct in procedure, type: ' +
+                    str(child.type) + ' - line ' + str(child.getLine()) +
+                    ' - string: ' + str(proc.inputString))
+    return proc, content, errors, warnings
+
+
+def procedure_post(proc, content, parent=None, context=None):
+    ''' Parse the content of a procedure '''
     errors = []
     warnings = []
     # Create a list of all inherited data
@@ -1895,57 +1951,38 @@ def procedure(root, parent=None, context=None):
     # Gather the list of states defined in the procedure
     # and create a mapping of transitions to each state
     # (Note, procedures in OG currently do NOT support states)
-    proc.mapping = {name: [] for name in get_state_list(root)}
-    for child in root.getChildren():
-        if child.type == lexer.CIF:
-            # Get symbol coordinates
-            proc.pos_x, proc.pos_y, proc.width, proc.height = cif(child)
-        elif child.type == lexer.ID:
-            proc.line = child.getLine()
-            proc.charPositionInLine = child.getCharPositionInLine()
-            proc.inputString = child.toString()
-        elif child.type == lexer.COMMENT:
-            proc.comment, _, ___ = end(child)
-        elif child.type == lexer.TEXTAREA:
-            textarea, err, warn = text_area(child, context=proc)
-            errors.extend(err)
-            warnings.extend(warn)
-            proc.content.textAreas.append(textarea)
-        elif child.type == lexer.PROCEDURE:
-            new_proc, err, warn = procedure(child, context=proc)
+    # proc.mapping = {name: [] for name in get_state_list(root)}
+    inner_proc = []
+    for child in content:
+        if child.type == lexer.PROCEDURE:
+            new_proc, content, err, warn = procedure_pre(child, context=proc)
+            inner_proc.append((new_proc, content))
             errors.extend(err)
             warnings.extend(warn)
             proc.content.inner_procedures.append(new_proc)
             # Add procedure to the context, to make it visible at scope level
             context.procedures.append(new_proc)
-        elif child.type == lexer.EXTERNAL:
-            proc.external = True
-        elif child.type == lexer.FPAR:
-            params, err, warn = fpar(child)
-            errors.extend(err)
-            warnings.extend(warn)
-            proc.fpar = params
         elif child.type == lexer.START:
             # START transition (fills the mapping structure)
             proc.content.start, err, warn = start(child, context=proc)
             errors.extend(err)
             warnings.extend(warn)
-        elif child.type == lexer.STATE:
-            # STATE - fills up the 'mapping' structure.
-            newstate, err, warn = state(child, parent=None, context=proc)
-            errors.extend(err)
-            warnings.extend(warn)
-            proc.content.states.append(newstate)
+#       elif child.type == lexer.STATE:
+#           # STATE - fills up the 'mapping' structure.
+#           newstate, err, warn = state(child, parent=None, context=proc)
+#           errors.extend(err)
+#           warnings.extend(warn)
+#           proc.content.states.append(newstate)
         elif child.type == lexer.FLOATING_LABEL:
             lab, err, warn = floating_label(child, parent=None, context=proc)
             errors.extend(err)
             warnings.extend(warn)
             proc.content.floating_labels.append(lab)
-        else:
-            warnings.append(
-                    'Unsupported construct in procedure, type: ' +
-                    str(child.type) + ' - line ' + str(child.getLine()) +
-                    ' - string: ' + str(proc.inputString))
+    for new_proc, content in inner_proc:
+        # parse content of procedures
+        err, warn = procedure_post(new_proc, content, context=proc)
+        errors.extend(err)
+        warnings.extend(warn)
     for each in proc.terminators:
         # check that RETURN statements type is correct
         if not proc.return_type and each.return_expr:
@@ -1969,6 +2006,17 @@ def procedure(root, parent=None, context=None):
             continue
     for each in chain(errors, warnings):
         each[2].insert(0, 'PROCEDURE {}'.format(proc.inputString))
+
+    return errors, warnings
+
+
+def procedure(root, parent=None, context=None):
+    ''' Parse a procedure - call sequentially the pre- and post- functions
+        This function is called by the syntax checker only '''
+    proc, content, errors, warnings = procedure_pre(root, parent, context)
+    err, warn = procedure_post(proc, content, parent, context)
+    errors.extend(err)
+    warnings.extend(warn)
     return proc, errors, warnings
 
 
@@ -2360,6 +2408,7 @@ def process_definition(root, parent=None, context=None):
     process.filename = node_filename(root)
     process.parent = parent
     proc_x, proc_y = 0, 0
+    inner_proc = []
     # Prepare the transition/state mapping
     process.mapping = {name: [] for name in get_state_list(root)}
     for child in root.getChildren():
@@ -2408,8 +2457,9 @@ def process_definition(root, parent=None, context=None):
             # Number of instances - discarded (working on a single process)
             pass
         elif child.type == lexer.PROCEDURE:
-            proc, err, warn = procedure(
+            proc, content, err, warn = procedure_pre(
                     child, parent=None, context=process)
+            inner_proc.append((proc, content))
             errors.extend(err)
             warnings.extend(warn)
             process.content.inner_procedures.append(proc)
@@ -2433,11 +2483,20 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.COMMENT:
             process.comment, _, _ = end(child)
         else:
-            warnings.append('Unsupported process definition child: ' +
+            warnings.append(['Unsupported process definition child: ' +
                              sdl92Parser.tokenNames[child.type] +
-                            ' - line ' + str(child.getLine()))
+                            ' - line ' + str(child.getLine()),
+                            [proc_x, proc_y], []])
+    for proc, content in inner_proc:
+        err, warn = procedure_post(proc, content, context=process)
+        errors.extend(err)
+        warnings.extend(warn)
     for each in chain(errors, warnings):
-        each[2].insert(0, 'PROCESS {}'.format(process.processName))
+        try:
+            each[2].insert(0, 'PROCESS {}'.format(process.processName))
+        except AttributeError as err:
+            LOG.debug(str(err))
+            LOG.error('Internal error - please report "{}"'.format(str(each)))
     errors.extend(perr)
     return process, errors, warnings
 
@@ -3423,6 +3482,9 @@ def assign(root, context):
     )
     expr.kind = 'assign'
 
+    if len(root.children) != 2:
+        errors.append('Syntax error: {}'.format(expr.inputString))
+
     if root.children[0].type == lexer.CALL:
         expr.left, err, warn = call_expression(root.children[0], context)
     elif root.children[0].type == lexer.SELECTOR:
@@ -3535,7 +3597,8 @@ def for_loop(root, context):
                     basic = find_basic_type(start_expr.exprType)
                     r_min = basic.Min if basic != UNKNOWN_TYPE else '0'
                 basic = find_basic_type(stop_expr.exprType)
-                r_max = basic.Max if basic != UNKNOWN_TYPE else '4294967295'
+                r_max = str(int(float(basic.Max) - 1)) \
+                        if basic != UNKNOWN_TYPE else '4294967295'
                 # basic may be UNKNOWN_TYPE if the expression is a
                 # reference to an ASN.1 constant - their values are not
                 # currently visible to the SDL parser
@@ -3708,6 +3771,9 @@ def pr_file(root):
         except (ImportError, NameError) as err:
             # Can happen if DataView.py is not there
             LOG.info('USE Clause did not contain ASN.1 filename')
+            LOG.debug(str(err))
+        except TypeError as err:
+            errors.append('ASN.1 compiler execution failed')
             LOG.debug(str(err))
 
     for child in systems:

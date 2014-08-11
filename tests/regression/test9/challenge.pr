@@ -1,14 +1,5 @@
 /* CIF PROCESS (150, 150), (150, 75) */
 PROCESS challenge;
-    /* CIF TEXT (922, 91), (298, 120) */
-    dcl count, actual_count CountTab;
-dcl pow_value T_UInt32 := 0;
-dcl check T_UInt8;
-
-dcl bitwise SeqBit;
-dcl bitwise2 SeqBit2;
-dcl boolwise t_Boolean;
-    /* CIF ENDTEXT */
     /* CIF TEXT (0, 26), (502, 179) */
     procedure test;
 fpar  in first t_UInt8,
@@ -20,29 +11,38 @@ dcl testvalue t_boolean := true;
 
 dcl nested Nested := {a {b {c {p {x 1, y 2}, l {3, 4}}}}};
     /* CIF ENDTEXT */
-    /* CIF START (672, 14), (68, 37) */
+    /* CIF TEXT (922, 91), (298, 120) */
+    dcl count, actual_count CountTab;
+dcl pow_value T_UInt32 := 0;
+dcl check T_UInt8;
+
+dcl bitwise SeqBit;
+dcl bitwise2 SeqBit2;
+dcl boolwise t_Boolean;
+    /* CIF ENDTEXT */
+    /* CIF START (632, 24), (68, 37) */
     START;
-        /* CIF TASK (613, 66), (184, 72) */
-        TASK for x in count:
+        /* CIF TASK (556, 76), (218, 72) */
+        TASK for x in range(length(count)):
     count(x) := count_max
     actual_count(x) := 0
 endfor;
-        /* CIF TASK (557, 153), (298, 35) */
+        /* CIF TASK (517, 163), (298, 35) */
         TASK nested := {a {b {c {p {x 1, y 2}, l {3, 4}}}}};
-        /* CIF NEXTSTATE (671, 203), (70, 35) */
+        /* CIF NEXTSTATE (631, 213), (70, 35) */
         NEXTSTATE Wait;
-    /* CIF STATE (759, 11), (68, 35) */
+    /* CIF STATE (756, 11), (68, 35) */
     STATE Wait;
     ENDSTATE;
-    /* CIF STATE (671, 203), (70, 35) */
+    /* CIF STATE (631, 213), (70, 35) */
     STATE Wait;
-        /* CIF INPUT (671, 258), (70, 35) */
+        /* CIF INPUT (631, 268), (70, 35) */
         INPUT run;
-            /* CIF PROCEDURECALL (622, 308), (166, 35) */
+            /* CIF PROCEDURECALL (582, 318), (166, 35) */
             CALL writeln('Computing');
-            /* CIF TASK (499, 358), (412, 216) */
+            /* CIF TASK (443, 368), (444, 216) */
             TASK for x in range(exceed_nb):
-    for n in range(nb_bit):
+    for n in range(20): -- can't use nb_bit: asn1 constants are not visible
         call pow(2, n, pow_value);
         check := if val_max - x>0 and pow_value>0 then 1 else 0 fi
         bitwise := bitwise and bitwise
@@ -54,7 +54,7 @@ endfor;
         call test((n+1) mod 255, testvalue);
     endfor
 endfor;
-            /* CIF NEXTSTATE (671, 589), (70, 35) */
+            /* CIF NEXTSTATE (631, 599), (70, 35) */
             NEXTSTATE wait;
     ENDSTATE;
 ENDPROCESS challenge;

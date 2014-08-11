@@ -23,8 +23,8 @@ Features
 - Graphical editor of SDL processes and procedures.
 - SDL2010 features: FOR loops in task symbols, hierarchical states 
 - Works on pure PR+CIF files (textual SDL notation) - no fancy proprietary save format
-- Supports ASN.1 data types, including the Value notation - check this page to know more about our ASN.1 compiler and tools 
-- Generates Ada code with ASN.1 types using TASTE ASN.1 "space-certified" (SPARK) compiler 
+- Full supports ASN.1 data types - using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)  
+- Generates Ada code
 - Extensive syntax and semantic checks 
 - Automatic conversion to Statechart diagrams 
 - Save the complete or parts of the model to PNG/SVG/PDF files
@@ -34,6 +34,7 @@ Features
 - Syntax highlighting 
 - Undo/Redo, Copy-Paste 
 - (Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern
+- (In progress) SDL to LLVM code generation
 
 Installation
 ============
@@ -41,46 +42,46 @@ Installation
 Pre-requisites
 --------------
 
-There are three major dependencies for OpenGEODE:
+There are several dependencies for OpenGEODE:
+Apart from pygraphviz, all of them exist for Linux, Windows, FreeBSD, and most likely Mac OSX
 
+- Python 2.7 with pip
 - Pyside (the Qt bindings for Python)
 - Python ANTLR Runtime
 - PyGraphviz (Linux only - not available on Windows)
+- enum34, singledispatch
+- ASN1SCC
+- (optional) GNAT to build the generated Ada code
+- mono
 
-If you use pip to install OpenGEODE, these dependencies should be installed
-automatically. However, note that installing PySide from pip requires some
-work and is not straightforward.
-
-If you are using a Linux Debian-based distribution (including Ubuntu),
-I would recommended to install PySide using your package manager:
-You should also install pygraphviz using the same method, for convenience.
+On Debian, Ubuntu, and probably other distributions:
 
 ```bash
-$ sudo apt-get install python-pyside pyside-tools python-pygraphviz pip
+$ sudo apt-get install python-pyside pyside-tools graphviz pip gnat mono-runtime libmono-system-runtime4.0-cil libmono-i18n-west2.0-cil libmono-posix2.0-cil libmono-security2.0-cil
+  libmono-system-runtime-serialization4.0-cil
+$ sudo pip install --upgrade graphviz enum34 singledispatch
+$ sudo pip install antlr_python_runtime --allow-external antlr_python_runtime --allow-unverified antlr_python_runtime
 ```
 
-The Python 2.7 ANTLR 3.1.3 runtime is not part of Debian packages. Install
-it with pip (or download and install manually the package):
+To install the ASN.1 compiler:
 
 ```bash
-$ pip install antlr_python_runtime singledispatch
+$ cd /opt
+$ sudo wget http://www.semantix.gr/asn1scc/asn1Comp.tar.gz
+$ sudo tar zxvf asn1Comp.tar.gz
+$ echo 'export PATH=$PATH:/opt/asn1Comp/bin' >> ~/.bashrc
 ```
 
-On Windows:
+Check that it works:
 
-You need to download and install Python, Pyside, and pip (binaries are
-available on respective websites)
+```bash
+$ asn1.exe
+```
 
-On FreeBSD:
+OpenGEODE installation
+----------------------
 
-PySide is available through the ports.
-You can also use easy_install to install it.
-Use pip to install the ANTLR runtime (see above)
-
-Automatic installation (recommended)
-------------------------------------
-
-To install the application on your machine:
+To install the application on your machine, once all dependencies are met:
 
 ```bash
 $ pip install --upgrade opengeode
@@ -88,30 +89,13 @@ $ pip install --upgrade opengeode
 
 This is sufficient to get opengeode running
 
-In addition OpenGEODE is capable of generating code for embedded, real-
-time systems in the Ada programming language, with compact and efficient
-data manipulation and binary encoding using the ASN.1 notation.
-
-To get the full benefits of SDL and OpenGEODE, consider installing
-TASTE, that is a complete development environment dedicated to
-real-time, embedded systems from the European Space Agency.
-
-TASTE also allows the transparent integration and communication between
-models developed by commercial tools such as Matlab-Simulink and 
-Real-Time Developer Studio.
-
 Installation from source
 ------------------------
 
 You can get the source from the TASTE repositories or from GitHub
 
 ```bash
-$ svn co https://tecsw.estec.esa.int/svn/taste/trunk/misc/opengeode opengeode
-```
-
-Or
-```bash
-$ git clone https://github.com/maxime-esa/opengeode.git opengeode
+$ git clone https://github.com/maxime-esa/opengeode.git
 ``` 
 
 Then enter the opengeode directory and as root, type:
@@ -120,6 +104,8 @@ Then enter the opengeode directory and as root, type:
 $ make install
 ```
 
+Installation is optional. You can simply run opengeode.py to get it work.
+
 Information and contact
 =======================
 
@@ -127,8 +113,15 @@ OpenGEODE is part of the TASTE project.
 
 Find more information and download at http://taste.tuxfamily.org
 
-OpenGEODE is developed and maintained by Maxime Perrotin
+TASTE allows to create embedded software systems that combine SDL models with C, Ada,
+Matlab-Simulink and a few other languages or tools.
+
+OpenGEODE is mainly designed, developed and maintained by Maxime Perrotin
 maxime (dot) perrotin (at) esa (dot) int
+
+The LLVM backend was designed and implemented by Diego Barbera during the ESA Summer of Code 2014
+
+Some parts have been implemented by Laurent Meyer (native SDL type support in the parser)
 
 The background pattern was downloaded from www.subtlepatterns.com
 

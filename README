@@ -11,15 +11,50 @@ Developer documentation is provided in docstrings in the Python modules.
 
 License is LGPL (see file LICENSE)
 
-You need Pyside and ANTLR 3.1.3 runtimes to be able to use this Python module
-On Debian, Ubuntu: 
-$ apt-get install python-pyside pip
-$ pip install antlr_python_runtime
+You need to install the following dependencies before you can run Opengeode:
 
-Also tested on Windows and FreeBSD - use pip to install antlr-python-runtime.
-Install Pyside from the Windows binary or from FreeBSD ports.
+- Python 2.7
+  installed on all Linux distributions ; on Windows you need to install it manually
 
-On Windows, you also need to install Python 2.7 manually.
+- PySide
+  on debian-based Linux run:
+  $ sudo apt-get install python-pyside
+  on windows and mac, download and run the automatic installer from Qt
+
+- pip for Python2
+  on debian-based Linux run:
+  $ sudo apt-get install python-pip
+  on windows and mac, download and use the automatic installer
+
+- enum34, singledispatch, graphviz, antlr runtime
+  graphviz core needs to be installed from the Linux repos first:
+  $ sudo apt-get install graphviz
+
+  Then using pip, install the python libraries:
+  $ sudo pip install --upgrade graphviz enum34 singledispatch
+  $ sudo pip install antlr_python_runtime --allow-external antlr_python_runtime --allow-unverified antlr_python_runtime
+
+  * Note: graphviz for python cannot be installed on Windows
+
+- ASN1SCC - the ASN.1 compiler
+  Download here: http://www.semantix.gr/asn1scc/asn1Comp.tar.gz
+  It is a .NET application, it can be installed on Windows and Linux (you need mono)
+  Make sure asn1.exe is in the path
+  On linux :
+    $ cd /opt
+    $ sudo wget http://www.semantix.gr/asn1scc/asn1Comp.tar.gz
+    $ sudo tar zxvf asn1Comp.tar.gz
+    $ sudo apt-get install mono-runtime libmono-system-runtime4.0-cil libmono-i18n-west2.0-cil libmono-posix2.0-cil libmono-security2.0-cil
+  libmono-system-runtime-serialization4.0-cil
+    Check that it works:
+    $ asn1Comp/bin/asn1.exe
+
+    Then add to your PATH the bin directory in e.g. your .bashrc file
+    $ echo 'export PATH=$PATH:/opt/asn1Comp/bin' >> ~/.bashrc
+
+- gnat - if you want to build the code you generate in Ada
+  $ sudo apt-get install gnat
+
 
 To make a static binary on Linux with pyinstaller 2.0:
  python pyinstaller.py ../../opengeode.py --onefile
