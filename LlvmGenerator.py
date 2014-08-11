@@ -151,7 +151,7 @@ class Context():
         elif basic_asn1ty.kind in ('StringType', 'StandardStringType'):
             llty = self.i8_ptr
         else:
-            raise NotImplementedError
+            raise CompileError('Unknown basic ASN.1 type "%s"' % basic_asn1ty.kind)
 
         if name:
             self.lltypes[name] = llty
@@ -1138,8 +1138,8 @@ def _expr_append(expr, ctx):
 
         return res_ptr
 
-    else:
-        raise NotImplementedError
+    raise CompileError('Type "%s" not supported in append expressions'
+        % basic_asn1ty.kind)
 
 
 @expression.register(ogAST.ExprIn)
