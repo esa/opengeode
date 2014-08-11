@@ -21,7 +21,7 @@ test-ada:
 
 test-llvm:
 	../../../opengeode.py myfunction.pr system_structure.pr --check --llvm
-	asn1.exe -c dataview-uniq.asn -equal
+	asn1.exe -c dataview-uniq.asn -equal -typePrefix asn1Scc
 	llc myfunction.ll
 	clang -c myfunction.s
 	clang -c dataview-uniq.c
