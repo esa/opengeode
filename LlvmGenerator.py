@@ -669,19 +669,22 @@ def generate_for_iterable(loop, ctx):
 
     idx_ptr = ctx.builder.alloca(ctx.i32)
     ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
-    seqof_struct_ptr = expression(loop['list'], ctx)
+    seqof_val = expression(loop['list'], ctx)
 
-    if is_variable_size:
-        # In variable size SequenceOfs the array values are in the second field
-        array_ptr = ctx.builder.gep(seqof_struct_ptr, [ctx.zero, ctx.one])
+    if isinstance(seqof_val, SDLSubstringValue):
+        array_ptr = seqof_val.arr_ptr
+    elif is_variable_size:
+        array_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.one])
     else:
-        array_ptr = ctx.builder.gep(seqof_struct_ptr, [ctx.zero, ctx.zero])
+        array_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero])
 
     elem_llty = array_ptr.type.pointee.element
 
-    if is_variable_size:
+    if isinstance(seqof_val, SDLSubstringValue):
+        end_idx = seqof_val.count_val
+    elif is_variable_size:
         # load the current number of elements that is on the first field
-        end_idx = ctx.builder.load(ctx.builder.gep(seqof_struct_ptr, [ctx.zero, ctx.zero]))
+        end_idx = ctx.builder.load(ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero]))
     else:
         end_idx = core.Constant.int(ctx.i32, array_ptr.type.pointee.count)
 
@@ -751,18 +754,43 @@ def _prim_selector_reference(prim, ctx):
 @reference.register(ogAST.PrimIndex)
 def _prim_index_reference(prim, ctx):
     ''' Generate the IR for an index reference '''
-    receiver_ptr = reference(prim.value[0], ctx)
+    receiver_val = reference(prim.value[0], ctx)
     idx_val = expression(prim.value[1]['index'][0], ctx)
 
-    array_ptr = ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.zero])
+    basic_asn1ty = ctx.basic_asn1type_of(prim.value[0].exprType)
 
-    # TODO: Refactor this
-    if array_ptr.type.pointee.kind != core.TYPE_ARRAY:
-        # If is not an array this is a pointer to a variable size SeqOf
-        # The array is in the second field of the struct
-        return ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.one, idx_val])
+    if isinstance(receiver_val, SDLSubstringValue):
+        return ctx.builder.gep(receiver_val.arr_ptr, [ctx.zero, idx_val])
+    elif basic_asn1ty.Min == basic_asn1ty.Max:
+        return ctx.builder.gep(receiver_val, [ctx.zero, ctx.zero, idx_val])
     else:
-        return ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.zero, idx_val])
+        return ctx.builder.gep(receiver_val, [ctx.zero, ctx.one, idx_val])
+
+
+@reference.register(ogAST.PrimSubstring)
+def _prim_substring_reference(prim, ctx):
+    ''' Generate hte IR for a substring reference '''
+    asn1ty = prim.exprType
+    basic_asn1ty = ctx.basic_asn1type_of(asn1ty)
+
+    seqof_val = expression(prim.value[0], ctx)
+
+    low_val = expression(prim.value[1]['substring'][0], ctx)
+    high_val = expression(prim.value[1]['substring'][1], ctx)
+    count_val = ctx.builder.sub(high_val, low_val)
+    count_val = ctx.builder.add(count_val, core.Constant.int(ctx.i64, 1))
+    count_val = ctx.builder.trunc(count_val, ctx.i32)
+
+    if isinstance(seqof_val, SDLSubstringValue):
+        arr_ptr = seqof_val.arr_ptr
+    elif basic_asn1ty.Min == basic_asn1ty.Max:
+        arr_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero])
+    else:
+        arr_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.one])
+
+    arr_ptr = ctx.builder.gep(arr_ptr, [low_val])
+
+    return SDLSubstringValue(arr_ptr, count_val, asn1ty)
 
 
 @singledispatch
@@ -1070,32 +1098,40 @@ def _expr_append(expr, ctx):
         res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
 
         left_ptr = expression(expr.left, ctx)
-        left_len_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.zero])
-        left_arr_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.one])
-        left_len_val = ctx.builder.load(left_len_ptr)
+        if isinstance(left_ptr, SDLSubstringValue):
+            left_arr_ptr = left_ptr.arr_ptr
+            left_count_val = left_ptr.count_val
+        else:
+            left_len_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.zero])
+            left_arr_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.one])
+            left_count_val = ctx.builder.load(left_len_ptr)
 
         right_ptr = expression(expr.right, ctx)
-        right_len_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero])
-        right_arr_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.one])
-        right_len_val = ctx.builder.load(right_len_ptr)
+        if isinstance(right_ptr, SDLSubstringValue):
+            right_arr_ptr = right_ptr.arr_ptr
+            right_count_val = right_ptr.count_val
+        else:
+            right_len_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero])
+            right_arr_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.one])
+            right_count_val = ctx.builder.load(right_len_ptr)
 
-        res_len_val = ctx.builder.add(left_len_val, right_len_val)
+        res_len_val = ctx.builder.add(left_count_val, right_count_val)
         ctx.builder.store(res_len_val, res_len_ptr)
 
         sdl_call('memcpy', [
             ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
             ctx.builder.bitcast(left_arr_ptr, ctx.i8_ptr),
-            ctx.builder.mul(elem_size_val, ctx.builder.zext(left_len_val, ctx.i64)),
+            ctx.builder.mul(elem_size_val, ctx.builder.zext(left_count_val, ctx.i64)),
             core.Constant.int(ctx.i32, 0),
             core.Constant.int(ctx.i1, 0)
         ], ctx)
 
-        res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one, left_len_val])
+        res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one, left_count_val])
 
         sdl_call('memcpy', [
             ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
             ctx.builder.bitcast(right_arr_ptr, ctx.i8_ptr),
-            ctx.builder.mul(elem_size_val, ctx.builder.zext(right_len_val, ctx.i64)),
+            ctx.builder.mul(elem_size_val, ctx.builder.zext(right_count_val, ctx.i64)),
             core.Constant.int(ctx.i32, 0),
             core.Constant.int(ctx.i1, 0)
         ], ctx)
@@ -1115,22 +1151,24 @@ def _expr_in(expr, ctx):
     check_block = func.append_basic_block('in:check')
     end_block = func.append_basic_block('in:end')
 
-    seq_basic_asn1ty = ctx.basic_asn1type_of(expr.left.exprType)
-    elem_asn1ty = seq_basic_asn1ty.type
+    seqof_basic_asn1ty = ctx.basic_asn1type_of(expr.left.exprType)
+    elem_asn1ty = seqof_basic_asn1ty.type
 
-    is_variable_size = seq_basic_asn1ty.Min != seq_basic_asn1ty.Max
+    is_variable_size = seqof_basic_asn1ty.Min != seqof_basic_asn1ty.Max
 
     idx_ptr = ctx.builder.alloca(ctx.i32)
     ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
 
     value_val = expression(expr.right, ctx)
-    struct_ptr = expression(expr.left, ctx)
+    seqof_val = expression(expr.left, ctx)
 
-    if is_variable_size:
+    if isinstance(seqof_val, SDLSubstringValue):
+        end_idx = seqof_val.count_val
+    elif is_variable_size:
         # load the current number of elements from the first field
-        end_idx = ctx.builder.load(ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero]))
+        end_idx = ctx.builder.load(ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero]))
     else:
-        array_llty = struct_ptr.type.pointee.elements[0]
+        array_llty = seqof_val.type.pointee.elements[0]
         end_idx = core.Constant.int(ctx.i32, array_llty.count)
 
     ctx.builder.branch(check_block)
@@ -1138,10 +1176,12 @@ def _expr_in(expr, ctx):
     ctx.builder.position_at_end(check_block)
     idx_val = ctx.builder.load(idx_ptr)
 
-    if is_variable_size:
-        elem_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one, idx_val])
+    if isinstance(seqof_val, SDLSubstringValue):
+        elem_ptr = ctx.builder.gep(seqof_val.arr_ptr, [ctx.zero, idx_val])
+    elif is_variable_size:
+        elem_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.one, idx_val])
     else:
-        elem_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero, idx_val])
+        elem_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero, idx_val])
 
     if is_struct_ptr(elem_ptr):
         cond_val = sdl_equals(value_val, elem_ptr, elem_asn1ty, ctx)
@@ -1185,38 +1225,7 @@ def _prim_index(prim, ctx):
 @expression.register(ogAST.PrimSubstring)
 def _prim_substring(prim, ctx):
     ''' Generate the IR for a substring expression '''
-    basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
-    if basic_asn1ty.Min == basic_asn1ty.Max:
-        raise NotImplementedError
-
-    range_l_val = expression(prim.value[1]['substring'][0], ctx)
-    range_r_val = expression(prim.value[1]['substring'][1], ctx)
-    len_val = ctx.builder.sub(range_r_val, range_l_val)
-
-    recvr_ptr = expression(prim.value[0], ctx)
-    recvr_arr_ptr = ctx.builder.gep(recvr_ptr, [ctx.zero, ctx.one, range_l_val])
-
-    recvr_llty = recvr_ptr.type.pointee
-    elem_llty = recvr_llty.elements[1].element
-
-    res_ptr = ctx.builder.alloca(recvr_llty)
-    res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
-    res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
-
-    ctx.builder.store(ctx.builder.trunc(len_val, ctx.i32), res_len_ptr)
-
-    elem_size_val = core.Constant.sizeof(elem_llty)
-
-    size = ctx.builder.mul(elem_size_val, len_val)
-    align = core.Constant.int(ctx.i32, 0)
-    volatile = core.Constant.int(ctx.i1, 0)
-
-    recvr_arr_ptr = ctx.builder.bitcast(recvr_arr_ptr, ctx.i8_ptr)
-    res_arr_ptr = ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr)
-
-    sdl_call('memcpy', [res_arr_ptr, recvr_arr_ptr, size, align, volatile], ctx)
-
-    return res_ptr
+    return reference(prim, ctx)
 
 
 @expression.register(ogAST.PrimCall)
@@ -1654,12 +1663,43 @@ def is_array_ptr(val):
 
 
 ################################################################################
+# Values
+
+
+class SDLSubstringValue():
+    def __init__(self, arr_ptr, count_val, asn1ty):
+        self.arr_ptr = arr_ptr
+        self.count_val = count_val
+        self.asn1ty = asn1ty
+
+
+################################################################################
 # Operators
 
 
 def sdl_assign(a_ptr, b_val, ctx):
     ''' Generate the IR for an Assign operation '''
-    if is_struct_ptr(a_ptr) or is_array_ptr(a_ptr):
+    if isinstance(b_val, SDLSubstringValue):
+        basic_asn1ty = ctx.basic_asn1type_of(b_val.asn1ty)
+
+        size = ctx.builder.zext(b_val.count_val, ctx.i64)
+        align = core.Constant.int(ctx.i32, 0)
+        volatile = core.Constant.int(ctx.i1, 0)
+
+        a_count_ptr = ctx.builder.gep(a_ptr, [ctx.zero, ctx.zero])
+        if basic_asn1ty.Min == basic_asn1ty.Max:
+            a_arr_ptr = ctx.builder.gep(a_ptr, [ctx.zero, ctx.zero])
+        else:
+            a_arr_ptr = ctx.builder.gep(a_ptr, [ctx.zero, ctx.one])
+
+        a_arr_ptr = ctx.builder.bitcast(a_arr_ptr, ctx.i8_ptr)
+        b_arr_ptr = ctx.builder.bitcast(b_val.arr_ptr, ctx.i8_ptr)
+
+        sdl_call('memcpy', [a_arr_ptr, b_arr_ptr, size, align, volatile], ctx)
+        if basic_asn1ty.Min != basic_asn1ty.Max:
+            ctx.builder.store(b_val.count_val, a_count_ptr)
+
+    elif is_struct_ptr(a_ptr) or is_array_ptr(a_ptr):
         size = core.Constant.sizeof(a_ptr.type.pointee)
         align = core.Constant.int(ctx.i32, 0)
         volatile = core.Constant.int(ctx.i1, 0)
@@ -1668,6 +1708,7 @@ def sdl_assign(a_ptr, b_val, ctx):
         b_ptr = ctx.builder.bitcast(b_val, ctx.i8_ptr)
 
         sdl_call('memcpy', [a_ptr, b_ptr, size, align, volatile], ctx)
+
     else:
         ctx.builder.store(b_val, a_ptr)
 
@@ -1700,7 +1741,10 @@ def sdl_not_equals(a_val, b_val, asn1ty, ctx):
 def sdl_length(s_ptr, s_asn1ty, ctx):
     ''' Generate the IR for a length operation '''
     s_basic_asn1ty = ctx.basic_asn1type_of(s_asn1ty)
-    if s_basic_asn1ty.Min != s_basic_asn1ty.Max:
+
+    if isinstance(s_ptr, SDLSubstringValue):
+        return ctx.builder.zext(s_ptr.count_val, ctx.i64)
+    elif s_basic_asn1ty.Min != s_basic_asn1ty.Max:
         len_ptr = ctx.builder.gep(s_ptr, [ctx.zero, ctx.zero])
         return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
     else:
@@ -1782,12 +1826,15 @@ def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
         elif basic_asn1ty.kind == 'OctetStringType':
             fmt += '%.*s'
 
-            if basic_asn1ty.Min == basic_asn1ty.Max:
+            if isinstance(arg_val, SDLSubstringValue):
+                arr_ptr = arg_val.arr_ptr
+                count_val = arg_val.count_val
+            elif basic_asn1ty.Min == basic_asn1ty.Max:
                 arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
                 count_val = core.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
             else:
-                count_val = ctx.builder.load(ctx.builder.gep(arg_val, [ctx.zero, ctx.zero]))
                 arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.one])
+                count_val = ctx.builder.load(ctx.builder.gep(arg_val, [ctx.zero, ctx.zero]))
 
             arg_values.append(count_val)
             arg_values.append(arr_ptr)
