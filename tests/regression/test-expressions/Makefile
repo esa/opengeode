@@ -16,6 +16,16 @@ test-ada:
 	gnatlink test_ada.o expressions.ali -lgnat -lm -o testcase
 	./testcase
 
+test-llvm:
+	../../../opengeode.py expressions.pr system_structure.pr --check --llvm
+	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	llc expressions.ll
+	clang -c expressions.s
+	clang -c dataview-uniq.c
+	clang -c test_llvm.c
+	clang expressions.o dataview-uniq.o test_llvm.o -o testcase
+	./testcase
+
 clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
 	bin *.wrn *.gpr testcase *.ll *.s dataview-uniq.c dataview-uniq.h real.c xer.c \

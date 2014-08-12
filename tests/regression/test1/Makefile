@@ -1,4 +1,4 @@
-all: test-ada
+all: test-ada test-llvm
 
 edit:
 	../../../opengeode.py og.pr system_structure.pr
@@ -11,8 +11,14 @@ test-ada:
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
 	gnatmake -c og.adb
 
+test-llvm:
+	../../../opengeode.py og.pr system_structure.pr --llvm
+	llc og.ll
+	gcc -c og.s
+
 coverage:
 	coverage run -p ../../../opengeode.py og.pr system_structure.pr --toAda
 
 clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner bin *.wrn *.gpr
+	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
+	bin *.wrn *.gpr testcase *.ll *.s

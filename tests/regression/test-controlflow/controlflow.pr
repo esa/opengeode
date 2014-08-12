@@ -1,0 +1,130 @@
+/* CIF PROCESS (151, 149), (150, 75) */
+PROCESS controlflow;
+    /* CIF TEXT (376, 97), (303, 168) */
+    -- Declare your variables
+
+-- Syntax: DCL <variable name> <type name>;
+
+DCL n Integer;
+DCL b Boolean;
+DCL seq1 IntegerSeqOf;
+DCL seq2 IntegerSeqOf;
+    /* CIF ENDTEXT */
+    /* CIF START (3, 0), (70, 35) */
+    START;
+        /* CIF NEXTSTATE (3, 50), (70, 35) */
+        NEXTSTATE Wait;
+    /* CIF LABEL (2, 1904), (75, 35) */
+    CONNECTION label2:
+        /* CIF PROCEDURECALL (-28, 1954), (136, 35) */
+        CALL writeln('label2');
+        /* CIF LABEL (2, 2004), (75, 35) */
+        label3:
+        /* CIF PROCEDURECALL (-28, 2054), (136, 35) */
+        CALL writeln('label3');
+        /* CIF NEXTSTATE (5, 2104), (70, 35) */
+        NEXTSTATE wait;
+    /* CIF End Label */
+    ENDCONNECTION;
+    /* CIF LABEL (0, 1747), (78, 35) */
+    CONNECTION label1:
+        /* CIF PROCEDURECALL (-31, 1797), (141, 35) */
+        CALL writeln('label1');
+        /* CIF JOIN (21, 1847), (35, 35) */
+        JOIN label2;
+    /* CIF End Label */
+    ENDCONNECTION;
+    /* CIF STATE (3, 50), (70, 35) */
+    STATE Wait;
+        /* CIF INPUT (3, 105), (70, 35) */
+        INPUT run;
+            /* CIF TASK (-133, 155), (343, 35) */
+            TASK '------------------------------- Decision -------------------------------';
+            /* CIF TASK (2, 205), (70, 35) */
+            TASK n := 2;
+            /* CIF DECISION (3, 255), (70, 50) */
+            DECISION n;
+                    /* CIF ANSWER (-107, 325), (70, 24) */
+                    (1):
+                        /* CIF PROCEDURECALL (-148, 364), (153, 35) */
+                        CALL fail('decision else');
+                    /* CIF ANSWER (114, 325), (70, 24) */
+                    else:
+            ENDDECISION;
+            /* CIF DECISION (3, 414), (70, 50) */
+            DECISION n;
+                    /* CIF ANSWER (-143, 474), (70, 24) */
+                    (1):
+                        /* CIF PROCEDURECALL (-200, 513), (184, 35) */
+                        CALL fail( 'decision constant');
+                    /* CIF ANSWER (3, 474), (70, 24) */
+                    (2):
+                    /* CIF ANSWER (165, 474), (70, 24) */
+                    else:
+                        /* CIF PROCEDURECALL (107, 513), (184, 35) */
+                        CALL fail( 'decision constant');
+            ENDDECISION;
+            /* CIF DECISION (3, 563), (70, 50) */
+            DECISION n;
+                    /* CIF ANSWER (-79, 623), (70, 24) */
+                    (<2):
+                        /* CIF PROCEDURECALL (-142, 662), (197, 35) */
+                        CALL fail('decision open range');
+                    /* CIF ANSWER (95, 623), (70, 24) */
+                    (>1):
+            ENDDECISION;
+            /* CIF DECISION (3, 712), (70, 50) */
+            DECISION n;
+                    /* CIF ANSWER (-171, 772), (70, 24) */
+                    (-1:1):
+                        /* CIF PROCEDURECALL (-247, 811), (223, 35) */
+                        CALL fail('decision closed range');
+                    /* CIF ANSWER (3, 772), (70, 24) */
+                    (2:5):
+                    /* CIF ANSWER (177, 772), (70, 24) */
+                    else:
+                        /* CIF PROCEDURECALL (109, 811), (205, 35) */
+                        CALL fail('decision closed range');
+            ENDDECISION;
+            /* CIF TASK (-136, 861), (348, 35) */
+            TASK '------------------------------- For loops -------------------------------';
+            /* CIF TASK (2, 911), (70, 35) */
+            TASK n := 0;
+            /* CIF TASK (-45, 961), (167, 56) */
+            TASK for x in range(10):
+   n := n + x mod 255
+endfor;
+            /* CIF PROCEDURECALL (-80, 1032), (237, 35) */
+            CALL assert(n = 45, 'for x in range(10)');
+            /* CIF TASK (2, 1082), (70, 35) */
+            TASK n := 0;
+            /* CIF TASK (-45, 1132), (167, 56) */
+            TASK for x in range(4, 10):
+   n := n + x mod 255
+endfor;
+            /* CIF PROCEDURECALL (-87, 1203), (251, 35) */
+            CALL assert(n = 39, 'for x in range(4, 10)');
+            /* CIF TASK (2, 1253), (70, 35) */
+            TASK n := 0;
+            /* CIF TASK (-66, 1303), (208, 56) */
+            TASK for x in range(4, 10, 2):
+    n := n + x mod 255
+endfor;
+            /* CIF PROCEDURECALL (-96, 1374), (269, 35) */
+            CALL assert(n = 18, 'for x in range(4, 10, 2)');
+            /* CIF TASK (-37, 1424), (150, 35) */
+            TASK seq1 := {7, 8, 9, 10};
+            /* CIF TASK (2, 1474), (70, 35) */
+            TASK n := 0;
+            /* CIF TASK (-40, 1524), (157, 56) */
+            TASK for x in seq1:
+  n := n + x mod 255
+endfor;
+            /* CIF PROCEDURECALL (-67, 1595), (210, 35) */
+            CALL assert(n = 34, 'for x in seq1' );
+            /* CIF TASK (-124, 1645), (325, 35) */
+            TASK '------------------------------- Join -------------------------------  ';
+            /* CIF JOIN (20, 1695), (35, 35) */
+            JOIN label1;
+    ENDSTATE;
+ENDPROCESS controlflow;

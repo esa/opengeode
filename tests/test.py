@@ -21,6 +21,7 @@ paths = [
     'regression/test12',
     'regression/test-substrings',
     'regression/test-expressions',
+    'regression/test-controlflow',
 ]
 
 

@@ -6,6 +6,9 @@ test-parse:
 test-ada:
 	@python tests/test.py test-ada
 
+test-llvm:
+	@python tests/test.py test-llvm
+
 flake8:
 	@echo Generating flake8_report file
 	flake8 opengeode.py Pr.py sdlSymbols.py genericSymbols.py ogParser.py AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py undoCommands.py  Connectors.py Asn1scc.py Helper.py Statechart.py >flake8_report
