@@ -17,9 +17,14 @@ test-ada:
 	./testcase | diff expected -
 
 test-llvm:
-	../../../opengeode.py orchestrator.pr system_structure.pr --llvm
+	../../../opengeode.py orchestrator.pr system_structure.pr --check --llvm
+	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
 	llc orchestrator.ll
-	gcc -c orchestrator.s
+	clang -c orchestrator.s
+	clang -c dataview-uniq.c
+	clang -c test_llvm.c
+	clang orchestrator.o dataview-uniq.o test_llvm.o -o testcase -lm
+	./testcase | diff expected -
 
 coverage:
 	coverage run -p ../../../opengeode.py orchestrator.pr system_structure.pr --toAda
