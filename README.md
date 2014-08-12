@@ -21,20 +21,20 @@ Features
 --------
 
 - Graphical editor of SDL processes and procedures.
-- SDL2010 features: FOR loops in task symbols, hierarchical states 
+- SDL2010 features: FOR loops in task symbols, hierarchical states
 - Works on pure PR+CIF files (textual SDL notation) - no fancy proprietary save format
-- Full supports ASN.1 data types - using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)  
+- Full supports ASN.1 data types - using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
 - Generates Ada code
-- Extensive syntax and semantic checks 
-- Automatic conversion to Statechart diagrams 
+- Extensive syntax and semantic checks
+- Automatic conversion to Statechart diagrams
 - Save the complete or parts of the model to PNG/SVG/PDF files
-- Hyperlinks (link a symbol content to any external document or web page) 
-- Zoom in, zoom-out 
-- Context-dependent text auto-completion 
-- Syntax highlighting 
-- Undo/Redo, Copy-Paste 
+- Hyperlinks (link a symbol content to any external document or web page)
+- Zoom in, zoom-out
+- Context-dependent text auto-completion
+- Syntax highlighting
+- Undo/Redo, Copy-Paste
 - (Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern
-- (In progress) SDL to LLVM code generation
+- SDL to LLVM code generation
 
 Installation
 ============
@@ -53,6 +53,7 @@ Apart from pygraphviz, all of them exist for Linux, Windows, FreeBSD, and most l
 - ASN1SCC
 - (optional) GNAT to build the generated Ada code
 - mono
+- llvmpy for the LLVM backend (tested with 0.12.4)
 
 On Debian, Ubuntu, and probably other distributions:
 
@@ -78,6 +79,8 @@ Check that it works:
 $ asn1.exe
 ```
 
+To install llvmpy follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.4/doc/getting_started.html#installation)
+
 OpenGEODE installation
 ----------------------
 
@@ -96,7 +99,7 @@ You can get the source from the TASTE repositories or from GitHub
 
 ```bash
 $ git clone https://github.com/maxime-esa/opengeode.git
-``` 
+```
 
 Then enter the opengeode directory and as root, type:
 

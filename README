@@ -55,6 +55,9 @@ You need to install the following dependencies before you can run Opengeode:
 - gnat - if you want to build the code you generate in Ada
   $ sudo apt-get install gnat
 
+- llvmpy (tested with 0.12.4)
+  Follow the instructions here: http://www.llvmpy.org/llvmpy-doc/0.12.4/doc/getting_started.html#installation
+
 
 To make a static binary on Linux with pyinstaller 2.0:
  python pyinstaller.py ../../opengeode.py --onefile
