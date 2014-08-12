@@ -464,7 +464,6 @@ def generate_runtr_func(process, ctx):
     for label in process.content.floating_labels:
         generate(label, ctx)
 
-    # TODO: Use defined cond_block instead?
     next_tr_label_block = ctx.scope.label('next_transition')
     ctx.builder.position_at_end(next_tr_label_block)
     ctx.builder.branch(cond_block)
@@ -1029,7 +1028,8 @@ def _expr_logic(expr, ctx):
         ctx.builder.position_at_end(end_block)
         return res_ptr
 
-    raise CompileError('Type "%s" not supported in bitwise expressions' % basic_asn1ty.kind)
+    raise CompileError('Type "%s" not supported in bitwise expressions'
+        % basic_asn1ty.kind)
 
 
 @expression.register(ogAST.ExprNot)
@@ -1080,7 +1080,8 @@ def _expr_not(expr, ctx):
         ctx.builder.position_at_end(end_block)
         return res_struct_ptr
 
-    raise CompileError('Type "%s" not supported in bitwise expressions' % basic_asn1ty.kind)
+    raise CompileError('Type "%s" not supported in bitwise expressions'
+        % basic_asn1ty.kind)
 
 
 @expression.register(ogAST.ExprAppend)
@@ -1292,7 +1293,6 @@ def _prim_boolean(prim, ctx):
 @expression.register(ogAST.PrimEmptyString)
 def _prim_empty_string(prim, ctx):
     ''' Generate the IR for an empty SEQUENCE OF '''
-    # TODO: Why is this named string if it's not an string?
     struct_llty = ctx.lltype_of(prim.exprType)
     struct_ptr = ctx.builder.alloca(struct_llty)
     ctx.builder.store(core.Constant.null(struct_llty), struct_ptr)
@@ -1410,8 +1410,9 @@ def _prim_sequence_of(prim, ctx):
     is_variable_size = basic_asn1ty.Min != basic_asn1ty.Max
 
     if is_variable_size:
-        size_val = core.Constant.int(ctx.i32, len(prim.value))
-        ctx.builder.store(size_val, ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero]))
+        count_val = core.Constant.int(ctx.i32, len(prim.value))
+        count_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
+        ctx.builder.store(count_val, count_ptr)
         array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one])
     else:
         array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
@@ -1449,15 +1450,23 @@ def _decision(dec, ctx):
     ''' Generate the IR for a decision '''
     func = ctx.builder.basic_block.function
 
-    ans_cond_blocks = [func.append_basic_block('dec:ans:cond') for ans in dec.answers]
+    ans_cond_blocks = [func.append_basic_block('dec:ans:cond') for _ in dec.answers]
     end_block = func.append_basic_block('dec:end')
 
     ctx.builder.branch(ans_cond_blocks[0])
 
     for idx, ans in enumerate(dec.answers):
         ans_cond_block = ans_cond_blocks[idx]
-        true_block = func.append_basic_block('dec:ans:tr') if ans.transition else end_block
-        false_block = ans_cond_blocks[idx + 1] if idx < len(ans_cond_blocks) - 1 else end_block
+
+        if ans.transition:
+            true_block = func.append_basic_block('dec:ans:tr')
+        else:
+            true_block = end_block
+
+        if idx < len(ans_cond_blocks) - 1:
+            false_block = ans_cond_blocks[idx + 1]
+        else:
+            false_block = end_block
 
         ctx.builder.position_at_end(ans_cond_block)
 
@@ -1470,18 +1479,18 @@ def _decision(dec, ctx):
             ctx.builder.cbranch(expr_val, true_block, false_block)
 
         elif ans.kind == 'closed_range':
-            question_val = expression(dec.question, ctx)
-            range_l_val = expression(ans.closedRange[0], ctx)
-            range_r_val = expression(ans.closedRange[1], ctx)
+            q_val = expression(dec.question, ctx)
+            low_val = expression(ans.closedRange[0], ctx)
+            high_val = expression(ans.closedRange[1], ctx)
 
-            if question_val.type.kind == core.TYPE_INTEGER:
-                range_l_cond_val = ctx.builder.icmp(core.ICMP_SGE, question_val, range_l_val)
-                range_r_cond_val = ctx.builder.icmp(core.ICMP_SLE, question_val, range_r_val)
+            if q_val.type.kind == core.TYPE_INTEGER:
+                low_cond_val = ctx.builder.icmp(core.ICMP_SGE, q_val, low_val)
+                high_cond_val = ctx.builder.icmp(core.ICMP_SLE, q_val, high_val)
             else:
-                range_l_cond_val = ctx.builder.fcmp(core.FCMP_OLE, question_val, range_l_val)
-                range_r_cond_val = ctx.builder.fcmp(core.FCMP_OGE, question_val, range_r_val)
+                low_cond_val = ctx.builder.fcmp(core.FCMP_OLE, q_val, low_val)
+                high_cond_val = ctx.builder.fcmp(core.FCMP_OGE, q_val, high_val)
 
-            ans_cond_val = ctx.builder.and_(range_l_cond_val, range_r_cond_val)
+            ans_cond_val = ctx.builder.and_(low_cond_val, high_cond_val)
             ctx.builder.cbranch(ans_cond_val, true_block, false_block)
 
         elif ans.kind == 'else':
@@ -1539,7 +1548,8 @@ def generate_next_state_terminator(term, ctx):
         if type(term.next_id) is int:
             next_id_val = core.Constant.int(ctx.i32, term.next_id)
             if term.next_id == -1:
-                ctx.builder.store(ctx.states[state.lower()], ctx.global_scope.resolve('.state'))
+                global_state_ptr = ctx.global_scope.resolve('.state')
+                ctx.builder.store(ctx.states[state.lower()], global_state_ptr)
         else:
             next_id_val = ctx.states[term.next_id.lower()]
         ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
@@ -1655,11 +1665,13 @@ def _procedure(proc, ctx):
 
 
 def is_struct_ptr(val):
-    return val.type.kind == core.TYPE_POINTER and val.type.pointee.kind == core.TYPE_STRUCT
+    return val.type.kind == core.TYPE_POINTER and \
+        val.type.pointee.kind == core.TYPE_STRUCT
 
 
 def is_array_ptr(val):
-    return val.type.kind == core.TYPE_POINTER and val.type.pointee.kind == core.TYPE_ARRAY
+    return val.type.kind == core.TYPE_POINTER and \
+        val.type.pointee.kind == core.TYPE_ARRAY
 
 
 ################################################################################
@@ -1834,7 +1846,8 @@ def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
                 count_val = core.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
             else:
                 arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.one])
-                count_val = ctx.builder.load(ctx.builder.gep(arg_val, [ctx.zero, ctx.zero]))
+                count_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
+                count_val = ctx.builder.load(count_ptr)
 
             arg_values.append(count_val)
             arg_values.append(arr_ptr)
