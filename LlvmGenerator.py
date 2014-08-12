@@ -36,6 +36,7 @@ class Context():
         self.module = core.Module.new(self.name)
         self.target_data = ee.TargetData.new(self.module.data_layout)
         self.dataview = process.dataview
+        self.procedures = process.procedures
 
         self.scope = Scope(self)
         self.global_scope = self.scope
@@ -548,25 +549,11 @@ def generate_input_signal(signal, inputs, ctx):
 
 
 @generate.register(ogAST.Output)
-@generate.register(ogAST.ProcedureCall)
-def _call_external_function(output, ctx):
-    ''' Generate the IR for an output or procedure call '''
+def _output(output, ctx):
+    ''' Generate the IR for an output '''
     for out in output.output:
         name = out['outputName'].lower()
         args = out.get('params', [])
-
-        if name == 'write' or name == 'writeln':
-            arg_vals = [expression(a, ctx) for a in args]
-            arg_asn1tys = [a.exprType for a in args]
-            sdl_write(arg_vals, arg_asn1tys, ctx, name == 'writeln')
-            continue
-        elif name == 'reset_timer':
-            sdl_reset_timer(args[0].value[0], ctx)
-            continue
-        elif name == 'set_timer':
-            timer_expr, timer_id = args
-            sdl_set_timer(timer_id.value[0], expression(timer_expr, ctx), ctx)
-            continue
 
         arg_vals = []
         for arg in args:
@@ -580,6 +567,52 @@ def _call_external_function(output, ctx):
                 arg_vals.append(arg_val)
 
         sdl_call(str(name).lower(), arg_vals, ctx)
+
+
+@generate.register(ogAST.ProcedureCall)
+def _proc_call(proc_call, ctx):
+    ''' Generate the IR for a procedure call '''
+    output = proc_call.output[0]
+
+    name = output['outputName'].lower()
+    args = output.get('params', [])
+
+    if name == 'write' or name == 'writeln':
+        arg_vals = [expression(a, ctx) for a in args]
+        arg_asn1tys = [a.exprType for a in args]
+        sdl_write(arg_vals, arg_asn1tys, ctx, name == 'writeln')
+        return
+    elif name == 'reset_timer':
+        sdl_reset_timer(args[0].value[0], ctx)
+        return
+    elif name == 'set_timer':
+        timer_expr, timer_id = args
+        sdl_set_timer(timer_id.value[0], expression(timer_expr, ctx), ctx)
+        return
+
+    proc = None
+    for p in ctx.procedures:
+        if p.inputString.lower() == name:
+            proc = p
+            break
+    else:
+        raise CompileError('Procedure "%s" not found' % name)
+
+    arg_vals = []
+    for arg, param in zip(args, proc.fpar):
+        if param['direction'] == 'out':
+            arg_vals.append(reference(arg, ctx))
+        else:
+            arg_val = expression(arg, ctx)
+            # Pass by reference
+            if arg_val.type.kind != core.TYPE_POINTER:
+                arg_var = ctx.builder.alloca(arg_val.type, None)
+                ctx.builder.store(arg_val, arg_var)
+                arg_vals.append(arg_var)
+            else:
+                arg_vals.append(arg_val)
+
+    sdl_call(str(name).lower(), arg_vals, ctx)
 
 
 @generate.register(ogAST.TaskAssign)
