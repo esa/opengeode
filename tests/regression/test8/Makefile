@@ -11,9 +11,9 @@ test-ada:
 	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
 	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc
 	gnatmake -c *.adb
-	gcc -c test.c
+	gcc -c test_ada.c
 	gnatbind -n orchestrator.ali
-	gnatlink -o testcase test.o orchestrator.ali -lgnat
+	gnatlink -o testcase test_ada.o orchestrator.ali -lgnat
 	./testcase | diff expected -
 
 test-llvm:
