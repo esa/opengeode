@@ -787,7 +787,9 @@ def _prim_substring_reference(prim, ctx):
     else:
         arr_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.one])
 
-    arr_ptr = ctx.builder.gep(arr_ptr, [low_val])
+    arr_ptr_llty = arr_ptr.type
+    arr_ptr = ctx.builder.gep(arr_ptr, [ctx.zero, low_val])
+    arr_ptr = ctx.builder.bitcast(arr_ptr, arr_ptr_llty)
 
     return SDLSubstringValue(arr_ptr, count_val, asn1ty)
 
