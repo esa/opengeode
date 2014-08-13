@@ -1812,7 +1812,7 @@ def sdl_abs(x_val, ctx):
         res_val = sdl_call('fabs', [expr_conv], ctx)
         return ctx.builder.fptosi(res_val, ctx.i64)
     else:
-        return sdl_call('fabs', [x_val])
+        return sdl_call('fabs', [x_val], ctx)
 
 
 def sdl_fix(x_val, ctx):
