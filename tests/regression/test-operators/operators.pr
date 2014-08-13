@@ -1,0 +1,44 @@
+/* CIF PROCESS (140, 161), (150, 75) */
+PROCESS operators;
+    /* CIF TEXT (286, 21), (303, 152) */
+    DCL i Integer := 2;
+DCL f Real := 2.0;
+DCL b Boolean := true;
+DCL s CharString := 'HELLO';
+DCL e Enum := one;
+DCL fixSeqOf FixSeqof := {1, 2, 3};
+DCL varSeqOf varSeqOf := {1, 2, 3};
+DCL c Choice := i:2;
+    /* CIF ENDTEXT */
+    /* CIF START (73, 24), (100, 50) */
+    START;
+        /* CIF NEXTSTATE (73, 89), (100, 50) */
+        NEXTSTATE Wait;
+    /* CIF STATE (73, 89), (100, 50) */
+    STATE Wait;
+        /* CIF INPUT (74, 159), (100, 50) */
+        INPUT run;
+            /* CIF PROCEDURECALL (13, 224), (221, 35) */
+            CALL assert(abs(-i) = i, 'abs(-i) = i');
+            /* CIF PROCEDURECALL (-8, 274), (264, 35) */
+            CALL assert(abs(-f) = f, 'abs(-f) = f');
+            /* CIF PROCEDURECALL (12, 324), (224, 35) */
+            CALL assert(fix(f) = i, 'fix(f) = i');
+            /* CIF PROCEDURECALL (-1, 374), (251, 35) */
+            CALL assert(float(i) = f, 'float(i) = f');
+            /* CIF PROCEDURECALL (-47, 424), (343, 35) */
+            CALL assert(length(fixSeqOf) = 3, 'length(fixSeqOf) = 3');
+            /* CIF PROCEDURECALL (-51, 474), (350, 35) */
+            CALL assert(length(varSeqOf) = 3, 'length(varSeqOf) = 3');
+            /* CIF PROCEDURECALL (3, 524), (240, 35) */
+            CALL assert(num(e) = 12, 'num(e) = 12');
+            /* CIF PROCEDURECALL (-14, 574), (276, 35) */
+            CALL assert(power(i, 3) = 8, 'power(i, 3) = 8');
+            /* CIF PROCEDURECALL (24, 624), (200, 35) */
+            CALL writeln(i, f, b, s);
+            /* CIF PROCEDURECALL (24, 674), (200, 35) */
+            CALL write(i, f, b, s);
+            /* CIF NEXTSTATE (74, 724), (100, 50) */
+            NEXTSTATE Wait;
+    ENDSTATE;
+ENDPROCESS operators;

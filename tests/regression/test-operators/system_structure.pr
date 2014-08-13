@@ -1,0 +1,27 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM operators;
+
+	SIGNAL run;
+
+	PROCEDURE assert;
+		FPAR
+			IN res Boolean,
+			IN msg CharString;
+ 	EXTERNAL;
+
+	CHANNEL c
+		FROM ENV TO operators WITH run;
+	ENDCHANNEL;
+
+	BLOCK operators;
+
+		SIGNALROUTE r
+			FROM ENV TO operators WITH run;
+		CONNECT c and r;
+
+		PROCESS operators REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

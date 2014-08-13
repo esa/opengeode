@@ -19,9 +19,10 @@ paths = [
     'regression/test10',
     'regression/test11',
     'regression/test12',
-    'regression/test-substrings',
-    'regression/test-expressions',
     'regression/test-controlflow',
+    'regression/test-expressions',
+    'regression/test-operators',
+    'regression/test-substrings',
 ]
 
 
