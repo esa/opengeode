@@ -22,23 +22,29 @@ DCL c Choice := i:2;
             CALL assert(abs(-i) = i, 'abs(-i) = i');
             /* CIF PROCEDURECALL (-8, 274), (264, 35) */
             CALL assert(abs(-f) = f, 'abs(-f) = f');
-            /* CIF PROCEDURECALL (12, 324), (224, 35) */
+            /* CIF PROCEDURECALL (-22, 324), (293, 35) */
+            CALL assert(ceil(f + 0.5) = 3.0, 'ceil(f + 0.5) = 3.0');
+            /* CIF PROCEDURECALL (12, 374), (224, 35) */
             CALL assert(fix(f) = i, 'fix(f) = i');
-            /* CIF PROCEDURECALL (-1, 374), (251, 35) */
+            /* CIF PROCEDURECALL (-1, 424), (251, 35) */
             CALL assert(float(i) = f, 'float(i) = f');
-            /* CIF PROCEDURECALL (-47, 424), (343, 35) */
+            /* CIF PROCEDURECALL (-18, 474), (284, 35) */
+            CALL assert(floor(f + 0.5) = f, 'floor(f + 0.5) = f');
+            /* CIF PROCEDURECALL (-47, 524), (343, 35) */
             CALL assert(length(fixSeqOf) = 3, 'length(fixSeqOf) = 3');
-            /* CIF PROCEDURECALL (-51, 474), (350, 35) */
+            /* CIF PROCEDURECALL (-51, 574), (350, 35) */
             CALL assert(length(varSeqOf) = 3, 'length(varSeqOf) = 3');
-            /* CIF PROCEDURECALL (3, 524), (240, 35) */
+            /* CIF PROCEDURECALL (3, 624), (240, 35) */
             CALL assert(num(e) = 12, 'num(e) = 12');
-            /* CIF PROCEDURECALL (-14, 574), (276, 35) */
+            /* CIF PROCEDURECALL (-14, 674), (276, 35) */
             CALL assert(power(i, 3) = 8, 'power(i, 3) = 8');
-            /* CIF PROCEDURECALL (24, 624), (200, 35) */
+            /* CIF PROCEDURECALL (-26, 724), (301, 35) */
+            CALL assert(trunc(f + 0.1) = f, 'trunc(f + 0.1) = f');
+            /* CIF PROCEDURECALL (24, 774), (200, 35) */
             CALL writeln(i, f, b, s);
-            /* CIF PROCEDURECALL (24, 674), (200, 35) */
+            /* CIF PROCEDURECALL (24, 824), (200, 35) */
             CALL write(i, f, b, s);
-            /* CIF NEXTSTATE (74, 724), (100, 50) */
+            /* CIF NEXTSTATE (74, 874), (100, 50) */
             NEXTSTATE Wait;
     ENDSTATE;
 ENDPROCESS operators;

@@ -28,6 +28,7 @@ __author__ = 'Maxime Perrotin'
 
 import sys
 import os
+import math
 import logging
 import traceback
 from itertools import chain, permutations, combinations
@@ -101,17 +102,22 @@ ENUMERATED = type('EnumeratedType', (object,), {'kind': 'EnumeratedType'})
 UNKNOWN_TYPE = type('UnknownType', (object,), {'kind': 'UnknownType'})
 
 SPECIAL_OPERATORS = {
+    'abs': [{'type': NUMERICAL, 'direction': 'in'}],
+    'ceil': [{'type': REAL, 'direction': 'in'}],
+    'fix': [{'type': NUMERICAL, 'direction': 'in'}],
+    'float': [{'type': NUMERICAL, 'direction': 'in'}],
+    'floor': [{'type': REAL, 'direction': 'in'}],
     'length': [{'type': LIST, 'direction': 'in'}],
+    'num': [{'type': ENUMERATED, 'direction': 'in'}],
+    'power': [{'type': NUMERICAL, 'direction': 'in'},
+              {'type': INTEGER, 'direction': 'in'}],
+    'present': [{'type': CHOICE, 'direction': 'in'}],
+    'reset_timer': [{'type': TIMER, 'direction': 'in'}],
+    'set_timer': [{'type': INTEGER, 'direction': 'in'},
+                  {'type': TIMER, 'direction': 'in'}],
+    'trunc': [{'type': REAL, 'direction': 'in'}],
     'write': [{'type': ANY_TYPE, 'direction': 'in'}],
     'writeln': [{'type': ANY_TYPE, 'direction': 'in'}],
-    'present': [{'type': CHOICE, 'direction': 'in'}],
-    'set_timer': [{'type': INTEGER, 'direction': 'in'}, {'type': TIMER, 'direction': 'in'}],
-    'reset_timer': [{'type': TIMER, 'direction': 'in'}],
-    'abs': [{'type': NUMERICAL, 'direction': 'in'}],
-    'num': [{'type': ENUMERATED, 'direction': 'in'}],
-    'float': [{'type': NUMERICAL, 'direction': 'in'}],
-    'fix': [{'type': NUMERICAL, 'direction': 'in'}],
-    'power': [{'type': NUMERICAL, 'direction': 'in'}, {'type': INTEGER, 'direction': 'in'}]
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -1312,20 +1318,32 @@ def primary_call(root, context):
                 'Max': str(max(float(param_btys[0].Max), 0))
             })
 
+        elif name == 'ceil':
+            node.exprType = type('Ceil', (REAL,), {
+                'Min': str(math.ceil(float(param_btys[0].Min))),
+                'Max': str(math.ceil(float(param_btys[0].Max)))
+            })
+
         elif name == 'fix':
-            node.exprType = type('fix', (INTEGER,), {
+            node.exprType = type('Fix', (INTEGER,), {
                 'Min': param_btys[0].Min,
                 'Max': param_btys[0].Max
             })
 
         elif name == 'float':
-            node.exprType = type('float', (REAL,), {
+            node.exprType = type('Float', (REAL,), {
                 'Min': param_btys[0].Min,
                 'Max': param_btys[0].Max
             })
 
+        elif name == 'floor':
+            node.exprType = type('Floor', (REAL,), {
+                'Min': str(math.floor(float(param_btys[0].Min))),
+                'Max': str(math.floor(float(param_btys[0].Max)))
+            })
+
         elif name == 'length':
-            node.exprType = type('length', (INTEGER,), {
+            node.exprType = type('Length', (INTEGER,), {
                 'Min': param_btys[0].Min,
                 'Max': param_btys[0].Max
             })
@@ -1348,9 +1366,15 @@ def primary_call(root, context):
             })
 
         elif name == 'present':
-            node.exprType = type('present', (object,), {
+            node.exprType = type('Present', (object,), {
                 'kind': 'ChoiceEnumeratedType',
                 'EnumValues': param_btys[0].Children
+            })
+
+        elif name == 'trunc':
+            node.exprType = type('Trunc', (REAL,), {
+                'Min': str(math.trunc(float(param_btys[0].Min))),
+                'Max': str(math.trunc(float(param_btys[0].Max)))
             })
 
     except TypeError as err:
