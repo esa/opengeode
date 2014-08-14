@@ -170,11 +170,17 @@ def is_numeric(ty):
     )
 
 
+def is_boolean(ty):
+    ''' Return true if a type is a Boolean Type '''
+    return find_basic_type(ty).kind == 'BooleanType'
+
+
 def is_string(ty):
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty).kind in (
         'StandardStringType',
-        'OctetStringType'
+        'OctetStringType',
+        'StringType'
     )
 
 
@@ -431,9 +437,14 @@ def check_and_fix_call_params(name, params, context):
     ''' Verify and/or set the type of a procedure/output/operator parameters '''
     LOG.debug('[check_and_fix_call_params] ' + name + ' - ' + str(params))
 
-    # Special case for write functions wich support any number of arguments
-    # with any kind of type
+    # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
+        for p in params:
+            p_ty = p.exprType
+            if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty):
+                continue
+            raise TypeError('Type {} not supported in call to {}'.
+                format(type_name(p.exprType), name))
         return
 
     # (1) Find the signature of the function
