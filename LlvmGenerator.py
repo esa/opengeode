@@ -33,6 +33,7 @@ __all__ = ['generate']
 class Context():
     def __init__(self, process):
         self.name = str(process.processName)
+        self.process = process
         self.module = core.Module.new(self.name)
         self.target_data = ee.TargetData.new(self.module.data_layout)
         self.dataview = process.dataview
@@ -349,7 +350,7 @@ def _process(process, ctx=None):
     ctx = Context(process)
 
     # In case model has nested states, flatten everything
-    Helper.flatten(process)
+    Helper.flatten(process, '.')
 
     # Make an maping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
@@ -520,23 +521,33 @@ def generate_input_signal(signal, inputs, ctx):
     for state_name, state_id in ctx.states.iteritems():
         if state_name.endswith('start'):
             continue
+
         state_block = func.append_basic_block('input:state_%s' % str(state_name))
         switch.add_case(state_id, state_block)
         ctx.builder.position_at_end(state_block)
 
-        # TODO: Nested states
+        state_input = inputs.get(state_name)
+        if not state_input:
+            ctx.builder.ret_void()
+            continue
 
-        input = inputs.get(state_name)
-        if input:
-            for var_name in input.parameters:
-                var_ptr = ctx.scope.resolve(str(var_name))
-                if is_struct_ptr(var_ptr) or is_array_ptr(var_ptr):
-                    sdl_assign(var_ptr, func.args[0], ctx)
-                else:
-                    sdl_assign(var_ptr, ctx.builder.load(func.args[0]), ctx)
-            if input.transition:
-                id_val = core.Constant.int(ctx.i32, input.transition_id)
-                sdl_call('run_transition', [id_val], ctx)
+        trans = state_input.transition
+
+        for exit_func_name in exit_list(state_name, ctx.process):
+            if trans and all(exit_func_name.startswith(trans_st)
+                             for trans_st in trans.possible_states):
+                sdl_call(exit_func_name, [], ctx)
+
+        for var_name in state_input.parameters:
+            var_ptr = ctx.scope.resolve(str(var_name))
+            if is_struct_ptr(var_ptr) or is_array_ptr(var_ptr):
+                sdl_assign(var_ptr, func.args[0], ctx)
+            else:
+                sdl_assign(var_ptr, ctx.builder.load(func.args[0]), ctx)
+
+        if trans:
+            id_val = core.Constant.int(ctx.i32, state_input.transition_id)
+            sdl_call('run_transition', [id_val], ctx)
 
         ctx.builder.ret_void()
 
@@ -546,6 +557,26 @@ def generate_input_signal(signal, inputs, ctx):
     ctx.close_scope()
 
     func.verify()
+
+
+def exit_list(state_name, process):
+    ''' Calculate the exit call list of a state '''
+    context = process
+    exitlist = []
+    current = ''
+    state_tree = state_name.split('.')
+
+    while state_tree:
+        current = current + state_tree.pop(0)
+        for comp in context.composite_states:
+            if current.lower() == comp.statename.lower():
+                if comp.exit_procedure:
+                    exitlist.append(current + '.exit')
+                context = comp
+                current = current + '.'
+                break
+
+    return reversed(exitlist)
 
 
 @generate.register(ogAST.Output)
