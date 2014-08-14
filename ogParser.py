@@ -433,9 +433,10 @@ def signature(name, context):
     raise AttributeError('Operator/output/procedure not found: ' + name)
 
 
-def check_and_fix_call_params(name, params, context):
-    ''' Verify and/or set the type of a procedure/output/operator parameters '''
-    LOG.debug('[check_and_fix_call_params] ' + name + ' - ' + str(params))
+def check_call(name, params, context):
+    ''' Check the parameter types of a procedure/output/operator call,
+        returning the type of its result '''
+    LOG.debug('[check_call] ' + name + ' - ' + str(params))
 
     # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
@@ -476,6 +477,75 @@ def check_and_fix_call_params(name, params, context):
                 and not isinstance(expr.right, ogAST.PrimVariable):
             raise TypeError('OUT parameter "{}" is not a variable'
                 .format(expr.right.inputString))
+
+    # (4) Compute the type of the result
+    param_btys = [find_basic_type(p.exprType) for p in params]
+    if name == 'abs':
+        return type('Abs', (param_btys[0],), {
+            'Min': str(max(float(param_btys[0].Min), 0)),
+            'Max': str(max(float(param_btys[0].Max), 0))
+        })
+
+    elif name == 'ceil':
+        return type('Ceil', (REAL,), {
+            'Min': str(math.ceil(float(param_btys[0].Min))),
+            'Max': str(math.ceil(float(param_btys[0].Max)))
+        })
+
+    elif name == 'fix':
+        return type('Fix', (INTEGER,), {
+            'Min': param_btys[0].Min,
+            'Max': param_btys[0].Max
+        })
+
+    elif name == 'float':
+        return type('Float', (REAL,), {
+            'Min': param_btys[0].Min,
+            'Max': param_btys[0].Max
+        })
+
+    elif name == 'floor':
+        return type('Floor', (REAL,), {
+            'Min': str(math.floor(float(param_btys[0].Min))),
+            'Max': str(math.floor(float(param_btys[0].Max)))
+        })
+
+    elif name == 'length':
+        return type('Length', (INTEGER,), {
+            'Min': param_btys[0].Min,
+            'Max': param_btys[0].Max
+        })
+
+    elif name == 'num':
+        enum_values = [int(each.IntValue)
+                       for each in param_btys[0].EnumValues.viewvalues()]
+
+        return type('Num', (INTEGER,), {
+            'Min': str(min(enum_values)),
+            'Max': str(max(enum_values))
+        })
+
+    elif name == 'power':
+        return type('Power', (param_btys[0],), {
+            'Min': str(pow(float(param_btys[0].Min),
+                           float(param_btys[1].Min))),
+            'Max': str(pow(float(param_btys[0].Max),
+                           float(param_btys[1].Max)))
+        })
+
+    elif name == 'present':
+        return type('Present', (object,), {
+            'kind': 'ChoiceEnumeratedType',
+            'EnumValues': param_btys[0].Children
+        })
+
+    elif name == 'trunc':
+        return type('Trunc', (REAL,), {
+            'Min': str(math.trunc(float(param_btys[0].Min))),
+            'Max': str(math.trunc(float(param_btys[0].Max)))
+        })
+
+    return UNKNOWN_TYPE
 
 
 def check_range(typeref, type_to_check):
@@ -1319,75 +1389,9 @@ def primary_call(root, context):
     warnings.extend(param_warnings)
 
     node.value = [name, {'procParams': params}]
-    param_btys = [find_basic_type(p.exprType) for p in params]
 
     try:
-        check_and_fix_call_params(name, params, context)
-        if name == 'abs':
-            node.exprType = type('Abs', (param_btys[0],), {
-                'Min': str(max(float(param_btys[0].Min), 0)),
-                'Max': str(max(float(param_btys[0].Max), 0))
-            })
-
-        elif name == 'ceil':
-            node.exprType = type('Ceil', (REAL,), {
-                'Min': str(math.ceil(float(param_btys[0].Min))),
-                'Max': str(math.ceil(float(param_btys[0].Max)))
-            })
-
-        elif name == 'fix':
-            node.exprType = type('Fix', (INTEGER,), {
-                'Min': param_btys[0].Min,
-                'Max': param_btys[0].Max
-            })
-
-        elif name == 'float':
-            node.exprType = type('Float', (REAL,), {
-                'Min': param_btys[0].Min,
-                'Max': param_btys[0].Max
-            })
-
-        elif name == 'floor':
-            node.exprType = type('Floor', (REAL,), {
-                'Min': str(math.floor(float(param_btys[0].Min))),
-                'Max': str(math.floor(float(param_btys[0].Max)))
-            })
-
-        elif name == 'length':
-            node.exprType = type('Length', (INTEGER,), {
-                'Min': param_btys[0].Min,
-                'Max': param_btys[0].Max
-            })
-
-        elif name == 'num':
-            enum_values = [int(each.IntValue)
-                           for each in param_btys[0].EnumValues.viewvalues()]
-
-            node.exprType = type('Num', (INTEGER,), {
-                'Min': str(min(enum_values)),
-                'Max': str(max(enum_values))
-            })
-
-        elif name == 'power':
-            node.exprType = type('Power', (param_btys[0],), {
-                'Min': str(pow(float(param_btys[0].Min),
-                               float(param_btys[1].Min))),
-                'Max': str(pow(float(param_btys[0].Max),
-                               float(param_btys[1].Max)))
-            })
-
-        elif name == 'present':
-            node.exprType = type('Present', (object,), {
-                'kind': 'ChoiceEnumeratedType',
-                'EnumValues': param_btys[0].Children
-            })
-
-        elif name == 'trunc':
-            node.exprType = type('Trunc', (REAL,), {
-                'Min': str(math.trunc(float(param_btys[0].Min))),
-                'Max': str(math.trunc(float(param_btys[0].Max)))
-            })
-
+        node.exprType = check_call(name, params, context)
     except TypeError as err:
         errors.append(error(root, str(err)))
     except OverflowError:
@@ -2869,9 +2873,9 @@ def outputbody(root, context):
                     str(child.type))
     # Check/set the type of each param
     try:
-        check_and_fix_call_params(body.get('outputName', '').lower(),
-                                body.get('params', []),
-                                context)
+        check_call(body.get('outputName', '').lower(),
+                   body.get('params', []),
+                   context)
     except (AttributeError, TypeError) as op_err:
         errors.append(str(op_err) + ' - ' + get_input_string(root))
         LOG.debug('[outputbody] call check_and_fix_op_params : '
