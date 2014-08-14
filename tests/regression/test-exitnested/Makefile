@@ -19,10 +19,10 @@ test-llvm:
 	../../../opengeode.py challenge.pr system_structure.pr --check --llvm
 	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
 	llc challenge.ll
-	clang -c challenge.s
-	clang -c dataview-uniq.c
-	clang -c test_llvm.c
-	clang challenge.o dataview-uniq.o test_llvm.o -o testcase -lm
+	gcc -c challenge.s
+	gcc -c dataview-uniq.c
+	gcc -c test_llvm.c
+	gcc challenge.o dataview-uniq.o test_llvm.o -o testcase -lm
 	./testcase | diff expected -
 
 coverage:
