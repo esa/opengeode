@@ -647,14 +647,14 @@ def check_type_compatibility(primary, type_ref, context):
         return
 
     elif isinstance(primary, ogAST.PrimInteger) \
-            and is_integer(basic_type) or type_ref == NUMERICAL:
+            and (is_integer(type_ref) or type_ref == NUMERICAL):
         return
 
     elif isinstance(primary, ogAST.PrimReal) \
-            and is_real(basic_type) or type_ref == NUMERICAL:
+            and (is_real(type_ref) or type_ref == NUMERICAL):
         return
 
-    elif isinstance(primary, ogAST.PrimBoolean) and is_boolean(basic_type):
+    elif isinstance(primary, ogAST.PrimBoolean) and is_boolean(type_ref):
         return
 
     elif (isinstance(primary, ogAST.PrimEmptyString) and
