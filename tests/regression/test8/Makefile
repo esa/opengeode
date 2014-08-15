@@ -20,10 +20,10 @@ test-llvm:
 	../../../opengeode.py orchestrator.pr system_structure.pr --check --llvm
 	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
 	llc orchestrator.ll
-	clang -c orchestrator.s
-	clang -c dataview-uniq.c
-	clang -c test_llvm.c
-	clang orchestrator.o dataview-uniq.o test_llvm.o -o testcase -lm
+	gcc -c orchestrator.s
+	gcc -c dataview-uniq.c
+	gcc -c test_llvm.c
+	gcc orchestrator.o dataview-uniq.o test_llvm.o -o testcase -lm
 	./testcase | diff expected -
 
 coverage:

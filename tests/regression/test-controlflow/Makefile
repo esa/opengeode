@@ -20,10 +20,10 @@ test-llvm:
 	../../../opengeode.py controlflow.pr system_structure.pr --check --llvm
 	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
 	llc controlflow.ll
-	clang -c controlflow.s
-	clang -c dataview-uniq.c
-	clang -c test_llvm.c
-	clang controlflow.o dataview-uniq.o test_llvm.o -o testcase
+	gcc -c controlflow.s
+	gcc -c dataview-uniq.c
+	gcc -c test_llvm.c
+	gcc controlflow.o dataview-uniq.o test_llvm.o -o testcase
 	./testcase | diff expected -
 
 clean:

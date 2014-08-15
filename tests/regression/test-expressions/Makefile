@@ -20,10 +20,10 @@ test-llvm:
 	../../../opengeode.py expressions.pr system_structure.pr --check --llvm
 	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
 	llc expressions.ll
-	clang -c expressions.s
-	clang -c dataview-uniq.c
-	clang -c test_llvm.c
-	clang expressions.o dataview-uniq.o test_llvm.o -o testcase
+	gcc -c expressions.s
+	gcc -c dataview-uniq.c
+	gcc -c test_llvm.c
+	gcc expressions.o dataview-uniq.o test_llvm.o -o testcase
 	./testcase
 
 clean:

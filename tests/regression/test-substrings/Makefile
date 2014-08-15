@@ -23,10 +23,10 @@ test-llvm:
 	../../../opengeode.py myfunction.pr system_structure.pr --check --llvm
 	asn1.exe -c dataview-uniq.asn -equal -typePrefix asn1Scc
 	llc myfunction.ll
-	clang -c myfunction.s
-	clang -c dataview-uniq.c
-	clang -c test_llvm.c
-	clang myfunction.o dataview-uniq.o test_llvm.o -o testcase
+	gcc -c myfunction.s
+	gcc -c dataview-uniq.c
+	gcc -c test_llvm.c
+	gcc myfunction.o dataview-uniq.o test_llvm.o -o testcase
 	./testcase | diff expected -
 
 coverage:

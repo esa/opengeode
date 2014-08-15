@@ -1,0 +1,81 @@
+/* CIF PROCESS (150, 150), (150, 75) */
+PROCESS challenge;
+    STATE nested;
+    SUBSTRUCTURE
+            STATE nested_1;
+            SUBSTRUCTURE
+                    /* CIF PROCEDURE (110, 183), (74, 35) */
+                    PROCEDURE entry;
+                        /* CIF START (105, 54), (70, 35) */
+                        START;
+                            /* CIF PROCEDURECALL (34, 104), (210, 35) */
+                            CALL writeln('entering nested_1');
+                            /* CIF RETURN (122, 154), (35, 35) */
+                            RETURN ;
+                    ENDPROCEDURE;
+                    /* CIF PROCEDURE (104, 101), (70, 35) */
+                    PROCEDURE exit;
+                        /* CIF START (198, 116), (70, 35) */
+                        START;
+                            /* CIF PROCEDURECALL (142, 166), (181, 35) */
+                            CALL writeln('exit nested_1');
+                            /* CIF RETURN (215, 216), (35, 35) */
+                            RETURN ;
+                    ENDPROCEDURE;
+                    /* CIF START (245, 55), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (234, 105), (93, 35) */
+                        NEXTSTATE nested_2;
+                    /* CIF STATE (276, 165), (93, 35) */
+                    STATE nested_2;
+                    ENDSTATE;
+            ENDSUBSTRUCTURE;
+            /* CIF PROCEDURE (340, 134), (74, 35) */
+            PROCEDURE entry;
+                /* CIF START (121, 85), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (57, 135), (196, 35) */
+                    CALL writeln('entering nested');
+                    /* CIF RETURN (138, 185), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (334, 58), (70, 35) */
+            PROCEDURE exit;
+                /* CIF START (76, 53), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (27, 103), (167, 35) */
+                    CALL writeln('exit nested');
+                    /* CIF RETURN (93, 153), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF START (136, 68), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (124, 118), (93, 35) */
+                NEXTSTATE nested_1;
+            /* CIF STATE (124, 118), (93, 35) */
+            STATE nested_1;
+                /* CIF INPUT (130, 173), (80, 35) */
+                INPUT go_off;
+                    /* CIF RETURN (153, 223), (35, 35) */
+                    RETURN ;
+            ENDSTATE;
+    ENDSUBSTRUCTURE;
+    /* CIF START (92, 76), (68, 37) */
+    START;
+        /* CIF NEXTSTATE (86, 128), (79, 35) */
+        NEXTSTATE nested;
+    /* CIF STATE (389, 131), (70, 35) */
+    STATE well;
+    ENDSTATE;
+    /* CIF STATE (86, 128), (79, 35) */
+    STATE nested;
+        /* CIF CONNECT (51, 183), (0, 35) */
+        CONNECT ;
+            /* CIF NEXTSTATE (12, 233), (78, 35) */
+            NEXTSTATE well;
+        /* CIF INPUT (145, 183), (70, 35) */
+        INPUT run;
+            /* CIF NEXTSTATE (145, 233), (70, 35) */
+            NEXTSTATE -;
+    ENDSTATE;
+ENDPROCESS challenge;
