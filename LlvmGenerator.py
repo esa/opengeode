@@ -1810,6 +1810,16 @@ class SDLSubstringValue():
 # Operators
 
 
+def sdl_abs(x_val, ctx):
+    ''' Generate the IR for an abs operation '''
+    if x_val.type.kind == lc.TYPE_INTEGER:
+        expr_conv = ctx.builder.sitofp(x_val, ctx.double)
+        res_val = sdl_call('fabs', [expr_conv], ctx)
+        return ctx.builder.fptosi(res_val, ctx.i64)
+    else:
+        return sdl_call('fabs', [x_val], ctx)
+
+
 def sdl_assign(a_ptr, b_val, ctx):
     ''' Generate the IR for an Assign operation '''
     if isinstance(b_val, SDLSubstringValue):
@@ -1846,6 +1856,21 @@ def sdl_assign(a_ptr, b_val, ctx):
         ctx.builder.store(b_val, a_ptr)
 
 
+def sdl_call(name, arg_vals, ctx):
+    ''' Generate the IR for a call operation '''
+    return ctx.builder.call(ctx.funcs[name], arg_vals)
+
+
+def sdl_ceil(x_val, ctx):
+    ''' Generate the IR for a ceil operation '''
+    return sdl_call('ceil', [x_val], ctx)
+
+
+def sdl_cos(x_val, ctx):
+    ''' Generate the IR for a cos operation '''
+    return sdl_call('cos', [x_val], ctx)
+
+
 def sdl_equals(a_val, b_val, asn1ty, ctx):
     ''' Generate the code for an Equal operation '''
     basic_asn1ty = ctx.basic_asn1type_of(asn1ty)
@@ -1866,9 +1891,19 @@ def sdl_equals(a_val, b_val, asn1ty, ctx):
     return sdl_call("asn1scc%s_equal" % type_name, [a_val, b_val], ctx)
 
 
-def sdl_not_equals(a_val, b_val, asn1ty, ctx):
-    ''' Generate the code for a Not Equal operation '''
-    return ctx.builder.not_(sdl_equals(a_val, b_val, asn1ty, ctx))
+def sdl_fix(x_val, ctx):
+    ''' Generate the IR for a fix operation '''
+    return ctx.builder.fptosi(x_val, ctx.i64)
+
+
+def sdl_float(x_val, ctx):
+    ''' Generate the IR for a float operation '''
+    return ctx.builder.sitofp(x_val, ctx.double)
+
+
+def sdl_floor(x_val, ctx):
+    ''' Generate the IR for a floor operation '''
+    return sdl_call('floor', [x_val], ctx)
 
 
 def sdl_length(s_ptr, s_asn1ty, ctx):
@@ -1885,35 +1920,53 @@ def sdl_length(s_ptr, s_asn1ty, ctx):
         return lc.Constant.int(ctx.i64, arr_llty.count)
 
 
+def sdl_not_equals(a_val, b_val, asn1ty, ctx):
+    ''' Generate the code for a Not Equal operation '''
+    return ctx.builder.not_(sdl_equals(a_val, b_val, asn1ty, ctx))
+
+
+def sdl_num(enum_val, ctx):
+    ''' Generate the IR for a num operation'''
+    return ctx.builder.sext(enum_val, ctx.i64)
+
+
+def sdl_power(x_val, y_val, ctx):
+    ''' Generate the IR for a power operation '''
+    y_val = ctx.builder.trunc(y_val, ctx.i32)
+    if x_val.type.kind == lc.TYPE_INTEGER:
+        x_val = ctx.builder.sitofp(x_val, ctx.double)
+        res_val = sdl_call('powi', [x_val, y_val], ctx)
+        return ctx.builder.fptosi(res_val, ctx.i64)
+    else:
+        return sdl_call('powi', [x_val, y_val], ctx)
+
+
 def sdl_present(s_ptr, ctx):
     ''' Generate the IR for a present operation '''
     kind_ptr = ctx.builder.gep(s_ptr, [ctx.zero, ctx.zero])
     return ctx.builder.load(kind_ptr)
 
 
-def sdl_abs(x_val, ctx):
-    ''' Generate the IR for an abs operation '''
-    if x_val.type.kind == lc.TYPE_INTEGER:
-        expr_conv = ctx.builder.sitofp(x_val, ctx.double)
-        res_val = sdl_call('fabs', [expr_conv], ctx)
-        return ctx.builder.fptosi(res_val, ctx.i64)
-    else:
-        return sdl_call('fabs', [x_val], ctx)
+def sdl_reset_timer(name, ctx):
+    ''' Generate the IR a reset timer operation '''
+    reset_func_name = 'reset_%s' % name.lower()
+
+    sdl_call(reset_func_name, [], ctx)
 
 
-def sdl_floor(x_val, ctx):
-    ''' Generate the IR for a floor operation '''
-    return sdl_call('floor', [x_val], ctx)
+def sdl_round(x_val, ctx):
+    ''' Generate the IR for a float operation '''
+    return sdl_call('round', [x_val], ctx)
 
 
-def sdl_ceil(x_val, ctx):
-    ''' Generate the IR for a ceil operation '''
-    return sdl_call('ceil', [x_val], ctx)
+def sdl_set_timer(name, val, ctx):
+    ''' Generate the IR for a set timer operation '''
+    set_func_name = 'set_%s' % name.lower()
 
+    tmp_ptr = ctx.builder.alloca(val.type)
+    ctx.builder.store(val, tmp_ptr)
 
-def sdl_cos(x_val, ctx):
-    ''' Generate the IR for a cos operation '''
-    return sdl_call('cos', [x_val], ctx)
+    sdl_call(set_func_name, [tmp_ptr], ctx)
 
 
 def sdl_sin(x_val, ctx):
@@ -1929,37 +1982,6 @@ def sdl_sqrt(x_val, ctx):
 def sdl_trunc(x_val, ctx):
     ''' Generate the IR for a cos operation '''
     return sdl_call('trunc', [x_val], ctx)
-
-
-def sdl_fix(x_val, ctx):
-    ''' Generate the IR for a fix operation '''
-    return ctx.builder.fptosi(x_val, ctx.i64)
-
-
-def sdl_float(x_val, ctx):
-    ''' Generate the IR for a float operation '''
-    return ctx.builder.sitofp(x_val, ctx.double)
-
-
-def sdl_power(x_val, y_val, ctx):
-    ''' Generate the IR for a power operation '''
-    y_val = ctx.builder.trunc(y_val, ctx.i32)
-    if x_val.type.kind == lc.TYPE_INTEGER:
-        x_val = ctx.builder.sitofp(x_val, ctx.double)
-        res_val = sdl_call('powi', [x_val, y_val], ctx)
-        return ctx.builder.fptosi(res_val, ctx.i64)
-    else:
-        return sdl_call('powi', [x_val, y_val], ctx)
-
-
-def sdl_round(x_val, ctx):
-    ''' Generate the IR for a float operation '''
-    return sdl_call('round', [x_val], ctx)
-
-
-def sdl_num(enum_val, ctx):
-    ''' Generate the IR for a num operation'''
-    return ctx.builder.sext(enum_val, ctx.i64)
 
 
 def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
@@ -2016,25 +2038,3 @@ def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
 
     arg_values.insert(0, ctx.string_ptr(fmt))
     sdl_call('printf', arg_values, ctx)
-
-
-def sdl_reset_timer(name, ctx):
-    ''' Generate the IR a reset timer operation '''
-    reset_func_name = 'reset_%s' % name.lower()
-
-    sdl_call(reset_func_name, [], ctx)
-
-
-def sdl_set_timer(name, val, ctx):
-    ''' Generate the IR for a set timer operation '''
-    set_func_name = 'set_%s' % name.lower()
-
-    tmp_ptr = ctx.builder.alloca(val.type)
-    ctx.builder.store(val, tmp_ptr)
-
-    sdl_call(set_func_name, [tmp_ptr], ctx)
-
-
-def sdl_call(name, arg_vals, ctx):
-    ''' Generate the IR for a call operation '''
-    return ctx.builder.call(ctx.funcs[name], arg_vals)
