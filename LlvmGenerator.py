@@ -20,7 +20,9 @@
 import logging
 
 from singledispatch import singledispatch
-from llvm import core, ee
+
+from llvm import core as lc
+from llvm import ee as le
 
 import ogAST
 import Helper
@@ -34,8 +36,8 @@ class Context():
     def __init__(self, process):
         self.name = str(process.processName)
         self.process = process
-        self.module = core.Module.new(self.name)
-        self.target_data = ee.TargetData.new(self.module.data_layout)
+        self.module = lc.Module.new(self.name)
+        self.target_data = le.TargetData.new(self.module.data_layout)
         self.dataview = process.dataview
         self.procedures = process.procedures
 
@@ -51,80 +53,80 @@ class Context():
         self.basic_asn1types = {}
 
         # Initialize built-in types
-        self.i1 = core.Type.int(1)
-        self.i8 = core.Type.int(8)
-        self.i32 = core.Type.int(32)
-        self.i64 = core.Type.int(64)
-        self.void = core.Type.void()
-        self.double = core.Type.double()
-        self.i1_ptr = core.Type.pointer(self.i1)
-        self.i8_ptr = core.Type.pointer(self.i8)
-        self.i32_ptr = core.Type.pointer(self.i32)
-        self.i64_ptr = core.Type.pointer(self.i64)
-        self.double_ptr = core.Type.pointer(self.double)
+        self.i1 = lc.Type.int(1)
+        self.i8 = lc.Type.int(8)
+        self.i32 = lc.Type.int(32)
+        self.i64 = lc.Type.int(64)
+        self.void = lc.Type.void()
+        self.double = lc.Type.double()
+        self.i1_ptr = lc.Type.pointer(self.i1)
+        self.i8_ptr = lc.Type.pointer(self.i8)
+        self.i32_ptr = lc.Type.pointer(self.i32)
+        self.i64_ptr = lc.Type.pointer(self.i64)
+        self.double_ptr = lc.Type.pointer(self.double)
 
         # Initialize common constants
-        self.zero = core.Constant.int(self.i32, 0)
-        self.one = core.Constant.int(self.i32, 1)
+        self.zero = lc.Constant.int(self.i32, 0)
+        self.one = lc.Constant.int(self.i32, 1)
 
         # Intialize built-in functions
-        ty = core.Type.function(self.void, [self.i8_ptr], True)
+        ty = lc.Type.function(self.void, [self.i8_ptr], True)
         self.funcs['printf'] = self.module.add_function(ty, 'printf')
 
-        ty = core.Type.function(self.double, [self.double])
+        ty = lc.Type.function(self.double, [self.double])
         self.funcs['round'] = self.module.add_function(ty, 'round')
 
-        self.funcs['memcpy'] = core.Function.intrinsic(
+        self.funcs['memcpy'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_MEMCPY,
+            lc.INTR_MEMCPY,
             [self.i8_ptr, self.i8_ptr, self.i64]
         )
 
-        self.funcs['powi'] = core.Function.intrinsic(
+        self.funcs['powi'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_POWI,
+            lc.INTR_POWI,
             [self.double]
         )
 
-        self.funcs['ceil'] = core.Function.intrinsic(
+        self.funcs['ceil'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_CEIL,
+            lc.INTR_CEIL,
             [self.double]
         )
 
-        self.funcs['cos'] = core.Function.intrinsic(
+        self.funcs['cos'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_COS,
+            lc.INTR_COS,
             [self.double]
         )
 
-        self.funcs['fabs'] = core.Function.intrinsic(
+        self.funcs['fabs'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_FABS,
+            lc.INTR_FABS,
             [self.double]
         )
 
-        self.funcs['floor'] = core.Function.intrinsic(
+        self.funcs['floor'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_FLOOR,
+            lc.INTR_FLOOR,
             [self.double]
         )
 
-        self.funcs['sin'] = core.Function.intrinsic(
+        self.funcs['sin'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_SIN,
+            lc.INTR_SIN,
             [self.double]
         )
 
-        self.funcs['sqrt'] = core.Function.intrinsic(
+        self.funcs['sqrt'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_SQRT,
+            lc.INTR_SQRT,
             [self.double]
         )
 
-        self.funcs['trunc'] = core.Function.intrinsic(
+        self.funcs['trunc'] = lc.Function.intrinsic(
             self.module,
-            core.INTR_TRUNC,
+            lc.INTR_TRUNC,
             [self.double]
         )
 
@@ -206,14 +208,14 @@ class Context():
         is_variable_size = min_size != max_size
 
         elem_llty = self.lltype_of(asn1ty.type)
-        array_llty = core.Type.array(elem_llty, max_size)
+        array_llty = lc.Type.array(elem_llty, max_size)
 
         if is_variable_size:
             struct = self.decl_struct(['nCount', 'arr'], [self.i32, array_llty], name)
         else:
             struct = self.decl_struct(['arr'], [array_llty], name)
 
-        struct_ptr = core.Type.pointer(struct.llty)
+        struct_ptr = lc.Type.pointer(struct.llty)
         self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
         return struct.llty
@@ -229,7 +231,7 @@ class Context():
 
         struct = self.decl_struct(field_names, field_lltys, name)
 
-        struct_ptr = core.Type.pointer(struct.llty)
+        struct_ptr = lc.Type.pointer(struct.llty)
         self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
         return struct.llty
@@ -241,14 +243,14 @@ class Context():
 
         for idx, field_name in enumerate(Helper.sorted_fields(asn1ty)):
             # enum values used in choice determinant/present
-            self.enums[field_name.replace('-', '_')] = core.Constant.int(self.i32, idx)
+            self.enums[field_name.replace('-', '_')] = lc.Constant.int(self.i32, idx)
 
             field_names.append(field_name.replace('-', '_'))
             field_lltys.append(self.lltype_of(asn1ty.Children[field_name].type))
 
         union = self.decl_union(field_names, field_lltys, name)
 
-        union_ptr = core.Type.pointer(union.llty)
+        union_ptr = lc.Type.pointer(union.llty)
         self.decl_func("asn1Scc%s_Equal" % name, self.i1, [union_ptr, union_ptr])
 
         return union.llty
@@ -259,14 +261,14 @@ class Context():
         max_size = int(asn1ty.Max)
         is_variable_size = min_size != max_size
 
-        array_llty = core.Type.array(self.i8, max_size)
+        array_llty = lc.Type.array(self.i8, max_size)
 
         if is_variable_size:
             struct = self.decl_struct(['nCount', 'arr'], [self.i32, array_llty], name)
         else:
             struct = self.decl_struct(['arr'], [array_llty], name)
 
-        struct_ptr = core.Type.pointer(struct.llty)
+        struct_ptr = lc.Type.pointer(struct.llty)
         self.decl_func("asn1Scc%s_Equal" % name, self.i1, [struct_ptr, struct_ptr])
 
         return struct.llty
@@ -276,7 +278,7 @@ class Context():
         if str in self.strings:
             return self.strings[str].gep([self.zero, self.zero])
 
-        str_val = core.Constant.stringz(str)
+        str_val = lc.Constant.stringz(str)
         var_name = '.str%s' % len(self.strings)
         var_ptr = self.module.add_global_variable(str_val.type, var_name)
         var_ptr.initializer = str_val
@@ -285,9 +287,9 @@ class Context():
 
     def decl_func(self, name, return_llty, param_lltys, extern=False):
         ''' Declare a function '''
-        func_llty = core.Type.function(return_llty, param_lltys)
+        func_llty = lc.Type.function(return_llty, param_lltys)
         func_name = ("%s_RI_%s" % (self.name, name)) if extern else name
-        func = core.Function.new(self.module, func_llty, func_name)
+        func = lc.Function.new(self.module, func_llty, func_name)
         self.funcs[name.lower()] = func
         return func
 
@@ -319,7 +321,7 @@ class StructType():
     def __init__(self, name, field_names, field_lltys):
         self.name = name
         self.field_names = field_names
-        self.llty = core.Type.struct(field_lltys, self.name)
+        self.llty = lc.Type.struct(field_lltys, self.name)
 
     def idx(self, field_name):
         return self.field_names.index(field_name)
@@ -333,7 +335,7 @@ class UnionType():
         # Unions are represented a struct with a field indicating the index of its type
         # and a byte array with the size of the biggest type in the union
         self.size = max([ctx.target_data.size(ty) for ty in field_lltys])
-        self.llty = core.Type.struct([ctx.i32, core.Type.array(ctx.i8, self.size)], name)
+        self.llty = lc.Type.struct([ctx.i32, lc.Type.array(ctx.i8, self.size)], name)
 
     def kind(self, name):
         idx = self.field_names.index(name)
@@ -398,22 +400,22 @@ def _process(process, ctx=None):
     # Initialize states
     for name, val in process.mapping.viewitems():
         if not name.endswith('START'):
-            cons_val = core.Constant.int(ctx.i32, len(ctx.states))
+            cons_val = lc.Constant.int(ctx.i32, len(ctx.states))
             ctx.states[name.lower()] = cons_val
         elif name != 'START':
-            cons_val = core.Constant.int(ctx.i32, val)
+            cons_val = lc.Constant.int(ctx.i32, val)
             ctx.states[name.lower()] = cons_val
 
     # Generate state var
     state_cons = ctx.module.add_global_variable(ctx.i32, '.state')
-    state_cons.initializer = core.Constant.int(ctx.i32, -1)
+    state_cons.initializer = lc.Constant.int(ctx.i32, -1)
     ctx.scope.define('.state', state_cons)
 
     # Generare process-level vars
     for name, (asn1ty, expr) in process.variables.viewitems():
         var_llty = ctx.lltype_of(asn1ty)
         global_var = ctx.module.add_global_variable(var_llty, str(name))
-        global_var.initializer = core.Constant.null(var_llty)
+        global_var.initializer = lc.Constant.null(var_llty)
         ctx.scope.define(str(name).lower(), global_var)
 
     # Declare set/reset timer functions
@@ -425,14 +427,14 @@ def _process(process, ctx=None):
     # Declare output signal functions
     for signal in process.output_signals:
         if 'type' in signal:
-            param_lltys = [core.Type.pointer(ctx.lltype_of(signal['type']))]
+            param_lltys = [lc.Type.pointer(ctx.lltype_of(signal['type']))]
         else:
             param_lltys = []
         ctx.decl_func(str(signal['name']), ctx.void, param_lltys, True)
 
     # Declare external procedures functions
     for proc in [proc for proc in process.procedures if proc.external]:
-        param_lltys = [core.Type.pointer(ctx.lltype_of(p['type'])) for p in proc.fpar]
+        param_lltys = [lc.Type.pointer(ctx.lltype_of(p['type'])) for p in proc.fpar]
         ctx.decl_func(str(proc.inputString), ctx.void, param_lltys, True)
 
     # Generate internal procedures
@@ -468,7 +470,7 @@ def generate_runtr_func(process, ctx):
     body_block = func.append_basic_block('runtr:body')
     exit_block = func.append_basic_block('runtr:exit')
 
-    ctx.builder = core.Builder.new(entry_block)
+    ctx.builder = lc.Builder.new(entry_block)
 
     # entry
     id_ptr = ctx.builder.alloca(ctx.i32, None, 'id')
@@ -478,9 +480,9 @@ def generate_runtr_func(process, ctx):
 
     # cond
     ctx.builder.position_at_end(cond_block)
-    no_tr_cons = core.Constant.int(ctx.i32, -1)
+    no_tr_cons = lc.Constant.int(ctx.i32, -1)
     id_val = ctx.builder.load(id_ptr)
-    cond_val = ctx.builder.icmp(core.ICMP_NE, id_val, no_tr_cons, 'cond')
+    cond_val = ctx.builder.icmp(lc.ICMP_NE, id_val, no_tr_cons, 'cond')
     ctx.builder.cbranch(cond_val, body_block, exit_block)
 
     # body
@@ -490,7 +492,7 @@ def generate_runtr_func(process, ctx):
     # transitions
     for idx, tr in enumerate(process.transitions):
         tr_block = func.append_basic_block('runtr:tr%d' % idx)
-        const = core.Constant.int(ctx.i32, idx)
+        const = lc.Constant.int(ctx.i32, idx)
         switch.add_case(const, tr_block)
         ctx.builder.position_at_end(tr_block)
         generate(tr, ctx)
@@ -522,7 +524,7 @@ def generate_startup_func(process, ctx):
     ctx.open_scope()
 
     entry_block = func.append_basic_block('startup:entry')
-    ctx.builder = core.Builder.new(entry_block)
+    ctx.builder = lc.Builder.new(entry_block)
 
     # Initialize process level variables
     for name, (ty, expr) in process.variables.viewitems():
@@ -530,7 +532,7 @@ def generate_startup_func(process, ctx):
             global_var = ctx.scope.resolve(str(name))
             sdl_assign(global_var, expression(expr, ctx), ctx)
 
-    sdl_call('run_transition', [core.Constant.int(ctx.i32, 0)], ctx)
+    sdl_call('run_transition', [lc.Constant.int(ctx.i32, 0)], ctx)
     ctx.builder.ret_void()
 
     ctx.close_scope()
@@ -544,7 +546,7 @@ def generate_input_signal(signal, inputs, ctx):
     func_name = ctx.name + "_" + str(signal['name'])
     param_lltys = []
     if 'type' in signal:
-        param_lltys.append(core.Type.pointer(ctx.lltype_of(signal['type'])))
+        param_lltys.append(lc.Type.pointer(ctx.lltype_of(signal['type'])))
 
     func = ctx.decl_func(func_name, ctx.void, param_lltys)
 
@@ -552,7 +554,7 @@ def generate_input_signal(signal, inputs, ctx):
 
     entry_block = func.append_basic_block('input:entry')
     exit_block = func.append_basic_block('input:exit')
-    ctx.builder = core.Builder.new(entry_block)
+    ctx.builder = lc.Builder.new(entry_block)
 
     g_state_val = ctx.builder.load(ctx.global_scope.resolve('.state'))
     switch = ctx.builder.switch(g_state_val, exit_block)
@@ -585,7 +587,7 @@ def generate_input_signal(signal, inputs, ctx):
                 sdl_assign(var_ptr, ctx.builder.load(func.args[0]), ctx)
 
         if trans:
-            id_val = core.Constant.int(ctx.i32, state_input.transition_id)
+            id_val = lc.Constant.int(ctx.i32, state_input.transition_id)
             sdl_call('run_transition', [id_val], ctx)
 
         ctx.builder.ret_void()
@@ -629,7 +631,7 @@ def _output(output, ctx):
         for arg in args:
             arg_val = expression(arg, ctx)
             # Pass by reference
-            if arg_val.type.kind != core.TYPE_POINTER:
+            if arg_val.type.kind != lc.TYPE_POINTER:
                 arg_var = ctx.builder.alloca(arg_val.type, None)
                 ctx.builder.store(arg_val, arg_var)
                 arg_vals.append(arg_var)
@@ -675,7 +677,7 @@ def _proc_call(proc_call, ctx):
         else:
             arg_val = expression(arg, ctx)
             # Pass by reference
-            if arg_val.type.kind != core.TYPE_POINTER:
+            if arg_val.type.kind != lc.TYPE_POINTER:
                 arg_var = ctx.builder.alloca(arg_val.type, None)
                 ctx.builder.store(arg_val, arg_var)
                 arg_vals.append(arg_var)
@@ -725,14 +727,14 @@ def generate_for_range(loop, ctx):
         start_val = expression(loop['range']['start'], ctx)
         ctx.builder.store(start_val, loop_var)
     else:
-        ctx.builder.store(core.Constant.int(ctx.i64, 0), loop_var)
+        ctx.builder.store(lc.Constant.int(ctx.i64, 0), loop_var)
 
     stop_val = expression(loop['range']['stop'], ctx)
     ctx.builder.branch(cond_block)
 
     ctx.builder.position_at_end(cond_block)
     loop_val = ctx.builder.load(loop_var)
-    cond_val = ctx.builder.icmp(core.ICMP_SLT, loop_val, stop_val)
+    cond_val = ctx.builder.icmp(lc.ICMP_SLT, loop_val, stop_val)
     ctx.builder.cbranch(cond_val, body_block, end_block)
 
     ctx.builder.position_at_end(body_block)
@@ -740,7 +742,7 @@ def generate_for_range(loop, ctx):
     ctx.builder.branch(inc_block)
 
     ctx.builder.position_at_end(inc_block)
-    step_val = core.Constant.int(ctx.i64, loop['range']['step'])
+    step_val = lc.Constant.int(ctx.i64, loop['range']['step'])
     loop_val = ctx.builder.load(loop_var)
     temp_val = ctx.builder.add(loop_val, step_val)
     ctx.builder.store(temp_val, loop_var)
@@ -770,7 +772,7 @@ def generate_for_iterable(loop, ctx):
     ctx.open_scope()
 
     idx_ptr = ctx.builder.alloca(ctx.i32)
-    ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
+    ctx.builder.store(lc.Constant.int(ctx.i32, 0), idx_ptr)
     seqof_val = expression(loop['list'], ctx)
 
     if isinstance(seqof_val, SDLSubstringValue):
@@ -788,7 +790,7 @@ def generate_for_iterable(loop, ctx):
         # load the current number of elements that is on the first field
         end_idx = ctx.builder.load(ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero]))
     else:
-        end_idx = core.Constant.int(ctx.i32, array_ptr.type.pointee.count)
+        end_idx = lc.Constant.int(ctx.i32, array_ptr.type.pointee.count)
 
     var_ptr = ctx.builder.alloca(elem_llty, None, str(loop['var']))
     ctx.scope.define(str(loop['var']), var_ptr)
@@ -798,7 +800,7 @@ def generate_for_iterable(loop, ctx):
     # load block
     ctx.builder.position_at_end(load_block)
     idx_var = ctx.builder.load(idx_ptr)
-    if elem_llty.kind == core.TYPE_STRUCT:
+    if elem_llty.kind == lc.TYPE_STRUCT:
         elem_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_var])
         sdl_assign(var_ptr, elem_ptr, ctx)
     else:
@@ -815,7 +817,7 @@ def generate_for_iterable(loop, ctx):
     ctx.builder.position_at_end(cond_block)
     tmp_val = ctx.builder.add(idx_var, ctx.one)
     ctx.builder.store(tmp_val, idx_ptr)
-    cond_val = ctx.builder.icmp(core.ICMP_SLT, tmp_val, end_idx)
+    cond_val = ctx.builder.icmp(lc.ICMP_SLT, tmp_val, end_idx)
     ctx.builder.cbranch(cond_val, load_block, end_block)
 
     ctx.builder.position_at_end(end_block)
@@ -843,14 +845,14 @@ def _prim_selector_reference(prim, ctx):
 
     if receiver_ptr.type.pointee.name in ctx.structs:
         struct = ctx.structs[receiver_ptr.type.pointee.name]
-        field_idx_cons = core.Constant.int(ctx.i32, struct.idx(field_name))
+        field_idx_cons = lc.Constant.int(ctx.i32, struct.idx(field_name))
         return ctx.builder.gep(receiver_ptr, [ctx.zero, field_idx_cons])
 
     else:
         union = ctx.unions[receiver_ptr.type.pointee.name]
         _, field_llty = union.kind(field_name)
         field_ptr = ctx.builder.gep(receiver_ptr, [ctx.zero, ctx.one])
-        return ctx.builder.bitcast(field_ptr, core.Type.pointer(field_llty))
+        return ctx.builder.bitcast(field_ptr, lc.Type.pointer(field_llty))
 
 
 @reference.register(ogAST.PrimIndex)
@@ -880,7 +882,7 @@ def _prim_substring_reference(prim, ctx):
     low_val = expression(prim.value[1]['substring'][0], ctx)
     high_val = expression(prim.value[1]['substring'][1], ctx)
     count_val = ctx.builder.sub(high_val, low_val)
-    count_val = ctx.builder.add(count_val, core.Constant.int(ctx.i64, 1))
+    count_val = ctx.builder.add(count_val, lc.Constant.int(ctx.i64, 1))
     count_val = ctx.builder.trunc(count_val, ctx.i32)
 
     if isinstance(seqof_val, SDLSubstringValue):
@@ -966,26 +968,26 @@ def _expr_rel(expr, ctx):
 
     if basic_asn1ty.kind in ('IntegerType', 'Integer32Type'):
         if isinstance(expr, ogAST.ExprLt):
-            return ctx.builder.icmp(core.ICMP_SLT, left_val, right_val)
+            return ctx.builder.icmp(lc.ICMP_SLT, left_val, right_val)
         elif isinstance(expr, ogAST.ExprLe):
-            return ctx.builder.icmp(core.ICMP_SLE, left_val, right_val)
+            return ctx.builder.icmp(lc.ICMP_SLE, left_val, right_val)
         elif isinstance(expr, ogAST.ExprGe):
-            return ctx.builder.icmp(core.ICMP_SGE, left_val, right_val)
+            return ctx.builder.icmp(lc.ICMP_SGE, left_val, right_val)
         elif isinstance(expr, ogAST.ExprGt):
-            return ctx.builder.icmp(core.ICMP_SGT, left_val, right_val)
+            return ctx.builder.icmp(lc.ICMP_SGT, left_val, right_val)
         raise CompileError(
             'Expression "%s" not supported for Integer types'
             % expr.__class__.__name__)
 
     elif basic_asn1ty.kind == 'RealType':
         if isinstance(expr, ogAST.ExprLt):
-            return ctx.builder.fcmp(core.FCMP_OLT, left_val, right_val)
+            return ctx.builder.fcmp(lc.FCMP_OLT, left_val, right_val)
         elif isinstance(expr, ogAST.ExprLe):
-            return ctx.builder.fcmp(core.FCMP_OLE, left_val, right_val)
+            return ctx.builder.fcmp(lc.FCMP_OLE, left_val, right_val)
         elif isinstance(expr, ogAST.ExprGe):
-            return ctx.builder.fcmp(core.FCMP_OGE, left_val, right_val)
+            return ctx.builder.fcmp(lc.FCMP_OGE, left_val, right_val)
         elif isinstance(expr, ogAST.ExprGt):
-            return ctx.builder.fcmp(core.FCMP_OGT, left_val, right_val)
+            return ctx.builder.fcmp(lc.FCMP_OGT, left_val, right_val)
         raise CompileError(
             'Expression "%s" not supported for Real types'
             % expr.__class__.__name__)
@@ -1013,11 +1015,11 @@ def _expr_eq(expr, ctx):
 def _expr_neg(expr, ctx):
     ''' Generate the IR for a negative expression '''
     expr_val = expression(expr.expr, ctx)
-    if expr_val.type.kind == core.TYPE_INTEGER:
-        zero_val = core.Constant.int(ctx.i64, 0)
+    if expr_val.type.kind == lc.TYPE_INTEGER:
+        zero_val = lc.Constant.int(ctx.i64, 0)
         return ctx.builder.sub(zero_val, expr_val)
     else:
-        zero_val = core.Constant.real(ctx.double, 0)
+        zero_val = lc.Constant.real(ctx.double, 0)
         return ctx.builder.fsub(zero_val, expr_val)
 
 
@@ -1090,10 +1092,10 @@ def _expr_logic(expr, ctx):
         res_ptr = ctx.builder.alloca(left_ptr.type.pointee)
 
         array_llty = res_ptr.type.pointee.elements[0]
-        len_val = core.Constant.int(ctx.i32, array_llty.count)
+        len_val = lc.Constant.int(ctx.i32, array_llty.count)
 
         idx_ptr = ctx.builder.alloca(ctx.i32)
-        ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
+        ctx.builder.store(lc.Constant.int(ctx.i32, 0), idx_ptr)
 
         ctx.builder.branch(body_block)
 
@@ -1126,7 +1128,7 @@ def _expr_logic(expr, ctx):
         ctx.builder.position_at_end(next_block)
         idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
         ctx.builder.store(idx_tmp_val, idx_ptr)
-        end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, len_val)
+        end_cond_val = ctx.builder.icmp(lc.ICMP_SGE, idx_tmp_val, len_val)
         ctx.builder.cbranch(end_cond_val, end_block, body_block)
 
         # end block
@@ -1153,13 +1155,13 @@ def _expr_not(expr, ctx):
         end_block = func.append_basic_block('not:end')
 
         idx_ptr = ctx.builder.alloca(ctx.i32)
-        ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
+        ctx.builder.store(lc.Constant.int(ctx.i32, 0), idx_ptr)
 
         struct_ptr = expression(expr.expr, ctx)
         res_struct_ptr = ctx.builder.alloca(struct_ptr.type.pointee)
 
         array_llty = struct_ptr.type.pointee.elements[0]
-        len_val = core.Constant.int(ctx.i32, array_llty.count)
+        len_val = lc.Constant.int(ctx.i32, array_llty.count)
 
         ctx.builder.branch(body_block)
 
@@ -1179,7 +1181,7 @@ def _expr_not(expr, ctx):
         ctx.builder.position_at_end(next_block)
         idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
         ctx.builder.store(idx_tmp_val, idx_ptr)
-        end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, len_val)
+        end_cond_val = ctx.builder.icmp(lc.ICMP_SGE, idx_tmp_val, len_val)
         ctx.builder.cbranch(end_cond_val, end_block, body_block)
 
         ctx.builder.position_at_end(end_block)
@@ -1197,7 +1199,7 @@ def _expr_append(expr, ctx):
     if basic_asn1ty.kind in ('SequenceOfType', 'OctetStringType'):
         res_llty = ctx.lltype_of(expr.exprType)
         elem_llty = res_llty.elements[1].element
-        elem_size_val = core.Constant.sizeof(elem_llty)
+        elem_size_val = lc.Constant.sizeof(elem_llty)
 
         res_ptr = ctx.builder.alloca(res_llty)
         res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
@@ -1228,8 +1230,8 @@ def _expr_append(expr, ctx):
             ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
             ctx.builder.bitcast(left_arr_ptr, ctx.i8_ptr),
             ctx.builder.mul(elem_size_val, ctx.builder.zext(left_count_val, ctx.i64)),
-            core.Constant.int(ctx.i32, 0),
-            core.Constant.int(ctx.i1, 0)
+            lc.Constant.int(ctx.i32, 0),
+            lc.Constant.int(ctx.i1, 0)
         ], ctx)
 
         res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one, left_count_val])
@@ -1238,8 +1240,8 @@ def _expr_append(expr, ctx):
             ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
             ctx.builder.bitcast(right_arr_ptr, ctx.i8_ptr),
             ctx.builder.mul(elem_size_val, ctx.builder.zext(right_count_val, ctx.i64)),
-            core.Constant.int(ctx.i32, 0),
-            core.Constant.int(ctx.i1, 0)
+            lc.Constant.int(ctx.i32, 0),
+            lc.Constant.int(ctx.i1, 0)
         ], ctx)
 
         return res_ptr
@@ -1263,7 +1265,7 @@ def _expr_in(expr, ctx):
     is_variable_size = seqof_basic_asn1ty.Min != seqof_basic_asn1ty.Max
 
     idx_ptr = ctx.builder.alloca(ctx.i32)
-    ctx.builder.store(core.Constant.int(ctx.i32, 0), idx_ptr)
+    ctx.builder.store(lc.Constant.int(ctx.i32, 0), idx_ptr)
 
     value_val = expression(expr.right, ctx)
     seqof_val = expression(expr.left, ctx)
@@ -1275,7 +1277,7 @@ def _expr_in(expr, ctx):
         end_idx = ctx.builder.load(ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero]))
     else:
         array_llty = seqof_val.type.pointee.elements[0]
-        end_idx = core.Constant.int(ctx.i32, array_llty.count)
+        end_idx = lc.Constant.int(ctx.i32, array_llty.count)
 
     ctx.builder.branch(check_block)
 
@@ -1300,7 +1302,7 @@ def _expr_in(expr, ctx):
     ctx.builder.position_at_end(next_block)
     idx_tmp_val = ctx.builder.add(idx_val, ctx.one)
     ctx.builder.store(idx_tmp_val, idx_ptr)
-    end_cond_val = ctx.builder.icmp(core.ICMP_SGE, idx_tmp_val, end_idx)
+    end_cond_val = ctx.builder.icmp(lc.ICMP_SGE, idx_tmp_val, end_idx)
     ctx.builder.cbranch(end_cond_val, end_block, check_block)
 
     ctx.builder.position_at_end(end_block)
@@ -1378,7 +1380,7 @@ def _prim_enumerated_value(prim, ctx):
     ''' Generate the IR for an enumerated value '''
     enumerant = prim.value[0].replace('_', '-')
     basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
-    return core.Constant.int(ctx.i32, basic_asn1ty.EnumValues[enumerant].IntValue)
+    return lc.Constant.int(ctx.i32, basic_asn1ty.EnumValues[enumerant].IntValue)
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
@@ -1391,22 +1393,22 @@ def _prim_choice_determinant(prim, ctx):
 @expression.register(ogAST.PrimInteger)
 def _prim_integer(prim, ctx):
     ''' Generate the IR for a raw integer value '''
-    return core.Constant.int(ctx.i64, prim.value[0])
+    return lc.Constant.int(ctx.i64, prim.value[0])
 
 
 @expression.register(ogAST.PrimReal)
 def _prim_real(prim, ctx):
     ''' Generate the IR for a raw real value '''
-    return core.Constant.real(ctx.double, prim.value[0])
+    return lc.Constant.real(ctx.double, prim.value[0])
 
 
 @expression.register(ogAST.PrimBoolean)
 def _prim_boolean(prim, ctx):
     ''' Generate the IR for a raw boolean value '''
     if prim.value[0].lower() == 'true':
-        return core.Constant.int(ctx.i1, 1)
+        return lc.Constant.int(ctx.i1, 1)
     else:
-        return core.Constant.int(ctx.i1, 0)
+        return lc.Constant.int(ctx.i1, 0)
 
 
 @expression.register(ogAST.PrimEmptyString)
@@ -1414,7 +1416,7 @@ def _prim_empty_string(prim, ctx):
     ''' Generate the IR for an empty SEQUENCE OF '''
     struct_llty = ctx.lltype_of(prim.exprType)
     struct_ptr = ctx.builder.alloca(struct_llty)
-    ctx.builder.store(core.Constant.null(struct_llty), struct_ptr)
+    ctx.builder.store(lc.Constant.null(struct_llty), struct_ptr)
     return struct_ptr
 
 
@@ -1438,7 +1440,7 @@ def _prim_string_literal(prim, ctx):
         arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.one])
 
         # Copy length
-        str_len_val = core.Constant.int(ctx.i32, str_len)
+        str_len_val = lc.Constant.int(ctx.i32, str_len)
         count_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
         ctx.builder.store(str_len_val, count_ptr)
 
@@ -1446,9 +1448,9 @@ def _prim_string_literal(prim, ctx):
     casted_arr_ptr = ctx.builder.bitcast(arr_ptr, ctx.i8_ptr)
     casted_str_ptr = ctx.builder.bitcast(str_ptr, ctx.i8_ptr)
 
-    size = core.Constant.int(ctx.i64, str_len)
-    align = core.Constant.int(ctx.i32, 0)
-    volatile = core.Constant.int(ctx.i1, 0)
+    size = lc.Constant.int(ctx.i64, str_len)
+    align = lc.Constant.int(ctx.i32, 0)
+    volatile = lc.Constant.int(ctx.i1, 0)
 
     sdl_call('memcpy', [casted_arr_ptr, casted_str_ptr, size, align, volatile], ctx)
 
@@ -1468,7 +1470,7 @@ def _prim_mantissa_base_exp(prim, ctx):
     base = int(prim.value['base'])
     exponent = int(prim.value['exponent'])
 
-    return core.Constant.real(ctx.double, (mantissa * base) ** exponent)
+    return lc.Constant.real(ctx.double, (mantissa * base) ** exponent)
 
 
 @expression.register(ogAST.PrimConditional)
@@ -1512,7 +1514,7 @@ def _prim_sequence(prim, ctx):
         # Workarround for unknown types in nested sequences
         field_expr.exprType = seq_asn1ty.type.Children[field_name.replace('_', '-')].type
 
-        field_idx_cons = core.Constant.int(ctx.i32, struct.idx(field_name))
+        field_idx_cons = lc.Constant.int(ctx.i32, struct.idx(field_name))
         field_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, field_idx_cons])
         sdl_assign(field_ptr, expression(field_expr, ctx), ctx)
 
@@ -1529,7 +1531,7 @@ def _prim_sequence_of(prim, ctx):
     is_variable_size = basic_asn1ty.Min != basic_asn1ty.Max
 
     if is_variable_size:
-        count_val = core.Constant.int(ctx.i32, len(prim.value))
+        count_val = lc.Constant.int(ctx.i32, len(prim.value))
         count_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
         ctx.builder.store(count_val, count_ptr)
         array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one])
@@ -1537,7 +1539,7 @@ def _prim_sequence_of(prim, ctx):
         array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
 
     for idx, expr in enumerate(prim.value):
-        idx_cons = core.Constant.int(ctx.i32, idx)
+        idx_cons = lc.Constant.int(ctx.i32, idx)
         expr_val = expression(expr, ctx)
         pos_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_cons])
         sdl_assign(pos_ptr, expr_val, ctx)
@@ -1555,10 +1557,10 @@ def _prim_choiceitem(prim, ctx):
     kind_idx, field_llty = union.kind(prim.value['choice'])
 
     kind_ptr = ctx.builder.gep(union_ptr, [ctx.zero, ctx.zero])
-    ctx.builder.store(core.Constant.int(ctx.i32, kind_idx), kind_ptr)
+    ctx.builder.store(lc.Constant.int(ctx.i32, kind_idx), kind_ptr)
 
     field_ptr = ctx.builder.gep(union_ptr, [ctx.zero, ctx.one])
-    field_ptr = ctx.builder.bitcast(field_ptr, core.Type.pointer(field_llty))
+    field_ptr = ctx.builder.bitcast(field_ptr, lc.Type.pointer(field_llty))
     sdl_assign(field_ptr, expr_val, ctx)
 
     return union_ptr
@@ -1602,12 +1604,12 @@ def _decision(dec, ctx):
             low_val = expression(ans.closedRange[0], ctx)
             high_val = expression(ans.closedRange[1], ctx)
 
-            if q_val.type.kind == core.TYPE_INTEGER:
-                low_cond_val = ctx.builder.icmp(core.ICMP_SGE, q_val, low_val)
-                high_cond_val = ctx.builder.icmp(core.ICMP_SLE, q_val, high_val)
+            if q_val.type.kind == lc.TYPE_INTEGER:
+                low_cond_val = ctx.builder.icmp(lc.ICMP_SGE, q_val, low_val)
+                high_cond_val = ctx.builder.icmp(lc.ICMP_SLE, q_val, high_val)
             else:
-                low_cond_val = ctx.builder.fcmp(core.FCMP_OLE, q_val, low_val)
-                high_cond_val = ctx.builder.fcmp(core.FCMP_OGE, q_val, high_val)
+                low_cond_val = ctx.builder.fcmp(lc.FCMP_OLE, q_val, low_val)
+                high_cond_val = ctx.builder.fcmp(lc.FCMP_OGE, q_val, high_val)
 
             ans_cond_val = ctx.builder.and_(low_cond_val, high_cond_val)
             ctx.builder.cbranch(ans_cond_val, true_block, false_block)
@@ -1665,7 +1667,7 @@ def generate_next_state_terminator(term, ctx):
     state = term.inputString.lower()
     if state.strip() != '-':
         if type(term.next_id) is int:
-            next_id_val = core.Constant.int(ctx.i32, term.next_id)
+            next_id_val = lc.Constant.int(ctx.i32, term.next_id)
             if term.next_id == -1:
                 global_state_ptr = ctx.global_scope.resolve('.state')
                 ctx.builder.store(ctx.states[state.lower()], global_state_ptr)
@@ -1692,13 +1694,13 @@ def generate_next_state_terminator(term, ctx):
                     ctx.builder.branch(end_block)
 
             ctx.builder.position_at_end(default_case_block)
-            next_id_val = core.Constant.int(ctx.i32, -1)
+            next_id_val = lc.Constant.int(ctx.i32, -1)
             ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
             ctx.builder.branch(end_block)
 
             ctx.builder.position_at_end(end_block)
         else:
-            next_id_cons = core.Constant.int(ctx.i32, -1)
+            next_id_cons = lc.Constant.int(ctx.i32, -1)
             ctx.builder.store(next_id_cons, ctx.scope.resolve('id'))
 
     ctx.builder.branch(ctx.scope.label('next_transition'))
@@ -1722,7 +1724,7 @@ def generate_return_terminator(term, ctx):
     elif term.next_id == -1:
         ctx.builder.ret_void()
     else:
-        next_id_cons = core.Constant.int(ctx.i32, term.next_id)
+        next_id_cons = lc.Constant.int(ctx.i32, term.next_id)
         ctx.builder.store(next_id_cons, ctx.scope.resolve('id'))
         ctx.builder.branch(ctx.scope.label('next_transition'))
 
@@ -1744,7 +1746,7 @@ def _floating_label(label, ctx):
 @generate.register(ogAST.Procedure)
 def _procedure(proc, ctx):
     ''' Generate the IR for a procedure '''
-    param_lltys = [core.Type.pointer(ctx.lltype_of(p['type'])) for p in proc.fpar]
+    param_lltys = [lc.Type.pointer(ctx.lltype_of(p['type'])) for p in proc.fpar]
     func = ctx.decl_func(str(proc.inputString), ctx.void, param_lltys)
 
     if proc.external:
@@ -1756,7 +1758,7 @@ def _procedure(proc, ctx):
         ctx.scope.define(str(param['name']), arg)
 
     entry_block = func.append_basic_block('proc:entry')
-    ctx.builder = core.Builder.new(entry_block)
+    ctx.builder = lc.Builder.new(entry_block)
 
     for name, (ty, expr) in proc.variables.viewitems():
         var_llty = ctx.lltype_of(ty)
@@ -1766,7 +1768,7 @@ def _procedure(proc, ctx):
             expr_val = expression(expr, ctx)
             sdl_assign(var_ptr, expr_val, ctx)
         else:
-            ctx.builder.store(core.Constant.null(var_llty), var_ptr)
+            ctx.builder.store(lc.Constant.null(var_llty), var_ptr)
 
     Helper.inner_labels_to_floating(proc)
 
@@ -1784,13 +1786,13 @@ def _procedure(proc, ctx):
 
 
 def is_struct_ptr(val):
-    return val.type.kind == core.TYPE_POINTER and \
-        val.type.pointee.kind == core.TYPE_STRUCT
+    return val.type.kind == lc.TYPE_POINTER and \
+        val.type.pointee.kind == lc.TYPE_STRUCT
 
 
 def is_array_ptr(val):
-    return val.type.kind == core.TYPE_POINTER and \
-        val.type.pointee.kind == core.TYPE_ARRAY
+    return val.type.kind == lc.TYPE_POINTER and \
+        val.type.pointee.kind == lc.TYPE_ARRAY
 
 
 ################################################################################
@@ -1814,8 +1816,8 @@ def sdl_assign(a_ptr, b_val, ctx):
         basic_asn1ty = ctx.basic_asn1type_of(b_val.asn1ty)
 
         size = ctx.builder.zext(b_val.count_val, ctx.i64)
-        align = core.Constant.int(ctx.i32, 0)
-        volatile = core.Constant.int(ctx.i1, 0)
+        align = lc.Constant.int(ctx.i32, 0)
+        volatile = lc.Constant.int(ctx.i1, 0)
 
         a_count_ptr = ctx.builder.gep(a_ptr, [ctx.zero, ctx.zero])
         if basic_asn1ty.Min == basic_asn1ty.Max:
@@ -1831,9 +1833,9 @@ def sdl_assign(a_ptr, b_val, ctx):
             ctx.builder.store(b_val.count_val, a_count_ptr)
 
     elif is_struct_ptr(a_ptr) or is_array_ptr(a_ptr):
-        size = core.Constant.sizeof(a_ptr.type.pointee)
-        align = core.Constant.int(ctx.i32, 0)
-        volatile = core.Constant.int(ctx.i1, 0)
+        size = lc.Constant.sizeof(a_ptr.type.pointee)
+        align = lc.Constant.int(ctx.i32, 0)
+        volatile = lc.Constant.int(ctx.i1, 0)
 
         a_ptr = ctx.builder.bitcast(a_ptr, ctx.i8_ptr)
         b_ptr = ctx.builder.bitcast(b_val, ctx.i8_ptr)
@@ -1850,10 +1852,10 @@ def sdl_equals(a_val, b_val, asn1ty, ctx):
 
     if basic_asn1ty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
             'EnumeratedType', 'ChoiceEnumeratedType'):
-        return ctx.builder.icmp(core.ICMP_EQ, a_val, b_val)
+        return ctx.builder.icmp(lc.ICMP_EQ, a_val, b_val)
 
     elif basic_asn1ty.kind == 'RealType':
-        return ctx.builder.fcmp(core.FCMP_OEQ, a_val, b_val)
+        return ctx.builder.fcmp(lc.FCMP_OEQ, a_val, b_val)
 
     try:
         type_name = asn1ty.ReferencedTypeName.replace('-', '_').lower()
@@ -1880,7 +1882,7 @@ def sdl_length(s_ptr, s_asn1ty, ctx):
         return ctx.builder.zext(ctx.builder.load(len_ptr), ctx.i64)
     else:
         arr_llty = s_ptr.type.pointee.elements[0]
-        return core.Constant.int(ctx.i64, arr_llty.count)
+        return lc.Constant.int(ctx.i64, arr_llty.count)
 
 
 def sdl_present(s_ptr, ctx):
@@ -1891,7 +1893,7 @@ def sdl_present(s_ptr, ctx):
 
 def sdl_abs(x_val, ctx):
     ''' Generate the IR for an abs operation '''
-    if x_val.type.kind == core.TYPE_INTEGER:
+    if x_val.type.kind == lc.TYPE_INTEGER:
         expr_conv = ctx.builder.sitofp(x_val, ctx.double)
         res_val = sdl_call('fabs', [expr_conv], ctx)
         return ctx.builder.fptosi(res_val, ctx.i64)
@@ -1942,7 +1944,7 @@ def sdl_float(x_val, ctx):
 def sdl_power(x_val, y_val, ctx):
     ''' Generate the IR for a power operation '''
     y_val = ctx.builder.trunc(y_val, ctx.i32)
-    if x_val.type.kind == core.TYPE_INTEGER:
+    if x_val.type.kind == lc.TYPE_INTEGER:
         x_val = ctx.builder.sitofp(x_val, ctx.double)
         res_val = sdl_call('powi', [x_val, y_val], ctx)
         return ctx.builder.fptosi(res_val, ctx.i64)
@@ -1997,7 +1999,7 @@ def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
                 count_val = arg_val.count_val
             elif basic_asn1ty.Min == basic_asn1ty.Max:
                 arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
-                count_val = core.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
+                count_val = lc.Constant.int(ctx.i32, arr_ptr.type.pointee.count)
             else:
                 arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.one])
                 count_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
