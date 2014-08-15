@@ -1993,7 +1993,7 @@ def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
         basic_asn1ty = ctx.basic_asn1type_of(arg_asn1ty)
 
         if basic_asn1ty.kind in ['IntegerType', 'Integer32Type']:
-            fmt += '% d'
+            fmt += '% lld'
             arg_values.append(arg_val)
 
         elif basic_asn1ty.kind == 'RealType':
