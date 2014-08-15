@@ -804,6 +804,14 @@ def _prim_call(prim):
         raise NotImplementedError
     elif ident == 'ceil':
         raise NotImplementedError
+    elif ident == 'cos':
+        raise NotImplementedError
+    elif ident == 'round':
+        raise NotImplementedError
+    elif ident == 'sin':
+        raise NotImplementedError
+    elif ident == 'sqrt':
+        raise NotImplementedError
     elif ident == 'trunc':
         raise NotImplementedError
     else:

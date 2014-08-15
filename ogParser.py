@@ -104,17 +104,25 @@ UNKNOWN_TYPE = type('UnknownType', (object,), {'kind': 'UnknownType'})
 SPECIAL_OPERATORS = {
     'abs': [{'type': NUMERICAL, 'direction': 'in'}],
     'ceil': [{'type': REAL, 'direction': 'in'}],
+    'cos': [{'type': REAL, 'direction': 'in'}],
     'fix': [{'type': NUMERICAL, 'direction': 'in'}],
     'float': [{'type': NUMERICAL, 'direction': 'in'}],
     'floor': [{'type': REAL, 'direction': 'in'}],
     'length': [{'type': LIST, 'direction': 'in'}],
     'num': [{'type': ENUMERATED, 'direction': 'in'}],
-    'power': [{'type': NUMERICAL, 'direction': 'in'},
-              {'type': INTEGER, 'direction': 'in'}],
+    'power': [
+        {'type': NUMERICAL, 'direction': 'in'},
+        {'type': INTEGER, 'direction': 'in'}
+    ],
     'present': [{'type': CHOICE, 'direction': 'in'}],
     'reset_timer': [{'type': TIMER, 'direction': 'in'}],
-    'set_timer': [{'type': INTEGER, 'direction': 'in'},
-                  {'type': TIMER, 'direction': 'in'}],
+    'round': [{'type': REAL, 'direction': 'in'}],
+    'set_timer': [
+        {'type': INTEGER, 'direction': 'in'},
+        {'type': TIMER, 'direction': 'in'}
+    ],
+    'sin': [{'type': REAL, 'direction': 'in'}],
+    'sqrt': [{'type': REAL, 'direction': 'in'}],
     'trunc': [{'type': REAL, 'direction': 'in'}],
     'write': [{'type': ANY_TYPE, 'direction': 'in'}],
     'writeln': [{'type': ANY_TYPE, 'direction': 'in'}],
@@ -492,6 +500,12 @@ def check_call(name, params, context):
             'Max': str(math.ceil(float(param_btys[0].Max)))
         })
 
+    elif name == 'cos':
+        return type('Cos', (REAL,), {
+            'Min': str(-1.0),
+            'Max': str(1.0)
+        })
+
     elif name == 'fix':
         return type('Fix', (INTEGER,), {
             'Min': param_btys[0].Min,
@@ -537,6 +551,24 @@ def check_call(name, params, context):
         return type('Present', (object,), {
             'kind': 'ChoiceEnumeratedType',
             'EnumValues': param_btys[0].Children
+        })
+
+    elif name == 'round':
+        return type('Round', (REAL,), {
+            'Min': str(round(float(param_btys[0].Min))),
+            'Max': str(round(float(param_btys[0].Max)))
+        })
+
+    elif name == 'sin':
+        return type('Sin', (REAL,), {
+            'Min': str(-1.0),
+            'Max': str(1.0)
+        })
+
+    elif name == 'sqrt':
+        return type('Sqrt', (REAL,), {
+            'Min': str(0.0),
+            'Max': str(math.sqrt(float(param_btys[0].Max)))
         })
 
     elif name == 'trunc':
@@ -1392,7 +1424,7 @@ def primary_call(root, context):
 
     try:
         node.exprType = check_call(name, params, context)
-    except TypeError as err:
+    except (TypeError, ValueError) as err:
         errors.append(error(root, str(err)))
     except OverflowError:
         errors.append(error(root, 'Result can exceeds 64-bits'))

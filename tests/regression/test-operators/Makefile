@@ -23,7 +23,7 @@ test-llvm:
 	clang -c operators.s
 	clang -c dataview-uniq.c
 	clang -c test_llvm.c
-	clang operators.o dataview-uniq.o test_llvm.o -o testcase
+	clang operators.o dataview-uniq.o test_llvm.o -o testcase -lm
 	./testcase | diff expected -
 
 clean:
