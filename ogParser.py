@@ -596,36 +596,36 @@ def check_range(typeref, type_to_check):
         raise TypeError('Missing range')
 
 
-def check_type_compatibility(primary, typeRef, context):
+def check_type_compatibility(primary, type_ref, context):
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
-        is compatible with a given type (typeRef is an ASN1Scc type)
+        is compatible with a given type (type_ref is an ASN1Scc type)
         Does not return anything if OK, otherwise raises TypeError
     '''
-    assert typeRef is not None
-    if typeRef is UNKNOWN_TYPE:
+    assert type_ref is not None
+    if type_ref is UNKNOWN_TYPE:
         raise TypeError('Type reference is unknown')
     if isinstance(primary, ogAST.PrimConstant):
         # ASN.1 constants type is unknown (Asn1 backend to be completed)
         return
-    actual_type = find_basic_type(typeRef)
+    basic_type = find_basic_type(type_ref)
     LOG.debug("[check_type_compatibility] "
               "checking if {value} is of type {typeref}"
-              .format(value=primary.inputString, typeref=type_name(typeRef)))
+              .format(value=primary.inputString, typeref=type_name(type_ref)))
 
     if (isinstance(primary, ogAST.PrimEnumeratedValue)
-            and actual_type.kind.endswith('EnumeratedType')):
+            and basic_type.kind.endswith('EnumeratedType')):
         # If type ref is an enumeration, check that the value is valid
         # Note, when using the "present" operator of a CHOICE type, the
         # resulting value is actually an EnumeratedType
         enumerant = primary.inputString.replace('_', '-')
-        corr_type = actual_type.EnumValues.get(enumerant)
+        corr_type = basic_type.EnumValues.get(enumerant)
         if corr_type:
             return
         else:
             err = ('Value "' + primary.inputString +
                    '" not in this enumeration: ' +
-                   str(actual_type.EnumValues.keys()))
+                   str(basic_type.EnumValues.keys()))
             raise TypeError(err)
     elif isinstance(primary, ogAST.PrimConditional):
         then_expr = primary.value['then']
@@ -633,61 +633,62 @@ def check_type_compatibility(primary, typeRef, context):
 
         for expr in (then_expr, else_expr):
             if expr.is_raw:
-                check_type_compatibility(expr, typeRef, context)
+                check_type_compatibility(expr, type_ref, context)
         return
 
     elif isinstance(primary, ogAST.PrimVariable):
         try:
-            compare_types(primary.exprType, typeRef)
+            compare_types(primary.exprType, type_ref)
         except TypeError as err:
             raise TypeError('{expr} should be of type {ty} - {err}'
                             .format(expr=primary.inputString,
-                                    ty=type_name(typeRef),
+                                    ty=type_name(type_ref),
                                     err=str(err)))
         return
+
     elif isinstance(primary, ogAST.PrimInteger) \
-            and actual_type.kind.startswith('Integer'):
+            and is_integer(basic_type) or type_ref == NUMERICAL:
         return
 
     elif isinstance(primary, ogAST.PrimReal) \
-            and actual_type.kind.startswith('Real'):
+            and is_real(basic_type) or type_ref == NUMERICAL:
         return
 
-    elif isinstance(primary, ogAST.PrimBoolean) \
-            and actual_type.kind.startswith('Boolean'):
+    elif isinstance(primary, ogAST.PrimBoolean) and is_boolean(basic_type):
         return
+
     elif (isinstance(primary, ogAST.PrimEmptyString) and
-                                         actual_type.kind == 'SequenceOfType'):
-        if int(actual_type.Min) == 0:
+                                         basic_type.kind == 'SequenceOfType'):
+        if int(basic_type.Min) == 0:
             return
         else:
             raise TypeError('SEQUENCE OF has a minimum size of '
-                            + actual_type.Min + ')')
+                            + basic_type.Min + ')')
     elif isinstance(primary, ogAST.PrimSequenceOf) \
-            and actual_type.kind == 'SequenceOfType':
-        if (len(primary.value) < int(actual_type.Min) or
-                len(primary.value) > int(actual_type.Max)):
+            and basic_type.kind == 'SequenceOfType':
+        if (len(primary.value) < int(basic_type.Min) or
+                len(primary.value) > int(basic_type.Max)):
             raise TypeError(str(len(primary.value)) +
                       ' elements in SEQUENCE OF, while constraint is [' +
-                      str(actual_type.Min) + '..' + str(actual_type.Max) + ']')
+                      str(basic_type.Min) + '..' + str(basic_type.Max) + ']')
         for elem in primary.value:
-            check_type_compatibility(elem, actual_type.type, context)
+            check_type_compatibility(elem, basic_type.type, context)
         return
     elif isinstance(primary, ogAST.PrimSequence) \
-            and actual_type.kind == 'SequenceType':
+            and basic_type.kind == 'SequenceType':
         user_nb_elem = len(primary.value.keys())
-        type_nb_elem = len(actual_type.Children.keys())
+        type_nb_elem = len(basic_type.Children.keys())
         if user_nb_elem != type_nb_elem:
             raise TypeError('Wrong number of fields in SEQUENCE of type {}'
-                            .format(type_name(typeRef)))
+                            .format(type_name(type_ref)))
         else:
-            for field, fd_data in actual_type.Children.viewitems():
+            for field, fd_data in basic_type.Children.viewitems():
                 ufield = field.replace('-', '_')
                 if ufield not in primary.value:
                     raise TypeError('Missing field {field} in SEQUENCE'
                                     ' of type {t1} '
                                     .format(field=ufield,
-                                            t1=type_name(typeRef)))
+                                            t1=type_name(type_ref)))
                 else:
                     # If the user field is a raw value
                     if primary.value[ufield].is_raw:
@@ -705,16 +706,16 @@ def check_type_compatibility(primary, typeRef, context):
                                         ' - ' + str(err))
         return
     elif isinstance(primary, ogAST.PrimChoiceItem) \
-                              and actual_type.kind.startswith('Choice'):
-        for choicekey, choice in actual_type.Children.viewitems():
+                              and basic_type.kind.startswith('Choice'):
+        for choicekey, choice in basic_type.Children.viewitems():
             if choicekey.lower() == primary.value['choice'].lower():
                 break
         else:
             raise TypeError('Non-existent choice "{choice}" in type {t1}'
                             .format(choice=primary.value['choice'],
-                            t1=type_name(typeRef)))
+                            t1=type_name(type_ref)))
         # compare primary.value['value']
-        # with actual_type['Children'][primary.choiceItem['choice']]
+        # with basic_type['Children'][primary.choiceItem['choice']]
         value = primary.value['value']
         choice_field_type = choice.type
         # if the user field is a raw value:
@@ -733,19 +734,19 @@ def check_type_compatibility(primary, typeRef, context):
         value.exprType = choice_field_type         # XXX
         return
     elif isinstance(primary, ogAST.PrimChoiceDeterminant) \
-                and actual_type.kind.startswith('Choice'):
-        for choicekey, choice in actual_type.EnumValues.viewitems():
+                and basic_type.kind.startswith('Choice'):
+        for choicekey, choice in basic_type.EnumValues.viewitems():
             if choicekey.replace('-', '_').lower() == \
                     primary.inputString.lower():
                 break
         else:
             raise TypeError('Non-existent choice "{choice}" in type {t1}'
                             .format(choice=primary.inputString,
-                            t1=type_name(typeRef)))
+                            t1=type_name(type_ref)))
 
     elif isinstance(primary, ogAST.PrimStringLiteral):
         # Octet strings
-        basic_type = find_basic_type(typeRef)
+        basic_type = find_basic_type(type_ref)
         if basic_type.kind == 'StandardStringType':
             return
         elif basic_type.kind.endswith('StringType'):
@@ -759,14 +760,14 @@ def check_type_compatibility(primary, typeRef, context):
         else:
             raise TypeError('String literal not expected')
     elif (isinstance(primary, ogAST.PrimMantissaBaseExp) and
-                                            actual_type.kind == 'RealType'):
+                                            basic_type.kind == 'RealType'):
         LOG.debug('PROBABLY (it is a float but I did not check'
                   'if values are compatible)')
         return
     else:
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
-                                t1=type_name(typeRef)))
+                                t1=type_name(type_ref)))
 
 
 def compare_types(type_a, type_b):
