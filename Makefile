@@ -33,3 +33,6 @@ clean:
 	make -C tests/regression clean
 	find . -name '*~' | xargs rm -f
 	find . -name '*.o' | xargs rm -f
+
+.PHONY: all test-parse test-ada test-llvm flake8 coverage compile-all install \
+	    publish clean

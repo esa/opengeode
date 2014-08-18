@@ -30,3 +30,5 @@ clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
 	bin *.wrn *.gpr testcase *.ll *.s dataview-uniq.c dataview-uniq.h real.c xer.c \
 	ber.c acn.c asn1crt.c asn1crt.h
+
+.PHONY: all edit test-parse test-ada test-llvm clean

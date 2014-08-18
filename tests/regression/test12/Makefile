@@ -29,3 +29,5 @@ coverage:
 clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
 	bin *.wrn *.gpr testcase *.ll *.s *.pdf *.svg *.png
+
+.PHONY: all edit test-parse test-ada test-llvm test-exports coverage clean
