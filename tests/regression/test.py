@@ -1,44 +1,20 @@
-import os
 import subprocess
 import sys
 import time
 
 
-tests_folder = os.path.dirname(__file__)
-
-paths = [
-    'test1',
-    'test2',
-    'test3',
-    'test4',
-    'test5',
-    'test6',
-    'test7',
-    'test8',
-    'test9',
-    'test10',
-    'test11',
-    'test12',
-    'test-controlflow',
-    'test-expressions',
-    'test-operators',
-    'test-substrings',
-    'test-exitnested',
-]
-
-
 def main():
     start = time.time()
     results = []
+    rule = sys.argv[1]
+    paths = sys.argv[2:]
 
-    for rule in sys.argv[1:]:
-        for path in paths:
-            full_path = os.path.join(tests_folder, path)
-            result = make(full_path, rule)
-            make(full_path, 'clean')
-            results.append(result)
-            sys.stdout.write('.' if result[0] == 0 else 'F')
-            sys.stdout.flush()
+    for path in paths:
+        result = make(path, rule)
+        make(path, 'clean')
+        results.append(result)
+        sys.stdout.write('.' if result[0] == 0 else 'F')
+        sys.stdout.flush()
 
     sys.stdout.write('\n')
 
