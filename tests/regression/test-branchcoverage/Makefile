@@ -1,3 +1,5 @@
+include ../shared.mk
+
 all: test-ada
 
 edit:

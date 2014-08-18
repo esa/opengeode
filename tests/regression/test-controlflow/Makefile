@@ -1,3 +1,5 @@
+include ../shared.mk
+
 all: test-ada
 
 edit:
@@ -13,8 +15,8 @@ test-ada:
 	gnatmake -c *.adb
 	gcc -c test_ada.c
 	gnatbind -n controlflow.ali
-	gnatlink test_ada.o controlflow.ali -lgnat -lm -o testcase
-	./testcase | diff expected -
+	gnatlink test_ada.o controlflow.ali -lgnat -lm -o test_ada
+	./test_ada | diff expected -
 
 test-llvm:
 	../../../opengeode.py controlflow.pr system_structure.pr --check --llvm
@@ -23,12 +25,12 @@ test-llvm:
 	gcc -c controlflow.s
 	gcc -c dataview-uniq.c
 	gcc -c test_llvm.c
-	gcc controlflow.o dataview-uniq.o test_llvm.o -o testcase
-	./testcase | diff expected -
+	gcc controlflow.o dataview-uniq.o test_llvm.o -o test_llvm -lm
+	./test_llvm | diff expected -
 
 clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
-	bin *.wrn *.gpr testcase *.ll *.s dataview-uniq.c dataview-uniq.h real.c xer.c \
-	ber.c acn.c asn1crt.c asn1crt.h
+	bin *.wrn *.gpr *.ll *.s dataview-uniq.c dataview-uniq.h real.c xer.c \
+	ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm
 
 .PHONY: all edit test-parse test-ada test-llvm clean
