@@ -1,16 +1,16 @@
 all: compile-all
 
 test-parse:
-	@make -C tests/regression test-parse
+	@make -s -C tests/regression test-parse
 
 test-ada:
-	@make -C tests/regression test-ada
+	@make -s -C tests/regression test-ada
 
 test-llvm:
-	@make -C tests/regression test-llvm
+	@make -s -C tests/regression test-llvm
 
 coverage:
-	@make -C tests/regression coverage
+	@make -s -C tests/regression coverage
 
 flake8:
 	@echo Generating flake8_report file
@@ -30,9 +30,9 @@ publish: install
 	python setup.py sdist upload
 
 clean:
-	make -C tests/regression clean
-	find . -name '*~' | xargs rm -f
-	find . -name '*.o' | xargs rm -f
+	@make -s -C tests/regression clean
+	@find . -name '*~' | xargs rm -f
+	@find . -name '*.o' | xargs rm -f
 
 .PHONY: all test-parse test-ada test-llvm flake8 coverage compile-all install \
 	    publish clean
