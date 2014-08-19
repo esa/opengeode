@@ -9,6 +9,9 @@ test-ada:
 test-llvm:
 	@make -s -C tests/regression test-llvm
 
+benchmark:
+	@make -s -C tests/regression benchmark
+
 coverage:
 	@make -s -C tests/regression coverage
 
@@ -34,5 +37,5 @@ clean:
 	@find . -name '*~' | xargs rm -f
 	@find . -name '*.o' | xargs rm -f
 
-.PHONY: all test-parse test-ada test-llvm flake8 coverage compile-all install \
-	    publish clean
+.PHONY: all test-parse test-ada test-llvm benchmark flake8 coverage \
+	    compile-all install publish clean
