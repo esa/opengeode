@@ -3,6 +3,8 @@ import subprocess
 import sys
 import time as t
 
+from tabulate import tabulate
+
 
 def main():
     start = t.time()
@@ -37,6 +39,7 @@ def benchmark(testfolder):
             return
 
     result = {
+        "name": testfolder[:-1],
         "size": {
             "ada": os.path.getsize(llvm_bin),
             "llvm": os.path.getsize(ada_bin),
@@ -64,16 +67,28 @@ def summarize(results, errors, elapsed):
         print "No results"
         return 1
 
-    print "Summary:"
-    print "  Size: Ada %.2f%% LLVM %.2f%%" % diff(results, "size")
-    print "  Time: Ada %.2f%% LLVM %.2f%%" % diff(results, "time")
+    print "Summary"
+    print "-------"
+    print ""
+    print "Size: Ada %.2f%% LLVM %.2f%%" % diff([r["size"] for r in results])
+    print "Time: Ada %.2f%% LLVM %.2f%%" % diff([r["time"] for r in results])
+    print ""
+
+    headers = ["Benchmark", "Ada size", "LLVM size", "Ada time", "LLVM time"]
+    table = []
+    for result in results:
+        row = [result["name"]]
+        row.extend(diff([result["size"]]))
+        row.extend(diff([result["time"]]))
+        table.append(row)
+
+    print tabulate(table, headers, tablefmt="orgtbl", floatfmt=".2f")
 
     return 0 if results and not errors else 1
 
 
-def diff(results, metric):
-    metrics = [r[metric] for r in results]
-    return 100, mean(([float(m["llvm"]) / float(m["ada"]) * 100 for m in metrics]))
+def diff(results):
+    return 100, mean(([float(r["llvm"]) / float(r["ada"]) * 100 for r in results]))
 
 
 def mean(values):
