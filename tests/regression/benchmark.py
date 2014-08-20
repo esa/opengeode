@@ -10,6 +10,7 @@ def main():
     errors = 0
     for testfolder in sys.argv[1:]:
         result = benchmark(testfolder)
+        make(testfolder, 'clean')
         if result:
             results.append(result)
         else:
@@ -20,7 +21,7 @@ def main():
     sys.stdout.write('\n')
 
     elapsed = t.time() - start
-    summarize(results, errors, elapsed)
+    sys.exit(summarize(results, errors, elapsed))
 
 
 def benchmark(testfolder):
@@ -35,7 +36,7 @@ def benchmark(testfolder):
         if not os.path.isfile(bin_name):
             return
 
-    return {
+    result = {
         "size": {
             "ada": os.path.getsize(llvm_bin),
             "llvm": os.path.getsize(ada_bin),
@@ -46,6 +47,8 @@ def benchmark(testfolder):
         }
     }
 
+    return result
+
 
 def time(file, iters=1000):
     start = t.time()
@@ -55,15 +58,17 @@ def time(file, iters=1000):
 
 def summarize(results, errors, elapsed):
     print "Finished in %.3fs" % elapsed
-    print "%s cases, %s errors" % (len(results), errors)
+    print "%s benchmarks, %s errors" % (len(results) + errors, errors)
 
     if not results:
         print "No results"
-        return
+        return 1
 
     print "Summary:"
     print "  Size: Ada %.2f%% LLVM %.2f%%" % diff(results, "size")
     print "  Time: Ada %.2f%% LLVM %.2f%%" % diff(results, "time")
+
+    return 0 if results and not errors else 1
 
 
 def diff(results, metric):

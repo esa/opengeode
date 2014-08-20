@@ -3,22 +3,22 @@ include ../shared.mk
 all: test-ada test-llvm
 
 edit:
-	../../../opengeode.py og.pr system_structure.pr
+	$(OPENGEODE) og.pr system_structure.pr
 
 test-parse:
-	../../../opengeode.py og.pr system_structure.pr --check
+	$(OPENGEODE) og.pr system_structure.pr --check
 
 test-ada:
-	../../../opengeode.py --toAda og.pr system_structure.pr
-	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatmake -c og.adb
+	$(OPENGEODE) --toAda og.pr system_structure.pr
+	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(GNATMAKE) -c og.adb
 
 test-llvm:
-	../../../opengeode.py og.pr system_structure.pr --llvm
-	llc og.ll
-	gcc -c og.s
+	$(OPENGEODE) og.pr system_structure.pr --llvm
+	$(LLC) og.ll
+	$(CC) -c og.s
 
 coverage:
-	coverage run -p ../../../opengeode.py og.pr system_structure.pr --toAda
+	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda
 
 .PHONY: all edit test-parse test-ada test-llvm coverage
