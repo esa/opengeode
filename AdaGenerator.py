@@ -789,7 +789,7 @@ def _prim_call(prim):
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
-        exp_type = find_basic_type(exp.exprType)
+        #exp_type = find_basic_type(exp.exprType)
         # Get the ASN.1 type name as it is needed to build the Ada expression
         exp_typename = \
                 (getattr(exp.exprType, 'ReferencedTypeName', None)
@@ -801,19 +801,47 @@ def _prim_call(prim):
         local_decl.extend(local_var)
         ada_string += ('num_{t}({p})'.format(t=exp_typename, p=param_str))
     elif ident == 'floor':
-        raise NotImplementedError
+        # Get the ASN.1 type name as it is needed to build the Ada expression
+        exp = params[0]
+        exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
+                        or exp.exprType.kind).replace('-', '_')
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        ada_string += "{t}'Floor({p})".format(t=exp_typename, p=param_str)
     elif ident == 'ceil':
-        raise NotImplementedError
+        # Get the ASN.1 type name as it is needed to build the Ada expression
+        exp = params[0]
+        exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
+                        or exp.exprType.kind).replace('-', '_')
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        ada_string += "{t}'Ceiling({p})".format(t=exp_typename, p=param_str)
     elif ident == 'cos':
         raise NotImplementedError
     elif ident == 'round':
-        raise NotImplementedError
+        exp = params[0]
+        # Get the ASN.1 type name as it is needed to build the Ada expression
+        exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
+                        or exp.exprType.kind).replace('-', '_')
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        ada_string += "{t}'Rounding({p})".format(t=exp_typename, p=param_str)
     elif ident == 'sin':
         raise NotImplementedError
     elif ident == 'sqrt':
         raise NotImplementedError
     elif ident == 'trunc':
-        raise NotImplementedError
+        exp = params[0]
+        # Get the ASN.1 type name as it is needed to build the Ada expression
+        exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
+                        or exp.exprType.kind).replace('-', '_')
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        ada_string += "{t}'Truncation({p})".format(t=exp_typename, p=param_str)
     else:
         ada_string += '('
         # Take all params and join them with commas
