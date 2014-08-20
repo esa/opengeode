@@ -175,6 +175,7 @@ with System.IO;
 use System.IO;
 
 with Ada.Unchecked_Conversion;
+with Ada.Numerics.Generic_Elementary_Functions;
 
 {dataview}
 
@@ -804,7 +805,7 @@ def _prim_call(prim):
         # Get the ASN.1 type name as it is needed to build the Ada expression
         exp = params[0]
         exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or exp.exprType.kind).replace('-', '_')
+                        or 'Long_Float').replace('-', '_')
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
@@ -813,31 +814,52 @@ def _prim_call(prim):
         # Get the ASN.1 type name as it is needed to build the Ada expression
         exp = params[0]
         exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or exp.exprType.kind).replace('-', '_')
+                        or 'Long_Float').replace('-', '_')
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += "{t}'Ceiling({p})".format(t=exp_typename, p=param_str)
     elif ident == 'cos':
-        raise NotImplementedError
+        exp = params[0]
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        local_decl.append('package Math is new '
+                          'Ada.Numerics.Generic_Elementary_Functions'
+                          '(Long_Float);')
+        ada_string += "Math.Cos({})".format(param_str)
     elif ident == 'round':
         exp = params[0]
         # Get the ASN.1 type name as it is needed to build the Ada expression
         exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or exp.exprType.kind).replace('-', '_')
+                        or 'Long_Float').replace('-', '_')
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += "{t}'Rounding({p})".format(t=exp_typename, p=param_str)
     elif ident == 'sin':
-        raise NotImplementedError
+        exp = params[0]
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        local_decl.append('package Math is new '
+                          'Ada.Numerics.Generic_Elementary_Functions'
+                          '(Long_Float);')
+        ada_string += "Math.Sin({})".format(param_str)
     elif ident == 'sqrt':
-        raise NotImplementedError
+        exp = params[0]
+        param_stmts, param_str, local_var = expression(exp)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        local_decl.append('package Math is new '
+                          'Ada.Numerics.Generic_Elementary_Functions'
+                          '(Long_Float);')
+        ada_string += "Math.Sqrt({})".format(param_str)
     elif ident == 'trunc':
         exp = params[0]
         # Get the ASN.1 type name as it is needed to build the Ada expression
         exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or exp.exprType.kind).replace('-', '_')
+                        or 'Long_Float').replace('-', '_')
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
