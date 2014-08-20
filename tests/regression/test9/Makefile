@@ -1,24 +1,24 @@
+include ../shared.mk
+
 all: test-ada test-llvm
 
 edit:
-	../../../opengeode.py challenge.pr system_structure.pr
+	$(OPENGEODE) challenge.pr system_structure.pr
 
 test-parse:
-	../../../opengeode.py challenge.pr system_structure.pr --check
+	$(OPENGEODE) challenge.pr system_structure.pr --check
 
 test-ada:
-	../../../opengeode.py --toAda challenge.pr system_structure.pr
-	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatmake -c challenge.adb
+	$(OPENGEODE) --toAda challenge.pr system_structure.pr
+	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(GNATMAKE) -c challenge.adb
 
 test-llvm:
-	../../../opengeode.py challenge.pr system_structure.pr --llvm
-	llc challenge.ll
-	gcc -c challenge.s
+	$(OPENGEODE) challenge.pr system_structure.pr --llvm
+	$(LLC) challenge.ll
+	$(CC) -c challenge.s
 
 coverage:
-	coverage run -p ../../../opengeode.py challenge.pr system_structure.pr --toAda
+	coverage run -p $(OPENGEODE) challenge.pr system_structure.pr --toAda
 
-clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
-	bin *.wrn *.gpr testcase *.ll *.s
+.PHONY: all edit test-parse test-ada test-llvm coverage

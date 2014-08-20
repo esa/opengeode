@@ -1,29 +1,33 @@
+include ../shared.mk
+
 all: test-ada test-llvm
 
+edit:
+	$(OPENGEODE) og.pr system_structure.pr
+
 test-parse:
-	../../../opengeode.py og.pr system_structure.pr --check
+	$(OPENGEODE) og.pr system_structure.pr --check
 
 test-ada:
-	../../../opengeode.py --toAda og.pr system_structure.pr
-	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	gnatmake -c *.adb
-	gcc -c test_ada.c
-	gnatbind -n og.ali
-	gnatlink -o testcase test_ada.o og.ali -lgnat
-	./testcase | diff expected -
+	$(OPENGEODE) --toAda og.pr system_structure.pr
+	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(GNATMAKE) -c *.adb
+	$(CC) -c test_ada.c
+	$(GNATBIND) -n og.ali
+	$(GNATLINK) -o test_ada test_ada.o og.ali -lgnat
+	./test_ada | diff expected -
 
 test-llvm:
-	../../../opengeode.py og.pr system_structure.pr --llvm
-	llc og.ll
-	gcc -c og.s
-	gcc -c test_llvm.c
-	gcc og.o test_llvm.o -o testcase
-	./testcase | diff expected -
-
+	$(OPENGEODE) og.pr system_structure.pr --llvm
+	$(ASN1SCC) -c dataview-uniq.asn -equal -typePrefix asn1Scc
+	$(LLC) og.ll
+	$(CC) -c og.s
+	$(CC) -c dataview-uniq.c
+	$(CC) -c test_llvm.c
+	$(CC) og.o dataview-uniq.o test_llvm.o -o test_llvm -lm
+	./test_llvm | diff expected -
 
 coverage:
-	coverage run -p ../../../opengeode.py og.pr system_structure.pr --toAda
+	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda
 
-clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
-	bin *.wrn *.gpr testcase *.ll *.s
+.PHONY: all edit test-parse test-ada test-llvm coverage

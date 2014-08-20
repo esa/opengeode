@@ -1,32 +1,34 @@
-all: test-ada
+include ../shared.mk
+
+all: test-ada test-llvm
 
 edit:
-	../../../opengeode.py operators.pr system_structure.pr
+	$(OPENGEODE) operators.pr system_structure.pr
 
 test-parse:
-	../../../opengeode.py operators.pr system_structure.pr --check
+	$(OPENGEODE) operators.pr system_structure.pr --check
 
 test-ada:
-	../../../opengeode.py operators.pr system_structure.pr --check --toAda
-	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc
-	gnatmake -c *.adb
-	gcc -c test_ada.c
-	gnatbind -n operators.ali
-	gnatlink test_ada.o operators.ali -lgnat -lm -o testcase
-	./testcase | diff expected -
+	$(OPENGEODE) operators.pr system_structure.pr --check --toAda
+	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc
+	$(GNATMAKE) -c *.adb
+	$(CC) -c test_ada.c
+	$(GNATBIND) -n operators.ali
+	$(GNATLINK) test_ada.o operators.ali -lgnat -lm -o test_ada
+	./test_ada | diff expected -
 
 test-llvm:
-	../../../opengeode.py operators.pr system_structure.pr --check --llvm
-	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
-	llc operators.ll
-	clang -c operators.s
-	clang -c dataview-uniq.c
-	clang -c test_llvm.c
-	clang operators.o dataview-uniq.o test_llvm.o -o testcase -lm
-	./testcase | diff expected -
+	$(OPENGEODE) operators.pr system_structure.pr --check --llvm
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(LLC) operators.ll
+	$(CC) -c operators.s
+	$(CC) -c dataview-uniq.c
+	$(CC) -c test_llvm.c
+	$(CC) operators.o dataview-uniq.o test_llvm.o -o test_llvm -lm
+	./test_llvm | diff expected -
 
-clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
-	bin *.wrn *.gpr testcase *.ll *.s dataview-uniq.c dataview-uniq.h real.c xer.c \
-	ber.c acn.c asn1crt.c asn1crt.h
+coverage:
+	coverage run -p $(OPENGEODE) operators.pr system_structure.pr --toAda
+
+.PHONY: all edit test-parse test-ada test-llvm coverage

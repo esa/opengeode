@@ -1,44 +1,20 @@
-import os
 import subprocess
 import sys
 import time
 
 
-tests_folder = os.path.dirname(__file__)
-
-paths = [
-    'regression/test1',
-    'regression/test2',
-    'regression/test3',
-    'regression/test4',
-    'regression/test5',
-    'regression/test6',
-    'regression/test7',
-    'regression/test8',
-    'regression/test9',
-    'regression/test10',
-    'regression/test11',
-    'regression/test12',
-    'regression/test-controlflow',
-    'regression/test-expressions',
-    'regression/test-operators',
-    'regression/test-substrings',
-    'regression/test-exitnested',
-]
-
-
 def main():
     start = time.time()
     results = []
+    rule = sys.argv[1]
+    paths = sys.argv[2:]
 
-    for rule in sys.argv[1:]:
-        for path in paths:
-            full_path = os.path.join(tests_folder, path)
-            result = make(full_path, rule)
-            make(full_path, 'clean')
-            results.append(result)
-            sys.stdout.write('.' if result[0] == 0 else 'F')
-            sys.stdout.flush()
+    for path in paths:
+        result = make(path, rule)
+        make(path, 'clean')
+        results.append(result)
+        sys.stdout.write('.' if result[0] == 0 else 'F')
+        sys.stdout.flush()
 
     sys.stdout.write('\n')
 

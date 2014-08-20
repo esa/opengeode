@@ -1,32 +1,34 @@
-all: test-ada
+include ../shared.mk
+
+all: test-ada test-llvm
 
 edit:
-	../../../opengeode.py controlflow.pr system_structure.pr
+	$(OPENGEODE) controlflow.pr system_structure.pr
 
 test-parse:
-	../../../opengeode.py controlflow.pr system_structure.pr --check
+	$(OPENGEODE) controlflow.pr system_structure.pr --check
 
 test-ada:
-	../../../opengeode.py controlflow.pr system_structure.pr --check --toAda
-	asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc
-	gnatmake -c *.adb
-	gcc -c test_ada.c
-	gnatbind -n controlflow.ali
-	gnatlink test_ada.o controlflow.ali -lgnat -lm -o testcase
-	./testcase | diff expected -
+	$(OPENGEODE) controlflow.pr system_structure.pr --check --toAda
+	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc
+	$(GNATMAKE) -c *.adb
+	$(CC) -c test_ada.c
+	$(GNATBIND) -n controlflow.ali
+	$(GNATLINK) test_ada.o controlflow.ali -lgnat -lm -o test_ada
+	./test_ada | diff expected -
 
 test-llvm:
-	../../../opengeode.py controlflow.pr system_structure.pr --check --llvm
-	asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
-	llc controlflow.ll
-	gcc -c controlflow.s
-	gcc -c dataview-uniq.c
-	gcc -c test_llvm.c
-	gcc controlflow.o dataview-uniq.o test_llvm.o -o testcase
-	./testcase | diff expected -
+	$(OPENGEODE) controlflow.pr system_structure.pr --check --llvm
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(LLC) controlflow.ll
+	$(CC) -c controlflow.s
+	$(CC) -c dataview-uniq.c
+	$(CC) -c test_llvm.c
+	$(CC) controlflow.o dataview-uniq.o test_llvm.o -o test_llvm -lm
+	./test_llvm | diff expected -
 
-clean:
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg examiner \
-	bin *.wrn *.gpr testcase *.ll *.s dataview-uniq.c dataview-uniq.h real.c xer.c \
-	ber.c acn.c asn1crt.c asn1crt.h
+coverage:
+	coverage run -p $(OPENGEODE) controlflow.pr system_structure.pr --toAda
+
+.PHONY: all edit test-parse test-ada test-llvm coverage
