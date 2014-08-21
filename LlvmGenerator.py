@@ -415,8 +415,9 @@ def _process(process, ctx=None):
     # Generate ASN.1 constants
     for name, t in process.dv.variables.viewitems():
         var_llty = ctx.lltype_of(t.type)
-        global_var = ctx.module.add_global_variable(var_llty, str(name))
-        ctx.scope.define(str(name).lower(), global_var)
+        name = str(name).replace('-', '_').lower()
+        global_var = ctx.module.add_global_variable(var_llty, name)
+        ctx.scope.define(name, global_var)
 
     # Generare process-level vars
     for name, (asn1ty, expr) in process.variables.viewitems():
