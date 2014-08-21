@@ -400,21 +400,6 @@ def find_basic_type(a_type):
     return basic_type
 
 
-def is_constant(var):
-    ''' Check in ASN.1 modules if var (Primary) is declared as a constant '''
-    if var is None:
-        return False
-    if isinstance(var, ogAST.PrimConstant):
-        return True
-    if DV and isinstance(var, ogAST.PrimVariable):
-        for mod in DV.asn1Modules:
-            for constant in DV.exportedVariables[mod]:
-                if(constant.lower() == var.value[0].lower().replace('_', '-')):
-                    LOG.debug('Constant ' + var.inputString + ' found')
-                    return True
-    return False
-
-
 def signature(name, context):
     ''' Return the signature of a procecure/output/operator '''
     name = name.lower()
@@ -605,9 +590,7 @@ def check_type_compatibility(primary, type_ref, context):
     assert type_ref is not None
     if type_ref is UNKNOWN_TYPE:
         raise TypeError('Type reference is unknown')
-    if isinstance(primary, ogAST.PrimConstant):
-        # ASN.1 constants type is unknown (Asn1 backend to be completed)
-        return
+
     basic_type = find_basic_type(type_ref)
     LOG.debug("[check_type_compatibility] "
               "checking if {value} is of type {typeref}"
@@ -817,12 +800,14 @@ def compare_types(type_a, type_b):
         ))
 
 
-def find_variable(var, context):
+def find_variable_type(var, context):
     ''' Look for a variable name in the context and return its type '''
     LOG.debug('[find_variable] checking if ' + str(var) + ' is defined')
+
     # all DCL-variables
     all_visible_variables = dict(context.global_variables)
     all_visible_variables.update(context.variables)
+
     # First check locally, i.e. in FPAR
     try:
         for variable in context.fpar:
@@ -843,6 +828,12 @@ def find_variable(var, context):
         if var.lower() == timer.lower():
             LOG.debug(str(var) + ' is defined')
             return TIMER
+
+    # check if is a ASN.1 constant
+    for varname, vartype in DV.variables.viewitems():
+        if var.lower() == varname.lower().replace('-', '_'):
+            LOG.debug(str(var) + ' is defined')
+            return vartype.type
 
     LOG.debug('[find_variable] result: not found, raising exception')
     raise AttributeError('Variable {var} not defined'.format(var=var))
@@ -886,13 +877,6 @@ def fix_expression_types(expr, context):
 #           getattr(expr, side[1]).exprType = getattr(expr, side[0]).exprType
 #       except (UnboundLocalError, AttributeError, TypeError):
 #           pass
-
-    # If a side type remains unknown, check if it is an ASN.1 constant
-    for side in permutations(('left', 'right')):
-        value = getattr(expr, side[0])
-        if value.exprType == UNKNOWN_TYPE and is_constant(value):
-            setattr(expr, side[0], ogAST.PrimConstant(primary=value))
-            getattr(expr, side[0]).exprType = getattr(expr, side[1]).exprType
 
     for side in (expr.right, expr.left):
         if side.is_raw:
@@ -1010,28 +994,44 @@ def expression_list(root, context):
 
 def primary_variable(root, context):
     ''' Primary Variable analysis '''
-    lexeme = root.children[0].text
+    name = root.children[0].text
+    errors, warnings = [], []
 
-    # Differentiate DCL and FPAR variables
-    Prim = ogAST.PrimVariable
-    if isinstance(context, ogAST.Procedure):
-        for each in context.fpar:
-            if each['name'].lower() == lexeme.lower():
-                Prim = ogAST.PrimFPAR
-                break
+    if is_asn1constant(name):
+        prim = ogAST.PrimConstant()
+    elif is_fpar(name, context):
+        prim = ogAST.PrimFPAR()
+    else:
+        prim = ogAST.PrimVariable()
 
-    prim, errors, warnings = Prim(), [], []
-    prim.value = [root.children[0].text]
+    prim.value = [name]
     prim.exprType = UNKNOWN_TYPE
     prim.inputString = get_input_string(root)
     prim.tmpVar = tmp()
 
     try:
-        prim.exprType = find_variable(lexeme, context)
+        prim.exprType = find_variable_type(name, context)
     except AttributeError:
         pass
 
     return prim, errors, warnings
+
+
+def is_fpar(name, context):
+    name = name.lower()
+    if isinstance(context, ogAST.Procedure):
+        for each in context.fpar:
+            if each['name'].lower() == name:
+                return True
+    return False
+
+
+def is_asn1constant(name):
+    name = name.lower().replace('-', '_')
+    for varname, vartype in DV.variables.viewitems():
+        if varname.lower().replace('-', '_') == name:
+            return True
+    return False
 
 
 def binary_expression(root, context):
@@ -1716,7 +1716,8 @@ def variables(root, ta_ast, context):
             else:
                 def_value.exprType = asn1_sort
 
-            if not def_value.is_raw and not is_constant(def_value):
+            if not def_value.is_raw and \
+                    not isinstance(def_value, ogAST.PrimConstant):
                 errors.append('In variable declaration {}: default'
                               ' value is not a valid ground expression'.
                               format(var[-1]))
@@ -2562,7 +2563,7 @@ def input_part(root, parent, context):
                     len(inputparams[0]) == 1:
                 user_param, = inputparams[0]
                 try:
-                    user_param_type = find_variable(user_param.text, context)
+                    user_param_type = find_variable_type(user_param.text, context)
                     try:
                         compare_types(sig_param_type, user_param_type)
                     except TypeError as err:
@@ -3817,6 +3818,7 @@ def pr_file(root):
         ast.processes.append(process)
         process.dataview = types()
         process.asn1Modules = ast.asn1Modules
+        process.dv = DV
         errors.extend(err)
         warnings.extend(warn)
     LOG.debug('all files: ' + str(ast.pr_files))

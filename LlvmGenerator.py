@@ -39,6 +39,7 @@ class Context():
         self.module = lc.Module.new(self.name)
         self.target_data = le.TargetData.new(self.module.data_layout)
         self.dataview = process.dataview
+
         self.procedures = process.procedures
 
         self.scope = Scope(self)
@@ -350,10 +351,10 @@ class Scope:
         self.parent = parent
 
     def define(self, name, var):
-        self.vars[name.lower()] = var
+        self.vars[name.lower().replace('-', '_')] = var
 
     def resolve(self, name):
-        var = self.vars.get(name.lower())
+        var = self.vars.get(name.lower().replace('-', '_'))
         if var:
             return var
         if self.parent:
@@ -410,6 +411,12 @@ def _process(process, ctx=None):
     state_cons = ctx.module.add_global_variable(ctx.i32, '.state')
     state_cons.initializer = lc.Constant.int(ctx.i32, -1)
     ctx.scope.define('.state', state_cons)
+
+    # Generate ASN.1 constants
+    for name, t in process.dv.variables.viewitems():
+        var_llty = ctx.lltype_of(t.type)
+        global_var = ctx.module.add_global_variable(var_llty, str(name))
+        ctx.scope.define(str(name).lower(), global_var)
 
     # Generare process-level vars
     for name, (asn1ty, expr) in process.variables.viewitems():
@@ -1460,7 +1467,8 @@ def _prim_string_literal(prim, ctx):
 @expression.register(ogAST.PrimConstant)
 def _prim_constant(prim, ctx):
     ''' Generate the IR for a reference to an ASN.1 constant '''
-    raise NotImplementedError
+    var_ptr = ctx.global_scope.resolve(prim.value[0])
+    return var_ptr if is_struct_ptr(var_ptr) else ctx.builder.load(var_ptr)
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
