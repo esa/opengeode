@@ -17,4 +17,6 @@ Choice ::= CHOICE {
     f Real
 }
 
+pi Real ::= 3.14159265359
+
 END

@@ -25,7 +25,7 @@ DCL c Choice := i:2;
             /* CIF PROCEDURECALL (-22, 324), (293, 35) */
             CALL assert(ceil(f + 0.5) = 3.0, 'ceil(f + 0.5) = 3.0');
             /* CIF PROCEDURECALL (-90, 374), (429, 35) */
-            CALL assert(round(cos(3.141632)) = -1.0, 'round(cos(3.141632)) = -1.0');
+            CALL assert(round(cos(pi)) = -1.0, 'round(cos(pi)) = -1.0');
             /* CIF PROCEDURECALL (12, 424), (224, 35) */
             CALL assert(fix(f) = i, 'fix(f) = i');
             /* CIF PROCEDURECALL (-1, 474), (251, 35) */
@@ -41,7 +41,7 @@ DCL c Choice := i:2;
             /* CIF PROCEDURECALL (-14, 724), (276, 35) */
             CALL assert(power(i, 3) = 8, 'power(i, 3) = 8');
             /* CIF PROCEDURECALL (-90, 774), (429, 35) */
-            CALL assert(round(sin(3.141632)) = 0.0, 'round(sin(3.141632)) = 0.0');
+            CALL assert(round(sin(pi)) = 0.0, 'round(sin(pi)) = 0.0');
             /* CIF PROCEDURECALL (-15, 824), (278, 35) */
             CALL assert(sqrt(16.0) = 4.0, 'sqrt(16.0) = 4.0');
             /* CIF PROCEDURECALL (-26, 874), (301, 35) */
