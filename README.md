@@ -53,7 +53,8 @@ Apart from pygraphviz, all of them exist for Linux, Windows, FreeBSD, and most l
 - ASN1SCC
 - (optional) GNAT to build the generated Ada code
 - mono
-- llvmpy for the LLVM backend (tested with 0.12.4)
+- llvmpy (tested with 0.12.7)
+- LLVM (tested with 3.3)
 
 On Debian, Ubuntu, and probably other distributions:
 
@@ -79,7 +80,7 @@ Check that it works:
 $ asn1.exe
 ```
 
-To install llvmpy follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.4/doc/getting_started.html#installation)
+To install llvmpy and LLVM follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.7/doc/getting_started.html#installation)
 
 OpenGEODE installation
 ----------------------

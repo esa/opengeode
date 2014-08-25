@@ -74,15 +74,18 @@ def summarize(results, errors, elapsed):
     print "Time: Ada %.2f%% LLVM %.2f%%" % diff([r["time"] for r in results])
     print ""
 
-    headers = ["Benchmark", "Ada size", "LLVM size", "Ada time", "LLVM time"]
+    headers = ["Benchmark", "Ada size (B)", "LLVM size (B)", "Ada time (us)", "LLVM time (us)"]
     table = []
     for result in results:
-        row = [result["name"]]
-        row.extend(diff([result["size"]]))
-        row.extend(diff([result["time"]]))
-        table.append(row)
+        table.append([
+            result["name"],
+            result["size"]["ada"],
+            result["size"]["llvm"],
+            int(round(result["time"]["ada"] * (10 ** 6))),
+            int(round(result["time"]["llvm"] * (10 ** 6))),
+        ])
 
-    print tabulate(table, headers, tablefmt="orgtbl", floatfmt=".2f")
+    print tabulate(table, headers, tablefmt="orgtbl")
 
     return 0 if results and not errors else 1
 
