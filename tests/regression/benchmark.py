@@ -41,8 +41,8 @@ def benchmark(testfolder):
     result = {
         "name": testfolder[:-1],
         "size": {
-            "ada": os.path.getsize(llvm_bin),
-            "llvm": os.path.getsize(ada_bin),
+            "ada": size(llvm_bin),
+            "llvm": size(ada_bin),
         },
         "time": {
             "ada": time(ada_bin),
@@ -51,6 +51,11 @@ def benchmark(testfolder):
     }
 
     return result
+
+
+def size(file):
+    call(["strip", os.path.abspath(file)])
+    return os.path.getsize(file)
 
 
 def time(file, iters=1000):
