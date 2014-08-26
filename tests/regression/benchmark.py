@@ -1,4 +1,5 @@
 import os
+import string
 import subprocess
 import sys
 import time as t
@@ -9,37 +10,40 @@ from tabulate import tabulate
 def main():
     start = t.time()
     results = []
-    errors = 0
-    for testfolder in sys.argv[1:]:
-        result = benchmark(testfolder)
+    testfolders = sys.argv[1:]
+
+    for testfolder in testfolders:
+        results.append(benchmark(testfolder))
         make(testfolder, 'clean')
-        if result:
-            results.append(result)
-        else:
-            errors += 1
         sys.stdout.write('.')
         sys.stdout.flush()
 
-    sys.stdout.write('\n')
+    print ""
 
     elapsed = t.time() - start
-    sys.exit(summarize(results, errors, elapsed))
+    sys.exit(summarize(results, elapsed))
 
 
 def benchmark(testfolder):
+    result = {
+        "name": testfolder[:-1],
+    }
+
     for rule in ("test-llvm", "test-ada"):
         if make(testfolder, rule) != 0:
-            return
+            result["status"] = "ERROR"
+            return result
 
     llvm_bin = os.path.join(testfolder, "test_ada")
     ada_bin = os.path.join(testfolder, "test_llvm")
 
     for bin_name in (llvm_bin, ada_bin):
         if not os.path.isfile(bin_name):
-            return
+            result["status"] = "ERROR"
+            return result
 
-    result = {
-        "name": testfolder[:-1],
+    result.update({
+        "status": "OK",
         "size": {
             "ada": size(llvm_bin),
             "llvm": size(ada_bin),
@@ -48,7 +52,7 @@ def benchmark(testfolder):
             "ada": time(ada_bin),
             "llvm": time(llvm_bin),
         }
-    }
+    })
 
     return result
 
@@ -64,35 +68,50 @@ def time(file, iters=1000):
     return (t.time() - start) / iters
 
 
-def summarize(results, errors, elapsed):
-    print "Finished in %.3fs" % elapsed
-    print "%s benchmarks, %s errors" % (len(results) + errors, errors)
-
-    if not results:
-        print "No results"
-        return 1
-
+def summarize(results, elapsed):
+    print ""
     print "Summary"
     print "-------"
     print ""
-    print "Size: Ada %.2f%% LLVM %.2f%%" % diff([r["size"] for r in results])
-    print "Time: Ada %.2f%% LLVM %.2f%%" % diff([r["time"] for r in results])
+
+    max_name_len = max([len(r["name"]) for r in results]) + 3
+    num_errors = 0
+    valid_results = []
+
+    for r in results:
+        print "%s [%s]" % (string.ljust(r["name"], max_name_len, '.'), r["status"])
+        if r["status"] == "OK":
+            valid_results.append(r)
+        else:
+            num_errors += 1
+
+    print ""
+    print "Finished in %.3fs" % elapsed
+    print "%s benchmarks, %s errors" % (len(results), num_errors)
+    print ""
+
+    if not valid_results:
+        print "No results"
+        return 1
+
+    print "Size: Ada %.2f%% LLVM %.2f%%" % diff([r["size"] for r in valid_results])
+    print "Time: Ada %.2f%% LLVM %.2f%%" % diff([r["time"] for r in valid_results])
     print ""
 
     headers = ["Benchmark", "Ada size (B)", "LLVM size (B)", "Ada time (us)", "LLVM time (us)"]
     table = []
-    for result in results:
+    for r in valid_results:
         table.append([
-            result["name"],
-            result["size"]["ada"],
-            result["size"]["llvm"],
-            int(round(result["time"]["ada"] * (10 ** 6))),
-            int(round(result["time"]["llvm"] * (10 ** 6))),
+            r["name"],
+            r["size"]["ada"],
+            r["size"]["llvm"],
+            int(round(r["time"]["ada"] * (10 ** 6))),
+            int(round(r["time"]["llvm"] * (10 ** 6))),
         ])
 
     print tabulate(table, headers, tablefmt="orgtbl")
 
-    return 0 if results and not errors else 1
+    return 0 if num_errors == 0 else 1
 
 
 def diff(results):
