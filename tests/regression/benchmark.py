@@ -34,8 +34,8 @@ def benchmark(testfolder):
             result["status"] = "ERROR"
             return result
 
-    llvm_bin = os.path.join(testfolder, "test_ada")
-    ada_bin = os.path.join(testfolder, "test_llvm")
+    llvm_bin = os.path.join(testfolder, "test_llvm")
+    ada_bin = os.path.join(testfolder, "test_ada")
 
     for bin_name in (llvm_bin, ada_bin):
         if not os.path.isfile(bin_name):
@@ -45,8 +45,8 @@ def benchmark(testfolder):
     result.update({
         "status": "OK",
         "size": {
-            "ada": size(llvm_bin),
-            "llvm": size(ada_bin),
+            "ada": size(ada_bin),
+            "llvm": size(llvm_bin),
         },
         "time": {
             "ada": time(ada_bin),
