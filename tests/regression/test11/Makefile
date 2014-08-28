@@ -8,22 +8,12 @@ edit:
 test-parse:
 	$(OPENGEODE) og.pr system_structure.pr --check
 
-test-ada:
-	$(OPENGEODE) --toAda og.pr system_structure.pr
-	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -c *.adb
-	$(CC) -c test_ada.c
+test-ada: og.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n og.ali
 	$(GNATLINK) -o test_ada test_ada.o og.ali -lgnat
 	./test_ada | diff expected -
 
-test-llvm:
-	$(OPENGEODE) og.pr system_structure.pr --llvm
-	$(ASN1SCC) -c dataview-uniq.asn -equal -typePrefix asn1Scc
-	$(LLC) og.ll
-	$(CC) -c og.s
-	$(CC) -c dataview-uniq.c
-	$(CC) -c test_llvm.c
+test-llvm: og.o dataview-uniq.o | test_llvm.o
 	$(CC) og.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm | diff expected -
 

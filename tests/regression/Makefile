@@ -1,7 +1,8 @@
 DISABLED_TESTS=test-branchcoverage/
 TEST_CASES=$(filter-out $(DISABLED_TESTS), $(sort $(dir $(wildcard */))))
 
-DISABLED_BENCHMARKS=test1/ test2/ test3/ test4/ test5/ test6/ test7/ test9/ test12/ test-branchcoverage/
+DISABLED_BENCHMARKS=test1/ test2/ test3/ test4/ test5/ test6/ test7/ test9/ \
+                    test12/ test-branchcoverage/
 BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */))))
 
 test-parse:

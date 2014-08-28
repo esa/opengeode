@@ -8,18 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) trafficlight.pr system_structure.pr --check
 
-test-ada:
-	$(OPENGEODE) --toAda trafficlight.pr system_structure.pr
-	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -c *.adb
-	#$(CC) -c test.c
-	#$(GNATBIND) -n trafficlight.ali
-	#$(GNATLINK) -o testcase test.o trafficlight.ali -lgnat -lm
+test-ada: trafficlight.ali
 
-test-llvm:
-	$(OPENGEODE) trafficlight.pr system_structure.pr --llvm
-	$(LLC) trafficlight.ll
-	$(CC) -c trafficlight.s
+test-llvm: trafficlight.o
 
 test-export:
 	$(OPENGEODE) --png --pdf --svg trafficlight.pr system_structure.pr
