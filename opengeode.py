@@ -24,7 +24,6 @@ import re
 import code
 import pprint
 from functools import partial
-from collections import deque
 from itertools import chain
 
 # Added to please py2exe - NOQA makes flake8 ignore the following lines:
@@ -410,6 +409,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def render_everything(self, ast):
         ''' Render a process and its children scenes, recursively '''
         already_created = []
+
         def recursive_render(content, dest_scene):
             ''' Process the rendering in scenes and nested scenes '''
             if isinstance(content, ogAST.Process):
@@ -420,7 +420,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # Render top-level items and their children:
                 for each in Renderer.render(content, dest_scene):
                     G_SYMBOLS.add(each)
-            except TypeError as err:
+            except TypeError:
                 LOG.error(traceback.format_exc())
 
             # Render nested scenes, recursively:
@@ -978,14 +978,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 pprint.pprint(selection.__dict__, None, 2, 1)
             code.interact('type your command:', local=locals())
 
-
     def create_subscene(self, context):
         ''' Create a new SDL scene, e.g. for nested symbols '''
         subscene = SDL_Scene(context=context)
         subscene.messages_window = self.messages_window
         subscene.parent_scene = self
         return subscene
-
 
     def place_symbol(self, item_type, parent, pos=None):
         ''' Draw a symbol on the scene '''
@@ -1803,6 +1801,9 @@ def parse_args():
             help='Generate Ada code for the .pr file')
     parser.add_argument('--llvm', dest='llvm', action='store_true',
             help='Generate LLVM IR code for the .pr file (experimental)')
+    parser.add_argument("-O", dest="optimization", metavar="LEVEL", type=int,
+            action="store", choices=[0, 1, 2, 3], default=0,
+            help="Optimize generated LLVM IR code")
     parser.add_argument('--png', dest='png', action='store_true',
             help='Generate a PNG file for the process')
     parser.add_argument('--pdf', dest='pdf', action='store_true',
@@ -1883,7 +1884,7 @@ def generate(process, options):
     if options.llvm:
         LOG.info('Generating LLVM code')
         try:
-            LlvmGenerator.generate(process)
+            LlvmGenerator.generate(process, options=options)
         except (TypeError, ValueError, NameError) as err:
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))

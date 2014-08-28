@@ -23,6 +23,7 @@ from singledispatch import singledispatch
 
 from llvm import core as lc
 from llvm import ee as le
+from llvm import passes
 
 import ogAST
 import Helper
@@ -377,14 +378,14 @@ class CompileError(Exception):
 
 
 @singledispatch
-def generate(ast, ctx=None):
+def generate(ast, ctx=None, options=None):
     ''' Generate the IR for an AST node '''
     raise CompileError('Unsupported AST construct "%s"' % ast.__class__.__name__)
 
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process, ctx=None):
+def _process(process, ctx=None, options=None):
     ''' Generate the IR for a process '''
     process_name = str(process.processName)
     LOG.info('Generating LLVM IR code for process ' + process_name)
@@ -462,6 +463,17 @@ def _process(process, ctx=None):
         generate_input_signal({'name': timer.lower()}, mapping[timer], ctx)
 
     ctx.module.verify()
+
+    if options and options.optimization:
+        LOG.info('Optimizing generated LLVM IR code for process %s at level %d'
+            % (ctx.name, options.optimization))
+        pm = passes.PassManager.new()
+
+        pmb = passes.PassManagerBuilder.new()
+        pmb.opt_level = options.optimization
+        pmb.populate(pm)
+
+        pm.run(ctx.module)
 
     with open(ctx.name + '.ll', 'w') as ll_file:
         ll_file.write(str(ctx.module))
