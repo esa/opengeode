@@ -5,6 +5,7 @@ LLC=llc
 GNATMAKE=gnatmake
 GNATBIND=gnatbind
 GNATLINK=gnatlink
+O=0
 
 clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.ali gnat.cfg \
@@ -13,21 +14,21 @@ clean:
 	       *.autosave
 
 %.o: %.pr FORCE
-	$(OPENGEODE) $< system_structure.pr --llvm
+	$(OPENGEODE) $< system_structure.pr --llvm -O$(O)
 	$(LLC) $*.ll
-	$(CC) -c $*.s
+	$(CC) -O$(O) -c $*.s
 
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -c *.adb
+	$(GNATMAKE) -O$(O) -c *.adb
 
 %.o: %.asn FORCE
 	$(ASN1SCC) -c $< -typePrefix asn1Scc -equal
-	$(CC) -c $*.c
+	$(CC) -O$(O) -c $*.c
 
 %.o: %.c FORCE
-	$(CC) -c $<
+	$(CC) -O$(O) -c $<
 
 FORCE:
 

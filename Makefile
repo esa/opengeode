@@ -1,19 +1,28 @@
 all: compile-all
 
 test-parse:
-	@$(MAKE) -s -C tests/regression test-parse
+	@$(MAKE) -s -C tests/regression $@
 
 test-ada:
-	@$(MAKE) -s -C tests/regression test-ada
+	@$(MAKE) -s -C tests/regression $@
 
 test-llvm:
-	@$(MAKE) -s -C tests/regression test-llvm
+	@$(MAKE) -s -C tests/regression $@
 
 benchmark:
-	@$(MAKE) -s -C tests/regression benchmark
+	@$(MAKE) -s -C tests/regression $@
+
+benchmark-O1:
+	@$(MAKE) -s -C tests/regression $@
+
+benchmark-O2:
+	@$(MAKE) -s -C tests/regression $@
+
+benchmark-O3:
+	@$(MAKE) -s -C tests/regression $@
 
 coverage:
-	@$(MAKE) -s -C tests/regression coverage
+	@$(MAKE) -s -C tests/regression $@
 
 flake8:
 	@echo Generating flake8_report file
@@ -45,9 +54,9 @@ publish: install
 	@python setup.py sdist upload
 
 clean:
-	@$(MAKE) -s -C tests/regression clean
+	@$(MAKE) -s -C tests/regression $@
 	@find . -name '*~' | xargs rm -f
 	@find . -name '*.o' | xargs rm -f
 
-.PHONY: all test-parse test-ada test-llvm benchmark flake8 coverage \
-	    compile-all install publish clean
+.PHONY: all test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
+	    benchmark-O3 flake8 coverage compile-all install publish clean

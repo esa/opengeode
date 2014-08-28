@@ -1801,9 +1801,9 @@ def parse_args():
             help='Generate Ada code for the .pr file')
     parser.add_argument('--llvm', dest='llvm', action='store_true',
             help='Generate LLVM IR code for the .pr file (experimental)')
-    parser.add_argument("-O", dest="optimization", metavar="LEVEL", type=int,
+    parser.add_argument("-O", dest="optimization", metavar="level", type=int,
             action="store", choices=[0, 1, 2, 3], default=0,
-            help="Optimize generated LLVM IR code")
+            help="Set optimization level for the generated LLVM IR code")
     parser.add_argument('--png', dest='png', action='store_true',
             help='Generate a PNG file for the process')
     parser.add_argument('--pdf', dest='pdf', action='store_true',

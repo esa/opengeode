@@ -17,6 +17,15 @@ test-llvm:
 benchmark:
 	@python benchmark.py $(BENCHMARK_CASES)
 
+benchmark-O1:
+	@python benchmark.py $(BENCHMARK_CASES) -O1
+
+benchmark-O2:
+	@python benchmark.py $(BENCHMARK_CASES) -O2
+
+benchmark-O3:
+	@python benchmark.py $(BENCHMARK_CASES) -O3
+
 coverage:
 	@for v in $(TEST_CASES) ; \
 		do $(MAKE) -C $$v coverage && mv $$v/.coverage* . || exit 1 ; \
@@ -28,4 +37,5 @@ clean:
 		do $(MAKE) -s -C $$v clean ; \
 	done
 
-.PHONY: test-parse test-ada test-llvm benchmark coverage clean
+.PHONY: test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
+	    benchmark-O3 coverage clean

@@ -1,3 +1,4 @@
+import argparse
 import os
 import string
 import subprocess
@@ -8,12 +9,13 @@ from tabulate import tabulate
 
 
 def main():
+    options = parse_args()
+
     start = t.time()
     results = []
-    testfolders = sys.argv[1:]
 
-    for testfolder in testfolders:
-        results.append(benchmark(testfolder))
+    for testfolder in options.testfolders:
+        results.append(benchmark(testfolder, options.optimization))
         make(testfolder, 'clean')
         sys.stdout.write('.')
         sys.stdout.flush()
@@ -21,16 +23,26 @@ def main():
     print ""
 
     elapsed = t.time() - start
-    sys.exit(summarize(results, elapsed))
+    sys.exit(summarize(results, elapsed, options))
 
 
-def benchmark(testfolder):
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-O", dest="optimization", metavar="level", type=int,
+            action="store", choices=[0, 1, 2, 3], default=0,
+            help="set optimization level")
+    parser.add_argument('testfolders', metavar='testfolder', type=str, nargs='*',
+            help='test folder(s)')
+    return parser.parse_args()
+
+
+def benchmark(testfolder, opt_level):
     result = {
         "name": testfolder[:-1],
     }
 
     for rule in ("test-llvm", "test-ada"):
-        if make(testfolder, rule) != 0:
+        if make(testfolder, rule, "O=%d" % opt_level) != 0:
             result["status"] = "ERROR"
             return result
 
@@ -68,7 +80,7 @@ def time(file, iters=1000):
     return (t.time() - start) / iters
 
 
-def summarize(results, elapsed):
+def summarize(results, elapsed, options):
     print ""
     print "Summary"
     print "-------"
@@ -94,6 +106,9 @@ def summarize(results, elapsed):
         print "No results"
         return 1
 
+    if options.optimization != 0:
+        print "Optimization level: %d" % options.optimization
+        print ""
     print "Size: Ada %.2f%% LLVM %.2f%%" % diff([r["size"] for r in valid_results])
     print "Time: Ada %.2f%% LLVM %.2f%%" % diff([r["time"] for r in valid_results])
     print ""
@@ -122,8 +137,10 @@ def mean(values):
     return sum(values) / len(values)
 
 
-def make(path, rule):
-    return call(["make", "-C", path, rule])[0]
+def make(path, rule, *args):
+    call_args = ["make", "-C", path, rule]
+    call_args.extend(args)
+    return call(call_args)[0]
 
 
 def call(args):
