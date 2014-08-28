@@ -8,15 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) og.pr system_structure.pr --check
 
-test-ada:
-	$(OPENGEODE) --toAda og.pr system_structure.pr
-	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -c og.adb
+test-ada: og.ali
 
-test-llvm:
-	$(OPENGEODE) og.pr system_structure.pr --llvm
-	$(LLC) og.ll
-	$(CC) -c og.s
+test-llvm: og.o
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda

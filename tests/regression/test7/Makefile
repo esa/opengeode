@@ -8,15 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check
 
-test-ada:
-	$(OPENGEODE) --toAda orchestrator.pr system_structure.pr
-	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -c orchestrator.adb
+test-ada: orchestrator.ali
 
-test-llvm:
-	$(OPENGEODE) orchestrator.pr system_structure.pr --llvm
-	$(LLC) orchestrator.ll
-	$(CC) -c orchestrator.s
+test-llvm: orchestrator.o
 
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
