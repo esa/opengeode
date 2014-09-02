@@ -738,7 +738,8 @@ class Process(HorizontalSymbol):
     def insert_symbol(self, parent, x, y):
         ''' Redefinition - adds connection line to env '''
         super(Process, self).insert_symbol(parent, x, y)
-        self.connection = self.connect_to_parent()
+        if not self.connection:
+            self.connection = self.connect_to_parent()
 
     def connect_to_parent(self):
         ''' Redefinition: creates connection to env with a signalroute '''

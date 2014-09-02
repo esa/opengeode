@@ -18,7 +18,7 @@
 import math
 import logging
 
-from PySide.QtCore import Qt, QPointF, QLineF
+from PySide.QtCore import Qt, QPointF, QLineF, Slot
 
 from PySide.QtGui import QGraphicsPathItem, QPainterPath, QGraphicsItem, QPen,\
                          QPainter, QFont, QGraphicsTextItem, QColor, \
@@ -253,8 +253,13 @@ class SignalList(EditableText):
         pass
 
     def try_resize(self):
-        ''' Resizing of the parent when size expands - ignore for now '''
+        ''' Resizing of the parent when size expands - ignore '''
         pass
+
+    # pylint: disable=C0103
+    def focusOutEvent(self, event):
+        ''' Redefined function - update in_sig and out_sig in parent '''
+        super(SignalList, self).focusOutEvent(event)
 
 
 class Signalroute(Connection):
@@ -264,8 +269,6 @@ class Signalroute(Connection):
         ''' Set generic parameters from Connection class '''
         super(Signalroute, self).__init__(process, process)
         self.parser = ogParser
-#        self.label_in = QGraphicsTextItem('[]', parent=self)
-#        self.label_out = QGraphicsTextItem('[]', parent=self)
         self.completion_list = []
         self.blackbold = ()
         self.redbold = ()
@@ -284,12 +287,25 @@ class Signalroute(Connection):
                                     for sig in process.output_signals))
         self.label_in.setPlainText('[{}]'.format(self.in_sig))
         self.label_out.setPlainText('[{}]'.format(self.out_sig))
-        #font = QFont('Ubuntu', pointSize=8)
+        self.label_in.document().contentsChanged.connect(self.change_siglist)
+        self.label_out.document().contentsChanged.connect(self.change_siglist)
         for each in (self.label_in, self.label_out):
-            #each.setFont(font)
             each.show()
         self.process = process
         self.reshape()
+
+    @Slot()
+    def change_siglist(self):
+        ''' Called when user modified the text of label_in or label_out '''
+        for each in self.label_in, self.label_out:
+            if not each.hasFocus():
+                if not unicode(each).startswith('['):
+                    each.setPlainText('[{}'.format(unicode(each)))
+                if not unicode(each).endswith(']'):
+                    each.setPlainText('{}]'.format(unicode(each)))
+        Signalroute.in_sig = unicode(self.label_in)[1:-1]
+        Signalroute.out_sig = unicode(self.label_out)[1:-1]
+
 
     @property
     def start_point(self):
@@ -315,9 +331,6 @@ class Signalroute(Connection):
         ''' Redefine shape function to add the text areas '''
         super(Signalroute, self).reshape()
 
-        #self.label_in.setPlainText('[{}]'.format(self.in_sig))
-        #self.label_out.setPlainText('[{}]'.format(self.out_sig))
-
         width_in = self.label_in.boundingRect().width()
 
         self.label_in.setX(self.start_point.x() - width_in)
@@ -337,7 +350,7 @@ class Signalroute(Connection):
 
     def update_completion_list(self, pr_text):
         ''' Called after text has been edited '''
-        print pr_text
+        pass
 
     def resize_item(self, new_rect):
         ''' Called after signallist text has been edited '''
