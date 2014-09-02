@@ -1308,6 +1308,11 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
+        
+        if not scene:
+            LOG.info('No scene - nothing to save')
+            return False
+
         # Translate scenes to avoid negative coordinates
         for each in scene.all_nested_scenes:
             each.translate_to_origin()

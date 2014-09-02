@@ -242,6 +242,8 @@ class Channel(Connection):
         super(Channel, self).__init__(process, process)
         self.label_in = QGraphicsTextItem('[]', parent=self)
         self.label_out = QGraphicsTextItem('[]', parent=self)
+        #self.label_in.setTextInteractionFlags(Qt.TextEditorInteraction)
+        #self.label_out.setTextInteractionFlags(Qt.TextEditorInteraction)
         if not Channel.in_sig:
             # keep at class level as long as only one process is supported
             # when copy-pasting a process the challel in/out signal lists
