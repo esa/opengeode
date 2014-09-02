@@ -151,10 +151,9 @@ class EditableText(QGraphicsTextItem, object):
                     (hlink=hyperlink, text=text.replace('\n', '<br>')))
         else:
             self.setPlainText(text)
-        self.setTextInteractionFlags(
-                Qt.TextEditorInteraction
-                | Qt.LinksAccessibleByMouse
-                | Qt.LinksAccessibleByKeyboard)
+        self.setTextInteractionFlags(Qt.TextEditorInteraction
+                                     | Qt.LinksAccessibleByMouse
+                                     | Qt.LinksAccessibleByKeyboard)
         self.completer_has_focus = False
         self.editing = False
         self.try_resize()
@@ -331,7 +330,11 @@ class EditableText(QGraphicsTextItem, object):
             self.completer.resize(0, 0)
         if not self.completer or not self.completer.isVisible():
             # Trigger a select - side effect makes the toolbar update
-            self.parentItem().select(True)
+            try:
+                self.parentItem().select(True)
+            except AttributeError:
+                # Some parents may not be selectable (e.g. Signalroute)
+                pass
             self.editing = False
             text_cursor = self.textCursor()
             if text_cursor.hasSelection():
@@ -350,8 +353,12 @@ class EditableText(QGraphicsTextItem, object):
                                           self.parentItem(), self.oldSize,
                                           self.parentItem().boundingRect())
                     self.scene().undo_stack.push(undo_cmd)
-                    self.parentItem().cam(self.parentItem().pos(),
-                        self.parentItem().pos())
+                    try:
+                        self.parentItem().cam(self.parentItem().pos(),
+                                              self.parentItem().pos())
+                    except AttributeError:
+                        # Some parents may not have CAM function (e.g. Channel)
+                        pass
 
                     undo_cmd = undoCommands.ReplaceText(self, self.oldText,
                                                         unicode(self))
@@ -364,7 +371,11 @@ class EditableText(QGraphicsTextItem, object):
         ''' When user starts editing text, save previous state for Undo '''
         super(EditableText, self).focusInEvent(event)
         # Trigger a select - side effect makes the toolbar update
-        self.parentItem().select(True)
+        try:
+            self.parentItem().select(True)
+        except AttributeError:
+            # Some parents may not be selectable (e.g. Signalroute)
+            pass
         # Update completer list of keywords
         self.completer.set_completer_list()
         # Clear selection otherwise the "Delete" key may delete other items

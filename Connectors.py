@@ -24,6 +24,9 @@ from PySide.QtGui import QGraphicsPathItem, QPainterPath, QGraphicsItem, QPen,\
                          QPainter, QFont, QGraphicsTextItem, QColor, \
                          QFontMetrics
 
+import ogParser
+from TextInteraction import EditableText
+
 LOG = logging.getLogger(__name__)
 
 
@@ -234,30 +237,56 @@ class CommentConnection(Connection):
         yield QPointF(go_to_point, self.end_point.y())
 
 
-class Channel(Connection):
+class SignalList(EditableText):
+    ''' Simplified text editor for signal lists '''
+    def __init__(self, parent, text='', hyperlink = None):
+        ''' Smaller font than normal text '''
+        super(SignalList, self).__init__(parent, text)
+        self.setFont(QFont('Ubuntu', pointSize=8))
+
+    def set_text_alignment(self):
+        ''' Text justification - ignore '''
+        pass
+
+    def set_textbox_position(self):
+        ''' Alignment vs parent - ignore, done by the parent '''
+        pass
+
+    def try_resize(self):
+        ''' Resizing of the parent when size expands - ignore for now '''
+        pass
+
+
+class Signalroute(Connection):
     ''' Subclass of Connection used to draw channels between processes '''
     in_sig = out_sig = None
     def __init__(self, process):
         ''' Set generic parameters from Connection class '''
-        super(Channel, self).__init__(process, process)
-        self.label_in = QGraphicsTextItem('[]', parent=self)
-        self.label_out = QGraphicsTextItem('[]', parent=self)
-        #self.label_in.setTextInteractionFlags(Qt.TextEditorInteraction)
-        #self.label_out.setTextInteractionFlags(Qt.TextEditorInteraction)
-        if not Channel.in_sig:
+        super(Signalroute, self).__init__(process, process)
+        self.parser = ogParser
+#        self.label_in = QGraphicsTextItem('[]', parent=self)
+#        self.label_out = QGraphicsTextItem('[]', parent=self)
+        self.completion_list = []
+        self.blackbold = ()
+        self.redbold = ()
+        self.label_in = SignalList(parent=self)
+        self.label_out = SignalList(parent=self)
+        if not Signalroute.in_sig:
             # keep at class level as long as only one process is supported
             # when copy-pasting a process the challel in/out signal lists
             # are not parsed. Workaround is to keep the list "global"
             # to allow a copy of both process and channel
             # Needed for the image exporter, that copies the scene to a
             # temporary one
-            Channel.in_sig = '[{}]'.format(',\n'.join(sig['name']
+            Signalroute.in_sig = '{}'.format(',\n'.join(sig['name']
                                    for sig in process.input_signals))
-            Channel.out_sig = '[{}]'.format(',\n'.join(sig['name']
+            Signalroute.out_sig = '{}'.format(',\n'.join(sig['name']
                                     for sig in process.output_signals))
-        font = QFont('Ubuntu', pointSize=8)
+        self.label_in.setPlainText('[{}]'.format(self.in_sig))
+        self.label_out.setPlainText('[{}]'.format(self.out_sig))
+        #font = QFont('Ubuntu', pointSize=8)
         for each in (self.label_in, self.label_out):
-            each.setFont(font)
+            #each.setFont(font)
             each.show()
         self.process = process
         self.reshape()
@@ -284,10 +313,10 @@ class Channel(Connection):
 
     def reshape(self):
         ''' Redefine shape function to add the text areas '''
-        super(Channel, self).reshape()
+        super(Signalroute, self).reshape()
 
-        self.label_in.setPlainText(self.in_sig)
-        self.label_out.setPlainText(self.out_sig)
+        #self.label_in.setPlainText('[{}]'.format(self.in_sig))
+        #self.label_out.setPlainText('[{}]'.format(self.out_sig))
 
         width_in = self.label_in.boundingRect().width()
 
@@ -295,6 +324,24 @@ class Channel(Connection):
         self.label_in.setY(self.start_point.y() + 5)
         self.label_out.setX(self.end_point.x() + 10)
         self.label_out.setY(self.end_point.y() + 5)
+
+    def check_syntax(self, text):
+        ''' Check the syntax of the IN and OUT signal lists '''
+        try:
+            _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
+                                           'signalroute', text)
+        except (AssertionError, AttributeError) as err:
+            LOG.error('Checker failed:' + str(err))
+        else:
+            return syntax_errors
+
+    def update_completion_list(self, pr_text):
+        ''' Called after text has been edited '''
+        print pr_text
+
+    def resize_item(self, new_rect):
+        ''' Called after signallist text has been edited '''
+        pass
 
 
 class Controlpoint(QGraphicsPathItem, object):

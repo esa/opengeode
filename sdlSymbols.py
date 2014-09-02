@@ -29,7 +29,7 @@ from PySide.QtCore import Qt, QPoint, QRect, QRectF
 from PySide.QtGui import(QPainterPath, QBrush, QColor, QRadialGradient, QPen)
 
 from genericSymbols import HorizontalSymbol, VerticalSymbol, Comment
-from Connectors import Connection, JoinConnection, Channel
+from Connectors import Connection, JoinConnection, Signalroute
 
 import ogParser
 import ogAST
@@ -695,7 +695,7 @@ class State(VerticalSymbol):
         ast, _, _, _, terminators = self.parser.parseSingleElement('state',
                                                                    pr_text)
         return ast, terminators
-    
+
     def check_syntax(self, pr_text):
         ''' Redefinition of the check syntax function for the state '''
         name = self.common_name if self.hasParent else 'state'
@@ -741,8 +741,8 @@ class Process(HorizontalSymbol):
         self.connection = self.connect_to_parent()
 
     def connect_to_parent(self):
-        ''' Redefinition: creates connection to env with a channel '''
-        return Channel(self)
+        ''' Redefinition: creates connection to env with a signalroute '''
+        return Signalroute(self)
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''

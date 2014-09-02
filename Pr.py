@@ -20,7 +20,7 @@ from collections import deque
 from itertools import chain
 from singledispatch import singledispatch
 
-import genericSymbols, sdlSymbols
+import genericSymbols, sdlSymbols, Connectors
 
 LOG = logging.getLogger(__name__)
 
@@ -330,3 +330,19 @@ def _start(symbol, recursive=True, **kwargs):
     if recursive:
         result.extend(recursive_aligned(symbol))
     return result
+
+
+@generate.register(Connectors.Signalroute)
+def _channel(symbol, recursive=True, **kwargs):
+    ''' Signalroute at block level '''
+    result = Indent()
+    result.append('SIGNALROUTE c')
+    if symbol.out_sig:
+        result.append('FROM {} TO ENV WITH {};'.format(unicode(symbol.process),
+                                                       symbol.out_sig))
+    if symbol.in_sig:
+        result.append('FROM ENV TO {} WITH {};'.format(unicode(symbol.process),
+                                                       symbol.in_sig))
+    return result
+
+

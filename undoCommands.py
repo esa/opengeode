@@ -72,14 +72,22 @@ class ResizeSymbol(QUndoCommand):
         self.new_rect = new_rect
 
     def undo(self):
-        self.symbol.resize_item(self.old_rect)
-        # Update grabber size
-        self.symbol.grabber.display()
+        try:
+            self.symbol.resize_item(self.old_rect)
+            # Update grabber size
+            self.symbol.grabber.display()
+        except AttributeError:
+            # Not all symbols can be resized
+            pass
 
     def redo(self):
-        self.symbol.resize_item(self.new_rect)
-        # Update grabber size
-        self.symbol.grabber.display()
+        try:
+            self.symbol.resize_item(self.new_rect)
+            # Update grabber size
+            self.symbol.grabber.display()
+        except AttributeError:
+            # Not all symbols can be resized
+            pass
 
 
 class InsertSymbol(QUndoCommand):

@@ -1851,7 +1851,8 @@ def init_logging(options):
             Asn1scc,
             Connectors,
             Pr,
-            TextInteraction
+            TextInteraction,
+            Connectors
         )
         for module in modules:
             module.LOG.addHandler(handler_console)

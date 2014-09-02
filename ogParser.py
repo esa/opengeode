@@ -329,8 +329,8 @@ def get_interfaces(ast, process_name):
             raise TypeError('Process ' + process_name +
                         ' is defined but not declared in a system')
     # Find in and out signals names using the signalroutes
-    for signalroute in process_parent.signalroutes:
-        for route in signalroute['routes']:
+    for each in process_parent.signalroutes:
+        for route in each['routes']:
             if route['source'] == process_name:
                 direction = 'out'
             elif route['dest'] == process_name:
@@ -2331,7 +2331,7 @@ def single_route(root):
     return route
 
 
-def channel_signalroute(root):
+def signalroute(root, parent=None, context=None):
     ''' Channel/signalroute definition (connections) '''
     # no AST entry for edges - a simple dict is sufficient
     # (name, [route])
@@ -2341,7 +2341,7 @@ def channel_signalroute(root):
             edge['name'] = child.text
         elif child.type == lexer.ROUTE:
             edge['routes'].append(single_route(child))
-    return edge
+    return edge, [], []
 
 
 def block_definition(root, parent):
@@ -2371,7 +2371,7 @@ def block_definition(root, parent):
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.SIGNALROUTE:
-            sigroute = channel_signalroute(child)
+            sigroute, _, _ = signalroute(child)
             block.signalroutes.append(sigroute)
         else:
             warnings.append('Unsupported block child type: ' +
@@ -2406,7 +2406,7 @@ def system_definition(root, parent):
             LOG.debug('Added procedure: ' + proc.inputString)
         elif child.type == lexer.CHANNEL:
             LOG.debug('channel declaration')
-            channel = channel_signalroute(child)
+            channel, _, _ = signalroute(child)
             system.channels.append(channel)
         elif child.type == lexer.BLOCK:
             LOG.debug('block declaration')
@@ -3915,7 +3915,8 @@ def parseSingleElement(elem='', string=''):
     assert(elem in ('input_part', 'output', 'decision', 'alternative_part',
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
-            'connect_part', 'process_definition', 'proc_start', 'state_start'))
+            'connect_part', 'process_definition', 'proc_start', 'state_start',
+            'signalroute'))
     # Create a dummy context, needed to place context data
     if elem == 'proc_start':
         elem = 'start'
