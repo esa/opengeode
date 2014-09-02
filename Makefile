@@ -29,7 +29,7 @@ flake8:
 	@flake8 opengeode.py Pr.py sdlSymbols.py genericSymbols.py ogParser.py \
 	        AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py \
 	        undoCommands.py  Connectors.py Asn1scc.py Helper.py \
-	        Statechart.py > flake8_report
+	        Statechart.py TextInteraction.py > flake8_report
 
 compile-all:
 	@pyside-rcc opengeode.qrc -o icons.py
@@ -45,7 +45,7 @@ install: compile-all
 	          ogAST.py ogParser.py opengeode.py Renderer.py samnmax.py \
 	          sdl92Lexer.py sdl92Parser.py sdlSymbols.py undoCommands.py \
 	          Clipboard.py Statechart.py LlvmGenerator.py Lander.py Helper.py \
-	          Connectors.py Asn1scc.py ; \
+	          Connectors.py Asn1scc.py TextInteraction.py ; \
 	    do echo Installing $$f && cp $$f opengeode ; \
 	done
 	@python setup.py install

@@ -1028,9 +1028,13 @@ def is_fpar(name, context):
 
 def is_asn1constant(name):
     name = name.lower().replace('-', '_')
-    for varname, vartype in DV.variables.viewitems():
-        if varname.lower().replace('-', '_') == name:
-            return True
+    try:
+        for varname, vartype in DV.variables.viewitems():
+            if varname.lower().replace('-', '_') == name:
+                return True
+    except AttributeError:
+        # Ignore - No DV - e.g. in syntax check mode
+        pass
     return False
 
 

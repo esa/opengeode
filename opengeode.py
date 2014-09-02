@@ -52,6 +52,7 @@ import PySide.QtXml  # NOQA
 import singledispatch  # NOQA
 import Asn1scc  # NOQA
 import Connectors  # NOQA
+import TextInteraction  # NOQA
 
 #from PySide import phonon
 
@@ -61,11 +62,11 @@ from PySide.QtCore import Qt, QSize, QFile, QIODevice, QRectF, QTimer, QPoint
 from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
 
-from genericSymbols import(Symbol, Comment, EditableText, Cornergrabber,
-                           Connection)
+from genericSymbols import(Symbol, Comment, Cornergrabber, Connection)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
         ProcedureStart, ProcedureStop, StateStart, Connect, Process)
+from TextInteraction import EditableText
 
 # Icons and png files generated from the resource file:
 import icons  # NOQA
@@ -1849,7 +1850,8 @@ def init_logging(options):
             LlvmGenerator,
             Asn1scc,
             Connectors,
-            Pr
+            Pr,
+            TextInteraction
         )
         for module in modules:
             module.LOG.addHandler(handler_console)
