@@ -12,7 +12,7 @@
 
     Copyright (c) 2012-2013 European Space Agency
 
-    Designed and implemented by Maxime Perrotin
+    Designed and implemented by Diego Barbera 
 
     Contact: maxime.perrotin@esa.int
 """
