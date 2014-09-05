@@ -1048,6 +1048,7 @@ class SDL_View(QtGui.QGraphicsView, object):
     ''' Main graphic view used to display the SDL scene and handle zoom '''
     # signal to ask the main application that a new scene is needed
     need_new_scene = QtCore.Signal()
+    update_asn1_dock = QtCore.Signal(ogAST.AST)
 
     def __init__(self, scene):
         ''' Create the SDL view holding the scene '''
@@ -1352,7 +1353,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             LOG.warning('Files are spread in several directories - '
                         'ASN.1 files may not be found')
         else:
-            os.chdir(dir_pool.pop())
+            files = [os.path.abspath(each) for each in files]
+            os.chdir(dir_pool.pop() or '.')
         try:
             ast, warnings, errors = ogParser.parse_pr(files=files)
         except IOError:
@@ -1385,7 +1387,9 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.refresh()
         self.centerOn(self.sceneRect().topLeft())
         self.scene().undo_stack.clear()
-        return ast
+        # Emit a signal for the application to update the ASN.1 scene
+        self.update_asn1_dock.emit(ast)
+        #return ast
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -1689,6 +1693,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.asn1_area = sdlSymbols.ASN1Viewer()
         self.asn1_area.text.setPlainText('-- ASN.1 Data Types')
         self.asn1_area.text.try_resize()
+        self.view.update_asn1_dock.connect(self.set_asn1_view)
 
         self.datatypes_scene.addItem(self.asn1_area)
 
@@ -1709,24 +1714,46 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
         if file_name:
             types = []
-            ast = self.view.load_file(file_name)
-            # Update the dock widget with ASN.1 files content
-            try:
-                for asn1file in ast.asn1_filenames:
-                    with open(asn1file, 'r') as file_handler:
-                        types.append('-- ' + asn1file)
-                        types.append(file_handler.read())
-                if types:
-                    self.asn1_area.text.setPlainText('\n'.join(types))
-                    # ASN.1 text area is read-only:
-                    self.asn1_area.text.setTextInteractionFlags(
-                                            QtCore.Qt.TextBrowserInteraction)
-                    self.asn1_area.text.try_resize()
+            self.view.load_file(file_name)
+#           # Update the dock widget with ASN.1 files content
+#           try:
+#               for asn1file in ast.asn1_filenames:
+#                   with open(asn1file, 'r') as file_handler:
+#                       types.append('-- ' + asn1file)
+#                       types.append(file_handler.read())
+#               if types:
+#                   self.asn1_area.text.setPlainText('\n'.join(types))
+#                   # ASN.1 text area is read-only:
+#                   self.asn1_area.text.setTextInteractionFlags(
+#                                           QtCore.Qt.TextBrowserInteraction)
+#                   self.asn1_area.text.try_resize()
+#
+#           except IOError as err:
+#               LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
+#           except AttributeError:
+#               LOG.warning('No AST, check input files')
 
-            except IOError as err:
-                LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
-            except AttributeError:
-                LOG.warning('No AST, check input files')
+    @QtCore.Slot(ogAST.AST)
+    def set_asn1_view(self, ast):
+        ''' Display the ASN.1 types in the dedicated scene '''
+        # Update the dock widget with ASN.1 files content
+        types = []
+        try:
+            for each in ast.asn1_filenames:
+                with open(each, 'r') as file_handler:
+                    types.append('-- ' + each)
+                    types.append(file_handler.read())
+            if types:
+                self.asn1_area.text.setPlainText('\n'.join(types))
+                # ASN.1 text area is read-only:
+                self.asn1_area.text.setTextInteractionFlags(
+                                        QtCore.Qt.TextBrowserInteraction)
+                self.asn1_area.text.try_resize()
+        except IOError as err:
+            LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
+        except AttributeError:
+            LOG.warning('No AST, check input files')
+
 
     def vi_command(self):
         '''

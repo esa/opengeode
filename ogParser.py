@@ -3842,8 +3842,8 @@ def add_to_ast(ast, filename=None, string=None):
     errors, warnings = [], []
     try:
         parser = parser_init(filename=filename, string=string)
-    except IOError:
-        LOG.error('parser_init failed')
+    except IOError as err:
+        LOG.error('parser_init failed: ' + str(err))
         raise
     # Use Sam & Max output capturer to get errors from ANTLR parser
     with samnmax.capture_ouput() as (stdout, stderr):
@@ -3962,11 +3962,11 @@ def parser_init(filename=None, string=None):
     ''' Initialize the parser (to be called first) '''
     try:
         char_stream = antlr3.ANTLRFileStream(filename, encoding='utf-8')
-    except (IOError, TypeError):
+    except (IOError, TypeError) as err:
         try:
             char_stream = antlr3.ANTLRStringStream(string)
         except TypeError as err:
-            raise IOError('Could not parse input' + str(err))
+            raise IOError('Could not parse input: ' + str(err))
     lex = lexer.sdl92Lexer(char_stream)
     tokens = antlr3.CommonTokenStream(lex)
     parser = sdl92Parser(tokens)
