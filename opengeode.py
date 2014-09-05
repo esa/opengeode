@@ -510,7 +510,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             min_y = min(item.y() for item in self.floating_symb)
         except ValueError:
             # No item in the scene
-            return
+            return 0, 0
         delta_x = -min_x if min_x < 0 else 0
         delta_y = -min_y if min_y < 0 else 0
         for item in self.floating_symb:
@@ -1309,7 +1309,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
-        
+
         if not scene:
             LOG.info('No scene - nothing to save')
             return False
@@ -1347,6 +1347,12 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def load_file(self, files):
         ''' Parse a PR file and render it on the scene '''
+        dir_pool = set(os.path.dirname(each) for each in files)
+        if len(dir_pool) != 1:
+            LOG.warning('Files are spread in several directories - '
+                        'ASN.1 files may not be found')
+        else:
+            os.chdir(dir_pool.pop())
         try:
             ast, warnings, errors = ogParser.parse_pr(files=files)
         except IOError:
@@ -1391,6 +1397,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             return
         else:
             self.load_file(filenames)
+            self.up_button.setEnabled(False)
 
     def is_model_clean(self):
         ''' Check recursively if anything has changed in any scene '''
@@ -2038,4 +2045,8 @@ def opengeode():
 
 
 if __name__ == '__main__':
-    sys.exit(opengeode())
+    ''' Run main application '''
+    cwd = os.getcwd()
+    ret = opengeode()
+    os.chdir(cwd)
+    sys.exit(ret)
