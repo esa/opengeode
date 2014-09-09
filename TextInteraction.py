@@ -14,7 +14,7 @@
     Contact: maxime.perrotin@esa.int
 """
 
-
+import string
 import logging
 
 from PySide.QtCore import Qt, QRegExp, Slot
@@ -40,7 +40,7 @@ class Completer(QGraphicsProxyWidget, object):
         self.setWidget(widget)
         self.string_list = QStringListModel()
         self._completer = QCompleter()
-        self.completion_list = parent.parentItem().completion_list
+        self.parent = parent
         self._completer.setCaseSensitivity(Qt.CaseInsensitive)
         # For some reason the default minimum size is (61,61)
         # Set it to 0 so that the size of the box is not taken
@@ -52,7 +52,8 @@ class Completer(QGraphicsProxyWidget, object):
 
     def set_completer_list(self):
         ''' Set list of items for the autocompleter popup '''
-        self.string_list.setStringList(list(self.completion_list))
+        compl = list(self.parent.parentItem().completion_list)
+        self.string_list.setStringList(compl)
         self._completer.setModel(self.string_list)
 
     def set_completion_prefix(self, completion_prefix):
@@ -165,6 +166,8 @@ class EditableText(QGraphicsTextItem, object):
         # Increase the Z value of the text area so that the autocompleter
         # always appear on top of text's siblings (parents's followers)
         self.setZValue(1)
+        # context is used for advanced autocompletion
+        self.context = ''
         # Set cursor when mouse goes over the text
         self.setCursor(self.default_cursor)
         # Activate cache mode to boost rendering by calling paint less often
@@ -242,6 +245,31 @@ class EditableText(QGraphicsTextItem, object):
         self.completer.hide()
         self.try_resize()
 
+
+    def context_completion_list(self):
+        ''' Advanced context-dependent autocompletion for SEQUENCE fields '''
+        # Select text from the begining of a line to the cursor position
+        # Then keep the last word including separators ('!' and '.')
+        # This word (e.g. variable!field!subfield) is then used to update
+        # the autocompletion list.
+        cursor = self.textCursor()
+        pos = cursor.positionInBlock() - 1
+        cursor.select(QTextCursor.BlockUnderCursor)
+        context = self.context
+        try:
+            # If not the first line of the text, Qt adds u+2029 as 1st char
+            line = cursor.selectedText().replace(u'\u2029', '')
+            if line[pos] in string.ascii_letters + '!' + '.' + '_':
+                self.context = line[slice(0, pos + 1)].split()[-1]
+            else:
+                self.context = ''
+        except IndexError:
+            pass
+        if context != self.context:
+            #print 'refreshing list with', self.context.encode('utf-8')
+            self.completer.set_completer_list()
+
+
     # pylint: disable=C0103
     def keyPressEvent(self, event):
         '''
@@ -263,23 +291,7 @@ class EditableText(QGraphicsTextItem, object):
         text_cursor.select(QTextCursor.WordUnderCursor)
         self.completion_prefix = text_cursor.selectedText()
 
-        # Work in progress - to support advanced autocompletion
-        tmp = self.textCursor()
-        pos = tmp.positionInBlock()
-        tmp.select(QTextCursor.BlockUnderCursor)
-        try:
-            import string
-            line = tmp.selectedText()
-            if line[pos] in string.ascii_letters + '!' + '.' + '_':
-                last_word = line[slice(0, pos + 1)].split()[-1]
-            else:
-                last_word = ''
-        except IndexError:
-            pass
-        else:
-            pass
-            # print last_word.encode('utf-8')
-        # -- END
+        self.context_completion_list()
 
         completion_count = self.completer.set_completion_prefix(
                 self.completion_prefix)
@@ -377,6 +389,7 @@ class EditableText(QGraphicsTextItem, object):
             # Some parents may not be selectable (e.g. Signalroute)
             pass
         # Update completer list of keywords
+        self.context = ''
         self.completer.set_completer_list()
         # Clear selection otherwise the "Delete" key may delete other items
         self.scene().clearSelection()

@@ -37,6 +37,7 @@ import ogAST
 
 LOG = logging.getLogger('sdlSymbols')
 
+AST = ogAST.AST()
 
 # SDL-specific: reserved keywords, to be highlighted in textboxes
 # Two kind of formatting are possible: black bold, and red bold
@@ -481,7 +482,7 @@ class Task(VerticalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    completion_list = set()
+    #completion_list = set()
 
     def __init__(self, parent=None, ast=None):
         ''' Initializes the TASK symbol '''
@@ -505,6 +506,16 @@ class Task(VerticalSymbol):
         path.lineTo(0, 0)
         self.setPath(path)
         super(Task, self).set_shape(width, height)
+
+    @property
+    def completion_list(self):
+        ''' Dynamically set completion list depending on current context '''
+        # Need access to the AST
+        try:
+            print self.text.context.encode('utf-8')
+        except AttributeError:
+            pass # text not set yet
+        return ['hello', 'world']
 
 
 # pylint: disable=R0904
@@ -575,7 +586,7 @@ class TextSymbol(HorizontalSymbol):
         ''' When text was entered, update TASK completion list '''
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
-        Task.completion_list |= {dcl for dcl in ast.variables.keys()}
+        #Task.completion_list |= {dcl for dcl in ast.variables.keys()}
 
     def set_shape(self, width, height):
         ''' Define the polygon of the text symbol '''

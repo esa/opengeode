@@ -350,6 +350,7 @@ class Signalroute(Connection):
 
     def update_completion_list(self, pr_text):
         ''' Called after text has been edited '''
+        # TODO - call parseSingleElement, check sdlSymbols for examples
         pass
 
     def resize_item(self, new_rect):

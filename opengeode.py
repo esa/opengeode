@@ -29,6 +29,7 @@ from itertools import chain
 # Added to please py2exe - NOQA makes flake8 ignore the following lines:
 # pylint: disable=W0611
 import enum  # NOQA
+import string  # NOQA
 import fnmatch  # NOQA
 import operator  # NOQA
 import subprocess  # NOQA
@@ -1389,7 +1390,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.scene().undo_stack.clear()
         # Emit a signal for the application to update the ASN.1 scene
         self.update_asn1_dock.emit(ast)
-        #return ast
+        # Set AST to be used as data dictionnary and updated on the fly
+        sdlSymbols.AST = ast
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''

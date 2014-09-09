@@ -86,7 +86,7 @@ def _process(ast, scene, **_):
             signal['name'] for signal in ast.input_signals}
     sdlSymbols.Output.completion_list = {
             signal['name'] for signal in ast.output_signals}
-    sdlSymbols.Task.completion_list = set(ast.variables.keys())
+    #sdlSymbols.Task.completion_list = set(ast.variables.keys())
 
     sdlSymbols.ProcedureCall.completion_list = {
             proc.inputString for proc in ast.procedures}
