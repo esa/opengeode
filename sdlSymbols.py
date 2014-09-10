@@ -38,6 +38,7 @@ import ogAST
 LOG = logging.getLogger('sdlSymbols')
 
 AST = ogAST.AST()
+CONTEXT = ogAST.Process()
 
 # SDL-specific: reserved keywords, to be highlighted in textboxes
 # Two kind of formatting are possible: black bold, and red bold
@@ -52,7 +53,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE',
-              'TASK', 'PROCESS', 'LABEL', 'JOIN', 'CONNECTION')]
+              'TASK', 'PROCESS', 'LABEL', 'JOIN', 'CONNECTION', 'CONNECT')]
 
 
 # pylint: disable=R0904
@@ -510,12 +511,46 @@ class Task(VerticalSymbol):
     @property
     def completion_list(self):
         ''' Dynamically set completion list depending on current context '''
-        # Need access to the AST
-        try:
-            print self.text.context.encode('utf-8')
-        except AttributeError:
-            pass # text not set yet
-        return ['hello', 'world']
+        res = []
+        if not self.text:
+            return res
+        #print self.text.context.encode('utf-8')
+        parts = self.text.context.split('!')
+        if len(parts) == 0:
+            return res
+        elif len(parts) == 1:
+            # Return the list of variables
+            res = set(CONTEXT.variables.keys() + AST.asn1_constants.keys())
+        else:
+            var = parts[0].lower()
+            try:
+                var_t = ogParser.find_variable_type(var, CONTEXT)
+                basic = ogParser.find_basic_type(var_t, AST.dataview)
+                res = (field.replace('-', '_')
+                        for field in basic.Children.keys())
+            except (AttributeError, TypeError):
+                res = []
+            else:
+                for each in parts[1:-1]:
+                    try:
+                        for child, childtype in basic.Children.viewitems():
+                            if child.lower() == each.lower().replace('_', '-'):
+                                basic = ogParser.find_basic_type(childtype.type,
+                                                                 AST.dataview)
+                                break
+                        else:
+                            res = []
+                            break
+                    except (AttributeError, TypeError):
+                        res = []
+                        break
+                else:
+                    try:
+                        res = (field.replace('-', '_')
+                               for field in basic.Children.keys())
+                    except AttributeError:
+                        res = []
+        return res
 
 
 # pylint: disable=R0904

@@ -42,8 +42,17 @@ SeqInt      ::= SEQUENCE (SIZE(1..2)) OF T-UInt8
 MyOctStr    ::= OCTET STRING (SIZE (3))
 String      ::= OCTET STRING (SIZE(0..100))
 
+Autocompletion ::= SEQUENCE {
+    first-field BOOLEAN,
+    secondField SEQUENCE {
+        third BOOLEAN,
+        fourth BOOLEAN
+    }
+}
+
 -- You can also declare variables (they will be visible in C, Ada and SDL)
 myVar	    MySeqOf	::= { hello, world }
+mySeq       Autocompletion ::= { first-field TRUE, secondField { third TRUE, fourth FALSE } }
 
 END
 

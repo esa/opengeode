@@ -924,8 +924,8 @@ class AST(object):
         # Refs to the ASN.1 dataview AST (set with USE clauses)
         self.dataview = None
         self.asn1Modules = None
-        # Constants stored in the ASN.1 modules (type is unknown/unchecked)
-        self.asn1_constants = []
+        # ASN.1-defined constants (constants in Ada but variables in C)
+        self.asn1_constants = None
 
         # List of System
         self.systems = []

@@ -1392,6 +1392,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.update_asn1_dock.emit(ast)
         # Set AST to be used as data dictionnary and updated on the fly
         sdlSymbols.AST = ast
+        sdlSymbols.CONTEXT = process
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''

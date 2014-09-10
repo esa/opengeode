@@ -385,14 +385,15 @@ def get_state_list(process_root):
     return set(state_list)
 
 
-def find_basic_type(a_type):
+def find_basic_type(a_type, pool=None):
     ''' Return the ASN.1 basic type of a_type '''
     basic_type = a_type or UNKNOWN_TYPE
+    pool = pool or types()
     while basic_type.kind == 'ReferenceType':
         # Find type with proper case in the data view
-        for typename in types().viewkeys():
+        for typename in pool.viewkeys():
             if typename.lower() == basic_type.ReferencedTypeName.lower():
-                basic_type = types()[typename].type
+                basic_type = pool[typename].type
                 break
         else:
             raise TypeError('Type "' + type_name(basic_type) +
@@ -812,7 +813,6 @@ def find_variable_type(var, context):
     try:
         for variable in context.fpar:
             if variable['name'].lower() == var.lower():
-                LOG.debug(str(var) + ' is defined')
                 return variable['type']
     except AttributeError:
         # No FPAR section
@@ -821,18 +821,15 @@ def find_variable_type(var, context):
     for varname, (vartype, _) in all_visible_variables.viewitems():
         # Case insensitive comparison with variables
         if var.lower() == varname.lower():
-            LOG.debug(str(var) + ' is defined')
             return vartype
 
     for timer in chain(context.timers, context.global_timers):
         if var.lower() == timer.lower():
-            LOG.debug(str(var) + ' is defined')
             return TIMER
 
     # check if is a ASN.1 constant
     for varname, vartype in DV.variables.viewitems():
         if var.lower() == varname.lower().replace('-', '_'):
-            LOG.debug(str(var) + ' is defined')
             return vartype.type
 
     LOG.debug('[find_variable] result: not found, raising exception')
@@ -3787,9 +3784,6 @@ def pr_file(root):
                             ast_version=ASN1.UniqueEnumeratedNames,
                             flags=[ASN1.AstOnly])
             ast.asn1Modules = DV.asn1Modules
-            # Add constants defined in the ASN.1 modules (for visibility)
-            for mod in ast.asn1Modules:
-                ast.asn1_constants.extend(DV.exportedVariables[mod])
         except (ImportError, NameError) as err:
             # Can happen if DataView.py is not there
             LOG.info('USE Clause did not contain ASN.1 filename')
@@ -3832,8 +3826,7 @@ def pr_file(root):
     # The ASN.1 ASTs needs to be copied at the end of PR parsing process
     # and not just after the ASN1 specific parsing
     ast.dataview = types()
-    for mod in DV.exportedVariables:
-        ast.asn1_constants.extend(DV.exportedVariables[mod])
+    ast.asn1_constants = DV.variables
     return ast, errors, warnings
 
 

@@ -75,21 +75,21 @@ def _block(ast, scene):
 def _process(ast, scene, **_):
     ''' Render a Process symbol (in a BLOCK diagram) '''
     # Set autocompletion lists for input, output, state, types, variables:
-    try:
-        sdlSymbols.TextSymbol.completion_list = {
-                t.replace('-', '_') for t in ast.dataview}
-    except (AttributeError, TypeError):
-        LOG.debug('No dataview for filling types autocompletion list')
-    sdlSymbols.State.completion_list = {
-            state for state in ast.mapping if state != 'START'}
-    sdlSymbols.Input.completion_list = {
-            signal['name'] for signal in ast.input_signals}
-    sdlSymbols.Output.completion_list = {
-            signal['name'] for signal in ast.output_signals}
+#   try:
+#       sdlSymbols.TextSymbol.completion_list = {
+#               t.replace('-', '_') for t in ast.dataview}
+#   except (AttributeError, TypeError):
+#       LOG.debug('No dataview for filling types autocompletion list')
+#   sdlSymbols.State.completion_list = {
+#           state for state in ast.mapping if state != 'START'}
+#   sdlSymbols.Input.completion_list = {
+#           signal['name'] for signal in ast.input_signals}
+#   sdlSymbols.Output.completion_list = {
+#           signal['name'] for signal in ast.output_signals}
     #sdlSymbols.Task.completion_list = set(ast.variables.keys())
-
-    sdlSymbols.ProcedureCall.completion_list = {
-            proc.inputString for proc in ast.procedures}
+#
+#   sdlSymbols.ProcedureCall.completion_list = {
+#           proc.inputString for proc in ast.procedures}
 
     symbol = sdlSymbols.Process(ast, ast)
     add_to_scene(symbol, scene)
