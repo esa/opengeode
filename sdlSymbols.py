@@ -24,6 +24,7 @@ __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
 
 #import traceback
 import logging
+from itertools import chain
 
 from PySide.QtCore import Qt, QPoint, QRect, QRectF
 from PySide.QtGui import(QPainterPath, QBrush, QColor, QRadialGradient, QPen)
@@ -56,6 +57,50 @@ SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'TASK', 'PROCESS', 'LABEL', 'JOIN', 'CONNECTION', 'CONNECT')]
 
 
+def variables_autocompletion(symbol):
+    ''' Intelligent autocompletion for variables - including struct fields '''
+    res = ()
+    if not symbol.text:
+        return res
+    parts = symbol.text.context.split('!')
+    if len(parts) == 0:
+        return res
+    elif len(parts) == 1:
+        # Return the list of variables
+        res = set(CONTEXT.variables.keys() + AST.asn1_constants.keys())
+    else:
+        var = parts[0].lower()
+        try:
+            var_t = ogParser.find_variable_type(var, CONTEXT)
+            basic = ogParser.find_basic_type(var_t, AST.dataview)
+            res = (field.replace('-', '_') for field in basic.Children.keys())
+        except (AttributeError, TypeError):
+            res = []
+        else:
+            for each in parts[1:-1]:
+                try:
+                    for child, childtype in basic.Children.viewitems():
+                        if child.lower() == each.lower().replace('_', '-'):
+                            basic = ogParser.find_basic_type(childtype.type,
+                                                             AST.dataview)
+                            break
+                    else:
+                        res = ()
+                        break
+                except (AttributeError, TypeError):
+                    res = ()
+                    break
+            else:
+                try:
+                    res = (field.replace('-', '_')
+                           for field in basic.Children.keys())
+                except AttributeError:
+                    res = ()
+    return res
+
+
+
+
 # pylint: disable=R0904
 class Input(HorizontalSymbol):
     ''' SDL INPUT Symbol '''
@@ -63,7 +108,6 @@ class Input(HorizontalSymbol):
     _insertable_followers = ['Task', 'ProcedureCall', 'Output', 'Decision',
                              'Input', 'Label', 'Connect']
     _terminal_followers = ['Join', 'State', 'ProcedureStop']
-    completion_list = set()
 
     common_name = 'input_part'
     # Define reserved keywords for the syntax highlighter
@@ -108,6 +152,14 @@ class Input(HorizontalSymbol):
         self.setPath(path)
         super(Input, self).set_shape(width, height)
 
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        if '(' in unicode(self):
+            return variables_autocompletion(self)
+        else:
+            return (sig['name'] for sig in CONTEXT.input_signals)
+
 
 class Connect(Input):
     ''' Connect point below a nested state '''
@@ -145,7 +197,6 @@ class Output(VerticalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    completion_list = set()
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Output()
@@ -171,6 +222,12 @@ class Output(VerticalSymbol):
         self.setPath(path)
         super(Output, self).set_shape(width, height)
 
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        return chain(variables_autocompletion(self),
+                    (sig['name'] for sig in CONTEXT.output_signals))
+
 
 # pylint: disable=R0904
 class Decision(VerticalSymbol):
@@ -184,7 +241,7 @@ class Decision(VerticalSymbol):
     blackbold = SDL_BLACKBOLD + ['\\b{}\\b'.format(word)
                                    for word in ('AND', 'OR')]
     redbold = SDL_REDBOLD
-    completion_list = {'length', 'present'}
+    #completion_list = {'length', 'present'}
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Decision()
@@ -210,6 +267,11 @@ class Decision(VerticalSymbol):
             if not branch.last_branch_item.terminal_symbol:
                 return False
         return True
+
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        return chain(variables_autocompletion(self), ('length', 'present'))
 
     def branches(self):
         ''' Return the list of decision answers (as a generator) '''
@@ -404,7 +466,6 @@ class ProcedureStop(Join):
             ast.width = 35
             ast.height = 35
         super(ProcedureStop, self).__init__(parent, ast)
-    completion_list = set()
 
     def set_shape(self, width, height):
         ''' Define the symbol shape '''
@@ -422,6 +483,11 @@ class ProcedureStop(Join):
         self.setPath(path)
         # call Join superclass, otherwise symbol will take Join shape
         super(Join, self).set_shape(circ, circ)
+
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        return variables_autocompletion(self)
 
 
 # pylint: disable=R0904
@@ -483,7 +549,6 @@ class Task(VerticalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    #completion_list = set()
 
     def __init__(self, parent=None, ast=None):
         ''' Initializes the TASK symbol '''
@@ -510,47 +575,9 @@ class Task(VerticalSymbol):
 
     @property
     def completion_list(self):
-        ''' Dynamically set completion list depending on current context '''
-        res = []
-        if not self.text:
-            return res
-        #print self.text.context.encode('utf-8')
-        parts = self.text.context.split('!')
-        if len(parts) == 0:
-            return res
-        elif len(parts) == 1:
-            # Return the list of variables
-            res = set(CONTEXT.variables.keys() + AST.asn1_constants.keys())
-        else:
-            var = parts[0].lower()
-            try:
-                var_t = ogParser.find_variable_type(var, CONTEXT)
-                basic = ogParser.find_basic_type(var_t, AST.dataview)
-                res = (field.replace('-', '_')
-                        for field in basic.Children.keys())
-            except (AttributeError, TypeError):
-                res = []
-            else:
-                for each in parts[1:-1]:
-                    try:
-                        for child, childtype in basic.Children.viewitems():
-                            if child.lower() == each.lower().replace('_', '-'):
-                                basic = ogParser.find_basic_type(childtype.type,
-                                                                 AST.dataview)
-                                break
-                        else:
-                            res = []
-                            break
-                    except (AttributeError, TypeError):
-                        res = []
-                        break
-                else:
-                    try:
-                        res = (field.replace('-', '_')
-                               for field in basic.Children.keys())
-                    except AttributeError:
-                        res = []
-        return res
+        ''' Set auto-completion list '''
+        return chain(variables_autocompletion(self),
+                    ogParser.SPECIAL_OPERATORS.viewkeys())
 
 
 # pylint: disable=R0904
@@ -565,7 +592,7 @@ class ProcedureCall(VerticalSymbol):
     blackbold = ['\\bWRITELN\\b', '\\bWRITE\\b',
                  '\\bSET_TIMER\\b', '\\bRESET_TIMER\\b']
     redbold = SDL_REDBOLD
-    completion_list = {'set_timer', 'reset_timer', 'write', 'writeln'}
+    #completion_list = {'set_timer', 'reset_timer', 'write', 'writeln'}
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Output(defName='')
@@ -590,6 +617,13 @@ class ProcedureCall(VerticalSymbol):
         self.setPath(path)
         super(ProcedureCall, self).set_shape(width, height)
 
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        return chain((proc.inputString for proc in CONTEXT.procedures),
+                     variables_autocompletion(self),
+                     ('set_timer', 'reset_timer', 'write', 'writeln'))
+
 
 # pylint: disable=R0904
 class TextSymbol(HorizontalSymbol):
@@ -599,7 +633,7 @@ class TextSymbol(HorizontalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    completion_list = set()
+    #completion_list = set()
 
     def __init__(self, ast=None):
         ''' Create a Text Symbol '''
@@ -622,6 +656,11 @@ class TextSymbol(HorizontalSymbol):
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
         #Task.completion_list |= {dcl for dcl in ast.variables.keys()}
+
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        return AST.dataview.viewkeys()
 
     def set_shape(self, width, height):
         ''' Define the polygon of the text symbol '''
@@ -664,7 +703,6 @@ class State(VerticalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    completion_list = set()
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.State()
@@ -720,8 +758,12 @@ class State(VerticalSymbol):
         ''' When text was entered, update state completion list '''
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('state', pr_text)
-        State.completion_list |= set(ast.statelist)
+        #State.completion_list |= set(ast.statelist)
 
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        return (state for state in CONTEXT.mapping if state != 'START')
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
