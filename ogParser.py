@@ -692,7 +692,8 @@ def check_type_compatibility(primary, type_ref, context):
     elif isinstance(primary, ogAST.PrimChoiceItem) \
                               and basic_type.kind.startswith('Choice'):
         for choicekey, choice in basic_type.Children.viewitems():
-            if choicekey.lower() == primary.value['choice'].lower():
+            if choicekey.lower().replace('-', '_') == \
+                    primary.value['choice'].lower().replace('-', '_'):
                 break
         else:
             raise TypeError('Non-existent choice "{choice}" in type {t1}'
@@ -1112,7 +1113,8 @@ def expression(root, context):
     elif root.type == lexer.SELECTOR:
         return selector_expression(root, context)
     else:
-        raise NotImplementedError
+        raise NotImplementedError(sdl92Parser.tokenNames[root.type] +
+                                ' - line ' + str(root.getLine()))
 
 
 def logic_expression(root, context):
