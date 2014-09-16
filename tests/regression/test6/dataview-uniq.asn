@@ -33,7 +33,7 @@ MySeq	    ::= SEQUENCE {
 }
 
 MyChoice    ::= CHOICE {
-		    a BOOLEAN,
+		    a-b BOOLEAN,
 		    b MySeq
 }
 
