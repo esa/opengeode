@@ -1547,8 +1547,8 @@ def selector_expression(root, context):
     field_name = root.children[1].text.replace('_', '-').lower()
     try:
         if receiver_bty.kind == 'ChoiceType':
-            warnings.append(error(root, 'Wrong syntax for a CHOICE selector. '
-                                      'Use "var := {field}: value" instead of '
+            warnings.append(warning(root, 'Choice assignment: '
+                                      'use "var := {field}: value" instead of '
                                       '"var!{field} := value"'
                                       .format(field=field_name)))
         for n, f in receiver_bty.Children.viewitems():
