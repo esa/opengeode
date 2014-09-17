@@ -1533,7 +1533,9 @@ def _prim_sequence(prim, ctx):
 
     for field_name, field_expr in prim.value.viewitems():
         # Workarround for unknown types in nested sequences
-        field_expr.exprType = seq_asn1ty.type.Children[field_name.replace('_', '-')].type
+        #field_expr.exprType = seq_asn1ty.type.Children[field_name.replace('_', '-')].type
+        field_expr.exprType = ctx.basic_asn1type_of(prim.exprType).Children[\
+                                            field_name.replace('_', '-')].type
 
         field_idx_cons = lc.Constant.int(ctx.i32, struct.idx(field_name))
         field_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, field_idx_cons])

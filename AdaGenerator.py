@@ -1367,8 +1367,9 @@ def _sequence(seq):
     for elem, value in seq.value.viewitems():
         # Set the type of the field - easy thanks to ASN.1 flattened AST
         delem = elem.replace('_', '-')
-        value.exprType = (TYPES
-                    [seqType.ReferencedTypeName].type.Children[delem].type)
+        #value.exprType = (TYPES
+        #            [seqType.ReferencedTypeName].type.Children[delem].type)
+        value.exprType = find_basic_type(seqType).Children[delem].type
         value_stmts, value_str, local_var = expression(value)
         ada_string += sep + elem + ' => ' + value_str
         sep = ', '

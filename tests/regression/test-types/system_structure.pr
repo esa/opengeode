@@ -1,0 +1,23 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM function1;
+
+	/* CIF Keep Specific Geode PARAMNAMES test */
+	SIGNAL PI1 (MyInteger);
+
+	CHANNEL c
+		FROM ENV TO function1 WITH PI1;
+	ENDCHANNEL;
+
+	BLOCK function1;
+
+		SIGNALROUTE r
+			FROM ENV TO function1 WITH PI1;
+
+		CONNECT c and r;
+
+		PROCESS function1 REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

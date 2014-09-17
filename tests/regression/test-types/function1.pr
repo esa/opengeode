@@ -1,0 +1,35 @@
+/* CIF PROCESS (250, 150), (150, 75) */
+PROCESS function1;
+    /* CIF TEXT (671, 54), (375, 197) */
+    -- Declare your variables
+
+-- Syntax: DCL <variable name> <type name>;
+
+DCL test MyInteger;
+
+DCL c1 MyChoice;
+
+DCL c2 MyChoice2;
+    /* CIF ENDTEXT */
+    /* CIF START (320, 10), (70, 35) */
+    START;
+        /* CIF NEXTSTATE (319, 60), (72, 35) */
+        NEXTSTATE Wait;
+    /* CIF STATE (449, 10), (72, 35) */
+    STATE Wait;
+        /* CIF INPUT (432, 65), (105, 35) */
+        INPUT pi1(test);
+            /* CIF PROCEDURECALL (411, 115), (146, 35) */
+            CALL Writeln(test);
+            /* CIF TASK (376, 165), (217, 35) */
+            TASK c1 := b:{a 1, b taste};
+            /* CIF PROCEDURECALL (396, 215), (176, 35) */
+            CALL Writeln(c1!b!a);
+            /* CIF TASK (380, 265), (209, 35) */
+            TASK c1 := c:{a 1, b taste};
+            /* CIF PROCEDURECALL (396, 315), (176, 35) */
+            CALL Writeln(c1!c!a);
+            /* CIF NEXTSTATE (448, 365), (72, 35) */
+            NEXTSTATE Wait;
+    ENDSTATE;
+ENDPROCESS function1;
