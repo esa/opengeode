@@ -590,6 +590,7 @@ def check_type_compatibility(primary, type_ref, context):
     '''
     assert type_ref is not None
     if type_ref is UNKNOWN_TYPE:
+        #print traceback.print_stack()
         raise TypeError('Type reference is unknown')
 
     basic_type = find_basic_type(type_ref)
@@ -650,7 +651,8 @@ def check_type_compatibility(primary, type_ref, context):
                             + basic_type.Min + ')')
     elif isinstance(primary, ogAST.PrimSequenceOf) \
             and basic_type.kind == 'SequenceOfType':
-        if (len(primary.value) < int(basic_type.Min) or
+        if type_ref.__name__ != 'Apnd' and \
+                (len(primary.value) < int(basic_type.Min) or
                 len(primary.value) > int(basic_type.Max)):
             raise TypeError(str(len(primary.value)) +
                       ' elements in SEQUENCE OF, while constraint is [' +
@@ -782,11 +784,20 @@ def compare_types(type_a, type_b):
 
     if type_a.kind == type_b.kind:
         if type_a.kind == 'SequenceOfType':
-            if type_a.Min == type_b.Min and type_a.Max == type_b.Max:
+            if type_a.Min == type_a.Max:
+                if type_a.Min == type_b.Min == type_b.Max:
+                    compare_types(type_a.type, type_b.type)
+                    return
+                else:
+                    raise TypeError('Incompatible sizes - size of {} can vary'
+                                    .format(type_name(type_b)))
+            elif(int(type_b.Min) >= int(type_a.Min)
+                 and int(type_b.Max) <= int(type_a.Max)):
                 compare_types(type_a.type, type_b.type)
                 return
             else:
-                raise TypeError('Incompatible arrays')
+                compare_types(type_a.type, type_b.type)
+                raise Warning('Size constraints mismatch - risk of overflow')
         # TODO: Check that OctetString types have compatible range
         return
     elif is_string(type_a) and is_string(type_b):
@@ -862,20 +873,6 @@ def fix_expression_types(expr, context):
         fix_enumerated_and_choice(expr, context)
         expr.right, expr.left = expr.left, expr.right
 
-#   for side in permutations(('left', 'right')):
-#       side_type = find_basic_type(getattr(expr, side[0]).exprType).kind
-#       if side_type == 'EnumeratedType':
-#           prim = ogAST.PrimEnumeratedValue(primary=getattr(expr, side[1]))
-#       elif side_type == 'ChoiceEnumeratedType':
-#           prim = ogAST.PrimChoiceDeterminant(primary=getattr(expr, side[1]))
-#       try:
-#           check_type_compatibility(prim, getattr(expr, side[0]).exprType,
-#                                    context)
-#           setattr(expr, side[1], prim)
-#           getattr(expr, side[1]).exprType = getattr(expr, side[0]).exprType
-#       except (UnboundLocalError, AttributeError, TypeError):
-#           pass
-
     for side in (expr.right, expr.left):
         if side.is_raw:
             raw_expr = side
@@ -884,11 +881,11 @@ def fix_expression_types(expr, context):
             ref_type = typed_expr.exprType
 
     # If a side is a raw Sequence Of with unknown type, try to resolve it
-    for side in permutations(('left', 'right')):
-        value = getattr(expr, side[0])  # get expr.left then expr.right
+    for side_a, side_b in permutations(('left', 'right')):
+        value = getattr(expr, side_a)  # get expr.left then expr.right
         if not isinstance(value, ogAST.PrimSequenceOf):
             continue
-        other = getattr(expr, side[1])  # other side
+        other = getattr(expr, side_b)  # other side
         basic = find_basic_type(value.exprType)
         if basic.kind == 'SequenceOfType' and basic.type == UNKNOWN_TYPE:
             asn_type = find_basic_type(other.exprType)
@@ -969,9 +966,14 @@ def fix_expression_types(expr, context):
 
     if expr.right.is_raw != expr.left.is_raw:
         check_type_compatibility(raw_expr, ref_type, context)
-        if not raw_expr.exprType.kind.startswith(('Integer', 'Real')):
+        if not raw_expr.exprType.kind.startswith(('Integer',
+                                                  'Real',
+                                                  'SequenceOf',
+                                                  'String')):
             # Raw int/real must keep their type because of the range
             # that can be computed
+            # Also true for raw SEQOF and String - Min/Max must not change
+            # Substrings: CHECKME XXX
             raw_expr.exprType = ref_type
     else:
         compare_types(expr.left.exprType, expr.right.exprType)
@@ -1061,6 +1063,8 @@ def binary_expression(root, context):
         fix_expression_types(expr, context)
     except (AttributeError, TypeError) as err:
         errors.append(error(root, str(err)))
+    except Warning as warn:
+        warnings.append(warning(root, str(warn)))
 
     return expr, errors, warnings
 
@@ -1277,14 +1281,20 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    for bty in (find_basic_type(expr.left.exprType),
-                find_basic_type(expr.right.exprType)):
+    left = find_basic_type(expr.left.exprType)
+    right = find_basic_type(expr.right.exprType)
+
+    for bty in (left, right):
         if bty.kind != 'SequenceOfType' and not is_string(bty):
             msg = 'Append can only be applied to types SequenceOf or String'
             errors.append(error(root, msg))
             break
+    else:
+        attrs = {'Min': str(int(right.Min) + int(left.Min)),
+                 'Max': str(int(right.Max) + int(left.Max))}
+        expr.exprType = type('Apnd', (left,), attrs)
+    #expr.exprType = expr.left.exprType
 
-    expr.exprType = expr.left.exprType
     return expr, errors, warnings
 
 
@@ -1507,20 +1517,23 @@ def primary_substring(root, context):
 
     if receiver_bty.kind == 'SequenceOfType' or \
             receiver_bty.kind.endswith('StringType'):
-        node.exprType = receiver.exprType
-        # Check bounds
+        min0 = float(find_basic_type(params[0].exprType).Min)
+        min1 = float(find_basic_type(params[1].exprType).Min)
+        max0 = float(find_basic_type(params[0].exprType).Max)
+        max1 = float(find_basic_type(params[1].exprType).Max)
+        node.exprType = type('SubStr', (receiver_bty,),
+                             {'Min': 
+                                str(int(min1) - int(max0) + 1),
+                              'Max':
+                                str(int(max1) - int(min0) + 1)})
         basic = find_basic_type(node.exprType)
-        min0 = find_basic_type(params[0].exprType).Min
-        min1 = find_basic_type(params[1].exprType).Min
-        max0 = find_basic_type(params[0].exprType).Max
-        max1 = find_basic_type(params[1].exprType).Max
         if int(min0) > int(min1) or int(max0) > int(max1):
             msg = 'Substring bounds are invalid'
             errors.append(error(root, msg))
-        if int(min0) > int(basic.Max) \
-                or int(max1) > int(basic.Max):
+        if int(min0) > int(receiver_bty.Max) \
+                or int(max1) > int(receiver_bty.Max):
             msg = 'Substring bounds [{}..{}] outside range [{}..{}]'.format(
-                    min0, max1, basic.Min, basic.Max)
+                    min0, max1, receiver_bty.Min, receiver_bty.Max)
             errors.append(error(root, msg))
     else:
         msg = 'Substring can only be applied to types SequenceOf or String'
@@ -1660,7 +1673,7 @@ def primary(root, context):
             'kind': 'SequenceOfType',
             'Min': str(len(root.children)),
             'Max': str(len(root.children)),
-            'type': UNKNOWN_TYPE
+            'type': prim_elem.exprType  #UNKNOWN_TYPE
         })
     elif root.type == lexer.BITSTR:
         prim = ogAST.PrimBitStringLiteral()
@@ -1717,7 +1730,8 @@ def variables(root, ta_ast, context):
                     expr.right.inputString + ', type= ' +
                     type_name(expr.right.exprType) + ') ' + str(err))
             else:
-                def_value.exprType = asn1_sort
+                if def_value.exprType == UNKNOWN_TYPE:
+                    def_value.exprType = asn1_sort
 
             if not def_value.is_raw and \
                     not isinstance(def_value, ogAST.PrimConstant):
@@ -3525,13 +3539,19 @@ def assign(root, context):
         if basic.kind.startswith(('Integer', 'Real')):
             check_range(basic, find_basic_type(expr.right.exprType))
     except(AttributeError, TypeError) as err:
-        errors.append('Types are incompatible in assignment: left (' +
+        errors.append('Type mismatch: left (' +
             expr.left.inputString + ', type= ' +
             type_name(expr.left.exprType) + '), right (' +
             expr.right.inputString + ', type= ' +
             (type_name(expr.right.exprType)
                 if expr.right.exprType else 'Unknown') + ') ' + str(err))
-    else:
+    except Warning as warn:
+        warnings.append('Expression "{}": {}'
+                        .format(expr.inputString, str(warn)))
+    if expr.right.exprType == UNKNOWN_TYPE or not \
+            isinstance(expr.right, (ogAST.ExprAppend,
+                                    ogAST.PrimSequenceOf,
+                                    ogAST.PrimStringLiteral)):
         expr.right.exprType = expr.left.exprType
 
     return expr, errors, warnings

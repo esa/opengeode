@@ -8,7 +8,10 @@ edit:
 test-parse:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check
 
-test-ada: orchestrator.ali
+test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
+	$(GNATBIND) -n orchestrator.ali
+	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali -lgnat
+	./test_ada
 
 test-llvm: orchestrator.o
 

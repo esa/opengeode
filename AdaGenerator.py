@@ -125,6 +125,9 @@ def _process(process):
             # Expression must be a ground expression, i.e. must not
             # require temporary variable to store computed result
             dst, dstr, dlocal = expression(def_value)
+            varbty = find_basic_type(var_type)
+            if varbty.kind in ('SequenceOfType', 'OctetStringType'):
+                dstr = array_content(def_value, dstr, varbty)
             assert not dst and not dlocal, 'DCL: Expecting a ground expression'
         process_level_decl.append(
                 u'l_{n} : aliased asn1Scc{t}{default};'.format(
@@ -152,9 +155,6 @@ def _process(process):
 
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
-    #process_level_decl.append('procedure state_start;')
-    #process_level_decl.append('pragma export(C, start, "{}_start");'
-    #                          .format(process_name))
 
     # Generate the code of the start transition:
     start_transition = ['begin',
@@ -419,31 +419,43 @@ def write_statement(param, newline):
     local = []
     basic_type = find_basic_type(param.exprType) or {}
     type_kind = basic_type.kind
-    if type_kind.endswith('StringType'):
+    if isinstance(param, ogAST.ExprAppend):
+        # Append: call Put_Line separately for each side of the expression
+        st1, _, lcl1= write_statement(param.left, newline = False)
+        st2, _, lcl2 = write_statement(param.right, newline = False)
+        code.extend(st1)
+        code.extend(st2)
+        local.extend(lcl1)
+        local.extend(lcl2)
+    elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimStringLiteral):
             # Raw string
-            string = '"' + param.value[1:-1].replace('"', "'") + '"'
+            code.append(u'Put("{}");'
+                        .format(param.value[1:-1].replace('"', "'")))
         else:
             code, string, local = expression(param)
             if type_kind == 'OctetStringType':
                 # Octet string -> convert to Ada string
                 sep = u'\u00dc'
-                localstr = u'tmp{}{}str'.format(str(param.tmpVar), sep)
-                local.append(u'{} : String(1 .. {});'
-                             .format(localstr, basic_type.Max))
+                last_it = u""
                 if isinstance(param, ogAST.PrimSubstring):
                     range_str = u"{}'Range".format(string)
+                    iterator = u"i - {}'First + 1".format(string)
                 elif basic_type.Min == basic_type.Max:
                     range_str = u"{}.Data'Range".format(string)
                     string += u".Data"
+                    iterator = u"i"
                 else:
                     range_str = u"1 .. {}.Length".format(string)
                     string += u".Data"
+                    iterator = u"i"
+                    last_it = u"({})".format(range_str)
                 code.extend([u"for i in {} loop".format(range_str),
-                             u"{tmp}(i) := Character'Val({st}(i));"
-                             .format(tmp=localstr, st=string, sep=sep),
+                             u"Put(Character'Val({st}(i)));"
+                             .format(st=string, sep=sep, it=iterator),
                              u"end loop;"])
-                string = u'{}({})'.format(localstr, range_str)
+            else:
+                code.append("Put({});".format(string))
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
@@ -453,15 +465,14 @@ def write_statement(param, newline):
             cast = 'Long_Float'
         elif type_kind == 'BooleanType':
             cast = 'Boolean'
-        string = u"{cast}'Image({s})".format(cast=cast, s=string)
+        code.append(u"Put({cast}'Image({s}));".format(cast=cast, s=string))
     else:
         error = (u'Unsupported parameter in write call ' +
                 param.inputString)
         LOG.error(error)
         raise TypeError(error)
-    code.append(u'Put{line}({string});'.format(
-        line=u'_Line' if newline else u'',
-        string=string))
+    if newline:
+        code.append(u"New_Line;")
     return code, string, local
 
 
@@ -551,11 +562,16 @@ def _call_external_function(output):
                 # Create a temporary variable for input parameters only
                 # (If needed, i.e. if argument is not a local variable)
                 if param_direction == 'in' \
-                        and (not (isinstance(param, ogAST.PrimVariable) and
-                p_id.startswith('l_')) or isinstance(param, ogAST.PrimFPAR)):
+                        and (not (isinstance(param, ogAST.PrimVariable)
+                        and p_id.startswith('l_'))
+                        or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = out['tmpVars'][idx]
                     local_decl.append('tmp{idx} : aliased asn1Scc{oType};'
                                       .format(idx=tmp_id, oType=typename))
+                    if isinstance(param,
+                              (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                        p_id = array_content(param, p_id,
+                                             find_basic_type(param_type))
                     code.append('tmp{idx} := {p_id};'
                                 .format(idx=tmp_id, p_id=p_id))
                     list_of_params.append("tmp{idx}'access"
@@ -597,7 +613,6 @@ def _task_assign(task):
         # ExprAssign only returns code statements, no string
         code_assign, _, decl_assign = expression(expr)
         code.extend(code_assign)
-        # code.append(ada_string[1:-1] + ';')
         local_decl.extend(decl_assign)
     return code, local_decl
 
@@ -790,7 +805,6 @@ def _prim_call(prim):
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
-        #exp_type = find_basic_type(exp.exprType)
         # Get the ASN.1 type name as it is needed to build the Ada expression
         exp_typename = \
                 (getattr(exp.exprType, 'ReferencedTypeName', None)
@@ -956,8 +970,10 @@ def _prim_selector(prim):
     receiver_ty_name = receiver.exprType.ReferencedTypeName.replace('-', '_')
 
     if receiver_bty.kind == 'ChoiceType':
-        ada_string = ('asn1Scc{typename}_{field_name}_get({ada_string})'.format(
-            typename=receiver_ty_name, field_name=field_name, ada_string=ada_string))
+        ada_string = ('asn1Scc{typename}_{field_name}_get({ada_string})'
+                    .format(typename=receiver_ty_name,
+                            field_name=field_name,
+                            ada_string=ada_string))
     else:
         ada_string += '.' + field_name
 
@@ -995,22 +1011,27 @@ def _equality(expr):
     right_stmts, right_str, right_local = expression(expr.right)
     code.extend(right_stmts)
     local_decl.extend(right_local)
-    actual_type = getattr(expr.left.exprType,
+    asn1_type = getattr(expr.left.exprType,
                           'ReferencedTypeName',
                           None) or expr.left.exprType.kind
-    actual_type = actual_type.replace('-', '_')
-    basic = find_basic_type(expr.left.exprType).kind in ('IntegerType',
-                                                         'Integer32Type',
-                                                         'BooleanType',
-                                                         'RealType',
-                                                         'EnumeratedType',
-                                                        'ChoiceEnumeratedType')
+    actual_type = asn1_type.replace('-', '_')
+    lbty = find_basic_type(expr.left.exprType)
+    basic = lbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
+                          'RealType', 'EnumeratedType', 'ChoiceEnumeratedType')
     if basic:
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)
     else:
-        ada_string = u'asn1Scc{asn1}_Equal({left}, {right})'.format(
-                            asn1=actual_type, left=left_str, right=right_str)
+        if asn1_type in TYPES:
+            if isinstance(expr.right,
+                          (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                right_str = array_content(expr.right, right_str, lbty)
+            ada_string = u'asn1Scc{asn1}_Equal({left}, {right})'.format(
+                              asn1=actual_type, left=left_str, right=right_str)
+        else:
+            # Raw types on both left and right.... use simple operator
+            ada_string = u"({left}) {op} ({right})".format(left=left_str,
+                    op=expr.operand, right=right_str)
         if isinstance(expr, ogAST.ExprNeq):
             ada_string = u'not {}'.format(ada_string)
     return code, unicode(ada_string), local_decl
@@ -1026,13 +1047,33 @@ def _assign_expression(expr):
     # If left side is a string/seqOf and right side is a substring, we must
     # assign the .Data and .Length parts properly
     basic_left = find_basic_type(expr.left.exprType)
-    if basic_left.kind in ('SequenceOfType', 'OctetStringType') \
-            and isinstance(expr.right, ogAST.PrimSubstring):
-        strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
+    if basic_left.kind in ('SequenceOfType', 'OctetStringType'):
+        rlen = "{}'Length".format(right_str)
+        if isinstance(expr.right, ogAST.PrimSubstring):
+            strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
                        .format(lvar=left_str, rvar=right_str))
-        if basic_left.Min != basic_left.Max:
-            strings.append(u"{lvar}.Length := {rvar}'Length;"
-                           .format(lvar=left_str, rvar=right_str))
+        elif isinstance(expr.right, ogAST.ExprAppend):
+            basic_right = find_basic_type(expr.right.exprType)
+            rlen = append_size(expr.right)
+            strings.append(u"{lvar}.Data(1..{lstr}) := {rvar};"
+                           .format(lvar=left_str,
+                                   rvar=right_str,
+                                   lstr=rlen))
+        elif isinstance(expr.right, (ogAST.PrimSequenceOf,
+                                    ogAST.PrimStringLiteral)):
+            strings.append(u"{lvar} := {value};"
+                           .format(lvar=left_str,
+                                   value=array_content(expr.right,
+                                                       right_str,
+                                                       basic_left)))
+            rlen = None
+        else:
+            # Right part is a variable
+            strings.append(u"{} := {};".format(left_str, right_str))
+            rlen = None
+        if rlen and basic_left.Min != basic_left.Max:
+            strings.append(u"{lvar}.Length := {rlen};"
+                           .format(lvar=left_str, rlen=rlen))
     else:
         strings.append(u"{} := {};".format(left_str, right_str))
     code.extend(left_stmts)
@@ -1134,60 +1175,16 @@ def _append(expr):
     stmts.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    # Declare a temporary variable to hold the result of the append
-    ada_string = 'tmp{}'.format(expr.tmpVar)
-    local_decl.append('{tmp} : aliased asn1Scc{eType};'.format(
-                    tmp=ada_string,
-                    eType=expr.exprType.ReferencedTypeName
-                    .replace('-', '_')))
 
-    # If right or left is raw, declare a temporary variable for it, too
-    for sexp, sid in zip((expr.right, expr.left), (right_str, left_str)):
-        if sexp.is_raw:
-            local_decl.append(u'tmp{idx} : aliased asn1Scc{eType};'.format(
-                    idx=sexp.tmpVar,
-                    eType=sexp.exprType.ReferencedTypeName
-                    .replace('-', '_')))
-            stmts.append(u'tmp{idx} := {s_id};'.format(
-                idx=sexp.tmpVar, s_id=sid))
-            sexp.sid = u'tmp' + unicode(sexp.tmpVar)
-            # Length of raw string - update for sequence of
-            if isinstance(sexp, ogAST.PrimStringLiteral):
-                sexp.slen = unicode(len(sexp.value[1:-1]))
-            elif isinstance(sexp, ogAST.PrimEmptyString):
-                sexp.slen = u'0'
-            elif isinstance(sexp, ogAST.PrimSequenceOf):
-                sexp.slen = unicode(len(sexp.value))
-            else:
-                raise TypeError('Not a string/Sequence in APPEND')
-        else:
-            sexp.sid = sid
-            basic = find_basic_type(sexp.exprType)
-            if basic.Min == basic.Max:
-                # Fixed-size string
-                sexp.slen = unicode(basic.Max)
-            else:
-                # Variable-size types have a Length field
-                if isinstance(sexp, ogAST.PrimSubstring):
-                    sexp.slen = u"{}'Length".format(sexp.sid)
-                else:
-                    sexp.slen = u'{}.Length'.format(sexp.sid)
-    left_payload = expr.left.sid + string_payload(expr.left, expr.left.sid)
-    right_payload = expr.right.sid + string_payload(expr.right, expr.right.sid)
-    if unicode.isnumeric(expr.left.slen) \
-            and unicode.isnumeric(expr.right.slen):
-        length = unicode(int(expr.left.slen) + int(expr.right.slen))
-    else:
-        length = u'{} + {}'.format(expr.left.slen, expr.right.slen)
-    stmts.append(u'{res}.Data(1 .. {length}) := {lid} & {rid};'
-                 .format(length=length,
-                         res=ada_string,
-                         lid=left_payload,
-                         rid=right_payload))
-    basic_tmp = find_basic_type(expr.exprType)
-    if basic_tmp.Min != basic_tmp.Max:
-        # Update lenght field of resulting variable (if variable size)
-        stmts.append(u'{}.Length := {};'.format(ada_string, length))
+    left = '{}{}'.format(left_str, string_payload(expr.left, left_str) if
+                    isinstance(expr.left, (ogAST.PrimVariable,
+                                           ogAST.PrimConstant)) else '')
+    right = '{}{}'.format(right_str, string_payload(expr.right, right_str) if
+                    isinstance(expr.right, (ogAST.PrimVariable,
+                                            ogAST.PrimConstant)) else '')
+
+    ada_string = '(({}) & ({}))'.format(left, right)
+
     return stmts, unicode(ada_string), local_decl
 
 
@@ -1280,13 +1277,7 @@ def _string_literal(primary):
     # as expected by the Ada type corresponding to Octet String
     unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
 
-    ada_string = u'(Data => (' + ', '.join(
-                                        unsigned_8) + ', others => 0)'
-    if basic_type.Min != basic_type.Max:
-        # Non-fixed string size -> add Length field
-        ada_string += u', Length => {}'.format(
-                                str(len(primary.value[1:-1])))
-    ada_string += ')'
+    ada_string = u', '.join(unsigned_8)
     return [], unicode(ada_string), []
 
 
@@ -1367,11 +1358,15 @@ def _sequence(seq):
     for elem, value in seq.value.viewitems():
         # Set the type of the field - easy thanks to ASN.1 flattened AST
         delem = elem.replace('_', '-')
-        #value.exprType = (TYPES
-        #            [seqType.ReferencedTypeName].type.Children[delem].type)
-        value.exprType = find_basic_type(seqType).Children[delem].type
+        elem_specty = find_basic_type(seqType).Children[delem].type
+        #value.exprType = find_basic_type(seqType).Children[delem].type
         value_stmts, value_str, local_var = expression(value)
-        ada_string += sep + elem + ' => ' + value_str
+        if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            # Raw SEQOF element need additional parentheses
+            #value_str = '(Data => ({}))'.format(value_str)
+            value_str = array_content(value, value_str,
+                                      find_basic_type(elem_specty))
+        ada_string += "{} {} => {}".format(sep, elem, value_str)
         sep = ', '
         stmts.extend(value_stmts)
         local_decl.extend(local_var)
@@ -1384,31 +1379,22 @@ def _sequence_of(seqof):
     ''' Return Ada string for an ASN.1 SEQUENCE OF '''
     stmts, local_decl = [], []
     seqofType = seqof.exprType
-    typename = seqofType.ReferencedTypeName
-    LOG.debug('SequenceOf Typename:' + str(typename))
-    asn_type = TYPES[typename].type
-    min_size = asn_type.Min
-    max_size = asn_type.Max
-    ada_string = 'asn1Scc{seqofType}\'('.format(
-                                seqofType=typename.replace('-', '_'))
-    if min_size == max_size:
-        # Fixed-length array - no need to set the Length field
-        ada_string += 'Data => asn1Scc{seqofType}_array\'('.format(
-                seqofType=typename.replace('-', '_'))
-    else:
-        # Variable-length array
-        ada_string += (
-                'Length => {length}, Data => asn1Scc{seqofType}_array\'('
-                .format(seqofType=typename.replace('-', '_'),
-                        length=len(seqof.value)))
+    try:
+        typename = seqofType.ReferencedTypeName
+        LOG.debug('SequenceOf Typename:' + str(typename))
+        asn_type = TYPES[typename].type
+        min_size = asn_type.Min
+        max_size = asn_type.Max
+    except AttributeError:
+        min_size, max_size = seqofType.Min, seqofType.Max
+
+    tab = []
     for i in xrange(len(seqof.value)):
-        # Set the type of the element (should not be useful anymore)
-        #seqof.value[i].exprType = TYPES[typename].type.type
         item_stmts, item_str, local_var = expression(seqof.value[i])
         stmts.extend(item_stmts)
         local_decl.extend(local_var)
-        ada_string += '{i} => {value}, '.format(i=i + 1, value=item_str)
-    ada_string += 'others => {anyVal}))'.format(anyVal=item_str)
+        tab.append('{i} => {value}'.format(i=i + 1, value=item_str))
+    ada_string = ', '.join(tab)
     return stmts, unicode(ada_string), local_decl
 
 
@@ -1463,6 +1449,10 @@ def _decision(dec):
             local_decl.extend(ans_decl)
             if not basic:
                 if a.openRangeOp in (ogAST.ExprEq, ogAST.ExprNeq):
+                    if isinstance(a.constant, (ogAST.PrimSequenceOf,
+                                               ogAST.PrimStringLiteral)):
+                        ans_str = array_content(a.constant, ans_str,
+                                                find_basic_type(question_type))
                     exp = u'asn1Scc{actType}_Equal(tmp{idx}, {ans})'.format(
                             actType=actual_type, idx=dec.tmpVar, ans=ans_str)
                     if a.openRangeOp == ogAST.ExprNeq:
@@ -1664,6 +1654,9 @@ def _inner_procedure(proc):
                 # Expression must be a ground expression, i.e. must not
                 # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value)
+                varbty = find_basic_type(var_type)
+                if varbty.kind in ('SequenceOfType', 'OctetStringType'):
+                    dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
             code.append('l_{name} : asn1Scc{sort}{default};'.format(
                 name=var_name,
@@ -1707,6 +1700,55 @@ def string_payload(prim, ada_string):
         else:
             payload = u'.Data'
     return payload
+
+
+def array_content(prim, values, asnty):
+    ''' String literal and SEQOF are given as a sequence of elements ;
+    this function builds the Ada string needed to fit it in an ASN.1 array
+    i.e. convert "1,2,3" to "Data => (1,2,3, others=>0), [Length => 3]"
+    inputs: prim is of type PrimStringLiteral or PrimSequenceOf
+    values is a string with the sequence of numbers as processed by expression
+    asnty is the reference type of the string literal '''
+    rtype = find_basic_type(prim.exprType)
+    if asnty.Min != asnty.Max:
+        # Reference type can vary -> there is a Length field
+        rlen = u", Length => {}".format(rtype.Min)
+    else:
+        rlen = u""
+    if isinstance(prim, ogAST.PrimStringLiteral):
+        df = '0'
+    else:
+        # Find a default value for the "others" field in case of SEQOF
+        _, df, _ = expression(prim.value[0])
+    return u"(Data => ({}, others => {}){})".format(values, df, rlen)
+
+
+
+def append_size(append):
+    ''' Return a string corresponding to the length of an APPEND construct
+        This function is recursive, to handle cases such as a//b//c
+        that is handled as (a//b) // c -> get the length of a//b then add c
+    '''
+    result = ''
+    basic = find_basic_type(append.exprType)
+    if basic.Min == basic.Max:
+        # Simple case when appending two fixed-length sizes
+        return basic.Min
+    for each in (append.left, append.right):
+        if result:
+            result += ' + '
+        if isinstance(each, ogAST.ExprAppend):
+            # Inner append -> go recursively
+            result += append_size(each)
+        else:
+            bty = find_basic_type(each.exprType)
+            if bty.Min == bty.Max:
+                result += bty.Min
+            else:
+                # Must be a variable of type SEQOF
+                _, inner, _ = expression(each)
+                result += '{}.Length'.format(inner)
+    return result
 
 
 def find_basic_type(a_type):
