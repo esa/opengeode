@@ -1,0 +1,33 @@
+/* CIF PROCESS (295, 56), (150, 75) */
+PROCESS orchestrator
+/* CIF COMMENT (405, 192), (71, 35) */
+COMMENT 'Hello';
+    /* CIF TEXT (89, 94), (293, 200) */
+    dcl seq tastE_Peek_id_list;
+
+dcl fixed FixedString := 'Hello';
+
+dcl variable VariableString := 'Hello';
+    /* CIF ENDTEXT */
+    /* CIF START (428, 223), (100, 45) */
+    START;
+        /* CIF TASK (415, 283), (126, 38) */
+        TASK fixed := 'hello';
+        /* CIF TASK (403, 336), (149, 35) */
+        TASK variable := 'HELLO';
+        /* CIF PROCEDURECALL (390, 386), (176, 35) */
+        CALL writeln(variable // '!!!');
+        /* CIF PROCEDURECALL (342, 436), (272, 35) */
+        CALL writeln(variable // variable // variable);
+        /* CIF TASK (432, 486), (91, 35) */
+        TASK seq := {1};
+        /* CIF TASK (401, 536), (153, 35) */
+        TASK seq := {1} // {2} // {3};
+        /* CIF TASK (392, 586), (172, 35) */
+        TASK seq := seq // {2} // {1};
+        /* CIF NEXTSTATE (419, 636), (118, 50) */
+        NEXTSTATE Wait_for_GUI;
+    /* CIF STATE (423, 163), (118, 50) */
+    STATE Wait_for_GUI;
+    ENDSTATE;
+ENDPROCESS orchestrator;
