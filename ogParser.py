@@ -994,7 +994,7 @@ def expression_list(root, context):
 
 def primary_variable(root, context):
     ''' Primary Variable analysis '''
-    name = root.children[0].text
+    name = getattr(root.getChild(0), 'text', 'error')
     errors, warnings = [], []
 
     if is_asn1constant(name):
@@ -1683,8 +1683,11 @@ def primary(root, context):
         warnings.append(
             warning(root, 'Octet string literal not supported yet'))
     else:
-        # TODO: return error message
-        raise NotImplementedError
+        errors.append('Parsing error (token {}, line {}, "{}")'
+                      .format(sdl92Parser.tokenNames[root.type],
+                              root.getLine(),
+                              get_input_string(root)))
+        prim = ogAST.Primary()
 
     prim.inputString = get_input_string(root)
     prim.tmpVar = tmp()
@@ -3528,9 +3531,13 @@ def assign(root, context):
     warnings.extend(warn)
     errors.extend(err)
 
-    expr.right, err, warn = expression(root.children[1], context)
-    errors.extend(err)
-    warnings.extend(warn)
+    try:
+        expr.right, err, warn = expression(root.children[1], context)
+    except NotImplementedError as nie:
+        errors.append(str(nie))
+    else:
+        errors.extend(err)
+        warnings.extend(warn)
 
     try:
         fix_expression_types(expr, context)
@@ -3539,20 +3546,25 @@ def assign(root, context):
         if basic.kind.startswith(('Integer', 'Real')):
             check_range(basic, find_basic_type(expr.right.exprType))
     except(AttributeError, TypeError) as err:
-        errors.append('Type mismatch: left (' +
-            expr.left.inputString + ', type= ' +
-            type_name(expr.left.exprType) + '), right (' +
-            expr.right.inputString + ', type= ' +
-            (type_name(expr.right.exprType)
-                if expr.right.exprType else 'Unknown') + ') ' + str(err))
+        errors.append(u'In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'
+                      .format(exp=expr.inputString,
+                              lty=type_name(expr.left.exprType) if
+                                expr.left and expr.left.exprType
+                                else 'Undefined',
+                              rty=type_name(expr.right.exprType) if
+                                expr.right and expr.right.exprType
+                                else 'Undefined',
+                              errstr=str(err)))
     except Warning as warn:
         warnings.append('Expression "{}": {}'
                         .format(expr.inputString, str(warn)))
-    if expr.right.exprType == UNKNOWN_TYPE or not \
-            isinstance(expr.right, (ogAST.ExprAppend,
-                                    ogAST.PrimSequenceOf,
-                                    ogAST.PrimStringLiteral)):
-        expr.right.exprType = expr.left.exprType
+    else:
+        # In "else" branch because in case of exception right side may be None
+        if expr.right.exprType == UNKNOWN_TYPE or not \
+                isinstance(expr.right, (ogAST.ExprAppend,
+                                        ogAST.PrimSequenceOf,
+                                        ogAST.PrimStringLiteral)):
+            expr.right.exprType = expr.left.exprType
 
     return expr, errors, warnings
 

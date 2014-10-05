@@ -47,6 +47,8 @@ class Expression(object):
         self.inputString = inputString
         self.line = line
         self.charPositionInLine = charPositionInLine
+        # Binary expressions have two sides
+        self.right = self.left = None
 
         # exprType is an ASN.1 type (as exported by asn1scc)
         self.exprType = None
