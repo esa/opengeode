@@ -52,7 +52,8 @@ class Completer(QGraphicsProxyWidget, object):
 
     def set_completer_list(self):
         ''' Set list of items for the autocompleter popup '''
-        compl = list(self.parent.parentItem().completion_list)
+        compl = [item.replace('-', '_') for item in
+                 self.parent.parentItem().completion_list]
         self.string_list.setStringList(compl)
         self._completer.setModel(self.string_list)
 
