@@ -2,7 +2,7 @@
 PROCESS orchestrator
 /* CIF COMMENT (405, 192), (71, 35) */
 COMMENT 'Hello';
-    /* CIF TEXT (89, 94), (293, 200) */
+    /* CIF TEXT (89, 94), (293, 203) */
     dcl seq tastE_Peek_id_list;
 
 dcl fixed FixedString := 'Hello';
@@ -10,34 +10,52 @@ dcl fixed FixedString := 'Hello';
 dcl variable VariableString := 'Hello';
 
 dcl seqboolean SeqBool := { true, false };
+
+dcl seqbool2 SeqBoolFix := { true, false };
+
+dcl seqen SeqEnum := { hello, world };
+
+dcl seqen2 SeqEnumFix := { hello, world };
     /* CIF ENDTEXT */
     /* CIF START (428, 223), (100, 45) */
     START;
-        /* CIF TASK (397, 283), (162, 53) */
+        /* CIF TASK (396, 283), (164, 53) */
+        TASK for x in seqen:
+ call writeln(num(x));
+endfor;
+        /* CIF TASK (396, 351), (164, 53) */
+        TASK for x in seqen2:
+ call writeln(num(x));
+endfor;
+        /* CIF TASK (397, 419), (162, 53) */
+        TASK for x in seqboolean:
+    call writeln(x);
+endfor
+        /* CIF COMMENT (579, 428), (168, 38) */
+        COMMENT 'FOR with a basic type';
+        /* CIF TASK (367, 487), (222, 35) */
+        TASK seqboolean := not seqboolean
+        /* CIF COMMENT (609, 487), (279, 35) */
+        COMMENT 'check NOT on a SEQUENCE of BOOLEAN';
+        /* CIF TASK (397, 537), (162, 53) */
         TASK for x in seqboolean:
     call writeln(x);
 endfor;
-        /* CIF TASK (367, 351), (222, 35) */
-        TASK seqboolean := not seqboolean;
-        /* CIF TASK (397, 401), (162, 53) */
-        TASK for x in seqboolean:
-    call writeln(x);
-endfor;
-        /* CIF TASK (415, 469), (126, 38) */
+        /* CIF TASK (415, 605), (126, 38) */
         TASK fixed := 'hello';
-        /* CIF TASK (403, 522), (149, 35) */
+        /* CIF TASK (403, 658), (149, 35) */
         TASK variable := 'HELLO';
-        /* CIF PROCEDURECALL (390, 572), (176, 35) */
+        /* CIF PROCEDURECALL (390, 708), (176, 35) */
         CALL writeln(variable // '!!!');
-        /* CIF PROCEDURECALL (342, 622), (272, 35) */
+        /* CIF PROCEDURECALL (342, 758), (272, 35) */
         CALL writeln(variable // variable // variable);
-        /* CIF TASK (432, 672), (91, 35) */
+        /* CIF TASK (432, 808), (91, 35) */
         TASK seq := {1};
-        /* CIF TASK (401, 722), (153, 35) */
+        /* CIF TASK (401, 858), (153, 35) */
         TASK seq := {1} // {2} // {3};
-        /* CIF TASK (392, 772), (172, 35) */
+        /* CIF TASK (392, 908), (172, 35) */
         TASK seq := seq // {2} // {1};
-        /* CIF NEXTSTATE (419, 822), (118, 50) */
+        /* CIF NEXTSTATE (419, 958), (118, 50) */
         NEXTSTATE Wait_for_GUI;
     /* CIF STATE (423, 163), (118, 50) */
     STATE Wait_for_GUI;

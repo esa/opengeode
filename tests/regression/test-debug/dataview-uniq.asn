@@ -9,6 +9,9 @@ VariableString ::= OCTET STRING (SIZE (1..10))
 FixedString ::= OCTET STRING (SIZE (5))
 
 SeqBool ::= SEQUENCE (SIZE(1..5)) OF BOOLEAN
+SeqBoolFix ::= SEQUENCE (SIZE(2)) OF BOOLEAN
+SeqEnum ::= SEQUENCE (SIZE(1..5)) OF ENUMERATED { hello, world }
+SeqEnumFix ::= SEQUENCE (SIZE(2)) OF ENUMERATED { hello, world }
 
 END
  
