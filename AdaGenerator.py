@@ -671,7 +671,6 @@ def _task_forloop(task):
                                                                stop=stop_str)])
         else:
             # case of form: FOR x in SEQUENCE OF
-            elem_type = loop['type'].ReferencedTypeName.replace('-', '_')
             list_stmt, list_str, list_local = expression(loop['list'])
             basic_type = find_basic_type(loop['list'].exprType)
             list_payload = list_str + string_payload(loop['list'], list_str)
@@ -683,8 +682,8 @@ def _task_forloop(task):
             stmt.extend(list_stmt)
             local_decl.extend(list_local)
             stmt.extend(['declare',
-                         '{it} : asn1Scc{it_ty};'.format(it=loop['var'],
-                                                         it_ty=elem_type),
+                         '{} : {};'.format(loop['var'],
+                                           type_name(loop['type'])),
                          '',
                          'begin',
                          'for {it}_idx in {rc} loop'.format(it=loop['var'],
@@ -1142,10 +1141,12 @@ def _not_expression(expr):
     code, local_decl = [], []
     expr_stmts, expr_str, expr_local = expression(expr.expr)
 
-    basic_type = find_basic_type(expr.exprType)
-    if basic_type.kind != 'BooleanType':
+    bty = find_basic_type(expr.exprType)
+    if bty.kind != 'BooleanType':
+        size_expr = ', Length => {}.Length'.format(expr_str) \
+                        if bty.Min != bty.Max else ''
         expr_payload = expr_str + string_payload(expr.expr, expr_str)
-        ada_string = u'(Data => (not {expr}))'.format(expr=expr_payload)
+        ada_string = u'(Data => (not {}.Data){})'.format(expr_str, size_expr)
     else:
         ada_string = u'(not {expr})'.format(expr=expr_str)
 
@@ -1761,6 +1762,20 @@ def find_basic_type(a_type):
                 basic_type = TYPES[typename].type
                 break
     return basic_type
+
+
+def type_name(a_type):
+    ''' Check the type kind and return an Ada usable type name '''
+    if a_type.kind == 'ReferenceType':
+        return 'asn1Scc{}'.format(a_type.ReferencedTypeName.replace('-', '_'))
+    elif a_type.kind == 'BooleanType':
+        return 'Boolean'
+    elif a_type.kind.startswith('Integer'):
+        return 'Asn1Int'
+    elif a_type.kind == 'RealType':
+        return 'Long_Float'
+    else:
+        raise NotImplmentedError('Type name for {}'.format(a_type.kind))
 
 
 def find_var(var):
