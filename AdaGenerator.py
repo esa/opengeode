@@ -1139,14 +1139,26 @@ def _bitwise_operators(expr):
 def _not_expression(expr):
     ''' Generate the code for a not expression '''
     code, local_decl = [], []
+    if isinstance(expr.expr, ogAST.PrimSequenceOf):
+        # Raw sequence of boolean (e.g. not "{true, false}") -> flip values
+        for each in expr.expr.value:
+            each.value[0] = 'true' if each.value[0] == 'false' else 'false'
     expr_stmts, expr_str, expr_local = expression(expr.expr)
 
-    bty = find_basic_type(expr.exprType)
-    if bty.kind != 'BooleanType':
-        size_expr = ', Length => {}.Length'.format(expr_str) \
-                        if bty.Min != bty.Max else ''
-        expr_payload = expr_str + string_payload(expr.expr, expr_str)
-        ada_string = u'(Data => (not {}.Data){})'.format(expr_str, size_expr)
+    bty_inner = find_basic_type(expr.expr.exprType)
+    bty_outer = find_basic_type(expr.exprType)
+    if bty_outer.kind != 'BooleanType':
+        if bty_outer.Min == bty_outer.Max:
+            size_expr = ''
+        elif bty_inner.Min == bty_inner.Max:
+            size_expr = ', Length => {}'.format(bty_inner.Min)
+        else:
+            size_expr = ', Length => {}.Length'.format(expr_str)
+        if isinstance(expr.expr, ogAST.PrimSequenceOf):
+            ada_string = array_content(expr.expr, expr_str, bty_outer)
+        else:
+            ada_string = u'(Data => (not {}.Data){})'.format(expr_str,
+                                                             size_expr)
     else:
         ada_string = u'(not {expr})'.format(expr=expr_str)
 
