@@ -53,6 +53,8 @@ Autocompletion ::= SEQUENCE {
 -- You can also declare variables (they will be visible in C, Ada and SDL)
 myVar	    MySeqOf	::= { hello, world }
 mySeq       Autocompletion ::= { first-field TRUE, secondField { third TRUE, fourth FALSE } }
+myConst     INTEGER ::= 5
+myStart     T-Int32 ::= 32
 
 END
 

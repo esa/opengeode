@@ -6,9 +6,7 @@ COMMENT 'Hello';
     dcl seq tastE_Peek_id_list;
 
 dcl fixed FixedString := 'Hello';
-
 dcl variable VariableString := 'Hello';
-
 dcl seqboolean SeqBool := { true, false };
 
 dcl seqbool2 SeqBoolFix := { true, false };

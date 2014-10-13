@@ -57,17 +57,31 @@ SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'TASK', 'PROCESS', 'LABEL', 'JOIN', 'CONNECTION', 'CONNECT')]
 
 
-def variables_autocompletion(symbol):
-    ''' Intelligent autocompletion for variables - including struct fields '''
-    res = ()
+def variables_autocompletion(symbol, type_filter=None):
+    ''' Intelligent autocompletion for variables - including struct fields
+        Optional: only variables of a type listed in type_filter are kept
+    '''
+    res = set()
     if not symbol.text:
         return res
     parts = symbol.text.context.split('!')
     if len(parts) == 0:
         return res
     elif len(parts) == 1:
-        # Return the list of variables
-        res = set(CONTEXT.variables.keys() + AST.asn1_constants.keys())
+        # Return the list of variables, possibly filterd by type
+        if not type_filter:
+            res = set(CONTEXT.variables.keys()
+                      + CONTEXT.global_variables.keys()
+                      + AST.asn1_constants.keys())
+        else:
+            constants = {name: (cty.type, None)
+                         for name, cty in AST.asn1_constants.viewitems()}
+            type_filter_names = [ogParser.type_name(ty) for ty in type_filter]
+            for name, (asn1type, _) in chain(CONTEXT.variables.viewitems(),
+                                          CONTEXT.global_variables.viewitems(),
+                                          constants.viewitems()):
+                if ogParser.type_name(asn1type) in type_filter_names:
+                    res.add(name)
     else:
         var = parts[0].lower()
         try:
@@ -156,9 +170,15 @@ class Input(HorizontalSymbol):
     def completion_list(self):
         ''' Set auto-completion list '''
         if '(' in unicode(self):
-            return variables_autocompletion(self)
+            # Input parameter: return the list of variables of this type
+            input_name = unicode(self).split('(')[0].strip().lower()
+            asn1_filter = [sig['type'] for sig in CONTEXT.input_signals if
+                           sig['name'] == input_name]
+            return variables_autocompletion(self, asn1_filter)
         else:
-            return (sig['name'] for sig in CONTEXT.input_signals)
+            # Return the list of input signals and timers
+            return (set(sig['name'] for sig in CONTEXT.input_signals).union(
+                    CONTEXT.global_timers + CONTEXT.timers))
 
 
 class Connect(Input):
@@ -592,7 +612,6 @@ class ProcedureCall(VerticalSymbol):
     blackbold = ['\\bWRITELN\\b', '\\bWRITE\\b',
                  '\\bSET_TIMER\\b', '\\bRESET_TIMER\\b']
     redbold = SDL_REDBOLD
-    #completion_list = {'set_timer', 'reset_timer', 'write', 'writeln'}
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Output(defName='')
@@ -660,7 +679,13 @@ class TextSymbol(HorizontalSymbol):
     @property
     def completion_list(self):
         ''' Set auto-completion list '''
-        return AST.dataview.viewkeys()
+        res = set(CONTEXT.global_timers + CONTEXT.timers)
+        try:
+            res = res.union(AST.dataview.keys())
+        except AttributeError:
+            # No Dataview
+            pass
+        return res
 
     def set_shape(self, width, height):
         ''' Define the polygon of the text symbol '''

@@ -3976,11 +3976,13 @@ def parseSingleElement(elem='', string=''):
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
         except AttributeError as err:
-            print str(err)
-            print (traceback.format_exc())
+            #print str(err)
+            #print (traceback.format_exc())
             # Syntax checker has no visibility on variables and types
             # so we have to discard exceptions sent by e.g. find_variable
             pass
+        except NotImplementedError as err:
+            syntax_errors.append('Syntax error in expression - Fix it.')
     return(t, syntax_errors, semantic_errors, warnings,
             context.terminators)
 
