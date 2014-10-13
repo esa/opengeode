@@ -674,6 +674,7 @@ class TextSymbol(HorizontalSymbol):
         ''' When text was entered, update TASK completion list '''
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
+        CONTEXT.variables.update(ast.variables)
         #Task.completion_list |= {dcl for dcl in ast.variables.keys()}
 
     @property
