@@ -570,7 +570,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         ''' When text has changed on a symbol, update the data dictionnary '''
         pr_text = '\n'.join(Pr.generate(symbol,
                                         recursive=False,
-                                        nextstate=False))
+                                        nextstate=False, cpy=True))
         symbol.update_completion_list(pr_text=pr_text)
 
     def find_text(self, pattern):

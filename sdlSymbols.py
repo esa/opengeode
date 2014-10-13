@@ -781,14 +781,15 @@ class State(VerticalSymbol):
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update state completion list '''
-        # Get AST for the symbol
+        # Get AST for the symbol and update the context dictionnary
         ast, _, _, _, _ = self.parser.parseSingleElement('state', pr_text)
-        #State.completion_list |= set(ast.statelist)
+        for each in ast.statelist:
+            CONTEXT.mapping[each] = None
 
     @property
     def completion_list(self):
         ''' Set auto-completion list '''
-        return (state for state in CONTEXT.mapping if state != 'START')
+        return set(state for state in CONTEXT.mapping if state != 'START')
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
