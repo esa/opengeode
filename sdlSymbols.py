@@ -648,6 +648,7 @@ class ProcedureCall(VerticalSymbol):
         ''' Set auto-completion list '''
         return chain((proc.inputString for proc in CONTEXT.procedures),
                      variables_autocompletion(self),
+                     CONTEXT.timers, CONTEXT.global_timers,
                      ('set_timer', 'reset_timer', 'write', 'writeln'))
 
 
@@ -659,7 +660,6 @@ class TextSymbol(HorizontalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    #completion_list = set()
 
     def __init__(self, ast=None):
         ''' Create a Text Symbol '''
@@ -678,11 +678,11 @@ class TextSymbol(HorizontalSymbol):
         self.parser = ogParser
 
     def update_completion_list(self, pr_text):
-        ''' When text was entered, update TASK completion list '''
+        ''' When text was entered, update list of variables/FPAR/Timers '''
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
         CONTEXT.variables.update(ast.variables)
-        #Task.completion_list |= {dcl for dcl in ast.variables.keys()}
+        CONTEXT.timers = list(set(CONTEXT.timers + ast.timers))
         try:
             CONTEXT.fpar.extend(ast.fpar)
         except AttributeError:

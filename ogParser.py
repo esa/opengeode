@@ -2266,11 +2266,13 @@ def text_area_content(root, ta_ast, context):
                     errors.append('Duplicate declaration of FPAR section')
                 else:
                     context.fpar = params
+                    ta_ast.fpar = params
             except AttributeError:
                 errors.append('Only procedures can have an FPAR section')
         elif child.type == lexer.TIMER:
-            context.timers.extend(timer.text.lower()
-                                            for timer in child.children)
+            timers = [timer.text.lower() for timer in child.children]
+            context.timers.extend(timers)
+            ta_ast.timers = timers
         else:
             warnings.append(
                     'Unsupported construct in text area content, type: ' +

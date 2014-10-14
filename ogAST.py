@@ -689,6 +689,9 @@ class TextArea(object):
                            '-- Syntax: DCL <variable name> <type name>;\n\n'
         # DCL variables in the text area {name: (sort, default_value), ...}
         self.variables = {}
+        # fpar and timers are also listed, useful when using autocompletion
+        self.fpar = []
+        self.timers = []
         self.line = None
         self.charPositionInLine = None
         # Set default coordinates and width/height
