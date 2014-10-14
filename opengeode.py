@@ -1808,6 +1808,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             if command.startswith('/') and len(command) > 1:
                 LOG.debug('Searching for ' + command[1:])
                 self.view.scene().search(command[1:])
+                self.view.setFocus()
             else:
                 saveclose = re.compile(r':(w)?(q)?(!)?')
                 try:
