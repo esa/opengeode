@@ -68,18 +68,25 @@ def variables_autocompletion(symbol, type_filter=None):
     if len(parts) == 0:
         return res
     elif len(parts) == 1:
+        try:
+            fpar = {fp['name']: (fp['type'], None) for fp in CONTEXT.fpar}
+        except AttributeError:
+            # not in the context of a procedure
+            fpar = {}
         # Return the list of variables, possibly filterd by type
         if not type_filter:
             res = set(CONTEXT.variables.keys()
                       + CONTEXT.global_variables.keys()
-                      + AST.asn1_constants.keys())
+                      + AST.asn1_constants.keys()
+                      + fpar.keys())
         else:
             constants = {name: (cty.type, None)
                          for name, cty in AST.asn1_constants.viewitems()}
             type_filter_names = [ogParser.type_name(ty) for ty in type_filter]
             for name, (asn1type, _) in chain(CONTEXT.variables.viewitems(),
                                           CONTEXT.global_variables.viewitems(),
-                                          constants.viewitems()):
+                                          constants.viewitems(),
+                                          fpar.viewitems()):
                 if ogParser.type_name(asn1type) in type_filter_names:
                     res.add(name)
     else:
@@ -676,6 +683,10 @@ class TextSymbol(HorizontalSymbol):
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
         CONTEXT.variables.update(ast.variables)
         #Task.completion_list |= {dcl for dcl in ast.variables.keys()}
+        try:
+            CONTEXT.fpar.extend(ast.fpar)
+        except AttributeError:
+            pass
 
     @property
     def completion_list(self):
@@ -921,7 +932,15 @@ class Procedure(Process):
 
     def update_completion_list(self, **kwargs):
         ''' When text was entered, update completion list of ProcedureCall '''
-        ProcedureCall.completion_list |= {unicode(self.text)}
+        #ProcedureCall.completion_list |= {unicode(self.text)}
+        for each in CONTEXT.procedures:
+            if unicode(self.text).lower() == each.inputString:
+                break
+        else:
+            new_proc = ogAST.Procedure()
+            new_proc.inputString = unicode(self.text).lower()
+            CONTEXT.procedures.append(new_proc)
+
 
 
 # pylint: disable=R0904

@@ -1070,6 +1070,10 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.parent_scene = []
         # Set of PR files that are not saved back (e.g. system structure)
         self.readonly_pr = None
+        # Context history referencing the AST entry corresponding to the scene
+        # Used when navigating between scene with up/down button to update
+        # the CONTEXT parameter in sdlSymbols - used for autocompletion
+        self.context_history = []
         # Special scene for the Lander module
         self.lander_scene = SDL_Scene(context='lander')
         # Do not initialize the lander now - only if needed
@@ -1216,9 +1220,48 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.refresh()
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
+        sdlSymbols.CONTEXT = self.context_history.pop()
 
     def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
+        # Save context history
+        self.context_history.append(sdlSymbols.CONTEXT)
+        subtype, subname = name.split()
+        # Get AST of the element that is entered
+        if subtype == 'procedure':
+            for each in sdlSymbols.CONTEXT.procedures:
+                if subname.lower() == each.inputString.lower():
+                    sdlSymbols.CONTEXT = each
+                    break
+            else:
+                # Not existing yet - creating the AST context
+                new_context = ogAST.Procedure()
+                new_context.inputString = subname.lower()
+                sdlSymbols.CONTEXT.procedures.append(new_context)
+                sdlSymbols.CONTEXT = new_context
+        elif subtype == 'state':
+            for each in sdlSymbols.CONTEXT.composite_states:
+                if subname.lower() == each.statename.lower():
+                    sdlSymbols.CONTEXT = each
+                    break
+            else:
+                # Not existing yet - creating the AST context
+                new_context = ogAST.CompositeState()
+                new_context.statename = subname.lower()
+                sdlSymbols.CONTEXT.composite_states.append(new_context)
+                sdlSymbols.CONTEXT = new_context
+        elif subtype == 'process':
+            for each in sdlSymbols.CONTEXT.processes:
+                if subname.lower() == each.processName.lower():
+                    sdlSymbols.CONTEXT = each
+                    break
+            else:
+                # Not existing yet - creating the AST context
+                new_context = ogAST.Process()
+                new_context.processName = subname.lower()
+                sdlSymbols.CONTEXT.processes.append(new_context)
+                sdlSymbols.CONTEXT = new_context
+
         horpos = self.horizontalScrollBar().value()
         verpos = self.verticalScrollBar().value()
         self.scene().name = self.wrapping_window.windowTitle()
@@ -1392,7 +1435,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.update_asn1_dock.emit(ast)
         # Set AST to be used as data dictionnary and updated on the fly
         sdlSymbols.AST = ast
-        sdlSymbols.CONTEXT = process
+        sdlSymbols.CONTEXT = block
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -1718,23 +1761,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         if file_name:
             types = []
             self.view.load_file(file_name)
-#           # Update the dock widget with ASN.1 files content
-#           try:
-#               for asn1file in ast.asn1_filenames:
-#                   with open(asn1file, 'r') as file_handler:
-#                       types.append('-- ' + asn1file)
-#                       types.append(file_handler.read())
-#               if types:
-#                   self.asn1_area.text.setPlainText('\n'.join(types))
-#                   # ASN.1 text area is read-only:
-#                   self.asn1_area.text.setTextInteractionFlags(
-#                                           QtCore.Qt.TextBrowserInteraction)
-#                   self.asn1_area.text.try_resize()
-#
-#           except IOError as err:
-#               LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
-#           except AttributeError:
-#               LOG.warning('No AST, check input files')
+        else:
+            # Create a default context - at Block level - for the autocompleter
+            sdlSymbols.CONTEXT = ogAST.Block()
+
 
     @QtCore.Slot(ogAST.AST)
     def set_asn1_view(self, ast):
