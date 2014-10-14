@@ -252,8 +252,15 @@ class Output(VerticalSymbol):
     @property
     def completion_list(self):
         ''' Set auto-completion list '''
-        return chain(variables_autocompletion(self),
-                    (sig['name'] for sig in CONTEXT.output_signals))
+        if '(' in unicode(self):
+            # Output parameter: return the list of variables of this type
+            output_name = unicode(self).split('(')[0].strip().lower()
+            asn1_filter = [sig['type'] for sig in CONTEXT.output_signals if
+                           sig['name'] == output_name]
+            return variables_autocompletion(self, asn1_filter)
+        else:
+            # Return the list of output signals
+            return (set(sig['name'] for sig in CONTEXT.output_signals))
 
 
 # pylint: disable=R0904
