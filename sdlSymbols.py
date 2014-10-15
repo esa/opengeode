@@ -456,7 +456,6 @@ class Join(VerticalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    completion_list = set()
 
     def __init__(self, parent=None, ast=None):
         if not ast:
@@ -485,6 +484,22 @@ class Join(VerticalSymbol):
         path.addEllipse(0, 0, circ, circ)
         self.setPath(path)
         super(Join, self).set_shape(width, height)
+
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list - list of labels '''
+        return (label.inputString for label in CONTEXT.labels)
+
+    def update_completion_list(self, pr_text):
+        ''' When text was entered, update list of join terminators '''
+        ast, _, _, _, _ = self.parser.parseSingleElement(self.common_name,
+                                                         pr_text)
+        for each in (t for t in CONTEXT.terminators if t.kind == 'join'):
+            if each.inputString == unicode(self):
+                # Ignore if already defined
+                break
+        else:
+            CONTEXT.terminators.append(ast)
 
 
 class ProcedureStop(Join):
@@ -536,7 +551,6 @@ class Label(VerticalSymbol):
     redbold = SDL_REDBOLD
     # Symbol must not use antialiasing, otherwise the middle line is too thick
     _antialiasing = False
-    completion_list = set()
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Label()
@@ -570,6 +584,23 @@ class Label(VerticalSymbol):
         path.moveTo(width, height)
         self.setPath(path)
         super(Label, self).set_shape(width, height)
+
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list - list of JOIN '''
+        return (term.inputString
+                for term in CONTEXT.terminators if term.kind == 'join')
+
+    def update_completion_list(self, pr_text):
+        ''' When text was entered, update list of labels in current context '''
+        ast, _, _, _, _ = self.parser.parseSingleElement(self.common_name,
+                                                         pr_text)
+        for each in CONTEXT.labels:
+            if each.inputString == unicode(self):
+                # Ignore if already defined
+                break
+        else:
+            CONTEXT.labels.append(ast)
 
 
 # pylint: disable=R0904
