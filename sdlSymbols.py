@@ -212,6 +212,16 @@ class Connect(Input):
         ''' Symbol cannot be resized '''
         return
 
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list: list of exit points of nested state '''
+        parent_state = unicode(self.parentItem()).lower()
+        for each in CONTEXT.composite_states:
+            if each.statename == parent_state:
+                return each.state_exitpoints
+        else:
+            return set()
+
 
 # pylint: disable=R0904
 class Output(VerticalSymbol):
@@ -275,7 +285,6 @@ class Decision(VerticalSymbol):
     blackbold = SDL_BLACKBOLD + ['\\b{}\\b'.format(word)
                                    for word in ('AND', 'OR')]
     redbold = SDL_REDBOLD
-    #completion_list = {'length', 'present'}
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Decision()
@@ -399,7 +408,6 @@ class DecisionAnswer(HorizontalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
-    completion_list = set()
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Answer()
@@ -445,6 +453,11 @@ class DecisionAnswer(HorizontalSymbol):
         path.moveTo(width, height)
         self.setPath(path)
         super(DecisionAnswer, self).set_shape(width, height)
+
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        return ['ELSE']
 
 
 # pylint: disable=R0904
@@ -536,7 +549,22 @@ class ProcedureStop(Join):
     @property
     def completion_list(self):
         ''' Set auto-completion list '''
-        return variables_autocompletion(self)
+        try:
+            return CONTEXT.state_exitpoints
+        except AttributeError:
+            # Not in a state but in a procedure
+            return set()
+
+    def update_completion_list(self, pr_text):
+        ''' When text was entered, if in a nested state update exit points '''
+        ast, _, _, _, _ = self.parser.parseSingleElement(self.common_name,
+                                                         pr_text)
+        try:
+            CONTEXT.state_exitpoints = set(CONTEXT.state_exitpoints
+                                           + [unicode(self)])
+        except AttributeError:
+            # No state exit points in a procedure
+            pass
 
 
 # pylint: disable=R0904
