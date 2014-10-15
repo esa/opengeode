@@ -892,7 +892,15 @@ class State(VerticalSymbol):
     @property
     def completion_list(self):
         ''' Set auto-completion list '''
-        return set(state for state in CONTEXT.mapping if state != 'START')
+        elems = unicode(self).lower().strip().split()
+        if len(elems) == 2 and elems[1] == 'via':
+            # Get list of entry point of the nested state
+            statename = elems[0]
+            for each in CONTEXT.composite_states:
+                if each.statename == statename:
+                    return each.state_entrypoints
+        else:
+            return set(state for state in CONTEXT.mapping if state != 'START')
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
@@ -1106,3 +1114,8 @@ class StateStart(Start):
     def __unicode__(self):
         ''' Return the state entry point '''
         return unicode(self.text)
+
+    def update_completion_list(self, pr_text):
+        ''' Update nested state entry points '''
+        CONTEXT.state_entrypoints = set(CONTEXT.state_entrypoints
+                                       + [unicode(self)])
