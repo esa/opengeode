@@ -238,8 +238,10 @@ class EditableText(QGraphicsTextItem, object):
         text_cursor.setPosition(self.cursor_position)
         extra = len(item.text()) - len(self.completion_prefix)
         if extra > 0:
-            text_cursor.movePosition(QTextCursor.Left)
-            text_cursor.movePosition(QTextCursor.EndOfWord)
+            if len(self.completion_prefix):
+                # Move back left only if there is a word to replace
+                text_cursor.movePosition(QTextCursor.Left)
+                text_cursor.movePosition(QTextCursor.EndOfWord)
             text_cursor.insertText(item.text()[-extra:])
             self.setTextCursor(text_cursor)
         self.completer_has_focus = False
