@@ -687,11 +687,6 @@ class TextArea(object):
         ''' Text area (raw content for rendering only) '''
         self.inputString = '-- Declare your variables\n\n' \
                            '-- Syntax: DCL <variable name> <type name>;\n\n'
-        # DCL variables in the text area {name: (sort, default_value), ...}
-        self.variables = {}
-        # fpar and timers are also listed, useful when using autocompletion
-        self.fpar = []
-        self.timers = []
         self.line = None
         self.charPositionInLine = None
         # Set default coordinates and width/height
@@ -699,6 +694,13 @@ class TextArea(object):
         self.pos_y = 0
         self.width = 170
         self.height = 140
+        # DCL variables in the text area {name: (sort, default_value), ...}
+        self.variables = {}
+        # fpar and timers are also listed, useful when using autocompletion
+        self.fpar = []
+        self.timers = []
+        # inner procedures - useful to get autocompletion params
+        self.procedures = []
         # optional hyperlink
         self.hyperlink = None
 

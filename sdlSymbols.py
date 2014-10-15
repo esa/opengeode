@@ -49,7 +49,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'LENGTH', 'PRESENT', 'FPAR', 'TODO', 'FIXME', 'XXX',
                 'CHECKME', 'PROCEDURE', 'EXTERNAL', 'IN', 'OUT', 'TIMER',
                 'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT',
-                'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS',
+                'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE',
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
@@ -745,6 +745,7 @@ class TextSymbol(HorizontalSymbol):
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
         CONTEXT.variables.update(ast.variables)
         CONTEXT.timers = list(set(CONTEXT.timers + ast.timers))
+        CONTEXT.procedures = list(set(CONTEXT.procedures + ast.procedures))
         try:
             CONTEXT.fpar.extend(ast.fpar)
         except AttributeError:

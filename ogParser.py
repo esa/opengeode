@@ -2257,6 +2257,8 @@ def text_area_content(root, ta_ast, context):
             context.content.inner_procedures.append(proc)
             # Add to context to make it visible at scope level
             context.procedures.append(proc)
+            # And add it to the TextArea AST for the text autocompletion
+            ta_ast.procedures.append(proc)
         elif child.type == lexer.FPAR:
             params, err, warn = fpar(child)
             errors.extend(err)
