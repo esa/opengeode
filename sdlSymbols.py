@@ -669,9 +669,27 @@ class Task(VerticalSymbol):
     @property
     def completion_list(self):
         ''' Set auto-completion list '''
-        return chain(variables_autocompletion(self),
-                    ogParser.SPECIAL_OPERATORS.viewkeys())
-
+        elems = unicode(self).lower().strip().split()
+        asn1_filter = []
+        if len(elems) == 2 and elems[1] == ':=':
+            # Find type of variable on the left and filter accordingly
+            varname = elems[0]
+            try:
+                fpar = {fp['name']: (fp['type'], None) for fp in CONTEXT.fpar}
+            except AttributeError:
+                # not in the context of a procedure
+                fpar = {}
+            constants = {name: (cty.type, None)
+                         for name, cty in AST.asn1_constants.viewitems()}
+            for name, (asn1ty, _) in chain (CONTEXT.variables.viewitems(),
+                                          CONTEXT.global_variables.viewitems(),
+                                          constants.viewitems(),
+                                          fpar.viewitems()):
+                if name == varname:
+                    asn1_filter = [asn1ty]
+                    break
+        return chain(variables_autocompletion(self, asn1_filter),
+                     ogParser.SPECIAL_OPERATORS.viewkeys())
 
 # pylint: disable=R0904
 class ProcedureCall(VerticalSymbol):
