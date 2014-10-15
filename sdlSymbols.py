@@ -684,10 +684,34 @@ class ProcedureCall(VerticalSymbol):
     @property
     def completion_list(self):
         ''' Set auto-completion list '''
-        return chain((proc.inputString for proc in CONTEXT.procedures),
-                     variables_autocompletion(self),
-                     CONTEXT.timers, CONTEXT.global_timers,
-                     ('set_timer', 'reset_timer', 'write', 'writeln'))
+        if '(' in unicode(self):
+            # Get the variables of the type of the current parameter
+            count = unicode(self).count(',')
+            procname = unicode(self).split('(')[0].strip().lower()
+            for each in (proc for proc in CONTEXT.procedures
+                         if proc.inputString.lower() == procname):
+                param_types = [p['type'] for p in each.fpar]
+                break
+            else:
+                # Procedure not defined, check special operators
+                if (procname == 'set_timer' and count == 1) or (
+                        procname == 'reset_timer' and count == 0):
+                    return chain(CONTEXT.timers, CONTEXT.global_timers)
+                elif procname in ('write', 'writeln'):
+                    # Could filter for OCTET STRINGS/Strings/Integer/Booleans
+                    return variables_autocompletion(self)
+                else:
+                    return ()
+            if count + 1 > len(param_types):
+                # User tries to set more parameters than defined
+                return ()
+            else:
+                # Return variables of the type of the parameter
+                asn1_filter = param_types[slice(count, count + 1)]
+                return variables_autocompletion(self, asn1_filter)
+        else:
+            return chain((proc.inputString for proc in CONTEXT.procedures),
+                         ('set_timer', 'reset_timer', 'write', 'writeln'))
 
 
 # pylint: disable=R0904

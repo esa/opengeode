@@ -249,7 +249,7 @@ class EditableText(QGraphicsTextItem, object):
         self.try_resize()
 
 
-    def context_completion_list(self):
+    def context_completion_list(self, force=False):
         ''' Advanced context-dependent autocompletion '''
         # Select text from the begining of a line to the cursor position
         # Then keep the last word including separators ('!' and '.')
@@ -268,8 +268,7 @@ class EditableText(QGraphicsTextItem, object):
                 self.context = ''
         except IndexError:
             pass
-        if context != self.context:
-            #print 'refreshing list with', self.context.encode('utf-8')
+        if (context != self.context) or force:
             self.completer.set_completer_list()
 
 
@@ -294,13 +293,10 @@ class EditableText(QGraphicsTextItem, object):
         text_cursor.select(QTextCursor.WordUnderCursor)
         self.completion_prefix = text_cursor.selectedText()
 
-        self.context_completion_list()
+        self.context_completion_list(force=(event.key()==Qt.Key_F8))
 
         completion_count = self.completer.set_completion_prefix(
                 self.completion_prefix)
-        if event.key() in (Qt.Key_Period, Qt.Key_Exclam):
-            # Enable autocompletion of complex types
-            pass  # placeholder to update autocompletion list
         if(completion_count > 0 and len(self.completion_prefix) > 1) or(
                 event.key() == Qt.Key_F8):
             # Save the position of the cursor
