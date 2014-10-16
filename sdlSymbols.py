@@ -192,7 +192,7 @@ class Input(HorizontalSymbol):
 class Connect(Input):
     ''' Connect point below a nested state '''
     common_name = 'connect_part'
-    auto_expand = False
+    auto_expand = True
     resizeable = False
     # Symbol must not use antialiasing, otherwise the middle line is too thick
     _antialiasing = False
@@ -468,7 +468,7 @@ class DecisionAnswer(HorizontalSymbol):
 # pylint: disable=R0904
 class Join(VerticalSymbol):
     ''' JOIN symbol (GOTO) '''
-    auto_expand = False
+    auto_expand = True
     arrow_head = 'simple'
     common_name = 'terminator_statement'
     # Define reserved keywords for the syntax highlighter
