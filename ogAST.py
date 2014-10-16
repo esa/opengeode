@@ -293,8 +293,7 @@ class Decision(object):
         self.inputString = ''
         self.line = None
         self.charPositionInLine = None
-        self.pos_x = 0
-        self.pos_y = 0
+        self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 50
         # kind can be 'any', 'informal_text', or 'question'
@@ -325,8 +324,7 @@ class Answer(object):
         self.inputString = ''
         self.line = None
         self.charPositionInLine = None
-        self.pos_x = 0
-        self.pos_y = 0
+        self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 10.5
         # one of 'closed_range' 'constant' 'open_range' 'else' 'informal_text'
@@ -360,8 +358,7 @@ class Task(object):
         self.inputString = ''
         self.line = None
         self.charPositionInLine = None
-        self.pos_x = 0
-        self.pos_y = 0
+        self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 35
         # optional comment symbol
@@ -400,8 +397,7 @@ class Output(object):
     def __init__(self, defName=''):
         ''' Set of OUTPUT statements '''
         self.inputString = defName
-        self.pos_x = 0
-        self.pos_y = 0
+        self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 35
         self.line = None
@@ -475,7 +471,7 @@ class Label(object):
         ''' Initialize the label attributes '''
         # inputString holds the label name
         self.inputString = ''
-        self.pos_x = 0
+        self.pos_x, self.pos_y = None, None
         self.pos_y = 0
         self.width = 70
         self.height = 35
@@ -496,7 +492,7 @@ class Label(object):
                 l=self.line, c=self.charPositionInLine)
 
 
-class Floating_label(Label, object):
+class Floating_label(Label):
     ''' AST Entry for a floating label '''
     def __init__(self, label=None):
         ''' Initialize the floating label attributes '''
@@ -549,8 +545,7 @@ class Input(object):
         ''' Initialize the Input attributes '''
         # inputString is the user text, it can contain several inputs
         self.inputString = ''
-        self.pos_x = 0
-        self.pos_y = 0
+        self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 35
         self.line = None
@@ -599,8 +594,7 @@ class Start(object):
     def __init__(self):
         ''' Initialize the Start symbol attributes '''
         self.inputString = ''
-        self.pos_x = 0
-        self.pos_y = 0
+        self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 35
         # start transition is of type Transition
@@ -633,8 +627,8 @@ class Comment(object):
         ''' Comment symbol '''
         # inputString is the comment value itself
         self.inputString = ''
-        self.pos_x = 0
-        self.pos_y = 0
+        self.pos_x = None
+        self.pos_y = None
         self.width = 70
         self.height = 35
         self.line = None
@@ -659,7 +653,7 @@ class State(object):
         self.statelist = []
         self.line = None
         self.charPositionInLine = None
-        self.pos_x = 0
+        self.pos_x, self.pos_y = None, None
         self.pos_y = 0
         self.width = 70
         self.height = 35
@@ -690,8 +684,7 @@ class TextArea(object):
         self.line = None
         self.charPositionInLine = None
         # Set default coordinates and width/height
-        self.pos_x = 0
-        self.pos_y = 0
+        self.pos_x, self.pos_y = None, None
         self.width = 170
         self.height = 140
         # DCL variables in the text area {name: (sort, default_value), ...}
@@ -731,7 +724,7 @@ class Procedure(object):
         self.line = None
         self.charPositionInLine = None
         # Set default coordinates and width/height
-        self.pos_x = self.pos_y = 0
+        self.pos_x = self.pos_y = None
         self.width = 70
         self.height = 35
         # Optional hyperlink

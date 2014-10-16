@@ -176,19 +176,19 @@ on string value';
 string';
                         /* CIF DECISION (368, 1482), (98, 50) */
                         DECISION 3 in {1,2,3};
-                                /* CIF ANSWER (328, 1552), (88, 23) */
+                                /* CIF ANSWER (328, 1552), (88, 33) */
                                 (1 in {1,2}):
-                                /* CIF ANSWER (418, 1552), (88, 23) */
+                                /* CIF ANSWER (418, 1552), (88, 33) */
                                 (0 in {1,2}):
                         ENDDECISION;
-                        /* CIF DECISION (368, 1590), (98, 50) */
+                        /* CIF DECISION (368, 1600), (98, 50) */
                         DECISION 4 in {1,2,3};
-                                /* CIF ANSWER (337, 1590), (70, 23) */
+                                /* CIF ANSWER (339, 1670), (66, 33) */
                                 (true):
-                                /* CIF ANSWER (427, 1590), (70, 23) */
+                                /* CIF ANSWER (422, 1670), (70, 33) */
                                 (false):
                         ENDDECISION;
-                        /* CIF NEXTSTATE (367, 1628), (100, 50) */
+                        /* CIF NEXTSTATE (367, 1718), (100, 50) */
                         NEXTSTATE Running;
             ENDDECISION;
     ENDSTATE;

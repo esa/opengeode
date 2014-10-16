@@ -422,6 +422,25 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # Render top-level items and their children:
                 for each in Renderer.render(content, dest_scene):
                     G_SYMBOLS.add(each)
+                # Refreshing the scene may result in resizing some symbols
+                dest_scene.refresh()
+                for each in dest_scene.floating_symb:
+                    # Once everything is rendered, adjust position of each
+                    # symbol to the value from the AST (positions may be
+                    # slightly altered by the reshaping functions)
+                    def fix_pos_from_ast(symbol):
+                        try:
+                            if symbol.ast.pos_x and symbol.ast.pos_y:
+                                relpos = symbol.mapFromScene(symbol.ast.pos_x,
+                                                           symbol.ast.pos_y)
+                                symbol.moveBy(relpos.x(), relpos.y())
+                                symbol.update_connections()
+                            for child in symbol.childItems():
+                                fix_pos_from_ast(child)
+                        except AttributeError:
+                            # no AST
+                            pass
+                    fix_pos_from_ast(each)
             except TypeError:
                 LOG.error(traceback.format_exc())
 

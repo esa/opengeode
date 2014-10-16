@@ -695,15 +695,17 @@ class Comment(Symbol):
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Comment()
+        self.ast = ast
         super(Comment, self).__init__(parent)
         self.connection = None
-        if parent:
-            local_pos = parent.mapFromScene(ast.pos_x, ast.pos_y)
-            self.insert_symbol(parent, local_pos.x(), local_pos.y())
         self.set_shape(ast.width, ast.height)
         self.text = EditableText(parent=self,
                                  text=ast.inputString,
                                  hyperlink=ast.hyperlink)
+        if parent:
+            local_pos = parent.mapFromScene(ast.pos_x or 0, ast.pos_y or 0)
+            self.insert_symbol(parent, local_pos.x(), local_pos.y())
+        #self.set_shape(ast.width, ast.height)
         self.common_name = 'end'
         self.parser = ogParser
 

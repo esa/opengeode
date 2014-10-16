@@ -36,27 +36,27 @@ expected output (in addition to the printf in vesat_one_step):
 2.0
 3.0
 4.0';
-        /* CIF TASK (363, 379), (140, 53) */
+        /* CIF TASK (363, 347), (140, 53) */
         TASK for x in foo:
     call writeln(x);
 endfor
-        /* CIF COMMENT (534, 359), (146, 93) */
+        /* CIF COMMENT (534, 327), (146, 93) */
         COMMENT 'expected output:
  1.0
  2.0
  3.0
  4.0';
-        /* CIF TASK (363, 516), (140, 53) */
+        /* CIF TASK (363, 440), (140, 53) */
         TASK for x in foo(1,2):
     call writeln(x);
 endfor
-        /* CIF COMMENT (525, 503), (146, 63) */
+        /* CIF COMMENT (525, 427), (146, 63) */
         COMMENT 'expected output:
  2.0
  3.0';
-        /* CIF TASK (374, 584), (118, 35) */
+        /* CIF TASK (374, 508), (118, 35) */
         TASK toto := (toto);
-        /* CIF NEXTSTATE (388, 634), (91, 39) */
+        /* CIF NEXTSTATE (388, 558), (91, 39) */
         NEXTSTATE Stopped;
     /* CIF STATE (617, 38), (91, 35) */
     STATE Stopped;
