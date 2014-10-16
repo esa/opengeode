@@ -3072,7 +3072,13 @@ def decision(root, parent, context):
             dec.line = child.getLine()
             dec.charPositionInLine = child.getCharPositionInLine()
         elif child.type == lexer.ANY:
+            warnings.append(['Use of "ANY" introduces non-determinism ',
+                            [dec.pos_x, dec.pos_y], []])
             dec.kind = 'any'
+            dec.inputString = get_input_string(child)
+            dec.question = ogAST.PrimStringLiteral()
+            dec.question.value = 'ANY'
+            dec.question.exprType = RAWSTRING
         elif child.type == lexer.COMMENT:
             dec.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
