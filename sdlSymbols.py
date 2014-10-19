@@ -50,6 +50,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'CHECKME', 'PROCEDURE', 'EXTERNAL', 'IN', 'OUT', 'TIMER',
                 'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT', 'ANY',
                 'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE',
+                'COMMENT', 'SIGNAL', 'SIGNALLIST', 'USE',
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (

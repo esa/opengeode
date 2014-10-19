@@ -264,6 +264,8 @@ text_area
 // and variable or timer declarations
 content
         :        (procedure
+                 | use_clause
+                 | signal_declaration
                  | fpar
                  | timer_declaration
                  | syntype_definition
