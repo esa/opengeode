@@ -926,7 +926,7 @@ class AST(object):
         self.asn1Modules = None
         # ASN.1-defined constants (constants in Ada but variables in C)
         # dictionnary: {ConstantName: type } - copied from dataview.py
-        self.asn1_constants = None
+        self.asn1_constants = {}
 
         # List of System
         self.systems = []
