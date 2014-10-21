@@ -59,6 +59,10 @@ def parse_asn1(*files, **options):
 
     asn1scc_root = os.path.dirname(spawn.find_executable('asn1.exe'))
     tempdir = tempfile.mkdtemp()
+    if hasattr(sys, 'frozen'):
+        # On windows, remove the drive letter, workaround to ASN1SCC bug
+        tempdir = tempdir[2:]
+        asn1scc_root = '.' if not asn1scc_root else asn1scc_root[2:]
     filename = str(uuid.uuid4()).replace('-', '_')
     filepath = tempdir + os.sep + filename + '.py'
 
