@@ -3223,7 +3223,9 @@ def decision(root, parent, context):
             # numeric type -> find the range covered by this answer
             a0_basic = find_basic_type(ans.closedRange[0].exprType)
             a1_basic = find_basic_type(ans.closedRange[1].exprType)
-            if a0_basic.Min != a0_basic.Max or a1_basic.Min != a1_basic.Max:
+            if not hasattr(a0_basic, "Min") or not hasattr(a1_basic, "Min") \
+                    or a0_basic.Min != a0_basic.Max \
+                    or a1_basic.Min != a1_basic.Max:
                 # Not a constant or a raw number, range is not fix
                 need_else = True
                 continue
