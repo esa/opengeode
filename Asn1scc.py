@@ -21,7 +21,8 @@ import distutils.spawn as spawn
 import sys
 import importlib
 import logging
-import PySide.QtCore as Qt
+from PySide.QtCore import QProcess
+
 
 LOG = logging.getLogger(__name__)
 
@@ -49,42 +50,48 @@ class ASN1(Enum):
 
 def parse_asn1(*files, **options):
     ''' Call the ASN.1 parser on a number of files, and return the module
-        containing the AST '''
+        containing the AST
+        This function uses QProcess to launch the ASN.1 compiler because
+        the subprocess module from Python has issues on the Windows platform
+    '''
     global AST
 
     ast_version = options.get('ast_version', ASN1.UniqueEnumeratedNames)
     flags = options.get('flags', [ASN1.AstOnly])
     assert isinstance(ast_version, ASN1)
     assert isinstance(flags, list)
-
-    asn1scc_root = os.path.dirname(spawn.find_executable('asn1.exe'))
+    path_to_asn1scc = spawn.find_executable('asn1.exe')
+    if not path_to_asn1scc:
+        raise TypeError('ASN.1 Compiler not found in path')
+    asn1scc_root = os.path.abspath(os.path.dirname(path_to_asn1scc))
+    # Create a temporary directory to store dataview.py and import it
     tempdir = tempfile.mkdtemp()
-    if hasattr(sys, 'frozen'):
+    sys.path.append(tempdir)
+    if hasattr(sys, 'frozen') or os.name == 'nt':
         # On windows, remove the drive letter, workaround to ASN1SCC bug
         tempdir = tempdir[2:]
-        asn1scc_root = '.' if not asn1scc_root else asn1scc_root[2:]
+        asn1scc_root = asn1scc_root[2:]
     filename = str(uuid.uuid4()).replace('-', '_')
     filepath = tempdir + os.sep + filename + '.py'
 
-    # dump python.stg in the temp directory
-    #stg = Qt.QFile(':misc/python.stg')
-    #stg_data = stg.readData(stg.size())
     stg = asn1scc_root + os.sep + 'python.stg'
-    #with open(tmp_stg, 'w') as fd:
-    #    fd.write(stg_data)
 
-    args = ['asn1.exe',
-            '-customStgAstVerion', str(ast_version.value),
+    args = ['-customStgAstVerion', str(ast_version.value),
             '-customStg', stg + ':' + filepath] + list(*files)
-
-    LOG.debug('Calling: ' + ' '.join(args))
-    try:
-        ret = subprocess.check_call(args)
-    except subprocess.CalledProcessError as err:
-        LOG.debug(str(err))
-        raise TypeError('asn1.exe execution failed')
-    sys.path.append(tempdir)
-    if ret == 0:
+    asn1scc = QProcess()
+    LOG.debug(os.getcwd())
+    LOG.debug(path_to_asn1scc + ' ' + ' '.join(args))
+    asn1scc.start(path_to_asn1scc, args)
+    if not asn1scc.waitForStarted():
+        raise TypeError('Could not start ASN.1 Compiler')
+    if not asn1scc.waitForFinished():
+        raise TypeError('Execution of ASN.1 Compiler timed out')
+    exitcode = asn1scc.exitCode()
+    result = asn1scc.readAllStandardError()
+    if exitcode != 0:
+        raise TypeError('ASN.1 Compiler Error (exit code = {}) - {}'
+                        .format(exitcode, str(result)))
+    else:
         if filename in AST.viewkeys():
             # Re-import module if it was already loaded
             ast = AST[filename]
@@ -93,8 +100,6 @@ def parse_asn1(*files, **options):
             ast = importlib.import_module(filename)
             AST[filename] = ast
         return ast
-    else:
-        raise TypeError('Error calling ASN.1 compiler')
 
 
 if __name__ == '__main__':

@@ -95,7 +95,8 @@ LIST = type('ListType', (object,), {'kind': 'ListType'})
 ANY_TYPE = type('AnyType', (object,), {'kind': 'AnyType'})
 CHOICE = type('ChoiceType', (object,), {'kind': 'ChoiceType'})
 BOOLEAN = type('BooleanType', (object,), {'kind': 'BooleanType'})
-RAWSTRING = type('RawString', (object,), {'kind': 'StandardStringType'})
+RAWSTRING = type('RawString', (object,), {'kind': 'StandardStringType',
+                                          'Min': '0', 'Max': '255'})
 OCTETSTRING = type('OctetString', (object,), {'kind': 'OctetStringType'})
 ENUMERATED = type('EnumeratedType', (object,), {'kind': 'EnumeratedType'})
 
@@ -3835,8 +3836,8 @@ def pr_file(root):
             LOG.info('USE Clause did not contain ASN.1 filename')
             LOG.debug(str(err))
         except TypeError as err:
-            errors.append('ASN.1 compiler execution failed')
-            LOG.debug(str(err))
+            LOG.debug(traceback.format_exc())
+            errors.append('ASN.1 compiler failed - {}'.format(str(err)))
 
     for child in systems:
         LOG.debug('found SYSTEM')
@@ -3882,7 +3883,7 @@ def add_to_ast(ast, filename=None, string=None):
     try:
         parser = parser_init(filename=filename, string=string)
     except IOError as err:
-        LOG.error('parser_init failed: ' + str(err))
+        LOG.error('Parser error: ' + str(err))
         raise
     # Use Sam & Max output capturer to get errors from ANTLR parser
     with samnmax.capture_ouput() as (stdout, stderr):
@@ -4001,13 +4002,17 @@ def parseSingleElement(elem='', string=''):
 
 def parser_init(filename=None, string=None):
     ''' Initialize the parser (to be called first) '''
-    try:
-        char_stream = antlr3.ANTLRFileStream(filename, encoding='utf-8')
-    except (IOError, TypeError) as err:
+    if filename is not None:
+        try:
+            char_stream = antlr3.ANTLRFileStream(filename, encoding='utf-8')
+        except (IOError, TypeError) as err:
+            LOG.debug(str(traceback.format_exc()))
+            raise
+    if string is not None:
         try:
             char_stream = antlr3.ANTLRStringStream(string)
         except TypeError as err:
-            raise IOError('Could not parse input: ' + str(err))
+            raise IOError('String parsing error: ' + str(err))
     lex = lexer.sdl92Lexer(char_stream)
     tokens = antlr3.CommonTokenStream(lex)
     parser = sdl92Parser(tokens)

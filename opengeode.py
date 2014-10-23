@@ -1952,8 +1952,12 @@ def init_logging(options):
 def parse(files):
     ''' Parse files '''
     LOG.info('Checking ' + str(files))
+    # move to the directory of the .pr files (needed for ASN.1 parsing)
+    LOG.info(files[0])
+    path = os.path.dirname(files[0])
+    files = [os.path.abspath(each) for each in files]
+    os.chdir(path or '.')
     ast, warnings, errors = ogParser.parse_pr(files=files)
-
     LOG.info('Parsing complete. '
              'Summary, found {} warnings and {} errors'
              .format(len(warnings), len(errors)))
@@ -2127,6 +2131,12 @@ def opengeode():
 if __name__ == '__main__':
     ''' Run main application '''
     cwd = os.getcwd()
+    # Windows only: argv[0] may not contain anything if binary is called
+    # from the current directory (no "./" prefix on Windows, even if the
+    # current folder is not in the PATH). In that case add it to the PATH
+    if os.name == 'nt':
+        os.environ['PATH'] += os.pathsep + os.path.abspath(
+                                           os.path.dirname(sys.argv[0]) or cwd)
     ret = opengeode()
     os.chdir(cwd)
     sys.exit(ret)
