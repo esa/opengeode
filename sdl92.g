@@ -151,7 +151,7 @@ system_definition
 use_clause
         :       use_asn1?
                 USE package_name end
-        ->      ^(USE use_asn1? package_name);
+        ->      ^(USE use_asn1? end? package_name);
 
 
 /* Entity in system:
@@ -159,6 +159,7 @@ use_clause
 */
 entity_in_system
         :       signal_declaration
+                | text_area
                 | procedure
                 | channel
                 | block_definition;
@@ -1271,8 +1272,8 @@ ENDSYNTYPE      :       E N D S Y N T Y P E;
 NEWTYPE         :       N E W T Y P E;
 ENDNEWTYPE      :       E N D N E W T Y P E;
 ARRAY           :       A R R A Y;
-CONSTANTS       :	    C O N S T A N T S;
-STRUCT          :	    S T R U C T;
+CONSTANTS       :       C O N S T A N T S;
+STRUCT          :       S T R U C T;
 SYNONYM        	:       S Y N O N Y M;
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;

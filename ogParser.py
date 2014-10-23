@@ -148,6 +148,22 @@ type_name = lambda t: \
 types = lambda: getattr(DV, 'types', {})
 
 
+def set_global_DV(asn1_filenames):
+    ''' Call ASN.1 parser and set the global dataview AST entry (DV) '''
+    global DV
+    try:
+        DV = parse_asn1(tuple(asn1_filenames),
+                        ast_version=ASN1.UniqueEnumeratedNames,
+                        flags=[ASN1.AstOnly])
+    except (ImportError, NameError) as err:
+        # Can happen if DataView.py is not there
+        LOG.error('Error loading ASN.1 model')
+        LOG.debug(str(err))
+    except TypeError as err:
+        LOG.debug(traceback.format_exc())
+        raise TypeError('ASN.1 compiler failed - {}'.format(str(err)))
+
+
 def substring_range(substring):
     ''' Return the range of a substring '''
     left, right = substring.value[1]['substring']
@@ -1848,6 +1864,8 @@ def composite_state(root, parent=None, context=None):
                 comp.state_exitpoints.append(point.toString().lower())
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=comp)
+            if textarea.signals:
+                errors.append('Signals shall not be declared in a state')
             errors.extend(err)
             warnings.extend(warn)
             comp.content.textAreas.append(textarea)
@@ -1946,6 +1964,8 @@ def procedure_pre(root, parent=None, context=None):
             proc.comment, _, ___ = end(child)
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=proc)
+            if textarea.signals:
+                errors.append('Signals shall not be declared in a procedure')
             errors.extend(err)
             warnings.extend(warn)
             proc.content.textAreas.append(textarea)
@@ -2276,6 +2296,23 @@ def text_area_content(root, ta_ast, context):
             timers = [timer.text.lower() for timer in child.children]
             context.timers.extend(timers)
             ta_ast.timers = timers
+        elif child.type == lexer.SIGNAL:
+            sig, err, warn = signal(child)
+            errors.extend(err)
+            warnings.extend(warn)
+            ta_ast.signals.append(sig)
+        elif child.type == lexer.USE:
+            # USE clauses can contain a CIF comment with the ASN.1 filename
+            for each in child.getChildren():
+                use_cmt = ''
+                if each.type == lexer.ASN1:
+                    errors.append('There shall be no CIF in text areas')
+                elif each.type == lexer.COMMENT:
+                    # Comment: better way to specify ASN.1 filename
+                    use_cmt, _, _ = end(each)
+                else:
+                    ta_ast.use_clauses.append(each.text)
+                    ta_ast.asn1_files.append(use_cmt)
         else:
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
@@ -2407,36 +2444,61 @@ def system_definition(root, parent):
     # Store the name of the file where the system is defined
     system.filename = node_filename(root)
     system.ast = parent
+    asn1_files = []
+    signals, procedures, blocks = [], [], []
     for child in root.getChildren():
         if child.type == lexer.ID:
             system.name = child.text
             LOG.debug('System name: ' + system.name)
         elif child.type == lexer.SIGNAL:
-            sig, err, warn = signal(child)
-            errors.extend(err)
-            warnings.extend(warn)
-            system.signals.append(sig)
-            LOG.debug('Found signal: ' + str(sig))
+            signals.append(child)
         elif child.type == lexer.PROCEDURE:
-            LOG.debug('procedure declaration')
-            proc, err, warn = procedure(
-                    child, parent=None, context=system)
-            errors.extend(err)
-            warnings.extend(warn)
-            system.procedures.append(proc)
-            LOG.debug('Added procedure: ' + proc.inputString)
+            procedures.append(child)
         elif child.type == lexer.CHANNEL:
             LOG.debug('channel declaration')
             channel, _, _ = signalroute(child)
             system.channels.append(channel)
         elif child.type == lexer.BLOCK:
-            LOG.debug('block declaration')
-            block, err, warn = block_definition(child, parent=system)
+            blocks.append(child)
+        elif child.type == lexer.TEXTAREA:
+            # Text zone where signals can be declared
+            textarea, err, warn = text_area(child, context=system)
+            system.signals.extend(textarea.signals)
+            if textarea.variables:
+                errors.append('Variables shall be declared only in a process')
+            if textarea.fpar:
+                errors.append('FPAR shall be declared only in procedures')
+            if textarea.timers:
+                errors.append('Timers shall be declared only in a process')
+            # Update list of ASN.1 files - if any
+            asn1_files.extend(textarea.asn1_files)
             errors.extend(err)
             warnings.extend(warn)
+            system.text_areas.append(textarea)
         else:
             warnings.append('Unsupported construct in system: ' +
                     str(child.type))
+    if asn1_files:
+        # parse ASN.1 files before parsing the rest of the system
+        try:
+            set_global_DV(asn1_files)
+        except TypeError as err:
+            errors.append(str(err))
+    for each in signals:
+        sig, err, warn = signal(each)
+        errors.extend(err)
+        warnings.extend(warn)
+        system.signals.append(sig)
+    for each in procedures:
+        proc, err, warn = procedure(
+                each, parent=None, context=system)
+        errors.extend(err)
+        warnings.extend(warn)
+        system.procedures.append(proc)
+    for each in blocks:
+        block, err, warn = block_definition(each, parent=system)
+        errors.extend(err)
+        warnings.extend(warn)
     return system, errors, warnings
 
 
@@ -2476,6 +2538,8 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.TEXTAREA:
             # Text zone where variables and operators are declared
             textarea, err, warn = text_area(child, context=process)
+            if textarea.signals:
+                errors.append('Signals shall not be declared in a process')
             errors.extend(err)
             warnings.extend(warn)
             process.content.textAreas.append(textarea)
@@ -3826,18 +3890,13 @@ def pr_file(root):
 #           for each in os.listdir('.'):
 #               if searchobj.match(each):
 #                   print 'found', each
+    if ast.asn1_filenames:
         try:
-            DV = parse_asn1(tuple(ast.asn1_filenames),
-                            ast_version=ASN1.UniqueEnumeratedNames,
-                            flags=[ASN1.AstOnly])
-            ast.asn1Modules = DV.asn1Modules
-        except (ImportError, NameError) as err:
-            # Can happen if DataView.py is not there
-            LOG.info('USE Clause did not contain ASN.1 filename')
-            LOG.debug(str(err))
+            set_global_DV(ast.asn1_filenames)
         except TypeError as err:
-            LOG.debug(traceback.format_exc())
-            errors.append('ASN.1 compiler failed - {}'.format(str(err)))
+            errors.append(str(err))
+
+    ast.asn1Modules = DV.asn1Modules
 
     for child in systems:
         LOG.debug('found SYSTEM')

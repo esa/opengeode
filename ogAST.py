@@ -692,6 +692,12 @@ class TextArea(object):
         # fpar and timers are also listed, useful when using autocompletion
         self.fpar = []
         self.timers = []
+        # signals can be declared in a text area (structure: see System class)
+        self.signals = []
+        # USE construct can be declared in a text area (list of strings)
+        # asn1_files lists optional COMMENT strings of USE constructs
+        self.use_clauses = []
+        self.asn1_files = []
         # inner procedures - useful to get autocompletion params
         self.procedures = []
         # optional hyperlink
@@ -906,6 +912,7 @@ class System(object):
         # 'signals': ['sig1', .. ]}]
         self.channels = []
         self.blocks = []
+        self.text_areas = []
 
 
 class AST(object):
