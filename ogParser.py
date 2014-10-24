@@ -2185,7 +2185,6 @@ def syntype(root, ta_ast, context):
     warnings = []
     newtype = ""
     reftype = ""
-    global DV
 
     newtypename = root.getChild(0).getChild(0).text
     # reftypename = root.getChild(1).getChild(0).text
@@ -2208,7 +2207,6 @@ def newtype(root, ta_ast, context):
     ''' Parse a NEWTYPE definition and inject it in ASN1 AST'''
     errors = []
     warnings = []
-    global DV
 
     newtypename, errors, warnings = newtype_gettype(root, ta_ast, context)
     if (newtypename == ""):
@@ -2242,7 +2240,6 @@ def synonym(root, ta_ast, context):
     ''' Parse a SYNONYM definition and inject it in ASN1 exported variables'''
     errors = []
     warnings = []
-    global DV
 
     if not "SDL-Constants" in DV.asn1Modules:
         DV.asn1Modules.append("SDL-Constants")
@@ -2492,6 +2489,7 @@ def system_definition(root, parent):
         except TypeError as err:
             errors.append(str(err))
         system.ast.asn1Modules = DV.asn1Modules
+        system.ast.asn1_filenames = asn1_files
     for each in signals:
         sig, err, warn = signal(each)
         errors.extend(err)
@@ -3926,7 +3924,6 @@ def pr_file(root):
         ast.processes.extend(find_processes(system))
     for child in processes:
         # process definition at root level (must be referenced in a system)
-        LOG.debug('found PROCESS')
         process, err, warn = process_definition(child, parent=ast)
         ast.processes.append(process)
         process.dataview = types()
