@@ -679,8 +679,7 @@ class TextArea(object):
     ''' AST Entry for text areas (containing declarations/comments) '''
     def __init__(self):
         ''' Text area (raw content for rendering only) '''
-        self.inputString = '-- Declare your variables\n\n' \
-                           '-- Syntax: DCL <variable name> <type name>;\n\n'
+        self.inputString = '-- Text area for declarations and comments\n\n'
         self.line = None
         self.charPositionInLine = None
         # Set default coordinates and width/height

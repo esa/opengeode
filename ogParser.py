@@ -1690,7 +1690,7 @@ def primary(root, context):
             'kind': 'SequenceOfType',
             'Min': str(len(root.children)),
             'Max': str(len(root.children)),
-            'type': prim_elem.exprType  #UNKNOWN_TYPE
+            'type': prim_elem.exprType
         })
     elif root.type == lexer.BITSTR:
         prim = ogAST.PrimBitStringLiteral()
@@ -2428,6 +2428,9 @@ def block_definition(root, parent):
             block.processes.append(proc)
             errors.extend(err)
             warnings.extend(warn)
+            proc.dataview = types()
+            proc.asn1Modules = DV.asn1Modules
+            proc.dv = DV
         elif child.type == lexer.SIGNALROUTE:
             sigroute, _, _ = signalroute(child)
             block.signalroutes.append(sigroute)
@@ -2449,13 +2452,11 @@ def system_definition(root, parent):
     for child in root.getChildren():
         if child.type == lexer.ID:
             system.name = child.text
-            LOG.debug('System name: ' + system.name)
         elif child.type == lexer.SIGNAL:
             signals.append(child)
         elif child.type == lexer.PROCEDURE:
             procedures.append(child)
         elif child.type == lexer.CHANNEL:
-            LOG.debug('channel declaration')
             channel, _, _ = signalroute(child)
             system.channels.append(channel)
         elif child.type == lexer.BLOCK:
@@ -2484,6 +2485,7 @@ def system_definition(root, parent):
             set_global_DV(asn1_files)
         except TypeError as err:
             errors.append(str(err))
+        system.ast.asn1Modules = DV.asn1Modules
     for each in signals:
         sig, err, warn = signal(each)
         errors.extend(err)
@@ -3891,6 +3893,7 @@ def pr_file(root):
 #               if searchobj.match(each):
 #                   print 'found', each
     if ast.asn1_filenames:
+        # Parse ASN.1 files before the rest of the system
         try:
             set_global_DV(ast.asn1_filenames)
         except TypeError as err:
