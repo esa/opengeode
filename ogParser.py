@@ -2313,9 +2313,9 @@ def text_area_content(root, ta_ast, context):
                 elif each.type == lexer.COMMENT:
                     # Comment: better way to specify ASN.1 filename
                     use_cmt, _, _ = end(each)
+                    ta_ast.asn1_files.append(use_cmt.inputString)
                 else:
                     ta_ast.use_clauses.append(each.text)
-                    ta_ast.asn1_files.append(use_cmt)
         else:
             print 'HIM'
             warnings.append(
