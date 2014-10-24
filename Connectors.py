@@ -265,11 +265,12 @@ class SignalList(EditableText):
 class Signalroute(Connection):
     ''' Subclass of Connection used to draw channels between processes '''
     in_sig = out_sig = None
+    completion_list = set()
+
     def __init__(self, process):
         ''' Set generic parameters from Connection class '''
         super(Signalroute, self).__init__(process, process)
         self.parser = ogParser
-        self.completion_list = []
         self.blackbold = ()
         self.redbold = ()
         self.label_in = SignalList(parent=self)

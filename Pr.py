@@ -395,12 +395,14 @@ def _channel(symbol, recursive=True, **kwargs):
     ''' Signalroute at block level '''
     result = Indent()
     result.append('SIGNALROUTE c')
+    Indent.indent += 1
     if symbol.out_sig:
         result.append('FROM {} TO ENV WITH {};'.format(unicode(symbol.process),
                                                        symbol.out_sig))
     if symbol.in_sig:
         result.append('FROM ENV TO {} WITH {};'.format(unicode(symbol.process),
                                                        symbol.in_sig))
+    Indent.indent -= 1
     return result
 
 

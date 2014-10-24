@@ -816,13 +816,15 @@ class TextSymbol(HorizontalSymbol):
             CONTEXT.variables.update(ast.variables)
             CONTEXT.timers = list(set(CONTEXT.timers + ast.timers))
         except AttributeError:
-            # context ma not have variables/timers (eg if context = block)
+            # context may not have variables/timers (eg if context = block)
             pass
         CONTEXT.procedures = list(set(CONTEXT.procedures + ast.procedures))
         try:
             CONTEXT.fpar.extend(ast.fpar)
         except AttributeError:
             pass
+        # Update completion list of Signalroutes
+        Signalroute.completion_list |= set(sig['name'] for sig in ast.signals)
 
     @property
     def completion_list(self):
@@ -1079,7 +1081,6 @@ class Procedure(Process):
 
     def update_completion_list(self, **kwargs):
         ''' When text was entered, update completion list of ProcedureCall '''
-        #ProcedureCall.completion_list |= {unicode(self.text)}
         for each in CONTEXT.procedures:
             if unicode(self.text).lower() == each.inputString:
                 break

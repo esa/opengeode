@@ -1216,6 +1216,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         '''
         # First propagate the click (then scene will receive it first):
         super(SDL_View, self).mousePressEvent(evt)
+        self.toolbar.update_menu(self.scene())
         self.mouse_pos = evt.pos()
         if evt.button() == Qt.MidButton:
             self.mode = 'moveScreen'
