@@ -43,29 +43,43 @@ def parse_scene(scene, full_model=False):
     if full_model:
         # Generate a complete SDL system - to have everything in a single file
         # (1) get system name
-        # (2) get all signal names from declaration in text boxes
-        # (3) get signal directions from the connection of the process to env
-        # (4) generate all the text
+        # (2) get signal directions from the connection of the process to env
+        # (3) generate all the text
         processes = list(scene.processes)
         system_name = unicode(processes[0]) if processes else u'OpenGEODE'
-        signals, routes = [], []
-        pr_txt = []
+        signals = []
+        to_env = []
+        from_env = []
+        pr_txt, channels, routes = [], [], []
         for each in scene.texts:
-            # Parse text areas to retrieve signal names
+            # Parse text areas to retrieve signal names USELESS
            pr = generate(each)
            txt = '\n'.join(pr)
            pr_txt.append(txt)
-           ast, _, _, _, _ = each.parser.parseSingleElement('text_area', txt)
-           signals.extend(['SIGNAL {}{};'
-                          .format(sig['name'], ('(' + sig['type'] + ')')
-                             if sig['type'] else '') for sig in ast.signals])
-        #routes = scene.CONTEXT.signalroutes
+        if processes:
+            to_env = processes[0].connection.out_sig
+            from_env = processes[0].connection.in_sig
+            if to_env or from_env:
+                channels = ['CHANNEL c']
+                routes = ['SIGNALROUTE r']
+                if from_env:
+                    from_txt = 'FROM ENV TO {} WITH {};'\
+                               .format(system_name, from_env)
+                    channels.append(from_txt)
+                    routes.append(from_txt)
+                if to_env:
+                    to_txt = 'FROM {} TO ENV WITH {};'\
+                              .format(system_name, to_env)
+                    channels.append(to_txt)
+                    routes.append(to_txt)
+            channels.append('ENDCHANNEL;')
+            routes.append('CONNECT c AND r;')
+
         pr_data.append('SYSTEM {};'.format(system_name))
         pr_data.extend(pr_txt)
-        pr_data.extend(signals)
-        #pr_data.extend(routes)
+        pr_data.extend(channels)
         pr_data.append('BLOCK {};'.format(system_name))
-        #pr_data.extend(route)
+        pr_data.extend(routes)
         for each in processes:
             pr_data.extend(generate(each))
         pr_data.append('ENDBLOCK;')

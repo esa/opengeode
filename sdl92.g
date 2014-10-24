@@ -275,7 +275,7 @@ content
                  | synonym_definition)*
         ->       ^(TEXTAREA_CONTENT fpar* procedure* variable_definition*
                    syntype_definition* newtype_definition* timer_declaration*
-                   synonym_definition*);
+                   signal_declaration* use_clause* synonym_definition*);
 
 
 timer_declaration

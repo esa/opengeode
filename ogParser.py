@@ -356,10 +356,13 @@ def get_interfaces(ast, process_name):
                 continue
             for sig_id in route['signals']:
                 # Copy the signal to the result dict
-                found, = [dict(sig) for sig in all_signals
-                          if sig['name'] == sig_id]
-                found['direction'] = direction
-                async_signals.append(found)
+                try:
+                    found, = [dict(sig) for sig in all_signals
+                              if sig['name'] == sig_id]
+                    found['direction'] = direction
+                    async_signals.append(found)
+                except ValueError:
+                    LOG.error('Signal {} is not declared'.format(sig_id))
     return async_signals, system.procedures
 
 
@@ -2314,6 +2317,7 @@ def text_area_content(root, ta_ast, context):
                     ta_ast.use_clauses.append(each.text)
                     ta_ast.asn1_files.append(use_cmt)
         else:
+            print 'HIM'
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
                     str(child.type))
@@ -3902,7 +3906,6 @@ def pr_file(root):
     ast.asn1Modules = DV.asn1Modules
 
     for child in systems:
-        LOG.debug('found SYSTEM')
         system, err, warn = system_definition(child, parent=ast)
         errors.extend(err)
         warnings.extend(warn)
