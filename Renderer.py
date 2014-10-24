@@ -64,9 +64,11 @@ def render(ast, scene, parent, states, terminators=None):
 @render.register(ogAST.Block)
 def _block(ast, scene):
     ''' Render a block, containing a set of process symbols '''
-    # TODO = Add text areas with signal lists, external procedures defs...
     top_level = []
     for each in ast.processes:
+        top_level.append(render(each, scene))
+    for each in ast.parent.text_areas:
+        # Sytem level may contain text areas with signal definitions, etc.
         top_level.append(render(each, scene))
     return top_level
 

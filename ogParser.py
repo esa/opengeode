@@ -2307,7 +2307,6 @@ def text_area_content(root, ta_ast, context):
         elif child.type == lexer.USE:
             # USE clauses can contain a CIF comment with the ASN.1 filename
             for each in child.getChildren():
-                use_cmt = ''
                 if each.type == lexer.ASN1:
                     errors.append('There shall be no CIF in text areas')
                 elif each.type == lexer.COMMENT:
@@ -2317,7 +2316,6 @@ def text_area_content(root, ta_ast, context):
                 else:
                     ta_ast.use_clauses.append(each.text)
         else:
-            print 'HIM'
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
                     str(child.type))
