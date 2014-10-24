@@ -39,7 +39,8 @@ class Indent(deque):
 def parse_scene(scene, full_model=False):
     ''' Return the PR string for a complete scene
         Optionally, also generate the SYSTEM structure, with channels, etc. '''
-    pr_data = deque()
+    #pr_data = deque()
+    pr_data = Indent()
     if full_model:
         # Generate a complete SDL system - to have everything in a single file
         # (1) get system name
@@ -47,42 +48,50 @@ def parse_scene(scene, full_model=False):
         # (3) generate all the text
         processes = list(scene.processes)
         system_name = unicode(processes[0]) if processes else u'OpenGEODE'
-        signals = []
-        to_env = []
-        from_env = []
-        pr_txt, channels, routes = [], [], []
+        pr_data.append('SYSTEM {};'.format(system_name))
+        Indent.indent += 1
+        channels, routes = Indent(), Indent()
         for each in scene.texts:
             # Parse text areas to retrieve signal names USELESS
            pr = generate(each)
-           txt = '\n'.join(pr)
-           pr_txt.append(txt)
+           pr_data.extend(pr)
         if processes:
             to_env = processes[0].connection.out_sig
             from_env = processes[0].connection.in_sig
             if to_env or from_env:
-                channels = ['CHANNEL c']
-                routes = ['SIGNALROUTE r']
+                channels.append('CHANNEL c')
+                Indent.indent += 1
+
+                routes.append('SIGNALROUTE r')
                 if from_env:
                     from_txt = 'FROM ENV TO {} WITH {};'\
                                .format(system_name, from_env)
                     channels.append(from_txt)
+                    Indent.indent += 1
                     routes.append(from_txt)
+                    Indent.indent -= 1
                 if to_env:
                     to_txt = 'FROM {} TO ENV WITH {};'\
                               .format(system_name, to_env)
                     channels.append(to_txt)
+                    Indent.indent += 1
                     routes.append(to_txt)
+                    Indent.indent -= 1
+            Indent.indent -= 1
             channels.append('ENDCHANNEL;')
+            Indent.indent += 1
             routes.append('CONNECT c AND r;')
+            Indent.indent -= 1
 
-        pr_data.append('SYSTEM {};'.format(system_name))
-        pr_data.extend(pr_txt)
         pr_data.extend(channels)
         pr_data.append('BLOCK {};'.format(system_name))
+        Indent.indent += 1
         pr_data.extend(routes)
         for each in processes:
             pr_data.extend(generate(each))
+        Indent.indent -= 1
         pr_data.append('ENDBLOCK;')
+        Indent.indent -= 1
         pr_data.append('ENDSYSTEM;')
         #print '\n'.join(pr_data)
 
