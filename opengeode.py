@@ -153,7 +153,8 @@ ACTIONS = {
     'clipboard': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
                   Output, ProcedureCall, TextSymbol, Comment, Label,
                   Join, Procedure, Process, StateStart, ProcedureStop],
-    'lander': []
+    'lander': [],
+    'asn1': []
 }
 
 
@@ -1216,7 +1217,11 @@ class SDL_View(QtGui.QGraphicsView, object):
         '''
         # First propagate the click (then scene will receive it first):
         super(SDL_View, self).mousePressEvent(evt)
-        self.toolbar.update_menu(self.scene())
+        try:
+            self.toolbar.update_menu(self.scene())
+        except AttributeError:
+            # If scene has no menu connected (eg. ASN.1 dock..)
+            pass
         self.mouse_pos = evt.pos()
         if evt.button() == Qt.MidButton:
             self.mode = 'moveScreen'
@@ -1556,13 +1561,18 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
+
+        if scene.context not in ('process', 'state', 'procedure', 'block'):
+            # check can only be done on SDL diagrams
+            return
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
         pr_data = unicode('\n'.join(pr_raw))
         if pr_data:
-            _, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
-                                                    string=pr_data)
+            ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
+                                                      string=pr_data)
             self.log_errors(errors, warnings)
+            self.update_asn1_dock.emit(ast)
 
     def show_item(self, item):
         '''
@@ -1738,7 +1748,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # get the messages list window (to display errors and warnings)
         # it is a QtGui.QListWidget
         msg_dock = self.findChild(QtGui.QDockWidget, 'msgDock')
-        msg_dock.setWindowTitle('Use F7 to check the model')
+        msg_dock.setWindowTitle('Use F7 to check the model'
+                                ' or update the Data view')
         msg_dock.setStyleSheet('QDockWidget::title {background: lightgrey;}')
         messages = self.findChild(QtGui.QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
@@ -1747,7 +1758,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         messages.itemClicked.connect(self.view.show_item)
 
         statechart_dock = self.findChild(QtGui.QDockWidget, 'statechart_dock')
-        #statechart_dock.setWindowTitle('Statechart view - F4 to update')
         if graphviz:
             self.statechart_view = self.findChild(SDL_View, 'statechart_view')
             self.statechart_scene = SDL_Scene(context='statechart')
@@ -1758,7 +1768,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # Set up the dock area to display the ASN.1 Data model
         #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
         self.datatypes_view = self.findChild(SDL_View, 'datatypes_view')
-        self.datatypes_scene = SDL_Scene(context='process')
+        self.datatypes_scene = SDL_Scene(context='asn1')
         self.datatypes_view.setScene(self.datatypes_scene)
         self.asn1_area = sdlSymbols.ASN1Viewer()
         self.asn1_area.text.setPlainText('-- ASN.1 Data Types')
