@@ -84,7 +84,7 @@ def parse_scene(scene, full_model=False):
             pr_data.extend(generate(each))
         pr_data.append('ENDBLOCK;')
         pr_data.append('ENDSYSTEM;')
-        print '\n'.join(pr_data)
+        #print '\n'.join(pr_data)
 
     else:
         for each in scene.processes:

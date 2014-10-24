@@ -1383,7 +1383,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             each.translate_to_origin()
         delta_x, delta_y = scene.translate_to_origin()
 
-        pr_raw = Pr.parse_scene(scene)
+        pr_raw = Pr.parse_scene(scene, full_model=True
+                                       if not self.readonly_pr else False)
 
         # Move items back to original place to avoid scrollbar jumps
         for item in scene.floating_symb:
@@ -1616,12 +1617,13 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def generate_ada(self):
         ''' Generate Ada code '''
-        # If the current scene is a nested one, save the top parent
+        # If the current scene is a nested one, move to the top parent
         if self.parent_scene:
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
-        pr_raw = Pr.parse_scene(scene)
+        pr_raw = Pr.parse_scene(scene, full_model=True
+                                       if not self.readonly_pr else False)
         pr_data = unicode('\n'.join(pr_raw))
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
