@@ -812,8 +812,12 @@ class TextSymbol(HorizontalSymbol):
         ''' When text was entered, update list of variables/FPAR/Timers '''
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
-        CONTEXT.variables.update(ast.variables)
-        CONTEXT.timers = list(set(CONTEXT.timers + ast.timers))
+        try:
+            CONTEXT.variables.update(ast.variables)
+            CONTEXT.timers = list(set(CONTEXT.timers + ast.timers))
+        except AttributeError:
+            # context ma not have variables/timers (eg if context = block)
+            pass
         CONTEXT.procedures = list(set(CONTEXT.procedures + ast.procedures))
         try:
             CONTEXT.fpar.extend(ast.fpar)
@@ -823,13 +827,10 @@ class TextSymbol(HorizontalSymbol):
     @property
     def completion_list(self):
         ''' Set auto-completion list '''
-        res = set(CONTEXT.global_timers + CONTEXT.timers)
         try:
-            res = res.union(AST.dataview.keys())
+            return set(AST.dataview.keys())
         except AttributeError:
-            # No Dataview
-            pass
-        return res
+            return [] # No Dataview
 
     def set_shape(self, width, height):
         ''' Define the polygon of the text symbol '''

@@ -887,6 +887,8 @@ class Block(object):
         self.blocks = []
         # list of class Process
         self.processes = []
+        # list of ogAST.Procedure
+        self.procedures = []
 
 
 class System(object):

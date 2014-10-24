@@ -36,29 +36,64 @@ class Indent(deque):
         super(Indent, self).append('    ' * Indent.indent + string)
 
 
-def parse_scene(scene):
-    ''' Return the PR string for a complete scene) '''
+def parse_scene(scene, full_model=False):
+    ''' Return the PR string for a complete scene
+        Optionally, also generate the SYSTEM structure, with channels, etc. '''
     pr_data = deque()
-    for each in scene.processes:
-        pr_data.extend(generate(each))
+    if full_model:
+        # Generate a complete SDL system - to have everything in a single file
+        # (1) get system name
+        # (2) get all signal names from declaration in text boxes
+        # (3) get signal directions from the connection of the process to env
+        # (4) generate all the text
+        processes = list(scene.processes)
+        system_name = unicode(processes[0]) if processes else u'OpenGEODE'
+        signals, routes = [], []
+        pr_txt = []
+        for each in scene.texts:
+            # Parse text areas to retrieve signal names
+           pr = generate(each)
+           txt = '\n'.join(pr)
+           pr_txt.append(txt)
+           ast, _, _, _, _ = each.parser.parseSingleElement('text_area', txt)
+           signals.extend(['SIGNAL {}{};'
+                          .format(sig['name'], ('(' + sig['type'] + ')')
+                             if sig['type'] else '') for sig in ast.signals])
+        #routes = scene.CONTEXT.signalroutes
+        pr_data.append('SYSTEM {};'.format(system_name))
+        pr_data.extend(pr_txt)
+        pr_data.extend(signals)
+        #pr_data.extend(routes)
+        pr_data.append('BLOCK {};'.format(system_name))
+        #pr_data.extend(route)
+        for each in processes:
+            pr_data.extend(generate(each))
+        pr_data.append('ENDBLOCK;')
+        pr_data.append('ENDSYSTEM;')
+        print '\n'.join(pr_data)
 
-    for each in chain(scene.texts, scene.procs, scene.start):
-        pr_data.extend(generate(each))
-    for each in scene.floating_labels:
-        pr_data.extend(generate(each))
-    composite = set(scene.composite_states.keys())
-    for each in scene.states:
-        if each.is_composite():
-            statename = unicode(each).split()[0].lower()  # Ignore via clause
-            try:
-                composite.remove(statename)
-                sub_state = generate(each, composite=True, nextstate=False)
-                if sub_state:
-                    sub_state.reverse()
-                    pr_data.extendleft(sub_state)
-            except KeyError:
-                pass
-        pr_data.extend(generate(each, nextstate=False))
+    else:
+        for each in scene.processes:
+            pr_data.extend(generate(each))
+
+        for each in chain(scene.texts, scene.procs, scene.start):
+            pr_data.extend(generate(each))
+        for each in scene.floating_labels:
+            pr_data.extend(generate(each))
+        composite = set(scene.composite_states.keys())
+        for each in scene.states:
+            if each.is_composite():
+                # Ignore via clause:
+                statename = unicode(each).split()[0].lower()
+                try:
+                    composite.remove(statename)
+                    sub_state = generate(each, composite=True, nextstate=False)
+                    if sub_state:
+                        sub_state.reverse()
+                        pr_data.extendleft(sub_state)
+                except KeyError:
+                    pass
+            pr_data.extend(generate(each, nextstate=False))
     return list(pr_data)
 
 

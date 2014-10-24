@@ -139,7 +139,7 @@ G_SYMBOLS = set()
 
 # Lookup table used to configure the context-dependent toolbars
 ACTIONS = {
-    'block': [Process, Comment],
+    'block': [Process, Comment, TextSymbol],
     'process': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
                 Output, ProcedureCall, TextSymbol, Comment, Label,
                 Join, Procedure],
@@ -1553,7 +1553,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
-        pr_raw = Pr.parse_scene(scene)
+        pr_raw = Pr.parse_scene(scene, full_model=True
+                                       if not self.readonly_pr else False)
         pr_data = unicode('\n'.join(pr_raw))
         if pr_data:
             _, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
