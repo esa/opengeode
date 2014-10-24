@@ -346,6 +346,7 @@ def get_interfaces(ast, process_name):
             raise TypeError('Process ' + process_name +
                         ' is defined but not declared in a system')
     # Find in and out signals names using the signalroutes
+    undeclared_signals = []
     for each in process_parent.signalroutes:
         for route in each['routes']:
             if route['source'] == process_name:
@@ -362,7 +363,10 @@ def get_interfaces(ast, process_name):
                     found['direction'] = direction
                     async_signals.append(found)
                 except ValueError:
-                    LOG.error('Signal {} is not declared'.format(sig_id))
+                    undeclared_signals.append(sig_id)
+    if undeclared_signals:
+        raise TypeError('Missing declaration for signal(s) {}'
+                        .format(', '.join(undeclared_signals)))
     return async_signals, system.procedures
 
 

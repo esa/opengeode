@@ -1312,8 +1312,8 @@ class SDL_View(QtGui.QGraphicsView, object):
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))
-            except AttributeError:
-                LOG.debug('Ignoring double click')
+            except AttributeError as err:
+                LOG.debug('Ignoring double click:' + str(err))
 
     # pylint: disable=C0103
     def mouseMoveEvent(self, evt):
@@ -1423,6 +1423,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             ast, warnings, errors = ogParser.parse_pr(files=files)
         except IOError:
             LOG.error('Aborting: could not open or parse input file')
+            sdlSymbols.CONTEXT = ogAST.Block()
             return
         try:
             process, = ast.processes
