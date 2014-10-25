@@ -2259,7 +2259,7 @@ def text_area_content(root, ta_ast, context):
         procedures  '''
     errors = []
     warnings = []
-    signals = []
+    signals, procedures = [], []
     for child in root.getChildren():
         if child.type == lexer.DCL:
             err, warn = dcl(child, ta_ast, context)
@@ -2278,15 +2278,7 @@ def text_area_content(root, ta_ast, context):
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.PROCEDURE:
-            proc, err, warn = procedure(child, context=context)
-            errors.extend(err)
-            warnings.extend(warn)
-            # Add procedure to the container (process or procedure)
-            context.content.inner_procedures.append(proc)
-            # Add to context to make it visible at scope level
-            context.procedures.append(proc)
-            # And add it to the TextArea AST for the text autocompletion
-            ta_ast.procedures.append(proc)
+            procedures.append(child)
         elif child.type == lexer.FPAR:
             params, err, warn = fpar(child)
             errors.extend(err)
@@ -2329,6 +2321,21 @@ def text_area_content(root, ta_ast, context):
             set_global_DV(ta_ast.asn1_files)
         except TypeError as err:
             errors.append(str(err))
+    for each in procedures:
+        # Procedure textual declarations need ASN.1 types
+        proc, err, warn = procedure(each, context=context)
+        errors.extend(err)
+        warnings.extend(warn)
+        try:
+            # Add procedure to the container (process or procedure)
+            context.content.inner_procedures.append(proc)
+        except AttributeError:
+            # May not be any content in current context (eg System)
+            pass
+        # Add to context to make it visible at scope level
+        context.procedures.append(proc)
+        # And add it to the TextArea AST for the text autocompletion
+        ta_ast.procedures.append(proc)
     for each in signals:
         # Parse signals now - ASN.1 types should have been set
         sig, err, warn = signal(each)

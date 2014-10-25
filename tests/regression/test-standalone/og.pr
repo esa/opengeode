@@ -1,5 +1,5 @@
 SYSTEM og;
-    /* CIF TEXT (159, 221), (287, 158) */
+    /* CIF TEXT (159, 221), (287, 188) */
     -- Text area for declarations and comments
 
 use dv comment 'dataview-uniq.asn';
@@ -8,6 +8,10 @@ use dv comment 'dataview-uniq.asn';
 
 signal dd(Type2);
 signal we;
+
+procedure hehe;
+fpar in/out a_param Type2;
+external;
     /* CIF ENDTEXT */
     CHANNEL c
         FROM ENV TO og WITH dd;
@@ -35,7 +39,9 @@ dcl hihi type2;
             STATE wait;
                 /* CIF INPUT (289, 286), (84, 35) */
                 INPUT dd(hihi);
-                    /* CIF NEXTSTATE (296, 336), (70, 35) */
+                    /* CIF PROCEDURECALL (281, 336), (100, 35) */
+                    CALL hehe(hihi);
+                    /* CIF NEXTSTATE (296, 386), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;
