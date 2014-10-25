@@ -1769,14 +1769,16 @@ def variables(root, ta_ast, context):
             warnings.append('Unsupported variables construct type: ' +
                     str(child.type))
     for variable in var:
+        if not hasattr(context, 'variables'):
+            errors.append('Variables shall not be declared here')
         # Add to the context and text area AST entries
-        if variable.lower() in context.variables \
-                or variable.lower() in ta_ast.variables:
+        elif(variable.lower() in context.variables
+                  or variable.lower() in ta_ast.variables):
             errors.append('Variable "{}" is declared more than once'
                           .format(variable))
         else:
             context.variables[variable.lower()] = (asn1_sort, def_value)
-            ta_ast.variables[variable.lower()] = (asn1_sort, def_value)
+        ta_ast.variables[variable.lower()] = (asn1_sort, def_value)
     if not DV:
         errors.append('Cannot do semantic checks on variable declarations')
     return errors, warnings
@@ -2257,6 +2259,7 @@ def text_area_content(root, ta_ast, context):
         procedures  '''
     errors = []
     warnings = []
+    signals = []
     for child in root.getChildren():
         if child.type == lexer.DCL:
             err, warn = dcl(child, ta_ast, context)
@@ -2301,10 +2304,10 @@ def text_area_content(root, ta_ast, context):
             context.timers.extend(timers)
             ta_ast.timers = timers
         elif child.type == lexer.SIGNAL:
-            sig, err, warn = signal(child)
-            errors.extend(err)
-            warnings.extend(warn)
-            ta_ast.signals.append(sig)
+            # Signals can be declared at system level, but that must be parsed
+            # AFTER possible "USE Datamodel COMMENT 'asn1_filename';"
+            # in order to have the types properly defined
+            signals.append(child)
         elif child.type == lexer.USE:
             # USE clauses can contain a CIF comment with the ASN.1 filename
             for each in child.getChildren():
@@ -2320,6 +2323,18 @@ def text_area_content(root, ta_ast, context):
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
                     str(child.type))
+    if ta_ast.asn1_files:
+        # Parse ASN.1 files that are referenced in USE clauses
+        try:
+            set_global_DV(ta_ast.asn1_files)
+        except TypeError as err:
+            errors.append(str(err))
+    for each in signals:
+        # Parse signals now - ASN.1 types should have been set
+        sig, err, warn = signal(each)
+        errors.extend(err)
+        warnings.extend(warn)
+        ta_ast.signals.append(sig)
     return errors, warnings
 
 
@@ -2468,26 +2483,27 @@ def system_definition(root, parent):
             # Text zone where signals can be declared
             textarea, err, warn = text_area(child, context=system)
             system.signals.extend(textarea.signals)
-            if textarea.variables:
-                errors.append('Variables shall be declared only in a process')
             if textarea.fpar:
                 errors.append('FPAR shall be declared only in procedures')
             if textarea.timers:
                 errors.append('Timers shall be declared only in a process')
             # Update list of ASN.1 files - if any
-            asn1_files.extend(textarea.asn1_files)
+            if not asn1_files:
+                asn1_files = textarea.asn1_files
+            else:
+                errors.append('All ASN.1 Files must be set in the same text area')
             errors.extend(err)
             warnings.extend(warn)
             system.text_areas.append(textarea)
         else:
             warnings.append('Unsupported construct in system: ' +
                     str(child.type))
-    if asn1_files:
-        # parse ASN.1 files before parsing the rest of the system
-        try:
-            set_global_DV(asn1_files)
-        except TypeError as err:
-            errors.append(str(err))
+#   if asn1_files:
+#       # parse ASN.1 files before parsing the rest of the system
+#       try:
+#           set_global_DV(asn1_files)
+#       except TypeError as err:
+#           errors.append(str(err))
         system.ast.asn1Modules = DV.asn1Modules
         system.ast.asn1_filenames = asn1_files
     for each in signals:

@@ -213,7 +213,7 @@ package {process_name} is'''.format(process_name=process_name,
         if signal.get('name', u'START') == u'START':
             continue
         pi_header = 'procedure {sig_name}'.format(sig_name=signal['name'])
-        param_name = signal.get('param_name') or 'MISSING_PARAM_NAME'
+        param_name = signal.get('param_name') or '{}_param'.format(signal['name'])
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = signal['type'].ReferencedTypeName.replace('-', '_')

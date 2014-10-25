@@ -1,0 +1,43 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (287, 158) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview-uniq.asn';
+
+--use dv2 comment 'dataview2.asn';
+
+signal dd(Type2);
+signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (57, 58), (287, 140) */
+            -- Text area for declarations and comments
+
+dcl haha SeqOf;
+
+dcl hihi type2;
+            /* CIF ENDTEXT */
+            /* CIF START (155, 216), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (155, 266), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (296, 231), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (289, 286), (84, 35) */
+                INPUT dd(hihi);
+                    /* CIF NEXTSTATE (296, 336), (70, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
