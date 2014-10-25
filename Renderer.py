@@ -70,6 +70,31 @@ def _block(ast, scene):
     for each in ast.parent.text_areas:
         # Sytem level may contain text areas with signal definitions, etc.
         top_level.append(render(each, scene))
+    if not ast.parent.text_areas:
+        # If signals are declared outside from a textbox, create one
+        signals = ["signal {si[name]}{param};\n".format(si=sig,
+             param=('(' + sig['type'].ReferencedTypeName.replace('-', '_') + ')')
+                   if 'type' in sig else '')
+             for sig in ast.parent.signals]
+        procedures = ["procedure {proc.inputString};\n{fpar}\nexternal;\n"
+                      .format(proc=proc,
+                              fpar="\n".join
+                              (["    fpar {direc} {fpar[name]} {asn1};"
+                                .format(fpar=fpar,
+                                        direc="in"
+                                           if fpar['direction']=='in'
+                                           else 'in/out',
+                                        asn1=fpar['type']
+                                         .ReferencedTypeName.replace('-', '_'))
+                                for fpar in proc.fpar]))
+                        for proc in ast.parent.procedures]
+        if signals or procedures:
+            text_area = ogAST.TextArea()
+            text_area.inputString = "{}\n\n{}".format('\n'.join(signals),
+                                                      '\n'.join(procedures))
+            text_area.pos_x = scene.itemsBoundingRect().width()
+            text_area.pos_y = scene.itemsBoundingRect().y() + 10
+            top_level.append(render(text_area, scene))
     return top_level
 
 

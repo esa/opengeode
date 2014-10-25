@@ -904,7 +904,7 @@ class System(object):
         self.filename = None
         # Reference to top-level AST
         self.ast = None
-        # list of SIGNAL declarations: [{'name': str, 'type': str}]
+        # list of SIGNAL declarations: [{'name': str, 'type': asn1type}]
         # (Supporting only one parameter)
         self.signals = []
         # list of ogAST.Procedure

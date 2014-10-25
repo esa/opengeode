@@ -93,11 +93,11 @@ def parse_scene(scene, full_model=False):
         pr_data.append('ENDBLOCK;')
         Indent.indent -= 1
         pr_data.append('ENDSYSTEM;')
-        #print '\n'.join(pr_data)
 
     else:
         for each in scene.processes:
-            pr_data.extend(generate(each))
+            #pr_data.extend(generate(each))
+            return list(generate(each))
 
         for each in chain(scene.texts, scene.procs, scene.start):
             pr_data.extend(generate(each))

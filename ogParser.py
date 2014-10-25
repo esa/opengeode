@@ -2498,7 +2498,7 @@ def system_definition(root, parent):
             if not asn1_files:
                 asn1_files = textarea.asn1_files
             else:
-                errors.append('All ASN.1 Files must be set in the same text area')
+                errors.append('ASN.1 Files must be set in a single text area')
             errors.extend(err)
             warnings.extend(warn)
             system.text_areas.append(textarea)
@@ -2511,8 +2511,9 @@ def system_definition(root, parent):
 #           set_global_DV(asn1_files)
 #       except TypeError as err:
 #           errors.append(str(err))
-        system.ast.asn1Modules = DV.asn1Modules
-        system.ast.asn1_filenames = asn1_files
+        if asn1_files:
+            system.ast.asn1Modules = DV.asn1Modules
+            system.ast.asn1_filenames = asn1_files
     for each in signals:
         sig, err, warn = signal(each)
         errors.extend(err)
