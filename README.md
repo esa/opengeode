@@ -39,16 +39,19 @@ Features
 Installation
 ============
 
-Pre-requisites
---------------
+On Windows, download the binary from [here](http://download.tuxfamily.org/taste/opengeode_windows.zip)
+
+Uzip it and run opengeode.exe. It contains everything without any other external dependencies.
+
+Linux Pre-requisites
+--------------------
 
 There are several dependencies for OpenGEODE:
-Apart from pygraphviz, all of them exist for Linux, Windows, FreeBSD, and most likely Mac OSX
 
 - Python 2.7 with pip
 - Pyside (the Qt bindings for Python)
 - Python ANTLR Runtime
-- PyGraphviz (Linux only - not available on Windows)
+- PyGraphviz
 - enum34, singledispatch
 - ASN1SCC
 - (optional) GNAT to build the generated Ada code
@@ -59,8 +62,10 @@ Apart from pygraphviz, all of them exist for Linux, Windows, FreeBSD, and most l
 On Debian, Ubuntu, and probably other distributions:
 
 ```bash
-$ sudo apt-get install python-pyside pyside-tools graphviz pip gnat mono-runtime libmono-system-runtime4.0-cil libmono-i18n-west2.0-cil libmono-posix2.0-cil libmono-security2.0-cil
-  libmono-system-runtime-serialization4.0-cil
+$ sudo apt-get install python-pyside pyside-tools graphviz python-pip gnat libmono-system-runtime4.0-cil \
+               libmono-corlib4.0-cil libmono-system-runtime-serialization-formatters-soap4.0-cil libmono-system-web4.0-cil \
+               libmono-system-xml4.0-cil libmono-system4.0-cil mono-runtime libmono-system-numerics4.0-cil \
+               libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
 $ sudo pip install --upgrade graphviz enum34 singledispatch
 $ sudo pip install antlr_python_runtime --allow-external antlr_python_runtime --allow-unverified antlr_python_runtime
 ```
@@ -69,9 +74,9 @@ To install the ASN.1 compiler:
 
 ```bash
 $ cd /opt
-$ sudo wget http://www.semantix.gr/asn1scc/asn1Comp.tar.gz
+$ sudo wget http://download.tuxfamily.org/taste/ASN1SCC/ASN1SCC-latest.tgz
 $ sudo tar zxvf asn1Comp.tar.gz
-$ echo 'export PATH=$PATH:/opt/asn1Comp/bin' >> ~/.bashrc
+$ echo 'export PATH=$PATH:/opt/<path to latest ASN1SCC>/bin' >> ~/.bashrc
 ```
 
 Check that it works:
@@ -80,7 +85,7 @@ Check that it works:
 $ asn1.exe
 ```
 
-To install llvmpy and LLVM follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.7/doc/getting_started.html#installation)
+Optionally, to install llvmpy and LLVM follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.7/doc/getting_started.html#installation)
 
 OpenGEODE installation
 ----------------------
@@ -141,6 +146,13 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 
 Changelog
 =========
+
+1.0RC (10/2014) 
+     - Release candidate Version 1
+     - Allow standalone systems (made of one process)
+     - Major refactoring of parser and Ada backend
+     - Many bugfixes and improvements
+     - First version of LLVM backend
 
 0.994 (07/2014)
      - Maintenance release, minor fixes

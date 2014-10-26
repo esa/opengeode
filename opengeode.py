@@ -100,7 +100,7 @@ except ImportError:
     print 'LLVM is not available'
 
 __all__ = ['opengeode']
-__version__ = '0.994'
+__version__ = '1.0RC'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
