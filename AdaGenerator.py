@@ -1430,6 +1430,10 @@ def _choiceitem(choice):
 def _decision(dec):
     ''' generate the code for a decision '''
     code, local_decl = [], []
+    if dec.kind == 'any':
+        LOG.warning('Ada backend does not support the "ANY" statement')
+        code.append('-- "DECISION ANY" statement was ignored')
+        return code, local_decl
     question_type = dec.question.exprType
     # XXX check if we should get the type like this
     actual_type = getattr(

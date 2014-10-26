@@ -60,7 +60,14 @@ endfor;
         TASK seq := {1} // {2} // {3};
         /* CIF TASK (392, 961), (172, 35) */
         TASK seq := seq // {2} // {1};
-        /* CIF NEXTSTATE (419, 1011), (118, 50) */
+        /* CIF DECISION (443, 1011), (70, 50) */
+        DECISION any;
+                /* CIF ANSWER (398, 1081), (70, 23) */
+                ('a'):
+                /* CIF ANSWER (488, 1081), (70, 23) */
+                ('b'):
+        ENDDECISION;
+        /* CIF NEXTSTATE (419, 1119), (118, 50) */
         NEXTSTATE Wait_for_GUI;
     /* CIF STATE (423, 163), (118, 50) */
     STATE Wait_for_GUI;
