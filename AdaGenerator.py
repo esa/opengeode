@@ -1276,8 +1276,7 @@ def _boolean(primary):
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''
-    ada_string = u'asn1Scc{typeRef}_Init'.format(
-            typeRef=primary.exprType.ReferencedTypeName.replace('-', '_'))
+    ada_string = u'{}_Init'.format(type_name(primary.exprType))
     return [], unicode(ada_string), []
 
 
@@ -1310,16 +1309,11 @@ def _mantissa_base_exp(primary):
 @expression.register(ogAST.PrimConditional)
 def _conditional(cond):
     ''' Return string and statements for conditional expressions '''
-    resType = cond.exprType
     stmts = []
 
-    if resType.kind in ('IntegerType', 'Integer32Type'):
-        tmp_type = 'Asn1Int'
-    elif resType.kind == 'RealType':
-        tmp_type = 'Asn1Real'
-    elif resType.kind == 'BooleanType':
-        tmp_type = 'Boolean'
-    elif resType.kind == 'StringType':
+    tmp_type = type_name(cond.exprType)
+
+    if tmp_type == 'String':
         then_str = cond.value['then'].value.replace("'", '"')
         else_str = cond.value['else'].value.replace("'", '"')
         lens = [len(then_str), len(else_str)]
@@ -1329,16 +1323,13 @@ def _conditional(cond):
             then_str = then_str[0:-1] + ' ' * (lens[1] - lens[0]) + '"'
         elif lens[1] < lens[0]:
             else_str = else_str[0:-1] + ' ' * (lens[0] - lens[1]) + '"'
-    else:
-        tmp_type = 'asn1Scc' + resType.ReferencedTypeName.replace('-', '_')
 
-    local_decl = ['tmp{idx} : {tmpType};'.format(
-                                                idx=cond.value['tmpVar'],
-                                                tmpType=tmp_type)]
+    local_decl = ['tmp{idx} : {tmpType};'.format(idx=cond.value['tmpVar'],
+                                                 tmpType=tmp_type)]
     if_stmts, if_str, if_local = expression(cond.value['if'])
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
-    if resType.kind != 'StringType':
+    if not tmp_type.startswith('String'):
         then_stmts, then_str, then_local = expression(cond.value['then'])
         else_stmts, else_str, else_local = expression(cond.value['else'])
         stmts.extend(then_stmts)
@@ -1435,17 +1426,14 @@ def _decision(dec):
         code.append('-- "DECISION ANY" statement was ignored')
         return code, local_decl
     question_type = dec.question.exprType
-    # XXX check if we should get the type like this
-    actual_type = getattr(
-            question_type, 'ReferencedTypeName', None) or question_type.kind
-    actual_type = actual_type.replace('-', '_')
+    actual_type = type_name(question_type)
     basic = find_basic_type(question_type).kind in ('IntegerType',
                           'Integer32Type', 'BooleanType',
                           'RealType', 'EnumeratedType', 'ChoiceEnumeratedType')
     # for ASN.1 types, declare a local variable
     # to hold the evaluation of the question
     if not basic:
-        local_decl.append('tmp{idx} : aliased asn1Scc{actType};'.format(
+        local_decl.append('tmp{idx} : aliased {actType};'.format(
                           idx=dec.tmpVar, actType=actual_type))
     q_stmts, q_str, q_decl = expression(dec.question)
     # Add code-to-model traceability
@@ -1470,7 +1458,7 @@ def _decision(dec):
                                                ogAST.PrimStringLiteral)):
                         ans_str = array_content(a.constant, ans_str,
                                                 find_basic_type(question_type))
-                    exp = u'asn1Scc{actType}_Equal(tmp{idx}, {ans})'.format(
+                    exp = u'{actType}_Equal(tmp{idx}, {ans})'.format(
                             actType=actual_type, idx=dec.tmpVar, ans=ans_str)
                     if a.openRangeOp == ogAST.ExprNeq:
                         exp = u'not {}'.format(exp)
@@ -1789,7 +1777,9 @@ def type_name(a_type):
     elif a_type.kind.startswith('Integer'):
         return 'Asn1Int'
     elif a_type.kind == 'RealType':
-        return 'Long_Float'
+        return 'Asn1Real'  # 'Long_Float'
+    elif a_type.kind == 'StringType':
+        return 'String'
     else:
         raise NotImplmentedError('Type name for {}'.format(a_type.kind))
 
