@@ -1090,10 +1090,9 @@ def _bitwise_operators(expr):
         if expr.right.is_raw:
             # Declare a temporary variable to store the raw value
             tmp_string = u'tmp{}'.format(expr.right.tmpVar)
-            local_decl.append(u'{tmp} : aliased asn1Scc{eType};'.format(
+            local_decl.append(u'{tmp} : aliased {sort};'.format(
                         tmp=tmp_string,
-                        eType=expr.right.exprType.ReferencedTypeName
-                        .replace('-', '_')))
+                        sort=type_name(expr.right.exprType)))
             code.append(u'{tmp} := {right};'.format(tmp=tmp_string,
                                                   right=right_str))
             right_str = tmp_string
