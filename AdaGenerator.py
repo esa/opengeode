@@ -130,10 +130,10 @@ def _process(process):
                 dstr = array_content(def_value, dstr, varbty)
             assert not dst and not dlocal, 'DCL: Expecting a ground expression'
         process_level_decl.append(
-                u'l_{n} : aliased asn1Scc{t}{default};'.format(
-                        n=var_name,
-                        t=var_type.ReferencedTypeName.replace('-', '_'),
-                        default=u' := ' + dstr if def_value else u''))
+                        u'l_{n} : aliased {sort}{default};'
+                        .format(n=var_name,
+                                sort=type_name(var_type),
+                                default=u' := ' + dstr if def_value else u''))
 
     # Add the process states list to the process-level variables
     statelist = ', '.join(name for name in process.mapping.iterkeys()
@@ -216,9 +216,9 @@ package {process_name} is'''.format(process_name=process_name,
         param_name = signal.get('param_name') or '{}_param'.format(signal['name'])
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
-            typename = signal['type'].ReferencedTypeName.replace('-', '_')
-            pi_header += '({pName}: access asn1Scc{pType})'.format(
-                                        pName=param_name, pType=typename)
+            typename = type_name(signal['type'])
+            pi_header += '({pName}: access {sort})'.format(
+                                        pName=param_name, sort=typename)
 
         # Add declaration of the provided interface in the .ads file
         ads_template.append('--  Provided interface "' + signal['name'] + '"')
@@ -284,9 +284,9 @@ package {process_name} is'''.format(process_name=process_name,
         param_name = signal.get('param_name') or 'MISSING_PARAM_NAME'
         # Add (optional) RI parameter
         if 'type' in signal:
-            typename = signal['type'].ReferencedTypeName.replace('-', '_')
-            ri_header += u'({pName}: access asn1Scc{pType})'.format(
-                pName=param_name, pType=typename)
+            typename = type_name(signal['type'])
+            ri_header += u'({pName}: access {sort})'.format(
+                pName=param_name, sort=typename)
         ads_template.append(u'--  Required interface "' + signal['name'] + '"')
         ads_template.append(ri_header + ';')
         ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
@@ -297,9 +297,10 @@ package {process_name} is'''.format(process_name=process_name,
         ri_header = u'procedure {sig_name}'.format(sig_name=proc.inputString)
         params = []
         for param in proc.fpar:
-            typename = param['type'].ReferencedTypeName.replace('-', '_')
-            params.append(u'{par[name]}: access asn1Scc{partype}'.format(
-                par=param, partype=typename))
+            typename = type_name(param['type'])
+            params.append(u'{par[name]}: access {sort}'
+                          .format(par=param,
+                                  sort=typename))
         if params:
             ri_header += u'(' + u';'.join(params) + ')'
         ads_template.append(
@@ -555,7 +556,7 @@ def _call_external_function(output):
                     param_type = out_sig.fpar[idx]['type']
                     param_direction = out_sig.fpar[idx]['direction']
 
-                typename = param_type.ReferencedTypeName.replace('-', '_')
+                typename = type_name(param_type)
                 p_code, p_id, p_local = expression(param)
                 code.extend(p_code)
                 local_decl.extend(p_local)
@@ -566,8 +567,8 @@ def _call_external_function(output):
                         and p_id.startswith('l_'))
                         or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = out['tmpVars'][idx]
-                    local_decl.append('tmp{idx} : aliased asn1Scc{oType};'
-                                      .format(idx=tmp_id, oType=typename))
+                    local_decl.append('tmp{idx} : aliased {sort};'
+                                      .format(idx=tmp_id, sort=typename))
                     if isinstance(param,
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         p_id = array_content(param, p_id,
@@ -789,9 +790,7 @@ def _prim_call(prim):
         exp_type = find_basic_type(exp.exprType)
         # Also get the ASN.1 type name as it is
         # needed to build the Ada expression
-        exp_typename = \
-                (getattr(exp.exprType, 'ReferencedTypeName',
-                     None) or exp.exprType.kind).replace('-', '_')
+        exp_typename = type_name(exp.exprType)
         if exp_type.kind != 'ChoiceType':
             error = '{} is not a CHOICE'.format(exp.inputString)
             LOG.error(error)
@@ -799,39 +798,37 @@ def _prim_call(prim):
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += ('asn1Scc{t}_Kind({e})'.format(
-            t=exp_typename, e=param_str))
+        ada_string += ('{sort}_Kind({e})'
+                       .format(sort=exp_typename,
+                               e=param_str))
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
-        # Get the ASN.1 type name as it is needed to build the Ada expression
-        exp_typename = \
-                (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or exp.exprType.kind).replace('-', '_')
+        exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp)
-        local_decl.append('function num_{t} is new Ada.Unchecked_Conversion'
-                          '(asn1scc{t}, Asn1Int);'.format(t=exp_typename))
+        local_decl.append('function num_{sort} is new Ada.Unchecked_Conversion'
+                          '({sort}, Asn1Int);'.format(sort=exp_typename))
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += ('num_{t}({p})'.format(t=exp_typename, p=param_str))
+        ada_string += ('num_{sort}({p})'
+                       .format(sort=exp_typename,
+                               p=param_str))
     elif ident == 'floor':
-        # Get the ASN.1 type name as it is needed to build the Ada expression
         exp = params[0]
-        exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or 'Long_Float').replace('-', '_')
+        exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += "{t}'Floor({p})".format(t=exp_typename, p=param_str)
+        ada_string += "{sort}'Floor({p})".format(sort=exp_typename,
+                                                 p=param_str)
     elif ident == 'ceil':
-        # Get the ASN.1 type name as it is needed to build the Ada expression
         exp = params[0]
-        exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or 'Long_Float').replace('-', '_')
+        exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += "{t}'Ceiling({p})".format(t=exp_typename, p=param_str)
+        ada_string += "{sort}'Ceiling({p})".format(sort=exp_typename,
+                                                   p=param_str)
     elif ident == 'cos':
         exp = params[0]
         param_stmts, param_str, local_var = expression(exp)
@@ -839,17 +836,16 @@ def _prim_call(prim):
         local_decl.extend(local_var)
         local_decl.append('package Math is new '
                           'Ada.Numerics.Generic_Elementary_Functions'
-                          '(Long_Float);')
+                          '(Asn1Real);')
         ada_string += "Math.Cos({})".format(param_str)
     elif ident == 'round':
         exp = params[0]
-        # Get the ASN.1 type name as it is needed to build the Ada expression
-        exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or 'Long_Float').replace('-', '_')
+        exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += "{t}'Rounding({p})".format(t=exp_typename, p=param_str)
+        ada_string += "{sort}'Rounding({p})".format(sort=exp_typename,
+                                                    p=param_str)
     elif ident == 'sin':
         exp = params[0]
         param_stmts, param_str, local_var = expression(exp)
@@ -857,7 +853,7 @@ def _prim_call(prim):
         local_decl.extend(local_var)
         local_decl.append('package Math is new '
                           'Ada.Numerics.Generic_Elementary_Functions'
-                          '(Long_Float);')
+                          '(Asn1Real);')
         ada_string += "Math.Sin({})".format(param_str)
     elif ident == 'sqrt':
         exp = params[0]
@@ -866,17 +862,16 @@ def _prim_call(prim):
         local_decl.extend(local_var)
         local_decl.append('package Math is new '
                           'Ada.Numerics.Generic_Elementary_Functions'
-                          '(Long_Float);')
+                          '(Asn1Real);')
         ada_string += "Math.Sqrt({})".format(param_str)
     elif ident == 'trunc':
         exp = params[0]
-        # Get the ASN.1 type name as it is needed to build the Ada expression
-        exp_typename = (getattr(exp.exprType, 'ReferencedTypeName', None)
-                        or 'Long_Float').replace('-', '_')
+        exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += "{t}'Truncation({p})".format(t=exp_typename, p=param_str)
+        ada_string += "{sort}'Truncation({p})".format(sort=exp_typename,
+                                                      p=param_str)
     else:
         ada_string += '('
         # Take all params and join them with commas
@@ -966,11 +961,10 @@ def _prim_selector(prim):
     local_decl.extend(receiver_decl)
 
     receiver_bty = find_basic_type(receiver.exprType)
-    receiver_ty_name = receiver.exprType.ReferencedTypeName.replace('-', '_')
 
     if receiver_bty.kind == 'ChoiceType':
-        ada_string = ('asn1Scc{typename}_{field_name}_get({ada_string})'
-                    .format(typename=receiver_ty_name,
+        ada_string = ('{sort}_{field_name}_get({ada_string})'
+                    .format(sort=type_name(receiver.exprType),
                             field_name=field_name,
                             ada_string=ada_string))
     else:
@@ -1010,10 +1004,8 @@ def _equality(expr):
     right_stmts, right_str, right_local = expression(expr.right)
     code.extend(right_stmts)
     local_decl.extend(right_local)
-    asn1_type = getattr(expr.left.exprType,
-                          'ReferencedTypeName',
-                          None) or expr.left.exprType.kind
-    actual_type = asn1_type.replace('-', '_')
+    asn1_type = getattr(expr.left.exprType, 'ReferencedTypeName', None)
+    actual_type = type_name(expr.left.exprType)
     lbty = find_basic_type(expr.left.exprType)
     basic = lbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
                           'RealType', 'EnumeratedType', 'ChoiceEnumeratedType')
@@ -1025,8 +1017,8 @@ def _equality(expr):
             if isinstance(expr.right,
                           (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                 right_str = array_content(expr.right, right_str, lbty)
-            ada_string = u'asn1Scc{asn1}_Equal({left}, {right})'.format(
-                              asn1=actual_type, left=left_str, right=right_str)
+            ada_string = u'{sort}_Equal({left}, {right})'.format(
+                           sort=actual_type, left=left_str, right=right_str)
         else:
             # Raw types on both left and right.... use simple operator
             ada_string = u"({left}) {op} ({right})".format(left=left_str,
@@ -1353,21 +1345,14 @@ def _conditional(cond):
 def _sequence(seq):
     ''' Return Ada string for an ASN.1 SEQUENCE '''
     stmts, local_decl = [], []
-    seqType = seq.exprType
-    LOG.debug('PrimSequence: ' + str(seq) + str(seqType))
-
-    ada_string = u"asn1Scc{seqType}'(".format(
-            seqType=seqType.ReferencedTypeName.replace('-', '_'))
+    ada_string = u"{}'(".format(type_name(seq.exprType))
     sep = ''
     for elem, value in seq.value.viewitems():
         # Set the type of the field - easy thanks to ASN.1 flattened AST
         delem = elem.replace('_', '-')
-        elem_specty = find_basic_type(seqType).Children[delem].type
-        #value.exprType = find_basic_type(seqType).Children[delem].type
+        elem_specty = find_basic_type(seq.exprType).Children[delem].type
         value_stmts, value_str, local_var = expression(value)
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            # Raw SEQOF element need additional parentheses
-            #value_str = '(Data => ({}))'.format(value_str)
             value_str = array_content(value, value_str,
                                       find_basic_type(elem_specty))
         ada_string += "{} {} => {}".format(sep, elem, value_str)
@@ -1382,23 +1367,21 @@ def _sequence(seq):
 def _sequence_of(seqof):
     ''' Return Ada string for an ASN.1 SEQUENCE OF '''
     stmts, local_decl = [], []
-    seqofType = seqof.exprType
+    seqof_ty = seqof.exprType
     try:
-        typename = seqofType.ReferencedTypeName
-        LOG.debug('SequenceOf Typename:' + str(typename))
-        asn_type = TYPES[typename].type
+        asn_type = TYPES[seqof_ty.ReferencedTypeName].type
         min_size = asn_type.Min
         max_size = asn_type.Max
     except AttributeError:
-        min_size, max_size = seqofType.Min, seqofType.Max
+        min_size, max_size = seqof_ty.Min, seqof_ty.Max
 
     tab = []
     for i in xrange(len(seqof.value)):
         item_stmts, item_str, local_var = expression(seqof.value[i])
         stmts.extend(item_stmts)
         local_decl.extend(local_var)
-        tab.append('{i} => {value}'.format(i=i + 1, value=item_str))
-    ada_string = ', '.join(tab)
+        tab.append(u'{i} => {value}'.format(i=i + 1, value=item_str))
+    ada_string = u', '.join(tab)
     return stmts, unicode(ada_string), local_decl
 
 
@@ -1406,14 +1389,10 @@ def _sequence_of(seqof):
 def _choiceitem(choice):
     ''' Return the Ada code for a CHOICE expression '''
     stmts, choice_str, local_decl = expression(choice.value['value'])
-    choiceType = choice.exprType
-    actual_type = getattr(
-                    choiceType, 'ReferencedTypeName', None) or choiceType.kind
-    actual_type = actual_type.replace('-', '_')
-    ada_string = 'asn1Scc{cType}_{opt}_set({expr})'.format(
-            cType=actual_type,
-            opt=choice.value['choice'],
-            expr=choice_str)
+    ada_string = u'{cType}_{opt}_set({expr})'.format(
+                        cType=type_name(choice.exprType),
+                        opt=choice.value['choice'],
+                        expr=choice_str)
     return stmts, unicode(ada_string), local_decl
 
 
@@ -1632,8 +1611,8 @@ def _inner_procedure(proc):
         pi_header += '('
         params = []
         for fpar in proc.fpar:
-            typename = fpar['type'].ReferencedTypeName.replace('-', '_')
-            params.append(u'l_{name}: in{out} asn1Scc{ptype}'.format(
+            typename = type_name(fpar['type'])
+            params.append(u'l_{name}: in{out} {ptype}'.format(
                     name=fpar.get('name'),
                     out=' out' if fpar.get('direction') == 'out' else '',
                     ptype=typename))
@@ -1643,7 +1622,7 @@ def _inner_procedure(proc):
     local_decl.append(pi_header + ';')
 
     if proc.external:
-        local_decl.append('pragma import(C, {});'.format(proc.inputString))
+        local_decl.append(u'pragma import(C, {});'.format(proc.inputString))
     else:
         # Generate the code for the procedure itself
         # local variables and code of the START transition
@@ -1652,9 +1631,9 @@ def _inner_procedure(proc):
             inner_code, inner_local = generate(inner_proc)
             local_decl.extend(inner_local)
             code.extend(inner_code)
-        code.append(pi_header + ' is')
+        code.append(pi_header + u' is')
         for var_name, (var_type, def_value) in proc.variables.viewitems():
-            typename = var_type.ReferencedTypeName.replace('-', '_')
+            typename = type_name(var_type)
             if def_value:
                 # Expression must be a ground expression, i.e. must not
                 # require temporary variable to store computed result
@@ -1663,10 +1642,10 @@ def _inner_procedure(proc):
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append('l_{name} : asn1Scc{sort}{default};'.format(
-                name=var_name,
-                sort=typename,
-                default=' := ' + dstr if def_value else ''))
+            code.append(u'l_{name} : {sort}{default};'
+                        .format(name=var_name,
+                                sort=typename,
+                                default=' := ' + dstr if def_value else ''))
 
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
@@ -1771,17 +1750,19 @@ def find_basic_type(a_type):
 def type_name(a_type):
     ''' Check the type kind and return an Ada usable type name '''
     if a_type.kind == 'ReferenceType':
-        return 'asn1Scc{}'.format(a_type.ReferencedTypeName.replace('-', '_'))
+        return u'asn1Scc{}'.format(a_type.ReferencedTypeName.replace('-', '_'))
     elif a_type.kind == 'BooleanType':
-        return 'Boolean'
+        return u'Boolean'
     elif a_type.kind.startswith('Integer'):
-        return 'Asn1Int'
+        return u'Asn1Int'
     elif a_type.kind == 'RealType':
-        return 'Asn1Real'  # 'Long_Float'
-    elif a_type.kind == 'StringType':
-        return 'String'
+        return u'Asn1Real'
+    elif a_type.kind.endswith('StringType'):
+        return u'String'
+    elif a_type.kind == 'ChoiceEnumeratedType':
+        return u'Asn1Int'
     else:
-        raise NotImplmentedError('Type name for {}'.format(a_type.kind))
+        raise NotImplementedError('Type name for {}'.format(a_type.kind))
 
 
 def find_var(var):
