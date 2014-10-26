@@ -950,6 +950,7 @@ def _prim_substring(prim):
 
 @expression.register(ogAST.PrimSelector)
 def _prim_selector(prim):
+    ''' Selector (field access with '!' separation) '''
     stmts, ada_string, local_decl = [], '', []
 
     receiver = prim.value[0]
