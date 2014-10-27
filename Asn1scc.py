@@ -67,7 +67,7 @@ def parse_asn1(*files, **options):
     # Create a temporary directory to store dataview.py and import it
     tempdir = tempfile.mkdtemp()
     sys.path.append(tempdir)
-    if hasattr(sys, 'frozen') or os.name == 'nt':
+    if os.name == 'nt':
         # On windows, remove the drive letter, workaround to ASN1SCC bug
         tempdir = tempdir[2:]
         asn1scc_root = asn1scc_root[2:]
