@@ -2149,7 +2149,7 @@ if __name__ == '__main__':
     # Windows only: argv[0] may not contain anything if binary is called
     # from the current directory (no "./" prefix on Windows, even if the
     # current folder is not in the PATH). In that case add it to the PATH
-    if os.name == 'nt':
+    if os.name == 'nt' or hasattr(sys, 'frozen'):
         os.environ['PATH'] += os.pathsep + os.path.abspath(
                                            os.path.dirname(sys.argv[0]) or cwd)
     ret = opengeode()

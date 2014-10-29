@@ -53,10 +53,19 @@ install: compile-all
 publish: install
 	@python setup.py sdist upload
 
+freeze-linux:
+	@bash -c "test -f pyinstaller-opengeode.tar.gz || wget http://download.tuxfamily.org/taste/misc/pyinstaller-opengeode.tar.gz"
+	@tar zxvf pyinstaller-opengeode.tar.gz
+	@cd pyinstaller-pyinstaller-953f6e3 && python pyinstaller.py ../opengeode.py --onefile && mkdir -p ../dist-linux && mv opengeode/dist/opengeode ../dist-linux && cd ..
+	@echo binary installed in ./dist-linux/
+
 clean:
 	@$(MAKE) -s -C tests/regression $@
 	@find . -name '*~' | xargs rm -f
 	@find . -name '*.o' | xargs rm -f
+	@rm -f pyinstaller-opengeode.tar.gz
+	@rm -rf dist-linux
+	@rm -rf pyinstaller-pyinstaller-953f6e3
 
 .PHONY: all test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
-	    benchmark-O3 flake8 coverage compile-all install publish clean
+	    benchmark-O3 flake8 coverage compile-all install publish clean freeze-linux

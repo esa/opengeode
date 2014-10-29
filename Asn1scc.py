@@ -60,7 +60,12 @@ def parse_asn1(*files, **options):
     flags = options.get('flags', [ASN1.AstOnly])
     assert isinstance(ast_version, ASN1)
     assert isinstance(flags, list)
-    path_to_asn1scc = spawn.find_executable('asn1.exe')
+    if os.name == 'posix' and hasattr(sys, 'frozen'):
+        # Frozen Linux binaries are expected to use the frozen ASN.1 compiler
+        asn1exe = 'asn1scc'
+    else:
+        asn1exe = 'asn1.exe'
+    path_to_asn1scc = spawn.find_executable(asn1exe)
     if not path_to_asn1scc:
         raise TypeError('ASN.1 Compiler not found in path')
     asn1scc_root = os.path.abspath(os.path.dirname(path_to_asn1scc))

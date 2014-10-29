@@ -1874,7 +1874,8 @@ def composite_state(root, parent=None, context=None):
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=comp)
             if textarea.signals:
-                errors.append('Signals shall not be declared in a state')
+                errors.append(['Signals shall not be declared in a state',
+                               [textarea.pos_y, textarea.pos_y], []])
             errors.extend(err)
             warnings.extend(warn)
             comp.content.textAreas.append(textarea)
@@ -1899,10 +1900,13 @@ def composite_state(root, parent=None, context=None):
         elif child.type == lexer.START:
             starts.append(child)
         else:
-            warnings.append(
-                    'Unsupported construct in nested state, type: ' +
-                    str(child.type) + ' - line ' + str(child.getLine()) +
-                    ' - state name: ' + str(comp.statename))
+            warnings.append(['Unsupported construct in nested state, type: {}'
+                             '- line {} - State name: {}'
+                             .format(str(child.type),
+                                     str(child.getLine()),
+                                     str(comp.statename)),
+                             [0 , 0],   # No graphical position
+                             []])
     for each in inner_composite:
         # Parse inner composite states after the text areas to make sure
         # that all variables are propagated to the the inner scope
@@ -1922,7 +1926,8 @@ def composite_state(root, parent=None, context=None):
         elif not comp.content.start:
             comp.content.start = st
         else:
-            errors.append('Only one unnamed START transition is allowed')
+            errors.append(['Only one unnamed START transition is allowed',
+                           [st.pos_x, st.pos_y], []])
     for each in floatings:
         lab, err, warn = floating_label(each, parent=None, context=comp)
         errors.extend(err)
@@ -1946,8 +1951,10 @@ def composite_state(root, parent=None, context=None):
             if t.kind == 'next_state']:
         if not ns in [s.lower() for s in
                 comp.mapping.viewkeys()] + ['-']:
-            errors.append('In composite state "{}": missing definition '
-                         'of substate "{}"'.format(comp.statename, ns.upper()))
+            errors.append(['In composite state "{}": missing definition '
+                           'of substate "{}"'
+                           .format(comp.statename, ns.upper()),
+                           [0, 0], []])
     for each in chain(errors, warnings):
         each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
@@ -2050,8 +2057,9 @@ def procedure_post(proc, content, parent=None, context=None):
     for each in proc.terminators:
         # check that RETURN statements type is correct
         if not proc.return_type and each.return_expr:
-            errors.append('No return value expected in procedure '
-                          + proc.inputString)
+            errors.append(['No return value expected in procedure {}'
+                           .format(proc.inputString),
+                           [0, 0], []])
         elif proc.return_type and each.return_expr:
             check_expr = ogAST.ExprAssign()
             check_expr.left = ogAST.PrimVariable()
@@ -2064,8 +2072,9 @@ def procedure_post(proc, content, parent=None, context=None):
             # Id of fd_expr may have changed (enumerated, choice)
             each.return_expr = check_expr.right
         elif proc.return_type and not each.return_expr:
-            errors.append('Missing return value in procedure '
-                          + proc.inputString)
+            errors.append(['Missing return value in procedure {}'
+                           .format(proc.inputString),
+                           [0, 0], []])
         else:
             continue
     for each in chain(errors, warnings):
@@ -2569,7 +2578,8 @@ def process_definition(root, parent=None, context=None):
             # Text zone where variables and operators are declared
             textarea, err, warn = text_area(child, context=process)
             if textarea.signals:
-                errors.append('Signals shall not be declared in a process')
+                errors.append(['Signals shall not be declared in a process',
+                              [textarea.pos_x, textarea.pos_y], []])
             errors.extend(err)
             warnings.extend(warn)
             process.content.textAreas.append(textarea)
