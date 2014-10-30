@@ -861,7 +861,7 @@ class ASN1Viewer(TextSymbol):
     blackbold = ['\\b{}\\b'.format(word) for word in (
                  'DEFINITIONS', 'AUTOMATIC', 'TAGS', 'BEGIN', 'END', 'INTEGER',
                  'OCTET', 'STRING', 'BIT', 'REAL', 'SEQUENCE', 'OF', 'WITH',
-                 'IMPORTS', 'FROM', 'SIZE', 'CHOICE', 'BOOLEAN')]
+                 'IMPORTS', 'FROM', 'SIZE', 'CHOICE', 'BOOLEAN', 'ENUMERATED')]
 
 
 # pylint: disable=R0904

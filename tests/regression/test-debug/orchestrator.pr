@@ -2,7 +2,7 @@
 PROCESS orchestrator
 /* CIF COMMENT (405, 192), (71, 35) */
 COMMENT 'Hello';
-    /* CIF TEXT (39, 94), (293, 233) */
+    /* CIF TEXT (39, 94), (293, 263) */
     dcl seq tastE_Peek_id_list;
 
 dcl fixed FixedString := 'Hello';
@@ -18,6 +18,8 @@ dcl seqen2 SeqEnumFix := { hello, world };
 dcl myenum Enum := a;
 
 dcl check tasTE_Peek_id;
+
+dcl choice choice;
     /* CIF ENDTEXT */
     /* CIF START (428, 223), (100, 45) */
     START;
@@ -67,7 +69,31 @@ endfor;
                 /* CIF ANSWER (488, 1081), (70, 23) */
                 ('b'):
         ENDDECISION;
-        /* CIF NEXTSTATE (419, 1119), (118, 50) */
+        /* CIF DECISION (433, 1119), (89, 50) */
+        DECISION myenum
+        /* CIF COMMENT (542, 1126), (183, 35) */
+        COMMENT 'Check case insensitivity';
+                /* CIF ANSWER (250, 1189), (70, 23) */
+                (a):
+                /* CIF ANSWER (330, 1189), (70, 23) */
+                (B):
+                /* CIF ANSWER (410, 1189), (70, 23) */
+                (c):
+                /* CIF ANSWER (488, 1189), (70, 23) */
+                (d):
+                /* CIF ANSWER (576, 1189), (70, 23) */
+                (Ee):
+        ENDDECISION;
+        /* CIF DECISION (408, 1227), (138, 50) */
+        DECISION present(choice)
+        /* CIF COMMENT (566, 1234), (183, 35) */
+        COMMENT 'Check case insensitivity';
+                /* CIF ANSWER (361, 1297), (70, 23) */
+                (cde2):
+                /* CIF ANSWER (532, 1297), (70, 23) */
+                ELSE:
+        ENDDECISION;
+        /* CIF NEXTSTATE (419, 1335), (116, 33) */
         NEXTSTATE Wait_for_GUI;
     /* CIF STATE (423, 163), (118, 50) */
     STATE Wait_for_GUI;

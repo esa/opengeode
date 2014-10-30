@@ -627,10 +627,11 @@ def check_type_compatibility(primary, type_ref, context):
         # If type ref is an enumeration, check that the value is valid
         # Note, when using the "present" operator of a CHOICE type, the
         # resulting value is actually an EnumeratedType
-        enumerant = primary.inputString.replace('_', '-')
-        corr_type = basic_type.EnumValues.get(enumerant)
-        if corr_type:
-            return
+        enumerant = primary.inputString.replace('_', '-').lower()
+        for each in basic_type.EnumValues.keys():
+            if each.lower() == enumerant:
+                # Found -> all OK
+                return
         else:
             err = ('Value "' + primary.inputString +
                    '" not in this enumeration: ' +
@@ -3110,8 +3111,7 @@ def alternative_part(root, parent, context):
             ans.closedRange = [cl0, cl1]
         elif child.type == lexer.CONSTANT:
             ans.kind = 'constant'
-            ans.constant, err, warn = expression(
-                                        child.getChild(0), context)
+            ans.constant, err, warn = expression(child.getChild(0), context)
             errors.extend(err)
             warnings.extend(warn)
             ans.openRangeOp = ogAST.ExprEq
@@ -3287,7 +3287,8 @@ def decision(root, parent, context):
                                                 ans.inputString),
                                         [ans_x, ans_y], []])
                 else:
-                    warnings.append('Unsupported range expression')
+                    warnings.append(['Unsupported range expression',
+                                     [ans_x, ans_y], []])
                 if not reachable:
                         warnings.append(['Decision "{}": '
                                         'Unreachable branch "{}"'
@@ -3414,14 +3415,18 @@ def decision(root, parent, context):
     # (5) check coverage of enumerated types
     if is_enum:
         # check duplicate answers
-        answers = list(chain.from_iterable(covered_ranges.viewvalues()))
+        answers = [a.lower()
+                   for a in chain.from_iterable(covered_ranges.viewvalues())]
         dupl = [a for a, v in Counter(answers).items() if v > 1]
         if dupl:
             qerr.append('Decision "{}": duplicate answers "{}"'
                           .format(dec.inputString, '", "'.join(dupl)))
-        enumerants = [en.replace('-', '_') for en in q_basic.EnumValues.keys()]
+        enumerants = [en.replace('-', '_').lower()
+                      for en in q_basic.EnumValues.keys()]
         # check for missing answers
         if set(answers) != set(enumerants) and not has_else:
+            print set(answers)
+            print set(enumerants)
             qerr.append('Decision "{}": Missing branches for answer(s) "{}"'
                           .format(dec.inputString,
                                   '", "'.join(set(enumerants) - set(answers))))
