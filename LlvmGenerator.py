@@ -671,7 +671,7 @@ def _proc_call(proc_call, ctx):
 
     if name == 'write' or name == 'writeln':
         def flatten_append(arg):
-            ''' transform "write(a//b)" to "write(a,b)" '''
+            ''' Transform "write(a//b//...)" to "write(a, b, ...)" '''
             if isinstance(arg, ogAST.ExprAppend):
                 res = flatten_append(arg.left)
                 res.extend(flatten_append(arg.right))
@@ -1223,61 +1223,78 @@ def _expr_not(expr, ctx):
 
 @expression.register(ogAST.ExprAppend)
 def _expr_append(expr, ctx):
-    ''' Generate the IR for a append expression '''
-    basic_asn1ty = ctx.basic_asn1type_of(expr.exprType)
-
-    if basic_asn1ty.kind in ('SequenceOfType', 'OctetStringType'):
-        res_llty = ctx.lltype_of(expr.exprType)
-        elem_llty = res_llty.elements[1].element
-        elem_size_val = lc.Constant.sizeof(elem_llty)
-
-        res_ptr = ctx.builder.alloca(res_llty)
-        res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
-        res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
-
-        left_ptr = expression(expr.left, ctx)
-        if isinstance(left_ptr, SDLSubstringValue):
-            left_arr_ptr = left_ptr.arr_ptr
-            left_count_val = left_ptr.count_val
-        else:
-            left_len_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.zero])
-            left_arr_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.one])
-            left_count_val = ctx.builder.load(left_len_ptr)
-
-        right_ptr = expression(expr.right, ctx)
-        if isinstance(right_ptr, SDLSubstringValue):
-            right_arr_ptr = right_ptr.arr_ptr
-            right_count_val = right_ptr.count_val
-        else:
-            right_len_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero])
-            right_arr_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.one])
-            right_count_val = ctx.builder.load(right_len_ptr)
-
-        res_len_val = ctx.builder.add(left_count_val, right_count_val)
-        ctx.builder.store(res_len_val, res_len_ptr)
-
-        sdl_call('memcpy', [
-            ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
-            ctx.builder.bitcast(left_arr_ptr, ctx.i8_ptr),
-            ctx.builder.mul(elem_size_val, ctx.builder.zext(left_count_val, ctx.i64)),
-            lc.Constant.int(ctx.i32, 0),
-            lc.Constant.int(ctx.i1, 0)
-        ], ctx)
-
-        res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one, left_count_val])
-
-        sdl_call('memcpy', [
-            ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
-            ctx.builder.bitcast(right_arr_ptr, ctx.i8_ptr),
-            ctx.builder.mul(elem_size_val, ctx.builder.zext(right_count_val, ctx.i64)),
-            lc.Constant.int(ctx.i32, 0),
-            lc.Constant.int(ctx.i1, 0)
-        ], ctx)
-
-        return res_ptr
-
-    raise CompileError('Type "%s" not supported in append expressions'
-        % basic_asn1ty.kind)
+    ''' Generate the IR for an append reference '''
+    apnd = SDLAppendValue()
+    # Append expressions can be recursive -> Flatten them
+    if isinstance(expr.left, ogAST.ExprAppend):
+        # Get an SDLAppendValue for recursive Append constructs
+        inner_left = expression(expr.left)
+        apnd.apnd_list.extend(inner_left.apnd_list)
+    else:
+        apnd.apnd_list.append(expr.left)
+    if isinstance(expr.left, ogAST.ExprAppend):
+        inner_right = expression(expr.right)
+        apnd.apnd_list.extend(inner_right.apnd_list)
+    else:
+        apnd.apnd_list.append(expr.right)
+    return apnd
+#@expression.register(ogAST.ExprAppend)
+#def _expr_append(expr, ctx):
+#   ''' Generate the IR for a append expression '''
+#   basic_asn1ty = ctx.basic_asn1type_of(expr.exprType)
+#
+#   if basic_asn1ty.kind in ('SequenceOfType', 'OctetStringType'):
+#       res_llty = ctx.lltype_of(expr.exprType)
+#       elem_llty = res_llty.elements[1].element
+#       elem_size_val = lc.Constant.sizeof(elem_llty)
+#
+#       res_ptr = ctx.builder.alloca(res_llty)
+#       res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
+#       res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
+#
+#       left_ptr = expression(expr.left, ctx)
+#       if isinstance(left_ptr, SDLSubstringValue):
+#           left_arr_ptr = left_ptr.arr_ptr
+#           left_count_val = left_ptr.count_val
+#       else:
+#           left_len_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.zero])
+#           left_arr_ptr = ctx.builder.gep(left_ptr, [ctx.zero, ctx.one])
+#           left_count_val = ctx.builder.load(left_len_ptr)
+#
+#       right_ptr = expression(expr.right, ctx)
+#       if isinstance(right_ptr, SDLSubstringValue):
+#           right_arr_ptr = right_ptr.arr_ptr
+#           right_count_val = right_ptr.count_val
+#       else:
+#           right_len_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.zero])
+#           right_arr_ptr = ctx.builder.gep(right_ptr, [ctx.zero, ctx.one])
+#           right_count_val = ctx.builder.load(right_len_ptr)
+#
+#       res_len_val = ctx.builder.add(left_count_val, right_count_val)
+#       ctx.builder.store(res_len_val, res_len_ptr)
+#
+#       sdl_call('memcpy', [
+#           ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
+#           ctx.builder.bitcast(left_arr_ptr, ctx.i8_ptr),
+#           ctx.builder.mul(elem_size_val, ctx.builder.zext(left_count_val, ctx.i64)),
+#           lc.Constant.int(ctx.i32, 0),
+#           lc.Constant.int(ctx.i1, 0)
+#       ], ctx)
+#
+#       res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one, left_count_val])
+#
+#       sdl_call('memcpy', [
+#           ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
+#           ctx.builder.bitcast(right_arr_ptr, ctx.i8_ptr),
+#           ctx.builder.mul(elem_size_val, ctx.builder.zext(right_count_val, ctx.i64)),
+#           lc.Constant.int(ctx.i32, 0),
+#           lc.Constant.int(ctx.i1, 0)
+#       ], ctx)
+#
+#       return res_ptr
+#
+#   raise CompileError('Type "%s" not supported in append expressions'
+#       % basic_asn1ty.kind)
 
 
 @expression.register(ogAST.ExprIn)
@@ -1828,7 +1845,7 @@ def is_array_ptr(val):
         val.type.pointee.kind == lc.TYPE_ARRAY
 
 
-################################################################################
+###############################################################################
 # Values
 
 
@@ -1838,8 +1855,12 @@ class SDLSubstringValue():
         self.count_val = count_val
         self.asn1ty = asn1ty
 
+class SDLAppendValue():
+    ''' Store an array concatenation value (e.g. "a//b") '''
+    def __init__(self):
+        self.apnd_list = []
 
-################################################################################
+###############################################################################
 # Operators
 
 
@@ -1874,6 +1895,9 @@ def sdl_assign(a_ptr, b_val, ctx):
         sdl_call('memcpy', [a_arr_ptr, b_arr_ptr, size, align, volatile], ctx)
         if basic_asn1ty.Min != basic_asn1ty.Max:
             ctx.builder.store(b_val.count_val, a_count_ptr)
+
+    elif isinstance(b_val, SDLAppendValue):
+        print 'Assign Append', b_val
 
     elif is_struct_ptr(a_ptr) or is_array_ptr(a_ptr):
         size = lc.Constant.sizeof(a_ptr.type.pointee)

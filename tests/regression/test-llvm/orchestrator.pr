@@ -1,0 +1,25 @@
+/* CIF PROCESS (295, 56), (150, 75) */
+PROCESS orchestrator
+/* CIF COMMENT (405, 192), (71, 35) */
+COMMENT 'Hello';
+    /* CIF TEXT (39, 94), (293, 263) */
+    dcl fixed FixedString := 'Hello';
+    /* CIF ENDTEXT */
+    /* CIF START (456, 110), (70, 35) */
+    START;
+        /* CIF PROCEDURECALL (352, 160), (277, 35) */
+        CALL writeln(fixed(0,2)//fixed(2,4)//' world')
+        /* CIF COMMENT (649, 160), (173, 53) */
+        COMMENT 'FIXME: string world
+cannot be longer than
+6 chars !?';
+        /* CIF TASK (410, 210), (159, 35) */
+        TASK fixed := 'Hel' // 'lp';
+        /* CIF PROCEDURECALL (428, 260), (124, 35) */
+        CALL writeln(fixed);
+        /* CIF NEXTSTATE (455, 310), (70, 35) */
+        NEXTSTATE wait;
+    /* CIF STATE (440, 359), (70, 35) */
+    STATE wait;
+    ENDSTATE;
+ENDPROCESS orchestrator;
