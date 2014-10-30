@@ -670,8 +670,18 @@ def _proc_call(proc_call, ctx):
     args = output.get('params', [])
 
     if name == 'write' or name == 'writeln':
-        arg_vals = [expression(a, ctx) for a in args]
-        arg_asn1tys = [a.exprType for a in args]
+        def flatten_append(arg):
+            ''' transform "write(a//b)" to "write(a,b)" '''
+            if isinstance(arg, ogAST.ExprAppend):
+                res = flatten_append(arg.left)
+                res.extend(flatten_append(arg.right))
+                return res
+            return [arg]
+        flat_args = []
+        for each in args:
+            flat_args.extend(flatten_append(each))
+        arg_vals = [expression(a, ctx) for a in flat_args]
+        arg_asn1tys = [a.exprType for a in flat_args]
         sdl_write(arg_vals, arg_asn1tys, ctx, name == 'writeln')
         return
     elif name == 'reset_timer':
