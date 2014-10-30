@@ -319,8 +319,7 @@ def get_interfaces(ast, process_name):
         Search for the list of input and output signals (async PI/RI)
         and procedures (sync RI) of a process in a given top-level AST
     '''
-    all_signals = []
-    async_signals = []
+    all_signals, async_signals, errors = [], [], []
     system = None
 
     # Move up to the system level, in case process is nested in a block
@@ -359,15 +358,15 @@ def get_interfaces(ast, process_name):
                 # Copy the signal to the result dict
                 try:
                     found, = [dict(sig) for sig in all_signals
-                              if sig['name'] == sig_id]
+                              if sig['name'].lower() == sig_id.lower()]
                     found['direction'] = direction
                     async_signals.append(found)
                 except ValueError:
                     undeclared_signals.append(sig_id)
     if undeclared_signals:
-        raise TypeError('Missing declaration for signal(s) {}'
-                        .format(', '.join(undeclared_signals)))
-    return async_signals, system.procedures
+        errors = ['Missing declaration for signal(s) {}'
+                  .format(', '.join(undeclared_signals))]
+    return async_signals, system.procedures, errors
 
 
 def get_input_string(root):
@@ -2563,12 +2562,13 @@ def process_definition(root, parent=None, context=None):
             process.processName = child.text
             try:
                 # Retrieve process interface (PI/RI)
-                async_signals, procedures = get_interfaces(parent, child.text)
-                process.input_signals.extend([sig for sig in async_signals
+                async, procedures, err = get_interfaces(parent, child.text)
+                process.input_signals.extend([sig for sig in async
                                              if sig['direction'] == 'in'])
-                process.output_signals.extend([sig for sig in async_signals
+                process.output_signals.extend([sig for sig in async
                                               if sig['direction'] == 'out'])
                 process.procedures.extend(procedures)
+                perr.extend(err)
             except AttributeError as err:
                 # No interface because process is defined standalone
                 LOG.debug('Discarding process ' + child.text + ' ' + str(err))
