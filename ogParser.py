@@ -1316,6 +1316,7 @@ def append_expression(root, context):
     else:
         attrs = {'Min': str(int(right.Min) + int(left.Min)),
                  'Max': str(int(right.Max) + int(left.Max))}
+        # It is wrong to set the type as inheriting from the left side FIXME
         expr.exprType = type('Apnd', (left,), attrs)
     #expr.exprType = expr.left.exprType
 
@@ -3686,6 +3687,12 @@ def assign(root, context):
                 isinstance(expr.right, (ogAST.ExprAppend,
                                         ogAST.PrimSequenceOf,
                                         ogAST.PrimStringLiteral)):
+            expr.right.exprType = expr.left.exprType
+        # XXX I don't understand why we don't set the type of right
+        # to the same value as left in case of ExprAppend
+        # Setting it - I did not see any place in the Ada backend where
+        # this could cause a bug (and regression is OK)
+        if isinstance(expr.right, ogAST.ExprAppend):
             expr.right.exprType = expr.left.exprType
 
     return expr, errors, warnings

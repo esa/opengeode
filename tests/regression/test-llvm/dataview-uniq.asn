@@ -6,7 +6,7 @@ TASTE-Peek-id ::= INTEGER (0..4294967295)
 TASTE-Peek-id-list ::= SEQUENCE (SIZE (1..10)) OF TASTE-Peek-id
 
 VariableString ::= OCTET STRING (SIZE (1..10))
-FixedString ::= OCTET STRING (SIZE (5))
+FixedString ::= OCTET STRING (SIZE (4))
 
 SeqBool ::= SEQUENCE (SIZE(1..5)) OF BOOLEAN
 SeqBoolFix ::= SEQUENCE (SIZE(2)) OF BOOLEAN

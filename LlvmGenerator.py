@@ -929,6 +929,26 @@ def _prim_substring_reference(prim, ctx):
     return SDLSubstringValue(arr_ptr, count_val, asn1ty)
 
 
+@reference.register(ogAST.ExprAppend)
+def _expr_append_reference(expr, ctx):
+    ''' Generate the IR for an append reference '''
+    apnd = SDLAppendValue()
+    # Append expressions can be recursive -> Flatten them
+    if isinstance(expr.left, ogAST.ExprAppend):
+        # Get an SDLAppendValue for recursive Append constructs
+        inner_left = expression(expr.left, ctx)
+        apnd.apnd_list.extend(inner_left.apnd_list)
+    else:
+        apnd.apnd_list.append(expr.left)
+    if isinstance(expr.right, ogAST.ExprAppend):
+        inner_right = expression(expr.right, ctx)
+        apnd.apnd_list.extend(inner_right.apnd_list)
+    else:
+        apnd.apnd_list.append(expr.right)
+    apnd.exprType = expr.exprType
+    return apnd
+
+
 @singledispatch
 def expression(expr, ctx):
     ''' Generate the IR for an expression node '''
@@ -1223,21 +1243,9 @@ def _expr_not(expr, ctx):
 
 @expression.register(ogAST.ExprAppend)
 def _expr_append(expr, ctx):
-    ''' Generate the IR for an append reference '''
-    apnd = SDLAppendValue()
-    # Append expressions can be recursive -> Flatten them
-    if isinstance(expr.left, ogAST.ExprAppend):
-        # Get an SDLAppendValue for recursive Append constructs
-        inner_left = expression(expr.left)
-        apnd.apnd_list.extend(inner_left.apnd_list)
-    else:
-        apnd.apnd_list.append(expr.left)
-    if isinstance(expr.left, ogAST.ExprAppend):
-        inner_right = expression(expr.right)
-        apnd.apnd_list.extend(inner_right.apnd_list)
-    else:
-        apnd.apnd_list.append(expr.right)
-    return apnd
+    ''' Generate the IR for an append expression '''
+    return reference(expr, ctx)
+
 #@expression.register(ogAST.ExprAppend)
 #def _expr_append(expr, ctx):
 #   ''' Generate the IR for a append expression '''
@@ -1559,7 +1567,7 @@ def _prim_sequence(prim, ctx):
     seq_asn1ty = ctx.dataview[prim.exprType.ReferencedTypeName]
 
     for field_name, field_expr in prim.value.viewitems():
-        # Workarround for unknown types in nested sequences
+        # Workaround for unknown types in nested sequences
         #field_expr.exprType = seq_asn1ty.type.Children[field_name.replace('_', '-')].type
         field_expr.exprType = ctx.basic_asn1type_of(prim.exprType).Children[\
                                             field_name.replace('_', '-')].type
@@ -1859,6 +1867,7 @@ class SDLAppendValue():
     ''' Store an array concatenation value (e.g. "a//b") '''
     def __init__(self):
         self.apnd_list = []
+        self.exprType = None
 
 ###############################################################################
 # Operators
@@ -1897,7 +1906,64 @@ def sdl_assign(a_ptr, b_val, ctx):
             ctx.builder.store(b_val.count_val, a_count_ptr)
 
     elif isinstance(b_val, SDLAppendValue):
-        print 'Assign Append', b_val
+        bty = ctx.basic_asn1type_of(b_val.exprType)
+        res_llty = ctx.lltype_of(b_val.exprType)
+        res_ptr = a_ptr
+        total_size = lc.Constant.int(ctx.i64, 0)
+        # Get pointer to data and nCount (if any) fields
+        if bty.Min != bty.Max:
+            res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
+            res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.one])
+            elem_llty = res_llty.elements[1].element
+        else:
+            # Fixed-size
+            res_len_ptr = None
+            res_arr_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
+            elem_llty = res_llty.elements[0].element
+
+        # Size of a single element (needed for memcpy):
+        elem_size_val = lc.Constant.sizeof(elem_llty)
+
+        # Append (memcpy) each of the elements of the append list
+        for each in b_val.apnd_list:
+            each_ptr = expression(each, ctx)
+            if isinstance(each_ptr, SDLSubstringValue):
+                each_arr_ptr = each_ptr.arr_ptr
+                each_count_val = each_ptr.count_val
+            else:
+                each_bty = ctx.basic_asn1type_of(each.exprType)
+                if each_bty.Min != each_bty.Max:
+                    # Non-fixed size, get pointer to array of element
+                    each_len_ptr = ctx.builder.gep(each_ptr,
+                                                   [ctx.zero, ctx.zero])
+                    each_arr_ptr = ctx.builder.gep(each_ptr,
+                                                   [ctx.zero, ctx.one])
+                    each_count_val = ctx.builder.load(each_len_ptr)
+                    total_size = total_size.add(
+                                    ctx.builder.zext(each_count_val, ctx.i64))
+                else:
+                    # Fixed size
+                    each_arr_ptr = each_ptr
+                    each_count_val = lc.Constant.int(ctx.i64,
+                                                     int(each_bty.Min))
+                    total_size = total_size.add(
+                                    ctx.builder.zext(each_count_val, ctx.i64))
+            sdl_call('memcpy', [
+                 ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
+                 ctx.builder.bitcast(each_arr_ptr, ctx.i8_ptr),
+                 ctx.builder.mul(elem_size_val,
+                                 ctx.builder.zext(each_count_val, ctx.i64)),
+                 lc.Constant.int(ctx.i32, 0),
+                 lc.Constant.int(ctx.i1, 0)
+             ], ctx)
+            # Move pointer to the end of the string for the next element
+            res_arr_ptr = ctx.builder.gep(res_ptr,
+                                         [ctx.zero,
+                                          ctx.one if res_len_ptr else ctx.zero,
+                                          total_size])
+        if res_len_ptr:
+            # Store the resulting size of the concatenation, if needed (nCount)
+            ctx.builder.store(total_size, res_len_ptr)
 
     elif is_struct_ptr(a_ptr) or is_array_ptr(a_ptr):
         size = lc.Constant.sizeof(a_ptr.type.pointee)
