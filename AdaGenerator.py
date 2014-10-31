@@ -1231,17 +1231,23 @@ def _expr_in(expr):
 @expression.register(ogAST.PrimEnumeratedValue)
 def _enumerated_value(primary):
     ''' Generate code for an enumerated value '''
-    enumerant = primary.value[0].replace('_', '-')
+    enumerant = primary.value[0].replace('_', '-').lower()
     basic = find_basic_type(primary.exprType)
-    ada_string = (u'asn1Scc' + basic.EnumValues[enumerant].EnumID)
+    for each in basic.EnumValues:
+        if each.lower() == enumerant:
+            break
+    ada_string = (u'asn1Scc' + basic.EnumValues[each].EnumID)
     return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
 def _choice_determinant(primary):
     ''' Generate code for a choice determinant (enumerated) '''
-    enumerant = primary.value[0].replace('_', '-')
-    ada_string = primary.exprType.EnumValues[enumerant].EnumID
+    enumerant = primary.value[0].replace('_', '-').lower()
+    for each in primary.exprType.EnumValues:
+        if each.lower() == enumerant:
+            break
+    ada_string = primary.exprType.EnumValues[each].EnumID
     return [], unicode(ada_string), []
 
 
