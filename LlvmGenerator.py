@@ -717,6 +717,8 @@ def _proc_call(proc_call, ctx):
             arg_vals.append(reference(arg, ctx))
         else:
             arg_val = expression(arg, ctx)
+            if isinstance(arg_val, SDLStringLiteral):
+                arg_val = sdl_stringliteral(arg_val.string, arg_val.typeof, ctx)
             # Pass by reference
             if arg_val.type.kind != lc.TYPE_POINTER:
                 arg_var = ctx.builder.alloca(arg_val.type, None)
@@ -2017,6 +2019,8 @@ def sdl_assign(a_ptr, b_val, ctx):
         sdl_call('memcpy', [a_ptr, b_ptr, size, align, volatile], ctx)
 
     else:
+        if isinstance(b_val, SDLStringLiteral):
+            b_val = sdl_stringliteral(b_val.string, b_val.typeof, ctx)
         ctx.builder.store(b_val, a_ptr)
 
 
