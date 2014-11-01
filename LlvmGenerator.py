@@ -24,6 +24,7 @@ from singledispatch import singledispatch
 from llvm import core as lc
 from llvm import ee as le
 from llvm import passes
+from llvm import LLVMException
 
 import ogAST
 import Helper
@@ -462,7 +463,10 @@ def _process(process, ctx=None, options=None):
     for timer in process.timers:
         generate_input_signal({'name': timer.lower()}, mapping[timer], ctx)
 
-    ctx.module.verify()
+    try:
+        ctx.module.verify()
+    except LLVMException as err:
+        LOG.error(str(err))
 
     if options and options.optimization:
         LOG.info('Optimizing generated LLVM IR code for process %s at level %d'
@@ -533,7 +537,10 @@ def generate_runtr_func(process, ctx):
 
     ctx.close_scope()
 
-    func.verify()
+    try:
+        func.verify()
+    except LLVMException as err:
+        LOG.error(str(err))
     return func
 
 
@@ -550,7 +557,11 @@ def generate_startup_func(process, ctx):
     for name, (ty, expr) in process.variables.viewitems():
         if expr:
             global_var = ctx.scope.resolve(str(name))
-            sdl_assign(global_var, expression(expr, ctx), ctx)
+            right = expression(expr, ctx)
+            if isinstance(right, SDLStringLiteral):
+                # Assigning string literal - make sure the left type is known
+                right.typeof = ty
+            sdl_assign(global_var, right, ctx)
 
     sdl_call('run_transition', [lc.Constant.int(ctx.i32, 0)], ctx)
     ctx.builder.ret_void()
@@ -949,6 +960,14 @@ def _expr_append_reference(expr, ctx):
     return apnd
 
 
+@reference.register(ogAST.PrimStringLiteral)
+def _prim_str_literal_reference(prim, ctx):
+    ''' Generate the IR for a raw string reference '''
+    return SDLStringLiteral(str(prim.value[1:-1]),
+                            len(str(prim.value[1:-1])),
+                            prim.exprType)
+
+
 @singledispatch
 def expression(expr, ctx):
     ''' Generate the IR for an expression node '''
@@ -1076,7 +1095,11 @@ def _expr_neg(expr, ctx):
 @expression.register(ogAST.ExprAssign)
 def _expr_assign(expr, ctx):
     ''' Generate the IR for an assign expression '''
-    sdl_assign(reference(expr.left, ctx), expression(expr.right, ctx), ctx)
+    right = expression(expr.right, ctx)
+    if isinstance(right, SDLStringLiteral):
+        # Assigning string literal - make sure the left type is known
+        right.typeof = expr.left.exprType
+    sdl_assign(reference(expr.left, ctx), right, ctx)
 
 
 @expression.register(ogAST.ExprOr)
@@ -1478,38 +1501,7 @@ def _prim_empty_string(prim, ctx):
 @expression.register(ogAST.PrimStringLiteral)
 def _prim_string_literal(prim, ctx):
     ''' Generate the IR for a string'''
-    basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
-
-    str_len = len(str(prim.value[1:-1]))
-    str_ptr = ctx.string_ptr(str(prim.value[1:-1]))
-
-    if basic_asn1ty.kind in ('StringType', 'StandardStringType'):
-        return str_ptr
-
-    llty = ctx.lltype_of(prim.exprType)
-    octectstr_ptr = ctx.builder.alloca(llty)
-
-    if basic_asn1ty.Min == basic_asn1ty.Max:
-        arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
-    else:
-        arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.one])
-
-        # Copy length
-        str_len_val = lc.Constant.int(ctx.i32, str_len)
-        count_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
-        ctx.builder.store(str_len_val, count_ptr)
-
-    # Copy constant string
-    casted_arr_ptr = ctx.builder.bitcast(arr_ptr, ctx.i8_ptr)
-    casted_str_ptr = ctx.builder.bitcast(str_ptr, ctx.i8_ptr)
-
-    size = lc.Constant.int(ctx.i64, str_len)
-    align = lc.Constant.int(ctx.i32, 0)
-    volatile = lc.Constant.int(ctx.i1, 0)
-
-    sdl_call('memcpy', [casted_arr_ptr, casted_str_ptr, size, align, volatile], ctx)
-
-    return octectstr_ptr
+    return reference(prim, ctx)
 
 
 @expression.register(ogAST.PrimConstant)
@@ -1869,6 +1861,13 @@ class SDLAppendValue():
         self.apnd_list = []
         self.exprType = None
 
+class SDLStringLiteral():
+    ''' Store a literal string and its length '''
+    def __init__(self, string, length, typeof):
+        self.string = string
+        self.length = length
+        self.typeof = typeof
+
 ###############################################################################
 # Operators
 
@@ -1881,6 +1880,42 @@ def sdl_abs(x_val, ctx):
         return ctx.builder.fptosi(res_val, ctx.i64)
     else:
         return sdl_call('fabs', [x_val], ctx)
+
+
+def sdl_stringliteral(string, oftype, ctx):
+    ''' Return the IR for a string literal, knowing the expected type '''
+    basic_asn1ty = ctx.basic_asn1type_of(oftype)
+
+    str_len = len(string)
+    str_ptr = ctx.string_ptr(string)
+
+    if basic_asn1ty.kind in ('StringType', 'StandardStringType'):
+        return str_ptr
+
+    llty = ctx.lltype_of(oftype)
+    octectstr_ptr = ctx.builder.alloca(llty)
+
+    if basic_asn1ty.Min == basic_asn1ty.Max:
+        arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
+    else:
+        arr_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.one])
+
+        # Copy length
+        str_len_val = lc.Constant.int(ctx.i32, str_len)
+        count_ptr = ctx.builder.gep(octectstr_ptr, [ctx.zero, ctx.zero])
+        ctx.builder.store(str_len_val, count_ptr)
+
+    # Copy constant string
+    casted_arr_ptr = ctx.builder.bitcast(arr_ptr, ctx.i8_ptr)
+    casted_str_ptr = ctx.builder.bitcast(str_ptr, ctx.i8_ptr)
+
+    size = lc.Constant.int(ctx.i64, str_len)
+    align = lc.Constant.int(ctx.i32, 0)
+    volatile = lc.Constant.int(ctx.i1, 0)
+
+    sdl_call('memcpy', [casted_arr_ptr, casted_str_ptr, size, align, volatile], ctx)
+
+    return octectstr_ptr
 
 
 def sdl_assign(a_ptr, b_val, ctx):
@@ -1909,7 +1944,7 @@ def sdl_assign(a_ptr, b_val, ctx):
         bty = ctx.basic_asn1type_of(b_val.exprType)
         res_llty = ctx.lltype_of(b_val.exprType)
         res_ptr = a_ptr
-        total_size = lc.Constant.int(ctx.i64, 0)
+        total_size = lc.Constant.int(ctx.i32, 0)
         # Get pointer to data and nCount (if any) fields
         if bty.Min != bty.Max:
             res_len_ptr = ctx.builder.gep(res_ptr, [ctx.zero, ctx.zero])
@@ -1930,6 +1965,9 @@ def sdl_assign(a_ptr, b_val, ctx):
             if isinstance(each_ptr, SDLSubstringValue):
                 each_arr_ptr = each_ptr.arr_ptr
                 each_count_val = each_ptr.count_val
+            elif isinstance(each_ptr, SDLStringLiteral):
+                each_arr_ptr = ctx.string_ptr(each_ptr.string)
+                each_count_val = lc.Constant.int(ctx.i32, int(each_ptr.length))
             else:
                 each_bty = ctx.basic_asn1type_of(each.exprType)
                 if each_bty.Min != each_bty.Max:
@@ -1939,15 +1977,16 @@ def sdl_assign(a_ptr, b_val, ctx):
                     each_arr_ptr = ctx.builder.gep(each_ptr,
                                                    [ctx.zero, ctx.one])
                     each_count_val = ctx.builder.load(each_len_ptr)
-                    total_size = total_size.add(
-                                    ctx.builder.zext(each_count_val, ctx.i64))
+#                   total_size = total_size.add(
+#                                   ctx.builder.zext(each_count_val, ctx.i64))
                 else:
                     # Fixed size
                     each_arr_ptr = each_ptr
-                    each_count_val = lc.Constant.int(ctx.i64,
+                    each_count_val = lc.Constant.int(ctx.i32,
                                                      int(each_bty.Min))
-                    total_size = total_size.add(
-                                    ctx.builder.zext(each_count_val, ctx.i64))
+#                   total_size = total_size.add(
+#                                   ctx.builder.zext(each_count_val, ctx.i64))
+            total_size = ctx.builder.add(total_size, each_count_val)
             sdl_call('memcpy', [
                  ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
                  ctx.builder.bitcast(each_arr_ptr, ctx.i8_ptr),
@@ -1971,6 +2010,8 @@ def sdl_assign(a_ptr, b_val, ctx):
         volatile = lc.Constant.int(ctx.i1, 0)
 
         a_ptr = ctx.builder.bitcast(a_ptr, ctx.i8_ptr)
+        if isinstance(b_val, SDLStringLiteral):
+            b_val = sdl_stringliteral(b_val.string, b_val.typeof, ctx)
         b_ptr = ctx.builder.bitcast(b_val, ctx.i8_ptr)
 
         sdl_call('memcpy', [a_ptr, b_ptr, size, align, volatile], ctx)

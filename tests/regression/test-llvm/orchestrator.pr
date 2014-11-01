@@ -4,22 +4,27 @@ PROCESS orchestrator
 COMMENT 'Hello';
     /* CIF TEXT (39, 94), (293, 263) */
     dcl fixed FixedString := 'Helo';
+
+dcl variable variableString := 'Hop';
     /* CIF ENDTEXT */
     /* CIF START (456, 110), (70, 35) */
     START;
-        /* CIF PROCEDURECALL (352, 160), (277, 35) */
-        CALL writeln(fixed(0,2)//fixed(2,3)//' word')
-        /* CIF COMMENT (649, 160), (173, 53) */
-        COMMENT 'FIXME: string world
+        /* CIF TASK (456, 160), (70, 35) */
+        TASK 'tmp'
+        /* CIF COMMENT (546, 143), (253, 68) */
+        COMMENT 'writeln(fixed(0,2)//fixed(2,3)// word)
+FIXME: string world
 cannot be longer than
-6 chars !?';
-        /* CIF TASK (398, 210), (183, 35) */
-        TASK fixed := 'H' // 'e' // 'p!';
-        /* CIF PROCEDURECALL (428, 260), (124, 35) */
-        CALL writeln(fixed);
-        /* CIF NEXTSTATE (455, 310), (70, 35) */
+6 chars !                         ';
+        /* CIF PROCEDURECALL (410, 210), (162, 35) */
+        CALL writeln(variable);
+        /* CIF TASK (397, 260), (188, 35) */
+        TASK variable := variable // '!!';
+        /* CIF PROCEDURECALL (410, 310), (162, 35) */
+        CALL writeln(variable);
+        /* CIF NEXTSTATE (456, 360), (70, 35) */
         NEXTSTATE wait;
-    /* CIF STATE (440, 359), (70, 35) */
+    /* CIF STATE (272, 359), (70, 35) */
     STATE wait;
     ENDSTATE;
 ENDPROCESS orchestrator;
