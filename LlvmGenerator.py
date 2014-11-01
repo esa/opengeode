@@ -2175,7 +2175,11 @@ def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
 
         elif basic_asn1ty.kind in ('StringType', 'StandardStringType'):
             fmt += '%s'
-            arg_values.append(arg_val)
+            if isinstance(arg_val, SDLStringLiteral):
+                arr_ptr = ctx.string_ptr(arg_val.string)
+                arg_values.append(arr_ptr)
+            else:
+                arg_values.append(arg_val)
 
         elif basic_asn1ty.kind == 'OctetStringType':
             fmt += '%.*s'
@@ -2183,6 +2187,9 @@ def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
             if isinstance(arg_val, SDLSubstringValue):
                 arr_ptr = arg_val.arr_ptr
                 count_val = arg_val.count_val
+            elif isinstance(arg_val, SDLStringLiteral):
+                arr_ptr = ctx.string_ptr(arg_val.string)
+                count_val = lc.Constant.int(ctx.i32, int(arg_val.length))
             elif basic_asn1ty.Min == basic_asn1ty.Max:
                 arr_ptr = ctx.builder.gep(arg_val, [ctx.zero, ctx.zero])
                 count_val = lc.Constant.int(ctx.i32, arr_ptr.type.pointee.count)

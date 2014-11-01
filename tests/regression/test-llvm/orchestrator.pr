@@ -16,13 +16,17 @@ dcl variable variableString := 'Hop';
 FIXME: string world
 cannot be longer than
 6 chars !                         ';
-        /* CIF PROCEDURECALL (410, 210), (162, 35) */
+        /* CIF PROCEDURECALL (357, 210), (267, 35) */
+        CALL writeln(fixed(0,2)//fixed(2,3)// ' word');
+        /* CIF PROCEDURECALL (410, 260), (162, 35) */
         CALL writeln(variable);
-        /* CIF TASK (397, 260), (188, 35) */
+        /* CIF TASK (397, 310), (188, 35) */
         TASK variable := variable // '!!';
-        /* CIF PROCEDURECALL (410, 310), (162, 35) */
+        /* CIF PROCEDURECALL (410, 360), (162, 35) */
         CALL writeln(variable);
-        /* CIF NEXTSTATE (456, 360), (70, 35) */
+        /* CIF PROCEDURECALL (406, 410), (170, 35) */
+        CALL writeln(variable//':-)');
+        /* CIF NEXTSTATE (456, 460), (70, 35) */
         NEXTSTATE wait;
     /* CIF STATE (272, 359), (70, 35) */
     STATE wait;
