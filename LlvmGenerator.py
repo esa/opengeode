@@ -916,7 +916,7 @@ def _prim_index_reference(prim, ctx):
 
 @reference.register(ogAST.PrimSubstring)
 def _prim_substring_reference(prim, ctx):
-    ''' Generate hte IR for a substring reference '''
+    ''' Generate the IR for a substring reference '''
     asn1ty = prim.exprType
     basic_asn1ty = ctx.basic_asn1type_of(asn1ty)
 
@@ -940,6 +940,12 @@ def _prim_substring_reference(prim, ctx):
     arr_ptr = ctx.builder.bitcast(arr_ptr, arr_ptr_llty)
 
     return SDLSubstringValue(arr_ptr, count_val, asn1ty)
+
+
+@reference.register(ogAST.PrimSequenceOf)
+def _prim_sequence_of_reference(prim, ctx):
+    ''' Generate the IR for an ASN.1 SEQUENCE OF reference '''
+    return SDLSequenceOf(prim)
 
 
 @reference.register(ogAST.ExprAppend)
@@ -1098,7 +1104,7 @@ def _expr_neg(expr, ctx):
 def _expr_assign(expr, ctx):
     ''' Generate the IR for an assign expression '''
     right = expression(expr.right, ctx)
-    if isinstance(right, SDLStringLiteral):
+    if isinstance(right, (SDLStringLiteral, SDLSequenceOf)):
         # Assigning string literal - make sure the left type is known
         right.typeof = expr.left.exprType
     sdl_assign(reference(expr.left, ctx), right, ctx)
@@ -1576,27 +1582,7 @@ def _prim_sequence(prim, ctx):
 @expression.register(ogAST.PrimSequenceOf)
 def _prim_sequence_of(prim, ctx):
     ''' Generate the IR for an ASN.1 SEQUENCE OF '''
-    basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
-    llty = ctx.lltype_of(prim.exprType)
-    struct_ptr = ctx.builder.alloca(llty)
-
-    is_variable_size = basic_asn1ty.Min != basic_asn1ty.Max
-
-    if is_variable_size:
-        count_val = lc.Constant.int(ctx.i32, len(prim.value))
-        count_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
-        ctx.builder.store(count_val, count_ptr)
-        array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one])
-    else:
-        array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
-
-    for idx, expr in enumerate(prim.value):
-        idx_cons = lc.Constant.int(ctx.i32, idx)
-        expr_val = expression(expr, ctx)
-        pos_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_cons])
-        sdl_assign(pos_ptr, expr_val, ctx)
-
-    return struct_ptr
+    return reference(prim, ctx)
 
 
 @expression.register(ogAST.PrimChoiceItem)
@@ -1851,24 +1837,32 @@ def is_array_ptr(val):
 # Values
 
 
-class SDLSubstringValue():
+class SDLSubstringValue(object):
     def __init__(self, arr_ptr, count_val, asn1ty):
         self.arr_ptr = arr_ptr
         self.count_val = count_val
         self.asn1ty = asn1ty
 
-class SDLAppendValue():
+class SDLAppendValue(object):
     ''' Store an array concatenation value (e.g. "a//b") '''
     def __init__(self):
         self.apnd_list = []
         self.exprType = None
 
-class SDLStringLiteral():
+class SDLStringLiteral(object):
     ''' Store a literal string and its length '''
     def __init__(self, string, length, typeof):
         self.string = string
         self.length = length
         self.typeof = typeof
+
+class SDLSequenceOf(object):
+    ''' Store a SEQUENCE OF reference '''
+    def __init__(self, seqof):
+        self.seqof = seqof
+        self.typeof = None
+        self.length = len(seqof.value)
+
 
 ###############################################################################
 # Operators
@@ -1918,6 +1912,31 @@ def sdl_stringliteral(string, oftype, ctx):
     sdl_call('memcpy', [casted_arr_ptr, casted_str_ptr, size, align, volatile], ctx)
 
     return octectstr_ptr
+
+
+def sdl_sequenceof(seqof, ctx):
+    ''' Return the IR of a SEQUENCE OF, knowing the expected type '''
+    basic_asn1ty = ctx.basic_asn1type_of(seqof.typeof)
+    llty = ctx.lltype_of(seqof.typeof)
+    struct_ptr = ctx.builder.alloca(llty)
+
+    is_variable_size = basic_asn1ty.Min != basic_asn1ty.Max
+
+    if is_variable_size:
+        count_val = lc.Constant.int(ctx.i32, seqof.length)
+        count_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
+        ctx.builder.store(count_val, count_ptr)
+        array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.one])
+    else:
+        array_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
+
+    for idx, expr in enumerate(seqof.seqof.value):
+        idx_cons = lc.Constant.int(ctx.i32, idx)
+        expr_val = expression(expr, ctx)
+        pos_ptr = ctx.builder.gep(array_ptr, [ctx.zero, idx_cons])
+        sdl_assign(pos_ptr, expr_val, ctx)
+
+    return struct_ptr
 
 
 def sdl_assign(a_ptr, b_val, ctx):
@@ -1970,6 +1989,9 @@ def sdl_assign(a_ptr, b_val, ctx):
             elif isinstance(each_ptr, SDLStringLiteral):
                 each_arr_ptr = ctx.string_ptr(each_ptr.string)
                 each_count_val = lc.Constant.int(ctx.i32, int(each_ptr.length))
+            elif isinstance(each_ptr, SDLSequenceOf):
+                each_arr_ptr = sdl_sequenceof(each_ptr, ctx)
+                each_count_val = lc.Constant.int(ctx.i32, each_ptr.length)
             else:
                 each_bty = ctx.basic_asn1type_of(each.exprType)
                 if each_bty.Min != each_bty.Max:
@@ -2014,6 +2036,8 @@ def sdl_assign(a_ptr, b_val, ctx):
         a_ptr = ctx.builder.bitcast(a_ptr, ctx.i8_ptr)
         if isinstance(b_val, SDLStringLiteral):
             b_val = sdl_stringliteral(b_val.string, b_val.typeof, ctx)
+        elif isinstance(b_val, SDLSequenceOf):
+            b_val = sdl_sequenceof(b_val, ctx)
         b_ptr = ctx.builder.bitcast(b_val, ctx.i8_ptr)
 
         sdl_call('memcpy', [a_ptr, b_ptr, size, align, volatile], ctx)
@@ -2021,6 +2045,8 @@ def sdl_assign(a_ptr, b_val, ctx):
     else:
         if isinstance(b_val, SDLStringLiteral):
             b_val = sdl_stringliteral(b_val.string, b_val.typeof, ctx)
+        elif isinstance(b_val, SDLSequenceOf):
+            b_val = sdl_sequenceof(b_val, ctx)
         ctx.builder.store(b_val, a_ptr)
 
 
@@ -2180,10 +2206,8 @@ def sdl_write(arg_vals, arg_asn1tys, ctx, newline=False):
         elif basic_asn1ty.kind in ('StringType', 'StandardStringType'):
             fmt += '%s'
             if isinstance(arg_val, SDLStringLiteral):
-                arr_ptr = ctx.string_ptr(arg_val.string)
-                arg_values.append(arr_ptr)
-            else:
-                arg_values.append(arg_val)
+                arg_val = ctx.string_ptr(arg_val.string)
+            arg_values.append(arg_val)
 
         elif basic_asn1ty.kind == 'OctetStringType':
             fmt += '%.*s'
