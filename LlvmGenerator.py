@@ -558,7 +558,7 @@ def generate_startup_func(process, ctx):
         if expr:
             global_var = ctx.scope.resolve(str(name))
             right = expression(expr, ctx)
-            if isinstance(right, SDLStringLiteral):
+            if isinstance(right, (SDLStringLiteral, SDLSequenceOf)):
                 # Assigning string literal - make sure the left type is known
                 right.typeof = ty
             sdl_assign(global_var, right, ctx)
@@ -1574,7 +1574,11 @@ def _prim_sequence(prim, ctx):
 
         field_idx_cons = lc.Constant.int(ctx.i32, struct.idx(field_name))
         field_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, field_idx_cons])
-        sdl_assign(field_ptr, expression(field_expr, ctx), ctx)
+        right = expression(field_expr, ctx)
+        if isinstance(right, (SDLStringLiteral, SDLSequenceOf)):
+            # Assigning string literal - make sure the left type is known
+            right.typeof = field_expr.exprType
+        sdl_assign(field_ptr, right, ctx)
 
     return struct_ptr
 
