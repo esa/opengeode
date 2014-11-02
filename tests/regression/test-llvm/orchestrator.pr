@@ -1,32 +1,43 @@
-/* CIF PROCESS (295, 56), (150, 75) */
+/* CIF PROCESS (295, 57), (150, 75) */
 PROCESS orchestrator
-/* CIF COMMENT (405, 192), (71, 35) */
+/* CIF COMMENT (405, 193), (71, 35) */
 COMMENT 'Hello';
     /* CIF TEXT (39, 94), (293, 263) */
     dcl fixed FixedString := 'Helo';
 
 dcl variable variableString := 'Hop';
+
+dcl seqof seqbool;
     /* CIF ENDTEXT */
     /* CIF START (456, 110), (70, 35) */
     START;
-        /* CIF TASK (456, 160), (70, 35) */
-        TASK 'tmp'
-        /* CIF COMMENT (546, 143), (253, 68) */
-        COMMENT 'writeln(fixed(0,2)//fixed(2,3)// word)
-FIXME: string world
-cannot be longer than
-6 chars !                         ';
-        /* CIF PROCEDURECALL (357, 210), (267, 35) */
+        /* CIF TASK (400, 160), (180, 35) */
+        TASK seqof := {true} // {false};
+        /* CIF TASK (409, 210), (163, 53) */
+        TASK for each in seqof:
+    call writeln(each);
+endfor;
+        /* CIF PROCEDURECALL (368, 278), (244, 35) */
+        CALL writeln('(1) -> ', seqof(0), seqof(1));
+        /* CIF TASK (388, 328), (205, 33) */
+        TASK seqof := {true, false, false};
+        /* CIF PROCEDURECALL (368, 376), (244, 35) */
+        CALL writeln('(2) -> ', seqof(0), seqof(1));
+        /* CIF TASK (409, 426), (163, 53) */
+        TASK 'for each in seqof:
+    call writeln(each);
+endfor';
+        /* CIF PROCEDURECALL (357, 494), (267, 35) */
         CALL writeln(fixed(0,2)//fixed(2,3)// ' word');
-        /* CIF PROCEDURECALL (410, 260), (162, 35) */
+        /* CIF PROCEDURECALL (410, 544), (162, 35) */
         CALL writeln(variable);
-        /* CIF TASK (397, 310), (188, 35) */
+        /* CIF TASK (397, 594), (188, 35) */
         TASK variable := variable // '!!';
-        /* CIF PROCEDURECALL (410, 360), (162, 35) */
+        /* CIF PROCEDURECALL (410, 644), (162, 35) */
         CALL writeln(variable);
-        /* CIF PROCEDURECALL (406, 410), (170, 35) */
+        /* CIF PROCEDURECALL (406, 694), (170, 35) */
         CALL writeln(variable//':-)');
-        /* CIF NEXTSTATE (456, 460), (70, 35) */
+        /* CIF NEXTSTATE (456, 744), (70, 35) */
         NEXTSTATE wait;
     /* CIF STATE (272, 359), (70, 35) */
     STATE wait;

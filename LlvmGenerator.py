@@ -964,6 +964,16 @@ def _expr_append_reference(expr, ctx):
         apnd.apnd_list.extend(inner_right.apnd_list)
     else:
         apnd.apnd_list.append(expr.right)
+#   flat_list = []
+#   for each in apnd.apnd_list:
+#       # Also flatten Sequence Of primaries
+#       if isinstance(each, ogAST.PrimSequenceOf):
+#           flat_list.extend(each.value)
+#       else:
+#           flat_list.append(each)
+#   print '(1):', apnd.apnd_list
+#   apnd.apnd_list = flat_list
+#   print '(2):', apnd.apnd_list
     apnd.exprType = expr.exprType
     return apnd
 
@@ -1994,8 +2004,13 @@ def sdl_assign(a_ptr, b_val, ctx):
                 each_arr_ptr = ctx.string_ptr(each_ptr.string)
                 each_count_val = lc.Constant.int(ctx.i32, int(each_ptr.length))
             elif isinstance(each_ptr, SDLSequenceOf):
+                if not each_ptr.typeof:
+                    each_ptr.typeof = b_val.exprType
                 each_arr_ptr = sdl_sequenceof(each_ptr, ctx)
                 each_count_val = lc.Constant.int(ctx.i32, each_ptr.length)
+                if bty.Min != bty.Max:
+                    each_arr_ptr = ctx.builder.gep(each_arr_ptr,
+                                                   [ctx.zero, ctx.one])
             else:
                 each_bty = ctx.basic_asn1type_of(each.exprType)
                 if each_bty.Min != each_bty.Max:
@@ -2005,15 +2020,11 @@ def sdl_assign(a_ptr, b_val, ctx):
                     each_arr_ptr = ctx.builder.gep(each_ptr,
                                                    [ctx.zero, ctx.one])
                     each_count_val = ctx.builder.load(each_len_ptr)
-#                   total_size = total_size.add(
-#                                   ctx.builder.zext(each_count_val, ctx.i64))
                 else:
                     # Fixed size
                     each_arr_ptr = each_ptr
                     each_count_val = lc.Constant.int(ctx.i32,
                                                      int(each_bty.Min))
-#                   total_size = total_size.add(
-#                                   ctx.builder.zext(each_count_val, ctx.i64))
             total_size = ctx.builder.add(total_size, each_count_val)
             sdl_call('memcpy', [
                  ctx.builder.bitcast(res_arr_ptr, ctx.i8_ptr),
