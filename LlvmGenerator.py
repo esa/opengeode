@@ -964,16 +964,7 @@ def _expr_append_reference(expr, ctx):
         apnd.apnd_list.extend(inner_right.apnd_list)
     else:
         apnd.apnd_list.append(expr.right)
-#   flat_list = []
-#   for each in apnd.apnd_list:
-#       # Also flatten Sequence Of primaries
-#       if isinstance(each, ogAST.PrimSequenceOf):
-#           flat_list.extend(each.value)
-#       else:
-#           flat_list.append(each)
-#   print '(1):', apnd.apnd_list
-#   apnd.apnd_list = flat_list
-#   print '(2):', apnd.apnd_list
+
     apnd.exprType = expr.exprType
     return apnd
 
@@ -1114,7 +1105,7 @@ def _expr_neg(expr, ctx):
 def _expr_assign(expr, ctx):
     ''' Generate the IR for an assign expression '''
     right = expression(expr.right, ctx)
-    if isinstance(right, (SDLStringLiteral, SDLSequenceOf)):
+    if isinstance(right, (SDLStringLiteral, SDLSequenceOf, SDLAppendValue)):
         # Assigning string literal - make sure the left type is known
         right.typeof = expr.left.exprType
     sdl_assign(reference(expr.left, ctx), right, ctx)
@@ -1976,8 +1967,10 @@ def sdl_assign(a_ptr, b_val, ctx):
             ctx.builder.store(b_val.count_val, a_count_ptr)
 
     elif isinstance(b_val, SDLAppendValue):
-        bty = ctx.basic_asn1type_of(b_val.exprType)
-        res_llty = ctx.lltype_of(b_val.exprType)
+        #bty = ctx.basic_asn1type_of(b_val.exprType)
+        #res_llty = ctx.lltype_of(b_val.exprType)
+        bty = ctx.basic_asn1type_of(b_val.typeof)
+        res_llty = ctx.lltype_of(b_val.typeof)
         res_ptr = a_ptr
         total_size = lc.Constant.int(ctx.i32, 0)
         # Get pointer to data and nCount (if any) fields
@@ -2005,7 +1998,7 @@ def sdl_assign(a_ptr, b_val, ctx):
                 each_count_val = lc.Constant.int(ctx.i32, int(each_ptr.length))
             elif isinstance(each_ptr, SDLSequenceOf):
                 if not each_ptr.typeof:
-                    each_ptr.typeof = b_val.exprType
+                    each_ptr.typeof = b_val.typeof #exprType
                 each_arr_ptr = sdl_sequenceof(each_ptr, ctx)
                 each_count_val = lc.Constant.int(ctx.i32, each_ptr.length)
                 if bty.Min != bty.Max:

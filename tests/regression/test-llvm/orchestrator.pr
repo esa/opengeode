@@ -11,8 +11,8 @@ dcl seqof seqbool;
     /* CIF ENDTEXT */
     /* CIF START (456, 110), (70, 35) */
     START;
-        /* CIF TASK (400, 160), (180, 35) */
-        TASK seqof := {true} // {false};
+        /* CIF TASK (372, 160), (235, 35) */
+        TASK seqof := {true} // {false} // {false};
         /* CIF TASK (409, 210), (163, 53) */
         TASK for each in seqof:
     call writeln(each);
@@ -20,9 +20,9 @@ endfor;
         /* CIF PROCEDURECALL (368, 278), (244, 35) */
         CALL writeln('(1) -> ', seqof(0), seqof(1));
         /* CIF TASK (388, 328), (205, 33) */
-        TASK seqof := {true, false, false};
+        TASK seqof := seqof // {true};
         /* CIF PROCEDURECALL (368, 376), (244, 35) */
-        CALL writeln('(2) -> ', seqof(0), seqof(1));
+        CALL writeln('(2) -> ', seqof(0), seqof(3));
         /* CIF TASK (409, 426), (163, 53) */
         TASK 'for each in seqof:
     call writeln(each);
