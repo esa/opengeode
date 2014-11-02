@@ -246,7 +246,7 @@ class Context():
 
         for idx, field_name in enumerate(Helper.sorted_fields(asn1ty)):
             # enum values used in choice determinant/present
-            self.enums[field_name.replace('-', '_')] = lc.Constant.int(self.i32, idx)
+            self.enums[field_name.replace('-', '_').lower()] = lc.Constant.int(self.i32, idx)
 
             field_names.append(field_name.replace('-', '_'))
             field_lltys.append(self.lltype_of(asn1ty.Children[field_name].type))
@@ -1243,10 +1243,16 @@ def _expr_not(expr, ctx):
     ''' Generate the IR for a not expression '''
     basic_asn1ty = ctx.basic_asn1type_of(expr.exprType)
 
+    if isinstance(expr.expr, ogAST.PrimSequenceOf):
+        # Raw sequence of boolean (e.g. not "{true, false}") -> flip values
+        for each in expr.expr.value:
+            each.value[0] = 'true' if each.value[0] == 'false' else 'false'
+        return expression(expr.expr, ctx)
+
     if basic_asn1ty.kind == 'BooleanType':
         return ctx.builder.not_(expression(expr.expr, ctx))
 
-    elif basic_asn1ty.kind == 'SequenceOfType' and basic_asn1ty.Min == basic_asn1ty.Max:
+    elif basic_asn1ty.kind == 'SequenceOfType': # and basic_asn1ty.Min == basic_asn1ty.Max:
         func = ctx.builder.basic_block.function
 
         body_block = func.append_basic_block('not:body')
@@ -1257,17 +1263,20 @@ def _expr_not(expr, ctx):
         ctx.builder.store(lc.Constant.int(ctx.i32, 0), idx_ptr)
 
         struct_ptr = expression(expr.expr, ctx)
+        if basic_asn1ty.Min != basic_asn1ty.Max:
+            len_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, ctx.zero])
+            len_val = ctx.builder.load(len_ptr)
+        else:
+            array_llty = struct_ptr.type.pointee.elements[0]
+            len_val = lc.Constant.int(ctx.i32, array_llty.count)
         res_struct_ptr = ctx.builder.alloca(struct_ptr.type.pointee)
-
-        array_llty = struct_ptr.type.pointee.elements[0]
-        len_val = lc.Constant.int(ctx.i32, array_llty.count)
 
         ctx.builder.branch(body_block)
 
         ctx.builder.position_at_end(body_block)
         idx_val = ctx.builder.load(idx_ptr)
 
-        elem_idxs = [ctx.zero, ctx.zero, idx_val]
+        elem_idxs = [ctx.zero, ctx.zero if basic_asn1ty.Min == basic_asn1ty.Max else ctx.one, idx_val]
 
         elem_ptr = ctx.builder.gep(struct_ptr, elem_idxs)
         elem_val = ctx.builder.load(elem_ptr)
@@ -1482,16 +1491,19 @@ def _prim_call(prim, ctx):
 @expression.register(ogAST.PrimEnumeratedValue)
 def _prim_enumerated_value(prim, ctx):
     ''' Generate the IR for an enumerated value '''
-    enumerant = prim.value[0].replace('_', '-')
+    enumerant = prim.value[0].replace('_', '-').lower()
     basic_asn1ty = ctx.basic_asn1type_of(prim.exprType)
-    return lc.Constant.int(ctx.i32, basic_asn1ty.EnumValues[enumerant].IntValue)
+    for each in basic_asn1ty.EnumValues:
+        if each.lower() == enumerant:
+            break
+    return lc.Constant.int(ctx.i32, basic_asn1ty.EnumValues[each].IntValue)
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
 def _prim_choice_determinant(prim, ctx):
     ''' Generate the IR for a choice determinant (enumerated) '''
     enumerant = prim.value[0].replace('-', '_')
-    return ctx.enums[enumerant]
+    return ctx.enums[enumerant.lower()]
 
 
 @expression.register(ogAST.PrimInteger)
@@ -1630,6 +1642,9 @@ def _prim_choiceitem(prim, ctx):
 @generate.register(ogAST.Decision)
 def _decision(dec, ctx):
     ''' Generate the IR for a decision '''
+    if dec.kind == 'any':
+        LOG.warning('LLVM backend does not support the "ANY" statement')
+        return
     func = ctx.builder.basic_block.function
 
     ans_cond_blocks = [func.append_basic_block('dec:ans:cond') for _ in dec.answers]
