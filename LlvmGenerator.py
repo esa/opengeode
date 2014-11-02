@@ -540,7 +540,7 @@ def generate_runtr_func(process, ctx):
     try:
         func.verify()
     except LLVMException as err:
-        LOG.error(str(err))
+        LOG.error('LLVM Verify: {}'.format(str(err)))
     return func
 
 
@@ -558,8 +558,9 @@ def generate_startup_func(process, ctx):
         if expr:
             global_var = ctx.scope.resolve(str(name))
             right = expression(expr, ctx)
-            if isinstance(right, (SDLStringLiteral, SDLSequenceOf)):
-                # Assigning string literal - make sure the left type is known
+            if isinstance(right, (SDLStringLiteral, SDLSequenceOf,
+                                  SDLAppendValue, SDLSubstringValue)):
+                # Propagate left type before processing the right side
                 right.typeof = ty
             sdl_assign(global_var, right, ctx)
 
@@ -661,6 +662,11 @@ def _output(output, ctx):
         arg_vals = []
         for arg in args:
             arg_val = expression(arg, ctx)
+            if isinstance(arg_val, SDLStringLiteral):
+                arg_val = sdl_stringliteral(arg_val.string, arg_val.typeof, ctx)
+            elif isinstance(arg_val, SDLSequenceOf):
+                arg_val = sdl_sequenceof(arg_val, ctx)
+            # XXX Add SDLSubstring and SDLAppendValue, no?
             # Pass by reference
             if arg_val.type.kind != lc.TYPE_POINTER:
                 arg_var = ctx.builder.alloca(arg_val.type, None)
@@ -917,29 +923,35 @@ def _prim_index_reference(prim, ctx):
 @reference.register(ogAST.PrimSubstring)
 def _prim_substring_reference(prim, ctx):
     ''' Generate the IR for a substring reference '''
-    asn1ty = prim.exprType
-    basic_asn1ty = ctx.basic_asn1type_of(asn1ty)
-
-    seqof_val = expression(prim.value[0], ctx)
-
-    low_val = expression(prim.value[1]['substring'][0], ctx)
-    high_val = expression(prim.value[1]['substring'][1], ctx)
-    count_val = ctx.builder.sub(high_val, low_val)
-    count_val = ctx.builder.add(count_val, lc.Constant.int(ctx.i64, 1))
-    count_val = ctx.builder.trunc(count_val, ctx.i32)
-
-    if isinstance(seqof_val, SDLSubstringValue):
-        arr_ptr = seqof_val.arr_ptr
-    elif basic_asn1ty.Min == basic_asn1ty.Max:
-        arr_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero])
-    else:
-        arr_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.one])
-
-    arr_ptr_llty = arr_ptr.type
-    arr_ptr = ctx.builder.gep(arr_ptr, [ctx.zero, low_val])
-    arr_ptr = ctx.builder.bitcast(arr_ptr, arr_ptr_llty)
-
-    return SDLSubstringValue(arr_ptr, count_val, asn1ty)
+    return SDLSubstringValue(prim, ctx)
+#
+#   asn1ty = prim.exprType
+#   basic_asn1ty = ctx.basic_asn1type_of(asn1ty)
+#
+#   seqof_val = expression(prim.value[0], ctx)
+#
+#   low_val = expression(prim.value[1]['substring'][0], ctx)
+#   high_val = expression(prim.value[1]['substring'][1], ctx)
+#   count_val = ctx.builder.sub(high_val, low_val)
+#   count_val = ctx.builder.add(count_val, lc.Constant.int(ctx.i64, 1))
+#   count_val = ctx.builder.trunc(count_val, ctx.i32)
+#
+#   if isinstance(seqof_val, SDLSubstringValue):
+#       arr_ptr = seqof_val.arr_ptr
+#   elif basic_asn1ty.Min == basic_asn1ty.Max:
+#       print 'Here'
+#       arr_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.zero])
+#   else:
+#       print 'Non-Fixed size'
+#       arr_ptr = ctx.builder.gep(seqof_val, [ctx.zero, ctx.one])
+#
+#   arr_ptr_llty = arr_ptr.type
+#   print 'will crash?', arr_ptr
+#   arr_ptr = ctx.builder.gep(arr_ptr, [ctx.zero, low_val])
+#   print 'no!'
+#   arr_ptr = ctx.builder.bitcast(arr_ptr, arr_ptr_llty)
+#
+#   return SDLSubstringValue(arr_ptr, count_val, asn1ty)
 
 
 @reference.register(ogAST.PrimSequenceOf)
@@ -1082,6 +1094,10 @@ def _expr_eq(expr, ctx):
     left_val = expression(expr.left, ctx)
     right_val = expression(expr.right, ctx)
     asn1ty = expr.left.exprType
+    if isinstance(right_val, (SDLStringLiteral, SDLSequenceOf,
+                              SDLAppendValue, SDLSubstringValue)):
+        # Propagate left type before processing the right side
+        right_val.typeof = asn1ty
 
     if isinstance(expr, ogAST.ExprEq):
         return sdl_equals(left_val, right_val, asn1ty, ctx)
@@ -1105,8 +1121,9 @@ def _expr_neg(expr, ctx):
 def _expr_assign(expr, ctx):
     ''' Generate the IR for an assign expression '''
     right = expression(expr.right, ctx)
-    if isinstance(right, (SDLStringLiteral, SDLSequenceOf, SDLAppendValue)):
-        # Assigning string literal - make sure the left type is known
+    if isinstance(right, (SDLStringLiteral, SDLSequenceOf,
+                          SDLAppendValue, SDLSubstringValue)):
+        # Propagate left type before processing the right side
         right.typeof = expr.left.exprType
     sdl_assign(reference(expr.left, ctx), right, ctx)
 
@@ -1576,8 +1593,9 @@ def _prim_sequence(prim, ctx):
         field_idx_cons = lc.Constant.int(ctx.i32, struct.idx(field_name))
         field_ptr = ctx.builder.gep(struct_ptr, [ctx.zero, field_idx_cons])
         right = expression(field_expr, ctx)
-        if isinstance(right, (SDLStringLiteral, SDLSequenceOf)):
-            # Assigning string literal - make sure the left type is known
+        if isinstance(right, (SDLStringLiteral, SDLSequenceOf,
+                              SDLAppendValue, SDLSubstringValue)):
+            # Propagate left type before processing the right side
             right.typeof = field_expr.exprType
         sdl_assign(field_ptr, right, ctx)
 
@@ -1843,10 +1861,47 @@ def is_array_ptr(val):
 
 
 class SDLSubstringValue(object):
-    def __init__(self, arr_ptr, count_val, asn1ty):
-        self.arr_ptr = arr_ptr
-        self.count_val = count_val
-        self.asn1ty = asn1ty
+    #def __init__(self, arr_ptr, count_val, asn1ty):
+    def __init__(self, substring, ctx):
+        self.substring = substring
+        #self.arr_ptr = arr_ptr
+        #self.count_val = count_val
+        #self.asn1ty = asn1ty
+        self.typeof = None
+        self.ctx = ctx
+        self.seqof_val = expression(self.substring.value[0], self.ctx)
+
+        self.low_val = expression(self.substring.value[1]['substring'][0], self.ctx)
+        high_val = expression(self.substring.value[1]['substring'][1], self.ctx)
+        count_val = self.ctx.builder.sub(high_val, self.low_val)
+        count_val = self.ctx.builder.add(count_val,
+                                         lc.Constant.int(self.ctx.i64, 1))
+        self.count_val = self.ctx.builder.trunc(count_val, self.ctx.i32)
+
+    @property
+    def arr_ptr(self):
+        basic_asn1ty = self.ctx.basic_asn1type_of(self.substring.exprType)
+        if self.typeof:
+            # When the destination field has a known type
+            typeof_bty = self.ctx.basic_asn1type_of(self.typeof)
+            Min, Max = typeof_bty.Min, typeof_bty.Max
+        else:
+            # Unknown, e.g. in a write statement
+            # Take the basic type of the variable used in the substring
+            typeof_var = self.substring.value[0].exprType
+            typeof_bty = self.ctx.basic_asn1type_of(typeof_var)
+            Min, Max = typeof_bty.Min, typeof_bty.Max
+
+        if isinstance(self.seqof_val, SDLSubstringValue):
+            _arr_ptr = self.seqof_val.arr_ptr
+        elif Min == Max:
+            _arr_ptr = self.ctx.builder.gep(self.seqof_val, [self.ctx.zero, self.ctx.zero])
+        else:
+            _arr_ptr = self.ctx.builder.gep(self.seqof_val, [self.ctx.zero, self.ctx.one])
+        arr_ptr_llty = _arr_ptr.type
+        _arr_ptr = self.ctx.builder.gep(_arr_ptr, [self.ctx.zero, self.low_val])
+        _arr_ptr = self.ctx.builder.bitcast(_arr_ptr, arr_ptr_llty)
+        return _arr_ptr
 
 class SDLAppendValue(object):
     ''' Store an array concatenation value (e.g. "a//b") '''
@@ -1947,7 +2002,7 @@ def sdl_sequenceof(seqof, ctx):
 def sdl_assign(a_ptr, b_val, ctx):
     ''' Generate the IR for an Assign operation '''
     if isinstance(b_val, SDLSubstringValue):
-        basic_asn1ty = ctx.basic_asn1type_of(b_val.asn1ty)
+        basic_asn1ty = ctx.basic_asn1type_of(b_val.typeof) #asn1ty)
 
         size = ctx.builder.zext(b_val.count_val, ctx.i64)
         align = lc.Constant.int(ctx.i32, 0)
@@ -2060,7 +2115,10 @@ def sdl_assign(a_ptr, b_val, ctx):
 
 def sdl_call(name, arg_vals, ctx):
     ''' Generate the IR for a call operation '''
-    return ctx.builder.call(ctx.funcs[name], arg_vals)
+    try:
+        return ctx.builder.call(ctx.funcs[name], arg_vals)
+    except TypeError as err:
+        LOG.error('[sdl_call] - {}'.format(str(err)))
 
 
 def sdl_ceil(x_val, ctx):
@@ -2083,6 +2141,13 @@ def sdl_equals(a_val, b_val, asn1ty, ctx):
 
     elif basic_asn1ty.kind == 'RealType':
         return ctx.builder.fcmp(lc.FCMP_OEQ, a_val, b_val)
+
+    if isinstance(b_val, SDLStringLiteral):
+        b_val = sdl_stringliteral(b_val.string, b_val.typeof, ctx)
+    elif isinstance(b_val, SDLSequenceOf):
+        b_val = sdl_sequenceof(b_val, ctx)
+
+    # XXX add isinstance(b_val, SDLAppend) and SDLSubstring, no?
 
     try:
         type_name = asn1ty.ReferencedTypeName.replace('-', '_').lower()

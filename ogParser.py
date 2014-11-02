@@ -1547,7 +1547,7 @@ def primary_substring(root, context):
         max0 = float(find_basic_type(params[0].exprType).Max)
         max1 = float(find_basic_type(params[1].exprType).Max)
         node.exprType = type('SubStr', (receiver_bty,),
-                             {'Min': 
+                             {'Min':
                                 str(int(min1) - int(max0) + 1),
                               'Max':
                                 str(int(max1) - int(min0) + 1)})
