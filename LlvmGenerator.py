@@ -2148,6 +2148,7 @@ def sdl_equals(a_val, b_val, asn1ty, ctx):
         b_val = sdl_sequenceof(b_val, ctx)
 
     # XXX add isinstance(b_val, SDLAppend) and SDLSubstring, no?
+    # Also in _equals a_val should also be evaluated against special types
 
     try:
         type_name = asn1ty.ReferencedTypeName.replace('-', '_').lower()

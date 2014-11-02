@@ -41,7 +41,18 @@ endfor';
         TASK variable := variable(0,2);
         /* CIF PROCEDURECALL (361, 794), (259, 35) */
         CALL writeln(variable(0, 2));
-        /* CIF NEXTSTATE (456, 844), (70, 35) */
+        /* CIF DECISION (380, 844), (221, 50) */
+        DECISION variable // variable = 'HopHop';
+                /* CIF ANSWER (371, 914), (70, 23) */
+                (true):
+                    /* CIF PROCEDURECALL (347, 952), (117, 35) */
+                    CALL writeln('OK');
+                /* CIF ANSWER (543, 914), (70, 23) */
+                (false):
+                    /* CIF PROCEDURECALL (474, 952), (207, 35) */
+                    CALL writeln(variable // variable);
+        ENDDECISION;
+        /* CIF NEXTSTATE (455, 1002), (70, 35) */
         NEXTSTATE wait;
     /* CIF STATE (272, 359), (70, 35) */
     STATE wait;

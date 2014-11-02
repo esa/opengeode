@@ -1451,9 +1451,9 @@ def _decision(dec):
                     exp = u'tmp{idx} {op} {ans}'.format(idx=dec.tmpVar,
                             op=a.openRangeOp.operand, ans=ans_str)
             else:
-                exp = u'{q} {op} {ans}'.format(q=q_str,
-                                              op=a.openRangeOp.operand,
-                                              ans=ans_str)
+                exp = u'({q}) {op} {ans}'.format(q=q_str,
+                                                 op=a.openRangeOp.operand,
+                                                 ans=ans_str)
             code.append(sep + exp + ' then')
             if a.transition:
                 stmt, tr_decl = generate(a.transition)
