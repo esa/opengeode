@@ -84,8 +84,9 @@ def _block(ast, scene):
                                         direc="in"
                                            if fpar['direction']=='in'
                                            else 'in/out',
-                                        asn1=fpar['type']
-                                         .ReferencedTypeName.replace('-', '_'))
+                                        asn1=getattr(fpar['type'],
+                                           'ReferencedTypeName', 'ERROR')
+                                           .replace('-', '_'))
                                 for fpar in proc.fpar]))
                         for proc in ast.parent.procedures]
         if signals or procedures:
