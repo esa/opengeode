@@ -438,6 +438,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                 symbol.update_connections()
                             for child in symbol.childItems():
                                 fix_pos_from_ast(child)
+                                # Update the position anyway, because
+                                # depending on the host platform, the exact
+                                # pixel position and size of symbols can
+                                # vary - due to font rendering, etc.
+                                child.update_position()
                         except AttributeError:
                             # no AST
                             pass
