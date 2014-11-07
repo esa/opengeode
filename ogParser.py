@@ -1760,6 +1760,7 @@ def variables(root, ta_ast, context):
             else:
                 if def_value.exprType == UNKNOWN_TYPE:
                     def_value.exprType = asn1_sort
+                def_value.expected_type = asn1_sort
 
             if not def_value.is_raw and \
                     not isinstance(def_value, ogAST.PrimConstant):
@@ -3694,6 +3695,11 @@ def assign(root, context):
         # this could cause a bug (and regression is OK)
         if isinstance(expr.right, ogAST.ExprAppend):
             expr.right.exprType = expr.left.exprType
+        if isinstance(expr.right, (ogAST.PrimSequenceOf,
+                                   ogAST.PrimStringLiteral)):
+            # Set the expected type on the right, this is needed to know
+            # if the expected size is variable or fixed in backends
+            expr.right.expected_type = expr.left.exprType
 
     return expr, errors, warnings
 

@@ -1,0 +1,48 @@
+SYSTEM og;
+    /* CIF TEXT (279, 258), (356, 140) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview-uniq.asn';
+
+signal run;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH run;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH run;
+        CONNECT c AND r;
+        /* CIF PROCESS (253, 105), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (0, 33), (356, 143) */
+            -- Text area for declarations and comments
+
+dcl a List := {'a', 'b', 'foo', 'bar
+', ' baz'};
+
+dcl result OutStr := '';
+
+dcl sep OutStr := ', ';
+dcl nosep OutStr := '';
+            /* CIF ENDTEXT */
+            /* CIF START (597, 63), (70, 35) */
+            START;
+                /* CIF TASK (539, 113), (185, 35) */
+                TASK result := result // 'Hello!';
+                /* CIF TASK (584, 163), (96, 35) */
+                TASK result := '';
+                /* CIF TASK (403, 213), (457, 78) */
+                TASK for each in a(2, length(a) - 1):
+ result := result // (if length(result) > 0 then sep else nosep fi) // each
+endfor;
+                /* CIF PROCEDURECALL (567, 306), (129, 35) */
+                CALL writeln(result);
+                /* CIF NEXTSTATE (597, 356), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (286, 217), (70, 35) */
+            STATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
