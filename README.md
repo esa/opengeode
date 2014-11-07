@@ -53,7 +53,7 @@ There are several dependencies for OpenGEODE:
 - Python ANTLR Runtime
 - PyGraphviz
 - enum34, singledispatch
-- ASN1SCC
+- [ASN1SCC](https://github.com/ttsiodras/asn1scc)
 - (optional) GNAT to build the generated Ada code
 - mono
 - llvmpy (tested with 0.12.7)
