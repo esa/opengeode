@@ -1186,6 +1186,7 @@ def _append(expr):
                                            ogAST.PrimConstant)) else '')
     right = '{}{}'.format(right_str, string_payload(expr.right, right_str) if
                     isinstance(expr.right, (ogAST.PrimVariable,
+                                            ogAST.PrimConditional,
                                             ogAST.PrimConstant)) else '')
 
     ada_string = '(({}) & ({}))'.format(left, right)
@@ -1375,15 +1376,27 @@ def _sequence_of(seqof):
     stmts, local_decl = [], []
     seqof_ty = seqof.exprType
     try:
-        asn_type = TYPES[seqof_ty.ReferencedTypeName].type
+        asn_type = find_basic_type(TYPES[seqof_ty.ReferencedTypeName].type)
         min_size = asn_type.Min
         max_size = asn_type.Max
     except AttributeError:
+        asn_type = None
         min_size, max_size = seqof_ty.Min, seqof_ty.Max
+        if hasattr(seqof, 'expected_type'):
+            asn_type = find_basic_type(
+                    TYPES[seqof.expected_type.ReferencedTypeName].type.type)
+            try:
+                min_size, max_size = asn_type.Min, asn_type.Max
+            except AttributeError:
+                pass
 
     tab = []
     for i in xrange(len(seqof.value)):
         item_stmts, item_str, local_var = expression(seqof.value[i])
+        if isinstance(seqof.value[i],
+                              (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            item_str = array_content(seqof.value[i], item_str, asn_type or
+                    find_basic_type(seqof.value[i].exprType))
         stmts.extend(item_stmts)
         local_decl.extend(local_var)
         tab.append(u'{i} => {value}'.format(i=i + 1, value=item_str))
@@ -1710,8 +1723,12 @@ def array_content(prim, values, asnty):
     else:
         # Find a default value for the "others" field in case of SEQOF
         _, df, _ = expression(prim.value[0])
-    return u"(Data => ({}, others => {}){})".format(values, df, rlen)
-
+        if isinstance(prim.value[0], (ogAST.PrimSequenceOf,
+                                      ogAST.PrimStringLiteral)):
+            df = array_content(prim.value[0], df, asnty)
+    return u"(Data => ({}{}others => {}){})".format(values,
+                                                    ', ' if values else '',
+                                                    df, rlen)
 
 
 def append_size(append):
