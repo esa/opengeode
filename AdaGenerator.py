@@ -255,7 +255,8 @@ package {process_name} is'''.format(process_name=process_name,
             for each in reversed(exitlist):
                 if trans and all(each.startswith(trans_st)
                                  for trans_st in trans.possible_states):
-                    taste_template.append(each + sep + u'exit;')
+                    taste_template.append(u'p{sep}{ref}{sep}exit;'
+                                          .format(ref=each, sep=sep))
 
             if input_def:
                 for inp in input_def.parameters:
@@ -542,7 +543,7 @@ def _call_external_function(output):
                     out_sig = proc
             except ValueError:
                 # Not there? Impossible, the parser would have barked
-                raise ValueError('Probably a bug - please report')
+                raise ValueError(u'Probably a bug - please report')
         if out_sig:
             list_of_params = []
             for idx, param in enumerate(out.get('params') or []):
@@ -1667,8 +1668,9 @@ def _inner_procedure(proc):
         VARIABLES.update({var['name']: (var['type'], None)})
 
     # Build the procedure signature
-    pi_header = u'procedure p{sep}{proc_name}'.format(sep=UNICODE_SEP,
-                                                    proc_name=proc.inputString)
+    pi_header = u'procedure {sep}{proc_name}'.format(sep=(u'p' + UNICODE_SEP)
+                                                  if not proc.external else '',
+                                                  proc_name=proc.inputString)
     if proc.fpar:
         pi_header += '('
         params = []

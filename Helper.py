@@ -150,7 +150,8 @@ def flatten(process, sep=u'_'):
                          if isinstance(trans, int)):
                 call_entry = ogAST.ProcedureCall()
                 call_entry.inputString = 'entry'
-                call_entry.output = [{'outputName': prefix + u'entry',
+                entryproc = u'{pre}entry'.format(pre=prefix)
+                call_entry.output = [{'outputName': entryproc,
                                      'params': [], 'tmpVars': []}]
                 process.transitions[each].actions.insert(0, call_entry)
 
@@ -161,8 +162,9 @@ def flatten(process, sep=u'_'):
                 if each.terminator.kind == 'return':
                     call_exit = ogAST.ProcedureCall()
                     call_exit.inputString = 'exit'
-                    call_exit.output = [{'outputName': prefix + u'exit',
-                                     'params': [], 'tmpVars': []}]
+                    exitproc = u'{pre}exit'.format(pre=prefix)
+                    call_exit.output = [{'outputName': exitproc,
+                                         'params': [], 'tmpVars': []}]
                     each.actions.append(call_exit)
 
         for inner in state.composite_states:
