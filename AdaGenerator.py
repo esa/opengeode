@@ -87,6 +87,7 @@ LOCAL_VAR = {}
 OUT_SIGNALS = []
 PROCEDURES = []
 
+UNICODE_SEP = u'\u00dc'
 
 @singledispatch
 def generate(ast):
@@ -110,7 +111,7 @@ def _process(process):
     LOG.info('Generating Ada code for process ' + str(process_name))
 
     # In case model has nested states, flatten everything
-    Helper.flatten(process, sep=u'\u00dc')
+    Helper.flatten(process, sep=UNICODE_SEP)
 
     # Make an maping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
@@ -236,7 +237,7 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'when {state} =>'.format(state=state))
             input_def = mapping[signal['name']].get(state)
             # Check for nested states to call optional exit procedure
-            sep = u'\u00dc'
+            sep = UNICODE_SEP
             state_tree = state.split(sep)
             context = process
             exitlist = []
@@ -435,7 +436,7 @@ def write_statement(param, newline):
             code, string, local = expression(param)
             if type_kind == 'OctetStringType':
                 # Octet string -> convert to Ada string
-                sep = u'\u00dc'
+                sep = UNICODE_SEP
                 last_it = u""
                 if isinstance(param, ogAST.PrimSubstring):
                     range_str = u"{}'Range".format(string)
@@ -593,11 +594,12 @@ def _call_external_function(output):
                 # no need to use temporary variables, we are in pure Ada
                 list_of_params.append(p_id)
             if list_of_params:
-                code.append(u'{proc}({params});'.format(
+                code.append(u'p{sep}{proc}({params});'.format(
+                    sep=UNICODE_SEP,
                     proc=proc.inputString,
                     params=', '.join(list_of_params)))
             else:
-                code.append(u'{};'.format(proc.inputString))
+                code.append(u'p{}{};'.format(UNICODE_SEP, proc.inputString))
     return code, local_decl
 
 
@@ -1665,7 +1667,8 @@ def _inner_procedure(proc):
         VARIABLES.update({var['name']: (var['type'], None)})
 
     # Build the procedure signature
-    pi_header = u'procedure {proc_name}'.format(proc_name=proc.inputString)
+    pi_header = u'procedure p{sep}{proc_name}'.format(sep=UNICODE_SEP,
+                                                    proc_name=proc.inputString)
     if proc.fpar:
         pi_header += '('
         params = []
@@ -1722,7 +1725,8 @@ def _inner_procedure(proc):
         code.append('begin')
         code.extend(tr_code)
         code.extend(code_labels)
-        code.append(u'end {procName};'.format(procName=proc.inputString))
+        code.append(u'end p{sep}{procName};'.format(sep=UNICODE_SEP,
+                                                    procName=proc.inputString))
     code.append('\n')
 
     # Reset the scope to how it was prior to the procedure definition

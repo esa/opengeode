@@ -49,6 +49,21 @@ dcl test Some_Thing := 4;
                     /* CIF RETURN (181, 263), (35, 35) */
                     RETURN ;
             ENDPROCEDURE;
+            /* CIF PROCEDURE (439, 309), (70, 35) */
+            PROCEDURE haha
+            /* CIF COMMENT (529, 309), (184, 35) */
+            COMMENT 'same name as a variable';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (414, 353), (124, 35) */
+            PROCEDURE default_seqof
+            /* CIF COMMENT (558, 353), (189, 35) */
+            COMMENT 'same name as a constant';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (430, 404), (78, 35) */
+            PROCEDURE enum1
+            /* CIF COMMENT (528, 404), (206, 35) */
+            COMMENT 'same name as an enum item';
+            ENDPROCEDURE;
             /* CIF START (155, 216), (70, 35) */
             START;
                 /* CIF NEXTSTATE (155, 266), (70, 35) */
@@ -61,7 +76,13 @@ dcl test Some_Thing := 4;
                     CALL hehe(hihi);
                     /* CIF OUTPUT (286, 386), (89, 35) */
                     OUTPUT we(test);
-                    /* CIF NEXTSTATE (296, 436), (70, 35) */
+                    /* CIF PROCEDURECALL (296, 436), (70, 35) */
+                    CALL haha;
+                    /* CIF PROCEDURECALL (269, 486), (124, 35) */
+                    CALL default_seqof;
+                    /* CIF PROCEDURECALL (292, 536), (78, 35) */
+                    CALL enum1;
+                    /* CIF NEXTSTATE (296, 586), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;
