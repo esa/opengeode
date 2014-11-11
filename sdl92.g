@@ -660,10 +660,9 @@ else_part
 
 
 question
-        :       expression
+        :       informal_text
+                | expression
         ->      ^(QUESTION expression)
-                | informal_text
-        ->      informal_text
                 | ANY
         ->      ^(ANY);
 

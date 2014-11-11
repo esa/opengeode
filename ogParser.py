@@ -3220,6 +3220,8 @@ def decision(root, parent, context):
     need_else = False
     is_enum = False
     for ans in dec.answers:
+        if dec.kind in ('informal_text', 'any'):
+            break
         ans_x, ans_y = ans.pos_x, ans.pos_y
         if ans.kind in ('constant', 'open_range'):
             expr = ans.openRangeOp()
@@ -3365,7 +3367,8 @@ def decision(root, parent, context):
     # (4) if an answer uses a non-ground expression an ELSE is there
     # (5) present() operator and enumerated question are fully covered
 
-    q_ranges = [(qmin, qmax)] if is_numeric(dec.question.exprType) else []
+    q_ranges = [(qmin, qmax)] if dec.question \
+                              and is_numeric(dec.question.exprType) else []
     for each in combinations(covered_ranges.viewitems(), 2):
         if not q_ranges:
             continue

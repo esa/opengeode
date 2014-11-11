@@ -1423,6 +1423,11 @@ def _decision(dec):
         LOG.warning('Ada backend does not support the "ANY" statement')
         code.append('-- "DECISION ANY" statement was ignored')
         return code, local_decl
+    elif dec.kind == 'informal_text':
+        LOG.warning('Informal decision ignored')
+        code.append('-- Informal decision was ignored: {}'
+                    .format(dec.inputString))
+        return code, local_decl
     question_type = dec.question.exprType
     actual_type = type_name(question_type)
     basic = find_basic_type(question_type).kind in ('IntegerType',
