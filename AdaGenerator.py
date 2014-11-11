@@ -1701,7 +1701,7 @@ def _inner_procedure(proc):
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'l_{name} : {sort}{default};'
+            code.append(u'l_{name} : aliased {sort}{default};'
                         .format(name=var_name,
                                 sort=typename,
                                 default=' := ' + dstr if def_value else ''))

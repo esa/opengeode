@@ -7,7 +7,7 @@ use dv comment 'dataview-uniq.asn';
 --use dv2 comment 'dataview2.asn';
 
 signal dd(Type2);
-signal we;
+signal we(Some_Thing);
 
 procedure hehe;
 fpar in/out a_param Type2;
@@ -30,7 +30,25 @@ external;
 dcl haha SeqOf;
 
 dcl hihi type2;
+
+dcl test Some_Thing := 4;
             /* CIF ENDTEXT */
+            /* CIF PROCEDURE (404, 228), (73, 35) */
+            PROCEDURE aProc;
+                /* CIF TEXT (542, 127), (287, 140) */
+                dcl  tmp Some_Thing := 1;
+                /* CIF ENDTEXT */
+                /* CIF START (164, 113), (70, 35) */
+                START;
+                    /* CIF OUTPUT (154, 163), (89, 35) */
+                    OUTPUT we(test);
+                    /* CIF OUTPUT (155, 213), (88, 35) */
+                    OUTPUT we(tmp)
+                    /* CIF COMMENT (263, 213), (269, 35) */
+                    COMMENT 'check that local variables can be sent';
+                    /* CIF RETURN (181, 263), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
             /* CIF START (155, 216), (70, 35) */
             START;
                 /* CIF NEXTSTATE (155, 266), (70, 35) */
@@ -41,7 +59,9 @@ dcl hihi type2;
                 INPUT dd(hihi);
                     /* CIF PROCEDURECALL (281, 336), (100, 35) */
                     CALL hehe(hihi);
-                    /* CIF NEXTSTATE (296, 386), (70, 35) */
+                    /* CIF OUTPUT (286, 386), (89, 35) */
+                    OUTPUT we(test);
+                    /* CIF NEXTSTATE (296, 436), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;

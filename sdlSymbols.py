@@ -269,7 +269,7 @@ class Output(VerticalSymbol):
             # Output parameter: return the list of variables of this type
             output_name = unicode(self).split('(')[0].strip().lower()
             asn1_filter = [sig['type'] for sig in CONTEXT.output_signals if
-                           sig['name'] == output_name]
+                           hasattr(sig, 'type') and sig['name'] == output_name]
             return variables_autocompletion(self, asn1_filter)
         else:
             # Return the list of output signals
