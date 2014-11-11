@@ -351,9 +351,7 @@ package {process_name} is'''.format(process_name=process_name,
         code_labels.extend(code_label)
 
     # Declare the local variables needed by the transitions in the template
-    decl = [u'{line}'.format(line=l)
-            for l in set(local_decl_transitions)]
-    taste_template.extend(decl)
+    taste_template.extend(set(local_decl_transitions))
     taste_template.append('begin')
 
     # Generate a loop that ends when a next state is reached
@@ -695,7 +693,7 @@ def _task_forloop(task):
             code_trans, local_trans = generate(loop['transition'])
             if local_trans:
                 stmt.append('declare')
-                stmt.extend(local_trans)
+                stmt.extend(set(local_trans))
                 stmt.append('')
                 stmt.append('begin')
             stmt.extend(code_trans)
@@ -919,8 +917,8 @@ def _prim_substring(prim):
 
     receiver = prim.value[0]
 
-    receiver_stms, reciver_string, receiver_decl = expression(receiver)
-    ada_string = reciver_string
+    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    ada_string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
@@ -956,8 +954,8 @@ def _prim_selector(prim):
     receiver = prim.value[0]
     field_name = prim.value[1]
 
-    receiver_stms, reciver_string, receiver_decl = expression(receiver)
-    ada_string = reciver_string
+    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    ada_string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
@@ -1720,7 +1718,7 @@ def _inner_procedure(proc):
             code_label, label_decl = generate(label)
             code_labels.extend(code_label)
             tr_decl.extend(label_decl)
-        code.extend(tr_decl)
+        code.extend(set(tr_decl))
         code.append('begin')
         code.extend(tr_code)
         code.extend(code_labels)
