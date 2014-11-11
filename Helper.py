@@ -67,8 +67,9 @@ def inner_labels_to_floating(process):
     for proc_tr in process.transitions:
         for new_floating in find_labels(proc_tr):
             process.content.floating_labels.append(new_floating)
-    for new_floating in find_labels(process.content.start.transition):
-        process.content.floating_labels.append(new_floating)
+    if process.content.start:
+        for new_floating in find_labels(process.content.start.transition):
+            process.content.floating_labels.append(new_floating)
     for each in process.content.named_start:
         for new_floating in find_labels(each.transition):
             process.content.floating_labels.append(new_floating)

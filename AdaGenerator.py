@@ -1673,8 +1673,10 @@ def _inner_procedure(proc):
 
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
-
-        tr_code, tr_decl = generate(proc.content.start.transition)
+        if proc.content.start:
+            tr_code, tr_decl = generate(proc.content.start.transition)
+        else:
+            tr_code, tr_decl = ['null;  --  Empty procedure'], []
         # Generate code for the floating labels
         code_labels = []
         for label in proc.content.floating_labels:
