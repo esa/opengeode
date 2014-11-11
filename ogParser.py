@@ -692,10 +692,6 @@ def check_type_compatibility(primary, type_ref, context):
                            for field, val in basic_type.Children.viewitems()
                            if val.Optional == 'True']
         user_fields = [field.lower() for field in primary.value.keys()]
-#       if user_nb_elem != type_nb_elem:
-#           raise TypeError('Wrong number of fields in SEQUENCE of type {}'
-#                           .format(type_name(type_ref)))
-#       else:
         for field, fd_data in basic_type.Children.viewitems():
             ufield = field.replace('-', '_')
             if ufield.lower() not in optional_fields \
@@ -709,14 +705,19 @@ def check_type_compatibility(primary, type_ref, context):
                 continue
             else:
                 # If the user field is a raw value
-                if primary.value[ufield].is_raw:
-                    check_type_compatibility(primary.value[ufield],
+                casefield = ufield
+                for each in primary.value:
+                    if each.lower() == ufield.lower():
+                        casefield = each
+                        break
+                if primary.value[casefield].is_raw:
+                    check_type_compatibility(primary.value[casefield],
                                              fd_data.type, context)
                 else:
                     # Compare the types for semantic equivalence
                     try:
                         compare_types(
-                            primary.value[ufield].exprType, fd_data.type)
+                            primary.value[casefield].exprType, fd_data.type)
                     except TypeError as err:
                         raise TypeError('Field ' + ufield +
                                     ' is not of the proper type, i.e. ' +

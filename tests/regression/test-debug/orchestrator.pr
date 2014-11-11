@@ -2,7 +2,7 @@
 PROCESS orchestrator
 /* CIF COMMENT (405, 192), (71, 35) */
 COMMENT 'Hello';
-    /* CIF TEXT (39, 94), (389, 293) */
+    /* CIF TEXT (39, 94), (398, 293) */
     dcl seq tastE_Peek_id_list;
 
 dcl fixed FixedString := 'Hello';
@@ -21,16 +21,16 @@ dcl check tasTE_Peek_id;
 
 dcl choice choice;
 
-dcl opt SeqOpt := { a TRUE, b FALSE }; -- test optional fields
+dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
     /* CIF ENDTEXT */
     /* CIF PROCEDURE (727, 175), (106, 35) */
     PROCEDURE emptyproc;
     ENDPROCEDURE;
     /* CIF START (502, 224), (80, 36) */
     START;
-        /* CIF TASK (474, 275), (136, 35) */
-        TASK opt := { b TRUE }
-        /* CIF COMMENT (630, 275), (155, 35) */
+        /* CIF TASK (470, 275), (144, 35) */
+        TASK opt := { B TRUE }
+        /* CIF COMMENT (634, 275), (155, 35) */
         COMMENT 'Test optional fields';
         /* CIF DECISION (492, 325), (99, 50) */
         DECISION 'informal'

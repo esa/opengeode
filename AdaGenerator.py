@@ -1364,8 +1364,10 @@ def _sequence(seq):
     for elem, value in seq.value.viewitems():
         # Set the type of the field - easy thanks to ASN.1 flattened AST
         delem = elem.replace('_', '-')
-        # XXX not sure the case is well handled
-        elem_spec = type_children[delem]
+        for each in type_children:
+            if each.lower() == delem.lower():
+                elem_spec = type_children[each]
+                break
         elem_specty = elem_spec.type
         value_stmts, value_str, local_var = expression(value)
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
