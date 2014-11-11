@@ -1355,7 +1355,8 @@ def _sequence(seq):
     ada_string = u"{}'(".format(type_name(seq.exprType))
     sep = ''
     type_children = find_basic_type(seq.exprType).Children
-    optional_fields = {field.lower(): False
+    optional_fields = {field.lower().replace('-', '_'): {'present': False,
+                                                         'ref': (field, val)}
                        for field, val in type_children.viewitems()
                        if val.Optional == 'True'}
     present_fields = []
@@ -1373,17 +1374,31 @@ def _sequence(seq):
         ada_string += u"{} {} => {}".format(sep, elem, value_str)
         if elem.lower() in optional_fields:
             # Set optional field presence
-            optional_fields[elem.lower()] = True
+            optional_fields[elem.lower()]['present'] = True
         sep = u', '
         stmts.extend(value_stmts)
         local_decl.extend(local_var)
     # Process optional fields
     if optional_fields:
-        sep = ''
+        absent_fields = ((fd_name, fd_data['ref'])
+                          for fd_name, fd_data in optional_fields.viewitems()
+                          if not fd_data['present'])
+        for fd_name, fd_data in absent_fields:
+            fd_type = fd_data[1].type
+            if fd_type.kind == 'ReferenceType':
+                value = u'{}_Init'.format(type_name(fd_type))
+            elif fd_type.kind == 'BooleanType':
+                value = u'False'
+            elif fd_type in ('IntegerType', 'RealType'):
+                value = fd_type.Min
+            ada_string += u'{}{} => {}'.format(sep, fd_name, value)
+            sep = u', '
         ada_string += u', Exist => ('
-        for fd_name, fd_present in optional_fields.viewitems():
+        sep = ''
+        for fd_name, fd_data in optional_fields.viewitems():
             ada_string += u'{}{} => {}'.format(sep, fd_name,
-                                               '1' if fd_present else '0')
+                                            '1' if fd_data['present'] else '0')
+            sep = u', '
         ada_string += u')'
 
     ada_string += ')'

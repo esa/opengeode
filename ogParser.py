@@ -688,32 +688,40 @@ def check_type_compatibility(primary, type_ref, context):
             and basic_type.kind == 'SequenceType':
         user_nb_elem = len(primary.value.keys())
         type_nb_elem = len(basic_type.Children.keys())
-        if user_nb_elem != type_nb_elem:
-            raise TypeError('Wrong number of fields in SEQUENCE of type {}'
-                            .format(type_name(type_ref)))
-        else:
-            for field, fd_data in basic_type.Children.viewitems():
-                ufield = field.replace('-', '_')
-                if ufield not in primary.value:
-                    raise TypeError('Missing field {field} in SEQUENCE'
-                                    ' of type {t1} '
-                                    .format(field=ufield,
-                                            t1=type_name(type_ref)))
+        optional_fields = [field.lower().replace('-', '_')
+                           for field, val in basic_type.Children.viewitems()
+                           if val.Optional == 'True']
+        user_fields = [field.lower() for field in primary.value.keys()]
+#       if user_nb_elem != type_nb_elem:
+#           raise TypeError('Wrong number of fields in SEQUENCE of type {}'
+#                           .format(type_name(type_ref)))
+#       else:
+        for field, fd_data in basic_type.Children.viewitems():
+            ufield = field.replace('-', '_')
+            if ufield.lower() not in optional_fields \
+                    and ufield.lower() not in user_fields:
+                raise TypeError('Missing mandatory field {field} in SEQUENCE'
+                                ' of type {t1} '
+                                .format(field=ufield,
+                                        t1=type_name(type_ref)))
+            elif field.lower() not in user_fields:
+                # Optional field not set - OK
+                continue
+            else:
+                # If the user field is a raw value
+                if primary.value[ufield].is_raw:
+                    check_type_compatibility(primary.value[ufield],
+                                             fd_data.type, context)
                 else:
-                    # If the user field is a raw value
-                    if primary.value[ufield].is_raw:
-                        check_type_compatibility(primary.value[ufield],
-                                                 fd_data.type, context)
-                    else:
-                        # Compare the types for semantic equivalence
-                        try:
-                            compare_types(
-                                primary.value[ufield].exprType, fd_data.type)
-                        except TypeError as err:
-                            raise TypeError('Field ' + ufield +
-                                        ' is not of the proper type, i.e. ' +
-                                        type_name(fd_data.type) +
-                                        ' - ' + str(err))
+                    # Compare the types for semantic equivalence
+                    try:
+                        compare_types(
+                            primary.value[ufield].exprType, fd_data.type)
+                    except TypeError as err:
+                        raise TypeError('Field ' + ufield +
+                                    ' is not of the proper type, i.e. ' +
+                                    type_name(fd_data.type) +
+                                    ' - ' + str(err))
         return
     elif isinstance(primary, ogAST.PrimChoiceItem) \
                               and basic_type.kind.startswith('Choice'):
