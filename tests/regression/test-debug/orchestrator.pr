@@ -2,7 +2,7 @@
 PROCESS orchestrator
 /* CIF COMMENT (405, 192), (71, 35) */
 COMMENT 'Hello';
-    /* CIF TEXT (39, 94), (293, 263) */
+    /* CIF TEXT (39, 94), (293, 293) */
     dcl seq tastE_Peek_id_list;
 
 dcl fixed FixedString := 'Hello';
@@ -20,6 +20,8 @@ dcl myenum Enum := a;
 dcl check tasTE_Peek_id;
 
 dcl choice choice;
+
+dcl opt SeqOpt := { a TRUE };
     /* CIF ENDTEXT */
     /* CIF PROCEDURE (727, 175), (106, 35) */
     PROCEDURE emptyproc;

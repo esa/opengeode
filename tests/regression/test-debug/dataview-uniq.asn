@@ -16,6 +16,9 @@ SeqEnumFix ::= SEQUENCE (SIZE(2)) OF ENUMERATED { hello, world }
 Enum ::= ENUMERATED {a, b, c, d, eE}
 Choice ::= CHOICE {c1 BOOLEAN, cDe2 BOOLEAN}
 
+SeqOpt ::= SEQUENCE { a BOOLEAN OPTIONAL }
+SeqNonOpt ::= SEQUENCE { a BOOLEAN }
+
 END
  
 

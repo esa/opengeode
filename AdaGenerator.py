@@ -1354,18 +1354,38 @@ def _sequence(seq):
     stmts, local_decl = [], []
     ada_string = u"{}'(".format(type_name(seq.exprType))
     sep = ''
+    type_children = find_basic_type(seq.exprType).Children
+    optional_fields = {field.lower(): False
+                       for field, val in type_children.viewitems()
+                       if val.Optional == 'True'}
+    present_fields = []
+    absent_fields = []
     for elem, value in seq.value.viewitems():
         # Set the type of the field - easy thanks to ASN.1 flattened AST
         delem = elem.replace('_', '-')
-        elem_specty = find_basic_type(seq.exprType).Children[delem].type
+        # XXX not sure the case is well handled
+        elem_spec = type_children[delem]
+        elem_specty = elem_spec.type
         value_stmts, value_str, local_var = expression(value)
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             value_str = array_content(value, value_str,
                                       find_basic_type(elem_specty))
-        ada_string += "{} {} => {}".format(sep, elem, value_str)
-        sep = ', '
+        ada_string += u"{} {} => {}".format(sep, elem, value_str)
+        if elem.lower() in optional_fields:
+            # Set optional field presence
+            optional_fields[elem.lower()] = True
+        sep = u', '
         stmts.extend(value_stmts)
         local_decl.extend(local_var)
+    # Process optional fields
+    if optional_fields:
+        sep = ''
+        ada_string += u', Exist => ('
+        for fd_name, fd_present in optional_fields.viewitems():
+            ada_string += u'{}{} => {}'.format(sep, fd_name,
+                                               '1' if fd_present else '0')
+        ada_string += u')'
+
     ada_string += ')'
     return stmts, unicode(ada_string), local_decl
 
