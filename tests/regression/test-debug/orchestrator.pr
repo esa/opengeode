@@ -11,7 +11,7 @@ dcl seqboolean SeqBool := { true, false };
 
 dcl seqbool2 SeqBoolFix := { true, false };
 
-dcl seqen SeqEnum := { hello, world };
+dcl seqen SeqEnum := { hello2, world2};
 
 dcl seqen2 SeqEnumFix := { hello, world };
 
@@ -23,9 +23,6 @@ dcl choice Mychoice;
 
 dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
     /* CIF ENDTEXT */
-    /* CIF PROCEDURE (1273, 175), (106, 35) */
-    PROCEDURE emptyproc;
-    ENDPROCEDURE;
     /* CIF PROCEDURE (1306, 371), (91, 35) */
     PROCEDURE numProc;
         /* CIF START (161, 82), (70, 35) */
@@ -37,11 +34,14 @@ dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
             ENDDECISION;
             /* CIF DECISION (135, 240), (122, 50) */
             DECISION num(myenum);
-                    /* CIF ANSWER (163, 265), (70, 23) */
+                    /* CIF ANSWER (163, 250), (70, 23) */
                     else:
             ENDDECISION;
-            /* CIF RETURN (178, 303), (35, 35) */
+            /* CIF RETURN (178, 288), (35, 35) */
             RETURN ;
+    ENDPROCEDURE;
+    /* CIF PROCEDURE (1273, 175), (106, 35) */
+    PROCEDURE emptyproc;
     ENDPROCEDURE;
     /* CIF START (596, 224), (80, 36) */
     START;
@@ -58,98 +58,98 @@ dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
         ENDDECISION;
         /* CIF DECISION (575, 433), (122, 50) */
         DECISION num(myenum);
-                /* CIF ANSWER (547, 503), (70, 23) */
+                /* CIF ANSWER (547, 488), (70, 23) */
                 (0):
-                /* CIF ANSWER (644, 503), (70, 23) */
+                /* CIF ANSWER (644, 488), (70, 23) */
                 else:
         ENDDECISION;
-        /* CIF DECISION (586, 541), (99, 50) */
+        /* CIF DECISION (586, 526), (99, 50) */
         DECISION 'informal'
-        /* CIF COMMENT (716, 536), (179, 53) */
+        /* CIF COMMENT (716, 506), (179, 53) */
         COMMENT 'Informal decision -
 check that it is ignored
 by the code generator';
-                /* CIF ANSWER (543, 611), (70, 33) */
+                /* CIF ANSWER (543, 581), (70, 33) */
                 ('a'):
-                /* CIF ANSWER (647, 611), (70, 33) */
+                /* CIF ANSWER (647, 581), (70, 33) */
                 ('2'):
         ENDDECISION;
-        /* CIF TASK (524, 659), (223, 38) */
+        /* CIF TASK (524, 629), (223, 38) */
         TASK seqboolean := {true, false},
 seqboolean := not {true, false};
-        /* CIF TASK (532, 712), (208, 83) */
+        /* CIF TASK (532, 682), (208, 83) */
         TASK for x in seqen:
  call writeln(num(x));
  call writeln(num(myenum));
  call writeln(num(myenum));
 endfor
-        /* CIF COMMENT (760, 736), (174, 38) */
+        /* CIF COMMENT (760, 706), (174, 38) */
         COMMENT 'Check that num is not
 declared twice';
-        /* CIF TASK (554, 810), (164, 53) */
+        /* CIF TASK (554, 780), (164, 53) */
         TASK for x in seqen2:
  call writeln(num(x));
 endfor;
-        /* CIF TASK (555, 878), (162, 53) */
+        /* CIF TASK (555, 848), (162, 53) */
         TASK for x in seqboolean:
     call writeln(x);
 endfor
-        /* CIF COMMENT (737, 887), (168, 38) */
+        /* CIF COMMENT (737, 857), (168, 38) */
         COMMENT 'FOR with a basic type';
-        /* CIF TASK (525, 946), (222, 35) */
+        /* CIF TASK (525, 916), (222, 35) */
         TASK seqboolean := not seqboolean
-        /* CIF COMMENT (767, 946), (279, 35) */
+        /* CIF COMMENT (767, 916), (279, 35) */
         COMMENT 'check NOT on a SEQUENCE of BOOLEAN';
-        /* CIF TASK (555, 996), (162, 53) */
+        /* CIF TASK (555, 966), (162, 53) */
         TASK for x in seqboolean:
     call writeln(x);
 endfor;
-        /* CIF TASK (573, 1064), (126, 38) */
+        /* CIF TASK (573, 1034), (126, 38) */
         TASK fixed := 'hello';
-        /* CIF TASK (561, 1117), (149, 35) */
+        /* CIF TASK (561, 1087), (149, 35) */
         TASK variable := 'HELLO';
-        /* CIF PROCEDURECALL (548, 1167), (176, 35) */
+        /* CIF PROCEDURECALL (548, 1137), (176, 35) */
         CALL writeln(variable // '!!!');
-        /* CIF PROCEDURECALL (500, 1217), (272, 35) */
+        /* CIF PROCEDURECALL (500, 1187), (272, 35) */
         CALL writeln(variable // variable // variable);
-        /* CIF TASK (590, 1267), (91, 35) */
+        /* CIF TASK (590, 1237), (91, 35) */
         TASK seq := {1};
-        /* CIF TASK (559, 1317), (153, 35) */
+        /* CIF TASK (559, 1287), (153, 35) */
         TASK seq := {1} // {2} // {3};
-        /* CIF TASK (550, 1367), (172, 35) */
+        /* CIF TASK (550, 1337), (172, 35) */
         TASK seq := seq // {2} // {1};
-        /* CIF DECISION (601, 1417), (70, 50) */
+        /* CIF DECISION (601, 1387), (70, 50) */
         DECISION any;
-                /* CIF ANSWER (556, 1487), (70, 23) */
+                /* CIF ANSWER (556, 1457), (70, 23) */
                 ('a'):
-                /* CIF ANSWER (646, 1487), (70, 23) */
+                /* CIF ANSWER (646, 1457), (70, 23) */
                 ('b'):
         ENDDECISION;
-        /* CIF DECISION (591, 1525), (89, 50) */
+        /* CIF DECISION (591, 1495), (89, 50) */
         DECISION myenum
-        /* CIF COMMENT (700, 1532), (183, 35) */
+        /* CIF COMMENT (700, 1502), (183, 35) */
         COMMENT 'Check case insensitivity';
-                /* CIF ANSWER (408, 1595), (70, 23) */
+                /* CIF ANSWER (408, 1565), (70, 23) */
                 (a):
-                /* CIF ANSWER (488, 1595), (70, 23) */
+                /* CIF ANSWER (488, 1565), (70, 23) */
                 (B):
-                /* CIF ANSWER (568, 1595), (70, 23) */
+                /* CIF ANSWER (568, 1565), (70, 23) */
                 (c):
-                /* CIF ANSWER (646, 1595), (70, 23) */
+                /* CIF ANSWER (646, 1565), (70, 23) */
                 (d):
-                /* CIF ANSWER (734, 1595), (70, 23) */
+                /* CIF ANSWER (734, 1565), (70, 23) */
                 (Ee):
         ENDDECISION;
-        /* CIF DECISION (567, 1633), (138, 50) */
+        /* CIF DECISION (567, 1603), (138, 50) */
         DECISION present(choice)
-        /* CIF COMMENT (724, 1640), (183, 35) */
+        /* CIF COMMENT (724, 1610), (183, 35) */
         COMMENT 'Check case insensitivity';
-                /* CIF ANSWER (519, 1703), (70, 23) */
+                /* CIF ANSWER (519, 1673), (70, 23) */
                 (cde2):
-                /* CIF ANSWER (690, 1703), (70, 23) */
+                /* CIF ANSWER (690, 1673), (70, 23) */
                 ELSE:
         ENDDECISION;
-        /* CIF NEXTSTATE (577, 1741), (116, 33) */
+        /* CIF NEXTSTATE (577, 1711), (116, 33) */
         NEXTSTATE Wait_for_GUI;
     /* CIF STATE (1063, 119), (116, 33) */
     STATE Wait_for_GUI;

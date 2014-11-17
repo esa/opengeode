@@ -10,7 +10,7 @@ FixedString ::= OCTET STRING (SIZE (5))
 
 SeqBool ::= SEQUENCE (SIZE(1..5)) OF BOOLEAN
 SeqBoolFix ::= SEQUENCE (SIZE(2)) OF BOOLEAN
-SeqEnum ::= SEQUENCE (SIZE(1..5)) OF ENUMERATED { hello, world }
+SeqEnum ::= SEQUENCE (SIZE(1..5)) OF ENUMERATED { hello2, world2 }
 SeqEnumFix ::= SEQUENCE (SIZE(2)) OF ENUMERATED { hello, world }
 
 MyEnum ::= ENUMERATED {a, b, c, d, eE}
