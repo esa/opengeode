@@ -282,17 +282,32 @@ package {process_name} is'''.format(process_name=process_name,
     # for the .ads file, generate the declaration of the required interfaces
     # output signals are the asynchronous RI - only one parameter
     for signal in process.output_signals:
-        ri_header = u'procedure {sig_name}'.format(sig_name=signal['name'])
+
         param_name = signal.get('param_name') or 'MISSING_PARAM_NAME'
         # Add (optional) RI parameter
+        param_spec = ''
         if 'type' in signal:
             typename = type_name(signal['type'])
-            ri_header += u'({pName}: access {sort})'.format(
-                pName=param_name, sort=typename)
+            param_spec = u'({pName}: access {sort})'.format(pName=param_name,
+                                                            sort=typename)
         ads_template.append(u'--  Required interface "' + signal['name'] + '"')
-        ads_template.append(ri_header + ';')
-        ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
-                .format(sig=signal['name'], proc=process_name))
+        if simu:
+            # When generating a shared library, we need a callback mechanism
+            ads_template.append(u'type {}_T is access procedure{};'
+                                .format(signal['name'], param_spec))
+            ads_template.append('pragma Convention(Convention => C,'
+                                ' Entity => {}_T);'.format(signal['name']))
+            ads_template.append('{sig} : {sig}_T;'.format(sig=signal['name']))
+            ads_template.append('procedure Register_{sig}(Callback: {sig}_T);'
+                                .format(sig=signal['name']))
+            ads_template.append('pragma Export(C, Register_{sig},'
+                                ' "register_{sig}");'
+                                .format(sig=signal['name']))
+        else:
+            ads_template.append(u'procedure {}{};'
+                                .format(signal['name'], param_spec))
+            ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
+                                .format(sig=signal['name'], proc=process_name))
 
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
