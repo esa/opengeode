@@ -1908,6 +1908,8 @@ def parse_args():
     parser = argparse.ArgumentParser(version=__version__)
     parser.add_argument('-g', '--debug', action='store_true', default=False,
             help='Display debug information')
+    parser.add_argument('-l', '--shared', action='store_true', default=False,
+            help='Generate code to build a shared library (with callbacks)')
     parser.add_argument('--check', action='store_true', dest='check',
             help='Check a .pr file for syntax and semantics')
     parser.add_argument('--toAda', dest='toAda', action='store_true',
@@ -1991,10 +1993,10 @@ def parse(files):
 
 def generate(process, options):
     ''' Generate code '''
-    if options.toAda:
+    if options.toAda or options.shared:
         LOG.info('Generating Ada code')
         try:
-            AdaGenerator.generate(process)
+            AdaGenerator.generate(process, simu=options.shared)
         except (TypeError, ValueError, NameError) as err:
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
@@ -2076,7 +2078,7 @@ def cli(options):
     if options.png or options.pdf or options.svg:
         export(ast, options)
 
-    if options.toAda or options.llvm:
+    if options.toAda or options.llvm or options.shared:
         if not errors:
             generate(ast.processes[0], options)
         else:
@@ -2142,7 +2144,7 @@ def opengeode():
 
     LOG.debug('Starting OpenGEODE version ' + __version__)
     if any((options.check, options.toAda, options.png, options.pdf,
-            options.svg, options.llvm)):
+            options.svg, options.llvm, options.shared)):
         return cli(options)
     else:
         return gui(options)
