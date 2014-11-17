@@ -262,7 +262,7 @@ package {process_name} is'''.format(process_name=process_name,
             # Generate code for the mini-cv template
             params = [(param_name, type_name(signal['type'], use_prefix=False),
                       'IN')] if 'type' in signal else []
-            minicv.append(aadl_template(signal['name'], params, 'PI'))
+            minicv.append(aadl_template(signal['name'], params, 'RI'))
 
         pi_header += ' is'
         taste_template.append(pi_header)
@@ -345,7 +345,7 @@ package {process_name} is'''.format(process_name=process_name,
             # Generate code for the mini-cv template
             params = [(param_name, type_name(signal['type'], use_prefix=False),
                       'IN')] if 'type' in signal else []
-            minicv.append(aadl_template(signal['name'], params, 'RI'))
+            minicv.append(aadl_template(signal['name'], params, 'PI'))
 
             taste_template.append('procedure Register_{sig}'
                                   '(Callback:{sig}_T) is'
