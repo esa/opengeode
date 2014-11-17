@@ -13,8 +13,8 @@ SeqBoolFix ::= SEQUENCE (SIZE(2)) OF BOOLEAN
 SeqEnum ::= SEQUENCE (SIZE(1..5)) OF ENUMERATED { hello, world }
 SeqEnumFix ::= SEQUENCE (SIZE(2)) OF ENUMERATED { hello, world }
 
-Enum ::= ENUMERATED {a, b, c, d, eE}
-Choice ::= CHOICE {c1 BOOLEAN, cDe2 BOOLEAN}
+MyEnum ::= ENUMERATED {a, b, c, d, eE}
+MyChoice ::= CHOICE {c1 BOOLEAN, cDe2 BOOLEAN}
 
 SeqOpt ::= SEQUENCE { a BOOLEAN OPTIONAL , b BOOLEAN, c SEQUENCE { a BOOLEAN } OPTIONAL, d OCTET STRING (SIZE (0..10)) OPTIONAL}
 SeqNonOpt ::= SEQUENCE { a BOOLEAN }
