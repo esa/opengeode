@@ -2,9 +2,9 @@
 USE Datamodel;
 SYSTEM orchestrator;
 
-	SIGNAL pulse;
+	SIGNAL pulse(myenum);
 
-	SIGNAL telemetry;
+	SIGNAL telemetry(myenum);
 
 
 	CHANNEL c

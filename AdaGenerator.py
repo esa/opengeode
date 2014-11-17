@@ -125,9 +125,9 @@ def _process(process, simu=False, **kwargs):
             res.append('FEATURES')
             for param_name, sort, direction in io_param:
                 res.append('    {pname}: {io} PARAMETER DataView::{sort} '
-                          '{encoding=>Native;};'.format(pname=param_name,
-                                                        sort=sort,
-                                                        io=direction))
+                          '{{encoding=>Native;}};'.format(pname=param_name,
+                                                          sort=sort,
+                                                          io=direction))
         res.append('END {};\n'.format(sp_name))
         res.append('SUBPROGRAM IMPLEMENTATION {}.GUI_{}'
                       .format(sp_name, pi_or_ri))
@@ -320,7 +320,8 @@ package {process_name} is'''.format(process_name=process_name,
     # output signals are the asynchronous RI - only one parameter
     for signal in process.output_signals:
 
-        param_name = signal.get('param_name') or 'MISSING_PARAM_NAME'
+        param_name = signal.get('param_name') \
+                                or u'{}_param'.format(signal['name'])
         # Add (optional) RI parameter
         param_spec = ''
         if 'type' in signal:
@@ -346,6 +347,13 @@ package {process_name} is'''.format(process_name=process_name,
                       'IN')] if 'type' in signal else []
             minicv.append(aadl_template(signal['name'], params, 'RI'))
 
+            taste_template.append('procedure Register_{sig}'
+                                  '(Callback:{sig}_T) is'
+                                  .format(sig=signal['name']))
+            taste_template.append('begin')
+            taste_template.append('{} := Callback;'.format(signal['name']))
+            taste_template.append('end Register_{};'.format(signal['name']))
+            taste_template.append('')
         else:
             ads_template.append(u'procedure {}{};'
                                 .format(signal['name'], param_spec))
