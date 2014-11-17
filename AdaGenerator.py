@@ -90,7 +90,7 @@ PROCEDURES = []
 UNICODE_SEP = u'\u00dc'
 
 @singledispatch
-def generate(ast):
+def generate(*args, **kwargs):
     ''' Generate the code for an item of the AST '''
     raise TypeError('[AdaGenerator] Unsupported AST construct')
     return [], []
@@ -98,7 +98,7 @@ def generate(ast):
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process):
+def _process(process, simu=False, **kwargs):
     ''' Generate the code for a complete process (AST Top level) '''
     process_name = process.processName
     global TYPES
@@ -479,7 +479,7 @@ def write_statement(param, newline):
 
 @generate.register(ogAST.Output)
 @generate.register(ogAST.ProcedureCall)
-def _call_external_function(output):
+def _call_external_function(output, **kwargs):
     ''' Generate the code of a set of output or procedure call statement '''
     code = []
     local_decl = []
@@ -605,7 +605,7 @@ def _call_external_function(output):
 
 
 @generate.register(ogAST.TaskAssign)
-def _task_assign(task):
+def _task_assign(task, **kwargs):
     ''' A list of assignments in a task symbol '''
     code, local_decl = [], []
     if task.comment:
@@ -620,7 +620,7 @@ def _task_assign(task):
 
 
 @generate.register(ogAST.TaskInformalText)
-def _task_informal_text(task):
+def _task_informal_text(task, **kwargs):
     ''' Generate Ada comments for informal text '''
     code = []
     if task.comment:
@@ -630,7 +630,7 @@ def _task_informal_text(task):
 
 
 @generate.register(ogAST.TaskForLoop)
-def _task_forloop(task):
+def _task_forloop(task, **kwargs):
     '''
         Return the code corresponding to a for loop. Two forms are possible:
         for x in range ([start], stop [, step])
@@ -1454,7 +1454,7 @@ def _choiceitem(choice):
 
 
 @generate.register(ogAST.Decision)
-def _decision(dec):
+def _decision(dec, **kwargs):
     ''' generate the code for a decision '''
     code, local_decl = [], []
     if dec.kind == 'any':
@@ -1559,7 +1559,7 @@ def _decision(dec):
 
 
 @generate.register(ogAST.Label)
-def _label(lab):
+def _label(lab, **kwargs):
     ''' Transition following labels are generated in a separate section
         for visibility reasons (see Ada scope)
     '''
@@ -1567,7 +1567,7 @@ def _label(lab):
 
 
 @generate.register(ogAST.Transition)
-def _transition(tr):
+def _transition(tr, **kwargs):
     ''' generate the code for a transition '''
     code, local_decl = [], []
     empty_transition = all(isinstance(act, ogAST.TaskInformalText)
@@ -1635,7 +1635,7 @@ def _transition(tr):
 
 
 @generate.register(ogAST.Floating_label)
-def _floating_label(label):
+def _floating_label(label, **kwargs):
     ''' Generate the code for a floating label (Ada label + transition) '''
     code = []
     local_decl = []
@@ -1652,7 +1652,7 @@ def _floating_label(label):
 
 
 @generate.register(ogAST.Procedure)
-def _inner_procedure(proc):
+def _inner_procedure(proc, **kwargs):
     ''' Generate the code for a procedure - does not support states '''
     code = []
     local_decl = []
