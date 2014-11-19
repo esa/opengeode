@@ -662,8 +662,8 @@ def _call_external_function(output, **kwargs):
                     # Output parameters/local variables
                     list_of_params.append(u"{var}'access{shared}"
                                          .format(var=p_id,
-                                                 shared="{}'Size".format(p_id)
-                                                 if is_out_sig else ""))
+                                                shared=", {}'Size".format(p_id)
+                                                  if is_out_sig else ""))
             if list_of_params:
                 code.append(u'{RI}({params});'
                             .format(RI=out['outputName'],
