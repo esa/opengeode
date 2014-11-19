@@ -332,8 +332,8 @@ package {process_name} is'''.format(process_name=process_name,
         param_spec = ''
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = u'({pName}: access {sort})'.format(pName=param_name,
-                                                            sort=typename)
+            param_spec = u'({pName}: access {sort}; Size: Integer)' \
+                         .format(pName=param_name, sort=typename)
         ads_template.append(u'--  Required interface "' + signal['name'] + '"')
         if simu:
             # When generating a shared library, we need a callback mechanism
@@ -341,7 +341,7 @@ package {process_name} is'''.format(process_name=process_name,
                                 .format(signal['name'], param_spec))
             ads_template.append('pragma Convention(Convention => C,'
                                 ' Entity => {}_T);'.format(signal['name']))
-            ads_template.append('{sig} : {sig}_T; size: Integer'
+            ads_template.append('{sig} : {sig}_T;'
                                 .format(sig=signal['name']))
             ads_template.append('procedure Register_{sig}(Callback: {sig}_T);'
                                 .format(sig=signal['name']))

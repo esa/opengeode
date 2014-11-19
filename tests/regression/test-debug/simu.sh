@@ -9,5 +9,5 @@ cd simu
 aadl2glueC.py DataView.aadl orchestrator_interface.aadl
 asn2dataModel.py -toPython dataview-uniq.asn
 make -f Makefile.python
-echo "errCodes=$(python $(taste-config --prefix)/share/asn1-editor/errCode.py ./dataview-uniq.h)" >>datamodel.py 
-LD_LIBRARY_PATH=. taste_gui -l
+echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py 
+LD_LIBRARY_PATH=. taste-gui -l
