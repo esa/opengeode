@@ -87,6 +87,9 @@ LOCAL_VAR = {}
 OUT_SIGNALS = []
 PROCEDURES = []
 
+# Specify that the target is a shared library
+SHARED_LIB = False
+
 UNICODE_SEP = u'\u00dc'
 
 @singledispatch
@@ -107,6 +110,9 @@ def _process(process, simu=False, **kwargs):
     del PROCEDURES[:]
     OUT_SIGNALS.extend(process.output_signals)
     PROCEDURES.extend(process.procedures)
+    global SHARED_LIB
+    if simu:
+        SHARED_LIB = True
 
     # When building a shared library (with simu=True), generate a "mini-cv"
     # for aadl2glueC to create the code interfacing with asn1scc
@@ -335,7 +341,8 @@ package {process_name} is'''.format(process_name=process_name,
                                 .format(signal['name'], param_spec))
             ads_template.append('pragma Convention(Convention => C,'
                                 ' Entity => {}_T);'.format(signal['name']))
-            ads_template.append('{sig} : {sig}_T;'.format(sig=signal['name']))
+            ads_template.append('{sig} : {sig}_T; size: Integer'
+                                .format(sig=signal['name']))
             ads_template.append('procedure Register_{sig}(Callback: {sig}_T);'
                                 .format(sig=signal['name']))
             ads_template.append('pragma Export(C, Register_{sig},'
@@ -601,9 +608,11 @@ def _call_external_function(output, **kwargs):
                                              .format(timer=p_id, value=tmp_id))
             continue
         proc, out_sig = None, None
+        is_out_sig = False
         try:
             out_sig, = [sig for sig in OUT_SIGNALS
                         if sig['name'].lower() == signal_name.lower()]
+            is_out_sig = True if SHARED_LIB else False
         except ValueError:
             # Not an output, try if it is an external or inner procedure
             try:
@@ -636,23 +645,29 @@ def _call_external_function(output, **kwargs):
                         and (not (isinstance(param, ogAST.PrimVariable)
                         and p_id.startswith('l_'))
                         or isinstance(param, ogAST.PrimFPAR)):
-                    tmp_id = out['tmpVars'][idx]
-                    local_decl.append('tmp{idx} : aliased {sort};'
-                                      .format(idx=tmp_id, sort=typename))
+                    tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
+                    local_decl.append('{tmp} : aliased {sort};'
+                                      .format(tmp=tmp_id,
+                                              sort=typename))
                     if isinstance(param,
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         p_id = array_content(param, p_id,
                                              find_basic_type(param_type))
-                    code.append('tmp{idx} := {p_id};'
-                                .format(idx=tmp_id, p_id=p_id))
-                    list_of_params.append("tmp{idx}'access"
-                                          .format(idx=out['tmpVars'][idx]))
+                    code.append('{} := {};'.format(tmp_id, p_id))
+                    list_of_params.append("{}'access{}"
+                                          .format(tmp_id,
+                                                  ", {}'Size".format(tmp_id)
+                                                     if is_out_sig else ""))
                 else:
-                    # Output parameters - no need for a temp variable
-                    list_of_params.append(u"{var}'access".format(var=p_id))
+                    # Output parameters/local variables
+                    list_of_params.append(u"{var}'access{shared}"
+                                         .format(var=p_id,
+                                                 shared="{}'Size".format(p_id)
+                                                 if is_out_sig else ""))
             if list_of_params:
-                code.append(u'{RI}({params});'.format(
-                    RI=out['outputName'], params=', '.join(list_of_params)))
+                code.append(u'{RI}({params});'
+                            .format(RI=out['outputName'],
+                                    params=', '.join(list_of_params)))
             else:
                 code.append(u'{RI};'.format(RI=out['outputName']))
         else:
