@@ -185,10 +185,11 @@ def _process(process, simu=False, **kwargs):
             process_level_decl.append(u'{name} : constant := {val};'
                                       .format(name=name, val=str(val)))
 
-    # Add function allowing to trace current state as a string
-    #process_level_decl.append('function get_state return String;')
-    #process_level_decl.append('pragma export(C, get_state, "{}_state");'
-    #                                                    .format(process_name))
+    if simu:
+        # Add function allowing to trace current state as a string
+        process_level_decl.append('function get_state return chars_ptr;')
+        process_level_decl.append('pragma export(C, get_state, "{}_state");'
+                                  .format(process_name))
 
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
@@ -218,9 +219,12 @@ with Ada.Numerics.Generic_Elementary_Functions;
 
 with Interfaces;
 use Interfaces;
-
+{C}
 package body {process_name} is'''.format(process_name=process_name,
-    dataview=asn1_modules)]
+                                         dataview=asn1_modules,
+                                         C='with Interfaces.C.Strings;\n'
+                                           'use Interfaces.C.Strings;'
+                                            if simu else '')]
 
     # Generate the source file (.ads) header
     ads_template = ['''\
@@ -463,12 +467,14 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.append('end runTransition;')
     taste_template.append('\n')
 
-    # Code of the function allowing to trace current state
-    #taste_template.append('function get_state return String is')
-    #taste_template.append('begin')
-    #taste_template.append("return states'Image(state);")
-    #taste_template.append('end get_state;')
-    #taste_template.append('\n')
+    if simu:
+        # Code of the function allowing to trace current state
+        # Can be used when tracing the execution with MSC
+        taste_template.append('function get_state return chars_ptr is')
+        taste_template.append('begin')
+        taste_template.append("return New_String(states'Image(state));")
+        taste_template.append('end get_state;')
+        taste_template.append('\n')
 
     taste_template.extend(start_transition)
     taste_template.append('end {process_name};'
