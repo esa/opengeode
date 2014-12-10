@@ -149,7 +149,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # for the comment symbol (need to refresh on_the_right property)
         self.setCacheMode(QGraphicsItem.NoCache)
         # Initialize variables used when moving/resizing
-        self.coord = self.pos()
+        self.coord = self.position
         self.height = 0
         self.old_rect = self.boundingRect()
         # List of visible connection points (that can move)
@@ -369,8 +369,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
                 # Update position of child - take place of deleted item
                 child_below.pos_y = self.pos_y
                 child_below.update_position()
-            self.parentItem().cam(self.parentItem().pos(),
-                                  self.parentItem().pos())
+            self.parentItem().cam(self.parentItem().position,
+                                  self.parentItem().position)
             self.setParentItem(None)
         # Following line causes segfault on exit:
         #scene().removeItem(self)
@@ -513,7 +513,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
             the lower right corner
         '''
         # Save current position to be able to revert move
-        self.coord = self.pos()
+        self.coord = self.position
         rect = self.boundingRect()
         self.height = rect.height()
         if self.grabber.resize_mode != '':
@@ -563,14 +563,14 @@ class Symbol(QObject, QGraphicsPathItem, object):
                                            self, self.old_rect,
                                            self.boundingRect())
                 self.scene().undo_stack.push(undo_cmd)
-                self.cam(self.coord, self.pos())
+                self.cam(self.coord, self.position)
                 self.updateConnectionPoints()
-        elif self.mode == 'Move' and self.coord != self.pos():
+        elif self.mode == 'Move' and self.coord != self.position:
             with undoCommands.UndoMacro(self.scene().undo_stack, 'Move'):
                 undo_cmd = undoCommands.MoveSymbol(
-                                            self, self.coord, self.pos())
+                                            self, self.coord, self.position)
                 self.scene().undo_stack.push(undo_cmd)
-                self.cam(self.coord, self.pos())
+                self.cam(self.coord, self.position)
         self.mode = ''
 
     def updateConnectionPoints(self):
@@ -601,7 +601,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
                 # a subsequent call to parentItem returns None. Seems to happen
                 # if the parent has not been added yet to the scene.
                 top_level = top_level.parentItem() or top_level.parent
-            top_level.cam(top_level.pos(), top_level.pos())
+            top_level.cam(top_level.position, top_level.position)
             return
 
         # In case CAM is called due to object move, go to the new position
@@ -652,7 +652,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # Determine how much we need to move the colliding groups and call
         # their CAM with this delta
         # Save colliders positions in case they are moved by a sub cam call
-        col_pos = {i: i.pos() for i in top_level_colliders}
+        col_pos = {i: i.position for i in top_level_colliders}
         for col in top_level_colliders:
             collider_rect = (col.sceneBoundingRect() |
                     col.mapRectToScene(col.childrenBoundingRect()))
@@ -673,8 +673,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
                 delta.setX(col.x() - collider_rect.x() -
                         collider_rect.width() - 10 + rect.x())
                 delta.setY(col.y())
-            if col.pos() == col_pos[col]:
-                col.cam(col.pos(), delta, ignore=self)
+            if col.position == col_pos[col]:
+                col.cam(col.position, delta, ignore=self)
                 # Put it back at the new position to make sure recursive
                 # CAM can happen properly with all object in new positions
                 # (End of CAM reset to the old position for animation)
@@ -784,9 +784,8 @@ class Comment(Symbol):
         ''' Handle item move '''
         super(Comment, self).mouse_move(event)
         if self.mode == 'Move':
-            new_y = self.pos().y() + (event.pos().y() - event.lastPos().y())
-            new_x = self.pos().x() + (event.pos().x() - event.lastPos().x())
-            self.position = QPointF(new_x, new_y)
+            self.pos_y += event.pos().y() - event.lastPos().y()
+            self.pos_x += event.pos().x() - event.lastPos().x()
             self.update_connections()
 
     def mouse_release(self, event):
@@ -952,10 +951,11 @@ class HorizontalSymbol(Symbol, object):
             group_width = last - first if first is not None else 0
             for sibling in self.siblings():
                 sib_x = sibling.x() - (self.boundingRect().width()) / 2 - 10
-                sib_oldpos = sibling.pos()
+                sib_oldpos = sibling.position
                 sibling.pos_x = sib_x
-                undo_cmd = undoCommands.MoveSymbol(
-                                          sibling, sib_oldpos, sibling.pos())
+                undo_cmd = undoCommands.MoveSymbol(sibling,
+                                                   sib_oldpos,
+                                                   sibling.position)
                 self.scene().undo_stack.push(undo_cmd)
             most_left = min([sibling.x()
                 for sibling in self.siblings()] or [0])
@@ -970,7 +970,7 @@ class HorizontalSymbol(Symbol, object):
         self.position = QPointF(pos_x, pos_y)
         self.connection = self.connect_to_parent()
         self.updateConnectionPoints()
-        self.cam(self.pos(), self.pos())
+        self.cam(self.position, self.position)
         LOG.debug('{} positionned at {}'.format(unicode(self),
                                          unicode(self.scenePos())))
 
@@ -1007,8 +1007,8 @@ class HorizontalSymbol(Symbol, object):
         ''' Prevent move from being above the parent '''
         if self.mode == 'Move':
             event_pos = event.pos()
-            new_y = self.pos().y() + (event_pos.y() - event.lastPos().y())
-            new_x = self.pos().x() + (event_pos.x() - event.lastPos().x())
+            new_y = self.pos_y + (event_pos.y() - event.lastPos().y())
+            new_x = self.pos_x + (event_pos.x() - event.lastPos().x())
             if self.hasParent:
                 new_y = max(new_y, self.parent.boundingRect().height() +
                         self.minDistanceToSymbolAbove)
@@ -1058,22 +1058,23 @@ class HorizontalSymbol(Symbol, object):
                     pass
                 if rect.intersects(sib_rect):
                     width = (sib_rect & rect).width() + 10
-                    old_sib_pos = sibling.pos()
+                    old_sib_pos = sibling.position
                     sibling.pos_x += width if self.pos_x <= sibling.pos_x \
                                            else -width
-                    undo_cmd = undoCommands.MoveSymbol(
-                                         sibling, old_sib_pos, sibling.pos())
+                    undo_cmd = undoCommands.MoveSymbol(sibling,
+                                                       old_sib_pos,
+                                                       sibling.position)
                     try:
                         self.scene().undo_stack.push(undo_cmd)
                     except AttributeError:
                         # If there is no scene or no undo stack
                         pass
-                    sibling.cam(sibling.pos(), sibling.pos())
+                    sibling.cam(sibling.position, sibling.position)
         super(HorizontalSymbol, self).cam(old_pos, new_pos, ignore)
         # Recursively call the cam of the parent
         try:
-            self.parentItem().cam(self.parentItem().pos(),
-                    self.parentItem().pos())
+            self.parentItem().cam(self.parentItem().position,
+                                  self.parentItem().position)
         except AttributeError:
             pass
         self.update_connections()
@@ -1180,7 +1181,7 @@ class VerticalSymbol(Symbol, object):
         self.updateConnectionPoints()
         if y is not None:
             self.pos_y = y
-        self.cam(self.pos(), self.pos())
+        self.cam(self.position, self.position)
         LOG.debug('{} positionned at {}'.format(unicode(self),
                                          unicode(self.scenePos())))
 
@@ -1203,7 +1204,7 @@ class VerticalSymbol(Symbol, object):
         ''' Click and move: forbid symbol to move on the x axis '''
         super(VerticalSymbol, self).mouse_move(event)
         if self.mode == 'Move':
-            new_y = self.pos().y() + (event.pos().y() - event.lastPos().y())
+            new_y = self.pos_y + (event.pos().y() - event.lastPos().y())
             if not self.parent:
                 self.pos_x += event.pos().x() - event.lastPos().x()
             if not self.hasParent or (new_y >=
@@ -1222,6 +1223,6 @@ class VerticalSymbol(Symbol, object):
                 # See cam of symbol for explanation about
                 # the 'or branch_entry.parent' (pyside/qt bug)
                 branch_entry = branch_entry.parentItem() or branch_entry.parent
-            branch_entry.cam(branch_entry.pos(), branch_entry.pos())
+            branch_entry.cam(branch_entry.position, branch_entry.position)
         else:
             super(VerticalSymbol, self).cam(old_pos, new_pos)
