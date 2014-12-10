@@ -237,7 +237,7 @@ def _floating_label(ast, scene, states, parent=None):
     lab = sdlSymbols.Label(parent=None, ast=ast)
     if lab not in scene.items():
         add_to_scene(lab, scene)
-    lab.setPos(ast.pos_x, ast.pos_y)
+    lab.pos_x, lab.pos_y = ast.pos_x, ast.pos_y
     if ast.transition:
         render(ast.transition, scene=scene, parent=lab, states=states)
     return lab
@@ -288,7 +288,7 @@ def _decision(ast, scene, parent, states):
     symbol = sdlSymbols.Decision(parent, ast=ast)
     # Place the symbol at absolute coordinates
     if not parent:
-        symbol.setPos(ast.pos_x, ast.pos_y)
+        symbol.pos_x, symbol.pos_y = ast.pos_x, ast.pos_y
     for branch in ast.answers:
         render(branch, scene=scene, parent=symbol, states=states)
     symbol.updateConnectionPointPosition()
@@ -309,7 +309,7 @@ def _answer(ast, scene, parent, states):
     # Place the symbol at absolute coordinates so that if
     # the branch has NEXTSTATEs symbols, they are properly placed
     if not parent:
-        symbol.setPos(ast.pos_x, ast.pos_y)
+        symbol.pos_x, symbol.pos_y = ast.pos_x, ast.pos_y
     if ast.transition:
         render(ast.transition, scene=scene, parent=symbol, states=states)
     return symbol
@@ -355,7 +355,7 @@ def _input(ast, scene, parent, states):
     if inp not in scene.items():
         add_to_scene(inp, scene)
     if not parent:
-        inp.setPos(ast.pos_x, ast.pos_y)
+        inp.pos_x, inp.pos_y = ast.pos_x, ast.pos_y
     if ast.transition:
         render(ast.transition,
                scene=scene,
@@ -371,7 +371,7 @@ def _connect(ast, scene, parent, states):
     if conn not in scene.items():
         add_to_scene(conn, scene)
     if not parent:
-        conn.setPos(ast.pos_x, ast.pos_y)
+        conn.pos_x, conn.pos_y = ast.pos_x, ast.pos_y
     if ast.transition:
         render(ast.transition,
                scene=scene,

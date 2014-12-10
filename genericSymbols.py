@@ -155,15 +155,18 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # List of visible connection points (that can move)
         self.movable_points = []
 
-    def _pos(self):
-        ''' Qt Property that can be used in animations '''
-        return self.pos()
 
-    def _set_pos(self, value):
-        ''' Qt Property that can be used in animations '''
-        self.setPos(value)
+    # The "position" property cannot be defined as a standard Python
+    # property because it is used in a QPropertyAnimation, which only
+    # works using Qt properties. However it behaves the same way.
+    position = Property(QPointF, lambda self: self.pos(),
+                                 lambda self, val: self.setPos(val))
 
-    position = Property(QPointF, _pos, _set_pos)
+    pos_x = Property(float, lambda self: self.x(),
+                            lambda self, val: self.setX(val))
+
+    pos_y = Property(float, lambda self: self.y(),
+                            lambda self, val: self.setY(val))
 
     def is_composite(self):
         ''' Return True if nested scene has something in it '''
@@ -364,7 +367,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
                 child_below.parent = self.parentItem()
                 child_below.setParentItem(child_below.parent)
                 # Update position of child - take place of deleted item
-                child_below.setY(self.y())
+                child_below.pos_y = self.pos_y
                 child_below.update_position()
             self.parentItem().cam(self.parentItem().pos(),
                                   self.parentItem().pos())
@@ -457,7 +460,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         ''' resize item, e.g. when editing text - move children accordingly '''
         if not self.resizeable:
             return
-        pos = self.pos()
+        #pos = self.position
         delta_x = (self.boundingRect().width() - rect.width()) / 2.0
         delta_y = self.boundingRect().height() - rect.height()
         self.set_shape(rect.width(), rect.height())
@@ -468,12 +471,14 @@ class Symbol(QObject, QGraphicsPathItem, object):
             # if called before text is initialized - or if no textbox
             pass
         for child in self.childSymbols():
-            child.moveBy(-delta_x, -delta_y)
+            child.pos_x -= delta_x
+            child.pos_y -= delta_y
         # X-pos must be updated when resizing,
-        # independently from update_position
-        self.setPos(pos.x() + delta_x, self.y())
+        # independently from update_position -->> XXX WHY ??
+        #self.setPos(pos.x() + delta_x, self.y())
         if self.comment:
-            self.comment.moveBy(-delta_x, delta_y / 2.0)
+            self.comment.pos_x -= delta_x
+            self.comment.pos_y += delta_y / 2.0
         self.update_connections()
 
     def update_connections(self):
@@ -608,13 +613,13 @@ class Symbol(QObject, QGraphicsPathItem, object):
 
         # Move the rectangle to the new position, and move the current item
         animation = False
-        if self.pos() != new_pos:
+        if self.position != new_pos:
             animation = True
             rect.adjust(delta.x(), delta.y(), delta.x(), delta.y())
             undo_cmd = undoCommands.MoveSymbol(
                     self, old_pos, new_pos, animate=animation)
             self.scene().undo_stack.push(undo_cmd)
-            self.setPos(new_pos)
+            self.position = new_pos
 
         # Get all items in the rectangle when placed at the new position
         items = self.scene().items(rect)
@@ -673,16 +678,16 @@ class Symbol(QObject, QGraphicsPathItem, object):
                 # Put it back at the new position to make sure recursive
                 # CAM can happen properly with all object in new positions
                 # (End of CAM reset to the old position for animation)
-                col.setPos(delta)
+                col.position = delta
         # Place top level colliders in old position so that animation can run
         for col in top_level_colliders:
-            col.setPos(col_pos[col])
+            col.position = col_pos[col]
         self.update_connections()
         if animation:
             # If animation is planned, it will trigger only when Qt
             # control loop runs again. Going back to original position
             # so that the animation can be done from the starting point
-            self.setPos(old_pos)
+            self.position = old_pos
 
 
 class Comment(Symbol):
@@ -723,17 +728,11 @@ class Comment(Symbol):
             return
         parent.comment = self
         super(Comment, self).insert_symbol(parent, x, y)
-        if x is not None:
-            self.setX(x)
-        else:
-            self.setX(parent.boundingRect().width() + 20)
-        if y is not None:
-            self.setY(y)
-        else:
-            self.setY((parent.boundingRect().height() -
-                self.boundingRect().height()) / 2)
+        self.pos_x = x if x is not None else parent.boundingRect().width() + 20
+        self.pos_y = y if y is not None else (parent.boundingRect().height() -
+                                              self.boundingRect().height()) / 2
         self.connection = self.connect_to_parent()
-        parent.cam(parent.pos(), parent.pos())
+        parent.cam(parent.position, parent.position)
 
     def connect_to_parent(self):
         ''' Redefinition of the function to use a comment connector '''
@@ -787,7 +786,7 @@ class Comment(Symbol):
         if self.mode == 'Move':
             new_y = self.pos().y() + (event.pos().y() - event.lastPos().y())
             new_x = self.pos().x() + (event.pos().x() - event.lastPos().x())
-            self.setPos(new_x, new_y)
+            self.position = QPointF(new_x, new_y)
             self.update_connections()
 
     def mouse_release(self, event):
@@ -800,7 +799,7 @@ class Comment(Symbol):
             if isinstance(item, Symbol):
                 move_accepted = False
         if not move_accepted:
-            self.setPos(self.coord)
+            self.position = self.coord
             self.update_connections()
         return super(Comment, self).mouse_release(event)
 
@@ -925,7 +924,7 @@ class HorizontalSymbol(Symbol, object):
             local_pos = parent.mapFromScene(x, y)
             self.insert_symbol(parent, local_pos.x(), local_pos.y())
         else:
-            self.setPos(x or 0, y or 0)
+            self.position = QPointF(x or 0, y or 0)
 
     def connect_to_parent(self):
         ''' Redefined: connect to parent item '''
@@ -934,7 +933,7 @@ class HorizontalSymbol(Symbol, object):
     def insert_symbol(self, parent, pos_x, pos_y):
         ''' Insert the symbol in the scene - Align below the parent '''
         if not parent:
-            self.setPos(pos_x, pos_y)
+            self.position = QPointF(pos_x, pos_y)
             return
         super(HorizontalSymbol, self).insert_symbol(parent, pos_x, pos_y)
         if pos_x is None or pos_y is None:
@@ -954,7 +953,7 @@ class HorizontalSymbol(Symbol, object):
             for sibling in self.siblings():
                 sib_x = sibling.x() - (self.boundingRect().width()) / 2 - 10
                 sib_oldpos = sibling.pos()
-                sibling.setX(sib_x)
+                sibling.pos_x = sib_x
                 undo_cmd = undoCommands.MoveSymbol(
                                           sibling, sib_oldpos, sibling.pos())
                 self.scene().undo_stack.push(undo_cmd)
@@ -968,7 +967,7 @@ class HorizontalSymbol(Symbol, object):
                         self.boundingRect().width()) / 2
             pos_y = (parent.boundingRect().height() +
                     self.minDistanceToSymbolAbove)
-        self.setPos(pos_x, pos_y)
+        self.position = QPointF(pos_x, pos_y)
         self.connection = self.connect_to_parent()
         self.updateConnectionPoints()
         self.cam(self.pos(), self.pos())
@@ -1013,7 +1012,7 @@ class HorizontalSymbol(Symbol, object):
             if self.hasParent:
                 new_y = max(new_y, self.parent.boundingRect().height() +
                         self.minDistanceToSymbolAbove)
-            self.setPos(new_x, new_y)
+            self.position = QPointF(new_x, new_y)
             self.update_connections()
         super(HorizontalSymbol, self).mouse_move(event)
 
@@ -1060,8 +1059,8 @@ class HorizontalSymbol(Symbol, object):
                 if rect.intersects(sib_rect):
                     width = (sib_rect & rect).width() + 10
                     old_sib_pos = sibling.pos()
-                    sibling.moveBy(width if self.x() <= sibling.x()
-                            else -width, 0)
+                    sibling.pos_x += width if self.pos_x <= sibling.pos_x \
+                                           else -width
                     undo_cmd = undoCommands.MoveSymbol(
                                          sibling, old_sib_pos, sibling.pos())
                     try:
@@ -1098,7 +1097,7 @@ class VerticalSymbol(Symbol, object):
             local_pos = self.mapFromScene(0, y or 0)
             self.insert_symbol(parent=parent, x=None, y=local_pos.y())
         else:
-            self.setPos(x or 0, y or 0)
+            self.position = QPointF(x or 0, y or 0)
 
     def next_aligned_symbol(self):
         ''' Return the next symbol in the flow '''
@@ -1121,7 +1120,7 @@ class VerticalSymbol(Symbol, object):
             # Place standalone item on the scene at given coordinates
             # (e.g. floating state)
             if x is not None and y is not None:
-                self.setPos(x, y)
+                self.position = QPointF(x, y)
             return
         super(VerticalSymbol, self).insert_symbol(parent, x, y)
         # in a branch (e.g. DECISION) all items must know the first element
@@ -1150,7 +1149,7 @@ class VerticalSymbol(Symbol, object):
                                     self.parentItem().connectionPoint.y() +
                                     self.boundingRect().height() +
                                     self.minDistanceToSymbolAbove)
-                            child.setY(child_y_diff)
+                            child.pos_y = child_y_diff
                             if not isinstance(child, Comment):
                                 child.update_position()
         else:
@@ -1167,7 +1166,7 @@ class VerticalSymbol(Symbol, object):
                     child.setParentItem(self)
                     # move child position down when inserting
                     if isinstance(child, Symbol):
-                        child.setY(0)
+                        child.pos_y = 0.0
                         child.update_position()
 
         # If inserting an symbol at the end of a branch (e.g. DECISION),
@@ -1180,7 +1179,7 @@ class VerticalSymbol(Symbol, object):
         self.update_position()
         self.updateConnectionPoints()
         if y is not None:
-            self.setY(y)
+            self.pos_y = y
         self.cam(self.pos(), self.pos())
         LOG.debug('{} positionned at {}'.format(unicode(self),
                                          unicode(self.scenePos())))
@@ -1190,17 +1189,15 @@ class VerticalSymbol(Symbol, object):
             Update the symbol position -
             always below its parent (check collisions, etc.)
         '''
-        pos_y = self.pos().y()
         # 'or self.parent' because of pyside/qt bug
         parent = self.parentItem() or self.parent
-        pos_x = (self.boundingRect().width() -
-             parent.boundingRect().width()) / 2
+        self.pos_x = -((self.boundingRect().width() -
+                      parent.boundingRect().width()) / 2)
         # In case of collision with parent item, move down
         try:
-            pos_y = max(self.y(), parent.connectionPoint.y())
+            self.pos_y = max(self.y(), parent.connectionPoint.y())
         except AttributeError:
-            pos_y = max(self.y(), parent.boundingRect().height() + 15)
-        self.setPos(-pos_x, pos_y)
+            self.pos_y = max(self.y(), parent.boundingRect().height() + 15)
 
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''
@@ -1208,12 +1205,11 @@ class VerticalSymbol(Symbol, object):
         if self.mode == 'Move':
             new_y = self.pos().y() + (event.pos().y() - event.lastPos().y())
             if not self.parent:
-                self.setX(self.pos().x() +
-                        (event.pos().x() - event.lastPos().x()))
+                self.pos_x += event.pos().x() - event.lastPos().x()
             if not self.hasParent or (new_y >=
-                    self.connection.start_point.y() +
-                    self.parent.minDistanceToSymbolAbove):
-                self.setY(new_y)
+                                      self.connection.start_point.y() +
+                                      self.parent.minDistanceToSymbolAbove):
+                self.pos_y = new_y
             self.update_connections()
             self.updateConnectionPoints()
 

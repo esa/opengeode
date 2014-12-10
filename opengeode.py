@@ -434,7 +434,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                             if symbol.ast.pos_x and symbol.ast.pos_y:
                                 relpos = symbol.mapFromScene(symbol.ast.pos_x,
                                                            symbol.ast.pos_y)
-                                symbol.moveBy(relpos.x(), relpos.y())
+                                symbol.pos_x += relpos.x()
+                                symbol.pos_y += relpos.y()
                                 symbol.update_connections()
                             for child in symbol.childItems():
                                 fix_pos_from_ast(child)
@@ -540,7 +541,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         delta_x = -min_x if min_x < 0 else 0
         delta_y = -min_y if min_y < 0 else 0
         for item in self.floating_symb:
-            item.moveBy(delta_x, delta_y)
+            item.pos_x += delta_x
+            item.pos_y += delta_y
         return delta_x, delta_y
 
     def selected_symbols(self):

@@ -347,7 +347,7 @@ def update(scene):
         # graphviz translates the graph to pos (0, 0) -> move it back
         # to the exact graphical position where the user clicked
         for item in scene.visible_symb:
-            item.setPos(item.pos() - delta)
+            item.position = QtCore.QPointF(item.position - delta)
 
 
 def render_statechart(scene, graph=None, keep_pos=False):

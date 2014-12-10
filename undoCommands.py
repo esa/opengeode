@@ -174,7 +174,7 @@ class MoveSymbol(QUndoCommand):
 
     def undo(self):
         ''' Undo a symbol move '''
-        self.symbol.setPos(self.old_pos)
+        self.symbol.position = self.old_pos
         try:
             self.symbol.decisionParent.updateConnectionPointPosition()
         except AttributeError:
@@ -185,7 +185,7 @@ class MoveSymbol(QUndoCommand):
         try:
             self.animation.start()
         except AttributeError:
-            self.symbol.setPos(self.new_pos)
+            self.symbol.position = self.new_pos
         try:
             self.symbol.decisionParent.updateConnectionPointPosition()
         except AttributeError:
