@@ -26,7 +26,7 @@ __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
 import logging
 from itertools import chain
 
-from PySide.QtCore import Qt, QPoint, QRect, QRectF
+from PySide.QtCore import Qt, QPoint, QRect, QRectF, QPointF
 from PySide.QtGui import(QPainterPath, QBrush, QColor, QRadialGradient, QPen)
 
 from genericSymbols import HorizontalSymbol, VerticalSymbol, Comment
@@ -396,7 +396,7 @@ class Decision(VerticalSymbol):
         if delta != 0:
             child = self.next_aligned_symbol()
             try:
-                child.moveBy(0, delta)
+                child.pos_y += delta
             except AttributeError:
                 pass
         self.update_connections()
@@ -801,7 +801,7 @@ class TextSymbol(HorizontalSymbol):
         self.set_shape(ast.width, ast.height)
         self.setBrush(QBrush(QColor(249, 249, 249)))
         self.terminal_symbol = False
-        self.setPos(ast.pos_x or 0, ast.pos_y or 0)
+        self.position = QPointF(ast.pos_x or 0, ast.pos_y or 0)
         # Disable hyperlinks for Text symbols
         self._no_hyperlink = True
         # Text is not centered in the box - change default alignment:
@@ -891,13 +891,13 @@ class State(VerticalSymbol):
         if parent:
             try:
                 # Map AST scene coordinates to get actual position
-                self.setPos(self.pos() + self.mapFromScene(ast.pos_x or 0,
-                                                           ast.pos_y or 0))
+                self.position += self.mapFromScene(ast.pos_x or 0,
+                                                   ast.pos_y or 0)
             except TypeError:
                 self.update_position()
         else:
             # Use scene coordinates to position
-            self.setPos(ast.pos_x or 0, ast.pos_y or 0)
+            self.position = QPointF(ast.pos_x or 0, ast.pos_y or 0)
         self.parser = ogParser
         if ast.comment:
             Comment(parent=self, ast=ast.comment)

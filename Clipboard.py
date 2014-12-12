@@ -185,7 +185,7 @@ def paste_below_item(parent, scene):
             if (type(new_item).__name__ in parent.allowed_followers):
                 # Move the item from the clipboard to the scene
                 Renderer.add_to_scene(new_item, scene)
-                new_item.setPos(0, 0)
+                new_item.pos_x = new_item.pos_y = 0.0
                 symbols.append(new_item)
             else:
                 raise TypeError('Cannot paste here ({t1} cannot follow {t2}'
