@@ -1019,14 +1019,11 @@ class HorizontalSymbol(Symbol, object):
         return None
 
     def mouse_move(self, event):
-        ''' Prevent move from being above the parent '''
+        ''' Will prevent move from being above the parent '''
         if self.mode == 'Move':
             event_pos = event.pos()
             new_y = self.pos_y + (event_pos.y() - event.lastPos().y())
             new_x = self.pos_x + (event_pos.x() - event.lastPos().x())
-            if self.hasParent:
-                new_y = max(new_y, self.parent.boundingRect().height() +
-                        self.minDistanceToSymbolAbove)
             self.position = QPointF(new_x, new_y)
             self.update_connections()
         super(HorizontalSymbol, self).mouse_move(event)
@@ -1126,6 +1123,21 @@ class VerticalSymbol(Symbol, object):
         ''' Redefined: connect to parent item with a straight line '''
         return VerticalConnection(self.parent, self)
 
+    def set_valid_pos(self, pos):
+        ''' Redefined function - make sure symbol is well aligned '''
+        if not self.hasParent:
+            super(VerticalSymbol, self).set_valid_pos(pos)
+        else:
+            # 'or self.parent' because of pyside/qt bug
+            parent = self.parentItem() or self.parent
+            self.setX(-((self.boundingRect().width() -
+                      parent.boundingRect().width()) / 2))
+            # In case of collision with parent item, move down
+            try:
+                self.setY(max(pos.y(), parent.connectionPoint.y()))
+            except AttributeError:
+                self.setY(max(pos.y(), parent.boundingRect().height() + 15))
+
     def insert_symbol(self, parent, x, y):
         '''
             Vertical symbol: place the symbol in the scene.
@@ -1205,27 +1217,30 @@ class VerticalSymbol(Symbol, object):
             Update the symbol position -
             always below its parent (check collisions, etc.)
         '''
-        # 'or self.parent' because of pyside/qt bug
-        parent = self.parentItem() or self.parent
-        self.pos_x = -((self.boundingRect().width() -
-                      parent.boundingRect().width()) / 2)
-        # In case of collision with parent item, move down
-        try:
-            self.pos_y = max(self.y(), parent.connectionPoint.y())
-        except AttributeError:
-            self.pos_y = max(self.y(), parent.boundingRect().height() + 15)
+        pass # set_valid_pos does it all
+#       # 'or self.parent' because of pyside/qt bug
+#       parent = self.parentItem() or self.parent
+#       self.pos_x = -((self.boundingRect().width() -
+#                     parent.boundingRect().width()) / 2)
+#       # In case of collision with parent item, move down
+#       try:
+#           self.pos_y = max(self.y(), parent.connectionPoint.y())
+#       except AttributeError:
+#           self.pos_y = max(self.y(), parent.boundingRect().height() + 15)
 
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''
         super(VerticalSymbol, self).mouse_move(event)
         if self.mode == 'Move':
-            new_y = self.pos_y + (event.pos().y() - event.lastPos().y())
-            if not self.parent:
-                self.pos_x += event.pos().x() - event.lastPos().x()
-            if not self.hasParent or (new_y >=
-                                      self.connection.start_point.y() +
-                                      self.parent.minDistanceToSymbolAbove):
-                self.pos_y = new_y
+            new_y = self.pos_y + event.pos().y() - event.lastPos().y()
+            new_x = self.pos_x + event.pos().x() - event.lastPos().x()
+            self.position = QPointF(new_x, new_y)
+#            if not self.parent:
+#                self.pos_x += event.pos().x() - event.lastPos().x()
+#            if not self.hasParent or (new_y >=
+#                                      self.connection.start_point.y() +
+#                                      self.parent.minDistanceToSymbolAbove):
+#                self.pos_y = new_y
             self.update_connections()
             self.updateConnectionPoints()
 
