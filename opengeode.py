@@ -99,7 +99,7 @@ except ImportError:
     LlvmGenerator = None
     print 'LLVM is not available'
 
-__all__ = ['opengeode']
+__all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
 __version__ = '1.0RC'
 
 if hasattr(sys, 'frozen'):
