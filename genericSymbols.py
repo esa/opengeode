@@ -480,8 +480,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
             child.pos_x -= delta_x
             child.pos_y -= delta_y
         # X-pos must be updated when resizing,
-        # independently from update_position -->> XXX WHY ??
-        #self.setPos(pos.x() + delta_x, self.y())
+        # independently from update_position
+        self.pos_x += delta_x
         if self.comment:
             self.comment.pos_x -= delta_x
             self.comment.pos_y += delta_y / 2.0
@@ -1212,12 +1212,11 @@ class VerticalSymbol(Symbol, object):
         LOG.debug('{} positionned at {}'.format(unicode(self),
                                          unicode(self.scenePos())))
 
-    def update_position(self):
-        '''
-            Update the symbol position -
-            always below its parent (check collisions, etc.)
-        '''
-        pass # set_valid_pos does it all
+#   def update_position(self):
+#       '''
+#           Update the symbol position -
+#           always below its parent (check collisions, etc.)
+#       '''
 #       # 'or self.parent' because of pyside/qt bug
 #       parent = self.parentItem() or self.parent
 #       self.pos_x = -((self.boundingRect().width() -
