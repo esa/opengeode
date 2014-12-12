@@ -437,16 +437,19 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                 symbol.pos_x += relpos.x()
                                 symbol.pos_y += relpos.y()
                                 symbol.update_connections()
-                            for child in symbol.childItems():
-                                fix_pos_from_ast(child)
-                                # Update the position anyway, because
-                                # depending on the host platform, the exact
-                                # pixel position and size of symbols can
-                                # vary - due to font rendering, etc.
-                                child.update_position()
+                                # Update_position is called here because it
+                                # is not possible to be sure that the
+                                # positionning stored in the file will be
+                                # rendered correctly on the host plaform.
+                                # Font rendering may cause slight differences
+                                # between Linux and Windows for example.
+                                symbol.update_position()
                         except AttributeError:
-                            # no AST
+                            # no AST, ignore (e.g. Connections, Cornergrabbers)
                             pass
+                        else:
+                            fix_pos_from_ast(symbol.next_aligned_symbol())
+                            fix_pos_from_ast(symbol.comment)
                     fix_pos_from_ast(each)
             except TypeError:
                 LOG.error(traceback.format_exc())

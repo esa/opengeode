@@ -155,18 +155,24 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # List of visible connection points (that can move)
         self.movable_points = []
 
+    def set_valid_pos(self, pos):
+        ''' Hook that can be redefined by sub classes to forbid wrong
+        placements on the fly, before calling the actual setPos() from Qt '''
+        self.setPos(pos)
 
     # The "position" property cannot be defined as a standard Python
     # property because it is used in a QPropertyAnimation, which only
     # works using Qt properties. However it behaves the same way.
     position = Property(QPointF, lambda self: self.pos(),
-                                 lambda self, val: self.setPos(val))
+                                 lambda self, val: self.set_valid_pos(val))
 
     pos_x = Property(float, lambda self: self.x(),
-                            lambda self, val: self.setX(val))
+                            lambda self, val:
+                                    self.set_valid_pos(QPointF(val, self.y())))
 
     pos_y = Property(float, lambda self: self.y(),
-                            lambda self, val: self.setY(val))
+                            lambda self, val:
+                                    self.set_valid_pos(QPointF(self.x(), val)))
 
     def is_composite(self):
         ''' Return True if nested scene has something in it '''
@@ -928,6 +934,15 @@ class HorizontalSymbol(Symbol, object):
     def connect_to_parent(self):
         ''' Redefined: connect to parent item '''
         return RakeConnection(self.parent, self)
+
+    def set_valid_pos(self, pos):
+        ''' Redefined function - make sure symbol is below its parent '''
+        if not self.hasParent:
+            super(HorizontalSymbol, self).set_valid_pos(pos)
+        else:
+            new_y = max(pos.y(), self.parent.boundingRect().height() +
+                        self.minDistanceToSymbolAbove)
+            self.setPos(pos.x(), new_y)
 
     def insert_symbol(self, parent, pos_x, pos_y):
         ''' Insert the symbol in the scene - Align below the parent '''
