@@ -610,7 +610,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if item in self.highlighted:
             return
         bound = item.boundingRect()
-        center = bound.center.x()
+        center = bound.center().x()
         gradient = QtGui.QLinearGradient(center, 0, center, bound.height())
         gradient.setColorAt(0, Qt.cyan)
         gradient.setColorAt(1, Qt.white)

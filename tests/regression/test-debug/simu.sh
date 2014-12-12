@@ -3,7 +3,7 @@ make test-python
 rm -rf simu
 mkdir -p simu
 asn2aadlPlus dataview-uniq.asn simu/DataView.aadl
-cp liborchestrator.so dataview-uniq.asn simu
+cp liborchestrator.so dataview-uniq.asn *.pr simu
 mv *.aadl simu
 cd simu
 aadl2glueC DataView.aadl orchestrator_interface.aadl
