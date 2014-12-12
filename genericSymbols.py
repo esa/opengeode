@@ -310,7 +310,6 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def update_position(self):
         ''' VIRTUAL - implemented in subclasses '''
         pass
-        #self.position = self.position
 
     def select(self, selected=True):
         ''' When item is selected, effectively select its grabber '''
