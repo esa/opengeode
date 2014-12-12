@@ -320,6 +320,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.select_rect = None
         # Keep a list of composite states: {'stateName': SDL_Scene}
         self._composite_states = {}
+        # Keep a track of highlighted symbols: { symbol: brush }
+        self.highlighted = {}
 
     @property
     def visible_symb(self):
@@ -602,6 +604,27 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                         recursive=False,
                                         nextstate=False, cpy=True))
         symbol.update_completion_list(pr_text=pr_text)
+
+    def highlight(self, item):
+        ''' Highlight a symbol '''
+        if item in self.highlighted:
+            return
+        bound = item.boundingRect()
+        center = bound.center.x()
+        gradient = QtGui.QLinearGradient(center, 0, center, bound.height())
+        gradient.setColorAt(0, Qt.cyan)
+        gradient.setColorAt(1, Qt.white)
+        self.highlighted[item] = item.brush()
+        item.setBrush(QtGui.QBrush(gradient))
+
+    def clear_highlight(self, item=None, reset=True):
+        ''' Remove the highlighting of one item or all items on the scene '''
+        if item in self.highlighted:
+            self.setBrush(self.highlighted.pop(item))
+        if reset:
+            for item, brush in self.highlighted.viewitems():
+                item.setBrush(brush)
+            self.highlighted = {}
 
     def find_text(self, pattern):
         ''' Return all symbols with matching text '''
