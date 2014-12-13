@@ -336,8 +336,11 @@ package {process_name} is'''.format(process_name=process_name,
         param_spec = ''
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = u'({pName}: access {sort}; Size: Integer)' \
-                         .format(pName=param_name, sort=typename)
+            param_spec = u'({pName}: access {sort}{shared})' \
+                         .format(pName=param_name,
+                                 sort=typename,
+                                 shared=u'; Size: Integer'
+                                        if SHARED_LIB else '')
         ads_template.append(u'--  Required interface "' + signal['name'] + '"')
         if simu:
             # When generating a shared library, we need a callback mechanism
