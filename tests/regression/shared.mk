@@ -1,4 +1,4 @@
-OPENGEODE=../../../opengeode.py
+OPENGEODE=../../../opengeode/opengeode.py
 ASN1SCC=asn1.exe
 CC=gcc
 LLC=llc
