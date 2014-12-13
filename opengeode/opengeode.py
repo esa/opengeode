@@ -100,7 +100,7 @@ except ImportError:
     print 'LLVM is not available'
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.0RC'
+__version__ = '1.0RC2'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
