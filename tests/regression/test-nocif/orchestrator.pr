@@ -1,0 +1,114 @@
+PROCESS orchestrator
+COMMENT 'Hello';
+    /* CIF TEXT (0, 94), (398, 293) */
+    dcl seq tastE_Peek_id_list;
+
+dcl fixed FixedString := 'Hello';
+dcl variable VariableString := 'Hello';
+dcl seqboolean SeqBool := { true, false };
+
+dcl seqbool2 SeqBoolFix := { true, false };
+
+dcl seqen SeqEnum := { hello2, world2};
+
+dcl seqen2 SeqEnumFix := { hello, world };
+
+dcl myenum MyEnum := a;
+
+dcl check tasTE_Peek_id;
+
+dcl choice Mychoice;
+
+dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
+    /* CIF ENDTEXT */
+    PROCEDURE emptyproc;
+    ENDPROCEDURE;
+    PROCEDURE numProc;
+        START;
+            DECISION num(myenum);
+                    else:
+            ENDDECISION;
+            DECISION num(myenum);
+                    else:
+            ENDDECISION;
+            RETURN ;
+    ENDPROCEDURE;
+    START;
+        TASK opt := { B TRUE }
+        COMMENT 'Test optional fields';
+        DECISION num(myenum);
+                (0):
+                else:
+        ENDDECISION;
+        DECISION num(myenum);
+                (0):
+                else:
+        ENDDECISION;
+        DECISION 'informal'
+        COMMENT 'Informal decision -
+check that it is ignored
+by the code generator';
+                ('a'):
+                ('2'):
+        ENDDECISION;
+        TASK seqboolean := {true, false},
+seqboolean := not {true, false};
+        TASK for x in seqen:
+ call writeln(num(x));
+ call writeln(num(myenum));
+ call writeln(num(myenum));
+endfor
+        COMMENT 'Check that num is not
+declared twice';
+        TASK for x in seqen2:
+ call writeln(num(x));
+endfor;
+        TASK for x in seqboolean:
+    call writeln(x);
+endfor
+        COMMENT 'FOR with a basic type';
+        TASK seqboolean := not seqboolean
+        COMMENT 'check NOT on a SEQUENCE of BOOLEAN';
+        TASK for x in seqboolean:
+    call writeln(x);
+endfor;
+        TASK fixed := 'hello';
+        TASK variable := 'HELLO';
+        CALL writeln(variable // '!!!');
+        CALL writeln(variable // variable // variable);
+        TASK seq := {1};
+        TASK seq := {1} // {2} // {3};
+        TASK seq := seq // {2} // {1};
+        DECISION any;
+                ('a'):
+                ('b'):
+        ENDDECISION;
+        DECISION myenum
+        COMMENT 'Check case insensitivity';
+                (a):
+                (B):
+                (c):
+                (d):
+                (Ee):
+        ENDDECISION;
+        DECISION present(choice)
+        COMMENT 'Check case insensitivity';
+                (cde2):
+                ELSE:
+        ENDDECISION;
+        NEXTSTATE Wait_for_GUI;
+    STATE Third;
+        INPUT pulse(myenum);
+            NEXTSTATE Wait_for_gui;
+    ENDSTATE;
+    STATE AnotherState;
+        INPUT pulse(myenum);
+            NEXTSTATE Third;
+    ENDSTATE;
+    STATE Wait_for_GUI;
+        INPUT pulse(myenum);
+            CALL writeln('Got PULSE', num(myenum));
+            OUTPUT telemetry(myenum);
+            NEXTSTATE AnotherState;
+    ENDSTATE;
+ENDPROCESS orchestrator;
