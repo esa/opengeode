@@ -453,7 +453,6 @@ def signature(name, context):
 def check_call(name, params, context):
     ''' Check the parameter types of a procedure/output/operator call,
         returning the type of its result '''
-#    LOG.debug('[check_call] ' + name + ' - ' + str(params))
 
     # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
@@ -617,9 +616,6 @@ def check_type_compatibility(primary, type_ref, context):
         raise TypeError('Type reference is unknown')
 
     basic_type = find_basic_type(type_ref)
-#   LOG.debug("[check_type_compatibility] "
-#             "checking if {value} is of type {typeref}"
-#             .format(value=primary.inputString, typeref=type_name(type_ref)))
 
     if (isinstance(primary, ogAST.PrimEnumeratedValue)
             and basic_type.kind.endswith('EnumeratedType')):
@@ -795,7 +791,6 @@ def compare_types(type_a, type_b):
        Compare two types, return if they are semantically equivalent,
        otherwise raise TypeError
     '''
-#    LOG.debug('[compare_types]' + str(type_a) + ' and ' + str(type_b) + ': ')
 
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
@@ -848,7 +843,6 @@ def compare_types(type_a, type_b):
 
 def find_variable_type(var, context):
     ''' Look for a variable name in the context and return its type '''
-#    LOG.debug('[find_variable] checking if ' + str(var) + ' is defined')
 
     # all DCL-variables
     all_visible_variables = dict(context.global_variables)
@@ -877,7 +871,6 @@ def find_variable_type(var, context):
         if var.lower() == varname.lower().replace('-', '_'):
             return vartype.type
 
-#    LOG.debug('[find_variable] result: not found, raising exception')
     raise AttributeError('Variable {var} not defined'.format(var=var))
 
 
@@ -895,8 +888,6 @@ def fix_enumerated_and_choice(expr_enum, context):
         expr_enum.right.exprType = expr_enum.left.exprType
     except (UnboundLocalError, AttributeError, TypeError):
         pass
-#   else:
-#       LOG.debug('Fixed enumerated/choice: {}'.format(expr_enum.inputString))
 
 
 def fix_expression_types(expr, context):
@@ -3928,7 +3919,6 @@ def pr_file(root):
         else:
             LOG.error('Unsupported construct in PR:' + str(child.type))
     for child in uses:
-        LOG.debug('USE clause')
         # USE clauses can contain a CIF comment with the ASN.1 filename
         use_clause_subs = child.getChildren()
         asn1_filename = None
@@ -3980,7 +3970,6 @@ def pr_file(root):
         process.dv = DV
         errors.extend(err)
         warnings.extend(warn)
-    LOG.debug('all files: ' + str(ast.pr_files))
 
     # Since SDL type declarations are injected in ASN.1 ast,
     # The ASN.1 ASTs needs to be copied at the end of PR parsing process

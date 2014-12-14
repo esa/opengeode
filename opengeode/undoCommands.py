@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
-    OpenGEODE - A tiny SDL Editor for TASTE
+    OpenGEODE - A tiny SDL Editor for TASTE - Support for Undo/Redo
 
     Undo/Redo commands for generic symbols when used in a diagram editor.
 
@@ -10,7 +9,7 @@
         the redo() function is *called* when the command is created.
         No need to perform the action before.
 
-    Copyright (c) 2012 European Space Agency
+    Copyright (c) 2012-2015 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -35,12 +34,10 @@ class UndoMacro(object):
 
     def __enter__(self):
         ''' Create macro for a set of undo commands '''
-        LOG.debug('New macro: {}'.format(self.text))
         self.stack.beginMacro(self.text)
 
     def __exit__(self, atype, value, traceback):
         ''' Stop the recording of undo commands '''
-        LOG.debug('End macro: {}'.format(self.text))
         self.stack.endMacro()
 
 
@@ -48,7 +45,6 @@ class ReplaceText(QUndoCommand):
     ''' Undo/Redo command for updating the text in a symbol '''
     def __init__(self, text_id, old_text, new_text):
         super(ReplaceText, self).__init__()
-        LOG.debug('New Undo command: Replace text')
         self.setText('Replace text')
         self.text = text_id
         self.old_text = old_text
@@ -65,7 +61,6 @@ class ResizeSymbol(QUndoCommand):
     ''' Undo/Redo command for resizing a symbol '''
     def __init__(self, symbol_id, old_rect, new_rect):
         super(ResizeSymbol, self).__init__()
-        LOG.debug('New Undo command: Resize symbol')
         self.setText('Resize symbol')
         self.symbol = symbol_id
         self.old_rect = old_rect
@@ -94,7 +89,6 @@ class InsertSymbol(QUndoCommand):
     ''' Undo/Redo command for inserting a new item '''
     def __init__(self, item, parent, pos):
         super(InsertSymbol, self).__init__()
-        LOG.debug('New Undo command: Insert symbol')
         self.item = item
         self.parent = parent
         self.pos_x = pos.x() if pos else None
@@ -131,7 +125,6 @@ class DeleteSymbol(QUndoCommand):
     ''' Undo/Redo command for a symbol deletion '''
     def __init__(self, item):
         super(DeleteSymbol, self).__init__()
-        LOG.debug('New Undo command: Delete symbol')
         self.item = item
         self.scene = item.scene()
         self.parent = item.parentItem() if item.hasParent else None
@@ -159,7 +152,6 @@ class MoveSymbol(QUndoCommand):
     ''' Undo/Redo command for moving symbols '''
     def __init__(self, symbol_id, old_pos, new_pos, animate=False):
         super(MoveSymbol, self).__init__()
-        LOG.debug('New Undo command: Move symbol')
         self.setText('Move symbol')
         self.symbol = symbol_id
         self.old_pos = old_pos
@@ -170,7 +162,6 @@ class MoveSymbol(QUndoCommand):
             self.animation.setStartValue(self.old_pos)
             self.animation.setEndValue(self.new_pos)
             self.animation.setEasingCurve(QEasingCurve.OutCirc)
-
 
     def undo(self):
         ''' Undo a symbol move '''

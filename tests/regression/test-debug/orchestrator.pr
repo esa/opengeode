@@ -23,9 +23,6 @@ dcl choice Mychoice;
 
 dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
     /* CIF ENDTEXT */
-    /* CIF PROCEDURE (1273, 175), (106, 35) */
-    PROCEDURE emptyproc;
-    ENDPROCEDURE;
     /* CIF PROCEDURE (1306, 371), (91, 35) */
     PROCEDURE numProc;
         /* CIF START (161, 82), (70, 35) */
@@ -42,6 +39,9 @@ dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
             ENDDECISION;
             /* CIF RETURN (178, 348), (35, 35) */
             RETURN ;
+    ENDPROCEDURE;
+    /* CIF PROCEDURE (1273, 175), (106, 35) */
+    PROCEDURE emptyproc;
     ENDPROCEDURE;
     /* CIF START (596, 224), (80, 36) */
     START;
@@ -129,15 +129,15 @@ endfor;
         DECISION myenum
         /* CIF COMMENT (718, 1533), (183, 35) */
         COMMENT 'Check case insensitivity';
-                /* CIF ANSWER (437, 1595), (70, 23) */
+                /* CIF ANSWER (528, 1595), (70, 23) */
                 (a):
-                /* CIF ANSWER (517, 1595), (70, 23) */
+                /* CIF ANSWER (608, 1595), (70, 23) */
                 (B):
-                /* CIF ANSWER (597, 1595), (70, 23) */
+                /* CIF ANSWER (688, 1595), (70, 23) */
                 (c):
-                /* CIF ANSWER (677, 1595), (70, 23) */
+                /* CIF ANSWER (768, 1595), (70, 23) */
                 (d):
-                /* CIF ANSWER (757, 1595), (70, 23) */
+                /* CIF ANSWER (848, 1595), (70, 23) */
                 (Ee):
         ENDDECISION;
         /* CIF DECISION (567, 1633), (138, 50) */
@@ -155,7 +155,7 @@ endfor;
     STATE Third;
         /* CIF INPUT (1054, 482), (130, 35) */
         INPUT pulse(myenum);
-            /* CIF NEXTSTATE (1063, 532), (113, 35) */
+            /* CIF NEXTSTATE (1062, 532), (113, 35) */
             NEXTSTATE Wait_for_gui;
     ENDSTATE;
     /* CIF STATE (1059, 322), (123, 35) */
