@@ -450,6 +450,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                             # no AST, ignore (e.g. Connections, Cornergrabbers)
                             pass
                         else:
+                            # Recursively fix pos of sub branches and followers
+                            for branch in (elm for elm in symbol.childSymbols()
+                                       if isinstance(elm,
+                                             genericSymbols.HorizontalSymbol)):
+                                fix_pos_from_ast(branch)
                             fix_pos_from_ast(symbol.next_aligned_symbol())
                             fix_pos_from_ast(symbol.comment)
                     fix_pos_from_ast(each)
