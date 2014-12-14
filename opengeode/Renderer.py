@@ -322,16 +322,13 @@ def _terminator(ast, scene, parent, states):
         # pylint: disable=E1111
         parent = render(ast.label, scene=scene, parent=parent, states=states)
     if ast.kind == 'next_state':
-        LOG.debug('ADDING NEXT_STATE ' + ast.inputString)
         # Create a new state symbol
         symbol = sdlSymbols.State(parent=parent, ast=ast)
         # If the terminator is also a new state, render the inputs below
-        LOG.debug('STATELIST:' + str([st.inputString for st in states]))
         for state_ast in states:
             if (state_ast.inputString == ast.inputString and
                     state_ast.pos_x == ast.pos_x and
                     state_ast.pos_y == ast.pos_y):
-                LOG.debug('MERGING TERMINATOR "' + ast.inputString + '"')
                 symbol.nested_scene = state_ast.composite or \
                                       ogAST.CompositeState()
                 for each in chain(state_ast.inputs, state_ast.connects):
