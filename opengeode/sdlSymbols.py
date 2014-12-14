@@ -353,7 +353,6 @@ class Decision(VerticalSymbol):
 
     def updateConnectionPointPosition(self):
         ''' Compute the joining point of decision branches '''
-        LOG.debug('UpdateConnectionPointPosition of {}'.format(unicode(self)))
         new_y = 0
         new_x = self.boundingRect().width() / 2.0
         answers = False
@@ -427,7 +426,6 @@ class DecisionAnswer(HorizontalSymbol):
                                              y=ast.pos_y or 0,
                                              hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
-        #self.setPen(QColor(0, 0, 0, 0))
         self.branch_entrypoint = self
         self.parser = ogParser
 
@@ -435,7 +433,7 @@ class DecisionAnswer(HorizontalSymbol):
         ''' ANSWER-specific insersion behaviour: link to connection point '''
         if not parent:
             return
-        # Make sure that parent is a state, not a sibling input
+        # Make sure that parent is not a sibling answer
         item_parent = (parent if not isinstance(parent, DecisionAnswer)
                        else parent.parentItem())
         super(DecisionAnswer, self).insert_symbol(item_parent, x, y)

@@ -453,7 +453,6 @@ def signature(name, context):
 def check_call(name, params, context):
     ''' Check the parameter types of a procedure/output/operator call,
         returning the type of its result '''
-    LOG.debug('[check_call] ' + name + ' - ' + str(params))
 
     # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
@@ -617,9 +616,6 @@ def check_type_compatibility(primary, type_ref, context):
         raise TypeError('Type reference is unknown')
 
     basic_type = find_basic_type(type_ref)
-    LOG.debug("[check_type_compatibility] "
-              "checking if {value} is of type {typeref}"
-              .format(value=primary.inputString, typeref=type_name(type_ref)))
 
     if (isinstance(primary, ogAST.PrimEnumeratedValue)
             and basic_type.kind.endswith('EnumeratedType')):
@@ -795,7 +791,6 @@ def compare_types(type_a, type_b):
        Compare two types, return if they are semantically equivalent,
        otherwise raise TypeError
     '''
-    LOG.debug('[compare_types]' + str(type_a) + ' and ' + str(type_b) + ': ')
 
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
@@ -848,7 +843,6 @@ def compare_types(type_a, type_b):
 
 def find_variable_type(var, context):
     ''' Look for a variable name in the context and return its type '''
-    LOG.debug('[find_variable] checking if ' + str(var) + ' is defined')
 
     # all DCL-variables
     all_visible_variables = dict(context.global_variables)
@@ -877,7 +871,6 @@ def find_variable_type(var, context):
         if var.lower() == varname.lower().replace('-', '_'):
             return vartype.type
 
-    LOG.debug('[find_variable] result: not found, raising exception')
     raise AttributeError('Variable {var} not defined'.format(var=var))
 
 
@@ -895,8 +888,6 @@ def fix_enumerated_and_choice(expr_enum, context):
         expr_enum.right.exprType = expr_enum.left.exprType
     except (UnboundLocalError, AttributeError, TypeError):
         pass
-    else:
-        LOG.debug('Fixed enumerated/choice: {}'.format(expr_enum.inputString))
 
 
 def fix_expression_types(expr, context):
@@ -2370,12 +2361,10 @@ def text_area(root, parent=None, context=None):
     errors = []
     warnings = []
     ta = ogAST.TextArea()
-    coord = False
     for child in root.getChildren():
         if child.type == lexer.CIF:
             userTextStartIndex = child.getTokenStopIndex() + 1
             ta.pos_x, ta.pos_y, ta.width, ta.height = cif(child)
-            coord = True
         elif child.type == lexer.TEXTAREA_CONTENT:
             ta.line = child.getLine()
             ta.charPositionInLine = child.getCharPositionInLine()
@@ -2394,9 +2383,8 @@ def text_area(root, parent=None, context=None):
             warnings.append('Unsupported construct in text area, type: ' +
                     str(child.type))
     # Report errors with symbol coordinates
-    if coord:
-        errors = [[e, [ta.pos_x, ta.pos_y], []] for e in errors]
-        warnings = [[w, [ta.pos_x, ta.pos_y], []] for w in warnings]
+    errors = [[e, [ta.pos_x or 0, ta.pos_y or 0], []] for e in errors]
+    warnings = [[w, [ta.pos_x or 0, ta.pos_y or 0], []] for w in warnings]
     return ta, errors, warnings
 
 
@@ -2650,8 +2638,8 @@ def process_definition(root, parent=None, context=None):
         try:
             each[2].insert(0, 'PROCESS {}'.format(process.processName))
         except AttributeError as err:
-            LOG.debug(str(err))
-            LOG.error('Internal error - please report "{}"'.format(str(each)))
+            LOG.error('Internal error - please report "{}" - "{}"'.format(
+                str(each), str(err)))
     errors.extend(perr)
     return process, errors, warnings
 
@@ -2660,7 +2648,6 @@ def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
     i = ogAST.Input()
     warnings, errors = [], []
-    coord = False
     # Keep track of the number of terminator statements follow the input
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
@@ -2668,7 +2655,6 @@ def input_part(root, parent, context):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             i.pos_x, i.pos_y, i.width, i.height = cif(child)
-            coord = True
         elif child.type == lexer.INPUTLIST:
             i.inputString = get_input_string(child)
             i.line = child.getLine()
@@ -2722,9 +2708,9 @@ def input_part(root, parent, context):
                 errors.append('Wrong number of parameters or type mismatch')
 
             # Report errors with symbol coordinates
-            if coord:
-                errors = [[e, [i.pos_x, i.pos_y], []] for e in errors]
-                warnings = [[w, [i.pos_x, i.pos_y], []] for w in warnings]
+            errors = [[e, [i.pos_x or 0, i.pos_y or 0], []] for e in errors]
+            warnings = [[w, [i.pos_x or 0, i.pos_y or 0], []]
+                         for w in warnings]
         elif child.type == lexer.ASTERISK:
             # Asterisk means: all inputs not processed explicitely
             # Here we do not set the input list - it is set after
@@ -2867,7 +2853,6 @@ def connect_part(root, parent, context):
     ''' Connection of a nested state exit point with a transition
         Very similar to INPUT '''
     errors, warnings = [], []
-    coord = False
     conn = ogAST.Connect()
     try:
         statename = parent.statelist[0].lower()
@@ -2890,7 +2875,6 @@ def connect_part(root, parent, context):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             conn.pos_x, conn.pos_y, conn.width, conn.height = cif(child)
-            coord = True
         elif child.type == lexer.ID:
             id_token.append(child)
             conn.connect_list.append(child.toString().lower())
@@ -2940,9 +2924,8 @@ def connect_part(root, parent, context):
     # Set list of terminators
     conn.terminators = list(context.terminators[terms:])
     # Report errors with symbol coordinates
-    if coord:
-        errors = [[e, [conn.pos_x, conn.pos_y], []] for e in errors]
-        warnings = [[w, [conn.pos_x, conn.pos_y], []] for w in warnings]
+    errors = [[e, [conn.pos_x or 0, conn.pos_y or 0], []] for e in errors]
+    warnings = [[w, [conn.pos_x or 0, conn.pos_y or 0], []] for w in warnings]
     return conn, errors, warnings
 
 
@@ -3067,14 +3050,12 @@ def output(root, parent, out_ast=None, context=None):
     ''' Parse an OUTPUT :  set of asynchronous required interface(s) '''
     errors = []
     warnings = []
-    coord = False
     out_ast = out_ast or ogAST.Output()  # syntax checker passes no ast
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
             out_ast.pos_x, out_ast.pos_y, out_ast.width, out_ast.height = \
                     cif(child)
-            coord = True
         elif child.type == lexer.OUTPUT_BODY:
             out_ast.inputString = get_input_string(child)
             out_ast.line = child.getLine()
@@ -3091,9 +3072,10 @@ def output(root, parent, out_ast=None, context=None):
             warnings.append('Unsupported output child type: ' +
                     str(child.type))
     # Report errors with symbol coordinates
-    if coord:
-        errors = [[e, [out_ast.pos_x, out_ast.pos_y], []] for e in errors]
-        warnings = [[w, [out_ast.pos_x, out_ast.pos_y], []] for w in warnings]
+    errors = [[e, [out_ast.pos_x or 0, out_ast.pos_y or 0], []]
+                for e in errors]
+    warnings = [[w, [out_ast.pos_x or 0, out_ast.pos_y or 0], []]
+                for w in warnings]
     return out_ast, errors, warnings
 
 
@@ -3102,7 +3084,6 @@ def alternative_part(root, parent, context):
     errors = []
     warnings = []
     ans = ogAST.Answer()
-    coord = False
     if root.type == lexer.ELSE:
         # used when copy-pasting
         ans.inputString = root.text
@@ -3110,7 +3091,6 @@ def alternative_part(root, parent, context):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             ans.pos_x, ans.pos_y, ans.width, ans.height = cif(child)
-            coord = True
         elif child.type == lexer.CLOSED_RANGE:
             ans.kind = 'closed_range'
             cl0, err0, warn0 = expression(child.getChild(0), context)
@@ -3156,10 +3136,9 @@ def alternative_part(root, parent, context):
             ans.line = child.getLine()
             ans.charPositionInLine = child.getCharPositionInLine()
             # Report errors with symbol coordinates
-            x, y = (ans.pos_x, ans.pos_y) if coord else (0, 0)
-            if coord:
-                errors = [[e, [x, y], []] for e in errors]
-                warnings = [[w, [x, y], []] for w in warnings]
+            x, y = (ans.pos_x or 0, ans.pos_y or 0)
+            errors = [[e, [x, y], []] for e in errors]
+            warnings = [[w, [x, y], []] for w in warnings]
     return ans, errors, warnings
 
 
@@ -3506,11 +3485,9 @@ def terminator_statement(root, parent, context):
     errors = []
     warnings = []
     t = ogAST.Terminator()
-    coord = False
     for term in root.getChildren():
         if term.type == lexer.CIF:
             t.pos_x, t.pos_y, t.width, t.height = cif(term)
-            coord = True
         elif term.type == lexer.LABEL:
             lab, err, warn = label(term, parent=parent)
             errors.extend(err)
@@ -3561,9 +3538,8 @@ def terminator_statement(root, parent, context):
             warnings.append('Unsupported terminator type: ' +
                     str(term.type))
     # Report errors with symbol coordinates
-    if coord:
-        errors = [[e, [t.pos_x, t.pos_y], []] for e in errors]
-        warnings = [[w, [t.pos_x, t.pos_y], []] for w in warnings]
+    errors = [[e, [t.pos_x or 0, t.pos_y or 0], []] for e in errors]
+    warnings = [[w, [t.pos_x or 0, t.pos_y or 0], []] for w in warnings]
     return t, errors, warnings
 
 
@@ -3879,10 +3855,13 @@ def task(root, parent=None, context=None):
                 pos_x, pos_y, width, height
         errors = [[e, [pos_x, pos_y], []] for e in errors]
         warnings = [[w, [pos_x, pos_y], []] for w in warnings]
+    else:
+        errors = [[e, [0, 0], []] for e in errors]
+        warnings = [[w, [0, 0], []] for w in warnings]
     if body:
         body.comment = comment
     else:
-        warnings.append('TASK missing content')
+        warnings.append(['TASK missing content', [pos_x or 0, pos_y or 0], []])
         body = ogAST.TaskAssign()
     return body, errors, warnings
 
@@ -3892,12 +3871,10 @@ def label(root, parent, context=None):
     errors = []
     warnings = []
     lab = ogAST.Label()
-    coord = False
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
             lab.pos_x, lab.pos_y, lab.width, lab.height = cif(child)
-            coord = True
         elif child.type == lexer.ID:
             lab.inputString = get_input_string(child)
             lab.line = child.getLine()
@@ -3909,9 +3886,8 @@ def label(root, parent, context=None):
                     'Unsupported child type in label definition: ' +
                     str(child.type))
     # Report errors with symbol coordinates
-    if coord:
-        errors = [[e, [lab.pos_x, lab.pos_y], []] for e in errors]
-        warnings = [[w, [lab.pos_x, lab.pos_y], []] for w in warnings]
+    errors = [[e, [lab.pos_x or 0, lab.pos_y or 0], []] for e in errors]
+    warnings = [[w, [lab.pos_x or 0, lab.pos_y or 0], []] for w in warnings]
     return lab, errors, warnings
 
 
@@ -3943,7 +3919,6 @@ def pr_file(root):
         else:
             LOG.error('Unsupported construct in PR:' + str(child.type))
     for child in uses:
-        LOG.debug('USE clause')
         # USE clauses can contain a CIF comment with the ASN.1 filename
         use_clause_subs = child.getChildren()
         asn1_filename = None
@@ -3995,7 +3970,6 @@ def pr_file(root):
         process.dv = DV
         errors.extend(err)
         warnings.extend(warn)
-    LOG.debug('all files: ' + str(ast.pr_files))
 
     # Since SDL type declarations are injected in ASN.1 ast,
     # The ASN.1 ASTs needs to be copied at the end of PR parsing process

@@ -195,7 +195,6 @@ class Symbol(QObject, QGraphicsPathItem, object):
                 followers.append(item_type)
         if not self.next_aligned_symbol():
             followers.extend(self._terminal_followers)
-        #LOG.debug(str(followers))
         return followers
 
     @property
@@ -924,8 +923,11 @@ class HorizontalSymbol(Symbol, object):
             self.text = EditableText(parent=self, text=text,
                     hyperlink=hyperlink)
         if parent:
-            local_pos = parent.mapFromScene(x, y)
-            self.insert_symbol(parent, local_pos.x(), local_pos.y())
+            if x and y:
+                local_pos = parent.mapFromScene(x, y)
+                self.insert_symbol(parent, local_pos.x(), local_pos.y())
+            else:
+                self.insert_symbol(parent, None, None)
         else:
             self.position = QPointF(x or 0, y or 0)
 
@@ -984,8 +986,6 @@ class HorizontalSymbol(Symbol, object):
         self.connection = self.connect_to_parent()
         self.updateConnectionPoints()
         self.cam(self.position, self.position)
-        LOG.debug('{} positionned at {}'.format(unicode(self),
-                                         unicode(self.scenePos())))
 
     def update_connections(self):
         '''
@@ -1207,8 +1207,6 @@ class VerticalSymbol(Symbol, object):
         if y is not None:
             self.pos_y = y
         self.cam(self.position, self.position)
-        LOG.debug('{} positionned at {}'.format(unicode(self),
-                                         unicode(self.scenePos())))
 
 #   def update_position(self):
 #       '''

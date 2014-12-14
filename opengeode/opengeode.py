@@ -446,6 +446,16 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                 # Font rendering may cause slight differences
                                 # between Linux and Windows for example.
                                 symbol.update_position()
+                            else:
+                                # No CIF coordinates: (1) fix COMMENT position
+                                # and (2) if floating, call CAM
+                                if isinstance(symbol, genericSymbols.Comment):
+                                    symbol.pos_x = \
+                                      symbol.parent.boundingRect().width() + 15
+                                    symbol.pos_y = 0
+                                if not symbol.hasParent:
+                                    symbol.cam(symbol.position,
+                                               symbol.position)
                         except AttributeError:
                             # no AST, ignore (e.g. Connections, Cornergrabbers)
                             pass

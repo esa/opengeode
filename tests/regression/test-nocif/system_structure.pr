@@ -1,0 +1,27 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM orchestrator;
+
+	SIGNAL pulse(myenum);
+
+	SIGNAL telemetry(myenum);
+
+
+	CHANNEL c
+		FROM ENV TO orchestrator WITH pulse;
+		FROM orchestrator TO ENV WITH telemetry;
+	ENDCHANNEL;
+
+	BLOCK orchestrator;
+
+		SIGNALROUTE r
+			FROM ENV TO orchestrator WITH pulse;
+			FROM orchestrator TO ENV WITH telemetry;
+
+		CONNECT c and r;
+
+		PROCESS orchestrator REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;
