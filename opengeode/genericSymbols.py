@@ -466,7 +466,6 @@ class Symbol(QObject, QGraphicsPathItem, object):
         ''' resize item, e.g. when editing text - move children accordingly '''
         if not self.resizeable:
             return
-        #pos = self.position
         delta_x = (self.boundingRect().width() - rect.width()) / 2.0
         delta_y = self.boundingRect().height() - rect.height()
         self.set_shape(rect.width(), rect.height())
@@ -479,8 +478,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         for child in self.childSymbols():
             child.pos_x -= delta_x
             child.pos_y -= delta_y
-        # X-pos must be updated when resizing,
-        # independently from update_position
+        # X-pos must be updated when resizing
         self.pos_x += delta_x
         if self.comment:
             self.comment.pos_x -= delta_x
