@@ -190,6 +190,19 @@ def _process(process, simu=False, **kwargs):
         process_level_decl.append('function get_state return chars_ptr;')
         process_level_decl.append('pragma export(C, get_state, "{}_state");'
                                   .format(process_name))
+        # Functions to get gobal variables (length and value)
+        for var_name, (var_type, _) in process.variables.viewitems():
+            process_level_decl.append("function l_{name}_size return integer "
+                                      "is (l_{name}'Size) with Export, "
+                                      "Convention => C, "
+                                      'Link_Name => "{name}_size";'
+                                      .format(name=var_name))
+            process_level_decl.append("function l_{name}_value return {sort} "
+                                      "is (l_{name}) with Export, "
+                                      "Convention => C, "
+                                      'Link_Name => "{name}_value";'
+                                      .format(name=var_name,
+                                              sort=type_name(var_type)))
 
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
