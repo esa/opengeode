@@ -193,12 +193,13 @@ def _process(process, simu=False, **kwargs):
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.viewitems():
             process_level_decl.append("function l_{name}_size return integer "
-                                      "is (l_{name}'Size) with Export, "
+                                      "is (l_{name}'Size/8) with Export, "
                                       "Convention => C, "
                                       'Link_Name => "{name}_size";'
                                       .format(name=var_name))
-            process_level_decl.append("function l_{name}_value return {sort} "
-                                      "is (l_{name}) with Export, "
+            process_level_decl.append("function l_{name}_value"
+                                      " return access {sort} "
+                                      "is (l_{name}'access) with Export, "
                                       "Convention => C, "
                                       'Link_Name => "{name}_value";'
                                       .format(name=var_name,
