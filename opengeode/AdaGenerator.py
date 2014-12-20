@@ -197,8 +197,9 @@ def _process(process, simu=False, **kwargs):
                                       "Convention => C, "
                                       'Link_Name => "{name}_size";'
                                       .format(name=var_name))
-            process_level_decl.append("function l_{name}_value return {sort} "
-                                      "is (l_{name}) with Export, "
+            process_level_decl.append("function l_{name}_value"
+                                      " return access {sort} "
+                                      "is (l_{name}'access) with Export, "
                                       "Convention => C, "
                                       'Link_Name => "{name}_value";'
                                       .format(name=var_name,
