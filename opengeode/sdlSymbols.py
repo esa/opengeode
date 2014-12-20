@@ -816,8 +816,8 @@ class TextSymbol(HorizontalSymbol):
         except AttributeError:
             # context may not have variables/timers (eg if context = block)
             pass
-        CONTEXT.procedures = list(set(CONTEXT.procedures + ast.procedures))
         try:
+            CONTEXT.procedures = list(set(CONTEXT.procedures + ast.procedures))
             CONTEXT.fpar.extend(ast.fpar)
         except AttributeError:
             pass
