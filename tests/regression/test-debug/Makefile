@@ -18,10 +18,10 @@ test-llvm: orchestrator.o
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -O$(O) -c *.adb
+	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
-	$(GNATMAKE) -c b~orchestrator.adb
-	$(CC) -shared -o liborchestrator.so b~orchestrator.o orchestrator.o taste_basictypes.o adaasn1rtl.o -lgnat
+	$(GNATMAKE) -c -gnat2012 b~orchestrator.adb
+	$(CC) -shared -fPIC -o liborchestrator.so b~orchestrator.o orchestrator.o taste_basictypes.o adaasn1rtl.o -lgnat
 	python -c "from ctypes import *; test=CDLL('./liborchestrator.so'); test.liborchestratorinit()"
 
 coverage:
