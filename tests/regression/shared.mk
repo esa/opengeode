@@ -16,19 +16,19 @@ clean:
 %.o: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --llvm -O$(O)
 	$(LLC) $*.ll
-	$(CC) -O$(O) -c $*.s
+	$(CC) -O$(O) -c -g $*.s
 
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -O$(O) -c *.adb
+	$(GNATMAKE) -O$(O) -c -g *.adb
 
 %.o: %.asn FORCE
 	$(ASN1SCC) -c $< -typePrefix asn1Scc -equal
-	$(CC) -O$(O) -c $*.c
+	$(CC) -O$(O) -c -g $*.c
 
 %.o: %.c FORCE
-	$(CC) -O$(O) -c $<
+	$(CC) -O$(O) -c -g $<
 
 FORCE:
 
