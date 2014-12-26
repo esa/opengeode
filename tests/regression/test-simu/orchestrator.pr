@@ -1,0 +1,36 @@
+/* CIF PROCESS (295, 56), (150, 75) */
+PROCESS orchestrator
+/* CIF COMMENT (405, 192), (71, 35) */
+COMMENT 'Hello';
+    /* CIF TEXT (0, 94), (398, 312) */
+    dcl seq tastE_Peek_id_list := { 1,2,3,4,5};
+
+dcl a myEnum;
+
+dcl fixed fixedIntList := { 1,2,3};
+    /* CIF ENDTEXT */
+    /* CIF START (478, 150), (80, 36) */
+    START;
+        /* CIF NEXTSTATE (484, 201), (68, 34) */
+        NEXTSTATE Wait;
+    /* CIF STATE (601, 354), (70, 35) */
+    STATE next;
+        /* CIF INPUT (601, 409), (70, 35) */
+        INPUT *;
+            /* CIF NEXTSTATE (601, 459), (70, 35) */
+            NEXTSTATE wait;
+    ENDSTATE;
+    /* CIF STATE (484, 201), (68, 34) */
+    STATE Wait;
+        /* CIF INPUT (474, 255), (87, 35) */
+        INPUT pulse(a);
+            /* CIF OUTPUT (461, 305), (114, 35) */
+            OUTPUT telemetry(a);
+            /* CIF OUTPUT (456, 355), (123, 35) */
+            OUTPUT peek_list(seq);
+            /* CIF OUTPUT (445, 405), (145, 35) */
+            OUTPUT peek_fixed(fixed);
+            /* CIF NEXTSTATE (483, 455), (70, 35) */
+            NEXTSTATE next;
+    ENDSTATE;
+ENDPROCESS orchestrator;

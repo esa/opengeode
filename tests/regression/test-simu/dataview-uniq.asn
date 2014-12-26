@@ -1,0 +1,14 @@
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+TASTE-Peek-id ::= INTEGER (0..4294967295)
+
+TASTE-Peek-id-list ::= SEQUENCE (SIZE (1..10)) OF TASTE-Peek-id
+FixedIntList ::= SEQUENCE (SIZE(3)) OF TASTE-Peek-id
+
+MyEnum ::= ENUMERATED {one, two, three, four, five}
+
+END
+ 
+
+
