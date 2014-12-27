@@ -8,10 +8,14 @@ COMMENT 'Hello';
 dcl a myEnum;
 
 dcl fixed fixedIntList := { 1,2,3};
+
+dcl anInt T_UInt32 :=0;
+
+timer myTimer;
     /* CIF ENDTEXT */
     /* CIF START (478, 150), (80, 36) */
     START;
-        /* CIF NEXTSTATE (484, 201), (68, 34) */
+        /* CIF NEXTSTATE (483, 201), (68, 34) */
         NEXTSTATE Wait;
     /* CIF STATE (601, 354), (70, 35) */
     STATE next;
@@ -20,17 +24,19 @@ dcl fixed fixedIntList := { 1,2,3};
             /* CIF NEXTSTATE (601, 459), (70, 35) */
             NEXTSTATE wait;
     ENDSTATE;
-    /* CIF STATE (484, 201), (68, 34) */
+    /* CIF STATE (483, 201), (68, 34) */
     STATE Wait;
         /* CIF INPUT (474, 255), (87, 35) */
         INPUT pulse(a);
-            /* CIF OUTPUT (461, 305), (114, 35) */
+            /* CIF PROCEDURECALL (420, 305), (193, 35) */
+            CALL externalProc(anint, anint);
+            /* CIF OUTPUT (460, 355), (114, 35) */
             OUTPUT telemetry(a);
-            /* CIF OUTPUT (456, 355), (123, 35) */
+            /* CIF OUTPUT (455, 405), (123, 35) */
             OUTPUT peek_list(seq);
-            /* CIF OUTPUT (445, 405), (145, 35) */
+            /* CIF OUTPUT (444, 455), (145, 35) */
             OUTPUT peek_fixed(fixed);
-            /* CIF NEXTSTATE (483, 455), (70, 35) */
+            /* CIF NEXTSTATE (482, 505), (70, 35) */
             NEXTSTATE next;
     ENDSTATE;
 ENDPROCESS orchestrator;

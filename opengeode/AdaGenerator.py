@@ -125,6 +125,11 @@ def _process(process, simu=False, **kwargs):
             return a string
         '''
         res = []
+        if not io_param:
+            LOG.info('Parameterless interface "{}" will not appear in the'
+                     ' AADL file but will be handled directly by the GUI'
+                     .format(sp_name))
+            return ''
         # In case of shared library, generate the AADL "mini-cv" code
         res.append('SUBPROGRAM {}'.format(sp_name))
         if io_param:

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash -e
 make test-python
 rm -rf simu
 mkdir -p simu

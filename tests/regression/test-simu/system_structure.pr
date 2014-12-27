@@ -7,7 +7,12 @@ SYSTEM orchestrator;
 	SIGNAL telemetry(myenum);
 	SIGNAL peek_list(taste_peek_id_list);
 	SIGNAL peek_fixed(fixedintlist);
-
+        
+        PROCEDURE ExternalProc;
+		FPAR
+			IN gnc_output T_UInt32,
+			IN/OUT gnc_input T_UInt32;
+ 	EXTERNAL; 
 
 	CHANNEL c
 		FROM ENV TO orchestrator WITH pulse;
