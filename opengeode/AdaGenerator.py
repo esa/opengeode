@@ -192,8 +192,10 @@ def _process(process, simu=False, **kwargs):
 
     if simu:
         # Add function allowing to trace current state as a string
-        process_level_decl.append('function get_state return chars_ptr;')
-        process_level_decl.append('pragma export(C, get_state, "{}_state");'
+        process_level_decl.append("function get_state return chars_ptr "
+                                  "is (New_String(states'Image(state))) "
+                                  "with Export, Convention => C, "
+                                  'Link_Name => "{}_state";'
                                   .format(process_name))
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.viewitems():
@@ -489,15 +491,6 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.append('end runTransition;')
     taste_template.append('\n')
 
-    if simu:
-        # Code of the function allowing to trace current state
-        # Can be used when tracing the execution with MSC
-        taste_template.append('function get_state return chars_ptr is')
-        taste_template.append('begin')
-        taste_template.append("return New_String(states'Image(state));")
-        taste_template.append('end get_state;')
-        taste_template.append('\n')
-
     taste_template.extend(start_transition)
     taste_template.append('end {process_name};'
             .format(process_name=process_name))
@@ -697,7 +690,10 @@ def _call_external_function(output, **kwargs):
                             .format(RI=out['outputName'],
                                     params=', '.join(list_of_params)))
             else:
-                code.append(u'{RI};'.format(RI=out['outputName']))
+                if not SHARED_LIB:
+                    code.append(u'{RI};'.format(RI=out['outputName']))
+                else:
+                    code.append(u'{RI}.all;'.format(RI=out['outputName']))
         else:
             # inner procedure call
             list_of_params = []
