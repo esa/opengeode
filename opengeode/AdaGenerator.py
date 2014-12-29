@@ -125,6 +125,11 @@ def _process(process, simu=False, **kwargs):
             return a string
         '''
         res = []
+        if not io_param:
+            LOG.info('Parameterless interface "{}" will not appear in the'
+                     ' AADL file but will be handled directly by the GUI'
+                     .format(sp_name))
+            return ''
         # In case of shared library, generate the AADL "mini-cv" code
         res.append('SUBPROGRAM {}'.format(sp_name))
         if io_param:
@@ -187,8 +192,10 @@ def _process(process, simu=False, **kwargs):
 
     if simu:
         # Add function allowing to trace current state as a string
-        process_level_decl.append('function get_state return chars_ptr;')
-        process_level_decl.append('pragma export(C, get_state, "{}_state");'
+        process_level_decl.append("function get_state return chars_ptr "
+                                  "is (New_String(states'Image(state))) "
+                                  "with Export, Convention => C, "
+                                  'Link_Name => "{}_state";'
                                   .format(process_name))
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.viewitems():
@@ -245,9 +252,13 @@ package body {process_name} is'''.format(process_name=process_name,
 -- This file was generated automatically: DO NOT MODIFY IT !
 
 {dataview}
+{C}
 
 package {process_name} is'''.format(process_name=process_name,
-                                    dataview=asn1_modules)]
+                                    dataview=asn1_modules,
+                                    C='with Interfaces.C.Strings;\n'
+                                      'use Interfaces.C.Strings;'
+                                        if simu else '')]
 
     # Generate the the code of the procedures
     inner_procedures_code = []
@@ -347,7 +358,7 @@ package {process_name} is'''.format(process_name=process_name,
         param_name = signal.get('param_name') \
                                 or u'{}_param'.format(signal['name'])
         # Add (optional) RI parameter
-        param_spec = ''
+        param_spec = '' if not simu else "(tm: chars_ptr)"
         if 'type' in signal:
             typename = type_name(signal['type'])
             param_spec = u'({pName}: access {sort}{shared})' \
@@ -483,15 +494,6 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.append('end loop;')
     taste_template.append('end runTransition;')
     taste_template.append('\n')
-
-    if simu:
-        # Code of the function allowing to trace current state
-        # Can be used when tracing the execution with MSC
-        taste_template.append('function get_state return chars_ptr is')
-        taste_template.append('begin')
-        taste_template.append("return New_String(states'Image(state));")
-        taste_template.append('end get_state;')
-        taste_template.append('\n')
 
     taste_template.extend(start_transition)
     taste_template.append('end {process_name};'
@@ -692,7 +694,11 @@ def _call_external_function(output, **kwargs):
                             .format(RI=out['outputName'],
                                     params=', '.join(list_of_params)))
             else:
-                code.append(u'{RI};'.format(RI=out['outputName']))
+                if not SHARED_LIB:
+                    code.append(u'{RI};'.format(RI=out['outputName']))
+                else:
+                    code.append(u'{RI}(New_String("{RI}"));'
+                                .format(RI=out['outputName']))
         else:
             # inner procedure call
             list_of_params = []
