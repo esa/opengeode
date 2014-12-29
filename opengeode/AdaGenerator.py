@@ -252,9 +252,13 @@ package body {process_name} is'''.format(process_name=process_name,
 -- This file was generated automatically: DO NOT MODIFY IT !
 
 {dataview}
+{C}
 
 package {process_name} is'''.format(process_name=process_name,
-                                    dataview=asn1_modules)]
+                                    dataview=asn1_modules,
+                                    C='with Interfaces.C.Strings;\n'
+                                      'use Interfaces.C.Strings;'
+                                        if simu else '')]
 
     # Generate the the code of the procedures
     inner_procedures_code = []
@@ -354,7 +358,7 @@ package {process_name} is'''.format(process_name=process_name,
         param_name = signal.get('param_name') \
                                 or u'{}_param'.format(signal['name'])
         # Add (optional) RI parameter
-        param_spec = ''
+        param_spec = '' if not simu else "(tm: chars_ptr)"
         if 'type' in signal:
             typename = type_name(signal['type'])
             param_spec = u'({pName}: access {sort}{shared})' \
@@ -693,7 +697,8 @@ def _call_external_function(output, **kwargs):
                 if not SHARED_LIB:
                     code.append(u'{RI};'.format(RI=out['outputName']))
                 else:
-                    code.append(u'{RI}.all;'.format(RI=out['outputName']))
+                    code.append(u'{RI}(New_String("{RI}"));'
+                                .format(RI=out['outputName']))
         else:
             # inner procedure call
             list_of_params = []
