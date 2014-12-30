@@ -418,15 +418,47 @@ package {process_name} is'''.format(process_name=process_name,
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
-        ads_template.append(
-                u'--  Timer {} SET and RESET functions'.format(timer))
-        ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
+        ads_template.append(u'--  Timer {} SET and RESET functions'
+                            .format(timer))
+        if simu:
+            # Declare callback registration for the SET and RESET functions
+            ads_template.append(u'type SET_{}_T is access procedure'
+                                 '(name: chars_ptr; duration: Integer);'
+                                .format(timer))
+            ads_template.append(u'type RESET_{}_T is access procedure'
+                                '(name: chars_ptr);'.format(timer))
+            for each in ('', 'RE'):
+                ads_template.append('pragma Convention(Convention => C,'
+                                    ' Entity => {re}SET_{t}_T);'
+                                    .format(re=each, t=timer))
+                ads_template.append('{re}SET_{t} : {re}SET_{t}_T;'
+                                    .format(re=each, t=timer))
+                ads_template.append('procedure Register_{re}SET_{t}'
+                                    '(Callback: {re}SET_{t}_T);'
+                                    .format(re=each, t=timer))
+                ads_template.append('pragma Export(C, Register_{re}SET_{t},'
+                                    ' "register_{re}SET_{t}");'
+                                    .format(re=each, t=timer))
+            # Code for the SET/RESET timer callback registration
+            for each in ('', 'RE'):
+                taste_template.append('procedure Register_{re}SET_{t}'
+                                      '(Callback:{re}SET_{t}_T) is'
+                                      .format(re=each, t=timer))
+                taste_template.append('begin')
+                taste_template.append('{re}SET_{t} := Callback;'
+                                      .format(re=each, t=timer))
+                taste_template.append('end Register_{re}SET_{t};'
+                                      .format(re=each, t=timer))
+                taste_template.append('')
+
+        else:
+            ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
                 .format(timer))
-        ads_template.append(
+            ads_template.append(
                 u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
                 .format(timer=timer, proc=process_name))
-        ads_template.append(u'procedure RESET_{};'.format(timer))
-        ads_template.append(
+            ads_template.append(u'procedure RESET_{};'.format(timer))
+            ads_template.append(
                 u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
                 .format(timer=timer, proc=process_name))
 
@@ -613,7 +645,10 @@ def _call_external_function(output, **kwargs):
             p_code, p_id, p_local = expression(param)
             code.extend(p_code)
             local_decl.extend(p_local)
-            code.append('RESET_{};'.format(p_id))
+            if not SHARED_LIB:
+                code.append('RESET_{};'.format(p_id))
+            else:
+                code.append('RESET_{t}(New_String("{t}"));'.format(t=p_id))
             continue
         elif signal_name.lower() == 'set_timer':
             # built-in operator for setting a timer: SET(1000, timer_name)
@@ -624,13 +659,17 @@ def _call_external_function(output, **kwargs):
             code.extend(p_code)
             local_decl.extend(t_local)
             local_decl.extend(p_local)
-            # Use a temporary variable to store the timer value
-            tmp_id = 'tmp' + str(out['tmpVars'][0])
-            local_decl.append('{} : aliased asn1SccT_UInt32;'
-                              .format(tmp_id))
-            code.append('{tmp} := {val};'.format(tmp=tmp_id, val=t_val))
-            code.append("SET_{timer}({value}'access);"
-                                             .format(timer=p_id, value=tmp_id))
+            if not SHARED_LIB:
+                # Use a temporary variable to store the timer value
+                tmp_id = 'tmp' + str(out['tmpVars'][0])
+                local_decl.append('{} : aliased asn1SccT_UInt32;'
+                                  .format(tmp_id))
+                code.append('{tmp} := {val};'.format(tmp=tmp_id, val=t_val))
+                code.append("SET_{timer}({value}'access);"
+                            .format(timer=p_id, value=tmp_id))
+            else:
+                code.append('SET_{t}(New_String("{t}"), {val});'
+                            .format(t=p_id, val=t_val))
             continue
         proc, out_sig = None, None
         is_out_sig = False
