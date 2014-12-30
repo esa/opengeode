@@ -418,15 +418,47 @@ package {process_name} is'''.format(process_name=process_name,
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
-        ads_template.append(
-                u'--  Timer {} SET and RESET functions'.format(timer))
-        ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
+        ads_template.append(u'--  Timer {} SET and RESET functions'
+                            .format(timer))
+        if simu:
+            # Declare callback registration for the SET and RESET functions
+            ads_template.append(u'type SET_{}_T is access procedure'
+                                '(value: access asn1SccT_UInt32);'
+                                .format(timer))
+            ads_template.append(u'type RESET_{}_T is access procedure;'
+                                .format(timer))
+            for each in ('', 'RE'):
+                ads_template.append('pragma Convention(Convention => C,'
+                                    ' Entity => {re}SET_{t}_T);'
+                                    .format(re=each, t=timer))
+                ads_template.append('{re}SET_{t} : {re}SET_{t}_T;'
+                                    .format(re=each, t=timer))
+                ads_template.append('procedure Register_{re}SET_{t}'
+                                    '(Callback: {re}SET_{t}_T);'
+                                    .format(re=each, t=timer))
+                ads_template.append('pragma Export(C, Register_{re}SET_{t},'
+                                    ' "register_{re}SET_{t}");'
+                                    .format(re=each, t=timer))
+            # Code for the SET/RESET timer callback registration
+            for each in ('', 'RE'):
+                taste_template.append('procedure Register_{re}SET_{t}'
+                                      '(Callback:{re}SET_{t}_T) is'
+                                      .format(re=each, t=timer))
+                taste_template.append('begin')
+                taste_template.append('{re}SET_{t} := Callback;'
+                                      .format(re=each, t=timer))
+                taste_template.append('end Register_{re}SET_{t};'
+                                      .format(re=each, t=timer))
+                taste_template.append('')
+
+        else:
+            ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
                 .format(timer))
-        ads_template.append(
+            ads_template.append(
                 u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
                 .format(timer=timer, proc=process_name))
-        ads_template.append(u'procedure RESET_{};'.format(timer))
-        ads_template.append(
+            ads_template.append(u'procedure RESET_{};'.format(timer))
+            ads_template.append(
                 u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
                 .format(timer=timer, proc=process_name))
 
