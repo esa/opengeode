@@ -15,53 +15,49 @@ timer myTimer;
     /* CIF ENDTEXT */
     /* CIF START (708, 150), (80, 36) */
     START;
-        /* CIF NEXTSTATE (714, 201), (68, 34) */
+        /* CIF NEXTSTATE (713, 201), (68, 34) */
         NEXTSTATE Wait;
+    /* CIF STATE (957, 345), (70, 35) */
+    STATE next;
+        /* CIF INPUT (930, 400), (122, 35) */
+        INPUT pulse(a);
+            /* CIF PROCEDURECALL (904, 450), (173, 35) */
+            CALL reset_timer(mytimer);
+            /* CIF NEXTSTATE (956, 500), (70, 35) */
+            NEXTSTATE wait;
+    ENDSTATE;
     /* CIF STATE (980, 125), (93, 35) */
     STATE timeout;
-        /* CIF INPUT (992, 180), (70, 35) */
-        INPUT *;
-            /* CIF PROCEDURECALL (927, 230), (200, 35) */
+        /* CIF INPUT (965, 180), (122, 35) */
+        INPUT Paramless_TC;
+            /* CIF PROCEDURECALL (926, 230), (200, 35) */
             CALL SET_timer(1000, mytimer);
             /* CIF NEXTSTATE (992, 280), (70, 35) */
             NEXTSTATE next;
     ENDSTATE;
-    /* CIF STATE (957, 345), (70, 35) */
-    STATE next;
-        /* CIF INPUT (871, 400), (70, 35) */
-        INPUT *;
-            /* CIF NEXTSTATE (871, 450), (70, 35) */
-            NEXTSTATE wait;
-        /* CIF INPUT (976, 400), (122, 35) */
-        INPUT paramless_TC;
-            /* CIF PROCEDURECALL (951, 450), (173, 35) */
-            CALL reset_timer(mytimer);
-            /* CIF NEXTSTATE (1002, 500), (70, 35) */
-            NEXTSTATE wait;
-    ENDSTATE;
-    /* CIF STATE (714, 201), (68, 34) */
+    /* CIF STATE (713, 201), (68, 34) */
     STATE Wait;
         /* CIF INPUT (461, 255), (87, 35) */
         INPUT pulse(a);
-            /* CIF PROCEDURECALL (408, 305), (193, 35) */
+            /* CIF PROCEDURECALL (407, 305), (193, 35) */
             CALL externalProc(anint, anint);
             /* CIF OUTPUT (447, 355), (114, 35) */
             OUTPUT telemetry(a);
-            /* CIF OUTPUT (443, 405), (123, 35) */
+            /* CIF OUTPUT (442, 405), (123, 35) */
             OUTPUT peek_list(seq);
-            /* CIF OUTPUT (432, 455), (145, 35) */
+            /* CIF OUTPUT (431, 455), (145, 35) */
             OUTPUT peek_fixed(fixed);
             /* CIF NEXTSTATE (469, 505), (70, 35) */
             NEXTSTATE next;
         /* CIF INPUT (652, 255), (122, 35) */
         INPUT Paramless_TC;
-            /* CIF PROCEDURECALL (611, 305), (205, 35) */
+            /* CIF PROCEDURECALL (610, 305), (205, 35) */
             CALL writeln('Got Paramless TC');
-            /* CIF PROCEDURECALL (614, 355), (200, 35) */
+            /* CIF PROCEDURECALL (613, 355), (200, 35) */
             CALL SET_timer(1000, mytimer);
-            /* CIF OUTPUT (651, 405), (125, 35) */
+            /* CIF OUTPUT (650, 405), (125, 35) */
             OUTPUT Paramless_TM;
-            /* CIF NEXTSTATE (679, 455), (70, 35) */
+            /* CIF NEXTSTATE (678, 455), (70, 35) */
             NEXTSTATE wait;
         /* CIF INPUT (826, 255), (90, 35) */
         INPUT mytimer;
