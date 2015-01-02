@@ -250,6 +250,7 @@ package {process_name} is'''.format(process_name=process_name,
                                   .format(process_name))
         set_state_decl = "procedure set_state(new_state: chars_ptr)"
         ads_template.append("{};".format(set_state_decl))
+        ads_template.append('pragma export(C, set_state, "_set_state");')
         dll_api.append("{} is".format(set_state_decl))
         dll_api.append("begin")
         dll_api.append("state := States'Value(Value(new_state));")
@@ -275,6 +276,8 @@ package {process_name} is'''.format(process_name=process_name,
             setter_decl = "procedure dll_set_l_{name}(value: access {sort})"\
                           .format(name=var_name, sort=type_name(var_type))
             ads_template.append('{};'.format(setter_decl))
+            ads_template.append('pragma export(C, dll_set_l_{name},'
+                                ' "_set_{name}");'.format(name=var_name))
             dll_api.append('{} is'.format(setter_decl))
             dll_api.append('begin')
             dll_api.append('l_{} := value.all;'.format(var_name))
