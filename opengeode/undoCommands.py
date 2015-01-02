@@ -17,10 +17,10 @@
 """
 
 
+import logging
 from PySide.QtGui import QUndoCommand
 from PySide.QtCore import QPropertyAnimation, QEasingCurve, QAbstractAnimation
 
-import logging
 LOG = logging.getLogger(__name__)
 
 
