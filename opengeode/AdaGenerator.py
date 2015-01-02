@@ -181,7 +181,7 @@ def _process(process, simu=False, **kwargs):
     statelist = ', '.join(name for name in process.mapping.iterkeys()
                              if not name.endswith(u'START')) or 'No_State'
     if statelist:
-        states_decl = u'type states is ({});'.format(statelist)
+        states_decl = u'type States is ({});'.format(statelist)
         process_level_decl.append(states_decl)
         process_level_decl.append('state : states;')
 
@@ -241,14 +241,22 @@ package {process_name} is'''.format(process_name=process_name,
     if simu:
         dll_api = []
         ads_template.append('--  DLL Interface')
+        dll_api.append('-- DLL Interface to remotely change internal data')
         # Add function allowing to trace current state as a string
         process_level_decl.append("function get_state return chars_ptr "
                                   "is (New_String(states'Image(state))) "
                                   "with Export, Convention => C, "
                                   'Link_Name => "{}_state";'
                                   .format(process_name))
+        set_state_decl = "procedure set_state(new_state: chars_ptr)"
+        ads_template.append("{};".format(set_state_decl))
+        dll_api.append("{} is".format(set_state_decl))
+        dll_api.append("begin")
+        dll_api.append("state := States'Value(Value(new_state));")
+        dll_api.append("end set_state;")
+        dll_api.append("")
+
         # Functions to get gobal variables (length and value)
-        dll_api.append('-- DLL Interface to remotely change internal data')
         for var_name, (var_type, _) in process.variables.viewitems():
             # Getters for local variables
             process_level_decl.append("function l_{name}_size return integer "
