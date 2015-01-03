@@ -32,22 +32,25 @@ timer myTimer;
         INPUT Paramless_TC;
             /* CIF PROCEDURECALL (926, 230), (200, 35) */
             CALL SET_timer(1000, mytimer);
-            /* CIF NEXTSTATE (992, 280), (70, 35) */
+            /* CIF NEXTSTATE (991, 280), (70, 35) */
             NEXTSTATE next;
     ENDSTATE;
     /* CIF STATE (713, 201), (68, 34) */
     STATE Wait;
         /* CIF INPUT (461, 255), (87, 35) */
         INPUT pulse(a);
-            /* CIF PROCEDURECALL (407, 305), (193, 35) */
+            /* CIF TASK (434, 305), (139, 40) */
+            TASK seq := {0,1,0,1,0},
+anint := 478;
+            /* CIF PROCEDURECALL (407, 365), (193, 35) */
             CALL externalProc(anint, anint);
-            /* CIF OUTPUT (447, 355), (114, 35) */
+            /* CIF OUTPUT (447, 415), (114, 35) */
             OUTPUT telemetry(a);
-            /* CIF OUTPUT (442, 405), (123, 35) */
+            /* CIF OUTPUT (442, 465), (123, 35) */
             OUTPUT peek_list(seq);
-            /* CIF OUTPUT (431, 455), (145, 35) */
+            /* CIF OUTPUT (431, 515), (145, 35) */
             OUTPUT peek_fixed(fixed);
-            /* CIF NEXTSTATE (469, 505), (70, 35) */
+            /* CIF NEXTSTATE (469, 565), (70, 35) */
             NEXTSTATE next;
         /* CIF INPUT (652, 255), (122, 35) */
         INPUT Paramless_TC;
