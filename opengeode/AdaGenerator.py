@@ -181,7 +181,7 @@ def _process(process, simu=False, **kwargs):
     statelist = ', '.join(name for name in process.mapping.iterkeys()
                              if not name.endswith(u'START')) or 'No_State'
     if statelist:
-        states_decl = u'type states is ({});'.format(statelist)
+        states_decl = u'type States is ({});'.format(statelist)
         process_level_decl.append(states_decl)
         process_level_decl.append('state : states;')
 
@@ -189,28 +189,6 @@ def _process(process, simu=False, **kwargs):
         if name.endswith(u'START') and name != u'START':
             process_level_decl.append(u'{name} : constant := {val};'
                                       .format(name=name, val=str(val)))
-
-    if simu:
-        # Add function allowing to trace current state as a string
-        process_level_decl.append("function get_state return chars_ptr "
-                                  "is (New_String(states'Image(state))) "
-                                  "with Export, Convention => C, "
-                                  'Link_Name => "{}_state";'
-                                  .format(process_name))
-        # Functions to get gobal variables (length and value)
-        for var_name, (var_type, _) in process.variables.viewitems():
-            process_level_decl.append("function l_{name}_size return integer "
-                                      "is (l_{name}'Size/8) with Export, "
-                                      "Convention => C, "
-                                      'Link_Name => "{name}_size";'
-                                      .format(name=var_name))
-            process_level_decl.append("function l_{name}_value"
-                                      " return access {sort} "
-                                      "is (l_{name}'access) with Export, "
-                                      "Convention => C, "
-                                      'Link_Name => "{name}_value";'
-                                      .format(name=var_name,
-                                              sort=type_name(var_type)))
 
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
@@ -260,6 +238,53 @@ package {process_name} is'''.format(process_name=process_name,
                                       'use Interfaces.C.Strings;'
                                         if simu else '')]
 
+    if simu:
+        dll_api = []
+        ads_template.append('--  DLL Interface')
+        dll_api.append('-- DLL Interface to remotely change internal data')
+        # Add function allowing to trace current state as a string
+        process_level_decl.append("function get_state return chars_ptr "
+                                  "is (New_String(states'Image(state))) "
+                                  "with Export, Convention => C, "
+                                  'Link_Name => "{}_state";'
+                                  .format(process_name))
+        set_state_decl = "procedure set_state(new_state: chars_ptr)"
+        ads_template.append("{};".format(set_state_decl))
+        ads_template.append('pragma export(C, set_state, "_set_state");')
+        dll_api.append("{} is".format(set_state_decl))
+        dll_api.append("begin")
+        dll_api.append("state := States'Value(Value(new_state));")
+        dll_api.append("end set_state;")
+        dll_api.append("")
+
+        # Functions to get gobal variables (length and value)
+        for var_name, (var_type, _) in process.variables.viewitems():
+            # Getters for local variables
+            process_level_decl.append("function l_{name}_size return integer "
+                                      "is (l_{name}'Size/8) with Export, "
+                                      "Convention => C, "
+                                      'Link_Name => "{name}_size";'
+                                      .format(name=var_name))
+            process_level_decl.append("function l_{name}_value"
+                                      " return access {sort} "
+                                      "is (l_{name}'access) with Export, "
+                                      "Convention => C, "
+                                      'Link_Name => "{name}_value";'
+                                      .format(name=var_name,
+                                              sort=type_name(var_type)))
+            # Setters for local variables
+            setter_decl = "procedure dll_set_l_{name}(value: access {sort})"\
+                          .format(name=var_name, sort=type_name(var_type))
+            ads_template.append('{};'.format(setter_decl))
+            ads_template.append('pragma export(C, dll_set_l_{name},'
+                                ' "_set_{name}");'.format(name=var_name))
+            dll_api.append('{} is'.format(setter_decl))
+            dll_api.append('begin')
+            dll_api.append('l_{} := value.all;'.format(var_name))
+            dll_api.append('end dll_set_l_{};'.format(var_name))
+            dll_api.append('')
+
+
     # Generate the the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
@@ -272,6 +297,9 @@ package {process_name} is'''.format(process_name=process_name,
 
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
+
+    # Add the code of the DLL interface
+    taste_template.extend(dll_api)
 
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
