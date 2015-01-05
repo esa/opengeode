@@ -72,6 +72,8 @@ from TextInteraction import EditableText
 # Icons and png files generated from the resource file:
 import icons  # NOQA
 
+LOG = logging.getLogger(__name__)
+
 import AdaGenerator
 import ogParser
 import ogAST
@@ -95,9 +97,7 @@ except ImportError:
 try:
     import LlvmGenerator
 except ImportError:
-    # not sure if LLVM is available on the Windows platform
     LlvmGenerator = None
-    print 'LLVM is not available'
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
 __version__ = '1.0RC2'
@@ -116,9 +116,6 @@ if hasattr(sys, 'frozen'):
         sys.stderr = open('opengeode_stderr.log', 'w')
 else:
     CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-
-
-LOG = logging.getLogger(__name__)
 
 
 # Global handling all top-level elements
