@@ -82,7 +82,9 @@ def copy_branch(top_level_item):
     if not isinstance(top_level_item, genericSymbols.HorizontalSymbol):
         next_aligned = top_level_item.next_aligned_symbol()
         while next_aligned and next_aligned.grabber.isSelected():
-            next_ast, next_terminators = next_aligned.get_ast()
+            pr_text = '\n'.join(Pr.generate(next_aligned, cpy=True,
+                                            nextstate=False, recursive=True))
+            next_ast, next_terminators = next_aligned.get_ast(pr_text)
             terminators.extend(next_terminators)
             branch.append(next_ast)
             next_aligned = next_aligned.next_aligned_symbol()
