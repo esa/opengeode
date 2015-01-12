@@ -238,8 +238,8 @@ package {process_name} is'''.format(process_name=process_name,
                                       'use Interfaces.C.Strings;'
                                         if simu else '')]
 
+    dll_api = []
     if simu:
-        dll_api = []
         ads_template.append('--  DLL Interface')
         dll_api.append('-- DLL Interface to remotely change internal data')
         # Add function allowing to trace current state as a string

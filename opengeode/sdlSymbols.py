@@ -181,7 +181,7 @@ class Input(HorizontalSymbol):
         if '(' in unicode(self):
             # Input parameter: return the list of variables of this type
             input_name = unicode(self).split('(')[0].strip().lower()
-            asn1_filter = [sig['type'] for sig in CONTEXT.input_signals if
+            asn1_filter = [sig.get('type') for sig in CONTEXT.input_signals if
                            sig['name'] == input_name]
             return variables_autocompletion(self, asn1_filter)
         else:
