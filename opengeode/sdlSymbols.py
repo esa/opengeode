@@ -446,7 +446,7 @@ class DecisionAnswer(HorizontalSymbol):
     def set_shape(self, width, height):
         ''' ANSWER has round, disjoint sides - does not fit in a polygon '''
         self.width, self.height = width, height
-        point = width / 2.85
+        point = 20 #width / 2.85
         path = QPainterPath()
         left = QRect(0, 0, point, height)
         right = QRect(width - point, 0, point, height)
