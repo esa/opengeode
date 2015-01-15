@@ -596,8 +596,8 @@ def check_range(typeref, type_to_check):
     try:
         if float(type_to_check.Min) < float(typeref.Min) \
                 or float(type_to_check.Max) > float(typeref.Max):
-            raise TypeError('Expression evaluation in range [{}..{}], '
-                            'outside expected range [{}..{}]'
+            raise Warning('Expression evaluation in range [{}..{}], '
+                          'outside expected range [{}..{}]'
                     .format(type_to_check.Min, type_to_check.Max,
                             typeref.Min, typeref.Max))
     except (AttributeError, ValueError):
