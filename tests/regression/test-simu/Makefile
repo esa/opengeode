@@ -9,13 +9,15 @@ test-parse:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check
 
 test-ada: 
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
 	$(CC) -c -g test_ada.c
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
 	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(CC) -c external_proc.c
 	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
 	$(GNATBIND) -n orchestrator.ali
-	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali -lgnat
+	$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali -lgnat
 	./test_ada
 
 test-llvm: orchestrator.o
