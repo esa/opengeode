@@ -52,7 +52,7 @@ def generate(*args, **kwargs):
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process, simu=False, **kwargs):
+def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     ''' Generate the code for a complete process (AST Top level) '''
     if not stg:
         return
@@ -60,7 +60,7 @@ def _process(process, simu=False, **kwargs):
     # initialize string template
     # will find the group in the file, and then retrieve the functions
     # with group.getInstanceOf
-    group = stringtemplate3.StringTemplateGroup(file=open("ada_source.st"))
+    group = stringtemplate3.StringTemplateGroup(file=open(stgfile))
     template = group.getInstanceOf("process")
     template['name'] = process.processName
     print str(template)
