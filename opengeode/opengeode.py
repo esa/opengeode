@@ -2072,7 +2072,6 @@ def generate(process, options):
         StgBackend.generate(process, simu=options.shared, stgfile=options.stg)
 
 
-
 def export(ast, options):
     ''' Export process '''
     # Qt must be initialized before using SDL_Scene

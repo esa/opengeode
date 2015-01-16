@@ -1,4 +1,4 @@
-group ads;
+group adb;
 
 process(name, decl, code) ::= <<
 --  This file was generated automatically: DO NOT MODIFY !
