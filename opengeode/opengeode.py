@@ -54,6 +54,10 @@ import singledispatch  # NOQA
 import Asn1scc  # NOQA
 import Connectors  # NOQA
 import TextInteraction  # NOQA
+try:
+    import stringtemplate3  # NOQA
+except ImportError:
+    pass
 
 #from PySide import phonon
 
@@ -98,6 +102,12 @@ try:
     import LlvmGenerator
 except ImportError:
     LlvmGenerator = None
+
+try:
+    import StgBackend
+except ImportError:
+    StgBackend = False
+
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
 __version__ = '1.0RC2'
@@ -1996,12 +2006,13 @@ def init_logging(options):
             Clipboard,
             Statechart,
             Helper,
-            LlvmGenerator,
             Asn1scc,
             Connectors,
             Pr,
             TextInteraction,
-            Connectors
+            Connectors,
+            LlvmGenerator,
+            StgBackend
         )
         for module in modules:
             module.LOG.addHandler(handler_console)
@@ -2037,6 +2048,7 @@ def generate(process, options):
         LOG.info('Generating Ada code')
         try:
             AdaGenerator.generate(process, simu=options.shared)
+            StgBackend.generate(process, simu=options.shared)  # TEMP
         except (TypeError, ValueError, NameError) as err:
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
