@@ -60,6 +60,7 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     global TYPES
     global STG
     global SHARED_LIB
+    process_name = process.processName
 
     if not stg:
         LOG.error('Library missing. As root: pip install stringtemplate3')
@@ -72,11 +73,9 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         return
 
     # Get the template corresponding to a SDL PROCESS
-    template = STG.getInstanceOf("process")
-    template['name'] = process.processName
-    print str(template)
+    process_template = STG.getInstanceOf("process")
+    process_template['name'] = process_name
 
-    process_name = process.processName
     TYPES = process.dataview
     del OUT_SIGNALS[:]
     del PROCEDURES[:]
@@ -96,9 +95,13 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
 
     VARIABLES.update(process.variables)
 
+    # Initialize array of strings containing all local declarations
+    process_decl = []
+
     # Generate the code to declare process-level variables
     process_level_decl = []
     for var_name, (var_type, def_value) in process.variables.viewitems():
+        dcl_template = STG.getInstanceOf("dcl")
         if def_value:
             # Expression must be a ground expression, i.e. must not
             # require temporary variable to store computed result
@@ -107,72 +110,39 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
             if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                 dstr = array_content(def_value, dstr, varbty)
             assert not dst and not dlocal, 'DCL: Expecting a ground expression'
-        process_level_decl.append(
-                        u'l_{n} : aliased {sort}{default};'
-                        .format(n=var_name,
-                                sort=type_name(var_type),
-                                default=u' := ' + dstr if def_value else u''))
+        dcl_template['var'] = var_name
+        dcl_template['sort'] = type_name(var_type)
+        dcl_template['def_expr'] = dstr if def_value else ''
+        process_decl.append(str(dcl_template))
 
-    # Add the process states list to the process-level variables
-    statelist = ', '.join(name for name in process.mapping.iterkeys()
-                             if not name.endswith(u'START')) or 'No_State'
-    if statelist:
-        states_decl = u'type States is ({});'.format(statelist)
-        process_level_decl.append(states_decl)
-        process_level_decl.append('state : states;')
+    # Set the DCL declarations variable in the process template
+    process_template['decl'] = process_decl
 
+
+    # Set the list of SDL states
+    process_template['states'] = (name for name in process.mapping.iterkeys()
+                                  if not name.endswith(u'START'))
+
+    # Set constants corresponding to substate start transitions
+    constants = []
     for name, val in process.mapping.viewitems():
         if name.endswith(u'START') and name != u'START':
-            process_level_decl.append(u'{name} : constant := {val};'
-                                      .format(name=name, val=str(val)))
+            const_template = STG.getInstanceOf("constant")
+            const_template['var'] = name
+            const_template['val'] = str(val)
+            constants.append(str(const_template))
 
-    # Add the declaration of the runTransition procedure
-    process_level_decl.append('procedure runTransition(Id: Integer);')
-
-    # Generate the code of the start transition:
-    start_transition = ['begin',
-                        'runTransition(0);']
+    process_template['constants'] = constants
 
     # Generate the TASTE template
     try:
-        asn1_modules = '\n'.join(['with {dv};\nuse {dv};'.format(
-            dv=dv.replace('-', '_'))
-            for dv in process.asn1Modules])
-        asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
+        process_template['asn1_mod'] = (dv.replace('-', '_')
+                                        for dv in process.asn1Modules)
     except TypeError:
-        asn1_modules = '--  No ASN.1 data types are used in this model'
-    taste_template = ['''\
--- This file was generated automatically: DO NOT MODIFY IT !
+        pass # No ASN.1 module
+    print str(process_template)
+    return
 
-with System.IO;
-use System.IO;
-
-with Ada.Unchecked_Conversion;
-with Ada.Numerics.Generic_Elementary_Functions;
-
-{dataview}
-
-with Interfaces;
-use Interfaces;
-{C}
-package body {process_name} is'''.format(process_name=process_name,
-                                         dataview=asn1_modules,
-                                         C='with Interfaces.C.Strings;\n'
-                                           'use Interfaces.C.Strings;'
-                                            if simu else '')]
-
-    # Generate the source file (.ads) header
-    ads_template = ['''\
--- This file was generated automatically: DO NOT MODIFY IT !
-
-{dataview}
-{C}
-
-package {process_name} is'''.format(process_name=process_name,
-                                    dataview=asn1_modules,
-                                    C='with Interfaces.C.Strings;\n'
-                                      'use Interfaces.C.Strings;'
-                                        if simu else '')]
 
     dll_api = []
     if simu:

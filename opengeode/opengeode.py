@@ -1962,8 +1962,7 @@ def parse_args():
             help='Generate getters/setters to access internal state')
     parser.add_argument('--dll', action='store_true', default=False,
             help='Generate callback hooks when compiling as shared object')
-    parser.add_argument('--stg', type=str, default='ada_source.st',
-            metavar='file',
+    parser.add_argument('--stg', type=str, metavar='file',
             help='Generate code using a custom String Template file')
     parser.add_argument('--check', action='store_true', dest='check',
             help='Check a .pr file for syntax and semantics')
