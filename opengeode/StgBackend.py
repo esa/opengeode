@@ -76,6 +76,9 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     process_template = STG.getInstanceOf("process")
     process_template['name'] = process_name
 
+    # Set Simulation/DLL mode
+    process_template['simu'] = simu
+
     TYPES = process.dataview
     del OUT_SIGNALS[:]
     del PROCEDURES[:]
@@ -97,11 +100,13 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
 
     # Initialize array of strings containing all local declarations
     process_decl = []
+    process_vars = []
 
     # Generate the code to declare process-level variables
     process_level_decl = []
     for var_name, (var_type, def_value) in process.variables.viewitems():
         dcl_template = STG.getInstanceOf("dcl")
+        dcl_template['simu'] = simu
         if def_value:
             # Expression must be a ground expression, i.e. must not
             # require temporary variable to store computed result
@@ -110,13 +115,15 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
             if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                 dstr = array_content(def_value, dstr, varbty)
             assert not dst and not dlocal, 'DCL: Expecting a ground expression'
-        dcl_template['var'] = var_name
-        dcl_template['sort'] = type_name(var_type)
+        var = {'name': var_name, 'sort': type_name(var_type)}
+        dcl_template['var'] = var
+        process_vars.append(var)
         dcl_template['def_expr'] = dstr if def_value else ''
         process_decl.append(str(dcl_template))
 
     # Set the DCL declarations variable in the process template
     process_template['decl'] = process_decl
+    process_template['vars'] = process_vars
 
 
     # Set the list of SDL states
@@ -140,56 +147,9 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
                                         for dv in process.asn1Modules)
     except TypeError:
         pass # No ASN.1 module
+
     print str(process_template)
     return
-
-
-    dll_api = []
-    if simu:
-        ads_template.append('--  DLL Interface')
-        dll_api.append('-- DLL Interface to remotely change internal data')
-        # Add function allowing to trace current state as a string
-        process_level_decl.append("function get_state return chars_ptr "
-                                  "is (New_String(states'Image(state))) "
-                                  "with Export, Convention => C, "
-                                  'Link_Name => "{}_state";'
-                                  .format(process_name))
-        set_state_decl = "procedure set_state(new_state: chars_ptr)"
-        ads_template.append("{};".format(set_state_decl))
-        ads_template.append('pragma export(C, set_state, "_set_state");')
-        dll_api.append("{} is".format(set_state_decl))
-        dll_api.append("begin")
-        dll_api.append("state := States'Value(Value(new_state));")
-        dll_api.append("end set_state;")
-        dll_api.append("")
-
-        # Functions to get gobal variables (length and value)
-        for var_name, (var_type, _) in process.variables.viewitems():
-            # Getters for local variables
-            process_level_decl.append("function l_{name}_size return integer "
-                                      "is (l_{name}'Size/8) with Export, "
-                                      "Convention => C, "
-                                      'Link_Name => "{name}_size";'
-                                      .format(name=var_name))
-            process_level_decl.append("function l_{name}_value"
-                                      " return access {sort} "
-                                      "is (l_{name}'access) with Export, "
-                                      "Convention => C, "
-                                      'Link_Name => "{name}_value";'
-                                      .format(name=var_name,
-                                              sort=type_name(var_type)))
-            # Setters for local variables
-            setter_decl = "procedure dll_set_l_{name}(value: access {sort})"\
-                          .format(name=var_name, sort=type_name(var_type))
-            ads_template.append('{};'.format(setter_decl))
-            ads_template.append('pragma export(C, dll_set_l_{name},'
-                                ' "_set_{name}");'.format(name=var_name))
-            dll_api.append('{} is'.format(setter_decl))
-            dll_api.append('begin')
-            dll_api.append('l_{} := value.all;'.format(var_name))
-            dll_api.append('end dll_set_l_{};'.format(var_name))
-            dll_api.append('')
-
 
     # Generate the the code of the procedures
     inner_procedures_code = []
@@ -203,9 +163,6 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
 
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
-
-    # Add the code of the DLL interface
-    taste_template.extend(dll_api)
 
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [

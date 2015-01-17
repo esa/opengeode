@@ -3,12 +3,13 @@ group adb;
 /* top-level: template for the code of a process
  * name: process name
  * decl: list of local declarations
+ * vars: list of local variables and sort:dictionnary { name: str, sort: str })
  * constants: list of start named start transitions (when using substates)
  * states: list of states
  * asn1_mod : list of ASN.1 modules
  * simu, dll : flags set by the user for generation of optional code
 */
-process(name, decl, constants, states, asn1_mod, simu, dll) ::= <<
+process(name, decl, vars, constants, states, asn1_mod, simu, dll) ::= <<
 --  This file was generated automatically: DO NOT MODIFY !
 
 <if(asn1_mod)>
@@ -37,20 +38,48 @@ use Interfaces;
 --  Access to C compatible types when interacting with another language
 with Interfaces.C.Strings;
 use Interfaces.C.Strings;
+
 <endif>
 
 package body <name> is
     --  Local variables declared in textboxes
     <decl; separator="\n">
+    ---------------------------------------------------------------------------
     --  List of SDL states, and variable holding the current state
     type States is (<states; separator=", ">);
     state: States;
+
+    <if(simu)>
+    --  External API to get/set the SDL state from a remote C application
+    function get_state return chars_ptr is (New_String(States'Image(state)))
+        with Export, Convention => C, Link_Name => "<name>_state";
+    procedure set_state(new_state: chars_ptr);
+    pragma export(C, set_state, "_set_state");
+    ---------------------------------------------------------------------------
+    <endif>
     <if(constants)>
     --  Constants holding substate identifier for the start transition
     <constants; separator="\n">
+    ---------------------------------------------------------------------------
     <endif>
     --  Declaration of the procedure executing transitions
     procedure RunTransition(Id: Integer);
+
+    <if(simu)>
+    --  Implementation of the set_state procedure
+    procedure set_state(new_state: chars_ptr) is
+    begin
+        state := States'Value(Value(new_state));
+    end set_state;
+    --  Implementation of the variable setters for external C access
+    <vars: {each |
+procedure dll_set_l_<each.name>(value: access <each.sort>) is
+begin
+    l_<each.name> := value.all;
+end dll_set_l_<each.name>;
+    }; separator="\n">
+    ---------------------------------------------------------------------------
+    <endif>
 
     --  Process initialization: execute the START transition)
     begin
@@ -59,8 +88,16 @@ end <name>;
 >>
 
 /* Variable declaration (DCL var sort [:= def_expr]; */
-dcl(var, sort, def_expr) ::= <<
-l_<var> : aliased <sort><if(def_expr)> := <def_expr><endif>;
+dcl(var, def_expr, simu) ::= <<
+l_<var.name> : aliased <var.sort><if(def_expr)> := <def_expr><endif>;
+<if(simu)>
+function l_<var.name>_size return Integer is (l_<var.name>'Size/8)
+    with Export, Convention => C, Link_Name => "<var.name>_size";
+function l_<var.name>_value return access <var.sort> is (l_<var.name>'access)
+    with Export, Convention => C, Link_Name => "<var.name>_value";
+procedure dll_set_l_<var.name>(value: access <var.sort>);
+pragma Export(C, dll_set_l_<var.name>, "_set_<var.name>");
+<endif>
 >>
 
 /* Constant declaration */
