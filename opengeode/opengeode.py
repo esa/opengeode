@@ -54,6 +54,10 @@ import singledispatch  # NOQA
 import Asn1scc  # NOQA
 import Connectors  # NOQA
 import TextInteraction  # NOQA
+try:
+    import stringtemplate3  # NOQA
+except ImportError:
+    pass
 
 #from PySide import phonon
 
@@ -98,6 +102,12 @@ try:
     import LlvmGenerator
 except ImportError:
     LlvmGenerator = None
+
+try:
+    import StgBackend
+except ImportError:
+    StgBackend = False
+
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
 __version__ = '1.0RC2'
@@ -1948,8 +1958,12 @@ def parse_args():
     parser = argparse.ArgumentParser(version=__version__)
     parser.add_argument('-g', '--debug', action='store_true', default=False,
             help='Display debug information')
-    parser.add_argument('-l', '--shared', action='store_true', default=False,
-            help='Generate code to build a shared library (with callbacks)')
+    parser.add_argument('--shared', action='store_true', default=False,
+            help='Generate getters/setters to access internal state')
+    parser.add_argument('--dll', action='store_true', default=False,
+            help='Generate callback hooks when compiling as shared object')
+    parser.add_argument('--stg', type=str, metavar='file',
+            help='Generate code using a custom String Template file')
     parser.add_argument('--check', action='store_true', dest='check',
             help='Check a .pr file for syntax and semantics')
     parser.add_argument('--toAda', dest='toAda', action='store_true',
@@ -1996,12 +2010,13 @@ def init_logging(options):
             Clipboard,
             Statechart,
             Helper,
-            LlvmGenerator,
             Asn1scc,
             Connectors,
             Pr,
             TextInteraction,
-            Connectors
+            Connectors,
+            LlvmGenerator,
+            StgBackend
         )
         for module in modules:
             module.LOG.addHandler(handler_console)
@@ -2033,10 +2048,10 @@ def parse(files):
 
 def generate(process, options):
     ''' Generate code '''
-    if options.toAda or options.shared:
+    if options.toAda or options.shared or options.dll:
         LOG.info('Generating Ada code')
         try:
-            AdaGenerator.generate(process, simu=options.shared)
+            AdaGenerator.generate(process, simu=options.dll)
         except (TypeError, ValueError, NameError) as err:
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
@@ -2050,6 +2065,10 @@ def generate(process, options):
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('LLVM IR generation failed')
+
+    if options.stg:
+        LOG.info('Using backend file {}'.format(options.stg))
+        StgBackend.generate(process, simu=options.shared, stgfile=options.stg)
 
 
 def export(ast, options):
@@ -2118,7 +2137,8 @@ def cli(options):
     if options.png or options.pdf or options.svg:
         export(ast, options)
 
-    if options.toAda or options.llvm or options.shared:
+    if any((options.toAda, options.llvm, options.shared,
+           options.stg, options.dll)):
         if not errors:
             generate(ast.processes[0], options)
         else:
@@ -2184,7 +2204,8 @@ def opengeode():
 
     LOG.debug('Starting OpenGEODE version ' + __version__)
     if any((options.check, options.toAda, options.png, options.pdf,
-            options.svg, options.llvm, options.shared)):
+            options.svg, options.llvm, options.shared, options.stg,
+            options.dll)):
         return cli(options)
     else:
         return gui(options)
