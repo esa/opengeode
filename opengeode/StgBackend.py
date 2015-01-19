@@ -1699,10 +1699,6 @@ def _floating_label(label, **kwargs):
 def _inner_procedure(proc, **kwargs):
     ''' Generate the code for a procedure - does not support states '''
     code = []
-    local_decl = []
-    # TODO: Update the global list of procedures
-    # with procedure defined inside the current procedure
-    # Not critical: the editor forbids procedures inside procedures
 
     # Save variable scope (as local variables may shadow process variables)
     outer_scope = dict(VARIABLES)
@@ -1711,37 +1707,36 @@ def _inner_procedure(proc, **kwargs):
     for var in proc.fpar:
         VARIABLES.update({var['name']: (var['type'], None)})
 
-    # Build the procedure signature
-    pi_header = u'procedure {sep}{proc_name}'.format(sep=(u'p' + UNICODE_SEP)
-                                                  if not proc.external else '',
-                                                  proc_name=proc.inputString)
-    if proc.fpar:
-        pi_header += '('
-        params = []
-        for fpar in proc.fpar:
-            typename = type_name(fpar['type'])
-            params.append(u'l_{name}: in{out} {ptype}'.format(
-                    name=fpar.get('name'),
-                    out=' out' if fpar.get('direction') == 'out' else '',
-                    ptype=typename))
-        pi_header += ';'.join(params)
-        pi_header += ')'
+    signature_template = STG.getInstanceOf("procedure_signature")
+    fpar = []
+    for each in proc.fpar:
+        fpar.append({'name': fpar.get('name'),
+                     'direction': str(STG.getInstanceOf("direction_out"))
+                                  if fpar.get('direction') == 'out'
+                                  else str(STG.getInstanceOf("direction_in")),
+                     'sort': type_name(fpar.get('type'))})
 
-    local_decl.append(pi_header + ';')
+    signature_template['name'] = proc.inputString
+    signature_template['external'] = proc.external
+    signature_template['fpar'] = fpar
 
-    if proc.external:
-        local_decl.append(u'pragma import(C, {});'.format(proc.inputString))
-    else:
+    declaration_template = STG.getInstanceOf("procedure_declaration")
+    declaration_template['header'] = str(signature_template)
+    declaration_template['name'] = proc.inputString
+    declaration_template['external'] = proc.external
+
+    local_decl = [str(declaration_template)]
+
+    if not proc.external:
+        definition_template = STG.getInstanceOf("procedure_definition")
+        definition_template['header'] = str(signature_template)
+        definition_template['name'] = proc.inputString
+
         # Generate the code for the procedure itself
         # local variables and code of the START transition
-        # Recursively generate the code for inner-defined procedures
-        for inner_proc in proc.content.inner_procedures:
-            inner_code, inner_local = generate(inner_proc)
-            local_decl.extend(inner_local)
-            code.extend(inner_code)
-        code.append(pi_header + u' is')
+        decl = []
         for var_name, (var_type, def_value) in proc.variables.viewitems():
-            typename = type_name(var_type)
+            dcl_template = STG.getInstanceOf("dcl")
             if def_value:
                 # Expression must be a ground expression, i.e. must not
                 # require temporary variable to store computed result
@@ -1750,10 +1745,13 @@ def _inner_procedure(proc, **kwargs):
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'l_{name} : aliased {sort}{default};'
-                        .format(name=var_name,
-                                sort=typename,
-                                default=' := ' + dstr if def_value else ''))
+            var = {'name': var_name, 'sort': type_name(var_type)}
+            dcl_template['var'] = var
+            dcl_template['def_expr'] = dstr if def_value else ''
+            decl.append(str(dcl_template))
+
+        definition_template['decl'] = decl
+        # XXX HERE
 
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
