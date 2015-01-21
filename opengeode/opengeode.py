@@ -2051,7 +2051,7 @@ def generate(process, options):
     if options.toAda or options.shared or options.dll:
         LOG.info('Generating Ada code')
         try:
-            AdaGenerator.generate(process, simu=options.dll)
+            AdaGenerator.generate(process, simu=options.shared)
         except (TypeError, ValueError, NameError) as err:
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))

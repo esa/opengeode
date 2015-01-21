@@ -103,6 +103,7 @@ def generate(*args, **kwargs):
 @generate.register(ogAST.Process)
 def _process(process, simu=False, **kwargs):
     ''' Generate the code for a complete process (AST Top level) '''
+    print "SIMU=", simu
     process_name = process.processName
     global TYPES
     TYPES = process.dataview
