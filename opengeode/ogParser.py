@@ -597,7 +597,7 @@ def check_range(typeref, type_to_check):
         if float(type_to_check.Min) < float(typeref.Min) \
                 or float(type_to_check.Max) > float(typeref.Max):
             raise Warning('Expression evaluation in range [{}..{}], '
-                          'outside expected range [{}..{}]'
+                          'could be outside expected range [{}..{}]'
                     .format(type_to_check.Min, type_to_check.Max,
                             typeref.Min, typeref.Max))
     except (AttributeError, ValueError):
@@ -1506,9 +1506,10 @@ def primary_index(root, context):
             if float(idx_bty.Max) >= float(r_max):
                 errors.append(error(root,
                                     'Index range [{id1} .. {id2}] '
-                                    'outside of range [0 .. <{r2}]'
+                                    'outside of range [{r1} .. {r2}]'
                                     .format(id1=idx_bty.Min, id2=idx_bty.Max,
-                                            r2=r_max)))
+                                        r1=int(r_min) - 1,
+                                        r2=int(r_max) - 1)))
             elif float(idx_bty.Min) > float(r_min):
                 warnings.append(warning(root,
                                         'Index higher than range min value'))
