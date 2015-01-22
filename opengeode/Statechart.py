@@ -372,8 +372,8 @@ def render_statechart(scene, graph=None, keep_pos=False):
     # Compute all the coordinates (self-modifying function)
     # Force the fontsize of the nodes to be 12, as in OpenGEODE
     # use -n2 below to keep user-specified node coordinates
-    graph.layout(prog='neato', args='-Nfontsize=12, -Gsplines=true -Gsep=1 '
-            '-Gstart=random10 '
+    graph.layout(prog='neato', args='-Nfontsize=12, -Gsplines=curved -Gsep=1 '
+            '-Gstart=random10 -Goverlap=false '
             '-Nstyle=rounded -Nshape=record -Elen=1.5 {kp}'
             .format(kp='-n1' if keep_pos else ''))
     # bb is not visible directly - extract it from the low level api:
