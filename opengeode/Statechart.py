@@ -20,6 +20,7 @@
 """
 
 import logging
+from collections import defaultdict
 import re
 from PySide import QtGui, QtCore
 
@@ -407,8 +408,11 @@ def render_statechart(scene, graph=None, keep_pos=False):
         Edge(edge, graph)
 
 
-def create_dot_graph(root_ast):
-    ''' Return a dot.AGraph item, from an ogAST.Process or child entry '''
+def create_dot_graph(root_ast, basic=False):
+    ''' Return a dot.AGraph item, from an ogAST.Process or child entry
+        Set basic=True to generate a simple graph with at most one edge
+        between two states and no diamond nodes
+    '''
     graph = dotgraph.AGraph(strict=False, directed=True)
     diamond = 0
     for state in root_ast.mapping.viewkeys():
@@ -432,6 +436,9 @@ def create_dot_graph(root_ast):
             inputs if not state.endswith('START') \
                    else [root_ast.transitions[inputs]]
                    #[root_ast.content.start]
+        # Allow simplified graph, without diamonds and with at most one
+        # transition from a given state to another
+        target_states = defaultdict(set)
         for trans in transitions:
             source = state
             # transition label - there can be several inputs
@@ -469,7 +476,7 @@ def create_dot_graph(root_ast):
             # Determine the list of terminators in this transition
             next_states = find_terminators(trans)
 
-            if len(next_states) > 1:
+            if len(next_states) > 1 and not basic:
                 # more than one terminator - add intermediate node
                 graph.add_node(str(diamond),
                                shape='diamond',
@@ -485,14 +492,18 @@ def create_dot_graph(root_ast):
                     target = state
                 else:
                     target = term.inputString.lower()
-                LOG.debug('Edge from ' + source + ' to ' +
-                           term.inputString + ' label: ' + label)
                 for each in root_ast.composite_states:
                     # check with deeper nesting
                     if each.statename.lower() == target.lower():
                         target = 'cluster_' + target
                         break
-                graph.add_edge(source, target, label=label)
+                if basic:
+                    target_states[target].add(label)
+                else:
+                    graph.add_edge(source, target, label=label)
+        for target, labels in target_states.viewitems():
+            # Basic mode
+            graph.add_edge(source, target, label=',\n'.join(labels))
     #print graph.to_string()
     return graph
 

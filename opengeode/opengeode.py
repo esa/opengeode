@@ -770,7 +770,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.undo_stack.endMacro()
                 self.refresh()
 
-    def sdl_to_statechart(self):
+    def sdl_to_statechart(self, basic=False):
         ''' Create a graphviz representation of the SDL model '''
         pr_raw = Pr.parse_scene(self)
         pr_data = unicode('\n'.join(pr_raw))
@@ -782,7 +782,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             return None
         # Flatten nested states
         Helper.flatten(process_ast)
-        return Statechart.create_dot_graph(process_ast)
+        return Statechart.create_dot_graph(process_ast, basic)
 
     def export_branch_to_picture(self, symbol, filename, doc_format):
         ''' Save a symbol and its followers to a file '''
