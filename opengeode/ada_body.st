@@ -104,19 +104,24 @@ pragma Export(C, dll_set_l_<var.name>, "_set_<var.name>");
 
 
 /* Code for a (stateless) procedure */
-procedure_definition(header, name, decl, code, labels) ::= <<
+procedure_definition(header, name, dcl, other_decl, start, labels) ::= <<
 <header> is
-    <if(decl)>
+    <if(dcl)>
     --  Procedure local variables declared in textboxes
-    <decl; separator="\n">
+    <dcl; separator="\n">
+    <endif>
+    <if(other_decl)>
+    --  Other local declarations needed to support all SDL constructs
+    <other_decl; separator="\n">
     <endif>
     begin
-        <code>
-        <if(!code)>
+        <start>
+        <if(!start)>
         null;  --  Empty procedure
         <endif>
         <labels>
 end p<\u00dc><name>;
+
 >>
 
 
