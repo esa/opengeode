@@ -410,12 +410,10 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
             .format(process_name=process_name))
 
     with open(process_name + '.adb', 'w') as ada_file:
-        ada_file.write(
-                u'\n'.join(format_ada_code(taste_template)).encode('latin1'))
+        ada_file.write(taste_template).encode('latin1'))
 
     with open(process_name + '.ads', 'w') as ada_file:
-        ada_file.write(
-                u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
+        ada_file.write(ads_template.encode('latin1'))
 
     if simu:
         with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
@@ -1591,7 +1589,9 @@ def _label(lab, **kwargs):
     ''' Transition following labels are generated in a separate section
         for visibility reasons (see Ada scope)
     '''
-    return ['goto {label};'.format(label=lab.inputString)], []
+    template = STG.getInstanceOf("label")
+    template['name'] = lab.inputString
+    return str(template), []
 
 
 @generate.register(ogAST.Transition)
@@ -1665,18 +1665,13 @@ def _transition(tr, **kwargs):
 @generate.register(ogAST.Floating_label)
 def _floating_label(label, **kwargs):
     ''' Generate the code for a floating label (Ada label + transition) '''
-    code = []
     local_decl = []
-    # Add the traceability information
-    code.extend(traceability(label))
-    code.append(u'<<{label}>>'.format(label=label.inputString))
+    template = STG.getInstanceOf("floating_label")
+    template['traceability']= traceability(label)
+    template['name'] = label.inputString
     if label.transition:
-        code_trans, local_trans = generate(label.transition)
-        code.extend(code_trans)
-        local_decl.extend(local_trans)
-    else:
-        code.append('return;')
-    return code, local_decl
+        template['transition'], local_decl = generate(label.transition)
+    return str(template), local_decl
 
 
 @generate.register(ogAST.Procedure)
@@ -1914,29 +1909,9 @@ def path_type(path):
 
 def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
-    trace = [u'-- {line}'.format(line=l) for l in
-        symbol.trace().split('\n')]
+    template = STG.getInstanceOf("comment")
+    template['lines'] = symbol.trace().split('\n')
+    result = [str(template)]
     if hasattr(symbol, 'comment') and symbol.comment:
-        trace.extend(traceability(symbol.comment))
-    return trace
-
-
-def format_ada_code(stmts):
-    ''' Indent properly the Ada code '''
-    indent = 0
-    indent_pattern = '    '
-    for line in stmts[:-1]:
-        elems = line.strip().split()
-        if elems and elems[0].startswith(('when', 'end', 'elsif', 'else')):
-            indent = max(indent - 1, 0)
-        if elems and elems[-1] == 'case;':  # Corresponds to end case;
-            indent = max(indent - 1, 0)
-        if line:
-            yield indent_pattern * indent + line
-        if elems and elems[-1] in ('is', 'then', 'loop', 'declare'):
-            indent += 1
-        if elems and elems[0] in ('begin', 'case', 'else', 'when'):
-            indent += 1
-        if not elems:  # newline -> decrease indent
-            indent -= 1
-    yield stmts[-1]
+        result.extend(traceability(symbol.comment))
+    return result

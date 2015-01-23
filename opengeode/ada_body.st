@@ -141,9 +141,25 @@ procedure <if(!external)>p<\u00dc><endif><name>
 <endif>
 >>
 
+
+/* Template for floating labels */
+floating_label(name, traceability, transition) ::= <<
+<traceability>
+\<\<<name>\>\>
+    <transition>
+<if(!transition)>
+    return;
+<endif>
+>>
+
+/* Template for a label within a procedure, i.e connecting to a floating */
+label(name) ::= "goto <name>;"
+
 /* Constant declaration */
 constant(var, val) ::= "<var> : constant := <val>;"
 
 direction_in() ::= "in"
 direction_out() ::= "in out"
+
+comment(lines) ::= "--  <lines; separator="\n--  ">"
 
