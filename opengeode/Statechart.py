@@ -203,6 +203,7 @@ def preprocess_edges(my_graph, nodes, bounding_rect, dpi):
             pass
         else:
             # translate the label position from dot-coordinates to Qt
+            # Note: lp is the position of the CENTER of the label
             new_edge['lp'][0] *= RENDER_DPI['X'] / dpi
             new_edge['lp'][1] = (
                     bb_height - new_edge['lp'][1]) * (RENDER_DPI['Y'] / dpi)
@@ -372,9 +373,10 @@ def render_statechart(scene, graph=None, keep_pos=False):
     # Compute all the coordinates (self-modifying function)
     # Force the fontsize of the nodes to be 12, as in OpenGEODE
     # use -n2 below to keep user-specified node coordinates
-    graph.layout(prog='neato', args='-Nfontsize=12, -Gsplines=curved -Gsep=1 '
-            '-Gstart=random10 -Goverlap=false '
-            '-Nstyle=rounded -Nshape=record -Elen=1.5 {kp}'
+    graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
+                 '-Gsplines=curved -Gsep=1 '
+                 '-Gstart=random10 -Goverlap=false '
+            '-Nstyle=rounded -Nshape=record -Elen=1 {kp} -Tpng -ocoucou.png'
             .format(kp='-n1' if keep_pos else ''))
     # bb is not visible directly - extract it from the low level api:
     bounding_rect = [float(val) for val in
@@ -388,7 +390,8 @@ def render_statechart(scene, graph=None, keep_pos=False):
 
     #fontname = graph.graph_attr.get('fontname')
     #fontsize = graph.graph_attr.get('fontsize')
-    #print 'AFTER PROCESSING: ', graph.to_string()
+    with open('statechart.dot', 'w') as output:
+        output.write(graph.to_string())
 
     nodes = preprocess_nodes(graph, bounding_rect, dot_dpi)
     node_symbols = []
@@ -504,7 +507,8 @@ def create_dot_graph(root_ast, basic=False):
         for target, labels in target_states.viewitems():
             # Basic mode
             graph.add_edge(source, target, label=',\n'.join(labels))
-    #print graph.to_string()
+#    with open('statechart.dot', 'w') as output:
+#        output.write(graph.to_string())
     return graph
 
 
