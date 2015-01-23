@@ -410,7 +410,7 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
             .format(process_name=process_name))
 
     with open(process_name + '.adb', 'w') as ada_file:
-        ada_file.write(taste_template).encode('latin1'))
+        ada_file.write(taste_template.encode('latin1'))
 
     with open(process_name + '.ads', 'w') as ada_file:
         ada_file.write(ads_template.encode('latin1'))
