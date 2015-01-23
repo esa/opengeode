@@ -103,7 +103,6 @@ def generate(*args, **kwargs):
 @generate.register(ogAST.Process)
 def _process(process, simu=False, **kwargs):
     ''' Generate the code for a complete process (AST Top level) '''
-    print "SIMU=", simu
     process_name = process.processName
     global TYPES
     TYPES = process.dataview
@@ -148,6 +147,28 @@ def _process(process, simu=False, **kwargs):
         res.append('    Source_Language => GUI_{};'.format(pi_or_ri))
         res.append('END {}.GUI_{};\n'.format(sp_name, pi_or_ri))
         return '\n'.join(res)
+
+    # bash script to simulate the system (TEMPORARY)
+    simu_script = '''#!/bin/bash -e
+opengeode {pr}.pr --shared
+asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
+gnatmake -gnat2012 -c *.adb
+gnatbind -n -Llib{pr} {pr}
+gnatmake -c -gnat2012 b~{pr}.adb
+gcc -shared -fPIC -o lib{pr}.so b~{pr}.o {pr}.o taste_dataview.o adaasn1rtl.o -lgnat
+rm -rf simu
+mkdir -p simu
+asn2aadlPlus dataview-uniq.asn simu/DataView.aadl
+cp lib{pr}.so dataview-uniq.asn *.pr simu
+mv *.aadl simu
+cd simu
+aadl2glueC DataView.aadl {pr}_interface.aadl
+asn2dataModel -toPython dataview-uniq.asn
+make -f Makefile.python
+echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
+LD_LIBRARY_PATH=. taste-gui -l
+'''.format(pr=process_name)
 
 
     LOG.info('Generating Ada code for process ' + str(process_name))
@@ -574,6 +595,10 @@ package {process_name} is'''.format(process_name=process_name,
     if simu:
         with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
             aadl.write(u'\n'.join(minicv).encode('latin1'))
+
+    if not simu:
+        with open('{}_simu.sh'.format(process_name), 'w') as bash_script:
+            bash_script.write(simu_script)
 
 
 def write_statement(param, newline):
