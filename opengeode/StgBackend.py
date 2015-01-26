@@ -101,12 +101,8 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     # Initialize array of strings containing all local declarations
     process_decl, process_vars = dcl(process, simu)
 
-    # Generate the code to declare process-level variables
-    process_level_decl = []
-
-
     # Set the DCL declarations variable in the process template
-    process_template['decl'] = process_decl
+    process_template['dcl'] = process_decl
     process_template['vars'] = process_vars
 
 
@@ -136,17 +132,16 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     return
 
     # Generate the the code of the procedures
+    inner_procedures_decl = []
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
         proc_code, proc_local = generate(proc)
-        process_level_decl.extend(proc_local)
+        inner_procedure_decl.extend(proc_local)
         inner_procedures_code.extend(proc_code)
 
     # Generate the code for the process-level variable declarations
-    taste_template.extend(process_level_decl)
-
-    # Add the code of the procedures definitions
-    taste_template.extend(inner_procedures_code)
+    process_template['pdecl'] = inner_procedure_decl
+    process_template['pcode'] = inner_procedures_code
 
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
