@@ -42,8 +42,10 @@ use Interfaces.C.Strings;
 <endif>
 
 package body <name> is
+    <if(decl)>
     --  Local variables declared in textboxes
     <decl; separator="\n">
+    <endif>
     ---------------------------------------------------------------------------
     --  List of SDL states, and variable holding the current state
     type States is (<states; separator=", ">);
@@ -100,5 +102,64 @@ pragma Export(C, dll_set_l_<var.name>, "_set_<var.name>");
 <endif>
 >>
 
+
+/* Code for a (stateless) procedure */
+procedure_definition(header, name, dcl, other_decl, start, labels) ::= <<
+<header> is
+    <if(dcl)>
+    --  Procedure local variables declared in textboxes
+    <dcl; separator="\n">
+    <endif>
+    <if(other_decl)>
+    --  Other local declarations needed to support all SDL constructs
+    <other_decl; separator="\n">
+    <endif>
+    begin
+        <start>
+        <if(!start)>
+        null;  --  Empty procedure
+        <endif>
+        <labels>
+end p<\u00dc><name>;
+
+>>
+
+
+procedure_declaration(header, name, external) ::= <<
+<header>;
+<if(external)>
+pragma import(C, <name>);
+<endif>
+>>
+
+
+/* Header of a procedure */
+procedure_signature(name, external, fpar) ::= <<
+procedure <if(!external)>p<\u00dc><endif><name>
+<if(fpar)>
+(<fpar: {each| l_<each.name>: <each.direction> <each.sort>}; separator="; ">)
+<endif>
+>>
+
+
+/* Template for floating labels */
+floating_label(name, traceability, transition) ::= <<
+<traceability>
+\<\<<name>\>\>
+    <transition>
+<if(!transition)>
+    return;
+<endif>
+>>
+
+/* Template for a label within a procedure, i.e connecting to a floating */
+label(name) ::= "goto <name>;"
+
 /* Constant declaration */
 constant(var, val) ::= "<var> : constant := <val>;"
+
+direction_in() ::= "in"
+direction_out() ::= "in out"
+
+comment(lines) ::= "--  <lines; separator="\n--  ">"
+

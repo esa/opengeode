@@ -1,0 +1,28 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM og;
+
+	/* CIF Keep Specific Geode PARAMNAMES ze_param */
+	SIGNAL go (My_OctStr);
+
+	/* CIF Keep Specific Geode PARAMNAMES ze_rezult */
+	SIGNAL rezult (My_OctStr);
+
+	CHANNEL c
+		FROM ENV TO og WITH go;
+		FROM og TO ENV WITH rezult;
+	ENDCHANNEL;
+
+	BLOCK og;
+
+		SIGNALROUTE r
+			FROM ENV TO og WITH go;
+			FROM og TO ENV WITH rezult;
+
+		CONNECT c and r;
+
+		PROCESS og REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

@@ -1,0 +1,89 @@
+/* CIF PROCESS (149, 150), (150, 75) */
+PROCESS og;
+    /* CIF TEXT (0, 0), (539, 348) */
+    -- A Demo to test the generation of _Equal functions from ASN1SCC
+
+dcl V1 My_OctStr :=  'Hello';
+dcl V2 My_OctStr := 'World!';
+
+dcl V3 SeqOf := { 'Hello', 'World!' };
+dcl V4 SeqOf := { 'Hello', 'World' };
+
+dcl fail t_bool := false;
+    /* CIF ENDTEXT */
+    /* CIF START (669, 95), (100, 50) */
+    START;
+        /* CIF LABEL (684, 160), (70, 35) */
+        one:
+        /* CIF DECISION (670, 210), (98, 50) */
+        DECISION V1 = V2;
+                /* CIF ANSWER (587, 280), (73, 28) */
+                (true):
+                    /* CIF TASK (562, 323), (123, 35) */
+                    TASK fail := false;
+                    /* CIF PROCEDURECALL (548, 373), (150, 38) */
+                    CALL writeln('2');
+                    /* CIF LABEL (588, 426), (70, 35) */
+                    two:
+                    /* CIF DECISION (574, 476), (98, 50) */
+                    DECISION V3 = V4;
+                            /* CIF ANSWER (309, 546), (73, 28) */
+                            (true):
+                                /* CIF TASK (284, 589), (123, 35) */
+                                TASK fail := false;
+                                /* CIF PROCEDURECALL (270, 639), (150, 38) */
+                                CALL writeln('4');
+                            /* CIF ANSWER (707, 546), (78, 28) */
+                            (false):
+                                /* CIF DECISION (707, 589), (78, 50) */
+                                DECISION fail;
+                                        /* CIF ANSWER (664, 659), (73, 28) */
+                                        (true):
+                                            /* CIF PROCEDURECALL (474, 702), (452, 38) */
+                                            CALL writeln('FAIL: V3 = V4 reports FALSE, but...');
+                                            /* CIF PROCEDURECALL (431, 755), (539, 35) */
+                                            CALL writeln('Length of V3(1) =', Length(V3(1)), ' and Value = ', V3(1));
+                                            /* CIF PROCEDURECALL (426, 805), (549, 35) */
+                                            CALL writeln('Length of V4(1) =', Length(V4(1)), ' and Value = ', V4(1));
+                                            /* CIF NEXTSTATE (665, 855), (70, 35) */
+                                            NEXTSTATE wait;
+                                        /* CIF ANSWER (980, 659), (78, 28) */
+                                        (false):
+                                ENDDECISION;
+                                /* CIF PROCEDURECALL (671, 905), (150, 38) */
+                                CALL writeln('3');
+                                /* CIF TASK (648, 958), (196, 35) */
+                                TASK V3(1) := V4(1)(0,4);
+                                /* CIF TASK (687, 1008), (118, 35) */
+                                TASK fail := true;
+                                /* CIF JOIN (728, 1058), (35, 35) */
+                                JOIN two;
+                    ENDDECISION;
+                    /* CIF NEXTSTATE (588, 1108), (70, 35) */
+                    NEXTSTATE wait;
+                /* CIF ANSWER (1150, 280), (78, 28) */
+                (false):
+                    /* CIF DECISION (1150, 323), (78, 50) */
+                    DECISION fail;
+                            /* CIF ANSWER (1108, 393), (73, 28) */
+                            (true):
+                                /* CIF PROCEDURECALL (1068, 436), (153, 38) */
+                                CALL writeln('FAIL');
+                                /* CIF NEXTSTATE (1109, 489), (70, 35) */
+                                NEXTSTATE wait;
+                            /* CIF ANSWER (1268, 393), (78, 28) */
+                            (false):
+                    ENDDECISION;
+                    /* CIF PROCEDURECALL (1114, 539), (150, 38) */
+                    CALL writeln('1');
+                    /* CIF TASK (1135, 592), (108, 35) */
+                    TASK V2 := V1;
+                    /* CIF TASK (1130, 642), (118, 35) */
+                    TASK fail := true;
+                    /* CIF JOIN (1171, 692), (35, 35) */
+                    JOIN one;
+        ENDDECISION;
+    /* CIF STATE (191, 549), (70, 35) */
+    STATE wait;
+    ENDSTATE;
+ENDPROCESS og;

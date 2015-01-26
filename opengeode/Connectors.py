@@ -20,9 +20,9 @@ import logging
 
 from PySide.QtCore import Qt, QPointF, QLineF, Slot
 
-from PySide.QtGui import QGraphicsPathItem, QPainterPath, QGraphicsItem, QPen,\
-                         QPainter, QFont, QGraphicsTextItem, QColor, \
-                         QFontMetrics
+from PySide.QtGui import(QGraphicsPathItem, QPainterPath, QGraphicsItem, QPen,
+                         QPainter, QFont, QGraphicsTextItem, QColor,
+                         QFontMetrics, QTextBlockFormat, QTextCursor)
 
 import ogParser
 from TextInteraction import EditableText
@@ -521,17 +521,28 @@ class Edge(Connection):
         try:
             # Add the transition label, if any (none for the START edge)
             font = QFont('arial', pointSize=8)
-            width = QFontMetrics(font).width(
-                    self.edge.get('label', 0))
+            metrics = QFontMetrics(font)
+            label = self.edge.get('label', '')
+            lines = label.split('\n')
+            width = metrics.width(max(lines)) # longest line
+            height = metrics.height() * len(lines)
+            # lp is the position of the center of the text
             pos = self.mapFromScene(*self.edge['lp'])
-            #path.addText(pos.x() - width/2, pos.y(),
-            #        font, self.edge['label'])
             if not self.text_label:
                 self.text_label = QGraphicsTextItem(
                                  self.edge.get('label', ''), parent=self)
             self.text_label.setX(pos.x() - width / 2)
-            self.text_label.setY(pos.y())
+            self.text_label.setY(pos.y() - height / 2)
             self.text_label.setFont(font)
+            # Make horizontal center alignment, as dot does
+            self.text_label.setTextWidth(self.text_label.boundingRect().width())
+            fmt = QTextBlockFormat()
+            fmt.setAlignment(Qt.AlignHCenter)
+            cursor = self.text_label.textCursor()
+            cursor.select(QTextCursor.Document)
+            cursor.mergeBlockFormat(fmt)
+            cursor.clearSelection()
+            self.text_label.setTextCursor(cursor)
             self.text_label.show()
         except KeyError:
             # no label

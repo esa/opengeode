@@ -99,27 +99,11 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     VARIABLES.update(process.variables)
 
     # Initialize array of strings containing all local declarations
-    process_decl = []
-    process_vars = []
+    process_decl, process_vars = dcl(process, simu)
 
     # Generate the code to declare process-level variables
     process_level_decl = []
-    for var_name, (var_type, def_value) in process.variables.viewitems():
-        dcl_template = STG.getInstanceOf("dcl")
-        dcl_template['simu'] = simu
-        if def_value:
-            # Expression must be a ground expression, i.e. must not
-            # require temporary variable to store computed result
-            dst, dstr, dlocal = expression(def_value)
-            varbty = find_basic_type(var_type)
-            if varbty.kind in ('SequenceOfType', 'OctetStringType'):
-                dstr = array_content(def_value, dstr, varbty)
-            assert not dst and not dlocal, 'DCL: Expecting a ground expression'
-        var = {'name': var_name, 'sort': type_name(var_type)}
-        dcl_template['var'] = var
-        process_vars.append(var)
-        dcl_template['def_expr'] = dstr if def_value else ''
-        process_decl.append(str(dcl_template))
+
 
     # Set the DCL declarations variable in the process template
     process_template['decl'] = process_decl
@@ -426,12 +410,10 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
             .format(process_name=process_name))
 
     with open(process_name + '.adb', 'w') as ada_file:
-        ada_file.write(
-                u'\n'.join(format_ada_code(taste_template)).encode('latin1'))
+        ada_file.write(taste_template.encode('latin1'))
 
     with open(process_name + '.ads', 'w') as ada_file:
-        ada_file.write(
-                u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
+        ada_file.write(ads_template.encode('latin1'))
 
     if simu:
         with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
@@ -1607,7 +1589,9 @@ def _label(lab, **kwargs):
     ''' Transition following labels are generated in a separate section
         for visibility reasons (see Ada scope)
     '''
-    return ['goto {label};'.format(label=lab.inputString)], []
+    template = STG.getInstanceOf("label")
+    template['name'] = lab.inputString
+    return str(template), []
 
 
 @generate.register(ogAST.Transition)
@@ -1681,28 +1665,19 @@ def _transition(tr, **kwargs):
 @generate.register(ogAST.Floating_label)
 def _floating_label(label, **kwargs):
     ''' Generate the code for a floating label (Ada label + transition) '''
-    code = []
     local_decl = []
-    # Add the traceability information
-    code.extend(traceability(label))
-    code.append(u'<<{label}>>'.format(label=label.inputString))
+    template = STG.getInstanceOf("floating_label")
+    template['traceability']= traceability(label)
+    template['name'] = label.inputString
     if label.transition:
-        code_trans, local_trans = generate(label.transition)
-        code.extend(code_trans)
-        local_decl.extend(local_trans)
-    else:
-        code.append('return;')
-    return code, local_decl
+        template['transition'], local_decl = generate(label.transition)
+    return str(template), local_decl
 
 
 @generate.register(ogAST.Procedure)
 def _inner_procedure(proc, **kwargs):
     ''' Generate the code for a procedure - does not support states '''
     code = []
-    local_decl = []
-    # TODO: Update the global list of procedures
-    # with procedure defined inside the current procedure
-    # Not critical: the editor forbids procedures inside procedures
 
     # Save variable scope (as local variables may shadow process variables)
     outer_scope = dict(VARIABLES)
@@ -1711,75 +1686,74 @@ def _inner_procedure(proc, **kwargs):
     for var in proc.fpar:
         VARIABLES.update({var['name']: (var['type'], None)})
 
-    # Build the procedure signature
-    pi_header = u'procedure {sep}{proc_name}'.format(sep=(u'p' + UNICODE_SEP)
-                                                  if not proc.external else '',
-                                                  proc_name=proc.inputString)
-    if proc.fpar:
-        pi_header += '('
-        params = []
-        for fpar in proc.fpar:
-            typename = type_name(fpar['type'])
-            params.append(u'l_{name}: in{out} {ptype}'.format(
-                    name=fpar.get('name'),
-                    out=' out' if fpar.get('direction') == 'out' else '',
-                    ptype=typename))
-        pi_header += ';'.join(params)
-        pi_header += ')'
+    signature_template = STG.getInstanceOf("procedure_signature")
+    fpar = []
+    for each in proc.fpar:
+        fpar.append({'name': fpar.get('name'),
+                     'direction': str(STG.getInstanceOf("direction_out"))
+                                  if fpar.get('direction') == 'out'
+                                  else str(STG.getInstanceOf("direction_in")),
+                     'sort': type_name(fpar.get('type'))})
 
-    local_decl.append(pi_header + ';')
+    signature_template['name'] = proc.inputString
+    signature_template['external'] = proc.external
+    signature_template['fpar'] = fpar
 
-    if proc.external:
-        local_decl.append(u'pragma import(C, {});'.format(proc.inputString))
-    else:
+    declaration_template = STG.getInstanceOf("procedure_declaration")
+    declaration_template['header'] = str(signature_template)
+    declaration_template['name'] = proc.inputString
+    declaration_template['external'] = proc.external
+
+    local_decl = [str(declaration_template)]
+
+    if not proc.external:
         # Generate the code for the procedure itself
-        # local variables and code of the START transition
-        # Recursively generate the code for inner-defined procedures
-        for inner_proc in proc.content.inner_procedures:
-            inner_code, inner_local = generate(inner_proc)
-            local_decl.extend(inner_local)
-            code.extend(inner_code)
-        code.append(pi_header + u' is')
-        for var_name, (var_type, def_value) in proc.variables.viewitems():
-            typename = type_name(var_type)
-            if def_value:
-                # Expression must be a ground expression, i.e. must not
-                # require temporary variable to store computed result
-                dst, dstr, dlocal = expression(def_value)
-                varbty = find_basic_type(var_type)
-                if varbty.kind in ('SequenceOfType', 'OctetStringType'):
-                    dstr = array_content(def_value, dstr, varbty)
-                assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'l_{name} : aliased {sort}{default};'
-                        .format(name=var_name,
-                                sort=typename,
-                                default=' := ' + dstr if def_value else ''))
+        definition_template = STG.getInstanceOf("procedure_definition")
+        definition_template['header'] = str(signature_template)
+        definition_template['name'] = proc.inputString
+        definition_template['dcl'], _ = dcl(proc, simu=False)
 
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
         if proc.content.start:
-            tr_code, tr_decl = generate(proc.content.start.transition)
-        else:
-            tr_code, tr_decl = ['null;  --  Empty procedure'], []
+            start_code, other_decl = generate(proc.content.start.transition)
+        definition_template['start'] = start_code
         # Generate code for the floating labels
         code_labels = []
         for label in proc.content.floating_labels:
             code_label, label_decl = generate(label)
             code_labels.extend(code_label)
-            tr_decl.extend(label_decl)
-        code.extend(set(tr_decl))
-        code.append('begin')
-        code.extend(tr_code)
-        code.extend(code_labels)
-        code.append(u'end p{sep}{procName};'.format(sep=UNICODE_SEP,
-                                                    procName=proc.inputString))
-    code.append('\n')
+            other_decl.extend(label_decl)
+        definition_template['other_decl'] = set(other_decl)
+        definition_template['labels'] = code_labels
 
     # Reset the scope to how it was prior to the procedure definition
     VARIABLES.clear()
     VARIABLES.update(outer_scope)
 
-    return code, local_decl
+    return str(definition_template), local_decl
+
+
+def dcl(entity, simu):
+    ''' Generate the code to declare variables '''
+    decl, arr_vars = [], []
+    for var_name, (var_type, def_value) in entity.variables.viewitems():
+        dcl_template = STG.getInstanceOf("dcl")
+        dcl_template['simu'] = simu
+        if def_value:
+            # Expression must be a ground expression, i.e. must not
+            # require temporary variable to store computed result
+            dst, dstr, dlocal = expression(def_value)
+            varbty = find_basic_type(var_type)
+            if varbty.kind in ('SequenceOfType', 'OctetStringType'):
+                dstr = array_content(def_value, dstr, varbty)
+            assert not dst and not dlocal, 'DCL: Expecting a ground expression'
+        var = {'name': var_name, 'sort': type_name(var_type)}
+        dcl_template['var'] = var
+        arr_vars.append(var)
+        dcl_template['def_expr'] = dstr if def_value else ''
+        result.append(str(dcl_template))
+    return decl, arr_vars
 
 
 def string_payload(prim, ada_string):
@@ -1935,29 +1909,9 @@ def path_type(path):
 
 def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
-    trace = [u'-- {line}'.format(line=l) for l in
-        symbol.trace().split('\n')]
+    template = STG.getInstanceOf("comment")
+    template['lines'] = symbol.trace().split('\n')
+    result = [str(template)]
     if hasattr(symbol, 'comment') and symbol.comment:
-        trace.extend(traceability(symbol.comment))
-    return trace
-
-
-def format_ada_code(stmts):
-    ''' Indent properly the Ada code '''
-    indent = 0
-    indent_pattern = '    '
-    for line in stmts[:-1]:
-        elems = line.strip().split()
-        if elems and elems[0].startswith(('when', 'end', 'elsif', 'else')):
-            indent = max(indent - 1, 0)
-        if elems and elems[-1] == 'case;':  # Corresponds to end case;
-            indent = max(indent - 1, 0)
-        if line:
-            yield indent_pattern * indent + line
-        if elems and elems[-1] in ('is', 'then', 'loop', 'declare'):
-            indent += 1
-        if elems and elems[0] in ('begin', 'case', 'else', 'when'):
-            indent += 1
-        if not elems:  # newline -> decrease indent
-            indent -= 1
-    yield stmts[-1]
+        result.extend(traceability(symbol.comment))
+    return result

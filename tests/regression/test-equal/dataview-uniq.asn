@@ -1,0 +1,15 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+T-Bool ::= BOOLEAN
+My-OctStr    ::= OCTET STRING (SIZE (0..20))
+
+SeqOf ::= SEQUENCE (SIZE(0..100)) OF My-OctStr
+
+Toto ::= SEQUENCE { elem-1 My-OctStr, elem-2 SeqOf }
+
+
+SeqBool ::= SEQUENCE(SIZE(1..5)) OF BOOLEAN
+
+
+END
