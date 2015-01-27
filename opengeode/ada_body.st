@@ -2,14 +2,16 @@ group adb;
 
 /* top-level: template for the code of a process
  * name: process name
- * decl: list of local declarations
- * vars: list of local variables and sort:dictionnary { name: str, sort: str })
+ * dcl: list of local declarations
+ * pdecl : inner procedure declarations (array)
+ * pcode : inner procedure code (array)
+ * vars: list of local variables and sort: { name: str, sort: str })
  * constants: list of start named start transitions (when using substates)
  * states: list of states
  * asn1_mod : list of ASN.1 modules
  * simu, dll : flags set by the user for generation of optional code
 */
-process(name, decl, vars, constants, states, asn1_mod, simu, dll) ::= <<
+process(name, decl, pdecl, pcode vars, constants, states, asn1_mod, simu, dll) ::= <<
 --  This file was generated automatically: DO NOT MODIFY !
 
 <if(asn1_mod)>
@@ -42,14 +44,18 @@ use Interfaces.C.Strings;
 <endif>
 
 package body <name> is
-    <if(decl)>
+    <if(dcl)>
     --  Local variables declared in textboxes
-    <decl; separator="\n">
+    <dcl; separator="\n">
     <endif>
     ---------------------------------------------------------------------------
     --  List of SDL states, and variable holding the current state
     type States is (<states; separator=", ">);
     state: States;
+    <if(pdecl)>
+    --  Declaration of inner procedures
+    <pdecl; separator="\n">
+    <endif>
 
     <if(simu)>
     --  External API to get/set the SDL state from a remote C application
@@ -82,6 +88,7 @@ end dll_set_l_<each.name>;
     }; separator="\n">
     ---------------------------------------------------------------------------
     <endif>
+    <pcode; separator="\n">
 
     --  Process initialization: execute the START transition)
     begin
@@ -102,6 +109,34 @@ pragma Export(C, dll_set_l_<var.name>, "_set_<var.name>");
 <endif>
 >>
 
+
+/* Code for a provided interface */
+pi_definition(header, name, cases) ::= <<
+--  Provided interface <name>
+<header> is
+    begin
+       case state is
+            <code; separator="\n">
+            when others =>
+                null;
+        end case;
+end <name>;
+
+>>
+
+/* Provided interface declaration, to be used in header/source file */
+pi_declaration(header, process, name) ::= <<
+<header>;
+pragma Export(C, <name>, "<process>_<name>");
+>>
+
+/* Provided interface header, used in declaration and definition */
+pi_signature(name, param_name, param_sort) ::= <<
+procedure <name>
+<if(param_sort)>
+(<if(param_name)><param_name><else><name>_param<endif>: access <param_sort>)
+<endif>
+>>
 
 /* Code for a (stateless) procedure */
 procedure_definition(header, name, dcl, other_decl, start, labels) ::= <<
