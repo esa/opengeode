@@ -40,7 +40,7 @@ compile-all:
 	@CLASSPATH=$$PWD/antlr-3.1.3/lib/antlr-3.1.3.jar java org.antlr.Tool sdl92.g
 	@mv sdl92*.py opengeode
 
-install: compile-all
+install:
 	@python setup.py install --record install.record
 
 publish: install
