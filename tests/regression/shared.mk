@@ -21,7 +21,7 @@ clean:
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -O$(O) -c -g *.adb
+	$(GNATMAKE) -O$(O) -gnat2012 -c -g *.adb
 
 %.o: %.asn FORCE
 	$(ASN1SCC) -c $< -typePrefix asn1Scc -equal
