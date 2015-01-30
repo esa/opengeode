@@ -143,6 +143,7 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     return
 
     # Generate the code for each input signal (provided interface) and timers
+    pi_code = []
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
         sig_template = STG.getInstanceOf('pi_signature')
@@ -167,6 +168,7 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
 
         # For each input signal, define the possible transition based on the
         # current state.
+        cases = []
         for state in process.mapping.viewkeys():
             if state.endswith(u'START'):
                 continue
@@ -209,6 +211,13 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
                 # Execute the correponding transition
                 if input_def.transition:
                     case_template['transition'] = input_def.transition_id
+            cases.append(str(case_template))
+        pi_template['cases'] = cases
+
+        # Generate the template amd add it to a list
+        pi_code.append(str(pi_template))
+
+    process_template['arrs_inp'] = pi_code
 
     # for the .ads file, generate the declaration of the required interfaces
     # output signals are the asynchronous RI - only one parameter

@@ -6,12 +6,13 @@ group adb;
  * pdecl : inner procedure declarations (array)
  * pcode : inner procedure code (array)
  * vars: list of local variables and sort: { name: str, sort: str })
+ * arrs_inp : code handling the reception of messages (array of <input_signal>)
  * constants: list of start named start transitions (when using substates)
  * states: list of states
  * asn1_mod : list of ASN.1 modules
  * simu, dll : flags set by the user for generation of optional code
 */
-process(name, decl, pdecl, pcode vars, constants, states, asn1_mod, simu, dll) ::= <<
+process(name, decl, pdecl, pcode vars, arrs_inp, constants, states, asn1_mod, simu, dll) ::= <<
 --  This file was generated automatically: DO NOT MODIFY !
 
 <if(asn1_mod)>
@@ -89,6 +90,7 @@ end dll_set_l_<each.name>;
     ---------------------------------------------------------------------------
     <endif>
     <pcode; separator="\n">
+    <arrs_inp; separator = "\n">
 
     --  Process initialization: execute the START transition)
     begin
