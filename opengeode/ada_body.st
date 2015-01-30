@@ -110,13 +110,13 @@ pragma Export(C, dll_set_l_<var.name>, "_set_<var.name>");
 >>
 
 
-/* Code for a provided interface */
-pi_definition(header, name, cases) ::= <<
+/* Code for a provided interface or timer timout signal */
+input_signal(header, name, process, cases) ::= <<
 --  Provided interface <name>
 <header> is
     begin
        case state is
-            <code; separator="\n">
+            <cases>
             when others =>
                 null;
         end case;
@@ -124,11 +124,21 @@ end <name>;
 
 >>
 
-/* Provided interface declaration, to be used in header/source file */
-pi_declaration(header, process, name) ::= <<
-<header>;
-pragma Export(C, <name>, "<process>_<name>");
+/* Case state to be used to select what transition to run
+   When leaving a state, it may be necessary to call the exit procedure of
+   inner states. The list of such procedures is in arrs_exitproc.
+   There can also be parameters (only one in practice at the moment), which
+   have to be assigned to a local variable: they are in arrs_param_assig
+*/
+case_state(name, arrs_exitproc, arrs_param_assig, transition) ::= <<
+when <name> =>
+    <arrs_param_assig; separator="\n">
+    <arrs_exitproc: {each | p<safe_separator()><each><safe_separator()>exit;};separator="\n">
+    <if(transition)>runTransition(<transition>);<else>null;<endif>
 >>
+
+/* Assign a parameter of an input signal to a local variable */
+assign_param(local_var, param_name) ::= "l_<local_var> := <param_name>.all;"
 
 /* Provided interface header, used in declaration and definition */
 pi_signature(name, param_name, param_sort) ::= <<
@@ -155,7 +165,7 @@ procedure_definition(header, name, dcl, other_decl, start, labels) ::= <<
         null;  --  Empty procedure
         <endif>
         <labels>
-end p<\u00dc><name>;
+end p<safe_separator()><name>;
 
 >>
 
@@ -170,7 +180,7 @@ pragma import(C, <name>);
 
 /* Header of a procedure */
 procedure_signature(name, external, fpar) ::= <<
-procedure <if(!external)>p<\u00dc><endif><name>
+procedure <if(!external)>p<safe_separator()><endif><name>
 <if(fpar)>
 (<fpar: {each| l_<each.name>: <each.direction> <each.sort>}; separator="; ">)
 <endif>
@@ -198,3 +208,4 @@ direction_out() ::= "in out"
 
 comment(lines) ::= "--  <lines; separator="\n--  ">"
 
+safe_separator() ::= "<\u00dc>"
