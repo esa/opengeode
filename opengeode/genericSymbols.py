@@ -1208,21 +1208,6 @@ class VerticalSymbol(Symbol, object):
             self.pos_y = y
         self.cam(self.position, self.position)
 
-#   def update_position(self):
-#       '''
-#           Update the symbol position -
-#           always below its parent (check collisions, etc.)
-#       '''
-#       # 'or self.parent' because of pyside/qt bug
-#       parent = self.parentItem() or self.parent
-#       self.pos_x = -((self.boundingRect().width() -
-#                     parent.boundingRect().width()) / 2)
-#       # In case of collision with parent item, move down
-#       try:
-#           self.pos_y = max(self.y(), parent.connectionPoint.y())
-#       except AttributeError:
-#           self.pos_y = max(self.y(), parent.boundingRect().height() + 15)
-
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''
         super(VerticalSymbol, self).mouse_move(event)
@@ -1230,12 +1215,6 @@ class VerticalSymbol(Symbol, object):
             new_y = self.pos_y + event.pos().y() - event.lastPos().y()
             new_x = self.pos_x + event.pos().x() - event.lastPos().x()
             self.position = QPointF(new_x, new_y)
-#            if not self.parent:
-#                self.pos_x += event.pos().x() - event.lastPos().x()
-#            if not self.hasParent or (new_y >=
-#                                      self.connection.start_point.y() +
-#                                      self.parent.minDistanceToSymbolAbove):
-#                self.pos_y = new_y
             self.update_connections()
             self.updateConnectionPoints()
 
