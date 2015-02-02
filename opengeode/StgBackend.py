@@ -139,8 +139,6 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     process_template['pdecl'] = inner_procedure_decl
     process_template['pcode'] = inner_procedures_code
 
-    print str(process_template)
-    return
 
     # Generate the code for each input signal (provided interface) and timers
     pi_code = []
@@ -159,12 +157,6 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         pi_template['header'] = str(sig_template)
         pi_template['name'] = signal['name']
         pi_template['process'] = process_name
-
-#       if simu:
-#           # Generate code for the mini-cv template
-#           params = [(param_name, type_name(signal['type'], use_prefix=False),
-#                     'IN')] if 'type' in signal else []
-#           minicv.append(aadl_template(signal['name'], params, 'RI'))
 
         # For each input signal, define the possible transition based on the
         # current state.
@@ -221,52 +213,20 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
 
     # for the .ads file, generate the declaration of the required interfaces
     # output signals are the asynchronous RI - only one parameter
+    required_interfaces = []
     for signal in process.output_signals:
+        # TODO, pass the type and name of the parameter (for the Ads)
+        ri_template = STG.getInstanceOf("required_interface")
+        ri_template['name'] = signal['name']
+        ri_template['simu'] = simu
+        required_interfaces.append(str(ri_template))
 
-        param_name = signal.get('param_name') \
-                                or u'{}_param'.format(signal['name'])
-        # Add (optional) RI parameter
-        param_spec = '' if not simu else "(tm: chars_ptr)"
-        if 'type' in signal:
-            typename = type_name(signal['type'])
-            param_spec = u'({pName}: access {sort}{shared})' \
-                         .format(pName=param_name,
-                                 sort=typename,
-                                 shared=u'; Size: Integer'
-                                        if SHARED_LIB else '')
-        ads_template.append(u'--  Required interface "' + signal['name'] + '"')
-        if simu:
-            # When generating a shared library, we need a callback mechanism
-            ads_template.append(u'type {}_T is access procedure{};'
-                                .format(signal['name'], param_spec))
-            ads_template.append('pragma Convention(Convention => C,'
-                                ' Entity => {}_T);'.format(signal['name']))
-            ads_template.append('{sig} : {sig}_T;'
-                                .format(sig=signal['name']))
-            ads_template.append('procedure Register_{sig}(Callback: {sig}_T);'
-                                .format(sig=signal['name']))
-            ads_template.append('pragma Export(C, Register_{sig},'
-                                ' "register_{sig}");'
-                                .format(sig=signal['name']))
+    process_template['arrs_async_ri'] = required_interfaces
 
-            # Generate code for the mini-cv template
-            params = [(param_name, type_name(signal['type'], use_prefix=False),
-                      'IN')] if 'type' in signal else []
-            minicv.append(aadl_template(signal['name'], params, 'PI'))
+    print str(process_template)
+    return
 
-            taste_template.append('procedure Register_{sig}'
-                                  '(Callback:{sig}_T) is'
-                                  .format(sig=signal['name']))
-            taste_template.append('begin')
-            taste_template.append('{} := Callback;'.format(signal['name']))
-            taste_template.append('end Register_{};'.format(signal['name']))
-            taste_template.append('')
-        else:
-            ads_template.append(u'procedure {}{};'
-                                .format(signal['name'], param_spec))
-            ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
-                                .format(sig=signal['name'], proc=process_name))
-
+    external_proc = []
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
         ri_header = u'procedure {sig_name}'.format(sig_name=proc.inputString)

@@ -7,12 +7,13 @@ group adb;
  * pcode : inner procedure code (array)
  * vars: list of local variables and sort: { name: str, sort: str })
  * arrs_inp : code handling the reception of messages (array of <input_signal>)
+ * arrs_async_ri : code for the required interfaces
  * constants: list of start named start transitions (when using substates)
  * states: list of states
  * asn1_mod : list of ASN.1 modules
  * simu, dll : flags set by the user for generation of optional code
 */
-process(name, decl, pdecl, pcode vars, arrs_inp, constants, states, asn1_mod, simu, dll) ::= <<
+process(name, decl, pdecl, pcode vars, arrs_inp, arrs_async_ri, constants, states, asn1_mod, simu, dll) ::= <<
 --  This file was generated automatically: DO NOT MODIFY !
 
 <if(asn1_mod)>
@@ -91,6 +92,7 @@ end dll_set_l_<each.name>;
     <endif>
     <pcode; separator="\n">
     <arrs_inp; separator = "\n">
+    <arrs_ri; separator = "\n">
 
     --  Process initialization: execute the START transition)
     begin
@@ -185,6 +187,17 @@ procedure_signature(name, external, fpar) ::= <<
 procedure <if(!external)>p<safe_separator()><endif><name>
 <if(fpar)>
 (<fpar: {each| l_<each.name>: <each.direction> <each.sort>}; separator="; ">)
+<endif>
+>>
+
+
+/* Code for external RI */
+required_interface(name, simu) ::= <<
+<if(simu)>
+procedure Register_<name>(Callback: <name>_T) is
+begin
+    <name> := Callback;
+end Register_<name>;
 <endif>
 >>
 
