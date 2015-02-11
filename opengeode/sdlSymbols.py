@@ -822,7 +822,12 @@ class TextSymbol(HorizontalSymbol):
         except AttributeError:
             pass
         # Update completion list of Signalroutes
-        Signalroute.completion_list |= set(sig['name'] for sig in ast.signals)
+        try:
+            Signalroute.completion_list |= set(sig['name']
+                                               for sig in ast.signals)
+        except AttributeError:
+            # no AST, e.g. in cae of syntax errors in the text area
+            pass
 
     @property
     def completion_list(self):
