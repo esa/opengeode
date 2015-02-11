@@ -6,8 +6,12 @@ My-OctStr    ::= OCTET STRING (SIZE (0..20))
 
 SeqOf ::= SEQUENCE (SIZE(0..100)) OF My-OctStr
 
-Toto ::= SEQUENCE { elem-1 My-OctStr, elem-2 SeqOf }
+Toto ::= SEQUENCE { elem-1 My-OctStr, elem-2 SeqOf OPTIONAL}
 
+AChoice ::= CHOICE {
+ a T-Bool,
+ b SeqOf
+}
 
 SeqBool ::= SEQUENCE(SIZE(1..5)) OF BOOLEAN
 

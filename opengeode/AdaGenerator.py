@@ -1653,6 +1653,11 @@ def _sequence_of(seqof):
 def _choiceitem(choice):
     ''' Return the Ada code for a CHOICE expression '''
     stmts, choice_str, local_decl = expression(choice.value['value'])
+    if isinstance(choice.value['value'], (ogAST.PrimSequenceOf,
+                                          ogAST.PrimStringLiteral)):
+        print choice.value['value'].exprType
+        choice_str = array_content(choice.value['value'], choice_str,
+                               find_basic_type(choice.value['value'].exprType))
     ada_string = u'{cType}_{opt}_set({expr})'.format(
                         cType=type_name(choice.exprType),
                         opt=choice.value['choice'],
