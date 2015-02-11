@@ -51,11 +51,12 @@ and V7 /= V8;
                                         (true):
                                             /* CIF PROCEDURECALL (501, 908), (150, 38) */
                                             CALL writeln('5');
-                                            /* CIF TASK (454, 961), (245, 68) */
+                                            /* CIF TASK (487, 961), (179, 48) */
                                             TASK V5 := V6,
-V7 := b: {'Hello', 'World'},
-V8!b(1) := V7!b(1)(0 ,4);
-                                            /* CIF JOIN (559, 1044), (35, 35) */
+V7 := b: {'Hello', 'World'};
+                                            /* CIF TASK (464, 1024), (225, 35) */
+                                            TASK V8 := b: {'Hello', 'world' };
+                                            /* CIF JOIN (559, 1074), (35, 35) */
                                             JOIN three;
                                         /* CIF ANSWER (745, 865), (78, 28) */
                                         (false):

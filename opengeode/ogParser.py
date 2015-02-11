@@ -991,7 +991,6 @@ def fix_expression_types(expr, context):
             expr.right.value[det] = check_expr.right
 
     if expr.right.is_raw != expr.left.is_raw:
-        print 'HIHI', raw_expr, ref_type
         check_type_compatibility(raw_expr, ref_type, context)
         if not raw_expr.exprType.kind.startswith(('Integer',
                                                   'Real',
