@@ -1655,7 +1655,6 @@ def _choiceitem(choice):
     stmts, choice_str, local_decl = expression(choice.value['value'])
     if isinstance(choice.value['value'], (ogAST.PrimSequenceOf,
                                           ogAST.PrimStringLiteral)):
-        print choice.value['value'].exprType
         choice_str = array_content(choice.value['value'], choice_str,
                                find_basic_type(choice.value['value'].exprType))
     ada_string = u'{cType}_{opt}_set({expr})'.format(
@@ -1972,10 +1971,14 @@ def array_content(prim, values, asnty):
     inputs: prim is of type PrimStringLiteral or PrimSequenceOf
     values is a string with the sequence of numbers as processed by expression
     asnty is the reference type of the string literal '''
-    rtype = find_basic_type(prim.exprType)
+    #rtype = find_basic_type(prim.exprType)
     if asnty.Min != asnty.Max:
+        length = len(prim.value)
+        if isinstance(prim, ogAST.PrimStringLiteral):
+            # Quotes are kept in string literals
+            length -= 2
         # Reference type can vary -> there is a Length field
-        rlen = u", Length => {}".format(rtype.Min)
+        rlen = u", Length => {}".format(length) # rtype.Min)
     else:
         rlen = u""
     if isinstance(prim, ogAST.PrimStringLiteral):
