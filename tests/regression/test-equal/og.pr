@@ -13,7 +13,7 @@ dcl fail t_bool := false;
 
 -- Test optional field
 dcl V5 Toto := { elem_1 'Hello' }; 
-dcl V6 Toto := { elem_1 'Hello', elem_2 {'Hello', 'World'} };
+dcl V6 Toto := { elem_1 'Hello', elem_2 {'Ola', 'TheWorld'} };
 
 dcl V7 AChoice := a: TRUE;
 dcl V8 ACHoice := b: {'Hello', 'World!'};
@@ -21,7 +21,7 @@ dcl V8 ACHoice := b: {'Hello', 'World!'};
     /* CIF START (1109, 72), (60, 30) */
     START;
         /* CIF TASK (1050, 118), (177, 35) */
-        TASK v8 := b: {'hello', 'world'} ;
+        TASK v8 := b: {'hello', 'world'};
         /* CIF LABEL (1104, 168), (70, 35) */
         one:
         /* CIF DECISION (1090, 218), (98, 50) */

@@ -679,6 +679,8 @@ def check_type_compatibility(primary, type_ref, context):
                       str(basic_type.Min) + '..' + str(basic_type.Max) + ']')
         for elem in primary.value:
             check_type_compatibility(elem, basic_type.type, context)
+        if not hasattr(primary, 'expected_type'):
+            primary.expected_type = type_ref
         return
     elif isinstance(primary, ogAST.PrimSequence) \
             and basic_type.kind == 'SequenceType':
@@ -696,7 +698,7 @@ def check_type_compatibility(primary, type_ref, context):
                                 ' of type {t1} '
                                 .format(field=ufield,
                                         t1=type_name(type_ref)))
-            elif field.lower() not in user_fields:
+            elif ufield.lower() not in user_fields:
                 # Optional field not set - OK
                 continue
             else:
@@ -989,6 +991,7 @@ def fix_expression_types(expr, context):
             expr.right.value[det] = check_expr.right
 
     if expr.right.is_raw != expr.left.is_raw:
+        print 'HIHI', raw_expr, ref_type
         check_type_compatibility(raw_expr, ref_type, context)
         if not raw_expr.exprType.kind.startswith(('Integer',
                                                   'Real',
@@ -998,6 +1001,9 @@ def fix_expression_types(expr, context):
             # that can be computed
             # Also true for raw SEQOF and String - Min/Max must not change
             # Substrings: CHECKME XXX
+            # EDIT: Size of raw SeqOf and Strings is known from looking at
+            # the number of elements. Min/Max are irrelevant. In principle
+            # removing SequenceOf and String from here should be OK.
             raw_expr.exprType = ref_type
     else:
         compare_types(expr.left.exprType, expr.right.exprType)
@@ -3419,8 +3425,8 @@ def decision(root, parent, context):
                       for en in q_basic.EnumValues.keys()]
         # check for missing answers
         if set(answers) != set(enumerants) and not has_else:
-            print set(answers)
-            print set(enumerants)
+            #print set(answers)
+            #print set(enumerants)
             qerr.append('Decision "{}": Missing branches for answer(s) "{}"'
                           .format(dec.inputString,
                                   '", "'.join(set(enumerants) - set(answers))))

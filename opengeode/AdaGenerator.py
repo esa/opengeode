@@ -70,6 +70,7 @@
 
 
 import logging
+import traceback
 from singledispatch import singledispatch
 
 import ogAST
@@ -1622,8 +1623,7 @@ def _sequence_of(seqof):
     seqof_ty = seqof.exprType
     try:
         asn_type = find_basic_type(TYPES[seqof_ty.ReferencedTypeName].type)
-        min_size = asn_type.Min
-        max_size = asn_type.Max
+        min_size, max_size = asn_type.Min, asn_type.Max
     except AttributeError:
         asn_type = None
         min_size, max_size = seqof_ty.Min, seqof_ty.Max
@@ -1634,7 +1634,6 @@ def _sequence_of(seqof):
                 min_size, max_size = asn_type.Min, asn_type.Max
             except AttributeError:
                 pass
-
     tab = []
     for i in xrange(len(seqof.value)):
         item_stmts, item_str, local_var = expression(seqof.value[i])
@@ -1972,6 +1971,8 @@ def array_content(prim, values, asnty):
     values is a string with the sequence of numbers as processed by expression
     asnty is the reference type of the string literal '''
     #rtype = find_basic_type(prim.exprType)
+    if asnty.Min == asnty.Max:
+        print prim.inputString, asnty, asnty.Min, asnty.Max
     if asnty.Min != asnty.Max:
         length = len(prim.value)
         if isinstance(prim, ogAST.PrimStringLiteral):
