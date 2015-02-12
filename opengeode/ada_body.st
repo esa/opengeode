@@ -2,14 +2,18 @@ group adb;
 
 /* top-level: template for the code of a process
  * name: process name
- * decl: list of local declarations
- * vars: list of local variables and sort:dictionnary { name: str, sort: str })
+ * dcl: list of local declarations
+ * pdecl : inner procedure declarations (array)
+ * pcode : inner procedure code (array)
+ * vars: list of local variables and sort: { name: str, sort: str })
+ * arrs_inp : code handling the reception of messages (array of <input_signal>)
+ * arrs_async_ri : code for the required interfaces
  * constants: list of start named start transitions (when using substates)
  * states: list of states
  * asn1_mod : list of ASN.1 modules
  * simu, dll : flags set by the user for generation of optional code
 */
-process(name, decl, vars, constants, states, asn1_mod, simu, dll) ::= <<
+process(name, decl, pdecl, pcode vars, arrs_inp, arrs_async_ri, constants, states, asn1_mod, simu, dll) ::= <<
 --  This file was generated automatically: DO NOT MODIFY !
 
 <if(asn1_mod)>
@@ -42,14 +46,18 @@ use Interfaces.C.Strings;
 <endif>
 
 package body <name> is
-    <if(decl)>
+    <if(dcl)>
     --  Local variables declared in textboxes
-    <decl; separator="\n">
+    <dcl; separator="\n">
     <endif>
     ---------------------------------------------------------------------------
     --  List of SDL states, and variable holding the current state
     type States is (<states; separator=", ">);
     state: States;
+    <if(pdecl)>
+    --  Declaration of inner procedures
+    <pdecl; separator="\n">
+    <endif>
 
     <if(simu)>
     --  External API to get/set the SDL state from a remote C application
@@ -82,6 +90,9 @@ end dll_set_l_<each.name>;
     }; separator="\n">
     ---------------------------------------------------------------------------
     <endif>
+    <pcode; separator="\n">
+    <arrs_inp; separator = "\n">
+    <arrs_ri; separator = "\n">
 
     --  Process initialization: execute the START transition)
     begin
@@ -103,6 +114,44 @@ pragma Export(C, dll_set_l_<var.name>, "_set_<var.name>");
 >>
 
 
+/* Code for a provided interface or timer timout signal */
+input_signal(header, name, process, cases) ::= <<
+--  Provided interface <name>
+<header> is
+    begin
+       case state is
+            <cases>
+            when others =>
+                null;
+        end case;
+end <name>;
+
+>>
+
+/* Case state to be used to select what transition to run
+   When leaving a state, it may be necessary to call the exit procedure of
+   inner states. The list of such procedures is in arrs_exitproc.
+   There can also be parameters (only one in practice at the moment), which
+   have to be assigned to a local variable: they are in arrs_param_assig
+*/
+case_state(name, arrs_exitproc, arrs_param_assig, transition) ::= <<
+when <name> =>
+    <arrs_param_assig; separator="\n">
+    <arrs_exitproc: {each | p<safe_separator()><each><safe_separator()>exit;};separator="\n">
+    <if(transition)>runTransition(<transition>);<else>null;<endif>
+>>
+
+/* Assign a parameter of an input signal to a local variable */
+assign_param(local_var, param_name) ::= "l_<local_var> := <param_name>.all;"
+
+/* Provided interface header, used in declaration and definition */
+pi_signature(name, param_name, param_sort) ::= <<
+procedure <name>
+<if(param_sort)>
+(<if(param_name)><param_name><else><name>_param<endif>: access <param_sort>)
+<endif>
+>>
+
 /* Code for a (stateless) procedure */
 procedure_definition(header, name, dcl, other_decl, start, labels) ::= <<
 <header> is
@@ -120,7 +169,7 @@ procedure_definition(header, name, dcl, other_decl, start, labels) ::= <<
         null;  --  Empty procedure
         <endif>
         <labels>
-end p<\u00dc><name>;
+end p<safe_separator()><name>;
 
 >>
 
@@ -135,9 +184,20 @@ pragma import(C, <name>);
 
 /* Header of a procedure */
 procedure_signature(name, external, fpar) ::= <<
-procedure <if(!external)>p<\u00dc><endif><name>
+procedure <if(!external)>p<safe_separator()><endif><name>
 <if(fpar)>
 (<fpar: {each| l_<each.name>: <each.direction> <each.sort>}; separator="; ">)
+<endif>
+>>
+
+
+/* Code for external RI */
+required_interface(name, simu) ::= <<
+<if(simu)>
+procedure Register_<name>(Callback: <name>_T) is
+begin
+    <name> := Callback;
+end Register_<name>;
 <endif>
 >>
 
@@ -163,3 +223,4 @@ direction_out() ::= "in out"
 
 comment(lines) ::= "--  <lines; separator="\n--  ">"
 
+safe_separator() ::= "<\u00dc>"

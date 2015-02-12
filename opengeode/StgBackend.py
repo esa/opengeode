@@ -101,12 +101,8 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     # Initialize array of strings containing all local declarations
     process_decl, process_vars = dcl(process, simu)
 
-    # Generate the code to declare process-level variables
-    process_level_decl = []
-
-
     # Set the DCL declarations variable in the process template
-    process_template['decl'] = process_decl
+    process_template['dcl'] = process_decl
     process_template['vars'] = process_vars
 
 
@@ -125,63 +121,51 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
 
     process_template['constants'] = constants
 
-    # Generate the TASTE template
     try:
         process_template['asn1_mod'] = (dv.replace('-', '_')
                                         for dv in process.asn1Modules)
     except TypeError:
         pass # No ASN.1 module
 
-    print str(process_template)
-    return
-
     # Generate the the code of the procedures
+    inner_procedures_decl = []
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
         proc_code, proc_local = generate(proc)
-        process_level_decl.extend(proc_local)
+        inner_procedure_decl.extend(proc_local)
         inner_procedures_code.extend(proc_code)
 
     # Generate the code for the process-level variable declarations
-    taste_template.extend(process_level_decl)
+    process_template['pdecl'] = inner_procedure_decl
+    process_template['pcode'] = inner_procedures_code
 
-    # Add the code of the procedures definitions
-    taste_template.extend(inner_procedures_code)
 
     # Generate the code for each input signal (provided interface) and timers
+    pi_code = []
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
+        sig_template = STG.getInstanceOf('pi_signature')
         if signal.get('name', u'START') == u'START':
             continue
-        pi_header = u'procedure {sig_name}'.format(sig_name=signal['name'])
-        param_name = signal.get('param_name') \
-                                or u'{}_param'.format(signal['name'])
+        sig_template['name'] = signal['name']
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
-            typename = type_name(signal['type'])
-            pi_header += u'({pName}: access {sort})'.format(
-                                        pName=param_name, sort=typename)
+            sig_template['param_name'] = signal.get('param_name')
+            sig_template['param_sort'] = type_name(signal['type'])
 
-        # Add declaration of the provided interface in the .ads file
-        ads_template.append(u'--  Provided interface "' + signal['name'] + '"')
-        ads_template.append(pi_header + ';')
-        ads_template.append(u'pragma export(C, {name}, "{proc}_{name}");'
-                             .format(name=signal['name'], proc=process_name))
+        pi_template = STG.getInstanceOf('input_signal')
+        pi_template['header'] = str(sig_template)
+        pi_template['name'] = signal['name']
+        pi_template['process'] = process_name
 
-        if simu:
-            # Generate code for the mini-cv template
-            params = [(param_name, type_name(signal['type'], use_prefix=False),
-                      'IN')] if 'type' in signal else []
-            minicv.append(aadl_template(signal['name'], params, 'RI'))
-
-        pi_header += ' is'
-        taste_template.append(pi_header)
-        taste_template.append('begin')
-        taste_template.append('case state is')
+        # For each input signal, define the possible transition based on the
+        # current state.
+        cases = []
         for state in process.mapping.viewkeys():
             if state.endswith(u'START'):
                 continue
-            taste_template.append(u'when {state} =>'.format(state=state))
+            case_template = STG.getInstanceOf('case_state')
+            case_template['name'] = state
             input_def = mapping[signal['name']].get(state)
             # Check for nested states to call optional exit procedure
             sep = UNICODE_SEP
@@ -199,81 +183,50 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
                         context = comp
                         current = current + sep
                         break
+            ordered_exitlist = []
             for each in reversed(exitlist):
                 if trans and all(each.startswith(trans_st)
                                  for trans_st in trans.possible_states):
-                    taste_template.append(u'p{sep}{ref}{sep}exit;'
-                                          .format(ref=each, sep=sep))
+                    ordered_exitlist.append(each)
+            case_template['arrs_exitproc'] = ordered_exitlist
 
             if input_def:
+                params_lst = []
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    taste_template.append(u'l_{inp} := {tInp}.all;'.format(
-                        inp=inp, tInp=param_name))
+                    assig_template = STG.getInstanceOf('assign_param')
+                    assig_template['local_var'] = inp
+                    assig_template['param_name'] = param_name
+                    params_lst.append(str(assig_template))
+                case_template['arrs_param_assig'] = params_lst
                 # Execute the correponding transition
                 if input_def.transition:
-                    taste_template.append(u'runTransition({idx});'.format(
-                        idx=input_def.transition_id))
-                else:
-                    taste_template.append('null;')
-            else:
-                taste_template.append('null;')
-        taste_template.append('when others =>')
-        taste_template.append('null;')
-        taste_template.append('end case;')
-        taste_template.append(u'end {sig_name};'.format(
-                                                    sig_name=signal['name']))
-        taste_template.append('\n')
+                    case_template['transition'] = input_def.transition_id
+            cases.append(str(case_template))
+        pi_template['cases'] = cases
+
+        # Generate the template amd add it to a list
+        pi_code.append(str(pi_template))
+
+    process_template['arrs_inp'] = pi_code
 
     # for the .ads file, generate the declaration of the required interfaces
     # output signals are the asynchronous RI - only one parameter
+    required_interfaces = []
     for signal in process.output_signals:
+        # TODO, pass the type and name of the parameter (for the Ads)
+        ri_template = STG.getInstanceOf("required_interface")
+        ri_template['name'] = signal['name']
+        ri_template['simu'] = simu
+        required_interfaces.append(str(ri_template))
 
-        param_name = signal.get('param_name') \
-                                or u'{}_param'.format(signal['name'])
-        # Add (optional) RI parameter
-        param_spec = '' if not simu else "(tm: chars_ptr)"
-        if 'type' in signal:
-            typename = type_name(signal['type'])
-            param_spec = u'({pName}: access {sort}{shared})' \
-                         .format(pName=param_name,
-                                 sort=typename,
-                                 shared=u'; Size: Integer'
-                                        if SHARED_LIB else '')
-        ads_template.append(u'--  Required interface "' + signal['name'] + '"')
-        if simu:
-            # When generating a shared library, we need a callback mechanism
-            ads_template.append(u'type {}_T is access procedure{};'
-                                .format(signal['name'], param_spec))
-            ads_template.append('pragma Convention(Convention => C,'
-                                ' Entity => {}_T);'.format(signal['name']))
-            ads_template.append('{sig} : {sig}_T;'
-                                .format(sig=signal['name']))
-            ads_template.append('procedure Register_{sig}(Callback: {sig}_T);'
-                                .format(sig=signal['name']))
-            ads_template.append('pragma Export(C, Register_{sig},'
-                                ' "register_{sig}");'
-                                .format(sig=signal['name']))
+    process_template['arrs_async_ri'] = required_interfaces
 
-            # Generate code for the mini-cv template
-            params = [(param_name, type_name(signal['type'], use_prefix=False),
-                      'IN')] if 'type' in signal else []
-            minicv.append(aadl_template(signal['name'], params, 'PI'))
+    print str(process_template)
+    return
 
-            taste_template.append('procedure Register_{sig}'
-                                  '(Callback:{sig}_T) is'
-                                  .format(sig=signal['name']))
-            taste_template.append('begin')
-            taste_template.append('{} := Callback;'.format(signal['name']))
-            taste_template.append('end Register_{};'.format(signal['name']))
-            taste_template.append('')
-        else:
-            ads_template.append(u'procedure {}{};'
-                                .format(signal['name'], param_spec))
-            ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
-                                .format(sig=signal['name'], proc=process_name))
-
+    external_proc = []
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
         ri_header = u'procedure {sig_name}'.format(sig_name=proc.inputString)

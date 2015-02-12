@@ -70,6 +70,7 @@
 
 
 import logging
+import traceback
 from singledispatch import singledispatch
 
 import ogAST
@@ -1622,8 +1623,7 @@ def _sequence_of(seqof):
     seqof_ty = seqof.exprType
     try:
         asn_type = find_basic_type(TYPES[seqof_ty.ReferencedTypeName].type)
-        min_size = asn_type.Min
-        max_size = asn_type.Max
+        min_size, max_size = asn_type.Min, asn_type.Max
     except AttributeError:
         asn_type = None
         min_size, max_size = seqof_ty.Min, seqof_ty.Max
@@ -1634,7 +1634,6 @@ def _sequence_of(seqof):
                 min_size, max_size = asn_type.Min, asn_type.Max
             except AttributeError:
                 pass
-
     tab = []
     for i in xrange(len(seqof.value)):
         item_stmts, item_str, local_var = expression(seqof.value[i])
@@ -1653,6 +1652,10 @@ def _sequence_of(seqof):
 def _choiceitem(choice):
     ''' Return the Ada code for a CHOICE expression '''
     stmts, choice_str, local_decl = expression(choice.value['value'])
+    if isinstance(choice.value['value'], (ogAST.PrimSequenceOf,
+                                          ogAST.PrimStringLiteral)):
+        choice_str = array_content(choice.value['value'], choice_str,
+                               find_basic_type(choice.value['value'].exprType))
     ada_string = u'{cType}_{opt}_set({expr})'.format(
                         cType=type_name(choice.exprType),
                         opt=choice.value['choice'],
@@ -1967,10 +1970,14 @@ def array_content(prim, values, asnty):
     inputs: prim is of type PrimStringLiteral or PrimSequenceOf
     values is a string with the sequence of numbers as processed by expression
     asnty is the reference type of the string literal '''
-    rtype = find_basic_type(prim.exprType)
+    #rtype = find_basic_type(prim.exprType)
     if asnty.Min != asnty.Max:
+        length = len(prim.value)
+        if isinstance(prim, ogAST.PrimStringLiteral):
+            # Quotes are kept in string literals
+            length -= 2
         # Reference type can vary -> there is a Length field
-        rlen = u", Length => {}".format(rtype.Min)
+        rlen = u", Length => {}".format(length) # rtype.Min)
     else:
         rlen = u""
     if isinstance(prim, ogAST.PrimStringLiteral):
