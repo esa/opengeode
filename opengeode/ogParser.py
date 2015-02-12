@@ -679,7 +679,8 @@ def check_type_compatibility(primary, type_ref, context):
                       str(basic_type.Min) + '..' + str(basic_type.Max) + ']')
         for elem in primary.value:
             check_type_compatibility(elem, basic_type.type, context)
-        if not hasattr(primary, 'expected_type'):
+        if not hasattr(primary, 'expected_type') \
+               and type_ref.__name__ not in ('Apnd', 'SubStr'):
             primary.expected_type = type_ref
         return
     elif isinstance(primary, ogAST.PrimSequence) \
