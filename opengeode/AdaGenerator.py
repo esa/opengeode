@@ -1971,8 +1971,6 @@ def array_content(prim, values, asnty):
     values is a string with the sequence of numbers as processed by expression
     asnty is the reference type of the string literal '''
     #rtype = find_basic_type(prim.exprType)
-    if asnty.Min == asnty.Max:
-        print prim.inputString, asnty, asnty.Min, asnty.Max
     if asnty.Min != asnty.Max:
         length = len(prim.value)
         if isinstance(prim, ogAST.PrimStringLiteral):
