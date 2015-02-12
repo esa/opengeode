@@ -2120,6 +2120,18 @@ def export(ast, options):
             LOG.info('Saving {ext} file: {name}.{ext}'
                      .format(ext=doc_fmt, name=name))
             diagram.export_img(name, doc_format=doc_fmt, split=options.split)
+        if diagram.context == 'block' and graphviz:
+            # Also save the statechart viewa of the current scene
+            LOG.info('Saving statechart sc_{}.png'.format(process.processName))
+            sc_scene = SDL_Scene(context='statechart')
+            graph = diagram.sdl_to_statechart()
+            try:
+                Statechart.render_statechart(sc_scene, graph,
+                                             dump_gfx=process.processName)
+                sc_scene.refresh()
+            except (IOError, TypeError) as err:
+                LOG.debug(str(err))
+
 
 
 def cli(options):
