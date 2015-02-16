@@ -1439,17 +1439,20 @@ class SDL_View(QtGui.QGraphicsView, object):
             LOG.info('No scene - nothing to save')
             return False
 
-        # Translate scenes to avoid negative coordinates
-        for each in scene.all_nested_scenes:
-            each.translate_to_origin()
+        # Translate all scenes to avoid negative coordinates
         delta_x, delta_y = scene.translate_to_origin()
+        for each in scene.all_nested_scenes:
+            dx, dy = each.translate_to_origin()
+            if each == self.scene():
+                delta_x, delta_y = dx, dy
 
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
 
         # Move items back to original place to avoid scrollbar jumps
-        for item in scene.floating_symb:
-            item.moveBy(-delta_x, -delta_y)
+        for item in self.scene().floating_symb:
+            item.pos_x -= delta_x
+            item.pos_y -= delta_y
 
         pr_data = unicode('\n'.join(pr_raw))
         try:

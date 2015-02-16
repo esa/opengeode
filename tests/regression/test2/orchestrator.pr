@@ -2,7 +2,7 @@
 PROCESS orchestrator
 /* CIF COMMENT (405, 192), (71, 35) */
 COMMENT 'Hello';
-    /* CIF TEXT (0, 12), (293, 200) */
+    /* CIF TEXT (0, 0), (293, 200) */
     -- GNC Orchestrator for the VEGA simulator
 
 DCL gnc_output T_GNC_LV_SIM_INPUTS;
@@ -16,107 +16,107 @@ dcl seq tastE_Peek_id_list := {1};
 
 DCL major_cycle, sub_cycle T_UInt32;
     /* CIF ENDTEXT */
-    /* CIF START (348, 208), (100, 45) */
+    /* CIF START (493, 377), (100, 45) */
     START;
-        /* CIF TASK (311, 268), (172, 35) */
+        /* CIF TASK (457, 437), (172, 35) */
         TASK seq := seq // {2} // {1};
-        /* CIF PROCEDURECALL (303, 318), (189, 50) */
+        /* CIF PROCEDURECALL (448, 487), (189, 50) */
         CALL writeln
 ('[Orchestrator] Startup');
-        /* CIF TASK (325, 383), (144, 50) */
+        /* CIF TASK (471, 552), (144, 50) */
         TASK intr := obt_pulse4;
-        /* CIF OUTPUT (333, 448), (130, 35) */
+        /* CIF OUTPUT (478, 617), (130, 35) */
         OUTPUT telemetry;
-        /* CIF TASK (326, 498), (144, 50) */
+        /* CIF TASK (471, 667), (144, 50) */
         TASK major_cycle := 1,
 sub_cycle := 0;
-        /* CIF NEXTSTATE (337, 563), (118, 50) */
+        /* CIF NEXTSTATE (484, 732), (118, 50) */
         NEXTSTATE Wait_for_GUI;
-    /* CIF STATE (1134, 32), (100, 50) */
+    /* CIF STATE (1279, 201), (100, 50) */
     STATE Running;
-        /* CIF INPUT (1388, 102), (136, 50) */
+        /* CIF INPUT (1533, 271), (136, 50) */
         INPUT start_simulation
 (gnc_input)
-        /* CIF COMMENT (1546, 102), (169, 50) */
+        /* CIF COMMENT (1691, 271), (169, 50) */
         COMMENT 'Input from gui
 stops the simulation';
-            /* CIF NEXTSTATE (1397, 167), (118, 50) */
+            /* CIF NEXTSTATE (1542, 336), (118, 50) */
             NEXTSTATE Wait_for_GUI;
-        /* CIF INPUT (943, 102), (105, 50) */
+        /* CIF INPUT (1088, 271), (105, 50) */
         INPUT pulse
-        /* CIF COMMENT (1068, 102), (114, 50) */
+        /* CIF COMMENT (1213, 271), (114, 50) */
         COMMENT 'Periodic call';
-            /* CIF PROCEDURECALL (798, 167), (393, 50) */
+            /* CIF PROCEDURECALL (944, 336), (393, 50) */
             CALL S_SET_GNC_LV_SIM_CONTEXT_FOR_NEXT_MAJOR_CYCLE
 (gnc_input)
-            /* CIF COMMENT (1210, 158), (173, 72) */
+            /* CIF COMMENT (1355, 327), (173, 72) */
             COMMENT 'Set data computed
 by the Simulink model
 (Simulator) in the GNC
 input vector';
-            /* CIF PROCEDURECALL (945, 232), (100, 50) */
+            /* CIF PROCEDURECALL (1090, 401), (100, 50) */
             CALL Scheduler
 (intr)
-            /* CIF COMMENT (1066, 232), (170, 50) */
+            /* CIF COMMENT (1211, 401), (170, 50) */
             COMMENT 'Call the GNC function';
-            /* CIF PROCEDURECALL (805, 297), (380, 50) */
+            /* CIF PROCEDURECALL (950, 466), (380, 50) */
             CALL S_GET_GNC_LV_SIM_INPUTS_FOR_NEXT_MAJOR_CYCLE
 (gnc_output)
-            /* CIF COMMENT (1207, 297), (175, 50) */
+            /* CIF COMMENT (1352, 466), (175, 50) */
             COMMENT 'Read output data
 from the GNC function';
-            /* CIF PROCEDURECALL (903, 362), (183, 50) */
+            /* CIF PROCEDURECALL (1049, 531), (183, 50) */
             CALL VESAT_Simulation_Step
 (gnc_output, gnc_input)
-            /* CIF COMMENT (1108, 362), (182, 50) */
+            /* CIF COMMENT (1253, 531), (182, 50) */
             COMMENT 'Call the Simulink model';
-            /* CIF DECISION (902, 427), (187, 115) */
+            /* CIF DECISION (1047, 596), (187, 115) */
             DECISION major_cycle mod 50 = 0
 and
 sub_cycle = 0
-            /* CIF COMMENT (1109, 459), (250, 50) */
+            /* CIF COMMENT (1254, 628), (250, 50) */
             COMMENT 'Plot only every 50 major cycles
 (otherwise performance is too low)';
-                    /* CIF ANSWER (886, 562), (100, 35) */
+                    /* CIF ANSWER (1031, 731), (100, 35) */
                     (true):
-                        /* CIF TASK (798, 612), (276, 72) */
+                        /* CIF TASK (943, 781), (276, 72) */
                         TASK plot_data!major_cycle := major_cycle,
 plot_data!subcycle := sub_cycle mod 7,
 plot_data!gnc_inputs := gnc_input,
 plot_data!gnc_outputs := gnc_output;
-                        /* CIF OUTPUT (856, 699), (159, 50) */
+                        /* CIF OUTPUT (1001, 868), (159, 50) */
                         OUTPUT plot(plot_data);
-                    /* CIF ANSWER (1081, 562), (100, 35) */
+                    /* CIF ANSWER (1226, 731), (100, 35) */
                     (false):
             ENDDECISION;
-            /* CIF DECISION (936, 764), (118, 70) */
+            /* CIF DECISION (1081, 933), (118, 70) */
             DECISION sub_cycle = 7
-            /* CIF COMMENT (1075, 774), (199, 50) */
+            /* CIF COMMENT (1220, 943), (199, 50) */
             COMMENT 'Compute next major cycle';
-                    /* CIF ANSWER (797, 854), (100, 35) */
+                    /* CIF ANSWER (942, 1023), (100, 35) */
                     (true):
-                        /* CIF TASK (705, 904), (283, 53) */
+                        /* CIF TASK (850, 1073), (283, 53) */
                         TASK sub_cycle := 0,
 major_cycle := (major_cycle + 1) mod 100;
-                        /* CIF PROCEDURECALL (722, 972), (249, 50) */
+                        /* CIF PROCEDURECALL (867, 1141), (249, 50) */
                         CALL S_JUMP_TO_NEXT_MAJOR_CYCLE;
-                    /* CIF ANSWER (1077, 854), (100, 35) */
+                    /* CIF ANSWER (1222, 1023), (100, 35) */
                     (false):
-                        /* CIF TASK (998, 904), (257, 50) */
+                        /* CIF TASK (1143, 1073), (257, 50) */
                         TASK sub_cycle := (sub_cycle + 1) mod 100;
             ENDDECISION;
-            /* CIF NEXTSTATE (946, 1037), (100, 50) */
+            /* CIF NEXTSTATE (1090, 1206), (100, 50) */
             NEXTSTATE Running;
     ENDSTATE;
-    /* CIF STATE (538, 53), (118, 50) */
+    /* CIF STATE (683, 222), (118, 50) */
     STATE Wait_for_GUI;
-        /* CIF INPUT (530, 123), (136, 50) */
+        /* CIF INPUT (675, 292), (136, 50) */
         INPUT start_simulation
 (gnc_input);
-            /* CIF PROCEDURECALL (502, 188), (193, 50) */
+            /* CIF PROCEDURECALL (646, 357), (193, 50) */
             CALL writeln
 ('[Orchestrator] Running');
-            /* CIF NEXTSTATE (549, 253), (100, 50) */
+            /* CIF NEXTSTATE (693, 422), (100, 50) */
             NEXTSTATE Running;
     ENDSTATE;
 ENDPROCESS orchestrator;
