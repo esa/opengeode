@@ -11,7 +11,7 @@ test-parse:
 test-ada: og.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n og.ali
 	$(GNATLINK) -o test_ada test_ada.o og.ali -lgnat
-	./test_ada
+	./test_ada | diff expected -
 
 
 test-llvm: og.o dataview-uniq.o | test_llvm.o

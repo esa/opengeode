@@ -947,7 +947,7 @@ class HorizontalSymbol(Symbol, object):
     def insert_symbol(self, parent, pos_x, pos_y):
         ''' Insert the symbol in the scene - Align below the parent '''
         if not parent:
-            self.position = QPointF(pos_x, pos_y)
+            self.position = QPointF(pos_x or 0, pos_y or 0)
             return
         super(HorizontalSymbol, self).insert_symbol(parent, pos_x, pos_y)
         if pos_x is None or pos_y is None:

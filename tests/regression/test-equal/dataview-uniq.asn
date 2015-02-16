@@ -15,5 +15,13 @@ AChoice ::= CHOICE {
 
 SeqBool ::= SEQUENCE(SIZE(1..5)) OF BOOLEAN
 
+MyReal ::= REAL (1.0 .. 5.0)
+MyOtherReal ::= REAL (1.0 .. 6.0)
 
+Nested ::= SEQUENCE {
+    a SEQUENCE {
+        b BOOLEAN
+    }
+}
+NestedArray ::= SEQUENCE (SIZE(1..2)) OF SEQUENCE { a BOOLEAN }
 END

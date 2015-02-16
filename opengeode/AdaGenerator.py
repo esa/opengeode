@@ -1218,7 +1218,7 @@ def _equality(expr):
     actual_type = type_name(expr.left.exprType)
     lbty = find_basic_type(expr.left.exprType)
     basic = lbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
-                          'RealType', 'EnumeratedType', 'ChoiceEnumeratedType')
+                          'EnumeratedType', 'ChoiceEnumeratedType')
     if basic:
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)

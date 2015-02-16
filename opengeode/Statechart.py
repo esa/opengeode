@@ -19,6 +19,7 @@
     Contact: maxime.perrotin@esa.int
 """
 
+import os
 import logging
 from collections import defaultdict
 import re
@@ -352,8 +353,10 @@ def update(scene):
             item.position = QtCore.QPointF(item.position - delta)
 
 
-def render_statechart(scene, graph=None, keep_pos=False):
-    ''' Render a graphviz/dot statechart on the QGraphicsScene '''
+def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
+    ''' Render a graphviz/dot statechart on the QGraphicsScene
+        set a filename to "dump_gfx" parameter to create a PNG of the graph
+    '''
     # Statechart symbols lookup table
     lookup = {'point': Point, 'record': Record, 'diamond': Diamond}
     try:
@@ -373,11 +376,18 @@ def render_statechart(scene, graph=None, keep_pos=False):
     # Compute all the coordinates (self-modifying function)
     # Force the fontsize of the nodes to be 12, as in OpenGEODE
     # use -n2 below to keep user-specified node coordinates
+    if dump_gfx:
+        dump_name = 'sc_' + os.path.basename(dump_gfx)
+        dump_gfx = os.path.dirname(dump_gfx) or '.' + os.sep + dump_name
+        if dump_gfx.split('.')[-1].lower() != 'png':
+            dump_gfx += '.png'
+
     graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
                  '-Gsplines=curved -Gsep=1 '
                  '-Gstart=random10 -Goverlap=false '
-            '-Nstyle=rounded -Nshape=record -Elen=1 {kp} -Tpng -ocoucou.png'
-            .format(kp='-n1' if keep_pos else ''))
+            '-Nstyle=rounded -Nshape=record -Elen=1 {kp} {dump}'
+            .format(kp='-n1' if keep_pos else '',
+                    dump=('-Tpng -o' + dump_gfx) if dump_gfx else ''))
     # bb is not visible directly - extract it from the low level api:
     bounding_rect = [float(val) for val in
             dotgraph.graphviz.agget(graph.handle, 'bb').split(',')]
@@ -390,8 +400,8 @@ def render_statechart(scene, graph=None, keep_pos=False):
 
     #fontname = graph.graph_attr.get('fontname')
     #fontsize = graph.graph_attr.get('fontsize')
-    with open('statechart.dot', 'w') as output:
-        output.write(graph.to_string())
+    #with open('statechart.dot', 'w') as output:
+    #    output.write(graph.to_string())
 
     nodes = preprocess_nodes(graph, bounding_rect, dot_dpi)
     node_symbols = []
