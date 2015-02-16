@@ -1,6 +1,6 @@
 *.pyc
 *.autosave
-
+*.swp
 sdl92.tokens
 install.record
 
