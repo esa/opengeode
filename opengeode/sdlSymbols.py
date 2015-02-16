@@ -936,7 +936,7 @@ class State(VerticalSymbol):
         # Get AST for the symbol and update the context dictionnary
         ast, _, _, _, _ = self.parser.parseSingleElement('state', pr_text)
         for each in ast.statelist:
-            CONTEXT.mapping[each] = None
+            CONTEXT.mapping[each.lower()] = None
 
     @property
     def completion_list(self):
