@@ -4,14 +4,14 @@ CC=gcc
 LLC=llc
 GNATMAKE=gnatmake
 GNATBIND=gnatbind
-GNATLINK=gnatlink
+GNATLINK=gnatlink -lgcov -coverage 
 O=0
 
 clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn *.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
-	       *.autosave
+	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov
 
 %.o: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --llvm -O$(O)
@@ -21,7 +21,7 @@ clean:
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -O$(O) -gnat2012 -c -g *.adb
+	$(GNATMAKE) -O$(O) -gnat2012 -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE
 	$(ASN1SCC) -c $< -typePrefix asn1Scc -equal

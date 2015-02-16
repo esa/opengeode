@@ -1335,7 +1335,14 @@ def not_expression(root, context):
 
     bty = find_basic_type(expr.expr.exprType)
     if bty.kind in ('BooleanType', ):
-        expr.exprType = BOOLEAN
+        if expr.expr.is_raw:
+            expr.expr.value = ['true'] \
+                    if expr.expr.value == ['false'] else ['false']
+            warnings.append(warning
+                    (root, 'Expression is always '+ expr.expr.value[0]))
+            expr = expr.expr
+        else:
+            expr.exprType = BOOLEAN
     elif bty.kind == 'BitStringType':
         expr.exprType = expr.expr.exprType
     elif bty.kind == 'SequenceOfType' and \
@@ -1756,7 +1763,10 @@ def variables(root, ta_ast, context):
             try:
                 fix_expression_types(expr, context)
                 def_value = expr.right
-            except(AttributeError, TypeError) as err:
+                basic = find_basic_type(asn1_sort)
+                if basic.kind.startswith(('Integer', 'Real')):
+                    check_range(basic, find_basic_type(def_value.exprType))
+            except(AttributeError, TypeError, Warning) as err:
                 #print (traceback.format_exc())
                 errors.append('Types are incompatible in DCL assignment: '
                     'left (' +
