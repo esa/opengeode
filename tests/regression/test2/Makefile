@@ -12,6 +12,7 @@ test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n orchestrator.ali
 	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali -lgnat
 	./test_ada
+	gcov orchestrator.adb
 
 test-llvm: orchestrator.o
 

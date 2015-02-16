@@ -4,7 +4,7 @@ CC=gcc
 LLC=llc
 GNATMAKE=gnatmake
 GNATBIND=gnatbind
-GNATLINK=gnatlink
+GNATLINK=gnatlink -lgcov -coverage 
 O=0
 
 clean:
@@ -21,7 +21,7 @@ clean:
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -O$(O) -gnat2012 -c -g *.adb
+	$(GNATMAKE) -O$(O) -gnat2012 -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE
 	$(ASN1SCC) -c $< -typePrefix asn1Scc -equal
