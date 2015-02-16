@@ -6,7 +6,7 @@ edit:
 	$(OPENGEODE) function1.pr system_structure.pr
 
 test-parse:
-	$(OPENGEODE) functin1.pr system_structure.pr --check
+	$(OPENGEODE) function1.pr system_structure.pr --check
 
 test-ada: function1.ali
 

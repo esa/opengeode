@@ -1756,7 +1756,10 @@ def variables(root, ta_ast, context):
             try:
                 fix_expression_types(expr, context)
                 def_value = expr.right
-            except(AttributeError, TypeError) as err:
+                basic = find_basic_type(asn1_sort)
+                if basic.kind.startswith(('Integer', 'Real')):
+                    check_range(basic, find_basic_type(def_value.exprType))
+            except(AttributeError, TypeError, Warning) as err:
                 #print (traceback.format_exc())
                 errors.append('Types are incompatible in DCL assignment: '
                     'left (' +
