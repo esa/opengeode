@@ -224,6 +224,13 @@ class PrimConstant(Primary):
     is_raw = False
 
 
+class PrimStateReference(Primary):
+    ''' This primary ("state" keyword) is used only in stop conditions and
+    possibly in the future in observers, to reference the state of the system
+    '''
+    is_raw = False
+
+
 class PrimBitStringLiteral(Primary):
     ''' Not supported yet '''
     pass

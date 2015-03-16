@@ -1183,6 +1183,12 @@ def _prim_selector(prim):
     return stmts, unicode(ada_string), local_decl
 
 
+@expression.register(ogAST.PrimStateReference)
+def _primary_state_reference(prim):
+    ''' Reference to the current state '''
+    return [], u'state', []
+
+
 @expression.register(ogAST.ExprPlus)
 @expression.register(ogAST.ExprMul)
 @expression.register(ogAST.ExprMinus)
@@ -1446,7 +1452,8 @@ def _enumerated_value(primary):
     for each in basic.EnumValues:
         if each.lower() == enumerant:
             break
-    ada_string = (u'asn1Scc' + basic.EnumValues[each].EnumID)
+    prefix = type_name(basic)
+    ada_string = (prefix + basic.EnumValues[each].EnumID)
     return [], unicode(ada_string), []
 
 
@@ -1466,7 +1473,7 @@ def _choice_determinant(primary):
 def _integer(primary):
     ''' Generate code for a raw numerical value  '''
     if float(primary.value[0]) < 0:
-        # Parentesize negative integers for maintaining
+        # Put brackets around negative integers for maintaining
         # the precedence in the generated code
         ada_string = u'({})'.format(primary.value[0])
     else:
@@ -2047,6 +2054,10 @@ def type_name(a_type, use_prefix=True):
         return u'String'
     elif a_type.kind == 'ChoiceEnumeratedType':
         return u'Asn1Int'
+    elif a_type.kind == 'StateEnumeratedType':
+        return u''
+    elif a_type.kind == 'EnumeratedType':
+        return u'asn1Scc'
     else:
         raise NotImplementedError('Type name for {}'.format(a_type.kind))
 

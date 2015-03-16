@@ -881,7 +881,7 @@ def fix_enumerated_and_choice(expr_enum, context):
     ''' If left side of the expression is of Enumerated or Choice type,
         check if right side is a literal of that sort, and update type '''
     kind = find_basic_type(expr_enum.left.exprType).kind
-    if kind == 'EnumeratedType':
+    if kind in ('EnumeratedType', 'StateEnumeratedType'):
         prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right)
     elif kind == 'ChoiceEnumeratedType':
         prim = ogAST.PrimChoiceDeterminant(primary=expr_enum.right)
@@ -906,6 +906,7 @@ def fix_expression_types(expr, context):
         else:
             typed_expr = side
             ref_type = typed_expr.exprType
+
 
     # If a side is a raw Sequence Of with unknown type, try to resolve it
     for side_a, side_b in permutations(('left', 'right')):
@@ -1721,6 +1722,13 @@ def primary(root, context):
         prim = ogAST.PrimOctetStringLiteral()
         warnings.append(
             warning(root, 'Octet string literal not supported yet'))
+    elif root.type == lexer.STATE:
+        prim = ogAST.PrimStateReference()
+        prim.exprType = ENUMERATED()
+        prim.exprType.kind = 'StateEnumeratedType'
+        prim.exprType.EnumValues = {value: type('', (object,),
+                                               {'EnumID': value})
+                                    for value in context.mapping.viewkeys()}
     else:
         errors.append('Parsing error (token {}, line {}, "{}")'
                       .format(sdl92Parser.tokenNames[root.type],
