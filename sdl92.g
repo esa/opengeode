@@ -869,6 +869,7 @@ primary
         |       '{'
                 primary (COMMA primary)*
                 '}'                         -> ^(SEQOF primary+)
+        |       STATE^
         ;
 
 
@@ -1077,8 +1078,8 @@ use_asn1
 /* OpenGEODE specific: Boolean condition that can be used in simulators
 */
 stop_if
-        :       STOP IF expression
-        ->      ^(STOPIF expression);
+        :       (STOP IF expression end)+
+        ->      ^(STOPIF expression+);
 
 symbolname
         :       START

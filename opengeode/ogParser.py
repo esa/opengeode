@@ -3909,16 +3909,20 @@ def label(root, parent, context=None):
 
 
 def stop_if(root, parent, context=None):
-    ''' Parse a STOP IF expression - Return an expression
+    ''' Parse a set of stop conditions - Return an list of expressions
         Can be used in simulators to cut off paths
         ** This is an extension of the SDL grammar **
     '''
-    expr = root.getChild(0)
-    expr, errors, warnings = expression(expr, context)
-    expr.exprType = BOOLEAN
+    expressions, errors, warnings = [], [], []
+    for each in root.getChildren():
+        expr, err, warn = expression(each, context)
+        expr.exprType = BOOLEAN
+        expressions.append(expr)
+        errors.extend(err)
+        warnings.extend(warn)
     errors = [[e, [0, 0], []] for e in errors]
     warnings = [[w, [0, 0], []] for w in warnings]
-    return expr, errors, warnings
+    return expressions, errors, warnings
 
 
 def pr_file(root):
