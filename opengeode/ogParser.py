@@ -881,7 +881,7 @@ def fix_enumerated_and_choice(expr_enum, context):
     ''' If left side of the expression is of Enumerated or Choice type,
         check if right side is a literal of that sort, and update type '''
     kind = find_basic_type(expr_enum.left.exprType).kind
-    if kind == 'EnumeratedType':
+    if kind in ('EnumeratedType', 'StateEnumeratedType'):
         prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right)
     elif kind == 'ChoiceEnumeratedType':
         prim = ogAST.PrimChoiceDeterminant(primary=expr_enum.right)
@@ -906,6 +906,7 @@ def fix_expression_types(expr, context):
         else:
             typed_expr = side
             ref_type = typed_expr.exprType
+
 
     # If a side is a raw Sequence Of with unknown type, try to resolve it
     for side_a, side_b in permutations(('left', 'right')):
@@ -1721,6 +1722,13 @@ def primary(root, context):
         prim = ogAST.PrimOctetStringLiteral()
         warnings.append(
             warning(root, 'Octet string literal not supported yet'))
+    elif root.type == lexer.STATE:
+        prim = ogAST.PrimStateReference()
+        prim.exprType = ENUMERATED()
+        prim.exprType.kind = 'StateEnumeratedType'
+        prim.exprType.EnumValues = {value: type('', (object,),
+                                               {'EnumID': value})
+                                    for value in context.mapping.viewkeys()}
     else:
         errors.append('Parsing error (token {}, line {}, "{}")'
                       .format(sdl92Parser.tokenNames[root.type],
@@ -3908,6 +3916,23 @@ def label(root, parent, context=None):
     return lab, errors, warnings
 
 
+def stop_if(root, parent, context=None):
+    ''' Parse a set of stop conditions - Return an list of expressions
+        Can be used in simulators to cut off paths
+        ** This is an extension of the SDL grammar **
+    '''
+    expressions, errors, warnings = [], [], []
+    for each in root.getChildren():
+        expr, err, warn = expression(each, context)
+        expr.exprType = BOOLEAN
+        expressions.append(expr)
+        errors.extend(err)
+        warnings.extend(warn)
+    errors = [[e, [0, 0], []] for e in errors]
+    warnings = [[w, [0, 0], []] for w in warnings]
+    return expressions, errors, warnings
+
+
 def pr_file(root):
     ''' Complete PR model - can be made up from several files/strings '''
     errors = []
@@ -4065,7 +4090,7 @@ def parse_pr(files=None, string=None):
     return og_ast, warnings, errors
 
 
-def parseSingleElement(elem='', string=''):
+def parseSingleElement(elem='', string='', context=None):
     '''
         Parse any symbol and return syntax error and AST entry
         Used for on-the-fly checks when user edits text
@@ -4075,7 +4100,7 @@ def parseSingleElement(elem='', string=''):
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
             'connect_part', 'process_definition', 'proc_start', 'state_start',
-            'signalroute'))
+            'signalroute', 'stop_if'))
     # Create a dummy context, needed to place context data
     if elem == 'proc_start':
         elem = 'start'
@@ -4084,7 +4109,7 @@ def parseSingleElement(elem='', string=''):
         elem = 'start'
         context = ogAST.CompositeState()
     else:
-        context = ogAST.Process()
+        context = context or ogAST.Process()
     LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)
