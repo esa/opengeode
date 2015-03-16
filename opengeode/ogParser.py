@@ -3908,6 +3908,19 @@ def label(root, parent, context=None):
     return lab, errors, warnings
 
 
+def stop_if(root, parent, context=None):
+    ''' Parse a STOP IF expression - Return an expression
+        Can be used in simulators to cut off paths
+        ** This is an extension of the SDL grammar **
+    '''
+    expr = root.getChild(0)
+    expr, errors, warnings = expression(expr, context)
+    expr.exprType = BOOLEAN
+    errors = [[e, [0, 0], []] for e in errors]
+    warnings = [[w, [0, 0], []] for w in warnings]
+    return expr, errors, warnings
+
+
 def pr_file(root):
     ''' Complete PR model - can be made up from several files/strings '''
     errors = []
@@ -4065,7 +4078,7 @@ def parse_pr(files=None, string=None):
     return og_ast, warnings, errors
 
 
-def parseSingleElement(elem='', string=''):
+def parseSingleElement(elem='', string='', context=None):
     '''
         Parse any symbol and return syntax error and AST entry
         Used for on-the-fly checks when user edits text
@@ -4075,7 +4088,7 @@ def parseSingleElement(elem='', string=''):
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
             'connect_part', 'process_definition', 'proc_start', 'state_start',
-            'signalroute'))
+            'signalroute', 'stop_if'))
     # Create a dummy context, needed to place context data
     if elem == 'proc_start':
         elem = 'start'
@@ -4084,7 +4097,7 @@ def parseSingleElement(elem='', string=''):
         elem = 'start'
         context = ogAST.CompositeState()
     else:
-        context = ogAST.Process()
+        context = context or ogAST.Process()
     LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
     parser = parser_init(string=string)
     parser_ptr = getattr(parser, elem)

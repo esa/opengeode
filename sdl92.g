@@ -106,6 +106,7 @@ tokens {
         STATELIST;
         STIMULUS;
         STOP;
+        STOPIF;
         STRING;
         STRUCT;
         SYNONYM;
@@ -1072,6 +1073,12 @@ use_asn1
         :       cif_decl KEEP SPECIFIC GEODE ASNFILENAME STRING cif_end
         ->      ^(ASN1 STRING);
 
+
+/* OpenGEODE specific: Boolean condition that can be used in simulators
+*/
+stop_if
+        :       STOP IF expression
+        ->      ^(STOPIF expression);
 
 symbolname
         :       START
