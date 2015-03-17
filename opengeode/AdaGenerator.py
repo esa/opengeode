@@ -216,9 +216,9 @@ LD_LIBRARY_PATH=. taste-gui -l
     # Add the declaration of the runTransition procedure
     process_level_decl.append('procedure runTransition(Id: Integer);')
 
-    # Generate the code of the start transition:
+    # Generate the code of the start transition (if process not empty)
     start_transition = ['begin',
-                        'runTransition(0);']
+                        'runTransition(0);'] if process.transitions else []
 
     # Generate the TASTE template
     try:
@@ -1884,10 +1884,16 @@ def _inner_procedure(proc, **kwargs):
     for var in proc.fpar:
         VARIABLES.update({var['name']: (var['type'], None)})
 
-    # Build the procedure signature
-    pi_header = u'procedure {sep}{proc_name}'.format(sep=(u'p' + UNICODE_SEP)
+    # Build the procedure signature (function if it can return a value)
+    ret_type = type_name(proc.return_type) if proc.return_type else None
+    pi_header = u'{kind} {sep}{proc_name}{ret}'.format(kind='procedure'
+                                                  if not proc.return_type
+                                                  else 'function',
+                                                  sep=(u'p' + UNICODE_SEP)
                                                   if not proc.external else '',
-                                                  proc_name=proc.inputString)
+                                                  proc_name=proc.inputString,
+                                                  ret=(' return '+ret_type)
+                                                  if ret_type else '')
     if proc.fpar:
         pi_header += '('
         params = []

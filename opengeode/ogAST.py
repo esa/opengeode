@@ -428,7 +428,7 @@ class ProcedureCall(Output):
 
 
 class Terminator(object):
-    ''' Terminator elements (join, nextstate, stop) '''
+    ''' Terminator elements (join, nextstate, stop, return) '''
     def __init__(self, defName=''):
         ''' Initialize terminator attributes '''
         self.inputString = defName
