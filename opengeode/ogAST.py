@@ -771,6 +771,8 @@ class Procedure(object):
         self.transitions = []
         # Determine if a procedure is externally defined
         self.external = False
+        # Determine if a procedure is a remote procedure
+        self.exported = False
         # Optional comment
         self.comment = None
         # Set of symbols contained in the procedure (type Automaton)

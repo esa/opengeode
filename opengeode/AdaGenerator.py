@@ -1898,6 +1898,7 @@ def _inner_procedure(proc, **kwargs):
                                                   proc_name=proc.inputString,
                                                   ret=(' return '+ret_type)
                                                   if ret_type else '')
+
     if proc.fpar:
         pi_header += '('
         params = []
@@ -1911,6 +1912,11 @@ def _inner_procedure(proc, **kwargs):
         pi_header += ')'
 
     local_decl.append(pi_header + ';')
+    # Remote procedures need to be exported with a C calling convention
+    if proc.exported and not proc.external:
+        local_decl.append(u'pragma export'
+                          u'(C, p{sep}{proc_name}, "_{proc_name}");'
+                        .format(sep=UNICODE_SEP, proc_name=proc.inputString))
 
     if proc.external:
         local_decl.append(u'pragma import(C, {});'.format(proc.inputString))
