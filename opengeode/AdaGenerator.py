@@ -213,8 +213,9 @@ LD_LIBRARY_PATH=. taste-gui -l
             process_level_decl.append(u'{name} : constant := {val};'
                                       .format(name=name, val=str(val)))
 
-    # Add the declaration of the runTransition procedure
-    process_level_decl.append('procedure runTransition(Id: Integer);')
+    # Add the declaration of the runTransition procedure, if needed
+    if process.transitions:
+        process_level_decl.append('procedure runTransition(Id: Integer);')
 
     # Generate the code of the start transition (if process not empty)
     start_transition = ['begin',
@@ -513,9 +514,6 @@ package {process_name} is'''.format(process_name=process_name,
                 u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
                 .format(timer=timer, proc=process_name))
 
-    taste_template.append('procedure runTransition(Id: Integer) is')
-    taste_template.append('trId : Integer := Id;')
-
     # If the process has no input, output, procedures, or timers, then Ada
     # will not compile the body - generate a pragma to fix this
     if not process.timers and not process.procedures \
@@ -540,44 +538,50 @@ package {process_name} is'''.format(process_name=process_name,
         local_decl_transitions.extend(label_decl)
         code_labels.extend(code_label)
 
-    # Declare the local variables needed by the transitions in the template
-    taste_template.extend(set(local_decl_transitions))
-    taste_template.append('begin')
+    # Generate the code of the runTransition procedure, if needed
+    if process.transitions:
+        taste_template.append('procedure runTransition(Id: Integer) is')
+        taste_template.append('trId : Integer := Id;')
 
-    # Generate a loop that ends when a next state is reached
-    # (there can be chained transition when entering a nested state)
-    taste_template.append('while (trId /= -1) loop')
+        # Declare the local variables needed by the transitions in the template
+        taste_template.extend(set(local_decl_transitions))
+        taste_template.append('begin')
 
-    # Generate the switch-case on the transition id
-    taste_template.append('case trId is')
+        # Generate a loop that ends when a next state is reached
+        # (there can be chained transition when entering a nested state)
+        taste_template.append('while (trId /= -1) loop')
 
-    for idx, val in enumerate(code_transitions):
-        taste_template.append(u'when {idx} =>'.format(idx=idx))
-        val = [u'{line}'.format(line=l) for l in val]
-        if val:
-            taste_template.extend(val)
-        else:
-            taste_template.append('null;')
+        # Generate the switch-case on the transition id
+        taste_template.append('case trId is')
 
-    taste_template.append('when others =>')
-    taste_template.append('null;')
+        for idx, val in enumerate(code_transitions):
+            taste_template.append(u'when {idx} =>'.format(idx=idx))
+            val = [u'{line}'.format(line=l) for l in val]
+            if val:
+                taste_template.extend(val)
+            else:
+                taste_template.append('null;')
 
-    taste_template.append('end case;')
-    if code_labels:
-        # Due to nested states (chained transitions) jump over label code
-        # (NEXTSTATEs do not return from runTransition)
-        taste_template.append('goto next_transition;')
+        taste_template.append('when others =>')
+        taste_template.append('null;')
 
-    # Add the code for the floating labels
-    taste_template.extend(code_labels)
+        taste_template.append('end case;')
+        if code_labels:
+            # Due to nested states (chained transitions) jump over label code
+            # (NEXTSTATEs do not return from runTransition)
+            taste_template.append('goto next_transition;')
 
-    #if code_labels:
-    taste_template.append('<<next_transition>>')
-    taste_template.append('null;')
-    taste_template.append('end loop;')
-    taste_template.append('end runTransition;')
-    taste_template.append('\n')
+        # Add the code for the floating labels
+        taste_template.extend(code_labels)
 
+        #if code_labels:
+        taste_template.append('<<next_transition>>')
+        taste_template.append('null;')
+        taste_template.append('end loop;')
+        taste_template.append('end runTransition;')
+        taste_template.append('\n')
+
+    # Add code of the package elaboration
     taste_template.extend(start_transition)
     taste_template.append('end {process_name};'
             .format(process_name=process_name))
