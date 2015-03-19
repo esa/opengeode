@@ -17,7 +17,7 @@ def main():
         make(path, 'clean')
         results.append(result)
         sys.stdout.write('\033[1m\033[')
-        sys.stdout.write('32m[OK]\n' if result[0] == 0 else '31mFAILED\n')
+        sys.stdout.write('32m[OK]\n' if result[0] == 0 else '31m[FAILED]\n')
         sys.stdout.flush()
 
     sys.stdout.write('\n')
