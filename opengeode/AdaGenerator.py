@@ -92,6 +92,7 @@ PROCEDURES = []
 SHARED_LIB = False
 
 UNICODE_SEP = u'\u00dc'
+LPREFIX = u'ctxt'
 
 @singledispatch
 def generate(*args, **kwargs):
@@ -112,8 +113,10 @@ def _process(process, simu=False, **kwargs):
     OUT_SIGNALS.extend(process.output_signals)
     PROCEDURES.extend(process.procedures)
     global SHARED_LIB
+    global LPREFIX
     if simu:
         SHARED_LIB = True
+        LPREFIX = process_name + u'_ctxt'
 
     # When building a shared library (with simu=True), generate a "mini-cv"
     # for aadl2glueC to create the code interfacing with asn1scc
@@ -183,8 +186,21 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     VARIABLES.update(process.variables)
 
-    # Generate the code to declare process-level variables
     process_level_decl = []
+
+    # Establish the list of states (excluding START states)
+    statelist = ', '.join(name for name in process.mapping.iterkeys()
+                             if not name.endswith(u'START')) or 'No_State'
+    if statelist:
+        states_decl = u'type States is ({});'.format(statelist)
+        process_level_decl.append(states_decl)
+
+    # Generate the code to declare process-level context
+    process_level_decl.extend(['type {}_Ty is'.format(LPREFIX), 'record'])
+
+    if statelist:
+        process_level_decl.append('state : States;')
+
     for var_name, (var_type, def_value) in process.variables.viewitems():
         if def_value:
             # Expression must be a ground expression, i.e. must not
@@ -195,26 +211,23 @@ LD_LIBRARY_PATH=. taste-gui -l
                 dstr = array_content(def_value, dstr, varbty)
             assert not dst and not dlocal, 'DCL: Expecting a ground expression'
         process_level_decl.append(
-                        u'l_{n} : aliased {sort}{default};'
+                        u'{n} : aliased {sort}{default};'
                         .format(n=var_name,
                                 sort=type_name(var_type),
                                 default=u' := ' + dstr if def_value else u''))
 
-    # Add the process states list to the process-level variables
-    statelist = ', '.join(name for name in process.mapping.iterkeys()
-                             if not name.endswith(u'START')) or 'No_State'
-    if statelist:
-        states_decl = u'type States is ({});'.format(statelist)
-        process_level_decl.append(states_decl)
-        process_level_decl.append('state : states;')
+    process_level_decl.append('end record;'.format(LPREFIX))
+    process_level_decl.append('{ctxt}: {ctxt}_Ty;'.format(ctxt=LPREFIX))
+
 
     for name, val in process.mapping.viewitems():
         if name.endswith(u'START') and name != u'START':
             process_level_decl.append(u'{name} : constant := {val};'
                                       .format(name=name, val=str(val)))
 
-    # Add the declaration of the runTransition procedure
-    process_level_decl.append('procedure runTransition(Id: Integer);')
+    # Add the declaration of the runTransition procedure, if needed
+    if process.transitions:
+        process_level_decl.append('procedure runTransition(Id: Integer);')
 
     # Generate the code of the start transition (if process not empty)
     start_transition = ['begin',
@@ -267,16 +280,17 @@ package {process_name} is'''.format(process_name=process_name,
         dll_api.append('-- DLL Interface to remotely change internal data')
         # Add function allowing to trace current state as a string
         process_level_decl.append("function get_state return chars_ptr "
-                                  "is (New_String(states'Image(state))) "
-                                  "with Export, Convention => C, "
-                                  'Link_Name => "{}_state";'
-                                  .format(process_name))
+                                  "is (New_String(states'Image({ctxt}.state)))"
+                                  " with Export, Convention => C, "
+                                  'Link_Name => "{name}_state";'
+                                  .format(name=process_name, ctxt=LPREFIX))
         set_state_decl = "procedure set_state(new_state: chars_ptr)"
         ads_template.append("{};".format(set_state_decl))
         ads_template.append('pragma export(C, set_state, "_set_state");')
         dll_api.append("{} is".format(set_state_decl))
         dll_api.append("begin")
-        dll_api.append("state := States'Value(Value(new_state));")
+        dll_api.append("{}.state := States'Value(Value(new_state));"
+                       .format(LPREFIX))
         dll_api.append("end set_state;")
         dll_api.append("")
 
@@ -284,16 +298,16 @@ package {process_name} is'''.format(process_name=process_name,
         for var_name, (var_type, _) in process.variables.viewitems():
             # Getters for local variables
             process_level_decl.append("function l_{name}_size return integer "
-                                      "is (l_{name}'Size/8) with Export, "
-                                      "Convention => C, "
-                                      'Link_Name => "{name}_size";'
-                                      .format(name=var_name))
+                                     "is ({prefix}.{name}'Size/8) with Export,"
+                                     " Convention => C,"
+                                     ' Link_Name => "{name}_size";'
+                                     .format(prefix=LPREFIX, name=var_name))
             process_level_decl.append("function l_{name}_value"
-                                      " return access {sort} "
-                                      "is (l_{name}'access) with Export, "
-                                      "Convention => C, "
-                                      'Link_Name => "{name}_value";'
-                                      .format(name=var_name,
+                                     " return access {sort} "
+                                     "is ({prefix}.{name}'access) with Export,"
+                                     " Convention => C,"
+                                     ' Link_Name => "{name}_value";'
+                                     .format(prefix=LPREFIX, name=var_name,
                                               sort=type_name(var_type)))
             # Setters for local variables
             setter_decl = "procedure dll_set_l_{name}(value: access {sort})"\
@@ -303,7 +317,7 @@ package {process_name} is'''.format(process_name=process_name,
                                 ' "_set_{name}");'.format(name=var_name))
             dll_api.append('{} is'.format(setter_decl))
             dll_api.append('begin')
-            dll_api.append('l_{} := value.all;'.format(var_name))
+            dll_api.append('{}.{} := value.all;'.format(LPREFIX, var_name))
             dll_api.append('end dll_set_l_{};'.format(var_name))
             dll_api.append('')
 
@@ -353,7 +367,7 @@ package {process_name} is'''.format(process_name=process_name,
         pi_header += ' is'
         taste_template.append(pi_header)
         taste_template.append('begin')
-        taste_template.append('case state is')
+        taste_template.append('case {ctxt}.state is'.format(ctxt=LPREFIX))
         for state in process.mapping.viewkeys():
             if state.endswith(u'START'):
                 continue
@@ -385,8 +399,10 @@ package {process_name} is'''.format(process_name=process_name,
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    taste_template.append(u'l_{inp} := {tInp}.all;'.format(
-                        inp=inp, tInp=param_name))
+                    taste_template.append(u'{ctxt}.{inp} := {tInp}.all;'
+                                          .format(ctxt=LPREFIX,
+                                                  inp=inp,
+                                                  tInp=param_name))
                 # Execute the correponding transition
                 if input_def.transition:
                     taste_template.append(u'runTransition({idx});'.format(
@@ -398,8 +414,7 @@ package {process_name} is'''.format(process_name=process_name,
         taste_template.append('when others =>')
         taste_template.append('null;')
         taste_template.append('end case;')
-        taste_template.append(u'end {sig_name};'.format(
-                                                    sig_name=signal['name']))
+        taste_template.append(u'end {};'.format(signal['name']))
         taste_template.append('\n')
 
     # for the .ads file, generate the declaration of the required interfaces
@@ -513,9 +528,6 @@ package {process_name} is'''.format(process_name=process_name,
                 u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
                 .format(timer=timer, proc=process_name))
 
-    taste_template.append('procedure runTransition(Id: Integer) is')
-    taste_template.append('trId : Integer := Id;')
-
     # If the process has no input, output, procedures, or timers, then Ada
     # will not compile the body - generate a pragma to fix this
     if not process.timers and not process.procedures \
@@ -540,44 +552,50 @@ package {process_name} is'''.format(process_name=process_name,
         local_decl_transitions.extend(label_decl)
         code_labels.extend(code_label)
 
-    # Declare the local variables needed by the transitions in the template
-    taste_template.extend(set(local_decl_transitions))
-    taste_template.append('begin')
+    # Generate the code of the runTransition procedure, if needed
+    if process.transitions:
+        taste_template.append('procedure runTransition(Id: Integer) is')
+        taste_template.append('trId : Integer := Id;')
 
-    # Generate a loop that ends when a next state is reached
-    # (there can be chained transition when entering a nested state)
-    taste_template.append('while (trId /= -1) loop')
+        # Declare the local variables needed by the transitions in the template
+        taste_template.extend(set(local_decl_transitions))
+        taste_template.append('begin')
 
-    # Generate the switch-case on the transition id
-    taste_template.append('case trId is')
+        # Generate a loop that ends when a next state is reached
+        # (there can be chained transition when entering a nested state)
+        taste_template.append('while (trId /= -1) loop')
 
-    for idx, val in enumerate(code_transitions):
-        taste_template.append(u'when {idx} =>'.format(idx=idx))
-        val = [u'{line}'.format(line=l) for l in val]
-        if val:
-            taste_template.extend(val)
-        else:
-            taste_template.append('null;')
+        # Generate the switch-case on the transition id
+        taste_template.append('case trId is')
 
-    taste_template.append('when others =>')
-    taste_template.append('null;')
+        for idx, val in enumerate(code_transitions):
+            taste_template.append(u'when {idx} =>'.format(idx=idx))
+            val = [u'{line}'.format(line=l) for l in val]
+            if val:
+                taste_template.extend(val)
+            else:
+                taste_template.append('null;')
 
-    taste_template.append('end case;')
-    if code_labels:
-        # Due to nested states (chained transitions) jump over label code
-        # (NEXTSTATEs do not return from runTransition)
-        taste_template.append('goto next_transition;')
+        taste_template.append('when others =>')
+        taste_template.append('null;')
 
-    # Add the code for the floating labels
-    taste_template.extend(code_labels)
+        taste_template.append('end case;')
+        if code_labels:
+            # Due to nested states (chained transitions) jump over label code
+            # (NEXTSTATEs do not return from runTransition)
+            taste_template.append('goto next_transition;')
 
-    #if code_labels:
-    taste_template.append('<<next_transition>>')
-    taste_template.append('null;')
-    taste_template.append('end loop;')
-    taste_template.append('end runTransition;')
-    taste_template.append('\n')
+        # Add the code for the floating labels
+        taste_template.extend(code_labels)
 
+        #if code_labels:
+        taste_template.append('<<next_transition>>')
+        taste_template.append('null;')
+        taste_template.append('end loop;')
+        taste_template.append('end runTransition;')
+        taste_template.append('\n')
+
+    # Add code of the package elaboration
     taste_template.extend(start_transition)
     taste_template.append('end {process_name};'
             .format(process_name=process_name))
@@ -762,7 +780,7 @@ def _call_external_function(output, **kwargs):
                 # (If needed, i.e. if argument is not a local variable)
                 if param_direction == 'in' \
                         and (not (isinstance(param, ogAST.PrimVariable)
-                        and p_id.startswith('l_'))
+                        and p_id.startswith(LPREFIX)) # NO FIXME WITH CTXT
                         or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
                     local_decl.append('{tmp} : aliased {sort};'
@@ -845,6 +863,7 @@ def _task_forloop(task, **kwargs):
         for x in iterable (a SEQUENCE OF)
     '''
     stmt, local_decl = [], []
+    local_scope = dict(LOCAL_VAR)
     if task.comment:
         stmt.extend(traceability(task.comment))
     stmt.extend(traceability(task))
@@ -881,6 +900,9 @@ def _task_forloop(task, **kwargs):
                                                                stop=stop_str)])
         else:
             # case of form: FOR x in SEQUENCE OF
+            # Add iterator to the list of local variables
+            LOCAL_VAR.update({loop['var']: (loop['type'], None)})
+
             list_stmt, list_str, list_local = expression(loop['list'])
             basic_type = find_basic_type(loop['list'].exprType)
             list_payload = list_str + string_payload(loop['list'], list_str)
@@ -918,6 +940,9 @@ def _task_forloop(task, **kwargs):
         stmt.append('end loop;')
         if (loop['range'] and loop['range']['step'] != 1) or loop['list']:
             stmt.append('end;')
+    # Restore list of local variables
+    LOCAL_VAR.clear()
+    LOCAL_VAR.update(local_scope)
     return stmt, local_decl
 
 
@@ -935,7 +960,12 @@ def expression(expr):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
-    sep = u'l_' if find_var(prim.value[0]) else u''
+    var = find_var(prim.value[0])
+    if not var or is_local(var):
+        sep = ''
+    else:
+        sep = LPREFIX + '.'
+    #sep = (LPREFIX + '.') if find_var(prim.value[0]) else u''
 
     ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
@@ -1186,7 +1216,7 @@ def _prim_selector(prim):
 @expression.register(ogAST.PrimStateReference)
 def _primary_state_reference(prim):
     ''' Reference to the current state '''
-    return [], u'state', []
+    return [], u'{}.state'.format(LPREFIX), []
 
 
 @expression.register(ogAST.ExprPlus)
@@ -1807,13 +1837,14 @@ def _transition(tr, **kwargs):
                     code.append(u'trId := ' +
                                 unicode(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
-                        code.append(u'state := {nextState};'.format(
-                                nextState=tr.terminator.inputString))
+                        code.append(u'{ctxt}.state := {nextState};'
+                                  .format(ctxt=LPREFIX,
+                                          nextState=tr.terminator.inputString))
                 else:
                     if any(next_id
                            for next_id in tr.terminator.candidate_id.viewkeys()
                            if next_id != -1):
-                        code.append('case state is')
+                        code.append('case {}.state is'.format(LPREFIX))
                         for nid, sta in tr.terminator.candidate_id.viewitems():
                             if nid != -1:
                                 for each in sta:
@@ -1877,12 +1908,17 @@ def _inner_procedure(proc, **kwargs):
     # with procedure defined inside the current procedure
     # Not critical: the editor forbids procedures inside procedures
 
-    # Save variable scope (as local variables may shadow process variables)
+    # Save variable scopes (as local variables may shadow process variables)
     outer_scope = dict(VARIABLES)
+    local_scope = dict(LOCAL_VAR)
     VARIABLES.update(proc.variables)
+    # Store local variables in global context
+    LOCAL_VAR.update(proc.variables)
     # Also add procedure parameters in scope
     for var in proc.fpar:
-        VARIABLES.update({var['name']: (var['type'], None)})
+        elem = {var['name']: (var['type'], None)}
+        VARIABLES.update(elem)
+        LOCAL_VAR.update(elem)
 
     # Build the procedure signature (function if it can return a value)
     ret_type = type_name(proc.return_type) if proc.return_type else None
@@ -1894,12 +1930,13 @@ def _inner_procedure(proc, **kwargs):
                                                   proc_name=proc.inputString,
                                                   ret=(' return '+ret_type)
                                                   if ret_type else '')
+
     if proc.fpar:
         pi_header += '('
         params = []
         for fpar in proc.fpar:
             typename = type_name(fpar['type'])
-            params.append(u'l_{name}: in{out} {ptype}'.format(
+            params.append(u'{name}: in{out} {ptype}'.format(
                     name=fpar.get('name'),
                     out=' out' if fpar.get('direction') == 'out' else '',
                     ptype=typename))
@@ -1907,6 +1944,11 @@ def _inner_procedure(proc, **kwargs):
         pi_header += ')'
 
     local_decl.append(pi_header + ';')
+    # Remote procedures need to be exported with a C calling convention
+    if proc.exported and not proc.external:
+        local_decl.append(u'pragma export'
+                          u'(C, p{sep}{proc_name}, "_{proc_name}");'
+                        .format(sep=UNICODE_SEP, proc_name=proc.inputString))
 
     if proc.external:
         local_decl.append(u'pragma import(C, {});'.format(proc.inputString))
@@ -1929,7 +1971,7 @@ def _inner_procedure(proc, **kwargs):
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'l_{name} : aliased {sort}{default};'
+            code.append(u'{name} : aliased {sort}{default};'
                         .format(name=var_name,
                                 sort=typename,
                                 default=' := ' + dstr if def_value else ''))
@@ -1957,6 +1999,8 @@ def _inner_procedure(proc, **kwargs):
     # Reset the scope to how it was prior to the procedure definition
     VARIABLES.clear()
     VARIABLES.update(outer_scope)
+    LOCAL_VAR.clear()
+    LOCAL_VAR.update(local_scope)
 
     return code, local_decl
 
@@ -1983,14 +2027,13 @@ def array_content(prim, values, asnty):
     inputs: prim is of type PrimStringLiteral or PrimSequenceOf
     values is a string with the sequence of numbers as processed by expression
     asnty is the reference type of the string literal '''
-    #rtype = find_basic_type(prim.exprType)
     if asnty.Min != asnty.Max:
         length = len(prim.value)
         if isinstance(prim, ogAST.PrimStringLiteral):
             # Quotes are kept in string literals
             length -= 2
         # Reference type can vary -> there is a Length field
-        rlen = u", Length => {}".format(length) # rtype.Min)
+        rlen = u", Length => {}".format(length)
     else:
         rlen = u""
     if isinstance(prim, ogAST.PrimStringLiteral):
@@ -2000,7 +2043,7 @@ def array_content(prim, values, asnty):
         _, df, _ = expression(prim.value[0])
         if isinstance(prim.value[0], (ogAST.PrimSequenceOf,
                                       ogAST.PrimStringLiteral)):
-            df = array_content(prim.value[0], df, asnty)
+            df = array_content(prim.value[0], df, asnty.type)
     return u"(Data => ({}{}others => {}){})".format(values,
                                                     ', ' if values else '',
                                                     df, rlen)
@@ -2074,6 +2117,12 @@ def find_var(var):
         if var.lower() == visible_var.lower():
             return visible_var
     return None
+
+
+def is_local(var):
+    ''' Check if a variable is in the global context or in a local scope
+        Typically needed to select the right prefix to use '''
+    return var in LOCAL_VAR.viewkeys()
 
 
 def path_type(path):

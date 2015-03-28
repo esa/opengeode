@@ -8,6 +8,10 @@ FixedIntList ::= SEQUENCE (SIZE(3)) OF TASTE-Peek-id
 
 MyEnum ::= ENUMERATED {one, two, three, four, five}
 
+MyChoice ::= CHOICE { a BOOLEAN, b ENUMERATED { aa, bb } }
+
+MySeq ::= SEQUENCE { a BOOLEAN, b MyChoice }
+
 END
  
 

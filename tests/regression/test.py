@@ -10,16 +10,20 @@ def main():
     paths = sys.argv[2:]
 
     for path in paths:
+        sys.stdout.write('\033[0m')
+        sys.stdout.write(path[:-1] + ' ... ')
+        sys.stdout.flush()
         result = make(path, rule)
         make(path, 'clean')
         results.append(result)
-        sys.stdout.write('.' if result[0] == 0 else 'F')
+        sys.stdout.write('\033[1m\033[')
+        sys.stdout.write('32m[OK]\n' if result[0] == 0 else '31m[FAILED]\n')
         sys.stdout.flush()
 
     sys.stdout.write('\n')
 
     elapsed = time.time() - start
-    sys.exit(summarize(results, elapsed))
+    return summarize(results, elapsed)
 
 
 def make(path, rule):
@@ -55,4 +59,7 @@ def summarize(results, elapsed):
 
 
 if __name__ == '__main__':
-    main()
+    ret = main()
+    sys.stdout.write('\033[0m\n')
+    sys.stdout.flush()
+    sys.exit(ret)
