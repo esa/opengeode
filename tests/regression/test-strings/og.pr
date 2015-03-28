@@ -35,7 +35,7 @@ dcl nosep OutStr := '';
                 /* CIF TASK (403, 213), (457, 78) */
                 TASK for each in a(2, length(a) - 1):
  result := result // (if length(result) > 0 then sep else nosep fi) // each
-endfor;
+endfor;;;;
                 /* CIF PROCEDURECALL (567, 306), (129, 35) */
                 CALL writeln(result);
                 /* CIF TASK (554, 356), (155, 53) */
