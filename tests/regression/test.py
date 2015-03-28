@@ -23,7 +23,7 @@ def main():
     sys.stdout.write('\n')
 
     elapsed = time.time() - start
-    sys.exit(summarize(results, elapsed))
+    return summarize(results, elapsed)
 
 
 def make(path, rule):
@@ -59,4 +59,7 @@ def summarize(results, elapsed):
 
 
 if __name__ == '__main__':
-    main()
+    ret = main()
+    sys.stdout.write('\033[0m\n')
+    sys.stdout.flush()
+    sys.exit(ret)
