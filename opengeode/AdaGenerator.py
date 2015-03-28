@@ -296,16 +296,16 @@ package {process_name} is'''.format(process_name=process_name,
         for var_name, (var_type, _) in process.variables.viewitems():
             # Getters for local variables
             process_level_decl.append("function l_{name}_size return integer "
-                                      "is ({prefix}{name}'Size/8) with Export,"
-                                      " Convention => C,"
-                                      ' Link_Name => "{name}_size";'
-                                      .format(prefix=LPREFIX, name=var_name))
+                                     "is ({prefix}.{name}'Size/8) with Export,"
+                                     " Convention => C,"
+                                     ' Link_Name => "{name}_size";'
+                                     .format(prefix=LPREFIX, name=var_name))
             process_level_decl.append("function l_{name}_value"
-                                      " return access {sort} "
-                                      "is ({prefix}{name}'access) with Export,"
-                                      " Convention => C,"
-                                      ' Link_Name => "{name}_value";'
-                                      .format(prefix=LPREFIX, name=var_name,
+                                     " return access {sort} "
+                                     "is ({prefix}.{name}'access) with Export,"
+                                     " Convention => C,"
+                                     ' Link_Name => "{name}_value";'
+                                     .format(prefix=LPREFIX, name=var_name,
                                               sort=type_name(var_type)))
             # Setters for local variables
             setter_decl = "procedure dll_set_l_{name}(value: access {sort})"\
@@ -315,7 +315,7 @@ package {process_name} is'''.format(process_name=process_name,
                                 ' "_set_{name}");'.format(name=var_name))
             dll_api.append('{} is'.format(setter_decl))
             dll_api.append('begin')
-            dll_api.append('{}{} := value.all;'.format(LPREFIX, var_name))
+            dll_api.append('{}.{} := value.all;'.format(LPREFIX, var_name))
             dll_api.append('end dll_set_l_{};'.format(var_name))
             dll_api.append('')
 
@@ -861,6 +861,7 @@ def _task_forloop(task, **kwargs):
         for x in iterable (a SEQUENCE OF)
     '''
     stmt, local_decl = [], []
+    local_scope = dict(LOCAL_VAR)
     if task.comment:
         stmt.extend(traceability(task.comment))
     stmt.extend(traceability(task))
@@ -897,6 +898,9 @@ def _task_forloop(task, **kwargs):
                                                                stop=stop_str)])
         else:
             # case of form: FOR x in SEQUENCE OF
+            # Add iterator to the list of local variables
+            LOCAL_VAR.update({loop['var']: (loop['type'], None)})
+
             list_stmt, list_str, list_local = expression(loop['list'])
             basic_type = find_basic_type(loop['list'].exprType)
             list_payload = list_str + string_payload(loop['list'], list_str)
@@ -934,6 +938,9 @@ def _task_forloop(task, **kwargs):
         stmt.append('end loop;')
         if (loop['range'] and loop['range']['step'] != 1) or loop['list']:
             stmt.append('end;')
+    # Restore list of local variables
+    LOCAL_VAR.clear()
+    LOCAL_VAR.update(local_scope)
     return stmt, local_decl
 
 
@@ -951,7 +958,12 @@ def expression(expr):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
-    sep = (LPREFIX + '.') if find_var(prim.value[0]) else u''
+    var = find_var(prim.value[0])
+    if not var or is_local(var):
+        sep = ''
+    else:
+        sep = LPREFIX + '.'
+    #sep = (LPREFIX + '.') if find_var(prim.value[0]) else u''
 
     ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
@@ -1830,7 +1842,7 @@ def _transition(tr, **kwargs):
                     if any(next_id
                            for next_id in tr.terminator.candidate_id.viewkeys()
                            if next_id != -1):
-                        code.append('case state is')
+                        code.append('case {}.state is'.format(LPREFIX))
                         for nid, sta in tr.terminator.candidate_id.viewitems():
                             if nid != -1:
                                 for each in sta:
@@ -1894,12 +1906,17 @@ def _inner_procedure(proc, **kwargs):
     # with procedure defined inside the current procedure
     # Not critical: the editor forbids procedures inside procedures
 
-    # Save variable scope (as local variables may shadow process variables)
+    # Save variable scopes (as local variables may shadow process variables)
     outer_scope = dict(VARIABLES)
+    local_scope = dict(LOCAL_VAR)
     VARIABLES.update(proc.variables)
+    # Store local variables in global context
+    LOCAL_VAR.update(proc.variables)
     # Also add procedure parameters in scope
     for var in proc.fpar:
-        VARIABLES.update({var['name']: (var['type'], None)})
+        elem = {var['name']: (var['type'], None)}
+        VARIABLES.update(elem)
+        LOCAL_VAR.update(elem)
 
     # Build the procedure signature (function if it can return a value)
     ret_type = type_name(proc.return_type) if proc.return_type else None
@@ -1917,8 +1934,8 @@ def _inner_procedure(proc, **kwargs):
         params = []
         for fpar in proc.fpar:
             typename = type_name(fpar['type'])
-            params.append(u'{prefix}_{name}: in{out} {ptype}'.format(
-                    name=fpar.get('name'), prefix=LPREFIX,
+            params.append(u'{name}: in{out} {ptype}'.format(
+                    name=fpar.get('name'),
                     out=' out' if fpar.get('direction') == 'out' else '',
                     ptype=typename))
         pi_header += ';'.join(params)
@@ -1952,8 +1969,8 @@ def _inner_procedure(proc, **kwargs):
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'{prefix}_{name} : aliased {sort}{default};'
-                        .format(name=var_name, prefix=LPREFIX,
+            code.append(u'{name} : aliased {sort}{default};'
+                        .format(name=var_name,
                                 sort=typename,
                                 default=' := ' + dstr if def_value else ''))
 
@@ -1980,6 +1997,8 @@ def _inner_procedure(proc, **kwargs):
     # Reset the scope to how it was prior to the procedure definition
     VARIABLES.clear()
     VARIABLES.update(outer_scope)
+    LOCAL_VAR.clear()
+    LOCAL_VAR.update(local_scope)
 
     return code, local_decl
 
@@ -2006,14 +2025,13 @@ def array_content(prim, values, asnty):
     inputs: prim is of type PrimStringLiteral or PrimSequenceOf
     values is a string with the sequence of numbers as processed by expression
     asnty is the reference type of the string literal '''
-    #rtype = find_basic_type(prim.exprType)
     if asnty.Min != asnty.Max:
         length = len(prim.value)
         if isinstance(prim, ogAST.PrimStringLiteral):
             # Quotes are kept in string literals
             length -= 2
         # Reference type can vary -> there is a Length field
-        rlen = u", Length => {}".format(length) # rtype.Min)
+        rlen = u", Length => {}".format(length)
     else:
         rlen = u""
     if isinstance(prim, ogAST.PrimStringLiteral):
@@ -2023,7 +2041,7 @@ def array_content(prim, values, asnty):
         _, df, _ = expression(prim.value[0])
         if isinstance(prim.value[0], (ogAST.PrimSequenceOf,
                                       ogAST.PrimStringLiteral)):
-            df = array_content(prim.value[0], df, asnty)
+            df = array_content(prim.value[0], df, asnty.type)
     return u"(Data => ({}{}others => {}){})".format(values,
                                                     ', ' if values else '',
                                                     df, rlen)
@@ -2097,6 +2115,12 @@ def find_var(var):
         if var.lower() == visible_var.lower():
             return visible_var
     return None
+
+
+def is_local(var):
+    ''' Check if a variable is in the global context or in a local scope
+        Typically needed to select the right prefix to use '''
+    return var in LOCAL_VAR.viewkeys()
 
 
 def path_type(path):

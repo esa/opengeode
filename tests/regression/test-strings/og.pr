@@ -38,7 +38,14 @@ dcl nosep OutStr := '';
 endfor;
                 /* CIF PROCEDURECALL (567, 306), (129, 35) */
                 CALL writeln(result);
-                /* CIF NEXTSTATE (597, 356), (70, 35) */
+                /* CIF TASK (554, 356), (155, 53) */
+                TASK for sep in a:
+    call writeln(sep);
+endfor
+                /* CIF COMMENT (729, 365), (194, 38) */
+                COMMENT 'Test to check scope
+(sep is also a dcl-variable)';
+                /* CIF NEXTSTATE (597, 424), (70, 35) */
                 NEXTSTATE wait;
             /* CIF STATE (286, 217), (70, 35) */
             STATE wait;
