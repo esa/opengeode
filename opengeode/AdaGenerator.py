@@ -113,8 +113,10 @@ def _process(process, simu=False, **kwargs):
     OUT_SIGNALS.extend(process.output_signals)
     PROCEDURES.extend(process.procedures)
     global SHARED_LIB
+    global LPREFIX
     if simu:
         SHARED_LIB = True
+        LPREFIX = process_name + u'_ctxt'
 
     # When building a shared library (with simu=True), generate a "mini-cv"
     # for aadl2glueC to create the code interfacing with asn1scc
