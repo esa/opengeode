@@ -1036,7 +1036,7 @@ via     :       VIA state_entry_point_name
 
 
 end
-        :   (cif? hyperlink? COMMENT STRING)? SEMI
+        :   (cif? hyperlink? COMMENT STRING)? SEMI+
         -> ^(COMMENT cif? hyperlink? STRING)?;
 
 
