@@ -92,6 +92,7 @@ PROCEDURES = []
 SHARED_LIB = False
 
 UNICODE_SEP = u'\u00dc'
+LPREFIX = u'l_'
 
 @singledispatch
 def generate(*args, **kwargs):
@@ -195,8 +196,8 @@ LD_LIBRARY_PATH=. taste-gui -l
                 dstr = array_content(def_value, dstr, varbty)
             assert not dst and not dlocal, 'DCL: Expecting a ground expression'
         process_level_decl.append(
-                        u'l_{n} : aliased {sort}{default};'
-                        .format(n=var_name,
+                        u'{prefix}{n} : aliased {sort}{default};'
+                        .format(prefix=LPREFIX, n=var_name,
                                 sort=type_name(var_type),
                                 default=u' := ' + dstr if def_value else u''))
 
@@ -285,16 +286,16 @@ package {process_name} is'''.format(process_name=process_name,
         for var_name, (var_type, _) in process.variables.viewitems():
             # Getters for local variables
             process_level_decl.append("function l_{name}_size return integer "
-                                      "is (l_{name}'Size/8) with Export, "
-                                      "Convention => C, "
-                                      'Link_Name => "{name}_size";'
-                                      .format(name=var_name))
+                                      "is ({prefix}{name}'Size/8) with Export,"
+                                      " Convention => C,"
+                                      ' Link_Name => "{name}_size";'
+                                      .format(prefix=LPREFIX, name=var_name))
             process_level_decl.append("function l_{name}_value"
                                       " return access {sort} "
-                                      "is (l_{name}'access) with Export, "
-                                      "Convention => C, "
-                                      'Link_Name => "{name}_value";'
-                                      .format(name=var_name,
+                                      "is ({prefix}{name}'access) with Export,"
+                                      " Convention => C,"
+                                      ' Link_Name => "{name}_value";'
+                                      .format(prefix=LPREFIX, name=var_name,
                                               sort=type_name(var_type)))
             # Setters for local variables
             setter_decl = "procedure dll_set_l_{name}(value: access {sort})"\
@@ -304,7 +305,7 @@ package {process_name} is'''.format(process_name=process_name,
                                 ' "_set_{name}");'.format(name=var_name))
             dll_api.append('{} is'.format(setter_decl))
             dll_api.append('begin')
-            dll_api.append('l_{} := value.all;'.format(var_name))
+            dll_api.append('{}{} := value.all;'.format(LPREFIX, var_name))
             dll_api.append('end dll_set_l_{};'.format(var_name))
             dll_api.append('')
 
@@ -386,8 +387,10 @@ package {process_name} is'''.format(process_name=process_name,
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    taste_template.append(u'l_{inp} := {tInp}.all;'.format(
-                        inp=inp, tInp=param_name))
+                    taste_template.append(u'{pre}{inp} := {tInp}.all;'
+                                          .format(pre=LPREFIX,
+                                                  inp=inp,
+                                                  tInp=param_name))
                 # Execute the correponding transition
                 if input_def.transition:
                     taste_template.append(u'runTransition({idx});'.format(
@@ -399,8 +402,7 @@ package {process_name} is'''.format(process_name=process_name,
         taste_template.append('when others =>')
         taste_template.append('null;')
         taste_template.append('end case;')
-        taste_template.append(u'end {sig_name};'.format(
-                                                    sig_name=signal['name']))
+        taste_template.append(u'end {};'.format(signal['name']))
         taste_template.append('\n')
 
     # for the .ads file, generate the declaration of the required interfaces
@@ -766,7 +768,7 @@ def _call_external_function(output, **kwargs):
                 # (If needed, i.e. if argument is not a local variable)
                 if param_direction == 'in' \
                         and (not (isinstance(param, ogAST.PrimVariable)
-                        and p_id.startswith('l_'))
+                        and p_id.startswith(LPREFIX))
                         or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
                     local_decl.append('{tmp} : aliased {sort};'
@@ -939,7 +941,7 @@ def expression(expr):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
-    sep = u'l_' if find_var(prim.value[0]) else u''
+    sep = LPREFIX if find_var(prim.value[0]) else u''
 
     ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
@@ -1904,8 +1906,8 @@ def _inner_procedure(proc, **kwargs):
         params = []
         for fpar in proc.fpar:
             typename = type_name(fpar['type'])
-            params.append(u'l_{name}: in{out} {ptype}'.format(
-                    name=fpar.get('name'),
+            params.append(u'{prefix}{name}: in{out} {ptype}'.format(
+                    name=fpar.get('name'), prefix=LPREFIX,
                     out=' out' if fpar.get('direction') == 'out' else '',
                     ptype=typename))
         pi_header += ';'.join(params)
@@ -1939,8 +1941,8 @@ def _inner_procedure(proc, **kwargs):
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'l_{name} : aliased {sort}{default};'
-                        .format(name=var_name,
+            code.append(u'{prefix}{name} : aliased {sort}{default};'
+                        .format(name=var_name, prefix=LPREFIX,
                                 sort=typename,
                                 default=' := ' + dstr if def_value else ''))
 
