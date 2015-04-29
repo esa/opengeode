@@ -20,8 +20,7 @@ setup(
     description='A tiny, free SDL editor for TASTE',
     long_description=open('README.md').read(),
     install_requires=[
-        'pygraphviz',
-        'singledispatch',
+        'pygraphviz'
     ],
     tests_require=['tabulate'],
     include_package_data=True,
