@@ -36,6 +36,7 @@ import genericSymbols
 import logging
 from itertools import chain
 from singledispatch import singledispatch
+from ogParser import type_name
 
 LOG = logging.getLogger(__name__)
 
@@ -150,6 +151,18 @@ def _automaton(ast, scene):
             pass
         else:
             top_level_symbols.append(new_state)
+
+    # If the source .pr contained FPAR outside a textbox, create one
+    if ast.parent.fpar:
+        text_area = ogAST.TextArea()
+        fpars = ('{} {}'.format(fp['name'],
+                                type_name(fp['type']).replace('-', '_'))
+                    for fp in ast.parent.fpar)
+        text_area.inputString = ("-- Formal parameters\n"
+                                "fpar {};".format(',\n          '.join(fpars)))
+        text_area.pos_x = scene.itemsBoundingRect().x() - 200
+        text_area.pos_y = scene.itemsBoundingRect().y()
+        top_level_symbols.append(render(text_area, scene))
     return top_level_symbols
 
 

@@ -1052,7 +1052,7 @@ def is_fpar(name, context):
     name = name.lower()
     if isinstance(context, ogAST.Procedure):
         for each in context.fpar:
-            if each['name'].lower() == name:
+            if each['name'].lower() == name.lower():
                 return True
     return False
 
@@ -2326,7 +2326,7 @@ def text_area_content(root, ta_ast, context):
                     context.fpar = params
                     ta_ast.fpar = params
             except AttributeError:
-                errors.append('Only procedures can have an FPAR section')
+                errors.append('Entity cannot have an FPAR section')
         elif child.type == lexer.TIMER:
             timers = [timer.text.lower() for timer in child.children]
             context.timers.extend(timers)
@@ -2524,7 +2524,7 @@ def system_definition(root, parent):
             textarea, err, warn = text_area(child, context=system)
             system.signals.extend(textarea.signals)
             if textarea.fpar:
-                errors.append('FPAR shall be declared only in procedures')
+                errors.append('FPAR cannot be declared at system level')
             if textarea.timers:
                 errors.append('Timers shall be declared only in a process')
             # Update list of ASN.1 files - if any
@@ -2624,6 +2624,12 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.NUMBER_OF_INSTANCES:
             # Number of instances - discarded (working on a single process)
             pass
+        elif child.type == lexer.PFPAR:
+            # Process formal parameters
+            params, err, warn = fpar(child)
+            errors.extend(err)
+            warnings.extend(warn)
+            process.fpar = params
         elif child.type == lexer.PROCEDURE:
             proc, content, err, warn = procedure_pre(
                     child, parent=None, context=process)
