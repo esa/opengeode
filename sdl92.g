@@ -58,6 +58,7 @@ tokens {
         FLOATING_LABEL;
         FOR;
         FPAR;
+        PFPAR;
         GROUND;
         HYPERLINK;
         IF;
@@ -220,11 +221,23 @@ process_definition
         :       PROCESS process_id number_of_instances? REFERENCED end
         ->      ^(PROCESS process_id number_of_instances? REFERENCED)
                 | cif? PROCESS process_id number_of_instances? end
+                pfpar?
                 (text_area | procedure | composite_state)*
                 processBody? ENDPROCESS process_id?
                 end
-        ->      ^(PROCESS cif? process_id number_of_instances? end?
+        ->      ^(PROCESS cif? process_id number_of_instances? end? pfpar?
                 text_area* procedure* composite_state* processBody?);
+
+// Process formal parameters
+pfpar
+        :       FPAR parameters_of_sort
+                (',' parameters_of_sort)*
+                end
+        ->      ^(PFPAR parameters_of_sort+);
+
+parameters_of_sort
+        :       variable_id (',' variable_id)* sort
+        ->      ^(PARAM variable_id+ sort);
 
 
 // procedure: missing the RETURNS statement

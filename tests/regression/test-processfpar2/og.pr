@@ -1,0 +1,52 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (287, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview-uniq.asn';
+
+--use dv2 comment 'dataview2.asn';
+
+signal dd(Type2);
+signal we(Some_Thing);
+
+procedure hehe;
+fpar in/out a_param Type2;
+external;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (0, 44), (173, 140) */
+            -- Formal parameters
+fpar toto Type2,
+          titi Type2,
+          tutu Some_Thing;
+            /* CIF ENDTEXT */
+            /* CIF START (207, 68), (70, 35) */
+            START;
+                /* CIF DECISION (207, 118), (70, 50) */
+                DECISION toto
+                /* CIF COMMENT (297, 125), (169, 38) */
+                COMMENT 'Check that the FPAR
+is visible.';
+                        /* CIF ANSWER (162, 188), (70, 23) */
+                        (true):
+                        /* CIF ANSWER (252, 188), (70, 23) */
+                        (false):
+                ENDDECISION;
+                /* CIF NEXTSTATE (207, 226), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (318, 74), (70, 35) */
+            STATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;

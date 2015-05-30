@@ -1,0 +1,3 @@
+Test the proper parsing of a process with formal parameters, in the case where
+the FPAR section is specified graphically in a text box.
+In that case the tool parses and renders the textbox normally.

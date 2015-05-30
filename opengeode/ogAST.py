@@ -844,6 +844,10 @@ class Process(object):
         # (Includes inner procedures)
         self.content = Automaton(parent=self)
 
+        # Process formal parameters - list of dict:
+        # [{'name': str, 'type': str}]
+        self.fpar = []
+
         # List of timers (strings) declared in the process
         self.timers = []
 

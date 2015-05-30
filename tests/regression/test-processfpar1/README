@@ -1,0 +1,4 @@
+Test the proper parsing of a process with formal parameters, in the case where
+the FPAR section is specified manually in the pr file. In that case the tool
+renders a textbox with the FPAR section. Don't edit/save this model otherwise
+the FPAR section will be saved as part of the rendered text box
