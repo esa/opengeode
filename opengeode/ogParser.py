@@ -2337,6 +2337,7 @@ def text_area_content(root, ta_ast, context):
             # in order to have the types properly defined
             signals.append(child)
         elif child.type == lexer.USE:
+            entities = []
             # USE clauses can contain a CIF comment with the ASN.1 filename
             for each in child.getChildren():
                 if each.type == lexer.ASN1:
@@ -2346,7 +2347,13 @@ def text_area_content(root, ta_ast, context):
                     use_cmt, _, _ = end(each)
                     ta_ast.asn1_files.append(use_cmt.inputString)
                 else:
-                    ta_ast.use_clauses.append(each.text)
+                    entities.append(each.text)
+            if len(entities) == 1:
+                ta_ast.use_clauses.append(entities[0])
+            elif len(entities) > 1:
+                ta_ast.use_clauses.extend('{}/{}'
+                           .format(entities[0], each) for each in entities[1:])
+
         else:
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
@@ -3971,11 +3978,17 @@ def pr_file(root):
         use_clause_subs = child.getChildren()
         asn1_filename = None
         for clause in use_clause_subs:
+            entities = []
             if clause.type == lexer.ASN1:
                 asn1_filename = clause.getChild(0).text[1:-1]
                 ast.asn1_filenames.append(asn1_filename)
             else:
-                ast.use_clauses.append(clause.text)
+                entities.append(clause.text)
+            if len(entities) == 1:
+                ast.use_clauses.append(entities[0])
+            elif len(entities) > 1:
+                ast.use_clauses.extend('{}/{}'
+                           .format(entities[0], each) for each in entities[1:])
 #       if not asn1_filename:
 #           # Look for case insentitive pr file and add it to AST
 #           search = fnmatch.translate(clause.text + '.pr')

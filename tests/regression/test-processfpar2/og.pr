@@ -1,10 +1,12 @@
 SYSTEM og;
-    /* CIF TEXT (159, 221), (287, 188) */
+    /* CIF TEXT (159, 221), (287, 218) */
     -- Text area for declarations and comments
 
 use dv comment 'dataview-uniq.asn';
 
 --use dv2 comment 'dataview2.asn';
+-- use clause with sub definitions: 
+use qt/qgraphicscene, qgraphicsview;
 
 signal dd(Type2);
 signal we(Some_Thing);

@@ -152,9 +152,16 @@ system_definition
 
 use_clause
         :       use_asn1?
-                USE package_name end
-        ->      ^(USE use_asn1? end? package_name);
+                USE package_name
+                ('/' def_selection_list )?
+                end
+        ->      ^(USE use_asn1? end? package_name def_selection_list?);
 
+/*
+    In USE clause: USE package/X, Y, Z;
+*/
+def_selection_list
+        :       ID (','! ID)*;
 
 /* Entity in system:
    Declare signals, external procedures, connections and blocks
