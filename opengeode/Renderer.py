@@ -153,7 +153,7 @@ def _automaton(ast, scene):
             top_level_symbols.append(new_state)
 
     # If the source .pr contained FPAR outside a textbox, create one
-    if ast.parent.fpar:
+    if ast.parent.fpar and not any(x.fpar for x in ast.textAreas):
         text_area = ogAST.TextArea()
         fpars = ('{} {}'.format(fp['name'],
                                 type_name(fp['type']).replace('-', '_'))
