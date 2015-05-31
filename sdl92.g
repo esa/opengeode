@@ -58,7 +58,6 @@ tokens {
         FLOATING_LABEL;
         FOR;
         FPAR;
-        PFPAR;
         GROUND;
         HYPERLINK;
         IF;
@@ -84,6 +83,7 @@ tokens {
         PARAMNAMES;
         PARAMS;
         PAREN;
+        PFPAR;
         PRIMARY;
         PROCEDURE;
         PROCEDURE_CALL;
@@ -124,6 +124,7 @@ tokens {
         TIMER;
         TO;
         TRANSITION;
+        TYPE_INSTANCE;
         USE;
         VALUE;
         VARIABLE;
@@ -232,8 +233,12 @@ process_definition
                 (text_area | procedure | composite_state)*
                 processBody? ENDPROCESS process_id?
                 end
-        ->      ^(PROCESS cif? process_id number_of_instances? end? pfpar?
-                text_area* procedure* composite_state* processBody?);
+        ->      ^(PROCESS cif? process_id number_of_instances? end?
+                pfpar? text_area* procedure* composite_state* processBody?)
+                | cif? PROCESS process_id number_of_instances? (':' type_inst)?
+                end
+        ->      ^(PROCESS cif? process_id type_inst? number_of_instances? end?)
+        ;
 
 // Process formal parameters
 pfpar
@@ -968,6 +973,9 @@ anyvalue_expression
 sort    :       sort_id
         ->      ^(SORT sort_id);
 
+type_inst
+        :       type_id
+        ->      ^(TYPE_INSTANCE type_id);
 
 syntype :       syntype_id;
 
@@ -1175,6 +1183,7 @@ remote_variable_id
                 :       ID;
 view_id         :       ID;
 sort_id         :       ID;
+type_id         :       ID;
 syntype_id      :       ID;
 stimulus_id     :       ID;
 ASSIG_OP        :       ':=';

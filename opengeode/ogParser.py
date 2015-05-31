@@ -2661,6 +2661,9 @@ def process_definition(root, parent=None, context=None):
             process.composite_states.append(comp)
         elif child.type == lexer.REFERENCED:
             process.referenced = True
+        elif child.type == lexer.TYPE_INSTANCE:
+            # PROCESS Toto:ParentType; Not supported
+            pass
         elif child.type == lexer.COMMENT:
             process.comment, _, _ = end(child)
         else:
