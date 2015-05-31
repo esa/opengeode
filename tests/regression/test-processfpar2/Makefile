@@ -10,15 +10,10 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n og.ali
 
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
 
 
 coverage:
