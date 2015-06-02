@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2015-03-28 16:25:41
+# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2015-06-02 14:23:02
 
 import sys
 from antlr3 import *
@@ -10,223 +10,225 @@ HIDDEN = BaseRecognizer.HIDDEN
 
 # token types
 NUMBER_OF_INSTANCES=60
-COMMENT2=211
-MANTISSA=168
-ROUTE=79
-MOD=160
+COMMENT2=213
+MANTISSA=170
+ROUTE=80
+MOD=162
 GROUND=44
 PARAM=65
-NOT=162
-SEQOF=82
-TEXTAREA_CONTENT=104
+NOT=164
+SEQOF=83
+TEXTAREA_CONTENT=105
 EOF=-1
 ACTION=4
-IMPORT=172
-CREATE=149
+IMPORT=174
+CREATE=152
 FPAR=43
 NEXTSTATE=59
-RETURN=78
-THIS=150
+RETURN=79
+THIS=153
 CHANNEL=13
-VIAPATH=114
-ENDCONNECTION=127
+VIAPATH=116
+ENDCONNECTION=130
 EXPORT=32
-EQ=143
+EQ=146
 INFORMAL_TEXT=49
-GEODE=176
-D=185
-E=188
-F=195
-GE=148
-G=196
-A=182
-IMPLIES=153
-B=204
-C=186
-L=187
-M=192
-N=183
-O=197
-STOPIF=92
-TERMINATOR=101
-H=198
-I=194
+GEODE=178
+D=187
+E=190
+F=197
+GE=151
+G=198
+A=184
+IMPLIES=155
+B=206
+C=188
+L=189
+M=194
+N=185
+O=199
+STOPIF=93
+TERMINATOR=102
+H=200
+I=196
 ELSE=27
-J=205
-K=189
-U=201
-T=199
-W=203
-STOP=91
-V=202
-INT=125
-Q=212
-P=190
-S=193
-VALUE=110
-R=191
-Y=184
-X=200
+J=207
+K=191
+U=203
+T=201
+W=205
+TYPE_INSTANCE=110
+STOP=92
+V=204
+INT=128
+Q=214
+P=192
+S=195
+VALUE=112
+R=193
+Y=186
+X=202
 FI=35
-Z=213
-MINUS_INFINITY=167
-WS=210
-OUT=133
-NONE=134
+Z=215
+MINUS_INFINITY=169
+WS=212
+OUT=136
+NONE=137
 INPUT_NONE=52
 CONSTANT=22
-GT=145
-CALL=139
-END=178
+GT=148
+CALL=142
+END=180
 FLOATING_LABEL=41
-T__215=215
 IFTHENELSE=47
 T__216=216
-T__214=214
 T__219=219
 T__217=217
 T__218=218
 INPUT=51
-ENDSUBSTRUCTURE=132
+ENDSUBSTRUCTURE=135
 FLOAT=40
-SUBSTRUCTURE=131
-ASTERISK=130
+SUBSTRUCTURE=134
+ASTERISK=133
+T__222=222
 PAREN=68
+T__221=221
 T__220=220
 INOUT=50
-STR=207
-STIMULUS=90
-SELECTOR=81
-THEN=105
-ENDDECISION=141
+STR=209
+STIMULUS=91
+SELECTOR=82
+THEN=106
+ENDDECISION=144
 OPEN_RANGE=62
-SIGNAL=85
-ENDSYSTEM=115
-PLUS=156
+SIGNAL=86
+ENDSYSTEM=117
+PLUS=158
 CHOICE=14
-TASK_BODY=100
+TASK_BODY=101
 PARAMS=67
 CLOSED_RANGE=16
-STATE=88
-STATELIST=89
-TO=107
-ASSIG_OP=179
-SIGNALROUTE=120
+STATE=89
+STATELIST=90
+TO=108
+ASSIG_OP=181
+SIGNALROUTE=123
 ENDSYNTYPE=30
-SORT=87
-SET=84
-TEXT=102
-SEMI=128
-TEXTAREA=103
+SORT=88
+SET=85
+TEXT=103
+SEMI=131
+TEXTAREA=104
 BLOCK=12
 CIF=15
-START=126
+START=129
 DECISION=25
-DIV=159
-PROCESS=73
-STRING=93
+DIV=161
+PROCESS=74
+STRING=94
 INPUTLIST=53
 EXTERNAL=34
-LT=146
-EXPONENT=170
-TRANSITION=108
-ENDBLOCK=119
-RESET=77
+LT=149
+EXPONENT=172
+TRANSITION=109
+ENDBLOCK=122
+RESET=78
 ENDNEWTYPE=29
-SIGNAL_LIST=86
+SIGNAL_LIST=87
 ENDTEXT=31
 CONNECTION=21
-SYSTEM=98
+SYSTEM=99
 CONNECT=20
-L_PAREN=136
-PROCEDURE_CALL=71
-BASE=169
+L_PAREN=139
+PROCEDURE_CALL=72
+BASE=171
 COMMENT=17
-SYNONYM=95
-ENDALTERNATIVE=140
+SYNONYM=96
+ENDALTERNATIVE=143
 ARRAY=8
-ACTIVE=171
-ENDFOR=152
+ACTIVE=173
+ENDFOR=154
 FIELD_NAME=37
 OCTSTR=61
-VIEW=173
+VIEW=175
 EMPTYSTR=28
-ENDCHANNEL=116
-NULL=165
+PFPAR=69
+ENDCHANNEL=119
+NULL=167
 ANSWER=7
 CONDITIONAL=19
-PRIMARY=69
-TASK=99
-REFERENCED=122
-ALPHA=208
-SEQUENCE=83
-VARIABLE=111
-PRIORITY=135
-SPECIFIC=175
-OR=154
+PRIMARY=70
+TASK=100
+REFERENCED=125
+ALPHA=210
+SEQUENCE=84
+VARIABLE=113
+PRIORITY=138
+SPECIFIC=177
+OR=156
 COMPOSITE_STATE=18
 FIELD=36
-USE=109
-FROM=117
-ENDPROCEDURE=124
-FALSE=164
+USE=111
+FROM=120
+ENDPROCEDURE=127
+FALSE=166
 OUTPUT=63
-SYNONYM_LIST=96
-APPEND=158
-L_BRACKET=180
+SYNONYM_LIST=97
+APPEND=160
+L_BRACKET=182
 DIGITS=26
 HYPERLINK=45
 NEWTYPE=58
-Exponent=209
+Exponent=211
 FOR=42
-ENDSTATE=129
-PROCEDURE_NAME=72
+ENDSTATE=132
+PROCEDURE_NAME=73
 CONSTANTS=23
-AND=121
-ID=151
+ID=118
+AND=124
 FLOAT2=39
 IF=46
 IN=48
-PROVIDED=74
-COMMA=138
+PROVIDED=75
+COMMA=141
 ALL=5
-ASNFILENAME=177
-DOT=206
+ASNFILENAME=179
+DOT=208
 EXPRESSION=33
-WITH=118
+WITH=121
 BITSTR=11
-XOR=155
-DASH=157
-ENDPROCESS=123
+XOR=157
+DASH=159
+ENDPROCESS=126
 DCL=24
-VIA=113
-RANGE=76
-STRUCT=94
+VIA=115
+RANGE=77
+STRUCT=95
 LITERAL=56
-SAVE=80
+SAVE=81
 FIELDS=38
-REM=161
-TRUE=163
+REM=163
+TRUE=165
 JOIN=54
-PROCEDURE=70
-R_BRACKET=181
-R_PAREN=137
+PROCEDURE=71
+R_BRACKET=183
+R_PAREN=140
 OUTPUT_BODY=64
-NEQ=144
-ANY=142
-QUESTION=75
+NEQ=147
+ANY=145
+QUESTION=76
 LABEL=55
-PLUS_INFINITY=166
+PLUS_INFINITY=168
 PARAMNAMES=66
 ASN1=9
-KEEP=174
+KEEP=176
 NEG=57
-VARIABLES=112
+VARIABLES=114
 ASSIGN=10
 ALTERNATIVE=6
-SYNTYPE=97
-TIMER=106
-LE=147
+SYNTYPE=98
+TIMER=107
+LE=150
 
 
 class sdl92Lexer(Lexer):
@@ -268,56 +270,6 @@ class sdl92Lexer(Lexer):
 
 
 
-    # $ANTLR start "T__214"
-    def mT__214(self, ):
-
-        try:
-            _type = T__214
-            _channel = DEFAULT_CHANNEL
-
-            # sdl92.g:7:8: ( ':' )
-            # sdl92.g:7:10: ':'
-            pass 
-            self.match(58)
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-
-        finally:
-
-            pass
-
-    # $ANTLR end "T__214"
-
-
-
-    # $ANTLR start "T__215"
-    def mT__215(self, ):
-
-        try:
-            _type = T__215
-            _channel = DEFAULT_CHANNEL
-
-            # sdl92.g:8:8: ( '!' )
-            # sdl92.g:8:10: '!'
-            pass 
-            self.match(33)
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-
-        finally:
-
-            pass
-
-    # $ANTLR end "T__215"
-
-
-
     # $ANTLR start "T__216"
     def mT__216(self, ):
 
@@ -325,10 +277,10 @@ class sdl92Lexer(Lexer):
             _type = T__216
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:9:8: ( '(.' )
-            # sdl92.g:9:10: '(.'
+            # sdl92.g:7:8: ( ':' )
+            # sdl92.g:7:10: ':'
             pass 
-            self.match("(.")
+            self.match(58)
 
 
 
@@ -350,10 +302,10 @@ class sdl92Lexer(Lexer):
             _type = T__217
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:10:8: ( '.)' )
-            # sdl92.g:10:10: '.)'
+            # sdl92.g:8:8: ( '!' )
+            # sdl92.g:8:10: '!'
             pass 
-            self.match(".)")
+            self.match(33)
 
 
 
@@ -375,10 +327,10 @@ class sdl92Lexer(Lexer):
             _type = T__218
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:11:8: ( 'ERROR' )
-            # sdl92.g:11:10: 'ERROR'
+            # sdl92.g:9:8: ( '(.' )
+            # sdl92.g:9:10: '(.'
             pass 
-            self.match("ERROR")
+            self.match("(.")
 
 
 
@@ -400,10 +352,10 @@ class sdl92Lexer(Lexer):
             _type = T__219
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:12:8: ( '/* CIF' )
-            # sdl92.g:12:10: '/* CIF'
+            # sdl92.g:10:8: ( '.)' )
+            # sdl92.g:10:10: '.)'
             pass 
-            self.match("/* CIF")
+            self.match(".)")
 
 
 
@@ -425,10 +377,10 @@ class sdl92Lexer(Lexer):
             _type = T__220
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:13:8: ( '*/' )
-            # sdl92.g:13:10: '*/'
+            # sdl92.g:11:8: ( 'ERROR' )
+            # sdl92.g:11:10: 'ERROR'
             pass 
-            self.match("*/")
+            self.match("ERROR")
 
 
 
@@ -443,6 +395,56 @@ class sdl92Lexer(Lexer):
 
 
 
+    # $ANTLR start "T__221"
+    def mT__221(self, ):
+
+        try:
+            _type = T__221
+            _channel = DEFAULT_CHANNEL
+
+            # sdl92.g:12:8: ( '/* CIF' )
+            # sdl92.g:12:10: '/* CIF'
+            pass 
+            self.match("/* CIF")
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "T__221"
+
+
+
+    # $ANTLR start "T__222"
+    def mT__222(self, ):
+
+        try:
+            _type = T__222
+            _channel = DEFAULT_CHANNEL
+
+            # sdl92.g:13:8: ( '*/' )
+            # sdl92.g:13:10: '*/'
+            pass 
+            self.match("*/")
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "T__222"
+
+
+
     # $ANTLR start "ASSIG_OP"
     def mASSIG_OP(self, ):
 
@@ -450,8 +452,8 @@ class sdl92Lexer(Lexer):
             _type = ASSIG_OP
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1160:17: ( ':=' )
-            # sdl92.g:1160:25: ':='
+            # sdl92.g:1189:17: ( ':=' )
+            # sdl92.g:1189:25: ':='
             pass 
             self.match(":=")
 
@@ -475,8 +477,8 @@ class sdl92Lexer(Lexer):
             _type = L_BRACKET
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1161:17: ( '{' )
-            # sdl92.g:1161:25: '{'
+            # sdl92.g:1190:17: ( '{' )
+            # sdl92.g:1190:25: '{'
             pass 
             self.match(123)
 
@@ -500,8 +502,8 @@ class sdl92Lexer(Lexer):
             _type = R_BRACKET
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1162:17: ( '}' )
-            # sdl92.g:1162:25: '}'
+            # sdl92.g:1191:17: ( '}' )
+            # sdl92.g:1191:25: '}'
             pass 
             self.match(125)
 
@@ -525,8 +527,8 @@ class sdl92Lexer(Lexer):
             _type = L_PAREN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1163:17: ( '(' )
-            # sdl92.g:1163:25: '('
+            # sdl92.g:1192:17: ( '(' )
+            # sdl92.g:1192:25: '('
             pass 
             self.match(40)
 
@@ -550,8 +552,8 @@ class sdl92Lexer(Lexer):
             _type = R_PAREN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1164:17: ( ')' )
-            # sdl92.g:1164:25: ')'
+            # sdl92.g:1193:17: ( ')' )
+            # sdl92.g:1193:25: ')'
             pass 
             self.match(41)
 
@@ -575,8 +577,8 @@ class sdl92Lexer(Lexer):
             _type = COMMA
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1165:17: ( ',' )
-            # sdl92.g:1165:25: ','
+            # sdl92.g:1194:17: ( ',' )
+            # sdl92.g:1194:25: ','
             pass 
             self.match(44)
 
@@ -600,8 +602,8 @@ class sdl92Lexer(Lexer):
             _type = SEMI
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1166:17: ( ';' )
-            # sdl92.g:1166:25: ';'
+            # sdl92.g:1195:17: ( ';' )
+            # sdl92.g:1195:25: ';'
             pass 
             self.match(59)
 
@@ -625,8 +627,8 @@ class sdl92Lexer(Lexer):
             _type = DASH
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1167:17: ( '-' )
-            # sdl92.g:1167:25: '-'
+            # sdl92.g:1196:17: ( '-' )
+            # sdl92.g:1196:25: '-'
             pass 
             self.match(45)
 
@@ -650,8 +652,8 @@ class sdl92Lexer(Lexer):
             _type = ANY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1168:17: ( A N Y )
-            # sdl92.g:1168:25: A N Y
+            # sdl92.g:1197:17: ( A N Y )
+            # sdl92.g:1197:25: A N Y
             pass 
             self.mA()
             self.mN()
@@ -677,8 +679,8 @@ class sdl92Lexer(Lexer):
             _type = ASTERISK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1169:17: ( '*' )
-            # sdl92.g:1169:25: '*'
+            # sdl92.g:1198:17: ( '*' )
+            # sdl92.g:1198:25: '*'
             pass 
             self.match(42)
 
@@ -702,8 +704,8 @@ class sdl92Lexer(Lexer):
             _type = DCL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1170:17: ( D C L )
-            # sdl92.g:1170:25: D C L
+            # sdl92.g:1199:17: ( D C L )
+            # sdl92.g:1199:25: D C L
             pass 
             self.mD()
             self.mC()
@@ -729,8 +731,8 @@ class sdl92Lexer(Lexer):
             _type = END
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1171:17: ( E N D )
-            # sdl92.g:1171:25: E N D
+            # sdl92.g:1200:17: ( E N D )
+            # sdl92.g:1200:25: E N D
             pass 
             self.mE()
             self.mN()
@@ -756,8 +758,8 @@ class sdl92Lexer(Lexer):
             _type = KEEP
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1172:17: ( K E E P )
-            # sdl92.g:1172:25: K E E P
+            # sdl92.g:1201:17: ( K E E P )
+            # sdl92.g:1201:25: K E E P
             pass 
             self.mK()
             self.mE()
@@ -784,8 +786,8 @@ class sdl92Lexer(Lexer):
             _type = PARAMNAMES
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1173:17: ( P A R A M N A M E S )
-            # sdl92.g:1173:25: P A R A M N A M E S
+            # sdl92.g:1202:17: ( P A R A M N A M E S )
+            # sdl92.g:1202:25: P A R A M N A M E S
             pass 
             self.mP()
             self.mA()
@@ -818,8 +820,8 @@ class sdl92Lexer(Lexer):
             _type = SPECIFIC
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1174:17: ( S P E C I F I C )
-            # sdl92.g:1174:25: S P E C I F I C
+            # sdl92.g:1203:17: ( S P E C I F I C )
+            # sdl92.g:1203:25: S P E C I F I C
             pass 
             self.mS()
             self.mP()
@@ -850,8 +852,8 @@ class sdl92Lexer(Lexer):
             _type = GEODE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1175:17: ( G E O D E )
-            # sdl92.g:1175:25: G E O D E
+            # sdl92.g:1204:17: ( G E O D E )
+            # sdl92.g:1204:25: G E O D E
             pass 
             self.mG()
             self.mE()
@@ -879,8 +881,8 @@ class sdl92Lexer(Lexer):
             _type = HYPERLINK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1176:17: ( H Y P E R L I N K )
-            # sdl92.g:1176:25: H Y P E R L I N K
+            # sdl92.g:1205:17: ( H Y P E R L I N K )
+            # sdl92.g:1205:25: H Y P E R L I N K
             pass 
             self.mH()
             self.mY()
@@ -912,8 +914,8 @@ class sdl92Lexer(Lexer):
             _type = ENDTEXT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1177:17: ( E N D T E X T )
-            # sdl92.g:1177:25: E N D T E X T
+            # sdl92.g:1206:17: ( E N D T E X T )
+            # sdl92.g:1206:25: E N D T E X T
             pass 
             self.mE()
             self.mN()
@@ -943,8 +945,8 @@ class sdl92Lexer(Lexer):
             _type = RETURN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1178:17: ( R E T U R N )
-            # sdl92.g:1178:25: R E T U R N
+            # sdl92.g:1207:17: ( R E T U R N )
+            # sdl92.g:1207:25: R E T U R N
             pass 
             self.mR()
             self.mE()
@@ -973,8 +975,8 @@ class sdl92Lexer(Lexer):
             _type = TIMER
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1179:17: ( T I M E R )
-            # sdl92.g:1179:25: T I M E R
+            # sdl92.g:1208:17: ( T I M E R )
+            # sdl92.g:1208:25: T I M E R
             pass 
             self.mT()
             self.mI()
@@ -1002,8 +1004,8 @@ class sdl92Lexer(Lexer):
             _type = PROCESS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1180:17: ( P R O C E S S )
-            # sdl92.g:1180:25: P R O C E S S
+            # sdl92.g:1209:17: ( P R O C E S S )
+            # sdl92.g:1209:25: P R O C E S S
             pass 
             self.mP()
             self.mR()
@@ -1033,8 +1035,8 @@ class sdl92Lexer(Lexer):
             _type = ENDPROCESS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1181:17: ( E N D P R O C E S S )
-            # sdl92.g:1181:25: E N D P R O C E S S
+            # sdl92.g:1210:17: ( E N D P R O C E S S )
+            # sdl92.g:1210:25: E N D P R O C E S S
             pass 
             self.mE()
             self.mN()
@@ -1067,8 +1069,8 @@ class sdl92Lexer(Lexer):
             _type = START
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1182:17: ( S T A R T )
-            # sdl92.g:1182:25: S T A R T
+            # sdl92.g:1211:17: ( S T A R T )
+            # sdl92.g:1211:25: S T A R T
             pass 
             self.mS()
             self.mT()
@@ -1096,8 +1098,8 @@ class sdl92Lexer(Lexer):
             _type = STATE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1183:17: ( S T A T E )
-            # sdl92.g:1183:25: S T A T E
+            # sdl92.g:1212:17: ( S T A T E )
+            # sdl92.g:1212:25: S T A T E
             pass 
             self.mS()
             self.mT()
@@ -1125,8 +1127,8 @@ class sdl92Lexer(Lexer):
             _type = TEXT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1184:17: ( T E X T )
-            # sdl92.g:1184:25: T E X T
+            # sdl92.g:1213:17: ( T E X T )
+            # sdl92.g:1213:25: T E X T
             pass 
             self.mT()
             self.mE()
@@ -1153,8 +1155,8 @@ class sdl92Lexer(Lexer):
             _type = PROCEDURE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1185:17: ( P R O C E D U R E )
-            # sdl92.g:1185:25: P R O C E D U R E
+            # sdl92.g:1214:17: ( P R O C E D U R E )
+            # sdl92.g:1214:25: P R O C E D U R E
             pass 
             self.mP()
             self.mR()
@@ -1186,8 +1188,8 @@ class sdl92Lexer(Lexer):
             _type = ENDPROCEDURE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1186:17: ( E N D P R O C E D U R E )
-            # sdl92.g:1186:25: E N D P R O C E D U R E
+            # sdl92.g:1215:17: ( E N D P R O C E D U R E )
+            # sdl92.g:1215:25: E N D P R O C E D U R E
             pass 
             self.mE()
             self.mN()
@@ -1222,8 +1224,8 @@ class sdl92Lexer(Lexer):
             _type = PROCEDURE_CALL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1187:17: ( P R O C E D U R E C A L L )
-            # sdl92.g:1187:25: P R O C E D U R E C A L L
+            # sdl92.g:1216:17: ( P R O C E D U R E C A L L )
+            # sdl92.g:1216:25: P R O C E D U R E C A L L
             pass 
             self.mP()
             self.mR()
@@ -1259,8 +1261,8 @@ class sdl92Lexer(Lexer):
             _type = ENDSTATE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1188:17: ( E N D S T A T E )
-            # sdl92.g:1188:25: E N D S T A T E
+            # sdl92.g:1217:17: ( E N D S T A T E )
+            # sdl92.g:1217:25: E N D S T A T E
             pass 
             self.mE()
             self.mN()
@@ -1291,8 +1293,8 @@ class sdl92Lexer(Lexer):
             _type = INPUT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1189:17: ( I N P U T )
-            # sdl92.g:1189:25: I N P U T
+            # sdl92.g:1218:17: ( I N P U T )
+            # sdl92.g:1218:25: I N P U T
             pass 
             self.mI()
             self.mN()
@@ -1320,8 +1322,8 @@ class sdl92Lexer(Lexer):
             _type = PROVIDED
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1190:17: ( P R O V I D E D )
-            # sdl92.g:1190:25: P R O V I D E D
+            # sdl92.g:1219:17: ( P R O V I D E D )
+            # sdl92.g:1219:25: P R O V I D E D
             pass 
             self.mP()
             self.mR()
@@ -1352,8 +1354,8 @@ class sdl92Lexer(Lexer):
             _type = PRIORITY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1191:17: ( P R I O R I T Y )
-            # sdl92.g:1191:25: P R I O R I T Y
+            # sdl92.g:1220:17: ( P R I O R I T Y )
+            # sdl92.g:1220:25: P R I O R I T Y
             pass 
             self.mP()
             self.mR()
@@ -1384,8 +1386,8 @@ class sdl92Lexer(Lexer):
             _type = SAVE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1192:17: ( S A V E )
-            # sdl92.g:1192:25: S A V E
+            # sdl92.g:1221:17: ( S A V E )
+            # sdl92.g:1221:25: S A V E
             pass 
             self.mS()
             self.mA()
@@ -1412,8 +1414,8 @@ class sdl92Lexer(Lexer):
             _type = NONE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1193:17: ( N O N E )
-            # sdl92.g:1193:25: N O N E
+            # sdl92.g:1222:17: ( N O N E )
+            # sdl92.g:1222:25: N O N E
             pass 
             self.mN()
             self.mO()
@@ -1440,8 +1442,8 @@ class sdl92Lexer(Lexer):
             _type = FOR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1200:17: ( F O R )
-            # sdl92.g:1200:25: F O R
+            # sdl92.g:1229:17: ( F O R )
+            # sdl92.g:1229:25: F O R
             pass 
             self.mF()
             self.mO()
@@ -1467,8 +1469,8 @@ class sdl92Lexer(Lexer):
             _type = ENDFOR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1201:17: ( E N D F O R )
-            # sdl92.g:1201:25: E N D F O R
+            # sdl92.g:1230:17: ( E N D F O R )
+            # sdl92.g:1230:25: E N D F O R
             pass 
             self.mE()
             self.mN()
@@ -1497,8 +1499,8 @@ class sdl92Lexer(Lexer):
             _type = RANGE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1202:17: ( R A N G E )
-            # sdl92.g:1202:25: R A N G E
+            # sdl92.g:1231:17: ( R A N G E )
+            # sdl92.g:1231:25: R A N G E
             pass 
             self.mR()
             self.mA()
@@ -1526,8 +1528,8 @@ class sdl92Lexer(Lexer):
             _type = NEXTSTATE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1203:17: ( N E X T S T A T E )
-            # sdl92.g:1203:25: N E X T S T A T E
+            # sdl92.g:1232:17: ( N E X T S T A T E )
+            # sdl92.g:1232:25: N E X T S T A T E
             pass 
             self.mN()
             self.mE()
@@ -1559,8 +1561,8 @@ class sdl92Lexer(Lexer):
             _type = ANSWER
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1204:17: ( A N S W E R )
-            # sdl92.g:1204:25: A N S W E R
+            # sdl92.g:1233:17: ( A N S W E R )
+            # sdl92.g:1233:25: A N S W E R
             pass 
             self.mA()
             self.mN()
@@ -1589,8 +1591,8 @@ class sdl92Lexer(Lexer):
             _type = COMMENT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1205:17: ( C O M M E N T )
-            # sdl92.g:1205:25: C O M M E N T
+            # sdl92.g:1234:17: ( C O M M E N T )
+            # sdl92.g:1234:25: C O M M E N T
             pass 
             self.mC()
             self.mO()
@@ -1620,8 +1622,8 @@ class sdl92Lexer(Lexer):
             _type = LABEL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1206:17: ( L A B E L )
-            # sdl92.g:1206:25: L A B E L
+            # sdl92.g:1235:17: ( L A B E L )
+            # sdl92.g:1235:25: L A B E L
             pass 
             self.mL()
             self.mA()
@@ -1649,8 +1651,8 @@ class sdl92Lexer(Lexer):
             _type = STOP
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1207:17: ( S T O P )
-            # sdl92.g:1207:25: S T O P
+            # sdl92.g:1236:17: ( S T O P )
+            # sdl92.g:1236:25: S T O P
             pass 
             self.mS()
             self.mT()
@@ -1677,8 +1679,8 @@ class sdl92Lexer(Lexer):
             _type = IF
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1208:17: ( I F )
-            # sdl92.g:1208:25: I F
+            # sdl92.g:1237:17: ( I F )
+            # sdl92.g:1237:25: I F
             pass 
             self.mI()
             self.mF()
@@ -1703,8 +1705,8 @@ class sdl92Lexer(Lexer):
             _type = THEN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1209:17: ( T H E N )
-            # sdl92.g:1209:25: T H E N
+            # sdl92.g:1238:17: ( T H E N )
+            # sdl92.g:1238:25: T H E N
             pass 
             self.mT()
             self.mH()
@@ -1731,8 +1733,8 @@ class sdl92Lexer(Lexer):
             _type = ELSE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1210:17: ( E L S E )
-            # sdl92.g:1210:25: E L S E
+            # sdl92.g:1239:17: ( E L S E )
+            # sdl92.g:1239:25: E L S E
             pass 
             self.mE()
             self.mL()
@@ -1759,8 +1761,8 @@ class sdl92Lexer(Lexer):
             _type = FI
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1211:17: ( F I )
-            # sdl92.g:1211:25: F I
+            # sdl92.g:1240:17: ( F I )
+            # sdl92.g:1240:25: F I
             pass 
             self.mF()
             self.mI()
@@ -1785,8 +1787,8 @@ class sdl92Lexer(Lexer):
             _type = CREATE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1212:17: ( C R E A T E )
-            # sdl92.g:1212:25: C R E A T E
+            # sdl92.g:1241:17: ( C R E A T E )
+            # sdl92.g:1241:25: C R E A T E
             pass 
             self.mC()
             self.mR()
@@ -1815,8 +1817,8 @@ class sdl92Lexer(Lexer):
             _type = OUTPUT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1213:17: ( O U T P U T )
-            # sdl92.g:1213:25: O U T P U T
+            # sdl92.g:1242:17: ( O U T P U T )
+            # sdl92.g:1242:25: O U T P U T
             pass 
             self.mO()
             self.mU()
@@ -1845,8 +1847,8 @@ class sdl92Lexer(Lexer):
             _type = CALL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1214:17: ( C A L L )
-            # sdl92.g:1214:25: C A L L
+            # sdl92.g:1243:17: ( C A L L )
+            # sdl92.g:1243:25: C A L L
             pass 
             self.mC()
             self.mA()
@@ -1873,8 +1875,8 @@ class sdl92Lexer(Lexer):
             _type = THIS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1215:17: ( T H I S )
-            # sdl92.g:1215:25: T H I S
+            # sdl92.g:1244:17: ( T H I S )
+            # sdl92.g:1244:25: T H I S
             pass 
             self.mT()
             self.mH()
@@ -1901,8 +1903,8 @@ class sdl92Lexer(Lexer):
             _type = SET
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1216:17: ( S E T )
-            # sdl92.g:1216:25: S E T
+            # sdl92.g:1245:17: ( S E T )
+            # sdl92.g:1245:25: S E T
             pass 
             self.mS()
             self.mE()
@@ -1928,8 +1930,8 @@ class sdl92Lexer(Lexer):
             _type = RESET
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1217:17: ( R E S E T )
-            # sdl92.g:1217:25: R E S E T
+            # sdl92.g:1246:17: ( R E S E T )
+            # sdl92.g:1246:25: R E S E T
             pass 
             self.mR()
             self.mE()
@@ -1957,8 +1959,8 @@ class sdl92Lexer(Lexer):
             _type = ENDALTERNATIVE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1218:17: ( E N D A L T E R N A T I V E )
-            # sdl92.g:1218:25: E N D A L T E R N A T I V E
+            # sdl92.g:1247:17: ( E N D A L T E R N A T I V E )
+            # sdl92.g:1247:25: E N D A L T E R N A T I V E
             pass 
             self.mE()
             self.mN()
@@ -1995,8 +1997,8 @@ class sdl92Lexer(Lexer):
             _type = ALTERNATIVE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1219:17: ( A L T E R N A T I V E )
-            # sdl92.g:1219:25: A L T E R N A T I V E
+            # sdl92.g:1248:17: ( A L T E R N A T I V E )
+            # sdl92.g:1248:25: A L T E R N A T I V E
             pass 
             self.mA()
             self.mL()
@@ -2030,8 +2032,8 @@ class sdl92Lexer(Lexer):
             _type = DECISION
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1220:17: ( D E C I S I O N )
-            # sdl92.g:1220:25: D E C I S I O N
+            # sdl92.g:1249:17: ( D E C I S I O N )
+            # sdl92.g:1249:25: D E C I S I O N
             pass 
             self.mD()
             self.mE()
@@ -2062,8 +2064,8 @@ class sdl92Lexer(Lexer):
             _type = ENDDECISION
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1221:17: ( E N D D E C I S I O N )
-            # sdl92.g:1221:25: E N D D E C I S I O N
+            # sdl92.g:1250:17: ( E N D D E C I S I O N )
+            # sdl92.g:1250:25: E N D D E C I S I O N
             pass 
             self.mE()
             self.mN()
@@ -2097,8 +2099,8 @@ class sdl92Lexer(Lexer):
             _type = EXPORT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1222:17: ( E X P O R T )
-            # sdl92.g:1222:25: E X P O R T
+            # sdl92.g:1251:17: ( E X P O R T )
+            # sdl92.g:1251:25: E X P O R T
             pass 
             self.mE()
             self.mX()
@@ -2127,8 +2129,8 @@ class sdl92Lexer(Lexer):
             _type = EXTERNAL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1223:17: ( E X T E R N A L )
-            # sdl92.g:1223:25: E X T E R N A L
+            # sdl92.g:1252:17: ( E X T E R N A L )
+            # sdl92.g:1252:25: E X T E R N A L
             pass 
             self.mE()
             self.mX()
@@ -2159,8 +2161,8 @@ class sdl92Lexer(Lexer):
             _type = REFERENCED
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1224:17: ( R E F E R E N C E D )
-            # sdl92.g:1224:25: R E F E R E N C E D
+            # sdl92.g:1253:17: ( R E F E R E N C E D )
+            # sdl92.g:1253:25: R E F E R E N C E D
             pass 
             self.mR()
             self.mE()
@@ -2193,8 +2195,8 @@ class sdl92Lexer(Lexer):
             _type = CONNECTION
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1225:17: ( C O N N E C T I O N )
-            # sdl92.g:1225:25: C O N N E C T I O N
+            # sdl92.g:1254:17: ( C O N N E C T I O N )
+            # sdl92.g:1254:25: C O N N E C T I O N
             pass 
             self.mC()
             self.mO()
@@ -2227,8 +2229,8 @@ class sdl92Lexer(Lexer):
             _type = ENDCONNECTION
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1226:17: ( E N D C O N N E C T I O N )
-            # sdl92.g:1226:25: E N D C O N N E C T I O N
+            # sdl92.g:1255:17: ( E N D C O N N E C T I O N )
+            # sdl92.g:1255:25: E N D C O N N E C T I O N
             pass 
             self.mE()
             self.mN()
@@ -2264,8 +2266,8 @@ class sdl92Lexer(Lexer):
             _type = FROM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1227:17: ( F R O M )
-            # sdl92.g:1227:25: F R O M
+            # sdl92.g:1256:17: ( F R O M )
+            # sdl92.g:1256:25: F R O M
             pass 
             self.mF()
             self.mR()
@@ -2292,8 +2294,8 @@ class sdl92Lexer(Lexer):
             _type = TO
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1228:17: ( T O )
-            # sdl92.g:1228:25: T O
+            # sdl92.g:1257:17: ( T O )
+            # sdl92.g:1257:25: T O
             pass 
             self.mT()
             self.mO()
@@ -2318,8 +2320,8 @@ class sdl92Lexer(Lexer):
             _type = WITH
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1229:17: ( W I T H )
-            # sdl92.g:1229:25: W I T H
+            # sdl92.g:1258:17: ( W I T H )
+            # sdl92.g:1258:25: W I T H
             pass 
             self.mW()
             self.mI()
@@ -2346,8 +2348,8 @@ class sdl92Lexer(Lexer):
             _type = VIA
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1230:17: ( V I A )
-            # sdl92.g:1230:25: V I A
+            # sdl92.g:1259:17: ( V I A )
+            # sdl92.g:1259:25: V I A
             pass 
             self.mV()
             self.mI()
@@ -2373,8 +2375,8 @@ class sdl92Lexer(Lexer):
             _type = ALL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1231:17: ( A L L )
-            # sdl92.g:1231:25: A L L
+            # sdl92.g:1260:17: ( A L L )
+            # sdl92.g:1260:25: A L L
             pass 
             self.mA()
             self.mL()
@@ -2400,8 +2402,8 @@ class sdl92Lexer(Lexer):
             _type = TASK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1232:17: ( T A S K )
-            # sdl92.g:1232:25: T A S K
+            # sdl92.g:1261:17: ( T A S K )
+            # sdl92.g:1261:25: T A S K
             pass 
             self.mT()
             self.mA()
@@ -2428,8 +2430,8 @@ class sdl92Lexer(Lexer):
             _type = JOIN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1233:17: ( J O I N )
-            # sdl92.g:1233:25: J O I N
+            # sdl92.g:1262:17: ( J O I N )
+            # sdl92.g:1262:25: J O I N
             pass 
             self.mJ()
             self.mO()
@@ -2456,8 +2458,8 @@ class sdl92Lexer(Lexer):
             _type = PLUS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1234:17: ( '+' )
-            # sdl92.g:1234:25: '+'
+            # sdl92.g:1263:17: ( '+' )
+            # sdl92.g:1263:25: '+'
             pass 
             self.match(43)
 
@@ -2481,8 +2483,8 @@ class sdl92Lexer(Lexer):
             _type = DOT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1235:17: ( '.' )
-            # sdl92.g:1235:25: '.'
+            # sdl92.g:1264:17: ( '.' )
+            # sdl92.g:1264:25: '.'
             pass 
             self.match(46)
 
@@ -2506,8 +2508,8 @@ class sdl92Lexer(Lexer):
             _type = APPEND
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1236:17: ( '//' )
-            # sdl92.g:1236:25: '//'
+            # sdl92.g:1265:17: ( '//' )
+            # sdl92.g:1265:25: '//'
             pass 
             self.match("//")
 
@@ -2531,8 +2533,8 @@ class sdl92Lexer(Lexer):
             _type = IN
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1237:17: ( I N )
-            # sdl92.g:1237:25: I N
+            # sdl92.g:1266:17: ( I N )
+            # sdl92.g:1266:25: I N
             pass 
             self.mI()
             self.mN()
@@ -2557,8 +2559,8 @@ class sdl92Lexer(Lexer):
             _type = OUT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1238:17: ( O U T )
-            # sdl92.g:1238:25: O U T
+            # sdl92.g:1267:17: ( O U T )
+            # sdl92.g:1267:25: O U T
             pass 
             self.mO()
             self.mU()
@@ -2584,8 +2586,8 @@ class sdl92Lexer(Lexer):
             _type = INOUT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1239:17: ( I N '/' O U T )
-            # sdl92.g:1239:25: I N '/' O U T
+            # sdl92.g:1268:17: ( I N '/' O U T )
+            # sdl92.g:1268:25: I N '/' O U T
             pass 
             self.mI()
             self.mN()
@@ -2614,8 +2616,8 @@ class sdl92Lexer(Lexer):
             _type = SUBSTRUCTURE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1240:17: ( S U B S T R U C T U R E )
-            # sdl92.g:1240:25: S U B S T R U C T U R E
+            # sdl92.g:1269:17: ( S U B S T R U C T U R E )
+            # sdl92.g:1269:25: S U B S T R U C T U R E
             pass 
             self.mS()
             self.mU()
@@ -2650,8 +2652,8 @@ class sdl92Lexer(Lexer):
             _type = ENDSUBSTRUCTURE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1241:17: ( E N D S U B S T R U C T U R E )
-            # sdl92.g:1241:25: E N D S U B S T R U C T U R E
+            # sdl92.g:1270:17: ( E N D S U B S T R U C T U R E )
+            # sdl92.g:1270:25: E N D S U B S T R U C T U R E
             pass 
             self.mE()
             self.mN()
@@ -2689,8 +2691,8 @@ class sdl92Lexer(Lexer):
             _type = FPAR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1242:17: ( F P A R )
-            # sdl92.g:1242:25: F P A R
+            # sdl92.g:1271:17: ( F P A R )
+            # sdl92.g:1271:25: F P A R
             pass 
             self.mF()
             self.mP()
@@ -2717,8 +2719,8 @@ class sdl92Lexer(Lexer):
             _type = PARAM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1243:17: ( P A R A M )
-            # sdl92.g:1243:25: P A R A M
+            # sdl92.g:1272:17: ( P A R A M )
+            # sdl92.g:1272:25: P A R A M
             pass 
             self.mP()
             self.mA()
@@ -2746,8 +2748,8 @@ class sdl92Lexer(Lexer):
             _type = EQ
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1244:17: ( '=' )
-            # sdl92.g:1244:25: '='
+            # sdl92.g:1273:17: ( '=' )
+            # sdl92.g:1273:25: '='
             pass 
             self.match(61)
 
@@ -2771,8 +2773,8 @@ class sdl92Lexer(Lexer):
             _type = NEQ
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1245:17: ( '/=' )
-            # sdl92.g:1245:25: '/='
+            # sdl92.g:1274:17: ( '/=' )
+            # sdl92.g:1274:25: '/='
             pass 
             self.match("/=")
 
@@ -2796,8 +2798,8 @@ class sdl92Lexer(Lexer):
             _type = GT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1246:17: ( '>' )
-            # sdl92.g:1246:25: '>'
+            # sdl92.g:1275:17: ( '>' )
+            # sdl92.g:1275:25: '>'
             pass 
             self.match(62)
 
@@ -2821,8 +2823,8 @@ class sdl92Lexer(Lexer):
             _type = GE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1247:17: ( '>=' )
-            # sdl92.g:1247:25: '>='
+            # sdl92.g:1276:17: ( '>=' )
+            # sdl92.g:1276:25: '>='
             pass 
             self.match(">=")
 
@@ -2846,8 +2848,8 @@ class sdl92Lexer(Lexer):
             _type = LT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1248:17: ( '<' )
-            # sdl92.g:1248:26: '<'
+            # sdl92.g:1277:17: ( '<' )
+            # sdl92.g:1277:26: '<'
             pass 
             self.match(60)
 
@@ -2871,8 +2873,8 @@ class sdl92Lexer(Lexer):
             _type = LE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1249:17: ( '<=' )
-            # sdl92.g:1249:25: '<='
+            # sdl92.g:1278:17: ( '<=' )
+            # sdl92.g:1278:25: '<='
             pass 
             self.match("<=")
 
@@ -2896,8 +2898,8 @@ class sdl92Lexer(Lexer):
             _type = NOT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1250:17: ( N O T )
-            # sdl92.g:1250:25: N O T
+            # sdl92.g:1279:17: ( N O T )
+            # sdl92.g:1279:25: N O T
             pass 
             self.mN()
             self.mO()
@@ -2923,8 +2925,8 @@ class sdl92Lexer(Lexer):
             _type = OR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1251:17: ( O R )
-            # sdl92.g:1251:25: O R
+            # sdl92.g:1280:17: ( O R )
+            # sdl92.g:1280:25: O R
             pass 
             self.mO()
             self.mR()
@@ -2949,8 +2951,8 @@ class sdl92Lexer(Lexer):
             _type = XOR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1252:17: ( X O R )
-            # sdl92.g:1252:25: X O R
+            # sdl92.g:1281:17: ( X O R )
+            # sdl92.g:1281:25: X O R
             pass 
             self.mX()
             self.mO()
@@ -2976,8 +2978,8 @@ class sdl92Lexer(Lexer):
             _type = AND
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1253:17: ( A N D )
-            # sdl92.g:1253:25: A N D
+            # sdl92.g:1282:17: ( A N D )
+            # sdl92.g:1282:25: A N D
             pass 
             self.mA()
             self.mN()
@@ -3003,8 +3005,8 @@ class sdl92Lexer(Lexer):
             _type = IMPLIES
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1254:17: ( '=>' )
-            # sdl92.g:1254:25: '=>'
+            # sdl92.g:1283:17: ( '=>' )
+            # sdl92.g:1283:25: '=>'
             pass 
             self.match("=>")
 
@@ -3028,8 +3030,8 @@ class sdl92Lexer(Lexer):
             _type = DIV
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1255:17: ( '/' )
-            # sdl92.g:1255:25: '/'
+            # sdl92.g:1284:17: ( '/' )
+            # sdl92.g:1284:25: '/'
             pass 
             self.match(47)
 
@@ -3053,8 +3055,8 @@ class sdl92Lexer(Lexer):
             _type = MOD
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1256:17: ( M O D )
-            # sdl92.g:1256:25: M O D
+            # sdl92.g:1285:17: ( M O D )
+            # sdl92.g:1285:25: M O D
             pass 
             self.mM()
             self.mO()
@@ -3080,8 +3082,8 @@ class sdl92Lexer(Lexer):
             _type = REM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1257:17: ( R E M )
-            # sdl92.g:1257:25: R E M
+            # sdl92.g:1286:17: ( R E M )
+            # sdl92.g:1286:25: R E M
             pass 
             self.mR()
             self.mE()
@@ -3107,8 +3109,8 @@ class sdl92Lexer(Lexer):
             _type = TRUE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1258:17: ( T R U E )
-            # sdl92.g:1258:25: T R U E
+            # sdl92.g:1287:17: ( T R U E )
+            # sdl92.g:1287:25: T R U E
             pass 
             self.mT()
             self.mR()
@@ -3135,8 +3137,8 @@ class sdl92Lexer(Lexer):
             _type = FALSE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1259:17: ( F A L S E )
-            # sdl92.g:1259:25: F A L S E
+            # sdl92.g:1288:17: ( F A L S E )
+            # sdl92.g:1288:25: F A L S E
             pass 
             self.mF()
             self.mA()
@@ -3164,8 +3166,8 @@ class sdl92Lexer(Lexer):
             _type = ASNFILENAME
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1260:17: ( A S N F I L E N A M E )
-            # sdl92.g:1260:25: A S N F I L E N A M E
+            # sdl92.g:1289:17: ( A S N F I L E N A M E )
+            # sdl92.g:1289:25: A S N F I L E N A M E
             pass 
             self.mA()
             self.mS()
@@ -3199,8 +3201,8 @@ class sdl92Lexer(Lexer):
             _type = NULL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1261:17: ( N U L L )
-            # sdl92.g:1261:25: N U L L
+            # sdl92.g:1290:17: ( N U L L )
+            # sdl92.g:1290:25: N U L L
             pass 
             self.mN()
             self.mU()
@@ -3227,8 +3229,8 @@ class sdl92Lexer(Lexer):
             _type = PLUS_INFINITY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1262:17: ( P L U S '-' I N F I N I T Y )
-            # sdl92.g:1262:25: P L U S '-' I N F I N I T Y
+            # sdl92.g:1291:17: ( P L U S '-' I N F I N I T Y )
+            # sdl92.g:1291:25: P L U S '-' I N F I N I T Y
             pass 
             self.mP()
             self.mL()
@@ -3264,8 +3266,8 @@ class sdl92Lexer(Lexer):
             _type = MINUS_INFINITY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1263:17: ( M I N U S '-' I N F I N I T Y )
-            # sdl92.g:1263:25: M I N U S '-' I N F I N I T Y
+            # sdl92.g:1292:17: ( M I N U S '-' I N F I N I T Y )
+            # sdl92.g:1292:25: M I N U S '-' I N F I N I T Y
             pass 
             self.mM()
             self.mI()
@@ -3302,8 +3304,8 @@ class sdl92Lexer(Lexer):
             _type = MANTISSA
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1264:17: ( M A N T I S S A )
-            # sdl92.g:1264:25: M A N T I S S A
+            # sdl92.g:1293:17: ( M A N T I S S A )
+            # sdl92.g:1293:25: M A N T I S S A
             pass 
             self.mM()
             self.mA()
@@ -3334,8 +3336,8 @@ class sdl92Lexer(Lexer):
             _type = EXPONENT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1265:17: ( E X P O N E N T )
-            # sdl92.g:1265:25: E X P O N E N T
+            # sdl92.g:1294:17: ( E X P O N E N T )
+            # sdl92.g:1294:25: E X P O N E N T
             pass 
             self.mE()
             self.mX()
@@ -3366,8 +3368,8 @@ class sdl92Lexer(Lexer):
             _type = BASE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1266:17: ( B A S E )
-            # sdl92.g:1266:25: B A S E
+            # sdl92.g:1295:17: ( B A S E )
+            # sdl92.g:1295:25: B A S E
             pass 
             self.mB()
             self.mA()
@@ -3394,8 +3396,8 @@ class sdl92Lexer(Lexer):
             _type = SYSTEM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1267:17: ( S Y S T E M )
-            # sdl92.g:1267:25: S Y S T E M
+            # sdl92.g:1296:17: ( S Y S T E M )
+            # sdl92.g:1296:25: S Y S T E M
             pass 
             self.mS()
             self.mY()
@@ -3424,8 +3426,8 @@ class sdl92Lexer(Lexer):
             _type = ENDSYSTEM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1268:17: ( E N D S Y S T E M )
-            # sdl92.g:1268:25: E N D S Y S T E M
+            # sdl92.g:1297:17: ( E N D S Y S T E M )
+            # sdl92.g:1297:25: E N D S Y S T E M
             pass 
             self.mE()
             self.mN()
@@ -3457,8 +3459,8 @@ class sdl92Lexer(Lexer):
             _type = CHANNEL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1269:17: ( C H A N N E L )
-            # sdl92.g:1269:25: C H A N N E L
+            # sdl92.g:1298:17: ( C H A N N E L )
+            # sdl92.g:1298:25: C H A N N E L
             pass 
             self.mC()
             self.mH()
@@ -3488,8 +3490,8 @@ class sdl92Lexer(Lexer):
             _type = ENDCHANNEL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1270:17: ( E N D C H A N N E L )
-            # sdl92.g:1270:25: E N D C H A N N E L
+            # sdl92.g:1299:17: ( E N D C H A N N E L )
+            # sdl92.g:1299:25: E N D C H A N N E L
             pass 
             self.mE()
             self.mN()
@@ -3522,8 +3524,8 @@ class sdl92Lexer(Lexer):
             _type = USE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1271:17: ( U S E )
-            # sdl92.g:1271:25: U S E
+            # sdl92.g:1300:17: ( U S E )
+            # sdl92.g:1300:25: U S E
             pass 
             self.mU()
             self.mS()
@@ -3549,8 +3551,8 @@ class sdl92Lexer(Lexer):
             _type = SIGNAL
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1272:17: ( S I G N A L )
-            # sdl92.g:1272:25: S I G N A L
+            # sdl92.g:1301:17: ( S I G N A L )
+            # sdl92.g:1301:25: S I G N A L
             pass 
             self.mS()
             self.mI()
@@ -3579,8 +3581,8 @@ class sdl92Lexer(Lexer):
             _type = BLOCK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1273:17: ( B L O C K )
-            # sdl92.g:1273:25: B L O C K
+            # sdl92.g:1302:17: ( B L O C K )
+            # sdl92.g:1302:25: B L O C K
             pass 
             self.mB()
             self.mL()
@@ -3608,8 +3610,8 @@ class sdl92Lexer(Lexer):
             _type = ENDBLOCK
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1274:17: ( E N D B L O C K )
-            # sdl92.g:1274:25: E N D B L O C K
+            # sdl92.g:1303:17: ( E N D B L O C K )
+            # sdl92.g:1303:25: E N D B L O C K
             pass 
             self.mE()
             self.mN()
@@ -3640,8 +3642,8 @@ class sdl92Lexer(Lexer):
             _type = SIGNALROUTE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1275:17: ( S I G N A L R O U T E )
-            # sdl92.g:1275:25: S I G N A L R O U T E
+            # sdl92.g:1304:17: ( S I G N A L R O U T E )
+            # sdl92.g:1304:25: S I G N A L R O U T E
             pass 
             self.mS()
             self.mI()
@@ -3675,8 +3677,8 @@ class sdl92Lexer(Lexer):
             _type = CONNECT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1276:17: ( C O N N E C T )
-            # sdl92.g:1276:25: C O N N E C T
+            # sdl92.g:1305:17: ( C O N N E C T )
+            # sdl92.g:1305:25: C O N N E C T
             pass 
             self.mC()
             self.mO()
@@ -3706,8 +3708,8 @@ class sdl92Lexer(Lexer):
             _type = SYNTYPE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1277:17: ( S Y N T Y P E )
-            # sdl92.g:1277:25: S Y N T Y P E
+            # sdl92.g:1306:17: ( S Y N T Y P E )
+            # sdl92.g:1306:25: S Y N T Y P E
             pass 
             self.mS()
             self.mY()
@@ -3737,8 +3739,8 @@ class sdl92Lexer(Lexer):
             _type = ENDSYNTYPE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1278:17: ( E N D S Y N T Y P E )
-            # sdl92.g:1278:25: E N D S Y N T Y P E
+            # sdl92.g:1307:17: ( E N D S Y N T Y P E )
+            # sdl92.g:1307:25: E N D S Y N T Y P E
             pass 
             self.mE()
             self.mN()
@@ -3771,8 +3773,8 @@ class sdl92Lexer(Lexer):
             _type = NEWTYPE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1279:17: ( N E W T Y P E )
-            # sdl92.g:1279:25: N E W T Y P E
+            # sdl92.g:1308:17: ( N E W T Y P E )
+            # sdl92.g:1308:25: N E W T Y P E
             pass 
             self.mN()
             self.mE()
@@ -3802,8 +3804,8 @@ class sdl92Lexer(Lexer):
             _type = ENDNEWTYPE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1280:17: ( E N D N E W T Y P E )
-            # sdl92.g:1280:25: E N D N E W T Y P E
+            # sdl92.g:1309:17: ( E N D N E W T Y P E )
+            # sdl92.g:1309:25: E N D N E W T Y P E
             pass 
             self.mE()
             self.mN()
@@ -3836,8 +3838,8 @@ class sdl92Lexer(Lexer):
             _type = ARRAY
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1281:17: ( A R R A Y )
-            # sdl92.g:1281:25: A R R A Y
+            # sdl92.g:1310:17: ( A R R A Y )
+            # sdl92.g:1310:25: A R R A Y
             pass 
             self.mA()
             self.mR()
@@ -3865,8 +3867,8 @@ class sdl92Lexer(Lexer):
             _type = CONSTANTS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1282:17: ( C O N S T A N T S )
-            # sdl92.g:1282:25: C O N S T A N T S
+            # sdl92.g:1311:17: ( C O N S T A N T S )
+            # sdl92.g:1311:25: C O N S T A N T S
             pass 
             self.mC()
             self.mO()
@@ -3898,8 +3900,8 @@ class sdl92Lexer(Lexer):
             _type = STRUCT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1283:17: ( S T R U C T )
-            # sdl92.g:1283:25: S T R U C T
+            # sdl92.g:1312:17: ( S T R U C T )
+            # sdl92.g:1312:25: S T R U C T
             pass 
             self.mS()
             self.mT()
@@ -3928,8 +3930,8 @@ class sdl92Lexer(Lexer):
             _type = SYNONYM
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1284:17: ( S Y N O N Y M )
-            # sdl92.g:1284:25: S Y N O N Y M
+            # sdl92.g:1313:17: ( S Y N O N Y M )
+            # sdl92.g:1313:25: S Y N O N Y M
             pass 
             self.mS()
             self.mY()
@@ -3959,8 +3961,8 @@ class sdl92Lexer(Lexer):
             _type = IMPORT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1285:17: ( I M P O R T )
-            # sdl92.g:1285:25: I M P O R T
+            # sdl92.g:1314:17: ( I M P O R T )
+            # sdl92.g:1314:25: I M P O R T
             pass 
             self.mI()
             self.mM()
@@ -3989,8 +3991,8 @@ class sdl92Lexer(Lexer):
             _type = VIEW
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1286:17: ( V I E W )
-            # sdl92.g:1286:25: V I E W
+            # sdl92.g:1315:17: ( V I E W )
+            # sdl92.g:1315:25: V I E W
             pass 
             self.mV()
             self.mI()
@@ -4017,8 +4019,8 @@ class sdl92Lexer(Lexer):
             _type = ACTIVE
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1287:17: ( A C T I V E )
-            # sdl92.g:1287:25: A C T I V E
+            # sdl92.g:1316:17: ( A C T I V E )
+            # sdl92.g:1316:25: A C T I V E
             pass 
             self.mA()
             self.mC()
@@ -4044,11 +4046,11 @@ class sdl92Lexer(Lexer):
     def mSTR(self, ):
 
         try:
-            # sdl92.g:1291:9: ( '\\'' ( options {greedy=false; } : . )* '\\'' )
-            # sdl92.g:1291:17: '\\'' ( options {greedy=false; } : . )* '\\''
+            # sdl92.g:1320:9: ( '\\'' ( options {greedy=false; } : . )* '\\'' )
+            # sdl92.g:1320:17: '\\'' ( options {greedy=false; } : . )* '\\''
             pass 
             self.match(39)
-            # sdl92.g:1291:22: ( options {greedy=false; } : . )*
+            # sdl92.g:1320:22: ( options {greedy=false; } : . )*
             while True: #loop1
                 alt1 = 2
                 LA1_0 = self.input.LA(1)
@@ -4060,7 +4062,7 @@ class sdl92Lexer(Lexer):
 
 
                 if alt1 == 1:
-                    # sdl92.g:1291:50: .
+                    # sdl92.g:1320:50: .
                     pass 
                     self.matchAny()
 
@@ -4087,10 +4089,10 @@ class sdl92Lexer(Lexer):
             _type = STRING
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1294:9: ( ( STR )+ )
-            # sdl92.g:1294:17: ( STR )+
+            # sdl92.g:1323:9: ( ( STR )+ )
+            # sdl92.g:1323:17: ( STR )+
             pass 
-            # sdl92.g:1294:17: ( STR )+
+            # sdl92.g:1323:17: ( STR )+
             cnt2 = 0
             while True: #loop2
                 alt2 = 2
@@ -4101,7 +4103,7 @@ class sdl92Lexer(Lexer):
 
 
                 if alt2 == 1:
-                    # sdl92.g:1294:17: STR
+                    # sdl92.g:1323:17: STR
                     pass 
                     self.mSTR()
 
@@ -4135,11 +4137,11 @@ class sdl92Lexer(Lexer):
             _type = BITSTR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1297:9: ( '\"' ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )* '\"B' )
-            # sdl92.g:1297:17: '\"' ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )* '\"B'
+            # sdl92.g:1326:9: ( '\"' ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )* '\"B' )
+            # sdl92.g:1326:17: '\"' ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )* '\"B'
             pass 
             self.match(34)
-            # sdl92.g:1297:21: ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )*
+            # sdl92.g:1326:21: ( '0' | '1' | ' ' | '\\t' | '\\r' | '\\n' )*
             while True: #loop3
                 alt3 = 2
                 LA3_0 = self.input.LA(1)
@@ -4184,11 +4186,11 @@ class sdl92Lexer(Lexer):
             _type = OCTSTR
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1301:9: ( '\"' ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )* '\"H' )
-            # sdl92.g:1301:17: '\"' ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )* '\"H'
+            # sdl92.g:1330:9: ( '\"' ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )* '\"H' )
+            # sdl92.g:1330:17: '\"' ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )* '\"H'
             pass 
             self.match(34)
-            # sdl92.g:1301:21: ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )*
+            # sdl92.g:1330:21: ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | ' ' | '\\t' | '\\r' | '\\n' )*
             while True: #loop4
                 alt4 = 2
                 LA4_0 = self.input.LA(1)
@@ -4233,11 +4235,11 @@ class sdl92Lexer(Lexer):
             _type = ID
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1305:9: ( ALPHA ( ALPHA | DIGITS | '_' )* )
-            # sdl92.g:1305:17: ALPHA ( ALPHA | DIGITS | '_' )*
+            # sdl92.g:1334:9: ( ALPHA ( ALPHA | DIGITS | '_' )* )
+            # sdl92.g:1334:17: ALPHA ( ALPHA | DIGITS | '_' )*
             pass 
             self.mALPHA()
-            # sdl92.g:1305:23: ( ALPHA | DIGITS | '_' )*
+            # sdl92.g:1334:23: ( ALPHA | DIGITS | '_' )*
             while True: #loop5
                 alt5 = 4
                 LA5 = self.input.LA(1)
@@ -4249,19 +4251,19 @@ class sdl92Lexer(Lexer):
                     alt5 = 3
 
                 if alt5 == 1:
-                    # sdl92.g:1305:24: ALPHA
+                    # sdl92.g:1334:24: ALPHA
                     pass 
                     self.mALPHA()
 
 
                 elif alt5 == 2:
-                    # sdl92.g:1305:32: DIGITS
+                    # sdl92.g:1334:32: DIGITS
                     pass 
                     self.mDIGITS()
 
 
                 elif alt5 == 3:
-                    # sdl92.g:1305:41: '_'
+                    # sdl92.g:1334:41: '_'
                     pass 
                     self.match(95)
 
@@ -4286,7 +4288,7 @@ class sdl92Lexer(Lexer):
     def mALPHA(self, ):
 
         try:
-            # sdl92.g:1308:9: ( ( 'a' .. 'z' ) | ( 'A' .. 'Z' ) )
+            # sdl92.g:1337:9: ( ( 'a' .. 'z' ) | ( 'A' .. 'Z' ) )
             alt6 = 2
             LA6_0 = self.input.LA(1)
 
@@ -4300,10 +4302,10 @@ class sdl92Lexer(Lexer):
                 raise nvae
 
             if alt6 == 1:
-                # sdl92.g:1308:17: ( 'a' .. 'z' )
+                # sdl92.g:1337:17: ( 'a' .. 'z' )
                 pass 
-                # sdl92.g:1308:17: ( 'a' .. 'z' )
-                # sdl92.g:1308:18: 'a' .. 'z'
+                # sdl92.g:1337:17: ( 'a' .. 'z' )
+                # sdl92.g:1337:18: 'a' .. 'z'
                 pass 
                 self.matchRange(97, 122)
 
@@ -4312,10 +4314,10 @@ class sdl92Lexer(Lexer):
 
 
             elif alt6 == 2:
-                # sdl92.g:1308:28: ( 'A' .. 'Z' )
+                # sdl92.g:1337:28: ( 'A' .. 'Z' )
                 pass 
-                # sdl92.g:1308:28: ( 'A' .. 'Z' )
-                # sdl92.g:1308:29: 'A' .. 'Z'
+                # sdl92.g:1337:28: ( 'A' .. 'Z' )
+                # sdl92.g:1337:29: 'A' .. 'Z'
                 pass 
                 self.matchRange(65, 90)
 
@@ -4339,23 +4341,23 @@ class sdl92Lexer(Lexer):
             _type = INT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1310:9: ( ( DASH )? ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* ) )
-            # sdl92.g:1310:17: ( DASH )? ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
+            # sdl92.g:1339:9: ( ( DASH )? ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* ) )
+            # sdl92.g:1339:17: ( DASH )? ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
             pass 
-            # sdl92.g:1310:17: ( DASH )?
+            # sdl92.g:1339:17: ( DASH )?
             alt7 = 2
             LA7_0 = self.input.LA(1)
 
             if (LA7_0 == 45) :
                 alt7 = 1
             if alt7 == 1:
-                # sdl92.g:1310:17: DASH
+                # sdl92.g:1339:17: DASH
                 pass 
                 self.mDASH()
 
 
 
-            # sdl92.g:1310:23: ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
+            # sdl92.g:1339:23: ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
             alt9 = 2
             LA9_0 = self.input.LA(1)
 
@@ -4369,22 +4371,22 @@ class sdl92Lexer(Lexer):
                 raise nvae
 
             if alt9 == 1:
-                # sdl92.g:1310:25: '0'
+                # sdl92.g:1339:25: '0'
                 pass 
                 self.match(48)
 
 
             elif alt9 == 2:
-                # sdl92.g:1310:31: ( '1' .. '9' ) ( '0' .. '9' )*
+                # sdl92.g:1339:31: ( '1' .. '9' ) ( '0' .. '9' )*
                 pass 
-                # sdl92.g:1310:31: ( '1' .. '9' )
-                # sdl92.g:1310:32: '1' .. '9'
+                # sdl92.g:1339:31: ( '1' .. '9' )
+                # sdl92.g:1339:32: '1' .. '9'
                 pass 
                 self.matchRange(49, 57)
 
 
 
-                # sdl92.g:1310:42: ( '0' .. '9' )*
+                # sdl92.g:1339:42: ( '0' .. '9' )*
                 while True: #loop8
                     alt8 = 2
                     LA8_0 = self.input.LA(1)
@@ -4394,7 +4396,7 @@ class sdl92Lexer(Lexer):
 
 
                     if alt8 == 1:
-                        # sdl92.g:1310:43: '0' .. '9'
+                        # sdl92.g:1339:43: '0' .. '9'
                         pass 
                         self.matchRange(48, 57)
 
@@ -4422,10 +4424,10 @@ class sdl92Lexer(Lexer):
     def mDIGITS(self, ):
 
         try:
-            # sdl92.g:1315:9: ( ( '0' .. '9' )+ )
-            # sdl92.g:1315:17: ( '0' .. '9' )+
+            # sdl92.g:1344:9: ( ( '0' .. '9' )+ )
+            # sdl92.g:1344:17: ( '0' .. '9' )+
             pass 
-            # sdl92.g:1315:17: ( '0' .. '9' )+
+            # sdl92.g:1344:17: ( '0' .. '9' )+
             cnt10 = 0
             while True: #loop10
                 alt10 = 2
@@ -4436,7 +4438,7 @@ class sdl92Lexer(Lexer):
 
 
                 if alt10 == 1:
-                    # sdl92.g:1315:18: '0' .. '9'
+                    # sdl92.g:1344:18: '0' .. '9'
                     pass 
                     self.matchRange(48, 57)
 
@@ -4468,35 +4470,35 @@ class sdl92Lexer(Lexer):
             _type = FLOAT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1318:9: ( INT DOT ( DIGITS )? ( Exponent )? | INT )
+            # sdl92.g:1347:9: ( INT DOT ( DIGITS )? ( Exponent )? | INT )
             alt13 = 2
             alt13 = self.dfa13.predict(self.input)
             if alt13 == 1:
-                # sdl92.g:1318:17: INT DOT ( DIGITS )? ( Exponent )?
+                # sdl92.g:1347:17: INT DOT ( DIGITS )? ( Exponent )?
                 pass 
                 self.mINT()
                 self.mDOT()
-                # sdl92.g:1318:25: ( DIGITS )?
+                # sdl92.g:1347:25: ( DIGITS )?
                 alt11 = 2
                 LA11_0 = self.input.LA(1)
 
                 if ((48 <= LA11_0 <= 57)) :
                     alt11 = 1
                 if alt11 == 1:
-                    # sdl92.g:1318:26: DIGITS
+                    # sdl92.g:1347:26: DIGITS
                     pass 
                     self.mDIGITS()
 
 
 
-                # sdl92.g:1318:35: ( Exponent )?
+                # sdl92.g:1347:35: ( Exponent )?
                 alt12 = 2
                 LA12_0 = self.input.LA(1)
 
                 if (LA12_0 == 69 or LA12_0 == 101) :
                     alt12 = 1
                 if alt12 == 1:
-                    # sdl92.g:1318:36: Exponent
+                    # sdl92.g:1347:36: Exponent
                     pass 
                     self.mExponent()
 
@@ -4505,7 +4507,7 @@ class sdl92Lexer(Lexer):
 
 
             elif alt13 == 2:
-                # sdl92.g:1319:17: INT
+                # sdl92.g:1348:17: INT
                 pass 
                 self.mINT()
 
@@ -4528,10 +4530,10 @@ class sdl92Lexer(Lexer):
             _type = WS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1322:5: ( ( ' ' | '\\t' | '\\r' | '\\n' )+ )
-            # sdl92.g:1322:9: ( ' ' | '\\t' | '\\r' | '\\n' )+
+            # sdl92.g:1351:5: ( ( ' ' | '\\t' | '\\r' | '\\n' )+ )
+            # sdl92.g:1351:9: ( ' ' | '\\t' | '\\r' | '\\n' )+
             pass 
-            # sdl92.g:1322:9: ( ' ' | '\\t' | '\\r' | '\\n' )+
+            # sdl92.g:1351:9: ( ' ' | '\\t' | '\\r' | '\\n' )+
             cnt14 = 0
             while True: #loop14
                 alt14 = 2
@@ -4582,8 +4584,8 @@ class sdl92Lexer(Lexer):
     def mExponent(self, ):
 
         try:
-            # sdl92.g:1330:10: ( ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+ )
-            # sdl92.g:1330:12: ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+
+            # sdl92.g:1359:10: ( ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+ )
+            # sdl92.g:1359:12: ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+
             pass 
             if self.input.LA(1) == 69 or self.input.LA(1) == 101:
                 self.input.consume()
@@ -4592,7 +4594,7 @@ class sdl92Lexer(Lexer):
                 self.recover(mse)
                 raise mse
 
-            # sdl92.g:1330:22: ( '+' | '-' )?
+            # sdl92.g:1359:22: ( '+' | '-' )?
             alt15 = 2
             LA15_0 = self.input.LA(1)
 
@@ -4611,7 +4613,7 @@ class sdl92Lexer(Lexer):
 
 
 
-            # sdl92.g:1330:33: ( '0' .. '9' )+
+            # sdl92.g:1359:33: ( '0' .. '9' )+
             cnt16 = 0
             while True: #loop16
                 alt16 = 2
@@ -4622,7 +4624,7 @@ class sdl92Lexer(Lexer):
 
 
                 if alt16 == 1:
-                    # sdl92.g:1330:34: '0' .. '9'
+                    # sdl92.g:1359:34: '0' .. '9'
                     pass 
                     self.matchRange(48, 57)
 
@@ -4654,11 +4656,11 @@ class sdl92Lexer(Lexer):
             _type = COMMENT2
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1334:9: ( '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' ) )
-            # sdl92.g:1334:18: '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' )
+            # sdl92.g:1363:9: ( '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' ) )
+            # sdl92.g:1363:18: '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' )
             pass 
             self.match("--")
-            # sdl92.g:1334:23: ( options {greedy=false; } : . )*
+            # sdl92.g:1363:23: ( options {greedy=false; } : . )*
             while True: #loop17
                 alt17 = 2
                 LA17_0 = self.input.LA(1)
@@ -4681,14 +4683,14 @@ class sdl92Lexer(Lexer):
 
 
                 if alt17 == 1:
-                    # sdl92.g:1334:51: .
+                    # sdl92.g:1363:51: .
                     pass 
                     self.matchAny()
 
 
                 else:
                     break #loop17
-            # sdl92.g:1334:56: ( '--' | ( '\\r' )? '\\n' )
+            # sdl92.g:1363:56: ( '--' | ( '\\r' )? '\\n' )
             alt19 = 2
             LA19_0 = self.input.LA(1)
 
@@ -4702,22 +4704,22 @@ class sdl92Lexer(Lexer):
                 raise nvae
 
             if alt19 == 1:
-                # sdl92.g:1334:57: '--'
+                # sdl92.g:1363:57: '--'
                 pass 
                 self.match("--")
 
 
             elif alt19 == 2:
-                # sdl92.g:1334:62: ( '\\r' )? '\\n'
+                # sdl92.g:1363:62: ( '\\r' )? '\\n'
                 pass 
-                # sdl92.g:1334:62: ( '\\r' )?
+                # sdl92.g:1363:62: ( '\\r' )?
                 alt18 = 2
                 LA18_0 = self.input.LA(1)
 
                 if (LA18_0 == 13) :
                     alt18 = 1
                 if alt18 == 1:
-                    # sdl92.g:1334:62: '\\r'
+                    # sdl92.g:1363:62: '\\r'
                     pass 
                     self.match(13)
 
@@ -4748,8 +4750,8 @@ class sdl92Lexer(Lexer):
     def mA(self, ):
 
         try:
-            # sdl92.g:1339:11: ( ( 'a' | 'A' ) )
-            # sdl92.g:1339:12: ( 'a' | 'A' )
+            # sdl92.g:1368:11: ( ( 'a' | 'A' ) )
+            # sdl92.g:1368:12: ( 'a' | 'A' )
             pass 
             if self.input.LA(1) == 65 or self.input.LA(1) == 97:
                 self.input.consume()
@@ -4774,8 +4776,8 @@ class sdl92Lexer(Lexer):
     def mB(self, ):
 
         try:
-            # sdl92.g:1340:11: ( ( 'b' | 'B' ) )
-            # sdl92.g:1340:12: ( 'b' | 'B' )
+            # sdl92.g:1369:11: ( ( 'b' | 'B' ) )
+            # sdl92.g:1369:12: ( 'b' | 'B' )
             pass 
             if self.input.LA(1) == 66 or self.input.LA(1) == 98:
                 self.input.consume()
@@ -4800,8 +4802,8 @@ class sdl92Lexer(Lexer):
     def mC(self, ):
 
         try:
-            # sdl92.g:1341:11: ( ( 'c' | 'C' ) )
-            # sdl92.g:1341:12: ( 'c' | 'C' )
+            # sdl92.g:1370:11: ( ( 'c' | 'C' ) )
+            # sdl92.g:1370:12: ( 'c' | 'C' )
             pass 
             if self.input.LA(1) == 67 or self.input.LA(1) == 99:
                 self.input.consume()
@@ -4826,8 +4828,8 @@ class sdl92Lexer(Lexer):
     def mD(self, ):
 
         try:
-            # sdl92.g:1342:11: ( ( 'd' | 'D' ) )
-            # sdl92.g:1342:12: ( 'd' | 'D' )
+            # sdl92.g:1371:11: ( ( 'd' | 'D' ) )
+            # sdl92.g:1371:12: ( 'd' | 'D' )
             pass 
             if self.input.LA(1) == 68 or self.input.LA(1) == 100:
                 self.input.consume()
@@ -4852,8 +4854,8 @@ class sdl92Lexer(Lexer):
     def mE(self, ):
 
         try:
-            # sdl92.g:1343:11: ( ( 'e' | 'E' ) )
-            # sdl92.g:1343:12: ( 'e' | 'E' )
+            # sdl92.g:1372:11: ( ( 'e' | 'E' ) )
+            # sdl92.g:1372:12: ( 'e' | 'E' )
             pass 
             if self.input.LA(1) == 69 or self.input.LA(1) == 101:
                 self.input.consume()
@@ -4878,8 +4880,8 @@ class sdl92Lexer(Lexer):
     def mF(self, ):
 
         try:
-            # sdl92.g:1344:11: ( ( 'f' | 'F' ) )
-            # sdl92.g:1344:12: ( 'f' | 'F' )
+            # sdl92.g:1373:11: ( ( 'f' | 'F' ) )
+            # sdl92.g:1373:12: ( 'f' | 'F' )
             pass 
             if self.input.LA(1) == 70 or self.input.LA(1) == 102:
                 self.input.consume()
@@ -4904,8 +4906,8 @@ class sdl92Lexer(Lexer):
     def mG(self, ):
 
         try:
-            # sdl92.g:1345:11: ( ( 'g' | 'G' ) )
-            # sdl92.g:1345:12: ( 'g' | 'G' )
+            # sdl92.g:1374:11: ( ( 'g' | 'G' ) )
+            # sdl92.g:1374:12: ( 'g' | 'G' )
             pass 
             if self.input.LA(1) == 71 or self.input.LA(1) == 103:
                 self.input.consume()
@@ -4930,8 +4932,8 @@ class sdl92Lexer(Lexer):
     def mH(self, ):
 
         try:
-            # sdl92.g:1346:11: ( ( 'h' | 'H' ) )
-            # sdl92.g:1346:12: ( 'h' | 'H' )
+            # sdl92.g:1375:11: ( ( 'h' | 'H' ) )
+            # sdl92.g:1375:12: ( 'h' | 'H' )
             pass 
             if self.input.LA(1) == 72 or self.input.LA(1) == 104:
                 self.input.consume()
@@ -4956,8 +4958,8 @@ class sdl92Lexer(Lexer):
     def mI(self, ):
 
         try:
-            # sdl92.g:1347:11: ( ( 'i' | 'I' ) )
-            # sdl92.g:1347:12: ( 'i' | 'I' )
+            # sdl92.g:1376:11: ( ( 'i' | 'I' ) )
+            # sdl92.g:1376:12: ( 'i' | 'I' )
             pass 
             if self.input.LA(1) == 73 or self.input.LA(1) == 105:
                 self.input.consume()
@@ -4982,8 +4984,8 @@ class sdl92Lexer(Lexer):
     def mJ(self, ):
 
         try:
-            # sdl92.g:1348:11: ( ( 'j' | 'J' ) )
-            # sdl92.g:1348:12: ( 'j' | 'J' )
+            # sdl92.g:1377:11: ( ( 'j' | 'J' ) )
+            # sdl92.g:1377:12: ( 'j' | 'J' )
             pass 
             if self.input.LA(1) == 74 or self.input.LA(1) == 106:
                 self.input.consume()
@@ -5008,8 +5010,8 @@ class sdl92Lexer(Lexer):
     def mK(self, ):
 
         try:
-            # sdl92.g:1349:11: ( ( 'k' | 'K' ) )
-            # sdl92.g:1349:12: ( 'k' | 'K' )
+            # sdl92.g:1378:11: ( ( 'k' | 'K' ) )
+            # sdl92.g:1378:12: ( 'k' | 'K' )
             pass 
             if self.input.LA(1) == 75 or self.input.LA(1) == 107:
                 self.input.consume()
@@ -5034,8 +5036,8 @@ class sdl92Lexer(Lexer):
     def mL(self, ):
 
         try:
-            # sdl92.g:1350:11: ( ( 'l' | 'L' ) )
-            # sdl92.g:1350:12: ( 'l' | 'L' )
+            # sdl92.g:1379:11: ( ( 'l' | 'L' ) )
+            # sdl92.g:1379:12: ( 'l' | 'L' )
             pass 
             if self.input.LA(1) == 76 or self.input.LA(1) == 108:
                 self.input.consume()
@@ -5060,8 +5062,8 @@ class sdl92Lexer(Lexer):
     def mM(self, ):
 
         try:
-            # sdl92.g:1351:11: ( ( 'm' | 'M' ) )
-            # sdl92.g:1351:12: ( 'm' | 'M' )
+            # sdl92.g:1380:11: ( ( 'm' | 'M' ) )
+            # sdl92.g:1380:12: ( 'm' | 'M' )
             pass 
             if self.input.LA(1) == 77 or self.input.LA(1) == 109:
                 self.input.consume()
@@ -5086,8 +5088,8 @@ class sdl92Lexer(Lexer):
     def mN(self, ):
 
         try:
-            # sdl92.g:1352:11: ( ( 'n' | 'N' ) )
-            # sdl92.g:1352:12: ( 'n' | 'N' )
+            # sdl92.g:1381:11: ( ( 'n' | 'N' ) )
+            # sdl92.g:1381:12: ( 'n' | 'N' )
             pass 
             if self.input.LA(1) == 78 or self.input.LA(1) == 110:
                 self.input.consume()
@@ -5112,8 +5114,8 @@ class sdl92Lexer(Lexer):
     def mO(self, ):
 
         try:
-            # sdl92.g:1353:11: ( ( 'o' | 'O' ) )
-            # sdl92.g:1353:12: ( 'o' | 'O' )
+            # sdl92.g:1382:11: ( ( 'o' | 'O' ) )
+            # sdl92.g:1382:12: ( 'o' | 'O' )
             pass 
             if self.input.LA(1) == 79 or self.input.LA(1) == 111:
                 self.input.consume()
@@ -5138,8 +5140,8 @@ class sdl92Lexer(Lexer):
     def mP(self, ):
 
         try:
-            # sdl92.g:1354:11: ( ( 'p' | 'P' ) )
-            # sdl92.g:1354:12: ( 'p' | 'P' )
+            # sdl92.g:1383:11: ( ( 'p' | 'P' ) )
+            # sdl92.g:1383:12: ( 'p' | 'P' )
             pass 
             if self.input.LA(1) == 80 or self.input.LA(1) == 112:
                 self.input.consume()
@@ -5164,8 +5166,8 @@ class sdl92Lexer(Lexer):
     def mQ(self, ):
 
         try:
-            # sdl92.g:1355:11: ( ( 'q' | 'Q' ) )
-            # sdl92.g:1355:12: ( 'q' | 'Q' )
+            # sdl92.g:1384:11: ( ( 'q' | 'Q' ) )
+            # sdl92.g:1384:12: ( 'q' | 'Q' )
             pass 
             if self.input.LA(1) == 81 or self.input.LA(1) == 113:
                 self.input.consume()
@@ -5190,8 +5192,8 @@ class sdl92Lexer(Lexer):
     def mR(self, ):
 
         try:
-            # sdl92.g:1356:11: ( ( 'r' | 'R' ) )
-            # sdl92.g:1356:12: ( 'r' | 'R' )
+            # sdl92.g:1385:11: ( ( 'r' | 'R' ) )
+            # sdl92.g:1385:12: ( 'r' | 'R' )
             pass 
             if self.input.LA(1) == 82 or self.input.LA(1) == 114:
                 self.input.consume()
@@ -5216,8 +5218,8 @@ class sdl92Lexer(Lexer):
     def mS(self, ):
 
         try:
-            # sdl92.g:1357:11: ( ( 's' | 'S' ) )
-            # sdl92.g:1357:12: ( 's' | 'S' )
+            # sdl92.g:1386:11: ( ( 's' | 'S' ) )
+            # sdl92.g:1386:12: ( 's' | 'S' )
             pass 
             if self.input.LA(1) == 83 or self.input.LA(1) == 115:
                 self.input.consume()
@@ -5242,8 +5244,8 @@ class sdl92Lexer(Lexer):
     def mT(self, ):
 
         try:
-            # sdl92.g:1358:11: ( ( 't' | 'T' ) )
-            # sdl92.g:1358:12: ( 't' | 'T' )
+            # sdl92.g:1387:11: ( ( 't' | 'T' ) )
+            # sdl92.g:1387:12: ( 't' | 'T' )
             pass 
             if self.input.LA(1) == 84 or self.input.LA(1) == 116:
                 self.input.consume()
@@ -5268,8 +5270,8 @@ class sdl92Lexer(Lexer):
     def mU(self, ):
 
         try:
-            # sdl92.g:1359:11: ( ( 'u' | 'U' ) )
-            # sdl92.g:1359:12: ( 'u' | 'U' )
+            # sdl92.g:1388:11: ( ( 'u' | 'U' ) )
+            # sdl92.g:1388:12: ( 'u' | 'U' )
             pass 
             if self.input.LA(1) == 85 or self.input.LA(1) == 117:
                 self.input.consume()
@@ -5294,8 +5296,8 @@ class sdl92Lexer(Lexer):
     def mV(self, ):
 
         try:
-            # sdl92.g:1360:11: ( ( 'v' | 'V' ) )
-            # sdl92.g:1360:12: ( 'v' | 'V' )
+            # sdl92.g:1389:11: ( ( 'v' | 'V' ) )
+            # sdl92.g:1389:12: ( 'v' | 'V' )
             pass 
             if self.input.LA(1) == 86 or self.input.LA(1) == 118:
                 self.input.consume()
@@ -5320,8 +5322,8 @@ class sdl92Lexer(Lexer):
     def mW(self, ):
 
         try:
-            # sdl92.g:1361:11: ( ( 'w' | 'W' ) )
-            # sdl92.g:1361:12: ( 'w' | 'W' )
+            # sdl92.g:1390:11: ( ( 'w' | 'W' ) )
+            # sdl92.g:1390:12: ( 'w' | 'W' )
             pass 
             if self.input.LA(1) == 87 or self.input.LA(1) == 119:
                 self.input.consume()
@@ -5346,8 +5348,8 @@ class sdl92Lexer(Lexer):
     def mX(self, ):
 
         try:
-            # sdl92.g:1362:11: ( ( 'x' | 'X' ) )
-            # sdl92.g:1362:12: ( 'x' | 'X' )
+            # sdl92.g:1391:11: ( ( 'x' | 'X' ) )
+            # sdl92.g:1391:12: ( 'x' | 'X' )
             pass 
             if self.input.LA(1) == 88 or self.input.LA(1) == 120:
                 self.input.consume()
@@ -5372,8 +5374,8 @@ class sdl92Lexer(Lexer):
     def mY(self, ):
 
         try:
-            # sdl92.g:1363:11: ( ( 'y' | 'Y' ) )
-            # sdl92.g:1363:12: ( 'y' | 'Y' )
+            # sdl92.g:1392:11: ( ( 'y' | 'Y' ) )
+            # sdl92.g:1392:12: ( 'y' | 'Y' )
             pass 
             if self.input.LA(1) == 89 or self.input.LA(1) == 121:
                 self.input.consume()
@@ -5398,8 +5400,8 @@ class sdl92Lexer(Lexer):
     def mZ(self, ):
 
         try:
-            # sdl92.g:1364:11: ( ( 'z' | 'Z' ) )
-            # sdl92.g:1364:12: ( 'z' | 'Z' )
+            # sdl92.g:1393:11: ( ( 'z' | 'Z' ) )
+            # sdl92.g:1393:12: ( 'z' | 'Z' )
             pass 
             if self.input.LA(1) == 90 or self.input.LA(1) == 122:
                 self.input.consume()
@@ -5421,49 +5423,49 @@ class sdl92Lexer(Lexer):
 
 
     def mTokens(self):
-        # sdl92.g:1:8: ( T__214 | T__215 | T__216 | T__217 | T__218 | T__219 | T__220 | ASSIG_OP | L_BRACKET | R_BRACKET | L_PAREN | R_PAREN | COMMA | SEMI | DASH | ANY | ASTERISK | DCL | END | KEEP | PARAMNAMES | SPECIFIC | GEODE | HYPERLINK | ENDTEXT | RETURN | TIMER | PROCESS | ENDPROCESS | START | STATE | TEXT | PROCEDURE | ENDPROCEDURE | PROCEDURE_CALL | ENDSTATE | INPUT | PROVIDED | PRIORITY | SAVE | NONE | FOR | ENDFOR | RANGE | NEXTSTATE | ANSWER | COMMENT | LABEL | STOP | IF | THEN | ELSE | FI | CREATE | OUTPUT | CALL | THIS | SET | RESET | ENDALTERNATIVE | ALTERNATIVE | DECISION | ENDDECISION | EXPORT | EXTERNAL | REFERENCED | CONNECTION | ENDCONNECTION | FROM | TO | WITH | VIA | ALL | TASK | JOIN | PLUS | DOT | APPEND | IN | OUT | INOUT | SUBSTRUCTURE | ENDSUBSTRUCTURE | FPAR | PARAM | EQ | NEQ | GT | GE | LT | LE | NOT | OR | XOR | AND | IMPLIES | DIV | MOD | REM | TRUE | FALSE | ASNFILENAME | NULL | PLUS_INFINITY | MINUS_INFINITY | MANTISSA | EXPONENT | BASE | SYSTEM | ENDSYSTEM | CHANNEL | ENDCHANNEL | USE | SIGNAL | BLOCK | ENDBLOCK | SIGNALROUTE | CONNECT | SYNTYPE | ENDSYNTYPE | NEWTYPE | ENDNEWTYPE | ARRAY | CONSTANTS | STRUCT | SYNONYM | IMPORT | VIEW | ACTIVE | STRING | BITSTR | OCTSTR | ID | INT | FLOAT | WS | COMMENT2 )
+        # sdl92.g:1:8: ( T__216 | T__217 | T__218 | T__219 | T__220 | T__221 | T__222 | ASSIG_OP | L_BRACKET | R_BRACKET | L_PAREN | R_PAREN | COMMA | SEMI | DASH | ANY | ASTERISK | DCL | END | KEEP | PARAMNAMES | SPECIFIC | GEODE | HYPERLINK | ENDTEXT | RETURN | TIMER | PROCESS | ENDPROCESS | START | STATE | TEXT | PROCEDURE | ENDPROCEDURE | PROCEDURE_CALL | ENDSTATE | INPUT | PROVIDED | PRIORITY | SAVE | NONE | FOR | ENDFOR | RANGE | NEXTSTATE | ANSWER | COMMENT | LABEL | STOP | IF | THEN | ELSE | FI | CREATE | OUTPUT | CALL | THIS | SET | RESET | ENDALTERNATIVE | ALTERNATIVE | DECISION | ENDDECISION | EXPORT | EXTERNAL | REFERENCED | CONNECTION | ENDCONNECTION | FROM | TO | WITH | VIA | ALL | TASK | JOIN | PLUS | DOT | APPEND | IN | OUT | INOUT | SUBSTRUCTURE | ENDSUBSTRUCTURE | FPAR | PARAM | EQ | NEQ | GT | GE | LT | LE | NOT | OR | XOR | AND | IMPLIES | DIV | MOD | REM | TRUE | FALSE | ASNFILENAME | NULL | PLUS_INFINITY | MINUS_INFINITY | MANTISSA | EXPONENT | BASE | SYSTEM | ENDSYSTEM | CHANNEL | ENDCHANNEL | USE | SIGNAL | BLOCK | ENDBLOCK | SIGNALROUTE | CONNECT | SYNTYPE | ENDSYNTYPE | NEWTYPE | ENDNEWTYPE | ARRAY | CONSTANTS | STRUCT | SYNONYM | IMPORT | VIEW | ACTIVE | STRING | BITSTR | OCTSTR | ID | INT | FLOAT | WS | COMMENT2 )
         alt20 = 137
         alt20 = self.dfa20.predict(self.input)
         if alt20 == 1:
-            # sdl92.g:1:10: T__214
-            pass 
-            self.mT__214()
-
-
-        elif alt20 == 2:
-            # sdl92.g:1:17: T__215
-            pass 
-            self.mT__215()
-
-
-        elif alt20 == 3:
-            # sdl92.g:1:24: T__216
+            # sdl92.g:1:10: T__216
             pass 
             self.mT__216()
 
 
-        elif alt20 == 4:
-            # sdl92.g:1:31: T__217
+        elif alt20 == 2:
+            # sdl92.g:1:17: T__217
             pass 
             self.mT__217()
 
 
-        elif alt20 == 5:
-            # sdl92.g:1:38: T__218
+        elif alt20 == 3:
+            # sdl92.g:1:24: T__218
             pass 
             self.mT__218()
 
 
-        elif alt20 == 6:
-            # sdl92.g:1:45: T__219
+        elif alt20 == 4:
+            # sdl92.g:1:31: T__219
             pass 
             self.mT__219()
 
 
-        elif alt20 == 7:
-            # sdl92.g:1:52: T__220
+        elif alt20 == 5:
+            # sdl92.g:1:38: T__220
             pass 
             self.mT__220()
+
+
+        elif alt20 == 6:
+            # sdl92.g:1:45: T__221
+            pass 
+            self.mT__221()
+
+
+        elif alt20 == 7:
+            # sdl92.g:1:52: T__222
+            pass 
+            self.mT__222()
 
 
         elif alt20 == 8:
