@@ -223,81 +223,45 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
 
     process_template['arrs_async_ri'] = required_interfaces
 
-    print str(process_template)
-    return
 
     external_proc = []
-    # for the .ads file, generate the declaration of the external procedures
+    # Generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
-        ri_header = u'procedure {sig_name}'.format(sig_name=proc.inputString)
-        params = []
-        for param in proc.fpar:
-            typename = type_name(param['type'])
-            params.append(u'{par[name]}: access {sort}'
-                          .format(par=param,
-                                  sort=typename))
-        if params:
-            ri_header += u'(' + u';'.join(params) + ')'
-        ads_template.append(
-                        u'--  Sync required interface "' + proc.inputString)
-        ads_template.append(ri_header + u';')
-        ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
-                .format(sig=proc.inputString, proc=process_name))
+        signature_template = STG.getInstanceOf("ext_procedure_signature")
+        signature_template['name'] = proc.inputString
+
+        fpar = []
+        for each in proc.fpar:
+            fpar.append({'name': fpar.get('name'),
+                         'sort': type_name(fpar.get('type'))})
+        signature_template['fpar'] = fpar
+
+        declaration_template = STG.getInstanceOf("ext_procedure_declaration")
+        declaration_template['header'] = str(signature_template)
+        declaration_template['name'] = proc.inputString
+        declaration_template['ctxt'] = process_name
+
+        external_proc.append(str(declaration_template))
+
+    process_template['ext_proc'] = external_proc
 
     # for the .ads file, generate the declaration of timers set/reset functions
+    timer_decls, timer_defs = [], []
     for timer in process.timers:
-        ads_template.append(u'--  Timer {} SET and RESET functions'
-                            .format(timer))
-        if simu:
-            # Declare callback registration for the SET and RESET functions
-            ads_template.append(u'type SET_{}_T is access procedure'
-                                 '(name: chars_ptr; duration: Integer);'
-                                .format(timer))
-            ads_template.append(u'type RESET_{}_T is access procedure'
-                                '(name: chars_ptr);'.format(timer))
-            for each in ('', 'RE'):
-                ads_template.append('pragma Convention(Convention => C,'
-                                    ' Entity => {re}SET_{t}_T);'
-                                    .format(re=each, t=timer))
-                ads_template.append('{re}SET_{t} : {re}SET_{t}_T;'
-                                    .format(re=each, t=timer))
-                ads_template.append('procedure Register_{re}SET_{t}'
-                                    '(Callback: {re}SET_{t}_T);'
-                                    .format(re=each, t=timer))
-                ads_template.append('pragma Export(C, Register_{re}SET_{t},'
-                                    ' "register_{re}SET_{t}");'
-                                    .format(re=each, t=timer))
-            # Code for the SET/RESET timer callback registration
-            for each in ('', 'RE'):
-                taste_template.append('procedure Register_{re}SET_{t}'
-                                      '(Callback:{re}SET_{t}_T) is'
-                                      .format(re=each, t=timer))
-                taste_template.append('begin')
-                taste_template.append('{re}SET_{t} := Callback;'
-                                      .format(re=each, t=timer))
-                taste_template.append('end Register_{re}SET_{t};'
-                                      .format(re=each, t=timer))
-                taste_template.append('')
+        timer_decl_template = STG.getInstanceOf("timer_declaration")
+        timer_def_template = STG.getInstanceOf("timer_definition")
+        timer_decl_template['name'] = timer
+        timer_def_template['name'] = timer
+        timer_decl_template['ctxt'] = process_name
+        timer_def_template['ctxt'] = process_name
+        timer_decl_template['simu'] = simu
+        timer_def_template['simu'] = simu
+        timer_decls.append(str(timer_decl_template))
+        timer_defs.append(str(timer_de_template))
 
-        else:
-            ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
-                .format(timer))
-            ads_template.append(
-                u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
-                .format(timer=timer, proc=process_name))
-            ads_template.append(u'procedure RESET_{};'.format(timer))
-            ads_template.append(
-                u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
-                .format(timer=timer, proc=process_name))
+    process_template['timer_decls'] = timer_decls
+    process_template['timer_defs'] = timer_defs
 
-    taste_template.append('procedure runTransition(Id: Integer) is')
-    taste_template.append('trId : Integer := Id;')
-
-    # If the process has no input, output, procedures, or timers, then Ada
-    # will not compile the body - generate a pragma to fix this
-    if not process.timers and not process.procedures \
-            and not process.input_signals and not process.output_signals:
-        ads_template.append('pragma elaborate_body;')
 
     # Transform inner labels to floating labels
     Helper.inner_labels_to_floating(process)
@@ -310,6 +274,7 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         code_transitions.append(code_tr)
         local_decl_transitions.extend(tr_local_decl)
 
+
     # Generate code for the floating labels
     code_labels = []
     for label in process.content.floating_labels:
@@ -317,9 +282,8 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         local_decl_transitions.extend(label_decl)
         code_labels.extend(code_label)
 
-    # Declare the local variables needed by the transitions in the template
-    taste_template.extend(set(local_decl_transitions))
-    taste_template.append('begin')
+    process_template['tr_locals'] = set(local_decl_transitions)
+    process_template['flab_code'] = code_labels
 
     # Generate a loop that ends when a next state is reached
     # (there can be chained transition when entering a nested state)
@@ -328,49 +292,27 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
     # Generate the switch-case on the transition id
     taste_template.append('case trId is')
 
+    tr_code = []
     for idx, val in enumerate(code_transitions):
-        taste_template.append(u'when {idx} =>'.format(idx=idx))
+        tr_template = STG.getInstanceOf("transition_code")
+        tr_template['idx'] = idx
         val = [u'{line}'.format(line=l) for l in val]
-        if val:
-            taste_template.extend(val)
-        else:
-            taste_template.append('null;')
+        tr_template['code'] = val
+        tr_code.append(str(tr_template))
 
-    taste_template.append('when others =>')
-    taste_template.append('null;')
+    process_template['tr_code'] = tr_code
 
-    taste_template.append('end case;')
-    if code_labels:
-        # Due to nested states (chained transitions) jump over label code
-        # (NEXTSTATEs do not return from runTransition)
-        taste_template.append('goto next_transition;')
+    result = str(process_template).encode('latin1')
 
-    # Add the code for the floating labels
-    taste_template.extend(code_labels)
+#   with open(process_name + '.adb', 'w') as ada_file:
+#       ada_file.write(taste_template.encode('latin1'))
+#
+#   with open(process_name + '.ads', 'w') as ada_file:
+#       ada_file.write(ads_template.encode('latin1'))
 
-    #if code_labels:
-    taste_template.append('<<next_transition>>')
-    taste_template.append('null;')
-    taste_template.append('end loop;')
-    taste_template.append('end runTransition;')
-    taste_template.append('\n')
-
-    taste_template.extend(start_transition)
-    taste_template.append('end {process_name};'
-            .format(process_name=process_name))
-
-    ads_template.append('end {process_name};'
-            .format(process_name=process_name))
-
-    with open(process_name + '.adb', 'w') as ada_file:
-        ada_file.write(taste_template.encode('latin1'))
-
-    with open(process_name + '.ads', 'w') as ada_file:
-        ada_file.write(ads_template.encode('latin1'))
-
-    if simu:
-        with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
-            aadl.write(u'\n'.join(minicv).encode('latin1'))
+#   if simu:
+#       with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
+#           aadl.write(u'\n'.join(minicv).encode('latin1'))
 
 
 def write_statement(param, newline):
@@ -1639,7 +1581,7 @@ def _inner_procedure(proc, **kwargs):
     for var in proc.fpar:
         VARIABLES.update({var['name']: (var['type'], None)})
 
-    signature_template = STG.getInstanceOf("procedure_signature")
+    signature_template = STG.getInstanceOf("inner_procedure_signature")
     fpar = []
     for each in proc.fpar:
         fpar.append({'name': fpar.get('name'),
@@ -1652,7 +1594,7 @@ def _inner_procedure(proc, **kwargs):
     signature_template['external'] = proc.external
     signature_template['fpar'] = fpar
 
-    declaration_template = STG.getInstanceOf("procedure_declaration")
+    declaration_template = STG.getInstanceOf("inner_procedure_declaration")
     declaration_template['header'] = str(signature_template)
     declaration_template['name'] = proc.inputString
     declaration_template['external'] = proc.external
@@ -1661,7 +1603,7 @@ def _inner_procedure(proc, **kwargs):
 
     if not proc.external:
         # Generate the code for the procedure itself
-        definition_template = STG.getInstanceOf("procedure_definition")
+        definition_template = STG.getInstanceOf("inner_procedure_definition")
         definition_template['header'] = str(signature_template)
         definition_template['name'] = proc.inputString
         definition_template['dcl'], _ = dcl(proc, simu=False)
