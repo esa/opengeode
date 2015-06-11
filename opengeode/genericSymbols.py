@@ -586,6 +586,19 @@ class Symbol(QObject, QGraphicsPathItem, object):
         ''' Implemented in the relevant subclass '''
         pass
 
+    def top_level(self):
+        ''' If the item is in a branch, return the highest level in the branch,
+            e.g. the starting state. '''
+        top_level = self
+        while top_level.hasParent:
+            # The "or top_level.parent" below is due to a Pyside/Qt bug
+            # of the parentItem() function. It can happen that even when
+            # the parent has explicitely been set with "setParentItem",
+            # a subsequent call to parentItem returns None. Seems to happen
+            # if the parent has not been added yet to the scene.
+            top_level = top_level.parentItem() or top_level.parent
+        return top_level
+
     # pylint: disable=R0914
     def cam(self, old_pos, new_pos, ignore=None):
         ''' Collision Avoidance Manoeuvre for top level symbols '''
@@ -594,18 +607,25 @@ class Symbol(QObject, QGraphicsPathItem, object):
             # a model from a file, some items may be connected together
             # and CAM called *before* the top-level item has been inserted.
             return
-        if self.hasParent:
+
+        top_level = self.top_level()
+        if top_level != self:
             # Exectute CAM on top level of this item
-            top_level = self
-            while top_level.hasParent:
-                # The "or top_level.parent" below is due to a Pyside/Qt bug
-                # of the parentItem() function. It can happen that even when
-                # the parent has explicitely been set with "setParentItem",
-                # a subsequent call to parentItem returns None. Seems to happen
-                # if the parent has not been added yet to the scene.
-                top_level = top_level.parentItem() or top_level.parent
             top_level.cam(top_level.position, top_level.position)
             return
+
+#       if self.hasParent:
+#           # Exectute CAM on top level of this item
+#           top_level = self
+#           while top_level.hasParent:
+#               # The "or top_level.parent" below is due to a Pyside/Qt bug
+#               # of the parentItem() function. It can happen that even when
+#               # the parent has explicitely been set with "setParentItem",
+#               # a subsequent call to parentItem returns None. Seems to happen
+#               # if the parent has not been added yet to the scene.
+#               top_level = top_level.parentItem() or top_level.parent
+#           top_level.cam(top_level.position, top_level.position)
+#           return
 
         # In case CAM is called due to object move, go to the new position
         delta = new_pos - old_pos
