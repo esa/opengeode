@@ -4097,25 +4097,34 @@ def parse_pr(files=None, string=None):
         errors.extend(err)
         warnings.extend(warn)
 
-    # At the end when common tree is complete, perform the parsing
-    og_ast, err, warn = pr_file(common_tree)
-    for error in err:
-        errors.append([error] if type(error) is not list else error)
-    for warning in warn:
-        warnings.append([warning] if type(warning) is not list else warning)
-    # Post-parsing: additional semantic checks
-    # check that all NEXTSTATEs have a correspondingly defined STATE
-    # (except the '-' state, which means "stay in the same state')
-    for process in og_ast.processes:
-        for ns in [t.inputString.lower() for t in process.terminators
-                if t.kind == 'next_state']:
-            if not ns in [s.lower() for s in
-                    process.mapping.viewkeys()] + ['-']:
-                t_x, t_y = t.pos_x or 0, t.pos_y or 0
-                errors.append(['State definition missing: ' + ns.upper(),
-                              [t_x, t_y],
-                              ['PROCESS {}'.format(process.processName)]])
-        # TODO: do the same with JOIN/LABEL
+    # If syntax errors were found, stop the process
+    if errors:
+        errors.append(['Syntax errors were found by the parser, you must '
+            'fix them before the model can be edited', [0, 0], ['']])
+        og_ast = ogAST.AST()
+
+    else:
+
+        # At the end when common tree is complete, perform the parsing
+        og_ast, err, warn = pr_file(common_tree)
+        for error in err:
+            errors.append([error] if type(error) is not list else error)
+        for warning in warn:
+            warnings.append([warning]
+                            if type(warning) is not list else warning)
+        # Post-parsing: additional semantic checks
+        # check that all NEXTSTATEs have a correspondingly defined STATE
+        # (except the '-' state, which means "stay in the same state')
+        for process in og_ast.processes:
+            for ns in [t.inputString.lower() for t in process.terminators
+                    if t.kind == 'next_state']:
+                if not ns in [s.lower() for s in
+                        process.mapping.viewkeys()] + ['-']:
+                    t_x, t_y = t.pos_x or 0, t.pos_y or 0
+                    errors.append(['State definition missing: ' + ns.upper(),
+                                  [t_x, t_y],
+                                  ['PROCESS {}'.format(process.processName)]])
+            # TODO: do the same with JOIN/LABEL
     return og_ast, warnings, errors
 
 

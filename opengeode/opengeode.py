@@ -1494,8 +1494,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.filename = process.filename
             self.readonly_pr = ast.pr_files - {self.filename}
         except ValueError:
-            LOG.error('Cannot load more than one process at a time')
-            return
+            LOG.error('Cannot load process')
+            process = ogAST.Process()
+            process.processName = "SyntaxError"
         try:
             syst, = ast.systems
             block, = syst.blocks
@@ -1509,7 +1510,10 @@ class SDL_View(QtGui.QGraphicsView, object):
         LOG.debug('Parsing complete. Summary, found ' + str(len(warnings)) +
                 ' warnings and ' + str(len(errors)) + ' errors')
         self.log_errors(errors, warnings)
-        self.scene().render_everything(block)
+        try:
+            self.scene().render_everything(block)
+        except AttributeError:
+            pass
         self.toolbar.update_menu(self.scene())
         self.wrapping_window.setWindowTitle('block ' +
                                             process.processName + '[*]')
