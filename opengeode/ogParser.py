@@ -319,7 +319,7 @@ def get_interfaces(ast, process_name):
         Search for the list of input and output signals (async PI/RI)
         and procedures (sync RI) of a process in a given top-level AST
     '''
-    all_signals, async_signals, errors = [], [], []
+    all_signals, async_signals, errors = [], [], set()
     system = None
 
     # Move up to the system level, in case process is nested in a block
@@ -363,9 +363,16 @@ def get_interfaces(ast, process_name):
                     async_signals.append(found)
                 except ValueError:
                     undeclared_signals.append(sig_id)
+                except (KeyError, AttributeError):
+                    # Exceptions raised if a signal is not defined, i.e. there
+                    # if an empty signal entry in the list. This can happen
+                    # if the name of the signal is a reserved keyword, such as
+                    # "stop", "reset"...
+                    errors.add('Check the names of your signals against'
+                               ' reserved keywords')
     if undeclared_signals:
-        errors = ['Missing declaration for signal(s) {}'
-                  .format(', '.join(undeclared_signals))]
+        errors.append('Missing declaration for signal(s) {}'
+                      .format(', '.join(undeclared_signals)))
     return async_signals, system.procedures, errors
 
 
