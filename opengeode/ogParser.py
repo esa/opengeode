@@ -2770,8 +2770,7 @@ def input_part(root, parent, context):
             warnings.append('"PROVIDED" expressions not supported')
             i.provided = 'Provided'
         elif child.type == lexer.TRANSITION:
-            trans, err, warn = transition(
-                                    child, parent=i, context=context)
+            trans, err, warn = transition(child, parent=i, context=context)
             errors.extend(err)
             warnings.extend(warn)
             i.transition = trans
@@ -2958,22 +2957,21 @@ def connect_part(root, parent, context):
                                         id_token[-1].getTokenStopIndex())
     for exitp in conn.connect_list:
         if exitp != '' and not exitp in nested.state_exitpoints:
-            errors.append('Exit point {ep} not defined in state {st}'
-                          .format(ep=exitp, st=statename))
+            errors.append(['Exit point {ep} not defined in state st}'
+                          .format(ep=exitp, st=statename),
+                          [conn.pos_x or 0, conn.pos_y or 0], []])
         terminators = [term for term in nested.terminators
                        if term.kind == 'return'
                        and term.inputString.lower() == exitp]
         if not terminators:
-            errors.append('No {rs} return statement in nested state {st}'
-                          .format(rs=exitp, st=statename))
+            errors.append(['No {rs} return statement in nested state {st}'
+                          .format(rs=exitp, st=statename),
+                          [conn.pos_x or 0, conn.pos_y or 0], []])
         for each in terminators:
             # Set next transition, exact id to be found in postprocessing
             each.next_trans = trans
     # Set list of terminators
     conn.terminators = list(context.terminators[terms:])
-    # Report errors with symbol coordinates
-    errors = [[e, [conn.pos_x or 0, conn.pos_y or 0], []] for e in errors]
-    warnings = [[w, [conn.pos_x or 0, conn.pos_y or 0], []] for w in warnings]
     return conn, errors, warnings
 
 
