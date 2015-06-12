@@ -2957,7 +2957,7 @@ def connect_part(root, parent, context):
                                         id_token[-1].getTokenStopIndex())
     for exitp in conn.connect_list:
         if exitp != '' and not exitp in nested.state_exitpoints:
-            errors.append(['Exit point {ep} not defined in state st}'
+            errors.append(['Exit point {ep} not defined in state {st}'
                           .format(ep=exitp, st=statename),
                           [conn.pos_x or 0, conn.pos_y or 0], []])
         terminators = [term for term in nested.terminators
