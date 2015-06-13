@@ -319,7 +319,7 @@ def get_interfaces(ast, process_name):
         Search for the list of input and output signals (async PI/RI)
         and procedures (sync RI) of a process in a given top-level AST
     '''
-    all_signals, async_signals, errors = [], [], []
+    all_signals, async_signals, errors = [], [], set()
     system = None
 
     # Move up to the system level, in case process is nested in a block
@@ -363,9 +363,16 @@ def get_interfaces(ast, process_name):
                     async_signals.append(found)
                 except ValueError:
                     undeclared_signals.append(sig_id)
+                except (KeyError, AttributeError):
+                    # Exceptions raised if a signal is not defined, i.e. there
+                    # if an empty signal entry in the list. This can happen
+                    # if the name of the signal is a reserved keyword, such as
+                    # "stop", "reset"...
+                    errors.add('Check the names of your signals against'
+                               ' reserved keywords')
     if undeclared_signals:
-        errors = ['Missing declaration for signal(s) {}'
-                  .format(', '.join(undeclared_signals))]
+        errors.append('Missing declaration for signal(s) {}'
+                      .format(', '.join(undeclared_signals)))
     return async_signals, system.procedures, errors
 
 
@@ -2763,8 +2770,7 @@ def input_part(root, parent, context):
             warnings.append('"PROVIDED" expressions not supported')
             i.provided = 'Provided'
         elif child.type == lexer.TRANSITION:
-            trans, err, warn = transition(
-                                    child, parent=i, context=context)
+            trans, err, warn = transition(child, parent=i, context=context)
             errors.extend(err)
             warnings.extend(warn)
             i.transition = trans
@@ -2951,22 +2957,21 @@ def connect_part(root, parent, context):
                                         id_token[-1].getTokenStopIndex())
     for exitp in conn.connect_list:
         if exitp != '' and not exitp in nested.state_exitpoints:
-            errors.append('Exit point {ep} not defined in state {st}'
-                          .format(ep=exitp, st=statename))
+            errors.append(['Exit point {ep} not defined in state {st}'
+                          .format(ep=exitp, st=statename),
+                          [conn.pos_x or 0, conn.pos_y or 0], []])
         terminators = [term for term in nested.terminators
                        if term.kind == 'return'
                        and term.inputString.lower() == exitp]
         if not terminators:
-            errors.append('No {rs} return statement in nested state {st}'
-                          .format(rs=exitp, st=statename))
+            errors.append(['No {rs} return statement in nested state {st}'
+                          .format(rs=exitp, st=statename),
+                          [conn.pos_x or 0, conn.pos_y or 0], []])
         for each in terminators:
             # Set next transition, exact id to be found in postprocessing
             each.next_trans = trans
     # Set list of terminators
     conn.terminators = list(context.terminators[terms:])
-    # Report errors with symbol coordinates
-    errors = [[e, [conn.pos_x or 0, conn.pos_y or 0], []] for e in errors]
-    warnings = [[w, [conn.pos_x or 0, conn.pos_y or 0], []] for w in warnings]
     return conn, errors, warnings
 
 
@@ -4090,25 +4095,34 @@ def parse_pr(files=None, string=None):
         errors.extend(err)
         warnings.extend(warn)
 
-    # At the end when common tree is complete, perform the parsing
-    og_ast, err, warn = pr_file(common_tree)
-    for error in err:
-        errors.append([error] if type(error) is not list else error)
-    for warning in warn:
-        warnings.append([warning] if type(warning) is not list else warning)
-    # Post-parsing: additional semantic checks
-    # check that all NEXTSTATEs have a correspondingly defined STATE
-    # (except the '-' state, which means "stay in the same state')
-    for process in og_ast.processes:
-        for ns in [t.inputString.lower() for t in process.terminators
-                if t.kind == 'next_state']:
-            if not ns in [s.lower() for s in
-                    process.mapping.viewkeys()] + ['-']:
-                t_x, t_y = t.pos_x or 0, t.pos_y or 0
-                errors.append(['State definition missing: ' + ns.upper(),
-                              [t_x, t_y],
-                              ['PROCESS {}'.format(process.processName)]])
-        # TODO: do the same with JOIN/LABEL
+    # If syntax errors were found, stop the process
+    if errors:
+        errors.append(['Syntax errors were found by the parser, you must '
+            'fix them before the model can be edited', [0, 0], ['']])
+        og_ast = ogAST.AST()
+
+    else:
+
+        # At the end when common tree is complete, perform the parsing
+        og_ast, err, warn = pr_file(common_tree)
+        for error in err:
+            errors.append([error] if type(error) is not list else error)
+        for warning in warn:
+            warnings.append([warning]
+                            if type(warning) is not list else warning)
+        # Post-parsing: additional semantic checks
+        # check that all NEXTSTATEs have a correspondingly defined STATE
+        # (except the '-' state, which means "stay in the same state')
+        for process in og_ast.processes:
+            for ns in [t.inputString.lower() for t in process.terminators
+                    if t.kind == 'next_state']:
+                if not ns in [s.lower() for s in
+                        process.mapping.viewkeys()] + ['-']:
+                    t_x, t_y = t.pos_x or 0, t.pos_y or 0
+                    errors.append(['State definition missing: ' + ns.upper(),
+                                  [t_x, t_y],
+                                  ['PROCESS {}'.format(process.processName)]])
+            # TODO: do the same with JOIN/LABEL
     return og_ast, warnings, errors
 
 

@@ -12,8 +12,14 @@ group adb;
  * states: list of states
  * asn1_mod : list of ASN.1 modules
  * simu, dll : flags set by the user for generation of optional code
+ * ext_proc : external procedure declarations (array)
+ * timer_decls : declaration of timers (array)
+ * timer_defs : definition of timers (array)
+ * tr_locals : local variables used in transitions/floating labels (arrary)
+ * tr_code : code of the transitions (array)
+ * flab_code : code of the floating labels
 */
-process(name, decl, pdecl, pcode vars, arrs_inp, arrs_async_ri, constants, states, asn1_mod, simu, dll) ::= <<
+process(name, decl, pdecl, pcode vars, arrs_inp, arrs_async_ri, constants, states, asn1_mod, simu, dll, ext_proc, timer_decls, timer_defs, tr_locals, tr_code, flab_code) ::= <<
 --  This file was generated automatically: DO NOT MODIFY !
 
 <if(asn1_mod)>
@@ -93,12 +99,37 @@ end dll_set_l_<each.name>;
     <pcode; separator="\n">
     <arrs_inp; separator = "\n">
     <arrs_ri; separator = "\n">
+    <timer_defs; separator = "\n">
+
+    procedure RunTransition(id: integer) is
+        tdId : integer := id;
+        <tr_locals; separator = "\n">
+    begin
+        while (trId /= -1) loop
+            case trId is
+                <tr_code; separator = "\n">
+                when others => null;
+            end case;
+        <if(flab_code)>
+        goto next_transition;
+        <flab_code>
+        <endif>
+        \<\<next_transition\>\>
+        null;
+        end loop;
+    end RunTransition;
 
     --  Process initialization: execute the START transition)
     begin
         RunTransition(0);
 end <name>;
 >>
+
+transition_code(idx, code) ::= <<
+when <idx> =>
+    <if(code)><code><else>null;<endif>
+>>
+
 
 /* Variable declaration (DCL var sort [:= def_expr]; */
 dcl(var, def_expr, simu) ::= <<
@@ -113,6 +144,41 @@ pragma Export(C, dll_set_l_<var.name>, "_set_<var.name>");
 <endif>
 >>
 
+/* Timer set/reset declaration, ctxt = process name*/
+timer_declaration(name, simu, ctxt) ::= <<
+<if(simu)>
+--  Timer <name> SET and RESET functions
+type SET_<name>_T is access procedure (name: chars_ptr; duration: integer);
+pragma Convention(Convention => C, Entity => SET_<name>_T);
+type RESET_<name>_T is access procedure (name: chars_ptr);
+pragma Convention(Convention => C, Entity => RESET_<name>_T);
+SET_<name> : SET_<name>_T;
+procedure Register_SET_<name>(Callback: SET_<name>_T);
+pragma Export(C, Register_SET_<name>, "register_SET_<name>");
+RESET_<name> : RESET_<name>_T;
+procedure Register_RESET_<name>(Callback: SET_<name>_T);
+pragma Export(C, Register_RESET_<name>, "register_RESET_<name>");
+<else>
+procedure SET_<name>(val: access asn1SccT_UInt32);
+pragma Import(C, SET_<name>, "<ctxt>_RI_set_<name>");
+procedure RESET_<name>;
+pragma Import(C, RESET_<name>, "<ctxt>_RI_reset_<name>);
+<endif>
+>>
+
+timer_definition(name, simu, ctxt) ::= <<
+<if(simu)>
+procedure Register_SET_<name>(Callback: SET_<name>_T) is
+begin
+    SET_<name> := Callback;
+end Register_SET_<name>;
+
+procedure Register_RESET_<name>(Callback: RESET_<name>_T) is
+begin
+    RESET_<name> := Callback;
+end Register_RESET_<name>;
+<endif>
+>>
 
 /* Code for a provided interface or timer timout signal */
 input_signal(header, name, process, cases) ::= <<
@@ -152,8 +218,8 @@ procedure <name>
 <endif>
 >>
 
-/* Code for a (stateless) procedure */
-procedure_definition(header, name, dcl, other_decl, start, labels) ::= <<
+/* Code for a (stateless) inner procedure */
+inner_procedure_definition(header, name, dcl, other_decl, start, labels) ::= <<
 <header> is
     <if(dcl)>
     --  Procedure local variables declared in textboxes
@@ -174,7 +240,7 @@ end p<safe_separator()><name>;
 >>
 
 
-procedure_declaration(header, name, external) ::= <<
+inner_procedure_declaration(header, name, external) ::= <<
 <header>;
 <if(external)>
 pragma import(C, <name>);
@@ -182,13 +248,34 @@ pragma import(C, <name>);
 >>
 
 
-/* Header of a procedure */
-procedure_signature(name, external, fpar) ::= <<
+/* Header of an inner procedure */
+inner_procedure_signature(name, external, fpar) ::= <<
 procedure <if(!external)>p<safe_separator()><endif><name>
 <if(fpar)>
 (<fpar: {each| l_<each.name>: <each.direction> <each.sort>}; separator="; ">)
 <endif>
 >>
+
+
+/* Header of an external procedure */
+ext_procedure_signature(name, fpar) ::= <<
+procedure <name>
+<if(fpar)>
+(<fpar: {each| <each.name>: access <each.sort>}; separator="; ">)
+<endif>
+>>
+
+/* Declaration of an external procedure.
+   header is obtained from ext_procedure_signature
+   name is the name of the procedure
+   ctxt is the context (process) name 
+*/
+ext_procedure_declaration(header, name, ctxt) ::= <<
+--  Synchronous required interface <<name>>
+<header>;
+pragma import(C, <name>, "<ctxt>_RI_<name>");
+>>
+
 
 
 /* Code for external RI */

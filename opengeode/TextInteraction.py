@@ -166,7 +166,7 @@ class EditableText(QGraphicsTextItem, object):
         self.set_text_alignment()
         # Increase the Z value of the text area so that the autocompleter
         # always appear on top of text's siblings (parents's followers)
-        self.setZValue(1)
+        self.setZValue(self.zValue() + 1)
         # context is used for advanced autocompletion
         self.context = ''
         # Set cursor when mouse goes over the text
@@ -375,15 +375,27 @@ class EditableText(QGraphicsTextItem, object):
                                                         unicode(self))
                     self.scene().undo_stack.push(undo_cmd)
         self.set_text_alignment()
+        # Reset Z-Values that were increased when getting focus
+        parent = self.parentItem()
+        top_level = parent.top_level()
+        top_level.setZValue(top_level.zValue() - 1)
+        parent.setZValue(parent.zValue() - 1)
         super(EditableText, self).focusOutEvent(event)
 
     # pylint: disable=C0103
     def focusInEvent(self, event):
         ''' When user starts editing text, save previous state for Undo '''
         super(EditableText, self).focusInEvent(event)
+        # Make the Z-value of items to make sure the
+        # completer will always be on top of other symbols
+        parent = self.parentItem()
+        top_level = parent.top_level()
+        top_level.setZValue(top_level.zValue() + 1)
+        parent.setZValue(parent.zValue() + 1)
+
         # Trigger a select - side effect makes the toolbar update
         try:
-            self.parentItem().select(True)
+            parent.select(True)
         except AttributeError:
             # Some parents may not be selectable (e.g. Signalroute)
             pass
@@ -396,7 +408,7 @@ class EditableText(QGraphicsTextItem, object):
         self.setTextWidth(-1)
         if not self.editing:
             self.oldText = unicode(self)
-            self.oldSize = self.parentItem().boundingRect()
+            self.oldSize = parent.boundingRect()
             self.editing = True
 
     def __str__(self):

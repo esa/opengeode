@@ -569,8 +569,8 @@ class ProcedureStop(Join):
         ast, _, _, _, _ = self.parser.parseSingleElement(self.common_name,
                                                          pr_text)
         try:
-            CONTEXT.state_exitpoints = set(CONTEXT.state_exitpoints
-                                           + [unicode(self)])
+            CONTEXT.state_exitpoints = \
+                    set(CONTEXT.state_exitpoints) | set(unicode(self))
         except AttributeError:
             # No state exit points in a procedure
             pass
