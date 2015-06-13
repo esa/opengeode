@@ -35,6 +35,7 @@ Features
 - Undo/Redo, Copy-Paste
 - (Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern
 - SDL to LLVM code generation
+- Python API to parse and render SDL from other Python modules
 
 Installation
 ============
@@ -146,6 +147,10 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 
 Changelog
 =========
+
+1.0.0 (06/2015)
+     - Bugfixes and minor improvements
+     - Python API / Simulator function (coupled with other TASTE components)
 
 1.0RC (10/2014) 
      - Release candidate Version 1
