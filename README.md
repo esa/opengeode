@@ -76,7 +76,7 @@ To install the ASN.1 compiler:
 ```bash
 $ cd /opt
 $ sudo wget http://download.tuxfamily.org/taste/ASN1SCC/ASN1SCC-latest.tgz
-$ sudo tar zxvf asn1Comp.tar.gz
+$ sudo tar zxvf ASN1SCC-latest.tgz
 $ echo 'export PATH=$PATH:/opt/<path to latest ASN1SCC>/bin' >> ~/.bashrc
 ```
 
@@ -156,7 +156,7 @@ Changelog
      - Bugfixes and minor improvements
      - Python API / Simulator function (coupled with other TASTE components)
 
-1.0RC (10/2014) 
+1.0RC (10/2014)
      - Release candidate Version 1
      - Allow standalone systems (made of one process)
      - Major refactoring of parser and Ada backend
