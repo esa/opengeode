@@ -148,6 +148,10 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.0.1 (06/2015)
+     - Bugfix: use mono when calling asn1.exe by default (needed redhat-based
+                                                          distros)
+
 1.0.0 (06/2015)
      - Bugfixes and minor improvements
      - Python API / Simulator function (coupled with other TASTE components)
