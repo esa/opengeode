@@ -110,7 +110,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.0RC2'
+__version__ = '1.0.1'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1763,15 +1763,15 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         png_action = self.findChild(QtGui.QAction, 'actionExport_to_PNG')
 
         # Connect menu actions
-        open_action.activated.connect(self.view.open_diagram)
-        save_action.activated.connect(self.view.save_diagram)
-        save_as_action.activated.connect(self.view.save_as)
-        quit_action.activated.connect(self.close)
-        new_action.activated.connect(self.view.new_diagram)
-        check_action.activated.connect(self.view.check_model)
-        about_action.activated.connect(self.view.about_og)
-        ada_action.activated.connect(self.view.generate_ada)
-        png_action.activated.connect(self.view.save_png)
+        open_action.triggered.connect(self.view.open_diagram)
+        save_action.triggered.connect(self.view.save_diagram)
+        save_as_action.triggered.connect(self.view.save_as)
+        quit_action.triggered.connect(self.close)
+        new_action.triggered.connect(self.view.new_diagram)
+        check_action.triggered.connect(self.view.check_model)
+        about_action.triggered.connect(self.view.about_og)
+        ada_action.triggered.connect(self.view.generate_ada)
+        png_action.triggered.connect(self.view.save_png)
 
         # Connect signal to let the view request a new scene
         self.view.need_new_scene.connect(self.new_scene)
@@ -1789,12 +1789,12 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
         # Add a toolbar with New/Open/Save/Check buttons
         filebar = File_toolbar(self)
-        filebar.open_button.activated.connect(self.view.open_diagram)
-        filebar.new_button.activated.connect(self.view.new_diagram)
-        filebar.check_button.activated.connect(self.view.check_model)
-        filebar.save_button.activated.connect(self.view.save_diagram)
+        filebar.open_button.triggered.connect(self.view.open_diagram)
+        filebar.new_button.triggered.connect(self.view.new_diagram)
+        filebar.check_button.triggered.connect(self.view.check_model)
+        filebar.save_button.triggered.connect(self.view.save_diagram)
         self.view.up_button = filebar.up_button
-        filebar.up_button.activated.connect(self.view.go_up)
+        filebar.up_button.triggered.connect(self.view.go_up)
         self.addToolBar(Qt.TopToolBarArea, filebar)
 
         self.scene.clearSelection()
