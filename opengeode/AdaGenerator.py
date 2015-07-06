@@ -731,6 +731,7 @@ def _call_external_function(output, **kwargs):
 
     for out in output.output:
         signal_name = out['outputName']
+        list_of_params = []
 
         if signal_name.lower() in ('write', 'writeln'):
             # special built-in SDL procedure for printing strings
@@ -792,11 +793,15 @@ def _call_external_function(output, **kwargs):
                             if sig.inputString.lower() == signal_name.lower()]
                 if proc.external:
                     out_sig = proc
+                    if SHARED_LIB:
+                        is_out_sig = True
+                        list_of_params = ['New_String("{}")'
+                                              .format(out['outputName'])]
             except ValueError:
                 # Not there? Impossible, the parser would have barked
                 raise ValueError(u'Probably a bug - please report')
         if out_sig:
-            list_of_params = []
+            #list_of_params = []
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
