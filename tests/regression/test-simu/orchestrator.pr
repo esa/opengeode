@@ -1,6 +1,6 @@
-/* CIF PROCESS (295, 56), (150, 75) */
+/* CIF PROCESS (297, 59), (150, 75) */
 PROCESS orchestrator
-/* CIF COMMENT (405, 192), (71, 35) */
+/* CIF COMMENT (407, 195), (71, 35) */
 COMMENT 'Hello';
     /* CIF TEXT (0, 94), (398, 312) */
     dcl seq tastE_Peek_id_list := { 1,2,3,4,5};
@@ -13,58 +13,62 @@ dcl anInt T_UInt32 :=0;
 
 timer myTimer;
     /* CIF ENDTEXT */
-    /* CIF START (708, 150), (80, 36) */
+    /* CIF START (743, 150), (80, 36) */
     START;
-        /* CIF NEXTSTATE (713, 201), (68, 34) */
+        /* CIF NEXTSTATE (749, 201), (68, 34) */
         NEXTSTATE Wait;
-    /* CIF STATE (957, 345), (70, 35) */
-    STATE next;
-        /* CIF INPUT (930, 400), (122, 35) */
-        INPUT pulse(a);
-            /* CIF PROCEDURECALL (904, 450), (173, 35) */
-            CALL reset_timer(mytimer);
-            /* CIF NEXTSTATE (956, 500), (70, 35) */
-            NEXTSTATE wait;
-    ENDSTATE;
-    /* CIF STATE (980, 125), (93, 35) */
+    /* CIF STATE (1034, 125), (93, 35) */
     STATE timeout;
-        /* CIF INPUT (965, 180), (122, 35) */
+        /* CIF INPUT (1019, 180), (122, 35) */
         INPUT Paramless_TC;
-            /* CIF PROCEDURECALL (926, 230), (200, 35) */
+            /* CIF PROCEDURECALL (981, 230), (200, 35) */
             CALL SET_timer(1000, mytimer);
-            /* CIF NEXTSTATE (991, 280), (70, 35) */
+            /* CIF NEXTSTATE (1046, 280), (70, 35) */
             NEXTSTATE next;
     ENDSTATE;
-    /* CIF STATE (713, 201), (68, 34) */
-    STATE Wait;
-        /* CIF INPUT (461, 255), (87, 35) */
+    /* CIF STATE (992, 345), (70, 35) */
+    STATE next;
+        /* CIF INPUT (965, 400), (122, 35) */
         INPUT pulse(a);
-            /* CIF TASK (434, 305), (139, 40) */
+            /* CIF PROCEDURECALL (939, 450), (173, 35) */
+            CALL reset_timer(mytimer);
+            /* CIF NEXTSTATE (991, 500), (70, 35) */
+            NEXTSTATE wait;
+    ENDSTATE;
+    /* CIF STATE (749, 201), (68, 34) */
+    STATE Wait;
+        /* CIF INPUT (496, 255), (87, 35) */
+        INPUT pulse(a);
+            /* CIF TASK (469, 305), (139, 40) */
             TASK seq := {0,1,0,1,0},
 anint := 478;
-            /* CIF PROCEDURECALL (407, 365), (193, 35) */
+            /* CIF PROCEDURECALL (433, 360), (212, 35) */
+            CALL writeln('Input param', anint);
+            /* CIF PROCEDURECALL (442, 410), (193, 35) */
             CALL externalProc(anint, anint);
-            /* CIF OUTPUT (447, 415), (114, 35) */
+            /* CIF PROCEDURECALL (427, 460), (224, 35) */
+            CALL writeln('Output param', anint);
+            /* CIF OUTPUT (482, 510), (114, 35) */
             OUTPUT telemetry(a);
-            /* CIF OUTPUT (442, 465), (123, 35) */
+            /* CIF OUTPUT (478, 560), (123, 35) */
             OUTPUT peek_list(seq);
-            /* CIF OUTPUT (431, 515), (145, 35) */
+            /* CIF OUTPUT (467, 610), (145, 35) */
             OUTPUT peek_fixed(fixed);
-            /* CIF NEXTSTATE (469, 565), (70, 35) */
+            /* CIF NEXTSTATE (504, 660), (70, 35) */
             NEXTSTATE next;
-        /* CIF INPUT (652, 255), (122, 35) */
+        /* CIF INPUT (706, 255), (122, 35) */
         INPUT Paramless_TC;
-            /* CIF PROCEDURECALL (610, 305), (205, 35) */
+            /* CIF PROCEDURECALL (664, 305), (205, 35) */
             CALL writeln('Got Paramless TC');
-            /* CIF PROCEDURECALL (613, 355), (200, 35) */
+            /* CIF PROCEDURECALL (667, 355), (200, 35) */
             CALL SET_timer(1000, mytimer);
-            /* CIF OUTPUT (650, 405), (125, 35) */
+            /* CIF OUTPUT (705, 405), (125, 35) */
             OUTPUT Paramless_TM;
-            /* CIF NEXTSTATE (678, 455), (70, 35) */
+            /* CIF NEXTSTATE (732, 455), (70, 35) */
             NEXTSTATE wait;
-        /* CIF INPUT (826, 255), (90, 35) */
+        /* CIF INPUT (880, 255), (90, 35) */
         INPUT mytimer;
-            /* CIF NEXTSTATE (826, 305), (90, 35) */
+            /* CIF NEXTSTATE (880, 305), (90, 35) */
             NEXTSTATE Timeout;
     ENDSTATE;
 ENDPROCESS orchestrator;
