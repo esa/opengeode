@@ -10,6 +10,9 @@ test-parse:
 
 test-ada: function0.ali
 
+test-c: function0.c
+	$(CC) -c function0.c
+
 test-llvm: function0.o
 
 coverage:

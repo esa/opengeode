@@ -8,7 +8,7 @@ edit:
 test-parse:
 	$(OPENGEODE) og.pr --check
 
-test-ada: 
+test-ada:
 	$(OPENGEODE) og.pr --toAda
 
 

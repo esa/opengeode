@@ -11,8 +11,14 @@ test-parse:
 test-ada:
 	@python test.py test-ada $(TEST_CASES)
 
+test-c:
+	@python test.py test-c $(TEST_CASES)
+
 test-llvm:
 	@python test.py test-llvm $(TEST_CASES)
+
+test-vhdl:
+	@python test.py test-c $(TEST_CASES)
 
 benchmark:
 	@python benchmark.py $(BENCHMARK_CASES)

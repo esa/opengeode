@@ -1,0 +1,27 @@
+[C Code] Running test
+ 0
+ 1
+ 2
+ 3
+ 0
+ 1
+ 2
+ 3
+-3
+FALSE
+abc
+abc
+Hello!
+Hello!!!!
+Hello!
+ 0
+-2 is FALSE
+ 2 2 1
+FALSE TRUE
+ 13 14
+OK
+[C] result_data: 6
+Hello Toto 5
+[C] SET MyTimer: 1000
+ 1.500000 ** 2 ==  2.250000 (should be 2.25 )
+timer expired

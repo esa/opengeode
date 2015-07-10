@@ -10,6 +10,9 @@ test-parse:
 
 test-ada: fce.ali
 
+test-c: fce.c
+	$(CC) -c fce.c
+
 test-llvm: fce.o
 
 coverage:

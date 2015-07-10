@@ -17,6 +17,13 @@ test-ada: dataview-uniq.o | test_ada.o
 	./test_ada
 
 
+test-c: dataview-uniq.o | test_ada.o
+	$(OPENGEODE) og.pr --toC
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(CC) -O$(O) test_c.c og.c dataview-uniq.c -o test_c
+	./test_c | diff - expected
+
+
 test-llvm: test.o dataview-uniq.o | test_llvm.o
 	$(OPENGEODE) og.pr --llvm -O$(O)
 	$(LLC) *.ll
