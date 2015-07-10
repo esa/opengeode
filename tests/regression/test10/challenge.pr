@@ -216,7 +216,7 @@ ENDSTATE;
 
 
 /* CIF STATE (851, 72), (65, 35) */
-STATE ON;
+STATE on;
 /* CIF INPUT (1043, 127), (88, 35) */
 INPUT any_one;
 /* CIF NEXTSTATE (1030, 177), (113, 35) */
@@ -248,7 +248,7 @@ INPUT run;
 /* CIF PROCEDURECALL (-360, 306), (106, 35) */
 CALL writeln('2');
 /* CIF NEXTSTATE (-374, 357), (132, 35) */
-NEXTSTATE ON via via_toto
+NEXTSTATE on via via_toto
 /* CIF COMMENT (-222, 357), (219, 35) */
 COMMENT 'Enter substate via entry point';
 ENDSTATE;

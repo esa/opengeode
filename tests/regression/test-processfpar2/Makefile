@@ -11,6 +11,9 @@ test-parse:
 test-ada:
 	$(OPENGEODE) og.pr --toAda
 
+test-c:
+	$(OPENGEODE) og.pr --toC
+
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)

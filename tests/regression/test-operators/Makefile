@@ -14,8 +14,8 @@ test-ada: operators.ali dataview-uniq.o | test_ada.o
 	./test_ada | diff expected -
 
 test-c: operators.c test_c.o dataview-uniq.o
-	$(CC) operators.c -c -o operators.o
-	$(CC) test_c.o operators.c -lm -o test_c
+	$(CC) -include missing.h operators.c -c -o operators.o
+	$(CC) test_c.o operators.o -lm -o test_c
 	./test_c | diff expected_c -
 
 test-llvm: operators.o dataview-uniq.o | test_llvm.o

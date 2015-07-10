@@ -45,7 +45,7 @@ anint := 478;
             /* CIF PROCEDURECALL (433, 360), (212, 35) */
             CALL writeln('Input param', anint);
             /* CIF PROCEDURECALL (442, 410), (193, 35) */
-            CALL externalProc(anint, anint);
+            CALL ExternalProc(anint, anint);
             /* CIF PROCEDURECALL (427, 460), (224, 35) */
             CALL writeln('Output param', anint);
             /* CIF OUTPUT (482, 510), (114, 35) */
