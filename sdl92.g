@@ -256,12 +256,12 @@ parameters_of_sort
 // (TODO - but check new SDL2000 syntax that has no RETURNS token)
 procedure
         :       cif?
-                PROCEDURE procedure_id end
+                PROCEDURE procedure_id e1=end
                 fpar?
                 (text_area | procedure)*
                 ((processBody? ENDPROCEDURE procedure_id?) | EXTERNAL)
-                end
-        ->      ^(PROCEDURE cif? procedure_id end? fpar?
+                e2=end
+        ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar?
                 text_area* procedure* processBody? EXTERNAL?);
 
 

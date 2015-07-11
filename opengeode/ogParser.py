@@ -2011,7 +2011,13 @@ def procedure_pre(root, parent=None, context=None):
             proc.charPositionInLine = child.getCharPositionInLine()
             proc.inputString = child.toString()
         elif child.type == lexer.COMMENT:
-            proc.comment, _, ___ = end(child)
+            # there can be two comments in a procedure declaration
+            # keep only one and concatenate strings
+            comment, _, _ = end(child)
+            if not proc.comment:
+                proc.comment = comment
+            else:
+                proc.comment.inputString += ' {}'.format(comment.inputString)
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=proc)
             if textarea.signals:

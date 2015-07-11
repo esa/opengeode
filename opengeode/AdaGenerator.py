@@ -1948,6 +1948,9 @@ def _inner_procedure(proc, **kwargs):
     # with procedure defined inside the current procedure
     # Not critical: the editor forbids procedures inside procedures
 
+    if proc.external and SHARED_LIB:
+        return code, local_decl
+
     # Save variable scopes (as local variables may shadow process variables)
     outer_scope = dict(VARIABLES)
     local_scope = dict(LOCAL_VAR)
