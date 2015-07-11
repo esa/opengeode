@@ -20,6 +20,14 @@ test-ada:
 	$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali -lgnat
 	./test_ada
 
+test-c:
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(CC) -c -g test_c.c
+	$(OPENGEODE) orchestrator.pr system_structure.pr --shared --toC
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
+	./test_c | diff - expected
+
 test-llvm: orchestrator.o
 
 test-python:

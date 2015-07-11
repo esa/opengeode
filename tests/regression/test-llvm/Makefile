@@ -13,6 +13,11 @@ test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali -lgnat
 	./test_ada
 
+test-c: orchestrator.c test_c.o dataview-uniq.o
+	$(CC) orchestrator.c -c -o orchestrator.o
+	$(CC) test_c.o orchestrator.c dataview-uniq.o -lm -o test_c
+	./test_c | diff expected -
+
 test-llvm: orchestrator.o dataview-uniq.o | test_llvm.o
 	$(CC) orchestrator.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm

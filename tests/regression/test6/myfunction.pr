@@ -37,7 +37,7 @@ dcl VeryTrue  t_boolean := not false;
     /* CIF PROCEDURE (1172, 490), (104, 35) */
     PROCEDURE factorial;
         /* CIF TEXT (29, 42), (269, 53) */
-        fpar in N MyInteger, 
+        fpar in n MyInteger, 
           in/out result MyInteger;
         /* CIF ENDTEXT */
         /* CIF START (298, 33), (70, 35) */

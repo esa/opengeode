@@ -10,6 +10,8 @@ test-parse:
 
 test-ada: function1.ali
 
+test-c: function1.c
+
 test-llvm: function1.o
 
 coverage:

@@ -10,6 +10,9 @@ test-parse:
 
 test-ada: challenge.ali
 
+test-c: challenge.c
+	$(CC) -c challenge.c
+
 test-llvm: challenge.o
 
 coverage:

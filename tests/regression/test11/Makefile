@@ -13,6 +13,11 @@ test-ada: og.ali dataview-uniq.o | test_ada.o
 	$(GNATLINK) -o test_ada test_ada.o og.ali -lgnat
 	./test_ada | diff expected -
 
+test-c: og.c test_c.o dataview-uniq.o
+	$(CC) og.c -c -o og.o
+	$(CC) test_c.o og.c dataview-uniq.o -lm -o test_c
+	./test_c | diff expected -
+
 test-llvm: og.o dataview-uniq.o | test_llvm.o
 	$(CC) og.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm | diff expected -

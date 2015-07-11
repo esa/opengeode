@@ -99,6 +99,11 @@ except ImportError:
     graphviz = False
 
 try:
+    import CGenerator
+except ImportError:
+    CGenerator = None
+
+try:
     import LlvmGenerator
 except ImportError:
     LlvmGenerator = None
@@ -1977,6 +1982,8 @@ def parse_args():
             help='Generate Ada code for the .pr file')
     parser.add_argument('--llvm', dest='llvm', action='store_true',
             help='Generate LLVM IR code for the .pr file (experimental)')
+    parser.add_argument('--toC', dest='toC', action='store_true',
+            help='Generate C code .pr file (experimental)')
     parser.add_argument("-O", dest="optimization", metavar="level", type=int,
             action="store", choices=[0, 1, 2, 3], default=0,
             help="Set optimization level for the generated LLVM IR code")
@@ -2023,6 +2030,7 @@ def init_logging(options):
             TextInteraction,
             Connectors,
             LlvmGenerator,
+            CGenerator,
             StgBackend
         )
         for module in modules:
@@ -2063,7 +2071,14 @@ def generate(process, options):
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('Ada code generation failed')
-
+    if options.toC:
+        LOG.info('Generating C code')
+        try:
+            CGenerator.generate(process, simu=options.shared, options=options)
+        except (TypeError, ValueError, NameError) as err:
+            LOG.error(str(err))
+            LOG.debug(str(traceback.format_exc()))
+            LOG.error('C generation failed')
     if options.llvm:
         LOG.info('Generating LLVM code')
         try:
@@ -2157,7 +2172,7 @@ def cli(options):
         export(ast, options)
 
     if any((options.toAda, options.llvm, options.shared,
-           options.stg, options.dll)):
+           options.stg, options.dll, options.toC)):
         if not errors:
             generate(ast.processes[0], options)
         else:
@@ -2224,7 +2239,7 @@ def opengeode():
     LOG.debug('Starting OpenGEODE version ' + __version__)
     if any((options.check, options.toAda, options.png, options.pdf,
             options.svg, options.llvm, options.shared, options.stg,
-            options.dll)):
+            options.dll, options.toC)):
         return cli(options)
     else:
         return gui(options)

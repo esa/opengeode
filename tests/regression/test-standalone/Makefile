@@ -14,6 +14,11 @@ test-ada:
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 
+test-c: 
+	$(OPENGEODE) og.pr --toC
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(CC) -O$(O) -c *.c
+
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)
