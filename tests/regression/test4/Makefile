@@ -10,6 +10,9 @@ test-parse:
 
 test-ada: orchestrator.ali
 
+test-c: orchestrator.c
+	$(CC) -include missing.h -c orchestrator.c
+
 test-llvm: orchestrator.o
 
 coverage:

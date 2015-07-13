@@ -8,8 +8,11 @@ edit:
 test-parse:
 	$(OPENGEODE) og.pr --check
 
-test-ada: 
+test-ada:
 	$(OPENGEODE) og.pr --toAda
+
+test-c:
+	$(OPENGEODE) og.pr --toC
 
 
 test-llvm:

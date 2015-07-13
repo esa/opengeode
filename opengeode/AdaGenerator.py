@@ -424,6 +424,9 @@ package {process_name} is'''.format(process_name=process_name,
         param_name = signal.get('param_name') \
                                 or u'{}_param'.format(signal['name'])
         # Add (optional) RI parameter
+        # Paramless TMs: when targetting simulation, the name of the TM is
+        # passed as single parameter. This allows the simualor to handle them
+        # dynamically, with a single callback function for all TMs
         param_spec = '' if not simu else "(tm: chars_ptr)"
         if 'type' in signal:
             typename = type_name(signal['type'])
@@ -432,7 +435,9 @@ package {process_name} is'''.format(process_name=process_name,
                                  sort=typename,
                                  shared=u'; Size: Integer'
                                         if SHARED_LIB else '')
-        ads_template.append(u'--  Required interface "' + signal['name'] + '"')
+        ads_template.append(u'--  {}equired interface "{}"'
+                            .format("Paramless r" if not 'type' in signal
+                                else "R", signal['name']))
         if simu:
             # When generating a shared library, we need a callback mechanism
             ads_template.append(u'type {}_T is access procedure{};'
@@ -469,18 +474,48 @@ package {process_name} is'''.format(process_name=process_name,
     for proc in (proc for proc in process.procedures if proc.external):
         ri_header = u'procedure {sig_name}'.format(sig_name=proc.inputString)
         params = []
+        params_spec = u""
+        if simu:
+            # For simulators: add the TM name as first parameter
+            params.append("tm: chars_ptr")
         for param in proc.fpar:
             typename = type_name(param['type'])
-            params.append(u'{par[name]}: access {sort}'
+            params.append(u'{par[name]}: access {sort}{shared}'
                           .format(par=param,
-                                  sort=typename))
+                                  sort=typename,
+                                  shared=u"; {}_Size: Integer"
+                                         .format(param['name'])
+                                         if SHARED_LIB else ""))
         if params:
-            ri_header += u'(' + u';'.join(params) + ')'
+            params_spec = "({})".format("; ".join(params))
+            ri_header += params_spec
         ads_template.append(
                         u'--  Sync required interface "' + proc.inputString)
-        ads_template.append(ri_header + u';')
-        ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
-                .format(sig=proc.inputString, proc=process_name))
+        if simu:
+            # As for async TM, generate a callback mechanism
+            ads_template.append(u"type {}_T is access procedure{};"
+                                .format(proc.inputString, params_spec))
+            ads_template.append('pragma Convention(Convention => C,'
+                                ' Entity => {}_T);'.format(proc.inputString))
+            ads_template.append('{sig} : {sig}_T;'
+                                .format(sig=proc.inputString))
+            ads_template.append('procedure Register_{sig}(Callback: {sig}_T);'
+                                .format(sig=proc.inputString))
+            ads_template.append('pragma Export(C, Register_{sig},'
+                                ' "register_{sig}");'
+                                .format(sig=proc.inputString))
+            taste_template.append('procedure Register_{sig}'
+                                  '(Callback:{sig}_T) is'
+                                  .format(sig=proc.inputString))
+            taste_template.append('begin')
+            taste_template.append('{} := Callback;'.format(proc.inputString))
+            taste_template.append('end Register_{};'.format(proc.inputString))
+            taste_template.append('')
+
+        else:
+            ads_template.append(ri_header + u';')
+            ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
+                    .format(sig=proc.inputString, proc=process_name))
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
@@ -696,6 +731,7 @@ def _call_external_function(output, **kwargs):
 
     for out in output.output:
         signal_name = out['outputName']
+        list_of_params = []
 
         if signal_name.lower() in ('write', 'writeln'):
             # special built-in SDL procedure for printing strings
@@ -757,11 +793,15 @@ def _call_external_function(output, **kwargs):
                             if sig.inputString.lower() == signal_name.lower()]
                 if proc.external:
                     out_sig = proc
+                    if SHARED_LIB:
+                        is_out_sig = True
+                        list_of_params = ['New_String("{}")'
+                                              .format(out['outputName'])]
             except ValueError:
                 # Not there? Impossible, the parser would have barked
                 raise ValueError(u'Probably a bug - please report')
         if out_sig:
-            list_of_params = []
+            #list_of_params = []
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
@@ -1907,6 +1947,9 @@ def _inner_procedure(proc, **kwargs):
     # TODO: Update the global list of procedures
     # with procedure defined inside the current procedure
     # Not critical: the editor forbids procedures inside procedures
+
+    if proc.external and SHARED_LIB:
+        return code, local_decl
 
     # Save variable scopes (as local variables may shadow process variables)
     outer_scope = dict(VARIABLES)

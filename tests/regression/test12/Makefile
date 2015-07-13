@@ -10,6 +10,9 @@ test-parse:
 
 test-ada: trafficlight.ali
 
+test-c: trafficlight.c
+	$(CC) trafficlight.c -c -o trafficlight.o
+
 test-llvm: trafficlight.o
 
 test-export:

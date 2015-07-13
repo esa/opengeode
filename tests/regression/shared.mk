@@ -18,6 +18,10 @@ clean:
 	$(LLC) $*.ll
 	$(CC) -O$(O) -c -g $*.s
 
+%.c: %.pr FORCE
+	$(OPENGEODE) $< system_structure.pr --toC
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
