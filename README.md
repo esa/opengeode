@@ -148,6 +148,9 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.1.0 (07/2015)
+     - Write/Writeln procedure support enumerated types
+
 1.0.1 (06/2015)
      - Bugfix: use mono when calling asn1.exe by default (needed redhat-based
                                                           distros)

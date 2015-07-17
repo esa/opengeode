@@ -30,15 +30,6 @@ external comment '#vdm #classname=RemoteCall';
     START;
         /* CIF NEXTSTATE (944, 201), (72, 34) */
         NEXTSTATE Wait;
-    /* CIF STATE (1474, 345), (74, 35) */
-    STATE next;
-        /* CIF INPUT (1447, 400), (122, 35) */
-        INPUT pulse(a);
-            /* CIF PROCEDURECALL (1401, 450), (213, 35) */
-            CALL reset_timer(mytimer);
-            /* CIF NEXTSTATE (1473, 500), (70, 35) */
-            NEXTSTATE wait;
-    ENDSTATE;
     /* CIF STATE (1468, 125), (100, 35) */
     STATE timeout;
         /* CIF INPUT (1453, 180), (147, 35) */
@@ -47,6 +38,15 @@ external comment '#vdm #classname=RemoteCall';
             CALL SET_timer(1000, mytimer);
             /* CIF NEXTSTATE (1489, 280), (74, 35) */
             NEXTSTATE next;
+    ENDSTATE;
+    /* CIF STATE (1474, 345), (74, 35) */
+    STATE next;
+        /* CIF INPUT (1447, 400), (122, 35) */
+        INPUT pulse(a);
+            /* CIF PROCEDURECALL (1401, 450), (213, 35) */
+            CALL reset_timer(mytimer);
+            /* CIF NEXTSTATE (1473, 500), (70, 35) */
+            NEXTSTATE wait;
     ENDSTATE;
     /* CIF STATE (944, 201), (72, 34) */
     STATE Wait;
@@ -79,8 +79,8 @@ anint := 478;
             CALL writeln('Calling VDM2 with value', fixed(0));
             /* CIF PROCEDURECALL (595, 946), (242, 35) */
             CALL vdm2(fixed(0), simpleseq);
-            /* CIF PROCEDURECALL (521, 996), (391, 40) */
-            CALL writeln('Result:', simpleseq!a, ' ', simpleseq!b);
+            /* CIF PROCEDURECALL (461, 996), (511, 40) */
+            CALL writeln('Result:', simpleseq!a, ' ', simpleseq!b, ' ', simpleseq!c);
             /* CIF OUTPUT (647, 1051), (138, 35) */
             OUTPUT telemetry(a);
             /* CIF OUTPUT (643, 1101), (147, 35) */

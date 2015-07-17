@@ -709,6 +709,10 @@ def write_statement(param, newline):
         elif type_kind == 'BooleanType':
             cast = 'Boolean'
         code.append(u"Put({cast}'Image({s}));".format(cast=cast, s=string))
+    elif type_kind == 'EnumeratedType':
+        code, string, local = expression(param)
+        code.append(u"Put({}'Image({}));".format(type_name(param.exprType),
+                                                 string))
     else:
         error = (u'Unsupported parameter in write call ' +
                 param.inputString)
