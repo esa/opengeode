@@ -12,6 +12,12 @@ MyChoice ::= CHOICE { a BOOLEAN, b ENUMERATED { aa, bb } }
 
 MySeq ::= SEQUENCE { a BOOLEAN, b MyChoice }
 
+MySetOf ::= SET (SIZE(1..3)) OF INTEGER (0..10)
+
+MySeqOf ::= SEQUENCE (SIZE(1..3)) OF INTEGER (0..10)
+
+MySimpleSeq ::= SEQUENCE { a INTEGER (0..255), b BOOLEAN, c MyEnum }
+
 END
  
 

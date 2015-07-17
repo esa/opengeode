@@ -465,7 +465,8 @@ def check_call(name, params, context):
     if name.lower() in ('write', 'writeln'):
         for p in params:
             p_ty = p.exprType
-            if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty):
+            if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty) or \
+                    is_enumerated(p_ty):
                 continue
             raise TypeError('Type {} not supported in call to {}'.
                 format(type_name(p.exprType), name))
