@@ -56,7 +56,7 @@ from PySide.QtCore import Qt, QPoint, QPointF, QRect, QFile, QObject, Property
 
 from PySide.QtGui import(QGraphicsPathItem, QGraphicsPolygonItem, QPainterPath,
                          QGraphicsItem, QPen, QColor, QMenu, QFileDialog,
-                         QPainter, QLineEdit, QTextBlockFormat)
+                         QPainter, QLineEdit, QTextBlockFormat, QPolygonF)
 
 from PySide.QtUiTools import QUiLoader
 
@@ -868,7 +868,7 @@ class Cornergrabber(QGraphicsPolygonItem, object):
         self.prepareGeometryChange()
         rect = self.parent.boundingRect()
         self.setPos(0, 0)
-        self.setPolygon(rect)
+        self.setPolygon(QPolygonF(rect))
         self.show()
 
     def mousePressEvent(self, event):
