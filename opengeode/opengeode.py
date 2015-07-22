@@ -713,7 +713,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                         line_nb, col = line_col
                         line_nb = int(line_nb) - 1
                         split[1] = '{}:{}'.format(line_nb, col)
-                fmt = [[' '.join(split), [each.pos_x, each.pos_y], self.path]]
+                pos = each.scenePos()
+                fmt = [[' '.join(split), [pos.x(), pos.y()], self.path]]
                 log_errors(self.messages_window, fmt, [], clearfirst=False)
 
         for each in self.all_nested_scenes:
