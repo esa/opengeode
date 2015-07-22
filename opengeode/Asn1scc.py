@@ -93,7 +93,8 @@ def parse_asn1(*files, **options):
     stg = asn1scc_root + os.sep + 'python.stg'
 
     args = [arg0, '-customStgAstVerion', str(ast_version.value),
-            '-customStg', stg + ':' + filepath] + list(*files)
+            '-customStg', stg + '::' + filepath,
+            '-renamePolicy', '0'] + list(*files)
     asn1scc = QProcess()
     LOG.debug(os.getcwd())
     LOG.debug(binary + ' ' + ' '.join(args))
