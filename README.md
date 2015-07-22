@@ -148,6 +148,10 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.1.1 (07/2015)
+     - Strongly report syntax errors with symbol location and warning if user
+       tries to save a model with syntax errors
+
 1.1.0 (07/2015)
      - Write/Writeln procedure support enumerated types
 
