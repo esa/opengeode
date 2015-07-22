@@ -170,6 +170,38 @@ ACTIONS = {
 }
 
 
+def log_errors(window, errors, warnings, clearfirst=True):
+    ''' Report Error and Warnings on the console and in the log window '''
+    if window and clearfirst:
+        window.clear()
+    for error in errors:
+        if type(error[0]) == list:
+            # should be fixed now, CHECKME - NO, NOT FULLY FIXED
+            # problem is in decision answers branches
+            error[0] = 'Internal error - ' + str(error[0])
+        LOG.error(error[0])
+        item = QtGui.QListWidgetItem(u'[ERROR] ' + error[0])
+        if len(error) == 3:
+            item.setData(Qt.UserRole, error[1])
+            #found = self.scene().symbol_near(QPoint(*error[1]), 1)
+            # Pyside bug: setData cannot store 'found' directly
+            #item.setData(Qt.UserRole + 1, id(found))
+            item.setData(Qt.UserRole + 1, error[2])
+        if window:
+            window.addItem(item)
+    for warning in warnings:
+        LOG.warning(warning[0])
+        item = QtGui.QListWidgetItem(u'[WARNING] ' + str(warning[0]))
+        if len(warning) == 3:
+            item.setData(Qt.UserRole, warning[1])
+            item.setData(Qt.UserRole + 1, warning[2])
+        if window:
+            window.addItem(item)
+    if not errors and not warnings and window:
+        window.addItem('No errors, no warnings!')
+
+
+
 class Vi_bar(QtGui.QLineEdit, object):
     ''' Line editor for the Vi-like command mode '''
     def __init__(self):
@@ -434,6 +466,17 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     yield sub
 
 
+    @property
+    def path(self):
+        ''' Get the path to the current scene as a list
+        e.g. ['BLOCK a', 'PROCESS b', ...]
+        '''
+        if not self.parent_scene:
+            return [self.name[0:-3]]
+        return self.parent_scene.path + [self.name[0:-3]]
+
+
+
     def quit_scene(self):
         ''' Called in case of scene switch (e.g. UP button) '''
         pass
@@ -508,7 +551,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     # Ignore nested state scenes that already exist
                     continue
                 subscene = \
-                        self.create_subscene(each.__class__.__name__.lower())
+                        self.create_subscene(each.__class__.__name__.lower(),
+                                             dest_scene)
                 already_created.append(each.nested_scene)
                 subscene.name = unicode(each)
                 LOG.debug('Created scene: {}'.format(subscene.name))
@@ -654,13 +698,29 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def global_syntax_check(self):
         ''' Parse each visible symbol in the current scene and its children
             and check syntax using the parser '''
-        errors = []
+        res = True
         for each in self.visible_symb:
-            err = self.syntax_errors(each)
-            errors.extend(err)
-        if errors:
-            return False
-        return True
+            errors = self.syntax_errors(each)
+            if errors:
+                res = False
+            for err in errors:
+                split = err.split()
+                if split[0] == 'line' and len(split) > 1:
+                    line_col = split[1].split(':')
+                    if len(line_col) == 2:
+                        # get line and col. line must be decremented because
+                        # line 1 is the CIF comment which is not visible
+                        line_nb, col = line_col
+                        line_nb = int(line_nb) - 1
+                        split[1] = '{}:{}'.format(line_nb, col)
+                fmt = [[' '.join(split), [each.pos_x, each.pos_y], self.path]]
+                log_errors(self.messages_window, fmt, [], clearfirst=False)
+
+        for each in self.all_nested_scenes:
+            err = each.global_syntax_check()
+            if not err:
+                res = False
+        return res
 
 
     def update_completion_list(self, symbol):
@@ -1116,11 +1176,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             code.interact('type your command:', local=locals())
 
 
-    def create_subscene(self, context):
+    def create_subscene(self, context, parent=None):
         ''' Create a new SDL scene, e.g. for nested symbols '''
         subscene = SDL_Scene(context=context)
         subscene.messages_window = self.messages_window
-        subscene.parent_scene = self
+        subscene.parent_scene = parent
         return subscene
 
 
@@ -1144,7 +1204,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         elif item_type in (Procedure, State, Process):
             # Create a sub-scene for clickable symbols
             item.nested_scene = \
-                    self.create_subscene(item_type.__name__.lower())
+                    self.create_subscene(item_type.__name__.lower(), self)
 
         self.clearSelection()
         self.clear_focus()
@@ -1430,7 +1490,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                     ctx = unicode(item.__class__.__name__.lower())
                     if not isinstance(item.nested_scene, SDL_Scene):
                         item.nested_scene = \
-                                self.scene().create_subscene(context=ctx)
+                                self.scene().create_subscene(ctx, self.scene())
                     self.go_down(item.nested_scene,
                                  name=ctx + u' ' + unicode(item))
                 else:
@@ -1493,7 +1553,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             return False
 
         # check syntax and raise a big warning before saving
-        if not scene.global_syntax_check():
+        self.messages_window.clear()
+        if not autosave and not scene.global_syntax_check():
             LOG.error('Syntax errors must be fixed NOW '
                       'or you may not be able to reload the model')
             msg_box = QtGui.QMessageBox(self)
@@ -1591,14 +1652,14 @@ class SDL_View(QtGui.QGraphicsView, object):
             block.processes = [process]
         LOG.debug('Parsing complete. Summary, found ' + str(len(warnings)) +
                 ' warnings and ' + str(len(errors)) + ' errors')
-        self.log_errors(errors, warnings)
+        log_errors(self.messages_window, errors, warnings)
         try:
             self.scene().render_everything(block)
         except AttributeError:
             pass
         self.toolbar.update_menu(self.scene())
-        self.wrapping_window.setWindowTitle('block ' +
-                                            process.processName + '[*]')
+        self.scene().name = 'block {}[*]'.format(process.processName)
+        self.wrapping_window.setWindowTitle(self.scene().name)
         self.refresh()
         self.centerOn(self.sceneRect().topLeft())
         self.scene().undo_stack.clear()
@@ -1668,37 +1729,6 @@ class SDL_View(QtGui.QGraphicsView, object):
         return True
 
 
-    def log_errors(self, errors, warnings):
-        ''' Report Error and Warnings on the console and in the log window '''
-        if self.messages_window:
-            self.messages_window.clear()
-        for error in errors:
-            if type(error[0]) == list:
-                # should be fixed now, CHECKME - NO, NOT FULLY FIXED
-                # problem is in decision answers branches
-                error[0] = 'Internal error - ' + str(error[0])
-            LOG.error(error[0])
-            item = QtGui.QListWidgetItem(u'[ERROR] ' + error[0])
-            if len(error) == 3:
-                item.setData(Qt.UserRole, error[1])
-                #found = self.scene().symbol_near(QPoint(*error[1]), 1)
-                # Pyside bug: setData cannot store 'found' directly
-                #item.setData(Qt.UserRole + 1, id(found))
-                item.setData(Qt.UserRole + 1, error[2])
-            if self.messages_window:
-                self.messages_window.addItem(item)
-        for warning in warnings:
-            LOG.warning(warning[0])
-            item = QtGui.QListWidgetItem(u'[WARNING] ' + str(warning[0]))
-            if len(warning) == 3:
-                item.setData(Qt.UserRole, warning[1])
-                item.setData(Qt.UserRole + 1, warning[2])
-                #found = self.scene().symbol_near(QPoint(*warning[1]), 1)
-            if self.messages_window:
-                self.messages_window.addItem(item)
-        if not errors and not warnings and self.messages_window:
-            self.messages_window.addItem('No errors, no warnings!')
-
     def check_model(self):
         ''' Parse the model and check for warnings and errors '''
         # If the current scene is a nested one, save the top parent
@@ -1706,6 +1736,13 @@ class SDL_View(QtGui.QGraphicsView, object):
             scene = self.parent_scene[0][0]
         else:
             scene = self.scene()
+
+        self.messages_window.clear()
+        self.messages_window.addItem("Checking syntax")
+        if not scene.global_syntax_check():
+            self.messages_window.addItem("Aborted. Fix syntax errors first")
+            return
+        self.messages_window.addItem("Checking semantics")
 
         if scene.context not in ('process', 'state', 'procedure', 'block'):
             # check can only be done on SDL diagrams
@@ -1716,7 +1753,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
-            self.log_errors(errors, warnings)
+            log_errors(self.messages_window, errors, warnings,
+                       clearfirst=False)
             self.update_asn1_dock.emit(ast)
 
     def show_item(self, item):
@@ -1737,7 +1775,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         for each in path:
             kind, name = each.split()
             name = unicode(name).lower()
-            if kind == 'PROCESS':
+            if kind.lower() == 'process':
                 for process in self.scene().processes:
                     if unicode(process).lower() == name:
                         self.go_down(process.nested_scene,
@@ -1745,7 +1783,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                         break
                 else:
                     LOG.error('Process {} not found'.format(name))
-            elif kind == 'STATE':
+            elif kind.lower() == 'state':
                 for state in self.scene().states:
                     if unicode(state).lower() == name:
                         self.go_down(state.nested_scene,
@@ -1753,7 +1791,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                         break
                 else:
                     LOG.error('Composite state {} not found'.format(name))
-            elif kind == 'PROCEDURE':
+            elif kind.lower() == 'procedure':
                 for proc in self.scene().procedures:
                     if unicode(proc).lower() == name:
                         self.go_down(proc.nested_scene,
@@ -1786,7 +1824,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
             process, = ast.processes
-            self.log_errors(errors, warnings)
+            log_errors(self.messages_window, errors, warnings)
             if len(errors) > 0:
                 self.messages_window.addItem(
                         'Aborting: too many errors to generate code')
@@ -2221,7 +2259,7 @@ def export(ast, options):
                      .format(ext=doc_fmt, name=name))
             diagram.export_img(name, doc_format=doc_fmt, split=options.split)
         if diagram.context == 'block' and graphviz:
-            # Also save the statechart viewa of the current scene
+            # Also save the statechart view of the current scene
             LOG.info('Saving statechart sc_{}.png'.format(process.processName))
             sc_scene = SDL_Scene(context='statechart')
             graph = diagram.sdl_to_statechart()
