@@ -2719,6 +2719,9 @@ def input_part(root, parent, context):
             inputnames = [c for c in child.getChildren()
                                                   if c.type != lexer.PARAMS]
             for inputname in inputnames:
+                if inputname.text is None:
+                    # syntax error (CommonErrorNode) - already caught
+                    continue
                 for inp_sig in context.input_signals:
                     if inp_sig['name'].lower() == inputname.text.lower():
                         i.inputlist.append(inp_sig['name'])
@@ -2745,7 +2748,8 @@ def input_part(root, parent, context):
                     len(inputparams[0]) == 1:
                 user_param, = inputparams[0]
                 try:
-                    user_param_type = find_variable_type(user_param.text, context)
+                    user_param_type = find_variable_type(user_param.text,
+                                                         context)
                     try:
                         compare_types(sig_param_type, user_param_type)
                     except TypeError as err:
@@ -2789,9 +2793,12 @@ def input_part(root, parent, context):
             i.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             i.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == 0:
+            # Syntax error caught by the parser, no need to report again
+            pass
         else:
-            warnings.append('Unsupported INPUT child type: ' +
-                    str(child.type))
+            warnings.append('Unsupported INPUT child type: {}'
+                            .format(child.type))
     # At the end of the input parsing, get the the list of terminators that
     # follow the input transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the input)
@@ -2878,6 +2885,9 @@ def state(root, parent, context):
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             state_def.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == 0:
+            # Parser error, already caught
+            pass
         else:
             stwarn.append('Unsupported STATE definition child type: ' +
                            str(child.type))
@@ -3079,9 +3089,11 @@ def outputbody(root, context):
         elif child.type == lexer.TO:
             pass
         # TODO: better support of TO primitive
+        elif child.type == 0:
+            # syntax error already caught by the parser
+            pass
         else:
-            warnings.append('Unsupported output body type:' +
-                    str(child.type))
+            warnings.append('Unsupported child type: {}'.format(child.type))
     # Check/set the type of each param
     try:
         check_call(body.get('outputName', '').lower(),
@@ -3121,9 +3133,10 @@ def output(root, parent, out_ast=None, context=None):
             out_ast.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             out_ast.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == 0:
+            pass
         else:
-            warnings.append('Unsupported output child type: ' +
-                    str(child.type))
+            warnings.append('Unsupported child type: {}'.format(child.type))
     # Report errors with symbol coordinates
     errors = [[e, [out_ast.pos_x or 0, out_ast.pos_y or 0], []]
                 for e in errors]
@@ -3869,9 +3882,10 @@ def task_body(root, context):
             errors.extend(err)
             warnings.extend(warn)
             body.elems.append(forloop)
+        elif child.type == 0:
+            pass
         else:
-            warnings.append('Unsupported child type in task body: ' +
-                    str(child.type))
+            warnings.append('Unsupported task child: {}'.format(child.type))
     if not body:
         body = ogAST.TaskAssign()
     return body, errors, warnings
@@ -4102,34 +4116,32 @@ def parse_pr(files=None, string=None):
         errors.extend(err)
         warnings.extend(warn)
 
-    # If syntax errors were found, stop the process
+    # If syntax errors were found, raise an alarm and try to continue anyway
     if errors:
-        errors.append(['Syntax errors were found by the parser, you must '
-            'fix them before the model can be edited', [0, 0], ['']])
-        og_ast = ogAST.AST()
+        errors.append(['You should fix the syntax errors to make sure '
+            'no information is lost when loading the model', [0, 0], ['- -']])
+        #og_ast = ogAST.AST()
 
-    else:
-
-        # At the end when common tree is complete, perform the parsing
-        og_ast, err, warn = pr_file(common_tree)
-        for error in err:
-            errors.append([error] if type(error) is not list else error)
-        for warning in warn:
-            warnings.append([warning]
-                            if type(warning) is not list else warning)
-        # Post-parsing: additional semantic checks
-        # check that all NEXTSTATEs have a correspondingly defined STATE
-        # (except the '-' state, which means "stay in the same state')
-        for process in og_ast.processes:
-            for ns in [t.inputString.lower() for t in process.terminators
-                    if t.kind == 'next_state']:
-                if not ns in [s.lower() for s in
-                        process.mapping.viewkeys()] + ['-']:
-                    t_x, t_y = t.pos_x or 0, t.pos_y or 0
-                    errors.append(['State definition missing: ' + ns.upper(),
-                                  [t_x, t_y],
-                                  ['PROCESS {}'.format(process.processName)]])
-            # TODO: do the same with JOIN/LABEL
+    # At the end when common tree is complete, perform the parsing
+    og_ast, err, warn = pr_file(common_tree)
+    for error in err:
+        errors.append([error] if type(error) is not list else error)
+    for warning in warn:
+        warnings.append([warning]
+                        if type(warning) is not list else warning)
+    # Post-parsing: additional semantic checks
+    # check that all NEXTSTATEs have a correspondingly defined STATE
+    # (except the '-' state, which means "stay in the same state')
+    for process in og_ast.processes:
+        for ns in [t.inputString.lower() for t in process.terminators
+                if t.kind == 'next_state']:
+            if not ns in [s.lower() for s in
+                    process.mapping.viewkeys()] + ['-']:
+                t_x, t_y = t.pos_x or 0, t.pos_y or 0
+                errors.append(['State definition missing: ' + ns.upper(),
+                              [t_x, t_y],
+                              ['PROCESS {}'.format(process.processName)]])
+        # TODO: do the same with JOIN/LABEL
     return og_ast, warnings, errors
 
 

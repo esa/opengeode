@@ -148,8 +148,9 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
-1.2.0 (07/2015)
+1.2.1 (07/2015)
      - Use version 3.2.x of the ASN1SCC compiler with new -renamePolicy flag
+     - Improve robustness
 
 1.1.1 (07/2015)
      - Strongly report syntax errors with symbol location and warning if user

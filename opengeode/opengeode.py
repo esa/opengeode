@@ -115,7 +115,11 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
+<<<<<<< HEAD
 __version__ = '1.2.0'
+=======
+__version__ = '1.2.1'
+>>>>>>> 5c1da643e8e8cb9c4ccaaefa89275df3a0a8ffa5
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
