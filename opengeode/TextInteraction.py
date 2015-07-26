@@ -386,8 +386,8 @@ class EditableText(QGraphicsTextItem, object):
     def focusInEvent(self, event):
         ''' When user starts editing text, save previous state for Undo '''
         super(EditableText, self).focusInEvent(event)
-        # Make the Z-value of items to make sure the
-        # completer will always be on top of other symbols
+        # Change the Z-value of items to make sure the
+        # completer is always be on top of other symbols
         parent = self.parentItem()
         top_level = parent.top_level()
         top_level.setZValue(top_level.zValue() + 1)

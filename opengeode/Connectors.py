@@ -69,6 +69,11 @@ class Connection(QGraphicsPathItem, object):
         ''' Compute connection intermediate points - redefine in subclasses '''
         return self._middle_points
 
+    def top_level(self):
+        ''' In case the connection has a text, implement top_level()
+            as needed by TextInteraction '''
+        return self.parent
+
     def simple_arrow(self, origin='head', path=None):
         ''' Compute the two points of an vertical arrow head '''
         if origin == 'head':
