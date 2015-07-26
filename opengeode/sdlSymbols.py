@@ -817,7 +817,10 @@ class TextSymbol(HorizontalSymbol):
             # context may not have variables/timers (eg if context = block)
             pass
         try:
-            CONTEXT.procedures = list(set(CONTEXT.procedures + ast.procedures))
+            existing = {proc.inputString.lower()
+                       for proc in CONTEXT.procedures}
+            CONTEXT.procedures += [proc for proc in ast.procedures
+                                   if proc.inputString.lower() not in existing]
             CONTEXT.fpar.extend(ast.fpar)
         except AttributeError:
             pass
@@ -826,7 +829,7 @@ class TextSymbol(HorizontalSymbol):
             Signalroute.completion_list |= set(sig['name']
                                                for sig in ast.signals)
         except AttributeError:
-            # no AST, e.g. in cae of syntax errors in the text area
+            # no AST, e.g. in case of syntax errors in the text area
             pass
 
     @property

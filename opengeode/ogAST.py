@@ -902,6 +902,9 @@ class Block(object):
         self.processes = []
         # list of ogAST.Procedure
         self.procedures = []
+        # Block formal parameters - list of dict (unused)
+        # [{'name': str, 'type': str}]
+        self.fpar = []
 
 
 class System(object):
