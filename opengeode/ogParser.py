@@ -363,7 +363,7 @@ def get_interfaces(ast, process_name):
                     async_signals.append(found)
                 except ValueError:
                     undeclared_signals.append(sig_id)
-                except (KeyError, AttributeError):
+                except (KeyError, AttributeError) as err:
                     # Exceptions raised if a signal is not defined, i.e. there
                     # if an empty signal entry in the list. This can happen
                     # if the name of the signal is a reserved keyword, such as
@@ -371,8 +371,8 @@ def get_interfaces(ast, process_name):
                     errors.add('Check the names of your signals against'
                                ' reserved keywords')
     if undeclared_signals:
-        errors.append('Missing declaration for signal(s) {}'
-                      .format(', '.join(undeclared_signals)))
+        errors.add('Missing declaration for signal(s) {}'
+                   .format(', '.join(undeclared_signals)))
     return async_signals, system.procedures, errors
 
 
@@ -2457,14 +2457,23 @@ def signal(root):
                   ' than one parameter. Check signal declaration.')
             except TypeError as err:
                 errors.append(str(err))
+    if not new_signal:
+        # Signal was not parsed properly, report it
+        faulty_name = get_input_string(root)[slice(7,-1)]
+        errors.append('Signal name "{}" is a reserved keyword'
+                       .format(faulty_name))
+        new_signal['name'] = faulty_name
     return new_signal, errors, warnings
 
 
 def single_route(root):
     ''' Route (from id to id with [signal id] '''
+    # sig.text can be None if the lexer failed on the token, for example if
+    # the signal name is a reserved keyword
     route = {'source': root.getChild(0).text,
              'dest': root.getChild(1).text,
-             'signals': [sig.text for sig in root.getChildren()[2:]]}
+             'signals': [sig.text for sig in root.getChildren()[2:] if
+                         sig.text]}
     return route
 
 
@@ -2603,7 +2612,7 @@ def process_definition(root, parent=None, context=None):
                     cif(child)
             proc_x, proc_y = process.pos_x, process.pos_y
         elif child.type == lexer.ID:
-            # Get process (taste function) name
+            # Get process name
             process.processName = child.text
             try:
                 # Retrieve process interface (PI/RI)
@@ -2614,11 +2623,11 @@ def process_definition(root, parent=None, context=None):
                                               if sig['direction'] == 'out'])
                 process.procedures.extend(procedures)
                 perr.extend(err)
-            except AttributeError as err:
+            except AttributeError as exc:
                 # No interface because process is defined standalone
-                LOG.debug('Discarding process ' + child.text + ' ' + str(err))
-            except TypeError as err:
-                perr.append(str(err))
+                LOG.debug('Discarding process ' + child.text + ' ' + str(exc))
+            except TypeError as exc:
+                perr.append(str(exc))
             perr = [[e, [proc_x, proc_y], []] for e in perr]
         elif child.type == lexer.TEXTAREA:
             # Text zone where variables and operators are declared
