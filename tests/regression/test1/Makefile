@@ -12,7 +12,7 @@ test-ada: og.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n og.ali
 	$(GNATLINK) -o test_ada test_ada.o og.ali -lgnat
 	./test_ada
-	gcov og.adb
+	#gcov og.adb
 
 test-c: og.c test_c.o dataview-uniq.o
 	$(CC) og.c -c -o og.o
