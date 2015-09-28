@@ -77,10 +77,10 @@ def parse_scene(scene, full_model=False):
                     Indent.indent += 1
                     routes.append(to_txt)
                     Indent.indent -= 1
-            Indent.indent -= 1
-            channels.append('ENDCHANNEL;')
-            Indent.indent += 1
-            routes.append('CONNECT c AND r;')
+                Indent.indent -= 1
+                channels.append('ENDCHANNEL;')
+                Indent.indent += 1
+                routes.append('CONNECT c AND r;')
             Indent.indent -= 1
 
         pr_data.extend(channels)
