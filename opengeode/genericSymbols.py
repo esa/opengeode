@@ -56,7 +56,8 @@ from PySide.QtCore import Qt, QPoint, QPointF, QRect, QFile, QObject, Property
 
 from PySide.QtGui import(QGraphicsPathItem, QGraphicsPolygonItem, QPainterPath,
                          QGraphicsItem, QPen, QColor, QMenu, QFileDialog,
-                         QPainter, QLineEdit, QTextBlockFormat, QPolygonF)
+                         QPainter, QLineEdit, QTextBlockFormat, QPolygonF,
+                         QApplication)
 
 from PySide.QtUiTools import QUiLoader
 
@@ -602,6 +603,9 @@ class Symbol(QObject, QGraphicsPathItem, object):
     # pylint: disable=R0914
     def cam(self, old_pos, new_pos, ignore=None):
         ''' Collision Avoidance Manoeuvre for top level symbols '''
+        # Since the cam function is recursive it may be time consuming
+        # Call the Qt event prcessing to avoid blocking the application
+        QApplication.processEvents()
         if not self.scene():
             # Make sure the item is in a scene. For instance, when loading
             # a model from a file, some items may be connected together
@@ -613,19 +617,6 @@ class Symbol(QObject, QGraphicsPathItem, object):
             # Exectute CAM on top level of this item
             top_level.cam(top_level.position, top_level.position)
             return
-
-#       if self.hasParent:
-#           # Exectute CAM on top level of this item
-#           top_level = self
-#           while top_level.hasParent:
-#               # The "or top_level.parent" below is due to a Pyside/Qt bug
-#               # of the parentItem() function. It can happen that even when
-#               # the parent has explicitely been set with "setParentItem",
-#               # a subsequent call to parentItem returns None. Seems to happen
-#               # if the parent has not been added yet to the scene.
-#               top_level = top_level.parentItem() or top_level.parent
-#           top_level.cam(top_level.position, top_level.position)
-#           return
 
         # In case CAM is called due to object move, go to the new position
         delta = new_pos - old_pos
