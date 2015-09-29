@@ -2267,8 +2267,12 @@ def newtype(root, ta_ast, context):
     newtype = type(str(newtypename), (object,), {
                    "Line": root.getLine(),
                    "CharPositionInLine": root.getCharPositionInLine()})
-
-    if (root.getChild(1).type == lexer.ARRAY):
+    if len(root.children) < 2:
+        warnings.append('Use newtype definitions for arrays and records only')
+        newtype.kind = "BooleanType"
+        DV.types[str(newtypename)] = newtype
+        LOG.debug("Boolean newtype " + newtypename)
+    elif (root.getChild(1).type == lexer.ARRAY):
         newtype.kind = "SequenceOfType"
         newtype.type = get_array_type(root.getChild(1))
         newtype.Min = "Min"
