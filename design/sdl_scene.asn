@@ -15,4 +15,17 @@ Context ::= ENUMERATED {
 
 String ::= IA5String
 
+Position ::= SEQUENCE {
+    x REAL,
+    y REAL
+}
+
+-- mousePressEvent parameter
+QMouseEvent ::= SEQUENCE {
+    button ENUMERATED {left, middle, right},
+    scenePos Position
+}
+
+QKeyEvent ::= SEQUENCE {
+}
 END
