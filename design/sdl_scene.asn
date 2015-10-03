@@ -1,0 +1,18 @@
+Scene DEFINITIONS ::=
+BEGIN
+
+Undefined ::= NULL
+
+QUndoStack ::= NULL
+
+Context ::= ENUMERATED {
+    sdl-process,
+    sdl-procedure,
+    sdl-block,
+    statechart,
+    lander
+}
+
+String ::= IA5String
+
+END

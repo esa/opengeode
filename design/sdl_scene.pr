@@ -1,0 +1,71 @@
+SYSTEM sdl_scene;
+    /* CIF TEXT (250, 19), (289, 152) */
+    -- SDL Scene behaviour
+use datatypes comment 'sdl_scene.asn';
+-- events that can be received by a scene
+
+signal mousePressEvent;
+signal mouseReleaseEvent;
+signal mouseMoveEvent;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO sdl_scene WITH mousePressEvent,
+mouseMoveEvent,
+mouseReleaseEvent;
+    ENDCHANNEL;
+    BLOCK sdl_scene;
+        SIGNALROUTE r
+            FROM ENV TO sdl_scene WITH mousePressEvent,
+mouseMoveEvent,
+mouseReleaseEvent;
+        CONNECT c AND r;
+        /* CIF PROCESS (287, 201), (150, 75) */
+        PROCESS sdl_scene;
+            /* CIF TEXT (65, 86), (392, 584) */
+            -- Scene static data
+
+dcl parent_scene Undefined;
+
+-- Context can be process, procedure, block...
+dcl context Context;
+
+-- Depending on the context
+dcl allowed_symbols Undefined;
+
+dcl all_possible_actions Undefined;
+dcl actions Undefined;
+
+-- Handle Undo/Redo commands 
+dcl undo_stack QUndoStack;
+
+-- To store selected symbol until next click on the scene
+-- to place the symbol
+dcl button_selected Undefined;
+
+-- Pointer to place messages on the log window
+dcl messages_window Undefined;
+
+dcl click_coordinates Undefined;
+
+dcl orig_pos Undefined;
+
+dcl process_name String := 'opengeode';
+
+-- Used to update the tab window name when scene changes
+dcl name String;
+
+dcl search_item Undefined;
+dcl search_pattern Undefined;
+
+
+            /* CIF ENDTEXT */
+            /* CIF START (467, 73), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (467, 123), (70, 35) */
+                NEXTSTATE idle;
+            /* CIF STATE (547, 92), (70, 35) */
+            STATE idle;
+            ENDSTATE;
+        ENDPROCESS sdl_scene;
+    ENDBLOCK;
+ENDSYSTEM;
