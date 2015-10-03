@@ -777,13 +777,20 @@ def check_type_compatibility(primary, type_ref, context):
         if basic_type.kind == 'StandardStringType':
             return
         elif basic_type.kind.endswith('StringType'):
-            if int(basic_type.Min) <= len(
-                    primary.value[1:-1]) <= int(basic_type.Max):
+            try:
+                if int(basic_type.Min) <= len(
+                        primary.value[1:-1]) <= int(basic_type.Max):
+                    return
+                else:
+                    raise TypeError('Invalid string literal'
+                                    ' - check that length is'
+                                    'within the bound limits {Min}..{Max}'
+                                    .format(Min=str(basic_type.Min),
+                                            Max=str(basic_type.Max)))
+            except ValueError:
+                # No size constraint (or MIN/MAX)
+                LOG.debug('String literal size constraint discarded')
                 return
-            else:
-                raise TypeError('Invalid string literal - check that length is'
-                                'within the bound limits {Min}..{Max}'.format
-                            (Min=str(basic_type.Min), Max=str(basic_type.Max)))
         else:
             raise TypeError('String literal not expected')
     elif (isinstance(primary, ogAST.PrimMantissaBaseExp) and
