@@ -572,6 +572,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def refresh(self):
         ''' Refresh the symbols and connections in the scene '''
+        LOG.debug('scene refresh')
         for symbol in self.visible_symb:
             symbol.updateConnectionPointPosition()
             symbol.updateConnectionPoints()
@@ -1332,6 +1333,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def refresh(self):
         ''' Refresh the complete view '''
+        LOG.debug('view refresh')
         self.scene().refresh()
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
@@ -1526,6 +1528,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             # Avoid doing it when editing texts - it would prevent text
             # selection or cursor move
             if not isinstance(self.scene().focusItem(), EditableText):
+                LOG.debug('mouseRelease refresh')
                 self.refresh()
         super(SDL_View, self).mouseReleaseEvent(evt)
 
