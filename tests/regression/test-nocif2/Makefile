@@ -12,7 +12,7 @@ test-ada:
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toAda
 	$(ASN1SCC) -Ada dv.asn -typePrefix asn1Scc -equal
 	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n DemoDeviceDSAP_fixed.ali
+	$(GNATBIND) -n demodemodevicedsap.ali
 
 test-c: 
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toC

@@ -71,6 +71,7 @@
 
 import logging
 import traceback
+import os
 from singledispatch import singledispatch
 
 import ogAST
@@ -638,11 +639,11 @@ package {process_name} is'''.format(process_name=process_name,
     ads_template.append('end {process_name};'
             .format(process_name=process_name))
 
-    with open(process_name + '.adb', 'w') as ada_file:
+    with open(process_name.lower() + os.extsep + 'adb', 'w') as ada_file:
         ada_file.write(
                 u'\n'.join(format_ada_code(taste_template)).encode('latin1'))
 
-    with open(process_name + '.ads', 'w') as ada_file:
+    with open(process_name.lower() + os.extsep + 'ads', 'w') as ada_file:
         ada_file.write(
                 u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
 
