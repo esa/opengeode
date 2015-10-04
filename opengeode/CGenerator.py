@@ -14,6 +14,7 @@
 """
 
 import logging
+import os
 from singledispatch import singledispatch
 
 import Helper
@@ -839,7 +840,9 @@ LD_LIBRARY_PATH=. taste-gui -l
     if string_include == True:
         c_source_code.extend(['#include <string.h>'])
 
-    c_source_code.extend(['#include \"dataview-uniq.h\"'])
+    for each in process.DV.asn1Files:
+        hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
+        c_source_code.extend(['#include "{}"'.format(hname)])
     c_source_code.append('#include \"{pn}.h\"'.format(pn=process_name))
 
     c_source_code.extend(global_decls)

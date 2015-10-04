@@ -2716,6 +2716,7 @@ def process_definition(root, parent=None, context=None):
             LOG.error('Internal error - please report "{}" - "{}"'.format(
                 str(each), str(err)))
     errors.extend(perr)
+    process.DV = DV
     return process, errors, warnings
 
 

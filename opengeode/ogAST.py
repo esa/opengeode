@@ -811,6 +811,8 @@ class Process(object):
         # dataview: complete AST of the ASN.1 types
         self.asn1Modules = None
         self.dataview = None
+        # Reference to the Python module containing the ASN.1 AST
+        self.DV = None
 
         # input and output signal lists:
         # [{'name': str, 'type': str, 'direction':'in'/'out'}]
