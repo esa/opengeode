@@ -151,9 +151,14 @@ types = lambda: getattr(DV, 'types', {})
 def set_global_DV(asn1_filenames):
     ''' Call ASN.1 parser and set the global dataview AST entry (DV) '''
     global DV
+    if '--toC' in sys.argv:
+        rename_policy = ASN1.RenameOnlyConflicting
+    else:
+        rename_policy = ASN1.NoRename
     try:
         DV = parse_asn1(tuple(asn1_filenames),
                         ast_version=ASN1.UniqueEnumeratedNames,
+                        rename_policy=rename_policy,
                         flags=[ASN1.AstOnly])
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
