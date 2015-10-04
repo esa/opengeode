@@ -23,6 +23,7 @@ import traceback
 import re
 import code
 import pprint
+import random
 from functools import partial
 from itertools import chain
 
@@ -528,7 +529,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                 symbol.update_position()
                             else:
                                 # No CIF coordinates: (1) fix COMMENT position
-                                # and (2) if floating, call CAM
+                                # and (2) if floating call CAM
                                 if isinstance(symbol, genericSymbols.Comment):
                                     symbol.pos_x = \
                                       symbol.parent.boundingRect().width() + 15
