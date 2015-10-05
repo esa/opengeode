@@ -148,10 +148,11 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
-1.2.7 (10/2015)
+1.2.8 (10/2015)
      - Better support of renamePolicy
      - Better handling of models without CIF coordinates
      - Minor bug fixes
+     - Forloop syntax error handled correctly when using range
 
 1.2.4 (07/2015)
      - Use version 3.2.x of the ASN1SCC compiler with new -renamePolicy flag

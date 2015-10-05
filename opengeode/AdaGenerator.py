@@ -936,7 +936,7 @@ def _task_forloop(task, **kwargs):
             else:
                 # Step is not directly supported in Ada, we need to use 'while'
                 stmt.extend(['declare',
-                             u'{it} : Integer := {start};'
+                             u'{it} : Asn1Int := {start};'
                              .format(it=loop['var'],
                              start=start_str),
                              '',

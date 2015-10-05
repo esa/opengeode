@@ -3854,7 +3854,7 @@ def for_loop(root, context):
                     forloop['type'] = basic_type.type
                     # Set the type of the iterator
                     context.variables[forloop['var']] = (forloop['type'], 0)
-            else:
+            elif forloop['range']:
                 # Using a range - set type of iterator to standard integer
                 start_expr, stop_expr = forloop['range']['start'], \
                                         forloop['range']['stop']
