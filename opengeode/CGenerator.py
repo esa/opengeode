@@ -1256,7 +1256,13 @@ def _prim_selector(prim):
     if receiver_bty.kind == 'ChoiceType':
         string = ('{sort}_{field_name}_get({string})'.format(sort=type_name(receiver.exprType), field_name=field_name, string=string))
     else:
-        string += '.' + field_name
+        # Sequence: we must get the right casing of the field
+        for field_case in receiver_bty.Children:
+            if field_case.lower() == field_name.lower():
+                break
+        else:
+            field_case = field_name
+        string += '.' + field_case
 
     return stmts, unicode(string), local_decl
 
