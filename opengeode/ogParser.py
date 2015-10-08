@@ -31,6 +31,7 @@ import os
 import math
 import logging
 import traceback
+import binascii
 from itertools import chain, permutations, combinations
 from collections import defaultdict, Counter
 import antlr3
@@ -1670,7 +1671,23 @@ def primary(root, context):
         })
     elif root.type == lexer.STRING:
         prim = ogAST.PrimStringLiteral()
-        prim.value = root.text
+        if root.text[-1] in ('B', 'b'):
+            try:
+                prim.value = "'{}'".format(
+                        binascii.unhexlify('%x' % int(root.text[1:-2], 2)))
+            except (ValueError, TypeError) as err:
+                errors.append(error
+                        (root, 'Bit string literal: {}'.format(err)))
+                prim.value = "''"
+        elif root.text[-1] in ('H', 'h'):
+            try:
+                prim.value = "'{}'".format(root.text[1:-2].decode('hex'))
+            except (ValueError, TypeError) as err:
+                errors.append(error
+                        (root, 'Octet string literal: {}'.format(err)))
+                prim.value = "''"
+        else:
+            prim.value = root.text
         prim.exprType = type('PrStr', (object,), {
             'kind': 'StringType',
             'Min': str(len(prim.value) - 2),
@@ -1735,13 +1752,6 @@ def primary(root, context):
             'Max': str(len(root.children)),
             'type': prim_elem.exprType
         })
-    elif root.type == lexer.BITSTR:
-        prim = ogAST.PrimBitStringLiteral()
-        warnings.append(warning(root, 'Bit string literal not supported yet'))
-    elif root.type == lexer.OCTSTR:
-        prim = ogAST.PrimOctetStringLiteral()
-        warnings.append(
-            warning(root, 'Octet string literal not supported yet'))
     elif root.type == lexer.STATE:
         prim = ogAST.PrimStateReference()
         prim.exprType = ENUMERATED()
