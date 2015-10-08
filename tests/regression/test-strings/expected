@@ -6,3 +6,4 @@ foo
 bar
 
  baz
+String literal (should be 'hello'):hello

@@ -1,0 +1,49 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (287, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview-uniq.asn';
+
+--use dv2 comment 'dataview2.asn';
+
+signal dd(myinteger);
+signal we(myinteger);
+
+procedure anExternalProc;
+fpar in/out a_param MyInteger;
+external;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (57, 58), (303, 140) */
+            -- Test the proper check of RANGE parameters
+
+dcl foo SeqOf;
+
+dcl a, b MyInteger;
+
+dcl c,d MyREAL;
+            /* CIF ENDTEXT */
+            /* CIF START (184, 217), (70, 35) */
+            START;
+                /* CIF TASK (86, 267), (266, 53) */
+                TASK for each in range (fix(1),fix(20.0) , 2):
+    call writeln(each);
+endfor;
+                /* CIF NEXTSTATE (184, 350), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (419, 218), (70, 35) */
+            STATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;

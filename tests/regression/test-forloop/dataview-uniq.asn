@@ -1,0 +1,13 @@
+TASTE-Dataview DEFINITIONS ::=
+
+
+BEGIN
+
+MyInteger   ::= INTEGER (0..255)
+MyReal ::= REAL
+
+My-OctStr    ::= OCTET STRING (SIZE (0..20))
+
+SeqOf ::= SEQUENCE (SIZE(0..100)) OF MyInteger
+
+END

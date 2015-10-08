@@ -1,0 +1,125 @@
+SYSTEM Mysystem;
+    /* CIF TEXT (178, 209), (356, 140) */
+    -- Text area for declarations and comments
+
+signal a;
+signal b;
+
+use datamodel comment 'dv.asn';
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO DemoDemoDeviceDSAP WITH a;
+        FROM DemoDemoDeviceDSAP TO ENV WITH b;
+    ENDCHANNEL;
+    BLOCK DemoDemoDeviceDSAP;
+        SIGNALROUTE r
+            FROM ENV TO DemoDemoDeviceDSAP WITH a;
+            FROM DemoDemoDeviceDSAP TO ENV WITH b;
+        CONNECT c AND r;
+
+PROCESS DemoDemoDeviceDSAP;
+
+            /* CIF TEXT (55, 105), (356, 140) */
+  DCL CommandAddress CcsdsSoisSubnetworkMemoryAddressType := 100;
+  DCL ExtendedStatusModeAddress CcsdsSoisSubnetworkMemoryAddressType := 102;
+  DCL MemoryID CcsdsSoisSubnetworkMemoryIDType := 0;
+  DCL StatusAddress CcsdsSoisSubnetworkMemoryAddressType := 101;
+  DCL ack DemoTelemetryAckType;
+  DCL event DemoEventType;
+  DCL eventTM DemoTelemetryEventType;
+  DCL extendedMode DemoExtendedModeUnionType;
+  DCL extendedStatus DemoExtendedStatusUnionType;
+  DCL status DemoStatusType;
+  DCL telecommandMode DemoTelecommandModeType;
+  DCL telecommandType DemoTelecommandTypeEnumType;
+  DCL telecommandUserData DemoTelecommandUserDataType;
+  DCL telemetry1 DemoTelemetry1Type;
+  DCL telemetry2 DemoTelemetry2Type;
+            /* CIF ENDTEXT */
+
+  PROCEDURE EventParam;
+  START;
+    TASK event!fldType := eventTM!fldEventType;
+    TASK event!fldData := eventTM!fldEventData;
+    -- todo - read deviceEvent from DeviceInterface
+
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE GetExtendedMode;
+  START;
+    -- todo - call interface write
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE GetExtendedStatus;
+  START;
+    -- todo - call interface write
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE GetExtendedStatusMode;
+  START;
+    -- todo - call interface read
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE ReadStatus;
+  START;
+    -- todo - call interface read
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE ReturnExtendedMode;
+  START;
+    -- todo - read extendedMode from DeviceInterface
+
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE ReturnExtendedStatus;
+  START;
+    -- todo - read extendedStatus from DeviceInterface
+
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE ReturnStatus;
+  START;
+    -- todo - read status from DeviceInterface
+
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE TCReceive;
+  START;
+    DECISION (telecommandType=mode);
+    (true):
+      -- todo - call interface setMode
+    (false):
+      -- todo - call interface setUserData
+    ENDDECISION;
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE TCSendMode;
+  START;
+    TASK telecommandType := mode;
+    -- todo - call interface send
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE TCSendUserData;
+  START;
+    TASK telecommandType := USER_DATA;
+    -- todo - call interface send
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE TM1Param;
+  START;
+    -- todo - read telemetrySet1 from DeviceInterface
+
+  RETURN;
+  ENDPROCEDURE;
+  PROCEDURE TM2Param;
+  START;
+    -- todo - read telemetrySet2 from DeviceInterface
+
+  RETURN;
+  ENDPROCEDURE;
+
+
+ENDPROCESS DemoDemoDeviceDSAP;
+
+ENDBLOCK;
+ENDSYSTEM;

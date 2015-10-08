@@ -31,6 +31,7 @@ import os
 import math
 import logging
 import traceback
+import binascii
 from itertools import chain, permutations, combinations
 from collections import defaultdict, Counter
 import antlr3
@@ -151,9 +152,14 @@ types = lambda: getattr(DV, 'types', {})
 def set_global_DV(asn1_filenames):
     ''' Call ASN.1 parser and set the global dataview AST entry (DV) '''
     global DV
+    if '--toC' in sys.argv:
+        rename_policy = ASN1.RenameOnlyConflicting
+    else:
+        rename_policy = ASN1.NoRename
     try:
         DV = parse_asn1(tuple(asn1_filenames),
                         ast_version=ASN1.UniqueEnumeratedNames,
+                        rename_policy=rename_policy,
                         flags=[ASN1.AstOnly])
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
@@ -777,13 +783,20 @@ def check_type_compatibility(primary, type_ref, context):
         if basic_type.kind == 'StandardStringType':
             return
         elif basic_type.kind.endswith('StringType'):
-            if int(basic_type.Min) <= len(
-                    primary.value[1:-1]) <= int(basic_type.Max):
+            try:
+                if int(basic_type.Min) <= len(
+                        primary.value[1:-1]) <= int(basic_type.Max):
+                    return
+                else:
+                    raise TypeError('Invalid string literal'
+                                    ' - check that length is'
+                                    'within the bound limits {Min}..{Max}'
+                                    .format(Min=str(basic_type.Min),
+                                            Max=str(basic_type.Max)))
+            except ValueError:
+                # No size constraint (or MIN/MAX)
+                LOG.debug('String literal size constraint discarded')
                 return
-            else:
-                raise TypeError('Invalid string literal - check that length is'
-                                'within the bound limits {Min}..{Max}'.format
-                            (Min=str(basic_type.Min), Max=str(basic_type.Max)))
         else:
             raise TypeError('String literal not expected')
     elif (isinstance(primary, ogAST.PrimMantissaBaseExp) and
@@ -1658,7 +1671,23 @@ def primary(root, context):
         })
     elif root.type == lexer.STRING:
         prim = ogAST.PrimStringLiteral()
-        prim.value = root.text
+        if root.text[-1] in ('B', 'b'):
+            try:
+                prim.value = "'{}'".format(
+                        binascii.unhexlify('%x' % int(root.text[1:-2], 2)))
+            except (ValueError, TypeError) as err:
+                errors.append(error
+                        (root, 'Bit string literal: {}'.format(err)))
+                prim.value = "''"
+        elif root.text[-1] in ('H', 'h'):
+            try:
+                prim.value = "'{}'".format(root.text[1:-2].decode('hex'))
+            except (ValueError, TypeError) as err:
+                errors.append(error
+                        (root, 'Octet string literal: {}'.format(err)))
+                prim.value = "''"
+        else:
+            prim.value = root.text
         prim.exprType = type('PrStr', (object,), {
             'kind': 'StringType',
             'Min': str(len(prim.value) - 2),
@@ -1723,13 +1752,6 @@ def primary(root, context):
             'Max': str(len(root.children)),
             'type': prim_elem.exprType
         })
-    elif root.type == lexer.BITSTR:
-        prim = ogAST.PrimBitStringLiteral()
-        warnings.append(warning(root, 'Bit string literal not supported yet'))
-    elif root.type == lexer.OCTSTR:
-        prim = ogAST.PrimOctetStringLiteral()
-        warnings.append(
-            warning(root, 'Octet string literal not supported yet'))
     elif root.type == lexer.STATE:
         prim = ogAST.PrimStateReference()
         prim.exprType = ENUMERATED()
@@ -1846,7 +1868,7 @@ def fpar(root):
         direction = 'in'
         assert param.type == lexer.PARAM
         for child in param.getChildren():
-            if child.type == lexer.INOUT:
+            if child.type in (lexer.INOUT, lexer.OUT):
                 direction = 'out'
             elif child.type == lexer.IN:
                 pass
@@ -2267,8 +2289,12 @@ def newtype(root, ta_ast, context):
     newtype = type(str(newtypename), (object,), {
                    "Line": root.getLine(),
                    "CharPositionInLine": root.getCharPositionInLine()})
-
-    if (root.getChild(1).type == lexer.ARRAY):
+    if len(root.children) < 2:
+        warnings.append('Use newtype definitions for arrays and records only')
+        newtype.kind = "BooleanType"
+        DV.types[str(newtypename)] = newtype
+        LOG.debug("Boolean newtype " + newtypename)
+    elif (root.getChild(1).type == lexer.ARRAY):
         newtype.kind = "SequenceOfType"
         newtype.type = get_array_type(root.getChild(1))
         newtype.Min = "Min"
@@ -2705,6 +2731,7 @@ def process_definition(root, parent=None, context=None):
             LOG.error('Internal error - please report "{}" - "{}"'.format(
                 str(each), str(err)))
     errors.extend(perr)
+    process.DV = DV
     return process, errors, warnings
 
 
@@ -3837,7 +3864,7 @@ def for_loop(root, context):
                     forloop['type'] = basic_type.type
                     # Set the type of the iterator
                     context.variables[forloop['var']] = (forloop['type'], 0)
-            else:
+            elif forloop['range']:
                 # Using a range - set type of iterator to standard integer
                 start_expr, stop_expr = forloop['range']['start'], \
                                         forloop['range']['stop']

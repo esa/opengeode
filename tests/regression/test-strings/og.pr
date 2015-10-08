@@ -15,7 +15,7 @@ signal run;
         CONNECT c AND r;
         /* CIF PROCESS (253, 105), (150, 75) */
         PROCESS og;
-            /* CIF TEXT (0, 33), (356, 143) */
+            /* CIF TEXT (0, 33), (356, 203) */
             -- Text area for declarations and comments
 
 dcl a List := {'a', 'b', 'foo', 'bar
@@ -25,29 +25,35 @@ dcl result OutStr := '';
 
 dcl sep OutStr := ', ';
 dcl nosep OutStr := '';
+
+dcl strlit outStr := '68656c6c6f'H;
+
+dcl bitstrlit outStr := '01010110'B;
             /* CIF ENDTEXT */
-            /* CIF START (597, 63), (70, 35) */
+            /* CIF START (639, 63), (70, 35) */
             START;
-                /* CIF TASK (539, 113), (185, 35) */
+                /* CIF TASK (581, 113), (185, 35) */
                 TASK result := result // 'Hello!';
-                /* CIF TASK (584, 163), (96, 35) */
+                /* CIF TASK (626, 163), (96, 35) */
                 TASK result := '';
-                /* CIF TASK (403, 213), (457, 78) */
+                /* CIF TASK (445, 213), (457, 78) */
                 TASK for each in a(2, length(a) - 1):
  result := result // (if length(result) > 0 then sep else nosep fi) // each
-endfor;;;;
-                /* CIF PROCEDURECALL (567, 306), (129, 35) */
+endfor;
+                /* CIF PROCEDURECALL (609, 306), (129, 35) */
                 CALL writeln(result);
-                /* CIF TASK (554, 356), (155, 53) */
+                /* CIF TASK (596, 356), (155, 53) */
                 TASK for sep in a:
     call writeln(sep);
 endfor
-                /* CIF COMMENT (729, 365), (194, 38) */
+                /* CIF COMMENT (771, 365), (194, 38) */
                 COMMENT 'Test to check scope
 (sep is also a dcl-variable)';
-                /* CIF NEXTSTATE (597, 424), (70, 35) */
+                /* CIF PROCEDURECALL (509, 424), (330, 35) */
+                CALL writeln('String literal (should be "hello"):', strlit);
+                /* CIF NEXTSTATE (639, 474), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (286, 217), (70, 35) */
+            /* CIF STATE (366, 217), (70, 35) */
             STATE wait;
             ENDSTATE;
         ENDPROCESS og;

@@ -1,0 +1,983 @@
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     CCSDS_SOIS_Subnetwork.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+CcsdsSoisSubnetwork DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+X ::= NULL
+
+CcsdsSoisSubnetworkOctet ::= INTEGER (0..255)
+
+CcsdsSoisSubnetworkMemoryIDType ::= INTEGER (0..65535)
+
+CcsdsSoisSubnetworkMemoryAddressType ::= INTEGER (0..4294967295)
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     Demo.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+Demo DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+IMPORTS CcsdsSoisSubnetworkOctet FROM CcsdsSoisSubnetwork;
+
+
+
+DemoStatusFlag1Type ::= BOOLEAN 
+
+DemoStatusFlag2Type ::= BOOLEAN 
+
+DemoCalibratedHK1Type ::= INTEGER (0..255)
+
+DemoCalibratedHK2Type ::= INTEGER (0..255)
+
+DemoQueryCountType ::= INTEGER (0..255)
+
+DemoExtendedModeType ::= INTEGER (0..255)
+
+DemoExtendedStatusType ::= INTEGER (0..255)
+
+DemoHK1Type ::= INTEGER (0..255)
+
+DemoHK2Type ::= INTEGER (0..255)
+
+DemoHK3Type ::= INTEGER (0..255)
+
+DemoHK4Type ::= INTEGER (0..255)
+
+DemoCommandStatusType ::= INTEGER (0..65535)
+
+DemoEventDataType ::= INTEGER (0..255)
+
+DemoUserDataLengthType ::= INTEGER (0..65535)
+
+DemoModeType ::= ENUMERATED
+{
+  reset(0),
+  do-a-little-bit-of-stuff(1),
+  do-lots-of-stuff(4),
+  do-tonnes-of-stuff-badly(6),
+  reveal-a-bug-and-malfunction(9)
+}
+
+DemoEventTypeType ::= ENUMERATED
+{
+  event1(0),
+  event2(1),
+  event3(2)
+}
+
+DemoReadStatusModeCommandType ::= ENUMERATED
+{
+  read-status(1),
+  read-mode(2)
+}
+
+DemoExtendedStatusModeEnumType ::= ENUMERATED
+{
+  mode(0),
+  status(1)
+}
+
+DemoTelecommandTypeEnumType ::= ENUMERATED
+{
+  mode(0),
+  user-data(1)
+}
+
+DemoTelemetryTypeEnumType ::= ENUMERATED
+{
+  ack(0),
+  type1(1),
+  type2(2),
+  event(3)
+}
+
+DemoOpCountType ::= INTEGER (0..39)
+
+DemoStatusType ::= 
+SEQUENCE
+{
+
+  fldStatusFlag1 DemoStatusFlag1Type,
+  fldStatusFlag2 DemoStatusFlag2Type,
+  fldOpCount DemoOpCountType
+}
+
+
+
+DemoTelemetrySet1Type ::= 
+SEQUENCE
+{
+
+  fldHk1 DemoHK1Type,
+  fldHk2 DemoHK2Type
+}
+
+
+
+DemoTelemetrySet2Type ::= 
+SEQUENCE
+{
+
+  fldHk3 DemoHK3Type,
+  fldHk4 DemoHK4Type
+}
+
+
+
+DemoEventType ::= 
+SEQUENCE
+{
+
+  fldType DemoEventTypeType,
+  fldData DemoEventDataType
+}
+
+
+
+DemoExtendedStatusOrModeType ::= 
+SEQUENCE
+{
+  fldQueryCount DemoQueryCountType,
+  fldType DemoExtendedStatusModeEnumType,
+  body-choice DemoExtendedstatusormodetype-BODY-CHOICE
+
+}
+
+DemoExtendedstatusormodetype-BODY-CHOICE ::= CHOICE
+{
+  fldExtendedModeUnionType DemoExtendedModeUnionType,
+  fldExtendedStatusUnionType DemoExtendedStatusUnionType
+}
+
+
+
+DemoExtendedStatusUnionType ::= 
+SEQUENCE
+{
+
+  fldStatus DemoExtendedStatusType
+}
+
+
+
+DemoExtendedModeUnionType ::= 
+SEQUENCE
+{
+
+  fldMode DemoExtendedModeType
+}
+
+
+
+DemoTelecommandType ::= 
+SEQUENCE
+{
+  fldType DemoTelecommandTypeEnumType,
+  body-choice DemoTelecommandtype-BODY-CHOICE
+
+}
+
+DemoTelecommandtype-BODY-CHOICE ::= CHOICE
+{
+  fldTelecommandModeType DemoTelecommandModeType,
+  fldTelecommandUserDataType DemoTelecommandUserDataType
+}
+
+
+
+DemoTelecommandModeType ::= 
+SEQUENCE
+{
+
+  fldMode DemoModeType
+}
+
+
+
+DemoTelecommandUserDataType ::= 
+SEQUENCE
+{
+
+  fldUserDataLength CcsdsSoisSubnetworkOctet,
+  fldUserData SEQUENCE SIZE(0..255) OF CcsdsSoisSubnetworkOctet
+}
+
+
+
+DemoTelemetryType ::= 
+SEQUENCE
+{
+  fldType DemoTelemetryTypeEnumType,
+  body-choice DemoTelemetrytype-BODY-CHOICE
+
+}
+
+DemoTelemetrytype-BODY-CHOICE ::= CHOICE
+{
+  fldTelemetry1Type DemoTelemetry1Type,
+  fldTelemetry2Type DemoTelemetry2Type,
+  fldTelemetryAckType DemoTelemetryAckType,
+  fldTelemetryEventType DemoTelemetryEventType
+}
+
+
+
+DemoTelemetryAckType ::= 
+SEQUENCE
+{
+
+  fldStatus DemoCommandStatusType
+}
+
+
+
+DemoTelemetry1Type ::= 
+SEQUENCE
+{
+
+  fldTelemetrySet DemoTelemetrySet1Type
+}
+
+
+
+DemoTelemetry2Type ::= 
+SEQUENCE
+{
+
+  fldTelemetrySet DemoTelemetrySet2Type
+}
+
+
+
+DemoTelemetryEventType ::= 
+SEQUENCE
+{
+
+  fldEventType DemoEventTypeType,
+  fldEventData DemoEventDataType
+}
+
+
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     DEMO_PRES.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+DemoPres DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+IMPORTS SedsSecondsSinceTAI FROM Seds;
+
+
+
+DemoPresUInt12 ::= INTEGER (0..4095)
+
+DemoPresTeamType ::= ENUMERATED
+{
+  home-team(0),
+  away-team(1)
+}
+
+DemoPresScoreType ::= 
+SEQUENCE
+{
+
+  fldScoreTeamHome DemoPresUInt12,
+  fldScoreTeamAway DemoPresUInt12
+}
+
+
+
+DemoPresGameInfoType ::= 
+SEQUENCE
+{
+
+  fldTime SedsSecondsSinceTAI,
+  fldScore DemoPresScoreType
+}
+
+
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     GENERIC.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+SEDS-Generic DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+IMPORTS SedsUint8 FROM Seds;
+
+
+
+GenericArray ::= SEQUENCE (SIZE(1)) OF SedsUint8
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     MISSION.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+Mission DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+IMPORTS SedsUint8 FROM Seds;
+
+
+
+MissionArray ::= SEQUENCE (SIZE(22)) OF SedsUint8
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     NPAL.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+Npal DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+IMPORTS SedsBoolean,SedsBitRate,SedsCommandStatus,SedsFloat64,SedsNumberOfKelvin,
+        SedsNumberOfSeconds,SedsUint16,SedsUint32,SedsUint8,SedsValidityFlag FROM Seds;
+
+
+
+NpalPixel ::= INTEGER (0..255)
+
+NpalEventCode ::= ENUMERATED
+{
+  mode-transition(0),
+  error-occurrence(1),
+  tc-received(2),
+  download-event(3),
+  deleted(4),
+  calibration-event(5)
+}
+
+NpalFrameSize ::= ENUMERATED
+{
+  half-frame(0),
+  full-frame(1)
+}
+
+NpalResetLevel ::= ENUMERATED
+{
+  level-0(0),
+  level-1(1)
+}
+
+NpalProgressStatus ::= ENUMERATED
+{
+  started(0),
+  completed(1),
+  aborted(2)
+}
+
+NpalTcReceived ::= ENUMERATED
+{
+  accepted(0),
+  not-accepted(1)
+}
+
+NpalCalibrationType ::= ENUMERATED
+{
+  cold-pixel-calibration(0),
+  hot-pixel-calibration(1),
+  save-calibration-data(2)
+}
+
+NpalWindowSize ::= ENUMERATED
+{
+  two-five-six-pixels(0),
+  five-one-two-pixels(1),
+  seven-six-eight-pixels(2),
+  one-zero-two-four-pixels(3)
+}
+
+NpalOperatingMode ::= ENUMERATED
+{
+  ini(0),
+  swm(1),
+  stb(2),
+  trk(3),
+  img(4),
+  trk-hibernated(5)
+}
+
+NpalSettableParameterCode ::= ENUMERATED
+{
+  restore-default-values(0),
+  defective-pixels-low-threshold(1),
+  defective-pixels-high-threshold(2),
+  number-of-cycles-for-defective-pixels-update(3),
+  camera-status-tm-update-rate(4)
+}
+
+NpalCyclePrescalar ::= ENUMERATED
+{
+  base-cycle-duration-1x(0),
+  base-cycle-duration-2x(1),
+  base-cycle-duration-4x(2),
+  base-cycle-duration-8x(3),
+  base-cycle-duration-16x(4),
+  base-cycle-duration-32x(5)
+}
+
+NpalSwLoading ::= ENUMERATED
+{
+  ram-loaded(0),
+  no-ram-loading(1)
+}
+
+NpalTrackingOption ::= ENUMERATED
+{
+  normal-tracking-mode(0),
+  hibernated-tracking-mode(1)
+}
+
+NpalImageDynamicRange ::= ENUMERATED
+{
+  one-bit(0),
+  two-bits(1),
+  four-bits(2),
+  eight-bits(3),
+  ten-bits(4)
+}
+
+NpalErrorCode ::= ENUMERATED
+{
+  tm-buffer-full(3)
+}
+
+NpalModeTransitionCause ::= ENUMERATED
+{
+  transition-after-error-condition(0),
+  automatic-transition-at-end-of-mode(1),
+  transition-after-tc(2)
+}
+
+NpalUpOrDown ::= ENUMERATED
+{
+  up(0),
+  down(1)
+}
+
+NpalTmHeader ::= 
+SEQUENCE
+{
+  fldPktLength SedsUint16,
+  fldTmType SedsUint8,
+  fldTmDays SedsUint16,
+  fldTmMillis SedsUint32,
+  body-choice NpalTmHeader-BODY-CHOICE
+
+}
+
+NpalTmHeader-BODY-CHOICE ::= CHOICE
+{
+  fldTmChecksum NpalTmChecksum,
+  fldTmChkdata NpalTmChkdata,
+  fldTmDeflist NpalTmDeflist,
+  fldTmDwndata NpalTmDwndata,
+  fldTmHorizon NpalTmHorizon,
+  fldTmImage1 NpalTmImage1,
+  fldTmImage10 NpalTmImage10,
+  fldTmImage2 NpalTmImage2,
+  fldTmImage4 NpalTmImage4,
+  fldTmImage8 NpalTmImage8,
+  fldTmReport NpalTmReport,
+  fldTmStars NpalTmStars,
+  fldTmStatus NpalTmStatus
+}
+
+
+
+NpalTmChecksum ::= 
+SEQUENCE
+{
+
+  fldStartAddress SedsUint32,
+  fldEndAddress SedsUint32,
+  fldChecksumResult SedsUint32
+}
+
+
+
+NpalModeTransition ::= 
+SEQUENCE
+{
+
+  fldCause NpalModeTransitionCause,
+  fldCurrentMode NpalOperatingMode,
+  fldPreviousMode NpalOperatingMode
+}
+
+
+
+NpalTmReport ::= 
+SEQUENCE
+{
+  fldEventCode NpalEventCode,
+  fldTcAcceptance NpalTcReceived,
+  fldModeTransitition NpalModeTransition,
+  fldDownloadStatus NpalProgressStatus,
+  fldCalibration NpalProgressStatus,
+  fldErrorCode NpalErrorCode,
+  body-choice NpalTmReport-BODY-CHOICE
+
+}
+
+NpalTmReport-BODY-CHOICE ::= CHOICE
+{
+  fldTmReportAckFail NpalTmReportAckFail,
+  fldTmReportAckOk NpalTmReportAckOk,
+  fldTmReportModeTrans NpalTmReportModeTrans
+}
+
+
+
+NpalTmReportAckOk ::= 
+INTEGER(0)
+
+
+NpalTmDeflist ::= 
+SEQUENCE
+{
+
+  fldPixelNumber SedsUint8,
+  fldPixelData SedsUint32
+}
+
+
+
+NpalTmImage4 ::= 
+SEQUENCE
+{
+
+  fldPacketNumber SedsUint16,
+  fldPixelNumber SedsUint16,
+  fldPixelData SedsUint8
+}
+
+
+
+NpalTmStatus ::= 
+SEQUENCE
+{
+
+  fldOperatingMode NpalOperatingMode,
+  fldExposureTime SedsUint16,
+  fldApsTemperature SedsUint8,
+  fldOpticsTemperature SedsUint8,
+  fldInputVoltage SedsUint8,
+  fldHealthCheck SedsUint8,
+  fldLinkSpeed SedsUint8,
+  fldCycleOptionFrameSize NpalFrameSize,
+  fldCycleOptionPrescalar NpalCyclePrescalar,
+  fldDefectivePixelLowThreshold SedsUint16,
+  fldDefectivePixelHighThreshold SedsUint16,
+  fldNumCyclesForDefectDetection SedsUint16,
+  fldCameraStatusRate SedsUint16,
+  fldSwRevisionNumber SedsUint8,
+  fldSwIssueNumber SedsUint8
+}
+
+
+
+NpalCameraImage ::= 
+SEQUENCE
+{
+
+  fldNumberOfRows SedsUint16 (256..1024),
+  fldNumberOfPixels SedsUint32 (65536..1048576),
+  fldPixels SEQUENCE SIZE(0..1048576) OF NpalPixel,
+  fldImageValid SedsValidityFlag
+}
+
+
+
+NpalStarData ::= 
+SEQUENCE
+{
+
+  fldXCoordinate SedsUint16,
+  fldYCoordinate SedsUint16,
+  fldDimension SedsUint8
+}
+
+
+
+NpalTmStars ::= 
+SEQUENCE
+{
+
+  fldNumberOfStars SedsUint8,
+  fldStars SEQUENCE (SIZE(16)) OF NpalStarData
+}
+
+
+
+NpalTmDwndata ::= 
+SEQUENCE
+{
+
+  fldStartAddress SedsUint32,
+  fldEndAddress SedsUint32,
+  fldWords SedsUint32
+}
+
+
+
+NpalTmReportAckFail ::= 
+INTEGER(0)
+
+
+NpalTmImage2 ::= 
+SEQUENCE
+{
+
+  fldPacketNumber SedsUint16,
+  fldPixelNumber SedsUint16,
+  fldPixelData SedsUint8
+}
+
+
+
+NpalTmChkdata ::= 
+SEQUENCE
+{
+
+  fldLastReset SedsUint8,
+  fldPromSwRelease SedsUint16,
+  fldRamFaults SedsUint16,
+  fldFirstErrorAddress SedsUint32,
+  fldPromChecksum SedsUint32,
+  fldEepromChecksum SedsUint32
+}
+
+
+
+NpalTenBitPixel ::= 
+SEQUENCE
+{
+
+  fldPixel SedsUint16
+}
+
+
+
+NpalTmImage8 ::= 
+SEQUENCE
+{
+
+  fldPacketNumber SedsUint16,
+  fldPixelNumber SedsUint16,
+  fldPixelData SEQUENCE (SIZE(512)) OF SedsUint8
+}
+
+
+
+NpalTmReportModeTrans ::= 
+INTEGER(0)
+
+
+NpalTmHorizon ::= 
+SEQUENCE
+{
+
+  fldBorderPolarAngle SedsUint16,
+  fldBorderDistance SedsUint16,
+  fldRadius SedsUint16
+}
+
+
+
+NpalTmImage1 ::= 
+SEQUENCE
+{
+
+  fldPacketNumber SedsUint16,
+  fldPixelNumber SedsUint16,
+  fldPixelData SEQUENCE (SIZE(4096)) OF SedsBoolean
+}
+
+
+
+NpalTmImage10 ::= 
+SEQUENCE
+{
+
+  fldPacketNumber SedsUint16,
+  fldPixelNumber SedsUint16,
+  fldPixelData SEQUENCE (SIZE(512)) OF NpalTenBitPixel
+}
+
+
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     SEDS.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+Seds DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+
+SedsBoolean ::= BOOLEAN 
+
+SedsUint8 ::= INTEGER (0..255)
+
+SedsUint16 ::= INTEGER (0..65535)
+
+SedsUint32 ::= INTEGER (0..4294967295)
+
+SedsInt8 ::= INTEGER (-128..127)
+
+SedsInt16 ::= INTEGER (-32768..32767)
+
+SedsInt32 ::= INTEGER (-2147483648..2147483647)
+
+SedsFloat32 ::= REAL (-3.4028234663852886E+38..3.4028234663852886E+38)
+
+SedsFloat64 ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsNumberOfMetre ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsRadianRate ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsMetreRate ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsNumberOfSeconds ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsValidityFlag ::= BOOLEAN 
+
+SedsCommandStatus ::= BOOLEAN 
+
+SedsNumberOfVolt ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsNumberOfWatt ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsNumberOfRadian ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsNumberOfNewton ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsBitRate ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+SedsSecondsSinceTAI ::= INTEGER (0..4294967295)
+
+SedsDaysSinceTAI ::= INTEGER (0..4294967295)
+
+SedsQuaternianCoordinate ::= REAL (-1..1)
+
+SedsAngle ::= REAL (-3.141592653589793..3.141592653589793)
+
+SedsNumberOfKelvin ::= REAL (0..1.7976931348623157E308)
+
+SedsNumberOfKilograms ::= REAL (0..1.7976931348623157E308)
+
+SedsNumberOfAmperes ::= REAL (0..1.7976931348623157E308)
+
+SedsNumberOfBits ::= REAL (0..1.7976931348623157E308)
+
+SedsQuaternian ::= 
+SEQUENCE
+{
+
+  fldQ1 SedsQuaternianCoordinate,
+  fldQ2 SedsQuaternianCoordinate,
+  fldQ3 SedsQuaternianCoordinate,
+  fldScalar SedsQuaternianCoordinate
+}
+
+
+
+SedsPosition ::= SEQUENCE (SIZE(3)) OF SedsNumberOfMetre
+
+SedsAngularRate ::= SEQUENCE (SIZE(3)) OF SedsRadianRate
+
+SedsVelocity ::= SEQUENCE (SIZE(3)) OF SedsMetreRate
+
+SedsKeplerianOrbitalElements ::= 
+SEQUENCE
+{
+
+  fldA SedsNumberOfMetre,
+  fldE SedsFloat64 (0..1.7976931348623157E308),
+  fldI SedsAngle (0..3.141592653589793),
+  fldRa SedsAngle,
+  fldOmega SedsAngle,
+  fldNu SedsAngle
+}
+
+
+
+SedsCucTime ::= 
+SEQUENCE
+{
+
+  fldCoarse SedsSecondsSinceTAI,
+  fldFine SedsNumberOfSeconds (0..1)
+}
+
+
+
+SedsCdsTime ::= 
+SEQUENCE
+{
+
+  fldDays SedsDaysSinceTAI,
+  fldSeconds SedsNumberOfSeconds (0..86400.0)
+}
+
+
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     SimpleDemo.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+SimpleDemo DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+
+SimpleDemoMyInteger ::= INTEGER (0..4294967295)
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     StarTracker.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+StarTracker DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+
+StarTrackerName2 ::= INTEGER (0..4294967295)
+
+StarTrackerCommandType ::= IA5String (SIZE (20)) 
+
+StarTrackerLisCommandType ::= IA5String (SIZE (1)) 
+
+StarTrackerSolutionType ::= IA5String (SIZE (169)) 
+
+StarTrackerCommandResultType ::= IA5String (SIZE (7)) 
+
+StarTrackerName ::= INTEGER (0..3)
+
+
+
+END
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     Test.asn1
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+Test DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+
+TestBoolean ::= BOOLEAN 
+
+TestInt32 ::= INTEGER (-2147483648..2147483647)
+
+TestFloat64 ::= REAL (-1.7976931348623157E308..1.7976931348623157E308)
+
+
+
+END

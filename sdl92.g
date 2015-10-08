@@ -274,9 +274,9 @@ fpar
 
 
 formal_variable_param
-        :       (INOUT | IN)?
+        :       (INOUT | IN | OUT)?
                 variable_id (',' variable_id)* sort
-        ->      ^(PARAM INOUT? IN? variable_id+ sort);
+        ->      ^(PARAM INOUT? IN? OUT? variable_id+ sort);
 
 
 // text_area: TODO add operator description in content
@@ -870,9 +870,7 @@ primary_expression
 
 
 primary
-        :       BITSTR^
-        |       OCTSTR^
-        |       TRUE^
+        :       TRUE^
         |       FALSE^
         |       STRING
         |       NULL^
@@ -1310,25 +1308,19 @@ ENDNEWTYPE      :       E N D N E W T Y P E;
 ARRAY           :       A R R A Y;
 CONSTANTS       :       C O N S T A N T S;
 STRUCT          :       S T R U C T;
-SYNONYM        	:       S Y N O N Y M;
+SYNONYM         :       S Y N O N Y M;
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
 
+
+
+STRING
+        :       STR+ (B|H)?;
+
 fragment
 STR
         :       '\'' ( options {greedy=false;} : .)* '\'';
-
-STRING
-        :       STR+ ;
-
-BITSTR
-        :       '"' ('0'|'1'|' ' | '\t' | '\r' | '\n')* '"B';
-
-
-OCTSTR
-        :       '"' ('0'..'9'|'a'..'f'|'A'..'F'|' ' | '\t' | '\r' | '\n')*
-                '"H';
 
 ID
         :       ALPHA (ALPHA | DIGITS | '_')*;
