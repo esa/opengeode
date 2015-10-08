@@ -14,7 +14,7 @@ test-ada: dataview-uniq.o | test_ada.o
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 	$(GNATLINK) -o test_ada test_ada.o og.ali -lgnat
-	./test_ada
+	./test_ada | diff - expected
 
 
 test-c: dataview-uniq.o | test_ada.o
