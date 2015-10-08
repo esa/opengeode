@@ -6,7 +6,7 @@ SYSTEM challenge;
 		FPAR
 			IN a T_UInt32,
 			IN b T_UInt32,
-			IN/OUT res T_UInt32;
+			OUT res T_UInt32;
  	EXTERNAL;
 
 	SIGNAL run;

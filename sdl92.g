@@ -274,9 +274,9 @@ fpar
 
 
 formal_variable_param
-        :       (INOUT | IN)?
+        :       (INOUT | IN | OUT)?
                 variable_id (',' variable_id)* sort
-        ->      ^(PARAM INOUT? IN? variable_id+ sort);
+        ->      ^(PARAM INOUT? IN? OUT? variable_id+ sort);
 
 
 // text_area: TODO add operator description in content

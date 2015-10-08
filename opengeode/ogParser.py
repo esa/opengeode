@@ -1868,7 +1868,7 @@ def fpar(root):
         direction = 'in'
         assert param.type == lexer.PARAM
         for child in param.getChildren():
-            if child.type == lexer.INOUT:
+            if child.type in (lexer.INOUT, lexer.OUT):
                 direction = 'out'
             elif child.type == lexer.IN:
                 pass
