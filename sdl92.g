@@ -3,9 +3,10 @@
     ANTLR 3.1.3 grammar for the SDL92 langage
     Includes the following features from SDL2000+:
     - FOR loops in TASKs
-    - Composite states
+    - Composite states (nested and agreggation/parallel states)
 
     author: Maxime Perrotin
+    with contributions from Diego Barbera, Laurent Meyer
 */
 
 grammar sdl92;
@@ -46,6 +47,7 @@ tokens {
         ENDNEWTYPE;
         ENDSYNTYPE;
         ENDTEXT;
+        ENTRY_POINT;
         EXPORT;
         EXPRESSION;
         EXTERNAL;
@@ -84,6 +86,7 @@ tokens {
         PARAMS;
         PAREN;
         PFPAR;
+        POINT;
         PRIMARY;
         PROCEDURE;
         PROCEDURE_CALL;
@@ -104,6 +107,8 @@ tokens {
         SIGNAL_LIST;
         SORT;
         STATE;
+        STATE_AGGREGATION;
+        STATE_PARTITION_CONNECTION;
         STATELIST;
         STIMULUS;
         STOP;
@@ -415,38 +420,102 @@ statelist
         :       ((statename)(',' statename)*)
         ->      ^(STATELIST statename+)
                 | ASTERISK exception_state?
-        ->      ^(ASTERISK exception_state?);
+        ->      ^(ASTERISK exception_state?)
+        ;
 
 
 exception_state
         :       '(' statename (',' statename)* ')'
-        ->      statename+;
+        ->      statename+
+        ;
 
 
 composite_state
+        :       composite_state_graph
+                | state_aggregation
+        ;
+
+
+composite_state_graph
         :       STATE statename e=end
                 SUBSTRUCTURE
                 connection_points*
                 body=composite_state_body
                 ENDSUBSTRUCTURE statename? f=end
-        ->      ^(COMPOSITE_STATE statename connection_points* $body $e?);
+        ->      ^(COMPOSITE_STATE statename connection_points* $body $e?)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+state_aggregation
+        :       STATE AGGREGATION statename e=end
+                SUBSTRUCTURE
+                connection_points*
+                entities=entity_in_composite_state*
+                body=state_aggregation_body
+                ENDSUBSTRUCTURE statename? f=end
+        ->      ^(STATE_AGGREGATION statename connection_points*
+                                    $entities* $body $e?)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+entity_in_composite_state
+        :       (text_area | procedure)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+state_aggregation_body
+        :       (state_partitioning | state_partition_connection)+
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+state_partitioning
+        :       composite_state
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+state_partition_connection
+        :       CONNECT outer=entry_point AND inner=entry_point end
+        ->      ^(STATE_PARTITION_CONNECTION $outer $inner end?)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+entry_point
+        :       state_part_id=ID VIA point
+        ->      ^(ENTRY_POINT $state_part_id point)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+point
+        :       (state_point=ID | DEFAULT)
+        ->      ^(POINT $state_point? DEFAULT?)
+        ;
 
 
 connection_points
         :       IN state_entry_exit_points end
         ->      ^(IN state_entry_exit_points end?)
                 | OUT state_entry_exit_points end
-        ->      ^(OUT state_entry_exit_points end?);
+        ->      ^(OUT state_entry_exit_points end?)
+        ;
 
 
 state_entry_exit_points
         :       '(' statename (',' statename)* ')'
-        ->      statename+;
+        ->      statename+
+        ;
 
 
 composite_state_body
         :       (text_area | procedure | composite_state)*
-                start* (state | floating_label)*;
+                start* (state | floating_label)*
+        ;
 
 
 state_part
@@ -455,7 +524,8 @@ state_part
                 | save_part               // Not supported in openGEODE
                 | spontaneous_transition
                 | continuous_signal       // Not supoorted in openGEODE
-                | connect_part;
+                | connect_part
+        ;
 
 
 // connect part is used to connect nested state exit points to a transition
@@ -464,13 +534,15 @@ connect_part
                 hyperlink?
                 CONNECT connect_list? end
                 transition?
-        ->      ^(CONNECT cif? hyperlink? connect_list? end? transition?);
+        ->      ^(CONNECT cif? hyperlink? connect_list? end? transition?)
+        ;
 
 
 connect_list
         :       state_exit_point_name (',' state_exit_point_name)*
                 -> state_exit_point_name+
-                | ASTERISK;
+                | ASTERISK
+        ;
 
 
 spontaneous_transition
@@ -479,30 +551,35 @@ spontaneous_transition
                 INPUT NONE end
                 enabling_condition?
                 transition
-        ->      ^(INPUT_NONE cif? hyperlink? transition);
+        ->      ^(INPUT_NONE cif? hyperlink? transition)
+        ;
 
 
 enabling_condition
         :       PROVIDED expression end
-        ->      ^(PROVIDED expression);
+        ->      ^(PROVIDED expression)
+        ;
 
 
 continuous_signal
         :       PROVIDED expression end
                 (PRIORITY integer_literal_name=INT end)?
                 transition
-        ->      ^(PROVIDED expression $integer_literal_name? transition);
+        ->      ^(PROVIDED expression $integer_literal_name? transition)
+        ;
 
 
 save_part
         :       SAVE save_list
                 end
-        ->      ^(SAVE save_list);
+        ->      ^(SAVE save_list)
+        ;
 
 
 save_list
         :       signal_list
-                | asterisk_save_list;
+                | asterisk_save_list
+        ;
 
 
 asterisk_save_list
@@ -511,7 +588,8 @@ asterisk_save_list
 
 signal_list
         :       signal_item (',' signal_item)*
-        ->      ^(SIGNAL_LIST signal_item+);
+        ->      ^(SIGNAL_LIST signal_item+)
+        ;
 
 
 
@@ -1244,6 +1322,7 @@ SET             :       S E T;
 RESET           :       R E S E T;
 ENDALTERNATIVE  :       E N D A L T E R N A T I V E;
 ALTERNATIVE     :       A L T E R N A T I V E;
+DEFAULT         :       D E F A U L T;
 DECISION        :       D E C I S I O N;
 ENDDECISION     :       E N D D E C I S I O N;
 EXPORT          :       E X P O R T;
@@ -1264,6 +1343,7 @@ APPEND          :       '//';
 IN              :       I N;
 OUT             :       O U T;
 INOUT           :       I N '/' O U T;
+AGGREGATION     :       A G G R E G A T I O N;
 SUBSTRUCTURE    :       S U B S T R U C T U R E;
 ENDSUBSTRUCTURE :       E N D S U B S T R U C T U R E;
 FPAR            :       F P A R;
