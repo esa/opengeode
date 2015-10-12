@@ -888,6 +888,13 @@ class StateAggregation(CompositeState):
             composite states (including sub-state aggregations)
         But no state machine definition
     '''
+    def __init__(self):
+        super(StateAggregation, self).__init__()
+        # List of partition connections:
+        # [{'outer': {'state_part_id': str, 'point': str},
+        #   'inner': {'state_part_id': str, 'point': str}}]
+        self.state_partition_connections = []
+
     def trace(self):
         ''' Debug output for state aggregation '''
         return u'STATE AGGREGATION {exp} ({l},{c})'.format(exp=self.statename,

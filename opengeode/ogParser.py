@@ -1893,8 +1893,11 @@ def fpar(root):
 
 
 def composite_state(root, parent=None, context=None):
-    ''' Parse a composite state definition '''
-    comp = ogAST.CompositeState()
+    ''' Parse a composite state (incl. state aggregation) definition '''
+    if root.type == lexer.COMPOSITE_STATE:
+        comp = ogAST.CompositeState()
+    elif root.type == lexer.STATE_AGGREGATION:
+        comp = ogAST.StateAggregation()
     errors, warnings = [], []
     # Create a list of all inherited data
     try:
@@ -1948,7 +1951,7 @@ def composite_state(root, parent=None, context=None):
             comp.content.inner_procedures.append(new_proc)
             # Add procedure to the context, to make it visible at scope level
             context.procedures.append(new_proc)
-        elif child.type == lexer.COMPOSITE_STATE:
+        elif child.type in (lexer.COMPOSITE_STATE, lexer.STATE_AGGREGATION):
             inner_composite.append(child)
         elif child.type == lexer.STATE:
             states.append(child)
@@ -1956,6 +1959,10 @@ def composite_state(root, parent=None, context=None):
             floatings.append(child)
         elif child.type == lexer.START:
             starts.append(child)
+        elif child.type == lexer.STATE_PARTITION_CONNECTION:
+            # TODO (see section 11.11.2)
+            warnings.append(['Ignoring state partition connections',
+                            [0, 0], []])
         else:
             warnings.append(['Unsupported construct in nested state, type: {}'
                              '- line {} - State name: {}'
@@ -1964,6 +1971,10 @@ def composite_state(root, parent=None, context=None):
                                      str(comp.statename)),
                              [0 , 0],   # No graphical position
                              []])
+    if (states or floatings or starts) and isinstance(comp,
+                                                      ogAST.StateAggregation):
+        errors.append(['State aggregation can only contain composite state(s)',
+                      [0, 0], []])
     for each in inner_composite:
         # Parse inner composite states after the text areas to make sure
         # that all variables are propagated to the the inner scope
@@ -2701,7 +2712,7 @@ def process_definition(root, parent=None, context=None):
             errors.extend(err)
             warnings.extend(warn)
             process.content.floating_labels.append(lab)
-        elif child.type == lexer.COMPOSITE_STATE:
+        elif child.type in (lexer.COMPOSITE_STATE, lexer.STATE_AGGREGATION):
             comp, err, warn = composite_state(child,
                                               parent=None,
                                               context=process)
