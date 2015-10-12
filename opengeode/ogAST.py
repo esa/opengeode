@@ -716,7 +716,7 @@ class TextArea(object):
 
 
 class Automaton(object):
-    ''' Elements contained in a process or a procedure '''
+    ''' Elements contained in a process, procedure or composite state'''
     def __init__(self, parent=None):
         ''' AST grouping the elements that can be rendered graphically '''
         self.parent = parent
@@ -876,6 +876,21 @@ class CompositeState(Process):
     def trace(self):
         ''' Debug output for composite state '''
         return u'COMPOSITE STATE {exp} ({l},{c})'.format(exp=self.statename,
+                l=self.line, c=self.charPositionInLine)
+
+
+class StateAggregation(CompositeState):
+    '''
+        State Aggregation (Parallel states) are supported since SDL2000
+        These states can only contain (in the self.content field):
+            text areas
+            procedure definitions
+            composite states (including sub-state aggregations)
+        But no state machine definition
+    '''
+    def trace(self):
+        ''' Debug output for state aggregation '''
+        return u'STATE AGGREGATION {exp} ({l},{c})'.format(exp=self.statename,
                 l=self.line, c=self.charPositionInLine)
 
 
