@@ -1980,6 +1980,10 @@ def composite_state(root, parent=None, context=None):
         # that all variables are propagated to the the inner scope
         inner, err, warn = composite_state(each, parent=None,
                                            context=comp)
+        if isinstance(comp, ogAST.StateAggregation):
+            # State aggregation contain only composite states, so we must
+            # add empty mapping information since there are no transitions
+            comp.mapping[inner.statename.lower()] = []
         errors.extend(err)
         warnings.extend(warn)
         comp.composite_states.append(inner)
