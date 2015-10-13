@@ -3585,7 +3585,8 @@ def nextstate(root, context):
             try:
                 composite, = (comp for comp in context.composite_states
                           if comp.statename.lower() == next_state_id.lower())
-                if not composite.content.start:
+                if not isinstance(composite, ogAST.StateAggregation) \
+                        and not composite.content.start:
                     errors.append('Composite state "{}" has no unnamed '
                                   'START symbol'.format(composite.statename))
             except ValueError:
