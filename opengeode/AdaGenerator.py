@@ -187,8 +187,6 @@ LD_LIBRARY_PATH=. taste-gui -l
     # Get list of parallel states to be added to the global list of states,
     # and list of their inner substates
     aggregates, substates = Helper.state_aggregations(process)
-    for each in substates:
-        print '{}{}state'.format(each.encode('utf-8'), UNICODE_SEP.encode('utf-8'))
 
     # End debug
 
@@ -242,6 +240,11 @@ LD_LIBRARY_PATH=. taste-gui -l
         if name.endswith(u'START') and name != u'START':
             process_level_decl.append(u'{name} : constant := {val};'
                                       .format(name=name, val=str(val)))
+
+    # Declare start procedure for aggregate states XXX add in C generator
+    for each in aggregates:
+        process_level_decl.append(u'procedure {}{}START;'.format(each,
+                                                                 UNICODE_SEP))
 
     # Add the declaration of the runTransition procedure, if needed
     if process.transitions:
@@ -1906,7 +1909,7 @@ def _transition(tr, **kwargs):
                     code.append(u'trId := ' +
                                 unicode(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
-                        if not tr.terminator.substate:
+                        if not tr.terminator.substate: # XXX add to C generator
                             code.append(u'{ctxt}.state := {nextState};'
                                         .format(ctxt=LPREFIX,
                                           nextState=tr.terminator.inputString))
