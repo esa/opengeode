@@ -144,7 +144,7 @@ state';
                 /* CIF LABEL (929, 366), (88, 35) */
                 nslabel:
                 /* CIF NEXTSTATE (938, 416), (70, 35) */
-                NEXTSTATE hello;
+                NEXTSTATE AggregNextToHello;
             /* CIF LABEL (512, 472), (141, 35) */
             CONNECTION another_floating:
                 /* CIF PROCEDURECALL (526, 522), (113, 35) */
@@ -175,6 +175,8 @@ result := 33;
                     /* CIF JOIN (24, 229), (35, 35) */
                     JOIN to_label;
             ENDSTATE;
+            state AggregNextToHello;
+            endstate;
     ENDSUBSTRUCTURE;
     /* CIF TEXT (51, 0), (298, 56) */
     -- This system tests nested states

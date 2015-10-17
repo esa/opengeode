@@ -463,6 +463,11 @@ class Terminator(object):
         self.possible_states = []
         # optional composite state content (type CompositeState)
         self.composite = None
+        # Flag to indicate if the nextstate is a state aggregation
+        self.is_aggregation = False
+        # If this terminator is within a state aggregation, store the name
+        # of the parallel substate (set by Helper.state_aggregations)
+        self.substate = ''
 
     def trace(self):
         ''' Debug output for terminators '''

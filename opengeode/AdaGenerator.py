@@ -72,6 +72,7 @@
 import logging
 import traceback
 import os
+from itertools import chain
 from singledispatch import singledispatch
 
 import ogAST
@@ -181,22 +182,13 @@ LD_LIBRARY_PATH=. taste-gui -l
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=UNICODE_SEP)
 
-    # Debug:
-    # After flattening, display all states, recursively. We need to find the
-    # composite states internal to state aggregations.
-    def do_composite(comp, aggregate=''):
-        for each in comp.composite_states:
-            pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
-                    else ''
-            do_composite(each, pre)
-        if isinstance(comp, ogAST.StateAggregation):
-            print 'State Aggregation:', comp.statename.encode('utf-8')
-        if aggregate:
-            print 'In aggregation:', aggregate.encode('utf-8'), comp.statename.encode('utf-8')
-    for each in process.composite_states:
-        do_composite(each)
+    # Process State aggregations (Parallel states)
 
-
+    # Get list of parallel states to be added to the global list of states,
+    # and list of their inner substates
+    aggregates, substates = Helper.state_aggregations(process)
+    for each in substates:
+        print '{}{}state'.format(each.encode('utf-8'), UNICODE_SEP.encode('utf-8'))
 
     # End debug
 
@@ -209,8 +201,9 @@ LD_LIBRARY_PATH=. taste-gui -l
     process_level_decl = []
 
     # Establish the list of states (excluding START states)
-    statelist = ', '.join(name for name in process.mapping.iterkeys()
-                             if not name.endswith(u'START')) or 'No_State'
+    statelist = ', '.join(chain(aggregates, (name for name in
+                             process.mapping.iterkeys()
+                             if not name.endswith(u'START')))) or 'No_State'
     if statelist:
         states_decl = u'type States is ({});'.format(statelist)
         process_level_decl.append(states_decl)
@@ -220,6 +213,11 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     if statelist:
         process_level_decl.append('state : States;')
+
+    # State aggregation: add list of substates (XXX to be added in C generator)
+    for each in substates:
+        process_level_decl.append(u'{}{}state: States;'
+                                  .format(each, UNICODE_SEP))
 
     for var_name, (var_type, def_value) in process.variables.viewitems():
         if def_value:

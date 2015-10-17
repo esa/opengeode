@@ -13,8 +13,10 @@
                                     input-state-transition
         sorted_fields(SEQ/CHOICE) : returns the ordered list of fields
                                     of an ASN.1 SEQUENCE or CHOICE type
+        state_aggregations: enrich AST with state aggregation flags,
+                            and return list of substates and parallel states
 
-    Copyright (c) 2012-2014 European Space Agency
+    Copyright (c) 2012-2015 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -33,7 +35,40 @@ import ogAST
 LOG = logging.getLogger(__name__)
 
 __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
-           'map_input_state', 'sorted_fields']
+           'map_input_state', 'sorted_fields', 'state_aggregations']
+
+
+def state_aggregations(process):
+    ''' Return the list of state aggregations and substates '''
+    aggregates, substates = [], []
+    def do_composite(comp, aggregate=''):
+        ''' Recursively find all state aggregations in order to create
+        variables to store the state of each parallel state '''
+        for each in comp.composite_states:
+            pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
+                    else ''
+            do_composite(each, pre)
+            if isinstance(each, ogAST.StateAggregation):
+                for term in comp.terminators:
+                    if term.inputString.lower() == each.statename.lower():
+                        each.next_is_aggregation = True
+        if isinstance(comp, ogAST.StateAggregation):
+            aggregates.append(comp.statename)
+        elif aggregate:  # Elif: no state for an inner state aggregation
+            # Composite state inside a state aggregation
+            substates.append(comp.statename)
+            # Here, all the terminators inside the composite states must
+            # be flagged with the name of the substate so that the NEXTSTATE
+            # will not be using the main "context.state" variable but will
+            # use the parallel substate name when generating code.
+            for each in comp.terminators:
+                each.substate = comp.statename
+    for each in process.composite_states:
+        do_composite(each)
+    for each in process.terminators:
+        if each.inputString.lower() in aggregates:
+            each.next_is_aggregation = True
+    return aggregates, substates
 
 
 def map_input_state(process):
