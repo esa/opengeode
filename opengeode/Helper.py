@@ -51,7 +51,7 @@ def state_aggregations(process):
             if isinstance(each, ogAST.StateAggregation):
                 for term in comp.terminators:
                     if term.inputString.lower() == each.statename.lower():
-                        each.next_is_aggregation = True
+                        term.next_is_aggregation = True
         if isinstance(comp, ogAST.StateAggregation):
             aggregates.append(comp.statename)
         elif aggregate:  # Elif: no state for an inner state aggregation

@@ -1895,12 +1895,27 @@ def _transition(tr, **kwargs):
                 code.append('<<{label}>>'.format(
                     label=tr.terminator.label.inputString))
             if tr.terminator.kind == 'next_state':
-                if tr.terminator.inputString.strip() != '-':
+                if tr.terminator.next_is_aggregation: # XXX add to C generator
+                    code.append(u'-- Entering state aggregation {}'
+                                .format(tr.terminator.inputString))
+                    code.append(u'{};'.format(tr.terminator.next_id))
+                    code.append(u'{ctxt}.state := {nextState};'
+                                .format(ctxt=LPREFIX,
+                                        nextState=tr.terminator.inputString))
+                elif tr.terminator.inputString.strip() != '-':
                     code.append(u'trId := ' +
                                 unicode(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
-                        code.append(u'{ctxt}.state := {nextState};'
-                                  .format(ctxt=LPREFIX,
+                        if not tr.terminator.substate:
+                            code.append(u'{ctxt}.state := {nextState};'
+                                        .format(ctxt=LPREFIX,
+                                          nextState=tr.terminator.inputString))
+                        else:
+                            code.append(u'{ctxt}.{sub}{sep}state :='
+                                        u' {nextState};'
+                                        .format(ctxt=LPREFIX,
+                                          sub=tr.terminator.substate,
+                                          sep=UNICODE_SEP,
                                           nextState=tr.terminator.inputString))
                 else:
                     if any(next_id
