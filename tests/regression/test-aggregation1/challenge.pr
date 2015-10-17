@@ -42,6 +42,24 @@ PROCESS challenge;
                     STATE wait_in_sub_hello;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
+            STATE AGGREGATION AggregNextToHello;
+            SUBSTRUCTURE
+                STATE C;
+                SUBSTRUCTURE
+                    START;
+                    NEXTSTATE CEH;
+                    STATE CEH;
+                    ENDSTATE;
+                ENDSUBSTRUCTURE;
+                STATE D; 
+                SUBSTRUCTURE
+                    START;
+                    NEXTSTATE DEH;
+                    STATE DEH;
+                    ENDSTATE;
+                ENDSUBSTRUCTURE;
+            ENDSUBSTRUCTURE;
+
             /* CIF TEXT (242, 251), (334, 95) */
             dcl myresult T_UInt8 := 4;
 -- Use a variable with the same name as a variable

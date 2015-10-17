@@ -181,6 +181,25 @@ LD_LIBRARY_PATH=. taste-gui -l
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=UNICODE_SEP)
 
+    # Debug:
+    # After flattening, display all states, recursively. We need to find the
+    # composite states internal to state aggregations.
+    def do_composite(comp, aggregate=''):
+        for each in comp.composite_states:
+            pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
+                    else ''
+            do_composite(each, pre)
+        if isinstance(comp, ogAST.StateAggregation):
+            print 'State Aggregation:', comp.statename.encode('utf-8')
+        if aggregate:
+            print 'In aggregation:', aggregate.encode('utf-8'), comp.statename.encode('utf-8')
+    for each in process.composite_states:
+        do_composite(each)
+
+
+
+    # End debug
+
     # Make an maping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     mapping = Helper.map_input_state(process)

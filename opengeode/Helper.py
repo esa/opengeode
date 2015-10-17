@@ -171,8 +171,12 @@ def flatten(process, sep=u'_'):
             # Go recursively in inner composite states
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
-            propagate_inputs(inner, process.mapping[inner.statename])
-            del process.mapping[inner.statename]
+            propagate_inputs(inner, process)
+            try:
+                del process.mapping[inner.statename]
+            except KeyError:
+                # KeyError in case of state aggregation
+                pass
         for each in state.terminators:
             # Give prefix to terminators
             if each.label:
@@ -200,7 +204,7 @@ def flatten(process, sep=u'_'):
             each.inputString = prefix + each.inputString
         process.content.inner_procedures.extend(state.content.inner_procedures)
 
-    def propagate_inputs(nested_state, inputlist):
+    def propagate_inputs(nested_state, context):
         ''' Nested states: Inputs at level N must be handled at level N-1
             that is, all inputs of a composite states (the ones that allow
             to exit the composite state from the outer scope) must be
@@ -208,12 +212,14 @@ def flatten(process, sep=u'_'):
         '''
         for _, val in nested_state.mapping.viewitems():
             try:
+                inputlist = context.mapping[nested_state.statename]
                 val.extend(inputlist)
-            except AttributeError:
+            except (AttributeError, KeyError):
+                # KeyError in case of StateAggregation
                 pass
         for each in nested_state.composite_states:
             # do the same recursively
-            propagate_inputs(each, nested_state.mapping[each.statename])
+            propagate_inputs(each, nested_state)
             #del nested_state.mapping[each.statename]
 
     def set_terminator_states(context, prefix=''):
@@ -238,7 +244,7 @@ def flatten(process, sep=u'_'):
 
     for each in process.composite_states:
         update_composite_state(each, process)
-        propagate_inputs(each, process.mapping[each.statename])
+        propagate_inputs(each, process)
         del process.mapping[each.statename]
 
     # Update terminators at process level
