@@ -255,6 +255,8 @@ LD_LIBRARY_PATH=. taste-gui -l
         aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
                                  .format(sub=subname, sep=UNICODE_SEP)
                                  for subname in substates)
+        aggreg_start_proc.append(u'{ctxt}.state := {name};'
+                                 .format(ctxt=LPREFIX, name=name))
         aggreg_start_proc.extend([u'end {}{}START;'
                                  .format(name, UNICODE_SEP),
                                  '\n'])
