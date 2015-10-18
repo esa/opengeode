@@ -186,7 +186,8 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     # Get list of parallel states to be added to the global list of states,
     # and list of their inner substates
-    aggregates, substates = Helper.state_aggregations(process)
+    #aggregates, substates = Helper.state_aggregations(process)
+    aggregates = Helper.state_aggregations(process)
 
     # End debug
 
@@ -199,7 +200,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     process_level_decl = []
 
     # Establish the list of states (excluding START states)
-    statelist = ', '.join(chain(aggregates, (name for name in
+    statelist = ', '.join(chain(aggregates.viewkeys(), (name for name in
                              process.mapping.iterkeys()
                              if not name.endswith(u'START')))) or 'No_State'
     if statelist:
@@ -213,9 +214,11 @@ LD_LIBRARY_PATH=. taste-gui -l
         process_level_decl.append('state : States;')
 
     # State aggregation: add list of substates (XXX to be added in C generator)
-    for each in substates:
-        process_level_decl.append(u'{}{}state: States;'
-                                  .format(each, UNICODE_SEP))
+#    for each in substates:
+    for substates in aggregates.viewvalues():
+        for each in substates:
+            process_level_decl.append(u'{}{}state: States;'
+                                      .format(each, UNICODE_SEP))
 
     for var_name, (var_type, def_value) in process.variables.viewitems():
         if def_value:
@@ -242,9 +245,19 @@ LD_LIBRARY_PATH=. taste-gui -l
                                       .format(name=name, val=str(val)))
 
     # Declare start procedure for aggregate states XXX add in C generator
-    for each in aggregates:
-        process_level_decl.append(u'procedure {}{}START;'.format(each,
-                                                                 UNICODE_SEP))
+    # should create one START per "via" clause, TODO later
+    aggreg_start_proc = []
+    for name, substates in aggregates.viewitems():
+        proc_name = u'procedure {}{}START'.format(name, UNICODE_SEP)
+        process_level_decl.append(u'{};'.format(proc_name))
+        aggreg_start_proc.extend([u'{} is'.format(proc_name),
+                                  'begin'])
+        aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
+                                 .format(sub=subname, sep=UNICODE_SEP)
+                                 for subname in substates)
+        aggreg_start_proc.extend([u'end {}{}START;'
+                                 .format(name, UNICODE_SEP),
+                                 '\n'])
 
     # Add the declaration of the runTransition procedure, if needed
     if process.transitions:
@@ -342,7 +355,6 @@ package {process_name} is'''.format(process_name=process_name,
             dll_api.append('end dll_set_l_{};'.format(var_name))
             dll_api.append('')
 
-
     # Generate the the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
@@ -355,6 +367,10 @@ package {process_name} is'''.format(process_name=process_name,
 
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
+
+    # Generate the code of the START procedures of state aggregations
+    # XXX to be added to C generator
+    taste_template.extend(aggreg_start_proc)
 
     # Add the code of the DLL interface
     taste_template.extend(dll_api)

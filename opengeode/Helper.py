@@ -40,7 +40,9 @@ __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
 
 def state_aggregations(process):
     ''' Return the list of state aggregations and substates '''
-    aggregates, substates = [], []
+    #aggregates, substates = [], []
+    # { aggregate_name : [list of parallel states] }
+    aggregates = defaultdict(list)
     def do_composite(comp, aggregate=''):
         ''' Recursively find all state aggregations in order to create
         variables to store the state of each parallel state '''
@@ -53,10 +55,12 @@ def state_aggregations(process):
                     if term.inputString.lower() == each.statename.lower():
                         term.next_is_aggregation = True
         if isinstance(comp, ogAST.StateAggregation):
-            aggregates.append(comp.statename)
+            pass
+            #aggregates.append(comp.statename)
         elif aggregate:  # Elif: no state for an inner state aggregation
             # Composite state inside a state aggregation
-            substates.append(comp.statename)
+            #substates.append(comp.statename)
+            aggregates[aggregate].append(comp.statename)
             # Here, all the terminators inside the composite states must
             # be flagged with the name of the substate so that the NEXTSTATE
             # will not be using the main "context.state" variable but will
@@ -68,7 +72,7 @@ def state_aggregations(process):
     for each in process.terminators:
         if each.inputString.lower() in aggregates:
             each.next_is_aggregation = True
-    return aggregates, substates
+    return aggregates #, substates
 
 
 def map_input_state(process):
