@@ -217,7 +217,6 @@ LD_LIBRARY_PATH=. taste-gui -l
         process_level_decl.append('state : States;')
 
     # State aggregation: add list of substates (XXX to be added in C generator)
-#    for each in substates:
     for substates in aggregates.viewvalues():
         for each in substates:
             process_level_decl.append(u'{}{}state: States;'
@@ -412,10 +411,10 @@ package {process_name} is'''.format(process_name=process_name,
         taste_template.append(pi_header)
         taste_template.append('begin')
         taste_template.append('case {ctxt}.state is'.format(ctxt=LPREFIX))
-        for state in reduced_statelist: #process.mapping.viewkeys(): XXX C Backend
-            if state.endswith(u'START'):
-                continue
-            taste_template.append(u'when {state} =>'.format(state=state))
+
+        def execute_transition(state):
+            ''' Generate the code that triggers the transition for the current
+                state/input combination '''
             input_def = mapping[signal['name']].get(state)
             # Check for nested states to call optional exit procedure
             sep = UNICODE_SEP
@@ -455,6 +454,15 @@ package {process_name} is'''.format(process_name=process_name,
                     taste_template.append('null;')
             else:
                 taste_template.append('null;')
+
+        for state in reduced_statelist:  # XXX C Backend
+            if state.endswith(u'START'):
+                continue
+            taste_template.append(u'when {state} =>'.format(state=state))
+            if state in aggregates.viewkeys():
+                taste_template.append(u'-- this is a state aggregation')
+            execute_transition(state)
+
         taste_template.append('when others =>')
         taste_template.append('null;')
         taste_template.append('end case;')
