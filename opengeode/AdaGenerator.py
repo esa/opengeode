@@ -184,12 +184,13 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     # Process State aggregations (Parallel states)
 
-    # Get list of parallel states to be added to the global list of states,
-    # and list of their inner substates
-    #aggregates, substates = Helper.state_aggregations(process)
+    # Find recursively in the AST all state aggregations
+    # Format: {'aggregation_name' : [list of ogAST.CompositeState]
     aggregates = Helper.state_aggregations(process)
 
-    # End debug
+    # Extract the list of parallel states names inside the composite states
+    # of state aggregations XXX add to C generator
+    parallel_states = Helper.parallel_states(aggregates)
 
     # Make an maping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
@@ -199,18 +200,20 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     process_level_decl = []
 
-    # Establish the list of states (excluding START states)
-    statelist = ', '.join(chain(aggregates.viewkeys(), (name for name in
-                             process.mapping.iterkeys()
-                             if not name.endswith(u'START')))) or 'No_State'
-    if statelist:
-        states_decl = u'type States is ({});'.format(statelist)
-        process_level_decl.append(states_decl)
+    # Establish the list of states (excluding START states) XXX update C backend
+    full_statelist = list(chain(aggregates.viewkeys(),
+                               (name for name in process.mapping.iterkeys()
+                                    if not name.endswith(u'START'))))
+    reduced_statelist = [s for s in full_statelist if s not in parallel_states]
+
+    if full_statelist:
+        process_level_decl.append(u'type States is ({});'
+                            .format(u', '.join(full_statelist) or u'No_State'))
 
     # Generate the code to declare process-level context
     process_level_decl.extend(['type {}_Ty is'.format(LPREFIX), 'record'])
 
-    if statelist:
+    if full_statelist:
         process_level_decl.append('state : States;')
 
     # State aggregation: add list of substates (XXX to be added in C generator)
@@ -218,7 +221,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     for substates in aggregates.viewvalues():
         for each in substates:
             process_level_decl.append(u'{}{}state: States;'
-                                      .format(each, UNICODE_SEP))
+                                      .format(each.statename, UNICODE_SEP))
 
     for var_name, (var_type, def_value) in process.variables.viewitems():
         if def_value:
@@ -253,7 +256,8 @@ LD_LIBRARY_PATH=. taste-gui -l
         aggreg_start_proc.extend([u'{} is'.format(proc_name),
                                   'begin'])
         aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
-                                 .format(sub=subname, sep=UNICODE_SEP)
+                                 .format(sub=subname.statename,
+                                         sep=UNICODE_SEP)
                                  for subname in substates)
         #Following done in the transition, not needed here
         #aggreg_start_proc.append(u'{ctxt}.state := {name};'
@@ -408,7 +412,7 @@ package {process_name} is'''.format(process_name=process_name,
         taste_template.append(pi_header)
         taste_template.append('begin')
         taste_template.append('case {ctxt}.state is'.format(ctxt=LPREFIX))
-        for state in process.mapping.viewkeys():
+        for state in reduced_statelist: #process.mapping.viewkeys(): XXX C Backend
             if state.endswith(u'START'):
                 continue
             taste_template.append(u'when {state} =>'.format(state=state))
