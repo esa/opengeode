@@ -255,8 +255,9 @@ LD_LIBRARY_PATH=. taste-gui -l
         aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
                                  .format(sub=subname, sep=UNICODE_SEP)
                                  for subname in substates)
-        aggreg_start_proc.append(u'{ctxt}.state := {name};'
-                                 .format(ctxt=LPREFIX, name=name))
+        #Following done in the transition, not needed here
+        #aggreg_start_proc.append(u'{ctxt}.state := {name};'
+        #                         .format(ctxt=LPREFIX, name=name))
         aggreg_start_proc.extend([u'end {}{}START;'
                                  .format(name, UNICODE_SEP),
                                  '\n'])
@@ -1923,6 +1924,7 @@ def _transition(tr, **kwargs):
                     code.append(u'{ctxt}.state := {nextState};'
                                 .format(ctxt=LPREFIX,
                                         nextState=tr.terminator.inputString))
+                    code.append(u'trId := -1;') # CHECKME
                 elif tr.terminator.inputString.strip() != '-':
                     code.append(u'trId := ' +
                                 unicode(tr.terminator.next_id) + u';')
