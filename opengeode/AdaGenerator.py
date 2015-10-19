@@ -461,7 +461,13 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'when {state} =>'.format(state=state))
             if state in aggregates.viewkeys():
                 taste_template.append(u'-- this is a state aggregation')
-            execute_transition(state)
+                # we have to:
+                # - find which substate manages this input
+                # - add a swich case on the corresponding substate
+                # This has to be recursive, no?
+                # execute_transition(sub)
+            else:
+                execute_transition(state)
 
         taste_template.append('when others =>')
         taste_template.append('null;')
