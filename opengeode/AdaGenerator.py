@@ -1956,11 +1956,12 @@ def _transition(tr, **kwargs):
                 if tr.terminator.next_is_aggregation: # XXX add to C generator
                     code.append(u'-- Entering state aggregation {}'
                                 .format(tr.terminator.inputString))
+                    # Call the START function of the state aggregation
                     code.append(u'{};'.format(tr.terminator.next_id))
                     code.append(u'{ctxt}.state := {nextState};'
                                 .format(ctxt=LPREFIX,
                                         nextState=tr.terminator.inputString))
-                    code.append(u'trId := -1;') # CHECKME
+                    code.append(u'trId := -1;')
                 elif tr.terminator.inputString.strip() != '-':
                     code.append(u'trId := ' +
                                 unicode(tr.terminator.next_id) + u';')
@@ -1977,14 +1978,22 @@ def _transition(tr, **kwargs):
                                           sep=UNICODE_SEP,
                                           nextState=tr.terminator.inputString))
                 else:
+                    # "nextstate -": switch case to re-run the entry transition
+                    # in case of a composite state or state aggregation
                     if any(next_id
                            for next_id in tr.terminator.candidate_id.viewkeys()
                            if next_id != -1):
                         code.append('case {}.state is'.format(LPREFIX))
                         for nid, sta in tr.terminator.candidate_id.viewitems():
+                            print nid.encode('utf-8'), sta
                             if nid != -1:
-                                for each in sta:
-                                    code.extend([u'when {} =>'.format(each),
+                                #if any(each for each in sta
+                                #       if each in parallel_states):
+                                #    pass
+                                #else:
+                                #for each in sta:
+                                code.extend([u'when {} =>'
+                                                .format(u'|'.join(sta)),
                                                  u'trId := {};'.format(nid)])
 
                         code.extend(['when others =>',
