@@ -25,6 +25,16 @@ test-llvm:
 	$(LLC) *.ll
 	$(CC) -O$(O) -c *.s
 
+test-python:
+	$(OPENGEODE) og.pr --shared
+	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
+	$(GNATBIND) -n -Llibog og
+	$(GNATMAKE) -c -fPIC -gnat2012 b~og.adb
+	$(CC) -shared -fPIC -o libog.so b~og.o og.o adaasn1rtl.o -lgnat
+	#python -c "from ctypes import *; test=CDLL('./libog.so'); test.liborchestratorinit()"
+
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
