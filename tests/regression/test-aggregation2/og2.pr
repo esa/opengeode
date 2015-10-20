@@ -1,0 +1,65 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (356, 248) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview-uniq.asn';
+
+--use dv2 comment 'dataview2.asn';
+
+signal dd(Type2);
+signal we(Some_Thing);
+
+procedure hehe;
+fpar in/out a_param Type2;
+external;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            STATE AGGREGATION wait;
+            SUBSTRUCTURE
+                    STATE a;
+                    SUBSTRUCTURE
+                            /* CIF START (7, 15), (70, 35) */
+                            START;
+                                /* CIF NEXTSTATE (7, 65), (70, 35) */
+                                NEXTSTATE c;
+                            /* CIF STATE (119, 53), (70, 35) */
+                            STATE c;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
+                    STATE b;
+                    SUBSTRUCTURE
+                            /* CIF START (36, 35), (70, 35) */
+                            START;
+                                /* CIF NEXTSTATE (36, 85), (70, 35) */
+                                NEXTSTATE d;
+                            /* CIF STATE (116, 91), (70, 35) */
+                            STATE d;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
+                    /* CIF STATE (71, 136), (70, 35) */
+                    STATE b;
+                    ENDSTATE;
+                    /* CIF STATE (55, 14), (70, 35) */
+                    STATE a;
+                    ENDSTATE;
+            ENDSUBSTRUCTURE;
+            /* CIF START (121, 191), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (121, 241), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (251, 205), (70, 35) */
+            STATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
