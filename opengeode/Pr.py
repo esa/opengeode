@@ -332,7 +332,8 @@ def _state(symbol, recursive=True, nextstate=True, composite=False, cpy=False,
     else:
         # Generate code for a nested state
         result = Indent()
-        result.append('STATE {};'.format(unicode(symbol).split()[0]))
+        agg = ' AGGREGATION' if not list(symbol.nested_scene.start) else ''
+        result.append('STATE{} {};'.format(agg, unicode(symbol).split()[0]))
         result.append('SUBSTRUCTURE')
         Indent.indent += 1
         entry_points, exit_points = [], []

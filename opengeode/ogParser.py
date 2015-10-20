@@ -1971,8 +1971,7 @@ def composite_state(root, parent=None, context=None):
                                      str(comp.statename)),
                              [0 , 0],   # No graphical position
                              []])
-    if (states or floatings or starts) and isinstance(comp,
-                                                      ogAST.StateAggregation):
+    if (floatings or starts) and isinstance(comp, ogAST.StateAggregation):
         errors.append(['State aggregation can only contain composite state(s)',
                       [0, 0], []])
     for each in inner_composite:

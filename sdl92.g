@@ -525,6 +525,7 @@ entity_in_composite_state
 // 11.11.2 State Aggregation (SDL2000)
 state_aggregation_body
         :       (state_partitioning | state_partition_connection)+
+                state*
         ;
 
 
