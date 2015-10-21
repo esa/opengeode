@@ -1953,7 +1953,8 @@ def _transition(tr, **kwargs):
                 code.append('<<{label}>>'.format(
                     label=tr.terminator.label.inputString))
             if tr.terminator.kind == 'next_state':
-                if tr.terminator.next_is_aggregation: # XXX add to C generator
+                history = tr.terminator.inputString.strip() == '-'
+                if tr.terminator.next_is_aggregation and not history: # XXX add to C generator
                     code.append(u'-- Entering state aggregation {}'
                                 .format(tr.terminator.inputString))
                     # Call the START function of the state aggregation
@@ -1962,7 +1963,7 @@ def _transition(tr, **kwargs):
                                 .format(ctxt=LPREFIX,
                                         nextState=tr.terminator.inputString))
                     code.append(u'trId := -1;')
-                elif tr.terminator.inputString.strip() != '-':
+                elif not history: # tr.terminator.inputString.strip() != '-':
                     code.append(u'trId := ' +
                                 unicode(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
@@ -1985,16 +1986,14 @@ def _transition(tr, **kwargs):
                            if next_id != -1):
                         code.append('case {}.state is'.format(LPREFIX))
                         for nid, sta in tr.terminator.candidate_id.viewitems():
-                            print nid.encode('utf-8'), sta
                             if nid != -1:
-                                #if any(each for each in sta
-                                #       if each in parallel_states):
-                                #    pass
-                                #else:
-                                #for each in sta:
+                                if tr.terminator.next_is_aggregation:
+                                    statement = u'{};'.format(nid)
+                                else:
+                                    statement = u'tdId := {};'.format(nid)
                                 code.extend([u'when {} =>'
                                                 .format(u'|'.join(sta)),
-                                                 u'trId := {};'.format(nid)])
+                                                 statement])
 
                         code.extend(['when others =>',
                                         'trId := -1;',

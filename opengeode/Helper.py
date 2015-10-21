@@ -140,16 +140,20 @@ def flatten(process, sep=u'_'):
                 term.next_id = u'{term}{sep}{entry}_START'.format(
                         term=term.inputString, entry=term.entrypoint, sep=sep)
         elif term.inputString.strip() == '-':
-            term.candidate_id = defaultdict(list)
+            #term.candidate_id = defaultdict(list)
             for each in term.possible_states:
-                if each.lower() in (st.statename.lower()
-                            for st in context.composite_states):
-                    term.candidate_id[each + sep + u'START'] = \
+                term.candidate_id[-1].append(each)
+                for comp in context.composite_states:
+                    if each.lower() == comp.statename.lower():
+                        if isinstance(comp, ogAST.StateAggregation):
+                            term.next_is_aggregation = True
+                            term.candidate_id[each + sep + u'START'] = [each]
+                        else:
+                            term.candidate_id[each + sep + u'START'] = \
                                        [st for st in process.mapping.viewkeys()
                                         if st.startswith(each)
                                         and not st.endswith(u'START')]
-                else:
-                    term.candidate_id[-1].append(each)
+                        continue
 
     def update_composite_state(state, process):
         ''' Rename inner states, recursively, and add inner transitions

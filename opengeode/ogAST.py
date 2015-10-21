@@ -35,6 +35,7 @@
 """
 
 import logging
+from collections import defaultdict
 LOG = logging.getLogger(__name__)
 
 
@@ -468,6 +469,12 @@ class Terminator(object):
         # If this terminator is within a state aggregation, store the name
         # of the parallel substate (set by Helper.state_aggregations)
         self.substate = ''
+        # candidate_id: {transition_id: [states]}
+        # field is set by Helper.py/flatten, in case of "nextstate -"
+        # there is a list of states that set transition_id to -1 : the standard
+        # states ; and there are the composite states, that set a different
+        # id corresponding to the start transition of the state.
+        self.candidate_id = defaultdict(list)
 
     def trace(self):
         ''' Debug output for terminators '''
