@@ -468,18 +468,19 @@ package {process_name} is'''.format(process_name=process_name,
                 # - add a swich case on the corresponding substate
                 taste_template.append(u'-- this is a state aggregation')
                 for sub in aggregates[state]:
-                    for par in sub.mapping.viewkeys():
-                        if par in mapping[signame].viewkeys():
-                            taste_template.append(u'case '
-                                                  u'{ctxt}.{sub}{sep}state is'
-                                                  .format(ctxt=LPREFIX,
-                                                         sub=sub.statename,
-                                                         sep=UNICODE_SEP))
+                    if [a for a in sub.mapping.viewkeys()
+                            if a in mapping[signame].viewkeys()]:
+                        taste_template.append(u'case '
+                                              u'{ctxt}.{sub}{sep}state is'
+                                              .format(ctxt=LPREFIX,
+                                                     sub=sub.statename,
+                                                     sep=UNICODE_SEP))
+                        for par in sub.mapping.viewkeys():
                             case_state(par)
-                            taste_template.append('when others =>')
-                            taste_template.append('null;')
-                            taste_template.append('end case;')
-                            break
+                        taste_template.append('when others =>')
+                        taste_template.append('null;')
+                        taste_template.append('end case;')
+                        break
                 else:
                     # Input is not managed in the state aggregation
                     taste_template.append('null;')
