@@ -83,7 +83,16 @@ def variables_autocompletion(symbol, type_filter=None):
         else:
             constants = {name: (cty.type, None)
                          for name, cty in AST.asn1_constants.viewitems()}
-            type_filter_names = [ogParser.type_name(ty) for ty in type_filter]
+            try:
+                type_filter_names = [ogParser.type_name(ty)
+                                     for ty in type_filter]
+            except AttributeError as err:
+                # This would need to be investigated: it can happen when
+                # using a parameter in an input just after the parameter was
+                # added to the signal in the block view, and before any
+                # variable has been declared....
+                LOG.debug(str(err))
+                return res
             for name, (asn1type, _) in chain(CONTEXT.variables.viewitems(),
                                           CONTEXT.global_variables.viewitems(),
                                           constants.viewitems(),
