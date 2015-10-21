@@ -32,8 +32,8 @@ test-python:
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Llibog og
 	$(GNATMAKE) -c -fPIC -gnat2012 b~og.adb
-	$(CC) -shared -fPIC -o libog.so b~og.o og.o adaasn1rtl.o -lgnat
-	#python -c "from ctypes import *; test=CDLL('./libog.so'); test.liborchestratorinit()"
+	$(CC) -shared -fPIC -o libog.so b~og.o og.o adaasn1rtl.o taste_dataview.o -lgnat
+	python -c "from ctypes import *; test=CDLL('./libog.so'); test.liboginit()"
 
 
 coverage:
