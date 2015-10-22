@@ -1990,7 +1990,7 @@ def _transition(tr, **kwargs):
                                 if tr.terminator.next_is_aggregation:
                                     statement = u'{};'.format(nid)
                                 else:
-                                    statement = u'tdId := {};'.format(nid)
+                                    statement = u'trId := {};'.format(nid)
                                 code.extend([u'when {} =>'
                                                 .format(u'|'.join(sta)),
                                                  statement])
