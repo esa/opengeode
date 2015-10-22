@@ -24,33 +24,6 @@ for_b;
         PROCESS og;
             STATE AGGREGATION wait;
             SUBSTRUCTURE
-                    STATE b;
-                    SUBSTRUCTURE
-                            /* CIF START (146, 55), (70, 35) */
-                            START;
-                                /* CIF PROCEDURECALL (77, 105), (208, 35) */
-                                CALL writeln('[b] startup');
-                                /* CIF NEXTSTATE (146, 155), (70, 35) */
-                                NEXTSTATE b1;
-                            /* CIF STATE (392, 144), (70, 35) */
-                            STATE b2;
-                                /* CIF INPUT (388, 199), (79, 35) */
-                                INPUT for_a;
-                                    /* CIF PROCEDURECALL (308, 249), (239, 35) */
-                                    CALL writeln('[b] Going to b1');
-                                    /* CIF NEXTSTATE (392, 299), (70, 35) */
-                                    NEXTSTATE b1;
-                            ENDSTATE;
-                            /* CIF STATE (146, 155), (70, 35) */
-                            STATE b1;
-                                /* CIF INPUT (138, 210), (80, 35) */
-                                INPUT for_b;
-                                    /* CIF PROCEDURECALL (58, 260), (239, 35) */
-                                    CALL writeln('[b] Going to b2');
-                                    /* CIF NEXTSTATE (143, 310), (70, 35) */
-                                    NEXTSTATE b2;
-                            ENDSTATE;
-                    ENDSUBSTRUCTURE;
                     STATE a;
                     SUBSTRUCTURE
                             /* CIF START (134, 57), (70, 35) */
@@ -78,11 +51,38 @@ for_b;
                                     NEXTSTATE a2;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
-                    /* CIF STATE (170, 50), (70, 35) */
-                    STATE a;
-                    ENDSTATE;
+                    STATE b;
+                    SUBSTRUCTURE
+                            /* CIF START (146, 55), (70, 35) */
+                            START;
+                                /* CIF PROCEDURECALL (77, 105), (208, 35) */
+                                CALL writeln('[b] startup');
+                                /* CIF NEXTSTATE (146, 155), (70, 35) */
+                                NEXTSTATE b1;
+                            /* CIF STATE (392, 144), (70, 35) */
+                            STATE b2;
+                                /* CIF INPUT (388, 199), (79, 35) */
+                                INPUT for_b;
+                                    /* CIF PROCEDURECALL (308, 249), (239, 35) */
+                                    CALL writeln('[b] Going to b1');
+                                    /* CIF NEXTSTATE (392, 299), (70, 35) */
+                                    NEXTSTATE b1;
+                            ENDSTATE;
+                            /* CIF STATE (146, 155), (70, 35) */
+                            STATE b1;
+                                /* CIF INPUT (138, 210), (80, 35) */
+                                INPUT for_b;
+                                    /* CIF PROCEDURECALL (58, 260), (239, 35) */
+                                    CALL writeln('[b] Going to b2');
+                                    /* CIF NEXTSTATE (143, 310), (70, 35) */
+                                    NEXTSTATE b2;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
                     /* CIF STATE (170, 160), (70, 35) */
                     STATE b;
+                    ENDSTATE;
+                    /* CIF STATE (170, 50), (70, 35) */
+                    STATE a;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
             /* CIF TEXT (522, 328), (287, 140) */
@@ -94,17 +94,17 @@ dcl x myInteger;
             START;
                 /* CIF NEXTSTATE (226, 299), (70, 35) */
                 NEXTSTATE wait;
+            /* CIF STATE (487, 484), (70, 35) */
+            STATE wait;
+            ENDSTATE;
             /* CIF STATE (226, 299), (70, 35) */
             STATE wait;
                 /* CIF INPUT (207, 354), (107, 35) */
                 INPUT reset_all(x);
-                    /* CIF PROCEDURECALL (174, 404), (174, 35) */
+                    /* CIF PROCEDURECALL (173, 404), (174, 35) */
                     CALL writeln('reset');
-                    /* CIF NEXTSTATE (226, 454), (70, 35) */
+                    /* CIF NEXTSTATE (225, 454), (70, 35) */
                     NEXTSTATE -;
-            ENDSTATE;
-            /* CIF STATE (487, 484), (70, 35) */
-            STATE wait;
             ENDSTATE;
         ENDPROCESS og;
     ENDBLOCK;

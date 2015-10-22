@@ -379,7 +379,6 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.extend(dll_api)
 
     # Generate the code for each input signal (provided interface) and timers
-    print process.input_signals
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
         signame = signal.get('name', u'START')
@@ -1991,7 +1990,7 @@ def _transition(tr, **kwargs):
                                 if tr.terminator.next_is_aggregation:
                                     statement = u'{};'.format(nid)
                                 else:
-                                    statement = u'tdId := {};'.format(nid)
+                                    statement = u'trId := {};'.format(nid)
                                 code.extend([u'when {} =>'
                                                 .format(u'|'.join(sta)),
                                                  statement])
