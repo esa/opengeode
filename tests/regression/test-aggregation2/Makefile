@@ -33,7 +33,7 @@ test-python:
 	$(GNATBIND) -n -Llibog og
 	$(GNATMAKE) -c -fPIC -gnat2012 b~og.adb
 	$(CC) -shared -fPIC -o libog.so b~og.o og.o adaasn1rtl.o taste_dataview.o -lgnat
-	python -c "from ctypes import *; test=CDLL('./libog.so'); test.liboginit()"
+	python -c "from ctypes import *; test=CDLL('./libog.so'); test.liboginit(); test.og_for_a(); test.og_for_b(); test.og_for_a(); test.og_for_b()"
 
 
 coverage:
