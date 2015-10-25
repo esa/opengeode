@@ -227,11 +227,7 @@ def flatten(process, sep=u'_'):
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
             propagate_inputs(inner, process)
-            try:
-                del process.mapping[inner.statename]
-            except KeyError:
-                # KeyError in case of state aggregation
-                pass
+            del process.mapping[inner.statename]
         for each in state.terminators:
             # Give prefix to terminators
             if each.label:
@@ -265,13 +261,14 @@ def flatten(process, sep=u'_'):
             to exit the composite state from the outer scope) must be
             processed by each of the substates.
         '''
-        for _, val in nested_state.mapping.viewitems():
-            try:
-                inputlist = context.mapping[nested_state.statename]
-                val.extend(inputlist)
-            except (AttributeError, KeyError):
-                # KeyError in case of StateAggregation
-                pass
+        if not isinstance(nested_state, ogAST.StateAggregation):
+            for _, val in nested_state.mapping.viewitems():
+                try:
+                    inputlist = context.mapping[nested_state.statename]
+                    val.extend(inputlist)
+                except (AttributeError, KeyError):
+                    # KeyError in case of StateAggregation
+                    pass
         for each in nested_state.composite_states:
             # do the same recursively
             propagate_inputs(each, nested_state)

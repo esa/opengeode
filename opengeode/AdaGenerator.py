@@ -201,10 +201,10 @@ LD_LIBRARY_PATH=. taste-gui -l
     process_level_decl = []
 
     # Establish the list of states (excluding START states) XXX update C backend
-    full_statelist = list(chain(aggregates.viewkeys(),
+    full_statelist = set(chain(aggregates.viewkeys(),
                                (name for name in process.mapping.iterkeys()
                                     if not name.endswith(u'START'))))
-    reduced_statelist = [s for s in full_statelist if s not in parallel_states]
+    reduced_statelist = {s for s in full_statelist if s not in parallel_states}
 
     if full_statelist:
         process_level_decl.append(u'type States is ({});'
@@ -462,6 +462,7 @@ package {process_name} is'''.format(process_name=process_name,
             if state.endswith(u'START'):
                 return
             taste_template.append(u'when {state} =>'.format(state=state))
+            input_def = mapping[signame].get(state)
             if state in aggregates.viewkeys():
                 # State aggregation:
                 # - find which substate manages this input
@@ -483,6 +484,9 @@ package {process_name} is'''.format(process_name=process_name,
                         break
                 else:
                     # Input is not managed in the state aggregation
+                    if input_def:
+                        # check if it is managed one level above
+                        execute_transition(state)
                     taste_template.append('null;')
             else:
                 execute_transition(state)

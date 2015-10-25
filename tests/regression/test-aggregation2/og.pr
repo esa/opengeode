@@ -1,23 +1,26 @@
 SYSTEM og;
-    /* CIF TEXT (159, 221), (356, 248) */
+    /* CIF TEXT (165, 217), (356, 248) */
     use dv comment 'dataview-uniq.asn';
 
 signal reset_all(MyInteger);
 signal for_a;
 signal for_b;
 signal response;
+signal exit_aggreg;
     /* CIF ENDTEXT */
     CHANNEL c
         FROM ENV TO og WITH reset_all,
 for_a,
-for_b;
+for_b,
+exit_aggreg;
         FROM og TO ENV WITH response;
     ENDCHANNEL;
     BLOCK og;
         SIGNALROUTE r
             FROM ENV TO og WITH reset_all,
 for_a,
-for_b;
+for_b,
+exit_aggreg;
             FROM og TO ENV WITH response;
         CONNECT c AND r;
         /* CIF PROCESS (225, 49), (150, 75) */
@@ -26,28 +29,34 @@ for_b;
             SUBSTRUCTURE
                     STATE a;
                     SUBSTRUCTURE
-                            /* CIF START (134, 57), (70, 35) */
+                            /* CIF START (0, 57), (70, 35) */
                             START;
-                                /* CIF PROCEDURECALL (70, 107), (198, 35) */
+                                /* CIF PROCEDURECALL (-64, 107), (198, 35) */
                                 CALL writeln('[a] startup');
-                                /* CIF NEXTSTATE (134, 157), (70, 35) */
+                                /* CIF NEXTSTATE (0, 157), (70, 35) */
                                 NEXTSTATE a1;
-                            /* CIF STATE (293, 53), (70, 35) */
+                            /* CIF STATE (453, 53), (70, 35) */
                             STATE a2;
-                                /* CIF INPUT (289, 108), (79, 35) */
+                                /* CIF INPUT (239, 108), (79, 35) */
                                 INPUT for_a;
-                                    /* CIF PROCEDURECALL (209, 158), (239, 35) */
+                                    /* CIF PROCEDURECALL (159, 158), (239, 35) */
                                     CALL writeln('[a] Going to a1');
-                                    /* CIF NEXTSTATE (293, 208), (70, 35) */
+                                    /* CIF NEXTSTATE (243, 208), (70, 35) */
                                     NEXTSTATE a1;
+                                /* CIF INPUT (485, 108), (106, 35) */
+                                INPUT reset_all(x);
+                                    /* CIF PROCEDURECALL (407, 158), (260, 35) */
+                                    CALL writeln('Reset_all from substate a2');
+                                    /* CIF NEXTSTATE (503, 208), (70, 35) */
+                                    NEXTSTATE a2;
                             ENDSTATE;
-                            /* CIF STATE (134, 157), (70, 35) */
+                            /* CIF STATE (0, 157), (70, 35) */
                             STATE a1;
-                                /* CIF INPUT (129, 212), (79, 35) */
+                                /* CIF INPUT (-5, 212), (79, 35) */
                                 INPUT for_a;
-                                    /* CIF PROCEDURECALL (54, 262), (229, 35) */
+                                    /* CIF PROCEDURECALL (-80, 262), (229, 35) */
                                     CALL writeln('[a] Going to a2');
-                                    /* CIF NEXTSTATE (133, 312), (70, 35) */
+                                    /* CIF NEXTSTATE (0, 312), (70, 35) */
                                     NEXTSTATE a2;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
@@ -85,26 +94,43 @@ for_b;
                     STATE a;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
-            /* CIF TEXT (522, 328), (287, 140) */
+            /* CIF TEXT (997, 328), (289, 140) */
             -- Text area for declarations and comments
 
 dcl x myInteger;
             /* CIF ENDTEXT */
-            /* CIF START (226, 249), (70, 35) */
+            /* CIF START (0, 249), (70, 35) */
             START;
-                /* CIF NEXTSTATE (226, 299), (70, 35) */
+                /* CIF NEXTSTATE (0, 299), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (487, 484), (70, 35) */
+            /* CIF STATE (577, 469), (67, 35) */
             STATE wait;
+                /* CIF INPUT (555, 524), (110, 35) */
+                INPUT exit_aggreg;
+                    /* CIF PROCEDURECALL (490, 574), (241, 34) */
+                    CALL writeln('Stop state aggregation');
+                    /* CIF NEXTSTATE (566, 623), (87, 35) */
+                    NEXTSTATE the_end;
             ENDSTATE;
-            /* CIF STATE (226, 299), (70, 35) */
+            /* CIF STATE (0, 299), (70, 35) */
             STATE wait;
-                /* CIF INPUT (207, 354), (107, 35) */
-                INPUT reset_all(x);
-                    /* CIF PROCEDURECALL (173, 404), (174, 35) */
-                    CALL writeln('reset');
-                    /* CIF NEXTSTATE (225, 454), (70, 35) */
+                /* CIF INPUT (-19, 354), (107, 35) */
+                INPUT reset_all(x)
+                /* CIF COMMENT (108, 354), (372, 40) */
+                COMMENT 'Transition is handled by a state in the state aggregation';
+                    /* CIF PROCEDURECALL (-115, 404), (300, 35) */
+                    CALL writeln('[ERROR] Should never be called');
+                    /* CIF NEXTSTATE (0, 454), (70, 35) */
                     NEXTSTATE -;
+            ENDSTATE;
+            /* CIF STATE (847, 464), (87, 35) */
+            STATE the_end;
+                /* CIF INPUT (837, 519), (107, 35) */
+                INPUT reset_all(x);
+                    /* CIF PROCEDURECALL (741, 569), (300, 35) */
+                    CALL writeln('Entering again aggregation');
+                    /* CIF NEXTSTATE (856, 619), (70, 35) */
+                    NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;
     ENDBLOCK;
