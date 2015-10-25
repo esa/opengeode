@@ -226,8 +226,8 @@ def flatten(process, sep=u'_'):
             # Go recursively in inner composite states
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
-            propagate_inputs(inner, process)
-            del process.mapping[inner.statename]
+            #propagate_inputs(inner, process)
+            #del process.mapping[inner.statename]
         for each in state.terminators:
             # Give prefix to terminators
             if each.label:
@@ -272,7 +272,7 @@ def flatten(process, sep=u'_'):
         for each in nested_state.composite_states:
             # do the same recursively
             propagate_inputs(each, nested_state)
-            #del nested_state.mapping[each.statename]
+            del nested_state.mapping[each.statename]
 
     def set_terminator_states(context, prefix=''):
         ''' Associate state to terminators, needed to process properly
