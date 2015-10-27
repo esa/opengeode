@@ -463,6 +463,7 @@ package {process_name} is'''.format(process_name=process_name,
                 return
             taste_template.append(u'when {state} =>'.format(state=state))
             input_def = mapping[signame].get(state)
+            #print signame, input_def
             if state in aggregates.viewkeys():
                 # State aggregation:
                 # - find which substate manages this input

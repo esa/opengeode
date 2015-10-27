@@ -226,6 +226,7 @@ def flatten(process, sep=u'_'):
             # Go recursively in inner composite states
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
+            # Remove: recursion is already handled within propagate_inputs
             #propagate_inputs(inner, process)
             #del process.mapping[inner.statename]
         for each in state.terminators:
@@ -272,7 +273,9 @@ def flatten(process, sep=u'_'):
         for each in nested_state.composite_states:
             # do the same recursively
             propagate_inputs(each, nested_state)
-            del nested_state.mapping[each.statename]
+            #del nested_state.mapping[each.statename]
+        if not isinstance(nested_state, ogAST.StateAggregation):
+            del context.mapping[nested_state.statename]
 
     def set_terminator_states(context, prefix=''):
         ''' Associate state to terminators, needed to process properly
@@ -297,7 +300,7 @@ def flatten(process, sep=u'_'):
     for each in process.composite_states:
         update_composite_state(each, process)
         propagate_inputs(each, process)
-        del process.mapping[each.statename]
+        #del process.mapping[each.statename]
 
     # Update terminators at process level
     for each in process.terminators:

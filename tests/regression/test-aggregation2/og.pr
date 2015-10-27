@@ -29,6 +29,15 @@ exit_aggreg;
             SUBSTRUCTURE
                     STATE a;
                     SUBSTRUCTURE
+                            /* CIF PROCEDURE (159, 386), (77, 35) */
+                            PROCEDURE entry;
+                                /* CIF START (119, 58), (70, 35) */
+                                START;
+                                    /* CIF PROCEDURECALL (28, 108), (250, 35) */
+                                    CALL writeln('[a] entry (before startup)');
+                                    /* CIF RETURN (136, 158), (35, 35) */
+                                    RETURN ;
+                            ENDPROCEDURE;
                             /* CIF START (0, 57), (70, 35) */
                             START;
                                 /* CIF PROCEDURECALL (-64, 107), (198, 35) */
@@ -103,34 +112,35 @@ dcl x myInteger;
             START;
                 /* CIF NEXTSTATE (0, 299), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (577, 469), (67, 35) */
+            /* CIF STATE (390, 307), (67, 35) */
             STATE wait;
-                /* CIF INPUT (555, 524), (110, 35) */
+                /* CIF INPUT (368, 362), (110, 35) */
                 INPUT exit_aggreg;
-                    /* CIF PROCEDURECALL (490, 574), (241, 34) */
-                    CALL writeln('Stop state aggregation');
-                    /* CIF NEXTSTATE (566, 623), (87, 35) */
+                    /* CIF PROCEDURECALL (325, 412), (195, 34) */
+                    CALL writeln('got exit_aggreg');
+                    /* CIF NEXTSTATE (379, 461), (87, 35) */
                     NEXTSTATE the_end;
+            ENDSTATE;
+            /* CIF STATE (649, 303), (87, 35) */
+            STATE the_end;
+                /* CIF INPUT (640, 358), (107, 35) */
+                INPUT reset_all(x);
+                    /* CIF PROCEDURECALL (544, 408), (300, 35) */
+                    CALL writeln('Entering again aggregation');
+                    /* CIF NEXTSTATE (659, 458), (70, 35) */
+                    NEXTSTATE wait;
             ENDSTATE;
             /* CIF STATE (0, 299), (70, 35) */
             STATE wait;
                 /* CIF INPUT (-19, 354), (107, 35) */
                 INPUT reset_all(x)
-                /* CIF COMMENT (108, 354), (372, 40) */
-                COMMENT 'Transition is handled by a state in the state aggregation';
+                /* CIF COMMENT (108, 338), (227, 50) */
+                COMMENT 'Transition is handled by
+a state in the state aggregation';
                     /* CIF PROCEDURECALL (-115, 404), (300, 35) */
                     CALL writeln('[ERROR] Should never be called');
                     /* CIF NEXTSTATE (0, 454), (70, 35) */
                     NEXTSTATE -;
-            ENDSTATE;
-            /* CIF STATE (847, 464), (87, 35) */
-            STATE the_end;
-                /* CIF INPUT (837, 519), (107, 35) */
-                INPUT reset_all(x);
-                    /* CIF PROCEDURECALL (741, 569), (300, 35) */
-                    CALL writeln('Entering again aggregation');
-                    /* CIF NEXTSTATE (856, 619), (70, 35) */
-                    NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;
     ENDBLOCK;
