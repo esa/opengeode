@@ -2302,7 +2302,6 @@ def path_type(path):
                 continue
             # Sequence, Choice (case insensitive)
             if current.kind in ('SequenceType', 'ChoiceType'):
-                #print list(Helper.sorted_fields(current))
                 elem_asn1 = elem.replace('_', '-').lower()
                 type_idx, = (c for c in current.Children
                                     if c.lower() == elem_asn1)

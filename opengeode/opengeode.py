@@ -894,8 +894,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         except ValueError:
             LOG.error('No statechart to render')
             return None
-        # Flatten nested states
-        Helper.flatten(process_ast)
+        # Flatten nested states (no, because neato does not support it,
+        # dot supports only vertically-aligned states, and fdp does not
+        # support curved edges and is buggy with pygraphviz anyway)
+        # Helper.flatten(process_ast)
         return Statechart.create_dot_graph(process_ast, basic)
 
 
@@ -2058,7 +2060,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 scene = self.view.scene()
             graph = scene.sdl_to_statechart()
             try:
-                Statechart.render_statechart(self.statechart_scene, graph)
+                Statechart.render_statechart(self.statechart_scene,
+                                             graph)
                 self.statechart_view.refresh()
             except (IOError, TypeError) as err:
                 LOG.debug(str(err))

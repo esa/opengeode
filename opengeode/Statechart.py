@@ -356,12 +356,14 @@ def update(scene):
 def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
     ''' Render a graphviz/dot statechart on the QGraphicsScene
         set a filename to "dump_gfx" parameter to create a PNG of the graph
+        input is resulting from sdl_to_statechart, it contains a tree of graphs
+        in case of composite states.
     '''
     # Statechart symbols lookup table
     lookup = {'point': Point, 'record': Record, 'diamond': Diamond}
     try:
         # Bonus: the tool can render any dot graph...
-        graph = graph or dotgraph.AGraph('taste.dot')
+        graph = graph.get('graph', None) or dotgraph.AGraph('taste.dot')
     except IOError:
         LOG.info('No statechart to display....')
         raise
@@ -375,7 +377,7 @@ def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
 
     # Compute all the coordinates (self-modifying function)
     # Force the fontsize of the nodes to be 12, as in OpenGEODE
-    # use -n2 below to keep user-specified node coordinates
+    # use -n1 below to keep user-specified node coordinates
     if dump_gfx:
         dump_name = 'sc_' + os.path.basename(dump_gfx)
         dump_gfx = os.path.dirname(dump_gfx) or '.' + os.sep + dump_name
@@ -427,6 +429,7 @@ def create_dot_graph(root_ast, basic=False):
         between two states and no diamond nodes
     '''
     graph = dotgraph.AGraph(strict=False, directed=True)
+    ret = {'graph': graph, 'children': {}}
     diamond = 0
     for state in root_ast.mapping.viewkeys():
         # create a new node for each state (including nested states)
@@ -436,19 +439,18 @@ def create_dot_graph(root_ast, basic=False):
         else:
             #print 'adding', state
             graph.add_node(state, label=state, shape='record', style='rounded')
-    for each in root_ast.composite_states:
-        # this will have to be recursive
-        subnodes = (name for name in graph.iternodes()
-                    if name.startswith(each.statename.lower() + '_'))
-        graph.add_subgraph(subnodes, name='cluster_' + each.statename.lower(),
-                           label=each.statename.lower(),
-                           style='rounded', shape='record')
+#   for each in root_ast.composite_states:
+#       # this will have to be recursive
+#       subnodes = (name for name in graph.iternodes()
+#                   if name.startswith(each.statename.lower() + '_'))
+#       graph.add_subgraph(subnodes, name='cluster_' + each.statename.lower(),
+#                          label=each.statename.lower(),
+#                          style='rounded', shape='record')
     for state, inputs in root_ast.mapping.viewitems():
         # Add edges
         transitions = \
             inputs if not state.endswith('START') \
                    else [root_ast.transitions[inputs]]
-                   #[root_ast.content.start]
         # Allow simplified graph, without diamonds and with at most one
         # transition from a given state to another
         target_states = defaultdict(set)
@@ -505,11 +507,11 @@ def create_dot_graph(root_ast, basic=False):
                     target = state
                 else:
                     target = term.inputString.lower()
-                for each in root_ast.composite_states:
-                    # check with deeper nesting
-                    if each.statename.lower() == target.lower():
-                        target = 'cluster_' + target
-                        break
+#               for each in root_ast.composite_states:
+#                   # check with deeper nesting
+#                   if each.statename.lower() == target.lower():
+#                       target = 'cluster_' + target
+#                       break
                 if basic:
                     target_states[target].add(label)
                 else:
@@ -517,9 +519,12 @@ def create_dot_graph(root_ast, basic=False):
         for target, labels in target_states.viewitems():
             # Basic mode
             graph.add_edge(source, target, label=',\n'.join(labels))
-#    with open('statechart.dot', 'w') as output:
-#        output.write(graph.to_string())
-    return graph
+#   with open('statechart.dot', 'w') as output:
+#       output.write(graph.to_string())
+    #return graph
+    for each in root_ast.composite_states:
+        ret['children'][each.statename] = create_dot_graph(each, basic)
+    return ret
 
 
 if __name__ == '__main__':
