@@ -57,7 +57,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
         super(Record, self).__init__(x=node['pos'][0],
                 y=node['pos'][1], text=self.name)
         self.set_shape(node['width'], node['height'])
-        self.setBrush(QtGui.QBrush(QtGui.QColor(255, 255, 202)))
+        #self.setBrush(QtGui.QBrush(QtGui.QColor(255, 255, 202)))
         self.graph = graph
         if 'properties' in node:
             property_box = QtGui.QGraphicsTextItem(self)
@@ -308,7 +308,7 @@ def update(scene):
         node.mapToScene(node.boundingRect().center()),
         'shape': type(node), 'width': node.boundingRect().width(),
         'height': node.boundingRect().height()}
-        for node in scene.items() if isinstance(node,
+        for node in scene.visible_symb if isinstance(node,
                                                (Point, Diamond, Record))]
     graph = dotgraph.AGraph(
             strict=False, directed=True, splines='spline', start='rand')
@@ -324,7 +324,6 @@ def update(scene):
         center_x = center_pos.x() * (dpi / RENDER_DPI['X'])
         center_y = (bb_height - center_pos.y()) * (dpi / RENDER_DPI['Y'])
 
-        #pos = unicode('{x},{y}'.format(x=int(center_x), y=int(center_y)))
         pos = unicode('{x},{y}'.format(x=float(center_x), y=float(center_y)))
 
         if node['shape'] in (Point, Diamond):
@@ -343,7 +342,8 @@ def update(scene):
     if nodes:
         before = scene.itemsBoundingRect().center()
         #before_pos = graph.get_node(nodes[0]['name']).attr['pos']
-        render_statechart(scene, graph, keep_pos=True)
+        render_statechart(scene, {'graph': graph, 'children': {}},
+                          keep_pos=True)
         #after_pos = graph.get_node(nodes[0]['name']).attr['pos']
         #print before_pos,after_pos
         delta = scene.itemsBoundingRect().center() - before
@@ -353,17 +353,31 @@ def update(scene):
             item.position = QtCore.QPointF(item.position - delta)
 
 
-def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
+def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     ''' Render a graphviz/dot statechart on the QGraphicsScene
         set a filename to "dump_gfx" parameter to create a PNG of the graph
         input is resulting from sdl_to_statechart, it contains a tree of graphs
         in case of composite states.
     '''
+    # Go recursive first: render children
+    for aname, agraph in graphtree['children'].viewitems():
+        # Render each child in a temporary scene to get the size of the scene
+        # in order to resize the parent node accordingly
+        temp_scene = type(scene)()
+        render_statechart(temp_scene, agraph, keep_pos, dump_gfx)
+        print 'rendering', aname
+        for node in graphtree['graph'].iternodes():
+            if node == aname:
+                size = temp_scene.itemsBoundingRect()
+                node.attr['width'] = size.width() / 72.0
+                node.attr['height'] = size.height() / 72.0
+                graphtree['children'][aname]['scene'] = temp_scene
+                break
     # Statechart symbols lookup table
     lookup = {'point': Point, 'record': Record, 'diamond': Diamond}
     try:
         # Bonus: the tool can render any dot graph...
-        graph = graph.get('graph', None) or dotgraph.AGraph('taste.dot')
+        graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
     except IOError:
         LOG.info('No statechart to display....')
         raise
@@ -421,6 +435,16 @@ def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
 
     for edge in edges:
         Edge(edge, graph)
+
+    for aname, agraph in graphtree['children'].viewitems():
+        # At the end, place the content of the scene of the composite states
+        # in the symbol by moving them from their temporary scene
+        for symb in scene.visible_symb:
+            if unicode(symb) == aname:
+                for each in agraph['scene'].visible_symb:
+                    print 'changing scene of', unicode(each)
+                    each.setParent(symb)
+                    scene.addItem(each)
 
 
 def create_dot_graph(root_ast, basic=False):
