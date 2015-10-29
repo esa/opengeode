@@ -424,6 +424,8 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         shape = node.get('shape')
         try:
             node_symbol = lookup[shape](node, graph)
+            if graphtree['children']:
+                node_symbol.setBrush(QtGui.QBrush(QtGui.QColor(249, 249, 249)))
             G_SYMBOLS.add(node_symbol)
             node_symbols.append(node_symbol)
             scene.addItem(node_symbol)
