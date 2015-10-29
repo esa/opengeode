@@ -441,10 +441,11 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         # in the symbol by moving them from their temporary scene
         for symb in scene.visible_symb:
             if unicode(symb) == aname:
-                for each in agraph['scene'].visible_symb:
+                for each in agraph['scene'].floating_symb:
                     print 'changing scene of', unicode(each)
                     each.setParent(symb)
                     scene.addItem(each)
+                    each.position += symb.scenePos()
 
 
 def create_dot_graph(root_ast, basic=False):
