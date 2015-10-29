@@ -499,7 +499,7 @@ class Edge(Connection):
         ''' On a mouse click, display the control points '''
         self.bezier_set_visible(True)
 
-  # pylint: disable=R0914
+    # pylint: disable=R0914
     def reshape(self):
         ''' Update the shape of the edge (redefined function) '''
         path = QPainterPath()
@@ -536,19 +536,20 @@ class Edge(Connection):
             if not self.text_label:
                 self.text_label = QGraphicsTextItem(
                                  self.edge.get('label', ''), parent=self)
-            self.text_label.setX(pos.x() - width / 2)
-            self.text_label.setY(pos.y() - height / 2)
-            self.text_label.setFont(font)
-            # Make horizontal center alignment, as dot does
-            self.text_label.setTextWidth(self.text_label.boundingRect().width())
-            fmt = QTextBlockFormat()
-            fmt.setAlignment(Qt.AlignHCenter)
-            cursor = self.text_label.textCursor()
-            cursor.select(QTextCursor.Document)
-            cursor.mergeBlockFormat(fmt)
-            cursor.clearSelection()
-            self.text_label.setTextCursor(cursor)
-            self.text_label.show()
+                self.text_label.setX(pos.x() - width / 2)
+                self.text_label.setY(pos.y() - height / 2)
+                self.text_label.setFont(font)
+                # Make horizontal center alignment, as dot does
+                self.text_label.setTextWidth(
+                        self.text_label.boundingRect().width())
+                fmt = QTextBlockFormat()
+                fmt.setAlignment(Qt.AlignHCenter)
+                cursor = self.text_label.textCursor()
+                cursor.select(QTextCursor.Document)
+                cursor.mergeBlockFormat(fmt)
+                cursor.clearSelection()
+                self.text_label.setTextCursor(cursor)
+                self.text_label.show()
         except KeyError:
             # no label
             pass

@@ -57,7 +57,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
         super(Record, self).__init__(x=node['pos'][0],
                 y=node['pos'][1], text=self.name)
         self.set_shape(node['width'], node['height'])
-        #self.setBrush(QtGui.QBrush(QtGui.QColor(255, 255, 202)))
+        self.setBrush(QtGui.QBrush(QtGui.QColor(255, 255, 202)))
         self.graph = graph
         if 'properties' in node:
             property_box = QtGui.QGraphicsTextItem(self)
@@ -365,12 +365,11 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         # in order to resize the parent node accordingly
         temp_scene = type(scene)()
         render_statechart(temp_scene, agraph, keep_pos, dump_gfx)
-        print 'rendering', aname
         for node in graphtree['graph'].iternodes():
             if node == aname:
                 size = temp_scene.itemsBoundingRect()
-                node.attr['width'] = size.width() / 72.0
-                node.attr['height'] = size.height() / 72.0
+                node.attr['width'] = (temp_scene.width() + 30) / 72.0
+                node.attr['height'] = (temp_scene.height() + 30) / 72.0
                 graphtree['children'][aname]['scene'] = temp_scene
                 break
     # Statechart symbols lookup table
@@ -422,7 +421,6 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     nodes = preprocess_nodes(graph, bounding_rect, dot_dpi)
     node_symbols = []
     for node in nodes:
-        #print node
         shape = node.get('shape')
         try:
             node_symbol = lookup[shape](node, graph)
@@ -441,11 +439,16 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         # in the symbol by moving them from their temporary scene
         for symb in scene.visible_symb:
             if unicode(symb) == aname:
+                deltapos = symb.scenePos() + QtCore.QPointF(30.0, 30.0)
                 for each in agraph['scene'].floating_symb:
-                    print 'changing scene of', unicode(each)
-                    each.setParent(symb)
+                    # In principle we should change the parentItem to make sure
+                    # that all children items are moved together with their
+                    # parent. Unfortunately calls to setParentItem provoke
+                    # a segfault. To be tried again when PySide is fixed...
+                    #each.setParent(symb)
                     scene.addItem(each)
-                    each.position += symb.scenePos()
+                    each.position += deltapos
+                    each.setZValue(each.zValue() + symb.zValue() + 1)
 
 
 def create_dot_graph(root_ast, basic=False):
