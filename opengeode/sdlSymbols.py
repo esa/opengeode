@@ -1183,5 +1183,5 @@ class StateStart(Start):
 
     def update_completion_list(self, pr_text):
         ''' Update nested state entry points '''
-        CONTEXT.state_entrypoints = set(CONTEXT.state_entrypoints
-                                       + [unicode(self)])
+        CONTEXT.state_entrypoints = \
+                set(CONTEXT.state_entrypoints) | set(unicode(self))

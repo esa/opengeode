@@ -29,6 +29,7 @@ exit_aggreg;
             SUBSTRUCTURE
                     STATE a;
                     SUBSTRUCTURE
+                        in (hehe);
                             /* CIF PROCEDURE (159, 386), (77, 35) */
                             PROCEDURE entry;
                                 /* CIF START (119, 58), (70, 35) */
@@ -38,6 +39,10 @@ exit_aggreg;
                                     /* CIF RETURN (136, 158), (35, 35) */
                                     RETURN ;
                             ENDPROCEDURE;
+                            /* CIF START (306, 314), (72, 35) */
+                            START hehe ;
+                                /* CIF NEXTSTATE (308, 364), (70, 35) */
+                                NEXTSTATE a1;
                             /* CIF START (0, 57), (70, 35) */
                             START;
                                 /* CIF PROCEDURECALL (-64, 107), (198, 35) */
@@ -125,9 +130,9 @@ dcl x myInteger;
             STATE the_end;
                 /* CIF INPUT (640, 358), (107, 35) */
                 INPUT reset_all(x);
-                    /* CIF PROCEDURECALL (544, 408), (300, 35) */
+                    /* CIF PROCEDURECALL (543, 408), (300, 35) */
                     CALL writeln('Entering again aggregation');
-                    /* CIF NEXTSTATE (659, 458), (70, 35) */
+                    /* CIF NEXTSTATE (658, 458), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
             /* CIF STATE (0, 299), (70, 35) */

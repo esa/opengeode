@@ -494,7 +494,13 @@ def create_dot_graph(root_ast, basic=False):
                 label = label.strip().replace('\n', ' ')
             except AttributeError:
                 # START transition may have no inputString
-                label = ''
+                for each in root_ast.content.named_start:
+                    # each is of type ogAST.Start
+                    if each.transition == trans:
+                        label = each.inputString[:-6]
+                        break
+                else:
+                    label = ''
 
             def find_terminators(trans):
                 ''' Recursively find all NEXTSTATES '''
@@ -514,8 +520,12 @@ def create_dot_graph(root_ast, basic=False):
                         LOG.error('Missing label: ' + join.inputString)
                     else:
                         # Don't recurse forever in case of livelock
-                        if corr_label.inputString != trans.inputString:
-                            next_states.extend(find_terminators(corr_label))
+                        try:
+                            if corr_label.inputString != trans.inputString:
+                                next_states.extend(find_terminators(corr_label))
+                        except AttributeError:
+                            # START transition -> no inputString
+                            pass
                 return set(next_states)
 
             # Determine the list of terminators in this transition

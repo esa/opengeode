@@ -527,7 +527,7 @@ class Edge(Connection):
             # Add the transition label, if any (none for the START edge)
             font = QFont('arial', pointSize=8)
             metrics = QFontMetrics(font)
-            label = self.edge.get('label', '')
+            label = self.edge.get('label', '') or ''
             lines = label.split('\n')
             width = metrics.width(max(lines)) # longest line
             height = metrics.height() * len(lines)
