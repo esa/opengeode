@@ -884,7 +884,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.refresh()
 
 
-    def sdl_to_statechart(self, basic=False):
+    def sdl_to_statechart(self, basic=True):
         ''' Create a graphviz representation of the SDL model '''
         pr_raw = Pr.parse_scene(self)
         pr_data = unicode('\n'.join(pr_raw))
@@ -1949,13 +1949,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.scene.messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
 
-        #statechart_dock = self.findChild(QtGui.QDockWidget, 'statechart_dock')
         if graphviz:
             self.statechart_view = self.findChild(SDL_View, 'statechart_view')
             self.statechart_scene = SDL_Scene(context='statechart')
             self.statechart_view.setScene(self.statechart_scene)
-        #else:
-        #    statechart_dock.hide()
 
         # Set up the dock area to display the ASN.1 Data model
         #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
