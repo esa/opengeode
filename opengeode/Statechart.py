@@ -89,6 +89,10 @@ class Record(genericSymbols.HorizontalSymbol, object):
         # Discard mouse release default action (CAM, UndoCommand)
         pass
 
+    def mouse_move(self, event):
+        ''' Disallow moving the symbols - this scene is auto-generated '''
+        pass
+
 
 # pylint: disable=R0904
 class Point(genericSymbols.HorizontalSymbol, object):
@@ -130,6 +134,10 @@ class Point(genericSymbols.HorizontalSymbol, object):
         ''' After moving item, ask dot to recompute the edges '''
         #self.scene().refresh()
         update(self.scene())
+
+    def mouse_move(self, event):
+        ''' Disallow moving the symbols - this scene is auto-generated '''
+        pass
 
 
 # pylint: disable=R0904
@@ -174,6 +182,10 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
         #update(self.scene())
         pass
 
+    def mouse_move(self, event):
+        ''' Disallow moving the symbols - this scene is auto-generated '''
+        pass
+
 
 # pylint: disable=R0904
 class Stop(genericSymbols.HorizontalSymbol, object):
@@ -215,6 +227,10 @@ class Stop(genericSymbols.HorizontalSymbol, object):
 
     def mouse_release(self, _):
         ''' After moving item, ask dot to recompute the edges '''
+        pass
+
+    def mouse_move(self, event):
+        ''' Disallow moving the symbols - this scene is auto-generated '''
         pass
 
 
@@ -346,8 +362,10 @@ def update(scene):
     '''
         Parse the graph symbols and create a graphviz graph
         Used to update the edges in case user moves nodes.
+        This function is disabled because move of symbols is not possible
+        anymore.
     '''
-    print 'update'
+    return
     nodes = [{'name':node.name, 'pos':
         node.mapToScene(node.boundingRect().center()),
         'shape': type(node), 'width': node.boundingRect().width(),
@@ -420,6 +438,22 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
                                       / RENDER_DPI['Y'])
                 graphtree['children'][aname]['scene'] = temp_scene
                 break
+
+    # Harmonize the size of states to avoid having huge composite state(s)
+    # next to single, small states. Rule: there can't be a state with a size
+    # that is less than a third of the biggest state.
+    min_width = float(max(node.attr.get('width', 0.0) or 0.0
+                    for node in graphtree['graph'].iternodes()))
+    min_height = float(max(node.attr.get('height', 0.0) or 0.0
+                    for node in graphtree['graph'].iternodes()))
+    if min_width and min_height:
+        for node in graphtree['graph'].iternodes():
+            if node.attr['shape'] != 'record':
+                continue
+            node.attr['width'] = node.attr.get('width') or min_width/3.0
+            node.attr['height'] = node.attr.get('height') or min_height/3.0
+
+
     # Statechart symbols lookup table
     lookup = {'point': Point, 'record': Record,
               'diamond': Diamond, 'plaintext': Stop}
