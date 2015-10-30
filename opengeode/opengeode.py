@@ -1949,13 +1949,13 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.scene.messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
 
-        statechart_dock = self.findChild(QtGui.QDockWidget, 'statechart_dock')
+        #statechart_dock = self.findChild(QtGui.QDockWidget, 'statechart_dock')
         if graphviz:
             self.statechart_view = self.findChild(SDL_View, 'statechart_view')
             self.statechart_scene = SDL_Scene(context='statechart')
             self.statechart_view.setScene(self.statechart_scene)
-        else:
-            statechart_dock.hide()
+        #else:
+        #    statechart_dock.hide()
 
         # Set up the dock area to display the ASN.1 Data model
         #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')

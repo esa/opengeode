@@ -78,6 +78,16 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="Statechart">
+       <property name="windowTitle">
+        <string>Statechart (F4 to update)</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="SDL_View" name="statechart_view"/>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -88,7 +98,7 @@
      <x>0</x>
      <y>0</y>
      <width>900</width>
-     <height>18</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuOpenGEODE">
@@ -137,21 +147,6 @@
      </property>
      <item>
       <widget class="QListWidget" name="messages"/>
-     </item>
-    </layout>
-   </widget>
-  </widget>
-  <widget class="QDockWidget" name="statechart_dock">
-   <property name="windowTitle">
-    <string>Statechart (F4 to update)</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2">
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="0">
-      <widget class="SDL_View" name="statechart_view"/>
      </item>
     </layout>
    </widget>
