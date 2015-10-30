@@ -2060,6 +2060,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 Statechart.render_statechart(self.statechart_scene,
                                              graph)
                 self.statechart_view.refresh()
+                self.statechart_view.fitInView(
+                        self.statechart_scene.itemsBoundingRect(),
+                        Qt.KeepAspectRatioByExpanding)
             except (IOError, TypeError) as err:
                 LOG.debug(str(err))
         elif key_event.key() == Qt.Key_Colon:
