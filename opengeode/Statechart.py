@@ -192,6 +192,8 @@ class Stop(genericSymbols.HorizontalSymbol, object):
                                    text=self.name)
         self.set_shape(node['width'], node['height'])
         self.graph = graph
+        # Text in statecharts is read-only:
+        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
@@ -408,11 +410,14 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         # in order to resize the parent node accordingly
         temp_scene = type(scene)()
         render_statechart(temp_scene, agraph, keep_pos, dump_gfx)
+        w = temp_scene.width()
         for node in graphtree['graph'].iternodes():
             if node == aname:
                 size = temp_scene.itemsBoundingRect()
-                node.attr['width'] = (temp_scene.width() + 30) / 72.0
-                node.attr['height'] = (temp_scene.height() + 30) / 72.0
+                node.attr['width'] = ((temp_scene.width() + 30)
+                                      / RENDER_DPI['X'])
+                node.attr['height'] = ((temp_scene.height() + 35)
+                                      / RENDER_DPI['Y'])
                 graphtree['children'][aname]['scene'] = temp_scene
                 break
     # Statechart symbols lookup table
