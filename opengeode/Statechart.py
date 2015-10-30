@@ -46,7 +46,7 @@ LOG = logging.getLogger(__name__)
 class Record(genericSymbols.HorizontalSymbol, object):
     ''' Graphviz node - it is floating and has no parent'''
     _unique_followers = []
-    _insertable_followers = ['Record', 'Diamond']
+    _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
     textbox_alignment = (QtCore.Qt.AlignTop
                          | QtCore.Qt.AlignHCenter)
@@ -94,7 +94,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
 class Point(genericSymbols.HorizontalSymbol, object):
     ''' Graphviz point node - used for START transition'''
     _unique_followers = []
-    _insertable_followers = ['Record', 'Diamond']
+    _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
     textbox_alignment = (QtCore.Qt.AlignTop
                          | QtCore.Qt.AlignHCenter)
@@ -136,7 +136,7 @@ class Point(genericSymbols.HorizontalSymbol, object):
 class Diamond(genericSymbols.HorizontalSymbol, object):
     ''' Graphviz node - it is floating and has no parent'''
     _unique_followers = []
-    _insertable_followers = ['Record']
+    _insertable_followers = ['Record', 'Stop']
     _terminal_followers = []
     textbox_alignment = (QtCore.Qt.AlignTop
                          | QtCore.Qt.AlignHCenter)
@@ -172,6 +172,47 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
     def mouse_release(self, _):
         ''' After moving item, ask dot to recompute the edges '''
         #update(self.scene())
+        pass
+
+
+# pylint: disable=R0904
+class Stop(genericSymbols.HorizontalSymbol, object):
+    ''' Graphviz state exit node - it is floating and has no parent'''
+    _unique_followers = []
+    _insertable_followers = []
+    _terminal_followers = []
+    textbox_alignment = (QtCore.Qt.AlignTop
+                         | QtCore.Qt.AlignHCenter)
+    has_text_area = True
+
+    def __init__(self, node, graph):
+        ''' Initialization: compute the polygon shape '''
+        self.name = node['name']
+        super(Stop, self).__init__(x=node['pos'][0], y=node['pos'][1],
+                                   text=self.name)
+        self.set_shape(node['width'], node['height'])
+        self.graph = graph
+
+    def set_shape(self, width, height):
+        ''' Define the polygon shape from width and height '''
+        path = QtGui.QPainterPath()
+        path.lineTo(width, height)
+        path.moveTo(width, 0)
+        path.lineTo(0, height)
+        self.setPath(path)
+        super(Stop, self).set_shape(width, height)
+
+    def resize_item(self, _):
+        ''' Redefine the resizing function - forbid resizing '''
+        pass
+
+    def __str__(self):
+        ''' User-friendly information about the node '''
+        return('Stop node ' + self.name + ' at pos ' + str(self.pos()) +
+                ' bounding rect = ' + str(self.boundingRect()))
+
+    def mouse_release(self, _):
+        ''' After moving item, ask dot to recompute the edges '''
         pass
 
 
@@ -304,16 +345,18 @@ def update(scene):
         Parse the graph symbols and create a graphviz graph
         Used to update the edges in case user moves nodes.
     '''
+    print 'update'
     nodes = [{'name':node.name, 'pos':
         node.mapToScene(node.boundingRect().center()),
         'shape': type(node), 'width': node.boundingRect().width(),
         'height': node.boundingRect().height()}
         for node in scene.visible_symb if isinstance(node,
-                                               (Point, Diamond, Record))]
+                                               (Point, Diamond, Record, Stop))]
     graph = dotgraph.AGraph(
             strict=False, directed=True, splines='spline', start='rand')
 
-    lookup = {Point: 'point', Record: 'record', Diamond: 'diamond'}
+    lookup = {Point: 'point', Record: 'record',
+              Diamond: 'diamond', Stop: 'plaintext'}
     for node in nodes:
         center_pos = node['pos']
         bb_height = scene.itemsBoundingRect().height()
@@ -326,7 +369,7 @@ def update(scene):
 
         pos = unicode('{x},{y}'.format(x=float(center_x), y=float(center_y)))
 
-        if node['shape'] in (Point, Diamond):
+        if node['shape'] in (Point, Diamond, Stop):
             graph.add_node(node['name'], pos=pos, shape=lookup[node['shape']],
                 fixedsize='true', width=node['width'] / RENDER_DPI['X'],
                 height=node['height'] / RENDER_DPI['Y'], pin=True)
@@ -373,7 +416,8 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
                 graphtree['children'][aname]['scene'] = temp_scene
                 break
     # Statechart symbols lookup table
-    lookup = {'point': Point, 'record': Record, 'diamond': Diamond}
+    lookup = {'point': Point, 'record': Record,
+              'diamond': Diamond, 'plaintext': Stop}
     try:
         # Bonus: the tool can render any dot graph...
         graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
@@ -399,7 +443,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
 
     graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
                  '-Gsplines=curved -Gsep=1 '
-                 '-Gstart=random10 -Goverlap=false '
+                 '-Gstart=random10 -Goverlap=scale '
             '-Nstyle=rounded -Nshape=record -Elen=1 {kp} {dump}'
             .format(kp='-n1' if keep_pos else '',
                     dump=('-Tpng -o' + dump_gfx) if dump_gfx else ''))
@@ -424,7 +468,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         shape = node.get('shape')
         try:
             node_symbol = lookup[shape](node, graph)
-            if graphtree['children']:
+            if graphtree['children'] and shape == 'record':
                 node_symbol.setBrush(QtGui.QBrush(QtGui.QColor(249, 249, 249)))
             G_SYMBOLS.add(node_symbol)
             node_symbols.append(node_symbol)
@@ -467,7 +511,6 @@ def create_dot_graph(root_ast, basic=False):
             graph.add_node(state, label='', shape='point',
                            fixedsize='true', width=10.0 / 72.0)
         else:
-            #print 'adding', state
             graph.add_node(state, label=state, shape='record', style='rounded')
 #   for each in root_ast.composite_states:
 #       # this will have to be recursive
@@ -476,6 +519,11 @@ def create_dot_graph(root_ast, basic=False):
 #       graph.add_subgraph(subnodes, name='cluster_' + each.statename.lower(),
 #                          label=each.statename.lower(),
 #                          style='rounded', shape='record')
+    for each in [term for term in root_ast.terminators
+                 if term.kind == 'return']:
+        # create a new node for each RETURN statement (in nested states)
+        ident = each.inputString or 'default'
+        graph.add_node(ident, label=ident, shape='plaintext')
     for state, inputs in root_ast.mapping.viewitems():
         # Add edges
         transitions = \
@@ -503,9 +551,9 @@ def create_dot_graph(root_ast, basic=False):
                     label = ''
 
             def find_terminators(trans):
-                ''' Recursively find all NEXTSTATES '''
+                ''' Recursively find all NEXTSTATES and RETURN nodes '''
                 next_states = [term for term in trans.terminators
-                               if term.kind == 'next_state']
+                               if term.kind in ('next_state', 'return')]
                 joins = [term for term in trans.terminators
                          if term.kind == 'join']
                 for join in joins:
@@ -546,12 +594,7 @@ def create_dot_graph(root_ast, basic=False):
                 if term.inputString.strip() == '-':
                     target = state
                 else:
-                    target = term.inputString.lower()
-#               for each in root_ast.composite_states:
-#                   # check with deeper nesting
-#                   if each.statename.lower() == target.lower():
-#                       target = 'cluster_' + target
-#                       break
+                    target = term.inputString.lower() or 'default'
                 if basic:
                     target_states[target].add(label)
                 else:
