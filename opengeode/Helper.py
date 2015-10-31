@@ -49,13 +49,15 @@ def state_aggregations(process):
     # { aggregate_name : [list of parallel states] }
     aggregates = defaultdict(list)
     def do_composite(comp, aggregate=''):
-        ''' Recursively find all state aggregations in order to create
-        variables to store the state of each parallel state '''
-        for each in comp.composite_states: # CHECKME
-            pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
+        ''' Recursively find all state aggregations in order to allow code
+        generator backends to store the state of each parallel state '''
+        pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
                     else ''
+        for each in comp.composite_states:
             do_composite(each, pre)
             if isinstance(each, ogAST.StateAggregation):
+                # substate of the current state is a state aggregation
+                # -> set a flag in each terminator of the current state
                 for term in comp.terminators:
                     if term.inputString.lower() == each.statename.lower():
                         term.next_is_aggregation = True
@@ -73,6 +75,14 @@ def state_aggregations(process):
     for each in process.terminators:
         if each.inputString.lower() in aggregates:
             each.next_is_aggregation = True
+    for name, comp in aggregates.viewitems():
+        # for each state aggregation. update the terminators
+        # of each parallel state with the name of all sibling states
+        # useful for backends to handle parallel state termination (return)
+        # since they have to synchronize with the sibling states
+        siblings = [sib.statename for sib in comp]
+        for term in [terms for sib in comp for terms in sib.terminators]:
+            term.siblings = siblings
     return aggregates
 
 

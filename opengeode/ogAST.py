@@ -466,6 +466,10 @@ class Terminator(object):
         self.composite = None
         # Flag to indicate if the nextstate is a state aggregation
         self.next_is_aggregation = False
+        # List of sibling states if terminator is within a state aggregation
+        # (list of strings with all parallel states of the aggregation)
+        # Used by backend to synchronise parallel state terminations
+        self.siblings = []
         # If this terminator is within a state aggregation, store the name
         # of the parallel substate (set by Helper.state_aggregations)
         self.substate = ''
