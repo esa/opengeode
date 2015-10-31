@@ -23,6 +23,7 @@ import traceback
 import re
 import code
 import pprint
+import random
 from functools import partial
 from itertools import chain
 
@@ -115,7 +116,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.2.5'
+__version__ = '1.3.0'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -277,7 +278,7 @@ class Sdl_toolbar(QtGui.QToolBar, object):
     def update_menu(self, scene=None):
         ''' Context-dependent enabling/disabling of menu buttons '''
         try:
-            selection = list(scene.selected_symbols())
+            selection = list(scene.selected_symbols)
         except AttributeError:
             selection = []
         if not selection:
@@ -476,6 +477,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         return self.parent_scene.path + [self.name[0:-3]]
 
 
+    @property
+    def selected_symbols(self):
+        ''' Generate the list of selected symbols (excluding grabbers) '''
+        for selection in self.selectedItems():
+            if isinstance(selection, Symbol):
+                yield selection
+            elif isinstance(selection, Cornergrabber):
+                yield selection.parent
+
 
     def quit_scene(self):
         ''' Called in case of scene switch (e.g. UP button) '''
@@ -519,7 +529,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                 symbol.update_position()
                             else:
                                 # No CIF coordinates: (1) fix COMMENT position
-                                # and (2) if floating, call CAM
+                                # and (2) if floating call CAM
                                 if isinstance(symbol, genericSymbols.Comment):
                                     symbol.pos_x = \
                                       symbol.parent.boundingRect().width() + 15
@@ -572,6 +582,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def refresh(self):
         ''' Refresh the symbols and connections in the scene '''
+        LOG.debug('scene refresh')
         for symbol in self.visible_symb:
             symbol.updateConnectionPointPosition()
             symbol.updateConnectionPoints()
@@ -642,19 +653,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         return delta_x, delta_y
 
 
-    def selected_symbols(self):
-        ''' Generate the list of selected symbols (excluding grabbers) '''
-        for selection in self.selectedItems():
-            if isinstance(selection, Symbol):
-                yield selection
-            elif isinstance(selection, Cornergrabber):
-                yield selection.parent
-
-
     def set_selection(self, toolbar):
         ''' When the selection has changed, update menu, etc '''
         toolbar.update_menu(self)
-        for item in self.selected_symbols():
+        for item in self.selected_symbols:
             item.grabber.display()
 
 
@@ -798,7 +800,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             Remove selected symbols from the scene, with proper re-connections
         '''
         self.undo_stack.beginMacro('Delete items')
-        for item in self.selected_symbols():
+        for item in self.selected_symbols:
             if not item.scene():
                 # Ignore if item has already been deleted
                 # (in case of multiple selection)
@@ -820,7 +822,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         '''
         self.click_coordinates = None
         try:
-            Clipboard.copy(self.selected_symbols())
+            Clipboard.copy(self.selected_symbols)
         except TypeError as error_msg:
             try:
                 self.messages_window.addItem(unicode(error_msg))
@@ -845,7 +847,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         '''
             Paste previously copied symbols at selection point
         '''
-        parent = list(self.selected_symbols())
+        parent = list(self.selected_symbols)
         if len(parent) > 1:
             self.messages_window.addItem(
                     'Cannot paste when several items are selected')
@@ -882,7 +884,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.refresh()
 
 
-    def sdl_to_statechart(self, basic=False):
+    def sdl_to_statechart(self, basic=True):
         ''' Create a graphviz representation of the SDL model '''
         pr_raw = Pr.parse_scene(self)
         pr_data = unicode('\n'.join(pr_raw))
@@ -892,8 +894,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         except ValueError:
             LOG.error('No statechart to render')
             return None
-        # Flatten nested states
-        Helper.flatten(process_ast)
+        # Flatten nested states (no, because neato does not support it,
+        # dot supports only vertically-aligned states, and fdp does not
+        # support curved edges and is buggy with pygraphviz anyway)
+        # Helper.flatten(process_ast)
         return Statechart.create_dot_graph(process_ast, basic)
 
 
@@ -1017,6 +1021,75 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 raise TypeError(parent_item.__class__.__name__ +
                                 ' symbol cannot be followed by ' +
                                 item_type.__name__)
+
+
+    def create_subscene(self, context, parent=None):
+        ''' Create a new SDL scene, e.g. for nested symbols '''
+        subscene = SDL_Scene(context=context)
+        subscene.messages_window = self.messages_window
+        subscene.parent_scene = parent
+        return subscene
+
+
+    def place_symbol(self, item_type, parent, pos=None):
+        ''' Draw a symbol on the scene '''
+        item = item_type()
+        # Add the item to the scene
+        if item not in self.items():
+            self.addItem(item)
+        # Create Undo command (makes the call to the insertSymbol function):
+        undo_cmd = undoCommands.InsertSymbol(item=item, parent=parent, pos=pos)
+        self.undo_stack.push(undo_cmd)
+        # If no item is selected (e.g. new STATE), add it to the scene
+        if not parent:
+            G_SYMBOLS.add(item)
+
+        if item_type == Decision:
+            # When creating a new decision, add two default answers
+            self.place_symbol(item_type=DecisionAnswer, parent=item)
+            self.place_symbol(item_type=DecisionAnswer, parent=item)
+        elif item_type in (Procedure, State, Process):
+            # Create a sub-scene for clickable symbols
+            item.nested_scene = \
+                    self.create_subscene(item_type.__name__.lower(), self)
+
+        self.clearSelection()
+        self.clear_focus()
+        item.select()
+        item.cam(item.pos(), item.pos())
+        # When item is placed, immediately set focus to input text
+        item.edit_text()
+
+        for view in self.views():
+            view.refresh()
+            view.ensureVisible(item)
+        return item
+
+
+
+    def add_symbol(self, item_type):
+        ''' Add a symbol, or postpone until a parent symbol is selected  '''
+        try:
+            # If an item is selected or if its text has focus,
+            # use it as parent item for the newly inserted item
+            selection, = (list(self.selected_symbols) or
+                          [self.focusItem().parentItem()])
+            with undoCommands.UndoMacro(self.undo_stack, 'Place Symbol'):
+                self.place_symbol(item_type=item_type, parent=selection)
+        except (ValueError, AttributeError):
+            # Menu item clicked but no symbol selected
+            # -> store until user clicks on the scene
+            self.messages_window.clear()
+            self.messages_window.addItem(
+                    'Click on the scene to place the symbol')
+            self.button_selected = item_type
+            if item_type == Connection:
+                self.mode = 'wait_connection_source'
+            else:
+                self.mode = 'wait_placement'
+            self.set_cursor(item_type)
+            return None
+
 
 
     # pylint: disable=C0103
@@ -1165,7 +1238,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         elif (event.key() == Qt.Key_J and
                 event.modifiers() == Qt.ControlModifier):
             # Debug mode
-            for selection in self.selected_symbols():
+            for selection in self.selected_symbols:
                 LOG.info(unicode(selection))
                 LOG.info('Position: ' + str(selection.pos()))
                 LOG.info('ScenePos: ' + str(selection.scenePos()))
@@ -1175,73 +1248,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                         str(selection.childrenBoundingRect()))
                 pprint.pprint(selection.__dict__, None, 2, 1)
             code.interact('type your command:', local=locals())
-
-
-    def create_subscene(self, context, parent=None):
-        ''' Create a new SDL scene, e.g. for nested symbols '''
-        subscene = SDL_Scene(context=context)
-        subscene.messages_window = self.messages_window
-        subscene.parent_scene = parent
-        return subscene
-
-
-    def place_symbol(self, item_type, parent, pos=None):
-        ''' Draw a symbol on the scene '''
-        item = item_type()
-        # Add the item to the scene
-        if item not in self.items():
-            self.addItem(item)
-        # Create Undo command (makes the call to the insertSymbol function):
-        undo_cmd = undoCommands.InsertSymbol(item=item, parent=parent, pos=pos)
-        self.undo_stack.push(undo_cmd)
-        # If no item is selected (e.g. new STATE), add it to the scene
-        if not parent:
-            G_SYMBOLS.add(item)
-
-        if item_type == Decision:
-            # When creating a new decision, add two default answers
-            self.place_symbol(item_type=DecisionAnswer, parent=item)
-            self.place_symbol(item_type=DecisionAnswer, parent=item)
-        elif item_type in (Procedure, State, Process):
-            # Create a sub-scene for clickable symbols
-            item.nested_scene = \
-                    self.create_subscene(item_type.__name__.lower(), self)
-
-        self.clearSelection()
-        self.clear_focus()
-        item.select()
-        item.cam(item.pos(), item.pos())
-        # When item is placed, immediately set focus to input text
-        item.edit_text()
-
-        for view in self.views():
-            view.refresh()
-            view.ensureVisible(item)
-        return item
-
-
-    def add_symbol(self, item_type):
-        ''' Add a symbol, or postpone until a parent symbol is selected  '''
-        try:
-            # If an item is selected or if its text has focus,
-            # use it as parent item for the newly inserted item
-            selection, = (list(self.selected_symbols()) or
-                          [self.focusItem().parentItem()])
-            with undoCommands.UndoMacro(self.undo_stack, 'Place Symbol'):
-                self.place_symbol(item_type=item_type, parent=selection)
-        except (ValueError, AttributeError):
-            # Menu item clicked but no symbol selected
-            # -> store until user clicks on the scene
-            self.messages_window.clear()
-            self.messages_window.addItem(
-                    'Click on the scene to place the symbol')
-            self.button_selected = item_type
-            if item_type == Connection:
-                self.mode = 'wait_connection_source'
-            else:
-                self.mode = 'wait_placement'
-            self.set_cursor(item_type)
-            return None
 
 
 class SDL_View(QtGui.QGraphicsView, object):
@@ -1332,6 +1338,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def refresh(self):
         ''' Refresh the complete view '''
+        LOG.debug('view refresh')
         self.scene().refresh()
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
@@ -1526,6 +1533,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             # Avoid doing it when editing texts - it would prevent text
             # selection or cursor move
             if not isinstance(self.scene().focusItem(), EditableText):
+                LOG.debug('mouseRelease refresh')
                 self.refresh()
         super(SDL_View, self).mouseReleaseEvent(evt)
 
@@ -1941,13 +1949,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.scene.messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
 
-        statechart_dock = self.findChild(QtGui.QDockWidget, 'statechart_dock')
         if graphviz:
             self.statechart_view = self.findChild(SDL_View, 'statechart_view')
             self.statechart_scene = SDL_Scene(context='statechart')
             self.statechart_view.setScene(self.statechart_scene)
-        else:
-            statechart_dock.hide()
 
         # Set up the dock area to display the ASN.1 Data model
         #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
@@ -2052,8 +2057,12 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 scene = self.view.scene()
             graph = scene.sdl_to_statechart()
             try:
-                Statechart.render_statechart(self.statechart_scene, graph)
+                Statechart.render_statechart(self.statechart_scene,
+                                             graph)
                 self.statechart_view.refresh()
+                self.statechart_view.fitInView(
+                        self.statechart_scene.itemsBoundingRect(),
+                        Qt.KeepAspectRatioByExpanding)
             except (IOError, TypeError) as err:
                 LOG.debug(str(err))
         elif key_event.key() == Qt.Key_Colon:

@@ -46,6 +46,9 @@ class ASN1(Enum):
     NoConstraintReference = 3
     UniqueEnumeratedNames = 4
     AstOnly = 5
+    NoRename = 0
+    RenameOnlyConflicting = 1
+    RenameAllEnumerants = 2
 
 
 def parse_asn1(*files, **options):
@@ -57,8 +60,10 @@ def parse_asn1(*files, **options):
     global AST
 
     ast_version = options.get('ast_version', ASN1.UniqueEnumeratedNames)
+    rename_policy = options.get('rename_policy', ASN1.NoRename)
     flags = options.get('flags', [ASN1.AstOnly])
     assert isinstance(ast_version, ASN1)
+    assert isinstance(rename_policy, ASN1)
     assert isinstance(flags, list)
     #if os.name == 'posix' and hasattr(sys, 'frozen'):
         # Frozen Linux binaries are expected to use the frozen ASN.1 compiler
@@ -94,7 +99,7 @@ def parse_asn1(*files, **options):
 
     args = [arg0, '-customStgAstVerion', str(ast_version.value),
             '-customStg', stg + '::' + filepath,
-            '-renamePolicy', '0'] + list(*files)
+            '-renamePolicy', str(rename_policy.value)] + list(*files)
     asn1scc = QProcess()
     LOG.debug(os.getcwd())
     LOG.debug(binary + ' ' + ' '.join(args))

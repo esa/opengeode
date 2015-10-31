@@ -14,6 +14,7 @@
 """
 
 import logging
+import os
 from singledispatch import singledispatch
 
 import Helper
@@ -839,7 +840,9 @@ LD_LIBRARY_PATH=. taste-gui -l
     if string_include == True:
         c_source_code.extend(['#include <string.h>'])
 
-    c_source_code.extend(['#include \"dataview-uniq.h\"'])
+    for each in process.DV.asn1Files:
+        hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
+        c_source_code.extend(['#include "{}"'.format(hname)])
     c_source_code.append('#include \"{pn}.h\"'.format(pn=process_name))
 
     c_source_code.extend(global_decls)
@@ -1253,7 +1256,13 @@ def _prim_selector(prim):
     if receiver_bty.kind == 'ChoiceType':
         string = ('{sort}_{field_name}_get({string})'.format(sort=type_name(receiver.exprType), field_name=field_name, string=string))
     else:
-        string += '.' + field_name
+        # Sequence: we must get the right casing of the field
+        for field_case in receiver_bty.Children:
+            if field_case.lower() == field_name.lower():
+                break
+        else:
+            field_case = field_name
+        string += '.' + field_case
 
     return stmts, unicode(string), local_decl
 

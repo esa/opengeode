@@ -46,7 +46,7 @@ LOG = logging.getLogger(__name__)
 class Record(genericSymbols.HorizontalSymbol, object):
     ''' Graphviz node - it is floating and has no parent'''
     _unique_followers = []
-    _insertable_followers = ['Record', 'Diamond']
+    _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
     textbox_alignment = (QtCore.Qt.AlignTop
                          | QtCore.Qt.AlignHCenter)
@@ -89,12 +89,16 @@ class Record(genericSymbols.HorizontalSymbol, object):
         # Discard mouse release default action (CAM, UndoCommand)
         pass
 
+    def mouse_move(self, event):
+        ''' Disallow moving the symbols - this scene is auto-generated '''
+        pass
+
 
 # pylint: disable=R0904
 class Point(genericSymbols.HorizontalSymbol, object):
     ''' Graphviz point node - used for START transition'''
     _unique_followers = []
-    _insertable_followers = ['Record', 'Diamond']
+    _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
     textbox_alignment = (QtCore.Qt.AlignTop
                          | QtCore.Qt.AlignHCenter)
@@ -131,12 +135,16 @@ class Point(genericSymbols.HorizontalSymbol, object):
         #self.scene().refresh()
         update(self.scene())
 
+    def mouse_move(self, event):
+        ''' Disallow moving the symbols - this scene is auto-generated '''
+        pass
+
 
 # pylint: disable=R0904
 class Diamond(genericSymbols.HorizontalSymbol, object):
     ''' Graphviz node - it is floating and has no parent'''
     _unique_followers = []
-    _insertable_followers = ['Record']
+    _insertable_followers = ['Record', 'Stop']
     _terminal_followers = []
     textbox_alignment = (QtCore.Qt.AlignTop
                          | QtCore.Qt.AlignHCenter)
@@ -172,6 +180,57 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
     def mouse_release(self, _):
         ''' After moving item, ask dot to recompute the edges '''
         #update(self.scene())
+        pass
+
+    def mouse_move(self, event):
+        ''' Disallow moving the symbols - this scene is auto-generated '''
+        pass
+
+
+# pylint: disable=R0904
+class Stop(genericSymbols.HorizontalSymbol, object):
+    ''' Graphviz state exit node - it is floating and has no parent'''
+    _unique_followers = []
+    _insertable_followers = []
+    _terminal_followers = []
+    textbox_alignment = (QtCore.Qt.AlignTop
+                         | QtCore.Qt.AlignHCenter)
+    has_text_area = True
+
+    def __init__(self, node, graph):
+        ''' Initialization: compute the polygon shape '''
+        self.name = node['name']
+        super(Stop, self).__init__(x=node['pos'][0], y=node['pos'][1],
+                                   text=self.name)
+        self.set_shape(node['width'], node['height'])
+        self.graph = graph
+        # Text in statecharts is read-only:
+        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+
+    def set_shape(self, width, height):
+        ''' Define the polygon shape from width and height '''
+        path = QtGui.QPainterPath()
+        path.lineTo(width, height)
+        path.moveTo(width, 0)
+        path.lineTo(0, height)
+        self.setPath(path)
+        super(Stop, self).set_shape(width, height)
+
+    def resize_item(self, _):
+        ''' Redefine the resizing function - forbid resizing '''
+        pass
+
+    def __str__(self):
+        ''' User-friendly information about the node '''
+        return('Stop node ' + self.name + ' at pos ' + str(self.pos()) +
+                ' bounding rect = ' + str(self.boundingRect()))
+
+    def mouse_release(self, _):
+        ''' After moving item, ask dot to recompute the edges '''
+        pass
+
+    def mouse_move(self, event):
+        ''' Disallow moving the symbols - this scene is auto-generated '''
         pass
 
 
@@ -303,17 +362,21 @@ def update(scene):
     '''
         Parse the graph symbols and create a graphviz graph
         Used to update the edges in case user moves nodes.
+        This function is disabled because move of symbols is not possible
+        anymore.
     '''
+    return
     nodes = [{'name':node.name, 'pos':
         node.mapToScene(node.boundingRect().center()),
         'shape': type(node), 'width': node.boundingRect().width(),
         'height': node.boundingRect().height()}
-        for node in scene.items() if isinstance(node,
-                                               (Point, Diamond, Record))]
+        for node in scene.visible_symb if isinstance(node,
+                                               (Point, Diamond, Record, Stop))]
     graph = dotgraph.AGraph(
             strict=False, directed=True, splines='spline', start='rand')
 
-    lookup = {Point: 'point', Record: 'record', Diamond: 'diamond'}
+    lookup = {Point: 'point', Record: 'record',
+              Diamond: 'diamond', Stop: 'plaintext'}
     for node in nodes:
         center_pos = node['pos']
         bb_height = scene.itemsBoundingRect().height()
@@ -324,10 +387,9 @@ def update(scene):
         center_x = center_pos.x() * (dpi / RENDER_DPI['X'])
         center_y = (bb_height - center_pos.y()) * (dpi / RENDER_DPI['Y'])
 
-        #pos = unicode('{x},{y}'.format(x=int(center_x), y=int(center_y)))
         pos = unicode('{x},{y}'.format(x=float(center_x), y=float(center_y)))
 
-        if node['shape'] in (Point, Diamond):
+        if node['shape'] in (Point, Diamond, Stop):
             graph.add_node(node['name'], pos=pos, shape=lookup[node['shape']],
                 fixedsize='true', width=node['width'] / RENDER_DPI['X'],
                 height=node['height'] / RENDER_DPI['Y'], pin=True)
@@ -343,7 +405,8 @@ def update(scene):
     if nodes:
         before = scene.itemsBoundingRect().center()
         #before_pos = graph.get_node(nodes[0]['name']).attr['pos']
-        render_statechart(scene, graph, keep_pos=True)
+        render_statechart(scene, {'graph': graph, 'children': {}},
+                          keep_pos=True)
         #after_pos = graph.get_node(nodes[0]['name']).attr['pos']
         #print before_pos,after_pos
         delta = scene.itemsBoundingRect().center() - before
@@ -353,15 +416,50 @@ def update(scene):
             item.position = QtCore.QPointF(item.position - delta)
 
 
-def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
+def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     ''' Render a graphviz/dot statechart on the QGraphicsScene
         set a filename to "dump_gfx" parameter to create a PNG of the graph
+        input is resulting from sdl_to_statechart, it contains a tree of graphs
+        in case of composite states.
     '''
+    # Go recursive first: render children
+    for aname, agraph in graphtree['children'].viewitems():
+        # Render each child in a temporary scene to get the size of the scene
+        # in order to resize the parent node accordingly
+        temp_scene = type(scene)()
+        render_statechart(temp_scene, agraph, keep_pos, dump_gfx)
+        w = temp_scene.width()
+        for node in graphtree['graph'].iternodes():
+            if node == aname:
+                size = temp_scene.itemsBoundingRect()
+                node.attr['width'] = ((temp_scene.width() + 30)
+                                      / RENDER_DPI['X'])
+                node.attr['height'] = ((temp_scene.height() + 35)
+                                      / RENDER_DPI['Y'])
+                graphtree['children'][aname]['scene'] = temp_scene
+                break
+
+    # Harmonize the size of states to avoid having huge composite state(s)
+    # next to single, small states. Rule: there can't be a state with a size
+    # that is less than a third of the biggest state.
+    min_width = float(max(node.attr.get('width', 0.0) or 0.0
+                    for node in graphtree['graph'].iternodes()))
+    min_height = float(max(node.attr.get('height', 0.0) or 0.0
+                    for node in graphtree['graph'].iternodes()))
+    if min_width and min_height:
+        for node in graphtree['graph'].iternodes():
+            if node.attr['shape'] != 'record':
+                continue
+            node.attr['width'] = node.attr.get('width') or min_width/3.0
+            node.attr['height'] = node.attr.get('height') or min_height/3.0
+
+
     # Statechart symbols lookup table
-    lookup = {'point': Point, 'record': Record, 'diamond': Diamond}
+    lookup = {'point': Point, 'record': Record,
+              'diamond': Diamond, 'plaintext': Stop}
     try:
         # Bonus: the tool can render any dot graph...
-        graph = graph or dotgraph.AGraph('taste.dot')
+        graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
     except IOError:
         LOG.info('No statechart to display....')
         raise
@@ -375,7 +473,7 @@ def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
 
     # Compute all the coordinates (self-modifying function)
     # Force the fontsize of the nodes to be 12, as in OpenGEODE
-    # use -n2 below to keep user-specified node coordinates
+    # use -n1 below to keep user-specified node coordinates
     if dump_gfx:
         dump_name = 'sc_' + os.path.basename(dump_gfx)
         dump_gfx = os.path.dirname(dump_gfx) or '.' + os.sep + dump_name
@@ -384,7 +482,7 @@ def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
 
     graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
                  '-Gsplines=curved -Gsep=1 '
-                 '-Gstart=random10 -Goverlap=false '
+                 '-Gstart=random10 -Goverlap=scale '
             '-Nstyle=rounded -Nshape=record -Elen=1 {kp} {dump}'
             .format(kp='-n1' if keep_pos else '',
                     dump=('-Tpng -o' + dump_gfx) if dump_gfx else ''))
@@ -406,10 +504,11 @@ def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
     nodes = preprocess_nodes(graph, bounding_rect, dot_dpi)
     node_symbols = []
     for node in nodes:
-        #print node
         shape = node.get('shape')
         try:
             node_symbol = lookup[shape](node, graph)
+            if graphtree['children'] and shape == 'record':
+                node_symbol.setBrush(QtGui.QBrush(QtGui.QColor(249, 249, 249)))
             G_SYMBOLS.add(node_symbol)
             node_symbols.append(node_symbol)
             scene.addItem(node_symbol)
@@ -420,6 +519,22 @@ def render_statechart(scene, graph=None, keep_pos=False, dump_gfx=''):
     for edge in edges:
         Edge(edge, graph)
 
+    for aname, agraph in graphtree['children'].viewitems():
+        # At the end, place the content of the scene of the composite states
+        # in the symbol by moving them from their temporary scene
+        for symb in scene.visible_symb:
+            if unicode(symb) == aname:
+                deltapos = symb.scenePos() + QtCore.QPointF(30.0, 30.0)
+                for each in agraph['scene'].floating_symb:
+                    # In principle we should change the parentItem to make sure
+                    # that all children items are moved together with their
+                    # parent. Unfortunately calls to setParentItem provoke
+                    # a segfault. To be tried again when PySide is fixed...
+                    #each.setParent(symb)
+                    scene.addItem(each)
+                    each.position += deltapos
+                    each.setZValue(each.zValue() + symb.zValue() + 1)
+
 
 def create_dot_graph(root_ast, basic=False):
     ''' Return a dot.AGraph item, from an ogAST.Process or child entry
@@ -427,6 +542,7 @@ def create_dot_graph(root_ast, basic=False):
         between two states and no diamond nodes
     '''
     graph = dotgraph.AGraph(strict=False, directed=True)
+    ret = {'graph': graph, 'children': {}}
     diamond = 0
     for state in root_ast.mapping.viewkeys():
         # create a new node for each state (including nested states)
@@ -434,21 +550,24 @@ def create_dot_graph(root_ast, basic=False):
             graph.add_node(state, label='', shape='point',
                            fixedsize='true', width=10.0 / 72.0)
         else:
-            #print 'adding', state
             graph.add_node(state, label=state, shape='record', style='rounded')
-    for each in root_ast.composite_states:
-        # this will have to be recursive
-        subnodes = (name for name in graph.iternodes()
-                    if name.startswith(each.statename.lower() + '_'))
-        graph.add_subgraph(subnodes, name='cluster_' + each.statename.lower(),
-                           label=each.statename.lower(),
-                           style='rounded', shape='record')
+#   for each in root_ast.composite_states:
+#       # this will have to be recursive
+#       subnodes = (name for name in graph.iternodes()
+#                   if name.startswith(each.statename.lower() + '_'))
+#       graph.add_subgraph(subnodes, name='cluster_' + each.statename.lower(),
+#                          label=each.statename.lower(),
+#                          style='rounded', shape='record')
+    for each in [term for term in root_ast.terminators
+                 if term.kind == 'return']:
+        # create a new node for each RETURN statement (in nested states)
+        ident = each.inputString or 'default'
+        graph.add_node(ident, label=ident, shape='plaintext')
     for state, inputs in root_ast.mapping.viewitems():
         # Add edges
         transitions = \
             inputs if not state.endswith('START') \
                    else [root_ast.transitions[inputs]]
-                   #[root_ast.content.start]
         # Allow simplified graph, without diamonds and with at most one
         # transition from a given state to another
         target_states = defaultdict(set)
@@ -462,12 +581,18 @@ def create_dot_graph(root_ast, basic=False):
                 label = label.strip().replace('\n', ' ')
             except AttributeError:
                 # START transition may have no inputString
-                label = ''
+                for each in root_ast.content.named_start:
+                    # each is of type ogAST.Start
+                    if each.transition == trans:
+                        label = each.inputString[:-6]
+                        break
+                else:
+                    label = ''
 
             def find_terminators(trans):
-                ''' Recursively find all NEXTSTATES '''
+                ''' Recursively find all NEXTSTATES and RETURN nodes '''
                 next_states = [term for term in trans.terminators
-                               if term.kind == 'next_state']
+                               if term.kind in ('next_state', 'return')]
                 joins = [term for term in trans.terminators
                          if term.kind == 'join']
                 for join in joins:
@@ -482,8 +607,12 @@ def create_dot_graph(root_ast, basic=False):
                         LOG.error('Missing label: ' + join.inputString)
                     else:
                         # Don't recurse forever in case of livelock
-                        if corr_label.inputString != trans.inputString:
-                            next_states.extend(find_terminators(corr_label))
+                        try:
+                            if corr_label.inputString != trans.inputString:
+                                next_states.extend(find_terminators(corr_label))
+                        except AttributeError:
+                            # START transition -> no inputString
+                            pass
                 return set(next_states)
 
             # Determine the list of terminators in this transition
@@ -504,12 +633,7 @@ def create_dot_graph(root_ast, basic=False):
                 if term.inputString.strip() == '-':
                     target = state
                 else:
-                    target = term.inputString.lower()
-                for each in root_ast.composite_states:
-                    # check with deeper nesting
-                    if each.statename.lower() == target.lower():
-                        target = 'cluster_' + target
-                        break
+                    target = term.inputString.lower() or 'default'
                 if basic:
                     target_states[target].add(label)
                 else:
@@ -517,9 +641,12 @@ def create_dot_graph(root_ast, basic=False):
         for target, labels in target_states.viewitems():
             # Basic mode
             graph.add_edge(source, target, label=',\n'.join(labels))
-#    with open('statechart.dot', 'w') as output:
-#        output.write(graph.to_string())
-    return graph
+#   with open('statechart.dot', 'w') as output:
+#       output.write(graph.to_string())
+    #return graph
+    for each in root_ast.composite_states:
+        ret['children'][each.statename] = create_dot_graph(each, basic)
+    return ret
 
 
 if __name__ == '__main__':

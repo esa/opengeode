@@ -1,0 +1,321 @@
+SYSTEM sdl_scene;
+    /* CIF TEXT (250, 19), (299, 152) */
+    -- SDL Scene behaviour
+use datatypes comment 'sdl_scene.asn';
+-- events that can be received by a scene
+
+signal mousePressEvent(QMouseEvent);
+signal mouseReleaseEvent(QMouseEvent);
+signal mouseMoveEvent(QMouseEvent);
+signal keyPressEvent(QKeyEvent);
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO sdl_scene WITH mousePressEvent,
+mouseMoveEvent,
+mouseReleaseEvent,
+keyPressEvent;
+    ENDCHANNEL;
+    BLOCK sdl_scene;
+        SIGNALROUTE r
+            FROM ENV TO sdl_scene WITH mousePressEvent,
+mouseMoveEvent,
+mouseReleaseEvent,
+keyPressEvent;
+        CONNECT c AND r;
+        /* CIF PROCESS (287, 201), (150, 75) */
+        PROCESS sdl_scene;
+            /* CIF TEXT (460, 91), (372, 557) */
+            -- Items accessible as properties
+
+-- The visible symbols of the scene
+dcl visible_symb Undefined;
+
+-- All EditableText areas of the scene
+dcl editable_texts Undefined;
+
+-- Top level floating items
+dcl floating_symb Undefined;
+
+-- Visible processes
+dcl processes Undefined;
+
+-- Visible procedures
+dcl procedures Undefined;
+
+-- Visible stuff
+dcl texts, procs, start_, floating_labels,
+      returns Undefined; 
+
+-- All nested states (recursive)
+dcl all_nested_scenes Undefined;
+
+-- Keep a list of composite states {statename: SDL_Scene}
+dcl composite_states Undefined;
+
+-- Path to the current scene (list)
+dcl path Undefined;
+
+-- Selected symbols (excluding grabbers) - generator
+dcl selected_symbols Undefined;
+            /* CIF ENDTEXT */
+            /* CIF TEXT (0, 86), (442, 696) */
+            -- Scene static data
+
+dcl parent_scene Undefined;
+
+-- Context can be process, procedure, block...
+dcl context Context;
+
+-- Depending on the context
+dcl allowed_symbols Undefined;
+
+dcl all_possible_actions Undefined;
+dcl actions Undefined;
+
+-- Handle Undo/Redo commands 
+dcl undo_stack QUndoStack;
+
+-- To store selected symbol until next click on the scene
+-- to place the symbol
+dcl button_selected Undefined;
+
+-- Pointer to place messages on the log window
+dcl messages_window Undefined;
+
+dcl click_coordinates Undefined;
+
+dcl orig_pos Undefined;
+
+dcl process_name String := 'opengeode';
+
+-- Used to update the tab window name when scene changes
+dcl name String;
+
+dcl search_item Undefined;
+dcl search_pattern Undefined;
+
+-- Selection rectangle when user clicks on the scene and moves mouse
+dcl select_rect Undefined;
+
+-- Keep a track of highlighted symbols {symbol: brush}
+dcl highlighted Undefined;
+            /* CIF ENDTEXT */
+            /* CIF TEXT (848, 96), (289, 140) */
+            -- Local variables used for the parameters
+-- of external signals
+
+dcl mouseEvent QMouseEvent;
+dcl keyEvent QKeyEvent;
+            /* CIF ENDTEXT */
+            /* CIF PROCEDURE (1193, 80), (104, 35) */
+            PROCEDURE quit_scene
+            /* CIF COMMENT (1321, 69), (137, 56) */
+            COMMENT 'Called in case of
+scene switch
+(e.g. UP button)';
+                /* CIF START (53, 35), (70, 35) */
+                START;
+                    /* CIF RETURN (70, 85), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1193, 143), (150, 35) */
+            PROCEDURE render_everything
+            /* CIF COMMENT (1363, 132), (166, 56) */
+            COMMENT 'Render a process and
+its children scenes,
+recursively';
+                /* CIF TEXT (212, 64), (289, 140) */
+                fpar in ast Undefined;
+                /* CIF ENDTEXT */
+                /* CIF START (53, 53), (70, 35) */
+                START;
+                    /* CIF RETURN (70, 103), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1197, 208), (81, 35) */
+            PROCEDURE refresh
+            /* CIF COMMENT (1299, 197), (161, 56) */
+            COMMENT 'Refresh the symbols
+and connections in
+the scene';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1197, 273), (103, 35) */
+            PROCEDURE set_cursor
+            /* CIF COMMENT (1316, 271), (190, 40) */
+            COMMENT 'Cursor shape depends on
+the selected menu item';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1199, 337), (115, 35) */
+            PROCEDURE reset_cursor
+            /* CIF COMMENT (1331, 329), (124, 50) */
+            COMMENT 'Go back to
+default cursor';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1183, 416), (153, 35) */
+            PROCEDURE translate_to_origin
+            /* CIF COMMENT (1353, 397), (201, 72) */
+            COMMENT 'Translate all titems
+to coordinate system
+starting at (0,0) to 
+avoid negative coordinates';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1190, 506), (118, 35) */
+            PROCEDURE set_selection
+            /* CIF COMMENT (1325, 498), (213, 50) */
+            COMMENT 'When selection has changed,
+update menu, etc.';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1202, 582), (121, 35) */
+            PROCEDURE syntax_errors
+            /* CIF COMMENT (1339, 566), (167, 66) */
+            COMMENT 'Parse a symbol and
+return a list of syntax
+errors';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1201, 674), (121, 35) */
+            PROCEDURE check_syntax
+            /* CIF COMMENT (1337, 658), (206, 66) */
+            COMMENT 'Check syntax of a symbol
+and display a pop-up in case
+of errors';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1199, 766), (163, 35) */
+            PROCEDURE global_syntax_check
+            /* CIF COMMENT (1378, 750), (231, 66) */
+            COMMENT 'Parse each visible symbol in the
+scene and its children and check
+its syntax.';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1166, 845), (183, 35) */
+            PROCEDURE update_completion_list
+            /* CIF COMMENT (1365, 837), (261, 50) */
+            COMMENT 'When text as changed on a symbol,
+update the data dictionnary';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1219, 896), (118, 35) */
+            PROCEDURE highlight
+            /* CIF COMMENT (1354, 896), (151, 34) */
+            COMMENT 'Highlight a symbol';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1216, 955), (135, 35) */
+            PROCEDURE clear_highlight
+            /* CIF COMMENT (1369, 952), (241, 40) */
+            COMMENT 'Remove the highlight of one item
+or all items on the scene';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1567, 100), (95, 35) */
+            PROCEDURE find_text
+            /* CIF COMMENT (1682, 89), (178, 56) */
+            COMMENT 'Return all symbols with
+matching text';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1576, 164), (81, 35) */
+            PROCEDURE search
+            /* CIF COMMENT (1678, 153), (205, 56) */
+            COMMENT 'Search and replace function';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1526, 228), (191, 35) */
+            PROCEDURE delete_selected_symbols
+            /* CIF COMMENT (1739, 217), (234, 56) */
+            COMMENT 'Remove symbols from the scene
+and properly reconnect items';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1574, 299), (191, 35) */
+            PROCEDURE copy_selected_symbols
+            /* CIF COMMENT (1786, 300), (195, 34) */
+            COMMENT 'Copy symbols in AST form';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1584, 358), (191, 35) */
+            PROCEDURE cut_selected_symbols
+            /* CIF COMMENT (1796, 359), (142, 34) */
+            COMMENT 'Copy then delete';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1594, 422), (128, 35) */
+            PROCEDURE paste_symbols
+            /* CIF COMMENT (1743, 423), (233, 40) */
+            COMMENT 'Paste previously copied symbols
+at selection point';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1597, 480), (145, 35) */
+            PROCEDURE sdl_to_statechart
+            /* CIF COMMENT (1759, 477), (236, 40) */
+            COMMENT 'Create a graphviz representation
+of the SDL model';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1583, 544), (196, 35) */
+            PROCEDURE export_branch_to_picture
+            /* CIF COMMENT (1800, 527), (139, 66) */
+            COMMENT 'Save a symbol
+and its followers
+to a file';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1616, 613), (107, 35) */
+            PROCEDURE export_img
+            /* CIF COMMENT (1741, 605), (240, 50) */
+            COMMENT 'Save the scene as png, svg or pdf
+Optionally split into multiple files';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1619, 685), (114, 35) */
+            PROCEDURE clear_focus
+            /* CIF COMMENT (1750, 677), (193, 50) */
+            COMMENT 'Clear focus from any item
+on the scene';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1627, 747), (117, 35) */
+            PROCEDURE symbol_near
+            /* CIF COMMENT (1761, 739), (193, 50) */
+            COMMENT 'If any, returns symbol
+around a point';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1636, 808), (117, 35) */
+            PROCEDURE can_insert
+            /* CIF COMMENT (1770, 800), (209, 50) */
+            COMMENT 'Check if we can insert an
+item type at a given position';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1636, 882), (140, 35) */
+            PROCEDURE create_subscene
+            /* CIF COMMENT (1794, 874), (178, 50) */
+            COMMENT 'Create a new scene,
+e.g. for nested symbols';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1637, 948), (140, 35) */
+            PROCEDURE place_symbol
+            /* CIF COMMENT (1790, 949), (207, 34) */
+            COMMENT 'Draw a symbol on the scene';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (1628, 1001), (120, 35) */
+            PROCEDURE add_symbol
+            /* CIF COMMENT (1768, 993), (207, 50) */
+            COMMENT 'Add a symbol or postpone
+until a parent is selected';
+            ENDPROCEDURE;
+            /* CIF START (2068, 103), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (2068, 153), (70, 35) */
+                NEXTSTATE idle;
+            /* CIF STATE (2148, 107), (70, 35) */
+            STATE idle;
+            ENDSTATE;
+            /* CIF STATE (2068, 153), (70, 35) */
+            STATE idle;
+                /* CIF INPUT (2029, 208), (147, 40) */
+                INPUT mousePressEvent
+(mouseEvent);
+                    /* CIF PROCEDURECALL (2044, 263), (115, 35) */
+                    CALL reset_cursor;
+                    /* CIF DECISION (2023, 313), (158, 50) */
+                    DECISION mouseEvent!button;
+                            /* CIF ANSWER (2022, 383), (70, 24) */
+                            (left):
+                                /* CIF NEXTSTATE (2022, 422), (70, 35) */
+                                NEXTSTATE -;
+                            /* CIF ANSWER (2112, 383), (70, 24) */
+                            else:
+                                /* CIF NEXTSTATE (2112, 422), (70, 35) */
+                                NEXTSTATE -;
+                    ENDDECISION;
+            ENDSTATE;
+        ENDPROCESS sdl_scene;
+    ENDBLOCK;
+ENDSYSTEM;

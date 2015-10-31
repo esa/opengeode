@@ -142,6 +142,7 @@ class EditableText(QGraphicsTextItem, object):
 
     def __init__(self, parent, text='...', hyperlink=None):
         super(EditableText, self).__init__(parent)
+        self.parent = parent
         self.setFont(QFont('Ubuntu', 10))
         self.completer = Completer(self)
         self.completer.widget().itemActivated.connect(
@@ -177,7 +178,7 @@ class EditableText(QGraphicsTextItem, object):
 
     def set_text_alignment(self):
         ''' Apply the required text alignment within the text box '''
-        alignment = self.parentItem().text_alignment
+        alignment = self.parent.text_alignment
         self.setTextWidth(self.boundingRect().width())
         fmt = QTextBlockFormat()
         fmt.setAlignment(alignment)
@@ -189,11 +190,11 @@ class EditableText(QGraphicsTextItem, object):
 
     def set_textbox_position(self):
         ''' Compute the textbox position '''
-        parent_rect = self.parentItem().boundingRect()
+        parent_rect = self.parent.boundingRect()
         rect = self.boundingRect()
         # Use parent symbol alignment requirement
         # Does not support right nor bottom alignment
-        alignment = self.parentItem().textbox_alignment
+        alignment = self.parent.textbox_alignment
         rect_center = parent_rect.center() - rect.center()
         if alignment & Qt.AlignLeft:
             x_pos = 0
@@ -215,14 +216,14 @@ class EditableText(QGraphicsTextItem, object):
             If needed, request a resizing of the parent item
             (when text size expands)
         '''
-        if self.parentItem().auto_expand:
+        if self.parent.auto_expand:
             self.setTextWidth(-1)
-            parent_rect = self.parentItem().boundingRect()
+            parent_rect = self.parent.boundingRect()
             rect = self.boundingRect()
             if rect.width() + 30 > parent_rect.width():
                 parent_rect.setWidth(rect.width() + 30)
             parent_rect.setHeight(max(rect.height(), parent_rect.height()))
-            self.parentItem().resize_item(parent_rect)
+            self.parent.resize_item(parent_rect)
 
     @Slot(QListWidgetItem)
     def completion_selected(self, item):
@@ -317,7 +318,7 @@ class EditableText(QGraphicsTextItem, object):
             self.completer.show()
             # Make sure parent item has higher visibility than its siblings
             # (useful in decision branches)
-            self.parentItem().setZValue(1)
+            self.parent.setZValue(1)
             self.completer.setFocusProxy(self)
             self.setTabChangesFocus(True)
         else:
@@ -342,7 +343,7 @@ class EditableText(QGraphicsTextItem, object):
         if not self.completer or not self.completer.isVisible():
             # Trigger a select - side effect makes the toolbar update
             try:
-                self.parentItem().select(True)
+                self.parent.select(True)
             except AttributeError:
                 # Some parents may not be selectable (e.g. Signalroute)
                 pass
@@ -352,21 +353,21 @@ class EditableText(QGraphicsTextItem, object):
                 text_cursor.clearSelection()
                 self.setTextCursor(text_cursor)
             # If something has changed, check syntax and create undo command
-            if(self.oldSize != self.parentItem().boundingRect() or
+            if(self.oldSize != self.parent.boundingRect() or
                                                 self.oldText != unicode(self)):
                 # Call syntax checker from item containing the text (if any)
-                self.scene().check_syntax(self.parentItem())
+                self.scene().check_syntax(self.parent)
                 # Update class completion list
                 self.scene().update_completion_list(self.parentItem())
                 # Create undo command, including possible CAM
                 with undoCommands.UndoMacro(self.scene().undo_stack, 'Text'):
                     undo_cmd = undoCommands.ResizeSymbol(
-                                          self.parentItem(), self.oldSize,
-                                          self.parentItem().boundingRect())
+                                          self.parent, self.oldSize,
+                                          self.parent.boundingRect())
                     self.scene().undo_stack.push(undo_cmd)
                     try:
-                        self.parentItem().cam(self.parentItem().pos(),
-                                              self.parentItem().pos())
+                        self.parent.cam(self.parent.pos(),
+                                              self.parent.pos())
                     except AttributeError:
                         # Some parents may not have CAM function (e.g. Channel)
                         pass
@@ -376,10 +377,9 @@ class EditableText(QGraphicsTextItem, object):
                     self.scene().undo_stack.push(undo_cmd)
         self.set_text_alignment()
         # Reset Z-Values that were increased when getting focus
-        parent = self.parentItem()
-        top_level = parent.top_level()
+        top_level = self.parent.top_level()
         top_level.setZValue(top_level.zValue() - 1)
-        parent.setZValue(parent.zValue() - 1)
+        self.parent.setZValue(self.parent.zValue() - 1)
         super(EditableText, self).focusOutEvent(event)
 
     # pylint: disable=C0103
@@ -388,14 +388,13 @@ class EditableText(QGraphicsTextItem, object):
         super(EditableText, self).focusInEvent(event)
         # Change the Z-value of items to make sure the
         # completer is always be on top of other symbols
-        parent = self.parentItem()
-        top_level = parent.top_level()
+        top_level = self.parent.top_level()
         top_level.setZValue(top_level.zValue() + 1)
-        parent.setZValue(parent.zValue() + 1)
+        self.parent.setZValue(self.parent.zValue() + 1)
 
         # Trigger a select - side effect makes the toolbar update
         try:
-            parent.select(True)
+            self.parent.select(True)
         except AttributeError:
             # Some parents may not be selectable (e.g. Signalroute)
             pass
@@ -408,7 +407,7 @@ class EditableText(QGraphicsTextItem, object):
         self.setTextWidth(-1)
         if not self.editing:
             self.oldText = unicode(self)
-            self.oldSize = parent.boundingRect()
+            self.oldSize = self.parent.boundingRect()
             self.editing = True
 
     def __str__(self):

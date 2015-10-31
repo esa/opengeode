@@ -13,8 +13,11 @@
                                     input-state-transition
         sorted_fields(SEQ/CHOICE) : returns the ordered list of fields
                                     of an ASN.1 SEQUENCE or CHOICE type
+        state_aggregations: enrich AST with state aggregation flags,
+                            and return the list of substates of aggregations
+        parallel_states: return a list of strings naming all parallel states
 
-    Copyright (c) 2012-2014 European Space Agency
+    Copyright (c) 2012-2015 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -33,7 +36,55 @@ import ogAST
 LOG = logging.getLogger(__name__)
 
 __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
-           'map_input_state', 'sorted_fields']
+           'map_input_state', 'sorted_fields', 'state_aggregations',
+           'parallel_states']
+
+
+def state_aggregations(process):
+    ''' Explore recursively the AST to find all state aggregations, and
+        return the composite states inside them
+        input: ogAST.Process element
+        output: {state_aggregation: {list of ogAST.CompositeState}
+    '''
+    # { aggregate_name : [list of parallel states] }
+    aggregates = defaultdict(list)
+    def do_composite(comp, aggregate=''):
+        ''' Recursively find all state aggregations in order to create
+        variables to store the state of each parallel state '''
+        for each in comp.composite_states: # CHECKME
+            pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
+                    else ''
+            do_composite(each, pre)
+            if isinstance(each, ogAST.StateAggregation):
+                for term in comp.terminators:
+                    if term.inputString.lower() == each.statename.lower():
+                        term.next_is_aggregation = True
+        if aggregate and not isinstance(comp, ogAST.StateAggregation):
+            # Composite state inside a state aggregation
+            aggregates[aggregate].append(comp)
+            # Here, all the terminators inside the composite states must
+            # be flagged with the name of the substate so that the NEXTSTATE
+            # will not be using the main "context.state" variable but will
+            # use the parallel substate name when generating code.
+            for each in comp.terminators:
+                each.substate = comp.statename
+    for each in process.composite_states:
+        do_composite(each)
+    for each in process.terminators:
+        if each.inputString.lower() in aggregates:
+            each.next_is_aggregation = True
+    return aggregates
+
+
+def parallel_states(aggregates):
+    ''' Given a mapping obtained with state_aggregation(process), extract
+        all parallel states and return a list of state names '''
+    parallel_states = []
+    for name, comp in aggregates.viewitems():
+        for each in comp:
+            parallel_states.extend(name for name in each.mapping.viewkeys()
+                    if not name.endswith(u'START'))
+    return parallel_states
 
 
 def map_input_state(process):
@@ -89,16 +140,20 @@ def flatten(process, sep=u'_'):
                 term.next_id = u'{term}{sep}{entry}_START'.format(
                         term=term.inputString, entry=term.entrypoint, sep=sep)
         elif term.inputString.strip() == '-':
-            term.candidate_id = defaultdict(list)
+            #term.candidate_id = defaultdict(list)
             for each in term.possible_states:
-                if each.lower() in (st.statename.lower()
-                            for st in context.composite_states):
-                    term.candidate_id[each + sep + u'START'] = \
+                term.candidate_id[-1].append(each)
+                for comp in context.composite_states:
+                    if each.lower() == comp.statename.lower():
+                        if isinstance(comp, ogAST.StateAggregation):
+                            term.next_is_aggregation = True
+                            term.candidate_id[each + sep + u'START'] = [each]
+                        else:
+                            term.candidate_id[each + sep + u'START'] = \
                                        [st for st in process.mapping.viewkeys()
                                         if st.startswith(each)
                                         and not st.endswith(u'START')]
-                else:
-                    term.candidate_id[-1].append(each)
+                        continue
 
     def update_composite_state(state, process):
         ''' Rename inner states, recursively, and add inner transitions
@@ -171,8 +226,9 @@ def flatten(process, sep=u'_'):
             # Go recursively in inner composite states
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
-            propagate_inputs(inner, process.mapping[inner.statename])
-            del process.mapping[inner.statename]
+            # Remove: recursion is already handled within propagate_inputs
+            #propagate_inputs(inner, process)
+            #del process.mapping[inner.statename]
         for each in state.terminators:
             # Give prefix to terminators
             if each.label:
@@ -200,21 +256,26 @@ def flatten(process, sep=u'_'):
             each.inputString = prefix + each.inputString
         process.content.inner_procedures.extend(state.content.inner_procedures)
 
-    def propagate_inputs(nested_state, inputlist):
+    def propagate_inputs(nested_state, context):
         ''' Nested states: Inputs at level N must be handled at level N-1
             that is, all inputs of a composite states (the ones that allow
             to exit the composite state from the outer scope) must be
             processed by each of the substates.
         '''
-        for _, val in nested_state.mapping.viewitems():
-            try:
-                val.extend(inputlist)
-            except AttributeError:
-                pass
+        if not isinstance(nested_state, ogAST.StateAggregation):
+            for _, val in nested_state.mapping.viewitems():
+                try:
+                    inputlist = context.mapping[nested_state.statename]
+                    val.extend(inputlist)
+                except (AttributeError, KeyError):
+                    # KeyError in case of StateAggregation
+                    pass
         for each in nested_state.composite_states:
             # do the same recursively
-            propagate_inputs(each, nested_state.mapping[each.statename])
+            propagate_inputs(each, nested_state)
             #del nested_state.mapping[each.statename]
+        if not isinstance(nested_state, ogAST.StateAggregation):
+            del context.mapping[nested_state.statename]
 
     def set_terminator_states(context, prefix=''):
         ''' Associate state to terminators, needed to process properly
@@ -238,8 +299,8 @@ def flatten(process, sep=u'_'):
 
     for each in process.composite_states:
         update_composite_state(each, process)
-        propagate_inputs(each, process.mapping[each.statename])
-        del process.mapping[each.statename]
+        propagate_inputs(each, process)
+        #del process.mapping[each.statename]
 
     # Update terminators at process level
     for each in process.terminators:

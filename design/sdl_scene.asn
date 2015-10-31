@@ -1,0 +1,31 @@
+Scene DEFINITIONS ::=
+BEGIN
+
+Undefined ::= NULL
+
+QUndoStack ::= NULL
+
+Context ::= ENUMERATED {
+    sdl-process,
+    sdl-procedure,
+    sdl-block,
+    statechart,
+    lander
+}
+
+String ::= IA5String
+
+Position ::= SEQUENCE {
+    x REAL,
+    y REAL
+}
+
+-- mousePressEvent parameter
+QMouseEvent ::= SEQUENCE {
+    button ENUMERATED {left, middle, right},
+    scenePos Position
+}
+
+QKeyEvent ::= SEQUENCE {
+}
+END

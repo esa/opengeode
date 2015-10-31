@@ -606,6 +606,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # Since the cam function is recursive it may be time consuming
         # Call the Qt event prcessing to avoid blocking the application
         QApplication.processEvents()
+        ignore = ignore or []
         if not self.scene():
             # Make sure the item is in a scene. For instance, when loading
             # a model from a file, some items may be connected together
@@ -652,22 +653,15 @@ class Symbol(QObject, QGraphicsPathItem, object):
             self.isAncestorOf(j) or j is self]]
 
         # (c) Filter out the potentially colliding items
-        #     if they belong in the cam caller
-        items = [i for i in items if not ignore or not
-                i.commonAncestorItem(ignore)]
-
-        # Get the top level item of each collider
-        top_level_colliders = set()
-        for item in items:
-            while item.hasParent:
-                item = item.parentItem() or item.parent
-            top_level_colliders.add(item)
+        #     if they belong in the cam caller and keep only top-level items
+        items = {i.top_level() for i in items if not
+                any(c for c in ignore if i.commonAncestorItem(c))}
 
         # Determine how much we need to move the colliding groups and call
         # their CAM with this delta
         # Save colliders positions in case they are moved by a sub cam call
-        col_pos = {i: i.position for i in top_level_colliders}
-        for col in top_level_colliders:
+        col_pos = {i: i.position for i in items}
+        for col in items:
             collider_rect = (col.sceneBoundingRect() |
                     col.mapRectToScene(col.childrenBoundingRect()))
             if old_pos.y() + rect.height() <= collider_rect.y():
@@ -688,13 +682,14 @@ class Symbol(QObject, QGraphicsPathItem, object):
                         collider_rect.width() - 10 + rect.x())
                 delta.setY(col.y())
             if col.position == col_pos[col]:
-                col.cam(col.position, delta, ignore=self)
+                #print unicode(self), 'collides with', unicode(col)
+                col.cam(col.position, delta, ignore=ignore + [self])
                 # Put it back at the new position to make sure recursive
                 # CAM can happen properly with all object in new positions
                 # (End of CAM reset to the old position for animation)
                 col.position = delta
         # Place top level colliders in old position so that animation can run
-        for col in top_level_colliders:
+        for col in items:
             col.position = col_pos[col]
         self.update_connections()
         if animation:
@@ -702,6 +697,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
             # control loop runs again. Going back to original position
             # so that the animation can be done from the starting point
             self.position = old_pos
+        #print 'returning from cam'
 
 
 class Comment(Symbol):
@@ -1240,4 +1236,4 @@ class VerticalSymbol(Symbol, object):
                 branch_entry = branch_entry.parentItem() or branch_entry.parent
             branch_entry.cam(branch_entry.position, branch_entry.position)
         else:
-            super(VerticalSymbol, self).cam(old_pos, new_pos)
+            super(VerticalSymbol, self).cam(old_pos, new_pos, ignore)

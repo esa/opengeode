@@ -35,6 +35,7 @@
 """
 
 import logging
+from collections import defaultdict
 LOG = logging.getLogger(__name__)
 
 
@@ -463,6 +464,17 @@ class Terminator(object):
         self.possible_states = []
         # optional composite state content (type CompositeState)
         self.composite = None
+        # Flag to indicate if the nextstate is a state aggregation
+        self.next_is_aggregation = False
+        # If this terminator is within a state aggregation, store the name
+        # of the parallel substate (set by Helper.state_aggregations)
+        self.substate = ''
+        # candidate_id: {transition_id: [states]}
+        # field is set by Helper.py/flatten, in case of "nextstate -"
+        # there is a list of states that set transition_id to -1 : the standard
+        # states ; and there are the composite states, that set a different
+        # id corresponding to the start transition of the state.
+        self.candidate_id = defaultdict(list)
 
     def trace(self):
         ''' Debug output for terminators '''
@@ -716,7 +728,7 @@ class TextArea(object):
 
 
 class Automaton(object):
-    ''' Elements contained in a process or a procedure '''
+    ''' Elements contained in a process, procedure or composite state'''
     def __init__(self, parent=None):
         ''' AST grouping the elements that can be rendered graphically '''
         self.parent = parent
@@ -811,6 +823,8 @@ class Process(object):
         # dataview: complete AST of the ASN.1 types
         self.asn1Modules = None
         self.dataview = None
+        # Reference to the Python module containing the ASN.1 AST
+        self.DV = None
 
         # input and output signal lists:
         # [{'name': str, 'type': str, 'direction':'in'/'out'}]
@@ -874,6 +888,28 @@ class CompositeState(Process):
     def trace(self):
         ''' Debug output for composite state '''
         return u'COMPOSITE STATE {exp} ({l},{c})'.format(exp=self.statename,
+                l=self.line, c=self.charPositionInLine)
+
+
+class StateAggregation(CompositeState):
+    '''
+        State Aggregation (Parallel states) are supported since SDL2000
+        These states can only contain (in the self.content field):
+            text areas
+            procedure definitions
+            composite states (including sub-state aggregations)
+        But no state machine definition
+    '''
+    def __init__(self):
+        super(StateAggregation, self).__init__()
+        # List of partition connections:
+        # [{'outer': {'state_part_id': str, 'point': str},
+        #   'inner': {'state_part_id': str, 'point': str}}]
+        self.state_partition_connections = []
+
+    def trace(self):
+        ''' Debug output for state aggregation '''
+        return u'STATE AGGREGATION {exp} ({l},{c})'.format(exp=self.statename,
                 l=self.line, c=self.charPositionInLine)
 
 

@@ -1,0 +1,32 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM challenge;
+
+	PROCEDURE pow COMMENT '#c_predef';
+		FPAR
+			IN a T_UInt32,
+			IN b T_UInt32,
+			IN/OUT res T_UInt32;
+ 	EXTERNAL;
+
+	SIGNAL run;
+        SIGNAL go_off;
+        SIGNAL any_one;
+        signal any_two;
+
+	CHANNEL c
+		FROM ENV TO challenge WITH run, go_off, any_one, any_two;
+	ENDCHANNEL;
+
+	BLOCK challenge;
+
+		SIGNALROUTE r
+			FROM ENV TO challenge WITH run, go_off, any_one, any_two;
+
+		CONNECT c and r;
+
+		PROCESS challenge REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

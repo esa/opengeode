@@ -148,6 +148,17 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.3.0 (10/2015)
+     - Support for State Aggregations (parallel states)
+
+1.2.10 (10/2015)
+     - Better support of renamePolicy
+     - Better handling of models without CIF coordinates
+     - Minor bug fixes
+     - Forloop syntax error handled correctly when using range
+     - support Hex and bit string literals when working with OCTET STRING
+     - support OUT keyword for procedure FPAR
+
 1.2.4 (07/2015)
      - Use version 3.2.x of the ASN1SCC compiler with new -renamePolicy flag
      - Improve robustness

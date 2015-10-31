@@ -3,9 +3,10 @@
     ANTLR 3.1.3 grammar for the SDL92 langage
     Includes the following features from SDL2000+:
     - FOR loops in TASKs
-    - Composite states
+    - Composite states (nested and agreggation/parallel states)
 
     author: Maxime Perrotin
+    with contributions from Diego Barbera, Laurent Meyer
 */
 
 grammar sdl92;
@@ -46,6 +47,7 @@ tokens {
         ENDNEWTYPE;
         ENDSYNTYPE;
         ENDTEXT;
+        ENTRY_POINT;
         EXPORT;
         EXPRESSION;
         EXTERNAL;
@@ -84,6 +86,7 @@ tokens {
         PARAMS;
         PAREN;
         PFPAR;
+        POINT;
         PRIMARY;
         PROCEDURE;
         PROCEDURE_CALL;
@@ -104,6 +107,8 @@ tokens {
         SIGNAL_LIST;
         SORT;
         STATE;
+        STATE_AGGREGATION;
+        STATE_PARTITION_CONNECTION;
         STATELIST;
         STIMULUS;
         STOP;
@@ -137,18 +142,19 @@ tokens {
 /*
     Top level: any .pr file
 */
-
 pr_file
         :       (use_clause
                 | system_definition
-                | process_definition)+;
+                | process_definition)+
+        ;
 
 
 system_definition
         :       SYSTEM system_name end
                 entity_in_system*
                 ENDSYSTEM system_name? end
-        ->      ^(SYSTEM system_name entity_in_system*);
+        ->      ^(SYSTEM system_name entity_in_system*)
+        ;
 
 
 use_clause
@@ -156,13 +162,17 @@ use_clause
                 USE package_name
                 ('/' def_selection_list )?
                 end
-        ->      ^(USE use_asn1? end? package_name def_selection_list?);
+        ->      ^(USE use_asn1? end? package_name def_selection_list?)
+        ;
+
 
 /*
     In USE clause: USE package/X, Y, Z;
 */
 def_selection_list
-        :       ID (','! ID)*;
+        :       ID (','! ID)*
+        ;
+
 
 /* Entity in system:
    Declare signals, external procedures, connections and blocks
@@ -172,7 +182,8 @@ entity_in_system
                 | text_area
                 | procedure
                 | channel
-                | block_definition;
+                | block_definition
+        ;
 
 /* signal_declaration:
    e.g. SIGNAL open_door(typeA, typeB);
@@ -180,26 +191,30 @@ entity_in_system
 signal_declaration
         :       paramnames?
                 SIGNAL signal_id input_params? end
-        ->      ^(SIGNAL paramnames? signal_id input_params?);
+        ->      ^(SIGNAL paramnames? signal_id input_params?)
+        ;
 
 
 channel
         :       CHANNEL channel_id
                 route+
                 ENDCHANNEL end
-        ->      ^(CHANNEL channel_id route+);
+        ->      ^(CHANNEL channel_id route+)
+        ;
 
 
 route
         :       FROM source_id TO dest_id WITH signal_id (',' signal_id)* end
-        ->      ^(ROUTE source_id dest_id signal_id+);
+        ->      ^(ROUTE source_id dest_id signal_id+)
+        ;
 
 
 block_definition
         :       BLOCK block_id end
                 entity_in_block*
                 ENDBLOCK end
-        ->      ^(BLOCK block_id entity_in_block*);
+        ->      ^(BLOCK block_id entity_in_block*)
+        ;
 
 
 /* Inside a SDL block:
@@ -211,18 +226,21 @@ entity_in_block
                 | signalroute
                 | connection
                 | block_definition
-                | process_definition;
+                | process_definition
+        ;
 
 
 signalroute
         :       SIGNALROUTE route_id
                 route+
-        ->      ^(SIGNALROUTE route_id route+);
+        ->      ^(SIGNALROUTE route_id route+)
+        ;
 
 
 connection
         :       CONNECT channel_id AND route_id end
-        ->      ^(CONNECTION channel_id route_id);
+        ->      ^(CONNECTION channel_id route_id)
+        ;
 
 
 process_definition
@@ -240,16 +258,20 @@ process_definition
         ->      ^(PROCESS cif? process_id type_inst? number_of_instances? end?)
         ;
 
+
 // Process formal parameters
 pfpar
         :       FPAR parameters_of_sort
                 (',' parameters_of_sort)*
                 end
-        ->      ^(PFPAR parameters_of_sort+);
+        ->      ^(PFPAR parameters_of_sort+)
+        ;
+
 
 parameters_of_sort
         :       variable_id (',' variable_id)* sort
-        ->      ^(PARAM variable_id+ sort);
+        ->      ^(PARAM variable_id+ sort)
+        ;
 
 
 // procedure: missing the RETURNS statement
@@ -262,7 +284,8 @@ procedure
                 ((processBody? ENDPROCEDURE procedure_id?) | EXTERNAL)
                 e2=end
         ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar?
-                text_area* procedure* processBody? EXTERNAL?);
+                text_area* procedure* processBody? EXTERNAL?)
+        ;
 
 
 // Procedure formal parameters
@@ -270,13 +293,15 @@ fpar
         :       FPAR formal_variable_param
                 (',' formal_variable_param)*
                 end
-        ->      ^(FPAR formal_variable_param+);
+        ->      ^(FPAR formal_variable_param+)
+        ;
 
 
 formal_variable_param
-        :       (INOUT | IN)?
+        :       (INOUT | IN | OUT)?
                 variable_id (',' variable_id)* sort
-        ->      ^(PARAM INOUT? IN? variable_id+ sort);
+        ->      ^(PARAM INOUT? IN? OUT? variable_id+ sort)
+        ;
 
 
 // text_area: TODO add operator description in content
@@ -284,7 +309,8 @@ text_area
         :       cif
                 content?
                 cif_end_text
-        ->      ^(TEXTAREA cif content? cif_end_text);
+        ->      ^(TEXTAREA cif content? cif_end_text)
+        ;
 
 
 // Text areas can contain textual procedures, FPAR declarations,
@@ -301,87 +327,119 @@ content
                  | synonym_definition)*
         ->       ^(TEXTAREA_CONTENT fpar* procedure* variable_definition*
                    syntype_definition* newtype_definition* timer_declaration*
-                   signal_declaration* use_clause* synonym_definition*);
+                   signal_declaration* use_clause* synonym_definition*)
+        ;
 
 
 timer_declaration
         :       TIMER timer_id
                 (',' timer_id)*
                 end
-        ->      ^(TIMER timer_id+);
+        ->      ^(TIMER timer_id+)
+        ;
+
 
 syntype_definition
         :       SYNTYPE syntype_name '=' parent_sort
                 (CONSTANTS (range_condition (',' range_condition)* ))?
                 ENDSYNTYPE syntype_name? end
-        ->      ^(SYNTYPE syntype_name parent_sort range_condition*);
+        ->      ^(SYNTYPE syntype_name parent_sort range_condition*)
+        ;
+
 
 syntype_name
-        :       sort;
+        :       sort
+        ;
+
 
 parent_sort
-        :       sort;
+        :       sort
+        ;
+
 
 newtype_definition
         :       NEWTYPE type_name (array_definition|structure_definition)?
                 ENDNEWTYPE type_name? end
-        ->      ^(NEWTYPE type_name array_definition* structure_definition*);
+        ->      ^(NEWTYPE type_name array_definition* structure_definition*)
+        ;
 
 
 type_name
-        :       sort;
+        :       sort
+        ;
+
 
 array_definition
         :       ARRAY '(' sort ',' sort ')'
-        ->      ^(ARRAY sort sort);
+        ->      ^(ARRAY sort sort)
+        ;
+
 
 structure_definition
         :       STRUCT field_list end
-        ->      ^(STRUCT field_list);
+        ->      ^(STRUCT field_list)
+        ;
+
 
 field_list
         :       field_definition (end field_definition)*
-        ->      ^(FIELDS field_definition+);
+        ->      ^(FIELDS field_definition+)
+        ;
+
 
 field_definition
         :       field_name (',' field_name)* sort
-        ->      ^(FIELD field_name+ sort);
+        ->      ^(FIELD field_name+ sort)
+        ;
+
 
 variable_definition
         :       DCL variables_of_sort
                 (',' variables_of_sort)*
                 end
-        ->      ^(DCL variables_of_sort+);
+        ->      ^(DCL variables_of_sort+)
+        ;
+
 
 synonym_definition
-        :       internal_synonym_definition;
+        :       internal_synonym_definition
+        ;
+
 
 internal_synonym_definition
         :       SYNONYM synonym_definition_item (',' synonym_definition_item)*
                 end
-        ->      ^(SYNONYM_LIST synonym_definition_item+);
+        ->      ^(SYNONYM_LIST synonym_definition_item+)
+        ;
+
 
 synonym_definition_item
         :       sort sort '=' ground_expression
-        ->      ^(SYNONYM sort sort ground_expression);
+        ->      ^(SYNONYM sort sort ground_expression)
+        ;
+
 
 variables_of_sort
         :       variable_id (',' variable_id)* sort (':=' ground_expression)?
-        ->      ^(VARIABLES variable_id+ sort ground_expression?);
+        ->      ^(VARIABLES variable_id+ sort ground_expression?)
+        ;
 
 
 ground_expression
         :       expression
-        ->      ^(GROUND expression);
+        ->      ^(GROUND expression)
+        ;
 
 
 number_of_instances
         :       '(' initial_number=INT ',' maximum_number=INT ')'
-        ->      ^(NUMBER_OF_INSTANCES $initial_number $maximum_number);
+        ->      ^(NUMBER_OF_INSTANCES $initial_number $maximum_number)
+        ;
 
 
 processBody
-        :       start? (state | floating_label)*;
+        :       start? (state | floating_label)*
+        ;
 
 
 start
@@ -389,7 +447,8 @@ start
                 hyperlink?
                 START name=state_entry_point_name? end
                 transition?
-        ->      ^(START cif? hyperlink? $name? end? transition?);
+        ->      ^(START cif? hyperlink? $name? end? transition?)
+        ;
 
 
 floating_label
@@ -399,7 +458,8 @@ floating_label
                 transition?
                 cif_end_label?
                 ENDCONNECTION SEMI
-        ->      ^(FLOATING_LABEL cif? hyperlink? connector_name transition?);
+        ->      ^(FLOATING_LABEL cif? hyperlink? connector_name transition?)
+        ;
 
 
 state
@@ -408,45 +468,115 @@ state
                 STATE statelist e=end
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? hyperlink? $e? statelist state_part*);
+        ->      ^(STATE cif? hyperlink? $e? statelist state_part*)
+        ;
 
 
 statelist
         :       ((statename)(',' statename)*)
         ->      ^(STATELIST statename+)
                 | ASTERISK exception_state?
-        ->      ^(ASTERISK exception_state?);
+        ->      ^(ASTERISK exception_state?)
+        ;
 
 
 exception_state
         :       '(' statename (',' statename)* ')'
-        ->      statename+;
+        ->      statename+
+        ;
 
 
+// 11.11 State Machine and Composite State (SDL2000)
 composite_state
+        :       composite_state_graph
+                | state_aggregation
+        ;
+
+
+composite_state_graph
         :       STATE statename e=end
                 SUBSTRUCTURE
                 connection_points*
                 body=composite_state_body
                 ENDSUBSTRUCTURE statename? f=end
-        ->      ^(COMPOSITE_STATE statename connection_points* $body $e?);
+        ->      ^(COMPOSITE_STATE statename connection_points* $body $e?)
+        ;
 
 
+// 11.11.2 State Aggregation (SDL2000)
+state_aggregation
+        :       STATE AGGREGATION statename e=end
+                SUBSTRUCTURE
+                connection_points*
+                entities=entity_in_composite_state*
+                body=state_aggregation_body
+                ENDSUBSTRUCTURE statename? f=end
+        ->      ^(STATE_AGGREGATION statename connection_points*
+                                    $entities* $body $e?)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+entity_in_composite_state
+        :       (text_area | procedure)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+state_aggregation_body
+        :       (state_partitioning | state_partition_connection)+
+                state*
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+state_partitioning
+        :       composite_state
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+state_partition_connection
+        :       CONNECT outer=entry_point AND inner=entry_point end
+        ->      ^(STATE_PARTITION_CONNECTION $outer $inner end?)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+entry_point
+        :       state_part_id=ID VIA point
+        ->      ^(ENTRY_POINT $state_part_id point)
+        ;
+
+
+// 11.11.2 State Aggregation (SDL2000)
+point
+        :       (state_point=ID | DEFAULT)
+        ->      ^(POINT $state_point? DEFAULT?)
+        ;
+
+
+// 11.11.1 and 11.11.2 Composite State (SDL2000)
 connection_points
         :       IN state_entry_exit_points end
         ->      ^(IN state_entry_exit_points end?)
                 | OUT state_entry_exit_points end
-        ->      ^(OUT state_entry_exit_points end?);
+        ->      ^(OUT state_entry_exit_points end?)
+        ;
 
 
+// 11.11.1 and 11.11.2 Composite State (SDL2000)
 state_entry_exit_points
         :       '(' statename (',' statename)* ')'
-        ->      statename+;
+        ->      statename+
+        ;
 
 
+// 11.11.1 Composite State graph content (SDL2000)
 composite_state_body
         :       (text_area | procedure | composite_state)*
-                start* (state | floating_label)*;
+                start* (state | floating_label)*
+        ;
 
 
 state_part
@@ -455,7 +585,8 @@ state_part
                 | save_part               // Not supported in openGEODE
                 | spontaneous_transition
                 | continuous_signal       // Not supoorted in openGEODE
-                | connect_part;
+                | connect_part
+        ;
 
 
 // connect part is used to connect nested state exit points to a transition
@@ -464,13 +595,15 @@ connect_part
                 hyperlink?
                 CONNECT connect_list? end
                 transition?
-        ->      ^(CONNECT cif? hyperlink? connect_list? end? transition?);
+        ->      ^(CONNECT cif? hyperlink? connect_list? end? transition?)
+        ;
 
 
 connect_list
         :       state_exit_point_name (',' state_exit_point_name)*
                 -> state_exit_point_name+
-                | ASTERISK;
+                | ASTERISK
+        ;
 
 
 spontaneous_transition
@@ -479,30 +612,35 @@ spontaneous_transition
                 INPUT NONE end
                 enabling_condition?
                 transition
-        ->      ^(INPUT_NONE cif? hyperlink? transition);
+        ->      ^(INPUT_NONE cif? hyperlink? transition)
+        ;
 
 
 enabling_condition
         :       PROVIDED expression end
-        ->      ^(PROVIDED expression);
+        ->      ^(PROVIDED expression)
+        ;
 
 
 continuous_signal
         :       PROVIDED expression end
                 (PRIORITY integer_literal_name=INT end)?
                 transition
-        ->      ^(PROVIDED expression $integer_literal_name? transition);
+        ->      ^(PROVIDED expression $integer_literal_name? transition)
+        ;
 
 
 save_part
         :       SAVE save_list
                 end
-        ->      ^(SAVE save_list);
+        ->      ^(SAVE save_list)
+        ;
 
 
 save_list
         :       signal_list
-                | asterisk_save_list;
+                | asterisk_save_list
+        ;
 
 
 asterisk_save_list
@@ -511,7 +649,8 @@ asterisk_save_list
 
 signal_list
         :       signal_item (',' signal_item)*
-        ->      ^(SIGNAL_LIST signal_item+);
+        ->      ^(SIGNAL_LIST signal_item+)
+        ;
 
 
 
@@ -545,7 +684,8 @@ input_part
                 enabling_condition?
                 transition?
         ->      ^(INPUT cif? hyperlink? end?
-                inputlist enabling_condition? transition?);
+                inputlist enabling_condition? transition?)
+        ;
 
 
 // asterisk means: all signals not excplicitely specified
@@ -553,23 +693,27 @@ input_part
 inputlist
         :       ASTERISK
                 | (stimulus (',' stimulus)*)
-        ->      ^(INPUTLIST stimulus+);
+        ->      ^(INPUTLIST stimulus+)
+        ;
 
 
 stimulus
-        :       stimulus_id input_params?;
+        :       stimulus_id input_params?
+        ;
 
 
 input_params
         :       L_PAREN variable_id (',' variable_id)* R_PAREN
-        ->      ^(PARAMS variable_id+);
+        ->      ^(PARAMS variable_id+)
+        ;
 
 
 transition
         :       action+ label? terminator_statement?
         ->      ^(TRANSITION action+ label? terminator_statement?)
                 | terminator_statement
-        ->      ^(TRANSITION terminator_statement);
+        ->      ^(TRANSITION terminator_statement)
+        ;
 
 
 action
@@ -583,13 +727,17 @@ action
                 | set_timer
                 | reset_timer
                 | export     // Not supported in OpenGEODE
-                | procedure_call);
+                | procedure_call)
+        ;
+
 
 export
         :       EXPORT
                 L_PAREN variable_id (COMMA variable_id)* R_PAREN
                 end
-        ->      ^(EXPORT variable_id+);
+        ->      ^(EXPORT variable_id+)
+        ;
+
 
 /*
 remote_procedure_call
@@ -598,41 +746,45 @@ remote_procedure_call
 remote_procedure_call_body
         :       remote_procedure_id actual_parameters? (TO destination)?;
 */
-
-
 procedure_call
         :       cif?
                 hyperlink?
                 CALL procedure_call_body end
-        ->      ^(PROCEDURE_CALL cif? hyperlink? end? procedure_call_body);
+        ->      ^(PROCEDURE_CALL cif? hyperlink? end? procedure_call_body)
+        ;
 
 
 procedure_call_body
         :       procedure_id actual_parameters?
-        ->      ^(OUTPUT_BODY procedure_id actual_parameters?);
+        ->      ^(OUTPUT_BODY procedure_id actual_parameters?)
+        ;
 
 
 set_timer
         :       SET set_statement (COMMA set_statement)*
                 end
-        ->      set_statement+;
+        ->      set_statement+
+        ;
 
 
 set_statement
         :       L_PAREN (expression COMMA)? timer_id R_PAREN
-        ->      ^(SET expression? timer_id);
+        ->      ^(SET expression? timer_id)
+        ;
         // ('('expression_list')')? ')'; (removed because of non-LL(*) problem)
 
 
 reset_timer
         :       RESET reset_statement (',' reset_statement)*
                 end
-        ->      reset_statement+;
+        ->      reset_statement+
+        ;
 
 
 reset_statement
         :       timer_id ('(' expression_list ')')?
-        ->      ^(RESET timer_id expression_list?);
+        ->      ^(RESET timer_id expression_list?)
+        ;
 
 
 transition_option
@@ -640,19 +792,22 @@ transition_option
                 answer_part
                 alternative_part
                 ENDALTERNATIVE f=end
-        ->      ^(ALTERNATIVE answer_part alternative_part);
+        ->      ^(ALTERNATIVE answer_part alternative_part)
+        ;
 
 
 alternative_part
         :       (answer_part+ else_part?)
         ->      answer_part+ else_part?
                 | else_part
-        ->      else_part;
+        ->      else_part
+        ;
 
 
 alternative_question
         :       expression
-                | informal_text;
+                | informal_text
+        ;
 
 
 decision
@@ -663,26 +818,30 @@ decision
                 alternative_part?
                 ENDDECISION f=end
         ->      ^(DECISION cif? hyperlink? $e? question
-                answer_part? alternative_part?);
+                answer_part? alternative_part?)
+        ;
 
 
 answer_part
         :       cif?
                 hyperlink?
                 L_PAREN answer R_PAREN ':' transition?
-        ->      ^(ANSWER cif? hyperlink? answer transition?);
+        ->      ^(ANSWER cif? hyperlink? answer transition?)
+        ;
 
 
 answer
         :       range_condition
-                | informal_text;
+                | informal_text
+        ;
 
 
 else_part
         :       cif?
                 hyperlink?
                 ELSE ':' transition?
-        ->      ^(ELSE cif? hyperlink? transition?);
+        ->      ^(ELSE cif? hyperlink? transition?)
+        ;
 
 
 question
@@ -690,29 +849,34 @@ question
                 | expression
         ->      ^(QUESTION expression)
                 | ANY
-        ->      ^(ANY);
+        ->      ^(ANY)
+        ;
 
 
 range_condition
-        :       (closed_range | open_range);
+        :       (closed_range | open_range)
+        ;
                 //(',' (closed_range|open_range))*;
 
 
 closed_range
         :       a=expression ':' b=expression
-        ->      ^(CLOSED_RANGE $a $b);
+        ->      ^(CLOSED_RANGE $a $b)
+        ;
 
 
 open_range
         :       constant
         ->      constant
                 | ( (EQ|NEQ|GT|LT|LE|GE) constant)
-        ->      ^(OPEN_RANGE EQ? NEQ? GT? LT? LE? GE? constant);
+        ->      ^(OPEN_RANGE EQ? NEQ? GT? LT? LE? GE? constant)
+        ;
 
 
 constant
         :       expression
-        ->      ^(CONSTANT expression);
+        ->      ^(CONSTANT expression)
+        ;
 
 
 create_request
@@ -720,39 +884,46 @@ create_request
                 createbody
                 actual_parameters?
                 end
-        ->      ^(CREATE createbody actual_parameters?);
+        ->      ^(CREATE createbody actual_parameters?)
+        ;
 
 
 createbody
         :       process_id
-                | THIS;
+                | THIS
+        ;
 
 
 output
         :       cif?
                 hyperlink?
                 OUTPUT outputbody end
-        ->      ^(OUTPUT cif? hyperlink? end? outputbody);
+        ->      ^(OUTPUT cif? hyperlink? end? outputbody)
+        ;
 
 
 outputbody
         :       outputstmt (',' outputstmt)* to_part?
-        ->      ^(OUTPUT_BODY outputstmt+ to_part?);
+        ->      ^(OUTPUT_BODY outputstmt+ to_part?)
+        ;
  //               via_part?
  //     -> (signal_id actual_parameters?)+ to_part? via_part?;
 
 
 outputstmt
         :       signal_id
-                actual_parameters?;
+                actual_parameters?
+        ;
 
 to_part
         :       (TO destination)
-        ->      ^(TO destination);
+        ->      ^(TO destination)
+        ;
 
 via_part
         :       VIA viabody
-        ->      ^(VIA viabody);
+        ->      ^(VIA viabody)
+        ;
 
 
 // ambiguous in SDL92, added OR between ALL and via_path
@@ -760,34 +931,40 @@ viabody
         :       ALL
         ->      ^(ALL)
                 | via_path
-        ->      ^(VIAPATH via_path);
+        ->      ^(VIAPATH via_path)
+        ;
 
 
 destination
         :       pid_expression
                 | process_id
-                | THIS;
+                | THIS
+        ;
 
 
 via_path
         :       via_path_element (',' via_path_element)*
-        ->      via_path_element+;
+        ->      via_path_element+
+        ;
 
 
 via_path_element
-        :       ID; // signal_route_id | channel_id | gate_id;
+        :       ID
+        ; // signal_route_id | channel_id | gate_id;
 
 
 actual_parameters
         :      '(' expression (',' expression)* ')'
-        ->     ^(PARAMS expression+);
+        ->     ^(PARAMS expression+)
+        ;
 
 
 task
         :       cif?
                 hyperlink?
                 TASK task_body? end
-        ->      ^(TASK cif? hyperlink? end? task_body?);
+        ->      ^(TASK cif? hyperlink? end? task_body?)
+        ;
 
 
 task_body
@@ -798,6 +975,7 @@ task_body
                 | (forloop (',' forloop)*)
         ->      ^(TASK_BODY forloop+)
         ;
+
 
 // SDL extension - FOR loop in TASKs
 forloop
@@ -870,9 +1048,7 @@ primary_expression
 
 
 primary
-        :       BITSTR^
-        |       OCTSTR^
-        |       TRUE^
+        :       TRUE^
         |       FALSE^
         |       STRING
         |       NULL^
@@ -900,19 +1076,22 @@ primary
 
 informal_text
         :        STRING
-        ->       ^(INFORMAL_TEXT STRING);
+        ->       ^(INFORMAL_TEXT STRING)
+        ;
 
 
 // { a 5 } (SEQUENCE field value)
 named_value
-        :       ID expression;
+        :       ID expression
+        ;
 
 
 primary_params
         :      '(' expression_list ')'
         ->     ^(PARAMS expression_list)
                | '!' literal_id
-        ->     ^(FIELD_NAME literal_id);
+        ->     ^(FIELD_NAME literal_id)
+        ;
 
 
 /* All cases are covered by the ground primary
@@ -921,26 +1100,31 @@ extended_primary
         :       synonym         |
                 indexed_primary |
                 field_primary   |
-                structure_primary;
+                structure_primary
+        ;
 */
 
 
 indexed_primary
-        :       primary '(' expression_list ')';
+        :       primary '(' expression_list ')'
+        ;
 
 
 field_primary
-        :       primary field_selection;
+        :       primary field_selection
+        ;
 
 
 structure_primary
-        :       '(.' expression_list '.)';
+        :       '(.' expression_list '.)'
+        ;
 // Removed "qualifier" from the standard
 // (to be put later, but never used in practice)
 
 
 active_expression
-        :       active_primary;
+        :       active_primary
+        ;
 
 
 active_primary
@@ -949,7 +1133,8 @@ active_primary
                 | conditional_expression
                 | imperative_operator
                 | '(' active_expression ')'
-                | 'ERROR';
+                | 'ERROR'
+        ;
    // active_extended_primary removed because not defined in the standard
 
 
@@ -959,64 +1144,81 @@ imperative_operator
                 | pid_expression
                 | view_expression
                 | timer_active_expression
-                | anyvalue_expression;
+                | anyvalue_expression
+        ;
 
 
 timer_active_expression
-        :       ACTIVE '(' timer_id ('(' expression_list ')')? ')';
+        :       ACTIVE '(' timer_id ('(' expression_list ')')? ')'
+        ;
 
 
 anyvalue_expression
-        :       ANY '(' sort ')';
+        :       ANY '(' sort ')'
+        ;
 
 
 sort    :       sort_id
-        ->      ^(SORT sort_id);
+        ->      ^(SORT sort_id)
+        ;
+
 
 type_inst
         :       type_id
-        ->      ^(TYPE_INSTANCE type_id);
+        ->      ^(TYPE_INSTANCE type_id)
+        ;
 
-syntype :       syntype_id;
+
+syntype :       syntype_id
+        ;
 
 
 import_expression
-        :       IMPORT '(' remote_variable_id (',' destination)? ')';
+        :       IMPORT '(' remote_variable_id (',' destination)? ')'
+        ;
 
 
 view_expression
-        :       VIEW '(' view_id (',' pid_expression)? ')';
+        :       VIEW '(' view_id (',' pid_expression)? ')'
+        ;
 
 
 variable_access
-        :       variable_id;
+        :       variable_id
+        ;
 
 
 operator_application
-        :       operator_id '('active_expression_list ')';
+        :       operator_id '('active_expression_list ')'
+        ;
 
 
 active_expression_list
-        :       active_expression (',' expression_list)?;/* |
+        :       active_expression (',' expression_list)?
+        ;
+/* |
                 ground_expression ',' active_expression_list;*/   // Will not work (recursion)
 
 
 //synonym :       ID; // synonym_id | external_synonym;
 
 external_synonym
-        :       external_synonym_id;
+        :       external_synonym_id
+        ;
 
 
 conditional_expression
         :       IF ifexpr=expression
                 THEN thenexpr=expression
                 ELSE elseexpr=expression FI
-        ->      ^(CONDITIONAL $ifexpr $thenexpr $elseexpr);
+        ->      ^(CONDITIONAL $ifexpr $thenexpr $elseexpr)
+        ;
 
 
 expression_list
         :       expression (',' expression)*
-        ->      expression+;
+        ->      expression+
+        ;
 
 
 terminator_statement
@@ -1025,47 +1227,57 @@ terminator_statement
                 hyperlink?
                 terminator
                 end
-        ->      ^(TERMINATOR label? cif? hyperlink? end? terminator);
+        ->      ^(TERMINATOR label? cif? hyperlink? end? terminator)
+        ;
 
 label
         :       cif? connector_name ':'
-        ->      ^(LABEL cif? connector_name);
+        ->      ^(LABEL cif? connector_name)
+        ;
 
 
 terminator
-        :       nextstate | join | stop | return_stmt;
+        :       nextstate | join | stop | return_stmt
+        ;
 
 
 join
         :        JOIN connector_name
-        ->       ^(JOIN connector_name);
+        ->       ^(JOIN connector_name)
+        ;
 
 
-stop    :       STOP;
+stop    :       STOP
+        ;
 
 
 return_stmt
         :       RETURN expression?
-        ->      ^(RETURN expression?);
+        ->      ^(RETURN expression?)
+        ;
 
 
 nextstate
         :       NEXTSTATE nextstatebody
-        ->      ^(NEXTSTATE nextstatebody);
+        ->      ^(NEXTSTATE nextstatebody)
+        ;
 
 
 nextstatebody
         :       statename via?
-                | dash_nextstate;
+                | dash_nextstate
+        ;
 
 
 via     :       VIA state_entry_point_name
-        ->      ^(VIA state_entry_point_name);
+        ->      ^(VIA state_entry_point_name)
+        ;
 
 
 end
         :   (cif? hyperlink? COMMENT STRING)? SEMI+
-        -> ^(COMMENT cif? hyperlink? STRING)?;
+        -> ^(COMMENT cif? hyperlink? STRING)?
+        ;
 
 
 cif
@@ -1074,13 +1286,15 @@ cif
                 COMMA
                 L_PAREN width=INT COMMA height=INT R_PAREN
                 cif_end
-        ->      ^(CIF $x $y $width $height);
+        ->      ^(CIF $x $y $width $height)
+        ;
 
 
 hyperlink
         :       cif_decl KEEP SPECIFIC GEODE HYPERLINK STRING
                 cif_end
-        ->      ^(HYPERLINK STRING);
+        ->      ^(HYPERLINK STRING)
+        ;
 
 /* OpenGEODE specific: SDL does not allow specifying the name
    of signal parameters, but it is needed to generate function signatures
@@ -1091,7 +1305,8 @@ hyperlink
 */
 paramnames
         :       cif_decl KEEP SPECIFIC GEODE PARAMNAMES field_name+ cif_end
-        ->      ^(PARAMNAMES field_name+);
+        ->      ^(PARAMNAMES field_name+)
+        ;
 
 
 /* OpenGEODE specific: Allow specifying the name of an ASN.1 file
@@ -1100,14 +1315,17 @@ paramnames
 */
 use_asn1
         :       cif_decl KEEP SPECIFIC GEODE ASNFILENAME STRING cif_end
-        ->      ^(ASN1 STRING);
+        ->      ^(ASN1 STRING)
+        ;
 
 
 /* OpenGEODE specific: Boolean condition that can be used in simulators
 */
 stop_if
         :       (STOP IF expression end)+
-        ->      ^(STOPIF expression+);
+        ->      ^(STOPIF expression+)
+        ;
+
 
 symbolname
         :       START
@@ -1128,23 +1346,29 @@ symbolname
                 | COMMENT
                 | LABEL
                 | JOIN
-                | CONNECT;
+                | CONNECT
+        ;
 
 
 cif_decl
-        :       '/* CIF';
+        :       '/* CIF'
+        ;
 
 
 cif_end
-        :       '*/';
+        :       '*/'
+        ;
 
 
 cif_end_text
         :       cif_decl ENDTEXT cif_end
-        ->      ^(ENDTEXT);
+        ->      ^(ENDTEXT)
+        ;
+
 
 cif_end_label
-        :       cif_decl END LABEL cif_end;
+        :       cif_decl END LABEL cif_end
+        ;
 
 
 dash_nextstate  :       DASH;
@@ -1246,6 +1470,7 @@ SET             :       S E T;
 RESET           :       R E S E T;
 ENDALTERNATIVE  :       E N D A L T E R N A T I V E;
 ALTERNATIVE     :       A L T E R N A T I V E;
+DEFAULT         :       D E F A U L T;
 DECISION        :       D E C I S I O N;
 ENDDECISION     :       E N D D E C I S I O N;
 EXPORT          :       E X P O R T;
@@ -1266,6 +1491,7 @@ APPEND          :       '//';
 IN              :       I N;
 OUT             :       O U T;
 INOUT           :       I N '/' O U T;
+AGGREGATION     :       A G G R E G A T I O N;
 SUBSTRUCTURE    :       S U B S T R U C T U R E;
 ENDSUBSTRUCTURE :       E N D S U B S T R U C T U R E;
 FPAR            :       F P A R;
@@ -1310,45 +1536,58 @@ ENDNEWTYPE      :       E N D N E W T Y P E;
 ARRAY           :       A R R A Y;
 CONSTANTS       :       C O N S T A N T S;
 STRUCT          :       S T R U C T;
-SYNONYM        	:       S Y N O N Y M;
+SYNONYM         :       S Y N O N Y M;
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
 
-fragment
-STR
-        :       '\'' ( options {greedy=false;} : .)* '\'';
+
 
 STRING
-        :       STR+ ;
+        :       STR+ (B|H)?
+        ;
 
-BITSTR
-        :       '"' ('0'|'1'|' ' | '\t' | '\r' | '\n')* '"B';
-
-
-OCTSTR
-        :       '"' ('0'..'9'|'a'..'f'|'A'..'F'|' ' | '\t' | '\r' | '\n')*
-                '"H';
-
-ID
-        :       ALPHA (ALPHA | DIGITS | '_')*;
 
 fragment
-ALPHA   :       ('a'..'z')|('A'..'Z');
+STR
+        :       '\'' ( options {greedy=false;} : .)* '\''
+        ;
 
-INT     :       DASH? ( '0' | ('1'..'9') ('0'..'9')*);
+
+ID
+        :       ALPHA (ALPHA | DIGITS | '_')*
+        ;
+
+
+fragment
+ALPHA
+        :       ('a'..'z')
+                |('A'..'Z')
+        ;
+
+
+INT
+        :       DASH? ( '0' | ('1'..'9') ('0'..'9')*)
+        ;
 
 
 fragment
 DIGITS
-        :       ('0'..'9')+;
+        :       ('0'..'9')+
+        ;
+
 
 FLOAT
         :       INT DOT (DIGITS)? (Exponent)?
         |       INT
         ;
 
-WS  :   (' ' | '\t' | '\r' | '\n')+ {$channel=HIDDEN;};
+
+WS
+        :       (' ' | '\t' | '\r' | '\n')+ {$channel=HIDDEN;}
+        ;
+
+
 /*
 COMMENT
     :   '//' ( options {greedy=false;} : . )* '//' {$channel=HIDDEN;}
@@ -1356,12 +1595,15 @@ COMMENT
 */
 
 fragment
-Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;
+Exponent
+        : ('e'|'E') ('+'|'-')? ('0'..'9')+
+        ;
 
 
 COMMENT2
         :        '--' ( options {greedy=false;} : . )* ('--'|'\r'?'\n')
-                 {$channel=HIDDEN;};
+                 {$channel=HIDDEN;}
+        ;
 
 
 // Following fragments allows to have case insensitive grammar

@@ -71,6 +71,8 @@
 
 import logging
 import traceback
+import os
+from itertools import chain
 from singledispatch import singledispatch
 
 import ogAST
@@ -180,6 +182,16 @@ LD_LIBRARY_PATH=. taste-gui -l
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=UNICODE_SEP)
 
+    # Process State aggregations (Parallel states)
+
+    # Find recursively in the AST all state aggregations
+    # Format: {'aggregation_name' : [list of ogAST.CompositeState]
+    aggregates = Helper.state_aggregations(process)
+
+    # Extract the list of parallel states names inside the composite states
+    # of state aggregations XXX add to C generator
+    parallel_states = Helper.parallel_states(aggregates)
+
     # Make an maping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     mapping = Helper.map_input_state(process)
@@ -188,18 +200,27 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     process_level_decl = []
 
-    # Establish the list of states (excluding START states)
-    statelist = ', '.join(name for name in process.mapping.iterkeys()
-                             if not name.endswith(u'START')) or 'No_State'
-    if statelist:
-        states_decl = u'type States is ({});'.format(statelist)
-        process_level_decl.append(states_decl)
+    # Establish the list of states (excluding START states) XXX update C backend
+    full_statelist = set(chain(aggregates.viewkeys(),
+                               (name for name in process.mapping.iterkeys()
+                                    if not name.endswith(u'START'))))
+    reduced_statelist = {s for s in full_statelist if s not in parallel_states}
+
+    if full_statelist:
+        process_level_decl.append(u'type States is ({});'
+                            .format(u', '.join(full_statelist) or u'No_State'))
 
     # Generate the code to declare process-level context
     process_level_decl.extend(['type {}_Ty is'.format(LPREFIX), 'record'])
 
-    if statelist:
+    if full_statelist:
         process_level_decl.append('state : States;')
+
+    # State aggregation: add list of substates (XXX to be added in C generator)
+    for substates in aggregates.viewvalues():
+        for each in substates:
+            process_level_decl.append(u'{}{}state: States;'
+                                      .format(each.statename, UNICODE_SEP))
 
     for var_name, (var_type, def_value) in process.variables.viewitems():
         if def_value:
@@ -224,6 +245,22 @@ LD_LIBRARY_PATH=. taste-gui -l
         if name.endswith(u'START') and name != u'START':
             process_level_decl.append(u'{name} : constant := {val};'
                                       .format(name=name, val=str(val)))
+
+    # Declare start procedure for aggregate states XXX add in C generator
+    # should create one START per "via" clause, TODO later
+    aggreg_start_proc = []
+    for name, substates in aggregates.viewitems():
+        proc_name = u'procedure {}{}START'.format(name, UNICODE_SEP)
+        process_level_decl.append(u'{};'.format(proc_name))
+        aggreg_start_proc.extend([u'{} is'.format(proc_name),
+                                  'begin'])
+        aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
+                                 .format(sub=subname.statename,
+                                         sep=UNICODE_SEP)
+                                 for subname in substates)
+        aggreg_start_proc.extend([u'end {}{}START;'
+                                 .format(name, UNICODE_SEP),
+                                 '\n'])
 
     # Add the declaration of the runTransition procedure, if needed
     if process.transitions:
@@ -321,7 +358,6 @@ package {process_name} is'''.format(process_name=process_name,
             dll_api.append('end dll_set_l_{};'.format(var_name))
             dll_api.append('')
 
-
     # Generate the the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
@@ -335,17 +371,22 @@ package {process_name} is'''.format(process_name=process_name,
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
 
+    # Generate the code of the START procedures of state aggregations
+    # XXX to be added to C generator
+    taste_template.extend(aggreg_start_proc)
+
     # Add the code of the DLL interface
     taste_template.extend(dll_api)
 
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
-        if signal.get('name', u'START') == u'START':
+        signame = signal.get('name', u'START')
+        if name == u'START':
             continue
-        pi_header = u'procedure {sig_name}'.format(sig_name=signal['name'])
+        pi_header = u'procedure {sig_name}'.format(sig_name=signame)
         param_name = signal.get('param_name') \
-                                or u'{}_param'.format(signal['name'])
+                                or u'{}_param'.format(name)
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
@@ -353,29 +394,27 @@ package {process_name} is'''.format(process_name=process_name,
                                         pName=param_name, sort=typename)
 
         # Add declaration of the provided interface in the .ads file
-        ads_template.append(u'--  Provided interface "' + signal['name'] + '"')
+        ads_template.append(u'--  Provided interface "{}"'.format(signame))
         ads_template.append(pi_header + ';')
         ads_template.append(u'pragma export(C, {name}, "{proc}_{name}");'
-                             .format(name=signal['name'], proc=process_name))
+                             .format(name=signame, proc=process_name))
 
         if simu:
             # Generate code for the mini-cv template
             params = [(param_name, type_name(signal['type'], use_prefix=False),
                       'IN')] if 'type' in signal else []
-            minicv.append(aadl_template(signal['name'], params, 'RI'))
+            minicv.append(aadl_template(signame, params, 'RI'))
 
         pi_header += ' is'
         taste_template.append(pi_header)
         taste_template.append('begin')
-        taste_template.append('case {ctxt}.state is'.format(ctxt=LPREFIX))
-        for state in process.mapping.viewkeys():
-            if state.endswith(u'START'):
-                continue
-            taste_template.append(u'when {state} =>'.format(state=state))
-            input_def = mapping[signal['name']].get(state)
+
+        def execute_transition(state):
+            ''' Generate the code that triggers the transition for the current
+                state/input combination '''
+            input_def = mapping[signame].get(state)
             # Check for nested states to call optional exit procedure
-            sep = UNICODE_SEP
-            state_tree = state.split(sep)
+            state_tree = state.split(UNICODE_SEP)
             context = process
             exitlist = []
             current = ''
@@ -387,13 +426,13 @@ package {process_name} is'''.format(process_name=process_name,
                         if comp.exit_procedure:
                             exitlist.append(current)
                         context = comp
-                        current = current + sep
+                        current = current + UNICODE_SEP
                         break
             for each in reversed(exitlist):
                 if trans and all(each.startswith(trans_st)
                                  for trans_st in trans.possible_states):
                     taste_template.append(u'p{sep}{ref}{sep}exit;'
-                                          .format(ref=each, sep=sep))
+                                          .format(ref=each, sep=UNICODE_SEP))
 
             if input_def:
                 for inp in input_def.parameters:
@@ -411,10 +450,54 @@ package {process_name} is'''.format(process_name=process_name,
                     taste_template.append('null;')
             else:
                 taste_template.append('null;')
+
+        taste_template.append('case {ctxt}.state is'.format(ctxt=LPREFIX))
+
+        def case_state(state):
+            ''' Recursive function (in case of state aggregation) to generate
+                the code that calls the proper transition according
+                to the current state
+                The input name is in signame
+            '''
+            if state.endswith(u'START'):
+                return
+            taste_template.append(u'when {state} =>'.format(state=state))
+            input_def = mapping[signame].get(state)
+            #print signame, input_def
+            if state in aggregates.viewkeys():
+                # State aggregation:
+                # - find which substate manages this input
+                # - add a swich case on the corresponding substate
+                taste_template.append(u'-- this is a state aggregation')
+                for sub in aggregates[state]:
+                    if [a for a in sub.mapping.viewkeys()
+                            if a in mapping[signame].viewkeys()]:
+                        taste_template.append(u'case '
+                                              u'{ctxt}.{sub}{sep}state is'
+                                              .format(ctxt=LPREFIX,
+                                                     sub=sub.statename,
+                                                     sep=UNICODE_SEP))
+                        for par in sub.mapping.viewkeys():
+                            case_state(par)
+                        taste_template.append('when others =>')
+                        taste_template.append('null;')
+                        taste_template.append('end case;')
+                        break
+                else:
+                    # Input is not managed in the state aggregation
+                    if input_def:
+                        # check if it is managed one level above
+                        execute_transition(state)
+                    taste_template.append('null;')
+            else:
+                execute_transition(state)
+
+        map(case_state, reduced_statelist) # XXX update C generator
+
         taste_template.append('when others =>')
         taste_template.append('null;')
         taste_template.append('end case;')
-        taste_template.append(u'end {};'.format(signal['name']))
+        taste_template.append(u'end {};'.format(signame))
         taste_template.append('\n')
 
     # for the .ads file, generate the declaration of the required interfaces
@@ -638,11 +721,11 @@ package {process_name} is'''.format(process_name=process_name,
     ads_template.append('end {process_name};'
             .format(process_name=process_name))
 
-    with open(process_name + '.adb', 'w') as ada_file:
+    with open(process_name.lower() + os.extsep + 'adb', 'w') as ada_file:
         ada_file.write(
                 u'\n'.join(format_ada_code(taste_template)).encode('latin1'))
 
-    with open(process_name + '.ads', 'w') as ada_file:
+    with open(process_name.lower() + os.extsep + 'ads', 'w') as ada_file:
         ada_file.write(
                 u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
 
@@ -679,7 +762,6 @@ def write_statement(param, newline):
             code, string, local = expression(param)
             if type_kind == 'OctetStringType':
                 # Octet string -> convert to Ada string
-                sep = UNICODE_SEP
                 last_it = u""
                 if isinstance(param, ogAST.PrimSubstring):
                     range_str = u"{}'Range".format(string)
@@ -695,7 +777,7 @@ def write_statement(param, newline):
                     last_it = u"({})".format(range_str)
                 code.extend([u"for i in {} loop".format(range_str),
                              u"Put(Character'Val({st}(i)));"
-                             .format(st=string, sep=sep, it=iterator),
+                             .format(st=string),
                              u"end loop;"])
             else:
                 code.append("Put({});".format(string))
@@ -935,7 +1017,7 @@ def _task_forloop(task, **kwargs):
             else:
                 # Step is not directly supported in Ada, we need to use 'while'
                 stmt.extend(['declare',
-                             u'{it} : Integer := {start};'
+                             u'{it} : Asn1Int := {start};'
                              .format(it=loop['var'],
                              start=start_str),
                              '',
@@ -1877,23 +1959,47 @@ def _transition(tr, **kwargs):
                 code.append('<<{label}>>'.format(
                     label=tr.terminator.label.inputString))
             if tr.terminator.kind == 'next_state':
-                if tr.terminator.inputString.strip() != '-':
+                history = tr.terminator.inputString.strip() == '-'
+                if tr.terminator.next_is_aggregation and not history: # XXX add to C generator
+                    code.append(u'-- Entering state aggregation {}'
+                                .format(tr.terminator.inputString))
+                    # Call the START function of the state aggregation
+                    code.append(u'{};'.format(tr.terminator.next_id))
+                    code.append(u'{ctxt}.state := {nextState};'
+                                .format(ctxt=LPREFIX,
+                                        nextState=tr.terminator.inputString))
+                    code.append(u'trId := -1;')
+                elif not history: # tr.terminator.inputString.strip() != '-':
                     code.append(u'trId := ' +
                                 unicode(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
-                        code.append(u'{ctxt}.state := {nextState};'
-                                  .format(ctxt=LPREFIX,
+                        if not tr.terminator.substate: # XXX add to C generator
+                            code.append(u'{ctxt}.state := {nextState};'
+                                        .format(ctxt=LPREFIX,
+                                          nextState=tr.terminator.inputString))
+                        else:
+                            code.append(u'{ctxt}.{sub}{sep}state :='
+                                        u' {nextState};'
+                                        .format(ctxt=LPREFIX,
+                                          sub=tr.terminator.substate,
+                                          sep=UNICODE_SEP,
                                           nextState=tr.terminator.inputString))
                 else:
+                    # "nextstate -": switch case to re-run the entry transition
+                    # in case of a composite state or state aggregation
                     if any(next_id
                            for next_id in tr.terminator.candidate_id.viewkeys()
                            if next_id != -1):
                         code.append('case {}.state is'.format(LPREFIX))
                         for nid, sta in tr.terminator.candidate_id.viewitems():
                             if nid != -1:
-                                for each in sta:
-                                    code.extend([u'when {} =>'.format(each),
-                                                 u'trId := {};'.format(nid)])
+                                if tr.terminator.next_is_aggregation:
+                                    statement = u'{};'.format(nid)
+                                else:
+                                    statement = u'trId := {};'.format(nid)
+                                code.extend([u'when {} =>'
+                                                .format(u'|'.join(sta)),
+                                                 statement])
 
                         code.extend(['when others =>',
                                         'trId := -1;',
@@ -2196,7 +2302,6 @@ def path_type(path):
                 continue
             # Sequence, Choice (case insensitive)
             if current.kind in ('SequenceType', 'ChoiceType'):
-                #print list(Helper.sorted_fields(current))
                 elem_asn1 = elem.replace('_', '-').lower()
                 type_idx, = (c for c in current.Children
                                     if c.lower() == elem_asn1)
