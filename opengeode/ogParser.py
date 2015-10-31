@@ -3055,7 +3055,8 @@ def connect_part(root, parent, context):
                            and term.inputString.lower() == exitp]
             if not terminators:
                 errors.append([u'No {rs} return statement in nested state {st}'
-                              .format(rs=exitp, st=comp.statename.lower()),
+                              .format(rs=exitp or u'default (unnamed)',
+                                      st=comp.statename.lower()),
                               [conn.pos_x or 0, conn.pos_y or 0], []])
             return terminators
 
