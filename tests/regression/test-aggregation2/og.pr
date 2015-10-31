@@ -27,6 +27,33 @@ exit_aggreg;
         PROCESS og;
             STATE AGGREGATION wait;
             SUBSTRUCTURE
+                    STATE b;
+                    SUBSTRUCTURE
+                            /* CIF START (146, 55), (70, 35) */
+                            START;
+                                /* CIF PROCEDURECALL (77, 105), (208, 35) */
+                                CALL writeln('[b] startup');
+                                /* CIF NEXTSTATE (146, 155), (70, 35) */
+                                NEXTSTATE b1;
+                            /* CIF STATE (392, 144), (70, 35) */
+                            STATE b2;
+                                /* CIF INPUT (388, 199), (79, 35) */
+                                INPUT for_b;
+                                    /* CIF PROCEDURECALL (308, 249), (239, 35) */
+                                    CALL writeln('[b] Going to b1');
+                                    /* CIF NEXTSTATE (392, 299), (70, 35) */
+                                    NEXTSTATE b1;
+                            ENDSTATE;
+                            /* CIF STATE (146, 155), (70, 35) */
+                            STATE b1;
+                                /* CIF INPUT (138, 210), (80, 35) */
+                                INPUT for_b;
+                                    /* CIF PROCEDURECALL (58, 260), (239, 35) */
+                                    CALL writeln('[b] Going to b2');
+                                    /* CIF NEXTSTATE (143, 310), (70, 35) */
+                                    NEXTSTATE b2;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
                     STATE a;
                     SUBSTRUCTURE
                         in (hehe);
@@ -41,7 +68,7 @@ exit_aggreg;
                             ENDPROCEDURE;
                             /* CIF START (306, 314), (72, 35) */
                             START hehe ;
-                                /* CIF NEXTSTATE (308, 364), (70, 35) */
+                                /* CIF NEXTSTATE (307, 364), (70, 35) */
                                 NEXTSTATE a1;
                             /* CIF START (0, 57), (70, 35) */
                             START;
@@ -74,38 +101,11 @@ exit_aggreg;
                                     NEXTSTATE a2;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
-                    STATE b;
-                    SUBSTRUCTURE
-                            /* CIF START (146, 55), (70, 35) */
-                            START;
-                                /* CIF PROCEDURECALL (77, 105), (208, 35) */
-                                CALL writeln('[b] startup');
-                                /* CIF NEXTSTATE (146, 155), (70, 35) */
-                                NEXTSTATE b1;
-                            /* CIF STATE (392, 144), (70, 35) */
-                            STATE b2;
-                                /* CIF INPUT (388, 199), (79, 35) */
-                                INPUT for_b;
-                                    /* CIF PROCEDURECALL (308, 249), (239, 35) */
-                                    CALL writeln('[b] Going to b1');
-                                    /* CIF NEXTSTATE (392, 299), (70, 35) */
-                                    NEXTSTATE b1;
-                            ENDSTATE;
-                            /* CIF STATE (146, 155), (70, 35) */
-                            STATE b1;
-                                /* CIF INPUT (138, 210), (80, 35) */
-                                INPUT for_b;
-                                    /* CIF PROCEDURECALL (58, 260), (239, 35) */
-                                    CALL writeln('[b] Going to b2');
-                                    /* CIF NEXTSTATE (143, 310), (70, 35) */
-                                    NEXTSTATE b2;
-                            ENDSTATE;
-                    ENDSUBSTRUCTURE;
-                    /* CIF STATE (170, 160), (70, 35) */
-                    STATE b;
-                    ENDSTATE;
                     /* CIF STATE (170, 50), (70, 35) */
                     STATE a;
+                    ENDSTATE;
+                    /* CIF STATE (170, 160), (70, 35) */
+                    STATE b;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
             /* CIF TEXT (997, 328), (289, 140) */
@@ -117,15 +117,6 @@ dcl x myInteger;
             START;
                 /* CIF NEXTSTATE (0, 299), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (390, 307), (67, 35) */
-            STATE wait;
-                /* CIF INPUT (368, 362), (110, 35) */
-                INPUT exit_aggreg;
-                    /* CIF PROCEDURECALL (325, 412), (195, 34) */
-                    CALL writeln('got exit_aggreg');
-                    /* CIF NEXTSTATE (379, 461), (87, 35) */
-                    NEXTSTATE the_end;
-            ENDSTATE;
             /* CIF STATE (649, 303), (87, 35) */
             STATE the_end;
                 /* CIF INPUT (640, 358), (107, 35) */
@@ -135,17 +126,14 @@ dcl x myInteger;
                     /* CIF NEXTSTATE (658, 458), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
-            /* CIF STATE (0, 299), (70, 35) */
+            /* CIF STATE (390, 307), (67, 35) */
             STATE wait;
-                /* CIF INPUT (-19, 354), (107, 35) */
-                INPUT reset_all(x)
-                /* CIF COMMENT (108, 338), (227, 50) */
-                COMMENT 'Transition is handled by
-a state in the state aggregation';
-                    /* CIF PROCEDURECALL (-115, 404), (300, 35) */
-                    CALL writeln('[ERROR] Should never be called');
-                    /* CIF NEXTSTATE (0, 454), (70, 35) */
-                    NEXTSTATE -;
+                /* CIF INPUT (368, 362), (110, 35) */
+                INPUT exit_aggreg;
+                    /* CIF PROCEDURECALL (325, 412), (195, 34) */
+                    CALL writeln('got exit_aggreg');
+                    /* CIF NEXTSTATE (379, 461), (87, 35) */
+                    NEXTSTATE the_end;
             ENDSTATE;
         ENDPROCESS og;
     ENDBLOCK;

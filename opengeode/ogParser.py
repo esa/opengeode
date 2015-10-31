@@ -2895,6 +2895,28 @@ def state(root, parent, context):
                     input_part(child, parent=state_def, context=context)
             errors.extend(err)
             warnings.extend(warn)
+            def gather_inputlist(state_ast):
+                ''' List all the inputs consumed by a given composite state
+                in any substate - used to check that an input consumed at level
+                N is not already consumed at N-1, causing conflicts '''
+                res = []
+                for lists in (inps for inps in state_ast.mapping.viewvalues()
+                              if not isinstance(inps, int)):
+                    res.extend(li for i in lists for li in i.inputlist)
+                subinputs = map(gather_inputlist, state_ast.composite_states)
+                map(res.extend, subinputs)
+                return res
+            for comp in context.composite_states:
+                # if the current state is a composite state, check that none of
+                # the inputs from the list is already consumed in a substate
+                if any(st.lower() == comp.statename.lower()
+                        for st in state_def.statelist):
+                    subinputs = [res.lower() for res in gather_inputlist(comp)]
+                    for each in inp.inputlist:
+                        if each.lower() in subinputs:
+                            sterr.append('Input "{}" is already consumed '
+                                         'in substate "{}"'
+                                         .format(each, comp.statename.lower()))
             try:
                 for statename in state_def.statelist:
                     # check that input is not already defined
