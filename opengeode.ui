@@ -80,7 +80,7 @@
       </widget>
       <widget class="QWidget" name="Statechart">
        <property name="windowTitle">
-        <string>Statechart (F4 to update)</string>
+        <string>Statechart view</string>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>

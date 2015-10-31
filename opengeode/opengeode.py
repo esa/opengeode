@@ -892,7 +892,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         try:
             process_ast, = ast.processes
         except ValueError:
-            LOG.error('No statechart to render')
+            LOG.debug('No statechart to render')
             return None
         # Flatten nested states (no, because neato does not support it,
         # dot supports only vertically-aligned states, and fdp does not
@@ -1313,9 +1313,6 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.check_model()
         elif event.key() == Qt.Key_F5:
             self.refresh()
-            # Refresh statechart
-            if graphviz:
-                Statechart.update(self.scene())
         elif event.matches(QtGui.QKeySequence.Open):
             self.open_diagram()
         elif event.matches(QtGui.QKeySequence.New):
@@ -1862,6 +1859,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.datatypes_view = None
         self.datatypes_scene = None
         self.asn1_area = None
+        # MDI area (need to keep them to avoid segfault due to pyside bugs)
+        self.mdi_area = None
+        self.sub_mdi = None
+        self.statechart_mdi = None
 
     def new_scene(self):
         ''' Create a new, clean SDL scene. This function is necessary because
@@ -1872,6 +1873,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             self.scene.messages_window = self.view.messages_window
             self.view.setScene(self.scene)
             self.view.refresh()
+
 
     def start(self, file_name):
         ''' Initializes all objects to start the application '''
@@ -1948,6 +1950,14 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.view.messages_window = messages
         self.scene.messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
+        self.mdi_area = self.findChild(QtGui.QMdiArea, 'mdiArea')
+        self.sub_mdi = self.mdi_area.subWindowList()
+        for each in self.sub_mdi:
+            if each.widget() != process_widget:
+                self.statechart_mdi = each
+                self.mdi_area.subWindowActivated.connect(self.upd_statechart)
+                break
+
 
         if graphviz:
             self.statechart_view = self.findChild(SDL_View, 'statechart_view')
@@ -1988,6 +1998,26 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             # Create a default context - at Block level - for the autocompleter
             sdlSymbols.CONTEXT = ogAST.Block()
 
+    @QtCore.Slot(QtGui.QMdiSubWindow)
+    def upd_statechart(self, mdi):
+        ''' Signal sent by Qt when the MDI area tab changes
+        Here we check if the Statechart tab is selected, and we draw/refresh
+        the statechart automatically in that case '''
+        if mdi == self.statechart_mdi and graphviz:
+            if self.view.parent_scene:
+                scene = self.view.parent_scene[0][0]
+            else:
+                scene = self.view.scene()
+            graph = scene.sdl_to_statechart()
+            try:
+                Statechart.render_statechart(self.statechart_scene,
+                                             graph)
+                self.statechart_view.refresh()
+                self.statechart_view.fitInView(
+                        self.statechart_scene.itemsBoundingRect(),
+                        Qt.KeepAspectRatioByExpanding)
+            except (IOError, TypeError) as err:
+                LOG.debug(str(err))
 
     @QtCore.Slot(ogAST.AST)
     def set_asn1_view(self, ast):
@@ -2050,22 +2080,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     # pylint: disable=C0103
     def keyPressEvent(self, key_event):
         ''' Handle keyboard: Statechart rendering '''
-        if key_event.key() == Qt.Key_F4 and graphviz:
-            if self.view.parent_scene:
-                scene = self.view.parent_scene[0][0]
-            else:
-                scene = self.view.scene()
-            graph = scene.sdl_to_statechart()
-            try:
-                Statechart.render_statechart(self.statechart_scene,
-                                             graph)
-                self.statechart_view.refresh()
-                self.statechart_view.fitInView(
-                        self.statechart_scene.itemsBoundingRect(),
-                        Qt.KeepAspectRatioByExpanding)
-            except (IOError, TypeError) as err:
-                LOG.debug(str(err))
-        elif key_event.key() == Qt.Key_Colon:
+        if key_event.key() == Qt.Key_Colon:
             self.vi_bar.show()
             self.vi_bar.setFocus()
             self.vi_bar.setText(':')
