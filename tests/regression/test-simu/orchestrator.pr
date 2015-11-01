@@ -2,6 +2,27 @@
 PROCESS orchestrator
 /* CIF COMMENT (407, 195), (78, 35) */
 COMMENT 'Hello';
+    STATE wait;
+    SUBSTRUCTURE
+            /* CIF START (116, 38), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (88, 88), (124, 35) */
+                NEXTSTATE entering_wait;
+            /* CIF STATE (83, 193), (134, 35) */
+            STATE waiting_in_wait;
+                /* CIF INPUT (114, 248), (73, 35) */
+                INPUT other;
+                    /* CIF NEXTSTATE (83, 298), (134, 35) */
+                    NEXTSTATE entering_wait;
+            ENDSTATE;
+            /* CIF STATE (88, 88), (124, 35) */
+            STATE entering_wait;
+                /* CIF INPUT (114, 143), (73, 35) */
+                INPUT other;
+                    /* CIF NEXTSTATE (83, 193), (134, 35) */
+                    NEXTSTATE waiting_in_wait;
+            ENDSTATE;
+    ENDSUBSTRUCTURE;
     /* CIF TEXT (0, 138), (448, 448) */
     dcl seq tastE_Peek_id_list := { 1,2,3,4,5};
 
@@ -34,7 +55,7 @@ external comment '#vdm #classname=RemoteCall';
     STATE next;
         /* CIF INPUT (1643, 400), (122, 35) */
         INPUT pulse(a);
-            /* CIF PROCEDURECALL (1598, 450), (213, 35) */
+            /* CIF PROCEDURECALL (1597, 450), (213, 35) */
             CALL reset_timer(mytimer);
             /* CIF NEXTSTATE (1669, 500), (70, 35) */
             NEXTSTATE wait;
@@ -45,65 +66,65 @@ external comment '#vdm #classname=RemoteCall';
         INPUT Paramless_TC;
             /* CIF PROCEDURECALL (1598, 230), (249, 35) */
             CALL SET_timer(1000, mytimer);
-            /* CIF NEXTSTATE (1686, 280), (74, 35) */
+            /* CIF NEXTSTATE (1685, 280), (74, 35) */
             NEXTSTATE next;
     ENDSTATE;
     /* CIF STATE (1085, 201), (72, 34) */
     STATE Wait;
-        /* CIF INPUT (807, 255), (101, 35) */
+        /* CIF INPUT (797, 255), (101, 35) */
         INPUT pulse(a);
-            /* CIF TASK (772, 305), (170, 48) */
+            /* CIF TASK (762, 305), (170, 48) */
             TASK seq := {0,1,0,1,0},
 anint := 478;
-            /* CIF PROCEDURECALL (728, 368), (259, 35) */
+            /* CIF PROCEDURECALL (718, 368), (259, 35) */
             CALL writeln('Input param', anint);
-            /* CIF PROCEDURECALL (738, 418), (238, 35) */
+            /* CIF PROCEDURECALL (728, 418), (238, 35) */
             CALL ExternalProc(anint, anint);
-            /* CIF PROCEDURECALL (720, 468), (275, 35) */
+            /* CIF PROCEDURECALL (710, 468), (275, 35) */
             CALL writeln('Output param', anint);
-            /* CIF PROCEDURECALL (714, 518), (286, 35) */
+            /* CIF PROCEDURECALL (704, 518), (286, 35) */
             CALL write('Calling VDM with data');
-            /* CIF TASK (664, 568), (386, 48) */
+            /* CIF TASK (654, 568), (386, 48) */
             TASK for each in fixed: call write(each, ' '); endfor;
-            /* CIF PROCEDURECALL (772, 631), (170, 40) */
+            /* CIF PROCEDURECALL (762, 631), (170, 40) */
             CALL writeln('');
-            /* CIF PROCEDURECALL (771, 686), (172, 35) */
+            /* CIF PROCEDURECALL (761, 686), (172, 35) */
             CALL vdm(fixed, fixed);
-            /* CIF PROCEDURECALL (772, 736), (170, 40) */
+            /* CIF PROCEDURECALL (762, 736), (170, 40) */
             CALL write('Result:');
-            /* CIF TASK (666, 791), (383, 35) */
+            /* CIF TASK (656, 791), (383, 35) */
             TASK for each in fixed: call write(each, ' '); endfor;
-            /* CIF PROCEDURECALL (799, 841), (116, 40) */
+            /* CIF PROCEDURECALL (789, 841), (116, 40) */
             CALL writeln('');
-            /* CIF PROCEDURECALL (667, 896), (381, 35) */
+            /* CIF PROCEDURECALL (657, 896), (381, 35) */
             CALL writeln('Calling VDM2 with value', fixed(0));
-            /* CIF PROCEDURECALL (736, 946), (242, 35) */
+            /* CIF PROCEDURECALL (726, 946), (242, 35) */
             CALL vdm2(fixed(0), simpleseq);
-            /* CIF PROCEDURECALL (602, 996), (511, 40) */
+            /* CIF PROCEDURECALL (592, 996), (511, 40) */
             CALL writeln('Result:', simpleseq!a, ' ', simpleseq!b, ' ', simpleseq!c);
-            /* CIF OUTPUT (788, 1051), (138, 35) */
+            /* CIF OUTPUT (778, 1051), (138, 35) */
             OUTPUT telemetry(a);
-            /* CIF OUTPUT (784, 1101), (147, 35) */
+            /* CIF OUTPUT (774, 1101), (147, 35) */
             OUTPUT peek_list(seq);
-            /* CIF OUTPUT (769, 1151), (177, 35) */
+            /* CIF OUTPUT (759, 1151), (177, 35) */
             OUTPUT peek_fixed(fixed);
-            /* CIF NEXTSTATE (820, 1201), (74, 35) */
+            /* CIF NEXTSTATE (810, 1201), (74, 35) */
             NEXTSTATE next;
-        /* CIF INPUT (1219, 255), (147, 35) */
+        /* CIF INPUT (1209, 255), (147, 35) */
         INPUT Paramless_TC;
-            /* CIF PROCEDURECALL (1166, 305), (253, 35) */
+            /* CIF PROCEDURECALL (1156, 305), (253, 35) */
             CALL writeln('Got Paramless TC');
-            /* CIF PROCEDURECALL (1168, 355), (249, 35) */
+            /* CIF PROCEDURECALL (1158, 355), (249, 35) */
             CALL SET_timer(1000, mytimer);
-            /* CIF OUTPUT (1217, 405), (150, 35) */
+            /* CIF OUTPUT (1207, 405), (150, 35) */
             OUTPUT Paramless_TM;
-            /* CIF TASK (1191, 455), (202, 35) */
+            /* CIF TASK (1181, 455), (202, 35) */
             TASK anint := (anint + 1) mod 100;
-            /* CIF NEXTSTATE (1257, 505), (70, 35) */
+            /* CIF NEXTSTATE (1247, 505), (70, 35) */
             NEXTSTATE wait;
-        /* CIF INPUT (1429, 255), (104, 35) */
+        /* CIF INPUT (1419, 255), (104, 35) */
         INPUT mytimer;
-            /* CIF NEXTSTATE (1430, 305), (102, 35) */
+            /* CIF NEXTSTATE (1420, 305), (102, 35) */
             NEXTSTATE Timeout;
     ENDSTATE;
 ENDPROCESS orchestrator;
