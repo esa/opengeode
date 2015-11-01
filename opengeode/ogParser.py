@@ -2996,7 +2996,7 @@ def connect_part(root, parent, context):
         # Ignore missing parent/statelist to allow local syntax check
         statename = ''
     id_token = []
-    # Keep track of the number of terminator statements follow the input
+    # Keep track of the number of terminator statements following the input
     # useful if we want to render graphs from the SDL model
     terms = len(context.terminators)
     # Retrieve composite state
@@ -3046,16 +3046,35 @@ def connect_part(root, parent, context):
                                         id_token[-1].getTokenStopIndex())
     for exitp in conn.connect_list:
         if exitp != '' and not exitp in nested.state_exitpoints:
-            errors.append(['Exit point {ep} not defined in state {st}'
+            errors.append([u'Exit point {ep} not defined in state {st}'
                           .format(ep=exitp, st=statename),
                           [conn.pos_x or 0, conn.pos_y or 0], []])
-        terminators = [term for term in nested.terminators
-                       if term.kind == 'return'
-                       and term.inputString.lower() == exitp]
-        if not terminators:
-            errors.append(['No {rs} return statement in nested state {st}'
-                          .format(rs=exitp, st=statename),
-                          [conn.pos_x or 0, conn.pos_y or 0], []])
+        def check_terminators(comp):
+            terminators = [term for term in comp.terminators
+                           if term.kind == 'return'
+                           and term.inputString.lower() == exitp]
+            if not terminators:
+                errors.append([u'No {rs} return statement in nested state {st}'
+                              .format(rs=exitp or u'default (unnamed)',
+                                      st=comp.statename.lower()),
+                              [conn.pos_x or 0, conn.pos_y or 0], []])
+            return terminators
+
+        if not isinstance(nested, ogAST.StateAggregation):
+            terminators = check_terminators(nested)
+        else:
+            # State aggregation: we must check that all parallel states
+            # contain indeed a return statement of the given name
+            def siblings(aggregate):
+                for comp in aggregate.composite_states:
+                    if not isinstance(comp, ogAST.StateAggregation):
+                        yield comp
+                    else:
+                        for each in siblings(comp()):
+                            yield each
+            all_terms = map(check_terminators, siblings(nested))
+            terminators = []
+            map(terminators.extend, all_terms)
         for each in terminators:
             # Set next transition, exact id to be found in postprocessing
             each.next_trans = trans

@@ -205,6 +205,9 @@ LD_LIBRARY_PATH=. taste-gui -l
                                (name for name in process.mapping.iterkeys()
                                     if not name.endswith(u'START'))))
     reduced_statelist = {s for s in full_statelist if s not in parallel_states}
+    if parallel_states:
+        # Parallel states in a state aggregation may terminate
+        full_statelist.add(u'{}finished'.format(UNICODE_SEP))
 
     if full_statelist:
         process_level_decl.append(u'type States is ({});'
@@ -2015,17 +2018,42 @@ def _transition(tr, **kwargs):
                 # TODO
             elif tr.terminator.kind == 'return':
                 string = ''
+                aggregate = False
+                if tr.terminator.substate: # XXX add to C generator
+                    aggregate = True
+                    # within a state aggregation, a return means that one
+                    # of the parallel states becomes disabled, but it does
+                    # not mean that the whole state aggregation can be
+                    # exited. We must set this substate to a "finished"
+                    # state until all the substates are returned. Then only
+                    # call the overall state aggregation exit procedures.
+                    code.append(u'{ctxt}.{sub}{sep}state := {sep}finished;'
+                                .format(ctxt=LPREFIX,
+                                  sub=tr.terminator.substate,
+                                  sep=UNICODE_SEP))
+                    cond = u'{ctxt}.{sib}{sep}state = {sep}finished'
+                    conds = [cond.format(sib=sib,
+                                         ctxt=LPREFIX,
+                                         sep=UNICODE_SEP)
+                            for sib in tr.terminator.siblings
+                            if sib.lower() != tr.terminator.substate.lower()]
+                    code.append(u'if {} then'.format(' and '.join(conds)))
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
                         stmts, string, local = expression(
                                                     tr.terminator.return_expr)
                         code.extend(stmts)
                         local_decl.extend(local)
-                    code.append('return{};'
+                    code.append(u'return{};'
                                 .format(' ' + string if string else ''))
                 else:
-                    code.append('trId := ' + str(tr.terminator.next_id) + ';')
-                    code.append('goto next_transition;')
+                    code.append(u'trId := ' + str(tr.terminator.next_id) + ';')
+                    code.append(u'goto next_transition;')
+                if aggregate:
+                    code.append(u'else')
+                    code.append(u'trId := -1;')
+                    code.append(u'goto next_transition;')
+                    code.append(u'end if;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
         code.append('null;')
