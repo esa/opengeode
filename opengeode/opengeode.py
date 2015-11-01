@@ -1952,7 +1952,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         messages.itemClicked.connect(self.view.show_item)
         self.mdi_area = self.findChild(QtGui.QMdiArea, 'mdiArea')
         self.sub_mdi = self.mdi_area.subWindowList()
+        self.filter_event = FilterEvent()
         for each in self.sub_mdi:
+            each.widget().installEventFilter(self.filter_event)
             if each.widget() != process_widget:
                 self.statechart_mdi = each
                 self.mdi_area.subWindowActivated.connect(self.upd_statechart)
@@ -2104,6 +2106,15 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.scene.undo_stack.clear()
         LOG.debug('Bye bye!')
         super(OG_MainWindow, self).closeEvent(event)
+
+class FilterEvent(QtCore.QObject):
+    def eventFilter(self, obj, event):
+        ''' Used to intercept the close event sent of the Mdi windows '''
+        if event.type() == QtCore.QEvent.Close:
+            event.ignore()
+            return True
+        else:
+            return QtCore.QObject.eventFilter(self, obj, event)
 
 
 def parse_args():
