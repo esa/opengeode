@@ -376,7 +376,7 @@ def update(scene):
             strict=False, directed=True, splines='spline', start='rand')
 
     lookup = {Point: 'point', Record: 'record',
-              Diamond: 'diamond', Stop: 'plaintext'}
+              Diamond: 'diamond', Stop: 'square'}
     for node in nodes:
         center_pos = node['pos']
         bb_height = scene.itemsBoundingRect().height()
@@ -466,7 +466,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
 
     # Statechart symbols lookup table
     lookup = {'point': Point, 'record': Record,
-              'diamond': Diamond, 'plaintext': Stop}
+              'diamond': Diamond, 'square': Stop}
     try:
         # Bonus: the tool can render any dot graph...
         graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
@@ -560,8 +560,8 @@ def create_dot_graph(root_ast, basic=False):
     for each in [term for term in root_ast.terminators
                  if term.kind == 'return']:
         # create a new node for each RETURN statement (in nested states)
-        ident = each.inputString or 'default'
-        graph.add_node(ident, label=ident, shape='plaintext')
+        ident = each.inputString or ' '
+        graph.add_node(ident, label=ident, shape='square', width=10.0 / 72.0)
     for state, inputs in root_ast.mapping.viewitems():
         # Add edges
         transitions = \
@@ -632,7 +632,7 @@ def create_dot_graph(root_ast, basic=False):
                 if term.inputString.strip() == '-':
                     target = state
                 else:
-                    target = term.inputString.lower() or 'default'
+                    target = term.inputString.lower() or ' '
                 if basic:
                     target_states[target].add(label)
                 else:
