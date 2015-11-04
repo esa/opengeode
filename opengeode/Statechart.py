@@ -35,7 +35,7 @@ except ImportError:
 import genericSymbols
 from Connectors import Edge
 
-RENDER_DPI = {'X': 93.0, 'Y': 95.0}
+RENDER_DPI = {'X': None, 'Y': None}
 G_SYMBOLS = set()
 EDGES = []
 
@@ -347,7 +347,7 @@ def preprocess_nodes(my_graph, bounding_rect, dpi):
             new_node['height'] = float(node['height']) * RENDER_DPI['Y']
         # get the position of the CENTER of the node
         center_pos = [float(val) for val in node['pos'].split(',')]
-        # apply dpi-conversion from 72 to 96
+        # apply dpi-conversion from 72 to actual screen DPI
         center_pos[0] *= (RENDER_DPI['X'] / dpi)
 
         # translate y-coord from bottom-left to top-left corner
@@ -422,6 +422,12 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         input is resulting from sdl_to_statechart, it contains a tree of graphs
         in case of composite states.
     '''
+    # dot uses a 72 dpi value for converting its position coordinates
+    # Get actual rendering DPI from Qt view
+    for view in scene.views():
+        RENDER_DPI['X'] = view.physicalDpiX()
+        RENDER_DPI['Y'] = view.physicalDpiY()
+
     # Go recursive first: render children
     for aname, agraph in graphtree['children'].viewitems():
         # Render each child in a temporary scene to get the size of the scene
@@ -494,11 +500,6 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     bounding_rect = [float(val) for val in
             dotgraph.graphviz.agget(graph.handle, 'bb').split(',')]
     dot_dpi = float(dotgraph.graphviz.agget(graph.handle, 'dpi'))
-    # dot uses a 72 dpi value for converting its position coordinates
-    # Get actual rendering DPI from Qt view
-    for view in scene.views():
-        RENDER_DPI['X'] = view.physicalDpiX()
-        RENDER_DPI['Y'] = view.physicalDpiY()
 
     #fontname = graph.graph_attr.get('fontname')
     #fontsize = graph.graph_attr.get('fontsize')
@@ -555,13 +556,7 @@ def create_dot_graph(root_ast, basic=False):
                            fixedsize='true', width=10.0 / 72.0)
         else:
             graph.add_node(state, label=state, shape='record', style='rounded')
-#   for each in root_ast.composite_states:
-#       # this will have to be recursive
-#       subnodes = (name for name in graph.iternodes()
-#                   if name.startswith(each.statename.lower() + '_'))
-#       graph.add_subgraph(subnodes, name='cluster_' + each.statename.lower(),
-#                          label=each.statename.lower(),
-#                          style='rounded', shape='record')
+
     for each in [term for term in root_ast.terminators
                  if term.kind == 'return']:
         # create a new node for each RETURN statement (in nested states)

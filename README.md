@@ -148,6 +148,9 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.3.2 (11/2015)
+     - Better support of platform-dependent screen resolution and dpi
+
 1.3.1 (11/2015)
      - Support for State Aggregations (parallel states)
      - Improved statechart rendering
