@@ -442,10 +442,14 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     # Harmonize the size of states to avoid having huge composite state(s)
     # next to single, small states. Rule: there can't be a state with a size
     # that is less than a third of the biggest state.
-    min_width = float(max(node.attr.get('width', 0.0) or 0.0
-                    for node in graphtree['graph'].iternodes()))
-    min_height = float(max(node.attr.get('height', 0.0) or 0.0
-                    for node in graphtree['graph'].iternodes()))
+    try:
+        min_width = float(max(node.attr.get('width', 0.0) or 0.0
+                        for node in graphtree['graph'].iternodes()))
+        min_height = float(max(node.attr.get('height', 0.0) or 0.0
+                        for node in graphtree['graph'].iternodes()))
+    except ValueError as err:
+        LOG.debug(str(err))
+        min_width, min_height = 0, 0
     if min_width and min_height:
         for node in graphtree['graph'].iternodes():
             if node.attr['shape'] != 'record':

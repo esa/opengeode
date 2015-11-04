@@ -2010,15 +2010,15 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 scene = self.view.parent_scene[0][0]
             else:
                 scene = self.view.scene()
-            graph = scene.sdl_to_statechart()
             try:
+                graph = scene.sdl_to_statechart()
                 Statechart.render_statechart(self.statechart_scene,
                                              graph)
                 self.statechart_view.refresh()
                 self.statechart_view.fitInView(
                         self.statechart_scene.itemsBoundingRect(),
                         Qt.KeepAspectRatioByExpanding)
-            except (IOError, TypeError) as err:
+            except (AttributeError, IOError, TypeError) as err:
                 LOG.debug(str(err))
 
     @QtCore.Slot(ogAST.AST)
@@ -2298,12 +2298,12 @@ def export(ast, options):
             # Also save the statechart view of the current scene
             LOG.info('Saving statechart sc_{}.png'.format(process.processName))
             sc_scene = SDL_Scene(context='statechart')
-            graph = diagram.sdl_to_statechart()
             try:
+                graph = diagram.sdl_to_statechart()
                 Statechart.render_statechart(sc_scene, graph,
                                              dump_gfx=process.processName)
                 sc_scene.refresh()
-            except (IOError, TypeError) as err:
+            except (AttributeError, IOError, TypeError) as err:
                 LOG.debug(str(err))
 
 
