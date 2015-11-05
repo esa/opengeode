@@ -49,13 +49,15 @@ def state_aggregations(process):
     # { aggregate_name : [list of parallel states] }
     aggregates = defaultdict(list)
     def do_composite(comp, aggregate=''):
-        ''' Recursively find all state aggregations in order to create
-        variables to store the state of each parallel state '''
-        for each in comp.composite_states: # CHECKME
-            pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
+        ''' Recursively find all state aggregations in order to allow code
+        generator backends to store the state of each parallel state '''
+        pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
                     else ''
+        for each in comp.composite_states:
             do_composite(each, pre)
             if isinstance(each, ogAST.StateAggregation):
+                # substate of the current state is a state aggregation
+                # -> set a flag in each terminator of the current state
                 for term in comp.terminators:
                     if term.inputString.lower() == each.statename.lower():
                         term.next_is_aggregation = True
@@ -73,6 +75,14 @@ def state_aggregations(process):
     for each in process.terminators:
         if each.inputString.lower() in aggregates:
             each.next_is_aggregation = True
+    for name, comp in aggregates.viewitems():
+        # for each state aggregation. update the terminators
+        # of each parallel state with the name of all sibling states
+        # useful for backends to handle parallel state termination (return)
+        # since they have to synchronize with the sibling states
+        siblings = [sib.statename for sib in comp]
+        for term in [terms for sib in comp for terms in sib.terminators]:
+            term.siblings = siblings
     return aggregates
 
 
@@ -226,12 +236,9 @@ def flatten(process, sep=u'_'):
             # Go recursively in inner composite states
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
-            propagate_inputs(inner, process)
-            try:
-                del process.mapping[inner.statename]
-            except KeyError:
-                # KeyError in case of state aggregation
-                pass
+            # Remove: recursion is already handled within propagate_inputs
+            #propagate_inputs(inner, process)
+            #del process.mapping[inner.statename]
         for each in state.terminators:
             # Give prefix to terminators
             if each.label:
@@ -265,17 +272,20 @@ def flatten(process, sep=u'_'):
             to exit the composite state from the outer scope) must be
             processed by each of the substates.
         '''
-        for _, val in nested_state.mapping.viewitems():
-            try:
-                inputlist = context.mapping[nested_state.statename]
-                val.extend(inputlist)
-            except (AttributeError, KeyError):
-                # KeyError in case of StateAggregation
-                pass
+        if not isinstance(nested_state, ogAST.StateAggregation):
+            for _, val in nested_state.mapping.viewitems():
+                try:
+                    inputlist = context.mapping[nested_state.statename]
+                    val.extend(inputlist)
+                except (AttributeError, KeyError):
+                    # KeyError in case of StateAggregation
+                    pass
         for each in nested_state.composite_states:
             # do the same recursively
             propagate_inputs(each, nested_state)
             #del nested_state.mapping[each.statename]
+        if not isinstance(nested_state, ogAST.StateAggregation):
+            del context.mapping[nested_state.statename]
 
     def set_terminator_states(context, prefix=''):
         ''' Associate state to terminators, needed to process properly
@@ -300,7 +310,7 @@ def flatten(process, sep=u'_'):
     for each in process.composite_states:
         update_composite_state(each, process)
         propagate_inputs(each, process)
-        del process.mapping[each.statename]
+        #del process.mapping[each.statename]
 
     # Update terminators at process level
     for each in process.terminators:

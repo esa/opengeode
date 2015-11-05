@@ -9,6 +9,7 @@ SYSTEM orchestrator;
 	SIGNAL peek_fixed(fixedintlist);
         SIGNAL Paramless_TC;
         SIGNAL Paramless_TM;
+        signal other;
         
         PROCEDURE ExternalProc;
 		FPAR
@@ -17,14 +18,14 @@ SYSTEM orchestrator;
  	EXTERNAL; 
 
 	CHANNEL c
-		FROM ENV TO orchestrator WITH pulse, Paramless_TC;
+		FROM ENV TO orchestrator WITH pulse, Paramless_TC, other;
 		FROM orchestrator TO ENV WITH telemetry, peek_list, peek_fixed, Paramless_TM;
 	ENDCHANNEL;
 
 	BLOCK orchestrator;
 
 		SIGNALROUTE r
-			FROM ENV TO orchestrator WITH pulse, Paramless_TC;
+			FROM ENV TO orchestrator WITH pulse, Paramless_TC, other;
 			FROM orchestrator TO ENV WITH telemetry, peek_list, peek_fixed, Paramless_TM;
 
 		CONNECT c and r;

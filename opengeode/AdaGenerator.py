@@ -201,10 +201,13 @@ LD_LIBRARY_PATH=. taste-gui -l
     process_level_decl = []
 
     # Establish the list of states (excluding START states) XXX update C backend
-    full_statelist = list(chain(aggregates.viewkeys(),
+    full_statelist = set(chain(aggregates.viewkeys(),
                                (name for name in process.mapping.iterkeys()
                                     if not name.endswith(u'START'))))
-    reduced_statelist = [s for s in full_statelist if s not in parallel_states]
+    reduced_statelist = {s for s in full_statelist if s not in parallel_states}
+    if parallel_states:
+        # Parallel states in a state aggregation may terminate
+        full_statelist.add(u'{}finished'.format(UNICODE_SEP))
 
     if full_statelist:
         process_level_decl.append(u'type States is ({});'
@@ -379,7 +382,6 @@ package {process_name} is'''.format(process_name=process_name,
     taste_template.extend(dll_api)
 
     # Generate the code for each input signal (provided interface) and timers
-    print process.input_signals
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
         signame = signal.get('name', u'START')
@@ -463,26 +465,32 @@ package {process_name} is'''.format(process_name=process_name,
             if state.endswith(u'START'):
                 return
             taste_template.append(u'when {state} =>'.format(state=state))
+            input_def = mapping[signame].get(state)
+            #print signame, input_def
             if state in aggregates.viewkeys():
                 # State aggregation:
                 # - find which substate manages this input
                 # - add a swich case on the corresponding substate
                 taste_template.append(u'-- this is a state aggregation')
                 for sub in aggregates[state]:
-                    for par in sub.mapping.viewkeys():
-                        if par in mapping[signame].viewkeys():
-                            taste_template.append(u'case '
-                                                  u'{ctxt}.{sub}{sep}state is'
-                                                  .format(ctxt=LPREFIX,
-                                                         sub=sub.statename,
-                                                         sep=UNICODE_SEP))
+                    if [a for a in sub.mapping.viewkeys()
+                            if a in mapping[signame].viewkeys()]:
+                        taste_template.append(u'case '
+                                              u'{ctxt}.{sub}{sep}state is'
+                                              .format(ctxt=LPREFIX,
+                                                     sub=sub.statename,
+                                                     sep=UNICODE_SEP))
+                        for par in sub.mapping.viewkeys():
                             case_state(par)
-                            taste_template.append('when others =>')
-                            taste_template.append('null;')
-                            taste_template.append('end case;')
-                            break
+                        taste_template.append('when others =>')
+                        taste_template.append('null;')
+                        taste_template.append('end case;')
+                        break
                 else:
                     # Input is not managed in the state aggregation
+                    if input_def:
+                        # check if it is managed one level above
+                        execute_transition(state)
                     taste_template.append('null;')
             else:
                 execute_transition(state)
@@ -1991,7 +1999,7 @@ def _transition(tr, **kwargs):
                                 if tr.terminator.next_is_aggregation:
                                     statement = u'{};'.format(nid)
                                 else:
-                                    statement = u'tdId := {};'.format(nid)
+                                    statement = u'trId := {};'.format(nid)
                                 code.extend([u'when {} =>'
                                                 .format(u'|'.join(sta)),
                                                  statement])
@@ -2010,17 +2018,42 @@ def _transition(tr, **kwargs):
                 # TODO
             elif tr.terminator.kind == 'return':
                 string = ''
+                aggregate = False
+                if tr.terminator.substate: # XXX add to C generator
+                    aggregate = True
+                    # within a state aggregation, a return means that one
+                    # of the parallel states becomes disabled, but it does
+                    # not mean that the whole state aggregation can be
+                    # exited. We must set this substate to a "finished"
+                    # state until all the substates are returned. Then only
+                    # call the overall state aggregation exit procedures.
+                    code.append(u'{ctxt}.{sub}{sep}state := {sep}finished;'
+                                .format(ctxt=LPREFIX,
+                                  sub=tr.terminator.substate,
+                                  sep=UNICODE_SEP))
+                    cond = u'{ctxt}.{sib}{sep}state = {sep}finished'
+                    conds = [cond.format(sib=sib,
+                                         ctxt=LPREFIX,
+                                         sep=UNICODE_SEP)
+                            for sib in tr.terminator.siblings
+                            if sib.lower() != tr.terminator.substate.lower()]
+                    code.append(u'if {} then'.format(' and '.join(conds)))
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
                         stmts, string, local = expression(
                                                     tr.terminator.return_expr)
                         code.extend(stmts)
                         local_decl.extend(local)
-                    code.append('return{};'
+                    code.append(u'return{};'
                                 .format(' ' + string if string else ''))
                 else:
-                    code.append('trId := ' + str(tr.terminator.next_id) + ';')
-                    code.append('goto next_transition;')
+                    code.append(u'trId := ' + str(tr.terminator.next_id) + ';')
+                    code.append(u'goto next_transition;')
+                if aggregate:
+                    code.append(u'else')
+                    code.append(u'trId := -1;')
+                    code.append(u'goto next_transition;')
+                    code.append(u'end if;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
         code.append('null;')
@@ -2297,7 +2330,6 @@ def path_type(path):
                 continue
             # Sequence, Choice (case insensitive)
             if current.kind in ('SequenceType', 'ChoiceType'):
-                #print list(Helper.sorted_fields(current))
                 elem_asn1 = elem.replace('_', '-').lower()
                 type_idx, = (c for c in current.Children
                                     if c.lower() == elem_asn1)

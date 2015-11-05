@@ -116,7 +116,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.0'
+__version__ = '1.3.2'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -884,7 +884,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.refresh()
 
 
-    def sdl_to_statechart(self, basic=False):
+    def sdl_to_statechart(self, basic=True):
         ''' Create a graphviz representation of the SDL model '''
         pr_raw = Pr.parse_scene(self)
         pr_data = unicode('\n'.join(pr_raw))
@@ -892,10 +892,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         try:
             process_ast, = ast.processes
         except ValueError:
-            LOG.error('No statechart to render')
+            LOG.debug('No statechart to render')
             return None
-        # Flatten nested states
-        Helper.flatten(process_ast)
+        # Flatten nested states (no, because neato does not support it,
+        # dot supports only vertically-aligned states, and fdp does not
+        # support curved edges and is buggy with pygraphviz anyway)
+        # Helper.flatten(process_ast)
         return Statechart.create_dot_graph(process_ast, basic)
 
 
@@ -1311,9 +1313,6 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.check_model()
         elif event.key() == Qt.Key_F5:
             self.refresh()
-            # Refresh statechart
-            if graphviz:
-                Statechart.update(self.scene())
         elif event.matches(QtGui.QKeySequence.Open):
             self.open_diagram()
         elif event.matches(QtGui.QKeySequence.New):
@@ -1860,6 +1859,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.datatypes_view = None
         self.datatypes_scene = None
         self.asn1_area = None
+        # MDI area (need to keep them to avoid segfault due to pyside bugs)
+        self.mdi_area = None
+        self.sub_mdi = None
+        self.statechart_mdi = None
 
     def new_scene(self):
         ''' Create a new, clean SDL scene. This function is necessary because
@@ -1870,6 +1873,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             self.scene.messages_window = self.view.messages_window
             self.view.setScene(self.scene)
             self.view.refresh()
+
 
     def start(self, file_name):
         ''' Initializes all objects to start the application '''
@@ -1946,14 +1950,21 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.view.messages_window = messages
         self.scene.messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
+        self.mdi_area = self.findChild(QtGui.QMdiArea, 'mdiArea')
+        self.sub_mdi = self.mdi_area.subWindowList()
+        self.filter_event = FilterEvent()
+        for each in self.sub_mdi:
+            each.widget().installEventFilter(self.filter_event)
+            if each.widget() != process_widget:
+                self.statechart_mdi = each
+                self.mdi_area.subWindowActivated.connect(self.upd_statechart)
+                break
 
-        statechart_dock = self.findChild(QtGui.QDockWidget, 'statechart_dock')
+
         if graphviz:
             self.statechart_view = self.findChild(SDL_View, 'statechart_view')
             self.statechart_scene = SDL_Scene(context='statechart')
             self.statechart_view.setScene(self.statechart_scene)
-        else:
-            statechart_dock.hide()
 
         # Set up the dock area to display the ASN.1 Data model
         #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
@@ -1989,6 +2000,26 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             # Create a default context - at Block level - for the autocompleter
             sdlSymbols.CONTEXT = ogAST.Block()
 
+    @QtCore.Slot(QtGui.QMdiSubWindow)
+    def upd_statechart(self, mdi):
+        ''' Signal sent by Qt when the MDI area tab changes
+        Here we check if the Statechart tab is selected, and we draw/refresh
+        the statechart automatically in that case '''
+        if mdi == self.statechart_mdi and graphviz:
+            if self.view.parent_scene:
+                scene = self.view.parent_scene[0][0]
+            else:
+                scene = self.view.scene()
+            try:
+                graph = scene.sdl_to_statechart()
+                Statechart.render_statechart(self.statechart_scene,
+                                             graph)
+                self.statechart_view.refresh()
+                self.statechart_view.fitInView(
+                        self.statechart_scene.itemsBoundingRect(),
+                        Qt.KeepAspectRatioByExpanding)
+            except (AttributeError, IOError, TypeError) as err:
+                LOG.debug(str(err))
 
     @QtCore.Slot(ogAST.AST)
     def set_asn1_view(self, ast):
@@ -2051,18 +2082,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     # pylint: disable=C0103
     def keyPressEvent(self, key_event):
         ''' Handle keyboard: Statechart rendering '''
-        if key_event.key() == Qt.Key_F4 and graphviz:
-            if self.view.parent_scene:
-                scene = self.view.parent_scene[0][0]
-            else:
-                scene = self.view.scene()
-            graph = scene.sdl_to_statechart()
-            try:
-                Statechart.render_statechart(self.statechart_scene, graph)
-                self.statechart_view.refresh()
-            except (IOError, TypeError) as err:
-                LOG.debug(str(err))
-        elif key_event.key() == Qt.Key_Colon:
+        if key_event.key() == Qt.Key_Colon:
             self.vi_bar.show()
             self.vi_bar.setFocus()
             self.vi_bar.setText(':')
@@ -2086,6 +2106,15 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.scene.undo_stack.clear()
         LOG.debug('Bye bye!')
         super(OG_MainWindow, self).closeEvent(event)
+
+class FilterEvent(QtCore.QObject):
+    def eventFilter(self, obj, event):
+        ''' Used to intercept the close event sent of the Mdi windows '''
+        if event.type() == QtCore.QEvent.Close:
+            event.ignore()
+            return True
+        else:
+            return QtCore.QObject.eventFilter(self, obj, event)
 
 
 def parse_args():
@@ -2269,12 +2298,12 @@ def export(ast, options):
             # Also save the statechart view of the current scene
             LOG.info('Saving statechart sc_{}.png'.format(process.processName))
             sc_scene = SDL_Scene(context='statechart')
-            graph = diagram.sdl_to_statechart()
             try:
+                graph = diagram.sdl_to_statechart()
                 Statechart.render_statechart(sc_scene, graph,
                                              dump_gfx=process.processName)
                 sc_scene.refresh()
-            except (IOError, TypeError) as err:
+            except (AttributeError, IOError, TypeError) as err:
                 LOG.debug(str(err))
 
 
