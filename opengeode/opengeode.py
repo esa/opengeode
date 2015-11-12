@@ -116,7 +116,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1371,10 +1371,9 @@ class SDL_View(QtGui.QGraphicsView, object):
         ''' Display the About dialog '''
         QtGui.QMessageBox.about(self, 'About OpenGEODE',
                 'OpenGEODE - a tiny SDL editor for TASTE\n\n'
-                'Author: \nMaxime Perrotin'
-                '\n\nContact: maxime.perrotin@esa.int\n\n'
-                'Coded with Pyside (Python + Qt)\n'
-                'and ANTLR 3.1.3 for Python (parser)')
+                'Version {}\n\n'
+                'Copyright (c) 2012-2015 European Space Agency\n\n'
+                'Contact: Maxime.Perrotin@esa.int\n\n'.format(__version__))
 
     # pylint: disable=C0103
     def wheelEvent(self, wheelEvent):
