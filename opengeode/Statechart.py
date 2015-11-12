@@ -427,6 +427,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     for view in scene.views():
         RENDER_DPI['X'] = view.physicalDpiX()
         RENDER_DPI['Y'] = view.physicalDpiY()
+        break
 
     # Go recursive first: render children
     for aname, agraph in graphtree['children'].viewitems():
@@ -438,7 +439,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         for node in graphtree['graph'].iternodes():
             if node == aname:
                 size = temp_scene.itemsBoundingRect()
-                node.attr['width'] = ((temp_scene.width() + 30)
+                node.attr['width'] = ((temp_scene.width() + 35)
                                       / RENDER_DPI['X'])
                 node.attr['height'] = ((temp_scene.height() + 35)
                                       / RENDER_DPI['Y'])
@@ -460,8 +461,8 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         for node in graphtree['graph'].iternodes():
             if node.attr['shape'] != 'record':
                 continue
-            node.attr['width'] = node.attr.get('width') or min_width/3.0
-            node.attr['height'] = node.attr.get('height') or min_height/3.0
+            node.attr['width'] = node.attr.get('width') or (min_width / 3.0)
+            node.attr['height'] = node.attr.get('height') or (min_height / 3.0)
 
 
     # Statechart symbols lookup table
@@ -491,7 +492,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
             dump_gfx += '.png'
 
     graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
-                 '-Gsplines=curved -Gsep=1 '
+                 '-Gsplines=curved -Gsep=1 -Gdpi=72 '
                  '-Gstart=random10 -Goverlap=scale '
             '-Nstyle=rounded -Nshape=record -Elen=1 {kp} {dump}'
             .format(kp='-n1' if keep_pos else '',
@@ -512,7 +513,9 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         shape = node.get('shape')
         try:
             node_symbol = lookup[shape](node, graph)
-            if graphtree['children'] and shape == 'record':
+            if unicode(node_symbol) in graphtree['children'] \
+                    and shape == 'record':
+                # Use a different color for non-terminal states
                 node_symbol.setBrush(QtGui.QBrush(QtGui.QColor(249, 249, 249)))
             G_SYMBOLS.add(node_symbol)
             node_symbols.append(node_symbol)
@@ -523,6 +526,9 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
 
     for edge in edges:
         Edge(edge, graph)
+
+    # Make sure the scene has no negative coordinates
+    scene.translate_to_origin()
 
     for aname, agraph in graphtree['children'].viewitems():
         # At the end, place the content of the scene of the composite states
