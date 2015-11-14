@@ -334,6 +334,17 @@ package {process_name} is'''.format(process_name=process_name,
         dll_api.append("end set_state;")
         dll_api.append("")
 
+        # interface to get/set state aggregations XXX add to C generator
+        for substates in aggregates.viewvalues():
+            for each in substates:
+                process_level_decl.append(
+                        u"function get_{name}_state return chars_ptr "
+                        u"is (New_String(states'Image({ctxt}.{name}{sep}state)"
+                        ")) with Export, Convention => C, "
+                        'Link_Name => "{proc}_{name}_state";'
+                        .format(name=each.statename, ctxt=LPREFIX,
+                                proc=process_name, sep=UNICODE_SEP))
+
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.viewitems():
             # Getters for local variables
