@@ -1,0 +1,98 @@
+This note explains the steps to be followed in order to implement SDL features
+that are not yet supported by the tool.
+
+Use case: add support for "Continous signals"
+
+The following steps are:
+
+1) add the new grammar to sdl92.g
+
+continuous_signal
+        :       cif?
+                hyperlink?
+                PROVIDED expression e=end
+                (PRIORITY p=INT end)?
+                transition
+        ->      ^(PROVIDED cif? hyperlink? expression $p? $e? transition)
+        ;
+
+A new token ("PROVIDED") may be needed and must be added at several places
+in the ANTLR grammar:
+    - in the "symbolname" production (for the CIF part)
+    - as a new keyword (PROVIDED : P R O V I D E D)
+    - in the list of tokens (tokens { ... })
+
+notes:
+    - "cif?" and "hyperlink?" are optional
+    - "end" corresponds to the COMMENT part
+
+then the new production is added as a child option to the (existing) "state":
+
+state_part
+        :       input_part
+                | save_part
+                | spontaneous_transition
+                | continuous_signal     // <==== HERE
+                | connect_part
+        ;
+
+2) Prepare the parser in ogParser.py
+
+Find the parent rule (state) and add a branch to parse the new child.
+Usually the rule is a function named after the production name. So look for
+"def state (...)"
+
+def state(root, parent, context):
+    '''
+        Parse a STATE.
+        "parent" is used to compute absolute coordinates
+        "context" is the AST used to store global data (process/procedure)
+    '''
+
+Each rule parses all its children based on the token name from ANTLR. It is
+therefore straightforward to add the parsing of a new child:
+
+    for child in root.getChildren():
+        if child.type == lexer.CIF:
+        ....
+        # you must add a new branch based on your token name:
+        elif child.type == lexer.PROVIDED:
+            # Add a placeholder for your code here
+            sterr.append('I am adding support for Continuous Signals now!')
+
+If the new rule has children, you will likely want to add a new function to
+parse it following the same scheme as the parent rule (add a function called
+"continuous_signal" which returns the full content of the grammar).
+
+We keep this as a placeholder for the time being because we must first define
+if/what new entries are needed in the AST (ogAST.py).
+
+Note:
+In SDL there are family of features and very often, new features are similar
+to existing ones so you will find a model to know how to easily code your new
+function. In the case of the continuous signals, they are very similar to
+INPUT and CONNECT - they are triggers for a transition below a state.
+
+3) Add new entries to the AST in ogAST.py
+
+Find the relevant places and add new entries if needed. Here we look for the
+State entry and we add a list of "continuous signals".
+Depending on the complexity of the new feature, we can create a new class for
+the entry, or use a simple type/dictionary.
+The general rule is that if we are adding a new symbol (with coordinates,
+comments, hyperlink, ...) it is better to create a new class to handle it.
+It is the case here.
+
+So first in the State class:
+
+class State(object):
+    ''' AST Entry for STATE symbols '''
+    def __init__(self, defName=''):
+        # (...) Add the following lines:
+        # list of ContinousSignal (provided clauses below a state)
+        self.continuous_signals = []
+
+Then create the new class, using the same structure as another class of a
+feature of the same family.
+
+

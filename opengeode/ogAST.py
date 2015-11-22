@@ -684,6 +684,8 @@ class State(object):
         self.inputs = []
         # list of type Connect (connection below a nested state)
         self.connects = []
+        # list of ContinousSignal (provided clauses below a state)
+        self.continuous_signals = []
         # optional comment symbol
         self.comment = None
         # optional hyperlink

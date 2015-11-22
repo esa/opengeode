@@ -2957,6 +2957,8 @@ def state(root, parent, context):
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             state_def.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.PROVIDED:
+            sterr.append('Continuous signals are not supported yet')
         elif child.type == 0:
             # Parser error, already caught
             pass
