@@ -1,0 +1,99 @@
+SYSTEM og;
+    /* CIF TEXT (156, 190), (356, 248) */
+    use dv comment 'dataview-uniq.asn';
+
+signal telecommand(tc_type);
+signal telemetry(tm_type);
+
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH telecommand;
+        FROM og TO ENV WITH telemetry;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH telecommand;
+            FROM og TO ENV WITH telemetry;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            STATE AGGREGATION wait;
+            SUBSTRUCTURE
+                    STATE mode_manager;
+                    SUBSTRUCTURE
+                            /* CIF START (180, 60), (70, 35) */
+                            START;
+                                /* CIF NEXTSTATE (159, 110), (111, 35) */
+                                NEXTSTATE wait_for_tc;
+                            /* CIF STATE (159, 110), (111, 35) */
+                            STATE wait_for_tc;
+                                /* CIF INPUT (143, 165), (144, 35) */
+                                provided got_tc=true and present(tc!content)=change_mode;
+                                    /* CIF PROCEDURECALL (123, 215), (184, 35) */
+                                    CALL writeln('Change Mode');
+                                    /* CIF NEXTSTATE (180, 265), (70, 35) */
+                                    NEXTSTATE -;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
+                    STATE tc_router;
+                    SUBSTRUCTURE
+                            /* CIF START (144, 56), (70, 35) */
+                            START;
+                                /* CIF NEXTSTATE (126, 106), (106, 35) */
+                                NEXTSTATE wait_for_tc;
+                            /* CIF STATE (126, 106), (106, 35) */
+                            STATE wait_for_tc;
+                                /* CIF INPUT (107, 161), (144, 35) */
+                                INPUT telecommand(tc);
+                                    /* CIF TASK (117, 211), (123, 35) */
+                                    TASK got_tc := true;
+                                    /* CIF NEXTSTATE (144, 261), (70, 35) */
+                                    NEXTSTATE -;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
+                    STATE memory_manager;
+                    SUBSTRUCTURE
+                            /* CIF START (165, 47), (70, 35) */
+                            START;
+                                /* CIF NEXTSTATE (147, 97), (106, 35) */
+                                NEXTSTATE wait_for_tc;
+                            /* CIF STATE (147, 97), (106, 35) */
+                            STATE wait_for_tc;
+                                /* CIF INPUT (128, 152), (144, 35) */
+                                provided got_tc=true and present(tc!content)=patch_memory;
+                                    /* CIF PROCEDURECALL (87, 202), (226, 35) */
+                                    CALL writeln('Patch Memory');
+                                    /* CIF NEXTSTATE (165, 252), (70, 35) */
+                                    NEXTSTATE -;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
+                    /* CIF STATE (370, 97), (147, 35) */
+                    STATE memory_manager;
+                    ENDSTATE;
+                    /* CIF STATE (238, 111), (96, 35) */
+                    STATE tc_router;
+                    ENDSTATE;
+                    /* CIF STATE (314, 191), (132, 35) */
+                    STATE mode_manager;
+                    ENDSTATE;
+            ENDSUBSTRUCTURE;
+            /* CIF TEXT (0, 310), (287, 140) */
+            -- This system tests the provided clause
+-- (continuous signal)
+
+dcl tc TC_type;
+
+dcl tm TM_type;
+
+dcl got_tc Boolean_type;
+            /* CIF ENDTEXT */
+            /* CIF START (316, 297), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (316, 347), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (412, 344), (67, 35) */
+            STATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;

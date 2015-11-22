@@ -2962,7 +2962,7 @@ def state(root, parent, context):
             pass
         else:
             stwarn.append('Unsupported STATE definition child type: ' +
-                           str(child.type))
+                            sdl92Parser.tokenNames[child.type])
     # post-processing: if state is followed by an ASTERISK input, the exact
     # list of inputs can be updated. Possible only if context has signals
     if context.input_signals and asterisk_input:

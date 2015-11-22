@@ -1,0 +1,17 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+TC-Type ::= SEQUENCE {
+     apid INTEGER,
+     content CHOICE {
+         change-mode ENUMERATED { safe, operational },
+         patch-memory INTEGER (0..100)
+     }
+}
+
+TM-Type ::= SEQUENCE {
+    apid INTEGER
+}
+
+Boolean-Type ::= BOOLEAN
+END
