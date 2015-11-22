@@ -627,8 +627,8 @@ continuous_signal
                 hyperlink?
                 PROVIDED expression e=end
                 (PRIORITY p=INT end)?
-                transition
-        ->      ^(PROVIDED cif? hyperlink? expression $p? $e? transition)
+                transition?
+        ->      ^(PROVIDED expression cif? hyperlink? $p? $e? transition?)
         ;
 
 

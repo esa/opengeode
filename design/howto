@@ -12,8 +12,8 @@ continuous_signal
                 hyperlink?
                 PROVIDED expression e=end
                 (PRIORITY p=INT end)?
-                transition
-        ->      ^(PROVIDED cif? hyperlink? expression $p? $e? transition)
+                transition?
+        ->      ^(PROVIDED expression cif? hyperlink? $p? $e? transition?)
         ;
 
 A new token ("PROVIDED") may be needed and must be added at several places
@@ -23,7 +23,10 @@ in the ANTLR grammar:
     - in the list of tokens (tokens { ... })
 
 notes:
-    - "cif?" and "hyperlink?" are optional
+    - "cif" and "hyperlink" are optional
+    - the "transition" is also optional, to allow partial model saving
+    - the expression is always the first child, since it does not have a
+      dedicated token, and is the only mandatory field
     - "end" corresponds to the COMMENT part
 
 then the new production is added as a child option to the (existing) "state":
@@ -93,6 +96,45 @@ class State(object):
         self.continuous_signals = []
 
 Then create the new class, using the same structure as another class of a
-feature of the same family.
+feature of the same family - here, we inherit from Input. The class is very
+simple:
+
+class ContinuousSignal(Input):
+    ''' AST Entry for the Continuous Signal '''
+    def __init__(self):
+        ''' Difference with Input: trigger is an expression '''
+        super(ContinuousSignal, self).__init__()
+        # Expression triggering the transition
+        self.trigger = None
+        # Priority (integer)
+        self.priority = 0
+
+    def trace(self):
+        ''' Debug output for a Continuous signal '''
+        return u'PROVIDED {exp} ({l},{c})'.format(exp=self.inputString,
+                l=self.line, c=self.charPositionInLine)
+
+We are done with the AST, we can close ogAST.py
+
+4) Back to ogParser.py
+
+Now we can parse the construct and create the AST entries we just defined.
+In the state() function, we replace the placeholder we added at step 2:
+
+        (...)
+        elif child.type == lexer.PROVIDED:
+            # Continuous signal
+            provided_part, err, warn = continuous_signal(child, state_def,
+                                                         context)
+            state_def.continuous_signals.append(provided_part)
+            warnings.extend(warn)
+            errors.extend(err)
+
+Then we can implement the continuous_signal function.
 
 
+def continuous_signal(root, parent, context):
+    ''' Parse a PROVIDED clause in a continuous signal '''
+    i = ogAST.ContinuousSignal()
+    (...)
+    return i, errors, warnings

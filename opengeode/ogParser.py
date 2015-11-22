@@ -2749,6 +2749,55 @@ def process_definition(root, parent=None, context=None):
     return process, errors, warnings
 
 
+def continuous_signal(root, parent, context):
+    ''' Parse a PROVIDED clause in a continuous signal '''
+    i = ogAST.ContinuousSignal()
+    warnings, errors = [], []
+    # Keep track of the number of terminator statements in the transition
+    # useful if we want to render graphs from the SDL model
+    terminators = len(context.terminators)
+    i.trigger, err0, warn0 = expression(root.getChild(0), context)
+    for child in root.children[1:]:
+        if child.type == lexer.CIF:
+            # Get symbol coordinates
+            i.pos_x, i.pos_y, i.width, i.height = cif(child)
+
+
+#           # Report errors with symbol coordinates
+#           errors = [[e, [i.pos_x or 0, i.pos_y or 0], []] for e in errors]
+#           warnings = [[w, [i.pos_x or 0, i.pos_y or 0], []]
+#                        for w in warnings]
+        elif child.type == lexer.INT:
+            # Priority
+            i.priority = int(child.text)
+        elif child.type == lexer.TRANSITION:
+            trans, err, warn = transition(child, parent=i, context=context)
+            errors.extend(err)
+            warnings.extend(warn)
+            i.transition = trans
+            # Associate a reference to the transition to the list of inputs
+            # The reference is an index to process.transitions table
+            context.transitions.append(trans)
+            i.transition_id = len(context.transitions) - 1
+        elif child.type == lexer.COMMENT:
+            i.comment, _, _ = end(child)
+        elif child.type == lexer.HYPERLINK:
+            i.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == 0:
+            # Syntax error caught by the parser, no need to report again
+            pass
+        else:
+            warnings.append('Unsupported INPUT child type: {}'
+                            .format(child.type))
+    # At the end of the input parsing, get the the list of terminators that
+    # follow the input transition by making a diff with the list at process
+    # level (we counted the number of terminators before parsing the input)
+    i.terminators = list(context.terminators[terminators:])
+    return i, errors, warnings
+
+
+
+
 def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
     i = ogAST.Input()
@@ -2958,7 +3007,12 @@ def state(root, parent, context):
         elif child.type == lexer.HYPERLINK:
             state_def.hyperlink = child.getChild(0).toString()[1:-1]
         elif child.type == lexer.PROVIDED:
-            sterr.append('Continuous signals are not supported yet')
+            # Continuous signal
+            provided_part, err, warn = continuous_signal(child, state_def,
+                                                         context)
+            state_def.continuous_signals.append(provided_part)
+            warnings.extend(warn)
+            errors.extend(err)
         elif child.type == 0:
             # Parser error, already caught
             pass

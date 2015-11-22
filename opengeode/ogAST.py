@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2013 European Space Agency
+    Copyright (c) 2012-2015 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -609,6 +609,21 @@ class Connect(Input):
     def trace(self):
         ''' Debug output for a CONNECT symbol '''
         return u'CONNECT {exp} ({l},{c})'.format(exp=self.inputString,
+                l=self.line, c=self.charPositionInLine)
+
+class ContinuousSignal(Input):
+    ''' AST Entry for the Continuous Signal '''
+    def __init__(self):
+        ''' Difference with Input: trigger is an expression '''
+        super(ContinuousSignal, self).__init__()
+        # Expression triggering the transition
+        self.trigger = None
+        # Priority (integer)
+        self.priority = 0
+
+    def trace(self):
+        ''' Debug output for a Continuous signal '''
+        return u'PROVIDED {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
