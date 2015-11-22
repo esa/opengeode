@@ -138,3 +138,16 @@ def continuous_signal(root, parent, context):
     i = ogAST.ContinuousSignal()
     (...)
     return i, errors, warnings
+
+At this point we are done with the parser, which is now capable of filling
+an AST containing the new construct.
+
+There are still a number of updates to perform to complete the support of the
+new feature:
+
+- Create a graphical symbol for the new feature
+- Update the renderer to draw the symbol
+- Update the on-the-fly parser for syntax checks in the graphical editor
+- Update the statechart renderer
+- Update other backends that can be impacted, such as code generators
+
