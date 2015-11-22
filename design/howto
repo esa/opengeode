@@ -145,9 +145,10 @@ an AST containing the new construct.
 There are still a number of updates to perform to complete the support of the
 new feature:
 
-- Create a graphical symbol for the new feature
-- Update the renderer to draw the symbol
-- Update the on-the-fly parser for syntax checks in the graphical editor
-- Update the statechart renderer
-- Update other backends that can be impacted, such as code generators
+- Create a graphical symbol for the new feature (in sdlSymbols.py)
+- Update the renderer to draw the symbol (Renderer.py)
+- Update the on-the-fly parser for syntax checks in the graphical editor (ogParser.py)
+- Update the statechart renderer (Statechart.py)
+- Update the backend that saves the model to phrase representation (Pr.py)
+- Update other backends that can be impacted, such as code generators (AdaGenerator.py, etc.)
 
