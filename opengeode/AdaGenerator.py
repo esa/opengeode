@@ -396,11 +396,11 @@ package {process_name} is'''.format(process_name=process_name,
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
         signame = signal.get('name', u'START')
-        if name == u'START':
+        if signame == u'START':
             continue
         pi_header = u'procedure {sig_name}'.format(sig_name=signame)
         param_name = signal.get('param_name') \
-                                or u'{}_param'.format(name)
+                                or u'{}_param'.format(signame)
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
