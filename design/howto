@@ -275,6 +275,6 @@ def _continuous_signal(symbol, recursive=True, **kwargs):
     return result
 
 As in 7), also make sure that the parent symbol (here: state) can recursively
-parse the new children.
+parse the new child.
 
 

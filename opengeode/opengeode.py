@@ -697,10 +697,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             msg_box.exec_()
 
 
-    def global_syntax_check(self):
+    def global_syntax_check(self, ignore=set()):
         ''' Parse each visible symbol in the current scene and its children
-            and check syntax using the parser '''
+            and check syntax using the parser
+            Use a mutable parameter to avoid recursion on already visited
+            scenes
+        '''
         res = True
+        reset = not ignore
+        ignore.add(self)
         for each in self.visible_symb:
             errors = self.syntax_errors(each)
             if errors:
@@ -720,9 +725,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 log_errors(self.messages_window, fmt, [], clearfirst=False)
 
         for each in self.all_nested_scenes:
-            err = each.global_syntax_check()
-            if not err:
-                res = False
+            if each not in ignore:
+                if not each.global_syntax_check():
+                    res = False
+        if reset:
+            ignore.clear()
         return res
 
 
