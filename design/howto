@@ -148,9 +148,9 @@ new feature:
 - Update the on-the-fly parser for syntax checks in the graphical editor (ogParser.py)
 - Create a graphical symbol for the new feature (in sdlSymbols.py)
 - Update the renderer to draw the symbol (Renderer.py)
+- Update the backend that saves the model to phrase representation (Pr.py)
 - Create an icon and add the new symbol to the palette
 - Update the statechart renderer (Statechart.py)
-- Update the backend that saves the model to phrase representation (Pr.py)
 - Update other backends that can be impacted, such as code generators (AdaGenerator.py, etc.)
 
 5) Syntax checker in ogParser.py
@@ -209,6 +209,14 @@ class ContinuousSignal(HorizontalSymbol):
         super(ContinuousSignal, self).set_shape(width, height)
 
 
+And you may need to add your new symbol to the properties of other symbols.
+For example _insertable_followers gives the list of signals that the tool will
+allow you to place after (or next to) the currently selected symbol.
+
+The "state" symbol has this property:
+    _insertable_followers = ['Input', 'Connect', 'ContinuousSignal']
+
+
 7) Update the renderer to see some first result: Renderer.py
 
 Since the parser is ready and the symbol is defined, it is now possible to
@@ -238,8 +246,9 @@ def _continuous_signal(ast, scene, parent, states):
                states=states)
     return cont
 
-And then you must call the render function from the State renderer, since
-the continuous signals are generated below states, just like Inputs:
+And then you must call the render function from the State and Terminator
+renderers, since the continuous signals are generated below states,
+just like Inputs:
 
 @render.register(ogAST.State)
 def _state(ast, scene, states, terminators, parent=None):
@@ -247,5 +256,25 @@ def _state(ast, scene, states, terminators, parent=None):
     for exit in chain(ast.inputs, ast.connects, ast.continuous_signals):
         render(exit, scene=scene, parent=new_state, states=states)
     (...)
+
+8) Update the graphical parser backend (Pr.py)
+
+In order to save the model or make syntax checks, we need to make sure that
+the graphical model parser recognises the new symbol.
+The principle is the same as for the renderer - a singledispatch visitor
+pattern, but on the graphical symbols instead of the AST.
+It is therefore straightforward to parse - just add a new function that
+mimicks an existing one and register it to singledispatch.
+
+@generate.register(sdlSymbols.ContinuousSignal)
+def _continuous_signal(symbol, recursive=True, **kwargs):
+    ''' "Provided" symbol or branch if recursive is set '''
+    result = common('PROVIDED', symbol)
+    if recursive:
+        result.extend(recursive_aligned(symbol))
+    return result
+
+As in 7), also make sure that the parent symbol (here: state) can recursively
+parse the new children.
 
 

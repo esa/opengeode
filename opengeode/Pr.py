@@ -194,6 +194,15 @@ def _input(symbol, recursive=True, **kwargs):
     return result
 
 
+@generate.register(sdlSymbols.ContinuousSignal)
+def _continuous_signal(symbol, recursive=True, **kwargs):
+    ''' "Provided" symbol or branch if recursive is set '''
+    result = common('PROVIDED', symbol)
+    if recursive:
+        result.extend(recursive_aligned(symbol))
+    return result
+
+
 @generate.register(sdlSymbols.Connect)
 def _connect(symbol, recursive=True, **kwargs):
     ''' Connect symbol or branch if recursive is set '''
@@ -325,7 +334,8 @@ def _state(symbol, recursive=True, nextstate=True, composite=False, cpy=False,
             Indent.indent += 1
             # Generate code for INPUT and CONNECT symbols
             for each in (symb for symb in symbol.childSymbols()
-                         if isinstance(symb, sdlSymbols.Input)):
+                         if isinstance(symb, (sdlSymbols.Input,
+                                              sdlSymbols.ContinuousSignal))):
                 result.extend(generate(each))
             Indent.indent -= 1
         result.append(u'ENDSTATE;')

@@ -2756,17 +2756,12 @@ def continuous_signal(root, parent, context):
     # Keep track of the number of terminator statements in the transition
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
-    i.trigger, err0, warn0 = expression(root.getChild(0), context)
+    i.trigger, exp_err, exp_warn = expression(root.getChild(0), context)
+    i.inputString = i.trigger.inputString
     for child in root.children[1:]:
         if child.type == lexer.CIF:
             # Get symbol coordinates
             i.pos_x, i.pos_y, i.width, i.height = cif(child)
-
-
-#           # Report errors with symbol coordinates
-#           errors = [[e, [i.pos_x or 0, i.pos_y or 0], []] for e in errors]
-#           warnings = [[w, [i.pos_x or 0, i.pos_y or 0], []]
-#                        for w in warnings]
         elif child.type == lexer.INT:
             # Priority
             i.priority = int(child.text)
@@ -2788,14 +2783,15 @@ def continuous_signal(root, parent, context):
             pass
         else:
             warnings.append('Unsupported INPUT child type: {}'
-                            .format(child.type))
+                           .format(child.type))
+    # Report errors in the expression with symbol coordinates
+    errors.extend([[e, [i.pos_x or 0, i.pos_y or 0], []] for e in exp_err])
+    warnings.extend([[w, [i.pos_x or 0, i.pos_y or 0], []] for w in exp_warn])
     # At the end of the input parsing, get the the list of terminators that
     # follow the input transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the input)
     i.terminators = list(context.terminators[terminators:])
     return i, errors, warnings
-
-
 
 
 def input_part(root, parent, context):
