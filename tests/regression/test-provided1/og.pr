@@ -27,7 +27,7 @@ signal telemetry(tm_type);
                                 NEXTSTATE wait_for_tc;
                             /* CIF STATE (159, 110), (111, 35) */
                             STATE wait_for_tc;
-                                /* CIF INPUT (143, 165), (144, 35) */
+                                /* CIF PROVIDED (143, 165), (144, 35) */
                                 provided got_tc=true and present(tc!content)=change_mode;
                                     /* CIF PROCEDURECALL (123, 215), (184, 35) */
                                     CALL writeln('Change Mode');
@@ -43,7 +43,7 @@ signal telemetry(tm_type);
                                 NEXTSTATE wait_for_tc;
                             /* CIF STATE (126, 106), (106, 35) */
                             STATE wait_for_tc;
-                                /* CIF INPUT (107, 161), (144, 35) */
+                                /* CIF PROVIDED (107, 161), (144, 35) */
                                 INPUT telecommand(tc);
                                     /* CIF TASK (117, 211), (123, 35) */
                                     TASK got_tc := true;

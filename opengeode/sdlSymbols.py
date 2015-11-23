@@ -20,7 +20,7 @@
 __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
            'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
-           'StateStart', 'Process']
+           'StateStart', 'Process', 'ContinuousSignal']
 
 #import traceback
 import logging
@@ -137,7 +137,7 @@ class Input(HorizontalSymbol):
     ''' SDL INPUT Symbol '''
     _unique_followers = ['Comment']
     _insertable_followers = ['Task', 'ProcedureCall', 'Output', 'Decision',
-                             'Input', 'Label', 'Connect']
+                             'Input', 'Label', 'Connect', 'ContinuousSignal']
     _terminal_followers = ['Join', 'State', 'ProcedureStop']
 
     common_name = 'input_part'
@@ -167,8 +167,9 @@ class Input(HorizontalSymbol):
 
     def insert_symbol(self, parent, x, y):
         ''' Insert Input symbol - propagate branch Entry point '''
-        # Make sure that parent is a state, not a sibling input
-        item_parent = (parent if not isinstance(parent, Input)
+        # Make sure that parent is a state, not a sibling symbol
+        item_parent = (parent if not isinstance(parent, (Input,
+                                                         ContinuousSignal))
                        else parent.parentItem())
         self.branch_entrypoint = item_parent.branch_entrypoint
         super(Input, self).insert_symbol(item_parent, x, y)
@@ -883,7 +884,7 @@ class ASN1Viewer(TextSymbol):
 class State(VerticalSymbol):
     ''' SDL STATE Symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = ['Input', 'Connect']
+    _insertable_followers = ['Input', 'Connect', 'ContinuousSignal']
     arrow_head = 'simple'
     common_name = 'terminator_statement'
     needs_parent = False
@@ -1185,3 +1186,59 @@ class StateStart(Start):
         ''' Update nested state entry points '''
         CONTEXT.state_entrypoints = \
                 set(CONTEXT.state_entrypoints) | set(unicode(self))
+
+# pylint: disable=R0904
+class ContinuousSignal(HorizontalSymbol):
+    ''' " Provided" part below a state - not a enabling condition '''
+    _unique_followers = ['Comment']
+    _insertable_followers = ['Task', 'ProcedureCall', 'Output', 'Decision',
+                             'Input', 'Label', 'Connect', 'ContinuousSignal']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    common_name = 'continuous_signal'
+    # Define reserved keywords for the syntax highlighter
+    blackbold = SDL_BLACKBOLD
+    redbold = SDL_REDBOLD
+
+    def __init__(self, parent=None, ast=None):
+        ''' Create the Provided symbol - use no background color '''
+        ast = ast or ogAST.ContinuousSignal()
+        self.ast = ast
+        self.branch_entrypoint = None
+        if not ast.pos_y and parent:
+            # Make sure the item is placed below its parent
+            ast.pos_y = parent.y() + parent.boundingRect().height() + 10
+        super(ContinuousSignal, self).__init__(parent, text=ast.inputString,
+                x=ast.pos_x or 0, y=ast.pos_y or 0, hyperlink=ast.hyperlink)
+        self.set_shape(ast.width, ast.height)
+        self.terminal_symbol = False
+        self.parser = ogParser
+        if ast.comment:
+            Comment(parent=self, ast=ast.comment)
+
+    def insert_symbol(self, parent, x, y):
+        ''' Insert symbol - propagate branch Entry point '''
+        # Make sure that parent is a state, not a sibling symbol
+        item_parent = (parent if not isinstance(parent, (Input,
+                                                         ContinuousSignal))
+                       else parent.parentItem())
+        self.branch_entrypoint = item_parent.branch_entrypoint
+        super(ContinuousSignal, self).insert_symbol(item_parent, x, y)
+
+    def set_shape(self, width, height):
+        ''' Define the shape '''
+        path = QPainterPath()
+        path.moveTo(15, 0)
+        path.lineTo(0, height / 2.0)
+        path.lineTo(15, height)
+        path.moveTo(width - 15, 0)
+        path.lineTo(width, height / 2.0)
+        path.lineTo(width - 15, height)
+        self.setPath(path)
+        super(ContinuousSignal, self).set_shape(width, height)
+
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        return variables_autocompletion(self, None)
+
+

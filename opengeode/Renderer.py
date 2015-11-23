@@ -183,7 +183,7 @@ def _state(ast, scene, states, terminators, parent=None):
     if new_state not in scene.items():
         add_to_scene(new_state, scene)
 
-    for exit in chain(ast.inputs, ast.connects):
+    for exit in chain(ast.inputs, ast.connects, ast.continuous_signals):
         render(exit, scene=scene, parent=new_state, states=states)
 
     new_state.nested_scene = ast.composite or ogAST.CompositeState()
@@ -344,7 +344,9 @@ def _terminator(ast, scene, parent, states):
                     state_ast.pos_y == ast.pos_y):
                 symbol.nested_scene = state_ast.composite or \
                                       ogAST.CompositeState()
-                for each in chain(state_ast.inputs, state_ast.connects):
+                for each in chain(state_ast.inputs,
+                                  state_ast.connects,
+                                  state_ast.continuous_signals):
                     render(each, scene=scene, parent=symbol, states=states)
                 break
         symbol.nested_scene = ast.composite or ogAST.CompositeState()
@@ -372,6 +374,22 @@ def _input(ast, scene, parent, states):
                parent=inp,
                states=states)
     return inp
+
+
+@render.register(ogAST.ContinuousSignal)
+def _continuous_signal(ast, scene, parent, states):
+    ''' Add continuous signal to the scene '''
+    cont = sdlSymbols.ContinuousSignal(parent, ast=ast)
+    if cont not in scene.items():
+        add_to_scene(cont, scene)
+    if not parent:
+        cont.pos_x, cont.pos_y = ast.pos_x, ast.pos_y
+    if ast.transition:
+        render(ast.transition,
+               scene=scene,
+               parent=cont,
+               states=states)
+    return cont
 
 
 @render.register(ogAST.Connect)
