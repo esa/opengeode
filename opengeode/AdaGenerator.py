@@ -72,7 +72,7 @@
 import logging
 import traceback
 import os
-from itertools import chain
+from itertools import chain, product
 from singledispatch import singledispatch
 
 import ogAST
@@ -182,7 +182,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=UNICODE_SEP)
 
-    # Process State aggregations (Parallel states)
+    # Process State aggregations (Parallel states) XXX Add to C backend
 
     # Find recursively in the AST all state aggregations
     # Format: {'aggregation_name' : [list of ogAST.CompositeState]
@@ -465,7 +465,7 @@ package {process_name} is'''.format(process_name=process_name,
             else:
                 taste_template.append('null;')
 
-        taste_template.append('case {ctxt}.state is'.format(ctxt=LPREFIX))
+        taste_template.append('case {}.state is'.format(LPREFIX))
 
         def case_state(state):
             ''' Recursive function (in case of state aggregation) to generate
@@ -477,7 +477,6 @@ package {process_name} is'''.format(process_name=process_name,
                 return
             taste_template.append(u'when {state} =>'.format(state=state))
             input_def = mapping[signame].get(state)
-            #print signame, input_def
             if state in aggregates.viewkeys():
                 # State aggregation:
                 # - find which substate manages this input
@@ -720,9 +719,41 @@ package {process_name} is'''.format(process_name=process_name,
         # Add the code for the floating labels
         taste_template.extend(code_labels)
 
-        #if code_labels:
         taste_template.append('<<next_transition>>')
-        taste_template.append('null;')
+
+        # After completing active transition(s), check continuous signals:
+        #     - Check current state(s)
+        #     - For each continuous signal generate code (test+transition)
+        # XXX add to C backend
+        if process.cs_mapping:
+            taste_template.append('--  Process continuous signals')
+        else:
+            taste_template.append('null;')
+
+        # Process the continuous states in state aggregations first
+        done = []
+        for cs, agg in product(process.cs_mapping.viewitems(),
+                               aggregates.viewitems()):
+            (statename, cs_item), (agg_name, substates) = cs, agg
+            for each in substates:
+                if statename in each.mapping.viewkeys():
+                    taste_template.append(u'{first}if trId = -1 and '
+                            u'{ctxt}.state = {s1} and '
+                            u'{ctxt}.{s2}{sep}state = {s3} then'
+                            .format(ctxt=LPREFIX, s1=agg_name,
+                                s2=each.statename, sep=UNICODE_SEP,
+                                s3=statename, first='els' if done else ''))
+                    taste_template.append(u'null;')
+                    done.append(statename)
+                    break
+        for statename in process.cs_mapping.viewkeys() - done:
+            cs_item = process.cs_mapping[statename]
+            taste_template.append(u'{first}if trId = -1 and {}.state = {} then'
+                    .format(LPREFIX, statename, first='els' if done else ''))
+            taste_template.append(u'null;')
+        if process.cs_mapping:
+            taste_template.append(u'end if;')
+
         taste_template.append('end loop;')
         taste_template.append('end runTransition;')
         taste_template.append('\n')

@@ -148,6 +148,9 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.3.5 (11/2015)
+     - Better support for continous signals
+
 1.3.4 (11/2015)
      - Early support for continous signals
      - Regression issue fixed (test-nocif2)

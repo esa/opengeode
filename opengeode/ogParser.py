@@ -3007,6 +3007,15 @@ def state(root, parent, context):
             provided_part, err, warn = continuous_signal(child, state_def,
                                                          context)
             state_def.continuous_signals.append(provided_part)
+            # Add the continuous signal to a mapping at context level,
+            # useful for code generation. Also check for duplicates.
+            for statename in state_def.statelist:
+                if provided_part in \
+                        context.cs_mapping.get(statename.lower(), []):
+                    sterr.append('Continous signal is defined more than once '
+                                 'below state "{}"'.format(statename.lower()))
+                else:
+                    context.cs_mapping[statename.lower()].append(provided_part)
             warnings.extend(warn)
             errors.extend(err)
         elif child.type == 0:

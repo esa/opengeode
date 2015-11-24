@@ -547,7 +547,7 @@ class Transition(object):
         self.terminator = None
         # All Terminators of this transition
         self.terminators = []
-        # List of State that can lead to this transition
+        # List of states (string) that can lead to this transition
         # There can be several if state has multiple names (e.g. STATE a, b)
         # Note, this field is updated by the Helper.flatten function
         # and is needed to properly know when to call a nested state exit
@@ -868,6 +868,9 @@ class Process(object):
         # dictionnary: {'stateName': [class Input1, Input2,...], ...}
         # then Input contains the inputs list and corresponding transition
         self.mapping = {}
+
+        # Similar mapping for continuous signals
+        self.cs_mapping = defaultdict(list)
 
         # list of type Transition - use 'mapping' to map index to inputs/states
         self.transitions = []

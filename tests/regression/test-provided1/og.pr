@@ -76,7 +76,7 @@ signal telemetry(tm_type);
                     STATE mode_manager;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
-            /* CIF TEXT (0, 310), (327, 168) */
+            /* CIF TEXT (0, 310), (327, 208) */
             -- This system tests the provided clause
 -- (continuous signal)
 
@@ -85,6 +85,8 @@ dcl tc TC_type;
 dcl tm TM_type;
 
 dcl got_tc Boolean_type;
+
+dcl anything boolean_Type := true;
             /* CIF ENDTEXT */
             /* CIF START (337, 297), (70, 35) */
             START;
@@ -92,6 +94,14 @@ dcl got_tc Boolean_type;
                 NEXTSTATE wait;
             /* CIF STATE (412, 344), (70, 35) */
             STATE wait;
+                /* CIF PROVIDED (394, 399), (106, 35) */
+                PROVIDED anything;
+                    /* CIF TASK (363, 449), (168, 35) */
+                    TASK anything := false;
+                    /* CIF PROCEDURECALL (359, 499), (177, 35) */
+                    CALL writeln('Lets go');
+                    /* CIF NEXTSTATE (412, 549), (70, 35) */
+                    NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;
     ENDBLOCK;

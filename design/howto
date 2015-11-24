@@ -127,8 +127,7 @@ In the state() function, we replace the placeholder we added at step 2:
             provided_part, err, warn = continuous_signal(child, state_def,
                                                          context)
             state_def.continuous_signals.append(provided_part)
-            warnings.extend(warn)
-            errors.extend(err)
+            (...)
 
 Then we can implement the continuous_signal function.
 
@@ -152,6 +151,7 @@ new feature:
 - Create an icon and add the new symbol to the palette
 - Update the statechart renderer (Statechart.py)
 - Update other backends that can be impacted, such as code generators (AdaGenerator.py, etc.)
+- Update clipboard
 
 5) Syntax checker in ogParser.py
 
