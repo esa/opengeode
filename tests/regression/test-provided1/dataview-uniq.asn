@@ -2,7 +2,7 @@ TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
 TC-Type ::= SEQUENCE {
-     apid INTEGER,
+     apid INTEGER (0..100),
      content CHOICE {
          change-mode ENUMERATED { safe, operational },
          patch-memory INTEGER (0..100)
@@ -10,7 +10,7 @@ TC-Type ::= SEQUENCE {
 }
 
 TM-Type ::= SEQUENCE {
-    apid INTEGER
+    apid INTEGER (0..100)
 }
 
 Boolean-Type ::= BOOLEAN
