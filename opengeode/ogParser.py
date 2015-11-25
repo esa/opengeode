@@ -2752,12 +2752,26 @@ def process_definition(root, parent=None, context=None):
 def continuous_signal(root, parent, context):
     ''' Parse a PROVIDED clause in a continuous signal '''
     i = ogAST.ContinuousSignal()
+    dec = ogAST.Decision()
+    ans = ogAST.Answer()
     warnings, errors = [], []
     # Keep track of the number of terminator statements in the transition
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
-    i.trigger, exp_err, exp_warn = expression(root.getChild(0), context)
-    i.inputString = i.trigger.inputString
+    dec.question, exp_err, exp_warn = expression(root.getChild(0), context)
+    dec.inputString = dec.question.inputString
+    dec.line = dec.question.line
+    dec.charPositionInLine = dec.question.charPositionInLine
+    dec.kind = 'question'
+    ans.inputString = 'true'
+    ans.openRangeOp = ogAST.ExprEq
+    ans.kind = 'constant'
+    ans.constant = ogAST.PrimBoolean()
+    ans.constant.value = ['true']
+    ans.constant.exprType = BOOLEAN
+    dec.answers = [ans]
+    i.trigger = dec
+    i.inputString = dec.inputString
     for child in root.children[1:]:
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -2770,12 +2784,14 @@ def continuous_signal(root, parent, context):
             errors.extend(err)
             warnings.extend(warn)
             i.transition = trans
+            ans.transition = trans
             # Associate a reference to the transition to the list of inputs
             # The reference is an index to process.transitions table
             context.transitions.append(trans)
             i.transition_id = len(context.transitions) - 1
         elif child.type == lexer.COMMENT:
             i.comment, _, _ = end(child)
+            dec.comment = i.comment
         elif child.type == lexer.HYPERLINK:
             i.hyperlink = child.getChild(0).toString()[1:-1]
         elif child.type == 0:

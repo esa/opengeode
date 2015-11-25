@@ -616,7 +616,7 @@ class ContinuousSignal(Input):
     def __init__(self):
         ''' Difference with Input: trigger is an expression '''
         super(ContinuousSignal, self).__init__()
-        # Expression triggering the transition
+        # Decision triggering the transition
         self.trigger = None
         # Priority (integer)
         self.priority = 0

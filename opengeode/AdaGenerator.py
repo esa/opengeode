@@ -743,14 +743,23 @@ package {process_name} is'''.format(process_name=process_name,
                             .format(ctxt=LPREFIX, s1=agg_name,
                                 s2=each.statename, sep=UNICODE_SEP,
                                 s3=statename, first='els' if done else ''))
-                    taste_template.append(u'null;')
+                    for provided_clause in cs_item:
+                        trId = process.transitions.index\
+                                            (provided_clause.transition)
+                        code, loc = generate(provided_clause.trigger,
+                                             branch_to=trId)
+                        taste_template.extend(code)
                     done.append(statename)
                     break
         for statename in process.cs_mapping.viewkeys() - done:
             cs_item = process.cs_mapping[statename]
             taste_template.append(u'{first}if trId = -1 and {}.state = {} then'
                     .format(LPREFIX, statename, first='els' if done else ''))
-            taste_template.append(u'null;')
+            for provided_clause in cs_item:
+                trId = process.transitions.index(provided_clause.transition)
+                code, loc = generate(provided_clause.trigger,
+                                     branch_to=trId)
+                taste_template.extend(code)
         if process.cs_mapping:
             taste_template.append(u'end if;')
 
@@ -777,8 +786,6 @@ package {process_name} is'''.format(process_name=process_name,
     if simu:
         with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
             aadl.write(u'\n'.join(minicv).encode('latin1'))
-
-    if not simu:
         with open('{}_simu.sh'.format(process_name), 'w') as bash_script:
             bash_script.write(simu_script)
 
@@ -1872,8 +1879,19 @@ def _choiceitem(choice):
 
 
 @generate.register(ogAST.Decision)
-def _decision(dec, **kwargs):
-    ''' generate the code for a decision '''
+def _decision(dec, branch_to=None, **kwargs):
+    ''' Generate the code for a decision
+        A decision is made of a question and some answers ; each answer may
+        be followed by a transition (ogAST.Transition). The code of the
+        transition is by default generated, but it is possible to generate only
+        the code of the question and reference a transition Id (trId) if
+        the reference number is passed to the branch_to parameter.
+        This option is used for example when generating the code of
+        continuous signal: the code is generated in the <<next_transition>>
+        part, while the code of the transition already exists in the
+        part above. The need is only to set the id of the next transition.
+        XXX has to be done also in the C backend
+    '''
     code, local_decl = [], []
     if dec.kind == 'any':
         LOG.warning('Ada backend does not support the "ANY" statement')
@@ -1929,12 +1947,15 @@ def _decision(dec, **kwargs):
                                                  op=a.openRangeOp.operand,
                                                  ans=ans_str)
             code.append(sep + exp + ' then')
-            if a.transition:
-                stmt, tr_decl = generate(a.transition)
+            if not branch_to:
+                if a.transition:
+                    stmt, tr_decl = generate(a.transition)
+                else:
+                    stmt, tr_decl = ['null;'], []
+                code.extend(stmt)
+                local_decl.extend(tr_decl)
             else:
-                stmt, tr_decl = ['null;'], []
-            code.extend(stmt)
-            local_decl.extend(tr_decl)
+                code.append('trId := {};'.format(branch_to))
             sep = 'elsif '
         elif a.kind == 'closed_range':
             cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0])
@@ -1945,12 +1966,15 @@ def _decision(dec, **kwargs):
             local_decl.extend(cl1_decl)
             code.append('{sep} {dec} >= {cl0} and {dec} <= {cl1} then'
                         .format(sep=sep, dec=q_str, cl0=cl0_str, cl1=cl1_str))
-            if a.transition:
-                stmt, tr_decl = generate(a.transition)
+            if not branch_to:
+                if a.transition:
+                    stmt, tr_decl = generate(a.transition)
+                else:
+                    stmt, tr_decl = ['null;'], []
+                code.extend(stmt)
+                local_decl.extend(tr_decl)
             else:
-                stmt, tr_decl = ['null;'], []
-            code.extend(stmt)
-            local_decl.extend(tr_decl)
+                code.append('trId := {};'.format(branch_to))
             sep = 'elsif '
         elif a.kind == 'informal_text':
             continue
