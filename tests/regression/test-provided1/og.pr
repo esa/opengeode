@@ -18,19 +18,19 @@ signal telemetry(tm_type);
         PROCESS og;
             STATE AGGREGATION wait;
             SUBSTRUCTURE
-                    STATE mode_manager;
+                    STATE memory_manager;
                     SUBSTRUCTURE
-                            /* CIF START (359, 108), (70, 35) */
+                            /* CIF START (259, 60), (70, 35) */
                             START;
-                                /* CIF NEXTSTATE (331, 158), (126, 35) */
+                                /* CIF NEXTSTATE (231, 110), (126, 35) */
                                 NEXTSTATE wait_for_tc;
-                            /* CIF STATE (331, 158), (126, 35) */
+                            /* CIF STATE (231, 110), (126, 35) */
                             STATE wait_for_tc;
-                                /* CIF PROVIDED (170, 213), (451, 35) */
-                                PROVIDED got_tc=true and present(tc!content)=change_mode;
-                                    /* CIF PROCEDURECALL (282, 263), (226, 35) */
-                                    CALL writeln('Change Mode');
-                                    /* CIF NEXTSTATE (360, 313), (70, 35) */
+                                /* CIF PROVIDED (64, 165), (459, 35) */
+                                PROVIDED got_tc=true and present(tc!content)=patch_memory;
+                                    /* CIF PROCEDURECALL (178, 215), (231, 35) */
+                                    CALL writeln('Patch Memory');
+                                    /* CIF NEXTSTATE (258, 265), (70, 35) */
                                     NEXTSTATE -;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
@@ -50,30 +50,30 @@ signal telemetry(tm_type);
                                     NEXTSTATE -;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
-                    STATE memory_manager;
+                    STATE mode_manager;
                     SUBSTRUCTURE
-                            /* CIF START (259, 60), (70, 35) */
+                            /* CIF START (359, 108), (70, 35) */
                             START;
-                                /* CIF NEXTSTATE (231, 110), (126, 35) */
+                                /* CIF NEXTSTATE (331, 158), (126, 35) */
                                 NEXTSTATE wait_for_tc;
-                            /* CIF STATE (231, 110), (126, 35) */
+                            /* CIF STATE (331, 158), (126, 35) */
                             STATE wait_for_tc;
-                                /* CIF PROVIDED (64, 165), (459, 35) */
-                                PROVIDED got_tc=true and present(tc!content)=patch_memory;
-                                    /* CIF PROCEDURECALL (178, 215), (231, 35) */
-                                    CALL writeln('Patch Memory');
-                                    /* CIF NEXTSTATE (258, 265), (70, 35) */
+                                /* CIF PROVIDED (170, 213), (451, 35) */
+                                PROVIDED got_tc=true and present(tc!content)=change_mode;
+                                    /* CIF PROCEDURECALL (282, 263), (226, 35) */
+                                    CALL writeln('Change Mode');
+                                    /* CIF NEXTSTATE (360, 313), (70, 35) */
                                     NEXTSTATE -;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
-                    /* CIF STATE (370, 97), (182, 35) */
-                    STATE memory_manager;
+                    /* CIF STATE (314, 191), (161, 35) */
+                    STATE mode_manager;
                     ENDSTATE;
                     /* CIF STATE (238, 111), (113, 35) */
                     STATE tc_router;
                     ENDSTATE;
-                    /* CIF STATE (314, 191), (161, 35) */
-                    STATE mode_manager;
+                    /* CIF STATE (370, 97), (182, 35) */
+                    STATE memory_manager;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
             /* CIF TEXT (0, 310), (327, 208) */
@@ -88,19 +88,22 @@ dcl got_tc Boolean_type;
 
 dcl anything boolean_Type := true;
             /* CIF ENDTEXT */
-            /* CIF START (337, 297), (70, 35) */
+            /* CIF START (351, 297), (70, 35) */
             START;
-                /* CIF NEXTSTATE (337, 348), (70, 35) */
-                NEXTSTATE wait;
-            /* CIF STATE (412, 344), (70, 35) */
+                /* CIF NEXTSTATE (337, 348), (99, 35) */
+                NEXTSTATE starting;
+            /* CIF STATE (333, 575), (70, 35) */
             STATE wait;
-                /* CIF PROVIDED (394, 399), (106, 35) */
+            ENDSTATE;
+            /* CIF STATE (485, 344), (99, 35) */
+            STATE starting;
+                /* CIF PROVIDED (481, 399), (106, 35) */
                 PROVIDED anything;
-                    /* CIF TASK (363, 449), (168, 35) */
+                    /* CIF TASK (450, 449), (168, 35) */
                     TASK anything := false;
-                    /* CIF PROCEDURECALL (359, 499), (177, 35) */
+                    /* CIF PROCEDURECALL (446, 499), (177, 35) */
                     CALL writeln('Lets go');
-                    /* CIF NEXTSTATE (412, 549), (70, 35) */
+                    /* CIF NEXTSTATE (499, 549), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;
