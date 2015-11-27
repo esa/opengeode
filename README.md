@@ -148,6 +148,13 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.3.5 (11/2015)
+     - Better support for continous signals
+
+1.3.4 (11/2015)
+     - Early support for continous signals
+     - Regression issue fixed (test-nocif2)
+
 1.3.3 (11/2015)
      - Better support of platform-dependent screen resolution and dpi
      - Minor fixes in statechart scenes (no negative coordinates)

@@ -10,20 +10,13 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toAda
-	$(ASN1SCC) -Ada dv.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n demodemodevicedsap.ali
+	
 
 test-c: 
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toC
-	$(ASN1SCC) -c dv.asn -typePrefix asn1Scc -equal
-	$(CC) -O$(O) -c *.c
-
 
 test-llvm:
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
 
 
 coverage:

@@ -2749,6 +2749,67 @@ def process_definition(root, parent=None, context=None):
     return process, errors, warnings
 
 
+def continuous_signal(root, parent, context):
+    ''' Parse a PROVIDED clause in a continuous signal '''
+    i = ogAST.ContinuousSignal()
+    dec = ogAST.Decision()
+    ans = ogAST.Answer()
+    warnings, errors = [], []
+    # Keep track of the number of terminator statements in the transition
+    # useful if we want to render graphs from the SDL model
+    terminators = len(context.terminators)
+    dec.question, exp_err, exp_warn = expression(root.getChild(0), context)
+    dec.inputString = dec.question.inputString
+    dec.line = dec.question.line
+    dec.charPositionInLine = dec.question.charPositionInLine
+    dec.kind = 'question'
+    ans.inputString = 'true'
+    ans.openRangeOp = ogAST.ExprEq
+    ans.kind = 'constant'
+    ans.constant = ogAST.PrimBoolean()
+    ans.constant.value = ['true']
+    ans.constant.exprType = BOOLEAN
+    dec.answers = [ans]
+    i.trigger = dec
+    i.inputString = dec.inputString
+    for child in root.children[1:]:
+        if child.type == lexer.CIF:
+            # Get symbol coordinates
+            i.pos_x, i.pos_y, i.width, i.height = cif(child)
+        elif child.type == lexer.INT:
+            # Priority
+            i.priority = int(child.text)
+        elif child.type == lexer.TRANSITION:
+            trans, err, warn = transition(child, parent=i, context=context)
+            errors.extend(err)
+            warnings.extend(warn)
+            i.transition = trans
+            ans.transition = trans
+            # Associate a reference to the transition to the list of inputs
+            # The reference is an index to process.transitions table
+            context.transitions.append(trans)
+            i.transition_id = len(context.transitions) - 1
+        elif child.type == lexer.COMMENT:
+            i.comment, _, _ = end(child)
+            dec.comment = i.comment
+        elif child.type == lexer.HYPERLINK:
+            i.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == 0:
+            # Syntax error caught by the parser, no need to report again
+            pass
+        else:
+            warnings.append('Unsupported INPUT child type: {}'
+                           .format(child.type))
+    # Report errors in the expression with symbol coordinates
+    errors.extend([[e, [i.pos_x or 0, i.pos_y or 0], []] for e in exp_err])
+    warnings.extend([[w, [i.pos_x or 0, i.pos_y or 0], []] for w in exp_warn])
+    # At the end of the input parsing, get the the list of terminators that
+    # follow the input transition by making a diff with the list at process
+    # level (we counted the number of terminators before parsing the input)
+    i.terminators = list(context.terminators[terminators:])
+    return i, errors, warnings
+
+
 def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
     i = ogAST.Input()
@@ -2957,12 +3018,28 @@ def state(root, parent, context):
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             state_def.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.PROVIDED:
+            # Continuous signal
+            provided_part, err, warn = continuous_signal(child, state_def,
+                                                         context)
+            state_def.continuous_signals.append(provided_part)
+            # Add the continuous signal to a mapping at context level,
+            # useful for code generation. Also check for duplicates.
+            for statename in state_def.statelist:
+                if provided_part in \
+                        context.cs_mapping.get(statename.lower(), []):
+                    sterr.append('Continous signal is defined more than once '
+                                 'below state "{}"'.format(statename.lower()))
+                else:
+                    context.cs_mapping[statename.lower()].append(provided_part)
+            warnings.extend(warn)
+            errors.extend(err)
         elif child.type == 0:
             # Parser error, already caught
             pass
         else:
             stwarn.append('Unsupported STATE definition child type: ' +
-                           str(child.type))
+                            sdl92Parser.tokenNames[child.type])
     # post-processing: if state is followed by an ASTERISK input, the exact
     # list of inputs can be updated. Possible only if context has signals
     if context.input_signals and asterisk_input:
@@ -4247,7 +4324,7 @@ def parseSingleElement(elem='', string='', context=None):
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
             'connect_part', 'process_definition', 'proc_start', 'state_start',
-            'signalroute', 'stop_if'))
+            'signalroute', 'stop_if', 'continuous_signal'))
     # Create a dummy context, needed to place context data
     if elem == 'proc_start':
         elem = 'start'

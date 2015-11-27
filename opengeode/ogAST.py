@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2013 European Space Agency
+    Copyright (c) 2012-2015 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -547,7 +547,7 @@ class Transition(object):
         self.terminator = None
         # All Terminators of this transition
         self.terminators = []
-        # List of State that can lead to this transition
+        # List of states (string) that can lead to this transition
         # There can be several if state has multiple names (e.g. STATE a, b)
         # Note, this field is updated by the Helper.flatten function
         # and is needed to properly know when to call a nested state exit
@@ -609,6 +609,21 @@ class Connect(Input):
     def trace(self):
         ''' Debug output for a CONNECT symbol '''
         return u'CONNECT {exp} ({l},{c})'.format(exp=self.inputString,
+                l=self.line, c=self.charPositionInLine)
+
+class ContinuousSignal(Input):
+    ''' AST Entry for the Continuous Signal '''
+    def __init__(self):
+        ''' Difference with Input: trigger is an expression '''
+        super(ContinuousSignal, self).__init__()
+        # Decision triggering the transition
+        self.trigger = None
+        # Priority (integer)
+        self.priority = 0
+
+    def trace(self):
+        ''' Debug output for a Continuous signal '''
+        return u'PROVIDED {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -684,6 +699,8 @@ class State(object):
         self.inputs = []
         # list of type Connect (connection below a nested state)
         self.connects = []
+        # list of ContinuousSignal (provided clauses below a state)
+        self.continuous_signals = []
         # optional comment symbol
         self.comment = None
         # optional hyperlink
@@ -851,6 +868,9 @@ class Process(object):
         # dictionnary: {'stateName': [class Input1, Input2,...], ...}
         # then Input contains the inputs list and corresponding transition
         self.mapping = {}
+
+        # Similar mapping for continuous signals
+        self.cs_mapping = defaultdict(list)
 
         # list of type Transition - use 'mapping' to map index to inputs/states
         self.transitions = []

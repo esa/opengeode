@@ -72,7 +72,7 @@
 import logging
 import traceback
 import os
-from itertools import chain
+from itertools import chain, product
 from singledispatch import singledispatch
 
 import ogAST
@@ -182,7 +182,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=UNICODE_SEP)
 
-    # Process State aggregations (Parallel states)
+    # Process State aggregations (Parallel states) XXX Add to C backend
 
     # Find recursively in the AST all state aggregations
     # Format: {'aggregation_name' : [list of ogAST.CompositeState]
@@ -334,6 +334,17 @@ package {process_name} is'''.format(process_name=process_name,
         dll_api.append("end set_state;")
         dll_api.append("")
 
+        # interface to get/set state aggregations XXX add to C generator
+        for substates in aggregates.viewvalues():
+            for each in substates:
+                process_level_decl.append(
+                        u"function get_{name}_state return chars_ptr "
+                        u"is (New_String(states'Image({ctxt}.{name}{sep}state)"
+                        ")) with Export, Convention => C, "
+                        'Link_Name => "{proc}_{name}_state";'
+                        .format(name=each.statename, ctxt=LPREFIX,
+                                proc=process_name, sep=UNICODE_SEP))
+
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.viewitems():
             # Getters for local variables
@@ -385,11 +396,11 @@ package {process_name} is'''.format(process_name=process_name,
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
         signame = signal.get('name', u'START')
-        if name == u'START':
+        if signame == u'START':
             continue
         pi_header = u'procedure {sig_name}'.format(sig_name=signame)
         param_name = signal.get('param_name') \
-                                or u'{}_param'.format(name)
+                                or u'{}_param'.format(signame)
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
@@ -454,7 +465,7 @@ package {process_name} is'''.format(process_name=process_name,
             else:
                 taste_template.append('null;')
 
-        taste_template.append('case {ctxt}.state is'.format(ctxt=LPREFIX))
+        taste_template.append('case {}.state is'.format(LPREFIX))
 
         def case_state(state):
             ''' Recursive function (in case of state aggregation) to generate
@@ -466,7 +477,6 @@ package {process_name} is'''.format(process_name=process_name,
                 return
             taste_template.append(u'when {state} =>'.format(state=state))
             input_def = mapping[signame].get(state)
-            #print signame, input_def
             if state in aggregates.viewkeys():
                 # State aggregation:
                 # - find which substate manages this input
@@ -709,9 +719,50 @@ package {process_name} is'''.format(process_name=process_name,
         # Add the code for the floating labels
         taste_template.extend(code_labels)
 
-        #if code_labels:
         taste_template.append('<<next_transition>>')
-        taste_template.append('null;')
+
+        # After completing active transition(s), check continuous signals:
+        #     - Check current state(s)
+        #     - For each continuous signal generate code (test+transition)
+        # XXX add to C backend
+        if process.cs_mapping:
+            taste_template.append('--  Process continuous signals')
+        else:
+            taste_template.append('null;')
+
+        # Process the continuous states in state aggregations first
+        done = []
+        for cs, agg in product(process.cs_mapping.viewitems(),
+                               aggregates.viewitems()):
+            (statename, cs_item), (agg_name, substates) = cs, agg
+            for each in substates:
+                if statename in each.mapping.viewkeys():
+                    taste_template.append(u'{first}if trId = -1 and '
+                            u'{ctxt}.state = {s1} and '
+                            u'{ctxt}.{s2}{sep}state = {s3} then'
+                            .format(ctxt=LPREFIX, s1=agg_name,
+                                s2=each.statename, sep=UNICODE_SEP,
+                                s3=statename, first='els' if done else ''))
+                    for provided_clause in cs_item:
+                        trId = process.transitions.index\
+                                            (provided_clause.transition)
+                        code, loc = generate(provided_clause.trigger,
+                                             branch_to=trId)
+                        taste_template.extend(code)
+                    done.append(statename)
+                    break
+        for statename in process.cs_mapping.viewkeys() - done:
+            cs_item = process.cs_mapping[statename]
+            taste_template.append(u'{first}if trId = -1 and {}.state = {} then'
+                    .format(LPREFIX, statename, first='els' if done else ''))
+            for provided_clause in cs_item:
+                trId = process.transitions.index(provided_clause.transition)
+                code, loc = generate(provided_clause.trigger,
+                                     branch_to=trId)
+                taste_template.extend(code)
+        if process.cs_mapping:
+            taste_template.append(u'end if;')
+
         taste_template.append('end loop;')
         taste_template.append('end runTransition;')
         taste_template.append('\n')
@@ -735,8 +786,6 @@ package {process_name} is'''.format(process_name=process_name,
     if simu:
         with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
             aadl.write(u'\n'.join(minicv).encode('latin1'))
-
-    if not simu:
         with open('{}_simu.sh'.format(process_name), 'w') as bash_script:
             bash_script.write(simu_script)
 
@@ -1830,8 +1879,19 @@ def _choiceitem(choice):
 
 
 @generate.register(ogAST.Decision)
-def _decision(dec, **kwargs):
-    ''' generate the code for a decision '''
+def _decision(dec, branch_to=None, **kwargs):
+    ''' Generate the code for a decision
+        A decision is made of a question and some answers ; each answer may
+        be followed by a transition (ogAST.Transition). The code of the
+        transition is by default generated, but it is possible to generate only
+        the code of the question and reference a transition Id (trId) if
+        the reference number is passed to the branch_to parameter.
+        This option is used for example when generating the code of
+        continuous signal: the code is generated in the <<next_transition>>
+        part, while the code of the transition already exists in the
+        part above. The need is only to set the id of the next transition.
+        XXX has to be done also in the C backend
+    '''
     code, local_decl = [], []
     if dec.kind == 'any':
         LOG.warning('Ada backend does not support the "ANY" statement')
@@ -1887,12 +1947,15 @@ def _decision(dec, **kwargs):
                                                  op=a.openRangeOp.operand,
                                                  ans=ans_str)
             code.append(sep + exp + ' then')
-            if a.transition:
-                stmt, tr_decl = generate(a.transition)
+            if not branch_to:
+                if a.transition:
+                    stmt, tr_decl = generate(a.transition)
+                else:
+                    stmt, tr_decl = ['null;'], []
+                code.extend(stmt)
+                local_decl.extend(tr_decl)
             else:
-                stmt, tr_decl = ['null;'], []
-            code.extend(stmt)
-            local_decl.extend(tr_decl)
+                code.append('trId := {};'.format(branch_to))
             sep = 'elsif '
         elif a.kind == 'closed_range':
             cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0])
@@ -1903,12 +1966,15 @@ def _decision(dec, **kwargs):
             local_decl.extend(cl1_decl)
             code.append('{sep} {dec} >= {cl0} and {dec} <= {cl1} then'
                         .format(sep=sep, dec=q_str, cl0=cl0_str, cl1=cl1_str))
-            if a.transition:
-                stmt, tr_decl = generate(a.transition)
+            if not branch_to:
+                if a.transition:
+                    stmt, tr_decl = generate(a.transition)
+                else:
+                    stmt, tr_decl = ['null;'], []
+                code.extend(stmt)
+                local_decl.extend(tr_decl)
             else:
-                stmt, tr_decl = ['null;'], []
-            code.extend(stmt)
-            local_decl.extend(tr_decl)
+                code.append('trId := {};'.format(branch_to))
             sep = 'elsif '
         elif a.kind == 'informal_text':
             continue

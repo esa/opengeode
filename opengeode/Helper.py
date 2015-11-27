@@ -150,7 +150,6 @@ def flatten(process, sep=u'_'):
                 term.next_id = u'{term}{sep}{entry}_START'.format(
                         term=term.inputString, entry=term.entrypoint, sep=sep)
         elif term.inputString.strip() == '-':
-            #term.candidate_id = defaultdict(list)
             for each in term.possible_states:
                 term.candidate_id[-1].append(each)
                 for comp in context.composite_states:
@@ -176,6 +175,9 @@ def flatten(process, sep=u'_'):
 
         state.mapping = {prefix + key: state.mapping.pop(key)
                          for key in state.mapping.keys()}
+        # Continuous signal mappings
+        state.cs_mapping = {prefix + key: state.cs_mapping.pop(key)
+                            for key in state.cs_mapping.keys()}
         process.transitions.extend(state.transitions)
 
         # Add prefix to local variable names and push them at process level
@@ -197,9 +199,15 @@ def flatten(process, sep=u'_'):
         for key, value in state.mapping.viewitems():
             # Update transition indices
             if isinstance(value, int):
+                # START transitions
                 state.mapping[key] = value + trans_idx
             else:
                 values.extend(value)
+
+        for each in state.cs_mapping.viewvalues():
+            # Update transition indices of continuous signals
+            # XXX shouldn't we do it also for CONNECT parts?
+            values.extend(value)
 
         for inp in set(values):
             # values may contain duplicate entries if an input corresponds
@@ -208,6 +216,7 @@ def flatten(process, sep=u'_'):
             inp.transition_id += trans_idx
 
         process.mapping.update(state.mapping)
+        process.cs_mapping.update(state.cs_mapping)
 
         # If composite state has entry procedures, add the call
         if state.entry_procedure:

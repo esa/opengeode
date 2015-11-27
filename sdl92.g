@@ -584,7 +584,7 @@ state_part
                 //| priority_input        // Not supported
                 | save_part               // Not supported in openGEODE
                 | spontaneous_transition
-                | continuous_signal       // Not supoorted in openGEODE
+                | continuous_signal
                 | connect_part
         ;
 
@@ -623,10 +623,12 @@ enabling_condition
 
 
 continuous_signal
-        :       PROVIDED expression end
-                (PRIORITY integer_literal_name=INT end)?
-                transition
-        ->      ^(PROVIDED expression $integer_literal_name? transition)
+        :       cif?
+                hyperlink?
+                PROVIDED expression e=end
+                (PRIORITY p=INT end)?
+                transition?
+        ->      ^(PROVIDED expression cif? hyperlink? $p? $e? transition?)
         ;
 
 
