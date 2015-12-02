@@ -1,21 +1,9 @@
 /* CIF PROCESS (144, 159), (150, 75) */
 PROCESS expressions;
-    /* CIF TEXT (1105, 175), (303, 268) */
-    DCL i Integer;
-DCL f Real;
-DCL b Boolean;
-DCL s CharString;
-DCL fixSeqOf1 FixSeqof;
-DCL fixSeqOf2 FixSeqof;
-DCL varSeqOf1 VarSeqof;
-DCL varSeqOf2 VarSeqof;
-DCL seq Seq;
-DCL nestedSeq NestedSeq;
-DCL bs1 BoolSeqOf;
-DCL bs2 BoolSeqOf;
-DCL bs3 BoolSeqOf;
+    /* CIF TEXT (742, 143), (125, 58) */
+    DCL f Real;
     /* CIF ENDTEXT */
-    /* CIF TEXT (40, 150), (444, 168) */
+    /* CIF TEXT (64, 151), (444, 178) */
     -- Declare an external procedure that has a return type
 -- Use this to get access to C libraries (eg. math lib)
 -- without having to write manually external code
@@ -25,17 +13,17 @@ fpar in par real;
 returns real
 external;
     /* CIF ENDTEXT */
-    /* CIF START (530, 47), (70, 35) */
+    /* CIF START (625, 146), (70, 34) */
     START;
-        /* CIF NEXTSTATE (530, 97), (70, 35) */
+        /* CIF NEXTSTATE (625, 199), (70, 35) */
         NEXTSTATE wait;
-    /* CIF STATE (530, 97), (70, 35) */
+    /* CIF STATE (625, 199), (70, 35) */
     STATE wait;
-        /* CIF INPUT (525, 153), (81, 38) */
+        /* CIF INPUT (620, 255), (81, 38) */
         INPUT run;
-            /* CIF TASK (494, 206), (144, 35) */
+            /* CIF TASK (588, 308), (144, 35) */
             TASK f := log(f);
-            /* CIF NEXTSTATE (516, 256), (100, 50) */
+            /* CIF NEXTSTATE (624, 358), (72, 38) */
             NEXTSTATE Wait;
     ENDSTATE;
 ENDPROCESS expressions;
