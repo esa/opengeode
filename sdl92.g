@@ -97,6 +97,7 @@ tokens {
         RANGE;
         RESET;
         RETURN;
+        RETURNS;
         ROUTE;
         SAVE;
         SELECTOR;
@@ -280,13 +281,21 @@ procedure
         :       cif?
                 PROCEDURE procedure_id e1=end
                 fpar?
+                res=procedure_result?
                 (text_area | procedure)*
                 ((processBody? ENDPROCEDURE procedure_id?) | EXTERNAL)
                 e2=end
-        ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar?
+        ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar? $res?
                 text_area* procedure* processBody? EXTERNAL?)
         ;
 
+// Procedure result / optional return type
+procedure_result
+        :       ('->' | RETURNS)
+                variable_id?
+                sort
+        ->      ^(RETURNS variable_id? sort)
+        ;
 
 // Procedure formal parameters
 fpar
@@ -1431,6 +1440,7 @@ GEODE           :       G E O D E;
 HYPERLINK       :       H Y P E R L I N K;
 ENDTEXT         :       E N D T E X T;
 RETURN          :       R E T U R N;
+RETURNS         :       R E T U R N S;
 TIMER           :       T I M E R;
 PROCESS         :       P R O C E S S;
 ENDPROCESS      :       E N D P R O C E S S;

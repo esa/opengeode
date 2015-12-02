@@ -585,8 +585,8 @@ package {process_name} is'''.format(process_name=process_name,
         if params:
             params_spec = "({})".format("; ".join(params))
             ri_header += params_spec
-        ads_template.append(
-                        u'--  Sync required interface "' + proc.inputString)
+        ads_template.append(u'--  Sync required interface "{}"'
+                            .format(proc.inputString))
         if simu:
             # As for async TM, generate a callback mechanism
             ads_template.append(u"type {}_T is access procedure{};"
