@@ -264,7 +264,7 @@ process_definition
 pfpar
         :       FPAR parameters_of_sort
                 (',' parameters_of_sort)*
-                end
+                end?
         ->      ^(PFPAR parameters_of_sort+)
         ;
 
@@ -301,7 +301,7 @@ procedure_result
 fpar
         :       FPAR formal_variable_param
                 (',' formal_variable_param)*
-                end
+                end?
         ->      ^(FPAR formal_variable_param+)
         ;
 
@@ -329,12 +329,13 @@ content
                  | use_clause
                  | signal_declaration
                  | fpar
+                 | res=procedure_result
                  | timer_declaration
                  | syntype_definition
                  | newtype_definition
                  | variable_definition
                  | synonym_definition)*
-        ->       ^(TEXTAREA_CONTENT fpar* procedure* variable_definition*
+        ->       ^(TEXTAREA_CONTENT fpar* $res? procedure* variable_definition*
                    syntype_definition* newtype_definition* timer_declaration*
                    signal_declaration* use_clause* synonym_definition*)
         ;

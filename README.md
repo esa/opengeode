@@ -148,6 +148,11 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.3.6 (11/2015)
+     - Support external procedures having a return statement
+       this allows to import math functions from the libmath without having
+       to provide manual code. see test-math
+
 1.3.5 (11/2015)
      - Better support for continous signals
 
