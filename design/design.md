@@ -55,7 +55,9 @@ places in the ANTLR grammar:
 * as a new keyword (`PROVIDED : P R O V I D E D`)
 * in the list of tokens (tokens { ... })
 
-** Notes: **
+
+__Notes:__
+
 * *cif* and *hyperlink* are optional
 * the *transition* is also optional, to allow partial model saving
 * the expression is always the first child, since it does not have a
@@ -69,7 +71,7 @@ Then the new production is added as a child option to the (existing) *state*:
             :       input_part
                     | save_part
                     | spontaneous_transition
-                    | **continuous_signal**     // <==== HERE
+                    | continuous_signal       // <==== HERE
                     | connect_part
             ;
 
@@ -108,7 +110,7 @@ parse it following the same scheme as the parent rule (add a function called
 We keep this as a placeholder for the time being because we must first define
 if/what new entries are needed in the AST (`ogAST.py`).
 
-** Note: **
+__Note:__
 
 In SDL there are family of features and very often, new features are similar
 to existing ones so you will find a model to know how to easily code your new
@@ -235,7 +237,7 @@ The symbol-specific class must contain the following information:
 * the list of symbols that can be connected to this symbol
 * and possibly tuning of some paramters
 
-At the top-part of the module, the new class needs to be added to the __all__
+At the top-part of the module, the new class needs to be added to the \_\_all\_\_
 global:
 
     __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
