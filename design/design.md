@@ -343,3 +343,53 @@ As before, also make sure that the parent symbol (here: state) can recursively
 parse the new child.
 
 
+### Create an icon for the palette
+
+To be able to use the new symbol in the graphical editor you need to create
+an icon that will be displayed in the palette of the GUI.
+The icons are specified in SVG format (in the `icons/` directory) using
+the *inkscape* tool and must be exporte to PNG.
+
+The filename must be the same as the class name of your symbol, but with
+lowercases.
+
+Our class is named `ContinuousSignal` so we will create `continuoussignal.png`.
+
+The following properties apply when exporting to PNG:
+
+* width 46
+* height 35
+* 90 DPI
+
+Add the resulting filename inside the Qt resource file: `opengeode.qrc`. This
+file lists all files that are "embedded" in the application. This was done to
+avoid external files, making the distribution of the tools easier to handle.
+
+    <!DOCTYPE RCC><RCC version="1.0">
+     <qresource>
+         <file>icons/comment.png</file>
+         <file>icons/decision.png</file>
+         <file>icons/decisionanswer.png</file>
+         <file>icons/input.png</file>
+         ... add the new file here (`continuoussignal.png`)
+
+
+To compile this resource file to get a Python file, run:
+
+    make compile-all
+
+You then need to specify in which palette(s) this new icon is available.
+This is done in `opengeode.py`.
+
+First add the new symbol (*ContinuousSignal*) to the list of imports:
+
+    from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
+            ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
+            ProcedureStart, ProcedureStop, StateStart, Connect, Process,
+            ContinuousSignal)
+
+Then edit the `ACTION` look-up table to specify which scenes can use the
+symbol. In our case, the process, state and clipboard scenes. You can decide
+at which place it will appear graphically - it respects the ordering of the
+list.
+
