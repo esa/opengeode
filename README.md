@@ -148,6 +148,9 @@ The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
 Changelog
 =========
 
+1.3.7 (12/2015)
+    - Added icon to use Continuous Signals from the GUI
+
 1.3.6 (11/2015)
      - Support external procedures having a return statement
        this allows to import math functions from the libmath without having
