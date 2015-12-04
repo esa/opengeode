@@ -1,59 +1,96 @@
-This note explains the steps to be followed in order to implement SDL features
-that are not yet supported by the tool.
+# OpenGEODE Design documentation
 
-Use case: add support for "Continuous signals"
+## Introduction
 
-The following steps are:
+This document describes some parts of the design of the tool, as well as
+practical guidelines to implement new features.
 
-1) add the new grammar to sdl92.g
+The first chapter explains the steps to be followed in order to implement SDL
+language features that are not yet supported by the tool and is based on a
+concrete use case: adding support for *Continuous signals*.
 
-continuous_signal
-        :       cif?
-                hyperlink?
-                PROVIDED expression e=end
-                (PRIORITY p=INT end)?
-                transition?
-        ->      ^(PROVIDED expression cif? hyperlink? $p? $e? transition?)
-        ;
+The source of this document is in the *Markdown* format and other formats are
+generated using the *pandoc* tool. Please take it in consideration when
+updating the text.
 
-A new token ("PROVIDED") may be needed and must be added at several places
-in the ANTLR grammar:
-    - in the "symbolname" production (for the CIF part)
-    - as a new keyword (PROVIDED : P R O V I D E D)
-    - in the list of tokens (tokens { ... })
+## Guideline for extending OpenGEODE with Continuous Signals
 
-notes:
-    - "cif" and "hyperlink" are optional
-    - the "transition" is also optional, to allow partial model saving
-    - the expression is always the first child, since it does not have a
-      dedicated token, and is the only mandatory field
-    - "end" corresponds to the COMMENT part
+Continuous signals are part of the SDL language and their semantics
+and syntax is formally specified in the Z100 standard.
 
-then the new production is added as a child option to the (existing) "state":
+This chapter explains how concretely to add support for this construct to the
+tool. It covers:
 
-state_part
-        :       input_part
-                | save_part
-                | spontaneous_transition
-                | continuous_signal     // <==== HERE
-                | connect_part
-        ;
+* Extending the ANTLR grammar
+* Updating the parser and the AST (metamodel), including syntax/semantic checks
+* Creating a new graphical symbol and updating the renderer and the menus
+* Updating the backend to parse the graphical model and save PR files
+* Updating other backends such as the Statechart renderer and code generators
+* Updating the clipboard functionality
 
-2) Prepare the parser in ogParser.py
+This is explained step by step in an order which allows to understand the logic
+easily.
 
-Find the parent rule (state) and add a branch to parse the new child.
+### Add the new grammar to sdl92.g
+
+The file `sdl92.g` contains the ANTLR3 grammar of the SDL language.
+Please refer to the ANTLR documentation if needed.
+
+We add the following production:
+
+    continuous_signal
+            :       cif?
+                    hyperlink?
+                    PROVIDED expression e=end
+                    (PRIORITY p=INT end)?
+                    transition?
+            ->      ^(PROVIDED expression cif? hyperlink? $p? $e? transition?)
+            ;
+
+
+When a new token is needed (here: *PROVIDED*) it must be added at several
+places in the ANTLR grammar:
+
+* in the "symbolname" production (for the CIF part)
+* as a new keyword (`PROVIDED : P R O V I D E D`)
+* in the list of tokens (tokens { ... })
+
+** Notes: **
+* *cif* and *hyperlink* are optional
+* the *transition* is also optional, to allow partial model saving
+* the expression is always the first child, since it does not have a
+dedicated token, and is the only mandatory field
+* *end* corresponds to the *COMMENT* part in SDL
+
+
+Then the new production is added as a child option to the (existing) *state*:
+
+    state_part
+            :       input_part
+                    | save_part
+                    | spontaneous_transition
+                    | **continuous_signal**     // <==== HERE
+                    | connect_part
+            ;
+
+### Prepare the parser in ogParser.py
+
+Find the parent rule (*state* here) and add a branch to parse the new child.
 Usually the rule is a function named after the production name. So look for
-"def state (...)"
+`def state (...)`
 
-def state(root, parent, context):
-    '''
-        Parse a STATE.
-        "parent" is used to compute absolute coordinates
-        "context" is the AST used to store global data (process/procedure)
-    '''
+
+    def state(root, parent, context):
+        '''
+            Parse a STATE.
+            "parent" is used to compute absolute coordinates
+            "context" is the AST used to store global data (process/procedure)
+        '''
+
 
 Each rule parses all its children based on the token name from ANTLR. It is
 therefore straightforward to add the parsing of a new child:
+
 
     for child in root.getChildren():
         if child.type == lexer.CIF:
@@ -63,80 +100,90 @@ therefore straightforward to add the parsing of a new child:
             # Add a placeholder for your code here
             sterr.append('I am adding support for Continuous Signals now!')
 
+
 If the new rule has children, you will likely want to add a new function to
 parse it following the same scheme as the parent rule (add a function called
-"continuous_signal" which returns the full content of the grammar).
+`continuous_signal` which returns the full content of the grammar).
 
 We keep this as a placeholder for the time being because we must first define
-if/what new entries are needed in the AST (ogAST.py).
+if/what new entries are needed in the AST (`ogAST.py`).
 
-Note:
+** Note: **
+
 In SDL there are family of features and very often, new features are similar
 to existing ones so you will find a model to know how to easily code your new
 function. In the case of the continuous signals, they are very similar to
-INPUT and CONNECT - they are triggers for a transition below a state.
+`INPUT` and `CONNECT` - they are triggers for a transition below a state.
 
-3) Add new entries to the AST in ogAST.py
+
+### Add new entries to the AST in ogAST.py
 
 Find the relevant places and add new entries if needed. Here we look for the
-State entry and we add a list of "continuous signals".
+State entry and we add a list of *continuous signals*.
+
 Depending on the complexity of the new feature, we can create a new class for
 the entry, or use a simple type/dictionary.
+
 The general rule is that if we are adding a new symbol (with coordinates,
 comments, hyperlink, ...) it is better to create a new class to handle it.
 It is the case here.
 
 So first in the State class:
 
-class State(object):
-    ''' AST Entry for STATE symbols '''
-    def __init__(self, defName=''):
-        # (...) Add the following lines:
-        # list of ContinuousSignal (provided clauses below a state)
-        self.continuous_signals = []
+    class State(object):
+        ''' AST Entry for STATE symbols '''
+        def __init__(self, defName=''):
+            # (...) Add the following lines:
+            # list of ContinuousSignal (provided clauses below a state)
+            self.continuous_signals = []
+
 
 Then create the new class, using the same structure as another class of a
 feature of the same family - here, we inherit from Input. The class is very
 simple:
 
-class ContinuousSignal(Input):
-    ''' AST Entry for the Continuous Signal '''
-    def __init__(self):
-        ''' Difference with Input: trigger is an expression '''
-        super(ContinuousSignal, self).__init__()
-        # Expression triggering the transition
-        self.trigger = None
-        # Priority (integer)
-        self.priority = 0
 
-    def trace(self):
-        ''' Debug output for a Continuous signal '''
-        return u'PROVIDED {exp} ({l},{c})'.format(exp=self.inputString,
-                l=self.line, c=self.charPositionInLine)
+    class ContinuousSignal(Input):
+        ''' AST Entry for the Continuous Signal '''
+        def __init__(self):
+            ''' Difference with Input: trigger is an expression '''
+            super(ContinuousSignal, self).__init__()
+            # Expression triggering the transition
+            self.trigger = None
+            # Priority (integer)
+            self.priority = 0
 
-We are done with the AST, we can close ogAST.py
+        def trace(self):
+            ''' Debug output for a Continuous signal '''
+            return u'PROVIDED {exp} ({l},{c})'.format(exp=self.inputString,
+                    l=self.line, c=self.charPositionInLine)
 
-4) Back to ogParser.py
+
+We are done with the AST, we can close `ogAST.py`.
+
+
+### Back to `ogParser.py`
+
 
 Now we can parse the construct and create the AST entries we just defined.
 In the state() function, we replace the placeholder we added at step 2:
 
+    (...)
+    elif child.type == lexer.PROVIDED:
+        # Continuous signal
+        provided_part, err, warn = continuous_signal(child, state_def, context)
+        state_def.continuous_signals.append(provided_part)
         (...)
-        elif child.type == lexer.PROVIDED:
-            # Continuous signal
-            provided_part, err, warn = continuous_signal(child, state_def,
-                                                         context)
-            state_def.continuous_signals.append(provided_part)
-            (...)
+
 
 Then we can implement the continuous_signal function.
 
+    def continuous_signal(root, parent, context):
+        ''' Parse a PROVIDED clause in a continuous signal '''
+        i = ogAST.ContinuousSignal()
+        (...)
+        return i, errors, warnings
 
-def continuous_signal(root, parent, context):
-    ''' Parse a PROVIDED clause in a continuous signal '''
-    i = ogAST.ContinuousSignal()
-    (...)
-    return i, errors, warnings
 
 At this point we are done with the parser, which is now capable of filling
 an AST containing the new construct.
@@ -144,23 +191,27 @@ an AST containing the new construct.
 There are still a number of updates to perform to complete the support of the
 new feature:
 
-- Update the on-the-fly parser for syntax checks in the graphical editor (ogParser.py)
-- Create a graphical symbol for the new feature (in sdlSymbols.py)
-- Update the renderer to draw the symbol (Renderer.py)
-- Update the backend that saves the model to phrase representation (Pr.py)
-- Create an icon and add the new symbol to the palette
-- Update the statechart renderer (Statechart.py)
-- Update other backends that can be impacted, such as code generators (AdaGenerator.py, etc.)
-- Update clipboard
+* Update the on-the-fly parser for syntax checks in the graphical editor (`ogParser.py`)
+* Create a graphical symbol for the new feature (in `sdlSymbols.py`)
+* Update the renderer to draw the symbol (`Renderer.py`)
+* Update the backend that saves the model to phrase representation (`Pr.py`)
+* Create an icon and add the new symbol to the palette
+* Update the statechart renderer (`Statechart.py`)
+* Update other backends that can be impacted, such as code generators (`AdaGenerator.py`, etc.)
+* Update clipboard
 
-5) Syntax checker in ogParser.py
 
-When a graphical symbol is edited, a call to "ogParser.parseSingleElement"
+### Syntax checker in `ogParser.py`
+
+When a graphical symbol is edited, a call to `ogParser.parseSingleElement`
 is made to check that there are no syntax errors.
+
 There is an assertion at the begining of this function to prevent trying to
 parse unsupported construct and raise a exception which would be more
-difficult to debug. 
+difficult to debug.
+
 We need to add our new "continuous_signal" symbol here:
+
 
     assert(elem in ('input_part', 'output', 'decision', 'alternative_part',
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
@@ -168,45 +219,50 @@ We need to add our new "continuous_signal" symbol here:
             'connect_part', 'process_definition', 'proc_start', 'state_start',
             'signalroute', 'stop_if', 'continuous_signal'))
 
-6) Create a new symbol in sdlSymbols.py
+
+### Create a new symbol in `sdlSymbols.py`
+
 
 sdlSymbols.py module contains the SDL-specific symbol ; they all inherit from
 a higher level symbol class, which provides the standard behaviour of the
 symbol, e.g. when it is moved, etc.
 
 The symbol-specific class must contain the following information:
-    - the name of the symbol as understood by the syntax checker
-    - the shape of the symbol
-    - the behaviour of the autocompletion feature
-    - the list of symbols that can be connected to this symbol
-    - and possibly tuning of some paramters
+
+* the name of the symbol as understood by the syntax checker
+* the shape of the symbol
+* the behaviour of the autocompletion feature
+* the list of symbols that can be connected to this symbol
+* and possibly tuning of some paramters
 
 At the top-part of the module, the new class needs to be added to the __all__
 global:
 
-__all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
-           'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
-           'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
-           'StateStart', 'Process', 'ContinuousSignal']
+    __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
+               'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
+               'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
+               'StateStart', 'Process', 'ContinuousSignal']
+
 
 Then the class is defined... extract:
 
-# pylint: disable=R0904
-class ContinuousSignal(HorizontalSymbol):
-    ''' " Provided" part below a state - not a enabling condition '''
-    common_name = 'continuous_signal' # <==== Same name as in ogParser.py
 
-    def set_shape(self, width, height):
-        ''' Define the shape '''
-        path = QPainterPath()
-        path.moveTo(15, 0)
-        path.lineTo(0, height / 2.0)
-        path.lineTo(15, height)
-        path.moveTo(width - 15, 0)
-        path.lineTo(width, height / 2.0)
-        path.lineTo(width - 15, height)
-        self.setPath(path)
-        super(ContinuousSignal, self).set_shape(width, height)
+    # pylint: disable=R0904
+    class ContinuousSignal(HorizontalSymbol):
+        ''' " Provided" part below a state - not a enabling condition '''
+        common_name = 'continuous_signal' # <==== Same name as in ogParser.py
+
+        def set_shape(self, width, height):
+            ''' Define the shape '''
+            path = QPainterPath()
+            path.moveTo(15, 0)
+            path.lineTo(0, height / 2.0)
+            path.lineTo(15, height)
+            path.moveTo(width - 15, 0)
+            path.lineTo(width, height / 2.0)
+            path.lineTo(width - 15, height)
+            self.setPath(path)
+            super(ContinuousSignal, self).set_shape(width, height)
 
 
 And you may need to add your new symbol to the properties of other symbols.
@@ -214,50 +270,55 @@ For example _insertable_followers gives the list of signals that the tool will
 allow you to place after (or next to) the currently selected symbol.
 
 The "state" symbol has this property:
+
     _insertable_followers = ['Input', 'Connect', 'ContinuousSignal']
 
 
-7) Update the renderer to see some first result: Renderer.py
+### Update the renderer to see some first result: `Renderer.py`
+
 
 Since the parser is ready and the symbol is defined, it is now possible to
 update the graphical renderer and see if the symbol is properly displayed.
 
 The renderer is a backend that uses a visitor design pattern (using the python
-singledispatch mechanism). It makes it easy to extend.
+*singledispatch* mechanism). It makes it easy to extend.
 
 Rendering means taking an ogAST class and creating an sdlSymbols class.
-There is a single "render" function that is dispatched depending on the class
+There is a single `render` function that is dispatched depending on the class
 name. You have to provide a function (name does not matter) and register it
 using a singledispatch decorator:
 
 
-@render.register(ogAST.ContinuousSignal)
-def _continuous_signal(ast, scene, parent, states):
-    ''' Add continuous signal to the scene '''
-    cont = sdlSymbols.ContinuousSignal(parent, ast=ast)
-    if cont not in scene.items():
-        add_to_scene(cont, scene)
-    if not parent:
-        cont.pos_x, cont.pos_y = ast.pos_x, ast.pos_y
-    if ast.transition:
-        render(ast.transition,
-               scene=scene,
-               parent=cont,
-               states=states)
-    return cont
+    @render.register(ogAST.ContinuousSignal)
+    def _continuous_signal(ast, scene, parent, states):
+        ''' Add continuous signal to the scene '''
+        cont = sdlSymbols.ContinuousSignal(parent, ast=ast)
+        if cont not in scene.items():
+            add_to_scene(cont, scene)
+        if not parent:
+            cont.pos_x, cont.pos_y = ast.pos_x, ast.pos_y
+        if ast.transition:
+            render(ast.transition,
+                   scene=scene,
+                   parent=cont,
+                   states=states)
+        return cont
+
 
 And then you must call the render function from the State and Terminator
 renderers, since the continuous signals are generated below states,
 just like Inputs:
 
-@render.register(ogAST.State)
-def _state(ast, scene, states, terminators, parent=None):
-    (...)
-    for exit in chain(ast.inputs, ast.connects, ast.continuous_signals):
-        render(exit, scene=scene, parent=new_state, states=states)
-    (...)
+    @render.register(ogAST.State)
+    def _state(ast, scene, states, terminators, parent=None):
+        (...)
+        for exit in chain(ast.inputs, ast.connects, ast.continuous_signals):
+            render(exit, scene=scene, parent=new_state, states=states)
+        (...)
 
-8) Update the graphical parser backend (Pr.py)
+
+### Update the graphical parser backend (Pr.py)
+
 
 In order to save the model or make syntax checks, we need to make sure that
 the graphical model parser recognises the new symbol.
@@ -266,15 +327,17 @@ pattern, but on the graphical symbols instead of the AST.
 It is therefore straightforward to parse - just add a new function that
 mimicks an existing one and register it to singledispatch.
 
-@generate.register(sdlSymbols.ContinuousSignal)
-def _continuous_signal(symbol, recursive=True, **kwargs):
-    ''' "Provided" symbol or branch if recursive is set '''
-    result = common('PROVIDED', symbol)
-    if recursive:
-        result.extend(recursive_aligned(symbol))
-    return result
 
-As in 7), also make sure that the parent symbol (here: state) can recursively
+    @generate.register(sdlSymbols.ContinuousSignal)
+    def _continuous_signal(symbol, recursive=True, **kwargs):
+        ''' "Provided" symbol or branch if recursive is set '''
+        result = common('PROVIDED', symbol)
+        if recursive:
+            result.extend(recursive_aligned(symbol))
+        return result
+
+
+As before, also make sure that the parent symbol (here: state) can recursively
 parse the new child.
 
 
