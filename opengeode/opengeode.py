@@ -71,7 +71,8 @@ from PySide import QtSvg
 from genericSymbols import(Symbol, Comment, Cornergrabber, Connection)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
-        ProcedureStart, ProcedureStop, StateStart, Connect, Process)
+        ProcedureStart, ProcedureStop, StateStart, Connect, Process,
+        ContinuousSignal)
 from TextInteraction import EditableText
 
 # Icons and png files generated from the resource file:
@@ -116,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.5'
+__version__ = '1.3.7'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -153,19 +154,20 @@ G_SYMBOLS = set()
 # Lookup table used to configure the context-dependent toolbars
 ACTIONS = {
     'block': [Process, Comment, TextSymbol],
-    'process': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
-                Output, ProcedureCall, TextSymbol, Comment, Label,
-                Join, Procedure],
+    'process': [Start, State, Input, Connect, ContinuousSignal, Task, Decision,
+                DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
+                Label, Join, Procedure],
     'procedure': [ProcedureStart, Task, Decision,
                   DecisionAnswer, Output, ProcedureCall, TextSymbol,
                   Comment, Label, Join, ProcedureStop],
     'statechart': [],
-    'state': [StateStart, State, Input, Connect, Task, Decision,
-              DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
-              Label, Join, ProcedureStop, Procedure],
+    'state': [StateStart, State, Input, Connect, ContinuousSignal, Task,
+              Decision, DecisionAnswer, Output, ProcedureCall, TextSymbol,
+              Comment, Label, Join, ProcedureStop, Procedure],
     'clipboard': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
                   Output, ProcedureCall, TextSymbol, Comment, Label,
-                  Join, Procedure, Process, StateStart, ProcedureStop],
+                  Join, Procedure, Process, StateStart, ProcedureStop,
+                  ContinuousSignal],
     'lander': [],
     'asn1': []
 }

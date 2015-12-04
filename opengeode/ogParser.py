@@ -599,6 +599,13 @@ def check_call(name, params, context):
             'Max': str(math.trunc(float(param_btys[0].Max)))
         })
 
+    else:
+        # check if procedure is declared to return a type
+        for inner_proc in context.procedures:
+            proc_name = inner_proc.inputString
+            if proc_name.lower() == name.lower() and inner_proc.return_type:
+                return inner_proc.return_type
+
     return UNKNOWN_TYPE
 
 
@@ -2069,15 +2076,32 @@ def procedure_pre(root, parent=None, context=None):
             errors.extend(err)
             warnings.extend(warn)
             proc.fpar = params
+        elif child.type == lexer.RETURNS:
+            try:
+                proc.return_type, proc.return_var = procedure_returns(child)
+            except TypeError as err:
+                errors.append(str(err))
+            if proc.return_var:
+                warnings.append('Procedure return variable not supported')
         elif child.type in (lexer.PROCEDURE, lexer.START,
                             lexer.STATE, lexer.FLOATING_LABEL):
             content.append(child)
         else:
             warnings.append(
                     'Unsupported construct in procedure, type: ' +
-                    str(child.type) + ' - line ' + str(child.getLine()) +
-                    ' - string: ' + str(proc.inputString))
+                    sdl92Parser.tokenNames[child.type] +
+                    ' - line ' + str(child.getLine()) +
+                    ' - in procedure ' + str(proc.inputString))
     return proc, content, errors, warnings
+
+
+def procedure_returns(root):
+    ''' Returns the (optional) variable name and the sort of the return '''
+    if len(root.children) == 1:
+        return sdl_to_asn1(root.getChild(0).getChild(0).text), None
+    else:
+        return sdl_to_asn1(root.getChild(1).getChild(0).text),\
+               root.getChild(0).text
 
 
 def procedure_post(proc, content, parent=None, context=None):
@@ -2381,6 +2405,14 @@ def text_area_content(root, ta_ast, context):
                     ta_ast.fpar = params
             except AttributeError:
                 errors.append('Entity cannot have an FPAR section')
+        elif child.type == lexer.RETURNS:
+            try:
+                context.return_type, context.return_var =\
+                        procedure_returns(child)
+            except TypeError as err:
+                errors.append(str(err))
+            if context.return_var:
+                warnings.append('Procedure return variable not supported')
         elif child.type == lexer.TIMER:
             timers = [timer.text.lower() for timer in child.children]
             context.timers.extend(timers)

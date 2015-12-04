@@ -1,0 +1,29 @@
+/* CIF PROCESS (144, 159), (150, 75) */
+PROCESS expressions;
+    /* CIF TEXT (742, 143), (125, 58) */
+    DCL f Real;
+    /* CIF ENDTEXT */
+    /* CIF TEXT (64, 151), (444, 178) */
+    -- Declare an external procedure that has a return type
+-- Use this to get access to C libraries (eg. math lib)
+-- without having to write manually external code
+-- Just link your code with the SDL object.
+procedure log;
+fpar in par real;
+returns real
+external;
+    /* CIF ENDTEXT */
+    /* CIF START (625, 146), (70, 34) */
+    START;
+        /* CIF NEXTSTATE (625, 199), (70, 35) */
+        NEXTSTATE wait;
+    /* CIF STATE (625, 199), (70, 35) */
+    STATE wait;
+        /* CIF INPUT (620, 255), (81, 38) */
+        INPUT run;
+            /* CIF TASK (588, 308), (144, 35) */
+            TASK f := log(f);
+            /* CIF NEXTSTATE (624, 358), (72, 38) */
+            NEXTSTATE Wait;
+    ENDSTATE;
+ENDPROCESS expressions;

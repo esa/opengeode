@@ -785,6 +785,8 @@ class Procedure(object):
         self.fpar = []
         # return type (ASN.1)
         self.return_type = None
+        # when procedure has a RETURN it can also contain a variable name
+        self.return_var = None
         # start, terminators, text areas, floating_labels (see Process)
         #self.start = None
         #self.states = []

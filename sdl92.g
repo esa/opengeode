@@ -97,6 +97,7 @@ tokens {
         RANGE;
         RESET;
         RETURN;
+        RETURNS;
         ROUTE;
         SAVE;
         SELECTOR;
@@ -263,7 +264,7 @@ process_definition
 pfpar
         :       FPAR parameters_of_sort
                 (',' parameters_of_sort)*
-                end
+                end?
         ->      ^(PFPAR parameters_of_sort+)
         ;
 
@@ -280,19 +281,27 @@ procedure
         :       cif?
                 PROCEDURE procedure_id e1=end
                 fpar?
+                res=procedure_result?
                 (text_area | procedure)*
                 ((processBody? ENDPROCEDURE procedure_id?) | EXTERNAL)
                 e2=end
-        ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar?
+        ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar? $res?
                 text_area* procedure* processBody? EXTERNAL?)
         ;
 
+// Procedure result / optional return type
+procedure_result
+        :       ('->' | RETURNS)
+                variable_id?
+                sort
+        ->      ^(RETURNS variable_id? sort)
+        ;
 
 // Procedure formal parameters
 fpar
         :       FPAR formal_variable_param
                 (',' formal_variable_param)*
-                end
+                end?
         ->      ^(FPAR formal_variable_param+)
         ;
 
@@ -320,12 +329,13 @@ content
                  | use_clause
                  | signal_declaration
                  | fpar
+                 | res=procedure_result
                  | timer_declaration
                  | syntype_definition
                  | newtype_definition
                  | variable_definition
                  | synonym_definition)*
-        ->       ^(TEXTAREA_CONTENT fpar* procedure* variable_definition*
+        ->       ^(TEXTAREA_CONTENT fpar* $res? procedure* variable_definition*
                    syntype_definition* newtype_definition* timer_declaration*
                    signal_declaration* use_clause* synonym_definition*)
         ;
@@ -1431,6 +1441,7 @@ GEODE           :       G E O D E;
 HYPERLINK       :       H Y P E R L I N K;
 ENDTEXT         :       E N D T E X T;
 RETURN          :       R E T U R N;
+RETURNS         :       R E T U R N S;
 TIMER           :       T I M E R;
 PROCESS         :       P R O C E S S;
 ENDPROCESS      :       E N D P R O C E S S;

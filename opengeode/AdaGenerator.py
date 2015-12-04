@@ -585,8 +585,8 @@ package {process_name} is'''.format(process_name=process_name,
         if params:
             params_spec = "({})".format("; ".join(params))
             ri_header += params_spec
-        ads_template.append(
-                        u'--  Sync required interface "' + proc.inputString)
+        ads_template.append(u'--  Sync required interface "{}"'
+                            .format(proc.inputString))
         if simu:
             # As for async TM, generate a callback mechanism
             ads_template.append(u"type {}_T is access procedure{};"
@@ -2169,14 +2169,12 @@ def _inner_procedure(proc, **kwargs):
 
     # Build the procedure signature (function if it can return a value)
     ret_type = type_name(proc.return_type) if proc.return_type else None
-    pi_header = u'{kind} {sep}{proc_name}{ret}'.format(kind='procedure'
+    pi_header = u'{kind} {sep}{proc_name}'.format(kind='procedure'
                                                   if not proc.return_type
                                                   else 'function',
                                                   sep=(u'p' + UNICODE_SEP)
                                                   if not proc.external else '',
-                                                  proc_name=proc.inputString,
-                                                  ret=(' return '+ret_type)
-                                                  if ret_type else '')
+                                                  proc_name=proc.inputString)
 
     if proc.fpar:
         pi_header += '('
@@ -2189,6 +2187,8 @@ def _inner_procedure(proc, **kwargs):
                     ptype=typename))
         pi_header += ';'.join(params)
         pi_header += ')'
+    if ret_type:
+        pi_header += ' return {}'.format(ret_type)
 
     local_decl.append(pi_header + ';')
     # Remote procedures need to be exported with a C calling convention
@@ -2198,6 +2198,9 @@ def _inner_procedure(proc, **kwargs):
                         .format(sep=UNICODE_SEP, proc_name=proc.inputString))
 
     if proc.external:
+        # Inner procedures declared external by the user: pragma import
+        # the C symbol with the same name. Overrules the pragma import from
+        # taste for required interfaces.
         local_decl.append(u'pragma import(C, {});'.format(proc.inputString))
     else:
         # Generate the code for the procedure itself
