@@ -393,3 +393,41 @@ symbol. In our case, the process, state and clipboard scenes. You can decide
 at which place it will appear graphically - it respects the ordering of the
 list.
 
+### Update the Statechart backend
+
+Very few symbol changes imply a modification of the statechart renderer. It is
+the case of the `continuous signals` because, like `inputs`, they can trigger
+transitions.
+
+The `Statechart.py` file is containing the code that creates a graphviz
+translation of the SDL model to render a statechart.
+
+The function that needs to be updated is `create_dot_graph`. It takes a SDL
+model (instance of AST) and generates a number of graphviz models, one for each
+level of hierarchy if the SDL model contains state composition or aggregations.
+
+What needs to be extended is the list of edges between the states.
+
+It is easy here, we have to extend the creation of edges from:
+
+    for state, inputs in root_ast.mapping.viewitems():
+        # ... create edges triggered by inputs below states
+
+to:
+
+    for state, inputs in chain(root_ast.mapping.viewitems(),
+                               root_ast.cs_mapping.viewitems()):
+        # chain the input iterator with continuous signals
+
+### Update the code generator backends
+
+All backends use a Visitor design pattern (with Python's *singledispatch*
+mechanism).
+
+Updating backends with custom code generation features is therefore
+straightforward. You need to find the parent function of your construct,
+and create a new visitor function to generate the code corresponding you need
+(or directly embed, depending on the complexity of the pattern).
+
+The Ada code generator contains documentation and details on how to proceed
+with updates. See `AdaGenerator.py` file.

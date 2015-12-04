@@ -22,6 +22,7 @@
 import os
 import logging
 from collections import defaultdict
+from itertools import chain
 import re
 from PySide import QtGui, QtCore
 
@@ -568,7 +569,8 @@ def create_dot_graph(root_ast, basic=False):
         # create a new node for each RETURN statement (in nested states)
         ident = each.inputString or ' '
         graph.add_node(ident, label=ident, shape='square', width=10.0 / 72.0)
-    for state, inputs in root_ast.mapping.viewitems():
+    for state, inputs in chain(root_ast.mapping.viewitems(),
+                               root_ast.cs_mapping.viewitems()):
         # Add edges
         transitions = \
             inputs if not state.endswith('START') \

@@ -21,15 +21,13 @@ Features
 --------
 
 - Graphical editor of SDL processes and procedures.
-- SDL2010 features: FOR loops in task symbols, hierarchical states
-- Works on pure PR+CIF files (textual SDL notation) - no fancy proprietary save format
-- Full supports ASN.1 data types - using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
+- SDL2010 features: state composition and state aggregation
+- Works on pure PR+CIF files (textual SDL notation)
+- Supports ASN.1 data types - using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
 - Generates Ada code
-- Extensive syntax and semantic checks
 - Automatic conversion to Statechart diagrams
 - Save the complete or parts of the model to PNG/SVG/PDF files
 - Hyperlinks (link a symbol content to any external document or web page)
-- Zoom in, zoom-out
 - Context-dependent text auto-completion
 - Syntax highlighting
 - Undo/Redo, Copy-Paste
@@ -57,8 +55,8 @@ There are several dependencies for OpenGEODE:
 - [ASN1SCC](https://github.com/ttsiodras/asn1scc)
 - (optional) GNAT to build the generated Ada code
 - mono
-- llvmpy (tested with 0.12.7)
-- LLVM (tested with 3.3)
+- optional: llvmpy (tested with 0.12.7)
+- optional: LLVM (tested with 3.3)
 
 On Debian, Ubuntu, and probably other distributions:
 
