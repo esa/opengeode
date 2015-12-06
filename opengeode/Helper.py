@@ -207,7 +207,7 @@ def flatten(process, sep=u'_'):
         for each in state.cs_mapping.viewvalues():
             # Update transition indices of continuous signals
             # XXX shouldn't we do it also for CONNECT parts?
-            values.extend(value)
+            values.extend(each)
 
         for inp in set(values):
             # values may contain duplicate entries if an input corresponds
