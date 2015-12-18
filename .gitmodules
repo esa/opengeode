@@ -7,3 +7,9 @@
 [submodule "properties"]
 	path = properties
 	url = https://gitrepos.estec.esa.int/taste/properties.git
+[submodule "dmt"]
+	path = dmt
+	url = https://gitrepos.estec.esa.int/taste/dmt.git
+[submodule "pymsc"]
+	path = pymsc
+	url = https://gitrepos.estec.esa.int/taste/pymsc.git
