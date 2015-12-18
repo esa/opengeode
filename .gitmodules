@@ -1,0 +1,27 @@
+[submodule "asn1-value-editor"]
+	path = asn1-value-editor
+	url = https://gitrepos.estec.esa.int/taste/asn1-value-editor.git
+[submodule "speedometer"]
+	path = speedometer
+	url = https://gitrepos.estec.esa.int/taste/speedometer.git
+[submodule "properties"]
+	path = properties
+	url = https://gitrepos.estec.esa.int/taste/properties.git
+[submodule "dmt"]
+	path = dmt
+	url = https://gitrepos.estec.esa.int/taste/dmt.git
+[submodule "pymsc"]
+	path = pymsc
+	url = https://gitrepos.estec.esa.int/taste/pymsc.git
+[submodule "singledispatch"]
+	path = singledispatch
+	url = https://gitrepos.estec.esa.int/taste/singledispatch.git
+[submodule "enum34"]
+	path = enum34
+	url = https://gitrepos.estec.esa.int/taste/enum34.git
+[submodule "antlr3-python"]
+	path = antlr3-python
+	url = https://gitrepos.estec.esa.int/taste/antlr3-python.git
+[submodule "pygraphviz"]
+	path = pygraphviz
+	url = https://gitrepos.estec.esa.int/maxime-esa/pygraphviz.git

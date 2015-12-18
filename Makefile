@@ -40,10 +40,16 @@ compile-all:
 	@CLASSPATH=$$PWD/antlr-3.1.3/lib/antlr-3.1.3.jar java org.antlr.Tool sdl92.g
 	@mv sdl92*.py opengeode
 
-install:
-	@python setup.py install --record install.record
+update:
+	@git submodule update --remote
 
-publish: install
+dependencies:
+	@pip install --upgrade ./singledispatch ./enum34 ./speedometer ./properties ./dmt ./pymsc ./asn1-value-editor ./antlr3-python ./pygraphviz
+
+install: update dependencies
+	@pip install --upgrade .
+
+publish: 
 	@python setup.py sdist upload
 
 freeze-linux:
