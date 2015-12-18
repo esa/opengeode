@@ -58,10 +58,13 @@ And optionally llvm and llvmpy
 On Debian, Ubuntu, and probably other distributions:
 
 ```bash
-$ sudo apt-get install python-pyside pyside-tools graphviz python-pip gnat libmono-system-runtime4.0-cil \
-               libmono-corlib4.0-cil libmono-system-runtime-serialization-formatters-soap4.0-cil libmono-system-web4.0-cil \
-               libmono-system-xml4.0-cil libmono-system4.0-cil mono-runtime libmono-system-numerics4.0-cil \
-               libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
+$ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
+                       graphviz-dev libgraphviz-dev  python-pip gnat-4.8 \
+                       libmono-system-runtime4.0-cil libmono-corlib4.0-cil \
+                       libmono-system-runtime-serialization-formatters-soap4.0-cil \
+                       libmono-system-web4.0-cil libmono-system-xml4.0-cil \
+                       libmono-system4.0-cil mono-runtime libmono-system-numerics4.0-cil \
+                       libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
 ```
 
 To install the ASN.1 compiler:
@@ -81,23 +84,32 @@ $ mono /opt/asn1scc/asn1.exe
 
 Optionally, to install llvmpy and LLVM follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.7/doc/getting_started.html#installation)
 
+
 OpenGEODE installation
 ----------------------
 
-To install the application on your machine, once all dependencies are met:
+Make sure all dependencies are installed.
 
-Get the software with git:
+You need to install a certificate to get software from ESA Git servers:
+
+```bash
+$ echo -n | openssl s_client -connect gitrepos.estec.esa.int:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > gitrepos.cert
+$ sudo cp gitrepos.cert /usr/local/share/ca-certificates/gitrepos.crt
+$ sudo update-ca-certificate
+```
+
+Then you can get the software with git:
 
 ```bash
 $ git clone --recursive https://github.com/maxime-esa/opengeode.git
 ```
 
-Then enter the opengeode directory and *as root*, type:
+And install it *as root*:
 
 ```bash
+$ cd opengeode
 $ make install
 ```
-
 
 
 Information and contact
