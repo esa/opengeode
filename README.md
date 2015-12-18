@@ -58,10 +58,13 @@ And optionally llvm and llvmpy
 On Debian, Ubuntu, and probably other distributions:
 
 ```bash
-$ sudo apt-get install python-pyside pyside-tools graphviz python-pip gnat libmono-system-runtime4.0-cil \
-               libmono-corlib4.0-cil libmono-system-runtime-serialization-formatters-soap4.0-cil libmono-system-web4.0-cil \
-               libmono-system-xml4.0-cil libmono-system4.0-cil mono-runtime libmono-system-numerics4.0-cil \
-               libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
+$ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
+                       graphviz-dev libgraphviz-dev  python-pip gnat \
+                       libmono-system-runtime4.0-cil libmono-corlib4.0-cil \
+                       libmono-system-runtime-serialization-formatters-soap4.0-cil \
+                       libmono-system-web4.0-cil libmono-system-xml4.0-cil \
+                       libmono-system4.0-cil mono-runtime libmono-system-numerics4.0-cil \
+                       libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
 ```
 
 To install the ASN.1 compiler:
