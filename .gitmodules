@@ -22,3 +22,6 @@
 [submodule "antlr3-python"]
 	path = antlr3-python
 	url = https://gitrepos.estec.esa.int/taste/antlr3-python.git
+[submodule "pygraphviz"]
+	path = pygraphviz
+	url = https://gitrepos.estec.esa.int/maxime-esa/pygraphviz.git
