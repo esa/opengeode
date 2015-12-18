@@ -13,3 +13,12 @@
 [submodule "pymsc"]
 	path = pymsc
 	url = https://gitrepos.estec.esa.int/taste/pymsc.git
+[submodule "singledispatch"]
+	path = singledispatch
+	url = https://gitrepos.estec.esa.int/taste/singledispatch.git
+[submodule "enum34"]
+	path = enum34
+	url = https://gitrepos.estec.esa.int/taste/enum34.git
+[submodule "antlr3-python"]
+	path = antlr3-python
+	url = https://gitrepos.estec.esa.int/taste/antlr3-python.git
