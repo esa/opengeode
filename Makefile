@@ -43,11 +43,13 @@ compile-all:
 update:
 	@git submodule update --remote
 
+dependencies:
+	@pip install --upgrade ./singledispatch ./enum34 ./speedometer ./properties ./dmt ./pymsc ./asn1-value-editor ./antlr3-python ./pygraphviz
 
-install: update
-	@python setup.py install --record install.record
+install: update dependencies
+	@pip install --upgrade .
 
-publish: install
+publish: 
 	@python setup.py sdist upload
 
 freeze-linux:
