@@ -45,18 +45,15 @@ Uzip it and run opengeode.exe. It contains everything without any other external
 Linux Pre-requisites
 --------------------
 
-There are several dependencies for OpenGEODE:
+To install OpenGEODE on Linux you need to install some system-level dependencies:
 
-- Python 2.7 with pip
-- Pyside (the Qt bindings for Python)
-- Python ANTLR Runtime
-- PyGraphviz
-- enum34, singledispatch
+- Python 2.7 with pip (installed by default on nearly all Linux distributions)
+- Pyside
+- Graphviz
 - [ASN1SCC](https://github.com/ttsiodras/asn1scc)
-- (optional) GNAT to build the generated Ada code
-- mono
-- optional: llvmpy (tested with 0.12.7)
-- optional: LLVM (tested with 3.3)
+- GNAT
+
+And optionally llvm and llvmpy
 
 On Debian, Ubuntu, and probably other distributions:
 
@@ -65,23 +62,21 @@ $ sudo apt-get install python-pyside pyside-tools graphviz python-pip gnat libmo
                libmono-corlib4.0-cil libmono-system-runtime-serialization-formatters-soap4.0-cil libmono-system-web4.0-cil \
                libmono-system-xml4.0-cil libmono-system4.0-cil mono-runtime libmono-system-numerics4.0-cil \
                libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
-$ sudo pip install --upgrade graphviz enum34 singledispatch
-$ sudo pip install antlr_python_runtime --allow-external antlr_python_runtime --allow-unverified antlr_python_runtime
 ```
 
 To install the ASN.1 compiler:
 
 ```bash
 $ cd /opt
-$ sudo wget http://download.tuxfamily.org/taste/ASN1SCC/ASN1SCC-latest.tgz
-$ sudo tar zxvf ASN1SCC-latest.tgz
-$ echo 'export PATH=$PATH:/opt/<path to latest ASN1SCC>/bin' >> ~/.bashrc
+$ wget http://download.tuxfamily.org/taste/ASN1SCC/ASN1SCC-latest.tgz
+$ tar zxvf ASN1SCC-latest.tgz
+$ echo 'export PATH=$PATH:/opt/asn1scc' >> ~/.bashrc
 ```
 
-Check that it works:
+Open a new terminal and check that it works:
 
 ```bash
-$ asn1.exe
+$ mono /opt/asn1scc/asn1.exe
 ```
 
 Optionally, to install llvmpy and LLVM follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.7/doc/getting_started.html#installation)
@@ -91,47 +86,32 @@ OpenGEODE installation
 
 To install the application on your machine, once all dependencies are met:
 
-```bash
-$ pip install --upgrade opengeode
-```
-
-This is sufficient to get opengeode running
-
-Installation from source
-------------------------
-
-You can get the source from the TASTE repositories or from GitHub
+Get the software with git:
 
 ```bash
-$ git clone https://github.com/maxime-esa/opengeode.git
+$ git clone --recursive https://github.com/maxime-esa/opengeode.git
 ```
 
-Then enter the opengeode directory and as root, type:
+Then enter the opengeode directory and *as root*, type:
 
 ```bash
 $ make install
 ```
 
-Installation is optional. You can simply run opengeode.py to get it work.
+
 
 Information and contact
 =======================
 
-OpenGEODE is part of the TASTE project.
+OpenGEODE is part of the [TASTE project](http://taste.tuxfamily.org)
 
-Find more information and download at http://taste.tuxfamily.org
-
-TASTE allows to create embedded software systems that combine SDL models with C, Ada,
-Matlab-Simulink and a few other languages or tools.
-
-OpenGEODE is mainly designed, developed and maintained by Maxime Perrotin
+For additional information please contact:
 maxime (dot) perrotin (at) esa (dot) int
 
-The LLVM backend was designed and implemented by Diego Barbera during the ESA Summer of Code 2014
 
+The LLVM backend was designed and implemented by Diego Barbera during the ESA Summer of Code 2014
 Some parts have been implemented by Laurent Meyer (native SDL type support in the parser)
 
-The background pattern was downloaded from www.subtlepatterns.com
 
 The ASN.1 compiler (ASN1Scc) that OpenGEODE is based on was
 developed by George Mamais and Thanassis Tsiodras for the European
@@ -141,7 +121,10 @@ Licence
 =======
 
 License is LGPL (see file LICENSE)
+There is no runtime, and the generated code is not subject to any license.
+
 The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
+The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
