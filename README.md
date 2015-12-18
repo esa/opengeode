@@ -59,7 +59,7 @@ On Debian, Ubuntu, and probably other distributions:
 
 ```bash
 $ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
-                       graphviz-dev libgraphviz-dev  python-pip gnat \
+                       graphviz-dev libgraphviz-dev  python-pip gnat-4.8 \
                        libmono-system-runtime4.0-cil libmono-corlib4.0-cil \
                        libmono-system-runtime-serialization-formatters-soap4.0-cil \
                        libmono-system-web4.0-cil libmono-system-xml4.0-cil \
