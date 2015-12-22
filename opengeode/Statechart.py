@@ -322,7 +322,7 @@ def preprocess_nodes(my_graph, bounding_rect, dpi):
                          kind='cluster')
         attrs.append(attr)
     for node in my_graph.nodes_iter():
-        if not node.attr:
+        if not dict(node.attr):
             continue
         node.attr.update(name=node.name)
         attrs.append(node.attr)
