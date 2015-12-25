@@ -16,6 +16,8 @@
         state_aggregations: enrich AST with state aggregation flags,
                             and return the list of substates of aggregations
         parallel_states: return a list of strings naming all parallel states
+        statenames: return a list of properly-formatted state names
+        rec_findstates: recursively find parallel/composite statenames
 
     Copyright (c) 2012-2015 European Space Agency
 
@@ -37,7 +39,27 @@ LOG = logging.getLogger(__name__)
 
 __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
            'map_input_state', 'sorted_fields', 'state_aggregations',
-           'parallel_states']
+           'parallel_states', 'statenames', 'rec_findstates']
+
+
+def statenames(context, sep=u'\u00dc'):
+    ''' Return the list of states (just the names) of a given context
+    Format the output by replacing unicode separator symbol with a dot '''
+    return (s.replace(sep, u'.') for s in context.mapping.viewkeys()
+            if not s.endswith(u'START'))
+
+
+def rec_findstates(context, prefix=''):
+    ''' In case of state compositions/aggregations, find substates '''
+    for each in context.composite_states:
+        if not isinstance(each, ogAST.StateAggregation):
+            # Aggregations are just containers, not states
+            for name in statenames(each):
+                yield u'{}{}.{}'.format(prefix, each.statename, name)
+        for substate in rec_findstates(each,
+                                       prefix=u'{}{}.'.format(prefix,
+                                                              each.statename)):
+            yield substate
 
 
 def state_aggregations(process):
