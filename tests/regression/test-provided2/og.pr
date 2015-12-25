@@ -18,38 +18,38 @@ signal telemetry(tm_type);
         PROCESS og;
             STATE AGGREGATION wait;
             SUBSTRUCTURE
-                    STATE exception_handler;
+                    STATE generic_tc_handler_1;
                     SUBSTRUCTURE
-                            /* CIF START (264, 78), (70, 35) */
+                            /* CIF TEXT (131, 91), (323, 140) */
+                            -- Model a generic TC handler. The content of this
+-- state can be copied several times, to manage
+-- several TC in parallel.
+                            /* CIF ENDTEXT */
+                            /* CIF START (490, 84), (70, 35) */
                             START;
-                                /* CIF NEXTSTATE (246, 128), (106, 35) */
+                                /* CIF NEXTSTATE (472, 134), (106, 35) */
                                 NEXTSTATE wait_for_tc;
-                            /* CIF STATE (246, 128), (106, 35) */
-                            STATE wait_for_tc;
-                                /* CIF PROVIDED (252, 183), (93, 38) */
-                                PROVIDED got_tc;
-                                    /* CIF PROCEDURECALL (117, 236), (363, 35) */
-                                    CALL writeln('ERROR, all TC handlers are busy - discarding');
-                                    /* CIF TASK (225, 286), (147, 35) */
-                                    TASK failure := true;
-                                    /* CIF NEXTSTATE (263, 336), (70, 35) */
-                                    NEXTSTATE -;
+                            /* CIF STATE (667, 182), (123, 35) */
+                            STATE Processing_tc;
+                                /* CIF INPUT (689, 237), (78, 35) */
+                                INPUT timer1;
+                                    /* CIF PROCEDURECALL (631, 287), (193, 35) */
+                                    CALL writeln('TC1 completed');
+                                    /* CIF NEXTSTATE (675, 337), (106, 35) */
+                                    NEXTSTATE wait_for_tc;
                             ENDSTATE;
-                    ENDSUBSTRUCTURE;
-                    STATE tc_router;
-                    SUBSTRUCTURE
-                            /* CIF START (144, 56), (70, 35) */
-                            START;
-                                /* CIF NEXTSTATE (116, 106), (126, 35) */
-                                NEXTSTATE wait_for_tc;
-                            /* CIF STATE (116, 106), (126, 35) */
+                            /* CIF STATE (472, 134), (106, 35) */
                             STATE wait_for_tc;
-                                /* CIF INPUT (93, 161), (175, 35) */
-                                INPUT telecommand(tc);
-                                    /* CIF TASK (107, 211), (146, 35) */
-                                    TASK got_tc := true;
-                                    /* CIF NEXTSTATE (145, 261), (70, 35) */
-                                    NEXTSTATE -;
+                                /* CIF PROVIDED (485, 189), (79, 35) */
+                                PROVIDED got_tc;
+                                    /* CIF TASK (461, 239), (126, 35) */
+                                    TASK got_tc := false;
+                                    /* CIF PROCEDURECALL (427, 289), (194, 35) */
+                                    CALL writeln('Processing TC 1');
+                                    /* CIF PROCEDURECALL (432, 339), (184, 35) */
+                                    CALL set_timer(5000, timer1);
+                                    /* CIF NEXTSTATE (461, 389), (126, 35) */
+                                    NEXTSTATE Processing_TC;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
                     STATE generic_tc_handler_2;
@@ -86,51 +86,61 @@ signal telemetry(tm_type);
                                     NEXTSTATE Processing_TC;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
-                    STATE generic_tc_handler_1;
+                    STATE tc_router;
                     SUBSTRUCTURE
-                            /* CIF TEXT (131, 91), (323, 140) */
-                            -- Model a generic TC handler. The content of this
--- state can be copied several times, to manage
--- several TC in parallel.
-                            /* CIF ENDTEXT */
-                            /* CIF START (490, 84), (70, 35) */
+                            /* CIF START (144, 56), (70, 35) */
                             START;
-                                /* CIF NEXTSTATE (472, 134), (106, 35) */
+                                /* CIF NEXTSTATE (116, 106), (126, 35) */
                                 NEXTSTATE wait_for_tc;
-                            /* CIF STATE (667, 182), (123, 35) */
-                            STATE Processing_tc;
-                                /* CIF INPUT (689, 237), (78, 35) */
-                                INPUT timer1;
-                                    /* CIF PROCEDURECALL (631, 287), (193, 35) */
-                                    CALL writeln('TC1 completed');
-                                    /* CIF NEXTSTATE (675, 337), (106, 35) */
-                                    NEXTSTATE wait_for_tc;
-                            ENDSTATE;
-                            /* CIF STATE (472, 134), (106, 35) */
+                            /* CIF STATE (116, 106), (126, 35) */
                             STATE wait_for_tc;
-                                /* CIF PROVIDED (485, 189), (79, 35) */
-                                PROVIDED got_tc;
-                                    /* CIF TASK (461, 239), (126, 35) */
-                                    TASK got_tc := false;
-                                    /* CIF PROCEDURECALL (427, 289), (194, 35) */
-                                    CALL writeln('Processing TC 1');
-                                    /* CIF PROCEDURECALL (432, 339), (184, 35) */
-                                    CALL set_timer(5000, timer1);
-                                    /* CIF NEXTSTATE (461, 389), (126, 35) */
-                                    NEXTSTATE Processing_TC;
+                                /* CIF INPUT (93, 161), (175, 35) */
+                                INPUT telecommand(tc);
+                                    /* CIF TASK (107, 211), (146, 35) */
+                                    TASK got_tc := true;
+                                    /* CIF NEXTSTATE (145, 261), (70, 35) */
+                                    NEXTSTATE -;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
-                    /* CIF STATE (370, 168), (182, 35) */
-                    STATE generic_tc_handler_1;
-                    ENDSTATE;
-                    /* CIF STATE (381, 338), (169, 35) */
-                    STATE generic_tc_handler_2;
+                    STATE exception_handler;
+                    SUBSTRUCTURE
+                            /* CIF START (264, 78), (70, 35) */
+                            START;
+                                /* CIF NEXTSTATE (246, 128), (106, 35) */
+                                NEXTSTATE wait_for_tc;
+                            /* CIF STATE (246, 128), (106, 35) */
+                            STATE wait_for_tc;
+                                /* CIF PROVIDED (252, 183), (93, 38) */
+                                PROVIDED got_tc;
+                                    /* CIF PROCEDURECALL (117, 236), (363, 35) */
+                                    CALL writeln('ERROR, all TC handlers are busy - discarding');
+                                    /* CIF TASK (225, 286), (147, 35) */
+                                    TASK failure := true;
+                                    /* CIF NEXTSTATE (263, 336), (70, 35) */
+                                    NEXTSTATE -;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
+                    /* CIF STATE (443, 507), (153, 35) */
+                    STATE exception_handler;
                     ENDSTATE;
                     /* CIF STATE (476, 0), (113, 35) */
                     STATE tc_router;
                     ENDSTATE;
-                    /* CIF STATE (443, 507), (153, 35) */
-                    STATE exception_handler;
+                    /* CIF STATE (381, 338), (169, 35) */
+                    STATE generic_tc_handler_2;
+                    ENDSTATE;
+                    /* CIF STATE (370, 168), (182, 35) */
+                    STATE generic_tc_handler_1;
+                    ENDSTATE;
+            ENDSUBSTRUCTURE;
+            STATE safe;
+            SUBSTRUCTURE
+                    /* CIF START (153, 96), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (135, 146), (105, 35) */
+                        NEXTSTATE Inside_safe;
+                    /* CIF STATE (301, 97), (106, 35) */
+                    STATE Inside_safe;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
             /* CIF TEXT (0, 310), (327, 208) */
@@ -151,17 +161,17 @@ timer timer1, timer2;
             START;
                 /* CIF NEXTSTATE (354, 348), (63, 35) */
                 NEXTSTATE wait;
+            /* CIF STATE (347, 583), (70, 35) */
+            STATE safe;
+            ENDSTATE;
             /* CIF STATE (485, 344), (99, 35) */
             STATE wait;
                 /* CIF PROVIDED (495, 399), (77, 35) */
                 PROVIDED failure;
-                    /* CIF PROCEDURECALL (402, 449), (264, 35) */
+                    /* CIF PROCEDURECALL (401, 449), (264, 35) */
                     CALL writeln('Going to SAFE mode');
-                    /* CIF NEXTSTATE (499, 499), (70, 35) */
+                    /* CIF NEXTSTATE (498, 499), (70, 35) */
                     NEXTSTATE safe;
-            ENDSTATE;
-            /* CIF STATE (347, 583), (70, 35) */
-            STATE safe;
             ENDSTATE;
         ENDPROCESS og;
     ENDBLOCK;

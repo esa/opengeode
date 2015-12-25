@@ -28,7 +28,7 @@
 
 import operator
 import logging
-from itertools import chain
+from itertools import chain, ifilterfalse
 from collections import defaultdict
 
 from singledispatch import singledispatch
@@ -47,6 +47,15 @@ def statenames(context, sep=u'\u00dc'):
     Format the output by replacing unicode separator symbol with a dot '''
     return (s.replace(sep, u'.') for s in context.mapping.viewkeys()
             if not s.endswith(u'START'))
+
+
+#def non_composite_statenames(context, sep=u'\u00dc'):
+#   ''' Return a list of statenames excluding parents of state compositions '''
+#   composites = []
+#   for each in context.composite_states:
+#       if not isinstance(each, ofAST.StateAggregation):
+#
+#   return ifilterfalse(lambda x: , statenames(context, sep))
 
 
 def rec_findstates(context, prefix=''):
