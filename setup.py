@@ -19,9 +19,7 @@ setup(
     author_email='maxime.perrotin@esa.int',
     description='A tiny, free SDL editor for TASTE',
     long_description=open('README.md').read(),
-    install_requires=[
-        'pygraphviz'
-    ],
+    install_requires=[],
     tests_require=['tabulate'],
     include_package_data=True,
     url='http://opengeode.net',

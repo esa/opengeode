@@ -46,8 +46,10 @@ update:
 dependencies:
 	@pip install --upgrade ./singledispatch ./enum34 ./speedometer ./properties ./dmt ./pymsc ./asn1-value-editor ./antlr3-python ./pygraphviz
 
-install: update dependencies
+install:
 	@pip install --upgrade .
+
+full-install: update dependencies install
 
 publish: 
 	@python setup.py sdist upload
