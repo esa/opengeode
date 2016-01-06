@@ -891,6 +891,9 @@ class Process(object):
         # List of timers (strings) declared in the process
         self.timers = []
 
+        # list of processes used for context management of the GUI
+        self.processes = []
+
 
 class CompositeState(Process):
     '''
