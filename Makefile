@@ -44,7 +44,15 @@ update:
 	@git submodule update --remote
 
 dependencies:
-	@pip install --upgrade ./singledispatch ./enum34 ./speedometer ./properties ./dmt ./pymsc ./asn1-value-editor ./antlr3-python ./pygraphviz
+	@pip install --upgrade ./singledispatch
+	@pip install --upgrade ./enum34
+	@pip install --upgrade ./speedometer
+	@pip install --upgrade ./properties
+	@pip install --upgrade ./dmt
+	@pip install --upgrade ./pymsc
+	@pip install --upgrade ./asn1-value-editor
+	@pip install --upgrade ./antlr3-python
+	@pip install --upgrade ./pygraphviz
 
 install:
 	@pip install --upgrade .
