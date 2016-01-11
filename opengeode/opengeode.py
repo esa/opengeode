@@ -2198,7 +2198,7 @@ def init_logging(options):
             each.LOG.setLevel(level)
         except AttributeError as err:
             # Discard unloaded modules (e.g. if LLVM is missing on target)
-            LOG.info(str(err))
+            LOG.debug(str(err))
 
 
 def parse(files):
