@@ -3472,7 +3472,7 @@ def decision(root, parent, context):
     covered_ranges = defaultdict(list)
     qmin, qmax = 0, 0
     need_else = False
-    is_enum = False
+    is_enum, is_bool = False, False
     for ans in dec.answers:
         if dec.kind in ('informal_text', 'any'):
             break
@@ -3495,6 +3495,12 @@ def decision(root, parent, context):
                         continue
                     covered_ranges[ans].append(ans.inputString)
                     is_enum = True
+                elif q_basic.kind == 'BooleanType':
+                    covered_ranges[ans].append(ans.inputString)
+                    is_bool = True
+                    if not ans.constant.is_raw:
+                        need_else = True
+                        continue
                 if not q_basic.kind.startswith(('Integer', 'Real')):
                     # Check numeric questions - ignore others
                     continue
@@ -3648,7 +3654,7 @@ def decision(root, parent, context):
     new_q_ranges = []
     # (2) Check that decision range is fully covered
     for ans_ref, ranges in covered_ranges.viewitems():
-        if is_enum:
+        if is_enum or is_bool:
             continue
         for mina, maxa in ranges:
             for minq, maxq in q_ranges:
@@ -3683,7 +3689,7 @@ def decision(root, parent, context):
                         .format(dec.inputString))
 
     # (5) check coverage of enumerated types
-    if is_enum:
+    if is_enum or is_bool:
         # check duplicate answers
         answers = [a.lower()
                    for a in chain.from_iterable(covered_ranges.viewvalues())]
@@ -3691,8 +3697,12 @@ def decision(root, parent, context):
         if dupl:
             qerr.append('Decision "{}": duplicate answers "{}"'
                           .format(dec.inputString, '", "'.join(dupl)))
-        enumerants = [en.replace('-', '_').lower()
-                      for en in q_basic.EnumValues.keys()]
+        if is_bool:
+            # Boolean special case: values are just True and False
+            enumerants = ['true', 'false']
+        else:
+            enumerants = [en.replace('-', '_').lower()
+                          for en in q_basic.EnumValues.keys()]
         # check for missing answers
         if set(answers) != set(enumerants) and not has_else:
             qerr.append('Decision "{}": Missing branches for answer(s) "{}"'
