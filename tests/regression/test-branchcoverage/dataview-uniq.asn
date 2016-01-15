@@ -13,6 +13,8 @@ T-UInt8 ::= INTEGER (0 .. 255)
 
 T-Boolean ::= BOOLEAN
 
+T-Real ::= REAL (-5.0 .. 100.0)
+
 END
 
 TASTE-Dataview DEFINITIONS ::=

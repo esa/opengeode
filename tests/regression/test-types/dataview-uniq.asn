@@ -31,6 +31,16 @@ MyOctStr    ::= OCTET STRING (SIZE (3))
 -- You can also declare variables (they will be visible in C, Ada and SDL)
 myVar	    MySeqOf	::= { hello, world }
 
+T1 ::= CHOICE {
+  replyToCommand CHOICE { cmd1 BOOLEAN, cmd2 SEQUENCE(SIZE(0..10)) OF BOOLEAN }
+}
+
+hello-t1 T1 ::= replyToCommand: cmd2: {}
+
+T2 ::= SEQUENCE {
+ outputData T1
+}
+
 END
 
 TASTE-BasicTypes DEFINITIONS ::=

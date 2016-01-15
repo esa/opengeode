@@ -1,0 +1,14 @@
+[ERROR] Decision "var6": No answer to cover range -5.0 .. 10.0
+[ERROR] Decision "var6": No answer to cover range 0.0 .. 0.1
+[ERROR] Decision "var6": No answer to cover range 10.0 .. 10.5
+[ERROR] Decision "var6": No answer to cover value 10.0
+[ERROR] Decision "var6": answers >=10.0 and <=10.0 are overlapping in range 10.0 .. 10.0
+[ERROR] Decision "varbool": Missing branches for answer(s) "false"
+[ERROR] Decision "varbool": Missing branches for answer(s) "false"
+[ERROR] Too many errors, cannot generate code
+[INFO] Checking ['myfunction.pr', 'system_structure.pr']
+[INFO] Parsing complete. Summary, found 3 warnings and 7 errors
+[INFO] myfunction.pr
+[WARNING] Decision "var6": Range -10.0 .. -5.0 is unreachable
+[WARNING] Decision "var6": Range 100.0 .. 150.0 is unreachable
+[WARNING] Decision "varbool": Missing ELSE branch

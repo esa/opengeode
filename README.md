@@ -141,6 +141,13 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.9 (01/2016)
+    - Checker verifies that decision coverage is complete on Real and Boolean
+      types
+
+1.3.8 (01/2016)
+    - Fix logging when LLVM is not installed
+
 1.3.7 (12/2015)
     - Added icon to use Continuous Signals from the GUI
 

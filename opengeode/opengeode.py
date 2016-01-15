@@ -117,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.7'
+__version__ = '1.3.9'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1567,7 +1567,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             return False
 
         # check syntax and raise a big warning before saving
-        self.messages_window.clear()
+        if not autosave:
+            self.messages_window.clear()
         if not autosave and not scene.global_syntax_check():
             LOG.error('Syntax errors must be fixed NOW '
                       'or you may not be able to reload the model')
@@ -2171,34 +2172,34 @@ def init_logging(options):
 
     # Set log level for all libraries
     LOG.setLevel(level)
-    try:
-        modules = (
-            sdlSymbols,
-            genericSymbols,
-            ogAST,
-            ogParser,
-            Lander,
-            AdaGenerator,
-            undoCommands,
-            Renderer,
-            Clipboard,
-            Statechart,
-            Helper,
-            Asn1scc,
-            Connectors,
-            Pr,
-            TextInteraction,
-            Connectors,
-            LlvmGenerator,
-            CGenerator,
-            StgBackend
-        )
-        for module in modules:
-            module.LOG.addHandler(handler_console)
-            module.LOG.setLevel(level)
-    except (NameError, AttributeError) as err:
-        # Some modules may not be loaded (like llvm on Windows)
-        LOG.info(str(err))
+    modules = (
+        sdlSymbols,
+        genericSymbols,
+        ogAST,
+        ogParser,
+        Lander,
+        AdaGenerator,
+        undoCommands,
+        Renderer,
+        Clipboard,
+        Statechart,
+        Helper,
+        Asn1scc,
+        Connectors,
+        Pr,
+        TextInteraction,
+        Connectors,
+        LlvmGenerator,
+        CGenerator,
+        StgBackend
+    )
+    for each in modules:
+        try:
+            each.LOG.addHandler(handler_console)
+            each.LOG.setLevel(level)
+        except AttributeError as err:
+            # Discard unloaded modules (e.g. if LLVM is missing on target)
+            LOG.debug(str(err))
 
 
 def parse(files):
