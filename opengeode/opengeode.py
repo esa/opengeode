@@ -1567,7 +1567,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             return False
 
         # check syntax and raise a big warning before saving
-        self.messages_window.clear()
+        if not autosave:
+            self.messages_window.clear()
         if not autosave and not scene.global_syntax_check():
             LOG.error('Syntax errors must be fixed NOW '
                       'or you may not be able to reload the model')
