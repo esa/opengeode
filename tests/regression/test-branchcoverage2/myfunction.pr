@@ -1,12 +1,12 @@
 /* CIF PROCESS (200, 143), (150, 75) */
 PROCESS myfunction;
+    /* CIF TEXT (0, 43), (449, 41) */
+    -- Test the branch coverage checker in decision answers
+    /* CIF ENDTEXT */
     /* CIF TEXT (78, 142), (282, 268) */
     dcl var6 T_Real := 5.0;
 
 dcl varbool T_Boolean := false;
-    /* CIF ENDTEXT */
-    /* CIF TEXT (0, 43), (449, 41) */
-    -- Test the branch coverage checker in decision answers
     /* CIF ENDTEXT */
     /* CIF START (525, 71), (70, 35) */
     START;
@@ -26,87 +26,99 @@ dcl varbool T_Boolean := false;
                 /* CIF ANSWER (531, 311), (71, 28) */
                 else:
         ENDDECISION;
-        /* CIF DECISION (511, 368), (98, 50) */
+        /* CIF DECISION (511, 375), (98, 50) */
         DECISION varbool
-        /* CIF COMMENT (629, 375), (262, 35) */
+        /* CIF COMMENT (629, 382), (262, 35) */
         COMMENT 'check there is no error';
-                /* CIF ANSWER (439, 445), (73, 28) */
+                /* CIF ANSWER (439, 452), (73, 28) */
                 (true):
-                /* CIF ANSWER (527, 438), (78, 28) */
+                /* CIF ANSWER (527, 445), (78, 28) */
                 (false):
         ENDDECISION;
-        /* CIF DECISION (511, 495), (98, 50) */
+        /* CIF DECISION (511, 509), (98, 50) */
         DECISION varbool
-        /* CIF COMMENT (629, 502), (322, 48) */
+        /* CIF COMMENT (629, 516), (322, 48) */
         COMMENT 'check else is missing
 and mix of true and varbool is not ok';
-                /* CIF ANSWER (412, 565), (73, 28) */
+                /* CIF ANSWER (412, 579), (73, 28) */
                 (true):
-                /* CIF ANSWER (495, 565), (98, 28) */
+                /* CIF ANSWER (495, 579), (98, 28) */
                 (varbool):
         ENDDECISION;
-        /* CIF DECISION (523, 608), (73, 50) */
+        /* CIF DECISION (511, 622), (98, 50) */
+        DECISION varbool
+        /* CIF COMMENT (629, 629), (322, 48) */
+        COMMENT 'check else is missing
+and mix of true and varbool is not ok';
+                /* CIF ANSWER (367, 692), (73, 28) */
+                (true):
+                /* CIF ANSWER (450, 692), (98, 28) */
+                (varbool):
+                /* CIF ANSWER (567, 692), (71, 28) */
+                else:
+        ENDDECISION;
+        /* CIF DECISION (523, 735), (73, 50) */
         DECISION var6
-        /* CIF COMMENT (616, 615), (217, 35) */
+        /* CIF COMMENT (616, 742), (217, 35) */
         COMMENT 'check there is no error';
-                /* CIF ANSWER (590, 678), (82, 28) */
+                /* CIF ANSWER (590, 805), (82, 28) */
                 (<10.0):
-                /* CIF ANSWER (440, 678), (92, 28) */
+                /* CIF ANSWER (440, 805), (92, 28) */
                 (>=10.0):
         ENDDECISION;
-        /* CIF DECISION (523, 721), (73, 50) */
+        /* CIF DECISION (523, 848), (73, 50) */
         DECISION var6
-        /* CIF COMMENT (616, 728), (279, 35) */
+        /* CIF COMMENT (616, 855), (279, 35) */
         COMMENT 'check there is value 10 missing';
-                /* CIF ANSWER (590, 791), (82, 28) */
+                /* CIF ANSWER (590, 918), (82, 28) */
                 (<10.0):
-                /* CIF ANSWER (440, 791), (92, 28) */
+                /* CIF ANSWER (440, 918), (92, 28) */
                 (>10.0):
         ENDDECISION;
-        /* CIF DECISION (523, 834), (73, 50) */
+        /* CIF DECISION (523, 961), (73, 50) */
         DECISION var6
-        /* CIF COMMENT (616, 841), (314, 35) */
+        /* CIF COMMENT (616, 968), (314, 35) */
         COMMENT 'check there is value 10 overlapping';
-                /* CIF ANSWER (585, 904), (92, 28) */
+                /* CIF ANSWER (585, 1031), (92, 28) */
                 (<=10.0):
-                /* CIF ANSWER (440, 904), (92, 28) */
+                /* CIF ANSWER (440, 1031), (92, 28) */
                 (>=10.0):
         ENDDECISION;
-        /* CIF DECISION (523, 947), (73, 50) */
+        /* CIF DECISION (523, 1074), (73, 50) */
         DECISION var6
-        /* CIF COMMENT (616, 954), (314, 35) */
+        /* CIF COMMENT (616, 1081), (314, 35) */
         COMMENT 'check missing range ]10.0;10.5[';
-                /* CIF ANSWER (585, 1017), (92, 28) */
+                /* CIF ANSWER (585, 1144), (92, 28) */
                 (<=10.0):
-                /* CIF ANSWER (440, 1017), (92, 28) */
+                /* CIF ANSWER (440, 1144), (92, 28) */
                 (>=10.5):
         ENDDECISION;
-        /* CIF DECISION (523, 1060), (73, 50) */
+        /* CIF DECISION (523, 1187), (73, 50) */
         DECISION var6
-        /* CIF COMMENT (616, 1067), (324, 35) */
+        /* CIF COMMENT (616, 1194), (324, 35) */
         COMMENT 'check there is no error (close range)';
-                /* CIF ANSWER (496, 1130), (116, 28) */
+                /* CIF ANSWER (496, 1257), (116, 28) */
                 (-5.0:100.0):
         ENDDECISION;
-        /* CIF DECISION (523, 1173), (73, 50) */
+        /* CIF DECISION (523, 1300), (73, 50) */
         DECISION var6
-        /* CIF COMMENT (616, 1180), (390, 48) */
+        /* CIF COMMENT (616, 1307), (390, 48) */
         COMMENT 'check unreachable branch and missing range';
-                /* CIF ANSWER (585, 1243), (92, 28) */
+                /* CIF ANSWER (585, 1370), (92, 28) */
                 (>10.0):
-                /* CIF ANSWER (427, 1243), (118, 28) */
+                /* CIF ANSWER (427, 1370), (118, 28) */
                 (-10.0:-5.0):
         ENDDECISION;
-        /* CIF DECISION (523, 1286), (73, 50) */
+        /* CIF DECISION (523, 1413), (73, 50) */
         DECISION var6
-        /* CIF COMMENT (615, 1294), (432, 48) */
+        /* CIF COMMENT (615, 1421), (432, 48) */
         COMMENT 'check missing range 0:0.1 and unrechable 100:150';
-                /* CIF ANSWER (576, 1356), (110, 28) */
+                /* CIF ANSWER (576, 1483), (110, 28) */
                 (0.1:150.0):
-                /* CIF ANSWER (427, 1356), (118, 28) */
+                /* CIF ANSWER (427, 1483), (118, 28) */
                 (-5.0:0.0):
         ENDDECISION;
-        /* CIF NEXTSTATE (525, 1399), (70, 35) */
+        /* CIF NEXTSTATE (525, 1526), (70, 35) */
         NEXTSTATE wait;
     /* CIF STATE (360, 356), (70, 35) */
     STATE wait;

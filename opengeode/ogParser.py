@@ -3692,6 +3692,13 @@ def decision(root, parent, context):
         qwarn.append('Decision "{}": Missing ELSE branch'
                         .format(dec.inputString))
 
+    if need_else and has_else and len(dec.answers) != 2:
+        # At least one branch has a non-ground expression answer, therefore
+        # there can be at most one additional answer: the ELSE branch,
+        # otherwise there is a risk that branches overlap due to variables
+        qerr.append('Answers of decision "{}" could overlap'
+                    .format(dec.inputString))
+
     # (5) check coverage of boolean types
     # Rules:
     # a. exactly 2 answers
