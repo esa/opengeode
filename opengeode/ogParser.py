@@ -3504,6 +3504,7 @@ def decision(root, parent, context):
                 if not q_basic.kind.startswith(('Integer', 'Real')):
                     # Check numeric questions - ignore others
                     continue
+                delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
                 # numeric type -> find the range covered by this answer
                 if a_basic.Min != a_basic.Max:
                     # Not a constant or a raw number, range is not fix
@@ -3522,13 +3523,13 @@ def decision(root, parent, context):
                 elif ans.openRangeOp == ogAST.ExprLt:
                     # answer < X means covered range is [min; X[
                     if qmin < val_a:
-                        covered_ranges[ans].append((qmin, val_a - 1e-10))
+                        covered_ranges[ans].append((qmin, val_a - delta))
                     else:
                         reachable = False
                 elif ans.openRangeOp == ogAST.ExprGt:
                     # answer > X means covered range is ]X; max]
                     if qmax > val_a:
-                        covered_ranges[ans].append((val_a + 1e-10, qmax))
+                        covered_ranges[ans].append((val_a + delta, qmax))
                     else:
                         reachable = False
                 elif ans.openRangeOp == ogAST.ExprGe:
@@ -3545,12 +3546,12 @@ def decision(root, parent, context):
                 elif ans.openRangeOp == ogAST.ExprNeq:
                     # answer != X means covered range is [min; X[;]X; max]
                     if qmin == val_a:
-                        covered_ranges[ans].append((qmin + 1e-10, qmax))
+                        covered_ranges[ans].append((qmin + delta, qmax))
                     elif qmax == val_a:
-                        covered_ranges[ans].append((qmin, qmax - 1e-10))
+                        covered_ranges[ans].append((qmin, qmax - delta))
                     elif qmin < val_a < qmax:
-                        covered_ranges[ans].append((qmin, val_a - 1e-10))
-                        covered_ranges[ans].append((val_a + 1e-10, qmax))
+                        covered_ranges[ans].append((qmin, val_a - delta))
+                        covered_ranges[ans].append((val_a + delta, qmax))
                     else:
                         warnings.append(['Condition is always true: {} /= {}'
                                         .format(dec.inputString,
@@ -3596,6 +3597,7 @@ def decision(root, parent, context):
             q_basic = find_basic_type(dec.question.exprType)
             if not q_basic.kind.startswith(('Integer', 'Real')):
                 continue
+            delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
             # numeric type -> find the range covered by this answer
             a0_basic = find_basic_type(ans.closedRange[0].exprType)
             a1_basic = find_basic_type(ans.closedRange[1].exprType)
@@ -3611,12 +3613,12 @@ def decision(root, parent, context):
             if a0_val < qmin:
                 qwarn.append('Decision "{dec}": '
                                 'Range {a0} .. {qmin} is unreachable'
-                                .format(a0=a0_val, qmin=round(qmin - 1e-10, 9),
+                                .format(a0=a0_val, qmin=round(qmin - delta, 9),
                                         dec=dec.inputString))
             if a1_val > qmax:
                 qwarn.append('Decision "{dec}": '
                                 'Range {qmax} .. {a1} is unreachable'
-                                .format(qmax=round(qmax + 1e-10), a1=a1_val,
+                                .format(qmax=round(qmax + delta), a1=a1_val,
                                         dec=dec.inputString))
             if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
                                                      a1_val > qmax):
@@ -3658,8 +3660,8 @@ def decision(root, parent, context):
             continue
         for mina, maxa in ranges:
             for minq, maxq in q_ranges:
-                left = (minq, min(maxq, mina - 1e-10))
-                right = (max(minq, maxa + 1e-10), maxq)
+                left = (minq, min(maxq, mina - delta))
+                right = (max(minq, maxa + delta), maxq)
                 if mina > minq and maxa < maxq:
                     new_q_ranges.extend([left, right])
                 elif mina <= minq and maxa >= maxq:
