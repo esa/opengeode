@@ -141,9 +141,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-1.3.9 (01/2016)
+1.3.9/10 (01/2016)
     - Checker verifies that decision coverage is complete on Real and Boolean
       types
+    - F3 generates Ada code
 
 1.3.8 (01/2016)
     - Fix logging when LLVM is not installed
