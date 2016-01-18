@@ -3496,7 +3496,7 @@ def decision(root, parent, context):
                     covered_ranges[ans].append(ans.inputString)
                     is_enum = True
                 elif q_basic.kind == 'BooleanType':
-                    covered_ranges[ans].append(ans.inputString)
+                    covered_ranges[ans].append(ans.constant.value[0])
                     is_bool = True
                     if not ans.constant.is_raw:
                         need_else = True
@@ -3633,8 +3633,10 @@ def decision(root, parent, context):
     # (2) no gap in the coverage of the decision possible values
     # (3) ELSE branch, if present, can be reached
     # (4) if an answer uses a non-ground expression an ELSE is there
-    # (5) present() operator and enumerated question are fully covered
+    # (5) boolean expressions are fully covered
+    # (6) present() operator and enumerated question are fully covered
 
+    # (1) no overlap between covered ranges in decision answers
     q_ranges = [(qmin, qmax)] if dec.question \
                               and is_numeric(dec.question.exprType) else []
     for each in combinations(covered_ranges.viewitems(), 2):
@@ -3690,7 +3692,14 @@ def decision(root, parent, context):
         qwarn.append('Decision "{}": Missing ELSE branch'
                         .format(dec.inputString))
 
-    # (5) check coverage of enumerated types
+    # (5) check coverage of boolean types
+    # Rules:
+    # a. exactly 2 answers
+    # b. if one answer is not ground expression, other branch must be ELSE
+    # c. if there is a ground expression G in a branch, the other branch
+    #    must evaluate to non-G or be ELSE
+
+    # (6) check coverage of enumerated types
     if is_enum or is_bool:
         # check duplicate answers
         answers = [a.lower()
@@ -3700,11 +3709,13 @@ def decision(root, parent, context):
             qerr.append('Decision "{}": duplicate answers "{}"'
                           .format(dec.inputString, '", "'.join(dupl)))
         if is_bool:
-            # Boolean special case: values are just True and False
             enumerants = ['true', 'false']
+            if len(answers) + (1 if has_else else 0) != 2:
+                qerr.append('Boolean decision "{}" must have exactly 2 answers'
+                           .format(dec.inputString))
         else:
             enumerants = [en.replace('-', '_').lower()
-                          for en in q_basic.EnumValues.keys()]
+                      for en in q_basic.EnumValues.keys()]
         # check for missing answers
         if set(answers) != set(enumerants) and not has_else:
             qerr.append('Decision "{}": Missing branches for answer(s) "{}"'
