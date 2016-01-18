@@ -3496,7 +3496,7 @@ def decision(root, parent, context):
                     covered_ranges[ans].append(ans.inputString)
                     is_enum = True
                 elif q_basic.kind == 'BooleanType':
-                    covered_ranges[ans].append(ans.inputString)
+                    covered_ranges[ans].append(ans.constant.value[0])
                     is_bool = True
                     if not ans.constant.is_raw:
                         need_else = True
@@ -3504,6 +3504,7 @@ def decision(root, parent, context):
                 if not q_basic.kind.startswith(('Integer', 'Real')):
                     # Check numeric questions - ignore others
                     continue
+                delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
                 # numeric type -> find the range covered by this answer
                 if a_basic.Min != a_basic.Max:
                     # Not a constant or a raw number, range is not fix
@@ -3522,13 +3523,13 @@ def decision(root, parent, context):
                 elif ans.openRangeOp == ogAST.ExprLt:
                     # answer < X means covered range is [min; X[
                     if qmin < val_a:
-                        covered_ranges[ans].append((qmin, val_a - 1e-10))
+                        covered_ranges[ans].append((qmin, val_a - delta))
                     else:
                         reachable = False
                 elif ans.openRangeOp == ogAST.ExprGt:
                     # answer > X means covered range is ]X; max]
                     if qmax > val_a:
-                        covered_ranges[ans].append((val_a + 1e-10, qmax))
+                        covered_ranges[ans].append((val_a + delta, qmax))
                     else:
                         reachable = False
                 elif ans.openRangeOp == ogAST.ExprGe:
@@ -3545,12 +3546,12 @@ def decision(root, parent, context):
                 elif ans.openRangeOp == ogAST.ExprNeq:
                     # answer != X means covered range is [min; X[;]X; max]
                     if qmin == val_a:
-                        covered_ranges[ans].append((qmin + 1e-10, qmax))
+                        covered_ranges[ans].append((qmin + delta, qmax))
                     elif qmax == val_a:
-                        covered_ranges[ans].append((qmin, qmax - 1e-10))
+                        covered_ranges[ans].append((qmin, qmax - delta))
                     elif qmin < val_a < qmax:
-                        covered_ranges[ans].append((qmin, val_a - 1e-10))
-                        covered_ranges[ans].append((val_a + 1e-10, qmax))
+                        covered_ranges[ans].append((qmin, val_a - delta))
+                        covered_ranges[ans].append((val_a + delta, qmax))
                     else:
                         warnings.append(['Condition is always true: {} /= {}'
                                         .format(dec.inputString,
@@ -3596,6 +3597,7 @@ def decision(root, parent, context):
             q_basic = find_basic_type(dec.question.exprType)
             if not q_basic.kind.startswith(('Integer', 'Real')):
                 continue
+            delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
             # numeric type -> find the range covered by this answer
             a0_basic = find_basic_type(ans.closedRange[0].exprType)
             a1_basic = find_basic_type(ans.closedRange[1].exprType)
@@ -3611,12 +3613,12 @@ def decision(root, parent, context):
             if a0_val < qmin:
                 qwarn.append('Decision "{dec}": '
                                 'Range {a0} .. {qmin} is unreachable'
-                                .format(a0=a0_val, qmin=round(qmin - 1e-10, 9),
+                                .format(a0=a0_val, qmin=round(qmin - delta, 9),
                                         dec=dec.inputString))
             if a1_val > qmax:
                 qwarn.append('Decision "{dec}": '
                                 'Range {qmax} .. {a1} is unreachable'
-                                .format(qmax=round(qmax + 1e-10), a1=a1_val,
+                                .format(qmax=round(qmax + delta), a1=a1_val,
                                         dec=dec.inputString))
             if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
                                                      a1_val > qmax):
@@ -3631,8 +3633,10 @@ def decision(root, parent, context):
     # (2) no gap in the coverage of the decision possible values
     # (3) ELSE branch, if present, can be reached
     # (4) if an answer uses a non-ground expression an ELSE is there
-    # (5) present() operator and enumerated question are fully covered
+    # (5) boolean expressions are fully covered
+    # (6) present() operator and enumerated question are fully covered
 
+    # (1) no overlap between covered ranges in decision answers
     q_ranges = [(qmin, qmax)] if dec.question \
                               and is_numeric(dec.question.exprType) else []
     for each in combinations(covered_ranges.viewitems(), 2):
@@ -3658,8 +3662,8 @@ def decision(root, parent, context):
             continue
         for mina, maxa in ranges:
             for minq, maxq in q_ranges:
-                left = (minq, min(maxq, mina - 1e-10))
-                right = (max(minq, maxa + 1e-10), maxq)
+                left = (minq, min(maxq, mina - delta))
+                right = (max(minq, maxa + delta), maxq)
                 if mina > minq and maxa < maxq:
                     new_q_ranges.extend([left, right])
                 elif mina <= minq and maxa >= maxq:
@@ -3688,7 +3692,21 @@ def decision(root, parent, context):
         qwarn.append('Decision "{}": Missing ELSE branch'
                         .format(dec.inputString))
 
-    # (5) check coverage of enumerated types
+    if need_else and has_else and len(dec.answers) != 2:
+        # At least one branch has a non-ground expression answer, therefore
+        # there can be at most one additional answer: the ELSE branch,
+        # otherwise there is a risk that branches overlap due to variables
+        qerr.append('Answers of decision "{}" could overlap'
+                    .format(dec.inputString))
+
+    # (5) check coverage of boolean types
+    # Rules:
+    # a. exactly 2 answers
+    # b. if one answer is not ground expression, other branch must be ELSE
+    # c. if there is a ground expression G in a branch, the other branch
+    #    must evaluate to non-G or be ELSE
+
+    # (6) check coverage of enumerated types
     if is_enum or is_bool:
         # check duplicate answers
         answers = [a.lower()
@@ -3698,11 +3716,13 @@ def decision(root, parent, context):
             qerr.append('Decision "{}": duplicate answers "{}"'
                           .format(dec.inputString, '", "'.join(dupl)))
         if is_bool:
-            # Boolean special case: values are just True and False
             enumerants = ['true', 'false']
+            if len(answers) + (1 if has_else else 0) != 2:
+                qerr.append('Boolean decision "{}" must have exactly 2 answers'
+                           .format(dec.inputString))
         else:
             enumerants = [en.replace('-', '_').lower()
-                          for en in q_basic.EnumValues.keys()]
+                      for en in q_basic.EnumValues.keys()]
         # check for missing answers
         if set(answers) != set(enumerants) and not has_else:
             qerr.append('Decision "{}": Missing branches for answer(s) "{}"'

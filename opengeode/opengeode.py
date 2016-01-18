@@ -117,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.9'
+__version__ = '1.3.10'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1315,8 +1315,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.scale(1.2, 1.2)
         elif event.matches(QtGui.QKeySequence.Save):
             self.save_diagram()
-        elif (event.key() == Qt.Key_G and
+        elif event.key() == Qt.Key_F3 or (event.key() == Qt.Key_G and
                 event.modifiers() == Qt.ControlModifier):
+            # F3 or Ctrl-G to generate Ada code
             self.generate_ada()
         elif event.key() == Qt.Key_F7:
             self.check_model()
@@ -1951,8 +1952,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # get the messages list window (to display errors and warnings)
         # it is a QtGui.QListWidget
         msg_dock = self.findChild(QtGui.QDockWidget, 'msgDock')
-        msg_dock.setWindowTitle('Use F7 to check the model'
-                                ' or update the Data view')
+        msg_dock.setWindowTitle('Use F7 to check the model or update the '
+                                'Data view, and F3 to generate Ada code')
         msg_dock.setStyleSheet('QDockWidget::title {background: lightgrey;}')
         messages = self.findChild(QtGui.QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
