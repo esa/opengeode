@@ -244,19 +244,25 @@ connection
         ;
 
 
+/* process_definition
+   Covers various cases such as:
+   PROCESS name REFERENCED;
+   PROCESS name;
+      <body>
+   ENDPROCESS <name>;
+   Etc. The grammar is tolerant, semantic checks are done in the code.
+*/
 process_definition
-        :       PROCESS process_id number_of_instances? REFERENCED end
-        ->      ^(PROCESS process_id number_of_instances? REFERENCED)
-                | cif? PROCESS process_id number_of_instances? end
+        :       cif?
+                PROCESS process_id
+                number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
                 (text_area | procedure | composite_state)*
-                processBody? ENDPROCESS process_id?
-                end
-        ->      ^(PROCESS cif? process_id number_of_instances? end?
-                pfpar? text_area* procedure* composite_state* processBody?)
-                | cif? PROCESS process_id number_of_instances? (':' type_inst)?
-                end
-        ->      ^(PROCESS cif? process_id type_inst? number_of_instances? end?)
+                processBody? ENDPROCESS? process_id?
+                end?
+        ->      ^(PROCESS cif? process_id number_of_instances? type_inst?
+                REFERENCED? $a? pfpar? text_area* procedure*
+                composite_state* processBody?)
         ;
 
 
@@ -534,7 +540,7 @@ entity_in_composite_state
 
 // 11.11.2 State Aggregation (SDL2000)
 state_aggregation_body
-        :       (state_partitioning | state_partition_connection)+
+        :       (state_partitioning | state_partition_connection)*
                 state*
         ;
 

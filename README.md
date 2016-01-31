@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.11
+    - Parser is more tolerant to incomplete systems
+
 1.3.9/10 (01/2016)
     - Checker verifies that decision coverage is complete on Real and Boolean
       types
