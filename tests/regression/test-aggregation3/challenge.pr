@@ -1,0 +1,35 @@
+/* CIF PROCESS (150, 150), (150, 75) */
+PROCESS challenge;
+    STATE AGGREGATION Aggreg;
+    SUBSTRUCTURE
+            /* CIF STATE (148, 125), (70, 35) */
+            STATE A;
+            ENDSTATE;
+            /* CIF STATE (123, 267), (70, 35) */
+            STATE B;
+            ENDSTATE;
+    ENDSUBSTRUCTURE;
+    /* CIF TEXT (80, 0), (298, 56) */
+    -- This system tests nested states
+
+dcl result T_uint32 :=0;
+    /* CIF ENDTEXT */
+    /* CIF START (89, 79), (68, 37) */
+    START;
+        /* CIF PROCEDURECALL (69, 131), (107, 35) */
+        CALL writeln('1');
+        /* CIF NEXTSTATE (88, 181), (70, 35) */
+        NEXTSTATE OFF;
+    /* CIF STATE (290, 148), (82, 35) */
+    STATE Aggreg;
+    ENDSTATE;
+    /* CIF STATE (88, 181), (70, 35) */
+    STATE OFF;
+        /* CIF INPUT (88, 236), (70, 35) */
+        INPUT run;
+            /* CIF PROCEDURECALL (69, 286), (107, 35) */
+            CALL writeln('2');
+            /* CIF NEXTSTATE (81, 336), (82, 35) */
+            NEXTSTATE Aggreg;
+    ENDSTATE;
+ENDPROCESS challenge;
