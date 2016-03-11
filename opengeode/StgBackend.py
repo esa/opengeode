@@ -5,6 +5,13 @@
     OpenGEODE - A tiny SDL Editor for TASTE - StringTemplate backend
 
     This module uses the StringTemplate library to ease writing new backends
+    To use this module:
+        import StgBackend as stg
+        stg.prepare_model(ogAST.process) # give your process AST as input
+        for each stg_file:
+            stg.initialize_stg(simu=True/False, each)
+            stg.generate(ogAST.process)
+
 
     Copyright (c) 2012-2015 European Space Agency
 
@@ -46,6 +53,45 @@ UNICODE_SEP = u'\u00dc'
 # STG group file, avoid passing a parameter as it is a module-level shared var
 STG = None
 
+# Shortcut function to instantiate a STG template
+new = lambda inst: STG.getInstanceOf(inst)
+
+def initialize_stg(simu=False, stgfile='ada_body.st'):
+    ''' Load the STG backend and set gobal STG pointer '''
+    global STG
+    global SHARED_LIB
+
+    if not stg:
+        LOG.error('Library missing. Use pip install stringtemplate3')
+        return
+
+    # Load the file containing a group of templates
+    STG = stringtemplate3.StringTemplateGroup(file=open(stgfile))
+    if not STG:
+        LOG.error('Could not load StringTemplate group')
+        return
+
+    if simu:
+        SHARED_LIB = True
+
+def prepare_model(process):
+    ''' Do some AST transformations: flatten model, etc. '''
+    global TYPES
+    TYPES = process.dataview
+    del OUT_SIGNALS[:]
+    del PROCEDURES[:]
+    OUT_SIGNALS.extend(process.output_signals)
+    PROCEDURES.extend(process.procedures)
+
+    # In case model has nested states, flatten everything (in-place)
+    Helper.flatten(process, sep=UNICODE_SEP)
+
+    # Add an maping {input: {state: transition...}} in order to easily
+    # generate the lookup tables for the state machine runtime
+    process.map_inp_states = Helper.map_input_state(process)
+
+    VARIABLES.update(process.variables)
+
 @singledispatch
 def generate(*args, **kwargs):
     ''' Generate the code for an item of the AST '''
@@ -55,75 +101,35 @@ def generate(*args, **kwargs):
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
+def _process(process, **kwargs):
     ''' Generate the code for a complete process (AST Top level) '''
-    global TYPES
-    global STG
-    global SHARED_LIB
+    assert stg and STG
     process_name = process.processName
-
-    if not stg:
-        LOG.error('Library missing. As root: pip install stringtemplate3')
-        return
-
-    # Load the file containing a group of templates
-    STG = stringtemplate3.StringTemplateGroup(file=open(stgfile))
-    if not STG:
-        LOG.error('Could not load StringTemplate group')
-        return
+    LOG.info('Generating code for process {}'.format(process.processName))
 
     # Get the template corresponding to a SDL PROCESS
-    process_template = STG.getInstanceOf("process")
-    process_template['name'] = process_name
-
-    # Set Simulation/DLL mode
-    process_template['simu'] = simu
-
-    TYPES = process.dataview
-    del OUT_SIGNALS[:]
-    del PROCEDURES[:]
-    OUT_SIGNALS.extend(process.output_signals)
-    PROCEDURES.extend(process.procedures)
-    if simu:
-        SHARED_LIB = True
-
-    LOG.info('Generating code for process {}'.format(process_name))
-
-    # In case model has nested states, flatten everything
-    Helper.flatten(process, sep=UNICODE_SEP)
-
-    # Make an maping {input: {state: transition...}} in order to easily
-    # generate the lookup tables for the state machine runtime
-    mapping = Helper.map_input_state(process)
-
-    VARIABLES.update(process.variables)
+    tpl = new("process")
 
     # Initialize array of strings containing all local declarations
-    process_decl, process_vars = dcl(process, simu)
-
-    # Set the DCL declarations variable in the process template
-    process_template['dcl'] = process_decl
-    process_template['vars'] = process_vars
-
+    tpl['arrsDcl'], process_decl, process_vars = dcl(process, simu)
 
     # Set the list of SDL states
-    process_template['states'] = (name for name in process.mapping.iterkeys()
+    tpl['states'] = (name for name in process.mapping.viewkeys()
                                   if not name.endswith(u'START'))
 
     # Set constants corresponding to substate start transitions
     constants = []
     for name, val in process.mapping.viewitems():
         if name.endswith(u'START') and name != u'START':
-            const_template = STG.getInstanceOf("constant")
+            const_template = new("constant")
             const_template['var'] = name
             const_template['val'] = str(val)
             constants.append(str(const_template))
 
-    process_template['constants'] = constants
+    tpl['constants'] = constants
 
     try:
-        process_template['asn1_mod'] = (dv.replace('-', '_')
-                                        for dv in process.asn1Modules)
+        tpl['asn1_mod'] = (dv.replace('-', '_') for dv in process.asn1Modules)
     except TypeError:
         pass # No ASN.1 module
 
@@ -136,15 +142,15 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         inner_procedures_code.extend(proc_code)
 
     # Generate the code for the process-level variable declarations
-    process_template['pdecl'] = inner_procedure_decl
-    process_template['pcode'] = inner_procedures_code
+    tpl['pdecl'] = inner_procedure_decl
+    tpl['pcode'] = inner_procedures_code
 
 
     # Generate the code for each input signal (provided interface) and timers
     pi_code = []
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
-        sig_template = STG.getInstanceOf('pi_signature')
+        sig_template = new('pi_signature')
         if signal.get('name', u'START') == u'START':
             continue
         sig_template['name'] = signal['name']
@@ -153,7 +159,7 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
             sig_template['param_name'] = signal.get('param_name')
             sig_template['param_sort'] = type_name(signal['type'])
 
-        pi_template = STG.getInstanceOf('input_signal')
+        pi_template = new('input_signal')
         pi_template['header'] = str(sig_template)
         pi_template['name'] = signal['name']
         pi_template['process'] = process_name
@@ -164,9 +170,9 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         for state in process.mapping.viewkeys():
             if state.endswith(u'START'):
                 continue
-            case_template = STG.getInstanceOf('case_state')
+            case_template = new('case_state')
             case_template['name'] = state
-            input_def = mapping[signal['name']].get(state)
+            input_def = process.map_inp_state[signal['name']].get(state)
             # Check for nested states to call optional exit procedure
             sep = UNICODE_SEP
             state_tree = state.split(sep)
@@ -195,7 +201,7 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    assig_template = STG.getInstanceOf('assign_param')
+                    assig_template = new('assign_param')
                     assig_template['local_var'] = inp
                     assig_template['param_name'] = param_name
                     params_lst.append(str(assig_template))
@@ -209,25 +215,25 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         # Generate the template amd add it to a list
         pi_code.append(str(pi_template))
 
-    process_template['arrs_inp'] = pi_code
+    tpl['arrs_inp'] = pi_code
 
     # for the .ads file, generate the declaration of the required interfaces
     # output signals are the asynchronous RI - only one parameter
     required_interfaces = []
     for signal in process.output_signals:
         # TODO, pass the type and name of the parameter (for the Ads)
-        ri_template = STG.getInstanceOf("required_interface")
+        ri_template = new("required_interface")
         ri_template['name'] = signal['name']
         ri_template['simu'] = simu
         required_interfaces.append(str(ri_template))
 
-    process_template['arrs_async_ri'] = required_interfaces
+    tpl['arrs_async_ri'] = required_interfaces
 
 
     external_proc = []
     # Generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
-        signature_template = STG.getInstanceOf("ext_procedure_signature")
+        signature_template = new("ext_procedure_signature")
         signature_template['name'] = proc.inputString
 
         fpar = []
@@ -236,20 +242,20 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
                          'sort': type_name(fpar.get('type'))})
         signature_template['fpar'] = fpar
 
-        declaration_template = STG.getInstanceOf("ext_procedure_declaration")
+        declaration_template = new("ext_procedure_declaration")
         declaration_template['header'] = str(signature_template)
         declaration_template['name'] = proc.inputString
         declaration_template['ctxt'] = process_name
 
         external_proc.append(str(declaration_template))
 
-    process_template['ext_proc'] = external_proc
+    tpl['ext_proc'] = external_proc
 
     # for the .ads file, generate the declaration of timers set/reset functions
     timer_decls, timer_defs = [], []
     for timer in process.timers:
-        timer_decl_template = STG.getInstanceOf("timer_declaration")
-        timer_def_template = STG.getInstanceOf("timer_definition")
+        timer_decl_template = new("timer_declaration")
+        timer_def_template = new("timer_definition")
         timer_decl_template['name'] = timer
         timer_def_template['name'] = timer
         timer_decl_template['ctxt'] = process_name
@@ -259,8 +265,8 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         timer_decls.append(str(timer_decl_template))
         timer_defs.append(str(timer_de_template))
 
-    process_template['timer_decls'] = timer_decls
-    process_template['timer_defs'] = timer_defs
+    tpl['timer_decls'] = timer_decls
+    tpl['timer_defs'] = timer_defs
 
 
     # Transform inner labels to floating labels
@@ -282,8 +288,8 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
         local_decl_transitions.extend(label_decl)
         code_labels.extend(code_label)
 
-    process_template['tr_locals'] = set(local_decl_transitions)
-    process_template['flab_code'] = code_labels
+    tpl['tr_locals'] = set(local_decl_transitions)
+    tpl['flab_code'] = code_labels
 
     # Generate a loop that ends when a next state is reached
     # (there can be chained transition when entering a nested state)
@@ -294,15 +300,15 @@ def _process(process, simu=False, stgfile='ada_source.st', **kwargs):
 
     tr_code = []
     for idx, val in enumerate(code_transitions):
-        tr_template = STG.getInstanceOf("transition_code")
+        tr_template = new("transition_code")
         tr_template['idx'] = idx
         val = [u'{line}'.format(line=l) for l in val]
         tr_template['code'] = val
         tr_code.append(str(tr_template))
 
-    process_template['tr_code'] = tr_code
+    tpl['tr_code'] = tr_code
 
-    result = str(process_template).encode('latin1')
+    result = str(tpl).encode('latin1')
 
 #   with open(process_name + '.adb', 'w') as ada_file:
 #       ada_file.write(taste_template.encode('latin1'))
@@ -1484,7 +1490,7 @@ def _label(lab, **kwargs):
     ''' Transition following labels are generated in a separate section
         for visibility reasons (see Ada scope)
     '''
-    template = STG.getInstanceOf("label")
+    template = new("label")
     template['name'] = lab.inputString
     return str(template), []
 
@@ -1561,7 +1567,7 @@ def _transition(tr, **kwargs):
 def _floating_label(label, **kwargs):
     ''' Generate the code for a floating label (Ada label + transition) '''
     local_decl = []
-    template = STG.getInstanceOf("floating_label")
+    template = new("floating_label")
     template['traceability']= traceability(label)
     template['name'] = label.inputString
     if label.transition:
@@ -1581,20 +1587,20 @@ def _inner_procedure(proc, **kwargs):
     for var in proc.fpar:
         VARIABLES.update({var['name']: (var['type'], None)})
 
-    signature_template = STG.getInstanceOf("inner_procedure_signature")
+    signature_template = new("inner_procedure_signature")
     fpar = []
     for each in proc.fpar:
         fpar.append({'name': fpar.get('name'),
-                     'direction': str(STG.getInstanceOf("direction_out"))
+                     'direction': str(new("direction_out"))
                                   if fpar.get('direction') == 'out'
-                                  else str(STG.getInstanceOf("direction_in")),
+                                  else str(new("direction_in")),
                      'sort': type_name(fpar.get('type'))})
 
     signature_template['name'] = proc.inputString
     signature_template['external'] = proc.external
     signature_template['fpar'] = fpar
 
-    declaration_template = STG.getInstanceOf("inner_procedure_declaration")
+    declaration_template = new("inner_procedure_declaration")
     declaration_template['header'] = str(signature_template)
     declaration_template['name'] = proc.inputString
     declaration_template['external'] = proc.external
@@ -1603,7 +1609,7 @@ def _inner_procedure(proc, **kwargs):
 
     if not proc.external:
         # Generate the code for the procedure itself
-        definition_template = STG.getInstanceOf("inner_procedure_definition")
+        definition_template = new("inner_procedure_definition")
         definition_template['header'] = str(signature_template)
         definition_template['name'] = proc.inputString
         definition_template['dcl'], _ = dcl(proc, simu=False)
@@ -1633,7 +1639,7 @@ def dcl(entity, simu):
     ''' Generate the code to declare variables '''
     decl, arr_vars = [], []
     for var_name, (var_type, def_value) in entity.variables.viewitems():
-        dcl_template = STG.getInstanceOf("dcl")
+        dcl_template = new("dcl")
         dcl_template['simu'] = simu
         if def_value:
             # Expression must be a ground expression, i.e. must not
@@ -1804,7 +1810,7 @@ def path_type(path):
 
 def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
-    template = STG.getInstanceOf("comment")
+    template = new("comment")
     template['lines'] = symbol.trace().split('\n')
     result = [str(template)]
     if hasattr(symbol, 'comment') and symbol.comment:
