@@ -1434,7 +1434,10 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.set_toolbar()
         if not self.scene_stack:
             self.up_button.setEnabled(False)
-        self.refresh()
+        self.setSceneRect(self.scene().sceneRect())
+        self.viewport().update()
+        #self.scene().refresh()
+        #self.refresh()
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
         sdlSymbols.CONTEXT = self.context_history.pop()
