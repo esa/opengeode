@@ -77,18 +77,19 @@ def _block(ast, scene):
            param=('(' + sig['type'].ReferencedTypeName.replace('-', '_') + ')')
                  if 'type' in sig else '')
              for sig in ast.parent.signals]
-        procedures = ["procedure {proc.inputString};\n{fpar}\nexternal;\n"
+        procedures = ["procedure {proc.inputString};\n{optfpar}external;\n"
                       .format(proc=proc,
-                              fpar="fpar\n    " + u",\n    ".join
-                              ([u"{direc} {fpar[name]} {asn1}"
-                                .format(fpar=fpar,
+                              optfpar="fpar\n    " + u",\n    ".join
+                              ([u"{direc} {fp[name]} {asn1}"
+                                .format(fp=fpar,
                                         direc="in"
                                            if fpar['direction']=='in'
                                            else 'in/out',
                                         asn1=getattr(fpar['type'],
                                            'ReferencedTypeName', 'TYPE_ERROR')
                                            .replace('-', '_'))
-                                for fpar in proc.fpar]) + ';')
+                                for fpar in proc.fpar]) + ';\n'
+                                    if proc.fpar else '')
                         for proc in ast.parent.procedures]
         if signals or procedures:
             text_area = ogAST.TextArea()
