@@ -141,6 +141,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.12
+    - Render properly parameterless procedures that are declared in the .pr
+      file but without a textbox
+
 1.3.11
     - Parser is more tolerant to incomplete systems
 

@@ -117,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.11'
+__version__ = '1.3.12'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1281,7 +1281,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         # Toolbar with the icons of the SDL symbols
         self.toolbar = None
         # Scene stack (used for nested symbols)
-        self.parent_scene = []
+        self.scene_stack = []
         # Set of PR files that are not saved back (e.g. system structure)
         self.readonly_pr = None
         # Context history referencing the AST entry corresponding to the scene
@@ -1335,7 +1335,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                 self.lander = Lander.Lander(self.lander_scene)
             horpos = self.horizontalScrollBar().value()
             verpos = self.verticalScrollBar().value()
-            self.parent_scene.append((self.scene(), horpos, verpos))
+            self.scene_stack.append((self.scene(), horpos, verpos))
             self.scene().clear_focus()
             self.setScene(self.lander_scene)
             self.up_button.setEnabled(True)
@@ -1426,15 +1426,18 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.scene().clear_focus()
         # Scene may need to be informed when it is left:
         self.scene().scene_left.emit()
-        scene, horpos, verpos = self.parent_scene.pop()
+        scene, horpos, verpos = self.scene_stack.pop()
         self.setScene(scene)
         self.wrapping_window.setWindowTitle(self.scene().name)
-        self.horizontalScrollBar().setSliderPosition(horpos)
-        self.verticalScrollBar().setSliderPosition(verpos)
+        #self.horizontalScrollBar().setSliderPosition(horpos)
+        #self.verticalScrollBar().setSliderPosition(verpos)
         self.set_toolbar()
-        if not self.parent_scene:
+        if not self.scene_stack:
             self.up_button.setEnabled(False)
-        self.refresh()
+        self.setSceneRect(self.scene().sceneRect())
+        self.viewport().update()
+        #self.scene().refresh()
+        #self.refresh()
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
         sdlSymbols.CONTEXT = self.context_history.pop()
@@ -1482,7 +1485,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         horpos = self.horizontalScrollBar().value()
         verpos = self.verticalScrollBar().value()
         self.scene().name = self.wrapping_window.windowTitle()
-        self.parent_scene.append((self.scene(), horpos, verpos))
+        self.scene_stack.append((self.scene(), horpos, verpos))
         self.scene().clear_focus()
         self.setScene(scene)
         self.scene().name = name + '[*]'
@@ -1558,8 +1561,8 @@ class SDL_View(QtGui.QGraphicsView, object):
                     + '.autosave') if autosave else self.filename
 
         # If the current scene is a nested one, save the top parent
-        if self.parent_scene:
-            scene = self.parent_scene[0][0]
+        if self.scene_stack:
+            scene = self.scene_stack[0][0]
         else:
             scene = self.scene()
 
@@ -1699,8 +1702,8 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def is_model_clean(self):
         ''' Check recursively if anything has changed in any scene '''
-        if self.parent_scene:
-            scene = self.parent_scene[0][0]
+        if self.scene_stack:
+            scene = self.scene_stack[0][0]
         else:
             scene = self.scene()
         for each in chain([scene], scene.all_nested_scenes):
@@ -1733,7 +1736,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             if not self.propose_to_save():
                 return False
         self.need_new_scene.emit()
-        self.parent_scene = []
+        self.scene_stack = []
         self.scene().undo_stack.clear()
         #self.scene().clear()
         G_SYMBOLS.clear()
@@ -1748,8 +1751,8 @@ class SDL_View(QtGui.QGraphicsView, object):
     def check_model(self):
         ''' Parse the model and check for warnings and errors '''
         # If the current scene is a nested one, save the top parent
-        if self.parent_scene:
-            scene = self.parent_scene[0][0]
+        if self.scene_stack:
+            scene = self.scene_stack[0][0]
         else:
             scene = self.scene()
 
@@ -1829,8 +1832,8 @@ class SDL_View(QtGui.QGraphicsView, object):
     def generate_ada(self):
         ''' Generate Ada code '''
         # If the current scene is a nested one, move to the top parent
-        if self.parent_scene:
-            scene = self.parent_scene[0][0]
+        if self.scene_stack:
+            scene = self.scene_stack[0][0]
         else:
             scene = self.scene()
         pr_raw = Pr.parse_scene(scene, full_model=True
@@ -2016,8 +2019,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         Here we check if the Statechart tab is selected, and we draw/refresh
         the statechart automatically in that case '''
         if mdi == self.statechart_mdi and graphviz:
-            if self.view.parent_scene:
-                scene = self.view.parent_scene[0][0]
+            if self.view.scene_stack:
+                scene = self.view.scene_stack[0][0]
             else:
                 scene = self.view.scene()
             try:
