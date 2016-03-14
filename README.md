@@ -144,6 +144,7 @@ Changelog
 1.3.12
     - Render properly parameterless procedures that are declared in the .pr
       file but without a textbox
+    - When going to parent scene, fixed rendering issue
 
 1.3.11
     - Parser is more tolerant to incomplete systems
