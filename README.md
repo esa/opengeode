@@ -90,7 +90,7 @@ OpenGEODE installation
 
 Make sure all dependencies are installed.
 
-You need to install a certificate to get software from ESA Git servers:
+If you see a certificate error, you may need to run the following commands:
 
 ```bash
 $ echo -n | openssl s_client -connect gitrepos.estec.esa.int:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > gitrepos.cert
@@ -104,7 +104,7 @@ Then you can get the software with git:
 $ git clone --recursive https://github.com/maxime-esa/opengeode.git
 ```
 
-And install it *as root*:
+And install it:
 
 ```bash
 $ cd opengeode
@@ -121,13 +121,14 @@ For additional information please contact:
 maxime (dot) perrotin (at) esa (dot) int
 
 
-The LLVM backend was designed and implemented by Diego Barbera during the ESA Summer of Code 2014
-Some parts have been implemented by Laurent Meyer (native SDL type support in the parser)
+The LLVM backend was designed and implemented by Diego Barbera during the ESA
+Summer of Code 2014.
+Some parts implemented by Laurent Meyer (native SDL type support in the parser)
 
 
 The ASN.1 compiler (ASN1Scc) that OpenGEODE is based on was
 developed by George Mamais and Thanassis Tsiodras for the European
-Space Agency. Information at http://www.semantix.gr/asn1scc
+Space Agency. Information at https://github.com/ttsiodras/asn1scc
 
 Licence
 =======
@@ -141,9 +142,13 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.13
+    - Bugfix in rendering of Continuous signals
+
 1.3.12
     - Render properly parameterless procedures that are declared in the .pr
       file but without a textbox
+    - When going to parent scene, fixed rendering issue
 
 1.3.11
     - Parser is more tolerant to incomplete systems

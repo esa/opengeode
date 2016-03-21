@@ -117,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.12'
+__version__ = '1.3.13'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1313,6 +1313,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.scale(0.8, 0.8)
         elif event.matches(QtGui.QKeySequence.ZoomIn):
             self.scale(1.2, 1.2)
+        elif event.key() == Qt.Key_Q and event.modifiers() == Qt.ControlModifier:
+            # Reset zoom with Ctrl-Q
+            self.resetTransform()
         elif event.matches(QtGui.QKeySequence.Save):
             self.save_diagram()
         elif event.key() == Qt.Key_F3 or (event.key() == Qt.Key_G and

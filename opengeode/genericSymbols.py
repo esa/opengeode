@@ -1011,8 +1011,11 @@ class HorizontalSymbol(Symbol, object):
         ''' Return all the items's sibling symbols '''
         try:
             return (item for item in self.parent.childItems()
-                    if item is not self and (isinstance(self, type(item)) or
-                        isinstance(item, type(self))))
+                    if item is not self and isinstance(item, HorizontalSymbol))
+            # Don't test only against the same type, that would exclude
+            # e.g. Inputs next to Continuous signals
+#                   if item is not self and (isinstance(self, type(item)) or
+#                       isinstance(item, type(self))))
         except:
             return ()
 
@@ -1036,7 +1039,7 @@ class HorizontalSymbol(Symbol, object):
     def cam(self, old_pos, new_pos, ignore=None):
         '''
             Collision avoidance manoeuvre for parallel branches
-            (for SDL: input, decision answers)
+            (for SDL: input, decision answers, continuous signals)
         '''
         if self.hasParent:
             # Rectangle of current group of item in scene coordinates
