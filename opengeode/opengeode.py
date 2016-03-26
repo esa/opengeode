@@ -117,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.13'
+__version__ = '1.3.14'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2211,9 +2211,10 @@ def init_logging(options):
 
 def parse(files):
     ''' Parse files '''
+    if not files:
+        raise IOError('No input .pr files')
     LOG.info('Checking ' + str(files))
     # move to the directory of the .pr files (needed for ASN.1 parsing)
-    LOG.info(files[0])
     path = os.path.dirname(files[0])
     files = [os.path.abspath(each) for each in files]
     os.chdir(path or '.')
@@ -2328,8 +2329,9 @@ def cli(options):
     ''' Run CLI App '''
     try:
         ast, warnings, errors = parse(options.files)
-    except IOError:
-        LOG.error('Aborting due to parsing error (check input file)')
+    except IOError as err:
+        LOG.error('Aborting due to parsing error')
+        LOG.error(str(err))
         return 1
 
     if len(ast.processes) != 1:

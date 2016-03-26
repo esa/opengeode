@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.14
+    - Minor bugfix with command line handling
+
 1.3.13
     - Bugfix in rendering of Continuous signals
 
