@@ -1514,7 +1514,6 @@ AGGREGATION     :       A G G R E G A T I O N;
 SUBSTRUCTURE    :       S U B S T R U C T U R E;
 ENDSUBSTRUCTURE :       E N D S U B S T R U C T U R E;
 FPAR            :       F P A R;
-PARAM           :       P A R A M;
 EQ              :       '=';
 NEQ             :       '/=';
 GT              :       '>';
