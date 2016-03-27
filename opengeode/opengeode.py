@@ -557,10 +557,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # Render nested scenes, recursively:
             for each in (item for item in dest_scene.visible_symb
                          if item.nested_scene):
+                LOG.debug(u'Recursive scene: ' + unicode(each))
                 if isinstance(each.nested_scene, ogAST.CompositeState) \
                         and (not each.nested_scene.statename
                              or each.nested_scene in already_created):
                     # Ignore nested state scenes that already exist
+                    LOG.debug('Subscene "{}" ignored'.format(unicode(each)))
                     continue
                 subscene = \
                         self.create_subscene(each.__class__.__name__.lower(),
