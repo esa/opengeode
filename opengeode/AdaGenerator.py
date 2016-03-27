@@ -205,7 +205,7 @@ LD_LIBRARY_PATH=. taste-gui -l
                                (name for name in process.mapping.iterkeys()
                                     if not name.endswith(u'START'))))
     reduced_statelist = {s for s in full_statelist if s not in parallel_states}
-    if parallel_states:
+    if aggregates:
         # Parallel states in a state aggregation may terminate
         full_statelist.add(u'{}finished'.format(UNICODE_SEP))
 
