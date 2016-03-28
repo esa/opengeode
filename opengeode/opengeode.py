@@ -117,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.15'
+__version__ = '1.3.16'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -381,7 +381,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             if not isinstance(each, State):
                 # At the moment do not support Text Areas
                 return False
-            if(child for child in each.childSymbols()
+            if any(child for child in each.childSymbols()
                     if isinstance(child, (Input, ContinuousSignal))):
                 return False
         return True

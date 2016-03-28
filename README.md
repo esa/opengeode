@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.16 (03/2016)
+    - Bugfix in testing aggregation states in the GUI
+
 1.3.15 (03/2016)
     - Bugfix in Ada backend when a state aggregation contained only empty
       states (directly returning states).
