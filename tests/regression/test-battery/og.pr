@@ -6,7 +6,7 @@ use dv comment 'dataview-uniq.asn';
 
 --use dv2 comment 'dataview2.asn';
 
-signal dd(Type2);
+signal dd(MyInteger);
 signal we(Some_Thing);
 
 procedure hehe;
@@ -39,21 +39,29 @@ external;
                                 NEXTSTATE discharge;
                             /* CIF STATE (152, 197), (114, 35) */
                             STATE discharge;
-                                /* CIF PROVIDED (148, 252), (121, 35) */
+                                /* CIF PROVIDED (32, 252), (121, 35) */
                                 PROVIDED charge = 0;
-                                    /* CIF RETURN (191, 302), (35, 35) */
+                                    /* CIF TASK (41, 302), (104, 35) */
+                                    TASK charge := 5;
+                                    /* CIF RETURN (75, 352), (35, 35) */
                                     RETURN battery_discharged;
+                                /* CIF INPUT (323, 252), (108, 35) */
+                                INPUT dd(charge);
+                                    /* CIF TASK (265, 302), (223, 35) */
+                                    TASK charge := (charge + 1) mod 255;
+                                    /* CIF NEXTSTATE (342, 352), (70, 35) */
+                                    NEXTSTATE -;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
                     /* CIF START (315, 314), (70, 35) */
                     START;
                         /* CIF NEXTSTATE (307, 364), (85, 35) */
                         NEXTSTATE battery;
-                    /* CIF STATE (396, 412), (98, 35) */
+                    /* CIF STATE (564, 510), (98, 35) */
                     STATE battery;
-                        /* CIF CONNECT (445, 467), (0, 35) */
+                        /* CIF CONNECT (613, 565), (0, 35) */
                         CONNECT battery_discharged;
-                            /* CIF RETURN (427, 517), (35, 35) */
+                            /* CIF RETURN (595, 615), (35, 35) */
                             RETURN battery_discharged;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
@@ -61,15 +69,15 @@ external;
             START;
                 /* CIF NEXTSTATE (140, 266), (100, 35) */
                 NEXTSTATE nominal;
-            /* CIF STATE (282, 264), (100, 35) */
-            STATE nominal;
-                /* CIF CONNECT (332, 319), (0, 35) */
-                CONNECT battery_discharged;
-                    /* CIF NEXTSTATE (284, 369), (95, 35) */
-                    NEXTSTATE backup;
-            ENDSTATE;
             /* CIF STATE (614, 272), (95, 35) */
             STATE backup;
+            ENDSTATE;
+            /* CIF STATE (422, 480), (100, 35) */
+            STATE nominal;
+                /* CIF CONNECT (472, 535), (0, 35) */
+                CONNECT battery_discharged;
+                    /* CIF NEXTSTATE (424, 585), (95, 35) */
+                    NEXTSTATE backup;
             ENDSTATE;
         ENDPROCESS car;
     ENDBLOCK;

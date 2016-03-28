@@ -380,11 +380,16 @@ def _rename_automaton(ast, from_name, to_name):
     for each in ast.floating_labels:
         rename_everything(each, from_name, to_name)
     for each in ast.states:
-        for inp in each.inputs:
+        for inp in chain(each.inputs, each.continuous_signals, each.connects):
             rename_everything(inp.transition, from_name, to_name)
             for idx, param in enumerate(inp.parameters):
                 if param.lower() == from_name.lower():
                     inp.parameters[idx] = to_name
+            try:
+                rename_everything(inp.trigger, from_name, to_name)
+            except AttributeError:
+                # only for continuous signals
+                pass
         if each.composite:
             rename_everything(each.composite.content, from_name, to_name)
     for each in ast.inner_procedures:
