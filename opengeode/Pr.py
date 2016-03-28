@@ -7,7 +7,7 @@
     This module generates textual SDL code (PR format)
     by parsing the graphical symbols.
 
-    Copyright (c) 2012-2014 European Space Agency
+    Copyright (c) 2012-2016 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -342,7 +342,7 @@ def _state(symbol, recursive=True, nextstate=True, composite=False, cpy=False,
     else:
         # Generate code for a nested state
         result = Indent()
-        agg = ' AGGREGATION' if not list(symbol.nested_scene.start) else ''
+        agg = ' AGGREGATION' if symbol.nested_scene.is_aggregation() else ''#if not list(symbol.nested_scene.start) else ''
         result.append('STATE{} {};'.format(agg, unicode(symbol).split()[0]))
         result.append('SUBSTRUCTURE')
         Indent.indent += 1

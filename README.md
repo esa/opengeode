@@ -142,6 +142,13 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.15 (03/2016)
+    - Bugfix in Ada backend when a state aggregation contained only empty
+      states (directly returning states).
+
+1.3.14
+    - Minor bugfix with command line handling
+
 1.3.13
     - Bugfix in rendering of Continuous signals
 

@@ -117,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.13'
+__version__ = '1.3.15'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -371,6 +371,22 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.highlighted = {}
 
 
+    def is_aggregation(self):
+        ''' Determine if the current scene is a state aggregation, i.e. if
+        if contains only floating states without children
+        '''
+        for each in self.visible_symb:
+            if each.hasParent:
+                return False
+            if not isinstance(each, State):
+                # At the moment do not support Text Areas
+                return False
+            if(child for child in each.childSymbols()
+                    if isinstance(child, (Input, ContinuousSignal))):
+                return False
+        return True
+
+
     @property
     def visible_symb(self):
         ''' Return the visible items of a scene '''
@@ -557,10 +573,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # Render nested scenes, recursively:
             for each in (item for item in dest_scene.visible_symb
                          if item.nested_scene):
+                LOG.debug(u'Recursive scene: ' + unicode(each))
                 if isinstance(each.nested_scene, ogAST.CompositeState) \
                         and (not each.nested_scene.statename
                              or each.nested_scene in already_created):
                     # Ignore nested state scenes that already exist
+                    LOG.debug('Subscene "{}" ignored'.format(unicode(each)))
                     continue
                 subscene = \
                         self.create_subscene(each.__class__.__name__.lower(),
@@ -2211,9 +2229,10 @@ def init_logging(options):
 
 def parse(files):
     ''' Parse files '''
+    if not files:
+        raise IOError('No input .pr files')
     LOG.info('Checking ' + str(files))
     # move to the directory of the .pr files (needed for ASN.1 parsing)
-    LOG.info(files[0])
     path = os.path.dirname(files[0])
     files = [os.path.abspath(each) for each in files]
     os.chdir(path or '.')
@@ -2328,8 +2347,9 @@ def cli(options):
     ''' Run CLI App '''
     try:
         ast, warnings, errors = parse(options.files)
-    except IOError:
-        LOG.error('Aborting due to parsing error (check input file)')
+    except IOError as err:
+        LOG.error('Aborting due to parsing error')
+        LOG.error(str(err))
         return 1
 
     if len(ast.processes) != 1:

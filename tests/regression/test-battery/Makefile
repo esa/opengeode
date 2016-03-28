@@ -12,7 +12,7 @@ test-ada:
 	$(OPENGEODE) og.pr --toAda
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
 	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n og.ali
+	$(GNATBIND) -n car.ali
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
