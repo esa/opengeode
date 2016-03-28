@@ -732,6 +732,8 @@ package {process_name} is'''.format(process_name=process_name,
 
         # Process the continuous states in state aggregations first
         done = []
+        sep = 'if '
+        last = ''
         for cs, agg in product(process.cs_mapping.viewitems(),
                                aggregates.viewitems()):
             (statename, cs_item), (agg_name, substates) = cs, agg
@@ -747,9 +749,13 @@ package {process_name} is'''.format(process_name=process_name,
                         trId = process.transitions.index\
                                             (provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
-                                             branch_to=trId)
+                                             branch_to=trId,
+                                             sep=sep, last=last)
+                        sep='elsif '
                         taste_template.extend(code)
                     done.append(statename)
+                    taste_template.append(u'end if;')
+                    sep = 'if '
                     break
         for statename in process.cs_mapping.viewkeys() - done:
             cs_item = process.cs_mapping[statename]
@@ -758,9 +764,11 @@ package {process_name} is'''.format(process_name=process_name,
             for provided_clause in cs_item:
                 trId = process.transitions.index(provided_clause.transition)
                 code, loc = generate(provided_clause.trigger,
-                                     branch_to=trId)
+                                     branch_to=trId, sep=sep, last=last)
+                sep='elsif '
                 taste_template.extend(code)
         if process.cs_mapping:
+            taste_template.append(u'end if;')
             taste_template.append(u'end if;')
 
         taste_template.append('end loop;')
@@ -1879,7 +1887,7 @@ def _choiceitem(choice):
 
 
 @generate.register(ogAST.Decision)
-def _decision(dec, branch_to=None, **kwargs):
+def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
     ''' Generate the code for a decision
         A decision is made of a question and some answers ; each answer may
         be followed by a transition (ogAST.Transition). The code of the
@@ -1919,7 +1927,6 @@ def _decision(dec, branch_to=None, **kwargs):
     code.extend(q_stmts)
     if not basic:
         code.append('tmp{idx} := {q};'.format(idx=dec.tmpVar, q=q_str))
-    sep = 'if '
     for a in dec.answers:
         code.extend(traceability(a))
         if a.kind in ('open_range', 'constant'):
@@ -1994,9 +2001,11 @@ def _decision(dec, branch_to=None, **kwargs):
             code.extend(else_code)
     except:
         pass
-    if sep != 'if ':
+    if sep != 'if ' and last:
         # If there is at least one 'if' branch
-        code.append('end if;')
+        # "last" is usually "end if;" but it can be changed by parameter
+        # e.g. if the decision is chained with other tests with "elsif"
+        code.append(last)
     return code, local_decl
 
 

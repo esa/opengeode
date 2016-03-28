@@ -39,17 +39,23 @@ external;
                                 NEXTSTATE discharge;
                             /* CIF STATE (152, 197), (114, 35) */
                             STATE discharge;
-                                /* CIF PROVIDED (32, 252), (121, 35) */
-                                PROVIDED charge = 0;
-                                    /* CIF TASK (41, 302), (104, 35) */
-                                    TASK charge := 5;
-                                    /* CIF RETURN (75, 352), (35, 35) */
-                                    RETURN battery_discharged;
-                                /* CIF INPUT (323, 252), (108, 35) */
+                                /* CIF INPUT (215, 252), (108, 35) */
                                 INPUT dd(charge);
-                                    /* CIF TASK (265, 302), (223, 35) */
+                                    /* CIF TASK (157, 302), (223, 35) */
                                     TASK charge := (charge + 1) mod 255;
-                                    /* CIF NEXTSTATE (342, 352), (70, 35) */
+                                    /* CIF NEXTSTATE (234, 352), (70, 35) */
+                                    NEXTSTATE -;
+                                /* CIF PROVIDED (-13, 252), (121, 35) */
+                                PROVIDED charge = 0;
+                                    /* CIF TASK (-4, 302), (104, 35) */
+                                    TASK charge := 5;
+                                    /* CIF RETURN (30, 352), (35, 35) */
+                                    RETURN battery_discharged;
+                                /* CIF PROVIDED (390, 252), (101, 35) */
+                                PROVIDED charge > 5;
+                                    /* CIF TASK (389, 302), (104, 35) */
+                                    TASK charge := 0;
+                                    /* CIF NEXTSTATE (406, 352), (70, 35) */
                                     NEXTSTATE -;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
@@ -69,15 +75,15 @@ external;
             START;
                 /* CIF NEXTSTATE (140, 266), (100, 35) */
                 NEXTSTATE nominal;
-            /* CIF STATE (614, 272), (95, 35) */
-            STATE backup;
-            ENDSTATE;
             /* CIF STATE (422, 480), (100, 35) */
             STATE nominal;
                 /* CIF CONNECT (472, 535), (0, 35) */
                 CONNECT battery_discharged;
                     /* CIF NEXTSTATE (424, 585), (95, 35) */
                     NEXTSTATE backup;
+            ENDSTATE;
+            /* CIF STATE (614, 272), (95, 35) */
+            STATE backup;
             ENDSTATE;
         ENDPROCESS car;
     ENDBLOCK;
