@@ -371,6 +371,22 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.highlighted = {}
 
 
+    def is_aggregation(self):
+        ''' Determine if the current scene is a state aggregation, i.e. if
+        if contains only floating states without children
+        '''
+        for each in self.visible_symb:
+            if each.hasParent:
+                return False
+            if not isinstance(each, State):
+                # At the moment do not support Text Areas
+                return False
+            if(child for child in each.childSymbols()
+                    if isinstance(child, (Input, ContinuousSignal))):
+                return False
+        return True
+
+
     @property
     def visible_symb(self):
         ''' Return the visible items of a scene '''

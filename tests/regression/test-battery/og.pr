@@ -24,7 +24,7 @@ external;
         CONNECT c AND r;
         /* CIF PROCESS (225, 49), (150, 75) */
         PROCESS car;
-            STATE AGGREGATION nominal;
+            STATE nominal;
             SUBSTRUCTURE
                 out (battery_discharged);
                     STATE battery;
@@ -45,11 +45,15 @@ external;
                                     RETURN battery_discharged;
                             ENDSTATE;
                     ENDSUBSTRUCTURE;
-                    /* CIF STATE (219, 274), (98, 35) */
+                    /* CIF START (315, 314), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (307, 364), (85, 35) */
+                        NEXTSTATE battery;
+                    /* CIF STATE (396, 412), (98, 35) */
                     STATE battery;
-                        /* CIF CONNECT (268, 329), (0, 35) */
+                        /* CIF CONNECT (445, 467), (0, 35) */
                         CONNECT battery_discharged;
-                            /* CIF RETURN (250, 379), (35, 35) */
+                            /* CIF RETURN (427, 517), (35, 35) */
                             RETURN battery_discharged;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
@@ -57,15 +61,15 @@ external;
             START;
                 /* CIF NEXTSTATE (140, 266), (100, 35) */
                 NEXTSTATE nominal;
-            /* CIF STATE (614, 272), (95, 35) */
-            STATE backup;
-            ENDSTATE;
             /* CIF STATE (282, 264), (100, 35) */
             STATE nominal;
                 /* CIF CONNECT (332, 319), (0, 35) */
                 CONNECT battery_discharged;
                     /* CIF NEXTSTATE (284, 369), (95, 35) */
                     NEXTSTATE backup;
+            ENDSTATE;
+            /* CIF STATE (614, 272), (95, 35) */
+            STATE backup;
             ENDSTATE;
         ENDPROCESS car;
     ENDBLOCK;
