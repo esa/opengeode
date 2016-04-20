@@ -1,24 +1,51 @@
 import subprocess
 import sys
 import time
+import os
+from functools import partial
 
+try:
+    from concurrent import futures
+except ImportError:
+    print "To run multicore, first 'pip install --user futures'"
+
+
+def getProcessors():
+    cmd = "cat /proc/cpuinfo  |grep ^processor | wc -l"
+    return int(os.popen(cmd).readlines()[0])
+
+
+def colorMe(result, msg):
+    if sys.stdout.isatty():
+        code = "2" if result else "1"
+        msg = chr(27) + "[3" + code + "m" + msg + chr(27) + "[0m"
+    return msg
 
 def main():
+    totalCPUs = getProcessors()
     start = time.time()
     results = []
     rule = sys.argv[1]
     paths = sys.argv[2:]
 
-    for path in paths:
-        sys.stdout.write('\033[0m')
-        sys.stdout.write(path[:-1] + ' ... ')
-        sys.stdout.flush()
-        result = make(path, rule)
-        make(path, 'clean')
-        results.append(result)
-        sys.stdout.write('\033[1m\033[')
-        sys.stdout.write('32m[OK]\n' if result[0] == 0 else '31m[FAILED]\n')
-        sys.stdout.flush()
+    try:
+        with futures.ProcessPoolExecutor(max_workers=totalCPUs) as executor:
+            for result in executor.map(partial(make, rule), paths):
+                print "%40s: %s" % (result[3], colorMe(result[0],
+                                   '[OK]' if result[0]==0 else '[FAILED]'))
+            executor.map(partial(make, 'clean'), paths)
+    except NameError:
+        # no multiprocessing available
+        for path in paths:
+            sys.stdout.write('\033[0m')
+            sys.stdout.write(path[:-1] + ' ... ')
+            sys.stdout.flush()
+            result = make(rule, path)
+            make('clean', path)
+            results.append(result)
+            sys.stdout.write('\033[1m\033[')
+            sys.stdout.write('32m[OK]\n' if result[0] == 0 else '31m[FAILED]\n')
+            sys.stdout.flush()
 
     sys.stdout.write('\n')
 
@@ -26,7 +53,7 @@ def main():
     return summarize(results, elapsed)
 
 
-def make(path, rule):
+def make(rule, path):
     proc = subprocess.Popen(
         ['make', '-C', path, rule],
         stdout=subprocess.PIPE,
