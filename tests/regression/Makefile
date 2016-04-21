@@ -6,19 +6,19 @@ DISABLED_BENCHMARKS=test1/ test2/ test3/ test4/ test5/ test6/ test7/ test9/ \
 BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */))))
 
 test-parse:
-	@python test.py test-parse $(TEST_CASES)
+	@python3 test.py test-parse $(TEST_CASES)
 
 test-ada:
-	@python test.py test-ada $(TEST_CASES)
+	@python3 test.py test-ada $(TEST_CASES)
 
 test-c:
-	@python test.py test-c $(TEST_CASES)
+	@python3 test.py test-c $(TEST_CASES)
 
 test-llvm:
-	@python test.py test-llvm $(TEST_CASES)
+	@python3 test.py test-llvm $(TEST_CASES)
 
 test-vhdl:
-	@python test.py test-c $(TEST_CASES)
+	@python3 test.py test-c $(TEST_CASES)
 
 benchmark:
 	@python benchmark.py $(BENCHMARK_CASES)
