@@ -4,12 +4,8 @@ import sys
 import time
 import os
 from functools import partial
+from multiprocessing import cpu_count
 from concurrent import futures
-
-
-def getProcessors():
-    cmd = "cat /proc/cpuinfo  |grep ^processor | wc -l"
-    return int(os.popen(cmd).readlines()[0])
 
 
 def colorMe(result, msg):
@@ -19,13 +15,13 @@ def colorMe(result, msg):
     return msg
 
 def main():
-    totalCPUs = getProcessors()
+    ''' Run the test cases in parallel on all available CPUs '''
     start = time.time()
     results = []
     rule = sys.argv[1]
     paths = sys.argv[2:]
 
-    with futures.ProcessPoolExecutor(max_workers=totalCPUs) as executor:
+    with futures.ProcessPoolExecutor(max_workers=cpu_count()) as executor:
         for result in executor.map(partial(make, rule), paths):
             print("%40s: %s" % (result[3], colorMe(result[0],
                                '[OK]' if result[0]==0 else '[FAILED]')))
@@ -38,6 +34,7 @@ def main():
 
 
 def make(rule, path):
+    ''' Call a Makefile with the required rule (e.g. test-ada or clean) '''
     proc = subprocess.Popen(
         ['make', '-C', path, rule],
         stdout=subprocess.PIPE,
@@ -49,6 +46,7 @@ def make(rule, path):
 
 
 def summarize(results, elapsed):
+    ''' At the end display the errors of project that failed '''
     failed = 0
     for errcode, stdout, stderr, path, rule in results:
         if errcode == 0:
