@@ -18,14 +18,17 @@ signal we;
         CONNECT c AND r;
         /* CIF PROCESS (225, 49), (150, 75) */
         PROCESS og;
-            /* CIF TEXT (57, 58), (331, 140) */
+            /* CIF TEXT (57, 58), (442, 158) */
             --  Test support for empty sequences and NULL type
+-- The parser does not support the value notation for these types
+-- this demo shows a workaround: define constants in the ASN.1 file
+-- and use them when needed to define a variable of one of these types
 
 dcl empty1 EmptySeq := c1;
 
 dcl null1 NullType;
 
-dcl choice1 ChoiceWithEmptySeq;
+dcl choice1 ChoiceWithEmptySeq := a: n1;
             /* CIF ENDTEXT */
             /* CIF START (155, 216), (70, 35) */
             START;
@@ -33,7 +36,9 @@ dcl choice1 ChoiceWithEmptySeq;
                 TASK empty1 := c1;
                 /* CIF TASK (118, 316), (144, 35) */
                 TASK choice1 := b: c1;
-                /* CIF NEXTSTATE (155, 366), (70, 35) */
+                /* CIF TASK (141, 366), (97, 35) */
+                TASK null1 := n1;
+                /* CIF NEXTSTATE (155, 416), (70, 35) */
                 NEXTSTATE wait;
             /* CIF STATE (296, 231), (70, 35) */
             STATE wait;
