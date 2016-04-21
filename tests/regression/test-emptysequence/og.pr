@@ -1,0 +1,49 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (287, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview.asn';
+
+signal dd;
+signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (57, 58), (331, 140) */
+            --  Test support for empty sequences and NULL type
+
+dcl empty1 EmptySeq := c1;
+
+dcl null1 NullType;
+
+dcl choice1 ChoiceWithEmptySeq;
+            /* CIF ENDTEXT */
+            /* CIF START (155, 216), (70, 35) */
+            START;
+                /* CIF TASK (132, 266), (115, 35) */
+                TASK empty1 := c1;
+                /* CIF TASK (118, 316), (144, 35) */
+                TASK choice1 := b: c1;
+                /* CIF NEXTSTATE (155, 366), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (296, 231), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (289, 286), (84, 35) */
+                INPUT dd;
+                    /* CIF OUTPUT (286, 336), (89, 35) */
+                    OUTPUT we;
+                    /* CIF NEXTSTATE (296, 386), (70, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
