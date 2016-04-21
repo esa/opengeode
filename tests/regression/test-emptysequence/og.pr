@@ -30,15 +30,15 @@ dcl null1 NullType;
 
 dcl choice1 ChoiceWithEmptySeq := a: n1;
             /* CIF ENDTEXT */
-            /* CIF START (155, 216), (70, 35) */
+            /* CIF START (160, 226), (70, 35) */
             START;
-                /* CIF TASK (132, 266), (115, 35) */
+                /* CIF TASK (137, 276), (115, 35) */
                 TASK empty1 := c1;
-                /* CIF TASK (118, 316), (144, 35) */
+                /* CIF TASK (130, 326), (130, 35) */
                 TASK choice1 := b: c1;
-                /* CIF TASK (141, 366), (97, 35) */
+                /* CIF TASK (146, 376), (97, 35) */
                 TASK null1 := n1;
-                /* CIF NEXTSTATE (155, 416), (70, 35) */
+                /* CIF NEXTSTATE (160, 426), (70, 35) */
                 NEXTSTATE wait;
             /* CIF STATE (296, 231), (70, 35) */
             STATE wait;
