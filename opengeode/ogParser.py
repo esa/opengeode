@@ -683,13 +683,19 @@ def check_type_compatibility(primary, type_ref, context):
     elif isinstance(primary, ogAST.PrimBoolean) and is_boolean(type_ref):
         return
 
-    elif (isinstance(primary, ogAST.PrimEmptyString) and
-                                         basic_type.kind == 'SequenceOfType'):
-        if int(basic_type.Min) == 0:
-            return
+    elif isinstance(primary, ogAST.PrimEmptyString):
+        # Empty strings ("{ }") can be used for arrays and empty records
+        if basic_type.kind == 'SequenceOfType':
+            if int(basic_type.Min) == 0:
+                return
+            else:
+                raise TypeError('SEQUENCE OF has a minimum size of '
+                                + basic_type.Min + ')')
+        elif basic_type.kind == 'SequenceType':
+            if len(basic_type.Children.keys()) > 0:
+                raise TypeError('SEQUENCE is not empty, wrong "{}" syntax')
         else:
-            raise TypeError('SEQUENCE OF has a minimum size of '
-                            + basic_type.Min + ')')
+            raise TypeError('Not a type compatible with empty string syntax')
     elif isinstance(primary, ogAST.PrimSequenceOf) \
             and basic_type.kind == 'SequenceOfType':
         if type_ref.__name__ != 'Apnd' and \
@@ -1714,7 +1720,8 @@ def primary(root, context):
             'Max': str(value)
         })
     elif root.type == lexer.EMPTYSTR:
-        # Empty SEQUENCE OF (i.e. "{}")
+        # Primary "{ }" used in empty SEQUENCE OF (i.e. "{}")
+        # and also in value notation of SEQUENCEs that have no fields
         prim = ogAST.PrimEmptyString()
         prim.exprType = type('PrES', (object,), {
             'kind': 'SequenceOfType',

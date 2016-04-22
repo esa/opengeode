@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.17 (04/2016)
+    - Add support for value notation of empty SEQUENCEs ("{}")
+
 1.3.16 (03/2016)
     - Bugfix in testing aggregation states in the GUI
 

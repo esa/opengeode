@@ -1,0 +1,62 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (287, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview.asn';
+
+signal dd;
+signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (57, 58), (474, 158) */
+            --  Test support for empty sequences and NULL type
+-- The parser does not support the value notation for NULL types yet
+-- this demo proposes  a workaround: define constants in the ASN.1 file
+-- and use them when needed to define a variable of one of these types
+
+dcl empty1 EmptySeq := c1;
+
+dcl null1 NullType;
+
+dcl choice1 ChoiceWithEmptySeq := a: n1;
+            /* CIF ENDTEXT */
+            /* CIF START (160, 226), (70, 35) */
+            START;
+                /* CIF TASK (137, 276), (115, 35) */
+                TASK empty1 := c1
+                /* CIF COMMENT (272, 276), (138, 35) */
+                COMMENT 'Using a constant';
+                /* CIF TASK (140, 326), (110, 35) */
+                TASK empty1 := {}
+                /* CIF COMMENT (270, 326), (135, 35) */
+                COMMENT 'Classic notation';
+                /* CIF TASK (130, 376), (130, 35) */
+                TASK choice1 := b: c1;
+                /* CIF TASK (132, 426), (125, 35) */
+                TASK choice1 := b: {};
+                /* CIF TASK (146, 476), (97, 35) */
+                TASK null1 := n1;
+                /* CIF NEXTSTATE (160, 526), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (424, 231), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (417, 286), (84, 35) */
+                INPUT dd;
+                    /* CIF OUTPUT (415, 336), (89, 35) */
+                    OUTPUT we;
+                    /* CIF NEXTSTATE (424, 386), (70, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
