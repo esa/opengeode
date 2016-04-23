@@ -221,6 +221,9 @@ class PrimBoolean(Primary):
     pass
 
 
+class PrimNull(Primary):
+    pass
+
 class PrimConstant(Primary):
     is_raw = False
 

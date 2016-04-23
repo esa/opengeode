@@ -1704,6 +1704,13 @@ def _boolean(primary):
     return [], unicode(ada_string), []
 
 
+@expression.register(ogAST.PrimNull)
+def _boolean(primary):
+    ''' Generate code for a raw null value  '''
+    ada_string = '0'
+    return [], unicode(ada_string), []
+
+
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''

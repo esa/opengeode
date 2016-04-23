@@ -1,5 +1,5 @@
 SYSTEM og;
-    /* CIF TEXT (159, 221), (287, 188) */
+    /* CIF TEXT (159, 221), (289, 188) */
     -- Text area for declarations and comments
 
 use dv comment 'dataview.asn';
@@ -18,15 +18,12 @@ signal we;
         CONNECT c AND r;
         /* CIF PROCESS (225, 49), (150, 75) */
         PROCESS og;
-            /* CIF TEXT (57, 58), (474, 158) */
+            /* CIF TEXT (57, 58), (337, 130) */
             --  Test support for empty sequences and NULL type
--- The parser does not support the value notation for NULL types yet
--- this demo proposes  a workaround: define constants in the ASN.1 file
--- and use them when needed to define a variable of one of these types
 
 dcl empty1 EmptySeq := c1;
 
-dcl null1 NullType;
+dcl null1 NullType := NULL;
 
 dcl choice1 ChoiceWithEmptySeq := a: n1;
             /* CIF ENDTEXT */
@@ -34,25 +31,27 @@ dcl choice1 ChoiceWithEmptySeq := a: n1;
             START;
                 /* CIF TASK (137, 276), (115, 35) */
                 TASK empty1 := c1
-                /* CIF COMMENT (272, 276), (138, 35) */
+                /* CIF COMMENT (272, 276), (139, 35) */
                 COMMENT 'Using a constant';
-                /* CIF TASK (140, 326), (110, 35) */
+                /* CIF TASK (138, 326), (112, 35) */
                 TASK empty1 := {}
                 /* CIF COMMENT (270, 326), (135, 35) */
                 COMMENT 'Classic notation';
                 /* CIF TASK (130, 376), (130, 35) */
                 TASK choice1 := b: c1;
-                /* CIF TASK (132, 426), (125, 35) */
+                /* CIF TASK (131, 426), (126, 35) */
                 TASK choice1 := b: {};
-                /* CIF TASK (146, 476), (97, 35) */
+                /* CIF TASK (144, 476), (100, 35) */
                 TASK null1 := n1;
-                /* CIF NEXTSTATE (160, 526), (70, 35) */
+                /* CIF TASK (134, 526), (121, 35) */
+                TASK null1 :=  null;
+                /* CIF NEXTSTATE (160, 576), (70, 35) */
                 NEXTSTATE wait;
             /* CIF STATE (424, 231), (70, 35) */
             STATE wait;
                 /* CIF INPUT (417, 286), (84, 35) */
                 INPUT dd;
-                    /* CIF OUTPUT (415, 336), (89, 35) */
+                    /* CIF OUTPUT (414, 336), (89, 35) */
                     OUTPUT we;
                     /* CIF NEXTSTATE (424, 386), (70, 35) */
                     NEXTSTATE wait;
