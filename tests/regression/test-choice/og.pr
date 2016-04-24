@@ -1,0 +1,50 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (289, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview.asn';
+
+signal dd;
+signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (56, 58), (337, 130) */
+            --  Test choice assignments and access
+
+dcl ch ChoiceWithEmptySeq := a: NULL;
+
+dcl em EmptySeq := {};
+            /* CIF ENDTEXT */
+            /* CIF START (160, 226), (70, 35) */
+            START;
+                /* CIF TASK (148, 276), (93, 35) */
+                TASK ch := b: {};
+                /* CIF TASK (144, 326), (100, 35) */
+                TASK em := ch!b
+                /* CIF COMMENT (261, 324), (175, 40) */
+                COMMENT 'This is ok, there should
+be no warning raised';
+                /* CIF NEXTSTATE (160, 376), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (460, 231), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (453, 286), (84, 35) */
+                INPUT dd;
+                    /* CIF OUTPUT (450, 336), (89, 35) */
+                    OUTPUT we;
+                    /* CIF NEXTSTATE (460, 386), (70, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
