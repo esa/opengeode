@@ -206,6 +206,11 @@ def is_boolean(ty):
     return find_basic_type(ty).kind == 'BooleanType'
 
 
+def is_null(ty):
+    ''' Return true if a type is a NULL Type '''
+    return find_basic_type(ty).kind == 'NullType'
+
+
 def is_string(ty):
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty).kind in (
@@ -681,6 +686,9 @@ def check_type_compatibility(primary, type_ref, context):
         return
 
     elif isinstance(primary, ogAST.PrimBoolean) and is_boolean(type_ref):
+        return
+
+    elif isinstance(primary, ogAST.PrimNull) and is_null(type_ref):
         return
 
     elif isinstance(primary, ogAST.PrimEmptyString):
@@ -1616,7 +1624,7 @@ def primary_substring(root, context):
     return node, errors, warnings
 
 
-def selector_expression(root, context):
+def selector_expression(root, context, pos="right"):
     ''' Selector expression analysis '''
     errors, warnings = [], []
 
@@ -1633,8 +1641,9 @@ def selector_expression(root, context):
 
     field_name = root.children[1].text.replace('_', '-').lower()
     try:
-        if receiver_bty.kind == 'ChoiceType':
-            warnings.append(warning(root, 'Choice assignment: '
+        if receiver_bty.kind == 'ChoiceType' and pos == "left":
+            # Error if this is the left part of an assignment
+            errors.append(warning(root, 'Choice assignment: '
                                       'use "var := {field}: value" instead of '
                                       '"var!{field} := value"'
                                       .format(field=field_name)))
@@ -1674,6 +1683,10 @@ def primary(root, context):
         prim = ogAST.PrimBoolean()
         prim.value = [root.text.lower()]
         prim.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
+    elif root.type == lexer.NULL:
+        prim = ogAST.PrimNull()
+        prim.value = [root.text.lower()]
+        prim.exprType = type('PrNull', (object,), {'kind': 'NullType'})
     elif root.type == lexer.FLOAT:
         prim = ogAST.PrimReal()
         prim.value = [root.text]
@@ -3950,7 +3963,8 @@ def assign(root, context):
     if root.children[0].type == lexer.CALL:
         expr.left, err, warn = call_expression(root.children[0], context)
     elif root.children[0].type == lexer.SELECTOR:
-        expr.left, err, warn = selector_expression(root.children[0], context)
+        expr.left, err, warn = selector_expression(root.children[0], context,
+                                                   pos="left")
     else:
         expr.left, err, warn = primary_variable(root.children[0], context)
     warnings.extend(warn)
