@@ -2293,6 +2293,8 @@ def array_content(prim, values, asnty):
     inputs: prim is of type PrimStringLiteral or PrimSequenceOf
     values is a string with the sequence of numbers as processed by expression
     asnty is the reference type of the string literal '''
+    if isinstance(prim, ogAST.PrimEmptyString):
+        return values
     if asnty.Min != asnty.Max:
         length = len(prim.value)
         if isinstance(prim, ogAST.PrimStringLiteral):
