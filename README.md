@@ -144,6 +144,7 @@ Changelog
 
 1.3.18 (04/2016)
     - Add support for value notation of NULL type
+    - Remove warning when accessing CHOICE fields
 
 1.3.17 (04/2016)
     - Add support for value notation of empty SEQUENCEs ("{}")

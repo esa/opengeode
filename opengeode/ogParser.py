@@ -1736,6 +1736,7 @@ def primary(root, context):
         # Primary "{ }" used in empty SEQUENCE OF (i.e. "{}")
         # and also in value notation of SEQUENCEs that have no fields
         prim = ogAST.PrimEmptyString()
+        prim.value = []
         prim.exprType = type('PrES', (object,), {
             'kind': 'SequenceOfType',
             'Min': '0',
@@ -1840,7 +1841,10 @@ def variables(root, ta_ast, context):
                     expr.right.inputString + ', type= ' +
                     type_name(expr.right.exprType) + ') ' + str(err))
             else:
-                if def_value.exprType == UNKNOWN_TYPE:
+                if def_value.exprType == UNKNOWN_TYPE or not \
+                         isinstance(def_value, (ogAST.ExprAppend,
+                                                ogAST.PrimSequenceOf,
+                                                ogAST.PrimStringLiteral)):
                     def_value.exprType = asn1_sort
                 def_value.expected_type = asn1_sort
 

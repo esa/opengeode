@@ -2,6 +2,7 @@ TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
 EmptySeq ::= SEQUENCE {}
+SeqOf ::= SEQUENCE (SIZE(0..10)) OF BOOLEAN
 
 AnotherEmptySeq ::= SEQUENCE {}
 
