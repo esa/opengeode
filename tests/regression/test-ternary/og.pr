@@ -1,0 +1,86 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (289, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview.asn';
+
+signal run;
+signal saved_signal(BoolType);
+signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH run,
+saved_signal;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH run,
+saved_signal;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 50), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (335, 58), (396, 136) */
+            --  Various tests of the ternary operator
+-- (PrimConditional)
+dcl save_buffer SeqOf;
+
+dcl param BoolType;
+            /* CIF ENDTEXT */
+            /* CIF START (0, 226), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (0, 276), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (291, 227), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (296, 282), (162, 35) */
+                INPUT saved_signal(param);
+                    /* CIF DECISION (296, 332), (161, 50) */
+                    DECISION length(save_buffer);
+                            /* CIF ANSWER (253, 402), (60, 34) */
+                            (<10):
+                                /* CIF TASK (194, 451), (177, 50) */
+                                TASK save_buffer :=
+save_buffer // {param};
+                            /* CIF ANSWER (457, 402), (53, 34) */
+                            (10):
+                                /* CIF PROCEDURECALL (382, 451), (202, 38) */
+                                CALL writeln('Buffer Overflow!');
+                    ENDDECISION;
+                    /* CIF NEXTSTATE (342, 516), (70, 35) */
+                    NEXTSTATE wait;
+                /* CIF INPUT (91, 282), (84, 35) */
+                INPUT run;
+                    /* CIF NEXTSTATE (79, 332), (107, 35) */
+                    NEXTSTATE Running;
+            ENDSTATE;
+            /* CIF STATE (929, 221), (88, 35) */
+            STATE Running;
+                /* CIF PROVIDED (718, 276), (181, 35) */
+                PROVIDED length(save_buffer) > 0;
+                    /* CIF TASK (714, 326), (188, 35) */
+                    TASK param := save_buffer(0);
+                    /* CIF TASK (633, 376), (350, 34) */
+                    TASK save_buffer := save_buffer(1, length(save_buffer));
+                    /* CIF TASK (647, 425), (323, 56) */
+                    TASK save_buffer := if length(save_buffer) > 1
+then {true} else save_buffer // {false } fi;
+                    /* CIF TASK (650, 496), (316, 56) */
+                    TASK save_buffer := if length(save_buffer) > 1
+then save_buffer(1, length(save_buffer))
+else {} fi;
+                    /* CIF PROCEDURECALL (708, 567), (200, 35) */
+                    CALL writeln('Running: ', param);
+                    /* CIF NEXTSTATE (764, 617), (88, 35) */
+                    NEXTSTATE Running;
+                /* CIF INPUT (1053, 276), (70, 35) */
+                INPUT Run;
+                    /* CIF PROCEDURECALL (990, 326), (194, 35) */
+                    CALL writeln('Already running');
+                    /* CIF NEXTSTATE (1053, 376), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;

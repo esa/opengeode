@@ -1781,33 +1781,54 @@ def _conditional(cond):
     basic_then = find_basic_type(cond.value['then'].exprType)
     basic_else = find_basic_type(cond.value['else'].exprType)
 
+    then_len = None
     if isinstance(cond.value['then'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         then_str = array_content(cond.value['then'], then_str, basic_then)
+    if isinstance(cond.value['then'], ogAST.ExprAppend):
+        then_len = append_size(cond.value['then'])
+        stmts.append(u"tmp{idx}.Data(1..{then_len}) := {then_str};"
+                     .format(idx=cond.value['tmpVar'],
+                             then_len=then_len, then_str=then_str))
+    elif isinstance(cond.value['then'], ogAST.PrimSubstring):
+        stmts.append(u"tmp{idx}.Data(1..{then_str}'Length) := {then_str};"
+                     .format(idx=cond.value['tmpVar'], then_str=then_str))
+        if basic_then.Min != basic_then.Max:
+            then_len = u"{}'Length".format(then_str)
+#           stmts.append(u"tmp{idx}.Length := {then_str}'Length;"
+#                        .format(idx=cond.value['tmpVar'], then_str=then_str))
+    else:
+        stmts.append(u'tmp{idx} := {then_str};'
+                     .format(idx=cond.value['tmpVar'], then_str=then_str))
+    if then_len:
+        stmts.append(u"tmp{idx}.Length := {then_len};"
+                     .format(idx=cond.value['tmpVar'], then_len=then_len))
+
+    stmts.append('else')
+    else_len = None
     if isinstance(cond.value['else'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         else_str = array_content(cond.value['else'], else_str, basic_else)
 
-    if isinstance(cond.value['then'], ogAST.PrimSubstring):
-        stmts.append(u"tmp{idx}.Data(1..{then_str}'Length) := {then_str};"
-                     .format(idx=cond.value['tmpVar'], then_str=then_str))
-        if basic_then.Min != basic_then.Max:
-            stmts.append(u"tmp{idx}.Length := {then_str}'Length;"
-                         .format(idx=cond.value['tmpVar'], then_str=then_str))
-    else:
-        stmts.append(u'tmp{idx} := {then_str};'
-                     .format(idx=cond.value['tmpVar'], then_str=then_str))
-    stmts.append('else')
-    if isinstance(cond.value['else'], ogAST.PrimSubstring):
+    if isinstance(cond.value['else'], ogAST.ExprAppend):
+        else_len = append_size(cond.value['else'])
+        stmts.append(u"tmp{idx}.Data(1..{else_len}) := {else_str};"
+                     .format(idx=cond.value['tmpVar'],
+                             else_len=else_len, else_str=else_str))
+    elif isinstance(cond.value['else'], ogAST.PrimSubstring):
         stmts.append(u"tmp{idx}.Data(1..{else_str}'Length) := {else_str};"
                      .format(idx=cond.value['tmpVar'], else_str=else_str))
         if basic_else.Min != basic_else.Max:
-            stmts.append(u"tmp{idx}.Length := {else_str}'Length;"
-                         .format(idx=cond.value['tmpVar'], else_str=elsn_str))
+            else_len = u"{}'Length".format(else_str)
+#           stmts.append(u"tmp{idx}.Length := {else_str}'Length;"
+#                        .format(idx=cond.value['tmpVar'], else_str=else_str))
     else:
         stmts.append(u'tmp{idx} := {else_str};'.format(
                                                     idx=cond.value['tmpVar'],
                                                     else_str=else_str))
+    if else_len:
+        stmts.append(u"tmp{idx}.Length := {else_len};"
+                     .format(idx=cond.value['tmpVar'], else_len=else_len))
     stmts.append('end if;')
     ada_string = u'tmp{idx}'.format(idx=cond.value['tmpVar'])
     return stmts, unicode(ada_string), local_decl

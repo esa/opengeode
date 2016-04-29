@@ -3954,7 +3954,7 @@ def transition(root, parent, context):
 
 
 def assign(root, context):
-    ''' Parse an assignation (a := b) in a task symbol '''
+    ''' Parse an assignment (a := b) in a task symbol '''
     errors = []
     warnings = []
     expr = ogAST.ExprAssign(
@@ -4004,8 +4004,7 @@ def assign(root, context):
     except Warning as warn:
         warnings.append('Expression "{}": {}'
                         .format(expr.inputString, str(warn)))
-    else:
-        # In "else" branch because in case of exception right side may be None
+    if not errors:
         if expr.right.exprType == UNKNOWN_TYPE or not \
                 isinstance(expr.right, (ogAST.ExprAppend,
                                         ogAST.PrimSequenceOf,
@@ -4160,7 +4159,7 @@ def task_body(root, context):
 
 
 def task(root, parent=None, context=None):
-    ''' Parse a TASK symbol (assignation or informal text) '''
+    ''' Parse a TASK symbol (assignment or informal text) '''
     errors = []
     warnings = []
     coord = False
