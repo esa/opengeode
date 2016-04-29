@@ -9,5 +9,6 @@ cd simu
 aadl2glueC DataView.aadl og_interface.aadl
 asn2dataModel -toPython dataview.asn
 make -f Makefile.python
+cp dataview_asn.py dataview_uniq_asn.py
 echo "errCodes=$(taste-asn1-errCodes ./dataview.h)" >>datamodel.py 
 LD_LIBRARY_PATH=. opengeode-simulator
