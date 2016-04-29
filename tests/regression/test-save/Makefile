@@ -19,6 +19,15 @@ test-c:
 	$(ASN1SCC) -c dataview.asn -typePrefix asn1Scc -equal
 	$(CC) -O$(O) -c *.c
 
+test-python:
+	$(OPENGEODE) og.pr --shared
+	$(ASN1SCC) -Ada dataview.asn -typePrefix asn1Scc -equal
+	$(ASN1SCC) -c dataview.asn -typePrefix asn1Scc -equal
+	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
+	$(GNATBIND) -n -Llibog og
+	$(GNATMAKE) -c -fPIC -gnat2012 b~og.adb
+	$(CC) -shared -fPIC -o libog.so b~og.o og.o taste_dataview.o adaasn1rtl.o -lgnat
+	python -c "from ctypes import *; test=CDLL('./libog.so'); test.liboginit()"
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)
