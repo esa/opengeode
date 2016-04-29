@@ -847,7 +847,7 @@ def write_statement(param, newline):
         if type_kind == 'IntegerType':
             cast = "Asn1Int"
         elif type_kind == 'Integer32Type':
-            cast = "Integer"
+            cast = "Asn1Int"
         elif type_kind == 'RealType':
             cast = 'Long_Float'
         elif type_kind == 'BooleanType':
@@ -1358,11 +1358,11 @@ def _prim_substring(prim):
     if unicode.isnumeric(r1_string):
         r1_string = unicode(int(r1_string) + 1)
     else:
-        r1_string += ' + 1'
+        r1_string = u"Integer({}) + 1".format(r1_string)
     if unicode.isnumeric(r2_string):
         r2_string = unicode(int(r2_string) + 1)
     else:
-        r2_string += ' + 1'
+        r2_string = u"Integer({}) + 1".format(r2_string)
 
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'
@@ -1499,6 +1499,9 @@ def _assign_expression(expr):
         if rlen and basic_left.Min != basic_left.Max:
             strings.append(u"{lvar}.Length := {rlen};"
                            .format(lvar=left_str, rlen=rlen))
+    elif basic_left.kind.startswith('Integer'):
+        # Make sure that integers are cast to 64 bits
+        strings.append(u"{} := Asn1Int({});".format(left_str, right_str))
     else:
         strings.append(u"{} := {};".format(left_str, right_str))
     code.extend(left_stmts)

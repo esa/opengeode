@@ -31,19 +31,6 @@ dcl save_buffer SeqOf;
 
 dcl param BoolType;
             /* CIF ENDTEXT */
-            /* CIF PROCEDURE (5, 163), (113, 35) */
-            PROCEDURE GET_PARAM;
-                /* CIF START (153, 81), (70, 35) */
-                START;
-                    /* CIF TASK (94, 131), (188, 35) */
-                    TASK param := save_buffer(0);
-                    /* CIF TASK (30, 181), (316, 56) */
-                    TASK save_buffer := if length(save_buffer) > 1
-then save_buffer(1, length(save_buffer))
-else {} fi;
-                    /* CIF RETURN (170, 252), (35, 35) */
-                    RETURN ;
-            ENDPROCEDURE;
             /* CIF PROCEDURE (0, 106), (120, 35) */
             PROCEDURE SAVE_PARAM;
                 /* CIF TEXT (1, 27), (289, 140) */
@@ -51,7 +38,7 @@ else {} fi;
                 /* CIF ENDTEXT */
                 /* CIF START (146, 192), (70, 28) */
                 START;
-                    /* CIF DECISION (101, 238), (161, 50) */
+                    /* CIF DECISION (100, 238), (161, 50) */
                     DECISION length(save_buffer);
                             /* CIF ANSWER (58, 308), (60, 34) */
                             (<10):
@@ -63,7 +50,26 @@ save_buffer // {param};
                                 /* CIF PROCEDURECALL (187, 357), (202, 38) */
                                 CALL writeln('Buffer Overflow!');
                     ENDDECISION;
-                    /* CIF RETURN (164, 422), (35, 35) */
+                    /* CIF RETURN (163, 422), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (5, 163), (113, 35) */
+            PROCEDURE GET_PARAM;
+                /* CIF TEXT (341, 385), (289, 140) */
+                -- Text area for declarations and comments
+
+dcl idx myinteger := 0;
+                /* CIF ENDTEXT */
+                /* CIF START (153, 81), (70, 35) */
+                START;
+                    /* CIF TASK (94, 131), (188, 35) */
+                    TASK param := save_buffer(0);
+                    /* CIF TASK (80, 181), (215, 35) */
+                    TASK idx := length (save_buffer) - 1;
+                    /* CIF TASK (46, 231), (282, 56) */
+                    TASK save_buffer := if length(save_buffer) > 1
+then save_buffer(1, idx) else {} fi;
+                    /* CIF RETURN (170, 302), (35, 35) */
                     RETURN ;
             ENDPROCEDURE;
             /* CIF START (97, 224), (70, 35) */
@@ -82,16 +88,16 @@ save_buffer // {param};
                 PROVIDED length(save_buffer) > 0;
                     /* CIF PROCEDURECALL (358, 341), (113, 35) */
                     CALL GET_PARAM;
-                    /* CIF PROCEDURECALL (315, 391), (200, 35) */
+                    /* CIF PROCEDURECALL (314, 391), (200, 35) */
                     CALL writeln('Running: ', param);
-                    /* CIF NEXTSTATE (371, 441), (88, 35) */
+                    /* CIF NEXTSTATE (370, 441), (88, 35) */
                     NEXTSTATE Running;
             ENDSTATE;
             /* CIF STATE (97, 274), (70, 35) */
             STATE wait;
-                /* CIF INPUT (0, 329), (84, 35) */
+                /* CIF INPUT (7, 329), (84, 35) */
                 INPUT run;
-                    /* CIF NEXTSTATE (-2, 379), (88, 35) */
+                    /* CIF NEXTSTATE (5, 379), (88, 35) */
                     NEXTSTATE Running;
                 /* CIF INPUT (103, 329), (162, 35) */
                 INPUT saved_signal(param);
