@@ -605,7 +605,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
         ''' Collision Avoidance Manoeuvre for top level symbols '''
         # Since the cam function is recursive it may be time consuming
         # Call the Qt event prcessing to avoid blocking the application
-        QApplication.processEvents()
+        # Removed (had bad visual side effects)
+        # QApplication.processEvents()
         ignore = ignore or []
         if not self.scene():
             # Make sure the item is in a scene. For instance, when loading

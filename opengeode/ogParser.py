@@ -1033,6 +1033,8 @@ def fix_expression_types(expr, context):
             check_expr.right = expr.right.value[det]
             fix_expression_types(check_expr, context)
             expr.right.value[det] = check_expr.right
+            # Set the type of "then" and "else" to the reference type:
+            expr.right.value[det].exprType = expr.left.exprType
 
     if expr.right.is_raw != expr.left.is_raw:
         check_type_compatibility(raw_expr, ref_type, context)
@@ -1609,8 +1611,9 @@ def primary_substring(root, context):
                               'Max':
                                 str(int(max1) - int(min0) + 1)})
         basic = find_basic_type(node.exprType)
-        if int(min0) > int(min1) or int(max0) > int(max1):
-            msg = 'Substring bounds are invalid'
+        if int(min0) < int(min1) or int(max0) > int(max1):
+            msg = 'Substring bounds are invalid ({}<{} or {}>{})'.format(
+                    min0, min1, max0, max1)
             errors.append(error(root, msg))
         if int(min0) > int(receiver_bty.Max) \
                 or int(max1) > int(receiver_bty.Max):
