@@ -1601,20 +1601,25 @@ def primary_substring(root, context):
 
     if receiver_bty.kind == 'SequenceOfType' or \
             receiver_bty.kind.endswith('StringType'):
+        # min0/max0 and min1/max1 are the values of the substring bounds
         min0 = float(find_basic_type(params[0].exprType).Min)
         min1 = float(find_basic_type(params[1].exprType).Min)
         max0 = float(find_basic_type(params[0].exprType).Max)
         max1 = float(find_basic_type(params[1].exprType).Max)
         node.exprType = type('SubStr', (receiver_bty,),
-                             {'Min':
-                                str(int(min1) - int(max0) + 1),
-                              'Max':
-                                str(int(max1) - int(min0) + 1)})
+                             {'Min': str(int(min1) - int(max0) + 1),
+                              'Max': str(int(max1) - int(min0) + 1)})
         basic = find_basic_type(node.exprType)
-        if int(min0) < int(min1) or int(max0) > int(max1):
-            msg = 'Substring bounds are invalid ({}<{} or {}>{})'.format(
-                    min0, min1, max0, max1)
-            errors.append(error(root, msg))
+        if int(min0) > int(min1):
+            # right value lower range smaller than left value lower bound
+            msg = ('Substring end range could be lower than start range'
+                   ' ({}>{})'.format(min0, min1))
+            warnings.append(warning(root, msg))
+        if int(max0) > int(max1):
+            # left value upper bound can be bigger than right value upper bound
+            msg = ('Substring start range could be higher than end range'
+                   ' ({}>{})'.format(max0, max1))
+            warnings.append(warning(root, msg))
         if int(min0) > int(receiver_bty.Max) \
                 or int(max1) > int(receiver_bty.Max):
             msg = 'Substring bounds [{}..{}] outside range [{}..{}]'.format(
