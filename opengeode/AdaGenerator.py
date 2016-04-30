@@ -847,7 +847,7 @@ def write_statement(param, newline):
         if type_kind == 'IntegerType':
             cast = "Asn1Int"
         elif type_kind == 'Integer32Type':
-            cast = "Asn1Int"
+            cast = "Integer"
         elif type_kind == 'RealType':
             cast = 'Long_Float'
         elif type_kind == 'BooleanType':
@@ -1785,7 +1785,7 @@ def _conditional(cond):
     basic_else = find_basic_type(cond.value['else'].exprType)
 
     then_len = None
-    if isinstance(cond.value['then'],
+    if not tmp_type.startswith('String') and isinstance(cond.value['then'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         then_str = array_content(cond.value['then'], then_str, basic_then)
     if isinstance(cond.value['then'], ogAST.ExprAppend):
@@ -1798,8 +1798,6 @@ def _conditional(cond):
                      .format(idx=cond.value['tmpVar'], then_str=then_str))
         if basic_then.Min != basic_then.Max:
             then_len = u"{}'Length".format(then_str)
-#           stmts.append(u"tmp{idx}.Length := {then_str}'Length;"
-#                        .format(idx=cond.value['tmpVar'], then_str=then_str))
     else:
         stmts.append(u'tmp{idx} := {then_str};'
                      .format(idx=cond.value['tmpVar'], then_str=then_str))
@@ -1809,7 +1807,7 @@ def _conditional(cond):
 
     stmts.append('else')
     else_len = None
-    if isinstance(cond.value['else'],
+    if not tmp_type.startswith('String') and isinstance(cond.value['else'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         else_str = array_content(cond.value['else'], else_str, basic_else)
 
@@ -1823,8 +1821,6 @@ def _conditional(cond):
                      .format(idx=cond.value['tmpVar'], else_str=else_str))
         if basic_else.Min != basic_else.Max:
             else_len = u"{}'Length".format(else_str)
-#           stmts.append(u"tmp{idx}.Length := {else_str}'Length;"
-#                        .format(idx=cond.value['tmpVar'], else_str=else_str))
     else:
         stmts.append(u'tmp{idx} := {else_str};'.format(
                                                     idx=cond.value['tmpVar'],

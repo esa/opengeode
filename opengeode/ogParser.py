@@ -552,7 +552,7 @@ def check_call(name, params, context):
         })
 
     elif name == 'length':
-        return type('Length', (INTEGER,), {
+        return type('Length', (INT32,), {
             'Min': param_btys[0].Min,
             'Max': param_btys[0].Max
         })
@@ -4115,8 +4115,8 @@ def for_loop(root, context):
                 # basic may be UNKNOWN_TYPE if the expression is a
                 # reference to an ASN.1 constant - their values are not
                 # currently visible to the SDL parser
-                result_type = type('for_range', (INT32,), {'Min': r_min,
-                                                           'Max': r_max})
+                result_type = type('for_range', (INTEGER,), {'Min': r_min,
+                                                             'Max': r_max})
                 context.variables[forloop['var']] = (result_type, 0)
 
             forloop['transition'], err, warn = transition(
