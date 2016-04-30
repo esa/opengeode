@@ -844,8 +844,10 @@ def write_statement(param, newline):
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
-        if type_kind in ('IntegerType', 'Integer32Type'):
+        if type_kind == 'IntegerType':
             cast = "Asn1Int"
+        elif type_kind == 'Integer32Type':
+            cast = "Integer"
         elif type_kind == 'RealType':
             cast = 'Long_Float'
         elif type_kind == 'BooleanType':
@@ -1207,7 +1209,7 @@ def _prim_call(prim):
                 range_str = u"{}'Length".format(param_str)
             else:
                 range_str = u"{}.Length".format(param_str)
-            ada_string += ('Asn1Int({})'.format(range_str))
+            ada_string += ('Integer({})'.format(range_str))
     elif ident == 'present':
         # User wants to know what CHOICE element is present
         exp = params[0]
@@ -1356,11 +1358,11 @@ def _prim_substring(prim):
     if unicode.isnumeric(r1_string):
         r1_string = unicode(int(r1_string) + 1)
     else:
-        r1_string += ' + 1'
+        r1_string = u"Integer({}) + 1".format(r1_string)
     if unicode.isnumeric(r2_string):
         r2_string = unicode(int(r2_string) + 1)
     else:
-        r2_string += ' + 1'
+        r2_string = u"Integer({}) + 1".format(r2_string)
 
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'
@@ -1497,6 +1499,9 @@ def _assign_expression(expr):
         if rlen and basic_left.Min != basic_left.Max:
             strings.append(u"{lvar}.Length := {rlen};"
                            .format(lvar=left_str, rlen=rlen))
+    elif basic_left.kind.startswith('Integer'):
+        # Make sure that integers are cast to 64 bits
+        strings.append(u"{} := Asn1Int({});".format(left_str, right_str))
     else:
         strings.append(u"{} := {};".format(left_str, right_str))
     code.extend(left_stmts)
@@ -1775,13 +1780,54 @@ def _conditional(cond):
         local_decl.extend(then_local)
         local_decl.extend(else_local)
     stmts.append(u'if {if_str} then'.format(if_str=if_str))
-    stmts.append(u'tmp{idx} := {then_str};'.format(
-                                                idx=cond.value['tmpVar'],
-                                                then_str=then_str))
+
+    basic_then = find_basic_type(cond.value['then'].exprType)
+    basic_else = find_basic_type(cond.value['else'].exprType)
+
+    then_len = None
+    if not tmp_type.startswith('String') and isinstance(cond.value['then'],
+                              (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+        then_str = array_content(cond.value['then'], then_str, basic_then)
+    if isinstance(cond.value['then'], ogAST.ExprAppend):
+        then_len = append_size(cond.value['then'])
+        stmts.append(u"tmp{idx}.Data(1..{then_len}) := {then_str};"
+                     .format(idx=cond.value['tmpVar'],
+                             then_len=then_len, then_str=then_str))
+    elif isinstance(cond.value['then'], ogAST.PrimSubstring):
+        stmts.append(u"tmp{idx}.Data(1..{then_str}'Length) := {then_str};"
+                     .format(idx=cond.value['tmpVar'], then_str=then_str))
+        if basic_then.Min != basic_then.Max:
+            then_len = u"{}'Length".format(then_str)
+    else:
+        stmts.append(u'tmp{idx} := {then_str};'
+                     .format(idx=cond.value['tmpVar'], then_str=then_str))
+    if then_len:
+        stmts.append(u"tmp{idx}.Length := {then_len};"
+                     .format(idx=cond.value['tmpVar'], then_len=then_len))
+
     stmts.append('else')
-    stmts.append(u'tmp{idx} := {else_str};'.format(
-                                                idx=cond.value['tmpVar'],
-                                                else_str=else_str))
+    else_len = None
+    if not tmp_type.startswith('String') and isinstance(cond.value['else'],
+                              (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+        else_str = array_content(cond.value['else'], else_str, basic_else)
+
+    if isinstance(cond.value['else'], ogAST.ExprAppend):
+        else_len = append_size(cond.value['else'])
+        stmts.append(u"tmp{idx}.Data(1..{else_len}) := {else_str};"
+                     .format(idx=cond.value['tmpVar'],
+                             else_len=else_len, else_str=else_str))
+    elif isinstance(cond.value['else'], ogAST.PrimSubstring):
+        stmts.append(u"tmp{idx}.Data(1..{else_str}'Length) := {else_str};"
+                     .format(idx=cond.value['tmpVar'], else_str=else_str))
+        if basic_else.Min != basic_else.Max:
+            else_len = u"{}'Length".format(else_str)
+    else:
+        stmts.append(u'tmp{idx} := {else_str};'.format(
+                                                    idx=cond.value['tmpVar'],
+                                                    else_str=else_str))
+    if else_len:
+        stmts.append(u"tmp{idx}.Length := {else_len};"
+                     .format(idx=cond.value['tmpVar'], else_len=else_len))
     stmts.append('end if;')
     ada_string = u'tmp{idx}'.format(idx=cond.value['tmpVar'])
     return stmts, unicode(ada_string), local_decl

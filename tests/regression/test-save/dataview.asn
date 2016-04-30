@@ -1,0 +1,7 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+SeqOf ::= SEQUENCE (SIZE(0..10)) OF BoolType
+BoolType ::= BOOLEAN
+MyInteger ::= INTEGER (0..10)
+END

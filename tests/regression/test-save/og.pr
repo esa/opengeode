@@ -1,0 +1,111 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (289, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview.asn';
+
+signal run;
+signal saved_signal(BoolType);
+signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH run,
+saved_signal;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH run,
+saved_signal;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 50), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (150, 75), (396, 136) */
+            --  Demonstrate how to simulate the behaviour of the SAVE
+-- signal. The actual SAVE implies dynamic memory allocation.
+-- But using a controlled-size array and a continuous signal it
+-- is easy to reproduce the same behaviour.
+
+dcl save_buffer SeqOf;
+
+dcl param BoolType;
+            /* CIF ENDTEXT */
+            /* CIF PROCEDURE (0, 106), (120, 35) */
+            PROCEDURE SAVE_PARAM;
+                /* CIF TEXT (1, 27), (289, 140) */
+                fpar in param BoolType;
+                /* CIF ENDTEXT */
+                /* CIF START (146, 192), (70, 28) */
+                START;
+                    /* CIF DECISION (100, 238), (161, 50) */
+                    DECISION length(save_buffer);
+                            /* CIF ANSWER (58, 308), (60, 34) */
+                            (<10):
+                                /* CIF TASK (0, 357), (177, 50) */
+                                TASK save_buffer :=
+save_buffer // {param};
+                            /* CIF ANSWER (262, 308), (53, 34) */
+                            (10):
+                                /* CIF PROCEDURECALL (187, 357), (202, 38) */
+                                CALL writeln('Buffer Overflow!');
+                    ENDDECISION;
+                    /* CIF RETURN (163, 422), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (5, 163), (113, 35) */
+            PROCEDURE GET_PARAM;
+                /* CIF TEXT (341, 385), (289, 140) */
+                -- Text area for declarations and comments
+
+dcl idx myinteger := 0;
+                /* CIF ENDTEXT */
+                /* CIF START (153, 81), (70, 35) */
+                START;
+                    /* CIF TASK (94, 131), (188, 35) */
+                    TASK param := save_buffer(0);
+                    /* CIF TASK (80, 181), (215, 35) */
+                    TASK idx := length (save_buffer) - 1;
+                    /* CIF TASK (46, 231), (282, 56) */
+                    TASK save_buffer := if length(save_buffer) > 1
+then save_buffer(1, idx) else {} fi;
+                    /* CIF RETURN (170, 302), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF START (97, 224), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (97, 274), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (479, 236), (88, 35) */
+            STATE Running;
+                /* CIF INPUT (588, 291), (70, 35) */
+                INPUT Run;
+                    /* CIF PROCEDURECALL (525, 341), (194, 35) */
+                    CALL writeln('Already running');
+                    /* CIF NEXTSTATE (588, 391), (70, 35) */
+                    NEXTSTATE -;
+                /* CIF PROVIDED (324, 291), (181, 35) */
+                PROVIDED length(save_buffer) > 0;
+                    /* CIF PROCEDURECALL (358, 341), (113, 35) */
+                    CALL GET_PARAM;
+                    /* CIF PROCEDURECALL (314, 391), (200, 35) */
+                    CALL writeln('Running: ', param);
+                    /* CIF NEXTSTATE (370, 441), (88, 35) */
+                    NEXTSTATE Running;
+            ENDSTATE;
+            /* CIF STATE (97, 274), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (7, 329), (84, 35) */
+                INPUT run;
+                    /* CIF NEXTSTATE (5, 379), (88, 35) */
+                    NEXTSTATE Running;
+                /* CIF INPUT (103, 329), (162, 35) */
+                INPUT saved_signal(param);
+                    /* CIF PROCEDURECALL (100, 379), (168, 35) */
+                    CALL SAVE_PARAM(param);
+                    /* CIF NEXTSTATE (149, 429), (70, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;

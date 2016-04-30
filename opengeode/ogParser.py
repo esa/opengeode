@@ -552,7 +552,7 @@ def check_call(name, params, context):
         })
 
     elif name == 'length':
-        return type('Length', (INTEGER,), {
+        return type('Length', (INT32,), {
             'Min': param_btys[0].Min,
             'Max': param_btys[0].Max
         })
@@ -1033,6 +1033,8 @@ def fix_expression_types(expr, context):
             check_expr.right = expr.right.value[det]
             fix_expression_types(check_expr, context)
             expr.right.value[det] = check_expr.right
+            # Set the type of "then" and "else" to the reference type:
+            expr.right.value[det].exprType = expr.left.exprType
 
     if expr.right.is_raw != expr.left.is_raw:
         check_type_compatibility(raw_expr, ref_type, context)
@@ -1599,19 +1601,25 @@ def primary_substring(root, context):
 
     if receiver_bty.kind == 'SequenceOfType' or \
             receiver_bty.kind.endswith('StringType'):
+        # min0/max0 and min1/max1 are the values of the substring bounds
         min0 = float(find_basic_type(params[0].exprType).Min)
         min1 = float(find_basic_type(params[1].exprType).Min)
         max0 = float(find_basic_type(params[0].exprType).Max)
         max1 = float(find_basic_type(params[1].exprType).Max)
         node.exprType = type('SubStr', (receiver_bty,),
-                             {'Min':
-                                str(int(min1) - int(max0) + 1),
-                              'Max':
-                                str(int(max1) - int(min0) + 1)})
+                             {'Min': str(int(min1) - int(max0) + 1),
+                              'Max': str(int(max1) - int(min0) + 1)})
         basic = find_basic_type(node.exprType)
-        if int(min0) > int(min1) or int(max0) > int(max1):
-            msg = 'Substring bounds are invalid'
-            errors.append(error(root, msg))
+        if int(min0) > int(min1):
+            # right value lower range smaller than left value lower bound
+            msg = ('Substring end range could be lower than start range'
+                   ' ({}>{})'.format(min0, min1))
+            warnings.append(warning(root, msg))
+        if int(max0) > int(max1):
+            # left value upper bound can be bigger than right value upper bound
+            msg = ('Substring start range could be higher than end range'
+                   ' ({}>{})'.format(max0, max1))
+            warnings.append(warning(root, msg))
         if int(min0) > int(receiver_bty.Max) \
                 or int(max1) > int(receiver_bty.Max):
             msg = 'Substring bounds [{}..{}] outside range [{}..{}]'.format(
@@ -3951,7 +3959,7 @@ def transition(root, parent, context):
 
 
 def assign(root, context):
-    ''' Parse an assignation (a := b) in a task symbol '''
+    ''' Parse an assignment (a := b) in a task symbol '''
     errors = []
     warnings = []
     expr = ogAST.ExprAssign(
@@ -4001,8 +4009,7 @@ def assign(root, context):
     except Warning as warn:
         warnings.append('Expression "{}": {}'
                         .format(expr.inputString, str(warn)))
-    else:
-        # In "else" branch because in case of exception right side may be None
+    if not errors:
         if expr.right.exprType == UNKNOWN_TYPE or not \
                 isinstance(expr.right, (ogAST.ExprAppend,
                                         ogAST.PrimSequenceOf,
@@ -4108,8 +4115,8 @@ def for_loop(root, context):
                 # basic may be UNKNOWN_TYPE if the expression is a
                 # reference to an ASN.1 constant - their values are not
                 # currently visible to the SDL parser
-                result_type = type('for_range', (INT32,), {'Min': r_min,
-                                                           'Max': r_max})
+                result_type = type('for_range', (INTEGER,), {'Min': r_min,
+                                                             'Max': r_max})
                 context.variables[forloop['var']] = (result_type, 0)
 
             forloop['transition'], err, warn = transition(
@@ -4157,7 +4164,7 @@ def task_body(root, context):
 
 
 def task(root, parent=None, context=None):
-    ''' Parse a TASK symbol (assignation or informal text) '''
+    ''' Parse a TASK symbol (assignment or informal text) '''
     errors = []
     warnings = []
     coord = False

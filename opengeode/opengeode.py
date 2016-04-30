@@ -117,7 +117,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.18'
+__version__ = '1.3.19'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2064,7 +2064,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             for each in ast.asn1_filenames:
                 with open(each, 'r') as file_handler:
                     types.append('-- ' + each)
-                    types.append(file_handler.read())
+                    types.append(file_handler.read().replace('-', '_'))
             if types:
                 self.asn1_area.text.setPlainText('\n'.join(types))
                 # ASN.1 text area is read-only:
