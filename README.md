@@ -146,6 +146,7 @@ Changelog
     - Various bugfixes with ternary operator
     - Added demo "test-save" showing how to emulate the behaviour of the SAVE
       symbol
+    - ASN.1 types are shown with SDL-syntax (no hyphens)
 
 1.3.18 (04/2016)
     - Add support for value notation of NULL type
