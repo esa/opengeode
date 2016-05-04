@@ -1145,7 +1145,7 @@ def binary_expression(root, context):
 
 
 def unary_expression(root, context):
-    ''' Unary expression analysys '''
+    ''' Unary expression analysis '''
     ExprNode = EXPR_NODE[root.type]
     expr = ExprNode(
         get_input_string(root),

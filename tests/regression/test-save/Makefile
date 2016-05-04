@@ -29,6 +29,10 @@ test-python:
 	$(CC) -shared -fPIC -o libog.so b~og.o og.o taste_dataview.o adaasn1rtl.o -lgnat
 	python -c "from ctypes import *; test=CDLL('./libog.so'); test.liboginit()"
 
+simu:
+	$(OPENGEODE) og.pr --shared
+	./og_simu.sh
+
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)
 	$(LLC) *.ll

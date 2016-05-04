@@ -72,6 +72,7 @@
 import logging
 import traceback
 import os
+import stat
 from itertools import chain, product
 from singledispatch import singledispatch
 
@@ -155,26 +156,54 @@ def _process(process, simu=False, **kwargs):
         return '\n'.join(res)
 
     # bash script to simulate the system (TEMPORARY)
+
+    # go up to the root of the AST to get the list of ASN.1 files
+    parent = process.parent
+    while hasattr(parent, 'parent') and parent.parent:
+        parent = parent.parent
+    if isinstance(parent, ogAST.System):
+        parent = parent.ast
+    asn1_filenames = ' '.join(parent.asn1_filenames)
+    asn1_uniq = ' '.join(each for each in parent.asn1_filenames
+                         if each != 'dataview-uniq.asn')
+    pr_path = ' '.join(parent.pr_files)
+    pr_names = ' '.join(
+                      os.path.basename(pr_file) for pr_file in parent.pr_files)
+    asn1_modules = (name.lower().replace('-', '_') + '.o'
+                    for name in process.asn1Modules)
+
     simu_script = '''#!/bin/bash -e
-opengeode {pr}.pr --shared
-asn1.exe -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-asn1.exe -c dataview-uniq.asn -typePrefix asn1Scc -equal
+rm -rf {pr}_simu
+mkdir -p {pr}_simu
+cp {pr_path} {asn1} {pr}_simu
+cd {pr}_simu
+opengeode {pr_names} --shared
+cat {uniq} >> dataview-uniq.asn '''.format(pr=process_name,
+                                           asn1=asn1_filenames,
+                                           pr_path=pr_path,
+                                           uniq=asn1_uniq or '/dev/null',
+                                           pr_names=pr_names)
+
+    if asn1_filenames:
+        simu_script += '''
+asn1.exe -Ada -typePrefix asn1Scc -equal {asn1}
+asn1.exe -c -typePrefix asn1Scc -equal {asn1}'''.format(asn1=asn1_filenames)
+
+    simu_script += '''
 gnatmake -gnat2012 -c *.adb
 gnatbind -n -Llib{pr} {pr}
 gnatmake -c -gnat2012 b~{pr}.adb
-gcc -shared -fPIC -o lib{pr}.so b~{pr}.o {pr}.o taste_dataview.o adaasn1rtl.o -lgnat
-rm -rf simu
-mkdir -p simu
-asn2aadlPlus dataview-uniq.asn simu/DataView.aadl
-cp lib{pr}.so dataview-uniq.asn *.pr simu
-mv *.aadl simu
-cd simu
+gcc -shared -fPIC -o lib{pr}.so b~{pr}.o {pr}.o {asn1_mod} adaasn1rtl.o -lgnat
+rm -f dataview-uniq.c dataview-uniq.h
+asn2aadlPlus dataview-uniq.asn DataView.aadl
 aadl2glueC DataView.aadl {pr}_interface.aadl
 asn2dataModel -toPython dataview-uniq.asn
 make -f Makefile.python
 echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
-LD_LIBRARY_PATH=. taste-gui -l
-'''.format(pr=process_name)
+LD_LIBRARY_PATH=. opengeode-simulator
+'''.format(pr=process_name,
+           asn1_files=asn1_filenames,
+           asn1_mod=' '.join(asn1_modules))
 
 
     LOG.info('Generating Ada code for process ' + str(process_name))
@@ -270,8 +299,18 @@ LD_LIBRARY_PATH=. taste-gui -l
         process_level_decl.append('procedure runTransition(Id: Integer);')
 
     # Generate the code of the start transition (if process not empty)
-    start_transition = ['begin',
-                        'runTransition(0);'] if process.transitions else []
+    if not simu:
+        start_transition = ['begin',
+                            'runTransition(0);'] if process.transitions else []
+    else:
+        start_transition = ['procedure Startup;',
+                            'pragma Export(C, Startup, "{}_startup");'
+                            .format(process_name),
+                            'procedure Startup is',
+                            'begin',
+                            '   runTransition(0);' if process.transitions
+                                                   else 'null;',
+                            'end Startup;']
 
     # Generate the TASTE template
     try:
@@ -794,8 +833,10 @@ package {process_name} is'''.format(process_name=process_name,
     if simu:
         with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
             aadl.write(u'\n'.join(minicv).encode('latin1'))
-        with open('{}_simu.sh'.format(process_name), 'w') as bash_script:
+        script = '{}_simu.sh'.format(process_name)
+        with open(script, 'w') as bash_script:
             bash_script.write(simu_script)
+        os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
 
 
 def write_statement(param, newline):
