@@ -194,11 +194,12 @@ gnatmake -gnat2012 -c *.adb
 gnatbind -n -Llib{pr} {pr}
 gnatmake -c -gnat2012 b~{pr}.adb
 gcc -shared -fPIC -o lib{pr}.so b~{pr}.o {pr}.o {asn1_mod} adaasn1rtl.o -lgnat
+echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
+rm dataview-uniq.*
 asn2aadlPlus dataview-uniq.asn DataView.aadl
 aadl2glueC DataView.aadl {pr}_interface.aadl
 asn2dataModel -toPython dataview-uniq.asn
 make -f Makefile.python
-echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
 LD_LIBRARY_PATH=. opengeode-simulator
 '''.format(pr=process_name,
            asn1_files=asn1_filenames,
