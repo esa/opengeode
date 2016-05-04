@@ -164,6 +164,8 @@ def _process(process, simu=False, **kwargs):
     if isinstance(parent, ogAST.System):
         parent = parent.ast
     asn1_filenames = ' '.join(parent.asn1_filenames)
+    asn1_uniq = ' '.join(each for each in parent.asn1_filenames
+                         if each != 'dataview-uniq.asn')
     pr_path = ' '.join(parent.pr_files)
     pr_names = ' '.join(
                       os.path.basename(pr_file) for pr_file in parent.pr_files)
@@ -176,10 +178,11 @@ mkdir -p {pr}_simu
 cp {pr_path} {asn1} {pr}_simu
 cd {pr}_simu
 opengeode {pr_names} --shared
-cat *.asn > dataview-uniq.asn '''.format(pr=process_name,
-                                         asn1=asn1_filenames,
-                                         pr_path=pr_path,
-                                         pr_names=pr_names)
+cat {uniq} >> dataview-uniq.asn '''.format(pr=process_name,
+                                           asn1=asn1_filenames,
+                                           pr_path=pr_path,
+                                           uniq=asn1_uniq or '/dev/null',
+                                           pr_names=pr_names)
 
     if asn1_filenames:
         simu_script += '''
