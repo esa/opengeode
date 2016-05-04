@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.20 (05/2016)
+    - Improve simulator interface
+
 1.3.19 (04/2016)
     - Various bugfixes with ternary operator
     - Added demo "test-save" showing how to emulate the behaviour of the SAVE
