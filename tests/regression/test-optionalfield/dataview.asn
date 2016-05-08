@@ -1,8 +1,14 @@
 TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
+-- Data view with optional fields, including mixed case,
+-- and dash
+
 Seq ::= SEQUENCE {
-    a BOOLEAN OPTIONAL
+    a BOOLEAN OPTIONAL,
+    b SEQUENCE {
+        b-C BOOLEAN OPTIONAL
+    } OPTIONAL
 }
 --SeqPresent ::= Seq (WITH COMPONENTS {a PRESENT})
 --SeqAbsent ::= Seq (WITH COMPONENTS {a ABSENT})

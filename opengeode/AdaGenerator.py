@@ -1437,6 +1437,10 @@ def _prim_selector(prim):
                             field_name=field_name,
                             ada_string=ada_string))
     else:
+        # SEQUENCE, check for field optionality first
+        child = child_spelling(field_name, receiver_bty)
+        if receiver_bty.Children[child].Optional == 'True':
+            stmts.append('{}.Exist.{} := 1;'.format(ada_string, field_name))
         ada_string += '.' + field_name
 
     return stmts, unicode(ada_string), local_decl
@@ -2464,6 +2468,14 @@ def type_name(a_type, use_prefix=True):
         return u'asn1Scc'
     else:
         raise NotImplementedError('Type name for {}'.format(a_type.kind))
+
+
+def child_spelling(name, bty):
+    ''' Return the index in Children with the proper spelling (case, dash) '''
+    for each in bty.Children:
+        if name.lower().replace('_', '-') == each.lower():
+            return each
+    raise TypeError('Child not found: {}'.format(name))
 
 
 def find_var(var):

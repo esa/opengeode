@@ -26,17 +26,21 @@ dcl s2 Seq;
             /* CIF ENDTEXT */
             /* CIF START (97, 224), (70, 35) */
             START;
-                /* CIF TASK (66, 274), (130, 35) */
+                /* CIF TASK (67, 274), (130, 35) */
                 TASK s2 := { a FALSE};
-                /* CIF TASK (74, 324), (114, 35) */
+                /* CIF TASK (75, 324), (114, 35) */
                 TASK s2!a := TRUE;
-                /* CIF NEXTSTATE (97, 374), (70, 35) */
+                /* CIF TASK (62, 374), (139, 35) */
+                TASK s2!b!b_c := TRUE;
+                /* CIF TASK (52, 424), (159, 35) */
+                TASK s2 :={ b { b_c TRUE }};
+                /* CIF NEXTSTATE (97, 474), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (97, 374), (70, 35) */
+            /* CIF STATE (97, 474), (70, 35) */
             STATE wait;
-                /* CIF INPUT (89, 429), (84, 35) */
+                /* CIF INPUT (89, 529), (84, 35) */
                 INPUT run;
-                    /* CIF NEXTSTATE (87, 479), (88, 35) */
+                    /* CIF NEXTSTATE (87, 579), (88, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;
