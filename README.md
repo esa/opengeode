@@ -142,6 +142,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.21 (05/2016)
+    - Complete support of optional fields
+      (check tests/regression/test-optionalfields)
+
 1.3.20 (05/2016)
     - Improve simulator interface
 

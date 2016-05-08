@@ -1,0 +1,48 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (289, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview.asn';
+
+signal run;
+
+signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH run;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH run;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 50), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (150, 75), (396, 136) */
+            dcl s1 Seq := { a TRUE };
+
+dcl s2 Seq;
+            /* CIF ENDTEXT */
+            /* CIF START (97, 224), (70, 35) */
+            START;
+                /* CIF TASK (67, 274), (130, 35) */
+                TASK s2 := { a FALSE};
+                /* CIF TASK (75, 324), (114, 35) */
+                TASK s2!a := TRUE;
+                /* CIF TASK (62, 374), (139, 35) */
+                TASK s2!b!b_c := TRUE;
+                /* CIF TASK (52, 424), (159, 35) */
+                TASK s2 :={ b { b_c TRUE }};
+                /* CIF NEXTSTATE (97, 474), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (97, 474), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (89, 529), (84, 35) */
+                INPUT run;
+                    /* CIF NEXTSTATE (87, 579), (88, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
