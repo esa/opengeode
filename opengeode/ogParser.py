@@ -1260,12 +1260,12 @@ def arithmetic_expression(root, context):
                      'Max': str(float(left.Max) * float(right.Max))}
             expr.exprType = type('Mul', (basic,), attrs)
         elif isinstance(expr, ogAST.ExprMinus):
-            attrs = {'Min': str(float(left.Min) - float(right.Min)),
-                     'Max': str(float(left.Max) - float(right.Max))}
+            attrs = {'Min': str(float(left.Min) - float(right.Max)),
+                     'Max': str(float(left.Max) - float(right.Min))}
             expr.exprType = type('Minus', (basic,), attrs)
         elif isinstance(expr, ogAST.ExprDiv):
-            attrs = {'Min': str(float(left.Min) / (float(right.Min) or 1)),
-                     'Max': str(float(left.Max) / (float(right.Max) or 1))}
+            attrs = {'Min': str(float(left.Min) / (float(right.Max) or 1)),
+                     'Max': str(float(left.Max) / (float(right.Min) or 1))}
             expr.exprType = type('Div', (basic,), attrs)
         elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
             attrs = {'Min': right.Min, 'Max': right.Max}
