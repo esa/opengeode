@@ -553,8 +553,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                       symbol.parent.boundingRect().width() + 15
                                     symbol.pos_y = 0
                                 if not symbol.hasParent:
-                                    symbol.cam(symbol.position,
-                                               symbol.position)
+                                    #print 'Positionning', unicode(symbol)[slice(0,20)]
+                                    sc_br = dest_scene.itemsBoundingRect()
+                                    sy_br = symbol.mapRectToScene(
+                                                symbol.boundingRect() |
+                                                symbol.childrenBoundingRect())
+                                    symbol.pos_x += (sc_br.width() - sy_br.x())
+#                                   symbol.cam(symbol.position,
+#                                              symbol.position)
                         except AttributeError:
                             # no AST, ignore (e.g. Connections, Cornergrabbers)
                             pass

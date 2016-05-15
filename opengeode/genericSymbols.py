@@ -607,6 +607,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # Call the Qt event prcessing to avoid blocking the application
         # Removed (had bad visual side effects)
         # QApplication.processEvents()
+        #print 'CAM', unicode(self)[slice(0, 20)]
         ignore = ignore or []
         if not self.scene():
             # Make sure the item is in a scene. For instance, when loading
@@ -743,7 +744,7 @@ class Comment(Symbol):
         self.pos_y = y if y is not None else (parent.boundingRect().height() -
                                               self.boundingRect().height()) / 2
         self.connection = self.connect_to_parent()
-        parent.cam(parent.position, parent.position)
+        #parent.cam(parent.position, parent.position)
 
     def connect_to_parent(self):
         ''' Redefinition of the function to use a comment connector '''
@@ -993,7 +994,7 @@ class HorizontalSymbol(Symbol, object):
         self.position = QPointF(pos_x, pos_y)
         self.connection = self.connect_to_parent()
         self.updateConnectionPoints()
-        self.cam(self.position, self.position)
+        #self.cam(self.position, self.position)
 
     def update_connections(self):
         '''
@@ -1217,7 +1218,7 @@ class VerticalSymbol(Symbol, object):
         self.updateConnectionPoints()
         if y is not None:
             self.pos_y = y
-        self.cam(self.position, self.position)
+        #self.cam(self.position, self.position)
 
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''
