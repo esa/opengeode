@@ -142,6 +142,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.22 (05/2016)
+    - Bux fix in range checks for division and subtraction
+    - Optimise loading when there are no CIF comments
+
 1.3.21 (05/2016)
     - Complete support of optional fields
       (check tests/regression/test-optionalfields)
