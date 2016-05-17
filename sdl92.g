@@ -508,6 +508,11 @@ composite_state
                 | state_aggregation
         ;
 
+// used for syntactic predicate
+composite_state_preamble
+        :       STATE AGGREGATION? statename end
+                SUBSTRUCTURE
+        ;
 
 composite_state_graph
         :       STATE statename e=end
@@ -589,9 +594,13 @@ state_entry_exit_points
 
 
 // 11.11.1 Composite State graph content (SDL2000)
+// Use a syntactic predicate to disambiguate the parsing of the composite
+// state vs a normal state, in the case of a syntax error in the composite.
 composite_state_body
-        :       (text_area | procedure | composite_state)*
-                start* (state | floating_label)*
+        :  (text_area
+            | procedure
+            | (composite_state_preamble) =>composite_state)*
+           start* (state | floating_label)*
         ;
 
 
