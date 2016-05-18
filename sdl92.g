@@ -257,7 +257,7 @@ process_definition
                 PROCESS process_id
                 number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
-                (text_area | procedure | composite_state)*
+                (text_area | procedure | (composite_state_preamble) =>composite_state)*
                 processBody? ENDPROCESS? process_id?
                 end?
         ->      ^(PROCESS cif? process_id number_of_instances? type_inst?

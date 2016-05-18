@@ -66,3 +66,22 @@ STATE AGGREGATION DemoDeviceDACPStates;
 
 test.composite_state()
 
+print('from rm(2) - reports that start must be before state:')
+test=opengeode.ogParser.parser_init(string=
+'''
+process hello;
+STATE AGGREGATION DemoDeviceDACPStates;
+        SUBSTRUCTURE
+          STATE INTERNAL_MAPPINGS;
+            SUBSTRUCTURE
+              STATE STATELESS;
+              ENDSTATE STATELESS;
+              START;
+              NEXTSTATE STATELESS;
+            ENDSUBSTRUCTURE INTERNAL_MAPPINGS;
+        ENDSUBSTRUCTURE DemoDeviceDACPStates;
+end hello;
+''')
+
+test.process_definition()
+
