@@ -142,7 +142,7 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-1.3.23 (05/2016)
+1.3.24 (05/2016)
     - Fix reporting of syntax errors in state aggregations
 
 1.3.22 (05/2016)
