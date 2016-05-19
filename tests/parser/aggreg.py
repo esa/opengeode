@@ -1,21 +1,33 @@
 #!/usr/bin/env python
 
-from opengeode.ogParser import parser_init
+from opengeode.ogParser import parser_init, antlr3, sdl92Parser
 
-# detect syntax errors (missing semi after "entry")
+# return a string corresponding to a token number:
+token = lambda num: sdl92Parser.tokenNames[num]
 
 def test_composite_state_body_1():
-
+    ''' Detect the syntax error (missing SEMI after "procedure entry") '''
     test = parser_init(string=
     '''state ENTRYA;
-              substructure
-                procedure entry EXTERNAL;
-              endsubstructure ENTRYA;
-    ''')
-    test.composite_state_body()
+       substructure
+           procedure entry external;
+       endsubstructure ENTRYA;''')
+    # Parse and then check that the reported error is the expected one
+
+    res = test.composite_state_body()
+    assert(not isinstance(res.tree, antlr3.tree.CommonErrorNode))
+    composite = res.tree.children[0]
+    compo_type = sdl92Parser.tokenNames[composite.type]
+    assert(compo_type == 'COMPOSITE_STATE')
+    for each in composite.children:
+        if isinstance(each, antlr3.tree.CommonErrorNode):
+            exception = each.trappedException
+            assert(isinstance(exception,antlr3.NoViableAltException))
+            assert(token(exception.unexpectedType) == 'EXTERNAL')
 
 
 def test_composite_state_1():
+    ''' Detect the syntax error (missing SEMI after "procedure entry") '''
     test = parser_init(string=
     '''state CHECKING;
             substructure
@@ -43,7 +55,7 @@ def test_composite_state_2():
     test.composite_state()
 
 
-def test_composite_state_body_1():
+def test_composite_state_body_2():
     print('composite_state_body 2:')
 
     test=parser_init(string=
