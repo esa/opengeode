@@ -281,11 +281,10 @@ parameters_of_sort
         ;
 
 
-// procedure: missing the RETURNS statement
-// (TODO - but check new SDL2000 syntax that has no RETURNS token)
+// procedure
 procedure
         :       cif?
-                PROCEDURE procedure_id e1=end
+                PROCEDURE procedure_id (e1=end | SEMI)
                 fpar?
                 res=procedure_result?
                 (text_area | procedure)*
@@ -307,7 +306,7 @@ procedure_result
 fpar
         :       FPAR formal_variable_param
                 (',' formal_variable_param)*
-                end?
+                end
         ->      ^(FPAR formal_variable_param+)
         ;
 
@@ -481,7 +480,7 @@ floating_label
 state
         :       cif?
                 hyperlink?
-                STATE statelist e=end
+                STATE statelist (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
         ->      ^(STATE cif? hyperlink? $e? statelist state_part*)
@@ -601,6 +600,7 @@ composite_state_body
             | procedure
             | (composite_state_preamble) =>composite_state)*
            start* (state | floating_label)*
+           EOF?
         ;
 
 
