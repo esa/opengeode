@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.26 (05/2016)
+    - Fix parser issues with negative expressions
+
 1.3.25 (05/2016)
     - Fix reporting of syntax errors in state aggregations
 

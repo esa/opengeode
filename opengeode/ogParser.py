@@ -685,6 +685,9 @@ def check_type_compatibility(primary, type_ref, context):
             and (is_real(type_ref) or type_ref == NUMERICAL):
         return
 
+    elif isinstance(primary, ogAST.ExprNeg):
+        check_type_compatibility(primary.expr, type_ref, context)
+
     elif isinstance(primary, ogAST.PrimBoolean) and is_boolean(type_ref):
         return
 
@@ -1841,7 +1844,7 @@ def variables(root, ta_ast, context):
                 if basic.kind.startswith(('Integer', 'Real')):
                     check_range(basic, find_basic_type(def_value.exprType))
             except(AttributeError, TypeError, Warning) as err:
-                #print (traceback.format_exc())
+                print (traceback.format_exc())
                 errors.append('Types are incompatible in DCL assignment: '
                     'left (' +
                     expr.left.inputString + ', type= ' +
@@ -3228,11 +3231,13 @@ def cif(root):
     ''' Return the CIF coordinates '''
     result = []
     for child in root.getChildren():
+        neg = False
         if child.type == lexer.DASH:
-            val = -int(child.getChild(0).toString())
+            neg = True
         else:
             val = int(child.toString())
-        result.append(val)
+            val = -val if neg else val
+            result.append(val)
     return result
 
 

@@ -5,6 +5,7 @@ from opengeode.ogParser import parser_init, antlr3, sdl92Parser
 # return a string corresponding to a token number:
 token = lambda num: sdl92Parser.tokenNames[num]
 
+
 def test_composite_state_body_1():
     ''' Detect the syntax error (missing SEMI after "procedure entry") '''
     test = parser_init(string=
