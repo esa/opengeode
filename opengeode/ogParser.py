@@ -1844,7 +1844,7 @@ def variables(root, ta_ast, context):
                 if basic.kind.startswith(('Integer', 'Real')):
                     check_range(basic, find_basic_type(def_value.exprType))
             except(AttributeError, TypeError, Warning) as err:
-                print (traceback.format_exc())
+                #print (traceback.format_exc())
                 errors.append('Types are incompatible in DCL assignment: '
                     'left (' +
                     expr.left.inputString + ', type= ' +
