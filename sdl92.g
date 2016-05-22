@@ -1309,7 +1309,7 @@ end
 
 cif
         :       cif_decl symbolname
-                L_PAREN x=INT COMMA y=INT R_PAREN
+                L_PAREN x=signed COMMA y=signed R_PAREN
                 COMMA
                 L_PAREN width=INT COMMA height=INT R_PAREN
                 cif_end
@@ -1594,9 +1594,12 @@ ALPHA
 
 
 INT
-        :       DASH? ( '0' | ('1'..'9') ('0'..'9')*)
+        :        '0' | ('1'..'9') ('0'..'9')*
         ;
 
+signed
+        :       DASH? INT
+        ;
 
 fragment
 DIGITS

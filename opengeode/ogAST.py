@@ -50,6 +50,8 @@ class Expression(object):
         self.charPositionInLine = charPositionInLine
         # Binary expressions have two sides
         self.right = self.left = None
+        # Unary expressions are stored in "expr"
+        self.expr = None
 
         # exprType is an ASN.1 type (as exported by asn1scc)
         self.exprType = None
@@ -134,6 +136,11 @@ class ExprNot(Expression):
 
 class ExprNeg(Expression):
     operand = '-'
+
+    @property
+    def is_raw(self):
+        ''' Redefine is_raw - check the actual element '''
+        return self.expr.is_raw
 
 
 class ExprAssign(Expression):
