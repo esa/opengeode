@@ -282,7 +282,7 @@ class Signalroute(Connection):
         self.label_out = SignalList(parent=self)
         if not Signalroute.in_sig:
             # keep at class level as long as only one process is supported
-            # when copy-pasting a process the challel in/out signal lists
+            # when copy-pasting a process the channel in/out signal lists
             # are not parsed. Workaround is to keep the list "global"
             # to allow a copy of both process and channel
             # Needed for the image exporter, that copies the scene to a
