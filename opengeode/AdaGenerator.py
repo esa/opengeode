@@ -834,7 +834,8 @@ package {process_name} is'''.format(process_name=process_name,
                 u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
 
     if simu:
-        with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
+        with open(u'{}_interface.aadl'
+                  .format(process_name.lower()), 'w') as aadl:
             aadl.write(u'\n'.join(minicv).encode('latin1'))
         script = '{}_simu.sh'.format(process_name.lower())
         with open(script, 'w') as bash_script:
