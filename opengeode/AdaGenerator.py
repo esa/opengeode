@@ -178,7 +178,7 @@ mkdir -p {pr}_simu
 cp {pr_path} {asn1} {pr}_simu
 cd {pr}_simu
 opengeode {pr_names} --shared
-cat {uniq} >> dataview-uniq.asn '''.format(pr=process_name,
+cat {uniq} >> dataview-uniq.asn '''.format(pr=process_name.lower(),
                                            asn1=asn1_filenames,
                                            pr_path=pr_path,
                                            uniq=asn1_uniq or '/dev/null',
@@ -201,7 +201,7 @@ asn2dataModel -toPython dataview-uniq.asn
 make -f Makefile.python
 echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
 LD_LIBRARY_PATH=. opengeode-simulator
-'''.format(pr=process_name,
+'''.format(pr=process_name.lower(),
            asn1_files=asn1_filenames,
            asn1_mod=' '.join(asn1_modules))
 
@@ -780,9 +780,9 @@ package {process_name} is'''.format(process_name=process_name,
                 if statename in each.mapping.viewkeys():
                     taste_template.append(u'{first}if trId = -1 and '
                             u'{ctxt}.state = {s1} and '
-                            u'{ctxt}.{s2}{sep}state = {s3} then'
+                            u'{ctxt}.{s2}{unisep}state = {s3} then'
                             .format(ctxt=LPREFIX, s1=agg_name,
-                                s2=each.statename, sep=UNICODE_SEP,
+                                s2=each.statename, unisep=UNICODE_SEP,
                                 s3=statename, first='els' if done else ''))
                     for provided_clause in cs_item:
                         trId = process.transitions.index\
@@ -796,7 +796,9 @@ package {process_name} is'''.format(process_name=process_name,
                     taste_template.append(u'end if;')
                     sep = 'if '
                     break
+        extra_if = False
         for statename in process.cs_mapping.viewkeys() - done:
+            extra_if = True
             cs_item = process.cs_mapping[statename]
             taste_template.append(u'{first}if trId = -1 and {}.state = {} then'
                     .format(LPREFIX, statename, first='els' if done else ''))
@@ -808,7 +810,8 @@ package {process_name} is'''.format(process_name=process_name,
                 taste_template.extend(code)
         if process.cs_mapping:
             taste_template.append(u'end if;')
-            taste_template.append(u'end if;')
+            if extra_if:
+                taste_template.append(u'end if;')
 
         taste_template.append('end loop;')
         taste_template.append('end runTransition;')
@@ -831,9 +834,10 @@ package {process_name} is'''.format(process_name=process_name,
                 u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
 
     if simu:
-        with open(u'{}_interface.aadl'.format(process_name), 'w') as aadl:
+        with open(u'{}_interface.aadl'
+                  .format(process_name.lower()), 'w') as aadl:
             aadl.write(u'\n'.join(minicv).encode('latin1'))
-        script = '{}_simu.sh'.format(process_name)
+        script = '{}_simu.sh'.format(process_name.lower())
         with open(script, 'w') as bash_script:
             bash_script.write(simu_script)
         os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
