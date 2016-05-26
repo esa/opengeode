@@ -3,7 +3,8 @@ BEGIN
 
 MyChoice ::= CHOICE {
  a SEQUENCE {},
- b SEQUENCE {c SEQUENCE {}, d BOOLEAN}
+ b SEQUENCE (SIZE (2)) OF SEQUENCE {},
+ c SEQUENCE {c BOOLEAN, d SEQUENCE {}}
 }
 
 END
