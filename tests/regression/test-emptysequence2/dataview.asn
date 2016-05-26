@@ -1,0 +1,10 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+MyChoice ::= CHOICE {
+ a SEQUENCE {},
+ b SEQUENCE {c SEQUENCE {}, d BOOLEAN}
+}
+
+END
+
