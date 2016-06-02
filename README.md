@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.3.28 (06/2016)
+    - Excluded states (with *(statelist) ) were case sensitive
+
 1.3.27 (05/2016)
     - Fix bug in Ada backend when using continous signals
     - Better handling of simulation script

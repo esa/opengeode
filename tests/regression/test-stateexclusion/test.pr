@@ -1,0 +1,63 @@
+SYSTEM test;
+    /* CIF TEXT (164, 303), (356, 140) */
+    -- Text area for declarations and comments
+
+use datamodel comment 'dataview.asn';
+signal go;
+signal go2;
+
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO test WITH go,
+go2;
+    ENDCHANNEL;
+    BLOCK test;
+        SIGNALROUTE r
+            FROM ENV TO test WITH go,
+go2;
+        CONNECT c AND r;
+        /* CIF PROCESS (202, 142), (150, 75) */
+        PROCESS test;
+            /* CIF TEXT (342, 419), (450, 140) */
+            -- Check that using star in a state with exclusion
+-- works well, indepently from the casing. Same
+-- for input.
+
+
+dcl blah mychoice;
+            /* CIF ENDTEXT */
+            /* CIF START (106, 48), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (106, 98), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (613, 114), (78, 38) */
+            STATE Hello;
+                /* CIF INPUT (595, 172), (113, 35) */
+                INPUT go2;
+                    /* CIF NEXTSTATE (617, 222), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+            /* CIF STATE (106, 98), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (96, 153), (103, 35) */
+                INPUT go;
+                    /* CIF NEXTSTATE (112, 203), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+            /* CIF STATE (425, 81), (146, 35) */
+            STATE *(wait, hEllo);
+                /* CIF INPUT (441, 136), (113, 35) */
+                INPUT go2;
+                    /* CIF NEXTSTATE (463, 186), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+            /* CIF STATE (254, 82), (145, 35) */
+            STATE *(WAIT, Hello);
+                /* CIF INPUT (275, 137), (103, 35) */
+                INPUT go;
+                    /* CIF NEXTSTATE (291, 187), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+        ENDPROCESS test;
+    ENDBLOCK;
+ENDSYSTEM;

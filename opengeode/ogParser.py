@@ -3013,7 +3013,7 @@ def state(root, parent, context):
             state_def.inputString = get_input_string(child)
             state_def.line = child.getLine()
             state_def.charPositionInLine = child.getCharPositionInLine()
-            exceptions = [c.toString() for c in child.getChildren()]
+            exceptions = [c.toString().lower() for c in child.getChildren()]
             for st in context.mapping:
                 if st not in exceptions + ['START']:
                     state_def.statelist.append(st)
