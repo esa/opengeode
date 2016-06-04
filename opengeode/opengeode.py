@@ -71,7 +71,7 @@ import CGenerator
 
 # Enable mypy type checking
 try:
-    from typing import List, Union, Dict, Set
+    from typing import List, Union, Dict, Set, Any, Tuple
 except ImportError:
     pass
 
