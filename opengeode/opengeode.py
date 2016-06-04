@@ -69,6 +69,12 @@ import Helper
 import Pr
 import CGenerator
 
+# Enable mypy type checking
+try:
+    from typing import List, Union, Dict, Set
+except ImportError:
+    pass
+
 try:
     import stringtemplate3  # NOQA
 except ImportError:
@@ -112,7 +118,7 @@ MODULES = [
     TextInteraction,
     Connectors,
     CGenerator,
-]
+] # type: List[module]
 
 try:
     import LlvmGenerator
@@ -2094,6 +2100,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
 
     def vi_command(self):
+        # type: () -> None
         '''
             Process a vi command as entered in the Vi command line
             Supported commands:
@@ -2131,7 +2138,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
     # pylint: disable=C0103
     def keyPressEvent(self, key_event):
-        ''' Handle keyboard: Statechart rendering '''
+        ''' Handle keyboard: Enable the vi command line '''
         if key_event.key() == Qt.Key_Colon:
             self.vi_bar.show()
             self.vi_bar.setFocus()
@@ -2156,6 +2163,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.scene.undo_stack.clear()
         LOG.debug('Bye bye!')
         super(OG_MainWindow, self).closeEvent(event)
+
 
 class FilterEvent(QtCore.QObject):
     def eventFilter(self, obj, event):
@@ -2274,7 +2282,7 @@ def generate(process, options):
 def export(ast, options):
     ''' Export process '''
     # Qt must be initialized before using SDL_Scene
-    init_qt()
+    _ = init_qt()
 
     # Initialize the clipboard
     Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
