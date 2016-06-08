@@ -27,7 +27,9 @@ import random
 from functools import partial
 from itertools import chain
 
-# Added to please py2exe - NOQA makes flake8 ignore the following lines:
+# To freeze the application on Windows, all modules must be imported even
+# when they are not directly used from this module (py2exe bug)
+# NOQA makes flake8 ignore locally-ununsed modules
 # pylint: disable=W0611
 import enum  # NOQA
 import string  # NOQA
@@ -49,12 +51,30 @@ import undoCommands  # NOQA
 import sdl92Lexer  # NOQA
 import sdl92Parser  # NOQA
 import genericSymbols  # NOQA
-import sdlSymbols
 import PySide.QtXml  # NOQA
 import singledispatch  # NOQA
 import Asn1scc  # NOQA
 import Connectors  # NOQA
 import TextInteraction  # NOQA
+import pygraphviz  # NOQA
+import sdlSymbols
+import AdaGenerator
+import ogParser
+import ogAST
+import Renderer
+import Clipboard
+import Statechart
+import Lander
+import Helper
+import Pr
+import CGenerator
+
+# Enable mypy type checking
+try:
+    from typing import List, Union, Dict, Set, Any, Tuple
+except ImportError:
+    pass
+
 try:
     import stringtemplate3  # NOQA
 except ImportError:
@@ -78,46 +98,43 @@ from TextInteraction import EditableText
 # Icons and png files generated from the resource file:
 import icons  # NOQA
 
+# Logging: ist of properly loaded modules that will use it
 LOG = logging.getLogger(__name__)
-
-import AdaGenerator
-import ogParser
-import ogAST
-import Renderer
-import Clipboard
-import Statechart
-import Lander
-import Helper
-import Pr
-
-
-# Try importing graphviz for the SDL to Statechart converter
-# This is optional, as graphviz installation can not be easily
-# automated on some platforms by opengeode installation scripts.
-try:
-    import pygraphviz  # NOQA
-    graphviz = True
-except ImportError:
-    graphviz = False
-
-try:
-    import CGenerator
-except ImportError:
-    CGenerator = None
+MODULES = [
+    sdlSymbols,
+    genericSymbols,
+    ogAST,
+    ogParser,
+    Lander,
+    AdaGenerator,
+    undoCommands,
+    Renderer,
+    Clipboard,
+    Statechart,
+    Helper,
+    Asn1scc,
+    Connectors,
+    Pr,
+    TextInteraction,
+    Connectors,
+    CGenerator,
+] # type: List[module]
 
 try:
     import LlvmGenerator
+    MODULES.append(LlvmGenerator)
 except ImportError:
-    LlvmGenerator = None
+    pass
 
 try:
     import StgBackend
+    MODULES.append(StgBackend)
 except ImportError:
-    StgBackend = False
+    pass
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.3.27'
+__version__ = '1.3.29'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2001,10 +2018,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 break
 
 
-        if graphviz:
-            self.statechart_view = self.findChild(SDL_View, 'statechart_view')
-            self.statechart_scene = SDL_Scene(context='statechart')
-            self.statechart_view.setScene(self.statechart_scene)
+        self.statechart_view = self.findChild(SDL_View, 'statechart_view')
+        self.statechart_scene = SDL_Scene(context='statechart')
+        self.statechart_view.setScene(self.statechart_scene)
 
         # Set up the dock area to display the ASN.1 Data model
         #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
@@ -2045,7 +2061,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         ''' Signal sent by Qt when the MDI area tab changes
         Here we check if the Statechart tab is selected, and we draw/refresh
         the statechart automatically in that case '''
-        if mdi == self.statechart_mdi and graphviz:
+        if mdi == self.statechart_mdi:
             if self.view.scene_stack:
                 scene = self.view.scene_stack[0][0]
             else:
@@ -2084,6 +2100,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
 
     def vi_command(self):
+        # type: () -> None
         '''
             Process a vi command as entered in the Vi command line
             Supported commands:
@@ -2121,7 +2138,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
     # pylint: disable=C0103
     def keyPressEvent(self, key_event):
-        ''' Handle keyboard: Statechart rendering '''
+        ''' Handle keyboard: Enable the vi command line '''
         if key_event.key() == Qt.Key_Colon:
             self.vi_bar.show()
             self.vi_bar.setFocus()
@@ -2146,6 +2163,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.scene.undo_stack.clear()
         LOG.debug('Bye bye!')
         super(OG_MainWindow, self).closeEvent(event)
+
 
 class FilterEvent(QtCore.QObject):
     def eventFilter(self, obj, event):
@@ -2203,34 +2221,9 @@ def init_logging(options):
 
     # Set log level for all libraries
     LOG.setLevel(level)
-    modules = (
-        sdlSymbols,
-        genericSymbols,
-        ogAST,
-        ogParser,
-        Lander,
-        AdaGenerator,
-        undoCommands,
-        Renderer,
-        Clipboard,
-        Statechart,
-        Helper,
-        Asn1scc,
-        Connectors,
-        Pr,
-        TextInteraction,
-        Connectors,
-        LlvmGenerator,
-        CGenerator,
-        StgBackend
-    )
-    for each in modules:
-        try:
-            each.LOG.addHandler(handler_console)
-            each.LOG.setLevel(level)
-        except AttributeError as err:
-            # Discard unloaded modules (e.g. if LLVM is missing on target)
-            LOG.debug(str(err))
+    for each in MODULES:
+        each.LOG.addHandler(handler_console)
+        each.LOG.setLevel(level)
 
 
 def parse(files):
@@ -2289,7 +2282,7 @@ def generate(process, options):
 def export(ast, options):
     ''' Export process '''
     # Qt must be initialized before using SDL_Scene
-    init_qt()
+    _ = init_qt()
 
     # Initialize the clipboard
     Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
@@ -2335,7 +2328,7 @@ def export(ast, options):
             LOG.info('Saving {ext} file: {name}.{ext}'
                      .format(ext=doc_fmt, name=name))
             diagram.export_img(name, doc_format=doc_fmt, split=options.split)
-        if diagram.context == 'block' and graphviz:
+        if diagram.context == 'block':
             # Also save the statechart view of the current scene
             LOG.info('Saving statechart sc_{}.png'.format(process.processName))
             sc_scene = SDL_Scene(context='statechart')

@@ -269,7 +269,7 @@ LD_LIBRARY_PATH=. opengeode-simulator
                                 sort=type_name(var_type),
                                 default=u' := ' + dstr if def_value else u''))
 
-    process_level_decl.append('end record;'.format(LPREFIX))
+    process_level_decl.append('end record;')
     process_level_decl.append('{ctxt}: {ctxt}_Ty;'.format(ctxt=LPREFIX))
 
 

@@ -1,0 +1,64 @@
+SYSTEM test;
+    /* CIF TEXT (164, 303), (356, 219) */
+    -- Text area for declarations and comments
+
+use datamodel comment 'dataview.asn';
+signal seqof1(MySeqOf);
+signal seqof2(MySeqOf2);
+signal seqof3(MySeqOf3);
+signal res1(MySeqof);
+signal res2(MySeqof2);
+signal res3(MySeqof3);
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO test WITH seqof1,
+seqof2,
+seqof3;
+        FROM test TO ENV WITH res1,
+res2,
+res3;
+    ENDCHANNEL;
+    BLOCK test;
+        SIGNALROUTE r
+            FROM ENV TO test WITH seqof1,
+seqof2,
+seqof3;
+            FROM test TO ENV WITH res1,
+res2,
+res3;
+        CONNECT c AND r;
+        /* CIF PROCESS (202, 142), (150, 75) */
+        PROCESS test;
+            /* CIF TEXT (435, 258), (287, 140) */
+            dcl s1 MySeqof,
+       s2 MySeqOf2,
+       s3 MySeqOf3;
+            /* CIF ENDTEXT */
+            /* CIF START (198, 56), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (198, 106), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (198, 106), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (-21, 161), (123, 35) */
+                INPUT seqof1(s1);
+                    /* CIF OUTPUT (-11, 211), (103, 38) */
+                    OUTPUT res1(s1);
+                    /* CIF NEXTSTATE (5, 267), (70, 35) */
+                    NEXTSTATE -;
+                /* CIF INPUT (145, 161), (123, 35) */
+                INPUT seqof2(s2);
+                    /* CIF OUTPUT (155, 211), (103, 38) */
+                    OUTPUT res2(s2);
+                    /* CIF NEXTSTATE (171, 264), (70, 35) */
+                    NEXTSTATE wait;
+                /* CIF INPUT (311, 161), (123, 35) */
+                INPUT seqof3(s3);
+                    /* CIF OUTPUT (321, 211), (103, 38) */
+                    OUTPUT res3(s3);
+                    /* CIF NEXTSTATE (337, 264), (70, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS test;
+    ENDBLOCK;
+ENDSYSTEM;

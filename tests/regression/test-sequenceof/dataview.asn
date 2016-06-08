@@ -1,0 +1,16 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+MySeqOf ::= SEQUENCE (SIZE (0..5)) OF BOOLEAN
+
+MySeqOf2 ::= SEQUENCE (SIZE (0..2)) OF MySeqOf
+
+MySeq ::= SEQUENCE {
+  a BOOLEAN,
+  b INTEGER (0..255)
+}
+
+MySeqOf3 ::= SEQUENCE (SIZE (3)) OF MySeq
+
+END
+

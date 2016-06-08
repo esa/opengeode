@@ -68,17 +68,17 @@ EXPR_NODE = {
     lexer.NOT: ogAST.ExprNot,
     lexer.NEG: ogAST.ExprNeg,
     lexer.PRIMARY: ogAST.Primary,
-}
+} # type: Dict[int, ogAST.Expression]
 
 # Insert current path in the search list for importing modules
 sys.path.insert(0, '.')
 
-DV = None
+DV = None  # type: module
 
 # Code generator backends may need some intemediate variables to process
 # expressions. For convenience and to avoid multiple pass parsing, the parser
 # tries to guess where they may be useful, and adds a hint in the AST.
-TMPVAR = 0
+TMPVAR = 0  # type: int
 
 # ASN.1 types used to support the signature of special operators
 INTEGER = type('IntegerType', (object,), {'kind': 'IntegerType',
@@ -150,6 +150,7 @@ types = lambda: getattr(DV, 'types', {})
 
 
 def set_global_DV(asn1_filenames):
+    # type: (List[str]) -> None
     ''' Call ASN.1 parser and set the global dataview AST entry (DV) '''
     global DV
     if '--toC' in sys.argv:
@@ -171,6 +172,7 @@ def set_global_DV(asn1_filenames):
 
 
 def substring_range(substring):
+    # type: (ogAST.PrimSubstring) -> Tuple[str, str]
     ''' Return the range of a substring '''
     left, right = substring.value[1]['substring']
     left_bty = find_basic_type(left.exprType)
@@ -179,6 +181,7 @@ def substring_range(substring):
 
 
 def is_integer(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is an Integer Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
@@ -187,11 +190,13 @@ def is_integer(ty):
 
 
 def is_real(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Real Type '''
     return find_basic_type(ty).kind == 'RealType'
 
 
 def is_numeric(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Numeric Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
@@ -202,16 +207,19 @@ def is_numeric(ty):
 
 
 def is_boolean(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Boolean Type '''
     return find_basic_type(ty).kind == 'BooleanType'
 
 
 def is_null(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a NULL Type '''
     return find_basic_type(ty).kind == 'NullType'
 
 
 def is_string(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty).kind in (
         'StandardStringType',
@@ -221,31 +229,37 @@ def is_string(ty):
 
 
 def is_sequenceof(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a SequenceOf Type '''
     return find_basic_type(ty).kind == 'SequenceOfType'
 
 
 def is_list(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a List Type '''
     return is_string(ty) or is_sequenceof(ty) or ty == LIST
 
 
 def is_enumerated(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is an Enumerated Type '''
     return find_basic_type(ty).kind == 'EnumeratedType' or ty == ENUMERATED
 
 
 def is_sequence(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Sequence Type '''
     return find_basic_type(ty).kind == 'SequenceType'
 
 
 def is_choice(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Choice Type '''
     return find_basic_type(ty).kind == 'ChoiceType' or ty == CHOICE
 
 
 def is_timer(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Timer Type '''
     return find_basic_type(ty).kind == 'TimerType'
 
@@ -394,16 +408,19 @@ def get_input_string(root):
 
 
 def error(root, msg):
+    # type: (Any, str) -> str
     ''' Return an error message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
 
 
 def warning(root, msg):
+    # type: (Any, str) -> str
     ''' Return a warning message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
 
 
 def tmp():
+    # type : () -> int
     ''' Return a temporary variable name '''
     global TMPVAR
     varname = TMPVAR
@@ -481,7 +498,7 @@ def check_call(name, params, context):
                 continue
             raise TypeError('Type {} not supported in call to {}'.
                 format(type_name(p.exprType), name))
-        return
+        return UNKNOWN_TYPE
 
     # (1) Find the signature of the function
     # signature will hold the list of parameters for the function
@@ -3013,7 +3030,7 @@ def state(root, parent, context):
             state_def.inputString = get_input_string(child)
             state_def.line = child.getLine()
             state_def.charPositionInLine = child.getCharPositionInLine()
-            exceptions = [c.toString() for c in child.getChildren()]
+            exceptions = [c.toString().lower() for c in child.getChildren()]
             for st in context.mapping:
                 if st not in exceptions + ['START']:
                     state_def.statelist.append(st)
