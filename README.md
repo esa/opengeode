@@ -142,6 +142,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.4.0 (06/2016)
+    - Continuous states can check the presence of messages in the input queue
+      to respect the SDL semantics
+
 1.3.28 (06/2016)
     - Excluded states (with *(statelist) ) were case sensitive
 

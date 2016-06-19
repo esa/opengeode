@@ -248,6 +248,8 @@ LD_LIBRARY_PATH=. opengeode-simulator
     if full_statelist:
         process_level_decl.append('state : States;')
 
+    process_level_decl.append('initDone : Boolean := False;')
+
     # State aggregation: add list of substates (XXX to be added in C generator)
     for substates in aggregates.viewvalues():
         for each in substates:
@@ -365,7 +367,7 @@ package {process_name} is'''.format(process_name=process_name,
                                   .format(name=process_name, ctxt=LPREFIX))
         set_state_decl = "procedure set_state(new_state: chars_ptr)"
         ads_template.append("{};".format(set_state_decl))
-        ads_template.append('pragma export(C, set_state, "_set_state");')
+        ads_template.append('pragma Export(C, set_state, "_set_state");')
         dll_api.append("{} is".format(set_state_decl))
         dll_api.append("begin")
         dll_api.append("{}.state := States'Value(Value(new_state));"
@@ -403,7 +405,7 @@ package {process_name} is'''.format(process_name=process_name,
             setter_decl = "procedure dll_set_l_{name}(value: access {sort})"\
                           .format(name=var_name, sort=type_name(var_type))
             ads_template.append('{};'.format(setter_decl))
-            ads_template.append('pragma export(C, dll_set_l_{name},'
+            ads_template.append('pragma Export(C, dll_set_l_{name},'
                                 ' "_set_{name}");'.format(name=var_name))
             dll_api.append('{} is'.format(setter_decl))
             dll_api.append('begin')
@@ -449,7 +451,7 @@ package {process_name} is'''.format(process_name=process_name,
         # Add declaration of the provided interface in the .ads file
         ads_template.append(u'--  Provided interface "{}"'.format(signame))
         ads_template.append(pi_header + ';')
-        ads_template.append(u'pragma export(C, {name}, "{proc}_{name}");'
+        ads_template.append(u'pragma Export(C, {name}, "{proc}_{name}");'
                              .format(name=signame, proc=process_name))
 
         if simu:
@@ -726,6 +728,9 @@ package {process_name} is'''.format(process_name=process_name,
     if process.transitions:
         taste_template.append('procedure runTransition(Id: Integer) is')
         taste_template.append('trId : Integer := Id;')
+        if process.cs_mapping:
+            taste_template.append(
+                              'msgPending : aliased asn1SccT_Boolean := True;')
 
         # Declare the local variables needed by the transitions in the template
         taste_template.extend(set(local_decl_transitions))
@@ -766,10 +771,13 @@ package {process_name} is'''.format(process_name=process_name,
         # XXX add to C backend
         if process.cs_mapping:
             taste_template.append('--  Process continuous signals')
+            taste_template.append('if ctxt.initDone then')
+            taste_template.append("Check_Queue(msgPending'access);")
+            taste_template.append('end if;')
         else:
             taste_template.append('null;')
 
-        # Process the continuous states in state aggregations first
+        # Process the continuous signals in state aggregations first
         done = []
         sep = 'if '
         last = ''
@@ -778,7 +786,8 @@ package {process_name} is'''.format(process_name=process_name,
             (statename, cs_item), (agg_name, substates) = cs, agg
             for each in substates:
                 if statename in each.mapping.viewkeys():
-                    taste_template.append(u'{first}if trId = -1 and '
+                    taste_template.append(u'{first}if not msgPending and '
+                            u'trId = -1 and '
                             u'{ctxt}.state = {s1} and '
                             u'{ctxt}.{s2}{unisep}state = {s3} then'
                             .format(ctxt=LPREFIX, s1=agg_name,
@@ -800,7 +809,8 @@ package {process_name} is'''.format(process_name=process_name,
         for statename in process.cs_mapping.viewkeys() - done:
             extra_if = True
             cs_item = process.cs_mapping[statename]
-            taste_template.append(u'{first}if trId = -1 and {}.state = {} then'
+            taste_template.append(u'{first}if not msgPending and '
+                    u'trId = -1 and {}.state = {} then'
                     .format(LPREFIX, statename, first='els' if done else ''))
             for provided_clause in cs_item:
                 trId = process.transitions.index(provided_clause.transition)
@@ -814,6 +824,7 @@ package {process_name} is'''.format(process_name=process_name,
                 taste_template.append(u'end if;')
 
         taste_template.append('end loop;')
+        taste_template.append('ctxt.initDone := True;')
         taste_template.append('end runTransition;')
         taste_template.append('\n')
 
@@ -2304,7 +2315,7 @@ def _inner_procedure(proc, **kwargs):
     local_decl.append(pi_header + ';')
     # Remote procedures need to be exported with a C calling convention
     if proc.exported and not proc.external:
-        local_decl.append(u'pragma export'
+        local_decl.append(u'pragma Export'
                           u'(C, p{sep}{proc_name}, "_{proc_name}");'
                         .format(sep=UNICODE_SEP, proc_name=proc.inputString))
 
