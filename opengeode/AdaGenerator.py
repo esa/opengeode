@@ -730,7 +730,7 @@ package {process_name} is'''.format(process_name=process_name,
         taste_template.append('trId : Integer := Id;')
         if process.cs_mapping:
             taste_template.append(
-                              'msgPending : aliased asn1SccT_Boolean := True;')
+                              'msgPending : aliased Asn1Boolean := True;')
 
         # Declare the local variables needed by the transitions in the template
         taste_template.extend(set(local_decl_transitions))
@@ -774,6 +774,11 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append('if ctxt.initDone then')
             taste_template.append("Check_Queue(msgPending'access);")
             taste_template.append('end if;')
+            ads_template.append(
+                    u'procedure Check_Queue(res: access Asn1Boolean);')
+            ads_template.append(
+                u'pragma import(C, Check_Queue, "{proc}_check_queue");'
+                .format(proc=process_name))
         else:
             taste_template.append('null;')
 
@@ -802,13 +807,12 @@ package {process_name} is'''.format(process_name=process_name,
                         sep='elsif '
                         taste_template.extend(code)
                     done.append(statename)
-                    taste_template.append(u'end if;')
+                    taste_template.append(u'end if; -- inner')  # inner if
                     sep = 'if '
                     break
-        extra_if = False
         for statename in process.cs_mapping.viewkeys() - done:
-            extra_if = True
             cs_item = process.cs_mapping[statename]
+            taste_template.append(u'-- Now what')
             taste_template.append(u'{first}if not msgPending and '
                     u'trId = -1 and {}.state = {} then'
                     .format(LPREFIX, statename, first='els' if done else ''))
@@ -818,13 +822,12 @@ package {process_name} is'''.format(process_name=process_name,
                                      branch_to=trId, sep=sep, last=last)
                 sep='elsif '
                 taste_template.extend(code)
-        if process.cs_mapping:
-            taste_template.append(u'end if;')
-            if extra_if:
-                taste_template.append(u'end if;')
+            taste_template.append(u'end if;') # inner if
+            taste_template.append(u'end if;') # current state
+            sep = 'if '
 
         taste_template.append('end loop;')
-        taste_template.append('ctxt.initDone := True;')
+        taste_template.append('{ctxt}.initDone := True;'.format(ctxt=LPREFIX))
         taste_template.append('end runTransition;')
         taste_template.append('\n')
 
