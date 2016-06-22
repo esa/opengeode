@@ -2863,6 +2863,7 @@ def continuous_signal(root, parent, context):
         elif child.type == lexer.INT:
             # Priority
             i.priority = int(child.text)
+            i.inputString += u';\npriority {}'.format(get_input_string(child))
         elif child.type == lexer.TRANSITION:
             trans, err, warn = transition(child, parent=i, context=context)
             errors.extend(err)
