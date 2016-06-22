@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.4.2 (06/2016)
+    - Reload / render properly priority of continuous signals
+
 1.4.1 (06/2016)
     - Continuous states can check the presence of messages in the input queue
       to respect the SDL semantics

@@ -123,7 +123,7 @@ signal telemetry(tm_type);
                     /* CIF STATE (443, 507), (153, 35) */
                     STATE exception_handler;
                     ENDSTATE;
-                    /* CIF STATE (476, 0), (113, 35) */
+                    /* CIF STATE (370, 0), (113, 35) */
                     STATE tc_router;
                     ENDSTATE;
                     /* CIF STATE (381, 338), (169, 35) */
@@ -143,7 +143,7 @@ signal telemetry(tm_type);
                     STATE Inside_safe;
                     ENDSTATE;
             ENDSUBSTRUCTURE;
-            /* CIF TEXT (0, 310), (327, 208) */
+            /* CIF TEXT (665, 310), (327, 208) */
             -- This system tests the provided clause
 -- (continuous signal)
 
@@ -166,11 +166,12 @@ timer timer1, timer2;
             ENDSTATE;
             /* CIF STATE (485, 344), (99, 35) */
             STATE wait;
-                /* CIF PROVIDED (495, 399), (77, 35) */
+                /* CIF PROVIDED (485, 399), (97, 38) */
                 PROVIDED failure;
-                    /* CIF PROCEDURECALL (401, 449), (264, 35) */
+priority 1;
+                    /* CIF PROCEDURECALL (401, 455), (264, 35) */
                     CALL writeln('Going to SAFE mode');
-                    /* CIF NEXTSTATE (498, 499), (70, 35) */
+                    /* CIF NEXTSTATE (498, 505), (70, 35) */
                     NEXTSTATE safe;
             ENDSTATE;
         ENDPROCESS og;
