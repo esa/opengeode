@@ -4288,7 +4288,8 @@ def pr_file(root):
     # and data typess references.
     processes, uses, systems = [], [], []
     for child in root.getChildren():
-        ast.pr_files.add(node_filename(child))
+        if node_filename(child) is not None:
+            ast.pr_files.add(node_filename(child))
         if child.type == lexer.PROCESS:
             processes.append(child)
         elif child.type == lexer.USE:

@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.4.3 (06/2016)
+    - Add support for priority of continuous signals in Ada code generator
+
 1.4.2 (06/2016)
     - Reload / render properly priority of continuous signals
 

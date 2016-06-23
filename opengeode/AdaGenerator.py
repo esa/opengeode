@@ -166,7 +166,7 @@ def _process(process, simu=False, **kwargs):
     asn1_filenames = ' '.join(parent.asn1_filenames)
     asn1_uniq = ' '.join(each for each in parent.asn1_filenames
                          if each != 'dataview-uniq.asn')
-    pr_path = ' '.join(parent.pr_files)
+    pr_path = ' '.join(parent.pr_files) if None not in parent.pr_files else ''
     pr_names = ' '.join(
                       os.path.basename(pr_file) for pr_file in parent.pr_files)
     asn1_modules = (name.lower().replace('-', '_') + '.o'
@@ -798,7 +798,15 @@ package {process_name} is'''.format(process_name=process_name,
                             .format(ctxt=LPREFIX, s1=agg_name,
                                 s2=each.statename, unisep=UNICODE_SEP,
                                 s3=statename, first='els' if done else ''))
-                    for provided_clause in cs_item:
+                    # Change priority 0 (no priority set) to lowest priority
+                    lowest_priority = max(item.priority for item in cs_item)
+                    for each in cs_item:
+                        if each.priority == 0:
+                            each.priority = lowest_priority + 1
+                    for provided_clause in sorted(cs_item,
+                                                 key=lambda itm: itm.priority):
+                        taste_template.append(u'-- Priority {}'
+                                             .format(provided_clause.priority))
                         trId = process.transitions.index\
                                             (provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
@@ -816,7 +824,15 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'{first}if not msgPending and '
                     u'trId = -1 and {}.state = {} then'
                     .format(LPREFIX, statename, first='els' if done else ''))
-            for provided_clause in cs_item:
+            # Change priority 0 (no priority set) to lowest priority
+            lowest_priority = max(item.priority for item in cs_item)
+            for each in cs_item:
+                if each.priority == 0:
+                    each.priority = lowest_priority + 1
+            for provided_clause in sorted(cs_item,
+                                          key=lambda itm: itm.priority):
+                taste_template.append(u'-- Priority {}'
+                                      .format(provided_clause.priority))
                 trId = process.transitions.index(provided_clause.transition)
                 code, loc = generate(provided_clause.trigger,
                                      branch_to=trId, sep=sep, last=last)
