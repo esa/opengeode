@@ -14,18 +14,18 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def capture_ouput(stdout_to=None, stderr_to=None):
+def capture_output(stdout_to=None, stderr_to=None):
     """
-        Context manager that captures any printed ouput in the 'with' block.
+        Context manager that captures any printed output in the 'with' block.
 
         :Exemple:
 
-        >>> with capture_ouput() as (stdout, stderr):
+        >>> with capture_output() as (stdout, stderr):
         ...    print "hello",
         ...
         >>> print stdout.getvalue().upper()
         HELLO
-        >>> with capture_ouput() as (stdout, stderr):
+        >>> with capture_output() as (stdout, stderr):
             # doctest: +IGNORE_EXCEPTION_DETAIL
         ...    assert False
         ...
@@ -33,7 +33,7 @@ def capture_ouput(stdout_to=None, stderr_to=None):
         AssertionError
         >>> from tempfile import NamedTemporaryFile
         >>> f = NamedTemporaryFile(mode="rw+b")
-        >>> with capture_ouput(f) as (stdout, stderr):
+        >>> with capture_output(f) as (stdout, stderr):
         ...    print "hello",
         ...
         >>> print stdout.read()

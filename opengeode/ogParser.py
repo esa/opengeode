@@ -4374,7 +4374,7 @@ def add_to_ast(ast, filename=None, string=None):
         LOG.error('Parser error: ' + str(err))
         raise
     # Use Sam & Max output capturer to get errors from ANTLR parser
-    with samnmax.capture_ouput() as (stdout, stderr):
+    with samnmax.capture_output() as (stdout, stderr):
         tree_rule_return_scope = parser.pr_file()
     for e in stderr:
         errors.append([e.strip()])
@@ -4470,7 +4470,7 @@ def parseSingleElement(elem='', string='', context=None):
     warnings = []
     t = None
     if parser:
-        with samnmax.capture_ouput() as (stdout, stderr):
+        with samnmax.capture_output() as (stdout, stderr):
             r = parser_ptr()
         for e in stderr:
             syntax_errors.append(e.strip())
