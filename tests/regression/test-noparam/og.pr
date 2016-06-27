@@ -1,0 +1,30 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (287, 188) */
+    -- Text area for declarations and comments
+
+signal dd;
+
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS og;
+            /* CIF START (155, 216), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (155, 266), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (155, 266), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (155, 321), (70, 35) */
+                INPUT dd;
+                    /* CIF NEXTSTATE (155, 371), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;

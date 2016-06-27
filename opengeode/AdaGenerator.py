@@ -319,7 +319,8 @@ LD_LIBRARY_PATH=. opengeode-simulator
         asn1_modules = '\n'.join(['with {dv};\nuse {dv};'.format(
             dv=dv.replace('-', '_'))
             for dv in process.asn1Modules])
-        asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
+        if process.asn1Modules:
+            asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
     except TypeError:
         asn1_modules = '--  No ASN.1 data types are used in this model'
     taste_template = ['''\
