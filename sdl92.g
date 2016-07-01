@@ -1112,14 +1112,14 @@ named_value
         :       ID expression
         ;
 
-
+/*
 primary_params
         :      '(' expression_list ')'
         ->     ^(PARAMS expression_list)
                | '!' literal_id
         ->     ^(FIELD_NAME literal_id)
         ;
-
+*/
 
 /* All cases are covered by the ground primary
    above (Except structure primary, but we favour ASN.1 notation)
@@ -1148,7 +1148,7 @@ structure_primary
 // Removed "qualifier" from the standard
 // (to be put later, but never used in practice)
 
-
+/*
 active_expression
         :       active_primary
         ;
@@ -1183,7 +1183,7 @@ timer_active_expression
 anyvalue_expression
         :       ANY '(' sort ')'
         ;
-
+*/
 
 sort    :       sort_id
         ->      ^(SORT sort_id)
@@ -1199,7 +1199,7 @@ type_inst
 syntype :       syntype_id
         ;
 
-
+/*
 import_expression
         :       IMPORT '(' remote_variable_id (',' destination)? ')'
         ;
@@ -1208,7 +1208,7 @@ import_expression
 view_expression
         :       VIEW '(' view_id (',' pid_expression)? ')'
         ;
-
+*/
 
 variable_access
         :       variable_id
@@ -1219,13 +1219,13 @@ operator_application
         :       operator_id '('active_expression_list ')'
         ;
 
-
+/*
 active_expression_list
         :       active_expression (',' expression_list)?
         ;
-/* |
-                ground_expression ',' active_expression_list;*/   // Will not work (recursion)
+// 	| ground_expression ',' active_expression_list;   // Will not work (recursion)
 
+*/
 
 //synonym :       ID; // synonym_id | external_synonym;
 
