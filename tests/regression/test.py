@@ -2,6 +2,7 @@
 import subprocess
 import sys
 import time
+import signal
 import os
 from functools import partial
 from multiprocessing import cpu_count
@@ -68,6 +69,8 @@ def summarize(results, elapsed):
 
 
 if __name__ == '__main__':
+    # Catch Ctrl-C to stop the app from the console
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     ret = main()
     sys.stdout.write('\033[0m\n')
     sys.stdout.flush()

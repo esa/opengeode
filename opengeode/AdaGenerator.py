@@ -580,13 +580,13 @@ package {process_name} is'''.format(process_name=process_name,
             # When generating a shared library, we need a callback mechanism
             ads_template.append(u'type {}_T is access procedure{};'
                                 .format(signal['name'], param_spec))
-            ads_template.append('pragma Convention(Convention => C,'
-                                ' Entity => {}_T);'.format(signal['name']))
-            ads_template.append('{sig} : {sig}_T;'
+            ads_template.append(u'pragma Convention(Convention => C,'
+                                u' Entity => {}_T);'.format(signal['name']))
+            ads_template.append(u'RI{sep}{sig} : {sig}_T;'
+                                .format(sep=UNICODE_SEP, sig=signal['name']))
+            ads_template.append(u'procedure Register_{sig}(Callback: {sig}_T);'
                                 .format(sig=signal['name']))
-            ads_template.append('procedure Register_{sig}(Callback: {sig}_T);'
-                                .format(sig=signal['name']))
-            ads_template.append('pragma Export(C, Register_{sig},'
+            ads_template.append(u'pragma Export(C, Register_{sig},'
                                 ' "register_{sig}");'
                                 .format(sig=signal['name']))
 
@@ -595,22 +595,30 @@ package {process_name} is'''.format(process_name=process_name,
                       'IN')] if 'type' in signal else []
             minicv.append(aadl_template(signal['name'], params, 'PI'))
 
-            taste_template.append('procedure Register_{sig}'
-                                  '(Callback:{sig}_T) is'
+            taste_template.append(u'procedure Register_{sig}'
+                                  u'(Callback:{sig}_T) is'
                                   .format(sig=signal['name']))
-            taste_template.append('begin')
-            taste_template.append('{} := Callback;'.format(signal['name']))
-            taste_template.append('end Register_{};'.format(signal['name']))
-            taste_template.append('')
+            taste_template.append(u'begin')
+            taste_template.append(u'RI{sep}{sig} := Callback;'
+                                  .format(sep=UNICODE_SEP, sig=signal['name']))
+            taste_template.append(u'end Register_{};'.format(signal['name']))
+            taste_template.append(u'')
         else:
-            ads_template.append(u'procedure {}{};'
-                                .format(signal['name'], param_spec))
-            ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
-                                .format(sig=signal['name'], proc=process_name))
+            ads_template.append(u'procedure RI{}{}{};'
+                                .format(UNICODE_SEP,
+                                        signal['name'],
+                                        param_spec))
+            ads_template.append(u'pragma import(C, RI{sep}{sig},'
+                                u' "{proc}_RI_{sig}");'
+                                .format(sep=UNICODE_SEP,
+                                        sig=signal['name'],
+                                        proc=process_name))
 
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
-        ri_header = u'procedure {sig_name}'.format(sig_name=proc.inputString)
+        ri_header = u'procedure RI{sep}{sig_name}'.format(
+                                                     sep=UNICODE_SEP,
+                                                     sig_name=proc.inputString)
         params = []
         params_spec = u""
         if simu:
@@ -633,27 +641,32 @@ package {process_name} is'''.format(process_name=process_name,
             # As for async TM, generate a callback mechanism
             ads_template.append(u"type {}_T is access procedure{};"
                                 .format(proc.inputString, params_spec))
-            ads_template.append('pragma Convention(Convention => C,'
-                                ' Entity => {}_T);'.format(proc.inputString))
-            ads_template.append('{sig} : {sig}_T;'
+            ads_template.append(u'pragma Convention(Convention => C,'
+                                u' Entity => {}_T);'.format(proc.inputString))
+            ads_template.append(u'RI{sep}{sig} : {sig}_T;'
+                                .format(sep=UNICODE_SEP, sig=proc.inputString))
+            ads_template.append(u'procedure Register_{sig}(Callback: {sig}_T);'
                                 .format(sig=proc.inputString))
-            ads_template.append('procedure Register_{sig}(Callback: {sig}_T);'
+            ads_template.append(u'pragma Export(C, Register_{sig},'
+                                u' "register_{sig}");'
                                 .format(sig=proc.inputString))
-            ads_template.append('pragma Export(C, Register_{sig},'
-                                ' "register_{sig}");'
-                                .format(sig=proc.inputString))
-            taste_template.append('procedure Register_{sig}'
+            taste_template.append(u'procedure Register_{sig}'
                                   '(Callback:{sig}_T) is'
                                   .format(sig=proc.inputString))
-            taste_template.append('begin')
-            taste_template.append('{} := Callback;'.format(proc.inputString))
-            taste_template.append('end Register_{};'.format(proc.inputString))
-            taste_template.append('')
+            taste_template.append(u'begin')
+            taste_template.append(u'RI{sep}{sig} := Callback;'
+                                  .format(sep=UNICODE_SEP,
+                                          sig=proc.inputString))
+            taste_template.append(u'end Register_{};'.format(proc.inputString))
+            taste_template.append(u'')
 
         else:
             ads_template.append(ri_header + u';')
-            ads_template.append(u'pragma import(C, {sig}, "{proc}_RI_{sig}");'
-                    .format(sig=proc.inputString, proc=process_name))
+            ads_template.append(u'pragma import(C, RI{sep}{sig},'
+                                u' "{proc}_RI_{sig}");'
+                                .format(sep=UNICODE_SEP,
+                                        sig=proc.inputString,
+                                        proc=process_name))
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
@@ -662,7 +675,7 @@ package {process_name} is'''.format(process_name=process_name,
         if simu:
             # Declare callback registration for the SET and RESET functions
             ads_template.append(u'type SET_{}_T is access procedure'
-                                 '(name: chars_ptr; duration: Integer);'
+                                 '(name: chars_ptr; duration: Asn1Int);'
                                 .format(timer))
             ads_template.append(u'type RESET_{}_T is access procedure'
                                 '(name: chars_ptr);'.format(timer))
@@ -770,9 +783,10 @@ package {process_name} is'''.format(process_name=process_name,
         #     - Check current state(s)
         #     - For each continuous signal generate code (test+transition)
         # XXX add to C backend
-        if process.cs_mapping:
+        # Check Queue: TODO implement when simu=True
+        if process.cs_mapping and not simu:
             taste_template.append('--  Process continuous signals')
-            taste_template.append('if ctxt.initDone then')
+            taste_template.append('if {}.initDone then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")
             taste_template.append('end if;')
             ads_template.append(
@@ -1066,15 +1080,19 @@ def _call_external_function(output, **kwargs):
                                                 shared=", {}'Size".format(p_id)
                                                   if is_out_sig else ""))
             if list_of_params:
-                code.append(u'{RI}({params});'
-                            .format(RI=out['outputName'],
+                code.append(u'RI{sep}{RI}({params});'
+                            .format(sep=UNICODE_SEP,
+                                    RI=out['outputName'],
                                     params=', '.join(list_of_params)))
             else:
                 if not SHARED_LIB:
-                    code.append(u'{RI};'.format(RI=out['outputName']))
+                    code.append(u'RI{sep}{RI};'
+                                .format(sep=UNICODE_SEP,
+                                        RI=out['outputName']))
                 else:
-                    code.append(u'{RI}(New_String("{RI}"));'
-                                .format(RI=out['outputName']))
+                    code.append(u'RI{sep}{RI}(New_String("{RI}"));'
+                                .format(sep=UNICODE_SEP,
+                                        RI=out['outputName']))
         else:
             # inner procedure call
             list_of_params = []
@@ -2315,7 +2333,8 @@ def _inner_procedure(proc, **kwargs):
                                                   if not proc.return_type
                                                   else 'function',
                                                   sep=(u'p' + UNICODE_SEP)
-                                                  if not proc.external else '',
+                                                  if not proc.external
+                                                  else u'RI' + UNICODE_SEP,
                                                   proc_name=proc.inputString)
 
     if proc.fpar:
@@ -2343,7 +2362,10 @@ def _inner_procedure(proc, **kwargs):
         # Inner procedures declared external by the user: pragma import
         # the C symbol with the same name. Overrules the pragma import from
         # taste for required interfaces.
-        local_decl.append(u'pragma import(C, {});'.format(proc.inputString))
+        local_decl.append(u'pragma import(C, RI{sep}{proc_name}, '
+                          u'"{proc_name}");'
+                          .format(sep=UNICODE_SEP,
+                                  proc_name=proc.inputString))
     else:
         # Generate the code for the procedure itself
         # local variables and code of the START transition
