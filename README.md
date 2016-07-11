@@ -142,9 +142,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-1.4.5 (07/2016): fixed related to the simulator mode
+1.4.5 (07/2016):
     - Context variable was not prefixed properly
     - Callback function for timers use 64bits integer
+    - RIs use prefix with unicode separation to avoid name clashes
+
 
 1.4.4 (06/2016)
     - Minor bugfix in Ada backend to support typeless systems
