@@ -662,7 +662,7 @@ package {process_name} is'''.format(process_name=process_name,
         if simu:
             # Declare callback registration for the SET and RESET functions
             ads_template.append(u'type SET_{}_T is access procedure'
-                                 '(name: chars_ptr; duration: Integer);'
+                                 '(name: chars_ptr; duration: Asn1Int);'
                                 .format(timer))
             ads_template.append(u'type RESET_{}_T is access procedure'
                                 '(name: chars_ptr);'.format(timer))
