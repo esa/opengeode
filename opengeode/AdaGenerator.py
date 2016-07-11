@@ -783,7 +783,8 @@ package {process_name} is'''.format(process_name=process_name,
         #     - Check current state(s)
         #     - For each continuous signal generate code (test+transition)
         # XXX add to C backend
-        if process.cs_mapping:
+        # Check Queue: TODO implement when simu=True
+        if process.cs_mapping and not simu:
             taste_template.append('--  Process continuous signals')
             taste_template.append('if {}.initDone then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")
