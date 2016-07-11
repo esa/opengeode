@@ -772,7 +772,7 @@ package {process_name} is'''.format(process_name=process_name,
         # XXX add to C backend
         if process.cs_mapping:
             taste_template.append('--  Process continuous signals')
-            taste_template.append('if ctxt.initDone then')
+            taste_template.append('if {}.initDone then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")
             taste_template.append('end if;')
             ads_template.append(

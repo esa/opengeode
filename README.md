@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.4.5 (07/2016)
+    - Code generation fix for the simulator
+
 1.4.4 (06/2016)
     - Minor bugfix in Ada backend to support typeless systems
 
