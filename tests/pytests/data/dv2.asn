@@ -1,0 +1,4 @@
+Other-Dataview DEFINITIONS ::=
+BEGIN
+Ahah ::= BOOLEAN
+END

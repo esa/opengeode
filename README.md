@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.0 (07/2016):
+    - Asn1scc API added to interface with DMT/asn2dataModel
+
 1.4.5 (07/2016):
     - Context variable was not prefixed properly
     - Callback function for timers use 64bits integer
