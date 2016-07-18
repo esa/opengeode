@@ -139,8 +139,9 @@ def asn2dataModel(*files):
 
     # 1) Create a temporary directory for the output
     tempdir = tempfile.mkdtemp()
-    sys.path.append(tempdir)
-    concat_prefix = 'dataview_uniq'
+    sys.path.insert(0, tempdir)
+    # Use a unique name for the asn1 concatenated module
+    concat_prefix = str(uuid.uuid4()).replace('-', '_')
     concat_path = os.path.join(tempdir, concat_prefix)
 
     # 2) Concat all input files to the output directory
@@ -177,9 +178,17 @@ def asn2dataModel(*files):
         # Re-import module if it was already loaded
         asn1mod = ASN2DM[concat_prefix]
         reload(asn1mod)
+        reload(asn1mod.DV)
+        import Stubs
+        reload(Stubs)
     else:
         asn1mod = importlib.import_module(concat_prefix + '_asn')
+        # force reload of modules in case of multiple calls
+        reload(asn1mod.DV)
+        import Stubs
+        reload(Stubs)
         ASN2DM[concat_prefix] = asn1mod
+    sys.path.pop(0)
     return asn1mod
 
 
