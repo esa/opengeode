@@ -493,7 +493,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
             dump_gfx += '.png'
 
     graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
-                 '-Gsplines=curved -Gsep=1 -Gdpi=72 '
+                 '-Gsplines=curved -Gsep=0.3 -Gdpi=72 '
                  '-Gstart=random10 -Goverlap=scale '
             '-Nstyle=rounded -Nshape=record -Elen=1 {kp} {dump}'
             .format(kp='-n1' if keep_pos else '',
