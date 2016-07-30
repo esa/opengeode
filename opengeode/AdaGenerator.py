@@ -505,7 +505,7 @@ package {process_name} is'''.format(process_name=process_name,
                     taste_template.append(u'runTransition({idx});'.format(
                         idx=input_def.transition_id))
                 else:
-                    taste_template.append('null;')
+                    taste_template.append('runTransition(CS_Only);')
             else:
                 taste_template.append('runTransition(CS_Only);')
 
