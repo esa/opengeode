@@ -507,7 +507,7 @@ package {process_name} is'''.format(process_name=process_name,
                 else:
                     taste_template.append('null;')
             else:
-                taste_template.append('null;')
+                taste_template.append('runTransition(CS_Only);')
 
         taste_template.append('case {}.state is'.format(LPREFIX))
 
