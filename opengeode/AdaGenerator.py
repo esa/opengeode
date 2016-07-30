@@ -273,6 +273,8 @@ LD_LIBRARY_PATH=. opengeode-simulator
 
     process_level_decl.append('end record;')
     process_level_decl.append('{ctxt}: {ctxt}_Ty;'.format(ctxt=LPREFIX))
+    process_level_decl.append('CS_Only  : constant Integer := {};'
+                              .format(len(process.transitions)))
 
 
     for name, val in process.mapping.viewitems():
@@ -503,9 +505,9 @@ package {process_name} is'''.format(process_name=process_name,
                     taste_template.append(u'runTransition({idx});'.format(
                         idx=input_def.transition_id))
                 else:
-                    taste_template.append('null;')
+                    taste_template.append('runTransition(CS_Only);')
             else:
-                taste_template.append('null;')
+                taste_template.append('runTransition(CS_Only);')
 
         taste_template.append('case {}.state is'.format(LPREFIX))
 
@@ -550,7 +552,7 @@ package {process_name} is'''.format(process_name=process_name,
         map(case_state, reduced_statelist) # XXX update C generator
 
         taste_template.append('when others =>')
-        taste_template.append('null;')
+        taste_template.append('runTransition(CS_Only);')
         taste_template.append('end case;')
         taste_template.append(u'end {};'.format(signame))
         taste_template.append('\n')
@@ -764,6 +766,10 @@ package {process_name} is'''.format(process_name=process_name,
                 taste_template.extend(val)
             else:
                 taste_template.append('null;')
+
+        taste_template.append('when CS_Only =>')
+        taste_template.append('trId := -1;')
+        taste_template.append('goto next_transition;')
 
         taste_template.append('when others =>')
         taste_template.append('null;')
