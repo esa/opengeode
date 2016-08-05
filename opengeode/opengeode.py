@@ -337,7 +337,8 @@ class Sdl_toolbar(QtGui.QToolBar, object):
                 try:
                     self.actions[action].setEnabled(True)
                 except KeyError:
-                    LOG.debug('No menu item for symbol "' + action + '"')
+                    pass
+                    #LOG.debug('No menu item for symbol "' + action + '"')
 
 
 class SDL_Scene(QtGui.QGraphicsScene, object):
@@ -386,6 +387,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self._composite_states = {}
         # Keep a track of highlighted symbols: { symbol: brush }
         self.highlighted = {}
+        self.refresh_requested = False
 
 
     def is_aggregation(self):
@@ -563,8 +565,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                 # between Linux and Windows for example.
                                 symbol.update_position()
                             else:
-                                # No CIF coordinates: (1) fix COMMENT position
-                                # and (2) if floating call CAM
+                                # No CIF coordinates: fix COMMENT position
                                 if isinstance(symbol, genericSymbols.Comment):
                                     symbol.pos_x = \
                                       symbol.parent.boundingRect().width() + 15
@@ -576,8 +577,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                                 symbol.boundingRect() |
                                                 symbol.childrenBoundingRect())
                                     symbol.pos_x += (sc_br.width() - sy_br.x())
-#                                   symbol.cam(symbol.position,
-#                                              symbol.position)
                         except AttributeError:
                             # no AST, ignore (e.g. Connections, Cornergrabbers)
                             pass
@@ -624,8 +623,17 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
 
     def refresh(self):
+        ''' Scene refresh - make sure it happens only once per cycle '''
+        LOG.debug('scene refresh requested by '
+                  + str(traceback.extract_stack(limit=2)[-2][1:3]))
+        if not self.refresh_requested:
+            self.refresh_requested = True
+            QTimer.singleShot(0, self.scene_refresh)
+
+    def scene_refresh(self):
         ''' Refresh the symbols and connections in the scene '''
-        LOG.debug('scene refresh')
+        self.refresh_requested = False
+        LOG.debug('scene refresh done')
         for symbol in self.visible_symb:
             symbol.updateConnectionPointPosition()
             symbol.updateConnectionPoints()
@@ -1333,6 +1341,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.lander_scene = SDL_Scene(context='lander')
         # Do not initialize the lander now - only if needed
         self.lander = None
+        # handle view refresh - once per cycle only
+        self.refresh_requested = False
 
     def set_toolbar(self):
         ''' Define the toolbar depending on the context '''
@@ -1388,8 +1398,17 @@ class SDL_View(QtGui.QGraphicsView, object):
         super(SDL_View, self).keyPressEvent(event)
 
     def refresh(self):
+        ''' View refresh - make sure it happens only once per cycle '''
+        LOG.debug('view refresh requested by '
+                  + str(traceback.extract_stack(limit=2)[-2][0:3]))
+        if not self.refresh_requested:
+            self.refresh_requested = True
+            QTimer.singleShot(0, self.view_refresh)
+
+    def view_refresh(self):
         ''' Refresh the complete view '''
-        LOG.debug('view refresh')
+        LOG.debug('view refresh done')
+        self.refresh_requested = False
         self.scene().refresh()
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
