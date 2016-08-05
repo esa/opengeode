@@ -624,8 +624,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def refresh(self):
         ''' Scene refresh - make sure it happens only once per cycle '''
-        LOG.debug('scene refresh requested by '
-                  + str(traceback.extract_stack(limit=2)[-2][1:3]))
+        #LOG.debug('scene refresh requested by '
+        #          + str(traceback.extract_stack(limit=2)[-2][1:3]))
         if not self.refresh_requested:
             self.refresh_requested = True
             QTimer.singleShot(0, self.scene_refresh)
@@ -633,10 +633,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def scene_refresh(self):
         ''' Refresh the symbols and connections in the scene '''
         self.refresh_requested = False
-        LOG.debug('scene refresh done')
-        for symbol in self.visible_symb:
-            symbol.updateConnectionPointPosition()
-            symbol.updateConnectionPoints()
+        #LOG.debug('scene refresh done')
+#       for symbol in self.visible_symb:
+#           symbol.updateConnectionPointPosition()
+#           symbol.updateConnectionPoints()
         for symbol in self.editable_texts:
             # EditableText refreshing - design explanation:
             # The first one is tricky: at symbol initialization,
@@ -656,7 +656,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # This has the effect of re-computing the bounding rect
             # and fixing the width issue.
             symbol.setTextWidth(-1)
-            symbol.set_textbox_position()
+#            symbol.set_textbox_position()
             symbol.try_resize()
             symbol.set_text_alignment()
         for symbol in self.visible_symb:
@@ -1095,7 +1095,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # Add the item to the scene
         if item not in self.items():
             self.addItem(item)
-        # Create Undo command (makes the call to the insertSymbol function):
+        # Create Undo command (makes the call to the insert_symbol function):
         undo_cmd = undoCommands.InsertSymbol(item=item, parent=parent, pos=pos)
         self.undo_stack.push(undo_cmd)
         # If no item is selected (e.g. new STATE), add it to the scene
@@ -1399,15 +1399,15 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def refresh(self):
         ''' View refresh - make sure it happens only once per cycle '''
-        LOG.debug('view refresh requested by '
-                  + str(traceback.extract_stack(limit=2)[-2][0:3]))
+        #LOG.debug('view refresh requested by '
+        #          + str(traceback.extract_stack(limit=2)[-2][0:3]))
         if not self.refresh_requested:
             self.refresh_requested = True
             QTimer.singleShot(0, self.view_refresh)
 
     def view_refresh(self):
         ''' Refresh the complete view '''
-        LOG.debug('view refresh done')
+        #LOG.debug('view refresh done')
         self.refresh_requested = False
         self.scene().refresh()
         self.setSceneRect(self.scene().sceneRect())

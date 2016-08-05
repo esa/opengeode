@@ -551,9 +551,9 @@ class Symbol(QObject, QGraphicsPathItem, object):
             # Minimum size is the size of the text inside the symbol
             try:
                 height = max(user_height,
-                             self.text.boundingRect().height() + 10)
+                             self.text.boundingRect().height())
                 width = max(user_width,
-                            self.text.boundingRect().width() + 30)
+                            self.text.boundingRect().width() + 15)
             except AttributeError:
                 height = max(user_height, 15)
                 width = max(user_width, 30)
@@ -1214,11 +1214,17 @@ class VerticalSymbol(Symbol, object):
 
         # Create the connection with the parent symbol
         self.connection = self.connect_to_parent()
-        self.update_position()
+        #self.update_position()
         self.updateConnectionPoints()
         if y is not None:
             self.pos_y = y
-        #self.cam(self.position, self.position)
+        if parent and y is None:
+            self.pos_y = self.parent.boundingRect().height() + 20
+        try:
+            self.text.set_textbox_position()
+        except AttributeError:
+            # if called before text is initialized - or if no textbox
+            pass
 
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''

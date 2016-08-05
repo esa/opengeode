@@ -449,6 +449,7 @@ class DecisionAnswer(HorizontalSymbol):
         super(DecisionAnswer, self).insert_symbol(item_parent, x, y)
         self.last_branch_item.connectionBelow = \
                 JoinConnection(self.last_branch_item, item_parent)
+        self.text.try_resize()
 
     def boundingRect(self):
         return QRectF(0, 0, self.width, self.height)
@@ -456,7 +457,7 @@ class DecisionAnswer(HorizontalSymbol):
     def set_shape(self, width, height):
         ''' ANSWER has round, disjoint sides - does not fit in a polygon '''
         self.width, self.height = width, height
-        point = 20 #width / 2.85
+        point = 20
         path = QPainterPath()
         left = QRect(0, 0, point, height)
         right = QRect(width - point, 0, point, height)
