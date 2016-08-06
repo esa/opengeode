@@ -793,6 +793,7 @@ class ProcedureCall(VerticalSymbol):
 class TextSymbol(HorizontalSymbol):
     ''' Text symbol - used to declare variables, etc. '''
     common_name = 'text_area'
+    default_size = 'any'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -996,6 +997,7 @@ class Process(HorizontalSymbol):
     ''' Process symbol '''
     _unique_followers = ['Comment']
     _allow_nesting = True
+    default_size = 'any'
     common_name = 'process_definition'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter

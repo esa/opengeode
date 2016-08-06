@@ -274,14 +274,14 @@ class Sdl_toolbar(QtGui.QToolBar, object):
         self.actions = {}
 
     def set_actions(self, bar_items):
-        ''' Set the acons and actions on the toolbar '''
+        ''' Set the icons and actions on the toolbar '''
         self.actions = {}
         self.clear()
         for item in bar_items:
             item_name = item.__name__
             self.actions[item_name] = self.addAction(
-                           QtGui.QIcon(':icons/{icon}'.format(
-                           icon=item_name.lower() + '.png')), item_name)
+                           QtGui.QIcon(':icons/{}.png'
+                                       .format(item_name.lower())), item_name)
         self.update_menu()
 
     def enable_action(self, action):
@@ -656,7 +656,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # This has the effect of re-computing the bounding rect
             # and fixing the width issue.
             symbol.setTextWidth(-1)
-#            symbol.set_textbox_position()
+            #symbol.set_textbox_position()
             symbol.try_resize()
             symbol.set_text_alignment()
         for symbol in self.visible_symb:
@@ -1232,17 +1232,46 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             pass
 
 
+    def quick_menu(self, pos, rect):
+        ''' Add actions on the fly to the context-dependent menu that is
+        displayed when the user draws a box on the screen '''
+        menu       = QtGui.QMenu('Select item to add')
+        singletons = (i.__class__ for i in self.visible_symb if i.is_singleton)
+        candidates = filter(lambda x: not x.needs_parent
+                                      and not x in singletons,
+                            ACTIONS.get(self.context, []))
+
+        def add_symbol(sort, rect):
+            symb = self.place_symbol(sort, parent=None, pos=rect.topLeft())
+            if symb.default_size == "any":
+                symb.resize_item(rect)
+
+        def setup_action(sort):
+            name   = sort.__name__
+            icon   = QtGui.QIcon(':icons/{}.png'.format(name.lower()))
+            action = menu.addAction(icon, name)
+            action.triggered.connect(partial(add_symbol,
+                                             sort,
+                                             rect=rect))
+        if map(setup_action, candidates):
+            menu.exec_(pos)
+
     # pylint: disable=C0103
     def mouseReleaseEvent(self, event):
         if self.mode == 'select_items':
+            found = False
+            rect = self.select_rect.rect()
             self.clear_highlight()
-            for item in self.items(self.select_rect.rect(),
-                                   mode=Qt.ContainsItemBoundingRect):
+            for item in self.items(rect, mode=Qt.ContainsItemBoundingRect):
                 try:
                     item.select()
                     self.highlight(item)
                 except AttributeError:
                     pass
+                else:
+                    found = True
+            if not found and rect.width() > 20 and rect.height() > 20:
+                self.quick_menu(event.screenPos(), rect)
             #self.removeItem(self.select_rect)
             # XXX stop with removeItem, it provokes segfault
             self.select_rect.hide()

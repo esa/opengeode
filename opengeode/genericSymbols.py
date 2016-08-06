@@ -88,6 +88,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     resizeable = True
     # By default symbol size may expand when inner text exceeds border
     auto_expand = True
+    # default size: "any" or "symbol_default" - optionally used at creation
+    default_size = "symbol_default"
     # By default connections between symbols are lines, not arrows
     arrow_head = None
     arrow_tail = None
@@ -744,6 +746,11 @@ class Comment(Symbol):
         self.pos_y = y if y is not None else (parent.boundingRect().height() -
                                               self.boundingRect().height()) / 2
         self.connection = self.connect_to_parent()
+        try:
+            self.text.set_textbox_position()
+        except AttributeError:
+            # if called before text is initialized
+            pass
         #parent.cam(parent.position, parent.position)
 
     def connect_to_parent(self):
