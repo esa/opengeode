@@ -1361,6 +1361,9 @@ class SDL_View(QtGui.QGraphicsView, object):
         # handle view refresh - once per cycle only
         self.refresh_requested = False
 
+    top_scene = lambda self: (self.scene_stack[0][0] if self.scene_stack
+                              else self.scene())
+
     def set_toolbar(self):
         ''' Define the toolbar depending on the context '''
         self.toolbar.set_actions(
@@ -1641,10 +1644,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                     + '.autosave') if autosave else self.filename
 
         # If the current scene is a nested one, save the top parent
-        if self.scene_stack:
-            scene = self.scene_stack[0][0]
-        else:
-            scene = self.scene()
+        scene = self.top_scene()
 
         if not scene:
             LOG.info('No scene - nothing to save')
@@ -1702,7 +1702,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             pr_file.close()
             if not autosave:
                 self.scene().clear_focus()
-                self.scene().undo_stack.setClean()
+                for each in scene.all_nested_scenes:
+                    each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
             return True
@@ -1782,10 +1783,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def is_model_clean(self):
         ''' Check recursively if anything has changed in any scene '''
-        if self.scene_stack:
-            scene = self.scene_stack[0][0]
-        else:
-            scene = self.scene()
+        scene = self.top_scene()
         for each in chain([scene], scene.all_nested_scenes):
             if not each.undo_stack.isClean():
                 return False
@@ -1818,7 +1816,6 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.need_new_scene.emit()
         self.scene_stack = []
         self.scene().undo_stack.clear()
-        #self.scene().clear()
         G_SYMBOLS.clear()
         self.scene().process_name = ''
         self.filename = None
@@ -1831,10 +1828,7 @@ class SDL_View(QtGui.QGraphicsView, object):
     def check_model(self):
         ''' Parse the model and check for warnings and errors '''
         # If the current scene is a nested one, save the top parent
-        if self.scene_stack:
-            scene = self.scene_stack[0][0]
-        else:
-            scene = self.scene()
+        scene = self.top_scene()
 
         self.messages_window.clear()
         self.messages_window.addItem("Checking syntax")
@@ -1914,10 +1908,7 @@ class SDL_View(QtGui.QGraphicsView, object):
     def generate_ada(self):
         ''' Generate Ada code '''
         # If the current scene is a nested one, move to the top parent
-        if self.scene_stack:
-            scene = self.scene_stack[0][0]
-        else:
-            scene = self.scene()
+        scene = self.top_scene()
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
         pr_data = unicode('\n'.join(pr_raw))
@@ -2101,10 +2092,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         Here we check if the Statechart tab is selected, and we draw/refresh
         the statechart automatically in that case '''
         if mdi == self.statechart_mdi:
-            if self.view.scene_stack:
-                scene = self.view.scene_stack[0][0]
-            else:
-                scene = self.view.scene()
+            scene = self.view.top_scene()
             try:
                 graph = scene.sdl_to_statechart()
                 Statechart.render_statechart(self.statechart_scene,
