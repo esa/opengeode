@@ -711,6 +711,7 @@ class Comment(Symbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = ('TODO', 'FIXME', 'XXX')
     redbold = ()
+    textbox_alignment = Qt.AlignLeft | Qt.AlignVCenter
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Comment()
@@ -724,7 +725,6 @@ class Comment(Symbol):
         if parent:
             local_pos = parent.mapFromScene(ast.pos_x or 0, ast.pos_y or 0)
             self.insert_symbol(parent, local_pos.x(), local_pos.y())
-        #self.set_shape(ast.width, ast.height)
         self.common_name = 'end'
         self.parser = ogParser
 
@@ -774,6 +774,7 @@ class Comment(Symbol):
             return
         self.set_shape(rect.width(), rect.height())
         self.update_connections()
+
 
     def set_shape(self, width, height):
         ''' Set a box - actual shape is computed in the paint function '''

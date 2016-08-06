@@ -200,10 +200,14 @@ class EditableText(QGraphicsTextItem, object):
             x_pos = 0
         elif alignment & Qt.AlignHCenter:
             x_pos = rect_center.x()
+        else:
+            x_pos = 0
         if alignment & Qt.AlignTop:
             y_pos = 0
         elif alignment & Qt.AlignVCenter:
             y_pos = rect_center.y()
+        else:
+            y_pos = 0
         self.setPos(x_pos, y_pos)
 
 #   def paint(self, painter, _, ___):
@@ -224,6 +228,7 @@ class EditableText(QGraphicsTextItem, object):
                 parent_rect.setWidth(rect.width() + 15)
             parent_rect.setHeight(max(rect.height(), parent_rect.height()))
             self.parent.resize_item(parent_rect)
+            self.set_textbox_position()
 
     @Slot(QListWidgetItem)
     def completion_selected(self, item):

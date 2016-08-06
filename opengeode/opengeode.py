@@ -1735,7 +1735,6 @@ class SDL_View(QtGui.QGraphicsView, object):
             if not autosave:
                 self.scene().clear_focus()
                 for each in scene.all_nested_scenes:
-                    print 'clean',each.name
                     each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
