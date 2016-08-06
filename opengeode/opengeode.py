@@ -1364,6 +1364,9 @@ class SDL_View(QtGui.QGraphicsView, object):
     top_scene = lambda self: (self.scene_stack[0][0] if self.scene_stack
                               else self.scene())
 
+    is_model_clean = lambda self: not any(not sc.undo_stack.isClean() for sc in
+                 chain([self.top_scene()], self.top_scene().all_nested_scenes))
+
     def set_toolbar(self):
         ''' Define the toolbar depending on the context '''
         self.toolbar.set_actions(
@@ -1703,6 +1706,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             if not autosave:
                 self.scene().clear_focus()
                 for each in scene.all_nested_scenes:
+                    print 'clean',each.name
                     each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
@@ -1781,14 +1785,6 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.load_file(filenames)
             self.up_button.setEnabled(False)
 
-    def is_model_clean(self):
-        ''' Check recursively if anything has changed in any scene '''
-        scene = self.top_scene()
-        for each in chain([scene], scene.all_nested_scenes):
-            if not each.undo_stack.isClean():
-                return False
-        return True
-
     def propose_to_save(self):
         ''' Display a dialog to let the user save his diagram '''
         msg_box = QtGui.QMessageBox(self)
@@ -1809,10 +1805,8 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def new_diagram(self):
         ''' If model state is clean, reset current diagram '''
-        if not self.is_model_clean():
-            # If changes occured since last save, pop up a window
-            if not self.propose_to_save():
-                return False
+        if not self.is_model_clean() and not self.propose_to_save():
+            return False
         self.need_new_scene.emit()
         self.scene_stack = []
         self.scene().undo_stack.clear()
@@ -2179,17 +2173,15 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     # pylint: disable=C0103
     def closeEvent(self, event):
         ''' Close main application '''
-        if not self.view.is_model_clean():
-            if not self.view.propose_to_save():
-                event.ignore()
-                return
-        # Clear the list of top-level symbols to avoid possible exit-crash
-        # due to pyside badly handling items that are not part of any scene
-        G_SYMBOLS.clear()
-        # Also clear undo stack that may keep reference to items
-        self.scene.undo_stack.clear()
-        LOG.debug('Bye bye!')
-        super(OG_MainWindow, self).closeEvent(event)
+        if not self.view.is_model_clean() and not self.view.propose_to_save():
+            event.ignore()
+        else:
+            # Clear the list of top-level symbols to avoid possible exit-crash
+            # due to pyside badly handling items that are not part of any scene
+            G_SYMBOLS.clear()
+            # Also clear undo stack that may keep reference to items
+            self.scene.undo_stack.clear()
+            super(OG_MainWindow, self).closeEvent(event)
 
 
 class FilterEvent(QtCore.QObject):
