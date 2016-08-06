@@ -819,13 +819,19 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         for item in (symbol for symbol in self.items()
                      if isinstance(symbol, EditableText)
                      and symbol.isVisible()):
-            if re.search(pattern, unicode(item), flags=re.IGNORECASE):
+            try:
+                res = re.search(pattern, unicode(item), flags=re.IGNORECASE)
+            except re.error:
+                # invalid pattern
+                raise StopIteration
+            if res:
                 yield item.parentItem()
 
 
     def search(self, pattern, replace_with=None):
         ''' Search and replace function ; get next search result with key n '''
         self.clearSelection()
+        self.clear_highlight()
         self.clear_focus()
         if pattern.endswith('\\'):
             # Avoid buggy pattern ending with a single backslash
@@ -848,6 +854,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             try:
                 item = self.search_item.next()
                 item.select()
+                self.highlight(item)
                 item.ensureVisible()
             except StopIteration:
                 LOG.info('Pattern not found')
@@ -964,6 +971,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         temp_scene = SDL_Scene(context=self.context)
         temp_scene.messages_window = self.messages_window
         self.clearSelection()
+        self.clear_highlight()
         symbol.select()
         try:
             self.copy_selected_symbols()
@@ -995,6 +1003,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             filename += '.' + doc_format
 
         self.clearSelection()
+        self.clear_highlight()
         self.clear_focus()
         # Copy in a different scene to get the smallest rectangle
         other_scene = SDL_Scene(context=self.context)
@@ -1112,6 +1121,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     self.create_subscene(item_type.__name__.lower(), self)
 
         self.clearSelection()
+        self.clear_highlight()
         self.clear_focus()
         item.select()
         item.cam(item.pos(), item.pos())
@@ -1225,10 +1235,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     # pylint: disable=C0103
     def mouseReleaseEvent(self, event):
         if self.mode == 'select_items':
+            self.clear_highlight()
             for item in self.items(self.select_rect.rect(),
-                    mode=Qt.ContainsItemBoundingRect):
+                                   mode=Qt.ContainsItemBoundingRect):
                 try:
                     item.select()
+                    self.highlight(item)
                 except AttributeError:
                     pass
             #self.removeItem(self.select_rect)
@@ -1245,12 +1257,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if event.matches(QtGui.QKeySequence.Delete) and self.selectedItems():
             self.delete_selected_symbols()
             self.clearSelection()
+            self.clear_highlight()
             self.clear_focus()
         elif event.matches(QtGui.QKeySequence.Undo):
             if not isinstance(self.focusItem(), EditableText):
                 LOG.debug('UNDO ' + self.undo_stack.undoText())
                 self.undo_stack.undo()
                 self.clearSelection()
+                self.clear_highlight()
                 self.refresh()
                 # Emit a selection change to make sure the toolbar is updated
                 # (e.g. when Undoing a Place START symbol)
@@ -1261,6 +1275,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 LOG.debug('REDO ' + self.undo_stack.redoText())
                 self.undo_stack.redo()
                 self.clearSelection()
+                self.clear_highlight()
                 self.refresh()
                 self.clear_focus()
                 # Emit a selection change to make sure the toolbar is updated
@@ -1285,8 +1300,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 return
             try:
                 self.clearSelection()
+                self.clear_highlight()
                 item = self.search_item.next()
                 item.select()
+                self.highlight(item)
                 item.ensureVisible()
             except StopIteration:
                 LOG.info('No more matches')
@@ -1886,8 +1903,10 @@ class SDL_View(QtGui.QGraphicsView, object):
         symbol = self.scene().symbol_near(pos=pos, dist=1)
         if symbol:
             self.scene().clearSelection()
+            self.clear_highlight()
             self.scene().clear_focus()
             symbol.select()
+            self.highlight(symbol)
             symbol.ensureVisible()
         else:
             LOG.info('No symbol at given coordinates in the current scene')
@@ -2006,6 +2025,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.addToolBar(Qt.TopToolBarArea, filebar)
 
         self.scene.clearSelection()
+        self.scene.clear_highlight()
         self.scene.clear_focus()
 
         # widget wrapping the view. We have to maximize it
