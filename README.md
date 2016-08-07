@@ -142,8 +142,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.4 (08/2016)
+    - Various GUI improvements
+
 1.5.3 (07/2016):
-    - Continous signals now handled in states where input is not consumed
+    - Ada backend fix: Continous signals now handled in states
+      where input is not consumed
 
 1.5.2 (07/2016):
     - Asn1scc API added to interface with DMT/asn2dataModel
