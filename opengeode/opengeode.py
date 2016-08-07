@@ -134,7 +134,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.3'
+__version__ = '1.5.4'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -274,14 +274,14 @@ class Sdl_toolbar(QtGui.QToolBar, object):
         self.actions = {}
 
     def set_actions(self, bar_items):
-        ''' Set the acons and actions on the toolbar '''
+        ''' Set the icons and actions on the toolbar '''
         self.actions = {}
         self.clear()
         for item in bar_items:
             item_name = item.__name__
             self.actions[item_name] = self.addAction(
-                           QtGui.QIcon(':icons/{icon}'.format(
-                           icon=item_name.lower() + '.png')), item_name)
+                           QtGui.QIcon(':icons/{}.png'
+                                       .format(item_name.lower())), item_name)
         self.update_menu()
 
     def enable_action(self, action):
@@ -337,7 +337,8 @@ class Sdl_toolbar(QtGui.QToolBar, object):
                 try:
                     self.actions[action].setEnabled(True)
                 except KeyError:
-                    LOG.debug('No menu item for symbol "' + action + '"')
+                    pass
+                    #LOG.debug('No menu item for symbol "' + action + '"')
 
 
 class SDL_Scene(QtGui.QGraphicsScene, object):
@@ -386,6 +387,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self._composite_states = {}
         # Keep a track of highlighted symbols: { symbol: brush }
         self.highlighted = {}
+        self.refresh_requested = False
 
 
     def is_aggregation(self):
@@ -543,53 +545,53 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     G_SYMBOLS.add(each)
                 # Refreshing the scene may result in resizing some symbols
                 dest_scene.refresh()
-                for each in dest_scene.floating_symb:
-                    # Once everything is rendered, adjust position of each
-                    # symbol to the value from the AST (positions may be
-                    # slightly altered by the reshaping functions)
-                    def fix_pos_from_ast(symbol):
-                        try:
-                            if symbol.ast.pos_x and symbol.ast.pos_y:
-                                relpos = symbol.mapFromScene(symbol.ast.pos_x,
-                                                           symbol.ast.pos_y)
-                                symbol.pos_x += relpos.x()
-                                symbol.pos_y += relpos.y()
-                                symbol.update_connections()
-                                # Update_position is called here because it
-                                # is not possible to be sure that the
-                                # positionning stored in the file will be
-                                # rendered correctly on the host plaform.
-                                # Font rendering may cause slight differences
-                                # between Linux and Windows for example.
-                                symbol.update_position()
+                # Once everything is rendered, adjust position of each
+                # symbol to the value from the AST (positions may be
+                # slightly altered by the reshaping functions)
+                def fix_pos_from_ast(symbol):
+                    try:
+                        if symbol.ast.pos_x and symbol.ast.pos_y:
+                            relpos = symbol.mapFromScene(symbol.ast.pos_x,
+                                                         symbol.ast.pos_y)
+                            #symbol.pos_x += relpos.x()
+                            #symbol.pos_y += relpos.y()
+                            if not symbol.hasParent:
+                                symbol.pos_x = symbol.ast.pos_x
+                                symbol.pos_y = symbol.ast.pos_y
                             else:
-                                # No CIF coordinates: (1) fix COMMENT position
-                                # and (2) if floating call CAM
-                                if isinstance(symbol, genericSymbols.Comment):
-                                    symbol.pos_x = \
-                                      symbol.parent.boundingRect().width() + 15
-                                    symbol.pos_y = 0
-                                if not symbol.hasParent:
-                                    #print 'Positionning', unicode(symbol)[slice(0,20)]
-                                    sc_br = dest_scene.itemsBoundingRect()
-                                    sy_br = symbol.mapRectToScene(
-                                                symbol.boundingRect() |
-                                                symbol.childrenBoundingRect())
-                                    symbol.pos_x += (sc_br.width() - sy_br.x())
-#                                   symbol.cam(symbol.position,
-#                                              symbol.position)
-                        except AttributeError:
-                            # no AST, ignore (e.g. Connections, Cornergrabbers)
-                            pass
+                                symbol.position += relpos
+                            symbol.update_connections()
+                            # Update_position is called here because it
+                            # is not possible to be sure that the
+                            # positionning stored in the file will be
+                            # rendered correctly on the host plaform.
+                            # Font rendering may cause slight differences
+                            # between Linux and Windows for example.
+                            symbol.update_position()
                         else:
-                            # Recursively fix pos of sub branches and followers
-                            for branch in (elm for elm in symbol.childSymbols()
-                                       if isinstance(elm,
-                                             genericSymbols.HorizontalSymbol)):
-                                fix_pos_from_ast(branch)
-                            fix_pos_from_ast(symbol.next_aligned_symbol())
-                            fix_pos_from_ast(symbol.comment)
-                    fix_pos_from_ast(each)
+                            # No CIF coordinates: fix COMMENT position
+                            if isinstance(symbol, genericSymbols.Comment):
+                                symbol.pos_x = \
+                                  symbol.parent.boundingRect().width() + 15
+                                symbol.pos_y = 0
+                            if not symbol.hasParent:
+                                sc_br = dest_scene.itemsBoundingRect()
+                                sy_br = symbol.mapRectToScene(
+                                            symbol.boundingRect() |
+                                            symbol.childrenBoundingRect())
+                                symbol.pos_x += (sc_br.width() - sy_br.x())
+                    except AttributeError:
+                        # no AST, ignore (e.g. Connections, Cornergrabbers)
+                        pass
+                    else:
+                        # Recursively fix pos of sub branches and followers
+                        for branch in (elm for elm in symbol.childSymbols()
+                                   if isinstance(elm,
+                                         genericSymbols.HorizontalSymbol)):
+                            fix_pos_from_ast(branch)
+                        fix_pos_from_ast(symbol.next_aligned_symbol())
+                        fix_pos_from_ast(symbol.comment)
+                map(fix_pos_from_ast, dest_scene.floating_symb)
             except TypeError:
                 LOG.error(traceback.format_exc())
 
@@ -624,11 +626,20 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
 
     def refresh(self):
+        ''' Scene refresh - make sure it happens only once per cycle '''
+        #LOG.debug('scene refresh requested by '
+        #          + str(traceback.extract_stack(limit=2)[-2][1:3]))
+        if not self.refresh_requested:
+            self.refresh_requested = True
+            QTimer.singleShot(0, self.scene_refresh)
+
+    def scene_refresh(self):
         ''' Refresh the symbols and connections in the scene '''
-        LOG.debug('scene refresh')
-        for symbol in self.visible_symb:
-            symbol.updateConnectionPointPosition()
-            symbol.updateConnectionPoints()
+        self.refresh_requested = False
+        #LOG.debug('scene refresh done')
+#       for symbol in self.visible_symb:
+#           symbol.updateConnectionPointPosition()
+#           symbol.updateConnectionPoints()
         for symbol in self.editable_texts:
             # EditableText refreshing - design explanation:
             # The first one is tricky: at symbol initialization,
@@ -648,7 +659,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             # This has the effect of re-computing the bounding rect
             # and fixing the width issue.
             symbol.setTextWidth(-1)
-            symbol.set_textbox_position()
+            #symbol.set_textbox_position()
             symbol.try_resize()
             symbol.set_text_alignment()
         for symbol in self.visible_symb:
@@ -683,8 +694,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             in order to avoid negative coordinates
         '''
         try:
-            min_x = min(item.x() for item in self.floating_symb)
-            min_y = min(item.y() for item in self.floating_symb)
+            min_x = min(item.x() for item in self.visible_symb)
+            min_y = min(item.y() for item in self.visible_symb)
         except ValueError:
             # No item in the scene
             return 0, 0
@@ -811,13 +822,19 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         for item in (symbol for symbol in self.items()
                      if isinstance(symbol, EditableText)
                      and symbol.isVisible()):
-            if re.search(pattern, unicode(item), flags=re.IGNORECASE):
+            try:
+                res = re.search(pattern, unicode(item), flags=re.IGNORECASE)
+            except re.error:
+                # invalid pattern
+                raise StopIteration
+            if res:
                 yield item.parentItem()
 
 
     def search(self, pattern, replace_with=None):
         ''' Search and replace function ; get next search result with key n '''
         self.clearSelection()
+        self.clear_highlight()
         self.clear_focus()
         if pattern.endswith('\\'):
             # Avoid buggy pattern ending with a single backslash
@@ -840,6 +857,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             try:
                 item = self.search_item.next()
                 item.select()
+                self.highlight(item)
                 item.ensureVisible()
             except StopIteration:
                 LOG.info('Pattern not found')
@@ -956,6 +974,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         temp_scene = SDL_Scene(context=self.context)
         temp_scene.messages_window = self.messages_window
         self.clearSelection()
+        self.clear_highlight()
         symbol.select()
         try:
             self.copy_selected_symbols()
@@ -987,6 +1006,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             filename += '.' + doc_format
 
         self.clearSelection()
+        self.clear_highlight()
         self.clear_focus()
         # Copy in a different scene to get the smallest rectangle
         other_scene = SDL_Scene(context=self.context)
@@ -1087,7 +1107,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # Add the item to the scene
         if item not in self.items():
             self.addItem(item)
-        # Create Undo command (makes the call to the insertSymbol function):
+        # Create Undo command (makes the call to the insert_symbol function):
         undo_cmd = undoCommands.InsertSymbol(item=item, parent=parent, pos=pos)
         self.undo_stack.push(undo_cmd)
         # If no item is selected (e.g. new STATE), add it to the scene
@@ -1104,6 +1124,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     self.create_subscene(item_type.__name__.lower(), self)
 
         self.clearSelection()
+        self.clear_highlight()
         self.clear_focus()
         item.select()
         item.cam(item.pos(), item.pos())
@@ -1111,7 +1132,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         item.edit_text()
 
         for view in self.views():
-            view.refresh()
+            view.view_refresh()
             view.ensureVisible(item)
         return item
 
@@ -1214,15 +1235,46 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             pass
 
 
+    def quick_menu(self, pos, rect):
+        ''' Add actions on the fly to the context-dependent menu that is
+        displayed when the user draws a box on the screen '''
+        menu       = QtGui.QMenu('Select item to add')
+        singletons = (i.__class__ for i in self.visible_symb if i.is_singleton)
+        candidates = filter(lambda x: not x.needs_parent
+                                      and not x in singletons,
+                            ACTIONS.get(self.context, []))
+
+        def add_symbol(sort, rect):
+            symb = self.place_symbol(sort, parent=None, pos=rect.topLeft())
+            if symb.default_size == "any":
+                symb.resize_item(rect)
+
+        def setup_action(sort):
+            name   = sort.__name__
+            icon   = QtGui.QIcon(':icons/{}.png'.format(name.lower()))
+            action = menu.addAction(icon, name)
+            action.triggered.connect(partial(add_symbol,
+                                             sort,
+                                             rect=rect))
+        if map(setup_action, candidates):
+            menu.exec_(pos)
+
     # pylint: disable=C0103
     def mouseReleaseEvent(self, event):
         if self.mode == 'select_items':
-            for item in self.items(self.select_rect.rect(),
-                    mode=Qt.ContainsItemBoundingRect):
+            found = False
+            rect = self.select_rect.rect()
+            self.clear_highlight()
+            for item in self.items(rect, mode=Qt.ContainsItemBoundingRect):
                 try:
                     item.select()
+                    self.highlight(item)
                 except AttributeError:
                     pass
+                else:
+                    found = True
+            if not found and rect.width() > 20 and rect.height() > 20:
+                self.quick_menu(event.screenPos(), rect)
             #self.removeItem(self.select_rect)
             # XXX stop with removeItem, it provokes segfault
             self.select_rect.hide()
@@ -1237,12 +1289,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if event.matches(QtGui.QKeySequence.Delete) and self.selectedItems():
             self.delete_selected_symbols()
             self.clearSelection()
+            self.clear_highlight()
             self.clear_focus()
         elif event.matches(QtGui.QKeySequence.Undo):
             if not isinstance(self.focusItem(), EditableText):
                 LOG.debug('UNDO ' + self.undo_stack.undoText())
                 self.undo_stack.undo()
                 self.clearSelection()
+                self.clear_highlight()
                 self.refresh()
                 # Emit a selection change to make sure the toolbar is updated
                 # (e.g. when Undoing a Place START symbol)
@@ -1253,6 +1307,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 LOG.debug('REDO ' + self.undo_stack.redoText())
                 self.undo_stack.redo()
                 self.clearSelection()
+                self.clear_highlight()
                 self.refresh()
                 self.clear_focus()
                 # Emit a selection change to make sure the toolbar is updated
@@ -1277,8 +1332,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 return
             try:
                 self.clearSelection()
+                self.clear_highlight()
                 item = self.search_item.next()
                 item.select()
+                self.highlight(item)
                 item.ensureVisible()
             except StopIteration:
                 LOG.info('No more matches')
@@ -1333,6 +1390,14 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.lander_scene = SDL_Scene(context='lander')
         # Do not initialize the lander now - only if needed
         self.lander = None
+        # handle view refresh - once per cycle only
+        self.refresh_requested = False
+
+    top_scene = lambda self: (self.scene_stack[0][0] if self.scene_stack
+                              else self.scene())
+
+    is_model_clean = lambda self: not any(not sc.undo_stack.isClean() for sc in
+                 chain([self.top_scene()], self.top_scene().all_nested_scenes))
 
     def set_toolbar(self):
         ''' Define the toolbar depending on the context '''
@@ -1388,8 +1453,17 @@ class SDL_View(QtGui.QGraphicsView, object):
         super(SDL_View, self).keyPressEvent(event)
 
     def refresh(self):
+        ''' View refresh - make sure it happens only once per cycle '''
+        #LOG.debug('view refresh requested by '
+        #          + str(traceback.extract_stack(limit=2)[-2][0:3]))
+        if not self.refresh_requested:
+            self.refresh_requested = True
+            QTimer.singleShot(0, self.view_refresh)
+
+    def view_refresh(self):
         ''' Refresh the complete view '''
-        LOG.debug('view refresh')
+        #LOG.debug('view refresh done')
+        self.refresh_requested = False
         self.scene().refresh()
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
@@ -1537,7 +1611,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.up_button.setEnabled(True)
         self.set_toolbar()
         self.scene().scene_left.emit()
-        self.refresh()
+        self.view_refresh()
 
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
@@ -1597,6 +1671,7 @@ class SDL_View(QtGui.QGraphicsView, object):
     def save_diagram(self, save_as=False, autosave=False):
         ''' Save the diagram to a .pr file '''
         if (not self.filename or save_as) and not autosave:
+            save_as = True
             self.filename = QtGui.QFileDialog.getSaveFileName(
                     self, "Save model", ".", "SDL Model (*.pr)")[0]
         if self.filename and self.filename.split('.')[-1] != 'pr':
@@ -1605,10 +1680,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                     + '.autosave') if autosave else self.filename
 
         # If the current scene is a nested one, save the top parent
-        if self.scene_stack:
-            scene = self.scene_stack[0][0]
-        else:
-            scene = self.scene()
+        scene = self.top_scene()
 
         if not scene:
             LOG.info('No scene - nothing to save')
@@ -1639,15 +1711,16 @@ class SDL_View(QtGui.QGraphicsView, object):
         else:
             pr_file = QFile(filename)
             pr_file.open(QIODevice.WriteOnly | QIODevice.Text)
-            if not autosave:
-                self.scene().process_name = ''.join(filename
-                        .split(os.path.extsep)[0:-1]).split(os.path.sep)[-1]
-                self.wrapping_window.setWindowTitle(
-                        'process ' + self.scene().process_name + '[*]')
+            if not autosave and save_as:
+                scene.name = 'block {}[*]'.format(''.join(filename
+                        .split(os.path.extsep)[0:-1]).split(os.path.sep)[-1])
+                if self.scene() == scene:
+                    self.wrapping_window.setWindowTitle('{}'
+                                                        .format(scene.name))
 
         # Translate all scenes to avoid negative coordinates
         delta_x, delta_y = scene.translate_to_origin()
-        for each in scene.all_nested_scenes:
+        for each in chain([scene], scene.all_nested_scenes):
             dx, dy = each.translate_to_origin()
             if each == self.scene():
                 delta_x, delta_y = dx, dy
@@ -1666,7 +1739,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             pr_file.close()
             if not autosave:
                 self.scene().clear_focus()
-                self.scene().undo_stack.setClean()
+                for each in chain([scene], scene.all_nested_scenes):
+                    each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
             return True
@@ -1744,17 +1818,6 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.load_file(filenames)
             self.up_button.setEnabled(False)
 
-    def is_model_clean(self):
-        ''' Check recursively if anything has changed in any scene '''
-        if self.scene_stack:
-            scene = self.scene_stack[0][0]
-        else:
-            scene = self.scene()
-        for each in chain([scene], scene.all_nested_scenes):
-            if not each.undo_stack.isClean():
-                return False
-        return True
-
     def propose_to_save(self):
         ''' Display a dialog to let the user save his diagram '''
         msg_box = QtGui.QMessageBox(self)
@@ -1775,19 +1838,16 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def new_diagram(self):
         ''' If model state is clean, reset current diagram '''
-        if not self.is_model_clean():
-            # If changes occured since last save, pop up a window
-            if not self.propose_to_save():
-                return False
+        if not self.is_model_clean() and not self.propose_to_save():
+            return False
         self.need_new_scene.emit()
         self.scene_stack = []
         self.scene().undo_stack.clear()
-        #self.scene().clear()
         G_SYMBOLS.clear()
         self.scene().process_name = ''
         self.filename = None
         self.readonly_pr = None
-        self.wrapping_window.setWindowTitle('process[*]')
+        self.wrapping_window.setWindowTitle('block[*]')
         self.set_toolbar()
         return True
 
@@ -1795,10 +1855,7 @@ class SDL_View(QtGui.QGraphicsView, object):
     def check_model(self):
         ''' Parse the model and check for warnings and errors '''
         # If the current scene is a nested one, save the top parent
-        if self.scene_stack:
-            scene = self.scene_stack[0][0]
-        else:
-            scene = self.scene()
+        scene = self.top_scene()
 
         self.messages_window.clear()
         self.messages_window.addItem("Checking syntax")
@@ -1836,7 +1893,11 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.go_up()
 
         for each in path:
-            kind, name = each.split()
+            try:
+                kind, name = each.split()
+            except ValueError as err:
+                LOG.error('Cannot locate item: ' + str(each))
+                continue
             name = unicode(name).lower()
             if kind.lower() == 'process':
                 for process in self.scene().processes:
@@ -1867,19 +1928,18 @@ class SDL_View(QtGui.QGraphicsView, object):
         symbol = self.scene().symbol_near(pos=pos, dist=1)
         if symbol:
             self.scene().clearSelection()
+            self.scene().clear_highlight()
             self.scene().clear_focus()
             symbol.select()
-            symbol.ensureVisible()
+            self.scene().highlight(symbol)
+            self.ensureVisible(symbol)
         else:
             LOG.info('No symbol at given coordinates in the current scene')
 
     def generate_ada(self):
         ''' Generate Ada code '''
         # If the current scene is a nested one, move to the top parent
-        if self.scene_stack:
-            scene = self.scene_stack[0][0]
-        else:
-            scene = self.scene()
+        scene = self.top_scene()
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
         pr_data = unicode('\n'.join(pr_raw))
@@ -1987,12 +2047,14 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.addToolBar(Qt.TopToolBarArea, filebar)
 
         self.scene.clearSelection()
+        self.scene.clear_highlight()
         self.scene.clear_focus()
 
         # widget wrapping the view. We have to maximize it
         process_widget = self.findChild(QtGui.QWidget, 'process')
         process_widget.showMaximized()
         self.view.wrapping_window = process_widget
+        self.view.wrapping_window.setWindowTitle('block unnamed[*]')
         self.scene.undo_stack.cleanChanged.connect(
                 lambda x: process_widget.setWindowModified(not x))
 
@@ -2062,10 +2124,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         Here we check if the Statechart tab is selected, and we draw/refresh
         the statechart automatically in that case '''
         if mdi == self.statechart_mdi:
-            if self.view.scene_stack:
-                scene = self.view.scene_stack[0][0]
-            else:
-                scene = self.view.scene()
+            scene = self.view.top_scene()
             try:
                 graph = scene.sdl_to_statechart()
                 Statechart.render_statechart(self.statechart_scene,
@@ -2152,17 +2211,15 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     # pylint: disable=C0103
     def closeEvent(self, event):
         ''' Close main application '''
-        if not self.view.is_model_clean():
-            if not self.view.propose_to_save():
-                event.ignore()
-                return
-        # Clear the list of top-level symbols to avoid possible exit-crash
-        # due to pyside badly handling items that are not part of any scene
-        G_SYMBOLS.clear()
-        # Also clear undo stack that may keep reference to items
-        self.scene.undo_stack.clear()
-        LOG.debug('Bye bye!')
-        super(OG_MainWindow, self).closeEvent(event)
+        if not self.view.is_model_clean() and not self.view.propose_to_save():
+            event.ignore()
+        else:
+            # Clear the list of top-level symbols to avoid possible exit-crash
+            # due to pyside badly handling items that are not part of any scene
+            G_SYMBOLS.clear()
+            # Also clear undo stack that may keep reference to items
+            self.scene.undo_stack.clear()
+            super(OG_MainWindow, self).closeEvent(event)
 
 
 class FilterEvent(QtCore.QObject):

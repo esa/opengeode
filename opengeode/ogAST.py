@@ -344,7 +344,7 @@ class Answer(object):
         self.charPositionInLine = None
         self.pos_x, self.pos_y = None, None
         self.width = 70
-        self.height = 10.5
+        self.height = 23
         # one of 'closed_range' 'constant' 'open_range' 'else' 'informal_text'
         self.kind = None
         # informalText is a string, when kind == 'informal_text'

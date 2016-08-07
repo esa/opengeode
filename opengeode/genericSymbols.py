@@ -88,6 +88,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     resizeable = True
     # By default symbol size may expand when inner text exceeds border
     auto_expand = True
+    # default size: "any" or "symbol_default" - optionally used at creation
+    default_size = "symbol_default"
     # By default connections between symbols are lines, not arrows
     arrow_head = None
     arrow_tail = None
@@ -551,9 +553,9 @@ class Symbol(QObject, QGraphicsPathItem, object):
             # Minimum size is the size of the text inside the symbol
             try:
                 height = max(user_height,
-                             self.text.boundingRect().height() + 10)
+                             self.text.boundingRect().height())
                 width = max(user_width,
-                            self.text.boundingRect().width() + 30)
+                            self.text.boundingRect().width() + 15)
             except AttributeError:
                 height = max(user_height, 15)
                 width = max(user_width, 30)
@@ -709,6 +711,7 @@ class Comment(Symbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = ('TODO', 'FIXME', 'XXX')
     redbold = ()
+    textbox_alignment = Qt.AlignLeft | Qt.AlignVCenter
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Comment()
@@ -722,7 +725,6 @@ class Comment(Symbol):
         if parent:
             local_pos = parent.mapFromScene(ast.pos_x or 0, ast.pos_y or 0)
             self.insert_symbol(parent, local_pos.x(), local_pos.y())
-        #self.set_shape(ast.width, ast.height)
         self.common_name = 'end'
         self.parser = ogParser
 
@@ -744,6 +746,11 @@ class Comment(Symbol):
         self.pos_y = y if y is not None else (parent.boundingRect().height() -
                                               self.boundingRect().height()) / 2
         self.connection = self.connect_to_parent()
+        try:
+            self.text.set_textbox_position()
+        except AttributeError:
+            # if called before text is initialized
+            pass
         #parent.cam(parent.position, parent.position)
 
     def connect_to_parent(self):
@@ -767,6 +774,7 @@ class Comment(Symbol):
             return
         self.set_shape(rect.width(), rect.height())
         self.update_connections()
+
 
     def set_shape(self, width, height):
         ''' Set a box - actual shape is computed in the paint function '''
@@ -1214,11 +1222,17 @@ class VerticalSymbol(Symbol, object):
 
         # Create the connection with the parent symbol
         self.connection = self.connect_to_parent()
-        self.update_position()
+        #self.update_position()
         self.updateConnectionPoints()
         if y is not None:
             self.pos_y = y
-        #self.cam(self.position, self.position)
+        if parent and y is None:
+            self.pos_y = self.parent.boundingRect().height() + 20
+        try:
+            self.text.set_textbox_position()
+        except AttributeError:
+            # if called before text is initialized - or if no textbox
+            pass
 
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''

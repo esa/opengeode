@@ -163,7 +163,7 @@ class EditableText(QGraphicsTextItem, object):
         self.highlighter = Highlighter(
                 self.document(), parent.blackbold, parent.redbold)
         self.completion_prefix = ''
-        self.set_textbox_position()
+        #self.set_textbox_position()
         self.set_text_alignment()
         # Increase the Z value of the text area so that the autocompleter
         # always appear on top of text's siblings (parents's followers)
@@ -200,16 +200,20 @@ class EditableText(QGraphicsTextItem, object):
             x_pos = 0
         elif alignment & Qt.AlignHCenter:
             x_pos = rect_center.x()
+        else:
+            x_pos = 0
         if alignment & Qt.AlignTop:
             y_pos = 0
         elif alignment & Qt.AlignVCenter:
             y_pos = rect_center.y()
+        else:
+            y_pos = 0
         self.setPos(x_pos, y_pos)
 
-    def paint(self, painter, _, ___):
-        ''' Place the textbox in the parent symbol and draw it '''
-        self.set_textbox_position()
-        super(EditableText, self).paint(painter, _, ___)
+#   def paint(self, painter, _, ___):
+#       ''' Place the textbox in the parent symbol and draw it '''
+#       self.set_textbox_position()
+#       super(EditableText, self).paint(painter, _, ___)
 
     def try_resize(self):
         '''
@@ -220,10 +224,11 @@ class EditableText(QGraphicsTextItem, object):
             self.setTextWidth(-1)
             parent_rect = self.parent.boundingRect()
             rect = self.boundingRect()
-            if rect.width() + 30 > parent_rect.width():
-                parent_rect.setWidth(rect.width() + 30)
+            if rect.width() + 15 > parent_rect.width():
+                parent_rect.setWidth(rect.width() + 15)
             parent_rect.setHeight(max(rect.height(), parent_rect.height()))
             self.parent.resize_item(parent_rect)
+            self.set_textbox_position()
 
     @Slot(QListWidgetItem)
     def completion_selected(self, item):

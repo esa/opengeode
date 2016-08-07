@@ -49,8 +49,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
     _unique_followers = []
     _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
-    textbox_alignment = (QtCore.Qt.AlignTop
-                         | QtCore.Qt.AlignHCenter)
+    textbox_alignment = (QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
 
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
@@ -66,6 +65,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
             property_box.setPlainText(node['properties'])
         # Text in statecharts is read-only:
         self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.text.set_textbox_position()
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
