@@ -1668,6 +1668,7 @@ class SDL_View(QtGui.QGraphicsView, object):
     def save_diagram(self, save_as=False, autosave=False):
         ''' Save the diagram to a .pr file '''
         if (not self.filename or save_as) and not autosave:
+            save_as = True
             self.filename = QtGui.QFileDialog.getSaveFileName(
                     self, "Save model", ".", "SDL Model (*.pr)")[0]
         if self.filename and self.filename.split('.')[-1] != 'pr':
@@ -1707,11 +1708,12 @@ class SDL_View(QtGui.QGraphicsView, object):
         else:
             pr_file = QFile(filename)
             pr_file.open(QIODevice.WriteOnly | QIODevice.Text)
-            if not autosave:
-                self.scene().process_name = ''.join(filename
-                        .split(os.path.extsep)[0:-1]).split(os.path.sep)[-1]
-                self.wrapping_window.setWindowTitle(
-                        'process ' + self.scene().process_name + '[*]')
+            if not autosave and save_as:
+                scene.name = 'block {}[*]'.format(''.join(filename
+                        .split(os.path.extsep)[0:-1]).split(os.path.sep)[-1])
+                if self.scene() == scene:
+                    self.wrapping_window.setWindowTitle('{}'
+                                                        .format(scene.name))
 
         # Translate all scenes to avoid negative coordinates
         delta_x, delta_y = scene.translate_to_origin()
@@ -1842,7 +1844,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.scene().process_name = ''
         self.filename = None
         self.readonly_pr = None
-        self.wrapping_window.setWindowTitle('process[*]')
+        self.wrapping_window.setWindowTitle('block[*]')
         self.set_toolbar()
         return True
 
@@ -1888,7 +1890,11 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.go_up()
 
         for each in path:
-            kind, name = each.split()
+            try:
+                kind, name = each.split()
+            except ValueError as err:
+                LOG.error('Cannot locate item: ' + str(each))
+                continue
             name = unicode(name).lower()
             if kind.lower() == 'process':
                 for process in self.scene().processes:
@@ -2045,6 +2051,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         process_widget = self.findChild(QtGui.QWidget, 'process')
         process_widget.showMaximized()
         self.view.wrapping_window = process_widget
+        self.view.wrapping_window.setWindowTitle('block unnamed[*]')
         self.scene.undo_stack.cleanChanged.connect(
                 lambda x: process_widget.setWindowModified(not x))
 
