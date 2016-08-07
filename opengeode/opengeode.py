@@ -545,50 +545,53 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     G_SYMBOLS.add(each)
                 # Refreshing the scene may result in resizing some symbols
                 dest_scene.refresh()
-                for each in dest_scene.floating_symb:
-                    # Once everything is rendered, adjust position of each
-                    # symbol to the value from the AST (positions may be
-                    # slightly altered by the reshaping functions)
-                    def fix_pos_from_ast(symbol):
-                        try:
-                            if symbol.ast.pos_x and symbol.ast.pos_y:
-                                relpos = symbol.mapFromScene(symbol.ast.pos_x,
-                                                           symbol.ast.pos_y)
-                                symbol.pos_x += relpos.x()
-                                symbol.pos_y += relpos.y()
-                                symbol.update_connections()
-                                # Update_position is called here because it
-                                # is not possible to be sure that the
-                                # positionning stored in the file will be
-                                # rendered correctly on the host plaform.
-                                # Font rendering may cause slight differences
-                                # between Linux and Windows for example.
-                                symbol.update_position()
+                # Once everything is rendered, adjust position of each
+                # symbol to the value from the AST (positions may be
+                # slightly altered by the reshaping functions)
+                def fix_pos_from_ast(symbol):
+                    try:
+                        if symbol.ast.pos_x and symbol.ast.pos_y:
+                            relpos = symbol.mapFromScene(symbol.ast.pos_x,
+                                                         symbol.ast.pos_y)
+                            #symbol.pos_x += relpos.x()
+                            #symbol.pos_y += relpos.y()
+                            if not symbol.hasParent:
+                                symbol.pos_x = symbol.ast.pos_x
+                                symbol.pos_y = symbol.ast.pos_y
                             else:
-                                # No CIF coordinates: fix COMMENT position
-                                if isinstance(symbol, genericSymbols.Comment):
-                                    symbol.pos_x = \
-                                      symbol.parent.boundingRect().width() + 15
-                                    symbol.pos_y = 0
-                                if not symbol.hasParent:
-                                    #print 'Positionning', unicode(symbol)[slice(0,20)]
-                                    sc_br = dest_scene.itemsBoundingRect()
-                                    sy_br = symbol.mapRectToScene(
-                                                symbol.boundingRect() |
-                                                symbol.childrenBoundingRect())
-                                    symbol.pos_x += (sc_br.width() - sy_br.x())
-                        except AttributeError:
-                            # no AST, ignore (e.g. Connections, Cornergrabbers)
-                            pass
+                                symbol.position += relpos
+                            symbol.update_connections()
+                            # Update_position is called here because it
+                            # is not possible to be sure that the
+                            # positionning stored in the file will be
+                            # rendered correctly on the host plaform.
+                            # Font rendering may cause slight differences
+                            # between Linux and Windows for example.
+                            symbol.update_position()
                         else:
-                            # Recursively fix pos of sub branches and followers
-                            for branch in (elm for elm in symbol.childSymbols()
-                                       if isinstance(elm,
-                                             genericSymbols.HorizontalSymbol)):
-                                fix_pos_from_ast(branch)
-                            fix_pos_from_ast(symbol.next_aligned_symbol())
-                            fix_pos_from_ast(symbol.comment)
-                    fix_pos_from_ast(each)
+                            # No CIF coordinates: fix COMMENT position
+                            if isinstance(symbol, genericSymbols.Comment):
+                                symbol.pos_x = \
+                                  symbol.parent.boundingRect().width() + 15
+                                symbol.pos_y = 0
+                            if not symbol.hasParent:
+                                sc_br = dest_scene.itemsBoundingRect()
+                                sy_br = symbol.mapRectToScene(
+                                            symbol.boundingRect() |
+                                            symbol.childrenBoundingRect())
+                                symbol.pos_x += (sc_br.width() - sy_br.x())
+                    except AttributeError:
+                        # no AST, ignore (e.g. Connections, Cornergrabbers)
+                        pass
+                    else:
+                        # Recursively fix pos of sub branches and followers
+                        for branch in (elm for elm in symbol.childSymbols()
+                                   if isinstance(elm,
+                                         genericSymbols.HorizontalSymbol)):
+                            fix_pos_from_ast(branch)
+                        fix_pos_from_ast(symbol.next_aligned_symbol())
+                        fix_pos_from_ast(symbol.comment)
+                map(fix_pos_from_ast, dest_scene.floating_symb)
             except TypeError:
                 LOG.error(traceback.format_exc())
 
@@ -691,8 +694,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             in order to avoid negative coordinates
         '''
         try:
-            min_x = min(item.x() for item in self.floating_symb)
-            min_y = min(item.y() for item in self.floating_symb)
+            min_x = min(item.x() for item in self.visible_symb)
+            min_y = min(item.y() for item in self.visible_symb)
         except ValueError:
             # No item in the scene
             return 0, 0
