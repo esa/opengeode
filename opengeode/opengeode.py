@@ -1925,10 +1925,10 @@ class SDL_View(QtGui.QGraphicsView, object):
         symbol = self.scene().symbol_near(pos=pos, dist=1)
         if symbol:
             self.scene().clearSelection()
-            self.clear_highlight()
+            self.scene().clear_highlight()
             self.scene().clear_focus()
             symbol.select()
-            self.highlight(symbol)
+            self.scene().highlight(symbol)
             symbol.ensureVisible()
         else:
             LOG.info('No symbol at given coordinates in the current scene')
