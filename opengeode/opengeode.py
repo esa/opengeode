@@ -1715,7 +1715,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
         # Translate all scenes to avoid negative coordinates
         delta_x, delta_y = scene.translate_to_origin()
-        for each in scene.all_nested_scenes:
+        for each in chain([scene], scene.all_nested_scenes):
             dx, dy = each.translate_to_origin()
             if each == self.scene():
                 delta_x, delta_y = dx, dy
@@ -1734,7 +1734,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             pr_file.close()
             if not autosave:
                 self.scene().clear_focus()
-                for each in scene.all_nested_scenes:
+                for each in chain([scene], scene.all_nested_scenes):
                     each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
