@@ -1132,7 +1132,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         item.edit_text()
 
         for view in self.views():
-            view.refresh()
+            view.view_refresh()
             view.ensureVisible(item)
         return item
 
@@ -1611,7 +1611,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.up_button.setEnabled(True)
         self.set_toolbar()
         self.scene().scene_left.emit()
-        self.refresh()
+        self.view_refresh()
 
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
@@ -1932,7 +1932,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.scene().clear_focus()
             symbol.select()
             self.scene().highlight(symbol)
-            symbol.ensureVisible()
+            self.ensureVisible(symbol)
         else:
             LOG.info('No symbol at given coordinates in the current scene')
 
