@@ -273,6 +273,10 @@ LD_LIBRARY_PATH=. opengeode-simulator
 
     process_level_decl.append('end record;')
     process_level_decl.append('{ctxt}: {ctxt}_Ty;'.format(ctxt=LPREFIX))
+    if simu:
+        # Exhaustive simulation needs a backup of the context to quickly undo
+        process_level_decl.append('{ctxt}_bk: {ctxt}_Ty;'.format(ctxt=LPREFIX))
+
     process_level_decl.append('CS_Only  : constant Integer := {};'
                               .format(len(process.transitions)))
 
@@ -360,8 +364,8 @@ package {process_name} is'''.format(process_name=process_name,
 
     dll_api = []
     if simu:
-        ads_template.append('--  DLL Interface')
-        dll_api.append('-- DLL Interface to remotely change internal data')
+        ads_template.append('--  API for simulation via DLL')
+        dll_api.append('-- API to remotely change internal data')
         # Add function allowing to trace current state as a string
         process_level_decl.append("function get_state return chars_ptr "
                                   "is (New_String(states'Image({ctxt}.state)))"
@@ -378,6 +382,24 @@ package {process_name} is'''.format(process_name=process_name,
         dll_api.append("end set_state;")
         dll_api.append("")
 
+        # Save/restore state allow one step undo, as needed for model checking
+        save_state_decl = "procedure save_context"
+        restore_state_decl = "procedure restore_context"
+        ads_template.append("{};".format(save_state_decl))
+        ads_template.append('pragma Export(C, save_context, "_save_context");')
+        ads_template.append("{};".format(restore_state_decl))
+        ads_template.append('pragma Export(C, restore_context, "_restore_context");')
+        dll_api.append("{} is".format(save_state_decl))
+        dll_api.append("begin")
+        dll_api.append("{ctxt} := {ctxt}_bk;".format(ctxt=LPREFIX))
+        dll_api.append("end save_context;")
+        dll_api.append("")
+        dll_api.append("{} is".format(restore_state_decl))
+        dll_api.append("begin")
+        dll_api.append("{ctxt}_bk := {ctxt};".format(ctxt=LPREFIX))
+        dll_api.append("end restore_context;")
+        dll_api.append("")
+
         # interface to get/set state aggregations XXX add to C generator
         for substates in aggregates.viewvalues():
             for each in substates:
@@ -392,11 +414,12 @@ package {process_name} is'''.format(process_name=process_name,
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.viewitems():
             # Getters for local variables
-            process_level_decl.append("function l_{name}_size return integer "
-                                     "is ({prefix}.{name}'Size/8) with Export,"
-                                     " Convention => C,"
-                                     ' Link_Name => "{name}_size";'
-                                     .format(prefix=LPREFIX, name=var_name))
+# Removed size - this was needed by swig only, not ctypes
+#           process_level_decl.append("function l_{name}_size return integer "
+#                                    "is ({prefix}.{name}'Size/8) with Export,"
+#                                    " Convention => C,"
+#                                    ' Link_Name => "{name}_size";'
+#                                    .format(prefix=LPREFIX, name=var_name))
             process_level_decl.append("function l_{name}_value"
                                      " return access {sort} "
                                      "is ({prefix}.{name}'access) with Export,"
