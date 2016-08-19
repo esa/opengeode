@@ -1078,7 +1078,6 @@ primary
         :       TRUE^
         |       FALSE^
         |       STRING
-        |       NULL^
         |       PLUS_INFINITY^
         |       MINUS_INFINITY^
         |       INT^
@@ -1214,12 +1213,12 @@ variable_access
         :       variable_id
         ;
 
-
+/*
 operator_application
         :       operator_id '('active_expression_list ')'
         ;
 
-/*
+
 active_expression_list
         :       active_expression (',' expression_list)?
         ;
@@ -1540,7 +1539,6 @@ REM             :       R E M;
 TRUE            :       T R U E;
 FALSE           :       F A L S E;
 ASNFILENAME     :       A S N F I L E N A M E;
-NULL            :       N U L L;
 PLUS_INFINITY   :       P L U S '-' I N F I N I T Y;
 MINUS_INFINITY  :       M I N U S '-' I N F I N I T Y;
 MANTISSA        :       M A N T I S S A;
