@@ -705,26 +705,26 @@ package {process_name} is'''.format(process_name=process_name,
             ads_template.append(u'type RESET_{}_T is access procedure'
                                 '(name: chars_ptr);'.format(timer))
             for each in ('', 'RE'):
-                ads_template.append('pragma Convention(Convention => C,'
-                                    ' Entity => {re}SET_{t}_T);'
+                ads_template.append(u'pragma Convention(Convention => C,'
+                                    u' Entity => {re}SET_{t}_T);'
                                     .format(re=each, t=timer))
-                ads_template.append('{re}SET_{t} : {re}SET_{t}_T;'
+                ads_template.append(u'{re}SET_{t} : {re}SET_{t}_T;'
                                     .format(re=each, t=timer))
-                ads_template.append('procedure Register_{re}SET_{t}'
-                                    '(Callback: {re}SET_{t}_T);'
+                ads_template.append(u'procedure Register_{re}SET_{t}'
+                                    u'(Callback: {re}SET_{t}_T);'
                                     .format(re=each, t=timer))
-                ads_template.append('pragma Export(C, Register_{re}SET_{t},'
-                                    ' "register_{re}SET_{t}");'
+                ads_template.append(u'pragma Export(C, Register_{re}SET_{t},'
+                                    u' "register_{re}SET_{t}");'
                                     .format(re=each, t=timer))
             # Code for the SET/RESET timer callback registration
             for each in ('', 'RE'):
-                taste_template.append('procedure Register_{re}SET_{t}'
-                                      '(Callback:{re}SET_{t}_T) is'
+                taste_template.append(u'procedure Register_{re}SET_{t}'
+                                      u'(Callback:{re}SET_{t}_T) is'
                                       .format(re=each, t=timer))
-                taste_template.append('begin')
-                taste_template.append('{re}SET_{t} := Callback;'
+                taste_template.append(u'begin')
+                taste_template.append(u'{re}SET_{t} := Callback;'
                                       .format(re=each, t=timer))
-                taste_template.append('end Register_{re}SET_{t};'
+                taste_template.append(u'end Register_{re}SET_{t};'
                                       .format(re=each, t=timer))
                 taste_template.append('')
 
@@ -738,6 +738,15 @@ package {process_name} is'''.format(process_name=process_name,
             ads_template.append(
                 u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
                 .format(timer=timer, proc=process_name))
+
+    if simu and process.cs_mapping:
+        # Callback registration for Check_Queue
+        taste_template.append(u'procedure Register_Check_Queue'
+                              u'(Callback: Check_Queue_T) is')
+        taste_template.append(u'begin')
+        taste_template.append(u'Check_Queue := Callback;')
+        taste_template.append(u'end Register_Check_Queue;')
+        taste_template.append(u'')
 
     # If the process has no input, output, procedures, or timers, then Ada
     # will not compile the body - generate a pragma to fix this
