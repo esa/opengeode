@@ -823,6 +823,20 @@ package {process_name} is'''.format(process_name=process_name,
             ads_template.append(
                 u'pragma import(C, Check_Queue, "{proc}_check_queue");'
                 .format(proc=process_name))
+        elif process.cs_mapping and simu:
+            taste_template.append('if {}.initDone then'.format(LPREFIX))
+            taste_template.append("Check_Queue(msgPending'access);")
+            taste_template.append('end if;')
+            # simulation: create a callback registration function
+            ads_template.append(u'type Check_Queue_T is access procedure'
+                                u'(res: access Asn1Boolean);')
+            ads_template.append(u'pragma Convention(Convention => C,'
+                                u' Entity => Check_Queue_T);')
+            ads_template.append(u'Check_Queue : Check_Queue_T;')
+            ads_template.append(u'procedure Register_Check_Queue'
+                                u'(Callback: Check_Queue_T);')
+            ads_template.append(u'pragma Export(C, Register_Check_Queue,'
+                                ' "register_check_queue");')
         else:
             taste_template.append('null;')
 
