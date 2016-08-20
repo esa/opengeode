@@ -1711,10 +1711,10 @@ def primary(root, context):
         prim = ogAST.PrimBoolean()
         prim.value = [root.text.lower()]
         prim.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
-    elif root.type == lexer.NULL:
-        prim = ogAST.PrimNull()
-        prim.value = [root.text.lower()]
-        prim.exprType = type('PrNull', (object,), {'kind': 'NullType'})
+#   elif root.type == lexer.NULL:
+#       prim = ogAST.PrimNull()
+#       prim.value = [root.text.lower()]
+#       prim.exprType = type('PrNull', (object,), {'kind': 'NullType'})
     elif root.type == lexer.FLOAT:
         prim = ogAST.PrimReal()
         prim.value = [root.text]
