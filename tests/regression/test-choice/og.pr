@@ -18,35 +18,35 @@ signal we;
         CONNECT c AND r;
         /* CIF PROCESS (225, 50), (150, 75) */
         PROCESS og;
-            /* CIF TEXT (56, 58), (337, 130) */
+            /* CIF TEXT (70, 60), (337, 130) */
             --  Test choice assignments and access
 
-dcl ch ChoiceWithEmptySeq := a: NULL;
+dcl ch ChoiceWithEmptySeq;
 
 dcl em EmptySeq := {};
 
 dcl eso SeqOf := {};
             /* CIF ENDTEXT */
-            /* CIF START (160, 226), (70, 35) */
+            /* CIF START (174, 228), (70, 35) */
             START;
-                /* CIF TASK (146, 276), (98, 35) */
+                /* CIF TASK (160, 278), (98, 35) */
                 TASK ch := b: {};
-                /* CIF TASK (152, 326), (85, 35) */
+                /* CIF TASK (166, 328), (85, 35) */
                 TASK eso := {};
-                /* CIF TASK (142, 376), (106, 35) */
+                /* CIF TASK (156, 378), (106, 35) */
                 TASK em := ch!b
-                /* CIF COMMENT (264, 374), (177, 40) */
+                /* CIF COMMENT (278, 376), (177, 40) */
                 COMMENT 'This is ok, there should
 be no warning raised';
-                /* CIF NEXTSTATE (160, 426), (70, 35) */
+                /* CIF NEXTSTATE (174, 428), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (460, 231), (70, 35) */
+            /* CIF STATE (474, 233), (70, 35) */
             STATE wait;
-                /* CIF INPUT (453, 286), (84, 35) */
+                /* CIF INPUT (467, 288), (84, 35) */
                 INPUT dd;
-                    /* CIF OUTPUT (450, 336), (89, 35) */
+                    /* CIF OUTPUT (464, 338), (89, 35) */
                     OUTPUT we;
-                    /* CIF NEXTSTATE (460, 386), (70, 35) */
+                    /* CIF NEXTSTATE (474, 388), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;

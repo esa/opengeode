@@ -18,42 +18,40 @@ signal we;
         CONNECT c AND r;
         /* CIF PROCESS (225, 49), (150, 75) */
         PROCESS og;
-            /* CIF TEXT (57, 58), (337, 130) */
+            /* CIF TEXT (79, 58), (337, 130) */
             --  Test support for empty sequences and NULL type
 
 dcl empty1 EmptySeq := c1;
 
-dcl null1 NullType := NULL;
+dcl null1 NullType;
 
 dcl choice1 ChoiceWithEmptySeq := a: n1;
             /* CIF ENDTEXT */
-            /* CIF START (160, 226), (70, 35) */
+            /* CIF START (182, 226), (70, 35) */
             START;
-                /* CIF TASK (137, 276), (115, 35) */
+                /* CIF TASK (160, 276), (115, 35) */
                 TASK empty1 := c1
-                /* CIF COMMENT (272, 276), (139, 35) */
+                /* CIF COMMENT (294, 276), (139, 35) */
                 COMMENT 'Using a constant';
-                /* CIF TASK (138, 326), (112, 35) */
+                /* CIF TASK (161, 326), (112, 35) */
                 TASK empty1 := {}
-                /* CIF COMMENT (270, 326), (135, 35) */
+                /* CIF COMMENT (292, 326), (135, 35) */
                 COMMENT 'Classic notation';
-                /* CIF TASK (130, 376), (130, 35) */
+                /* CIF TASK (152, 376), (130, 35) */
                 TASK choice1 := b: c1;
-                /* CIF TASK (131, 426), (126, 35) */
+                /* CIF TASK (154, 426), (126, 35) */
                 TASK choice1 := b: {};
-                /* CIF TASK (144, 476), (100, 35) */
+                /* CIF TASK (167, 476), (100, 35) */
                 TASK null1 := n1;
-                /* CIF TASK (134, 526), (121, 35) */
-                TASK null1 :=  null;
-                /* CIF NEXTSTATE (160, 576), (70, 35) */
+                /* CIF NEXTSTATE (182, 526), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (424, 231), (70, 35) */
+            /* CIF STATE (446, 231), (70, 35) */
             STATE wait;
-                /* CIF INPUT (417, 286), (84, 35) */
+                /* CIF INPUT (439, 286), (84, 35) */
                 INPUT dd;
-                    /* CIF OUTPUT (414, 336), (89, 35) */
+                    /* CIF OUTPUT (437, 336), (89, 35) */
                     OUTPUT we;
-                    /* CIF NEXTSTATE (424, 386), (70, 35) */
+                    /* CIF NEXTSTATE (446, 386), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
         ENDPROCESS og;
