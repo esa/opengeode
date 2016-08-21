@@ -11,9 +11,11 @@ void og_RI_rezult (asn1SccMy_OctStr *val)
 }
 
 int main() {
-    asn1SccMy_OctStr toto;
+    asn1SccMy_OctStr toto = test_string;  // send "hello"
     adainit();
-    og_go(&toto);
+    og_go(&toto); // will move state to Running
+    og_go(&toto); // will display ay
+    og_go(&toto); // will display ay
     return 0;
 }
 
