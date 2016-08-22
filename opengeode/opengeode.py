@@ -2012,6 +2012,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.mdi_area = None
         self.sub_mdi = None
         self.statechart_mdi = None
+        self.datadict = None
 
     def new_scene(self):
         ''' Create a new, clean SDL scene. This function is necessary because
@@ -2128,6 +2129,13 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.asn1_area.text.try_resize()
         self.view.update_asn1_dock.connect(self.set_asn1_view)
 
+        self.datadict = self.findChild(QtGui.QTreeWidget, 'datadict')
+
+        QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Data types"])
+        QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Input signals"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Output signals"])
+
         self.datatypes_scene.addItem(self.asn1_area)
 
         # Create a timer for periodically saving a backup of the model
@@ -2192,11 +2200,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                     children = []
                     try:
                         children.extend(ast.dataview[each].type.Children)
-                    except AttributeError:
+                    except (AttributeError, KeyError):
                         pass
                     try:
                         children.extend(ast.dataview[each].type.EnumValues)
-                    except AttributeError:
+                    except (AttributeError, KeyError):
                         pass
                     for ch in children:
                         text = re.sub(ch, ch.replace('-', '_'), text)
