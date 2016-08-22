@@ -83,6 +83,10 @@ class Connection(QGraphicsPathItem, object):
         return (QPointF(endp.x() - 5, endp.y() - 5),
                 QPointF(endp.x() + 5, endp.y() - 5))
 
+    def select(self):
+        ''' Select a connection - for future use? '''
+        return
+
     def angle_arrow(self, path, origin='head'):
         ''' Compute the two points of the arrow head with the right angle '''
         if origin == 'tail':

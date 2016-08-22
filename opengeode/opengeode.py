@@ -227,12 +227,33 @@ class Vi_bar(QtGui.QLineEdit, object):
     def __init__(self):
         ''' Create the bar - no need for parent '''
         super(Vi_bar, self).__init__()
+        self.history = []
+        self.pointer = 0
 
     def keyPressEvent(self, key_event):
-        ''' Handle key press - in particular Escape '''
+        ''' Handle key press - Escape, command history '''
         super(Vi_bar, self).keyPressEvent(key_event)
         if key_event.key() == Qt.Key_Escape:
             self.clearFocus()
+            self.pointer = len(self.history)
+        elif key_event.key() == Qt.Key_Return:
+            self.history.append(self.text())
+            self.pointer = len(self.history)
+        elif key_event.key() == Qt.Key_Up:
+            if self.text() and self.text() not in self.history:
+                self.history.insert(self.pointer + 1, self.text())
+            self.pointer = max(0, self.pointer - 1)
+            try:
+                self.setText(self.history[self.pointer])
+            except IndexError as err:
+                pass
+        elif key_event.key() == Qt.Key_Down:
+            self.pointer = min(len(self.history), self.pointer + 1)
+            try:
+                self.setText(self.history[self.pointer])
+            except IndexError:
+                pass
+            pass
 
 
 class File_toolbar(QtGui.QToolBar, object):
@@ -829,11 +850,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # invalid pattern
                 raise StopIteration
             if res:
-                yield item.parentItem()
+                yield item
 
 
-    def search(self, pattern, replace_with=None):
-        ''' Search and replace function ; get next search result with key n '''
+    def search(self, pattern, replace_with=None, cmd=None):
+        ''' Search and replace function ; get next search result with key n
+        cmd is a user string from the vi bar that by default for a replace
+        is "s" (substittute string) but that can be a different command,
+        e.g. "state" to limit the substitution to State components'''
         self.clearSelection()
         self.clear_highlight()
         self.clear_focus()
@@ -845,18 +869,25 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if replace_with:
             with undoCommands.UndoMacro(self.undo_stack, 'Search and Replace'):
                 for item in self.search_item:
+                    if(cmd and cmd != "s" and
+                        item.parentItem().__class__.__name__.lower()
+                                                               != cmd.lower()):
+                        # filter symbols based on the user command
+                        continue
                     new_string = re.sub(pattern,
                                         replace_with,
-                                        unicode(item.text),
+                                        unicode(item),
                                         flags=re.IGNORECASE)
                     undo_cmd = undoCommands.ReplaceText(
-                                     item.text, unicode(item.text), new_string)
+                                     item, unicode(item), new_string)
                     self.undo_stack.push(undo_cmd)
-                    item.select()
+                    item.try_resize()
+                    item.parentItem().select()
             self.refresh()
         else:
             try:
                 item = self.search_item.next()
+                item = item.parentItem()
                 item.select()
                 self.highlight(item)
                 item.ensureVisible()
@@ -2170,13 +2201,21 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         '''
         command = self.vi_bar.text()
         # Match vi-like search and replace pattern (e.g. :%s,a,b,g)
-        search = re.compile(r':%s(.)(.*)\1(.*)\1(.)')
+        # any command is supported, not only substitute
+        search = re.compile(r':%(\w+)(.)(.*)\2(.*)\2(.)?')
         try:
-            _, pattern, new, _ = search.match(command).groups()
+            cmd, _, pattern, new, loc = search.match(command).groups()
             LOG.debug('Replacing {this} with {that}'
                           .format(this=pattern, that=new))
-            self.view.scene().search(pattern, replace_with=new)
-        except AttributeError:
+            if loc != 'g':
+                # apply only to the current scene
+                self.view.scene().search(pattern, replace_with=new, cmd=cmd)
+            else:
+                # apply globally to the whole model
+                scene = self.view.top_scene()
+                for each in chain([scene], scene.all_nested_scenes):
+                    each.search(pattern, replace_with=new, cmd=cmd)
+        except AttributeError as err:
             if command.startswith('/') and len(command) > 1:
                 LOG.debug('Searching for ' + command[1:])
                 self.view.scene().search(command[1:])
