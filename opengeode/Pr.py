@@ -39,7 +39,6 @@ class Indent(deque):
 def parse_scene(scene, full_model=False):
     ''' Return the PR string for a complete scene
         Optionally, also generate the SYSTEM structure, with channels, etc. '''
-    #pr_data = deque()
     pr_data = Indent()
     if full_model:
         # Generate a complete SDL system - to have everything in a single file

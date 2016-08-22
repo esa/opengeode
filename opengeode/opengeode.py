@@ -134,7 +134,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.4'
+__version__ = '1.5.5'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -550,7 +550,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # slightly altered by the reshaping functions)
                 def fix_pos_from_ast(symbol):
                     try:
-                        if symbol.ast.pos_x and symbol.ast.pos_y:
+                        if(symbol.ast.pos_x is not None
+                                and symbol.ast.pos_y is not None):
                             relpos = symbol.mapFromScene(symbol.ast.pos_x,
                                                          symbol.ast.pos_y)
                             #symbol.pos_x += relpos.x()
@@ -694,8 +695,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             in order to avoid negative coordinates
         '''
         try:
-            min_x = min(item.x() for item in self.visible_symb)
-            min_y = min(item.y() for item in self.visible_symb)
+            min_x = min(item.scenePos().x() for item in self.visible_symb)
+            min_y = min(item.scenePos().y() for item in self.visible_symb)
         except ValueError:
             # No item in the scene
             return 0, 0

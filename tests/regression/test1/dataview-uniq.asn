@@ -31,5 +31,6 @@ SeqBool ::= SEQUENCE(SIZE(1..5)) OF BOOLEAN
 
 default-seqof SeqOf ::= {4,7,9}
 default-str My-OctStr ::= 'DEADBEEF'H
+test-string My-OctStr ::= '68656c6c6f'H  -- "hello"
 
 END

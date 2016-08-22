@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.5 (08/2016)
+    - Fixed issue with rendering (coordinates of symbols could be wrong)
+
 1.5.4 (08/2016)
     - Various GUI improvements
 
