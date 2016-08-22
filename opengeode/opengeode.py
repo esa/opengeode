@@ -2214,6 +2214,17 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
         except AttributeError as err:
             LOG.warning('No AST, check input files:' + str(err))
+        else:
+            # Update the data dictionary
+            item = self.datadict.topLevelItem(0)
+            item.takeChildren() # remove old children
+            for each in ast.dataview:
+                QtGui.QTreeWidgetItem(item, [each.replace('-', '_')])
+            item = self.datadict.topLevelItem(1)
+            item.takeChildren()
+            for each in ast.asn1_constants:
+                QtGui.QTreeWidgetItem(item, [each.replace('-', '_')])
+
 
 
     def vi_command(self):
