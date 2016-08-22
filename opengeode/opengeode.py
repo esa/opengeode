@@ -853,8 +853,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 yield item
 
 
-    def search(self, pattern, replace_with=None):
-        ''' Search and replace function ; get next search result with key n '''
+    def search(self, pattern, replace_with=None, cmd=None):
+        ''' Search and replace function ; get next search result with key n
+        cmd is a user string from the vi bar that by default for a replace
+        is "s" (substittute string) but that can be a different command,
+        e.g. "state" to limit the substitution to State components'''
         self.clearSelection()
         self.clear_highlight()
         self.clear_focus()
@@ -866,6 +869,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if replace_with:
             with undoCommands.UndoMacro(self.undo_stack, 'Search and Replace'):
                 for item in self.search_item:
+                    if(cmd and cmd != "s" and
+                        item.parentItem().__class__.__name__.lower()
+                                                               != cmd.lower()):
+                        # filter symbols based on the user command
+                        continue
                     new_string = re.sub(pattern,
                                         replace_with,
                                         unicode(item),
@@ -2193,19 +2201,20 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         '''
         command = self.vi_bar.text()
         # Match vi-like search and replace pattern (e.g. :%s,a,b,g)
-        search = re.compile(r':%s(.)(.*)\1(.*)\1(.)?')
+        # any command is supported, not only substitute
+        search = re.compile(r':%(\w+)(.)(.*)\2(.*)\2(.)?')
         try:
-            _, pattern, new, loc = search.match(command).groups()
+            cmd, _, pattern, new, loc = search.match(command).groups()
             LOG.debug('Replacing {this} with {that}'
                           .format(this=pattern, that=new))
             if loc != 'g':
                 # apply only to the current scene
-                self.view.scene().search(pattern, replace_with=new)
+                self.view.scene().search(pattern, replace_with=new, cmd=cmd)
             else:
                 # apply globally to the whole model
                 scene = self.view.top_scene()
                 for each in chain([scene], scene.all_nested_scenes):
-                    each.search(pattern, replace_with=new)
+                    each.search(pattern, replace_with=new, cmd=cmd)
         except AttributeError as err:
             if command.startswith('/') and len(command) > 1:
                 LOG.debug('Searching for ' + command[1:])
