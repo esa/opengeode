@@ -2117,7 +2117,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_view.setScene(self.statechart_scene)
 
         # Set up the dock area to display the ASN.1 Data model
-        #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
+        asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
+        dict_dock = self.findChild(QtGui.QDockWidget, 'datadict_dock')
+        self.tabifyDockWidget(asn1_dock, dict_dock)
         self.datatypes_view = self.findChild(SDL_View, 'datatypes_view')
         self.datatypes_scene = SDL_Scene(context='asn1')
         self.datatypes_view.setScene(self.datatypes_scene)
