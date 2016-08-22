@@ -2177,17 +2177,33 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             for each in ast.asn1_filenames:
                 with open(each, 'r') as file_handler:
                     types.append('-- ' + each)
-                    types.append(file_handler.read().replace('-', '_'))
+                    types.append(file_handler.read())
             if types:
                 self.asn1_area.text.setPlainText('\n'.join(types))
                 # ASN.1 text area is read-only:
                 self.asn1_area.text.setTextInteractionFlags(
                                         QtCore.Qt.TextBrowserInteraction)
+                text = unicode(self.asn1_area.text)
+                for each in chain(ast.dataview, ast.asn1_constants):
+                    # Replace dash with underscore of all types and constants
+                    text = re.sub(each, each.replace('-', '_'), text)
+                    children = []
+                    try:
+                        children.extend(ast.dataview[each].type.Children)
+                    except AttributeError:
+                        pass
+                    try:
+                        children.extend(ast.dataview[each].type.EnumValues)
+                    except AttributeError:
+                        pass
+                    for ch in children:
+                        text = re.sub(ch, ch.replace('-', '_'), text)
+                self.asn1_area.text.setPlainText(text)
                 self.asn1_area.text.try_resize()
         except IOError as err:
             LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
-        except AttributeError:
-            LOG.warning('No AST, check input files')
+        except AttributeError as err:
+            LOG.warning('No AST, check input files:' + str(err))
 
 
     def vi_command(self):
