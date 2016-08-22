@@ -227,12 +227,33 @@ class Vi_bar(QtGui.QLineEdit, object):
     def __init__(self):
         ''' Create the bar - no need for parent '''
         super(Vi_bar, self).__init__()
+        self.history = []
+        self.pointer = 0
 
     def keyPressEvent(self, key_event):
-        ''' Handle key press - in particular Escape '''
+        ''' Handle key press - Escape, command history '''
         super(Vi_bar, self).keyPressEvent(key_event)
         if key_event.key() == Qt.Key_Escape:
             self.clearFocus()
+            self.pointer = len(self.history)
+        elif key_event.key() == Qt.Key_Return:
+            self.history.append(self.text())
+            self.pointer = len(self.history)
+        elif key_event.key() == Qt.Key_Up:
+            if self.text() and self.text() not in self.history:
+                self.history.insert(self.pointer + 1, self.text())
+            self.pointer = max(0, self.pointer - 1)
+            try:
+                self.setText(self.history[self.pointer])
+            except IndexError as err:
+                pass
+        elif key_event.key() == Qt.Key_Down:
+            self.pointer = min(len(self.history), self.pointer + 1)
+            try:
+                self.setText(self.history[self.pointer])
+            except IndexError:
+                pass
+            pass
 
 
 class File_toolbar(QtGui.QToolBar, object):
@@ -2186,7 +2207,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 for each in chain([scene], scene.all_nested_scenes):
                     each.search(pattern, replace_with=new)
         except AttributeError as err:
-            print 'attribute error', str(err)
             if command.startswith('/') and len(command) > 1:
                 LOG.debug('Searching for ' + command[1:])
                 self.view.scene().search(command[1:])
