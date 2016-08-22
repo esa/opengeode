@@ -829,7 +829,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # invalid pattern
                 raise StopIteration
             if res:
-                yield item.parentItem()
+                yield item
 
 
     def search(self, pattern, replace_with=None):
@@ -847,16 +847,18 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 for item in self.search_item:
                     new_string = re.sub(pattern,
                                         replace_with,
-                                        unicode(item.text),
+                                        unicode(item),
                                         flags=re.IGNORECASE)
                     undo_cmd = undoCommands.ReplaceText(
-                                     item.text, unicode(item.text), new_string)
+                                     item, unicode(item), new_string)
                     self.undo_stack.push(undo_cmd)
-                    item.select()
+                    item.try_resize()
+                    item.parentItem().select()
             self.refresh()
         else:
             try:
                 item = self.search_item.next()
+                item = item.parentItem()
                 item.select()
                 self.highlight(item)
                 item.ensureVisible()
@@ -2170,13 +2172,21 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         '''
         command = self.vi_bar.text()
         # Match vi-like search and replace pattern (e.g. :%s,a,b,g)
-        search = re.compile(r':%s(.)(.*)\1(.*)\1(.)')
+        search = re.compile(r':%s(.)(.*)\1(.*)\1(.)?')
         try:
-            _, pattern, new, _ = search.match(command).groups()
+            _, pattern, new, loc = search.match(command).groups()
             LOG.debug('Replacing {this} with {that}'
                           .format(this=pattern, that=new))
-            self.view.scene().search(pattern, replace_with=new)
-        except AttributeError:
+            if loc != 'g':
+                # apply only to the current scene
+                self.view.scene().search(pattern, replace_with=new)
+            else:
+                # apply globally to the whole model
+                scene = self.view.top_scene()
+                for each in chain([scene], scene.all_nested_scenes):
+                    each.search(pattern, replace_with=new)
+        except AttributeError as err:
+            print 'attribute error', str(err)
             if command.startswith('/') and len(command) > 1:
                 LOG.debug('Searching for ' + command[1:])
                 self.view.scene().search(command[1:])
