@@ -83,7 +83,7 @@ class Connection(QGraphicsPathItem, object):
         return (QPointF(endp.x() - 5, endp.y() - 5),
                 QPointF(endp.x() + 5, endp.y() - 5))
 
-    def select(self):
+    def select(self, selected=True):
         ''' Select a connection - for future use? '''
         return
 

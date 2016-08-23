@@ -2130,6 +2130,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.view.update_asn1_dock.connect(self.set_asn1_view)
 
         self.datadict = self.findChild(QtGui.QTreeWidget, 'datadict')
+        self.datadict.setAlternatingRowColors(True)
+        self.datadict.setColumnCount(2)
+        self.datadict.itemClicked.connect(self.datadict_item_selected)
 
         QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Data types"])
         QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
@@ -2178,6 +2181,12 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             except (AttributeError, IOError, TypeError) as err:
                 LOG.debug(str(err))
 
+
+    @QtCore.Slot(QtGui.QTreeWidgetItem, int)
+    def datadict_item_selected(self, item, column):
+        ''' Slot called when user clicks on an item of the data dictionary '''
+        print item, column
+
     @QtCore.Slot(ogAST.AST)
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
@@ -2218,12 +2227,15 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             # Update the data dictionary
             item = self.datadict.topLevelItem(0)
             item.takeChildren() # remove old children
-            for each in ast.dataview:
-                QtGui.QTreeWidgetItem(item, [each.replace('-', '_')])
+            for name, sort in ast.dataview.viewitems():
+                basic = ogParser.find_basic_type(sort.type).kind[:-4].upper()
+                QtGui.QTreeWidgetItem(item, [name.replace('-', '_'), basic])
             item = self.datadict.topLevelItem(1)
             item.takeChildren()
-            for each in ast.asn1_constants:
-                QtGui.QTreeWidgetItem(item, [each.replace('-', '_')])
+            for name, sort in ast.asn1_constants.viewitems():
+                QtGui.QTreeWidgetItem(item, [name.replace('-', '_'),
+                                             sort.type.ReferencedTypeName])
+            self.datadict.resizeColumnToContents(0)
 
 
 

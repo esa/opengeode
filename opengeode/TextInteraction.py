@@ -401,7 +401,7 @@ class EditableText(QGraphicsTextItem, object):
         try:
             self.parent.select(True)
         except AttributeError:
-            # Some parents may not be selectable (e.g. Signalroute)
+            # Some parents may not be selectable
             pass
         # Update completer list of keywords
         self.context = ''
