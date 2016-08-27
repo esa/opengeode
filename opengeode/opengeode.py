@@ -120,6 +120,9 @@ MODULES = [
     CGenerator,
 ] # type: List[module]
 
+# Define custom UserRoles
+ANCHOR = Qt.UserRole + 1
+
 try:
     import LlvmGenerator
     MODULES.append(LlvmGenerator)
@@ -2122,11 +2125,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         dict_dock = self.findChild(QtGui.QDockWidget, 'datadict_dock')
         self.tabifyDockWidget(asn1_dock, dict_dock)
         self.asn1_browser = self.findChild(QtGui.QTextBrowser, 'asn1_browser')
-        #self.datatypes_scene = SDL_Scene(context='asn1')
-        #self.datatypes_view.setScene(self.datatypes_scene)
-        #self.asn1_area = sdlSymbols.ASN1Viewer()
-        #self.asn1_area.text.setPlainText('-- ASN.1 Data Types')
-        #self.asn1_area.text.try_resize()
         self.view.update_asn1_dock.connect(self.set_asn1_view)
 
         self.datadict = self.findChild(QtGui.QTreeWidget, 'datadict')
@@ -2185,7 +2183,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     @QtCore.Slot(QtGui.QTreeWidgetItem, int)
     def datadict_item_selected(self, item, column):
         ''' Slot called when user clicks on an item of the data dictionary '''
-        print item, column
+        anchor = item.data(0, ANCHOR)
+        if anchor and column == 1:
+            self.asn1_browser.scrollToAnchor(anchor)
+            # Activate the tab to display the ASN.1 type in html
+            self.asn1_browser.parent().parent().raise_()
 
     @QtCore.Slot(ogAST.AST)
     def set_asn1_view(self, ast):
@@ -2194,61 +2196,24 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         html_file = open(ast.DV.html, 'r')
         html_content = html_file.read()
         self.asn1_browser.setHtml(html_content)
-#       self.asn1_area.text.setHtml(html_content)
-#       self.asn1_area.text.setTextInteractionFlags(
-#                                             QtCore.Qt.TextBrowserInteraction)
-#       self.asn1_area.text.try_resize()
-#       types = []
-#       try:
-#           for each in ast.asn1_filenames:
-#               with open(each, 'r') as file_handler:
-#                   types.append('-- ' + each)
-#                   types.append(file_handler.read())
-#           if types:
-#               self.asn1_area.text.setPlainText('\n'.join(types))
-#               # ASN.1 text area is read-only:
-#               self.asn1_area.text.setTextInteractionFlags(
-#                                       QtCore.Qt.TextBrowserInteraction)
-#               text = unicode(self.asn1_area.text)
-#               for each in chain(ast.dataview, ast.asn1_constants):
-#                   # Replace dash with underscore of all types and constants
-#                   text = re.sub(each, each.replace('-', '_'), text)
-#                   children = []
-#                   try:
-#                       children.extend(ast.dataview[each].type.Children)
-#                   except (AttributeError, KeyError):
-#                       pass
-#                   try:
-#                       children.extend(ast.dataview[each].type.EnumValues)
-#                   except (AttributeError, KeyError):
-#                       pass
-#                   for ch in children:
-#                       text = re.sub(ch, ch.replace('-', '_'), text)
-#               self.asn1_area.text.setPlainText(text)
-#               self.asn1_area.text.try_resize()
-#       except IOError as err:
-#           LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
-#       except AttributeError as err:
-#           LOG.warning('No AST, check input files:' + str(err))
-#        else:
+
         # Update the data dictionary
         item = self.datadict.topLevelItem(0)
         item.takeChildren() # remove old children
         for name, sort in ast.dataview.viewitems():
-            basic = ogParser.find_basic_type(sort.type).kind[:-4].upper()
+            #basic = ogParser.find_basic_type(sort.type).kind[:-4].upper()
             new_item = QtGui.QTreeWidgetItem(item,
                                              [name.replace('-', '_'),
-                                              basic])
-            # Save type pointer
-            new_item.setData(0, Qt.UserRole + 1, sort)
+                                              'view'])
+            new_item.setForeground(1, Qt.blue)
+            # Save type anchor for html
+            new_item.setData(0, ANCHOR, "ASN1_" + name.replace('-', '_'))
         item = self.datadict.topLevelItem(1)
         item.takeChildren()
         for name, sort in ast.asn1_constants.viewitems():
             QtGui.QTreeWidgetItem(item, [name.replace('-', '_'),
                                          sort.type.ReferencedTypeName])
         self.datadict.resizeColumnToContents(0)
-
-
 
     def vi_command(self):
         # type: () -> None
