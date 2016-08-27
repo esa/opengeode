@@ -19,7 +19,7 @@
 
 __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
-           'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
+           'Procedure', 'ProcedureStart', 'ProcedureStop',
            'StateStart', 'Process', 'ContinuousSignal']
 
 #import traceback
@@ -874,12 +874,12 @@ class TextSymbol(HorizontalSymbol):
         self.set_shape(rect.width(), rect.height())
 
 
-class ASN1Viewer(TextSymbol):
-    ''' Text symbol with dedicated text highlighting set of words for ASN.1 '''
-    blackbold = ['\\b{}\\b'.format(word) for word in (
-                 'DEFINITIONS', 'AUTOMATIC', 'TAGS', 'BEGIN', 'END', 'INTEGER',
-                 'OCTET', 'STRING', 'BIT', 'REAL', 'SEQUENCE', 'OF', 'WITH',
-                 'IMPORTS', 'FROM', 'SIZE', 'CHOICE', 'BOOLEAN', 'ENUMERATED')]
+#class ASN1Viewer(TextSymbol):
+#   ''' Text symbol with dedicated text highlighting set of words for ASN.1 '''
+#   blackbold = ['\\b{}\\b'.format(word) for word in (
+#                'DEFINITIONS', 'AUTOMATIC', 'TAGS', 'BEGIN', 'END', 'INTEGER',
+#                'OCTET', 'STRING', 'BIT', 'REAL', 'SEQUENCE', 'OF', 'WITH',
+#                'IMPORTS', 'FROM', 'SIZE', 'CHOICE', 'BOOLEAN', 'ENUMERATED')]
 
 
 # pylint: disable=R0904

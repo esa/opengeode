@@ -155,11 +155,9 @@ EmmitFile(sAsnFileName, arrsModules) ::= <<
 >>
 
 EmmitFilePart2(sFileName, sAsn1Content) ::= <<
-<div style="width: 100%">
 <h1 >$sFileName$</h1>
 <div style="width: 100%; white-space:pre; font-size:medium">
 $sAsn1Content$
-</div>
 </div>
 >>
 

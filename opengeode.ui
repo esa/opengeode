@@ -161,7 +161,7 @@
    <widget class="QWidget" name="dockWidgetContents_3">
     <layout class="QGridLayout" name="gridLayout_3">
      <item row="0" column="0">
-      <widget class="SDL_View" name="datatypes_view"/>
+      <widget class="QTextBrowser" name="asn1_browser"/>
      </item>
     </layout>
    </widget>

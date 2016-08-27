@@ -2005,8 +2005,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_scene = None
         self.vi_bar = Vi_bar()
         # Docking areas
-        self.datatypes_view = None
-        self.datatypes_scene = None
+        self.datatypes_browser = None  # type: QtGui.QTextBrowser
+        #self.datatypes_scene = None
         self.asn1_area = None
         # MDI area (need to keep them to avoid segfault due to pyside bugs)
         self.mdi_area = None
@@ -2121,12 +2121,12 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
         dict_dock = self.findChild(QtGui.QDockWidget, 'datadict_dock')
         self.tabifyDockWidget(asn1_dock, dict_dock)
-        self.datatypes_view = self.findChild(SDL_View, 'datatypes_view')
-        self.datatypes_scene = SDL_Scene(context='asn1')
-        self.datatypes_view.setScene(self.datatypes_scene)
-        self.asn1_area = sdlSymbols.ASN1Viewer()
-        self.asn1_area.text.setPlainText('-- ASN.1 Data Types')
-        self.asn1_area.text.try_resize()
+        self.asn1_browser = self.findChild(QtGui.QTextBrowser, 'asn1_browser')
+        #self.datatypes_scene = SDL_Scene(context='asn1')
+        #self.datatypes_view.setScene(self.datatypes_scene)
+        #self.asn1_area = sdlSymbols.ASN1Viewer()
+        #self.asn1_area.text.setPlainText('-- ASN.1 Data Types')
+        #self.asn1_area.text.try_resize()
         self.view.update_asn1_dock.connect(self.set_asn1_view)
 
         self.datadict = self.findChild(QtGui.QTreeWidget, 'datadict')
@@ -2139,7 +2139,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         QtGui.QTreeWidgetItem(self.datadict, ["Input signals"])
         QtGui.QTreeWidgetItem(self.datadict, ["Output signals"])
 
-        self.datatypes_scene.addItem(self.asn1_area)
+        #self.datatypes_scene.addItem(self.asn1_area)
 
         # Create a timer for periodically saving a backup of the model
         autosave = QTimer(self)
@@ -2193,10 +2193,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # Update the dock widget with ASN.1 files content
         html_file = open(ast.DV.html, 'r')
         html_content = html_file.read()
-        self.asn1_area.text.setHtml(html_content)
-        self.asn1_area.text.setTextInteractionFlags(
-                                              QtCore.Qt.TextBrowserInteraction)
-        self.asn1_area.text.try_resize()
+        self.asn1_browser.setHtml(html_content)
+#       self.asn1_area.text.setHtml(html_content)
+#       self.asn1_area.text.setTextInteractionFlags(
+#                                             QtCore.Qt.TextBrowserInteraction)
+#       self.asn1_area.text.try_resize()
 #       types = []
 #       try:
 #           for each in ast.asn1_filenames:
