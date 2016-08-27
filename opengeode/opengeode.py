@@ -1369,14 +1369,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.clearSelection()
                 self.clear_highlight()
                 item = self.search_item.next()
+                item = item.parentItem()
                 item.select()
                 self.highlight(item)
                 item.ensureVisible()
             except StopIteration:
                 LOG.info('No more matches')
                 self.search(self.search_pattern)
-            except AttributeError:
-                LOG.info('No search pattern set. Use "/<pattern>"')
+            except AttributeError as err:
+                LOG.info('No search pattern. Use "/pattern"')
         elif (event.key() == Qt.Key_J and
                 event.modifiers() == Qt.ControlModifier):
             # Debug mode
