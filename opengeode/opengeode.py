@@ -120,6 +120,9 @@ MODULES = [
     CGenerator,
 ] # type: List[module]
 
+# Define custom UserRoles
+ANCHOR = Qt.UserRole + 1
+
 try:
     import LlvmGenerator
     MODULES.append(LlvmGenerator)
@@ -134,7 +137,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.5'
+__version__ = '1.5.6'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1366,14 +1369,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.clearSelection()
                 self.clear_highlight()
                 item = self.search_item.next()
+                item = item.parentItem()
                 item.select()
                 self.highlight(item)
                 item.ensureVisible()
             except StopIteration:
                 LOG.info('No more matches')
                 self.search(self.search_pattern)
-            except AttributeError:
-                LOG.info('No search pattern set. Use "/<pattern>"')
+            except AttributeError as err:
+                LOG.info('No search pattern. Use "/pattern"')
         elif (event.key() == Qt.Key_J and
                 event.modifiers() == Qt.ControlModifier):
             # Debug mode
@@ -2005,13 +2009,14 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_scene = None
         self.vi_bar = Vi_bar()
         # Docking areas
-        self.datatypes_view = None
-        self.datatypes_scene = None
+        self.datatypes_browser = None  # type: QtGui.QTextBrowser
+        #self.datatypes_scene = None
         self.asn1_area = None
         # MDI area (need to keep them to avoid segfault due to pyside bugs)
         self.mdi_area = None
         self.sub_mdi = None
         self.statechart_mdi = None
+        self.datadict = None
 
     def new_scene(self):
         ''' Create a new, clean SDL scene. This function is necessary because
@@ -2117,16 +2122,23 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_view.setScene(self.statechart_scene)
 
         # Set up the dock area to display the ASN.1 Data model
-        #asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
-        self.datatypes_view = self.findChild(SDL_View, 'datatypes_view')
-        self.datatypes_scene = SDL_Scene(context='asn1')
-        self.datatypes_view.setScene(self.datatypes_scene)
-        self.asn1_area = sdlSymbols.ASN1Viewer()
-        self.asn1_area.text.setPlainText('-- ASN.1 Data Types')
-        self.asn1_area.text.try_resize()
+        asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
+        dict_dock = self.findChild(QtGui.QDockWidget, 'datadict_dock')
+        self.tabifyDockWidget(asn1_dock, dict_dock)
+        self.asn1_browser = self.findChild(QtGui.QTextBrowser, 'asn1_browser')
         self.view.update_asn1_dock.connect(self.set_asn1_view)
 
-        self.datatypes_scene.addItem(self.asn1_area)
+        self.datadict = self.findChild(QtGui.QTreeWidget, 'datadict')
+        self.datadict.setAlternatingRowColors(True)
+        self.datadict.setColumnCount(2)
+        self.datadict.itemClicked.connect(self.datadict_item_selected)
+
+        QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Data types"])
+        QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Input signals"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Output signals"])
+
+        #self.datatypes_scene.addItem(self.asn1_area)
 
         # Create a timer for periodically saving a backup of the model
         autosave = QTimer(self)
@@ -2168,43 +2180,41 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             except (AttributeError, IOError, TypeError) as err:
                 LOG.debug(str(err))
 
+
+    @QtCore.Slot(QtGui.QTreeWidgetItem, int)
+    def datadict_item_selected(self, item, column):
+        ''' Slot called when user clicks on an item of the data dictionary '''
+        anchor = item.data(0, ANCHOR)
+        if anchor and column == 1:
+            self.asn1_browser.scrollToAnchor(anchor)
+            # Activate the tab to display the ASN.1 type in html
+            self.asn1_browser.parent().parent().raise_()
+
     @QtCore.Slot(ogAST.AST)
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
         # Update the dock widget with ASN.1 files content
-        types = []
-        try:
-            for each in ast.asn1_filenames:
-                with open(each, 'r') as file_handler:
-                    types.append('-- ' + each)
-                    types.append(file_handler.read())
-            if types:
-                self.asn1_area.text.setPlainText('\n'.join(types))
-                # ASN.1 text area is read-only:
-                self.asn1_area.text.setTextInteractionFlags(
-                                        QtCore.Qt.TextBrowserInteraction)
-                text = unicode(self.asn1_area.text)
-                for each in chain(ast.dataview, ast.asn1_constants):
-                    # Replace dash with underscore of all types and constants
-                    text = re.sub(each, each.replace('-', '_'), text)
-                    children = []
-                    try:
-                        children.extend(ast.dataview[each].type.Children)
-                    except AttributeError:
-                        pass
-                    try:
-                        children.extend(ast.dataview[each].type.EnumValues)
-                    except AttributeError:
-                        pass
-                    for ch in children:
-                        text = re.sub(ch, ch.replace('-', '_'), text)
-                self.asn1_area.text.setPlainText(text)
-                self.asn1_area.text.try_resize()
-        except IOError as err:
-            LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
-        except AttributeError as err:
-            LOG.warning('No AST, check input files:' + str(err))
+        html_file = open(ast.DV.html, 'r')
+        html_content = html_file.read()
+        self.asn1_browser.setHtml(html_content)
 
+        # Update the data dictionary
+        item = self.datadict.topLevelItem(0)
+        item.takeChildren() # remove old children
+        for name, sort in ast.dataview.viewitems():
+            #basic = ogParser.find_basic_type(sort.type).kind[:-4].upper()
+            new_item = QtGui.QTreeWidgetItem(item,
+                                             [name.replace('-', '_'),
+                                              'view'])
+            new_item.setForeground(1, Qt.blue)
+            # Save type anchor for html
+            new_item.setData(0, ANCHOR, "ASN1_" + name.replace('-', '_'))
+        item = self.datadict.topLevelItem(1)
+        item.takeChildren()
+        for name, sort in ast.asn1_constants.viewitems():
+            QtGui.QTreeWidgetItem(item, [name.replace('-', '_'),
+                                         sort.type.ReferencedTypeName])
+        self.datadict.resizeColumnToContents(0)
 
     def vi_command(self):
         # type: () -> None

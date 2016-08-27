@@ -161,11 +161,27 @@
    <widget class="QWidget" name="dockWidgetContents_3">
     <layout class="QGridLayout" name="gridLayout_3">
      <item row="0" column="0">
-      <widget class="SDL_View" name="datatypes_view"/>
+      <widget class="QTextBrowser" name="asn1_browser"/>
      </item>
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="datadict_dock">
+   <property name="windowTitle">
+    <string>Data dictionary</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QGridLayout" name="gridLayout_3">
+     <item row="0" column="0">
+      <widget class="QTreeWidget" name="datadict"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+
   <action name="actionOpen">
    <property name="text">
     <string>Open</string>

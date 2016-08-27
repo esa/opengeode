@@ -21,8 +21,9 @@ import distutils.spawn as spawn
 import sys
 import importlib
 import logging
-from PySide.QtCore import QProcess
+from PySide.QtCore import QProcess, QFile
 
+import icons
 
 LOG = logging.getLogger(__name__)
 terminal_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")
@@ -80,6 +81,7 @@ def parse_asn1(*files, **options):
     ast_version = options.get('ast_version', ASN1.UniqueEnumeratedNames)
     rename_policy = options.get('rename_policy', ASN1.NoRename)
     flags = options.get('flags', [ASN1.AstOnly])
+    pprint = options.get('pretty_print', False)
     assert isinstance(ast_version, ASN1)
     assert isinstance(rename_policy, ASN1)
     assert isinstance(flags, list)
@@ -109,9 +111,21 @@ def parse_asn1(*files, **options):
 
     stg = asn1scc_root + os.sep + 'python.stg'
 
+    if pprint:
+        # Generate an html file with pretty-printed ASN.1 types
+        stg_qrc = QFile(':misc/pretty_print_asn1.stg')
+        stg_qrc.open(1)
+        content = stg_qrc.readAll()
+        stgfile = tempdir + os.sep + 'pretty_print_asn1.stg'
+        with open(stgfile, 'w') as tmpfile:
+            tmpfile.write(content.data())
+        out_html = tempdir + os.sep + 'dataview.html'
+        html = ['-customIcdUper', stgfile + '::' + out_html]
+    else:
+        html = []
     args = [arg0, '-customStgAstVerion', str(ast_version.value),
             '-customStg', stg + '::' + filepath,
-            '-renamePolicy', str(rename_policy.value)] + list(*files)
+            '-renamePolicy', str(rename_policy.value)] + html + list(*files)
     asn1scc = QProcess()
     LOG.debug(os.getcwd())
     LOG.debug(binary + ' ' + ' '.join(args))
@@ -126,6 +140,9 @@ def parse_asn1(*files, **options):
     else:
         ast = importlib.import_module(filename)
         AST[filename] = ast
+    if pprint:
+        # add the path to the optionally-gernated pretty-printed HTML file
+        ast.html = out_html
     return ast
 
 

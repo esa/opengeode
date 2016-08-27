@@ -142,11 +142,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-1.5.5 (08/2016)
+1.5.6 (08/2016)
     - vi interface supports history
     - vi interface for substitution can apply to the whole model (with g)
     - refactoring function via vi interface (eg. %state,fromName,toName,)
     - Fixed issue with rendering (coordinates of symbols could be wrong)
+    - Introduce data dictionary
 
 1.5.4 (08/2016)
     - Various GUI improvements
