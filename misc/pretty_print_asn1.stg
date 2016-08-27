@@ -61,7 +61,7 @@ Comment(sComment) ::= <<
 <font color="#008000"><i>$sComment$</i></font>
 >>
 
-// End HTML formatting for the ACN grammar
+// End HTML formatting for the ASN.1 grammar
 
 
 RealSizeExplained() ::= <<
