@@ -2191,51 +2191,61 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
         # Update the dock widget with ASN.1 files content
-        types = []
-        try:
-            for each in ast.asn1_filenames:
-                with open(each, 'r') as file_handler:
-                    types.append('-- ' + each)
-                    types.append(file_handler.read())
-            if types:
-                self.asn1_area.text.setPlainText('\n'.join(types))
-                # ASN.1 text area is read-only:
-                self.asn1_area.text.setTextInteractionFlags(
-                                        QtCore.Qt.TextBrowserInteraction)
-                text = unicode(self.asn1_area.text)
-                for each in chain(ast.dataview, ast.asn1_constants):
-                    # Replace dash with underscore of all types and constants
-                    text = re.sub(each, each.replace('-', '_'), text)
-                    children = []
-                    try:
-                        children.extend(ast.dataview[each].type.Children)
-                    except (AttributeError, KeyError):
-                        pass
-                    try:
-                        children.extend(ast.dataview[each].type.EnumValues)
-                    except (AttributeError, KeyError):
-                        pass
-                    for ch in children:
-                        text = re.sub(ch, ch.replace('-', '_'), text)
-                self.asn1_area.text.setPlainText(text)
-                self.asn1_area.text.try_resize()
-        except IOError as err:
-            LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
-        except AttributeError as err:
-            LOG.warning('No AST, check input files:' + str(err))
-        else:
-            # Update the data dictionary
-            item = self.datadict.topLevelItem(0)
-            item.takeChildren() # remove old children
-            for name, sort in ast.dataview.viewitems():
-                basic = ogParser.find_basic_type(sort.type).kind[:-4].upper()
-                QtGui.QTreeWidgetItem(item, [name.replace('-', '_'), basic])
-            item = self.datadict.topLevelItem(1)
-            item.takeChildren()
-            for name, sort in ast.asn1_constants.viewitems():
-                QtGui.QTreeWidgetItem(item, [name.replace('-', '_'),
-                                             sort.type.ReferencedTypeName])
-            self.datadict.resizeColumnToContents(0)
+        html_file = open(ast.DV.html, 'r')
+        html_content = html_file.read()
+        self.asn1_area.text.setHtml(html_content)
+        self.asn1_area.text.setTextInteractionFlags(
+                                              QtCore.Qt.TextBrowserInteraction)
+        self.asn1_area.text.try_resize()
+#       types = []
+#       try:
+#           for each in ast.asn1_filenames:
+#               with open(each, 'r') as file_handler:
+#                   types.append('-- ' + each)
+#                   types.append(file_handler.read())
+#           if types:
+#               self.asn1_area.text.setPlainText('\n'.join(types))
+#               # ASN.1 text area is read-only:
+#               self.asn1_area.text.setTextInteractionFlags(
+#                                       QtCore.Qt.TextBrowserInteraction)
+#               text = unicode(self.asn1_area.text)
+#               for each in chain(ast.dataview, ast.asn1_constants):
+#                   # Replace dash with underscore of all types and constants
+#                   text = re.sub(each, each.replace('-', '_'), text)
+#                   children = []
+#                   try:
+#                       children.extend(ast.dataview[each].type.Children)
+#                   except (AttributeError, KeyError):
+#                       pass
+#                   try:
+#                       children.extend(ast.dataview[each].type.EnumValues)
+#                   except (AttributeError, KeyError):
+#                       pass
+#                   for ch in children:
+#                       text = re.sub(ch, ch.replace('-', '_'), text)
+#               self.asn1_area.text.setPlainText(text)
+#               self.asn1_area.text.try_resize()
+#       except IOError as err:
+#           LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
+#       except AttributeError as err:
+#           LOG.warning('No AST, check input files:' + str(err))
+#        else:
+        # Update the data dictionary
+        item = self.datadict.topLevelItem(0)
+        item.takeChildren() # remove old children
+        for name, sort in ast.dataview.viewitems():
+            basic = ogParser.find_basic_type(sort.type).kind[:-4].upper()
+            new_item = QtGui.QTreeWidgetItem(item,
+                                             [name.replace('-', '_'),
+                                              basic])
+            # Save type pointer
+            new_item.setData(0, Qt.UserRole + 1, sort)
+        item = self.datadict.topLevelItem(1)
+        item.takeChildren()
+        for name, sort in ast.asn1_constants.viewitems():
+            QtGui.QTreeWidgetItem(item, [name.replace('-', '_'),
+                                         sort.type.ReferencedTypeName])
+        self.datadict.resizeColumnToContents(0)
 
 
 

@@ -1,0 +1,191 @@
+/*
+ Pretty print ASN.1 files in HTML with anchors
+ Type names use underscores
+*/
+
+group icd_uper;
+
+//delimiters "$", "$"
+
+Infinity() ::= "&#8734"
+
+NewLine() ::= "<br/>"
+
+Orange() ::= "#FF8f00"
+Blue() ::= "#379CEE"
+
+ItemNumber(nIndex) ::= "Item #$nIndex$"
+
+
+Integer()       ::= "INTEGER"
+BitString()     ::= "BIT-STRING"
+OctetString()   ::= "OCTET-STRING"
+Boolean()       ::= "BOOLEAN"
+Choice()        ::= "CHOICE"
+Enumerated()    ::= "ENUMERATED"
+IA5String()     ::= "IA5String"
+NumericString() ::= "NumericString"
+NullType()      ::= "NULL"
+Real()          ::= "REAL"
+Sequence()      ::= "SEQUENCE"
+SequenceOf()    ::= "SEQUENCE-OF"
+
+
+// HTML formatting for the input ASN.1 grammar (new in version 3.2.x)
+
+// Lower/greater than symbols (< and >) must be replaced with HTML code
+LeftDiple() ::= "&lt;"
+RightDiple() ::= "&gt;"
+
+BlueTas(sBlueTasC,sTasName) ::= <<
+<a name="ASN1_$sBlueTasC$">$sTasName$</a>
+>>
+
+Asn1Token(sKeyword) ::= <<
+<b><font color="#5F9EA0">$sKeyword$</font></b>
+>>
+
+StringLiteral(sStringLiteral) ::= <<
+<font color="#A31515">$sStringLiteral$</font>
+>>
+
+TasName(sTasName, sTasNameC) ::= <<
+<a name="ASN1_$sTasNameC$"></a><font color="#B8860B"><b>$sTasNameC$</b></font></a>
+>>
+
+TasName2(sTasName, sTasNameC) ::= <<
+<a href="#ASN1_$sTasNameC$"><font color="#000000">$sTasNameC$</font></a>
+>>
+
+Comment(sComment) ::= <<
+<font color="#008000"><i>$sComment$</i></font>
+>>
+
+// End HTML formatting for the ACN grammar
+
+
+RealSizeExplained() ::= <<
+>>
+
+IntSizeExplained() ::= <<
+>>
+
+ArraySizeExplained() ::= <<
+>>
+
+ZeroSizeExplained() ::= <<
+>>
+
+EmitEnumItem(sName, nValue) ::= <<
+>>
+
+EmitEnumItemWithComment(sName, nValue, sComment) ::= <<
+>>
+
+EmitEnumInternalContents(arrsItems) ::= <<
+>>
+
+// applicable to Integers, booleans, reals
+EmitPrimitiveType(sColor, sTasName, sTasNameC, sAsnKindName, sMinBytes, sMaxBytes, sMaxBitsExplained, sCommentLine, sAsn1Constraints, sMinBits, sMaxBits, arrsComments) ::= <<
+>>
+
+
+
+EmitSequence(sColor, sTasName, sTasNameC, sMinBytes, sMaxBytes, sMaxBitsExplained, sCommentLine, arrsChildren, arrsComments) ::= <<
+>>
+
+EmmitSeqChild_RefType(sRefName, sRefNameC) ::= <<
+>>
+
+OddRow() ::= ""
+EvenRow() ::= ""
+
+EmmitSequenceChild(sCssClass, nIndex, sName, sComment, sOptionality, sType, sConstraint, sMin, sMax) ::= <<
+>>
+
+
+EmmitSequencePreambleSingleComment(nIndex, sOptChildName) ::= <<
+>>
+
+EmmitSequencePreambleComment(arrsOptChildren) ::= <<
+>>
+
+/* *** CHOICE ****/
+EmitChoice(sColor, sTasName, sTasNameC, sMinBytes, sMaxBytes, sMaxBitsExplained, sCommentLine, arrsChildren, arrsComments) ::= <<
+>>
+
+
+EmmitChoiceChild(sCssClass, nIndex, sName, sComment,  sType, sConstraint, sMin, sMax) ::= <<
+>>
+
+EmmitChoiceIndexSingleComment(nIndex, sChildName) ::= <<
+>>
+
+EmmitChoiceIndexComment(arrsOptChildren) ::= <<
+>>
+
+/* *********** CHOICE END ********** */
+/* *********** SEQUENCE OF, OCTET STRING etc ********** */
+EmitSizeable(sColor, sTasName, sTasNameC, sKind, sMinBytes, sMaxBytes, sMaxBitsExplained, sCommentLine, arrsRows, arrsComments) ::= <<
+>>
+
+EmitRowWith3Dots() ::= <<
+>>
+
+EmmitTass(sTypeContent) ::= <<
+$sTypeContent$
+&nbsp;<br/>
+>>
+
+EmmitModule(sModName, arrsComments, arrsTases) ::= <<
+<div style="width: 100%">
+<h2 >Module : $sModName$</h2>
+<font face="Courier" color="DimGray"><pre>
+$arrsComments;separator="\n"$
+</pre></font>
+$arrsTases;separator="\n"$
+</div>
+>>
+
+EmmitFile(sAsnFileName, arrsModules) ::= <<
+<div style="width: 100%">
+<h1 >Asn1 file : $sAsnFileName$</h1>
+    $arrsModules;separator="\n"$
+</div>
+>>
+
+EmmitFilePart2(sFileName, sAsn1Content) ::= <<
+<div style="width: 100%">
+<h1 >$sFileName$</h1>
+<div style="width: 100%; white-space:pre; font-size:medium">
+$sAsn1Content$
+</div>
+</div>
+>>
+
+RootHtml(arrsFiles1, arrsFiles2, bIntegerSizeMustBeExplained, bRealSizeMustBeExplained, bLengthSizeMustBeExplained, bWithComponentMustBeExplained, bZeroBitsMustBeExplained) ::= <<
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head>
+    <title>ICD</title>
+    <style type="text/css"> 
+
+h1
+{
+    color: #033a7a;
+}
+
+h2
+{
+    color: #033a7a;
+}
+ </style>
+</head>
+<body>
+  $arrsFiles2;separator="\n"$
+</body>
+</html>
+>>
+
+
+

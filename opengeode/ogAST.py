@@ -1023,6 +1023,8 @@ class AST(object):
         # Refs to the ASN.1 dataview AST (set with USE clauses)
         self.dataview = None
         self.asn1Modules = None
+        # DV is the Asn1scc imported module
+        self.DV = None
         # ASN.1-defined constants (constants in Ada but variables in C)
         # dictionnary: {ConstantName: type } - copied from dataview.py
         self.asn1_constants = {}
