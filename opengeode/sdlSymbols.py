@@ -844,6 +844,8 @@ class TextSymbol(HorizontalSymbol):
         try:
             Signalroute.completion_list |= set(sig['name']
                                                for sig in ast.signals)
+            # Here: update input signals of the process AST since the
+            # signature of the signals may have changed...TODO
             CONTEXT.signals += ast.signals
         except AttributeError:
             # no AST, e.g. in case of syntax errors in the text area

@@ -2243,11 +2243,17 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             map(lambda elem: change_state(elem, False),
                 (in_sig, out_sig, states, labels, dcl, timers))
             for each in context.input_signals:
+                sort = each.get('type', '')
+                if sort:
+                    sort = sort.ReferencedTypeName
                 QtGui.QTreeWidgetItem(in_sig, [each['name'],
-                                               each.get('type', '')])
+                                               sort])
             for each in context.output_signals:
+                sort = each.get('type', '')
+                if sort:
+                    sort = sort.ReferencedTypeName
                 QtGui.QTreeWidgetItem(out_sig, [each['name'],
-                                                each.get('type', '')])
+                                                sort])
             for each in sorted(context.mapping.viewkeys()):
                 QtGui.QTreeWidgetItem(states, [each,])
             for each in context.labels:
