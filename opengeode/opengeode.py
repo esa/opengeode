@@ -369,6 +369,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     ''' Main graphic scene (canvas) where the user can place SDL symbols '''
     # Signal to be emitted when the scene is left (e.g. UP button)
     scene_left = QtCore.Signal()
+    context_change = QtCore.Signal()
 
     def __init__(self, context='process'):
         ''' Create a Scene for a given context:
@@ -820,6 +821,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                         recursive=False,
                                         nextstate=False, cpy=True))
         symbol.update_completion_list(pr_text=pr_text)
+        self.context_change.emit()
 
 
     def highlight(self, item):
@@ -1135,6 +1137,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         subscene = SDL_Scene(context=context)
         subscene.messages_window = self.messages_window
         subscene.parent_scene = parent
+        subscene.context_change.connect(self.context_change.emit)
         return subscene
 
 
@@ -2035,6 +2038,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             self.view.refresh()
             scene.undo_stack.cleanChanged.connect(
                 lambda x: self.view.wrapping_window.setWindowModified(not x))
+            scene.context_change.connect(self.update_datadict_window)
 
     def start(self, file_name):
         ''' Initializes all objects to start the application '''
@@ -2226,17 +2230,23 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # it should be attached to the current scene instead TODO
         in_sig, out_sig, states, dcl, timers = [self.datadict.topLevelItem(i)
                                                 for i in range(2, 7)]
+        context = sdlSymbols.CONTEXT
+        def change_state(item, state):
+            item.setDisabled(state)
+            item.takeChildren()
+
         if self.view.scene().context == 'block':
-            map(lambda elem: elem.setDisabled(True),
+            map(lambda elem: change_state(elem, True),
                 (in_sig, out_sig, states, dcl, timers))
         elif self.view.scene().context == 'process':
-            map(lambda elem: elem.setDisabled(False),
+            map(lambda elem: change_state(elem, False),
                 (in_sig, out_sig, states, dcl, timers))
+            for each in sorted(context.mapping.viewkeys()):
+                QtGui.QTreeWidgetItem(states, [each,])
         elif self.view.scene().context == 'procedure':
-            map(lambda elem: elem.setDisabled(False), (dcl, timers, out_sig))
-            map(lambda elem: elem.setDisabled(True), (in_sig, states))
+            map(lambda elem: change_state(elem, False), (dcl, timers, out_sig))
+            map(lambda elem: change_state(elem, True), (in_sig, states))
         self.datadict.resizeColumnToContents(0)
-
 
     def vi_command(self):
         # type: () -> None
