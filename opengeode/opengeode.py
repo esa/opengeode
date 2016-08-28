@@ -890,6 +890,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     self.undo_stack.push(undo_cmd)
                     item.try_resize()
                     item.parentItem().select()
+                    self.update_completion_list(item.parent)
             self.refresh()
         else:
             try:
@@ -2193,11 +2194,39 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     @QtCore.Slot(QtGui.QTreeWidgetItem, int)
     def datadict_item_selected(self, item, column):
         ''' Slot called when user clicks on an item of the data dictionary '''
+        parent = item.parent()
+        if not parent:
+            # user clicked on a root item
+            return
+
+        index = self.datadict.indexOfTopLevelItem(parent)
+        root = {0: 'asn1 types', 1: 'asn1 constants', 2: 'input signals',
+                3: 'output signals', 4: 'states', 5: 'labels', 6: 'variables',
+                7: 'timers'}[index]
+
         anchor = item.data(0, ANCHOR)
-        if anchor and column == 1:
+        if root == 'asn1 types' and anchor and column == 1:
             self.asn1_browser.scrollToAnchor(anchor)
             # Activate the tab to display the ASN.1 type in html
             self.asn1_browser.parent().parent().raise_()
+        elif root == 'states' and column == 0:
+            state = item.text(column)
+            if self.view.scene().search_pattern != state:
+                self.view.scene().search(item.text(column))
+                self.view.setFocus()
+            else:
+                # Already selected, show next match
+                key_event = QtGui.QKeyEvent(QtCore.QEvent.KeyPress, Qt.Key_N,
+                                            Qt.NoModifier)
+                QtGui.QApplication.sendEvent(self.view.scene(), key_event)
+        elif root == 'states' and column == 1:
+            state = item.text(0)
+            self.vi_bar.setText(':%state,{},new_name,'.format(state))
+            self.vi_bar.cursorWordBackward(False)
+            self.vi_bar.cursorWordBackward(True)
+            self.vi_bar.show()
+            self.vi_bar.setFocus()
+
 
     @QtCore.Slot(ogAST.AST)
     def set_asn1_view(self, ast):
@@ -2233,8 +2262,18 @@ class OG_MainWindow(QtGui.QMainWindow, object):
          dcl, timers) = [self.datadict.topLevelItem(i) for i in range(2, 8)]
         context = sdlSymbols.CONTEXT
         def change_state(item, state):
+            ''' Disable (with state=True) or enable (state=False) one of the
+            root items of the data dictionary '''
             item.setDisabled(state)
             item.takeChildren()
+
+        def refresh_signals(root, signals):
+            for each in signals:
+                sort = each.get('type', '')
+                sort = sort.ReferencedTypeName if sort else ''
+                QtGui.QTreeWidgetItem(root, [each['name'], sort])
+
+        add_elem = lambda root, elem: QtGui.QTreeWidgetItem(root, [elem])
 
         if self.view.scene().context == 'block':
             map(lambda elem: change_state(elem, True),
@@ -2242,32 +2281,29 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         elif self.view.scene().context == 'process':
             map(lambda elem: change_state(elem, False),
                 (in_sig, out_sig, states, labels, dcl, timers))
-            for each in context.input_signals:
-                sort = each.get('type', '')
-                if sort:
-                    sort = sort.ReferencedTypeName
-                QtGui.QTreeWidgetItem(in_sig, [each['name'],
-                                               sort])
-            for each in context.output_signals:
-                sort = each.get('type', '')
-                if sort:
-                    sort = sort.ReferencedTypeName
-                QtGui.QTreeWidgetItem(out_sig, [each['name'],
-                                                sort])
+            refresh_signals(in_sig, context.input_signals)
+            refresh_signals(out_sig, context.output_signals)
+
             for each in sorted(context.mapping.viewkeys()):
-                QtGui.QTreeWidgetItem(states, [each,])
-            for each in context.labels:
-                QtGui.QTreeWidgetItem(labels, [each.inputString,])
+                if each != 'START':
+                    state = QtGui.QTreeWidgetItem(states, [each, 'refactor'])
+                    state.setForeground(1, Qt.blue)
+
+            map(partial(add_elem, labels), sorted(context.labels))
+            map(partial(add_elem, timers), sorted(context.timers))
+
             for var, (sort, _) in context.variables.viewitems():
                 QtGui.QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
-            for each in context.timers:
-                QtGui.QTreeWidgetItem(timers, [each,])
-
 
         elif self.view.scene().context == 'procedure':
+            map(lambda elem: change_state(elem, True), (in_sig, states))
             map(lambda elem: change_state(elem, False),
                 (dcl, timers, labels, out_sig))
-            map(lambda elem: change_state(elem, True), (in_sig, states))
+            for var, (sort, _) in context.variables.viewitems():
+                QtGui.QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
+            map(partial(add_elem, timers), sorted(context.timers))
+            map(partial(add_elem, labels), sorted(context.labels))
+            refresh_signals(out_sig, context.output_signals)
         self.datadict.resizeColumnToContents(0)
 
     def vi_command(self):
