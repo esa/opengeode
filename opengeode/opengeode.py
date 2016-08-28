@@ -2209,9 +2209,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             self.asn1_browser.scrollToAnchor(anchor)
             # Activate the tab to display the ASN.1 type in html
             self.asn1_browser.parent().parent().raise_()
-        elif root == 'states' and column == 0:
-            state = item.text(column)
-            if self.view.scene().search_pattern != state:
+        elif root in ('states', 'labels') and column == 0:
+            name = item.text(column)
+            if self.view.scene().search_pattern != name:
                 self.view.scene().search(item.text(column))
                 self.view.setFocus()
             else:
