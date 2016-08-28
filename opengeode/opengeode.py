@@ -371,9 +371,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     scene_left = QtCore.Signal()
 
     def __init__(self, context='process'):
-        '''
-            Create an SDL Scene for a given context:
-            process, procedure or composite state
+        ''' Create a Scene for a given context:
+            process, procedure, composite state, clipboard, etc.
+            Design note: creating subclasses per context was evaluated but
+            rejected - there are too few behavioural differences between them
+            Creating tons of files / classes is not right. Keep it simple.
         '''
         super(SDL_Scene, self).__init__()
         # Reference to the parent scene
@@ -1398,6 +1400,8 @@ class SDL_View(QtGui.QGraphicsView, object):
     # signal to ask the main application that a new scene is needed
     need_new_scene = QtCore.Signal()
     update_asn1_dock = QtCore.Signal(ogAST.AST)
+    # When changing scene the data dictionary has to be updated
+    update_datadict = QtCore.Signal()
 
     def __init__(self, scene):
         ''' Create the SDL view holding the scene '''
@@ -1578,23 +1582,22 @@ class SDL_View(QtGui.QGraphicsView, object):
         '''
         LOG.debug('GO_UP')
         self.scene().clear_focus()
-        # Scene may need to be informed when it is left:
+        # Signal to the world that the current scene is left:
         self.scene().scene_left.emit()
         scene, horpos, verpos = self.scene_stack.pop()
         self.setScene(scene)
         self.wrapping_window.setWindowTitle(self.scene().name)
-        #self.horizontalScrollBar().setSliderPosition(horpos)
-        #self.verticalScrollBar().setSliderPosition(verpos)
         self.set_toolbar()
         if not self.scene_stack:
             self.up_button.setEnabled(False)
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
-        #self.scene().refresh()
-        #self.refresh()
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
         sdlSymbols.CONTEXT = self.context_history.pop()
+        self.update_datadict.emit()
+        self.scene().undo_stack.cleanChanged.connect(
+                lambda x: self.wrapping_window.setWindowModified(not x))
 
     def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
@@ -1646,8 +1649,11 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.wrapping_window.setWindowTitle(self.scene().name)
         self.up_button.setEnabled(True)
         self.set_toolbar()
-        self.scene().scene_left.emit()
         self.view_refresh()
+        self.scene().scene_left.emit()
+        self.update_datadict.emit()
+        self.scene().undo_stack.cleanChanged.connect(
+                lambda x: self.wrapping_window.setWindowModified(not x))
 
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
@@ -2004,7 +2010,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         ''' Create the main window '''
         super(OG_MainWindow, self).__init__(parent)
         self.view = None
-        self.scene = None
         self.statechart_view = None
         self.statechart_scene = None
         self.vi_bar = Vi_bar()
@@ -2022,20 +2027,28 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         ''' Create a new, clean SDL scene. This function is necessary because
         it is not possible to use QGraphicsScene.clear(), because of Pyside
         bugs with deletion of items on application exit '''
-        self.scene = SDL_Scene(context='block')
+        scene = SDL_Scene(context='block')
         if self.view:
-            self.scene.messages_window = self.view.messages_window
-            self.view.setScene(self.scene)
+            scene.messages_window = self.view.messages_window
+            self.view.setScene(scene)
             self.view.refresh()
-
+            scene.undo_stack.cleanChanged.connect(
+                lambda x: self.view.wrapping_window.setWindowModified(not x))
 
     def start(self, file_name):
         ''' Initializes all objects to start the application '''
-        # Create a graphic scene: the main canvas
-        self.new_scene()
+
+        # widget wrapping the view. We have to maximize it
+        process_widget = self.findChild(QtGui.QWidget, 'process')
+        process_widget.showMaximized()
+
         # Find SDL_View widget
         self.view = self.findChild(SDL_View, 'graphicsView')
-        self.view.setScene(self.scene)
+        self.view.wrapping_window = process_widget
+        self.view.wrapping_window.setWindowTitle('block unnamed[*]')
+
+        # Create a default (block) scene for the view
+        self.new_scene()
 
         # Find Menu Actions
         open_action = self.findChild(QtGui.QAction, 'actionOpen')
@@ -2083,17 +2096,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         filebar.up_button.triggered.connect(self.view.go_up)
         self.addToolBar(Qt.TopToolBarArea, filebar)
 
-        self.scene.clearSelection()
-        self.scene.clear_highlight()
-        self.scene.clear_focus()
+#       self.scene.clearSelection()
+#       self.scene.clear_highlight()
+#       self.scene.clear_focus()
 
-        # widget wrapping the view. We have to maximize it
-        process_widget = self.findChild(QtGui.QWidget, 'process')
-        process_widget.showMaximized()
-        self.view.wrapping_window = process_widget
-        self.view.wrapping_window.setWindowTitle('block unnamed[*]')
-        self.scene.undo_stack.cleanChanged.connect(
-                lambda x: process_widget.setWindowModified(not x))
 
         # get the messages list window (to display errors and warnings)
         # it is a QtGui.QListWidget
@@ -2104,7 +2110,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         messages = self.findChild(QtGui.QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
         self.view.messages_window = messages
-        self.scene.messages_window = messages
+        self.view.scene().messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
         self.mdi_area = self.findChild(QtGui.QMdiArea, 'mdiArea')
         self.sub_mdi = self.mdi_area.subWindowList()
@@ -2115,7 +2121,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 self.statechart_mdi = each
                 self.mdi_area.subWindowActivated.connect(self.upd_statechart)
                 break
-
 
         self.statechart_view = self.findChild(SDL_View, 'statechart_view')
         self.statechart_scene = SDL_Scene(context='statechart')
@@ -2137,8 +2142,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
         QtGui.QTreeWidgetItem(self.datadict, ["Input signals"])
         QtGui.QTreeWidgetItem(self.datadict, ["Output signals"])
-
-        #self.datatypes_scene.addItem(self.asn1_area)
+        QtGui.QTreeWidgetItem(self.datadict, ["States"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Variables"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Timers"])
+        self.view.update_datadict.connect(self.update_datadict_window)
 
         # Create a timer for periodically saving a backup of the model
         autosave = QTimer(self)
@@ -2216,6 +2223,14 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                                          sort.type.ReferencedTypeName])
         self.datadict.resizeColumnToContents(0)
 
+
+    def update_datadict_window(self):
+        ''' Update the tree in the data dictionary based on the AST '''
+        # currently the ast is a global in sdlSymbols.CONTEXT
+        # it should be attached to the current scene instead TODO
+        print 'update dict'
+
+
     def vi_command(self):
         # type: () -> None
         '''
@@ -2284,7 +2299,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             # due to pyside badly handling items that are not part of any scene
             G_SYMBOLS.clear()
             # Also clear undo stack that may keep reference to items
-            self.scene.undo_stack.clear()
+            scene = self.view.top_scene()
+            for each in chain([scene], scene.all_nested_scenes):
+                each.undo_stack.clear()
             super(OG_MainWindow, self).closeEvent(event)
 
 
