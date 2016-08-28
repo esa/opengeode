@@ -360,8 +360,46 @@ class Signalroute(Connection):
 
     def update_completion_list(self, pr_text):
         ''' Called after text has been edited '''
-        # TODO - call parseSingleElement, check sdlSymbols for examples
-        pass
+        from sdlSymbols import CONTEXT
+        ast, _, _, _, _ = self.parser.parseSingleElement('signalroute',
+                                                         pr_text)
+        # ast is a dict:
+        # {'routes': [{'dest': str, 'source': str', 'signals': [str]}],
+        #  'name': u'c'} - dest and source can be 'ENV'
+        all_sigs = []
+        for each in ast['routes']:
+            source    = each['source']
+            dest      = each['dest']
+            sigs = [{'name': name} for name in each['signals']]
+            all_sigs.extend(sigs)
+            def get_sig(signal):
+                ''' If signal is declared, return the signature '''
+                for sig in CONTEXT.signals:
+                    if sig['name'].lower() == signal['name'].lower():
+                        return sig
+                return signal
+            if each['dest'] == 'ENV':
+                # output signals of process 'source'
+                process, = [p for p in CONTEXT.processes
+                            if p.processName.lower() == each['source'].lower()]
+                existing = [sig['name'].lower()
+                           for sig in process.output_signals]
+                for sig in sigs:
+                    if sig['name'].lower() not in existing:
+                        process.output_signals.append(get_sig(sig))
+            else:
+                # input signals of process 'source'
+                process, = [p for p in CONTEXT.processes
+                            if p.processName.lower() == each['dest'].lower()]
+                existing = [sig['name'].lower()
+                            for sig in process.input_signals]
+                for sig in sigs:
+                    if sig['name'].lower() not in existing:
+                        process.input_signals.append(get_sig(sig))
+        existing = [sig['name'].lower() for sig in CONTEXT.signals]
+        for each in all_sigs:
+            if each['name'].lower() not in existing:
+                CONTEXT.signals.append(each)
 
     def resize_item(self, new_rect):
         ''' Called after signallist text has been edited '''

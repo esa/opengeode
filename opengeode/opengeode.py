@@ -2143,6 +2143,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         QtGui.QTreeWidgetItem(self.datadict, ["Input signals"])
         QtGui.QTreeWidgetItem(self.datadict, ["Output signals"])
         QtGui.QTreeWidgetItem(self.datadict, ["States"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Labels"])
         QtGui.QTreeWidgetItem(self.datadict, ["Variables"])
         QtGui.QTreeWidgetItem(self.datadict, ["Timers"])
         self.view.update_datadict.connect(self.update_datadict_window)
@@ -2228,8 +2229,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         ''' Update the tree in the data dictionary based on the AST '''
         # currently the ast is a global in sdlSymbols.CONTEXT
         # it should be attached to the current scene instead TODO
-        in_sig, out_sig, states, dcl, timers = [self.datadict.topLevelItem(i)
-                                                for i in range(2, 7)]
+        (in_sig, out_sig, states, labels,
+         dcl, timers) = [self.datadict.topLevelItem(i) for i in range(2, 8)]
         context = sdlSymbols.CONTEXT
         def change_state(item, state):
             item.setDisabled(state)
@@ -2237,14 +2238,29 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
         if self.view.scene().context == 'block':
             map(lambda elem: change_state(elem, True),
-                (in_sig, out_sig, states, dcl, timers))
+                (in_sig, out_sig, states, labels, dcl, timers))
         elif self.view.scene().context == 'process':
             map(lambda elem: change_state(elem, False),
-                (in_sig, out_sig, states, dcl, timers))
+                (in_sig, out_sig, states, labels, dcl, timers))
+            for each in context.input_signals:
+                QtGui.QTreeWidgetItem(in_sig, [each['name'],
+                                               each.get('type', '')])
+            for each in context.output_signals:
+                QtGui.QTreeWidgetItem(out_sig, [each['name'],
+                                                each.get('type', '')])
             for each in sorted(context.mapping.viewkeys()):
                 QtGui.QTreeWidgetItem(states, [each,])
+            for each in context.labels:
+                QtGui.QTreeWidgetItem(labels, [each.inputString,])
+            for var, (sort, _) in context.variables.viewitems():
+                QtGui.QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
+            for each in context.timers:
+                QtGui.QTreeWidgetItem(timers, [each,])
+
+
         elif self.view.scene().context == 'procedure':
-            map(lambda elem: change_state(elem, False), (dcl, timers, out_sig))
+            map(lambda elem: change_state(elem, False),
+                (dcl, timers, labels, out_sig))
             map(lambda elem: change_state(elem, True), (in_sig, states))
         self.datadict.resizeColumnToContents(0)
 
