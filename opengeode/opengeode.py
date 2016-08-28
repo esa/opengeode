@@ -1847,6 +1847,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         # Set AST to be used as data dictionnary and updated on the fly
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
+        self.update_datadict.emit()
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -2096,11 +2097,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         filebar.up_button.triggered.connect(self.view.go_up)
         self.addToolBar(Qt.TopToolBarArea, filebar)
 
-#       self.scene.clearSelection()
-#       self.scene.clear_highlight()
-#       self.scene.clear_focus()
-
-
         # get the messages list window (to display errors and warnings)
         # it is a QtGui.QListWidget
         msg_dock = self.findChild(QtGui.QDockWidget, 'msgDock')
@@ -2168,6 +2164,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         else:
             # Create a default context - at Block level - for the autocompleter
             sdlSymbols.CONTEXT = ogAST.Block()
+            self.update_datadict_window()
 
     @QtCore.Slot(QtGui.QMdiSubWindow)
     def upd_statechart(self, mdi):
@@ -2209,7 +2206,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         item = self.datadict.topLevelItem(0)
         item.takeChildren() # remove old children
         for name, sort in ast.dataview.viewitems():
-            #basic = ogParser.find_basic_type(sort.type).kind[:-4].upper()
             new_item = QtGui.QTreeWidgetItem(item,
                                              [name.replace('-', '_'),
                                               'view'])
@@ -2228,7 +2224,18 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         ''' Update the tree in the data dictionary based on the AST '''
         # currently the ast is a global in sdlSymbols.CONTEXT
         # it should be attached to the current scene instead TODO
-        print 'update dict'
+        in_sig, out_sig, states, dcl, timers = [self.datadict.topLevelItem(i)
+                                                for i in range(2, 7)]
+        if self.view.scene().context == 'block':
+            map(lambda elem: elem.setDisabled(True),
+                (in_sig, out_sig, states, dcl, timers))
+        elif self.view.scene().context == 'process':
+            map(lambda elem: elem.setDisabled(False),
+                (in_sig, out_sig, states, dcl, timers))
+        elif self.view.scene().context == 'procedure':
+            map(lambda elem: elem.setDisabled(False), (dcl, timers, out_sig))
+            map(lambda elem: elem.setDisabled(True), (in_sig, states))
+        self.datadict.resizeColumnToContents(0)
 
 
     def vi_command(self):
