@@ -2289,7 +2289,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                     state = QtGui.QTreeWidgetItem(states, [each, 'refactor'])
                     state.setForeground(1, Qt.blue)
 
-            map(partial(add_elem, labels), sorted(context.labels))
+            map(partial(add_elem, labels), sorted(l.inputString
+                                                  for l in context.labels))
             map(partial(add_elem, timers), sorted(context.timers))
 
             for var, (sort, _) in context.variables.viewitems():
@@ -2302,7 +2303,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             for var, (sort, _) in context.variables.viewitems():
                 QtGui.QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
             map(partial(add_elem, timers), sorted(context.timers))
-            map(partial(add_elem, labels), sorted(context.labels))
+            map(partial(add_elem, labels), sorted(l.inputString
+                                                  for l in context.labels))
             refresh_signals(out_sig, context.output_signals)
         self.datadict.resizeColumnToContents(0)
 
