@@ -887,7 +887,6 @@ package {process_name} is'''.format(process_name=process_name,
                     break
         for statename in process.cs_mapping.viewkeys() - done:
             cs_item = process.cs_mapping[statename]
-            taste_template.append(u'-- Now what')
             taste_template.append(u'{first}if not msgPending and '
                     u'trId = -1 and {}.state = {} then'
                     .format(LPREFIX, statename, first='els' if done else ''))
