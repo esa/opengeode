@@ -2129,6 +2129,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.asn1_area.text.try_resize()
         self.view.update_asn1_dock.connect(self.set_asn1_view)
 
+        # Set up the data dictionary window
         self.datadict = self.findChild(QtGui.QTreeWidget, 'datadict')
         self.datadict.setAlternatingRowColors(True)
         self.datadict.setColumnCount(2)
