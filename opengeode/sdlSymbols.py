@@ -19,7 +19,7 @@
 
 __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
-           'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
+           'Procedure', 'ProcedureStart', 'ProcedureStop',
            'StateStart', 'Process', 'ContinuousSignal']
 
 #import traceback
@@ -820,6 +820,10 @@ class TextSymbol(HorizontalSymbol):
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update list of variables/FPAR/Timers '''
+        # note, on standalone systems, if the textbox contains a
+        # USE Dataview comment 'file.asn'. this file is parsed when leaving
+        # the textbox. This gives the impression that this function is slow,
+        # it it is not! - no need to investigate performance issues here
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
         try:
@@ -840,6 +844,9 @@ class TextSymbol(HorizontalSymbol):
         try:
             Signalroute.completion_list |= set(sig['name']
                                                for sig in ast.signals)
+            # Here: update input signals of the process AST since the
+            # signature of the signals may have changed...TODO
+            CONTEXT.signals += ast.signals
         except AttributeError:
             # no AST, e.g. in case of syntax errors in the text area
             pass
@@ -872,14 +879,6 @@ class TextSymbol(HorizontalSymbol):
             return
         self.prepareGeometryChange()
         self.set_shape(rect.width(), rect.height())
-
-
-class ASN1Viewer(TextSymbol):
-    ''' Text symbol with dedicated text highlighting set of words for ASN.1 '''
-    blackbold = ['\\b{}\\b'.format(word) for word in (
-                 'DEFINITIONS', 'AUTOMATIC', 'TAGS', 'BEGIN', 'END', 'INTEGER',
-                 'OCTET', 'STRING', 'BIT', 'REAL', 'SEQUENCE', 'OF', 'WITH',
-                 'IMPORTS', 'FROM', 'SIZE', 'CHOICE', 'BOOLEAN', 'ENUMERATED')]
 
 
 # pylint: disable=R0904
@@ -1098,7 +1097,7 @@ class Procedure(Process):
         self.setPath(path)
         super(Process, self).set_shape(width, height)
 
-    def update_completion_list(self, **kwargs):
+    def update_completion_list(self, _):
         ''' When text was entered, update completion list of ProcedureCall '''
         for each in CONTEXT.procedures:
             if unicode(self.text).lower() == each.inputString:

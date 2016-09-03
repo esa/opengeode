@@ -161,7 +161,8 @@ def set_global_DV(asn1_filenames):
         DV = parse_asn1(tuple(asn1_filenames),
                         ast_version=ASN1.UniqueEnumeratedNames,
                         rename_policy=rename_policy,
-                        flags=[ASN1.AstOnly])
+                        flags=[ASN1.AstOnly],
+                        pretty_print=True)
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
@@ -4362,6 +4363,7 @@ def pr_file(root):
     # and not just after the ASN1 specific parsing
     ast.dataview = types()
     ast.asn1_constants = DV.variables
+    ast.DV = DV
     return ast, errors, warnings
 
 
