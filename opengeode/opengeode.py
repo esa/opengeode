@@ -120,6 +120,9 @@ MODULES = [
     CGenerator,
 ] # type: List[module]
 
+# Define custom UserRoles
+ANCHOR = Qt.UserRole + 1
+
 try:
     import LlvmGenerator
     MODULES.append(LlvmGenerator)
@@ -134,7 +137,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.5'
+__version__ = '1.5.6'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -366,11 +369,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     ''' Main graphic scene (canvas) where the user can place SDL symbols '''
     # Signal to be emitted when the scene is left (e.g. UP button)
     scene_left = QtCore.Signal()
+    context_change = QtCore.Signal()
 
     def __init__(self, context='process'):
-        '''
-            Create an SDL Scene for a given context:
-            process, procedure or composite state
+        ''' Create a Scene for a given context:
+            process, procedure, composite state, clipboard, etc.
+            Design note: creating subclasses per context was evaluated but
+            rejected - there are too few behavioural differences between them
+            Creating tons of files / classes is not right. Keep it simple.
         '''
         super(SDL_Scene, self).__init__()
         # Reference to the parent scene
@@ -815,6 +821,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                         recursive=False,
                                         nextstate=False, cpy=True))
         symbol.update_completion_list(pr_text=pr_text)
+        self.context_change.emit()
 
 
     def highlight(self, item):
@@ -883,6 +890,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     self.undo_stack.push(undo_cmd)
                     item.try_resize()
                     item.parentItem().select()
+                    self.update_completion_list(item.parent)
             self.refresh()
         else:
             try:
@@ -1130,6 +1138,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         subscene = SDL_Scene(context=context)
         subscene.messages_window = self.messages_window
         subscene.parent_scene = parent
+        subscene.context_change.connect(self.context_change.emit)
         return subscene
 
 
@@ -1366,14 +1375,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.clearSelection()
                 self.clear_highlight()
                 item = self.search_item.next()
+                item = item.parentItem()
                 item.select()
                 self.highlight(item)
                 item.ensureVisible()
             except StopIteration:
                 LOG.info('No more matches')
                 self.search(self.search_pattern)
-            except AttributeError:
-                LOG.info('No search pattern set. Use "/<pattern>"')
+            except AttributeError as err:
+                LOG.info('No search pattern. Use "/pattern"')
         elif (event.key() == Qt.Key_J and
                 event.modifiers() == Qt.ControlModifier):
             # Debug mode
@@ -1394,6 +1404,8 @@ class SDL_View(QtGui.QGraphicsView, object):
     # signal to ask the main application that a new scene is needed
     need_new_scene = QtCore.Signal()
     update_asn1_dock = QtCore.Signal(ogAST.AST)
+    # When changing scene the data dictionary has to be updated
+    update_datadict = QtCore.Signal()
 
     def __init__(self, scene):
         ''' Create the SDL view holding the scene '''
@@ -1574,23 +1586,22 @@ class SDL_View(QtGui.QGraphicsView, object):
         '''
         LOG.debug('GO_UP')
         self.scene().clear_focus()
-        # Scene may need to be informed when it is left:
+        # Signal to the world that the current scene is left:
         self.scene().scene_left.emit()
         scene, horpos, verpos = self.scene_stack.pop()
         self.setScene(scene)
         self.wrapping_window.setWindowTitle(self.scene().name)
-        #self.horizontalScrollBar().setSliderPosition(horpos)
-        #self.verticalScrollBar().setSliderPosition(verpos)
         self.set_toolbar()
         if not self.scene_stack:
             self.up_button.setEnabled(False)
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
-        #self.scene().refresh()
-        #self.refresh()
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
         sdlSymbols.CONTEXT = self.context_history.pop()
+        self.update_datadict.emit()
+        self.scene().undo_stack.cleanChanged.connect(
+                lambda x: self.wrapping_window.setWindowModified(not x))
 
     def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
@@ -1642,8 +1653,11 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.wrapping_window.setWindowTitle(self.scene().name)
         self.up_button.setEnabled(True)
         self.set_toolbar()
-        self.scene().scene_left.emit()
         self.view_refresh()
+        self.scene().scene_left.emit()
+        self.update_datadict.emit()
+        self.scene().undo_stack.cleanChanged.connect(
+                lambda x: self.wrapping_window.setWindowModified(not x))
 
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
@@ -1837,6 +1851,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         # Set AST to be used as data dictionnary and updated on the fly
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
+        self.update_datadict.emit()
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -2000,13 +2015,12 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         ''' Create the main window '''
         super(OG_MainWindow, self).__init__(parent)
         self.view = None
-        self.scene = None
         self.statechart_view = None
         self.statechart_scene = None
         self.vi_bar = Vi_bar()
         # Docking areas
-        self.datatypes_view = None
-        self.datatypes_scene = None
+        self.datatypes_browser = None  # type: QtGui.QTextBrowser
+        #self.datatypes_scene = None
         self.asn1_area = None
         # MDI area (need to keep them to avoid segfault due to pyside bugs)
         self.mdi_area = None
@@ -2018,20 +2032,29 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         ''' Create a new, clean SDL scene. This function is necessary because
         it is not possible to use QGraphicsScene.clear(), because of Pyside
         bugs with deletion of items on application exit '''
-        self.scene = SDL_Scene(context='block')
+        scene = SDL_Scene(context='block')
         if self.view:
-            self.scene.messages_window = self.view.messages_window
-            self.view.setScene(self.scene)
+            scene.messages_window = self.view.messages_window
+            self.view.setScene(scene)
             self.view.refresh()
-
+            scene.undo_stack.cleanChanged.connect(
+                lambda x: self.view.wrapping_window.setWindowModified(not x))
+            scene.context_change.connect(self.update_datadict_window)
 
     def start(self, file_name):
         ''' Initializes all objects to start the application '''
-        # Create a graphic scene: the main canvas
-        self.new_scene()
+
+        # widget wrapping the view. We have to maximize it
+        process_widget = self.findChild(QtGui.QWidget, 'process')
+        process_widget.showMaximized()
+
         # Find SDL_View widget
         self.view = self.findChild(SDL_View, 'graphicsView')
-        self.view.setScene(self.scene)
+        self.view.wrapping_window = process_widget
+        self.view.wrapping_window.setWindowTitle('block unnamed[*]')
+
+        # Create a default (block) scene for the view
+        self.new_scene()
 
         # Find Menu Actions
         open_action = self.findChild(QtGui.QAction, 'actionOpen')
@@ -2079,18 +2102,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         filebar.up_button.triggered.connect(self.view.go_up)
         self.addToolBar(Qt.TopToolBarArea, filebar)
 
-        self.scene.clearSelection()
-        self.scene.clear_highlight()
-        self.scene.clear_focus()
-
-        # widget wrapping the view. We have to maximize it
-        process_widget = self.findChild(QtGui.QWidget, 'process')
-        process_widget.showMaximized()
-        self.view.wrapping_window = process_widget
-        self.view.wrapping_window.setWindowTitle('block unnamed[*]')
-        self.scene.undo_stack.cleanChanged.connect(
-                lambda x: process_widget.setWindowModified(not x))
-
         # get the messages list window (to display errors and warnings)
         # it is a QtGui.QListWidget
         msg_dock = self.findChild(QtGui.QDockWidget, 'msgDock')
@@ -2100,7 +2111,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         messages = self.findChild(QtGui.QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
         self.view.messages_window = messages
-        self.scene.messages_window = messages
+        self.view.scene().messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
         self.mdi_area = self.findChild(QtGui.QMdiArea, 'mdiArea')
         self.sub_mdi = self.mdi_area.subWindowList()
@@ -2112,7 +2123,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 self.mdi_area.subWindowActivated.connect(self.upd_statechart)
                 break
 
-
         self.statechart_view = self.findChild(SDL_View, 'statechart_view')
         self.statechart_scene = SDL_Scene(context='statechart')
         self.statechart_view.setScene(self.statechart_scene)
@@ -2121,12 +2131,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
         dict_dock = self.findChild(QtGui.QDockWidget, 'datadict_dock')
         self.tabifyDockWidget(asn1_dock, dict_dock)
-        self.datatypes_view = self.findChild(SDL_View, 'datatypes_view')
-        self.datatypes_scene = SDL_Scene(context='asn1')
-        self.datatypes_view.setScene(self.datatypes_scene)
-        self.asn1_area = sdlSymbols.ASN1Viewer()
-        self.asn1_area.text.setPlainText('-- ASN.1 Data Types')
-        self.asn1_area.text.try_resize()
+        self.asn1_browser = self.findChild(QtGui.QTextBrowser, 'asn1_browser')
         self.view.update_asn1_dock.connect(self.set_asn1_view)
 
         # Set up the data dictionary window
@@ -2139,8 +2144,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
         QtGui.QTreeWidgetItem(self.datadict, ["Input signals"])
         QtGui.QTreeWidgetItem(self.datadict, ["Output signals"])
-
-        self.datatypes_scene.addItem(self.asn1_area)
+        QtGui.QTreeWidgetItem(self.datadict, ["States"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Labels"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Variables"])
+        QtGui.QTreeWidgetItem(self.datadict, ["Timers"])
+        self.view.update_datadict.connect(self.update_datadict_window)
 
         # Create a timer for periodically saving a backup of the model
         autosave = QTimer(self)
@@ -2163,6 +2171,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         else:
             # Create a default context - at Block level - for the autocompleter
             sdlSymbols.CONTEXT = ogAST.Block()
+            self.update_datadict_window()
 
     @QtCore.Slot(QtGui.QMdiSubWindow)
     def upd_statechart(self, mdi):
@@ -2186,59 +2195,119 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     @QtCore.Slot(QtGui.QTreeWidgetItem, int)
     def datadict_item_selected(self, item, column):
         ''' Slot called when user clicks on an item of the data dictionary '''
-        print item, column
+        parent = item.parent()
+        if not parent:
+            # user clicked on a root item
+            return
+
+        index = self.datadict.indexOfTopLevelItem(parent)
+        root = {0: 'asn1 types', 1: 'asn1 constants', 2: 'input signals',
+                3: 'output signals', 4: 'states', 5: 'labels', 6: 'variables',
+                7: 'timers'}[index]
+
+        anchor = item.data(0, ANCHOR)
+        if root == 'asn1 types' and anchor and column == 1:
+            self.asn1_browser.scrollToAnchor(anchor)
+            # Activate the tab to display the ASN.1 type in html
+            self.asn1_browser.parent().parent().raise_()
+        elif root in ('states', 'labels') and column == 0:
+            name = item.text(column)
+            if self.view.scene().search_pattern != name:
+                self.view.scene().search(item.text(column))
+                self.view.setFocus()
+            else:
+                # Already selected, show next match
+                key_event = QtGui.QKeyEvent(QtCore.QEvent.KeyPress, Qt.Key_N,
+                                            Qt.NoModifier)
+                QtGui.QApplication.sendEvent(self.view.scene(), key_event)
+        elif root == 'states' and column == 1:
+            state = item.text(0)
+            self.vi_bar.setText(':%state,{},new_name,'.format(state))
+            self.vi_bar.cursorWordBackward(False)
+            self.vi_bar.cursorWordBackward(True)
+            self.vi_bar.show()
+            self.vi_bar.setFocus()
+
 
     @QtCore.Slot(ogAST.AST)
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
         # Update the dock widget with ASN.1 files content
-        types = []
-        try:
-            for each in ast.asn1_filenames:
-                with open(each, 'r') as file_handler:
-                    types.append('-- ' + each)
-                    types.append(file_handler.read())
-            if types:
-                self.asn1_area.text.setPlainText('\n'.join(types))
-                # ASN.1 text area is read-only:
-                self.asn1_area.text.setTextInteractionFlags(
-                                        QtCore.Qt.TextBrowserInteraction)
-                text = unicode(self.asn1_area.text)
-                for each in chain(ast.dataview, ast.asn1_constants):
-                    # Replace dash with underscore of all types and constants
-                    text = re.sub(each, each.replace('-', '_'), text)
-                    children = []
-                    try:
-                        children.extend(ast.dataview[each].type.Children)
-                    except (AttributeError, KeyError):
-                        pass
-                    try:
-                        children.extend(ast.dataview[each].type.EnumValues)
-                    except (AttributeError, KeyError):
-                        pass
-                    for ch in children:
-                        text = re.sub(ch, ch.replace('-', '_'), text)
-                self.asn1_area.text.setPlainText(text)
-                self.asn1_area.text.try_resize()
-        except IOError as err:
-            LOG.warning('ASN.1 file(s) could not be loaded : ' + str(err))
-        except AttributeError as err:
-            LOG.warning('No AST, check input files:' + str(err))
-        else:
-            # Update the data dictionary
-            item = self.datadict.topLevelItem(0)
-            item.takeChildren() # remove old children
-            for name, sort in ast.dataview.viewitems():
-                basic = ogParser.find_basic_type(sort.type).kind[:-4].upper()
-                QtGui.QTreeWidgetItem(item, [name.replace('-', '_'), basic])
-            item = self.datadict.topLevelItem(1)
+        html_file = open(ast.DV.html, 'r')
+        html_content = html_file.read()
+        self.asn1_browser.setHtml(html_content)
+
+        # Update the data dictionary
+        item = self.datadict.topLevelItem(0)
+        item.takeChildren() # remove old children
+        for name, sort in ast.dataview.viewitems():
+            new_item = QtGui.QTreeWidgetItem(item,
+                                             [name.replace('-', '_'),
+                                              'view'])
+            new_item.setForeground(1, Qt.blue)
+            # Save type anchor for html
+            new_item.setData(0, ANCHOR, "ASN1_" + name.replace('-', '_'))
+        item = self.datadict.topLevelItem(1)
+        item.takeChildren()
+        for name, sort in ast.asn1_constants.viewitems():
+            QtGui.QTreeWidgetItem(item, [name.replace('-', '_'),
+                                         sort.type.ReferencedTypeName])
+        self.datadict.resizeColumnToContents(0)
+
+
+    def update_datadict_window(self):
+        ''' Update the tree in the data dictionary based on the AST '''
+        # currently the ast is a global in sdlSymbols.CONTEXT
+        # it should be attached to the current scene instead TODO
+        (in_sig, out_sig, states, labels,
+         dcl, timers) = [self.datadict.topLevelItem(i) for i in range(2, 8)]
+        context = sdlSymbols.CONTEXT
+        def change_state(item, state):
+            ''' Disable (with state=True) or enable (state=False) one of the
+            root items of the data dictionary '''
+            item.setDisabled(state)
             item.takeChildren()
-            for name, sort in ast.asn1_constants.viewitems():
-                QtGui.QTreeWidgetItem(item, [name.replace('-', '_'),
-                                             sort.type.ReferencedTypeName])
-            self.datadict.resizeColumnToContents(0)
 
+        def refresh_signals(root, signals):
+            for each in signals:
+                sort = each.get('type', '')
+                sort = sort.ReferencedTypeName if sort else ''
+                QtGui.QTreeWidgetItem(root, [each['name'], sort])
 
+        add_elem = lambda root, elem: QtGui.QTreeWidgetItem(root, [elem])
+
+        if self.view.scene().context == 'block':
+            map(lambda elem: change_state(elem, True),
+                (in_sig, out_sig, states, labels, dcl, timers))
+        elif self.view.scene().context == 'process':
+            map(lambda elem: change_state(elem, False),
+                (in_sig, out_sig, states, labels, dcl, timers))
+            refresh_signals(in_sig, context.input_signals)
+            refresh_signals(out_sig, context.output_signals)
+
+            for each in sorted(context.mapping.viewkeys()):
+                if each != 'START':
+                    state = QtGui.QTreeWidgetItem(states, [each, 'refactor'])
+                    state.setForeground(1, Qt.blue)
+
+            map(partial(add_elem, labels), sorted(l.inputString
+                                                  for l in context.labels))
+            map(partial(add_elem, timers), sorted(context.timers))
+
+            for var, (sort, _) in context.variables.viewitems():
+                QtGui.QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
+
+        elif self.view.scene().context == 'procedure':
+            map(lambda elem: change_state(elem, True), (in_sig, states))
+            map(lambda elem: change_state(elem, False),
+                (dcl, timers, labels, out_sig))
+            for var, (sort, _) in context.variables.viewitems():
+                QtGui.QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
+            map(partial(add_elem, timers), sorted(context.timers))
+            map(partial(add_elem, labels), sorted(l.inputString
+                                                  for l in context.labels))
+            refresh_signals(out_sig, context.output_signals)
+        self.datadict.resizeColumnToContents(0)
 
     def vi_command(self):
         # type: () -> None
@@ -2308,7 +2377,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             # due to pyside badly handling items that are not part of any scene
             G_SYMBOLS.clear()
             # Also clear undo stack that may keep reference to items
-            self.scene.undo_stack.clear()
+            scene = self.view.top_scene()
+            for each in chain([scene], scene.all_nested_scenes):
+                each.undo_stack.clear()
             super(OG_MainWindow, self).closeEvent(event)
 
 
