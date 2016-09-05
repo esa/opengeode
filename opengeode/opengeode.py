@@ -1142,9 +1142,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         return subscene
 
 
-    def place_symbol(self, item_type, parent, pos=None):
+    def place_symbol(self, item_type, parent, pos=None, rect=None):
         ''' Draw a symbol on the scene '''
         item = item_type()
+        if rect is not None:
+            # Optionally size the new item
+            item.set_shape(rect.width(), rect.height())
         # Add the item to the scene
         if item not in self.items():
             self.addItem(item)
@@ -1286,9 +1289,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                             ACTIONS.get(self.context, []))
 
         def add_symbol(sort, rect):
-            symb = self.place_symbol(sort, parent=None, pos=rect.topLeft())
-            if symb.default_size == "any":
-                symb.resize_item(rect)
+            size = rect if sort.default_size == "any" else None
+            symb = self.place_symbol(sort, parent=None, pos=rect.topLeft(),
+                                     rect=size)
 
         def setup_action(sort):
             name   = sort.__name__
@@ -2240,7 +2243,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # Update the data dictionary
         item = self.datadict.topLevelItem(0)
         item.takeChildren() # remove old children
-        for name, sort in sorted(ast.dataview.viewitems(), key=lambda (x,_): x):
+        for name, sort in sorted(ast.dataview.viewitems(),
+                                 key=lambda (name, sort): name):
             new_item = QtGui.QTreeWidgetItem(item,
                                              [name.replace('-', '_'),
                                               'view'])
