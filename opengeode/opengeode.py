@@ -2240,7 +2240,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # Update the data dictionary
         item = self.datadict.topLevelItem(0)
         item.takeChildren() # remove old children
-        for name, sort in sorted(ast.dataview.viewitems(), key=lambda (x,_): x):
+        for name, sort in sorted(ast.dataview.viewitems(),
+                                 key=lambda (name, sort): name):
             new_item = QtGui.QTreeWidgetItem(item,
                                              [name.replace('-', '_'),
                                               'view'])
