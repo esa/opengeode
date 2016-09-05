@@ -1,7 +1,7 @@
 #!/bin/bash -e
 rm -rf testsc_simu
 mkdir -p testsc_simu
-cp /home/assert/work/scisys/example/testsc.pr dataview.asn testsc_simu
+cp testsc.pr dataview.asn testsc_simu
 cd testsc_simu
 opengeode testsc.pr --shared
 cat dataview.asn >> dataview-uniq.asn 
