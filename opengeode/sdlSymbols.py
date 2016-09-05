@@ -1107,7 +1107,7 @@ class Procedure(Process):
         self.setPath(path)
         super(Process, self).set_shape(width, height)
 
-    def update_completion_list(self, _):
+    def update_completion_list(self, pr_text):
         ''' When text was entered, update completion list of ProcedureCall '''
         for each in CONTEXT.procedures:
             if unicode(self.text).lower() == each.inputString:
