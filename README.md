@@ -142,6 +142,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.7 (09/2016)
+    - Bugfix - Update completion list of process symbol
+    - Sort ASN.1 types in data dictionary
+
 1.5.6 (08/2016)
     - vi interface supports history
     - vi interface for substitution can apply to the whole model (with g)

@@ -1050,6 +1050,16 @@ class Process(HorizontalSymbol):
         self.setPath(path)
         super(Process, self).set_shape(width, height)
 
+    def update_completion_list(self, pr_text):
+        ''' When text was entered, update completion list at block level '''
+        for each in CONTEXT.processes:
+            if unicode(self.text).lower() == each.inputString:
+                break
+        else:
+            new_proc = ogAST.Process()
+            new_proc.processName = unicode(self.text).lower()
+            CONTEXT.processes.append(new_proc)
+
 
 class Procedure(Process):
     ''' Procedure declaration symbol - Very similar to Process '''

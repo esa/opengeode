@@ -137,7 +137,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.6'
+__version__ = '1.5.7'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2240,7 +2240,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # Update the data dictionary
         item = self.datadict.topLevelItem(0)
         item.takeChildren() # remove old children
-        for name, sort in ast.dataview.viewitems():
+        for name, sort in sorted(ast.dataview.viewitems(), key=lambda (x,_): x):
             new_item = QtGui.QTreeWidgetItem(item,
                                              [name.replace('-', '_'),
                                               'view'])
