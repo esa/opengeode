@@ -84,6 +84,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     _unique_followers = []  # unique : e.g. comment symbol
     _insertable_followers = []  # no limit to insert below current symbol
     _terminal_followers = []  # cannot be inserted between two symbols
+    # List of symbols that can be connected, but without parent-child relation
+    _connectable_siblings = []
     # By default a symbol is resizeable
     resizeable = True
     # By default symbol size may expand when inner text exceeds border
@@ -93,6 +95,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     # By default connections between symbols are lines, not arrows
     arrow_head = None
     arrow_tail = None
+    # Define if a symbol can be manually connected to another one by user
+    user_can_connect = False
     # Default mouse cursor
     default_cursor = Qt.SizeAllCursor
     # Decide if a symbol can be copy-pasted several times
@@ -124,6 +128,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         '''
         super(Symbol, self).__init__(parent)
         QGraphicsPathItem.__init__(self, parent)
+        # Current mode, can be empty string, "Resize", or "Move"
         self.mode = ''
         self.comment = None
         self.text = None

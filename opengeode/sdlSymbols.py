@@ -1006,6 +1006,9 @@ class Process(HorizontalSymbol):
     is_singleton = True
     arrow_head = 'angle'
     arrow_tail = 'angle'
+    # Process can be connected to other processes by the user
+    user_can_connect = True
+    _connectable_siblings = ['Process']
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()

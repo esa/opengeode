@@ -381,6 +381,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         super(SDL_Scene, self).__init__()
         # Reference to the parent scene
         self.parent_scene = None
+        # mode can be "idle", "wait_connection_source", "select_items",
+        # "wait_next_connection_point", "wait_placement"
         self.mode = 'idle'
         self.context = context
         self.allowed_symbols = ACTIONS[context]
@@ -1247,8 +1249,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
         elif self.mode == 'wait_placement':
             try:
-                parent = \
-                        self.can_insert(event.scenePos(), self.button_selected)
+                parent = self.can_insert(event.scenePos(),
+                                         self.button_selected)
             except TypeError as err:
                 self.messages_window.addItem(str(err))
             else:
@@ -1318,6 +1320,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 else:
                     found = True
             if not found and rect.width() > 20 and rect.height() > 20:
+                # No items to select, so propose a context dependent menu
                 self.quick_menu(event.screenPos(), rect)
             #self.removeItem(self.select_rect)
             # XXX stop with removeItem, it provokes segfault
