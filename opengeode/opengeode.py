@@ -1260,8 +1260,13 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # TODO check if symbol can be a connection source, can have
                 # more than one connection if there is already one, etc.
                 self.mode = 'wait_next_connection_point'
-                center = symb.mapToScene(symb.boundingRect().center())
+                rect = symb.sceneBoundingRect()
+                center = rect.center()
                 click_point = event.scenePos()
+                h_dist = min(click_point.y() - rect.y(),
+                             rect.y() + rect.height() - click_point.y())
+                v_dist = min(click_point.x() - rect.x(),
+                             rect.x() + rect.width() - click_point.x())
                 point = QPointF()
                 point.setX(symb.pos_x
                         if click_point.x() <= center.x()
@@ -1269,6 +1274,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 point.setY(symb.pos_y
                         if click_point.y() <= center.y()
                         else symb.pos_y + symb.boundingRect().height())
+                if h_dist < v_dist:
+                    point.setX(click_point.x())
+                else:
+                    point.setY(click_point.y())
                 self.edge_points = [point]
                 self.current_line = self.addLine(point.x(),
                                                  point.y(),
