@@ -1225,6 +1225,26 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                rectangle. If no object is selected, open a pop-up menu to
                insert a new symbol, based on the scene context
         '''
+        def border_point(symb, point):
+            ''' find the closest point on the border of a symbol '''
+            rect = symb.sceneBoundingRect()
+            center = rect.center()
+            h_dist = min(point.y() - rect.y(),
+                         rect.y() + rect.height() - point.y())
+            v_dist = min(point.x() - rect.x(),
+                         rect.x() + rect.width() - point.x())
+            res = QPointF()
+            res.setX(symb.pos_x
+                    if point.x() <= center.x()
+                    else symb.pos_x + symb.boundingRect().width())
+            res.setY(symb.pos_y
+                    if point.y() <= center.y()
+                    else symb.pos_y + symb.boundingRect().height())
+            if h_dist < v_dist:
+                res.setX(point.x())
+            else:
+                res.setY(point.y())
+            return res
         self.reset_cursor()
         # First propagate event to symbols for specific treatment
         super(SDL_Scene, self).mousePressEvent(event)
@@ -1260,29 +1280,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # TODO check if symbol can be a connection source, can have
                 # more than one connection if there is already one, etc.
                 self.mode = 'wait_next_connection_point'
-                rect = symb.sceneBoundingRect()
-                center = rect.center()
                 click_point = event.scenePos()
-                h_dist = min(click_point.y() - rect.y(),
-                             rect.y() + rect.height() - click_point.y())
-                v_dist = min(click_point.x() - rect.x(),
-                             rect.x() + rect.width() - click_point.x())
-                point = QPointF()
-                point.setX(symb.pos_x
-                        if click_point.x() <= center.x()
-                        else symb.pos_x + symb.boundingRect().width())
-                point.setY(symb.pos_y
-                        if click_point.y() <= center.y()
-                        else symb.pos_y + symb.boundingRect().height())
-                if h_dist < v_dist:
-                    point.setX(click_point.x())
-                else:
-                    point.setY(click_point.y())
+                point = border_point(symb, click_point)
                 self.edge_points = [point]
                 self.current_line = self.addLine(point.x(),
                                                  point.y(),
                                                  click_point.x(),
                                                  click_point.y())
+                self.connection_start = symb
 
         elif self.mode == 'wait_placement':
             try:
@@ -1307,6 +1312,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             symb = self.symbol_near(event.scenePos(), dist=1)
             if symb:
                 # Here: create the actual connector
+                connector = Connection(parent=self.connection_start,
+                                       child=symb)
+                connector._start_point = self.edge_points[0]
+                connector._middle_points = self.edge_points[1:]
+                connector._end_point = border_point(symb, event.scenePos())
+
                 self.mode = 'idle'
 
 
