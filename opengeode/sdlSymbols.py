@@ -1075,6 +1075,7 @@ class Procedure(Process):
     redbold = SDL_REDBOLD
     completion_list = set()
     is_singleton = False
+    user_can_connect = False
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Procedure()

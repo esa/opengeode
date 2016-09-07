@@ -83,7 +83,8 @@ except ImportError:
 #from PySide import phonon
 
 from PySide import QtGui, QtCore
-from PySide.QtCore import Qt, QSize, QFile, QIODevice, QRectF, QTimer, QPoint
+from PySide.QtCore import (Qt, QSize, QFile, QIODevice, QRectF, QTimer, QPoint,
+                           QPointF, QLineF)
 
 from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
@@ -404,6 +405,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.messages_window = None
         self.click_coordinates = None
         self.orig_pos = None
+        # When connecting symbols, store list of intermediate points
+        self.edge_points = []   #  type: List[QPointF] in scene coordinates
+        self.current_line = None  # type: QGraphicsLineItem
         self.process_name = 'opengeode'
         # Scene name is used to update the tab window name when scene changes
         self.name = ''
@@ -1213,9 +1217,13 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def mousePressEvent(self, event):
         '''
             Handle mouse click on the scene:
-            If a symbol was selected in the menu, check if it can be inserted
-            Otherwise store the coordinates, in which case if the user does
-            a paste action with floating items, they will be placed there.
+            1) If a symbol was selected in the menu, place it in the scene
+            2) Otherwise store the coordinates, in which case if the user does
+               a paste action with floating items, they will be placed there.
+            3) If there is no object at click coordinates, enter the
+               selection mode. When mouse is released, check the selection
+               rectangle. If no object is selected, open a pop-up menu to
+               insert a new symbol, based on the scene context
         '''
         self.reset_cursor()
         # First propagate event to symbols for specific treatment
@@ -1233,7 +1241,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # (some connections like statechart Edges can react)
                 nearby_connection.mousePressEvent(event)
                 connection_selected = True
-            if not self.symbol_near(event.scenePos(), dist=1):
+            symb = self.symbol_near(event.scenePos(), dist=1)
+            if not symb:
                 self.mode = 'select_items'
                 self.orig_pos = event.scenePos()
                 self.select_rect = self.addRect(
@@ -1246,6 +1255,25 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                             item.bezier_set_visible(False)
                         except AttributeError:
                             pass
+            elif symb.user_can_connect \
+                    and event.modifiers() == Qt.ControlModifier:
+                # TODO check if symbol can be a connection source, can have
+                # more than one connection if there is already one, etc.
+                self.mode = 'wait_next_connection_point'
+                center = symb.mapToScene(symb.boundingRect().center())
+                click_point = event.scenePos()
+                point = QPointF()
+                point.setX(symb.pos_x
+                        if click_point.x() <= center.x()
+                        else symb.pos_x + symb.boundingRect().width())
+                point.setY(symb.pos_y
+                        if click_point.y() <= center.y()
+                        else symb.pos_y + symb.boundingRect().height())
+                self.edge_points = [point]
+                self.current_line = self.addLine(point.x(),
+                                                 point.y(),
+                                                 click_point.x(),
+                                                 click_point.y())
 
         elif self.mode == 'wait_placement':
             try:
@@ -1278,8 +1306,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             self.select_rect.setRect(rect.normalized())
         elif self.mode == 'wait_next_connection_point':
             # Update the line
-            pass
-
+            line = self.current_line.line()
+            self.current_line.setLine(line.x1(), line.y1(),
+                    event.scenePos().x(), event.scenePos().y())
 
     def quick_menu(self, pos, rect):
         ''' Add actions on the fly to the context-dependent menu that is
