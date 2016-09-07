@@ -1303,12 +1303,18 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             self.mode = 'wait_next_connection_point'
             # if not OK, reset and:
             self.mode = 'idle'
+        elif self.mode == 'wait_next_connection_point':
+            symb = self.symbol_near(event.scenePos(), dist=1)
+            if symb:
+                # Here: create the actual connector
+                self.mode = 'idle'
 
 
     # pylint: disable=C0103
     def mouseMoveEvent(self, event):
         ''' Handle Click + Mouse move, based on the mode '''
-        if event.buttons() == Qt.NoButton or self.mode == 'idle':
+        if(event.buttons() == Qt.NoButton and
+            self.mode != 'wait_next_connection_point') or self.mode == 'idle':
             return super(SDL_Scene, self).mouseMoveEvent(event)
         elif self.mode == 'select_items':
             rect = QRectF(self.orig_pos, event.scenePos())
@@ -1363,7 +1369,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             #self.removeItem(self.select_rect)
             # XXX stop with removeItem, it provokes segfault
             self.select_rect.hide()
-        self.mode = 'idle'
+            self.mode = 'idle'
+        elif self.mode == 'wait_next_connection_point':
+            point = event.scenePos()
+            self.edge_points.append(point)
+            self.current_line = self.addLine(point.x(),
+                                             point.y(),
+                                             point.x(),
+                                             point.y())
+
         super(SDL_Scene, self).mouseReleaseEvent(event)
 
 
