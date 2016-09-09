@@ -65,7 +65,7 @@ import undoCommands
 import ogAST
 import ogParser
 from Connectors import Connection, VerticalConnection, CommentConnection, \
-                       RakeConnection, JoinConnection
+                       RakeConnection, JoinConnection, Channel
 
 from TextInteraction import EditableText
 

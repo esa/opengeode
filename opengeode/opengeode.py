@@ -89,7 +89,7 @@ from PySide.QtCore import (Qt, QSize, QFile, QIODevice, QRectF, QTimer, QPoint,
 from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
 
-from genericSymbols import(Symbol, Comment, Cornergrabber, Connection)
+from genericSymbols import(Symbol, Comment, Cornergrabber, Connection, Channel)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
         ProcedureStart, ProcedureStop, StateStart, Connect, Process,
@@ -1380,14 +1380,18 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             symb = self.symbol_near(point, dist=1)
             if symb:
                 # Clicked on a symbol: create the actual connector
-                connector = Connection(parent=self.connection_start,
-                                       child=symb)
-                connector._start_point = \
-                        connector.mapFromScene(self.edge_points[0])
-                connector._middle_points = [connector.mapFromScene(p)
-                                            for p in self.edge_points[1:]]
-                connector._end_point = \
-                        connector.mapFromScene(self.border_point(symb, point))
+                connector = Channel(parent=self.connection_start, child=symb)
+                connector.start_point = self.edge_points[0]
+                connector.middle_points = self.edge_points[1:]
+                connector.end_point = self.border_point(symb, point)
+#               connector = Connection(parent=self.connection_start,
+#                                      child=symb)
+#               connector._start_point = \
+#                       connector.mapFromScene(self.edge_points[0])
+#               connector._middle_points = [connector.mapFromScene(p)
+#                                           for p in self.edge_points[1:]]
+#               connector._end_point = \
+#                       connector.mapFromScene(self.border_point(symb, point))
                 for each in self.temp_lines:
                     # Just hide to avoid pyside segfaults
                     each.setVisible(False)
