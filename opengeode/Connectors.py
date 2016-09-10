@@ -301,7 +301,7 @@ class Signalroute(Connection):
         self.label_out.document().contentsChanged.connect(self.change_siglist)
         for each in (self.label_in, self.label_out):
             each.show()
-        self.reshape()
+        #self.reshape()
 
     @Slot()
     def change_siglist(self):
@@ -414,13 +414,12 @@ class Channel(Signalroute):
     @property
     def start_point(self):
         ''' Compute connection origin - redefined function '''
-        return self.parent.mapFromScene(self._start_point)
+        return self._start_point
 
     @start_point.setter
     def start_point(self, scene_coord):  # type: QPointF
         ''' value is in scene coordinates '''
-        print 'set start point'
-        self._start_point = scene_coord
+        self._start_point = self.parent.mapFromScene(scene_coord)
 
     @property
     def end_point(self):

@@ -411,10 +411,10 @@ def _channel(symbol, recursive=True, **kwargs):
     result.append('SIGNALROUTE c')
     Indent.indent += 1
     if symbol.out_sig:
-        result.append('FROM {} TO ENV WITH {};'.format(unicode(symbol.process),
+        result.append('FROM {} TO ENV WITH {};'.format(unicode(symbol.parent),
                                                        symbol.out_sig))
     if symbol.in_sig:
-        result.append('FROM ENV TO {} WITH {};'.format(unicode(symbol.process),
+        result.append('FROM ENV TO {} WITH {};'.format(unicode(symbol.parent),
                                                        symbol.in_sig))
     Indent.indent -= 1
     return result
