@@ -52,7 +52,8 @@ __all__ = ['Symbol', 'VerticalSymbol', 'HorizontalSymbol', 'Comment']
 import os
 import logging
 
-from PySide.QtCore import Qt, QPoint, QPointF, QRect, QFile, QObject, Property
+from PySide.QtCore import (Qt, QPoint, QPointF, QRect, QFile, QObject,
+                           Signal, Property)
 
 from PySide.QtGui import(QGraphicsPathItem, QGraphicsPolygonItem, QPainterPath,
                          QGraphicsItem, QPen, QColor, QMenu, QFileDialog,
@@ -78,6 +79,9 @@ class Symbol(QObject, QGraphicsPathItem, object):
         Top-level class used to handle all SDL symbols
         Inherits from QObject to allow animations
     '''
+    # Emit a signal when the symbol moved - can be caught by connectors to
+    # adjust connection points if the symbol is not the connection parent
+    moved = Signal(float, float)
     # Symbols of a given type share a text-autocompletion list:
     completion_list = set()
     # Flexible lists of symbol types that can be set as child of this symbol
@@ -582,6 +586,10 @@ class Symbol(QObject, QGraphicsPathItem, object):
                                             self, self.coord, self.position)
                 self.scene().undo_stack.push(undo_cmd)
                 self.cam(self.coord, self.position)
+                # Emit signal to indicate that the symbol moved
+                # typically caught by connectors
+                self.moved.emit(self.coord.x() - self.pos_x,
+                                self.coord.y() - self.pos_y)
         self.mode = ''
 
     def updateConnectionPoints(self):

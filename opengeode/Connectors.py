@@ -53,6 +53,13 @@ class Connection(QGraphicsPathItem, object):
         self.childRect = child.sceneBoundingRect()
         # Activate cache mode to boost rendering by calling paint less often
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        # When the child moves, the connection may need to adjust the end point
+        self.child.moved.connect(self.child_moved)
+
+    @Slot(float, float)
+    def child_moved(self, delta_x, delta_y):
+        ''' When the connection child moves - redefine in subclasses '''
+        pass
 
     @property
     def start_point(self):
@@ -410,6 +417,12 @@ class Channel(Signalroute):
     between a function and the environment (edge of the screen). Here the
     start, middle and end point are redefined. They are stored with
     scene coordinates '''
+
+    @Slot(float, float)
+    def child_moved(self, delta_x, delta_y):
+        ''' When the connection child moves - redefined function '''
+        self._end_point.setX(self._end_point.x() - delta_x)
+        self._end_point.setY(self._end_point.y() - delta_y)
 
     @property
     def start_point(self):
