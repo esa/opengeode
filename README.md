@@ -142,6 +142,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.8 (09/2016)
+    - Bugfix - Ada backend failed when there were continuous signals in
+               nested states but none at root level (missing end if)
+    - Load fix when there is no dataview
+    - Additional type checks
+
 1.5.7 (09/2016)
     - Bugfix - Update completion list of process symbol
     - Sort ASN.1 types in data dictionary

@@ -1,0 +1,40 @@
+SYSTEM NpalDsap;
+    /* CIF TEXT (57, 40), (406, 38) */
+    -- the type checker must detect all type errors
+-- the code generator must complain that there is no START symbol
+    /* CIF ENDTEXT */
+    /* CIF TEXT (40, 256), (304, 53) */
+    USE DataModel comment 'dataview-uniq.asn';
+
+SIGNAL MyIn(TotoT1);
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO NpalDsap WITH MyIn;
+    ENDCHANNEL;
+    BLOCK NpalDsap;
+        SIGNALROUTE r
+            FROM ENV TO NpalDsap WITH MyIn;
+        CONNECT c AND r;
+        /* CIF PROCESS (202, 149), (150, 75) */
+        PROCESS NpalDsap;
+            /* CIF TEXT (0, 0), (380, 156) */
+            dcl test1 TotoT1;
+
+dcl test2 TotoT2;
+
+dcl toto TotoT1;
+            /* CIF ENDTEXT */
+            /* CIF STATE (497, 17), (83, 35) */
+            STATE TestState;
+                /* CIF PROVIDED (510, 72), (58, 23) */
+                PROVIDED TRUE;
+                    /* CIF TASK (476, 115), (127, 35) */
+                    TASK test1 := { a toto };
+                    /* CIF TASK (474, 170), (131, 35) */
+                    TASK test1 := { a test2 };
+                    /* CIF NEXTSTATE (504, 225), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+        ENDPROCESS NpalDsap;
+    ENDBLOCK;
+ENDSYSTEM;

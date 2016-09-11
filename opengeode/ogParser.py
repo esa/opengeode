@@ -525,6 +525,11 @@ def check_call(name, params, context):
             received = type_name(expr.right.exprType)
             raise TypeError('Expected type {} in call to {} ({} received)'.
                 format(expected, name, received))
+        except Warning as warn:
+            expected = type_name(sign[idx]['type'])
+            received = type_name(expr.right.exprType)
+            raise Warning('Expected type {} in call to {} ({} received)'.
+                format(expected, name, received))
 
         if sign[idx].get('direction') != 'in' \
                 and not isinstance(expr.right, ogAST.PrimVariable):
@@ -774,8 +779,7 @@ def check_type_compatibility(primary, type_ref, context):
                         compare_types(
                             primary.value[casefield].exprType, fd_data.type)
                     except TypeError as err:
-                        raise TypeError('Field ' + ufield +
-                                    ' is not of the proper type, i.e. ' +
+                        raise TypeError('Field "' + ufield + '" not of type ' +
                                     type_name(fd_data.type) +
                                     ' - ' + str(err))
         return
@@ -857,7 +861,11 @@ def compare_types(type_a, type_b):
        Compare two types, return if they are semantically equivalent,
        otherwise raise TypeError
     '''
-
+    mismatch = ''
+    if type_a.kind == 'ReferenceType' and type_b.kind == 'ReferenceType':
+        if type_a.ReferencedTypeName != type_b.ReferencedTypeName:
+            mismatch = '"{}" is not "{}"'.format(type_a.ReferencedTypeName,
+                                                 type_b.ReferencedTypeName)
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
 
@@ -893,19 +901,29 @@ def compare_types(type_a, type_b):
                 compare_types(type_a.type, type_b.type)
                 raise Warning('Size constraints mismatch - risk of overflow')
         # TODO: Check that OctetString types have compatible range
-        return
+        elif type_a.kind == 'SequenceType' and mismatch:
+            raise TypeError(mismatch)
+        elif mismatch:
+            raise Warning(mismatch)
+        else:
+            return
     elif is_string(type_a) and is_string(type_b):
         return
     elif is_integer(type_a) and is_integer(type_b):
-        return
+        if mismatch:
+            raise Warning(mismatch)
+        else:
+            return
     elif is_real(type_a) and is_real(type_b):
-        return
+        if mismatch:
+            raise Warning(mismatch)
+        else:
+            return
     else:
         raise TypeError('Incompatible types {} and {}'.format(
             type_name(type_a),
             type_name(type_b)
         ))
-
 
 def find_variable_type(var, context):
     ''' Look for a variable name in the context and return its type '''
@@ -3360,6 +3378,8 @@ def outputbody(root, context):
         LOG.debug('[outputbody] call check_and_fix_op_params : '
                     + get_input_string(root) + str(op_err))
         LOG.debug(str(traceback.format_exc()))
+    except Warning as warn:
+        warnings.append('{} - {}'.format(str(warn), get_input_string(root)))
     if body['params']:
         body['tmpVars'] = []
         for _ in body['params']:
@@ -3629,6 +3649,9 @@ def decision(root, parent, context):
                     expr.right.inputString + ', type= ' +
                     type_name(expr.right.exprType) + ') ' + str(err),
                     [ans_x, ans_y], []])
+            except Warning as warn:
+                warnings.append(['Type mismatch: ' + str(warn), [ans_x, ans_y],
+                                []])
         elif ans.kind == 'closed_range':
             if not is_numeric(dec.question.exprType):
                 errors.append(['Closed range are only for numerical types',

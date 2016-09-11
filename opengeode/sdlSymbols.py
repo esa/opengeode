@@ -1003,9 +1003,12 @@ class Process(HorizontalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
     completion_list = set()
-    is_singleton = True
+    #is_singleton = True
     arrow_head = 'angle'
     arrow_tail = 'angle'
+    # Process can be connected to other processes by the user
+    user_can_connect = True
+    _connectable_siblings = ['Process']
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()
@@ -1072,6 +1075,7 @@ class Procedure(Process):
     redbold = SDL_REDBOLD
     completion_list = set()
     is_singleton = False
+    user_can_connect = False
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Procedure()
