@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.7'
+__version__ = '1.5.8'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2321,7 +2321,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
         # Update the dock widget with ASN.1 files content
-        html_file = open(ast.DV.html, 'r')
+        try:
+            html_file = open(ast.DV.html, 'r')
+        except AttributeError:
+            LOG.debug('set_asn1_view: No ASN.1 file specified')
+            return
         html_content = html_file.read()
         self.asn1_browser.setHtml(html_content)
 

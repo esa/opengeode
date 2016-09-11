@@ -821,7 +821,6 @@ package {process_name} is'''.format(process_name=process_name,
         #     - Check current state(s)
         #     - For each continuous signal generate code (test+transition)
         # XXX add to C backend
-        # Check Queue: TODO implement when simu=True
         if process.cs_mapping and not simu:
             taste_template.append('--  Process continuous signals')
             taste_template.append('if {}.initDone then'.format(LPREFIX))
@@ -853,11 +852,14 @@ package {process_name} is'''.format(process_name=process_name,
         done = []
         sep = 'if '
         last = ''
+        # flag indicating there are CS in nested states but not at root
+        need_final_endif = False
         for cs, agg in product(process.cs_mapping.viewitems(),
                                aggregates.viewitems()):
             (statename, cs_item), (agg_name, substates) = cs, agg
             for each in substates:
                 if statename in each.mapping.viewkeys():
+                    need_final_endif = True
                     taste_template.append(u'{first}if not msgPending and '
                             u'trId = -1 and '
                             u'{ctxt}.state = {s1} and '
@@ -882,10 +884,11 @@ package {process_name} is'''.format(process_name=process_name,
                         sep='elsif '
                         taste_template.extend(code)
                     done.append(statename)
-                    taste_template.append(u'end if; -- inner')  # inner if
+                    taste_template.append(u'end if;')  # inner if
                     sep = 'if '
                     break
         for statename in process.cs_mapping.viewkeys() - done:
+            need_final_endif = False
             cs_item = process.cs_mapping[statename]
             taste_template.append(u'{first}if not msgPending and '
                     u'trId = -1 and {}.state = {} then'
@@ -907,6 +910,9 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'end if;') # inner if
             taste_template.append(u'end if;') # current state
             sep = 'if '
+
+        if need_final_endif:
+            taste_template.append(u'end if;')
 
         taste_template.append('end loop;')
         taste_template.append('{ctxt}.initDone := True;'.format(ctxt=LPREFIX))
