@@ -9,10 +9,7 @@ test-parse:
 	$(OPENGEODE) og.pr --check
 
 test-ada: 
-	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
-	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n og.ali
+	@echo 'Nothing to test - test-parse must retun errors'
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
