@@ -1,0 +1,36 @@
+SYSTEM NpalDsap;
+    /* CIF TEXT (57, 262), (445, 263) */
+    USE DataModel comment 'dataview-uniq.asn';
+ 
+  SIGNAL MyIn(TotoT1);
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO NpalDsap WITH MyIn;
+    ENDCHANNEL;
+    BLOCK NpalDsap;
+        SIGNALROUTE r
+            FROM ENV TO NpalDsap WITH MyIn;
+        CONNECT c AND r;
+        /* CIF PROCESS (250, 150), (150, 75) */
+        PROCESS NpalDsap;
+            /* CIF TEXT (0, 0), (380, 156) */
+            dcl test1 TotoT1;
+
+dcl test2 TotoT2;
+
+dcl toto TotoT1;
+            /* CIF ENDTEXT */
+            /* CIF STATE (414, 17), (83, 35) */
+            STATE TestState;
+                /* CIF INPUT (409, 72), (92, 35) */
+                INPUT MyIn(test1);
+                    /* CIF TASK (391, 127), (127, 35) */
+                    TASK test1 := { a toto };
+                    /* CIF TASK (389, 182), (131, 35) */
+                    TASK test1 := { a test2 };
+                    /* CIF NEXTSTATE (420, 232), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+        ENDPROCESS NpalDsap;
+    ENDBLOCK;
+ENDSYSTEM;
