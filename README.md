@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.9 (09/2016)
+    - Added --readonly command line to restrict process modifications
+
 1.5.8 (09/2016)
     - Bugfix - Ada backend failed when there were continuous signals in
                nested states but none at root level (missing end if)
