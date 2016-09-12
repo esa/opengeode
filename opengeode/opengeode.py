@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.8'
+__version__ = '1.5.9'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -372,12 +372,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     scene_left = QtCore.Signal()
     context_change = QtCore.Signal()
 
-    def __init__(self, context='process'):
+    def __init__(self, context='process', readonly=False):
         ''' Create a Scene for a given context:
             process, procedure, composite state, clipboard, etc.
             Design note: creating subclasses per context was evaluated but
             rejected - there are too few behavioural differences between them
             Creating tons of files / classes is not right. Keep it simple.
+            "readonly" is a command line argument that allows to prevent some
+            scenes to be modified by the user.
         '''
         super(SDL_Scene, self).__init__()
         # Reference to the parent scene
@@ -387,6 +389,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.mode = 'idle'
         self.context = context
         self.allowed_symbols = ACTIONS[context]
+        self.readonly = readonly
+        self.set_readonly(readonly)
         # Configure the action menu
         all_possible_actions = set()
         for action in ACTIONS.viewvalues():
@@ -422,6 +426,13 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.highlighted = {}
         self.refresh_requested = False
 
+    def set_readonly(self, readonly=True):
+        ''' Set the current scene as read-only, discard all new actions '''
+        if self.context == 'process':
+            # only applies to 1st level hierarchy (process) allowing to have
+            # unmodifiable list of DCL and STATES at the 1st level of hierarchy
+            ACTIONS[self.context] = []
+            #self.allowed_symbols = [] if readonly else ACTIONS[self.context]
 
     def is_aggregation(self):
         ''' Determine if the current scene is a state aggregation, i.e. if
@@ -1141,7 +1152,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def create_subscene(self, context, parent=None):
         ''' Create a new SDL scene, e.g. for nested symbols '''
-        subscene = SDL_Scene(context=context)
+        subscene = SDL_Scene(context=context, readonly=self.readonly)
         subscene.messages_window = self.messages_window
         subscene.parent_scene = parent
         subscene.context_change.connect(self.context_change.emit)
@@ -2116,11 +2127,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_mdi = None
         self.datadict = None
 
-    def new_scene(self):
+    def new_scene(self, readonly=False):
         ''' Create a new, clean SDL scene. This function is necessary because
         it is not possible to use QGraphicsScene.clear(), because of Pyside
         bugs with deletion of items on application exit '''
-        scene = SDL_Scene(context='block')
+        scene = SDL_Scene(context='block', readonly=readonly)
         if self.view:
             scene.messages_window = self.view.messages_window
             self.view.setScene(scene)
@@ -2129,9 +2140,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 lambda x: self.view.wrapping_window.setWindowModified(not x))
             scene.context_change.connect(self.update_datadict_window)
 
-    def start(self, file_name):
+    def start(self, options):
         ''' Initializes all objects to start the application '''
 
+        file_name = options.files
         # widget wrapping the view. We have to maximize it
         process_widget = self.findChild(QtGui.QWidget, 'process')
         process_widget.showMaximized()
@@ -2142,7 +2154,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.view.wrapping_window.setWindowTitle('block unnamed[*]')
 
         # Create a default (block) scene for the view
-        self.new_scene()
+        self.new_scene(options.readonly)
 
         # Find Menu Actions
         open_action = self.findChild(QtGui.QAction, 'actionOpen')
@@ -2516,6 +2528,8 @@ def parse_args():
             help='Generate a SVG file for the process')
     parser.add_argument('--split', dest='split', action='store_true',
             help='Save pictures in multiple files (one per floating item)')
+    parser.add_argument('--readonly', dest='readonly', action='store_true',
+            help='Set process diagram as read-only')
     parser.add_argument('files', metavar='file.pr', type=str, nargs='*',
             help='SDL file(s)')
     return parser.parse_args()
@@ -2720,7 +2734,7 @@ def gui(options):
     ui_file.open(QFile.ReadOnly)
     my_widget = loader.load(ui_file)
     ui_file.close()
-    my_widget.start(options.files)
+    my_widget.start(options)
 
     return app.exec_()
 
