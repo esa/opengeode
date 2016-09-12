@@ -428,7 +428,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def set_readonly(self, readonly=True):
         ''' Set the current scene as read-only, discard all new actions '''
-        if self.context == 'process':
+        if self.context == 'process' and readonly:
             # only applies to 1st level hierarchy (process) allowing to have
             # unmodifiable list of DCL and STATES at the 1st level of hierarchy
             ACTIONS[self.context] = []
