@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.10 (09/2016)
+    - readonly mode with more restrictions
+
 1.5.9 (09/2016)
     - Added --readonly command line to restrict process modifications
 

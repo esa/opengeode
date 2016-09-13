@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.9'
+__version__ = '1.5.10'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -667,6 +667,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     each.nested_scene = dest_scene.composite_states[
                                                          unicode(each).lower()]
 
+            # Readonly user flag
+            if dest_scene.context == 'process' and dest_scene.readonly:
+                for each in dest_scene.editable_texts:
+                    each.setTextInteractionFlags(Qt.NoTextInteraction)
+
         recursive_render(ast, self)
 
 
@@ -924,6 +929,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         '''
             Remove selected symbols from the scene, with proper re-connections
         '''
+        if self.context == 'process' and self.readonly:
+            # with readonly flag, forbid item delettion
+            return
         self.undo_stack.beginMacro('Delete items')
         for item in self.selected_symbols:
             if not item.scene():
@@ -972,6 +980,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         '''
             Paste previously copied symbols at selection point
         '''
+        if self.context == 'process' and self.readonly:
+            # with readonly flag, forbid item delettion
+            return
         parent = list(self.selected_symbols)
         if len(parent) > 1:
             self.messages_window.addItem(
