@@ -9,7 +9,7 @@ test-parse:
 	$(OPENGEODE) testsc.pr --check
 
 test-ada: 
-	./check_simu.sh && rm -rf testsc_simu
+	./check_simulation.sh && rm -rf testsc_simu
 
 test-c: 
 	$(OPENGEODE) testsc.pr --toC
