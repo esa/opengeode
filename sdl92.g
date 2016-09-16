@@ -298,7 +298,7 @@ procedure
 procedure_result
         :       ('->' | RETURNS)
                 variable_id?
-                sort
+                sort end?
         ->      ^(RETURNS variable_id? sort)
         ;
 
