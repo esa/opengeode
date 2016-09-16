@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.11 (09/2016)
+    - Allow semicolon in the declaration of procedures after RETURNS keyword
+
 1.5.10 (09/2016)
     - readonly mode with more restrictions
 
