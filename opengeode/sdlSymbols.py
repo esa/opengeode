@@ -1008,7 +1008,8 @@ class Process(HorizontalSymbol):
     arrow_tail = 'angle'
     # Process can be connected to other processes by the user
     user_can_connect = True
-    _connectable_siblings = ['Process']
+    _conn_sources = ['Process']
+    _conn_targets = ['Process']
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()
@@ -1027,6 +1028,25 @@ class Process(HorizontalSymbol):
         self.input_signals = ast.input_signals
         self.output_signals = ast.output_signals
         self.insert_symbol(None, self.x(), self.y())
+
+    @property
+    def conn_start_zones(self):
+        ''' Redefined - define the zones in the symbol from which user can
+        start a connection with another symbol '''
+        rect = self.boundingRect()
+        yield QRect(15, 5, rect.width() - 30, 10)
+        yield QRect(5, 5, 10, rect.height() - 10)
+        yield QRect(rect.width() - 15, 5, 10, rect.height() - 10)
+        yield QRect(15, rect.height() - 15, rect.width() - 30, 10)
+
+    @property
+    def conn_end_zones(self):
+        ''' Redefined - define the zones that can receive a connection '''
+        rect = self.boundingRect()
+        yield QRect(15, 5, rect.width() - 30, 10)
+        yield QRect(5, 5, 10, rect.height() - 10)
+        yield QRect(rect.width() - 15, 5, 10, rect.height() - 10)
+        yield QRect(15, rect.heigth() - 15, rect.width() - 30, 10)
 
     def insert_symbol(self, parent, x, y):
         ''' Redefinition - adds connection line to env '''

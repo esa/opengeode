@@ -410,7 +410,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.click_coordinates = None
         self.orig_pos = None
         # When connecting symbols, store list of intermediate points
-        self.edge_points = []   #  type: List[QPointF] in scene coordinates
+        self.edge_points = []   # type: List[QPointF] in scene coordinates
         self.temp_lines = []    # type: List[QGraphicsLineItem]
         self.process_name = 'opengeode'
         # Scene name is used to update the tab window name when scene changes
@@ -1296,10 +1296,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                             item.bezier_set_visible(False)
                         except AttributeError:
                             pass
-            elif symb.user_can_connect \
-                    and event.modifiers() == Qt.ControlModifier:
-                # TODO check if symbol can be a connection source, can have
-                # more than one connection if there is already one, etc.
+            elif symb.user_can_connect and symb.in_start_zone(event.pos().toPoint()):
+                # TODO check if symbol can have more than
+                # one connection if there is already one, if start
+                # and end can be on the same symbol, etc.
                 self.mode = 'wait_next_connection_point'
                 click_point = event.scenePos()
                 point = self.border_point(symb, click_point)
@@ -1371,6 +1371,13 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if map(setup_action, candidates):
             menu.exec_(pos)
 
+    def cancel(self):
+        ''' Return to idle mode, reset current actions '''
+        self.select_rect.hide()
+        for each in self.temp_lines:
+            each.setVisible(False)
+        self.mode = 'idle'
+
     # pylint: disable=C0103
     def mouseReleaseEvent(self, event):
         if self.mode == 'select_items':
@@ -1389,9 +1396,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # No items to select, so propose a context dependent menu
                 self.quick_menu(event.screenPos(), rect)
             #self.removeItem(self.select_rect)
-            # XXX stop with removeItem, it provokes segfault
-            self.select_rect.hide()
-            self.mode = 'idle'
+            # stop with removeItem, it provokes segfault
+            self.cancel()
         elif self.mode == 'wait_next_connection_point':
             point = event.scenePos()
             previous = self.edge_points[-1]
@@ -1400,26 +1406,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             if abs(point.y() - previous.y()) < 15:
                 point.setY(previous.y())
             symb = self.symbol_near(point, dist=1)
-            if symb:
-                # Clicked on a symbol: create the actual connector
-                connector = Channel(parent=self.connection_start, child=symb)
-                connector.start_point = self.edge_points[0]
-                connector.middle_points = self.edge_points[1:]
-                connector.end_point = self.border_point(symb, point)
-#               connector = Connection(parent=self.connection_start,
-#                                      child=symb)
-#               connector._start_point = \
-#                       connector.mapFromScene(self.edge_points[0])
-#               connector._middle_points = [connector.mapFromScene(p)
-#                                           for p in self.edge_points[1:]]
-#               connector._end_point = \
-#                       connector.mapFromScene(self.border_point(symb, point))
-                for each in self.temp_lines:
-                    # Just hide to avoid pyside segfaults
-                    each.setVisible(False)
-
-                self.mode = 'idle'
-            else:
+            if previous != point:
+                # Draw a temporary line to the scene
                 current_line = self.temp_lines[-1]
                 line = current_line.line()
                 current_line.setLine(line.x1(), line.y1(),
@@ -1429,6 +1417,23 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                                     point.y(),
                                                     point.x(),
                                                     point.y()))
+            # Decide if the connection is valid, create it accordingly
+            valid = (symb and symb.__class__.__name__
+                     in self.connection_start._conn_sources and
+                     self.connection_start.__class__.__name__
+                     in symb._conn_targets and
+                     len(self.edge_points) > 2)
+            if symb and valid:
+                nb_segments = len(self.edge_points) - 1
+                for each in self.temp_lines[-nb_segments:]:
+                    # check lines that collide with the source or dest TODO
+                    pass
+                # Clicked on a symbol: create the actual connector
+                connector = Channel(parent=self.connection_start, child=symb)
+                connector.start_point = self.edge_points[0]
+                connector.middle_points = self.edge_points[1:-1]
+                connector.end_point = self.border_point(symb, point)
+                self.cancel()
 
         super(SDL_Scene, self).mouseReleaseEvent(event)
 
@@ -1442,6 +1447,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             self.clearSelection()
             self.clear_highlight()
             self.clear_focus()
+        elif event.key() == Qt.Key_Escape:
+            self.cancel()
         elif event.matches(QtGui.QKeySequence.Undo):
             if not isinstance(self.focusItem(), EditableText):
                 LOG.debug('UNDO ' + self.undo_stack.undoText())

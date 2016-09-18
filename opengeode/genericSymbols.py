@@ -89,7 +89,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     _insertable_followers = []  # no limit to insert below current symbol
     _terminal_followers = []  # cannot be inserted between two symbols
     # List of symbols that can be connected, but without parent-child relation
-    _connectable_siblings = []
+    _conn_sources = []   # source types that can connect to this symbol
+    _conn_targets = []   # target types that can connect to this symbol
     # By default a symbol is resizeable
     resizeable = True
     # By default symbol size may expand when inner text exceeds border
@@ -154,7 +155,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # and default text alignment within a textbox
         self.text_alignment = Qt.AlignLeft
         # Activate cache mode to boost rendering by calling paint less often
-        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         # Apply symbol default mouse cursor
         self.setCursor(self.default_cursor)
         # De-ativate cache mode otherwise paint is not properly updated
@@ -225,6 +226,28 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def nested_scene(self, value):
         ''' Set the value of the nested scene '''
         self._nested_scene = value
+
+    # Connection zones (for start and end of connection) are lists of QRect
+    # that define areas for the mouse to grab the symbol and start a connection
+    # These zones depend on the shape of the symbol and must be defined in
+    # sub-classes. By default there are none. Example in SDL symbol "Process".
+    # Zones are defined as properties because they must be dynamically
+    # computed, e.g. based on the current size of the symbol.
+    @property
+    def conn_start_zones(self):
+        return []
+
+    @property
+    def conn_end_zones(self):
+        return []
+
+    def in_start_zone(self, point):   # type: QPoint
+        ''' Return true if "point" is in one of the connection start zones '''
+        return any(rect.contains(point) for rect in self.conn_start_zones)
+
+    def in_end_zone(self, point):   # type: QPoint
+        ''' Return true if "point" is in one of the connection end zones '''
+        return any(rect.contains(point) for rect in self.conn_end_zones)
 
     def closest_connection_point(self, coord):
         '''
@@ -901,6 +924,8 @@ class Cornergrabber(QGraphicsPolygonItem, object):
             # Parent item may have changed its cursor (e.g. when inserting
             # items). In that case, don't override the cursor for that area
             cursor = self.parent.cursor()
+        elif self.parent.in_start_zone(event.pos().toPoint()):
+            cursor = Qt.CrossCursor
         elif not self.parent.resizeable:
             cursor = self.parent.default_cursor
             self.resize_mode = ''
