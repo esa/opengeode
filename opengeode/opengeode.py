@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.11'
+__version__ = '1.5.12'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1300,15 +1300,17 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # TODO check if symbol can have more than
                 # one connection if there is already one, if start
                 # and end can be on the same symbol, etc.
-                self.mode = 'wait_next_connection_point'
-                click_point = event.scenePos()
-                point = self.border_point(symb, click_point)
-                self.edge_points = [point]
-                self.temp_lines.append(self.addLine(point.x(),
-                                                    point.y(),
-                                                    click_point.x(),
-                                                    click_point.y()))
-                self.connection_start = symb
+                # DISABLE CONNECTIONS FOR NOW
+                pass
+#               self.mode = 'wait_next_connection_point'
+#               click_point = event.scenePos()
+#               point = self.border_point(symb, click_point)
+#               self.edge_points = [point]
+#               self.temp_lines.append(self.addLine(point.x(),
+#                                                   point.y(),
+#                                                   click_point.x(),
+#                                                   click_point.y()))
+#               self.connection_start = symb
 
         elif self.mode == 'wait_placement':
             try:
