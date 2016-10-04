@@ -2026,8 +2026,16 @@ def composite_state(root, parent=None, context=None):
                 comp.entry_procedure = new_proc
             elif new_proc.inputString.strip().lower() == 'exit':
                 comp.exit_procedure = new_proc
-            comp.content.inner_procedures.append(new_proc)
+            # check for duplicate declaration
+            if any(each.inputString.lower() == new_proc.inputString.lower()
+                   for each in chain(comp.content.inner_procedures,
+                                     context.procedures)
+                   if each.inputString.lower() not in ('entry', 'exit')):
+                errors.append(['Duplicate procedure Declaration: {}'
+                              .format(new_proc.inputString),
+                              [new_proc.pos_x, new_proc.pos_y], []])
             # Add procedure to the context, to make it visible at scope level
+            comp.content.inner_procedures.append(new_proc)
             context.procedures.append(new_proc)
         elif child.type in (lexer.COMPOSITE_STATE, lexer.STATE_AGGREGATION):
             inner_composite.append(child)
@@ -2202,9 +2210,17 @@ def procedure_post(proc, content, parent=None, context=None):
             inner_proc.append((new_proc, content))
             errors.extend(err)
             warnings.extend(warn)
-            proc.content.inner_procedures.append(new_proc)
+            # check for duplicate declaration
+            err = any(each.inputString.lower() == new_proc.inputString.lower()
+                      for each in chain(proc.content.inner_procedures,
+                                        context.procedures))
             # Add procedure to the context, to make it visible at scope level
             context.procedures.append(new_proc)
+            proc.content.inner_procedures.append(new_proc)
+            if err:
+                errors.append(['Duplicate declaration of procedure {}'
+                              .format(new_proc.inputString),
+                              [0, 0], []])
         elif child.type == lexer.START:
             # START transition (fills the mapping structure)
             proc.content.start, err, warn = start(child, context=proc)
@@ -2527,11 +2543,18 @@ def text_area_content(root, ta_ast, context):
         errors.extend(err)
         warnings.extend(warn)
         try:
-            # Add procedure to the container (process or procedure)
-            context.content.inner_procedures.append(proc)
+            content = context.content.inner_procedures
         except AttributeError:
             # May not be any content in current context (eg System)
-            pass
+            content = []
+        # check for duplicates
+        if any(each.inputString.lower() == proc.inputString.lower()
+               for each in chain(content, context.procedures)):
+            errors.append('Duplicate Procedure Declaration: {}'
+                          .format(proc.inputString))
+
+        # Add procedure to the container (process or procedure) if any
+        content.append(proc)
         # Add to context to make it visible at scope level
         context.procedures.append(proc)
         # And add it to the TextArea AST for the text autocompletion
@@ -2809,8 +2832,15 @@ def process_definition(root, parent=None, context=None):
             inner_proc.append((proc, content))
             errors.extend(err)
             warnings.extend(warn)
-            process.content.inner_procedures.append(proc)
+            # check for duplicate declaration
+            if any(each.inputString.lower() == proc.inputString.lower()
+                   for each in chain(process.content.inner_procedures,
+                                     process.procedures)):
+                errors.append(['Duplicate Procedure declaration: {}'
+                              .format(proc.inputString),
+                              [proc.pos_x, proc.pos_y], []])
             # Add it at process level so that it is in the scope
+            process.content.inner_procedures.append(proc)
             process.procedures.append(proc)
         elif child.type == lexer.FLOATING_LABEL:
             lab, err, warn = floating_label(

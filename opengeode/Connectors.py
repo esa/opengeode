@@ -457,6 +457,12 @@ class Channel(Signalroute):
     def add_point(self, scene_coord):
         self._middle_points.append(scene_coord)
 
+    def paint(self, painter, _, ___):
+        ''' Apply anti-aliasing '''
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        super(Channel, self).paint(painter, _, ___)
+
+
 
 class Controlpoint(QGraphicsPathItem, object):
     ''' Class handling one edge control point (to change bezier curves) '''
