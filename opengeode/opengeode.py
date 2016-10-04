@@ -2420,7 +2420,14 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             map(partial(add_elem, timers), sorted(context.timers))
 
             for var, (sort, _) in context.variables.viewitems():
-                QtGui.QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
+                try:
+                    sort_name = sort.ReferencedTypeName
+                except AttributeError:
+                    sort_name = "Undefined"
+                    self.view.messages_window.addItem(
+                            'Warning: Type of variable "{}" is undefined'
+                            .format(var))
+                QtGui.QTreeWidgetItem(dcl, [var, sort_name])
 
         elif self.view.scene().context == 'procedure':
             map(lambda elem: change_state(elem, True), (in_sig, states))
