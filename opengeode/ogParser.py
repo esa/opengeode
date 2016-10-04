@@ -2029,7 +2029,8 @@ def composite_state(root, parent=None, context=None):
             # check for duplicate declaration
             if any(each.inputString.lower() == new_proc.inputString.lower()
                    for each in chain(comp.content.inner_procedures,
-                                     context.procedures)):
+                                     context.procedures)
+                   if each.inputString.lower() not in ('entry', 'exit')):
                 errors.append(['Duplicate procedure Declaration: {}'
                               .format(new_proc.inputString),
                               [new_proc.pos_x, new_proc.pos_y], []])
