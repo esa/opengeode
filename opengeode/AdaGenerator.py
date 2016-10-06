@@ -1178,7 +1178,11 @@ def _task_assign(task, **kwargs):
     for expr in task.elems:
         code.extend(traceability(expr))
         # ExprAssign only returns code statements, no string
-        code_assign, _, decl_assign = expression(expr)
+        try:
+            code_assign, _, decl_assign = expression(expr)
+        except TypeError as err:
+            raise TypeError("{} - TaskAssign: '{}' (please report this bug)"
+                            .format(str(err), task.inputString))
         code.extend(code_assign)
         local_decl.extend(decl_assign)
     return code, local_decl
@@ -1992,7 +1996,12 @@ def _conditional(cond):
 def _sequence(seq):
     ''' Return Ada string for an ASN.1 SEQUENCE '''
     stmts, local_decl = [], []
-    ada_string = u"{}'(".format(type_name(seq.exprType))
+    try:
+        ada_string = u"{}'(".format(type_name(seq.exprType))
+    except NotImplementedError as err:
+        raise TypeError("Bug - unknown type in Sequence: {}"
+                        .format(str(seq.value)))
+
     sep = ''
     type_children = find_basic_type(seq.exprType).Children
     optional_fields = {field.lower().replace('-', '_'): {'present': False,
