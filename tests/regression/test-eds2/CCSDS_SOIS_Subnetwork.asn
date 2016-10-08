@@ -1,0 +1,53 @@
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     CCSDS_SOIS_Subnetwork.asn
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+CcsdsSoisSubnetwork DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- imports
+
+
+-- explicit namespace-level data type declarations
+------------------------------------------
+-- SIMPLE OctetType
+-- 
+
+OctetTypeT ::= INTEGER (0..255)
+
+------------------------------------------
+-- SIMPLE MemoryIDType
+-- 
+
+MemoryIDTypeT ::= INTEGER (0..65535)
+
+------------------------------------------
+-- ENUMERATION StartStop
+-- 
+
+StartStopT ::= ENUMERATED
+{
+  start(0),
+  stop(1)
+}
+
+------------------------------------------
+-- RANGE MemoryAddressType
+-- 
+
+MemoryAddressTypeT ::= INTEGER (0..4294967296)
+
+
+
+-- explicit component-level data type declarations
+
+
+END

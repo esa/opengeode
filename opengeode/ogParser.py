@@ -512,20 +512,21 @@ def check_call(name, params, context):
 
     # (3) Check each individual parameter type
     for idx, param in enumerate(params):
+        warnings = []
         expr = ogAST.ExprAssign()
         expr.left = ogAST.PrimVariable()
         expr.left.exprType = sign[idx]['type']
         expr.right = param
 
         try:
-            fix_expression_types(expr, context)
+            warnings.extend(fix_expression_types(expr, context))
             params[idx] = expr.right
         except TypeError:
             expected = type_name(sign[idx]['type'])
             received = type_name(expr.right.exprType)
             raise TypeError('Expected type {} in call to {} ({} received)'.
                 format(expected, name, received))
-        except Warning as warn:
+        if (warnings):
             expected = type_name(sign[idx]['type'])
             received = type_name(expr.right.exprType)
             raise Warning('Expected type {} in call to {} ({} received)'.
@@ -653,12 +654,13 @@ def check_range(typeref, type_to_check):
         raise TypeError('Missing range')
 
 
-def check_type_compatibility(primary, type_ref, context):
+def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
         Does not return anything if OK, otherwise raises TypeError
     '''
+    warnings = []    # function returns a list of warnings
     assert type_ref is not None
     if type_ref is UNKNOWN_TYPE:
         #print traceback.print_stack()
@@ -675,7 +677,7 @@ def check_type_compatibility(primary, type_ref, context):
         for each in basic_type.EnumValues.keys():
             if each.lower() == enumerant:
                 # Found -> all OK
-                return
+                return warnings
         else:
             err = ('Value "' + primary.inputString +
                    '" not in this enumeration: ' +
@@ -687,41 +689,45 @@ def check_type_compatibility(primary, type_ref, context):
 
         for expr in (then_expr, else_expr):
             if expr.is_raw:
-                check_type_compatibility(expr, type_ref, context)
-        return
+                warnings.extend(check_type_compatibility(expr,
+                                                         type_ref,
+                                                         context))
+        return warnings
 
     elif isinstance(primary, ogAST.PrimVariable):
         try:
-            compare_types(primary.exprType, type_ref)
+            warnings.extend(compare_types(primary.exprType, type_ref))
         except TypeError as err:
             raise TypeError('{expr} should be of type {ty} - {err}'
                             .format(expr=primary.inputString,
                                     ty=type_name(type_ref),
                                     err=str(err)))
-        return
+        return warnings
 
     elif isinstance(primary, ogAST.PrimInteger) \
             and (is_integer(type_ref) or type_ref == NUMERICAL):
-        return
+        return warnings
 
     elif isinstance(primary, ogAST.PrimReal) \
             and (is_real(type_ref) or type_ref == NUMERICAL):
-        return
+        return warnings
 
     elif isinstance(primary, ogAST.ExprNeg):
-        check_type_compatibility(primary.expr, type_ref, context)
+        warnings.extend(check_type_compatibility(primary.expr,
+                                                 type_ref,
+                                                 context))
 
     elif isinstance(primary, ogAST.PrimBoolean) and is_boolean(type_ref):
-        return
+        return warnings
 
     elif isinstance(primary, ogAST.PrimNull) and is_null(type_ref):
-        return
+        return warnings
 
     elif isinstance(primary, ogAST.PrimEmptyString):
         # Empty strings ("{ }") can be used for arrays and empty records
         if basic_type.kind == 'SequenceOfType':
             if int(basic_type.Min) == 0:
-                return
+                return warnings
             else:
                 raise TypeError('SEQUENCE OF has a minimum size of '
                                 + basic_type.Min + ')')
@@ -739,11 +745,13 @@ def check_type_compatibility(primary, type_ref, context):
                       ' elements in SEQUENCE OF, while constraint is [' +
                       str(basic_type.Min) + '..' + str(basic_type.Max) + ']')
         for elem in primary.value:
-            check_type_compatibility(elem, basic_type.type, context)
+            warnings.extend(check_type_compatibility(elem,
+                                                     basic_type.type,
+                                                     context))
         if not hasattr(primary, 'expected_type') \
                and type_ref.__name__ not in ('Apnd', 'SubStr'):
             primary.expected_type = type_ref
-        return
+        return warnings
     elif isinstance(primary, ogAST.PrimSequence) \
             and basic_type.kind == 'SequenceType':
         user_nb_elem = len(primary.value.keys())
@@ -771,18 +779,21 @@ def check_type_compatibility(primary, type_ref, context):
                         casefield = each
                         break
                 if primary.value[casefield].is_raw:
-                    check_type_compatibility(primary.value[casefield],
-                                             fd_data.type, context)
+                    warnings.extend(check_type_compatibility
+                                         (primary.value[casefield],
+                                          fd_data.type,
+                                          context))
                 else:
                     # Compare the types for semantic equivalence
                     try:
-                        compare_types(
-                            primary.value[casefield].exprType, fd_data.type)
+                        warnings.extend(compare_types
+                                       (primary.value[casefield].exprType,
+                                        fd_data.type))
                     except TypeError as err:
                         raise TypeError('Field "' + ufield + '" not of type ' +
                                     type_name(fd_data.type) +
                                     ' - ' + str(err))
-        return
+        return warnings
     elif isinstance(primary, ogAST.PrimChoiceItem) \
                               and basic_type.kind.startswith('Choice'):
         for choicekey, choice in basic_type.Children.viewitems():
@@ -799,11 +810,14 @@ def check_type_compatibility(primary, type_ref, context):
         choice_field_type = choice.type
         # if the user field is a raw value:
         if value.is_raw:
-            check_type_compatibility(value, choice_field_type, context)
+            warnings.extend(check_type_compatibility(value,
+                                                     choice_field_type,
+                                                     context))
         # Compare the types for semantic equivalence:
         else:
             try:
-                compare_types(value.exprType, choice_field_type)
+                warnings.extend(compare_types(value.exprType,
+                                              choice_field_type))
             except TypeError as err:
                 raise TypeError(
                             'Field {field} in CHOICE is not of type {t1} - {e}'
@@ -811,7 +825,7 @@ def check_type_compatibility(primary, type_ref, context):
                                     t1=type_name(choice_field_type),
                                     e=str(err)))
         value.exprType = choice_field_type         # XXX
-        return
+        return warnings
     elif isinstance(primary, ogAST.PrimChoiceDeterminant) \
                 and basic_type.kind.startswith('Choice'):
         for choicekey, choice in basic_type.EnumValues.viewitems():
@@ -827,12 +841,12 @@ def check_type_compatibility(primary, type_ref, context):
         # Octet strings
         basic_type = find_basic_type(type_ref)
         if basic_type.kind == 'StandardStringType':
-            return
+            return warnings
         elif basic_type.kind.endswith('StringType'):
             try:
                 if int(basic_type.Min) <= len(
                         primary.value[1:-1]) <= int(basic_type.Max):
-                    return
+                    return warnings
                 else:
                     raise TypeError('Invalid string literal'
                                     ' - check that length is'
@@ -842,25 +856,27 @@ def check_type_compatibility(primary, type_ref, context):
             except ValueError:
                 # No size constraint (or MIN/MAX)
                 LOG.debug('String literal size constraint discarded')
-                return
+                return warnings
         else:
             raise TypeError('String literal not expected')
     elif (isinstance(primary, ogAST.PrimMantissaBaseExp) and
                                             basic_type.kind == 'RealType'):
         LOG.debug('PROBABLY (it is a float but I did not check'
                   'if values are compatible)')
-        return
+        return warnings
     else:
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
                                 t1=type_name(type_ref)))
+    return warnings
 
 
-def compare_types(type_a, type_b):
+def compare_types(type_a, type_b):   # type -> [warnings]
     '''
        Compare two types, return if they are semantically equivalent,
        otherwise raise TypeError
     '''
+    warnings = []
     mismatch = ''
     if type_a.kind == 'ReferenceType' and type_b.kind == 'ReferenceType':
         if type_a.ReferencedTypeName != type_b.ReferencedTypeName:
@@ -870,17 +886,17 @@ def compare_types(type_a, type_b):
     type_b = find_basic_type(type_b)
 
     if type_a == type_b:
-        return
+        return warnings
     elif NUMERICAL in (type_a, type_b) and is_numeric(type_a) \
             and is_numeric(type_b):
-        return
+        return warnings
     elif LIST in (type_a, type_b) and is_list(type_a) and is_list(type_b):
-        return
+        return warnings
     elif ENUMERATED in (type_a, type_b) and is_enumerated(type_a) \
             and is_enumerated(type_b):
-        return
+        return warnings
     elif CHOICE in (type_a, type_b) and is_choice(type_a) and is_choice(type_b):
-        return
+        return warnings
 
     # Check if both types have basic compatibility
 
@@ -888,37 +904,36 @@ def compare_types(type_a, type_b):
         if type_a.kind == 'SequenceOfType':
             if type_a.Min == type_a.Max:
                 if type_a.Min == type_b.Min == type_b.Max:
-                    compare_types(type_a.type, type_b.type)
-                    return
+                    warnings.extend(compare_types(type_a.type, type_b.type))
+                    return warnings
                 else:
                     raise TypeError('Incompatible sizes - size of {} can vary'
                                     .format(type_name(type_b)))
             elif(int(type_b.Min) >= int(type_a.Min)
                  and int(type_b.Max) <= int(type_a.Max)):
-                compare_types(type_a.type, type_b.type)
-                return
+                warnings.extend(compare_types(type_a.type, type_b.type))
+                return warnings
             else:
-                compare_types(type_a.type, type_b.type)
-                raise Warning('Size constraints mismatch - risk of overflow')
+                warnings.extend(compare_types(type_a.type, type_b.type))
+                warnings.append('Size constraints mismatch - risk of overflow')
+                return warnings
         # TODO: Check that OctetString types have compatible range
         elif type_a.kind == 'SequenceType' and mismatch:
             raise TypeError(mismatch)
         elif mismatch:
-            raise Warning(mismatch)
-        else:
-            return
+            warnings.append(mismatch)
+        #print traceback.print_stack()
+        return warnings
     elif is_string(type_a) and is_string(type_b):
-        return
+        return warnings
     elif is_integer(type_a) and is_integer(type_b):
         if mismatch:
-            raise Warning(mismatch)
-        else:
-            return
+            warnings.append(mismatch)
+        return warnings
     elif is_real(type_a) and is_real(type_b):
         if mismatch:
-            raise Warning(mismatch)
-        else:
-            return
+            warnings.append(mismatch)
+        return warnings
     else:
         raise TypeError('Incompatible types {} and {}'.format(
             type_name(type_a),
@@ -961,24 +976,29 @@ def find_variable_type(var, context):
 def fix_enumerated_and_choice(expr_enum, context):
     ''' If left side of the expression is of Enumerated or Choice type,
         check if right side is a literal of that sort, and update type '''
+    warnings = []
     kind = find_basic_type(expr_enum.left.exprType).kind
     if kind in ('EnumeratedType', 'StateEnumeratedType'):
         prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right)
     elif kind == 'ChoiceEnumeratedType':
         prim = ogAST.PrimChoiceDeterminant(primary=expr_enum.right)
     try:
-        check_type_compatibility(prim, expr_enum.left.exprType, context)
+        warnings.extend(check_type_compatibility(prim,
+                                                 expr_enum.left.exprType,
+                                                 context))
         expr_enum.right = prim
         expr_enum.right.exprType = expr_enum.left.exprType
     except (UnboundLocalError, AttributeError, TypeError):
         pass
+    return warnings
 
 
-def fix_expression_types(expr, context):
+def fix_expression_types(expr, context): # type: -> [warnings]
     ''' Check/ensure type consistency in binary expressions '''
+    warnings = []
     for _ in range(2):
         # Check if an raw enumerated value is of a reference type
-        fix_enumerated_and_choice(expr, context)
+        warnings.extend(fix_enumerated_and_choice(expr, context))
         expr.right, expr.left = expr.left, expr.right
 
     for side in (expr.right, expr.left):
@@ -987,7 +1007,6 @@ def fix_expression_types(expr, context):
         else:
             typed_expr = side
             ref_type = typed_expr.exprType
-
 
     # If a side is a raw Sequence Of with unknown type, try to resolve it
     for side_a, side_b in permutations(('left', 'right')):
@@ -1005,13 +1024,13 @@ def fix_expression_types(expr, context):
                     check_expr.left = ogAST.PrimVariable()
                     check_expr.left.exprType = asn_type
                     check_expr.right = elem
-                    fix_expression_types(check_expr, context)
+                    warnings.extend(fix_expression_types(check_expr, context))
                     value.value[idx] = check_expr.right
             # the type of the raw PrimSequenceOf can be set now
             value.exprType.type = asn_type
 
     if isinstance(expr, ogAST.ExprIn):
-        return
+        return warnings
 
     if not expr.right.is_raw and not expr.left.is_raw:
         unknown = [uk_expr for uk_expr in expr.right, expr.left
@@ -1040,7 +1059,7 @@ def fix_expression_types(expr, context):
                 check_expr.left = ogAST.PrimVariable()
                 check_expr.left.exprType = expected_type
                 check_expr.right = fd_expr
-                fix_expression_types(check_expr, context)
+                warnings.extend(fix_expression_types(check_expr, context))
                 # Id of fd_expr may have changed (enumerated, choice)
                 expr.right.value[field] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimChoiceItem):
@@ -1061,7 +1080,7 @@ def fix_expression_types(expr, context):
             check_expr.left = ogAST.PrimVariable()
             check_expr.left.exprType = expected_type
             check_expr.right = expr.right.value['value']
-            fix_expression_types(check_expr, context)
+            warnings.extend(fix_expression_types(check_expr, context))
             expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimConditional):
         for det in ('then', 'else'):
@@ -1070,13 +1089,13 @@ def fix_expression_types(expr, context):
             check_expr.left = ogAST.PrimVariable()
             check_expr.left.exprType = expr.left.exprType
             check_expr.right = expr.right.value[det]
-            fix_expression_types(check_expr, context)
+            warnings.extend(fix_expression_types(check_expr, context))
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
             expr.right.value[det].exprType = expr.left.exprType
 
     if expr.right.is_raw != expr.left.is_raw:
-        check_type_compatibility(raw_expr, ref_type, context)
+        warnings.extend(check_type_compatibility(raw_expr, ref_type, context))
         if not raw_expr.exprType.kind.startswith(('Integer',
                                                   'Real',
                                                   'SequenceOf',
@@ -1090,7 +1109,8 @@ def fix_expression_types(expr, context):
             # removing SequenceOf and String from here should be OK.
             raw_expr.exprType = ref_type
     else:
-        compare_types(expr.left.exprType, expr.right.exprType)
+        warnings.extend(compare_types(expr.left.exprType, expr.right.exprType))
+    return list(set(warnings))
 
 
 def expression_list(root, context):
@@ -1174,11 +1194,9 @@ def binary_expression(root, context):
     warnings.extend(warn_right)
 
     try:
-        fix_expression_types(expr, context)
+        warnings.extend(fix_expression_types(expr, context))
     except (AttributeError, TypeError) as err:
         errors.append(error(root, str(err)))
-    except Warning as warn:
-        warnings.append(warning(root, str(warn)))
 
     return expr, errors, warnings
 
@@ -1367,7 +1385,7 @@ def in_expression(root, context):
     expr.left.exprType = left_type
 
     try:
-        compare_types(expr.right.exprType, ref_type)
+        warnings.extend(compare_types(expr.right.exprType, ref_type))
     except TypeError as err:
         errors.append(error(root, str(err)))
 
@@ -1495,7 +1513,7 @@ def conditional_expression(root, context):
     try:
         expr.left = then_expr
         expr.right = else_expr
-        fix_expression_types(expr, context)
+        warnings.extend(fix_expression_types(expr, context))
         expr.exprType = then_expr.exprType
     except (AttributeError, TypeError) as err:
         if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
@@ -1874,7 +1892,7 @@ def variables(root, ta_ast, context):
             expr.left.exprType = asn1_sort
             expr.right = def_value
             try:
-                fix_expression_types(expr, context)
+                warnings.extend(fix_expression_types(expr, context))
                 def_value = expr.right
                 basic = find_basic_type(asn1_sort)
                 if basic.kind.startswith(('Integer', 'Real')):
@@ -2113,6 +2131,7 @@ def composite_state(root, parent=None, context=None):
                            .format(comp.statename, ns.upper()),
                            [0, 0], []])
     for each in chain(errors, warnings):
+        print each
         each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
 
@@ -2254,7 +2273,7 @@ def procedure_post(proc, content, parent=None, context=None):
             check_expr.left.exprType = proc.return_type
             check_expr.right = each.return_expr
             try:
-                fix_expression_types(check_expr, context)
+                warnings.extend(fix_expression_types(check_expr, context))
             except (TypeError, AttributeError) as err:
                 errors.append(str(err))
             # Id of fd_expr may have changed (enumerated, choice)
@@ -2996,7 +3015,8 @@ def input_part(root, parent, context):
                     user_param_type = find_variable_type(user_param.text,
                                                          context)
                     try:
-                        compare_types(sig_param_type, user_param_type)
+                        warnings.extend(compare_types(sig_param_type,
+                                                      user_param_type))
                     except TypeError as err:
                         errors.append('Parameter type does not match with '
                                       'signal declaration (expecting '
@@ -3341,8 +3361,8 @@ def start(root, parent=None, context=None):
         elif child.type == lexer.HYPERLINK:
             s.hyperlink = child.getChild(0).toString()[1:-1]
         else:
-            warnings.append('START unsupported child type: ' +
-                    str(child.type))
+            warnings.append(['START unsupported child type: ' +
+                    str(child.type), [s.pos_x, s.pos_y], []])
     # At the end of the START parsing, get the the list of terminators that
     # follow the START transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the START)
@@ -3588,7 +3608,9 @@ def decision(root, parent, context):
             expr.left = dec.question
             expr.right = ans.constant
             try:
-                fix_expression_types(expr, context)
+                answarn = fix_expression_types(expr, context)
+                answarn = [[w, [ans_x, ans_y], []] for w in answarn]
+                warnings.extend(answarn)
                 if dec.question.exprType == UNKNOWN_TYPE:
                     dec.question = expr.left
                 ans.constant = expr.right
@@ -3673,6 +3695,7 @@ def decision(root, parent, context):
                                                 ans.inputString),
                                         [ans_x, ans_y], []])
             except (AttributeError, TypeError) as err:
+                print (traceback.format_exc())
                 errors.append(['Type mismatch: '
                     'question (' + expr.left.inputString + ', type= ' +
                     type_name(expr.left.exprType) + '), answer (' +
@@ -3692,7 +3715,7 @@ def decision(root, parent, context):
                 expr.left = dec.question
                 expr.right = ans.closedRange[idx]
                 try:
-                    fix_expression_types(expr, context)
+                    warnings.extend(fix_expression_types(expr, context))
                     if dec.question.exprType == UNKNOWN_TYPE:
                         dec.question = expr.left
                     ans.closedRange[idx] = expr.right
@@ -4010,8 +4033,7 @@ def transition(root, parent, context):
             trans.actions.append(out_ast)
             parent = out_ast
         elif child.type == lexer.DECISION:
-            dec, err, warn = decision(
-                            child, parent=parent, context=context)
+            dec, err, warn = decision(child, parent=parent, context=context)
             errors.extend(err)
             warnings.extend(warn)
             trans.actions.append(dec)
@@ -4068,7 +4090,7 @@ def assign(root, context):
         warnings.extend(warn)
 
     try:
-        fix_expression_types(expr, context)
+        warnings.extend(fix_expression_types(expr, context))
         # Assignment with numerical value: check range
         basic = find_basic_type(expr.left.exprType)
         if basic.kind.startswith(('Integer', 'Real')):
@@ -4084,8 +4106,7 @@ def assign(root, context):
                                 else 'Undefined',
                               errstr=str(err)))
     except Warning as warn:
-        warnings.append('Expression "{}": {}'
-                        .format(expr.inputString, str(warn)))
+        warnings.append(str(warn))
     if not errors:
         if expr.right.exprType == UNKNOWN_TYPE or not \
                 isinstance(expr.right, (ogAST.ExprAppend,
