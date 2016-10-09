@@ -142,6 +142,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.13 (10/2016)
+    - Better support of warnings
+    - Fixed detection of CHOICE assignment erros
+
 1.5.12 (09/2016)
     - Detect duplicate declaration of procedures
 

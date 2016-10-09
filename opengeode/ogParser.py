@@ -1217,7 +1217,7 @@ def unary_expression(root, context):
     return expr, errors, warnings
 
 
-def expression(root, context):
+def expression(root, context, pos='right'):
     ''' Expression analysis (e.g. 5+5*hello(world)!foo) '''
     logic = (lexer.OR, lexer.AND, lexer.XOR, lexer.IMPLIES)
     arithmetic = (lexer.PLUS, lexer.ASTERISK, lexer.DASH,
@@ -1247,7 +1247,7 @@ def expression(root, context):
     elif root.type == lexer.CALL:
         return call_expression(root, context)
     elif root.type == lexer.SELECTOR:
-        return selector_expression(root, context)
+        return selector_expression(root, context, pos)
     else:
         raise NotImplementedError(sdl92Parser.tokenNames[root.type] +
                                 ' - line ' + str(root.getLine()))
@@ -1699,7 +1699,7 @@ def selector_expression(root, context, pos="right"):
     node.tmpVar = tmp()
 
     receiver, receiver_err, receiver_warn = \
-                                expression(root.children[0], context)
+                                expression(root.children[0], context, pos)
     receiver_bty = find_basic_type(receiver.exprType)
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
