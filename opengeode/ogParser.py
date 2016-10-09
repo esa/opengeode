@@ -902,6 +902,8 @@ def compare_types(type_a, type_b):   # type -> [warnings]
 
     if type_a.kind == type_b.kind:
         if type_a.kind == 'SequenceOfType':
+            if mismatch:
+                raise TypeError(mismatch)
             if type_a.Min == type_a.Max:
                 if type_a.Min == type_b.Min == type_b.Max:
                     warnings.extend(compare_types(type_a.type, type_b.type))

@@ -146,6 +146,7 @@ Changelog
     - Better support of warnings
     - Fixed detection of CHOICE assignment erros
     - Raise error if process miss the start transition
+    - Raise error in case of SEQUENCE OF type mismatch
 
 1.5.12 (09/2016)
     - Detect duplicate declaration of procedures
