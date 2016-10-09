@@ -117,6 +117,10 @@ PROCESS DemoDemoDeviceDSAP;
 
   RETURN;
   ENDPROCEDURE;
+  start;
+      nextstate wait;
+  state wait;
+  endstate;
 
 
 ENDPROCESS DemoDemoDeviceDSAP;

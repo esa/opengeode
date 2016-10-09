@@ -1,0 +1,28 @@
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     Environment.asn
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+Environment DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- imports
+
+
+-- explicit namespace-level data type declarations
+
+-- explicit component-level data type declarations
+-- types local to Application
+
+
+
+
+
+END

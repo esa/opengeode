@@ -38,7 +38,12 @@ dcl eso SeqOf := {};
                 /* CIF COMMENT (278, 376), (177, 40) */
                 COMMENT 'This is ok, there should
 be no warning raised';
-                /* CIF NEXTSTATE (174, 428), (70, 35) */
+                /* CIF TASK (145, 433), (127, 35) */
+                TASK ch:= d: {a  TRUE}
+                /* CIF COMMENT (292, 433), (170, 38) */
+                COMMENT 'No error, but
+ch!d!a := TRUE would fail';
+                /* CIF NEXTSTATE (174, 483), (70, 35) */
                 NEXTSTATE wait;
             /* CIF STATE (474, 233), (70, 35) */
             STATE wait;

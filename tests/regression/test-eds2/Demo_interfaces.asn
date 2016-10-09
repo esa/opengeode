@@ -1,0 +1,105 @@
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     Demo_interfaces.asn
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+DemoInterfaces DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- imports
+IMPORTS
+  CommandStatusTypeT,EventDataTypeT,EventTypeT,EventTypeTypeT,ExtendedModeTypeT,
+  ExtendedStatusTypeT,HKTypeT,ModeTypeT,OpCountTypeT,QueryCountTypeT,StatusFlag1TypeT,
+  StatusFlag2TypeT,StatusTypeT,TelemetrySet1TypeT,TelemetrySet2TypeT,CalibratedHKTypeT FROM Demo
+  OctetTypeT FROM CcsdsSoisSubnetwork
+;
+
+
+
+-- interface messages
+-- message types for DeviceInterface
+DeviceAccessInterfaceDownType ::= CHOICE
+{
+  getParameter CHOICE {
+    extendedMode INTEGER(0),
+    extendedStatus INTEGER(0),
+    queryCount INTEGER(0),
+    status INTEGER(0)
+  },
+  sendCommand CHOICE {
+    setMode SEQUENCE {
+     mode ModeTypeT
+    },
+    setUserData SEQUENCE {
+     data OctetTypeT
+    }
+  }
+}
+
+DeviceAccessInterfaceUpType ::= CHOICE
+{
+  updateParameter CHOICE {
+    deviceEvent EventTypeT,
+    extendedMode ExtendedModeTypeT,
+    extendedStatus ExtendedStatusTypeT,
+    queryCount QueryCountTypeT,
+    status StatusTypeT,
+    telemetrySet1 TelemetrySet1TypeT,
+    telemetrySet2 TelemetrySet2TypeT
+  },
+  replyToCommand CHOICE {
+    setMode SEQUENCE {
+     status CommandStatusTypeT
+    },
+    setUserData SEQUENCE {
+     status CommandStatusTypeT
+    }
+  }
+}
+
+DeviceAccessInterfaceProviderType ::= SEQUENCE
+{
+  inputReady BOOLEAN,
+  inputData DeviceAccessInterfaceDownType,
+  outputData DeviceAccessInterfaceUpType
+}
+
+DeviceAccessInterfaceClientType ::= SEQUENCE
+{
+  inputReady BOOLEAN,
+  inputData DeviceAccessInterfaceUpType,
+  outputData DeviceAccessInterfaceDownType
+}
+
+
+-- message types for VirtualInterface
+DeviceFunctionalInterfaceUpType ::= CHOICE
+{
+  updateParameter CHOICE {
+    hk1 CalibratedHKTypeT,
+    hk2 CalibratedHKTypeT
+  }
+}
+
+DeviceFunctionalInterfaceProviderType ::= SEQUENCE
+{
+  outputData DeviceFunctionalInterfaceUpType
+}
+
+DeviceFunctionalInterfaceClientType ::= SEQUENCE
+{
+  inputReady BOOLEAN,
+  inputData DeviceFunctionalInterfaceUpType
+}
+
+
+
+
+END

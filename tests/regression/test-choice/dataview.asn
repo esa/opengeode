@@ -11,7 +11,8 @@ NullType ::= NULL
 ChoiceWithEmptySeq ::= CHOICE {
   a NULL,
   b EmptySeq,
-  c NullType
+  c NullType,
+  d SEQUENCE { a BOOLEAN }
 }
 
 c1 EmptySeq ::= {}

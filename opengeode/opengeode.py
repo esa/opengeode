@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.12'
+__version__ = '1.5.13'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1375,7 +1375,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
     def cancel(self):
         ''' Return to idle mode, reset current actions '''
-        self.select_rect.hide()
+        try:
+            self.select_rect.hide()
+        except AttributeError:
+            # there may be none
+            pass
         for each in self.temp_lines:
             each.setVisible(False)
         self.mode = 'idle'

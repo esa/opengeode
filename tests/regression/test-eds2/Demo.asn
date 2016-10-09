@@ -1,0 +1,434 @@
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     Demo.asn
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+Demo DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- imports
+IMPORTS
+  OctetTypeT,MemoryAddressTypeT,MemoryIDTypeT FROM CcsdsSoisSubnetwork
+;
+
+
+
+-- explicit namespace-level data type declarations
+------------------------------------------
+-- SIMPLE StatusFlag1Type
+-- The first type of status flag
+
+StatusFlag1TypeT ::= BOOLEAN 
+
+------------------------------------------
+-- SIMPLE StatusFlag2Type
+-- The second type of status flag
+
+StatusFlag2TypeT ::= BOOLEAN 
+
+------------------------------------------
+-- SIMPLE CalibratedHKType
+-- Dimensionless real
+
+CalibratedHKTypeT ::= REAL (-3.4028234663852886E+38..3.4028234663852886E+38)
+
+------------------------------------------
+-- SIMPLE QueryCountType
+-- The total number of device queries
+
+QueryCountTypeT ::= INTEGER (0..255)
+
+------------------------------------------
+-- SIMPLE ExtendedModeType
+-- Extended mode information
+
+ExtendedModeTypeT ::= INTEGER (0..255)
+
+------------------------------------------
+-- SIMPLE ExtendedStatusType
+-- Extended status information
+
+ExtendedStatusTypeT ::= INTEGER (0..255)
+
+------------------------------------------
+-- SIMPLE HKType
+-- 
+
+HKTypeT ::= INTEGER (0..255)
+
+------------------------------------------
+-- SIMPLE CommandStatusType
+-- The status of execution of a command
+
+CommandStatusTypeT ::= INTEGER (0..65535)
+
+------------------------------------------
+-- SIMPLE EventDataType
+-- Event data information
+
+EventDataTypeT ::= INTEGER (0..255)
+
+------------------------------------------
+-- SIMPLE UserDataLengthType
+-- 
+
+UserDataLengthTypeT ::= INTEGER (0..65535)
+
+------------------------------------------
+-- ENUMERATION ModeType
+-- 
+
+ModeTypeT ::= ENUMERATED
+{
+  reset(0),
+  doALittleBitOfStuff(1),
+  doLotsOfStuff(4),
+  doTonnesOfStuffBadly(6),
+  revealABugAndMalfunction(9)
+}
+
+------------------------------------------
+-- ENUMERATION EventTypeType
+-- 
+
+EventTypeTypeT ::= ENUMERATED
+{
+  event1(0),
+  event2(1),
+  event3(2)
+}
+
+------------------------------------------
+-- ENUMERATION ReadStatusModeCommandType
+-- 
+
+ReadStatusModeCommandTypeT ::= ENUMERATED
+{
+  readStatus(1),
+  readMode(2)
+}
+
+------------------------------------------
+-- ENUMERATION ExtendedStatusModeEnumType
+-- An enumeration to distinguish between mode and status
+
+ExtendedStatusModeEnumTypeT ::= ENUMERATED
+{
+  mode(0),
+  status(1)
+}
+
+------------------------------------------
+-- ENUMERATION TelecommandTypeEnumType
+-- 
+
+TelecommandTypeEnumTypeT ::= ENUMERATED
+{
+  mode(0),
+  userData(1)
+}
+
+------------------------------------------
+-- ENUMERATION TelemetryTypeEnumType
+-- 
+
+TelemetryTypeEnumTypeT ::= ENUMERATED
+{
+  ack(0),
+  type1(1),
+  type2(2),
+  event(3)
+}
+
+------------------------------------------
+-- RANGE OpCountType
+-- The number of device operations
+
+OpCountTypeT ::= INTEGER (0..39)
+
+------------------------------------------
+-- AGGREGATE StatusType
+-- 
+
+StatusTypeT ::= 
+SEQUENCE
+{
+  statusFlag1 StatusFlag1TypeT,
+  statusFlag2 StatusFlag2TypeT,
+  opCount OpCountTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE TelemetrySet1Type
+-- 
+
+TelemetrySet1TypeT ::= 
+SEQUENCE
+{
+  hk1 HKTypeT,
+  hk2 HKTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE TelemetrySet2Type
+-- 
+
+TelemetrySet2TypeT ::= 
+SEQUENCE
+{
+  hk3 HKTypeT,
+  hk4 HKTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE EventType
+-- 
+
+EventTypeT ::= 
+SEQUENCE
+{
+  typeKeyword EventTypeTypeT,
+  data EventDataTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE ExtendedStatusOrModeType
+-- This is the extended status or mode structure retrieved using MAS
+
+ExtendedStatusOrModeTypeT ::= 
+SEQUENCE
+{
+  queryCount QueryCountTypeT,
+  contents CHOICE {
+      mode  ExtendedModeUnionTypeBodyT,
+      status  ExtendedStatusUnionTypeBodyT
+  }
+}
+
+ExtendedModeUnionTypeBodyT ::=
+SEQUENCE
+{
+  mode ExtendedModeTypeT
+}
+
+
+ExtendedStatusUnionTypeBodyT ::=
+SEQUENCE
+{
+  status ExtendedStatusTypeT
+}
+
+
+
+
+
+
+
+------------------------------------------
+-- AGGREGATE ExtendedStatusUnionType
+-- This is the extended status structure retrieved using MAS
+
+ExtendedStatusUnionTypeT ::= 
+SEQUENCE
+{
+  queryCount QueryCountTypeT,
+  status ExtendedStatusTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE ExtendedModeUnionType
+-- This is the extended mode structure retrieved using MAS
+
+ExtendedModeUnionTypeT ::= 
+SEQUENCE
+{
+  queryCount QueryCountTypeT,
+  mode ExtendedModeTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE TelecommandType
+-- 
+
+TelecommandTypeT ::= 
+SEQUENCE
+{
+  contents CHOICE {
+      mode  TelecommandModeTypeBodyT,
+      userData  TelecommandUserDataTypeBodyT
+  }
+}
+
+TelecommandModeTypeBodyT ::=
+SEQUENCE
+{
+  mode ModeTypeT
+}
+
+
+TelecommandUserDataTypeBodyT ::=
+SEQUENCE
+{
+  userData SEQUENCE SIZE(0..255) OF OctetTypeT
+}
+
+
+
+
+
+
+
+------------------------------------------
+-- AGGREGATE TelecommandModeType
+-- 
+
+TelecommandModeTypeT ::= 
+SEQUENCE
+{
+  mode ModeTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE TelecommandUserDataType
+-- 
+
+TelecommandUserDataTypeT ::= 
+SEQUENCE
+{
+  userData SEQUENCE SIZE(0..255) OF OctetTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE TelemetryType
+-- Common header for TM
+
+TelemetryTypeT ::= 
+SEQUENCE
+{
+  contents CHOICE {
+      ack  TelemetryAckTypeBodyT,
+      type1  Telemetry1TypeBodyT,
+      type2  Telemetry2TypeBodyT,
+      event  TelemetryEventTypeBodyT
+  }
+}
+
+Telemetry1TypeBodyT ::=
+SEQUENCE
+{
+  telemetrySet TelemetrySet1TypeT
+}
+
+
+Telemetry2TypeBodyT ::=
+SEQUENCE
+{
+  telemetrySet TelemetrySet2TypeT
+}
+
+
+TelemetryAckTypeBodyT ::=
+SEQUENCE
+{
+  status CommandStatusTypeT
+}
+
+
+TelemetryEventTypeBodyT ::=
+SEQUENCE
+{
+  eventType EventTypeTypeT,
+  eventData EventDataTypeT
+}
+
+
+
+
+
+
+
+------------------------------------------
+-- AGGREGATE TelemetryAckType
+-- Acknowledgement report for TC
+
+TelemetryAckTypeT ::= 
+SEQUENCE
+{
+  status CommandStatusTypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE Telemetry1Type
+-- First HK TM packet
+
+Telemetry1TypeT ::= 
+SEQUENCE
+{
+  telemetrySet TelemetrySet1TypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE Telemetry2Type
+-- Second HK TM packet
+
+Telemetry2TypeT ::= 
+SEQUENCE
+{
+  telemetrySet TelemetrySet2TypeT
+}
+
+
+
+------------------------------------------
+-- AGGREGATE TelemetryEventType
+-- Event packet
+
+TelemetryEventTypeT ::= 
+SEQUENCE
+{
+  eventType EventTypeTypeT,
+  eventData EventDataTypeT
+}
+
+
+
+
+
+-- explicit component-level data type declarations
+-- types local to DemoDeviceDACP
+
+
+-- types local to DemoDeviceDSAP
+
+
+
+
+
+END
