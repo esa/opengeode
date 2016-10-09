@@ -2890,6 +2890,10 @@ def process_definition(root, parent=None, context=None):
         err, warn = procedure_post(proc, content, context=process)
         errors.extend(err)
         warnings.extend(warn)
+    if not process.referenced and not process.content.start:
+        # detect missing START transition
+        errors.append(['Mandatory START transition is missing in process',
+                      [process.pos_x, process.pos_y], []])
     for each in chain(errors, warnings):
         try:
             each[2].insert(0, 'PROCESS {}'.format(process.processName))
