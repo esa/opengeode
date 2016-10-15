@@ -1898,7 +1898,7 @@ def _string_literal(primary):
 @expression.register(ogAST.PrimConstant)
 def _constant(primary):
     ''' Generate code for a reference to an ASN.1 constant '''
-    return [], unicode(primary.value[0]), []
+    return [], unicode(primary.constant_c_name), []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
