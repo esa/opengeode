@@ -142,6 +142,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+
+1.5.14 (10/2016)
+    - Support named integers (requires asn1scc 3.3.04 or more recent)
+
 1.5.13 (10/2016)
     - Better support of warnings
     - Fixed detection of CHOICE assignment erros
