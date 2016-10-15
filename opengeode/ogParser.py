@@ -1133,8 +1133,10 @@ def primary_variable(root, context):
     name = getattr(root.getChild(0), 'text', 'error')
     errors, warnings = [], []
 
-    if is_asn1constant(name):
+    possible_constant = is_asn1constant(name)
+    if possible_constant:
         prim = ogAST.PrimConstant()
+        prim.constant_c_name = possible_constant
     elif is_fpar(name, context):
         prim = ogAST.PrimFPAR()
     else:
@@ -1167,7 +1169,7 @@ def is_asn1constant(name):
     try:
         for varname, vartype in DV.variables.viewitems():
             if varname.lower().replace('-', '_') == name:
-                return True
+                return vartype.varName
     except AttributeError:
         # Ignore - No DV - e.g. in syntax check mode
         pass
