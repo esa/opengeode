@@ -2150,6 +2150,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.sub_mdi = None
         self.statechart_mdi = None
         self.datadict = None
+        self.setWindowState(Qt.WindowMaximized)
 
     def new_scene(self, readonly=False):
         ''' Create a new, clean SDL scene. This function is necessary because

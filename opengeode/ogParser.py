@@ -999,7 +999,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
     ''' Check/ensure type consistency in binary expressions '''
     warnings = []
     for _ in range(2):
-        # Check if an raw enumerated value is of a reference type
+        # Check if a raw enumerated value is of a reference type
         warnings.extend(fix_enumerated_and_choice(expr, context))
         expr.right, expr.left = expr.left, expr.right
 
