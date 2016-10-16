@@ -143,6 +143,9 @@ Changelog
 =========
 
 
+1.5.15 (10/2016)
+    - Report incomplete startup transitions as errors in nested states
+
 1.5.14 (10/2016)
     - Support named integers (requires asn1scc 3.3.04 or more recent)
 

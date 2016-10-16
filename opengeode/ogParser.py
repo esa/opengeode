@@ -999,7 +999,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
     ''' Check/ensure type consistency in binary expressions '''
     warnings = []
     for _ in range(2):
-        # Check if an raw enumerated value is of a reference type
+        # Check if a raw enumerated value is of a reference type
         warnings.extend(fix_enumerated_and_choice(expr, context))
         expr.right, expr.left = expr.left, expr.right
 
@@ -2107,6 +2107,9 @@ def composite_state(root, parent=None, context=None):
         else:
             errors.append(['Only one unnamed START transition is allowed',
                            [st.pos_x, st.pos_y], []])
+        if not comp.terminators:
+            errors.append(['Transition is incomplete',
+                           [st.pos_x, st.pos_y], []])
     for each in floatings:
         lab, err, warn = floating_label(each, parent=None, context=comp)
         errors.extend(err)
@@ -2134,8 +2137,16 @@ def composite_state(root, parent=None, context=None):
                            'of substate "{}"'
                            .format(comp.statename, ns.upper()),
                            [0, 0], []])
+#   # Raise an error is there is no NEXTSTATE at all
+#   for each in comp.terminators:
+#       if each.kind == 'next_state':
+#           break
+#   else:
+#       if not isinstance(comp, ogAST.StateAggregation):
+#           errors.append(['In composite state "{}"'
+#                          ': incomplete startup transition'
+#                          .format(comp.statename), [0, 0], []])
     for each in chain(errors, warnings):
-        print each
         each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
 

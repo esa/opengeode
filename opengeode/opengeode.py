@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.14'
+__version__ = '1.5.15'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2150,6 +2150,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.sub_mdi = None
         self.statechart_mdi = None
         self.datadict = None
+        self.setWindowState(Qt.WindowMaximized)
 
     def new_scene(self, readonly=False):
         ''' Create a new, clean SDL scene. This function is necessary because
