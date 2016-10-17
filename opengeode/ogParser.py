@@ -2107,6 +2107,9 @@ def composite_state(root, parent=None, context=None):
         else:
             errors.append(['Only one unnamed START transition is allowed',
                            [st.pos_x, st.pos_y], []])
+        if not comp.terminators:
+            errors.append(['Transition is incomplete',
+                           [st.pos_x, st.pos_y], []])
     for each in floatings:
         lab, err, warn = floating_label(each, parent=None, context=comp)
         errors.extend(err)
@@ -2135,7 +2138,6 @@ def composite_state(root, parent=None, context=None):
                            .format(comp.statename, ns.upper()),
                            [0, 0], []])
     for each in chain(errors, warnings):
-        print each
         each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
 
