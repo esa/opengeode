@@ -2137,15 +2137,6 @@ def composite_state(root, parent=None, context=None):
                            'of substate "{}"'
                            .format(comp.statename, ns.upper()),
                            [0, 0], []])
-#   # Raise an error is there is no NEXTSTATE at all
-#   for each in comp.terminators:
-#       if each.kind == 'next_state':
-#           break
-#   else:
-#       if not isinstance(comp, ogAST.StateAggregation):
-#           errors.append(['In composite state "{}"'
-#                          ': incomplete startup transition'
-#                          .format(comp.statename), [0, 0], []])
     for each in chain(errors, warnings):
         each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
