@@ -240,7 +240,6 @@ def _decision(symbol, recursive=True, **kwargs):
 def _decisionanswer(symbol, recursive=True, **kwargs):
     ''' Decision Answer symbol or branch if recursive is set '''
     result = Indent()
-    Indent.indent += 1
     result.append(cif_coord('ANSWER', symbol))
     ans = unicode(symbol)
     if ans.lower().strip() != u'else':
@@ -250,7 +249,6 @@ def _decisionanswer(symbol, recursive=True, **kwargs):
     result.append(u'{}:'.format(ans))
     if recursive:
         result.extend(recursive_aligned(symbol))
-    Indent.indent -= 1
     return result
 
 

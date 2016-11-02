@@ -142,6 +142,8 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.16 (11/2016)
+    - Fix minor indentation issue when saving
 
 1.5.15 (10/2016)
     - Report incomplete startup transitions as errors in nested states
