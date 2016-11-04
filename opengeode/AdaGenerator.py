@@ -307,18 +307,22 @@ LD_LIBRARY_PATH=. opengeode-simulator
         process_level_decl.append('procedure runTransition(Id: Integer);')
 
     # Generate the code of the start transition (if process not empty)
+    initDone =  u'{ctxt}.initDone := True;'.format(ctxt=LPREFIX)
     if not simu:
-        start_transition = ['begin',
-                            'runTransition(0);'] if process.transitions else []
+        start_transition = [u'begin']
+        if process.transitions:
+            start_transition.append(u'runTransition(0);')
+        start_transition.append(initDone)
     else:
-        start_transition = ['procedure Startup;',
-                            'pragma Export(C, Startup, "{}_startup");'
+        start_transition = [u'procedure Startup;',
+                            u'pragma Export(C, Startup, "{}_startup");'
                             .format(process_name),
-                            'procedure Startup is',
-                            'begin',
-                            '   runTransition(0);' if process.transitions
+                            u'procedure Startup is',
+                            u'begin',
+                            u'   runTransition(0);' if process.transitions
                                                    else 'null;',
-                            'end Startup;']
+                            initDone,
+                            u'end Startup;']
 
     # Generate the TASTE template
     try:
@@ -915,7 +919,6 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'end if;')
 
         taste_template.append('end loop;')
-        taste_template.append('{ctxt}.initDone := True;'.format(ctxt=LPREFIX))
         taste_template.append('end runTransition;')
         taste_template.append('\n')
 
