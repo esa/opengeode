@@ -143,6 +143,9 @@ Changelog
 =========
 
 1.5.16 (11/2016)
+    - Fixed issue with initialization of generated code in state aggregations
+
+1.5.16 (11/2016)
     - Fix minor indentation issue when saving
 
 1.5.15 (10/2016)
