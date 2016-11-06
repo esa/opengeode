@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.17'
+__version__ = '1.5.18'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2380,8 +2380,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         item = self.datadict.topLevelItem(1)
         item.takeChildren()
         for name, sort in ast.asn1_constants.viewitems():
-            QtGui.QTreeWidgetItem(item, [name.replace('-', '_'),
-                                         sort.type.ReferencedTypeName])
+            sortname = sort.type.ReferencedTypeName \
+                    if sort.type.kind.startswith('Reference') \
+                    else sort.type.kind[:-4]
+            QtGui.QTreeWidgetItem(item, [name.replace('-', '_'), sortname])
         self.datadict.resizeColumnToContents(0)
 
 
