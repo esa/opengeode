@@ -142,7 +142,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-1.5.16 (11/2016)
+1.5.18 (11/2016)
+    - Fix parsing of ASN.1 constants that use an annonymous inner type
+
+1.5.17 (11/2016)
     - Fixed issue with initialization of generated code in state aggregations
 
 1.5.16 (11/2016)
