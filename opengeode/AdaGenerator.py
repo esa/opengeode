@@ -1367,7 +1367,10 @@ def _prim_call(prim):
                 range_str = u"{}'Length".format(param_str)
             else:
                 range_str = u"{}.Length".format(param_str)
-            ada_string += ('Integer({})'.format(range_str))
+            #ada_string += ('Integer({})'.format(range_str))
+            # I removed the cast here, because it is not the right place
+            # length fields are already Integers, no?
+            ada_string += range_str
     elif ident == 'present':
         # User wants to know what CHOICE element is present
         exp = params[0]
@@ -1606,6 +1609,9 @@ def _equality(expr):
     basic = lbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
                           'EnumeratedType', 'ChoiceEnumeratedType')
     if basic:
+        if lbty.kind == 'IntegerType':
+            # Cast right side to make sure it is the same integer type as left
+            right_str = '{}({})'.format(actual_type, right_str)
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)
     else:

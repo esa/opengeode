@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.19 (11/2016)
+    - Fix integer cast in Ada
+
 1.5.18 (11/2016)
     - Fix parsing of ASN.1 constants that use an annonymous inner type
 
