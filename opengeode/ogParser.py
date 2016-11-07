@@ -1806,11 +1806,14 @@ def primary(root, context):
         # and also in value notation of SEQUENCEs that have no fields
         prim = ogAST.PrimEmptyString()
         prim.value = []
-        prim.exprType = type('PrES', (object,), {
-            'kind': 'SequenceOfType',
-            'Min': '0',
-            'Max': '0'
-        })
+        prim.exprType = UNKNOWN_TYPE
+        # Let fix_expression_type resolve this type
+#       prim.exprType = type('PrES', (object,), {
+#           'kind': 'SequenceOfType',
+#           'Min': '0',
+#           'Max': '0',
+#           'type': UNKNOWN_TYPE
+#       })
     elif root.type == lexer.CHOICE:
         prim = ogAST.PrimChoiceItem()
         choice = root.getChild(0).toString()
@@ -1826,7 +1829,7 @@ def primary(root, context):
             if elem.type == lexer.ID:
                 field_name = elem.text
             else:
-                prim.value[field_name], err, warn = (expression(elem, context))
+                prim.value[field_name], err, warn = expression(elem, context)
                 errors.extend(err)
                 warnings.extend(warn)
         prim.exprType = UNKNOWN_TYPE
