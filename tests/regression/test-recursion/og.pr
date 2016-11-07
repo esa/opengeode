@@ -1,0 +1,109 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (287, 188) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview-uniq.asn';
+
+signal dd(Tree);
+signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 50), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (57, 58), (287, 140) */
+            -- Text area for declarations and comments
+
+dcl my_tree Tree;
+
+dcl res path;
+            /* CIF ENDTEXT */
+            /* CIF PROCEDURE (460, 209), (75, 35) */
+            PROCEDURE findpath;
+                /* CIF TEXT (129, 18), (183, 98) */
+                fpar
+    in startnode letter,
+    in endnode letter,
+    in my_tree Tree,
+    in/out best_path Path;
+                /* CIF ENDTEXT */
+                /* CIF TEXT (0, 131), (272, 140) */
+                dcl result Path := { cost 0, elem {} };
+
+dcl elem Path_elem := {};
+
+dcl single Letter;
+                /* CIF ENDTEXT */
+                /* CIF START (521, 64), (70, 35) */
+                START;
+                    /* CIF TASK (503, 119), (106, 68) */
+                    TASK best_path := {
+    cost 100,
+    elem {}
+};
+                    /* CIF DECISION (480, 207), (151, 50) */
+                    DECISION startnode = endnode;
+                        /* CIF ANSWER (264, 277), (70, 23) */
+                        (true):
+                            /* CIF TASK (246, 320), (106, 68) */
+                            TASK best_path := {
+    cost 0,
+    elem {}
+};
+                            /* CIF RETURN (281, 408), (35, 35) */
+                            RETURN ;
+                        /* CIF ANSWER (566, 277), (70, 23) */
+                        (false):
+                            /* CIF DECISION (504, 320), (193, 50) */
+                            DECISION length(my_tree(startnode))
+= 0;
+                                /* CIF ANSWER (362, 390), (70, 23) */
+                                (true):
+                                    /* CIF RETURN (379, 433), (35, 35) */
+                                    RETURN ;
+                                /* CIF ANSWER (664, 390), (70, 23) */
+                                (false):
+                                    /* CIF TASK (442, 433), (514, 113) */
+                                    TASK for each in my_tree(startnode):
+    call findpath(each!son, endnode, my_tree, result);
+    task result!cost := result!cost + each!cost;
+    task single := each!son,  elem := {single} // elem ;
+    task best_path := if result!cost < best_path!cost then result else best_path fi;
+endfor;
+                                    /* CIF TASK (628, 566), (141, 35) */
+                                    TASK result!elem := elem;
+                                    /* CIF RETURN (681, 616), (35, 35) */
+                                    RETURN ;
+                            ENDDECISION;
+                    ENDDECISION;
+            ENDPROCEDURE;
+            /* CIF START (155, 216), (70, 35) */
+            START;
+                /* CIF TASK (1, 271), (378, 128) */
+                TASK my_tree(a) := {{ cost 3, son b}, {cost 4, son c}},
+my_tree(b) := {{cost 2, son d}},
+my_tree(c) := {{ cost 1, son d}, {cost 1, son e}, {cost 6, son f}},
+my_tree(d) := {{cost 1, son h}},
+my_tree(e) := {{cost 7, son h}},
+my_tree(f) := {{cost 1, son g}},
+my_tree(g) := {},
+my_tree(h) := {{cost 3, son g}};
+                /* CIF PROCEDURECALL (97, 419), (186, 35) */
+                CALL findpath(a, g, my_tree, res);
+                /* CIF PROCEDURECALL (89, 474), (201, 35) */
+                CALL writeln('best cost:', res!cost);
+                /* CIF NEXTSTATE (155, 524), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (296, 231), (70, 35) */
+            STATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
