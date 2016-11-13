@@ -1,0 +1,27 @@
+/* CIF PROCESS (250, 150), (150, 75) */
+PROCESS flight;
+    /* CIF TEXT (572, 40), (290, 140) */
+    dcl myAPID APID := flight;
+dcl mytc Telecommand;
+    /* CIF ENDTEXT */
+    /* CIF START (389, 12), (70, 35) */
+    START;
+        /* CIF NEXTSTATE (389, 62), (70, 35) */
+        NEXTSTATE Wait;
+    /* CIF STATE (389, 62), (70, 35) */
+    STATE Wait;
+        /* CIF INPUT (345, 117), (156, 35) */
+        INPUT telecommand(mytc);
+            /* CIF DECISION (323, 172), (200, 50) */
+            DECISION present(mytc!packet_data);
+                /* CIF ANSWER (324, 242), (109, 24) */
+                (tc2_4):
+                    /* CIF OUTPUT (190, 286), (377, 35) */
+                    OUTPUT Distribute_CPDU_Commands(mytc!packet_data!tc2_4);
+                /* CIF ANSWER (582, 242), (70, 24) */
+                else:
+            ENDDECISION;
+            /* CIF NEXTSTATE (388, 336), (70, 35) */
+            NEXTSTATE wait;
+    ENDSTATE;
+ENDPROCESS flight;

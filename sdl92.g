@@ -1030,7 +1030,7 @@ variable
 
 
 field_selection
-        :       (('!'|'.') field_name);
+        :       (('!' | DOT) field_name);
 
 
 expression
@@ -1061,8 +1061,10 @@ unary_expression
 
 postfix_expression
         :       (ID -> ^(PRIMARY ^(VARIABLE ID)))
-                (   '(' params=expression_list ')' -> ^(CALL $postfix_expression ^(PARAMS $params))
-                |   '!' field_name  -> ^(SELECTOR $postfix_expression field_name)
+                (   '(' params=expression_list ')'
+                -> ^(CALL $postfix_expression ^(PARAMS $params))
+                |   ('!' | DOT) field_name
+                -> ^(SELECTOR $postfix_expression field_name)
                 )+
         ;
 
@@ -1094,8 +1096,8 @@ primary
                 named_value (COMMA named_value)*
                 '}'                         -> ^(SEQUENCE named_value+)
         |       '{'
-                primary (COMMA primary)*
-                '}'                         -> ^(SEQOF primary+)
+                expression (COMMA expression)*
+                '}'                         -> ^(SEQOF expression+)
         |       STATE^
         ;
 

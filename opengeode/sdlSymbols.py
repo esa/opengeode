@@ -46,10 +46,10 @@ CONTEXT = ogAST.Process()
 SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'DCL', 'CALL', 'ELSE', 'IF', 'THEN', 'MANTISSA', 'BASE',
                 'EXPONENT', 'TRUE', 'FALSE', 'MOD', 'FI', 'WRITE', 'WRITELN',
-                'LENGTH', 'PRESENT', 'FPAR', 'TODO', 'FIXME', 'XXX',
+                'LENGTH', 'PRESENT', 'FPAR', 'TODO', 'FIXME', 'XXX', 'ENDFOR',
                 'CHECKME', 'PROCEDURE', 'EXTERNAL', 'IN', 'OUT', 'TIMER',
                 'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT', 'PRIORITY',
-                'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE',
+                'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE', 'FOR',
                 'COMMENT', 'SIGNAL', 'SIGNALLIST', 'USE', 'RETURNS', 'ANY',
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
 
