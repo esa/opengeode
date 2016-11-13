@@ -148,6 +148,7 @@ Changelog
       while sdl92 only supported variable!field)
     - Sequence of literals now support field selectors
       (i.e. { variable.field } is now a valid statement)
+    - Support inner procedure call with return statement
 
 1.5.19 (11/2016)
     - Fix integer cast in Ada

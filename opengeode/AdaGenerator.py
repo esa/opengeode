@@ -1323,6 +1323,7 @@ def _primary_variable(prim):
 
 @expression.register(ogAST.PrimCall)
 def _prim_call(prim):
+    ''' Cover all built-in functions and inner procedures with RETURN stmt '''
     stmts, ada_string, local_decl = [], '', []
 
     ident = prim.value[0].lower()
@@ -1461,7 +1462,8 @@ def _prim_call(prim):
         ada_string += "{sort}'Truncation({p})".format(sort=exp_typename,
                                                       p=param_str)
     else:
-        ada_string += '('
+        # inner procedure call (with a RETURN statement)
+        ada_string += u'p{}{}('.format(UNICODE_SEP, ident)
         # Take all params and join them with commas
         list_of_params = []
         for param in params:
