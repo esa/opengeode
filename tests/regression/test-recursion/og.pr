@@ -99,7 +99,7 @@ my_tree(h) := {{cost 5, son g}};
                 CALL findpath(a, g, my_tree, res);
                 /* CIF PROCEDURECALL (89, 474), (201, 35) */
                 CALL writeln('best cost:', res!cost);
-                /* CIF NEXTSTATE (155, 524), (70, 35) */
+                /* CIF NEXTSTATE (155, 529), (70, 35) */
                 NEXTSTATE wait;
             /* CIF STATE (296, 231), (70, 35) */
             STATE wait;

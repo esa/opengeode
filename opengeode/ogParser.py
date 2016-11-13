@@ -2016,7 +2016,7 @@ def composite_state(root, parent=None, context=None):
         LOG.debug('Procedure context is undefined')
     inner_proc = []
     # Gather the list of states defined in the composite state
-    # and map a list of transitionsi to each state
+    # and map a list of transitions to each state
     comp.mapping = {name: [] for name in get_state_list(root)}
     inner_composite, states, floatings, starts = [], [], [], []
     for child in root.getChildren():
@@ -4233,8 +4233,12 @@ def for_loop(root, context):
 
             forloop['transition'], err, warn = transition(
                                     child, parent=for_loop, context=context)
-            errors.extend(err)
-            warnings.extend(warn)
+            # if the transition contains tasks or other constructs that are
+            # normally inside a graphical symbol, the errors and warnings will
+            # contain coordinates. Remove them, they will be replaced by those
+            # of the TASK symbol that contains the for loop
+            errors.extend(e[0] if type(e) is list else e for e in err)
+            warnings.extend(w[0] if type(w) is list else w for w in warn)
         else:
             warnings.append('Unsupported child type in FOR body' +
                             str(child.type))

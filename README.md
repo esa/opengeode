@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.20 (11/2016)
+    - Fix wrongly formatted error reporting in FOR loops
+
 1.5.19 (11/2016)
     - Fix integer cast in Ada
 
