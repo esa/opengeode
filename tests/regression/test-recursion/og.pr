@@ -16,7 +16,7 @@ signal we;
             FROM ENV TO og WITH dd;
             FROM og TO ENV WITH we;
         CONNECT c AND r;
-        /* CIF PROCESS (0, 59), (138, 75) */
+        /* CIF PROCESS (308, 80), (138, 75) */
         PROCESS og;
             /* CIF TEXT (57, 58), (287, 140) */
             -- Text area for declarations and comments
@@ -27,18 +27,16 @@ dcl res path;
             /* CIF ENDTEXT */
             /* CIF PROCEDURE (460, 209), (75, 35) */
             PROCEDURE findpath;
-                /* CIF TEXT (234, 18), (183, 98) */
-                fpar
-    in startnode letter,
-    in endnode letter,
-    in my_tree Tree,
-    in/out best_path Path;
-                /* CIF ENDTEXT */
-                /* CIF TEXT (0, 131), (272, 140) */
+                /* CIF TEXT (107, 140), (272, 140) */
                 dcl result Path := { cost 0, elem {} };
 
 dcl elem Path_elem := {};
-
+                /* CIF ENDTEXT */
+                /* CIF TEXT (108, 55), (183, 68) */
+                fpar
+    in startnode letter,
+    in endnode letter,
+    in/out best_path Path;
                 /* CIF ENDTEXT */
                 /* CIF START (626, 64), (70, 35) */
                 START;
@@ -51,34 +49,31 @@ dcl elem Path_elem := {};
                     DECISION startnode = endnode;
                         /* CIF ANSWER (431, 277), (70, 23) */
                         (true):
-                            /* CIF TASK (413, 320), (106, 68) */
-                            TASK best_path := {
-    cost 0,
-    elem {}
-};
-                            /* CIF RETURN (448, 408), (35, 35) */
+                            /* CIF TASK (398, 320), (136, 23) */
+                            TASK best_path.cost :=0;
+                            /* CIF RETURN (448, 363), (35, 35) */
                             RETURN ;
-                        /* CIF ANSWER (802, 277), (70, 23) */
+                        /* CIF ANSWER (820, 277), (70, 23) */
                         (false):
-                            /* CIF DECISION (740, 320), (193, 50) */
+                            /* CIF DECISION (759, 320), (193, 50) */
                             DECISION length(my_tree(startnode))
 = 0;
-                                /* CIF ANSWER (529, 390), (70, 23) */
+                                /* CIF ANSWER (547, 390), (70, 23) */
                                 (true):
-                                    /* CIF RETURN (546, 433), (35, 35) */
+                                    /* CIF RETURN (565, 433), (35, 35) */
                                     RETURN ;
-                                /* CIF ANSWER (900, 390), (70, 23) */
+                                /* CIF ANSWER (918, 390), (70, 23) */
                                 (false):
-                                    /* CIF TASK (696, 433), (478, 113) */
+                                    /* CIF TASK (714, 433), (478, 113) */
                                     TASK for each in my_tree(startnode):
-    call findpath(each.son, endnode, my_tree, result);
+    call findpath(each.son, endnode, result);
     result.cost := result.cost + each.cost
     elem := { each.son } // elem
     best_path := if result.cost < best_path.cost then result else best_path fi
 endfor;
-                                    /* CIF TASK (864, 561), (141, 35) */
+                                    /* CIF TASK (883, 561), (141, 35) */
                                     TASK result.elem := elem;
-                                    /* CIF RETURN (917, 611), (35, 35) */
+                                    /* CIF RETURN (936, 611), (35, 35) */
                                     RETURN ;
                             ENDDECISION;
                     ENDDECISION;
@@ -95,7 +90,7 @@ my_tree(f) := {{cost 1, son g}},
 my_tree(g) := {},
 my_tree(h) := {{cost 5, son g}};
                 /* CIF PROCEDURECALL (97, 419), (186, 35) */
-                CALL findpath(a, g, my_tree, res);
+                CALL findpath(a, g, res);
                 /* CIF PROCEDURECALL (88, 474), (204, 35) */
                 CALL writeln('best cost:', res.cost);
                 /* CIF NEXTSTATE (155, 529), (70, 35) */
