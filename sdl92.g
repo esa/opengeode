@@ -1096,8 +1096,8 @@ primary
                 named_value (COMMA named_value)*
                 '}'                         -> ^(SEQUENCE named_value+)
         |       '{'
-                primary (COMMA primary)*
-                '}'                         -> ^(SEQOF primary+)
+                expression (COMMA expression)*
+                '}'                         -> ^(SEQOF expression+)
         |       STATE^
         ;
 

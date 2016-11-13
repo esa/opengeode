@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2016-11-13 12:18:17
+# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2016-11-13 17:50:51
 
 import sys
 from antlr3 import *
@@ -18628,7 +18628,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "primary"
-    # sdl92.g:1079:1: primary : ( TRUE | FALSE | STRING | PLUS_INFINITY | MINUS_INFINITY | INT | FLOAT | ID ':' expression -> ^( CHOICE ID expression ) | ID -> ^( VARIABLE ID ) | '{' '}' -> ^( EMPTYSTR ) | '{' MANTISSA mant= INT COMMA BASE bas= INT COMMA EXPONENT exp= INT '}' -> ^( FLOAT2 $mant $bas $exp) | '{' named_value ( COMMA named_value )* '}' -> ^( SEQUENCE ( named_value )+ ) | '{' primary ( COMMA primary )* '}' -> ^( SEQOF ( primary )+ ) | STATE );
+    # sdl92.g:1079:1: primary : ( TRUE | FALSE | STRING | PLUS_INFINITY | MINUS_INFINITY | INT | FLOAT | ID ':' expression -> ^( CHOICE ID expression ) | ID -> ^( VARIABLE ID ) | '{' '}' -> ^( EMPTYSTR ) | '{' MANTISSA mant= INT COMMA BASE bas= INT COMMA EXPONENT exp= INT '}' -> ^( FLOAT2 $mant $bas $exp) | '{' named_value ( COMMA named_value )* '}' -> ^( SEQUENCE ( named_value )+ ) | '{' expression ( COMMA expression )* '}' -> ^( SEQOF ( expression )+ ) | STATE );
     def primary(self, ):
 
         retval = self.primary_return()
@@ -18671,9 +18671,9 @@ class sdl92Parser(Parser):
 
         named_value575 = None
 
-        primary578 = None
+        expression578 = None
 
-        primary580 = None
+        expression580 = None
 
 
         mant_tree = None
@@ -18716,10 +18716,9 @@ class sdl92Parser(Parser):
         stream_BASE = RewriteRuleTokenStream(self._adaptor, "token BASE")
         stream_named_value = RewriteRuleSubtreeStream(self._adaptor, "rule named_value")
         stream_expression = RewriteRuleSubtreeStream(self._adaptor, "rule expression")
-        stream_primary = RewriteRuleSubtreeStream(self._adaptor, "rule primary")
         try:
             try:
-                # sdl92.g:1080:9: ( TRUE | FALSE | STRING | PLUS_INFINITY | MINUS_INFINITY | INT | FLOAT | ID ':' expression -> ^( CHOICE ID expression ) | ID -> ^( VARIABLE ID ) | '{' '}' -> ^( EMPTYSTR ) | '{' MANTISSA mant= INT COMMA BASE bas= INT COMMA EXPONENT exp= INT '}' -> ^( FLOAT2 $mant $bas $exp) | '{' named_value ( COMMA named_value )* '}' -> ^( SEQUENCE ( named_value )+ ) | '{' primary ( COMMA primary )* '}' -> ^( SEQOF ( primary )+ ) | STATE )
+                # sdl92.g:1080:9: ( TRUE | FALSE | STRING | PLUS_INFINITY | MINUS_INFINITY | INT | FLOAT | ID ':' expression -> ^( CHOICE ID expression ) | ID -> ^( VARIABLE ID ) | '{' '}' -> ^( EMPTYSTR ) | '{' MANTISSA mant= INT COMMA BASE bas= INT COMMA EXPONENT exp= INT '}' -> ^( FLOAT2 $mant $bas $exp) | '{' named_value ( COMMA named_value )* '}' -> ^( SEQUENCE ( named_value )+ ) | '{' expression ( COMMA expression )* '}' -> ^( SEQOF ( expression )+ ) | STATE )
                 alt190 = 14
                 alt190 = self.dfa190.predict(self.input)
                 if alt190 == 1:
@@ -19094,18 +19093,18 @@ class sdl92Parser(Parser):
 
 
                 elif alt190 == 13:
-                    # sdl92.g:1098:17: '{' primary ( COMMA primary )* '}'
+                    # sdl92.g:1098:17: '{' expression ( COMMA expression )* '}'
                     pass 
                     char_literal577=self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_primary12722) 
                     if self._state.backtracking == 0:
                         stream_L_BRACKET.add(char_literal577)
-                    self._state.following.append(self.FOLLOW_primary_in_primary12740)
-                    primary578 = self.primary()
+                    self._state.following.append(self.FOLLOW_expression_in_primary12740)
+                    expression578 = self.expression()
 
                     self._state.following.pop()
                     if self._state.backtracking == 0:
-                        stream_primary.add(primary578.tree)
-                    # sdl92.g:1099:25: ( COMMA primary )*
+                        stream_expression.add(expression578.tree)
+                    # sdl92.g:1099:28: ( COMMA expression )*
                     while True: #loop189
                         alt189 = 2
                         LA189_0 = self.input.LA(1)
@@ -19115,17 +19114,17 @@ class sdl92Parser(Parser):
 
 
                         if alt189 == 1:
-                            # sdl92.g:1099:26: COMMA primary
+                            # sdl92.g:1099:29: COMMA expression
                             pass 
                             COMMA579=self.match(self.input, COMMA, self.FOLLOW_COMMA_in_primary12743) 
                             if self._state.backtracking == 0:
                                 stream_COMMA.add(COMMA579)
-                            self._state.following.append(self.FOLLOW_primary_in_primary12745)
-                            primary580 = self.primary()
+                            self._state.following.append(self.FOLLOW_expression_in_primary12745)
+                            expression580 = self.expression()
 
                             self._state.following.pop()
                             if self._state.backtracking == 0:
-                                stream_primary.add(primary580.tree)
+                                stream_expression.add(expression580.tree)
 
 
                         else:
@@ -19135,7 +19134,7 @@ class sdl92Parser(Parser):
                         stream_R_BRACKET.add(char_literal581)
 
                     # AST Rewrite
-                    # elements: primary
+                    # elements: expression
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -19152,20 +19151,20 @@ class sdl92Parser(Parser):
 
 
                         root_0 = self._adaptor.nil()
-                        # 1100:45: -> ^( SEQOF ( primary )+ )
-                        # sdl92.g:1100:48: ^( SEQOF ( primary )+ )
+                        # 1100:45: -> ^( SEQOF ( expression )+ )
+                        # sdl92.g:1100:48: ^( SEQOF ( expression )+ )
                         root_1 = self._adaptor.nil()
                         root_1 = self._adaptor.becomeRoot(self._adaptor.createFromType(SEQOF, "SEQOF"), root_1)
 
-                        # sdl92.g:1100:56: ( primary )+
-                        if not (stream_primary.hasNext()):
+                        # sdl92.g:1100:56: ( expression )+
+                        if not (stream_expression.hasNext()):
                             raise RewriteEarlyExitException()
 
-                        while stream_primary.hasNext():
-                            self._adaptor.addChild(root_1, stream_primary.nextTree())
+                        while stream_expression.hasNext():
+                            self._adaptor.addChild(root_1, stream_expression.nextTree())
 
 
-                        stream_primary.reset()
+                        stream_expression.reset()
 
                         self._adaptor.addChild(root_0, root_1)
 
@@ -25576,15 +25575,15 @@ class sdl92Parser(Parser):
 
     # $ANTLR start "synpred261_sdl92"
     def synpred261_sdl92_fragment(self, ):
-        # sdl92.g:1098:17: ( '{' primary ( COMMA primary )* '}' )
-        # sdl92.g:1098:17: '{' primary ( COMMA primary )* '}'
+        # sdl92.g:1098:17: ( '{' expression ( COMMA expression )* '}' )
+        # sdl92.g:1098:17: '{' expression ( COMMA expression )* '}'
         pass 
         self.match(self.input, L_BRACKET, self.FOLLOW_L_BRACKET_in_synpred261_sdl9212722)
-        self._state.following.append(self.FOLLOW_primary_in_synpred261_sdl9212740)
-        self.primary()
+        self._state.following.append(self.FOLLOW_expression_in_synpred261_sdl9212740)
+        self.expression()
 
         self._state.following.pop()
-        # sdl92.g:1099:25: ( COMMA primary )*
+        # sdl92.g:1099:28: ( COMMA expression )*
         while True: #loop225
             alt225 = 2
             LA225_0 = self.input.LA(1)
@@ -25594,11 +25593,11 @@ class sdl92Parser(Parser):
 
 
             if alt225 == 1:
-                # sdl92.g:1099:26: COMMA primary
+                # sdl92.g:1099:29: COMMA expression
                 pass 
                 self.match(self.input, COMMA, self.FOLLOW_COMMA_in_synpred261_sdl9212743)
-                self._state.following.append(self.FOLLOW_primary_in_synpred261_sdl9212745)
-                self.primary()
+                self._state.following.append(self.FOLLOW_expression_in_synpred261_sdl9212745)
+                self.expression()
 
                 self._state.following.pop()
 
@@ -29455,11 +29454,11 @@ class sdl92Parser(Parser):
         )
 
     DFA186_min = DFA.unpack(
-        u"\1\6\63\uffff\1\0\20\uffff\1\0\3\uffff\1\0\2\uffff"
+        u"\1\6\63\uffff\1\0\17\uffff\1\0\4\uffff\1\0\2\uffff"
         )
 
     DFA186_max = DFA.unpack(
-        u"\1\u00e3\63\uffff\1\0\20\uffff\1\0\3\uffff\1\0\2\uffff"
+        u"\1\u00e3\63\uffff\1\0\17\uffff\1\0\4\uffff\1\0\2\uffff"
         )
 
     DFA186_accept = DFA.unpack(
@@ -29467,7 +29466,7 @@ class sdl92Parser(Parser):
         )
 
     DFA186_special = DFA.unpack(
-        u"\64\uffff\1\0\20\uffff\1\1\3\uffff\1\2\2\uffff"
+        u"\64\uffff\1\0\17\uffff\1\1\4\uffff\1\2\2\uffff"
         )
 
             
@@ -29479,7 +29478,7 @@ class sdl92Parser(Parser):
         u"\1\1\uffff\1\1\4\uffff\2\1\5\uffff\1\1\4\uffff\1\1\6\uffff\1\1"
         u"\3\uffff\3\1\1\uffff\3\1\2\uffff\4\1\2\uffff\1\1\3\uffff\1\64\5"
         u"\1\1\uffff\7\1\1\uffff\1\1\1\111\11\1\15\uffff\1\1\1\uffff\1\1"
-        u"\42\uffff\1\1\1\uffff\1\105\1\uffff\2\1"),
+        u"\42\uffff\1\1\1\uffff\1\104\1\uffff\2\1"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -29547,8 +29546,8 @@ class sdl92Parser(Parser):
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u""),
         DFA.unpack(u"\1\uffff"),
+        DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
@@ -29591,10 +29590,10 @@ class sdl92Parser(Parser):
                 if s >= 0:
                     return s
             elif s == 1: 
-                LA186_69 = input.LA(1)
+                LA186_68 = input.LA(1)
 
                  
-                index186_69 = input.index()
+                index186_68 = input.index()
                 input.rewind()
                 s = -1
                 if (self.synpred244_sdl92()):
@@ -29604,7 +29603,7 @@ class sdl92Parser(Parser):
                     s = 1
 
                  
-                input.seek(index186_69)
+                input.seek(index186_68)
                 if s >= 0:
                     return s
             elif s == 2: 
@@ -30418,10 +30417,10 @@ class sdl92Parser(Parser):
     FOLLOW_COMMA_in_primary12649 = frozenset([123])
     FOLLOW_named_value_in_primary12651 = frozenset([148, 187])
     FOLLOW_R_BRACKET_in_primary12671 = frozenset([1])
-    FOLLOW_L_BRACKET_in_primary12722 = frozenset([41, 92, 99, 123, 135, 173, 174, 175, 176, 186])
-    FOLLOW_primary_in_primary12740 = frozenset([148, 187])
-    FOLLOW_COMMA_in_primary12743 = frozenset([41, 92, 99, 123, 135, 173, 174, 175, 176, 186])
-    FOLLOW_primary_in_primary12745 = frozenset([148, 187])
+    FOLLOW_L_BRACKET_in_primary12722 = frozenset([41, 47, 92, 99, 123, 135, 146, 167, 172, 173, 174, 175, 176, 186])
+    FOLLOW_expression_in_primary12740 = frozenset([148, 187])
+    FOLLOW_COMMA_in_primary12743 = frozenset([41, 47, 92, 99, 123, 135, 146, 167, 172, 173, 174, 175, 176, 186])
+    FOLLOW_expression_in_primary12745 = frozenset([148, 187])
     FOLLOW_R_BRACKET_in_primary12765 = frozenset([1])
     FOLLOW_STATE_in_primary12816 = frozenset([1])
     FOLLOW_STRING_in_informal_text12850 = frozenset([1])
@@ -30663,10 +30662,10 @@ class sdl92Parser(Parser):
     FOLLOW_COMMA_in_synpred259_sdl9212649 = frozenset([123])
     FOLLOW_named_value_in_synpred259_sdl9212651 = frozenset([148, 187])
     FOLLOW_R_BRACKET_in_synpred259_sdl9212671 = frozenset([1])
-    FOLLOW_L_BRACKET_in_synpred261_sdl9212722 = frozenset([41, 92, 99, 123, 135, 173, 174, 175, 176, 186])
-    FOLLOW_primary_in_synpred261_sdl9212740 = frozenset([148, 187])
-    FOLLOW_COMMA_in_synpred261_sdl9212743 = frozenset([41, 92, 99, 123, 135, 173, 174, 175, 176, 186])
-    FOLLOW_primary_in_synpred261_sdl9212745 = frozenset([148, 187])
+    FOLLOW_L_BRACKET_in_synpred261_sdl9212722 = frozenset([41, 47, 92, 99, 123, 135, 146, 167, 172, 173, 174, 175, 176, 186])
+    FOLLOW_expression_in_synpred261_sdl9212740 = frozenset([148, 187])
+    FOLLOW_COMMA_in_synpred261_sdl9212743 = frozenset([41, 47, 92, 99, 123, 135, 146, 167, 172, 173, 174, 175, 176, 186])
+    FOLLOW_expression_in_synpred261_sdl9212745 = frozenset([148, 187])
     FOLLOW_R_BRACKET_in_synpred261_sdl9212765 = frozenset([1])
     FOLLOW_SEMI_in_synpred276_sdl9213974 = frozenset([1])
 

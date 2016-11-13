@@ -694,7 +694,7 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
                                                          context))
         return warnings
 
-    elif isinstance(primary, ogAST.PrimVariable):
+    elif isinstance(primary, (ogAST.PrimVariable, ogAST.PrimSelector)):
         try:
             warnings.extend(compare_types(primary.exprType, type_ref))
         except TypeError as err:
@@ -1837,9 +1837,8 @@ def primary(root, context):
         prim = ogAST.PrimSequenceOf()
         prim.value = []
         for elem in root.getChildren():
-            # SEQUENCE OF elements cannot have fieldnames/indexes
             prim_elem, prim_elem_errors, prim_elem_warnings = \
-                                                        primary(elem, context)
+                                                      expression(elem, context)
             errors += prim_elem_errors
             warnings += prim_elem_warnings
             prim_elem.inputString = get_input_string(elem)

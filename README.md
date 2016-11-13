@@ -146,6 +146,8 @@ Changelog
     - Fix wrongly formatted error reporting in FOR loops
     - Support SDL2010 dot field separator (variable.field,
       while sdl92 only supported variable!field)
+    - Sequence of literals now support field selectors
+      (i.e. { variable.field } is now a valid statement)
 
 1.5.19 (11/2016)
     - Fix integer cast in Ada
