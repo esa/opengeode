@@ -27,19 +27,19 @@ dcl res path;
             /* CIF ENDTEXT */
             /* CIF PROCEDURE (460, 209), (75, 35) */
             PROCEDURE findpath;
-                /* CIF TEXT (0, 131), (272, 140) */
-                dcl result Path := { cost 0, elem {} };
-
-dcl elem Path_elem := {};
-
-dcl single Letter;
-                /* CIF ENDTEXT */
                 /* CIF TEXT (129, 18), (183, 98) */
                 fpar
     in startnode letter,
     in endnode letter,
     in my_tree Tree,
     in/out best_path Path;
+                /* CIF ENDTEXT */
+                /* CIF TEXT (0, 131), (272, 140) */
+                dcl result Path := { cost 0, elem {} };
+
+dcl elem Path_elem := {};
+
+dcl single Letter;
                 /* CIF ENDTEXT */
                 /* CIF START (521, 64), (70, 35) */
                 START;
@@ -70,15 +70,15 @@ dcl single Letter;
                                     RETURN ;
                                 /* CIF ANSWER (664, 390), (70, 23) */
                                 (false):
-                                    /* CIF TASK (442, 433), (514, 113) */
+                                    /* CIF TASK (460, 433), (478, 113) */
                                     TASK for each in my_tree(startnode):
-    call findpath(each!son, endnode, my_tree, result);
-    task result!cost := result!cost + each!cost;
-    task single := each!son,  elem := {single} // elem ;
-    task best_path := if result!cost < best_path!cost then result else best_path fi;
+    call findpath(each.son, endnode, my_tree, result);
+    result.cost := result.cost + each.cost
+    single := each.son,  elem := {single} // elem 
+    best_path := if result.cost < best_path.cost then result else best_path fi
 endfor;
                                     /* CIF TASK (628, 566), (141, 35) */
-                                    TASK result!elem := elem;
+                                    TASK result.elem := elem;
                                     /* CIF RETURN (681, 616), (35, 35) */
                                     RETURN ;
                             ENDDECISION;
@@ -97,8 +97,8 @@ my_tree(g) := {},
 my_tree(h) := {{cost 5, son g}};
                 /* CIF PROCEDURECALL (97, 419), (186, 35) */
                 CALL findpath(a, g, my_tree, res);
-                /* CIF PROCEDURECALL (89, 474), (201, 35) */
-                CALL writeln('best cost:', res!cost);
+                /* CIF PROCEDURECALL (88, 474), (204, 35) */
+                CALL writeln('best cost:', res.cost);
                 /* CIF NEXTSTATE (155, 529), (70, 35) */
                 NEXTSTATE wait;
             /* CIF STATE (296, 231), (70, 35) */
