@@ -27,19 +27,19 @@ dcl res path;
             /* CIF ENDTEXT */
             /* CIF PROCEDURE (460, 209), (75, 35) */
             PROCEDURE findpath;
-                /* CIF TEXT (129, 18), (183, 98) */
-                fpar
-    in startnode letter,
-    in endnode letter,
-    in my_tree Tree,
-    in/out best_path Path;
-                /* CIF ENDTEXT */
                 /* CIF TEXT (0, 131), (272, 140) */
                 dcl result Path := { cost 0, elem {} };
 
 dcl elem Path_elem := {};
 
 dcl single Letter;
+                /* CIF ENDTEXT */
+                /* CIF TEXT (129, 18), (183, 98) */
+                fpar
+    in startnode letter,
+    in endnode letter,
+    in my_tree Tree,
+    in/out best_path Path;
                 /* CIF ENDTEXT */
                 /* CIF START (521, 64), (70, 35) */
                 START;
@@ -94,7 +94,7 @@ my_tree(d) := {{cost 1, son h}},
 my_tree(e) := {{cost 7, son h}},
 my_tree(f) := {{cost 1, son g}},
 my_tree(g) := {},
-my_tree(h) := {{cost 3, son g}};
+my_tree(h) := {{cost 5, son g}};
                 /* CIF PROCEDURECALL (97, 419), (186, 35) */
                 CALL findpath(a, g, my_tree, res);
                 /* CIF PROCEDURECALL (89, 474), (201, 35) */
