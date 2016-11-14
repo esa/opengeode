@@ -2,7 +2,7 @@ TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
 -- Named integers to work with letters
-Letter ::= INTEGER {
+Letter ::= ENUMERATED {
   a (0),
   b (1),
   c (2),
@@ -28,7 +28,36 @@ Letter ::= INTEGER {
   w (22),
   x (23),
   y (24),
-  z (25) } (0..25)
+  z (25) }
+
+LetterInt ::= INTEGER {
+  letter-a (0),
+  letter-b (1),
+  letter-c (2),
+  letter-d (3),
+  letter-e (4),
+  letter-f (5),
+  letter-g (6),
+  letter-h (7),
+  letter-i (8),
+  letter-j (9),
+  letter-k (10),
+  letter-l (11),
+  letter-m (12),
+  letter-n (13),
+  letter-o (14),
+  letter-p (15),
+  letter-q (16),
+  letter-r (17),
+  letter-s (18),
+  letter-t (19),
+  letter-u (20),
+  letter-v (21),
+  letter-w (22),
+  letter-x (23),
+  letter-y (24),
+  letter-z (25) } (0..25)
+
 
 Cost-ty ::= INTEGER (0..255)
 
