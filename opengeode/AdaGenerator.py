@@ -302,9 +302,8 @@ LD_LIBRARY_PATH=. opengeode-simulator
                                  .format(name, UNICODE_SEP),
                                  '\n'])
 
-    # Add the declaration of the runTransition procedure, if needed
-    if process.transitions:
-        process_level_decl.append('procedure runTransition(Id: Integer);')
+    # Add the declaration of the runTransition procedure
+    process_level_decl.append('procedure runTransition(Id: Integer);')
 
     # Generate the code of the start transition (if process not empty)
     initDone =  u'{ctxt}.initDone := True;'.format(ctxt=LPREFIX)
@@ -919,6 +918,13 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'end if;')
 
         taste_template.append('end loop;')
+        taste_template.append('end runTransition;')
+        taste_template.append('\n')
+    else:
+        # No transitions defined, but keep the interface for CS_Only calls
+        taste_template.append('procedure runTransition(Id: Integer) is')
+        taste_template.append('begin')
+        taste_template.append('null;')
         taste_template.append('end runTransition;')
         taste_template.append('\n')
 
