@@ -142,6 +142,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.21 (11/2016)
+    - Fix regression with test-math (import of external functions)
+    - Use monospace font in the HTML rendering of ASN.1 files
+
 1.5.20 (11/2016)
     - Fix wrongly formatted error reporting in FOR loops
     - Support SDL2010 dot field separator (variable.field,
