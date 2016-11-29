@@ -2415,9 +2415,9 @@ def _inner_procedure(proc, **kwargs):
     pi_header = u'{kind} {sep}{proc_name}'.format(kind='procedure'
                                                   if not proc.return_type
                                                   else 'function',
-                                                  sep=(u'p' + UNICODE_SEP)
-                                                  if not proc.external
-                                                  else u'RI' + UNICODE_SEP,
+                                                  sep=(u'p' + UNICODE_SEP),
+                                             #    if not proc.external
+                                             #    else u'RI' + UNICODE_SEP,
                                                   proc_name=proc.inputString)
 
     if proc.fpar:
@@ -2445,7 +2445,7 @@ def _inner_procedure(proc, **kwargs):
         # Inner procedures declared external by the user: pragma import
         # the C symbol with the same name. Overrules the pragma import from
         # taste for required interfaces.
-        local_decl.append(u'pragma import(C, RI{sep}{proc_name}, '
+        local_decl.append(u'pragma import(C, p{sep}{proc_name}, '
                           u'"{proc_name}");'
                           .format(sep=UNICODE_SEP,
                                   proc_name=proc.inputString))
