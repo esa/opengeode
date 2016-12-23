@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.22 (12/2016)
+    - Simulation function save/restore context fix
+
 1.5.21 (11/2016)
     - Fix regression with test-math (import of external functions)
     - Use monospace font in the HTML rendering of ASN.1 files
