@@ -282,7 +282,10 @@ LD_LIBRARY_PATH=. opengeode-simulator
 
 
     for name, val in process.mapping.viewitems():
-        if name.endswith(u'START') and name != u'START':
+        # Test val, in principle there is a value but if the code targets
+        # generation of properties, the model may have been cleant up and
+        # in that case no value would be set..
+        if name.endswith(u'START') and name != u'START' and val:
             process_level_decl.append(u'{name} : constant := {val};'
                                       .format(name=name, val=str(val)))
 
