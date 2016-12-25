@@ -25,73 +25,78 @@ dcl my_tree Tree;
 
 dcl res path;
             /* CIF ENDTEXT */
-            /* CIF PROCEDURE (460, 209), (75, 35) */
+            /* CIF PROCEDURE (574, 209), (75, 35) */
             PROCEDURE findpath;
+                /* CIF TEXT (107, 140), (329, 53) */
+                dcl result, best_path Path := { cost 0, elem {} };
+
+dcl elem Path_elem := {};
+                /* CIF ENDTEXT */
                 /* CIF TEXT (104, 47), (183, 68) */
                 fpar
     in startnode letter,
     in endnode letter;
 returns Path;
                 /* CIF ENDTEXT */
-                /* CIF TEXT (107, 140), (304, 53) */
-                dcl result, best_path Path := { cost 0, elem {} };
-
-dcl elem Path_elem := {};
-                /* CIF ENDTEXT */
                 /* CIF START (626, 64), (70, 35) */
                 START;
-                    /* CIF TASK (608, 119), (106, 68) */
-                    TASK best_path := {
-    cost 100,
-    elem {}
-};
-                    /* CIF DECISION (585, 207), (151, 50) */
+                    /* CIF TASK (584, 119), (153, 23) */
+                    TASK best_path.cost := 100;
+                    /* CIF DECISION (585, 162), (151, 50) */
                     DECISION startnode = endnode;
-                        /* CIF ANSWER (431, 277), (70, 23) */
+                        /* CIF ANSWER (431, 232), (70, 23) */
                         (true):
-                            /* CIF TASK (398, 320), (136, 23) */
+                            /* CIF TASK (398, 275), (136, 23) */
                             TASK best_path.cost :=0;
-                        /* CIF ANSWER (820, 277), (70, 23) */
+                        /* CIF ANSWER (820, 232), (70, 23) */
                         (false):
-                            /* CIF DECISION (758, 320), (193, 50) */
-                            DECISION length(my_tree(startnode))
+                            /* CIF DECISION (742, 275), (226, 50) */
+                            DECISION length(my_tree(num(startnode)))
 = 0;
-                                /* CIF ANSWER (547, 390), (70, 23) */
+                                /* CIF ANSWER (547, 345), (70, 23) */
                                 (true):
-                                /* CIF ANSWER (918, 390), (70, 23) */
+                                /* CIF ANSWER (918, 345), (70, 23) */
                                 (false):
-                                    /* CIF TASK (714, 433), (478, 113) */
-                                    TASK for each in my_tree(startnode):
+                                    /* CIF TASK (708, 388), (490, 128) */
+                                    TASK for each in my_tree(num(startnode)):
     result := findpath(each.son, endnode)
+    elem := result.elem
     result.cost := result.cost + each.cost
     elem := { each.son } // elem
+    result.elem := elem
     best_path := if result.cost < best_path.cost then result else best_path fi
 endfor;
-                                    /* CIF TASK (882, 561), (141, 35) */
-                                    TASK result.elem := elem;
                             ENDDECISION;
                     ENDDECISION;
-                    /* CIF RETURN (643, 626), (35, 35) */
+                    /* CIF RETURN (643, 546), (35, 35) */
                     RETURN best_path;
             ENDPROCEDURE;
-            /* CIF START (155, 216), (70, 35) */
+            /* CIF START (237, 232), (70, 35) */
             START;
-                /* CIF TASK (1, 271), (378, 128) */
-                TASK my_tree(a) := {{ cost 3, son b}, {cost 4, son c}},
-my_tree(b) := {{cost 2, son d}},
-my_tree(c) := {{ cost 1, son d}, {cost 1, son e}, {cost 6, son f}},
-my_tree(d) := {{cost 1, son h}},
-my_tree(e) := {{cost 7, son h}},
-my_tree(f) := {{cost 1, son g}},
-my_tree(g) := {},
-my_tree(h) := {{cost 5, son g}};
-                /* CIF TASK (120, 419), (139, 35) */
+                /* CIF TASK (60, 287), (424, 128) */
+                TASK my_tree(Letter_a) := {{ cost 3, son b}, {cost 4, son c}},
+my_tree(Letter_b) := {{cost 2, son d}},
+my_tree(Letter_c) := {{ cost 1, son d}, {cost 1, son e}, {cost 6, son f}},
+my_tree(Letter_d) := {{cost 1, son h}},
+my_tree(Letter_e) := {{cost 7, son h}},
+my_tree(Letter_f) := {{cost 1, son g}},
+my_tree(Letter_g) := {},
+my_tree(Letter_h) := {{cost 5, son g}};
+                /* CIF TASK (202, 435), (139, 35) */
                 TASK res := findpath(a, g);
-                /* CIF PROCEDURECALL (88, 469), (204, 35) */
+                /* CIF PROCEDURECALL (172, 485), (200, 35) */
                 CALL writeln('best cost:', res.cost);
-                /* CIF NEXTSTATE (155, 524), (70, 35) */
+                /* CIF PROCEDURECALL (199, 540), (145, 35) */
+                CALL write('best path: [ ');
+                /* CIF TASK (196, 590), (151, 53) */
+                TASK for each in res.elem:
+    call write(each, ' ');
+endfor;
+                /* CIF PROCEDURECALL (211, 663), (122, 35) */
+                CALL writeln(']');
+                /* CIF NEXTSTATE (237, 713), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (296, 231), (70, 35) */
+            /* CIF STATE (494, 231), (70, 35) */
             STATE wait;
             ENDSTATE;
         ENDPROCESS og;

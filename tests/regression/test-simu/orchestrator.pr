@@ -6,7 +6,7 @@ COMMENT 'Hello';
     SUBSTRUCTURE
             /* CIF START (116, 38), (70, 35) */
             START;
-                /* CIF NEXTSTATE (88, 88), (124, 35) */
+                /* CIF NEXTSTATE (89, 88), (124, 35) */
                 NEXTSTATE entering_wait;
             /* CIF STATE (83, 193), (134, 35) */
             STATE waiting_in_wait;
@@ -15,7 +15,7 @@ COMMENT 'Hello';
                     /* CIF NEXTSTATE (83, 298), (134, 35) */
                     NEXTSTATE entering_wait;
             ENDSTATE;
-            /* CIF STATE (88, 88), (124, 35) */
+            /* CIF STATE (89, 88), (124, 35) */
             STATE entering_wait;
                 /* CIF INPUT (114, 143), (73, 35) */
                 INPUT other;
@@ -36,6 +36,8 @@ dcl simpleseq MySimpleSeq := {a 42, b true, c three};
 
 timer myTimer;
 
+dcl counter T_UInt32 := 0;
+
 
 procedure VDM comment '#hello';
    fpar in inp fixedIntList,
@@ -53,23 +55,23 @@ external comment '#vdm #classname=RemoteCall';
         CALL writeln('Simulation startup');
         /* CIF NEXTSTATE (1095, 251), (72, 34) */
         NEXTSTATE Wait;
-    /* CIF STATE (1674, 125), (100, 35) */
-    STATE timeout;
-        /* CIF INPUT (1659, 180), (147, 35) */
-        INPUT Paramless_TC;
-            /* CIF PROCEDURECALL (1608, 230), (249, 35) */
-            CALL SET_timer(1000, mytimer);
-            /* CIF NEXTSTATE (1695, 280), (74, 35) */
-            NEXTSTATE next;
-    ENDSTATE;
     /* CIF STATE (1680, 345), (74, 35) */
     STATE next;
-        /* CIF INPUT (1653, 400), (122, 35) */
+        /* CIF INPUT (1681, 400), (70, 35) */
         INPUT pulse(a);
-            /* CIF PROCEDURECALL (1607, 450), (213, 35) */
+            /* CIF PROCEDURECALL (1610, 450), (213, 35) */
             CALL reset_timer(mytimer);
-            /* CIF NEXTSTATE (1679, 500), (70, 35) */
+            /* CIF NEXTSTATE (1682, 500), (70, 35) */
             NEXTSTATE wait;
+    ENDSTATE;
+    /* CIF STATE (1674, 125), (100, 35) */
+    STATE timeout;
+        /* CIF INPUT (1651, 180), (147, 35) */
+        INPUT Paramless_TC;
+            /* CIF PROCEDURECALL (1600, 230), (249, 35) */
+            CALL SET_timer(1000, mytimer);
+            /* CIF NEXTSTATE (1687, 280), (74, 35) */
+            NEXTSTATE next;
     ENDSTATE;
     /* CIF STATE (1095, 251), (72, 34) */
     STATE Wait;
@@ -114,15 +116,17 @@ anint := 478;
             NEXTSTATE next;
         /* CIF INPUT (1219, 305), (147, 35) */
         INPUT Paramless_TC;
-            /* CIF PROCEDURECALL (1166, 355), (253, 35) */
+            /* CIF TASK (1182, 360), (219, 35) */
+            TASK counter := (counter + 1)  mod 500;
+            /* CIF PROCEDURECALL (1166, 410), (253, 35) */
             CALL writeln('Got Paramless TC');
-            /* CIF PROCEDURECALL (1168, 405), (249, 35) */
+            /* CIF PROCEDURECALL (1168, 460), (249, 35) */
             CALL SET_timer(1000, mytimer);
-            /* CIF OUTPUT (1217, 455), (150, 35) */
+            /* CIF OUTPUT (1217, 510), (150, 35) */
             OUTPUT Paramless_TM;
-            /* CIF TASK (1191, 505), (202, 35) */
+            /* CIF TASK (1191, 560), (202, 35) */
             TASK anint := (anint + 1) mod 100;
-            /* CIF NEXTSTATE (1257, 555), (70, 35) */
+            /* CIF NEXTSTATE (1257, 610), (70, 35) */
             NEXTSTATE wait;
         /* CIF INPUT (1429, 305), (104, 35) */
         INPUT mytimer;

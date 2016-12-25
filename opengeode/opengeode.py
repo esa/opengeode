@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.20'
+__version__ = '1.5.22'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2365,6 +2365,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             return
         html_content = html_file.read()
         self.asn1_browser.setHtml(html_content)
+        self.asn1_browser.setFont(QtGui.QFont('UbuntuMono', 12))
 
         # Update the data dictionary
         item = self.datadict.topLevelItem(0)
@@ -2755,6 +2756,10 @@ def gui(options):
     font_database.addApplicationFont(':fonts/Ubuntu-R.ttf')
     font_database.addApplicationFont(':fonts/Ubuntu-B.ttf')
     font_database.addApplicationFont(':fonts/Ubuntu-BI.ttf')
+    font_database.addApplicationFont(':fonts/UbuntuMono-RI.ttf')
+    font_database.addApplicationFont(':fonts/UbuntuMono-R.ttf')
+    font_database.addApplicationFont(':fonts/UbuntuMono-B.ttf')
+    font_database.addApplicationFont(':fonts/UbuntuMono-BI.ttf')
     app.setFont(QtGui.QFont('Ubuntu', 10))
 
     # Initialize the clipboard

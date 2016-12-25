@@ -1,4 +1,4 @@
-# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2016-11-13 17:50:51
+# $ANTLR 3.1.3 Mar 17, 2009 19:23:44 sdl92.g 2016-11-29 10:37:53
 
 import sys
 from antlr3 import *
@@ -924,7 +924,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end10.tree)
 
                 # AST Rewrite
-                # elements: SYSTEM, system_name, entity_in_system
+                # elements: SYSTEM, entity_in_system, system_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1079,7 +1079,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end16.tree)
 
                 # AST Rewrite
-                # elements: package_name, def_selection_list, use_asn1, USE, end
+                # elements: end, def_selection_list, USE, use_asn1, package_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1476,7 +1476,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end29.tree)
 
                 # AST Rewrite
-                # elements: input_params, SIGNAL, paramnames, signal_id
+                # elements: signal_id, input_params, SIGNAL, paramnames
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1630,7 +1630,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end34.tree)
 
                 # AST Rewrite
-                # elements: CHANNEL, route, channel_id
+                # elements: CHANNEL, channel_id, route
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1950,7 +1950,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end49.tree)
 
                 # AST Rewrite
-                # elements: block_id, BLOCK, entity_in_block
+                # elements: BLOCK, entity_in_block, block_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -2235,7 +2235,7 @@ class sdl92Parser(Parser):
                     cnt14 += 1
 
                 # AST Rewrite
-                # elements: route_id, SIGNALROUTE, route
+                # elements: route, route_id, SIGNALROUTE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -2691,7 +2691,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: number_of_instances, a, PROCESS, type_inst, REFERENCED, process_id, cif, procedure, composite_state, pfpar, text_area, processBody
+                # elements: cif, number_of_instances, a, processBody, type_inst, procedure, process_id, REFERENCED, composite_state, PROCESS, pfpar, text_area
                 # token labels: 
                 # rule labels: a, retval
                 # token list labels: 
@@ -3396,7 +3396,7 @@ class sdl92Parser(Parser):
                     stream_end.add(e2.tree)
 
                 # AST Rewrite
-                # elements: processBody, EXTERNAL, e1, fpar, procedure, cif, procedure_id, PROCEDURE, text_area, e2, res
+                # elements: PROCEDURE, processBody, procedure_id, res, procedure, cif, e1, text_area, e2, EXTERNAL, fpar
                 # token labels: 
                 # rule labels: res, e1, e2, retval
                 # token list labels: 
@@ -3635,7 +3635,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: sort, variable_id, RETURNS
+                # elements: variable_id, RETURNS, sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3948,7 +3948,7 @@ class sdl92Parser(Parser):
                     stream_sort.add(sort114.tree)
 
                 # AST Rewrite
-                # elements: sort, INOUT, OUT, variable_id, IN
+                # elements: INOUT, variable_id, sort, IN, OUT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4096,7 +4096,7 @@ class sdl92Parser(Parser):
                     stream_cif_end_text.add(cif_end_text117.tree)
 
                 # AST Rewrite
-                # elements: cif_end_text, content, cif
+                # elements: cif, cif_end_text, content
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -4326,7 +4326,7 @@ class sdl92Parser(Parser):
                         break #loop43
 
                 # AST Rewrite
-                # elements: newtype_definition, variable_definition, fpar, synonym_definition, syntype_definition, timer_declaration, procedure, signal_declaration, use_clause, res
+                # elements: synonym_definition, timer_declaration, syntype_definition, newtype_definition, use_clause, procedure, variable_definition, signal_declaration, res, fpar
                 # token labels: 
                 # rule labels: res, retval
                 # token list labels: 
@@ -4735,7 +4735,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end142.tree)
 
                 # AST Rewrite
-                # elements: range_condition, syntype_name, parent_sort, SYNTYPE
+                # elements: range_condition, SYNTYPE, syntype_name, parent_sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5020,7 +5020,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end151.tree)
 
                 # AST Rewrite
-                # elements: type_name, NEWTYPE, array_definition, structure_definition
+                # elements: structure_definition, type_name, array_definition, NEWTYPE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5207,7 +5207,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(char_literal158)
 
                 # AST Rewrite
-                # elements: sort, ARRAY, sort
+                # elements: ARRAY, sort, sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -5696,7 +5696,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end173.tree)
 
                 # AST Rewrite
-                # elements: DCL, variables_of_sort
+                # elements: variables_of_sort, DCL
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -6009,7 +6009,7 @@ class sdl92Parser(Parser):
                     stream_ground_expression.add(ground_expression183.tree)
 
                 # AST Rewrite
-                # elements: sort, sort, ground_expression
+                # elements: ground_expression, sort, sort
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -6648,7 +6648,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: START, hyperlink, end, cif, transition, name
+                # elements: end, cif, hyperlink, name, transition, START
                 # token labels: 
                 # rule labels: name, retval
                 # token list labels: 
@@ -6885,7 +6885,7 @@ class sdl92Parser(Parser):
                     stream_SEMI.add(SEMI210)
 
                 # AST Rewrite
-                # elements: transition, hyperlink, connector_name, cif
+                # elements: hyperlink, transition, cif, connector_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -7155,7 +7155,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: STATE, statelist, cif, e, state_part, hyperlink
+                # elements: hyperlink, STATE, cif, state_part, e, statelist
                 # token labels: 
                 # rule labels: e, retval
                 # token list labels: 
@@ -7908,7 +7908,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: connection_points, statename, body, e
+                # elements: connection_points, body, statename, e
                 # token labels: 
                 # rule labels: e, body, retval
                 # token list labels: 
@@ -8134,9 +8134,9 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: body, entities, statename, e, connection_points
+                # elements: body, e, entities, statename, connection_points
                 # token labels: 
-                # rule labels: entities, e, body, retval
+                # rule labels: e, entities, body, retval
                 # token list labels: 
                 # rule list labels: 
                 # wildcard labels: 
@@ -8144,16 +8144,16 @@ class sdl92Parser(Parser):
 
                     retval.tree = root_0
 
-                    if entities is not None:
-                        stream_entities = RewriteRuleSubtreeStream(self._adaptor, "rule entities", entities.tree)
-                    else:
-                        stream_entities = RewriteRuleSubtreeStream(self._adaptor, "token entities", None)
-
-
                     if e is not None:
                         stream_e = RewriteRuleSubtreeStream(self._adaptor, "rule e", e.tree)
                     else:
                         stream_e = RewriteRuleSubtreeStream(self._adaptor, "token e", None)
+
+
+                    if entities is not None:
+                        stream_entities = RewriteRuleSubtreeStream(self._adaptor, "rule entities", entities.tree)
+                    else:
+                        stream_entities = RewriteRuleSubtreeStream(self._adaptor, "token entities", None)
 
 
                     if body is not None:
@@ -8553,7 +8553,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end257.tree)
 
                 # AST Rewrite
-                # elements: end, outer, inner
+                # elements: outer, end, inner
                 # token labels: 
                 # rule labels: outer, inner, retval
                 # token list labels: 
@@ -8670,7 +8670,7 @@ class sdl92Parser(Parser):
                     stream_point.add(point259.tree)
 
                 # AST Rewrite
-                # elements: state_part_id, point
+                # elements: point, state_part_id
                 # token labels: state_part_id
                 # rule labels: retval
                 # token list labels: 
@@ -8789,7 +8789,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: state_point, DEFAULT
+                # elements: DEFAULT, state_point
                 # token labels: state_point
                 # rule labels: retval
                 # token list labels: 
@@ -8925,7 +8925,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end263.tree)
 
                     # AST Rewrite
-                    # elements: end, state_entry_exit_points, IN
+                    # elements: IN, end, state_entry_exit_points
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -8982,7 +8982,7 @@ class sdl92Parser(Parser):
                         stream_end.add(end266.tree)
 
                     # AST Rewrite
-                    # elements: OUT, state_entry_exit_points, end
+                    # elements: OUT, end, state_entry_exit_points
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -9577,7 +9577,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: cif, hyperlink, end, transition, CONNECT, connect_list
+                # elements: hyperlink, connect_list, cif, transition, CONNECT, end
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -9927,7 +9927,7 @@ class sdl92Parser(Parser):
                     stream_transition.add(transition300.tree)
 
                 # AST Rewrite
-                # elements: hyperlink, cif, transition
+                # elements: transition, cif, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -10236,7 +10236,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: expression, hyperlink, transition, PROVIDED, cif, e, p
+                # elements: p, PROVIDED, transition, cif, hyperlink, expression, e
                 # token labels: p
                 # rule labels: e, retval
                 # token list labels: 
@@ -10881,7 +10881,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: inputlist, hyperlink, INPUT, transition, cif, enabling_condition, end
+                # elements: INPUT, enabling_condition, inputlist, hyperlink, end, cif, transition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -11432,7 +11432,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: action, label, terminator_statement
+                    # elements: terminator_statement, action, label
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -11836,7 +11836,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end360.tree)
 
                 # AST Rewrite
-                # elements: EXPORT, variable_id
+                # elements: variable_id, EXPORT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -11990,7 +11990,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end365.tree)
 
                 # AST Rewrite
-                # elements: procedure_call_body, cif, end, hyperlink
+                # elements: end, procedure_call_body, cif, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -12115,7 +12115,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: actual_parameters, procedure_id
+                # elements: procedure_id, actual_parameters
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -12642,7 +12642,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: timer_id, expression_list
+                # elements: expression_list, timer_id
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -12781,7 +12781,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: answer_part, ALTERNATIVE, alternative_part
+                # elements: answer_part, alternative_part, ALTERNATIVE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13274,7 +13274,7 @@ class sdl92Parser(Parser):
                     stream_end.add(f.tree)
 
                 # AST Rewrite
-                # elements: answer_part, alternative_part, hyperlink, DECISION, question, cif, e
+                # elements: alternative_part, answer_part, question, hyperlink, e, cif, DECISION
                 # token labels: 
                 # rule labels: e, retval
                 # token list labels: 
@@ -13477,7 +13477,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: cif, answer, hyperlink, transition
+                # elements: answer, cif, hyperlink, transition
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -13750,7 +13750,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: transition, ELSE, cif, hyperlink
+                # elements: hyperlink, transition, ELSE, cif
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -14365,7 +14365,7 @@ class sdl92Parser(Parser):
 
 
                     # AST Rewrite
-                    # elements: GT, EQ, GE, constant, NEQ, LT, LE
+                    # elements: constant, EQ, NEQ, LE, GT, GE, LT
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -14608,7 +14608,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end436.tree)
 
                 # AST Rewrite
-                # elements: createbody, CREATE, actual_parameters
+                # elements: actual_parameters, CREATE, createbody
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -14847,7 +14847,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end443.tree)
 
                 # AST Rewrite
-                # elements: outputbody, cif, end, OUTPUT, hyperlink
+                # elements: cif, outputbody, end, hyperlink, OUTPUT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -15002,7 +15002,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: to_part, outputstmt
+                # elements: outputstmt, to_part
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -15996,7 +15996,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end472.tree)
 
                 # AST Rewrite
-                # elements: task_body, TASK, end, cif, hyperlink
+                # elements: TASK, end, cif, task_body, hyperlink
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -16517,7 +16517,7 @@ class sdl92Parser(Parser):
                     stream_ENDFOR.add(ENDFOR489)
 
                 # AST Rewrite
-                # elements: transition, variable, range, variable_id, FOR
+                # elements: range, transition, variable_id, variable, FOR
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -16696,7 +16696,7 @@ class sdl92Parser(Parser):
                     stream_R_PAREN.add(R_PAREN494)
 
                 # AST Rewrite
-                # elements: step, a, b, RANGE
+                # elements: b, step, a, RANGE
                 # token labels: step
                 # rule labels: a, b, retval
                 # token list labels: 
@@ -18291,7 +18291,7 @@ class sdl92Parser(Parser):
                             stream_R_PAREN.add(char_literal543)
 
                         # AST Rewrite
-                        # elements: postfix_expression, params
+                        # elements: params, postfix_expression
                         # token labels: 
                         # rule labels: params, retval
                         # token list labels: 
@@ -18829,7 +18829,7 @@ class sdl92Parser(Parser):
                         stream_expression.add(expression561.tree)
 
                     # AST Rewrite
-                    # elements: expression, ID
+                    # elements: ID, expression
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -18975,7 +18975,7 @@ class sdl92Parser(Parser):
                         stream_R_BRACKET.add(char_literal571)
 
                     # AST Rewrite
-                    # elements: exp, mant, bas
+                    # elements: mant, exp, bas
                     # token labels: bas, mant, exp
                     # rule labels: retval
                     # token list labels: 
@@ -19991,7 +19991,7 @@ class sdl92Parser(Parser):
                     stream_FI.add(FI603)
 
                 # AST Rewrite
-                # elements: ifexpr, thenexpr, elseexpr
+                # elements: elseexpr, thenexpr, ifexpr
                 # token labels: 
                 # rule labels: thenexpr, elseexpr, ifexpr, retval
                 # token list labels: 
@@ -20287,7 +20287,7 @@ class sdl92Parser(Parser):
                     stream_end.add(end611.tree)
 
                 # AST Rewrite
-                # elements: label, cif, end, hyperlink, terminator
+                # elements: hyperlink, end, terminator, cif, label
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -20424,7 +20424,7 @@ class sdl92Parser(Parser):
                     stream_222.add(char_literal614)
 
                 # AST Rewrite
-                # elements: connector_name, cif
+                # elements: cif, connector_name
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -20642,7 +20642,7 @@ class sdl92Parser(Parser):
                     stream_connector_name.add(connector_name620.tree)
 
                 # AST Rewrite
-                # elements: JOIN, connector_name
+                # elements: connector_name, JOIN
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -20803,7 +20803,7 @@ class sdl92Parser(Parser):
 
 
                 # AST Rewrite
-                # elements: RETURN, expression
+                # elements: expression, RETURN
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -20900,7 +20900,7 @@ class sdl92Parser(Parser):
                     stream_nextstatebody.add(nextstatebody625.tree)
 
                 # AST Rewrite
-                # elements: NEXTSTATE, nextstatebody
+                # elements: nextstatebody, NEXTSTATE
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -21282,7 +21282,7 @@ class sdl92Parser(Parser):
                     cnt203 += 1
 
                 # AST Rewrite
-                # elements: STRING, cif, COMMENT, hyperlink
+                # elements: hyperlink, cif, STRING, COMMENT
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -21301,7 +21301,7 @@ class sdl92Parser(Parser):
                     root_0 = self._adaptor.nil()
                     # 1307:9: -> ( ^( COMMENT ( cif )? ( hyperlink )? STRING ) )?
                     # sdl92.g:1307:12: ( ^( COMMENT ( cif )? ( hyperlink )? STRING ) )?
-                    if stream_STRING.hasNext() or stream_cif.hasNext() or stream_COMMENT.hasNext() or stream_hyperlink.hasNext():
+                    if stream_hyperlink.hasNext() or stream_cif.hasNext() or stream_STRING.hasNext() or stream_COMMENT.hasNext():
                         # sdl92.g:1307:12: ^( COMMENT ( cif )? ( hyperlink )? STRING )
                         root_1 = self._adaptor.nil()
                         root_1 = self._adaptor.becomeRoot(stream_COMMENT.nextNode(), root_1)
@@ -21323,10 +21323,10 @@ class sdl92Parser(Parser):
                         self._adaptor.addChild(root_0, root_1)
 
 
-                    stream_STRING.reset();
-                    stream_cif.reset();
-                    stream_COMMENT.reset();
                     stream_hyperlink.reset();
+                    stream_cif.reset();
+                    stream_STRING.reset();
+                    stream_COMMENT.reset();
 
 
 
@@ -21472,7 +21472,7 @@ class sdl92Parser(Parser):
                     stream_cif_end.add(cif_end645.tree)
 
                 # AST Rewrite
-                # elements: width, x, y, height
+                # elements: y, width, height, x
                 # token labels: width, height
                 # rule labels: x, y, retval
                 # token list labels: 
@@ -21614,7 +21614,7 @@ class sdl92Parser(Parser):
                     stream_cif_end.add(cif_end652.tree)
 
                 # AST Rewrite
-                # elements: STRING, HYPERLINK
+                # elements: HYPERLINK, STRING
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 

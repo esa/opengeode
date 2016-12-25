@@ -20,6 +20,13 @@ test-ada:
 	$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali -lgnat
 	./test_ada
 
+simu:
+	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
+	taste-properties -s properties orchestrator.pr system_structure.pr
+	make -f Makefile.properties
+	./orchestrator_simu.sh
+
+
 test-c:
 	$(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
 	$(CC) -c -g test_c.c

@@ -282,7 +282,10 @@ LD_LIBRARY_PATH=. opengeode-simulator
 
 
     for name, val in process.mapping.viewitems():
-        if name.endswith(u'START') and name != u'START':
+        # Test val, in principle there is a value but if the code targets
+        # generation of properties, the model may have been cleant up and
+        # in that case no value would be set..
+        if name.endswith(u'START') and name != u'START' and val:
             process_level_decl.append(u'{name} : constant := {val};'
                                       .format(name=name, val=str(val)))
 
@@ -302,9 +305,8 @@ LD_LIBRARY_PATH=. opengeode-simulator
                                  .format(name, UNICODE_SEP),
                                  '\n'])
 
-    # Add the declaration of the runTransition procedure, if needed
-    if process.transitions:
-        process_level_decl.append('procedure runTransition(Id: Integer);')
+    # Add the declaration of the runTransition procedure
+    process_level_decl.append('procedure runTransition(Id: Integer);')
 
     # Generate the code of the start transition (if process not empty)
     initDone =  u'{ctxt}.initDone := True;'.format(ctxt=LPREFIX)
@@ -395,12 +397,12 @@ package {process_name} is'''.format(process_name=process_name,
         ads_template.append('pragma Export(C, restore_context, "_restore_context");')
         dll_api.append("{} is".format(save_state_decl))
         dll_api.append("begin")
-        dll_api.append("{ctxt} := {ctxt}_bk;".format(ctxt=LPREFIX))
+        dll_api.append("{ctxt}_bk := {ctxt};".format(ctxt=LPREFIX))
         dll_api.append("end save_context;")
         dll_api.append("")
         dll_api.append("{} is".format(restore_state_decl))
         dll_api.append("begin")
-        dll_api.append("{ctxt}_bk := {ctxt};".format(ctxt=LPREFIX))
+        dll_api.append("{ctxt} := {ctxt}_bk;".format(ctxt=LPREFIX))
         dll_api.append("end restore_context;")
         dll_api.append("")
 
@@ -919,6 +921,13 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'end if;')
 
         taste_template.append('end loop;')
+        taste_template.append('end runTransition;')
+        taste_template.append('\n')
+    else:
+        # No transitions defined, but keep the interface for CS_Only calls
+        taste_template.append('procedure runTransition(Id: Integer) is')
+        taste_template.append('begin')
+        taste_template.append('null;')
         taste_template.append('end runTransition;')
         taste_template.append('\n')
 
@@ -2409,9 +2418,9 @@ def _inner_procedure(proc, **kwargs):
     pi_header = u'{kind} {sep}{proc_name}'.format(kind='procedure'
                                                   if not proc.return_type
                                                   else 'function',
-                                                  sep=(u'p' + UNICODE_SEP)
-                                                  if not proc.external
-                                                  else u'RI' + UNICODE_SEP,
+                                                  sep=(u'p' + UNICODE_SEP),
+                                             #    if not proc.external
+                                             #    else u'RI' + UNICODE_SEP,
                                                   proc_name=proc.inputString)
 
     if proc.fpar:
@@ -2439,7 +2448,7 @@ def _inner_procedure(proc, **kwargs):
         # Inner procedures declared external by the user: pragma import
         # the C symbol with the same name. Overrules the pragma import from
         # taste for required interfaces.
-        local_decl.append(u'pragma import(C, RI{sep}{proc_name}, '
+        local_decl.append(u'pragma import(C, p{sep}{proc_name}, '
                           u'"{proc_name}");'
                           .format(sep=UNICODE_SEP,
                                   proc_name=proc.inputString))
