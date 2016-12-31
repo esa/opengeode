@@ -316,10 +316,7 @@ LD_LIBRARY_PATH=. opengeode-simulator
             start_transition.append(u'runTransition(0);')
         start_transition.append(initDone)
     else:
-        start_transition = [u'procedure Startup;',
-                            u'pragma Export(C, Startup, "{}_startup");'
-                            .format(process_name),
-                            u'procedure Startup is',
+        start_transition = [u'procedure Startup is',
                             u'begin',
                             u'   runTransition(0);' if process.transitions
                                                    else 'null;',
@@ -406,6 +403,11 @@ package {process_name} is'''.format(process_name=process_name,
         dll_api.append("end restore_context;")
         dll_api.append("")
 
+        # Declare procedure Startup in .ads
+        ads_template.append(u'procedure Startup;')
+        ads_template.append(u'pragma Export(C, Startup, "{}_startup");'
+                            .format(process_name))
+
         # interface to get/set state aggregations XXX add to C generator
         for substates in aggregates.viewvalues():
             for each in substates:
@@ -419,13 +421,7 @@ package {process_name} is'''.format(process_name=process_name,
 
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.viewitems():
-            # Getters for local variables
-# Removed size - this was needed by swig only, not ctypes
-#           process_level_decl.append("function l_{name}_size return integer "
-#                                    "is ({prefix}.{name}'Size/8) with Export,"
-#                                    " Convention => C,"
-#                                    ' Link_Name => "{name}_size";'
-#                                    .format(prefix=LPREFIX, name=var_name))
+            # Getters for external applications to view local variables via dll
             process_level_decl.append("function l_{name}_value"
                                      " return access {sort} "
                                      "is ({prefix}.{name}'access) with Export,"
