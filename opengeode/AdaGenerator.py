@@ -447,6 +447,15 @@ package {process_name} is'''.format(process_name=process_name,
         proc_code, proc_local = generate(proc)
         process_level_decl.extend(proc_local)
         inner_procedures_code.extend(proc_code)
+        if proc.exported:
+            # Exported procedures must be declared in the .ads
+            pi_header = procedure_header(proc)
+            ads_template.append(u'{};'.format(pi_header))
+            if not proc.external:
+                ads_template.append(u'pragma Export'
+                                    u'(C, p{sep}{proc_name}, "_{proc_name}");'
+                                    .format(sep=UNICODE_SEP,
+                                            proc_name=proc.inputString))
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
@@ -2385,6 +2394,30 @@ def _floating_label(label, **kwargs):
     return code, local_decl
 
 
+def procedure_header(proc):
+    ''' Build the protoype of a procedure '''
+    ret_type = type_name(proc.return_type) if proc.return_type else None
+    pi_header = u'{kind} {sep}{proc_name}'.format(kind='procedure'
+                                                  if not proc.return_type
+                                                  else 'function',
+                                                  sep=(u'p' + UNICODE_SEP),
+                                                  proc_name=proc.inputString)
+    if proc.fpar:
+        pi_header += '('
+        params = []
+        for fpar in proc.fpar:
+            typename = type_name(fpar['type'])
+            params.append(u'{name}: in{out} {ptype}'.format(
+                    name=fpar.get('name'),
+                    out=' out' if fpar.get('direction') == 'out' else '',
+                    ptype=typename))
+        pi_header += ';'.join(params)
+        pi_header += ')'
+    if ret_type:
+        pi_header += ' return {}'.format(ret_type)
+    return pi_header
+
+
 @generate.register(ogAST.Procedure)
 def _inner_procedure(proc, **kwargs):
     ''' Generate the code for a procedure - does not support states '''
@@ -2410,35 +2443,9 @@ def _inner_procedure(proc, **kwargs):
         LOCAL_VAR.update(elem)
 
     # Build the procedure signature (function if it can return a value)
-    ret_type = type_name(proc.return_type) if proc.return_type else None
-    pi_header = u'{kind} {sep}{proc_name}'.format(kind='procedure'
-                                                  if not proc.return_type
-                                                  else 'function',
-                                                  sep=(u'p' + UNICODE_SEP),
-                                             #    if not proc.external
-                                             #    else u'RI' + UNICODE_SEP,
-                                                  proc_name=proc.inputString)
-
-    if proc.fpar:
-        pi_header += '('
-        params = []
-        for fpar in proc.fpar:
-            typename = type_name(fpar['type'])
-            params.append(u'{name}: in{out} {ptype}'.format(
-                    name=fpar.get('name'),
-                    out=' out' if fpar.get('direction') == 'out' else '',
-                    ptype=typename))
-        pi_header += ';'.join(params)
-        pi_header += ')'
-    if ret_type:
-        pi_header += ' return {}'.format(ret_type)
-
-    local_decl.append(pi_header + ';')
-    # Remote procedures need to be exported with a C calling convention
-    if proc.exported and not proc.external:
-        local_decl.append(u'pragma Export'
-                          u'(C, p{sep}{proc_name}, "_{proc_name}");'
-                        .format(sep=UNICODE_SEP, proc_name=proc.inputString))
+    pi_header = procedure_header(proc)
+    if not proc.exported:
+        local_decl.append(pi_header + ';')
 
     if proc.external:
         # Inner procedures declared external by the user: pragma import
