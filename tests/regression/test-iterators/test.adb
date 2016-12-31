@@ -24,7 +24,7 @@ procedure test is
         errno: Natural := 0;
     begin
         if check(errno) then
-            put_line("Property " & errno'img & " is not verified");
+            put_line("Property " & errno'img & " is not verified, at step " & count'img);
         end if;
     end;
 
