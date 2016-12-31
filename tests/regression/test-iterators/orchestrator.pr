@@ -1,0 +1,89 @@
+SYSTEM orchestrator;
+    /* CIF TEXT (880, 108), (315, 128) */
+    use datatypes comment  'dataview-uniq.asn';
+
+signal pulse (t_int);
+
+signal arr (t_seqof);
+
+signal paramless;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO orchestrator WITH pulse,
+arr,
+paramless;
+    ENDCHANNEL;
+    BLOCK orchestrator;
+        SIGNALROUTE r
+            FROM ENV TO orchestrator WITH pulse,
+arr,
+paramless;
+        CONNECT c AND r;
+        /* CIF PROCESS (465, 158), (265, 176) */
+        PROCESS orchestrator;
+            /* CIF TEXT (920, 71), (268, 140) */
+            -- Text area for declarations and comments
+
+dcl t t_int := 0;
+
+dcl counter t_int := 0;
+
+dcl seqof t_seqof;
+            /* CIF ENDTEXT */
+            /* CIF START (444, 48), (70, 34) */
+            START;
+                /* CIF PROCEDURECALL (373, 102), (211, 35) */
+                CALL writeln( 'Orchestrator startup');
+                /* CIF NEXTSTATE (445, 152), (67, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (733, 94), (70, 35) */
+            STATE running;
+                /* CIF INPUT (733, 149), (70, 35) */
+                INPUT *;
+                    /* CIF NEXTSTATE (733, 204), (70, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+            /* CIF STATE (445, 152), (67, 35) */
+            STATE wait;
+                /* CIF INPUT (120, 207), (70, 35) */
+                INPUT pulse(t);
+                    /* CIF DECISION (120, 262), (70, 50) */
+                    DECISION t;
+                        /* CIF ANSWER (75, 332), (70, 23) */
+                        (0):
+                            /* CIF NEXTSTATE (75, 375), (70, 35) */
+                            NEXTSTATE wait;
+                        /* CIF ANSWER (165, 332), (70, 23) */
+                        else:
+                            /* CIF NEXTSTATE (165, 375), (70, 35) */
+                            NEXTSTATE running;
+                    ENDDECISION;
+                /* CIF INPUT (371, 207), (83, 35) */
+                INPUT arr(seqof);
+                    /* CIF TASK (312, 262), (202, 35) */
+                    TASK counter := (counter + 1) mod 4;
+                    /* CIF DECISION (353, 317), (121, 50) */
+                    DECISION seqof = {4,4,4,4}
+and counter = 0;
+                        /* CIF ANSWER (336, 387), (70, 23) */
+                        (true):
+                            /* CIF PROCEDURECALL (245, 430), (250, 35) */
+                            CALL writeln( 'Property should be checked');
+                        /* CIF ANSWER (522, 387), (70, 23) */
+                        (false):
+                            /* CIF TASK (506, 430), (103, 35) */
+                            TASK seqof(1) := 1;
+                    ENDDECISION;
+                    /* CIF NEXTSTATE (378, 480), (70, 35) */
+                    NEXTSTATE -;
+                /* CIF INPUT (629, 207), (83, 35) */
+                INPUT paramless;
+                    /* CIF TASK (619, 262), (104, 38) */
+                    TASK counter := 4,
+t := 1;
+                    /* CIF NEXTSTATE (636, 320), (70, 35) */
+                    NEXTSTATE running;
+            ENDSTATE;
+        ENDPROCESS orchestrator;
+    ENDBLOCK;
+ENDSYSTEM;

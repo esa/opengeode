@@ -1,0 +1,1 @@
+stop if seqof = { 4,4,4,4 } and state = wait;
