@@ -12,7 +12,7 @@ test-parse:
 	$(OPENGEODE) orchestrator.pr --check
 
 test-ada:
-	mkdir -p build && cp *.pr test.adb *.asn properties build && cd build && \
+	mkdir -p build && cp *.pr *.ad? iter_lib/* *.asn properties build && cd build && \
 	../../../../opengeode/opengeode.py orchestrator.pr --shared && \
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal && \
 	taste-properties -d -s properties orchestrator.pr && \
