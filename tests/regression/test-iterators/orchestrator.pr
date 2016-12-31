@@ -36,50 +36,52 @@ dcl seqof t_seqof;
                 CALL writeln( 'Orchestrator startup');
                 /* CIF NEXTSTATE (445, 152), (67, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (693, 94), (70, 35) */
+            /* CIF STATE (733, 94), (70, 35) */
             STATE running;
-                /* CIF INPUT (693, 149), (70, 35) */
+                /* CIF INPUT (733, 149), (70, 35) */
                 INPUT *;
-                    /* CIF NEXTSTATE (693, 204), (70, 35) */
+                    /* CIF NEXTSTATE (733, 204), (70, 35) */
                     NEXTSTATE wait;
             ENDSTATE;
             /* CIF STATE (445, 152), (67, 35) */
             STATE wait;
-                /* CIF INPUT (190, 207), (70, 35) */
+                /* CIF INPUT (120, 207), (70, 35) */
                 INPUT pulse(t);
-                    /* CIF DECISION (190, 262), (70, 50) */
+                    /* CIF DECISION (120, 262), (70, 50) */
                     DECISION t;
-                        /* CIF ANSWER (145, 332), (70, 23) */
+                        /* CIF ANSWER (75, 332), (70, 23) */
                         (0):
-                            /* CIF NEXTSTATE (145, 375), (70, 35) */
+                            /* CIF NEXTSTATE (75, 375), (70, 35) */
                             NEXTSTATE wait;
-                        /* CIF ANSWER (235, 332), (70, 23) */
+                        /* CIF ANSWER (165, 332), (70, 23) */
                         else:
-                            /* CIF NEXTSTATE (235, 375), (70, 35) */
+                            /* CIF NEXTSTATE (165, 375), (70, 35) */
                             NEXTSTATE running;
                     ENDDECISION;
-                /* CIF INPUT (373, 207), (83, 35) */
+                /* CIF INPUT (371, 207), (83, 35) */
                 INPUT arr(seqof);
-                    /* CIF TASK (314, 262), (202, 35) */
+                    /* CIF TASK (312, 262), (202, 35) */
                     TASK counter := (counter + 1) mod 4;
-                    /* CIF DECISION (355, 317), (121, 50) */
+                    /* CIF DECISION (353, 317), (121, 50) */
                     DECISION seqof = {4,4,4,4}
 and counter = 0;
                         /* CIF ANSWER (336, 387), (70, 23) */
                         (true):
-                        /* CIF ANSWER (426, 387), (70, 23) */
+                            /* CIF PROCEDURECALL (245, 430), (250, 35) */
+                            CALL writeln( 'Property should be checked');
+                        /* CIF ANSWER (522, 387), (70, 23) */
                         (false):
-                            /* CIF TASK (409, 430), (103, 35) */
+                            /* CIF TASK (506, 430), (103, 35) */
                             TASK seqof(1) := 1;
                     ENDDECISION;
-                    /* CIF NEXTSTATE (380, 480), (70, 35) */
+                    /* CIF NEXTSTATE (378, 480), (70, 35) */
                     NEXTSTATE -;
-                /* CIF INPUT (532, 207), (83, 35) */
+                /* CIF INPUT (629, 207), (83, 35) */
                 INPUT paramless;
-                    /* CIF TASK (525, 262), (97, 38) */
-                    TASK counter := 0,
+                    /* CIF TASK (619, 262), (104, 38) */
+                    TASK counter := 4,
 t := 1;
-                    /* CIF NEXTSTATE (539, 320), (70, 35) */
+                    /* CIF NEXTSTATE (636, 320), (70, 35) */
                     NEXTSTATE running;
             ENDSTATE;
         ENDPROCESS orchestrator;
