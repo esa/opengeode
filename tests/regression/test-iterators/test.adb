@@ -49,6 +49,16 @@ procedure test is
             end case;
     end record;
 
+    -- Type representing an entry in the state graph (could be generic)
+    type Global_State is
+        record
+            event   : access Event_ty;
+            context :        Orchestrator_ctxt_ty;
+    end record;
+
+    -- We'll store only pointers to graph states in the set
+    type State_Access is not null access Global_State;
+
     count : natural := 0;
 
     procedure save_context is
@@ -60,63 +70,6 @@ procedure test is
     begin
         orchestrator_ctxt := backup_ctxt;
     end;
-
-    -- Check all properties in one go, and if one fails, set errno
-    function check_properties(errno: out natural) return boolean is
-        res : Boolean := false;
-    begin
-        errno := 0;
-        res := orchestrator_stop_conditions.pÜproperty_0;
-        count := count + 1;
-        return res;
-    end;
-
-    -- Report the result of the property check to the user
-    procedure check_and_report is
-        errno: Natural := 0;
-    begin
-        if check_properties(errno) then
-            put_line("Property " & errno'img & " is verified, at step " & count'img);
-        end if;
-    end;
-
-    -- One function per PI to exhaust the interface parameters
-    procedure exhaust_pulse is
-        pulse_it : T_Int_pkg.Instance;
-        asn1_p   : aliased asn1SccT_Int;
-    begin
-        for each of pulse_it loop
-            save_context;
-            asn1_p := asn1SccT_Int'(asn1SccT_Int(each));
-            orchestrator.pulse(asn1_p'access);
-            check_and_report;
-            restore_context;
-        end loop;
-    end;
-
-    procedure exhaust_arr is
-        arr_it : T_SeqOf_pkg.Instance;
-        asn1_p : aliased asn1SccT_SeqOf;
-    begin
-        for each of arr_it loop
-            asn1_p.Length := each.Length;
-            for idx in 1..asn1_p.Length loop
-                asn1_p.Data(idx) := asn1SccT_Int'(asn1SccT_Int(each.Data(idx)));
-            end loop;
-            orchestrator.arr(asn1_p'access);
-            check_and_report;
-        end loop;
-    end;
-
-    -- Type representing an entry in the state graph (could be generic)
-    type Global_State is
-        record
-            event   : access Event_ty;
-            context :        Orchestrator_ctxt_ty;
-    end record;
-
-    -- We'll store only pointers to graph states in the set
-    type State_Access is not null access Global_State;
 
     -- We will store the state graph in a hashed set. Use md5 to hash the
     -- SDL context.
@@ -142,6 +95,7 @@ procedure test is
                           ctxt  : orchestrator_ctxt_ty) return State_Access is
         New_State: constant State_Access := new Global_State;
     begin
+        New_State.event := new Event_ty (event.Option);
         New_State.event.all := event;
         New_State.context   := ctxt;
         Grafset.Insert(New_State);
@@ -165,6 +119,67 @@ procedure test is
             return Null;
         end if;
     end Retrieve_State;
+
+
+    -- Check all properties in one go, and if one fails, set errno
+    function check_properties(errno: out natural) return boolean is
+        res : Boolean := false;
+    begin
+        errno := 0;
+        res := orchestrator_stop_conditions.pÜproperty_0;
+        count := count + 1;
+        return res;
+    end;
+
+    -- Report the result of the property check to the user
+    procedure check_and_report is
+        errno: Natural := 0;
+    begin
+        if check_properties(errno) then
+            put_line("Property " & errno'img & " is verified, at step " & count'img);
+        end if;
+    end;
+
+    -- One function per PI to exhaust the interface parameters
+    procedure exhaust_pulse is
+        pulse_it : T_Int_pkg.Instance;
+        asn1_p   : aliased asn1SccT_Int;
+        event    : Event_ty (pulse_pi);
+        SA       : access Global_State;
+    begin
+        for each of pulse_it loop
+            save_context;
+            event.pulse_param := asn1SccT_Int(each);
+            asn1_p := asn1SccT_Int'(event.pulse_param);
+            orchestrator.pulse(asn1_p'access);
+            SA := Add_to_graph(event => event,
+                               ctxt  => orchestrator_ctxt);
+            check_and_report;
+            restore_context;
+        end loop;
+    end;
+
+    procedure exhaust_arr is
+        arr_it : T_SeqOf_pkg.Instance;
+        asn1_p : aliased asn1SccT_SeqOf;
+        event  : Event_ty (arr_pi);
+        SA     : access Global_State;
+    begin
+        for each of arr_it loop
+            save_context;
+            asn1_p.Length := each.Length;
+            for idx in 1..asn1_p.Length loop
+                asn1_p.Data(idx) := asn1SccT_Int'(asn1SccT_Int(each.Data(idx)));
+            end loop;
+            event.Arr_Param := asn1_p;
+            orchestrator.arr(asn1_p'access);
+            SA := Add_to_graph(event => event,
+                               ctxt  => orchestrator_ctxt);
+            check_and_report;
+            restore_context;
+        end loop;
+    end;
+
 
 begin
     put_line("hello");
