@@ -13,6 +13,10 @@ with ada.streams;
 use ada.streams;
 with ada.Unchecked_Conversion;
 with system;
+with ada.strings.hash;
+
+with Ada.containers.hashed_sets;
+use Ada.containers;
 
 procedure test is
     -- Reproduce the Context, and import it
@@ -29,7 +33,7 @@ procedure test is
     pragma Import (C, orchestrator_ctxt, "orchestrator_ctxt");
 
     -- To save/restore the context when calling a PI:
-    backup_ctxt : orchestrator_ctxT_ty;
+    backup_ctxt : orchestrator_ctxt_ty;
 
     -- Type representing an event (input or output)
     type Interfaces is (pulse_pi, arr_pi, paramless_pi);
@@ -43,13 +47,6 @@ procedure test is
                 when paramless_pi =>
                     null;
             end case;
-    end record;
-
-    -- Type representing an entry in the state graph
-    type Graph_State is
-        record
-            event  : access Event_ty; -- Event causing the transition
-            context: orchestrator_ctxt_ty;
     end record;
 
     count : natural := 0;
@@ -110,19 +107,69 @@ procedure test is
             check_and_report;
         end loop;
     end;
+
+    -- Type representing an entry in the state graph (could be generic)
+    type Global_State is
+        record
+            event   : access Event_ty;
+            context :        Orchestrator_ctxt_ty;
+    end record;
+
+    -- We'll store only pointers to graph states in the set
+    type State_Access is not null access Global_State;
+
+    -- We will store the state graph in a hashed set. Use md5 to hash the
+    -- SDL context.
     Ctxt_Size: constant stream_element_offset :=
            orchestrator_ctxt_ty'object_size / stream_element'size;
     type SEA_Pointer is
          access all Stream_Element_Array (1 .. Ctxt_Size);
 
-    function As_SEA_Pointer is
-         new Ada.Unchecked_Conversion (System.Address, SEA_Pointer);
+    function As_SEA_Ptr is
+       new Ada.Unchecked_Conversion (System.Address, SEA_Pointer);
+
+    function State_Hash(state: State_Access) return Hash_Type is
+        (Ada.Strings.Hash(gnat.md5.digest(as_sea_ptr(state.context'address).all)));
+
+    package State_graph is new Hashed_Sets
+                    (Element_Type        => State_Access,
+                     Hash                => State_Hash,
+                     Equivalent_Elements => "=");
+
+    Grafset : State_graph.Set;
+
+    function Add_to_graph(event : Event_ty;
+                          ctxt  : orchestrator_ctxt_ty) return State_Access is
+        New_State: constant State_Access := new Global_State;
+    begin
+        New_State.event.all := event;
+        New_State.context   := ctxt;
+        Grafset.Insert(New_State);
+        return New_State;
+    end;
+
+    -- Build up a function to retrieve a state in the graph based on the hash
+    function Get_Hash(S : State_Access) return Hash_Type is (State_Hash(S));
+    function Hash_Hash(N : Hash_Type) return Hash_Type is (Hash_Type(N));
+    package State_Keys is new State_graph.Generic_Keys (Key_Type => Hash_Type,
+                                                        Key => Get_Hash,
+                                                        Hash => Hash_Hash,
+                                                        Equivalent_Keys => "=");
+    function Retrieve_State (Hash: Hash_Type) return access Global_State is
+        C: constant State_graph.Cursor :=
+            State_Keys.Find (Grafset, Hash);
+    begin
+        if State_graph.Has_Element(C) then
+            return State_graph.Element(C);
+        else
+            return Null;
+        end if;
+    end Retrieve_State;
+
 begin
     put_line("hello");
     orchestrator.startup;
     check_and_report;
-    -- Compute the MD5 of the state, as a hash
-    Put_Line (gnat.md5.digest(As_SEA_Pointer (orchestrator_ctxt'Address).all));
     exhaust_pulse;
     exhaust_arr;
     put_line("Executed" & count'img & " functions");
