@@ -16,6 +16,7 @@ with system;
 with ada.strings.hash;
 
 with Ada.containers.hashed_sets;
+with Ada.containers.vectors;
 use Ada.containers;
 
 procedure test is
@@ -34,12 +35,16 @@ procedure test is
 
     -- To save/restore the context when calling a PI:
     backup_ctxt : orchestrator_ctxt_ty;
+    -- stop condition set to true when a property is verified
+    stop_condition : boolean := false;
 
     -- Type representing an event (input or output)
-    type Interfaces is (pulse_pi, arr_pi, paramless_pi);
+    type Interfaces is (start, pulse_pi, arr_pi, paramless_pi);
     type Event_ty (Option: Interfaces) is
         record
             case Option is
+                when start =>
+                    null;
                 when pulse_pi =>
                     Pulse_Param: asn1SccT_Int;
                 when arr_pi =>
@@ -57,7 +62,7 @@ procedure test is
     end record;
 
     -- We'll store only pointers to graph states in the set
-    type State_Access is not null access Global_State;
+    type State_Access is access Global_State;
 
     count : natural := 0;
 
@@ -137,17 +142,29 @@ procedure test is
     begin
         if check_properties(errno) then
             put_line("Property " & errno'img & " is verified, at step " & count'img);
+            stop_condition := true;
         end if;
     end;
+
+    subtype Vect_Count is Positive range 1 .. 1000;
+    package Lists is new Vectors (Element_Type => State_Access,
+                                  Index_type   => Vect_Count);
+    use Lists;
+
+    queue   : Lists.Vector;
+    qcursor : Lists.Cursor := queue.First;
+    visited : Lists.Vector;
+
 
     -- One function per PI to exhaust the interface parameters
     procedure exhaust_pulse is
         pulse_it : T_Int_pkg.Instance;
         asn1_p   : aliased asn1SccT_Int;
         event    : Event_ty (pulse_pi);
-        SA       : access Global_State;
+        SA       : State_Access;
     begin
         for each of pulse_it loop
+            stop_condition := false;
             save_context;
             event.pulse_param := asn1SccT_Int(each);
             asn1_p := asn1SccT_Int'(event.pulse_param);
@@ -156,6 +173,12 @@ procedure test is
                                ctxt  => orchestrator_ctxt);
             check_and_report;
             restore_context;
+            if visited.find(SA) = Lists.No_Element then
+                visited.append(SA);
+--               if stop_condition = false then
+--                   queue.append(SA);
+--               end if;
+            end if;
         end loop;
     end;
 
@@ -163,7 +186,7 @@ procedure test is
         arr_it : T_SeqOf_pkg.Instance;
         asn1_p : aliased asn1SccT_SeqOf;
         event  : Event_ty (arr_pi);
-        SA     : access Global_State;
+        SA     : State_Access;
     begin
         for each of arr_it loop
             save_context;
@@ -180,12 +203,40 @@ procedure test is
         end loop;
     end;
 
+    procedure exhaust_paramless is
+        event  : Event_ty (paramless_pi);
+        SA     : State_Access;
+    begin
+        save_context;
+        orchestrator.paramless;
+        SA := Add_to_graph(event => event,
+                           ctxt  => orchestrator_ctxt);
+        check_and_report;
+        restore_context;
+    end;
 
+    procedure exhaustive_simulation is
+    begin
+        exhaust_paramless;
+        exhaust_pulse;
+        exhaust_arr;
+    end;
+
+    event : Event_ty(start);
+    SA    : State_Access;
 begin
-    put_line("hello");
+    put_line("Exhaustive simulation. Hit Ctrl-C to stop if it is too long...");
     orchestrator.startup;
     check_and_report;
-    exhaust_pulse;
-    exhaust_arr;
+    SA := Add_to_graph(event => event,
+                       ctxt  => orchestrator_ctxt);
+    queue.append(SA);
+    visited.append(SA);
+    while queue.Length > 0 loop
+        orchestrator_ctxt := queue.Last_Element.context;
+        exhaustive_simulation;
+        -- discard the event for now (needed to generate MSC)
+        queue.delete_last;
+    end loop;
     put_line("Executed" & count'img & " functions");
 end;
