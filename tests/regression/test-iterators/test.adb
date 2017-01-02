@@ -162,9 +162,12 @@ procedure test is
         asn1_p   : aliased asn1SccT_Int;
         event    : Event_ty (pulse_pi);
         SA       : State_Access;
+        done     : boolean := false;
     begin
         for each of pulse_it loop
             stop_condition := false;
+            done := false;
+
             save_context;
             event.pulse_param := asn1SccT_Int(each);
             asn1_p := asn1SccT_Int'(event.pulse_param);
@@ -173,11 +176,20 @@ procedure test is
                                ctxt  => orchestrator_ctxt);
             check_and_report;
             restore_context;
-            if visited.find(SA) = Lists.No_Element then
+
+            for ctxt of visited loop
+                -- We should check the hash, not the full value..
+                if ctxt.context = SA.context then
+                    done := true;
+                    exit;
+                end if;
+            end loop;
+            --if visited.find(SA) = Lists.No_Element then
+            if not done then
                 visited.append(SA);
---               if stop_condition = false then
---                   queue.append(SA);
---               end if;
+                if stop_condition = false then
+                    queue.append(SA);
+                end if;
             end if;
         end loop;
     end;
@@ -187,8 +199,12 @@ procedure test is
         asn1_p : aliased asn1SccT_SeqOf;
         event  : Event_ty (arr_pi);
         SA     : State_Access;
+        done   : boolean := false;
     begin
         for each of arr_it loop
+            stop_condition := false;
+            done := false;
+
             save_context;
             asn1_p.Length := each.Length;
             for idx in 1..asn1_p.Length loop
@@ -200,6 +216,20 @@ procedure test is
                                ctxt  => orchestrator_ctxt);
             check_and_report;
             restore_context;
+            for ctxt of visited loop
+                -- We should check the hash, not the full value..
+                if ctxt.context = SA.context then
+                    done := true;
+                    exit;
+                end if;
+            end loop;
+            if not done then
+                visited.append(SA);
+                if stop_condition = false then
+                    queue.append(SA);
+                end if;
+            end if;
+
         end loop;
     end;
 
@@ -239,4 +269,5 @@ begin
         queue.delete_last;
     end loop;
     put_line("Executed" & count'img & " functions");
+    put_line("Visited" & Grafset.Length'img & " states");
 end;
