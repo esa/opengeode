@@ -1,16 +1,20 @@
 with SimpleTypes;
 with Generic_Basic;
+with Interfaces;
+use Interfaces;
 
 generic
-    Min: Integer;
-    Max: Integer;
+    Min: Interfaces.Integer_64;
+    Max: Interfaces.Integer_64;
 package Generic_Integer is
-    function Elem_Init return Integer is (Min);
-    function Has_Elem (Value: Integer) return Boolean is (Value <= Max);
-    function Elem_First return Integer is (Min);
-    function Elem_Next (Value: Integer) return Integer is (Value + 1);
+    function Elem_Init return Interfaces.Integer_64 is (Min);
+    function Has_Elem(Value: Interfaces.Integer_64) return Boolean is
+        (Value <= Max);
+    function Elem_First return Interfaces.Integer_64 is (Min);
+    function Elem_Next(Value: Interfaces.Integer_64) return Interfaces.Integer_64 is
+        (Value + 1);
 
-    package Integer_type is new SimpleTypes(Element    => Integer,
+    package Integer_type is new SimpleTypes(Element    => Interfaces.Integer_64,
                                             Elem_Init  => Elem_Init,
                                             Has_Elem   => Has_Elem,
                                             Elem_First => Elem_First,

@@ -46,7 +46,7 @@ package body Generic_SeqOf is
           -- Exhausted "rest": iterate on the first item
           Ptr_elem := Ptr.LenIt.Next(Ptr_elem);
           if Length_Pkg.Has_Element (Ptr_elem) then
-              Ptr.Value.Length := Ptr_elem.Value.Value;
+              Ptr.Value.Length := Integer(Ptr_elem.Value.Value);
               Ptr.Length := Ptr.Value.Length;
               Ptr.RestVal := new P.ASN1_SeqOf(Ptr.Value.Length);
               Ptr.RestIt := new P.ASN1_SeqOf_It'(P.ASN1_SeqOf_It(Ptr.RestVal.Iterate));
