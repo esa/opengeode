@@ -97,14 +97,14 @@ procedure test is
     Grafset : State_graph.Set;
 
     function Add_to_graph(event : Event_ty;
-                          ctxt  : orchestrator_ctxt_ty) return State_Access is
+                          ctxt  : orchestrator_ctxt_ty) return Hash_Type is
         New_State: constant State_Access := new Global_State;
     begin
         New_State.event := new Event_ty (event.Option);
         New_State.event.all := event;
         New_State.context   := ctxt;
         Grafset.Insert(New_State);
-        return New_State;
+        return State_Hash(New_State);
     end;
 
     -- Build up a function to retrieve a state in the graph based on the hash
@@ -146,8 +146,9 @@ procedure test is
         end if;
     end;
 
+    -- Vector of hashes (integers) used for the model checking
     subtype Vect_Count is Positive range 1 .. 1000;
-    package Lists is new Vectors (Element_Type => State_Access,
+    package Lists is new Vectors (Element_Type => Hash_Type,
                                   Index_type   => Vect_Count);
     use Lists;
 
@@ -161,7 +162,7 @@ procedure test is
         pulse_it : T_Int_pkg.Instance;
         asn1_p   : aliased asn1SccT_Int;
         event    : Event_ty (pulse_pi);
-        SA       : State_Access;
+        S_Hash   : Hash_Type;
         done     : boolean := false;
     begin
         for each of pulse_it loop
@@ -172,23 +173,22 @@ procedure test is
             event.pulse_param := asn1SccT_Int(each);
             asn1_p := asn1SccT_Int'(event.pulse_param);
             orchestrator.pulse(asn1_p'access);
-            SA := Add_to_graph(event => event,
-                               ctxt  => orchestrator_ctxt);
+            S_Hash := Add_to_graph(event => event,
+                                   ctxt  => orchestrator_ctxt);
             check_and_report;
             restore_context;
 
-            for ctxt of visited loop
+            for each_hash of visited loop
                 -- We should check the hash, not the full value..
-                if ctxt.context = SA.context then
+                if each_hash = S_Hash then
                     done := true;
                     exit;
                 end if;
             end loop;
-            --if visited.find(SA) = Lists.No_Element then
             if not done then
-                visited.append(SA);
+                visited.append(S_Hash);
                 if stop_condition = false then
-                    queue.append(SA);
+                    queue.append(S_Hash);
                 end if;
             end if;
         end loop;
@@ -198,7 +198,7 @@ procedure test is
         arr_it : T_SeqOf_pkg.Instance;
         asn1_p : aliased asn1SccT_SeqOf;
         event  : Event_ty (arr_pi);
-        SA     : State_Access;
+        S_Hash : Hash_Type;
         done   : boolean := false;
     begin
         for each of arr_it loop
@@ -212,21 +212,20 @@ procedure test is
             end loop;
             event.Arr_Param := asn1_p;
             orchestrator.arr(asn1_p'access);
-            SA := Add_to_graph(event => event,
-                               ctxt  => orchestrator_ctxt);
+            S_Hash := Add_to_graph(event => event,
+                                   ctxt  => orchestrator_ctxt);
             check_and_report;
             restore_context;
-            for ctxt of visited loop
-                -- We should check the hash, not the full value..
-                if ctxt.context = SA.context then
+            for each_hash of visited loop
+                if each_hash = S_Hash then
                     done := true;
                     exit;
                 end if;
             end loop;
             if not done then
-                visited.append(SA);
+                visited.append(S_Hash);
                 if stop_condition = false then
-                    queue.append(SA);
+                    queue.append(S_Hash);
                 end if;
             end if;
 
@@ -235,12 +234,12 @@ procedure test is
 
     procedure exhaust_paramless is
         event  : Event_ty (paramless_pi);
-        SA     : State_Access;
+        S_Hash : Hash_Type;
     begin
         save_context;
         orchestrator.paramless;
-        SA := Add_to_graph(event => event,
-                           ctxt  => orchestrator_ctxt);
+        S_Hash := Add_to_graph(event => event,
+                               ctxt  => orchestrator_ctxt);
         check_and_report;
         restore_context;
     end;
@@ -252,18 +251,19 @@ procedure test is
         exhaust_arr;
     end;
 
-    event : Event_ty(start);
-    SA    : State_Access;
+    event  : Event_ty(start);
+    S_Hash : Hash_Type;
 begin
     put_line("Exhaustive simulation. Hit Ctrl-C to stop if it is too long...");
     orchestrator.startup;
     check_and_report;
-    SA := Add_to_graph(event => event,
-                       ctxt  => orchestrator_ctxt);
-    queue.append(SA);
-    visited.append(SA);
+    S_Hash := Add_to_graph(event => event,
+                           ctxt  => orchestrator_ctxt);
+    queue.append(S_Hash);
+    visited.append(S_Hash);
     while queue.Length > 0 loop
-        orchestrator_ctxt := queue.Last_Element.context;
+        --put_line (queue.length'img);
+        orchestrator_ctxt := Retrieve_State(queue.Last_Element).Context;
         exhaustive_simulation;
         -- discard the event for now (needed to generate MSC)
         queue.delete_last;
