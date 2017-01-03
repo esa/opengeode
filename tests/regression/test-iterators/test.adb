@@ -20,6 +20,9 @@ with Ada.containers.ordered_maps;
 with Ada.containers.vectors;
 use Ada.containers;
 
+with ada.calendar;
+use ada.calendar;
+
 procedure test is
     -- Reproduce the Context, and import it
     type States is (running, wait);
@@ -215,8 +218,9 @@ procedure test is
         exhaust_arr;
     end;
 
-    event  : Event_ty(start);
-    S_Hash : Hash_Type;
+    event      : Event_ty(start);
+    S_Hash     : Hash_Type;
+    Start_Time : Time := Clock;
 begin
     put_line("Exhaustive simulation. Hit Ctrl-C to stop if it is too long...");
     orchestrator.startup;
@@ -226,11 +230,11 @@ begin
     queue.append(S_Hash);
     visited.append(S_Hash);
     while queue.Length > 0 loop
-        --put_line (queue.length'img);
         orchestrator_ctxt := Grafset.Element(Key => queue.Last_Element).Context;
         exhaustive_simulation;
         queue.delete_last;
     end loop;
     put_line("Executed" & count'img & " functions");
     put_line("Visited" & Grafset.Length'img & " states");
+    Put_Line("Execution time:" & Duration'Image(Clock - Start_Time) & "s.");
 end;
