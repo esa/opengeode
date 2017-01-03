@@ -16,7 +16,7 @@ test-ada:
 	../../../../opengeode/opengeode.py orchestrator.pr --shared && \
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal && \
 	taste-properties -d -s properties orchestrator.pr && \
-	gnat make test && ./test
+	gnat make test -O2 && ./test
 
 simu: test-ada
 	cd build && make -f Makefile.properties && \
