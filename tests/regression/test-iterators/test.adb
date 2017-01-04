@@ -197,9 +197,15 @@ procedure test is
 
     procedure exhaustive_simulation is
     begin
-        exhaust_paramless;
-        exhaust_pulse;
-        exhaust_arr;
+        if Process_Ctxt.State in Wait | Running then
+            exhaust_paramless;
+        end if;
+        if Process_Ctxt.State in Wait | Running then
+            exhaust_pulse;
+        end if;
+        if Process_Ctxt.State in Wait | Running then
+            exhaust_arr;
+        end if;
     end;
 
     event      : Event_ty(start);
