@@ -3,7 +3,9 @@ include ../shared.mk
 all: test-ada test-llvm
 
 clean:
-	rm -rf build
+	rm -rf build model_checker.adb
+	rm -rf Makefile.properties orchestrator_stop_conditions.ad?
+
 
 edit:
 	$(OPENGEODE) orchestrator.pr
@@ -16,7 +18,7 @@ test-ada:
 	../../../../opengeode/opengeode.py orchestrator.pr --shared && \
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal && \
 	taste-properties -d -s properties orchestrator.pr && \
-	gnat make test -O2 && ./test
+	gnat make model_checker -O2 && ./model_checker
 
 simu: test-ada
 	cd build && make -f Makefile.properties && \
