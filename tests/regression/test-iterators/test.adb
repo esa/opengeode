@@ -1,8 +1,8 @@
 with orchestrator;
 use orchestrator;
 with orchestrator_stop_conditions;
-with asn1_iterators;
-use  asn1_iterators;
+with asn1_iterators.iterators;
+use  asn1_iterators.iterators;
 with TASTE_BasicTypes;
 use  TASTE_BasicTypes;
 
@@ -16,7 +16,6 @@ with ada.Unchecked_Conversion;
 with system;
 with ada.strings.hash;
 
-with Ada.containers.hashed_sets;
 with Ada.containers.ordered_maps;
 with Ada.containers.vectors;
 use Ada.containers;
@@ -30,16 +29,6 @@ procedure test is
 
     -- To save/restore the context when calling a PI:
     backup_ctxt : Context_ty;
-
-    procedure save_context is
-    begin
-        backup_ctxt := Process_Ctxt;
-    end;
-
-    procedure restore_context is
-    begin
-        Process_Ctxt := backup_ctxt;
-    end;
 
     -- Type representing an event (input or output)
     type Interfaces is (start, pulse_pi, arr_pi, paramless_pi);
@@ -110,7 +99,6 @@ procedure test is
     use Lists;
 
     queue   : Lists.Vector;
-    qcursor : Lists.Cursor := queue.First;
     visited : Lists.Vector;
 
     -- Check all properties in one go, and if one fails, set errno
@@ -153,14 +141,14 @@ procedure test is
         event    : Event_ty (pulse_pi);
         S_Hash   : Hash_Type;
     begin
-        save_context;
+        backup_ctxt := Process_Ctxt;
         for each of pulse_it loop
-            event.pulse_param := each;
+            T_Int_Pkg.To_asn1(each, event.pulse_param);
             orchestrator.pulse(event.pulse_param'access);
             count := count + 1;
             S_Hash := Add_to_graph(event => event);
             check_and_report(S_Hash);
-            restore_context;
+            Process_Ctxt := backup_ctxt;
         end loop;
     end;
 
@@ -169,17 +157,14 @@ procedure test is
         event  : Event_ty (arr_pi);
         S_Hash : Hash_Type;
     begin
-        save_context;
+        backup_ctxt := Process_Ctxt;
         for each of arr_it loop
-            event.arr_param.length := each.length; -- only variable-sized arrays
-            for idx in 1..each.length loop
-                event.arr_param.data(idx) := each.data(idx);
-            end loop;
+            T_SeqOf_pkg.To_asn1(each, event.arr_param);
             orchestrator.arr(event.arr_param'access);
             count := count + 1;
             S_Hash := Add_to_graph(event => event);
             check_and_report(S_Hash);
-            restore_context;
+            Process_Ctxt := backup_ctxt;
         end loop;
     end;
 
@@ -187,12 +172,12 @@ procedure test is
         event  : Event_ty (paramless_pi);
         S_Hash : Hash_Type;
     begin
-        save_context;
+        backup_ctxt := Process_Ctxt;
         orchestrator.paramless;
         count := count + 1;
         S_Hash := Add_to_graph(event => event);
         check_and_report(S_Hash);
-        restore_context;
+        Process_Ctxt := backup_ctxt;
     end;
 
     procedure exhaustive_simulation is
