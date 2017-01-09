@@ -242,22 +242,23 @@ LD_LIBRARY_PATH=. opengeode-simulator
         # Parallel states in a state aggregation may terminate
         full_statelist.add(u'{}finished'.format(UNICODE_SEP))
 
+    context_decl = []
     if full_statelist:
-        process_level_decl.append(u'type States is ({});'
+        context_decl.append(u'type States is ({});'
                             .format(u', '.join(full_statelist) or u'No_State'))
 
     # Generate the code to declare process-level context
-    process_level_decl.extend(['type {}_Ty is'.format(LPREFIX), 'record'])
+    context_decl.extend(['type {}_Ty is'.format(LPREFIX), 'record'])
 
     if full_statelist:
-        process_level_decl.append('state : States;')
+        context_decl.append('state : States;')
 
-    process_level_decl.append('initDone : Boolean := False;')
+    context_decl.append('initDone : Boolean := False;')
 
     # State aggregation: add list of substates (XXX to be added in C generator)
     for substates in aggregates.viewvalues():
         for each in substates:
-            process_level_decl.append(u'{}{}state: States;'
+            context_decl.append(u'{}{}state: States;'
                                       .format(each.statename, UNICODE_SEP))
 
     for var_name, (var_type, def_value) in process.variables.viewitems():
@@ -269,29 +270,33 @@ LD_LIBRARY_PATH=. opengeode-simulator
             if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                 dstr = array_content(def_value, dstr, varbty)
             assert not dst and not dlocal, 'DCL: Expecting a ground expression'
-        process_level_decl.append(
+        context_decl.append(
                         u'{n} : aliased {sort}{default};'
                         .format(n=var_name,
                                 sort=type_name(var_type),
                                 default=u' := ' + dstr if def_value else u''))
 
-    process_level_decl.append('end record;')
-    process_level_decl.append('{ctxt}: {ctxt}_Ty;'.format(ctxt=LPREFIX))
+    context_decl.append('end record;')
+    context_decl.append('{ctxt}: {ctxt}_Ty;'.format(ctxt=LPREFIX))
     if simu:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
-        process_level_decl.append(u'pragma export (C, {ctxt}, "{ctxt}");'
+        context_decl.append(u'pragma export (C, {ctxt}, "{ctxt}");'
                                   .format(ctxt=LPREFIX))
         # Exhaustive simulation needs a backup of the context to quickly undo
-        process_level_decl.append(u'{ctxt}_bk: {ctxt}_Ty;'
+        context_decl.append(u'{ctxt}_bk: {ctxt}_Ty;'
                                   .format(ctxt=LPREFIX))
     elif import_context:
         # Possibility to have the context defined outside the module
         # in order for a model checker to view/modify internals without any
         # copy at runtime
-        process_level_decl.append(u'pragma import (C, ctxt, "{}_ctxt");'
+        context_decl.append(u'pragma import (C, ctxt, "{}_ctxt");'
                                   .format(import_context))
 
+    if not simu:
+        process_level_decl.extend(context_decl)
+
+    # Continuous State transition id
     process_level_decl.append('CS_Only  : constant Integer := {};'
                               .format(len(process.transitions)))
 
@@ -382,6 +387,7 @@ package {process_name} is'''.format(process_name=process_name,
 
     dll_api = []
     if simu:
+        ads_template.extend(context_decl)
         ads_template.append('--  API for simulation via DLL')
         dll_api.append('-- API to remotely change internal data')
         # Add function allowing to trace current state as a string

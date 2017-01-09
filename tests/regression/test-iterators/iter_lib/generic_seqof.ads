@@ -7,16 +7,20 @@ with generic_fixed_seqof;
 with generic_integer;
 with generic_basic;
 
+with Interfaces;
+use Interfaces;
+
 -- Iterator for a variable-size array of basic type
 generic
-    Min : Integer;
-    Max : Integer;
+    Min : Natural;
+    Max : Natural;
     with package Basic is new Generic_Basic (<>);
 package Generic_SeqOf is
 
     Package P is new Generic_Fixed_SeqOF (P => Basic);
     -- Create an integer type with a range constraint to iterate on
-    package Length_ty is new Generic_Integer (Min, Max);
+    package Length_ty is new Generic_Integer (Integer_64(Min),
+                                              Integer_64(Max));
     -- Instantiate the package to iterate on the integer for the length
     package Length_Pkg renames Length_ty.It;
 
