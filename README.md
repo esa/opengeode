@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.24 (01/2017)
+    - PR file use better indentation for text areas (no line return)
+
 1.5.23 (12/2016)
     - In simulation mode, bugfix in the declaration of the startup function
     - Code generator prepared for model checking

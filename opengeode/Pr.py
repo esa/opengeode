@@ -291,7 +291,9 @@ def _textsymbol(symbol, **kwargs):
     result.append(cif_coord('TEXT', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append(unicode(symbol.text))
+    # Align nicely the text (parser will dedent it)
+    for line in unicode(symbol.text).split('\n'):
+        result.append(line)
     result.append(u'/* CIF ENDTEXT */')
     return result
 
