@@ -7,8 +7,11 @@ with asn1_iterators;
 pragma Unreferenced (asn1_iterators);
 with Interfaces;
 use Interfaces;
+with Ada.Strings.Unbounded;
 
 package ASN1_Iterators.iterators is
+    package Str renames Ada.Strings.Unbounded;
+    use Str;
 
     --  ASN.1 File dataview-uniq.asn
     --  Module TASTE_BasicTypes
@@ -24,13 +27,16 @@ package ASN1_Iterators.iterators is
         package It renames Inner.It;
         procedure To_ASN1(from: Interfaces.Integer_64; to: out ASN1_Type);
         subtype Instance is Inner.Instance;
+        function Image(Elm: ASN1_Type) return String;
     end;
     --  Type "T-SeqOf defined at line 6
     package T_SeqOf_pkg is
         subtype ASN1_Type is asn1SccT_SeqOf;
         package Inner is new Generic_SeqOf (Min => 1, Max => 4, Basic => T_Int_Pkg.It);
-        procedure To_ASN1 (from: Inner.MySeqOf; to: out ASN1_Type);
+        use T_Int_Pkg;
+        procedure To_ASN1(from: Inner.MySeqOf; to: out ASN1_Type);
         subtype Instance is Inner.Instance;
+        function Image(Elm: ASN1_Type) return String;
     end;
 
 end;
