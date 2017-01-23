@@ -22,13 +22,17 @@ package body ASN1_Iterators.iterators is
         end;
 
         function Image(Elm: ASN1_Type) return String is
-            (if Elm.Length > 0 then
-                (Image(Elm.Data(1)) & (if Elm.Length > 1 then "," &
-                     Image(ASN1_Type'(Length => Elm.Length-1,
-                                      Data   => Elm.Data(2..Elm.Length) &
-                                                Elm.Data(1..Elm.Data'Length-Elm.Length+1)))
-                 else ""))
-            else "");
+            function Image_rec(Elm: ASN1_Type) return String is
+                (if Elm.Length > 0 then
+                    (Image(Elm.Data(1)) & (if Elm.Length > 1 then "," &
+                         Image_Rec(ASN1_Type'(Length => Elm.Length-1,
+                                              Data   => Elm.Data(2..Elm.Length) &
+                                                        Elm.Data(1..Elm.Data'Length-Elm.Length+1)))
+                     else ""))
+                else "");
+        begin
+            return "{" & Image_rec(Elm) & " }";
+        end;
     end;
 
 end;
