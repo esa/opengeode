@@ -3,7 +3,7 @@ include ../shared.mk
 all: test-ada test-llvm
 
 clean:
-	rm -rf build model_checker.adb
+	rm -rf build
 	rm -rf Makefile.properties orchestrator_stop_conditions.ad?
 
 
