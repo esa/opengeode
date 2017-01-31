@@ -277,7 +277,8 @@ LD_LIBRARY_PATH=. opengeode-simulator
                                 default=u' := ' + dstr if def_value else u''))
 
     context_decl.append('end record;')
-    context_decl.append('{ctxt}: {ctxt}_Ty;'.format(ctxt=LPREFIX))
+    # context is aliased so that the model checker can work with access type
+    context_decl.append('{ctxt}: aliased {ctxt}_Ty;'.format(ctxt=LPREFIX))
     if simu:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
