@@ -472,6 +472,8 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     try:
         # Bonus: the tool can render any dot graph...
         graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
+        config = " ".join("{name}={val}".format(name=name, val=val)
+                for name, val in graphtree['config'].viewitems())
     except IOError:
         LOG.info('No statechart to display....')
         raise
@@ -492,11 +494,12 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         if dump_gfx.split('.')[-1].lower() != 'png':
             dump_gfx += '.png'
 
-    graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
-                 '-Gsplines=curved -Gsep=0.3 -Gdpi=72 '
-                 '-Gstart=random10 -Goverlap=scale '
-            '-Nstyle=rounded -Nshape=record -Elen=1 {kp} {dump}'
-            .format(kp='-n1' if keep_pos else '',
+#   graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
+#                '-Gsplines=curved -Gsep=0.3 -Gdpi=72 '
+#                '-Gstart=random10 -Goverlap=scale '
+#           '-Nstyle=rounded -Nshape=record -Elen=1 {kp} {dump}'
+    graph.layout(prog='neato', args='{cfg} {kp} {dump}'
+            .format(cfg=config, kp='-n1' if keep_pos else '',
                     dump=('-Tpng -o' + dump_gfx) if dump_gfx else ''))
     # bb is not visible directly - extract it from the low level api:
     bounding_rect = [float(val) for val in
@@ -554,8 +557,39 @@ def create_dot_graph(root_ast, basic=False):
         between two states and no diamond nodes
     '''
     graph = dotgraph.AGraph(strict=False, directed=True)
-    ret = {'graph': graph, 'children': {}}
+    ret = {'graph': graph, 'children': {}, 'config': {}}
     diamond = 0
+    # valid_inputs: list of messages to be displayed in the statecharts
+    # user can remove them from the file to make cleaner diagrams
+    # config_params can be set to tune the call to graphviz
+    valid_inputs = []
+    config_params = {}
+    inputs_to_save = set()
+    identifier = getattr(root_ast, "statename", root_ast.processName)
+    try:
+        with open (identifier + ".cfg", "r") as cfg_file:
+            all_lines = (line.strip() for line in cfg_file.readlines())
+        for each in all_lines:
+            split = each.split()
+            if len(split) == 3 and split[0] == "cfg":
+                config_params[split[1]] = split[2]
+            else:
+                valid_inputs.append(each)
+    except IOError:
+        valid_inputs = None
+        config_params = {"-Nfontsize" : "12",
+                         "-Efontsize" : "8",
+                         "-Gsplines"  : "curved",
+                         "-Gsep"      : "0.3",
+                         "-Gdpi"      : "72",
+                         "-Gstart"    : "random10",
+                         "-Goverlap"  : "scale",
+                         "-Nstyle"    : "rounded",
+                         "-Nshape"    : "record",
+                         "-Elen"      : "1"}
+    else:
+        LOG.info ("Statechart settings read from configuration file")
+
     for state in root_ast.mapping.viewkeys():
         # create a new node for each state (including nested states)
         if state.endswith('START'):
@@ -632,7 +666,9 @@ def create_dot_graph(root_ast, basic=False):
                                fixedsize='true',
                                width=15.0 / 72.0,
                                height=15.0 / 72.0, label='')
-                graph.add_edge(source, str(diamond), label=label)
+                if valid_inputs is None or label in valid_inputs or not label:
+                    graph.add_edge(source, str(diamond), label=label)
+                    inputs_to_save.add(label)
                 source = str(diamond)
                 label = ''
                 diamond += 1
@@ -643,14 +679,26 @@ def create_dot_graph(root_ast, basic=False):
                     target = term.inputString.lower() or ' '
                 if basic:
                     target_states[target].add(label)
-                else:
+                elif valid_inputs is None or label in valid_inputs or not label:
                     graph.add_edge(source, target, label=label)
+                    inputs_to_save.add(label)
         for target, labels in target_states.viewitems():
+            sublab = [lab for lab in labels if valid_inputs is None or label in
+                      valid_inputs]
             # Basic mode
-            graph.add_edge(source, target, label=',\n'.join(labels))
+            if sublab:
+                graph.add_edge(source, target, label=',\n'.join(sublab))
+                inputs_to_save |= set(sublab)
 #   with open('statechart.dot', 'w') as output:
 #       output.write(graph.to_string())
     #return graph
+    if valid_inputs is None:
+        with open(identifier + ".cfg", "w") as cfg_file:
+            for name, value in config_params.viewitems():
+                cfg_file.write("cfg {} {}\n".format(name, value))
+            for each in inputs_to_save:
+                cfg_file.write(each + "\n")
+    ret['config'] = config_params
     for each in root_ast.composite_states:
         ret['children'][each.statename] = create_dot_graph(each, basic)
     return ret
