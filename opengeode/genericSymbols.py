@@ -444,7 +444,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def loadHyperlinkDialog(self):
         ''' Load dialog from ui file for defining hyperlink '''
         loader = QUiLoader()
-        ui_file = QFile(':/hyperlink.ui')  # UI_DIALOG_FILE)
+        ui_file = QFile(':/hyperlink.ui')
         ui_file.open(QFile.ReadOnly)
         self.hyperlink_dialog = loader.load(ui_file)
         ui_file.close()

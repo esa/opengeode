@@ -1027,6 +1027,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         ast, _, _ = ogParser.parse_pr(string=pr_data)
         try:
             process_ast, = ast.processes
+            process_ast.input_signals = \
+                    sdlSymbols.CONTEXT.processes[0].input_signals
         except ValueError:
             LOG.debug('No statechart to render')
             return None
@@ -1034,7 +1036,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # dot supports only vertically-aligned states, and fdp does not
         # support curved edges and is buggy with pygraphviz anyway)
         # Helper.flatten(process_ast)
-        return Statechart.create_dot_graph(process_ast, basic)
+        return Statechart.create_dot_graph(process_ast, basic, scene=self)
 
 
     def export_branch_to_picture(self, symbol, filename, doc_format):
@@ -2149,6 +2151,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.mdi_area = None
         self.sub_mdi = None
         self.statechart_mdi = None
+        self.current_window = None
         self.datadict = None
         self.setWindowState(Qt.WindowMaximized)
 
@@ -2303,7 +2306,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         ''' Signal sent by Qt when the MDI area tab changes
         Here we check if the Statechart tab is selected, and we draw/refresh
         the statechart automatically in that case '''
-        if mdi == self.statechart_mdi:
+        if(mdi == self.statechart_mdi and
+           mdi != self.current_window and not Statechart.locked()):
+            # this signal is executed even when model windows are open
+            # so the lock is necessary to prevent recursive execution
             scene = self.view.top_scene()
             try:
                 graph = scene.sdl_to_statechart()
@@ -2314,7 +2320,11 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                         self.statechart_scene.itemsBoundingRect(),
                         Qt.KeepAspectRatioByExpanding)
             except (AttributeError, IOError, TypeError) as err:
-                LOG.debug(str(err))
+                LOG.debug("Statechart error: " + str(err))
+        if mdi is not None:
+            # When leaving the focus, this signal is received with mdi == None
+            # but the window is not changed, so don't update current_window
+            self.current_window = mdi
 
 
     @QtCore.Slot(QtGui.QTreeWidgetItem, int)
