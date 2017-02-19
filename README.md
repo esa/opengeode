@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.26 (02/2017)
+    - Statecharts can be configured to filter out signals
+
 1.5.25 (01/2017)
     - Ada backend generates aliased context (used for model checking)
 
