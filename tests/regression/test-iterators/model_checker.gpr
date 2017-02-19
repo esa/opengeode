@@ -1,0 +1,9 @@
+with "asn1_iterators";
+project model_checker is
+   for Source_Dirs use (".", "./iterators");
+   for Main use ("model_checker.adb");
+    package Compiler is
+      for Default_Switches ("Ada") use
+         ("-O2");
+   end Compiler;
+end model_checker;

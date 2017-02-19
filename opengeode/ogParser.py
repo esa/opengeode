@@ -32,6 +32,7 @@ import math
 import logging
 import traceback
 import binascii
+from textwrap import dedent
 from itertools import chain, permutations, combinations
 from collections import defaultdict, Counter
 import antlr3
@@ -2614,8 +2615,9 @@ def text_area(root, parent=None, context=None):
             warnings.extend(warn)
         elif child.type == lexer.ENDTEXT:
             userTextStopIndex = child.getTokenStartIndex() - 1
-            ta.inputString = token_stream(child).toString(
-                    userTextStartIndex, userTextStopIndex).strip()
+            string = token_stream(child).toString(userTextStartIndex,
+                                                  userTextStopIndex)
+            ta.inputString = dedent(string).strip()
         elif child.type == lexer.HYPERLINK:
             ta.hyperlink = child.getChild(0).toString()[1:-1]
         else:
