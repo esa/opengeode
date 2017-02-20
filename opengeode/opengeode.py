@@ -1027,11 +1027,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         ast, _, _ = ogParser.parse_pr(string=pr_data)
         try:
             process_ast, = ast.processes
-            process_ast.input_signals = \
-                    sdlSymbols.CONTEXT.processes[0].input_signals
         except ValueError:
             LOG.debug('No statechart to render')
             return None
+        try:
+            process_ast.input_signals = \
+                    sdlSymbols.CONTEXT.processes[0].input_signals
+        except IndexError:
+            # No process context, eg. when called from cmd line
+            LOG.debug("Statechart rendering: no CONTEXT.processes[0]")
         # Flatten nested states (no, because neato does not support it,
         # dot supports only vertically-aligned states, and fdp does not
         # support curved edges and is buggy with pygraphviz anyway)

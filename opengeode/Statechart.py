@@ -612,7 +612,7 @@ def create_dot_graph(root_ast, basic=False, scene=None):
     else:
         LOG.info ("Statechart settings read from configuration file")
 
-    if scene:
+    if scene and scene.views():
         # Load and display a table for the user to filter out messages that
         # are not relevant to display on the statechart - and make it lighter
         # Repeat for substates, too.
