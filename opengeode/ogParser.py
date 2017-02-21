@@ -3710,7 +3710,7 @@ def decision(root, parent, context):
                                                 ans.inputString),
                                         [ans_x, ans_y], []])
             except (AttributeError, TypeError) as err:
-                print (traceback.format_exc())
+                LOG.debug('ogParser:\n' + str(traceback.format_exc()))
                 errors.append(['Type mismatch: '
                     'question (' + expr.left.inputString + ', type= ' +
                     type_name(expr.left.exprType) + '), answer (' +
