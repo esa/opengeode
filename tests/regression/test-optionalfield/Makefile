@@ -11,9 +11,7 @@ test-parse:
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
 	$(ASN1SCC) -Ada dataview.asn -typePrefix asn1Scc -equal
-	cp test_ada.ada test_ada.adb && gnat make test_ada.adb
-	#$(GNATMAKE) -O$(O) -c *.adb
-	#$(GNATBIND) -n og.ali
+	cp test_ada.ada test_ada.adb && gnat make test_ada.adb && ./test_ada
 
 test-c: 
 	$(OPENGEODE) og.pr --toC

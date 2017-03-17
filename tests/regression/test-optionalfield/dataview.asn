@@ -15,7 +15,8 @@ Seq ::= SEQUENCE {
 SeqDef ::= SEQUENCE {
     a BOOLEAN DEFAULT TRUE,
     b INTEGER (10..20) DEFAULT 15,
-    c INTEGER (8..255)
+    c INTEGER (8..255),
+    d SEQUENCE { thanassis BOOLEAN } DEFAULT { thanassis TRUE }
 }
 
 --SeqPresent ::= Seq (WITH COMPONENTS {a PRESENT})
