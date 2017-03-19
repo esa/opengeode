@@ -127,6 +127,12 @@ def external_ri_list(process):
             params_spec = u"({})".format("; ".join(params))
             ri_header += params_spec
         result.append(ri_header)
+
+    for timer in process.timers:
+        result.append(u"procedure set_{}(val: access asn1SccT_Uint32)"
+                      .format(timer))
+        result.append(u"procedure reset_{}"
+                      .format(timer))
     return result
 
 
@@ -139,13 +145,25 @@ def generate(*args, **kwargs):
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process, simu=False, **kwargs):
-    ''' Generate the code for a complete process (AST Top level) '''
+def _process(process, simu=False, instance=False, **kwargs):
+    ''' Generate the code for a complete process (AST Top level)
+        use instance=True to generate the code for a process type instance
+        rather than the process type itself.
+    '''
     # support generation of code of a process type
-    process_name = process.instance_of_name or process.processName
-    generic = process.instance_of_name  #  shortcut
-    process_instance = process
-    process = process.instance_of_ref or process
+    if not instance:
+        process_name = process.instance_of_name or process.processName
+        generic = process.instance_of_name  #  shortcut
+        process_instance = process
+        process = process.instance_of_ref or process
+    else:
+        process_name = process.processName
+        generic = False
+        process_instance = process
+
+    if process_instance is not process:
+        # Generate an instance of the process type, too.
+        generate(process_instance, simu, instance=True)
 
     global TYPES
     TYPES = process.dataview
@@ -411,20 +429,25 @@ package body {process_name} is'''.format(process_name=process_name,
                                            'use Interfaces.C.Strings;'
                                             if simu else '')]
 
-    generic_spec = ""
+    generic_spec, instance_decl = "", ""
     if generic:
         generic_spec = u"generic\n"
         ri_list = external_ri_list(process)
         if ri_list:
             generic_spec += u"    with " + u";\n    with ".join(ri_list) + ';'
+    if instance:
+        instance_decl = u"with {};".format(process.instance_of_name)
+
     # Generate the source file (.ads) header
     ads_template = [u'''\
 -- This file was generated automatically: DO NOT MODIFY IT !
 
 {dataview}
 {C}
+{instance}
 {generic}
-package {process_name} is'''.format(generic=generic_spec if generic else "",
+package {process_name} is'''.format(generic=generic_spec,
+                                    instance=instance_decl,
                                     process_name=process_name,
                                     dataview=asn1_modules,
                                     C='with Interfaces.C.Strings;\n'
@@ -819,6 +842,24 @@ package {process_name} is'''.format(generic=generic_spec if generic else "",
                 ads_template.append(
                  u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
                  .format(timer=timer, proc=process_name))
+
+    if instance:
+        # Instance of a process type, all the RIs (including timers) must
+        # be gathered to instantiate the package
+        pkg_decl = (u"package {}_Instance is new {}"
+                    .format(process_name, process.instance_of_name))
+        ri_list = [u"RI{sep}{name}".format(sep=UNICODE_SEP, name=sig['name'])
+                   for sig in process.output_signals]
+        ri_list.extend ([u"RI{sep}{name}".format(sep=UNICODE_SEP,
+                                                 name=proc.inputString)
+                        for proc in process.procedures if proc.external])
+        ri_list.extend([u"set_{}".format(timer) for timer in process.timers])
+        ri_list.extend([u"reset_{}".format(timer) for timer in process.timers])
+        ri_inst = [u"{ri} => {ri}".format(ri=ri) for ri in ri_list]
+        if ri_inst:
+            pkg_decl += u" ({})".format(u", ".join(ri_inst))
+        ads_template.append(pkg_decl + u";")
+        ads_template.append(u"use {}_Instance;".format(process_name))
 
     if simu and process.cs_mapping:
         # Callback registration for Check_Queue
