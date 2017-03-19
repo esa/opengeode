@@ -97,6 +97,39 @@ SHARED_LIB = False
 UNICODE_SEP = u'\u00dc'
 LPREFIX = u'ctxt'
 
+def external_ri_list(process):
+    ''' Helper function: create a list of RI with proper signature
+    Used for the formal parameters of generic packages when using process type
+    '''
+    result = []
+    for signal in process.output_signals:
+        param_name = signal.get('param_name') \
+                                or u'{}_param'.format(signal['name'])
+        param_spec = ''
+        if 'type' in signal:
+            typename = type_name(signal['type'])
+            param_spec = u'({pName}: access {sort})'.format(pName=param_name,
+                                                            sort=typename)
+        result.append(u"procedure RI{sep}{name}{param}".format(sep=UNICODE_SEP,
+                                                           name=signal['name'],
+                                                           param=param_spec))
+    for proc in (proc for proc in process.procedures if proc.external):
+        ri_header = u'procedure RI{sep}{sig_name}'.format(
+                                                     sep=UNICODE_SEP,
+                                                     sig_name=proc.inputString)
+        params = []
+        params_spec = ''
+        for param in proc.fpar:
+            typename = type_name(param['type'])
+            params.append(u'{par[name]}: access {sort}'.format(par=param,
+                                                               sort=typename))
+        if params:
+            params_spec = u"({})".format("; ".join(params))
+            ri_header += params_spec
+        result.append(ri_header)
+    return result
+
+
 @singledispatch
 def generate(*args, **kwargs):
     ''' Generate the code for an item of the AST '''
@@ -108,7 +141,12 @@ def generate(*args, **kwargs):
 @generate.register(ogAST.Process)
 def _process(process, simu=False, **kwargs):
     ''' Generate the code for a complete process (AST Top level) '''
-    process_name = process.processName
+    # support generation of code of a process type
+    process_name = process.instance_of_name or process.processName
+    generic = process.instance_of_name  #  shortcut
+    process_instance = process
+    process = process.instance_of_ref or process
+
     global TYPES
     TYPES = process.dataview
     del OUT_SIGNALS[:]
@@ -373,19 +411,25 @@ package body {process_name} is'''.format(process_name=process_name,
                                            'use Interfaces.C.Strings;'
                                             if simu else '')]
 
+    generic_spec = ""
+    if generic:
+        generic_spec = u"generic\n"
+        ri_list = external_ri_list(process)
+        if ri_list:
+            generic_spec += u"    with " + u";\n    with ".join(ri_list) + ';'
     # Generate the source file (.ads) header
-    ads_template = ['''\
+    ads_template = [u'''\
 -- This file was generated automatically: DO NOT MODIFY IT !
 
 {dataview}
 {C}
-
-package {process_name} is'''.format(process_name=process_name,
+{generic}
+package {process_name} is'''.format(generic=generic_spec if generic else "",
+                                    process_name=process_name,
                                     dataview=asn1_modules,
                                     C='with Interfaces.C.Strings;\n'
                                       'use Interfaces.C.Strings;'
                                         if simu else '')]
-
     dll_api = []
     if simu:
         ads_template.extend(context_decl)
@@ -473,7 +517,7 @@ package {process_name} is'''.format(process_name=process_name,
             # Exported procedures must be declared in the .ads
             pi_header = procedure_header(proc)
             ads_template.append(u'{};'.format(pi_header))
-            if not proc.external:
+            if not proc.external and not generic:
                 ads_template.append(u'pragma Export'
                                     u'(C, p{sep}{proc_name}, "_{proc_name}");'
                                     .format(sep=UNICODE_SEP,
@@ -510,8 +554,9 @@ package {process_name} is'''.format(process_name=process_name,
         # Add declaration of the provided interface in the .ads file
         ads_template.append(u'--  Provided interface "{}"'.format(signame))
         ads_template.append(pi_header + ';')
-        ads_template.append(u'pragma Export(C, {name}, "{proc}_{name}");'
-                             .format(name=signame, proc=process_name))
+        if not generic:
+            ads_template.append(u'pragma Export(C, {name}, "{proc}_{name}");'
+                                 .format(name=signame, proc=process_name))
 
         if simu:
             # Generate code for the mini-cv template
@@ -631,9 +676,10 @@ package {process_name} is'''.format(process_name=process_name,
                                  sort=typename,
                                  shared=u'; Size: Integer'
                                         if SHARED_LIB else '')
-        ads_template.append(u'--  {}equired interface "{}"'
-                            .format("Paramless r" if not 'type' in signal
-                                else "R", signal['name']))
+        if not generic:
+            ads_template.append(u'--  {}equired interface "{}"'
+                                .format("Paramless r" if not 'type' in signal
+                                    else "R", signal['name']))
         if simu:
             # When generating a shared library, we need a callback mechanism
             ads_template.append(u'type {}_T is access procedure{};'
@@ -661,7 +707,7 @@ package {process_name} is'''.format(process_name=process_name,
                                   .format(sep=UNICODE_SEP, sig=signal['name']))
             taste_template.append(u'end Register_{};'.format(signal['name']))
             taste_template.append(u'')
-        else:
+        elif not generic:
             ads_template.append(u'procedure RI{}{}{};'
                                 .format(UNICODE_SEP,
                                         signal['name'],
@@ -718,7 +764,7 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'end Register_{};'.format(proc.inputString))
             taste_template.append(u'')
 
-        else:
+        elif not generic:
             ads_template.append(ri_header + u';')
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
@@ -764,13 +810,15 @@ package {process_name} is'''.format(process_name=process_name,
         else:
             ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
                 .format(timer))
-            ads_template.append(
-                u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
-                .format(timer=timer, proc=process_name))
+            if not generic:
+                ads_template.append(
+                    u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
+                    .format(timer=timer, proc=process_name))
             ads_template.append(u'procedure RESET_{};'.format(timer))
-            ads_template.append(
-                u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
-                .format(timer=timer, proc=process_name))
+            if not generic:
+                ads_template.append(
+                 u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
+                 .format(timer=timer, proc=process_name))
 
     if simu and process.cs_mapping:
         # Callback registration for Check_Queue
@@ -861,9 +909,10 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append('end if;')
             ads_template.append(
                     u'procedure Check_Queue(res: access Asn1Boolean);')
-            ads_template.append(
-                u'pragma import(C, Check_Queue, "{proc}_check_queue");'
-                .format(proc=process_name))
+            if not generic:
+                ads_template.append(
+                    u'pragma import(C, Check_Queue, "{proc}_check_queue");'
+                    .format(proc=process_name))
         elif process.cs_mapping and simu:
             taste_template.append('if {}.initDone then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")

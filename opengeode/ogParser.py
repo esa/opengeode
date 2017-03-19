@@ -320,7 +320,9 @@ def find_process_declaration(ast, process_name):
             return result
     try:
         for process in ast.processes:
-            if process.processName == process_name:
+            if process.processName.lower() == process_name.lower():
+                return process
+            elif process.instance_of_name.lower() == process_name.lower():
                 return process
     except AttributeError:
         return None
@@ -345,13 +347,15 @@ def get_interfaces(ast, process_name):
     '''
         Search for the list of input and output signals (async PI/RI)
         and procedures (sync RI) of a process in a given top-level AST
+        process_name can be the name of a process type, in which case the
+        interfaces can only be found by looking at an instance of the type
+        that is actually connected in the system
     '''
     all_signals, async_signals, errors = [], [], set()
-    system = None
+    system = ast
 
     # Move up to the system level, in case process is nested in a block
     # and not defined at root level as it is the case when it is referenced
-    system = ast
     while hasattr(system, 'parent'):
         system = system.parent
 
@@ -361,7 +365,10 @@ def get_interfaces(ast, process_name):
     for system in iterator:
         all_signals.extend(signals_in_system(system))
         process_ref = find_process_declaration(system, process_name)
+        # Update process name with the name of the instance if we are parsing
+        # a process type.
         if process_ref:
+            process_name = process_ref.processName
             # Go to the block where the process is defined
             process_parent = process_ref.parent
             break
@@ -2763,12 +2770,6 @@ def system_definition(root, parent):
         else:
             warnings.append('Unsupported construct in system: ' +
                     str(child.type))
-#   if asn1_files:
-#       # parse ASN.1 files before parsing the rest of the system
-#       try:
-#           set_global_DV(asn1_files)
-#       except TypeError as err:
-#           errors.append(str(err))
         if asn1_files:
             system.ast.asn1Modules = DV.asn1Modules
             system.ast.asn1_filenames = asn1_files
@@ -2886,9 +2887,11 @@ def process_definition(root, parent=None, context=None):
             process.composite_states.append(comp)
         elif child.type == lexer.REFERENCED:
             process.referenced = True
+        elif child.type == lexer.TYPE:
+            process.process_type = True
         elif child.type == lexer.TYPE_INSTANCE:
-            # PROCESS Toto:ParentType; Not supported
-            pass
+            # PROCESS Toto:ParentType;
+            process.instance_of_name = child.children[0].text
         elif child.type == lexer.COMMENT:
             process.comment, _, _ = end(child)
         else:
@@ -2900,7 +2903,8 @@ def process_definition(root, parent=None, context=None):
         err, warn = procedure_post(proc, content, context=process)
         errors.extend(err)
         warnings.extend(warn)
-    if not process.referenced and (not process.content.start or
+    if not process.referenced and not process.instance_of_name \
+                              and (not process.content.start or
                                    not process.content.start.terminators):
         # detect missing START transition
         errors.append(['Mandatory START transition is missing in process',
@@ -4431,7 +4435,7 @@ def pr_file(root):
         ast.systems.append(system)
 
         def find_processes(block):
-            ''' Recursively find processes in a system '''
+            ''' Recursively find non-referenced processes in a system '''
             try:
                 result = [proc for proc in block.processes
                           if not proc.referenced]
@@ -4442,7 +4446,7 @@ def pr_file(root):
             return result
         ast.processes.extend(find_processes(system))
     for child in processes:
-        # process definition at root level (must be referenced in a system)
+        # process definition at root level (can be a process type)
         process, err, warn = process_definition(child, parent=ast)
         ast.processes.append(process)
         process.dataview = types()
@@ -4450,6 +4454,34 @@ def pr_file(root):
         process.dv = DV
         errors.extend(err)
         warnings.extend(warn)
+    # Check that process instance/types match
+    process_instances = []
+    process_types     = []
+    to_be_deleted     = []
+    for each in ast.processes:
+        if each.instance_of_name is not None or not each.process_type:
+            # standalone process or instance of a process type
+            process_instances.append(each)
+        elif each.process_type:
+            process_types.append(each)
+    for each in process_instances:
+        if each.instance_of_name is not None:
+            # Find corresponding process type definition
+            for p_type in process_types:
+                if p_type.processName == each.instance_of_name:
+                    each.instance_of_ref = p_type
+                    to_be_deleted.append(p_type)
+                    break
+            else:
+                warnings.append('"{}" PROCESS TYPE definition not found'
+                                .format(each.instance_of_name))
+    for each in to_be_deleted:
+        ast.processes.remove(each)
+        process_types.remove(each)
+    for each in process_types:
+        ast.processes.remove(each)
+        warnings.append('No instance of PROCESS TYPE "{}" found'
+                        .format(each.processName))
 
     # Since SDL type declarations are injected in ASN.1 ast,
     # The ASN.1 ASTs needs to be copied at the end of PR parsing process

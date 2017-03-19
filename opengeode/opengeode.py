@@ -1736,7 +1736,12 @@ class SDL_View(QtGui.QGraphicsView, object):
         ''' Enter a nested diagram (procedure, composite state) '''
         # Save context history
         self.context_history.append(sdlSymbols.CONTEXT)
-        subtype, subname = name.split()
+        try:
+            subtype, subname = name.split()
+        except ValueError as err:
+            LOG.debug("[go_down] name split fail (PROCESS TYPE?)" + str(err))
+            LOG.info("Can't refine content of a type instance")
+            return
         # Get AST of the element that is entered
         if subtype == 'procedure':
             for each in sdlSymbols.CONTEXT.procedures:
@@ -1802,7 +1807,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                         item.nested_scene = \
                                 self.scene().create_subscene(ctx, self.scene())
                     self.go_down(item.nested_scene,
-                                 name=ctx + u' ' + unicode(item))
+                                 name=u"{} {}".format(ctx, unicode(item)))
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))
@@ -1944,19 +1949,23 @@ class SDL_View(QtGui.QGraphicsView, object):
             LOG.error('Aborting: could not open or parse input file')
             sdlSymbols.CONTEXT = ogAST.Block()
             return
-        try:
-            process, = ast.processes
-            self.filename = process.filename
-            self.readonly_pr = ast.pr_files - {self.filename}
-        except ValueError:
-            LOG.error('Cannot load process')
+        if not ast.processes:
+            LOG.error("No PROCESS was parsed in the input file(s)")
             process = ogAST.Process()
-            process.processName = "SyntaxError"
+            process.processName = "Syntax_Error"
+        elif len(ast.processes) == 1:
+            process,         = ast.processes
+            self.filename    = process.filename
+            self.readonly_pr = ast.pr_files - {self.filename}
+        else:
+            # More than one process
+            LOG.error("More than one process is not supported")
+            return
         try:
             syst, = ast.systems
             block, = syst.blocks
             if block.processes[0].referenced:
-                LOG.debug('Process is referenced, fixing')
+                LOG.debug('[Load file] Process is referenced')
                 block.processes = [process]
         except ValueError:
             # No System/Block hierarchy, creating single block
@@ -2761,8 +2770,7 @@ def gui(options):
 
     # Set all encodings to utf-8 in Qt
     QtCore.QTextCodec.setCodecForCStrings(
-        QtCore.QTextCodec.codecForName('UTF-8')
-    )
+                                       QtCore.QTextCodec.codecForName('UTF-8'))
 
     # Bypass system-default font, to harmonize size on all platforms
     font_database = QtGui.QFontDatabase()

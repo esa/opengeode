@@ -254,14 +254,14 @@ connection
 */
 process_definition
         :       cif?
-                PROCESS process_id
+                PROCESS TYPE? process_id
                 number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
                 (text_area | procedure | (composite_state_preamble) =>composite_state)*
                 processBody? ENDPROCESS? process_id?
                 end?
         ->      ^(PROCESS cif? process_id number_of_instances? type_inst?
-                REFERENCED? $a? pfpar? text_area* procedure*
+                TYPE? REFERENCED? $a? pfpar? text_area* procedure*
                 composite_state* processBody?)
         ;
 
@@ -1460,6 +1460,7 @@ RETURN          :       R E T U R N;
 RETURNS         :       R E T U R N S;
 TIMER           :       T I M E R;
 PROCESS         :       P R O C E S S;
+TYPE            :       T Y P E;
 ENDPROCESS      :       E N D P R O C E S S;
 START           :       S T A R T;
 STATE           :       S T A T E;

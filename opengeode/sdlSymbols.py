@@ -1014,8 +1014,10 @@ class Process(HorizontalSymbol):
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()
         self.ast = ast
+        label = ast.processName + (': {}'.format(ast.instance_of_name) \
+                                  if ast.instance_of_name else '')
         super(Process, self).__init__(parent=None,
-                                      text=ast.processName,
+                                      text=label,
                                       x=ast.pos_x,
                                       y=ast.pos_y,
                                       hyperlink=ast.hyperlink)
