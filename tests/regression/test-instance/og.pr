@@ -204,4 +204,4 @@ string';
                     NEXTSTATE Running;
             enddecision;
     endstate;
-endprocess og_type;
+endprocess type og_type;

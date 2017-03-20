@@ -386,7 +386,10 @@ def _process(symbol, recursive=True, **kwargs):
         result.extend(parse_scene(symbol.nested_scene))
         Indent.indent -= 1
     if ":" not in unicode(symbol):
-        result.append(u'endprocess {};'.format(unicode(symbol)))
+        result.append(u'endprocess {}{};'
+                .format("type " if isinstance(symbol, sdlSymbols.ProcessType)
+                                else "",
+                        unicode(symbol)))
     return result
 
 
