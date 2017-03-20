@@ -1,4 +1,4 @@
-/* CIF PROCESS (149, 150), (150, 75) */
+/* CIF PROCESS (300, 400), (150, 75) */
 PROCESS type og_type;
     /* CIF TEXT (2755, 9), (298, 286) */
     -- A Demo to test octet strings

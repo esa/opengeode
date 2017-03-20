@@ -1179,6 +1179,8 @@ class ProcessType(Procedure):
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
         path = QPainterPath()
+        # Fill rule makes sure the full symbol is colored
+        path.setFillRule(Qt.WindingFill)
         path.moveTo(7, 0)
         path.lineTo(0, 7)
         path.lineTo(0, height - 7)

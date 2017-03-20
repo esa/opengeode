@@ -829,6 +829,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                         line_nb = int(line_nb) - 1
                         split[1] = '{}:{}'.format(line_nb, col)
                 pos = each.scenePos()
+                split.append (u'in "{}"'.format(unicode(each)))
                 fmt = [[' '.join(split), [pos.x(), pos.y()], self.path]]
                 log_errors(self.messages_window, fmt, [], clearfirst=False)
 

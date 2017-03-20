@@ -333,6 +333,10 @@ class Symbol(QObject, QGraphicsPathItem, object):
         try:
             _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
                                            self.common_name, text)
+            # In case of syntax errors, it would be useful to return the text
+            # in addition to the error from ANTLR, in order to be very clear
+            # about the line number and character position to fix the error
+            # => TODO
         except (AssertionError, AttributeError):
             LOG.error('Checker failed - no parser for this construct?')
         else:
