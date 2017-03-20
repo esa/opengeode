@@ -118,6 +118,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     # (e.g. a subscene that appears when double-clicking on the item)
     _allow_nesting = False
     _nested_scene = None
+    # name used to discriminate the scene context
+    context_name = ''
     # keywords for the syntax highlighter
     blackbold = ()
     redbold = ()

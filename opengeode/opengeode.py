@@ -93,7 +93,7 @@ from genericSymbols import(Symbol, Comment, Cornergrabber, Connection, Channel)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
         ProcedureStart, ProcedureStop, StateStart, Connect, Process,
-        ContinuousSignal)
+        ContinuousSignal, ProcessType)
 from TextInteraction import EditableText
 
 # Icons and png files generated from the resource file:
@@ -174,7 +174,7 @@ G_SYMBOLS = set()
 
 # Lookup table used to configure the context-dependent toolbars
 ACTIONS = {
-    'block': [Process, Comment, TextSymbol],
+    'block': [Process, ProcessType, Comment, TextSymbol],
     'process': [Start, State, Input, Connect, ContinuousSignal, Task, Decision,
                 DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
                 Label, Join, Procedure],
@@ -625,9 +625,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                             symbol.boundingRect() |
                                             symbol.childrenBoundingRect())
                                 symbol.pos_x += (sc_br.width() - sy_br.x())
-                    except AttributeError:
+                    except AttributeError as err:
                         # no AST, ignore (e.g. Connections, Cornergrabbers)
                         pass
+                        #LOG.debug("[render everything] " + str(err))
                     else:
                         # Recursively fix pos of sub branches and followers
                         for branch in (elm for elm in symbol.childSymbols()
@@ -651,8 +652,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     LOG.debug('Subscene "{}" ignored'.format(unicode(each)))
                     continue
                 subscene = \
-                        self.create_subscene(each.__class__.__name__.lower(),
+                        self.create_subscene(each.context_name,
                                              dest_scene)
+
+#                       self.create_subscene(each.__class__.__name__.lower(),
+#                                            dest_scene)
                 already_created.append(each.nested_scene)
                 subscene.name = unicode(each)
                 LOG.debug('Created scene: {}'.format(subscene.name))
@@ -1776,6 +1780,8 @@ class SDL_View(QtGui.QGraphicsView, object):
                 new_context.processName = subname.lower()
                 sdlSymbols.CONTEXT.processes.append(new_context)
                 sdlSymbols.CONTEXT = new_context
+        else:
+            LOG.error("Please report BUG: miss support for " + subtype)
 
         horpos = self.horizontalScrollBar().value()
         verpos = self.verticalScrollBar().value()
@@ -1802,7 +1808,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             try:
                 if item.allow_nesting:
                     item.double_click()
-                    ctx = unicode(item.__class__.__name__.lower())
+                    ctx = unicode(item.context_name)  #__class__.__name__.lower())
                     if not isinstance(item.nested_scene, SDL_Scene):
                         item.nested_scene = \
                                 self.scene().create_subscene(ctx, self.scene())
@@ -1976,8 +1982,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         log_errors(self.messages_window, errors, warnings)
         try:
             self.scene().render_everything(block)
-        except AttributeError:
-            pass
+        except AttributeError as err:
+            LOG.debug("[Rendering] " + str(err))
         self.toolbar.update_menu(self.scene())
         self.scene().name = 'block {}[*]'.format(process.processName)
         self.wrapping_window.setWindowTitle(self.scene().name)

@@ -68,6 +68,8 @@ def _block(ast, scene):
     top_level = []
     for each in ast.processes:
         top_level.append(render(each, scene))
+        if each.instance_of_ref:
+            top_level.append(render(each.instance_of_ref, scene))
     for each in ast.parent.text_areas:
         # Sytem level may contain text areas with signal definitions, etc.
         top_level.append(render(each, scene))
@@ -104,7 +106,10 @@ def _block(ast, scene):
 @render.register(ogAST.Process)
 def _process(ast, scene, **_):
     ''' Render a Process symbol (in a BLOCK diagram) '''
-    symbol = sdlSymbols.Process(ast, ast)
+    if ast.process_type:
+        symbol = sdlSymbols.ProcessType(ast, ast)
+    else:
+        symbol = sdlSymbols.Process(ast, ast)
     add_to_scene(symbol, scene)
     return symbol
 
