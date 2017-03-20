@@ -142,7 +142,7 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-1.5.27 (03/2017)
+1.5.28 (03/2017)
     - Added preliminary support for PROCESS TYPE and instances
 
 1.5.26 (02/2017)
