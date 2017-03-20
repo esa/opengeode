@@ -473,8 +473,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     @property
     def processes(self):
         ''' Return visible processes components of the scene '''
-        return (it for it in self.visible_symb if isinstance(it, Process) and
-                not isinstance(it, Procedure))
+        return (it for it in self.visible_symb
+                if (isinstance(it, Process) and not isinstance(it, Procedure))
+                or isinstance(it, ProcessType))
 
 
     @property
@@ -1962,7 +1963,10 @@ class SDL_View(QtGui.QGraphicsView, object):
             process.processName = "Syntax_Error"
         elif len(ast.processes) == 1:
             process,         = ast.processes
-            self.filename    = process.filename
+            if not process.instance_of_name:
+                self.filename    = process.filename
+            else:
+                self.filename    = process.instance_of_ref.filename
             self.readonly_pr = ast.pr_files - {self.filename}
         else:
             # More than one process
@@ -2054,6 +2058,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         if not scene.global_syntax_check():
             self.messages_window.addItem("Aborted. Fix syntax errors first")
             return
+        self.messages_window.addItem("No syntax errors")
         self.messages_window.addItem("Checking semantics")
 
         if scene.context not in ('process', 'state', 'procedure', 'block'):

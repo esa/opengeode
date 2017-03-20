@@ -153,7 +153,7 @@ def paste_floating_objects(scene):
             new_item = Renderer.render(each, scene, states=states)
             symbols.append(new_item)
             new_item.nested_scene = scene.create_subscene(
-                                               type(new_item).__name__.lower())
+                                                        new_item.context_name)
             # Render recursively, creating any required scene
             try:
                 new_item.nested_scene.render_everything(each.content)

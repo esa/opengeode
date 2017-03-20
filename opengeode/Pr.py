@@ -95,6 +95,9 @@ def parse_scene(scene, full_model=False):
 
     else:
         for each in scene.processes:
+            if ":" in unicode(each):
+                # ignore instances of process type
+                continue
             #pr_data.extend(generate(each))
             # Only one process is supported - return now because
             # the text areas must not be parsed - some may have been
