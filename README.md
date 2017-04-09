@@ -59,7 +59,7 @@ On Debian, Ubuntu, and probably other distributions:
 
 ```bash
 $ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
-                       graphviz-dev libgraphviz-dev  python-pip gnat-4.8 \
+                       graphviz-dev libgraphviz-dev  python-pip gnat \
                        libmono-system-runtime4.0-cil libmono-corlib4.0-cil \
                        libmono-system-runtime-serialization-formatters-soap4.0-cil \
                        libmono-system-web4.0-cil libmono-system-xml4.0-cil \
@@ -67,7 +67,9 @@ $ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
                        libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
 ```
 
-To install the ASN.1 compiler:
+Some of these packages may be more recent on your distrib (e.g. the mono runtime 4.0 may be replaced by 4.5 or more).
+
+To install the ASN.1 compiler, run (possibly as root):
 
 ```bash
 $ cd /opt
@@ -90,18 +92,19 @@ OpenGEODE installation
 
 Make sure all dependencies are installed.
 
-If you see a certificate error, you may need to run the following commands:
+If you see a certificate error while cloning from [Gitlab](https://gitrepos.estec.esa.int), you may need to run the following commands:
 
 ```bash
 $ echo -n | openssl s_client -connect gitrepos.estec.esa.int:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > gitrepos.cert
 $ sudo cp gitrepos.cert /usr/local/share/ca-certificates/gitrepos.crt
-$ sudo update-ca-certificate
+$ sudo update-ca-certificates
 ```
 
-Then you can get the software with git:
+There is no such issue if you use Gitlab:
+
 
 ```bash
-$ git clone --recursive https://github.com/maxime-esa/opengeode.git
+$ git clone --recursive https://github.com/esa/opengeode.git
 ```
 
 And install it:
