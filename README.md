@@ -107,7 +107,7 @@ And install it:
 
 ```bash
 $ cd opengeode
-$ make install
+$ make full-install
 ```
 
 
