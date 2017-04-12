@@ -1,0 +1,51 @@
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+MyBoolean ::= BOOLEAN
+
+TASTE-Peek-id ::= INTEGER (0..4294967295)
+
+TASTE-Peek-id-list ::= SEQUENCE (SIZE (1..10)) OF TASTE-Peek-id
+
+VariableString ::= OCTET STRING (SIZE (1..10))
+FixedString ::= OCTET STRING (SIZE (5))
+
+SeqBool ::= SEQUENCE (SIZE(1..5)) OF BOOLEAN
+SeqBoolFix ::= SEQUENCE (SIZE(2)) OF BOOLEAN
+SeqEnum ::= SEQUENCE (SIZE(1..5)) OF ENUMERATED { hello2, world2 }
+SeqEnumFix ::= SEQUENCE (SIZE(2)) OF ENUMERATED { hello, world }
+
+MyEnum ::= ENUMERATED {a, b, c, d, eE}
+MyChoice ::= CHOICE {c1 BOOLEAN, cDe2 BOOLEAN}
+
+SeqOpt ::= SEQUENCE { a BOOLEAN OPTIONAL , b BOOLEAN, c SEQUENCE { a BOOLEAN } OPTIONAL, d OCTET STRING (SIZE (0..10)) OPTIONAL}
+SeqNonOpt ::= SEQUENCE { a BOOLEAN }
+
+NamedInt ::= INTEGER { one(1), two(2) } (1..2)
+
+Enum-with-dash ::= ENUMERATED { first-one, second-one }
+NamedInt-with-dash ::= INTEGER { first-value(0), second-value(3) } ( 0 | 3 )
+
+myOne NamedInt ::= one
+
+myBool MyBoolean ::= TRUE
+
+myInt TASTE-Peek-id ::= 5
+
+myString VariableString ::= 'DEADBEEF'H
+
+mySeqBool SeqBool ::= { TRUE, FALSE }
+
+myEnum MyEnum ::= eE
+
+myCh MyChoice ::= c1: TRUE
+
+mySeq SeqNonOpt ::= { a TRUE }
+
+
+
+
+END
+ 
+
+

@@ -1,0 +1,31 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+EmptySeq ::= SEQUENCE {}
+SeqOf ::= SEQUENCE (SIZE(0..10)) OF BOOLEAN
+
+AnotherEmptySeq ::= SEQUENCE {}
+
+NullType ::= NULL
+
+ChoiceWithEmptySeq ::= CHOICE {
+  a NULL,
+  b EmptySeq,
+  c NullType,
+  d SEQUENCE { a BOOLEAN }
+}
+
+c1 EmptySeq ::= {}
+
+n1 NullType ::= NULL
+
+c2 ChoiceWithEmptySeq ::= a: NULL
+c3 ChoiceWithEmptySeq ::= b: {}
+c4 ChoiceWithEmptySeq ::= c: NULL
+c5 AnotherEmptySeq ::= {}
+
+-- Type below is accepted by ASN.1 compiler but that's wrong
+-- c6 ChoiceWithEmptySeq ::= b: c5
+
+
+END

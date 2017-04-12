@@ -22,9 +22,16 @@
 import os
 import logging
 from collections import defaultdict
+from functools import partial
 from itertools import chain
 import re
 from PySide import QtGui, QtCore
+
+# import resource file to get the configuration widget
+from PySide.QtUiTools import QUiLoader
+import icons
+
+g_statechart_lock = False
 
 try:
     import pygraphviz as dotgraph
@@ -49,8 +56,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
     _unique_followers = []
     _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
-    textbox_alignment = (QtCore.Qt.AlignTop
-                         | QtCore.Qt.AlignHCenter)
+    textbox_alignment = (QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
 
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
@@ -66,6 +72,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
             property_box.setPlainText(node['properties'])
         # Text in statecharts is read-only:
         self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.text.set_textbox_position()
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
@@ -472,6 +479,8 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     try:
         # Bonus: the tool can render any dot graph...
         graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
+        config = " ".join("{name}={val}".format(name=name, val=val)
+                for name, val in graphtree['config'].viewitems())
     except IOError:
         LOG.info('No statechart to display....')
         raise
@@ -492,11 +501,8 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         if dump_gfx.split('.')[-1].lower() != 'png':
             dump_gfx += '.png'
 
-    graph.layout(prog='neato', args='-Nfontsize=12, -Efontsize=8 '
-                 '-Gsplines=curved -Gsep=1 -Gdpi=72 '
-                 '-Gstart=random10 -Goverlap=scale '
-            '-Nstyle=rounded -Nshape=record -Elen=1 {kp} {dump}'
-            .format(kp='-n1' if keep_pos else '',
+    graph.layout(prog='neato', args='{cfg} {kp} {dump}'
+            .format(cfg=config, kp='-n1' if keep_pos else '',
                     dump=('-Tpng -o' + dump_gfx) if dump_gfx else ''))
     # bb is not visible directly - extract it from the low level api:
     bounding_rect = [float(val) for val in
@@ -548,14 +554,99 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
                     each.setZValue(each.zValue() + symb.zValue() + 1)
 
 
-def create_dot_graph(root_ast, basic=False):
+def lock():
+    ''' Prevent multiple callers to render at the same time '''
+    global g_statechart_lock
+    g_statechart_lock = True
+
+def unlock():
+    ''' Prevent multiple callers to render at the same time '''
+    global g_statechart_lock
+    g_statechart_lock = False
+
+def locked():
+    ''' Return the lock status '''
+    return g_statechart_lock
+
+
+def create_dot_graph(root_ast, basic=False, scene=None):
     ''' Return a dot.AGraph item, from an ogAST.Process or child entry
         Set basic=True to generate a simple graph with at most one edge
         between two states and no diamond nodes
     '''
     graph = dotgraph.AGraph(strict=False, directed=True)
-    ret = {'graph': graph, 'children': {}}
+    ret = {'graph': graph, 'children': {}, 'config': {}}
     diamond = 0
+
+    input_signals = {sig['name'].lower() for sig in root_ast.input_signals}
+    # XXX misses the timers
+
+    # valid_inputs: list of messages to be displayed in the statecharts
+    # user can remove them from the file to make cleaner diagrams
+    # config_params can be set to tune the call to graphviz
+    valid_inputs = set()
+    config_params = {}
+    inputs_to_save = set()
+    identifier = getattr(root_ast, "statename", root_ast.processName)
+    try:
+        with open (identifier + ".cfg", "r") as cfg_file:
+            all_lines = (line.strip() for line in cfg_file.readlines())
+        for each in all_lines:
+            split = each.split()
+            if len(split) == 3 and split[0] == "cfg":
+                config_params[split[1]] = split[2]
+            elif each:
+                valid_inputs.add(each.lower())
+    except IOError:
+        valid_inputs = input_signals
+        config_params = {"-Nfontsize" : "12",
+                         "-Efontsize" : "8",
+                         "-Gsplines"  : "curved",
+                         "-Gsep"      : "0.3",
+                         "-Gdpi"      : "72",
+                         "-Gstart"    : "random10",
+                         "-Goverlap"  : "scale",
+                         "-Nstyle"    : "rounded",
+                         "-Nshape"    : "record",
+                         "-Elen"      : "1"}
+    else:
+        LOG.info ("Statechart settings read from configuration file")
+
+    if scene and scene.views():
+        # Load and display a table for the user to filter out messages that
+        # are not relevant to display on the statechart - and make it lighter
+        # Repeat for substates, too.
+        lock()
+        def right(leftList, rightList):
+            for each in leftList.selectedItems():
+                item = leftList.takeItem(leftList.row(each))
+                rightList.addItem(item)
+        def left(leftList, rightList):
+            for each in rightList.selectedItems():
+                item = rightList.takeItem(rightList.row(each))
+                leftList.addItem(item)
+        loader = QUiLoader()
+        ui_file = QtCore.QFile(":/statechart_cfg.ui")
+        ui_file.open(QtCore.QFile.ReadOnly)
+        dialog = loader.load(ui_file)
+        dialog.setParent (scene.views()[0], QtCore.Qt.Dialog)
+        okButton = dialog.findChild(QtGui.QPushButton, "okButton")
+        rightButton = dialog.findChild(QtGui.QToolButton, "toRight")
+        leftButton = dialog.findChild(QtGui.QToolButton, "toLeft")
+        rightList = dialog.findChild(QtGui.QListWidget, "rightList")
+        leftList = dialog.findChild(QtGui.QListWidget, "leftList")
+        okButton.pressed.connect(dialog.accept)
+        rightButton.pressed.connect(partial(right, leftList, rightList))
+        leftButton.pressed.connect(partial(left, leftList, rightList))
+        ui_file.close()
+        rightList.addItems(list(valid_inputs))
+        leftList.addItems(list(input_signals - valid_inputs))
+        go = dialog.exec_()
+        valid_inputs.clear()
+        for idx in xrange(rightList.count()):
+            valid_inputs.add(rightList.item(idx).text())
+        unlock()
+
     for state in root_ast.mapping.viewkeys():
         # create a new node for each state (including nested states)
         if state.endswith('START'):
@@ -632,7 +723,9 @@ def create_dot_graph(root_ast, basic=False):
                                fixedsize='true',
                                width=15.0 / 72.0,
                                height=15.0 / 72.0, label='')
-                graph.add_edge(source, str(diamond), label=label)
+                if label.lower() in valid_inputs or not label.strip():
+                    graph.add_edge(source, str(diamond), label=label)
+                    inputs_to_save.add(label.lower())
                 source = str(diamond)
                 label = ''
                 diamond += 1
@@ -642,17 +735,34 @@ def create_dot_graph(root_ast, basic=False):
                 else:
                     target = term.inputString.lower() or ' '
                 if basic:
-                    target_states[target].add(label)
+                    target_states[target] |= set(label.split(','))
                 else:
-                    graph.add_edge(source, target, label=label)
+                    labs = set(lab.strip() for lab in label.split(',') if
+                                    lab.strip().lower() in valid_inputs | {""})
+                    actual = ',\n'.join(labs)
+                    graph.add_edge(source, target, label=actual)
+                    inputs_to_save |= set(lab.lower() for lab in labs)
         for target, labels in target_states.viewitems():
+            sublab = [lab.strip() for lab in labels if
+                      lab.strip().lower() in valid_inputs | {""}]
             # Basic mode
-            graph.add_edge(source, target, label=',\n'.join(labels))
+            if sublab:
+                graph.add_edge(source, target, label=',\n'.join(sublab))
+                inputs_to_save |= set(lab.lower() for lab in sublab)
 #   with open('statechart.dot', 'w') as output:
 #       output.write(graph.to_string())
     #return graph
+    with open(identifier + ".cfg", "w") as cfg_file:
+        for name, value in config_params.viewitems():
+            cfg_file.write("cfg {} {}\n".format(name, value))
+        for each in inputs_to_save:
+            cfg_file.write(each + "\n")
+    ret['config'] = config_params
     for each in root_ast.composite_states:
-        ret['children'][each.statename] = create_dot_graph(each, basic)
+        # Recursively generate the graphs for nested states
+        # Inherit from the list of signals from the higer level state
+        each.input_signals = root_ast.input_signals
+        ret['children'][each.statename] = create_dot_graph(each, basic, scene)
     return ret
 
 

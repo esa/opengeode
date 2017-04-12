@@ -1,0 +1,16 @@
+
+DataModel DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+
+TotoT3 ::= SEQUENCE { yy BOOLEAN }
+
+TotoT1 ::= SEQUENCE  {
+ a TotoT3
+}
+
+TotoT2 ::= CHOICE {
+  choice-a BOOLEAN,
+  choice-b CHOICE { one SEQUENCE  { xx TotoT1 } }
+}
+
+END

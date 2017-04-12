@@ -1,0 +1,77 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+-- Named integers to work with letters
+Letter ::= ENUMERATED {
+  a (0),
+  b (1),
+  c (2),
+  d (3),
+  e (4),
+  f (5),
+  g (6),
+  h (7),
+  i (8),
+  j (9),
+  k (10),
+  l (11),
+  m (12),
+  n (13),
+  o (14),
+  p (15),
+  q (16),
+  r (17),
+  s (18),
+  t (19),
+  u (20),
+  v (21),
+  w (22),
+  x (23),
+  y (24),
+  z (25) }
+
+LetterInt ::= INTEGER {
+  letter-a (0),
+  letter-b (1),
+  letter-c (2),
+  letter-d (3),
+  letter-e (4),
+  letter-f (5),
+  letter-g (6),
+  letter-h (7),
+  letter-i (8),
+  letter-j (9),
+  letter-k (10),
+  letter-l (11),
+  letter-m (12),
+  letter-n (13),
+  letter-o (14),
+  letter-p (15),
+  letter-q (16),
+  letter-r (17),
+  letter-s (18),
+  letter-t (19),
+  letter-u (20),
+  letter-v (21),
+  letter-w (22),
+  letter-x (23),
+  letter-y (24),
+  letter-z (25) } (0..25)
+
+
+Cost-ty ::= INTEGER (0..255)
+
+Tree-Elem ::= SEQUENCE {
+    cost Cost-ty,
+    son  Letter
+}
+Sons ::= SEQUENCE (SIZE (0..100)) OF Tree-Elem
+Tree ::= SEQUENCE (SIZE (26))     OF Sons
+
+Path ::= SEQUENCE {
+    cost Cost-ty,
+    elem SEQUENCE (SIZE(0..255)) OF Letter
+}
+
+  
+END

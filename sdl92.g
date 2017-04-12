@@ -254,14 +254,14 @@ connection
 */
 process_definition
         :       cif?
-                PROCESS process_id
+                PROCESS t=TYPE? process_id
                 number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
-                (text_area | procedure | composite_state)*
-                processBody? ENDPROCESS? process_id?
+                (text_area | procedure | (composite_state_preamble) =>composite_state)*
+                processBody? ENDPROCESS? TYPE? process_id?
                 end?
         ->      ^(PROCESS cif? process_id number_of_instances? type_inst?
-                REFERENCED? $a? pfpar? text_area* procedure*
+                $t? REFERENCED? $a? pfpar? text_area* procedure*
                 composite_state* processBody?)
         ;
 
@@ -281,11 +281,10 @@ parameters_of_sort
         ;
 
 
-// procedure: missing the RETURNS statement
-// (TODO - but check new SDL2000 syntax that has no RETURNS token)
+// procedure
 procedure
         :       cif?
-                PROCEDURE procedure_id e1=end
+                PROCEDURE procedure_id (e1=end | SEMI)
                 fpar?
                 res=procedure_result?
                 (text_area | procedure)*
@@ -299,7 +298,7 @@ procedure
 procedure_result
         :       ('->' | RETURNS)
                 variable_id?
-                sort
+                sort end?
         ->      ^(RETURNS variable_id? sort)
         ;
 
@@ -307,7 +306,7 @@ procedure_result
 fpar
         :       FPAR formal_variable_param
                 (',' formal_variable_param)*
-                end?
+                end
         ->      ^(FPAR formal_variable_param+)
         ;
 
@@ -481,7 +480,7 @@ floating_label
 state
         :       cif?
                 hyperlink?
-                STATE statelist e=end
+                STATE statelist (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
         ->      ^(STATE cif? hyperlink? $e? statelist state_part*)
@@ -508,6 +507,11 @@ composite_state
                 | state_aggregation
         ;
 
+// used for syntactic predicate
+composite_state_preamble
+        :       STATE AGGREGATION? statename end
+                SUBSTRUCTURE
+        ;
 
 composite_state_graph
         :       STATE statename e=end
@@ -589,9 +593,14 @@ state_entry_exit_points
 
 
 // 11.11.1 Composite State graph content (SDL2000)
+// Use a syntactic predicate to disambiguate the parsing of the composite
+// state vs a normal state, in the case of a syntax error in the composite.
 composite_state_body
-        :       (text_area | procedure | composite_state)*
-                start* (state | floating_label)*
+        :  (text_area
+            | procedure
+            | (composite_state_preamble) =>composite_state)*
+           start* (state | floating_label)*
+           EOF?
         ;
 
 
@@ -1021,7 +1030,7 @@ variable
 
 
 field_selection
-        :       (('!'|'.') field_name);
+        :       (('!' | DOT) field_name);
 
 
 expression
@@ -1052,8 +1061,10 @@ unary_expression
 
 postfix_expression
         :       (ID -> ^(PRIMARY ^(VARIABLE ID)))
-                (   '(' params=expression_list ')' -> ^(CALL $postfix_expression ^(PARAMS $params))
-                |   '!' field_name  -> ^(SELECTOR $postfix_expression field_name)
+                (   '(' params=expression_list ')'
+                -> ^(CALL $postfix_expression ^(PARAMS $params))
+                |   ('!' | DOT) field_name
+                -> ^(SELECTOR $postfix_expression field_name)
                 )+
         ;
 
@@ -1069,7 +1080,6 @@ primary
         :       TRUE^
         |       FALSE^
         |       STRING
-        |       NULL^
         |       PLUS_INFINITY^
         |       MINUS_INFINITY^
         |       INT^
@@ -1086,8 +1096,8 @@ primary
                 named_value (COMMA named_value)*
                 '}'                         -> ^(SEQUENCE named_value+)
         |       '{'
-                primary (COMMA primary)*
-                '}'                         -> ^(SEQOF primary+)
+                expression (COMMA expression)*
+                '}'                         -> ^(SEQOF expression+)
         |       STATE^
         ;
 
@@ -1103,14 +1113,14 @@ named_value
         :       ID expression
         ;
 
-
+/*
 primary_params
         :      '(' expression_list ')'
         ->     ^(PARAMS expression_list)
                | '!' literal_id
         ->     ^(FIELD_NAME literal_id)
         ;
-
+*/
 
 /* All cases are covered by the ground primary
    above (Except structure primary, but we favour ASN.1 notation)
@@ -1139,7 +1149,7 @@ structure_primary
 // Removed "qualifier" from the standard
 // (to be put later, but never used in practice)
 
-
+/*
 active_expression
         :       active_primary
         ;
@@ -1174,7 +1184,7 @@ timer_active_expression
 anyvalue_expression
         :       ANY '(' sort ')'
         ;
-
+*/
 
 sort    :       sort_id
         ->      ^(SORT sort_id)
@@ -1190,7 +1200,7 @@ type_inst
 syntype :       syntype_id
         ;
 
-
+/*
 import_expression
         :       IMPORT '(' remote_variable_id (',' destination)? ')'
         ;
@@ -1199,13 +1209,13 @@ import_expression
 view_expression
         :       VIEW '(' view_id (',' pid_expression)? ')'
         ;
-
+*/
 
 variable_access
         :       variable_id
         ;
 
-
+/*
 operator_application
         :       operator_id '('active_expression_list ')'
         ;
@@ -1214,9 +1224,9 @@ operator_application
 active_expression_list
         :       active_expression (',' expression_list)?
         ;
-/* |
-                ground_expression ',' active_expression_list;*/   // Will not work (recursion)
+// 	| ground_expression ',' active_expression_list;   // Will not work (recursion)
 
+*/
 
 //synonym :       ID; // synonym_id | external_synonym;
 
@@ -1300,7 +1310,7 @@ end
 
 cif
         :       cif_decl symbolname
-                L_PAREN x=INT COMMA y=INT R_PAREN
+                L_PAREN x=signed COMMA y=signed R_PAREN
                 COMMA
                 L_PAREN width=INT COMMA height=INT R_PAREN
                 cif_end
@@ -1450,6 +1460,7 @@ RETURN          :       R E T U R N;
 RETURNS         :       R E T U R N S;
 TIMER           :       T I M E R;
 PROCESS         :       P R O C E S S;
+TYPE            :       T Y P E;
 ENDPROCESS      :       E N D P R O C E S S;
 START           :       S T A R T;
 STATE           :       S T A T E;
@@ -1514,7 +1525,6 @@ AGGREGATION     :       A G G R E G A T I O N;
 SUBSTRUCTURE    :       S U B S T R U C T U R E;
 ENDSUBSTRUCTURE :       E N D S U B S T R U C T U R E;
 FPAR            :       F P A R;
-PARAM           :       P A R A M;
 EQ              :       '=';
 NEQ             :       '/=';
 GT              :       '>';
@@ -1532,7 +1542,6 @@ REM             :       R E M;
 TRUE            :       T R U E;
 FALSE           :       F A L S E;
 ASNFILENAME     :       A S N F I L E N A M E;
-NULL            :       N U L L;
 PLUS_INFINITY   :       P L U S '-' I N F I N I T Y;
 MINUS_INFINITY  :       M I N U S '-' I N F I N I T Y;
 MANTISSA        :       M A N T I S S A;
@@ -1586,9 +1595,12 @@ ALPHA
 
 
 INT
-        :       DASH? ( '0' | ('1'..'9') ('0'..'9')*)
+        :        '0' | ('1'..'9') ('0'..'9')*
         ;
 
+signed
+        :       DASH? INT
+        ;
 
 fragment
 DIGITS

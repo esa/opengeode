@@ -2,7 +2,7 @@
 PROCESS orchestrator
 /* CIF COMMENT (405, 192), (71, 35) */
 COMMENT 'Hello';
-    /* CIF TEXT (0, 94), (398, 293) */
+    /* CIF TEXT (0, 94), (450, 353) */
     dcl seq tastE_Peek_id_list := { 1,2,3,4,5};
 
 dcl fixed FixedString := 'Hello';
@@ -16,16 +16,17 @@ dcl seqen SeqEnum := { hello2, world2};
 dcl seqen2 SeqEnumFix := { hello, world };
 
 dcl myenum MyEnum := a;
+dcl turlututu MyEnum := a;
 
 dcl check tasTE_Peek_id := 42;
 
 dcl choice Mychoice := c1:TRUE ;
 
 dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
+dcl somebool boolean := true;
+
+-- dcl opt2 SeqOpt := { a somebool, b false }; SHOULD REPORT AND ERROR
     /* CIF ENDTEXT */
-    /* CIF PROCEDURE (1273, 175), (106, 35) */
-    PROCEDURE emptyproc;
-    ENDPROCEDURE;
     /* CIF PROCEDURE (1306, 371), (91, 35) */
     PROCEDURE numProc;
         /* CIF START (161, 82), (70, 35) */
@@ -42,6 +43,9 @@ dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
             ENDDECISION;
             /* CIF RETURN (178, 348), (35, 35) */
             RETURN ;
+    ENDPROCEDURE;
+    /* CIF PROCEDURE (1273, 175), (106, 35) */
+    PROCEDURE emptyproc;
     ENDPROCEDURE;
     /* CIF START (596, 224), (80, 36) */
     START;

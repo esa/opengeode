@@ -32,7 +32,6 @@ Features
 - Syntax highlighting
 - Undo/Redo, Copy-Paste
 - (Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern
-- SDL to LLVM code generation
 - Python API to parse and render SDL from other Python modules
 
 Installation
@@ -58,8 +57,8 @@ And optionally llvm and llvmpy
 On Debian, Ubuntu, and probably other distributions:
 
 ```bash
-$ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
-                       graphviz-dev libgraphviz-dev  python-pip gnat-4.8 \
+$ sudo apt install pkg-config python-pyside pyside-tools graphviz python-ply \
+                       graphviz-dev libgraphviz-dev  python-pip gnat \
                        libmono-system-runtime4.0-cil libmono-corlib4.0-cil \
                        libmono-system-runtime-serialization-formatters-soap4.0-cil \
                        libmono-system-web4.0-cil libmono-system-xml4.0-cil \
@@ -67,7 +66,9 @@ $ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
                        libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
 ```
 
-To install the ASN.1 compiler:
+Some of these packages may be more recent on your distribution.
+
+To install the ASN.1 compiler, run (possibly as root):
 
 ```bash
 $ cd /opt
@@ -82,33 +83,31 @@ Open a new terminal and check that it works:
 $ mono /opt/asn1scc/asn1.exe
 ```
 
-Optionally, to install llvmpy and LLVM follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.7/doc/getting_started.html#installation)
-
-
 OpenGEODE installation
 ----------------------
 
 Make sure all dependencies are installed.
 
-You need to install a certificate to get software from ESA Git servers:
+If you see a certificate error while cloning from [Gitlab](https://gitrepos.estec.esa.int/taste/opengeode), you may need to run the following commands:
 
 ```bash
 $ echo -n | openssl s_client -connect gitrepos.estec.esa.int:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > gitrepos.cert
 $ sudo cp gitrepos.cert /usr/local/share/ca-certificates/gitrepos.crt
-$ sudo update-ca-certificate
+$ sudo update-ca-certificates
 ```
 
-Then you can get the software with git:
+There is no such issue if you use Github:
+
 
 ```bash
-$ git clone --recursive https://github.com/maxime-esa/opengeode.git
+$ git clone --recursive https://github.com/esa/opengeode.git
 ```
 
-And install it *as root*:
+And install it:
 
 ```bash
 $ cd opengeode
-$ make install
+$ make full-install
 ```
 
 
@@ -121,13 +120,14 @@ For additional information please contact:
 maxime (dot) perrotin (at) esa (dot) int
 
 
-The LLVM backend was designed and implemented by Diego Barbera during the ESA Summer of Code 2014
-Some parts have been implemented by Laurent Meyer (native SDL type support in the parser)
+The LLVM backend was designed and implemented by Diego Barbera during the ESA
+Summer of Code 2014 (It is unfortunately unmaintained now and does not support all features of the tool).
+Some parts implemented by Laurent Meyer (native SDL type support in the parser)
 
 
 The ASN.1 compiler (ASN1Scc) that OpenGEODE is based on was
 developed by George Mamais and Thanassis Tsiodras for the European
-Space Agency. Information at http://www.semantix.gr/asn1scc
+Space Agency. Information at https://github.com/ttsiodras/asn1scc
 
 Licence
 =======
@@ -140,6 +140,176 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+1.5.28 (03/2017)
+    - Added preliminary support for PROCESS TYPE and instances
+
+1.5.26 (02/2017)
+    - Statecharts can be configured to filter out signals
+
+1.5.25 (01/2017)
+    - Ada backend generates aliased context (used for model checking)
+
+1.5.24 (01/2017)
+    - PR file use better indentation for text areas (no line return)
+
+1.5.23 (12/2016)
+    - In simulation mode, bugfix in the declaration of the startup function
+    - Code generator prepared for model checking
+
+1.5.22 (12/2016)
+    - Simulation function save/restore context fix
+
+1.5.21 (11/2016)
+    - Fix regression with test-math (import of external functions)
+    - Use monospace font in the HTML rendering of ASN.1 files
+
+1.5.20 (11/2016)
+    - Fix wrongly formatted error reporting in FOR loops
+    - Support SDL2010 dot field separator (variable.field,
+      while sdl92 only supported variable!field)
+    - Sequence of literals now support field selectors
+      (i.e. { variable.field } is now a valid statement)
+    - Support inner procedure call with return statement
+
+1.5.19 (11/2016)
+    - Fix integer cast in Ada
+
+1.5.18 (11/2016)
+    - Fix parsing of ASN.1 constants that use an annonymous inner type
+
+1.5.17 (11/2016)
+    - Fixed issue with initialization of generated code in state aggregations
+
+1.5.16 (11/2016)
+    - Fix minor indentation issue when saving
+
+1.5.15 (10/2016)
+    - Report incomplete startup transitions as errors in nested states
+
+1.5.14 (10/2016)
+    - Support named integers (requires asn1scc 3.3.04 or more recent)
+
+1.5.13 (10/2016)
+    - Better support of warnings
+    - Fixed detection of CHOICE assignment erros
+    - Raise error if process miss the start transition
+    - Raise error in case of SEQUENCE OF type mismatch
+
+1.5.12 (09/2016)
+    - Detect duplicate declaration of procedures
+
+1.5.11 (09/2016)
+    - Allow semicolon in the declaration of procedures after RETURNS keyword
+
+1.5.10 (09/2016)
+    - readonly mode with more restrictions
+
+1.5.9 (09/2016)
+    - Added --readonly command line to restrict process modifications
+
+1.5.8 (09/2016)
+    - Bugfix - Ada backend failed when there were continuous signals in
+               nested states but none at root level (missing end if)
+    - Load fix when there is no dataview
+    - Additional type checks
+
+1.5.7 (09/2016)
+    - Bugfix - Update completion list of process symbol
+    - Sort ASN.1 types in data dictionary
+
+1.5.6 (08/2016)
+    - vi interface supports history
+    - vi interface for substitution can apply to the whole model (with g)
+    - refactoring function via vi interface (eg. %state,fromName,toName,)
+    - Fixed issue with rendering (coordinates of symbols could be wrong)
+    - Introduce data dictionary
+
+1.5.4 (08/2016)
+    - Various GUI improvements
+
+1.5.3 (07/2016):
+    - Ada backend fix: Continous signals now handled in states
+      where input is not consumed
+
+1.5.2 (07/2016):
+    - Asn1scc API added to interface with DMT/asn2dataModel
+    - Better statechart rendering (less distance between nodes)
+
+1.4.5 (07/2016):
+    - Context variable was not prefixed properly
+    - Callback function for timers use 64bits integer
+    - RIs use prefix with unicode separation to avoid name clashes
+
+
+1.4.4 (06/2016)
+    - Minor bugfix in Ada backend to support typeless systems
+
+1.4.3 (06/2016)
+    - Add support for priority of continuous signals in Ada code generator
+
+1.4.2 (06/2016)
+    - Reload / render properly priority of continuous signals
+
+1.4.1 (06/2016)
+    - Continuous states can check the presence of messages in the input queue
+      to respect the SDL semantics
+    - Bugfix in Ada code generator on continuous states
+
+1.3.28 (06/2016)
+    - Excluded states (with *(statelist) ) were case sensitive
+
+1.3.27 (05/2016)
+    - Fix bug in Ada backend when using continous signals
+    - Better handling of simulation script
+
+1.3.26 (05/2016)
+    - Fix parser issues with negative expressions
+
+1.3.25 (05/2016)
+    - Fix reporting of syntax errors in state aggregations
+
+1.3.22 (05/2016)
+    - Bug fix in range checks for division and subtraction
+    - Optimise loading when there are no CIF comments
+
+1.3.21 (05/2016)
+    - Complete support of optional fields
+      (check tests/regression/test-optionalfields)
+
+1.3.20 (05/2016)
+    - Improve simulator interface
+
+1.3.19 (04/2016)
+    - Various bugfixes with ternary operator
+    - Added demo "test-save" showing how to emulate the behaviour of the SAVE
+      symbol
+    - ASN.1 types are shown with SDL-syntax (no hyphens)
+
+1.3.18 (04/2016)
+    - Add support for value notation of NULL type
+    - Remove warning when accessing CHOICE fields
+
+1.3.17 (04/2016)
+    - Add support for value notation of empty SEQUENCEs ("{}")
+
+1.3.16 (03/2016)
+    - Bugfix in testing aggregation states in the GUI
+
+1.3.15 (03/2016)
+    - Bugfix in Ada backend when a state aggregation contained only empty
+      states (directly returning states).
+
+1.3.14
+    - Minor bugfix with command line handling
+
+1.3.13
+    - Bugfix in rendering of Continuous signals
+
+1.3.12
+    - Render properly parameterless procedures that are declared in the .pr
+      file but without a textbox
+    - When going to parent scene, fixed rendering issue
 
 1.3.11
     - Parser is more tolerant to incomplete systems

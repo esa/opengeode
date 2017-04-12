@@ -1,0 +1,46 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+IMPORTS T-Int32, T-UInt32, T-Int8, T-UInt8, T-Boolean FROM TASTE-BasicTypes;
+
+MyData ::= SEQUENCE(SIZE(1..10)) OF SEQUENCE {
+   a SEQUENCE (SIZE(10)) OF INTEGER (0..255),
+   b ENUMERATED { enum-one, enum-two }
+}
+
+Type-SingleInt ::= T-UInt8
+Type-SingleBool ::= T-Boolean
+Type-SingleReal ::= REAL (-5.0 .. 5.0)
+Type-SingleEnum ::= ENUMERATED { enum-one(4), enum-two(2) }
+Type-SingleString ::= OCTET STRING (SIZE(0..20))
+
+Type-SingleChoice ::= CHOICE {
+   choice-a Type-SingleInt,
+   choice-b Type-SingleBool
+}
+Type-Seq ::= SEQUENCE {
+   item-a Type-SingleReal,
+   item-b Type-SingleChoice,
+   item-c MyData,
+   item-d Type-SingleString
+}
+
+
+END
+
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+END
+

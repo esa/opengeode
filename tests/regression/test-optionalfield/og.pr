@@ -1,0 +1,69 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (289, 188) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview.asn';
+    
+    signal run;
+    
+    signal we;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH run;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH run;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 50), (150, 75) */
+        PROCESS og;
+            /* CIF TEXT (531, 266), (448, 158) */
+            dcl s1 Seq := { a TRUE };
+            
+            dcl s2 Seq;
+            
+            -- Sequence containing DEFAULT values
+            -- When not initialized by the user, the fields should anyway
+            -- be set to their default (call to _Initialize should be done when declared!)
+            dcl def SeqDef;
+            
+            dcl def2 SeqDef := { b 19, c 42 };
+            /* CIF ENDTEXT */
+            /* CIF START (269, 259), (70, 35) */
+            START;
+                /* CIF TASK (239, 309), (130, 35) */
+                TASK s2 := { a FALSE};
+                /* CIF TASK (247, 359), (114, 35) */
+                TASK s2.a := TRUE;
+                /* CIF TASK (234, 409), (139, 35) */
+                TASK s2.b.b_c := TRUE;
+                /* CIF TASK (224, 459), (159, 35) */
+                TASK s2 :={ b { b_c TRUE }};
+                /* CIF PROCEDURECALL (244, 514), (119, 35) */
+                CALL writeln (def.b)
+                /* CIF COMMENT (383, 514), (201, 35) */
+                COMMENT 'Uninitialized, expect garbage';
+                /* CIF PROCEDURECALL (244, 569), (120, 35) */
+                CALL writeln (def2.b)
+                /* CIF COMMENT (384, 569), (145, 35) */
+                COMMENT 'Should display 19';
+                /* CIF TASK (258, 624), (92, 35) */
+                TASK def2.b := 16;
+                /* CIF PROCEDURECALL (244, 674), (120, 35) */
+                CALL writeln (def2.b)
+                /* CIF COMMENT (384, 674), (145, 35) */
+                COMMENT 'Should display 16';
+                /* CIF NEXTSTATE (269, 724), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (269, 724), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (261, 779), (84, 35) */
+                INPUT run;
+                    /* CIF NEXTSTATE (259, 829), (88, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;

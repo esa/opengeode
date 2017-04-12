@@ -116,7 +116,11 @@ class InsertSymbol(QUndoCommand):
         self.item.show()
         self.item.grabber.display()
         try:
-            self.scene.refresh()
+            # Immediate refresh for a better rendering, howerver slows down
+            # performance when inserting decisions in a complex model
+            #self.scene.refresh()
+            # Update only the connections - this is much faster
+            self.item.update_connections()
         except AttributeError:
             pass
 

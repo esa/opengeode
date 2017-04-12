@@ -68,6 +68,8 @@ def _block(ast, scene):
     top_level = []
     for each in ast.processes:
         top_level.append(render(each, scene))
+        if each.instance_of_ref:
+            top_level.append(render(each.instance_of_ref, scene))
     for each in ast.parent.text_areas:
         # Sytem level may contain text areas with signal definitions, etc.
         top_level.append(render(each, scene))
@@ -77,18 +79,19 @@ def _block(ast, scene):
            param=('(' + sig['type'].ReferencedTypeName.replace('-', '_') + ')')
                  if 'type' in sig else '')
              for sig in ast.parent.signals]
-        procedures = ["procedure {proc.inputString};\n{fpar}\nexternal;\n"
+        procedures = ["procedure {proc.inputString};\n{optfpar}external;\n"
                       .format(proc=proc,
-                              fpar="fpar\n    " + u",\n    ".join
-                              ([u"{direc} {fpar[name]} {asn1}"
-                                .format(fpar=fpar,
+                              optfpar="fpar\n    " + u",\n    ".join
+                              ([u"{direc} {fp[name]} {asn1}"
+                                .format(fp=fpar,
                                         direc="in"
                                            if fpar['direction']=='in'
                                            else 'in/out',
                                         asn1=getattr(fpar['type'],
                                            'ReferencedTypeName', 'TYPE_ERROR')
                                            .replace('-', '_'))
-                                for fpar in proc.fpar]) + ';')
+                                for fpar in proc.fpar]) + ';\n'
+                                    if proc.fpar else '')
                         for proc in ast.parent.procedures]
         if signals or procedures:
             text_area = ogAST.TextArea()
@@ -103,7 +106,10 @@ def _block(ast, scene):
 @render.register(ogAST.Process)
 def _process(ast, scene, **_):
     ''' Render a Process symbol (in a BLOCK diagram) '''
-    symbol = sdlSymbols.Process(ast, ast)
+    if ast.process_type:
+        symbol = sdlSymbols.ProcessType(ast, ast)
+    else:
+        symbol = sdlSymbols.Process(ast, ast)
     add_to_scene(symbol, scene)
     return symbol
 

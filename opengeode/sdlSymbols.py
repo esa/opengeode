@@ -19,7 +19,7 @@
 
 __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
-           'Procedure', 'ProcedureStart', 'ProcedureStop', 'ASN1Viewer',
+           'Procedure', 'ProcedureStart', 'ProcedureStop', 'ProcessType',
            'StateStart', 'Process', 'ContinuousSignal']
 
 #import traceback
@@ -46,11 +46,11 @@ CONTEXT = ogAST.Process()
 SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'DCL', 'CALL', 'ELSE', 'IF', 'THEN', 'MANTISSA', 'BASE',
                 'EXPONENT', 'TRUE', 'FALSE', 'MOD', 'FI', 'WRITE', 'WRITELN',
-                'LENGTH', 'PRESENT', 'FPAR', 'TODO', 'FIXME', 'XXX',
+                'LENGTH', 'PRESENT', 'FPAR', 'TODO', 'FIXME', 'XXX', 'ENDFOR',
                 'CHECKME', 'PROCEDURE', 'EXTERNAL', 'IN', 'OUT', 'TIMER',
-                'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT', 'ANY',
-                'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE',
-                'COMMENT', 'SIGNAL', 'SIGNALLIST', 'USE', 'RETURNS'
+                'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT', 'PRIORITY',
+                'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE', 'FOR',
+                'COMMENT', 'SIGNAL', 'SIGNALLIST', 'USE', 'RETURNS', 'ANY',
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
@@ -449,6 +449,7 @@ class DecisionAnswer(HorizontalSymbol):
         super(DecisionAnswer, self).insert_symbol(item_parent, x, y)
         self.last_branch_item.connectionBelow = \
                 JoinConnection(self.last_branch_item, item_parent)
+        self.text.try_resize()
 
     def boundingRect(self):
         return QRectF(0, 0, self.width, self.height)
@@ -456,7 +457,7 @@ class DecisionAnswer(HorizontalSymbol):
     def set_shape(self, width, height):
         ''' ANSWER has round, disjoint sides - does not fit in a polygon '''
         self.width, self.height = width, height
-        point = 20 #width / 2.85
+        point = 20
         path = QPainterPath()
         left = QRect(0, 0, point, height)
         right = QRect(width - point, 0, point, height)
@@ -792,6 +793,7 @@ class ProcedureCall(VerticalSymbol):
 class TextSymbol(HorizontalSymbol):
     ''' Text symbol - used to declare variables, etc. '''
     common_name = 'text_area'
+    default_size = 'any'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -818,6 +820,10 @@ class TextSymbol(HorizontalSymbol):
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update list of variables/FPAR/Timers '''
+        # note, on standalone systems, if the textbox contains a
+        # USE Dataview comment 'file.asn'. this file is parsed when leaving
+        # the textbox. This gives the impression that this function is slow,
+        # it it is not! - no need to investigate performance issues here
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
         try:
@@ -838,6 +844,9 @@ class TextSymbol(HorizontalSymbol):
         try:
             Signalroute.completion_list |= set(sig['name']
                                                for sig in ast.signals)
+            # Here: update input signals of the process AST since the
+            # signature of the signals may have changed...TODO
+            CONTEXT.signals += ast.signals
         except AttributeError:
             # no AST, e.g. in case of syntax errors in the text area
             pass
@@ -872,14 +881,6 @@ class TextSymbol(HorizontalSymbol):
         self.set_shape(rect.width(), rect.height())
 
 
-class ASN1Viewer(TextSymbol):
-    ''' Text symbol with dedicated text highlighting set of words for ASN.1 '''
-    blackbold = ['\\b{}\\b'.format(word) for word in (
-                 'DEFINITIONS', 'AUTOMATIC', 'TAGS', 'BEGIN', 'END', 'INTEGER',
-                 'OCTET', 'STRING', 'BIT', 'REAL', 'SEQUENCE', 'OF', 'WITH',
-                 'IMPORTS', 'FROM', 'SIZE', 'CHOICE', 'BOOLEAN', 'ENUMERATED')]
-
-
 # pylint: disable=R0904
 class State(VerticalSymbol):
     ''' SDL STATE Symbol '''
@@ -891,6 +892,7 @@ class State(VerticalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
+    context_name = "state"
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.State()
@@ -995,6 +997,7 @@ class Process(HorizontalSymbol):
     ''' Process symbol '''
     _unique_followers = ['Comment']
     _allow_nesting = True
+    default_size = 'any'
     common_name = 'process_definition'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
@@ -1004,12 +1007,20 @@ class Process(HorizontalSymbol):
     is_singleton = True
     arrow_head = 'angle'
     arrow_tail = 'angle'
+    # Process can be connected to other processes by the user
+    user_can_connect = True
+    _conn_sources = ['Process']
+    _conn_targets = ['Process']
+    context_name = "process"
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()
         self.ast = ast
+        label = (ast.processName or "") + (': {}'
+                                            .format(ast.instance_of_name)
+                                            if ast.instance_of_name else '')
         super(Process, self).__init__(parent=None,
-                                      text=ast.processName,
+                                      text=label,
                                       x=ast.pos_x,
                                       y=ast.pos_y,
                                       hyperlink=ast.hyperlink)
@@ -1022,6 +1033,25 @@ class Process(HorizontalSymbol):
         self.input_signals = ast.input_signals
         self.output_signals = ast.output_signals
         self.insert_symbol(None, self.x(), self.y())
+
+    @property
+    def conn_start_zones(self):
+        ''' Redefined - define the zones in the symbol from which user can
+        start a connection with another symbol '''
+        rect = self.boundingRect()
+        yield QRect(15, 5, rect.width() - 30, 10)
+        yield QRect(5, 5, 10, rect.height() - 10)
+        yield QRect(rect.width() - 15, 5, 10, rect.height() - 10)
+        yield QRect(15, rect.height() - 15, rect.width() - 30, 10)
+
+    @property
+    def conn_end_zones(self):
+        ''' Redefined - define the zones that can receive a connection '''
+        rect = self.boundingRect()
+        yield QRect(15, 5, rect.width() - 30, 10)
+        yield QRect(5, 5, 10, rect.height() - 10)
+        yield QRect(rect.width() - 15, 5, 10, rect.height() - 10)
+        yield QRect(15, rect.heigth() - 15, rect.width() - 30, 10)
 
     def insert_symbol(self, parent, x, y):
         ''' Redefinition - adds connection line to env '''
@@ -1048,6 +1078,16 @@ class Process(HorizontalSymbol):
         self.setPath(path)
         super(Process, self).set_shape(width, height)
 
+    def update_completion_list(self, pr_text):
+        ''' When text was entered, update completion list at block level '''
+        for each in CONTEXT.processes:
+            if unicode(self.text).lower() == each.processName:
+                break
+        else:
+            new_proc = ogAST.Process()
+            new_proc.processName = unicode(self.text).lower()
+            CONTEXT.processes.append(new_proc)
+
 
 class Procedure(Process):
     ''' Procedure declaration symbol - Very similar to Process '''
@@ -1060,6 +1100,8 @@ class Procedure(Process):
     redbold = SDL_REDBOLD
     completion_list = set()
     is_singleton = False
+    user_can_connect = False
+    context_name = "procedure"
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Procedure()
@@ -1095,7 +1137,7 @@ class Procedure(Process):
         self.setPath(path)
         super(Process, self).set_shape(width, height)
 
-    def update_completion_list(self, **kwargs):
+    def update_completion_list(self, pr_text):
         ''' When text was entered, update completion list of ProcedureCall '''
         for each in CONTEXT.procedures:
             if unicode(self.text).lower() == each.inputString:
@@ -1105,7 +1147,68 @@ class Procedure(Process):
             new_proc.inputString = unicode(self.text).lower()
             CONTEXT.procedures.append(new_proc)
 
+class ProcessType(Procedure):
+    ''' PROCESS TYPE (floating symbol with no connections '''
+    _unique_followers = ['Comment']
+    _allow_nesting = True
+    common_name = 'process_definition'
+    context_name = 'process'
+    needs_parent = False
+    # Define reserved keywords for the syntax highlighter
+    blackbold = SDL_BLACKBOLD
+    redbold = SDL_REDBOLD
+    completion_list = set()
+    is_singleton = False
+    user_can_connect = False
 
+    def __init__(self, ast=None, subscene=None):
+        ast = ast or ogAST.Process()
+        ast.process_type = True
+        self.ast = ast
+        super(Process, self).__init__(parent=None,
+                                      text=ast.processName,
+                                      x=ast.pos_x or 0,
+                                      y=ast.pos_y or 0,
+                                      hyperlink=ast.hyperlink)
+        self.set_shape(ast.width, ast.height)
+        self.setBrush(QBrush(QColor(255, 255, 202)))
+        self.parser = ogParser
+        if ast.comment:
+            Comment(parent=self, ast=ast.comment)
+        self.nested_scene = subscene
+
+    def set_shape(self, width, height):
+        ''' Compute the polygon to fit in width, height '''
+        path = QPainterPath()
+        # Fill rule makes sure the full symbol is colored
+        path.setFillRule(Qt.WindingFill)
+        path.moveTo(7, 0)
+        path.lineTo(0, 7)
+        path.lineTo(0, height - 7)
+        path.lineTo(7, height)
+        path.lineTo(width - 7, height)
+        path.lineTo(width, height - 7)
+        path.lineTo(width, 7)
+        path.lineTo(width - 7, 0)
+        path.lineTo(7, 0)
+        # inner shape
+        path.moveTo(12, 7)
+        path.lineTo(7, 12)
+        path.lineTo(7, height - 12)
+        path.lineTo(12, height - 7)
+        path.lineTo(width - 12, height - 7)
+        path.lineTo(width - 7, height - 12)
+        path.lineTo(width - 7, 12)
+        path.lineTo(width - 12, 7)
+        path.lineTo(12, 7)
+        self.setPath(path)
+        super(Process, self).set_shape(width, height)
+
+
+    def update_completion_list(self, pr_text):
+        ''' After text is entered in process type, don't update any context '''
+        # Todo perhaps later for autocompletion of process instances
+        pass
 
 # pylint: disable=R0904
 class Start(HorizontalSymbol):

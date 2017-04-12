@@ -1,0 +1,49 @@
+SYSTEM DemoDeviceDSAP;
+    /* CIF TEXT (232, 287), (445, 278) */
+    -- Text area for data model reference
+  USE DataModel comment 'CCSDS_SOIS_Subnetwork.asn';
+  USE DataModel comment 'Demo.asn';
+
+  USE DataModel comment 'CCSDS_SOIS_Subnetwork_interfaces.asn';
+  USE DataModel comment 'Demo_interfaces.asn';
+
+
+
+  -- declare signals
+  SIGNAL DeviceInterface_IN;
+  SIGNAL DeviceInterface_OUT;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO DemoDeviceDSAP WITH DeviceInterface_IN;
+        FROM DemoDeviceDSAP TO ENV WITH DeviceInterface_OUT;
+    ENDCHANNEL;
+    BLOCK DemoDeviceDSAP;
+        SIGNALROUTE r
+            FROM ENV TO DemoDeviceDSAP WITH DeviceInterface_IN;
+            FROM DemoDeviceDSAP TO ENV WITH DeviceInterface_OUT;
+        CONNECT c AND r;
+        /* CIF PROCESS (383, 110), (150, 75) */
+        PROCESS DemoDeviceDSAP;
+            /* CIF TEXT (32, 108), (374, 83) */
+            DCL subnetworkMASVar MASInterfaceTypeClientType;
+      DCL commandAddress MemoryAddressTypeT := 100;
+      DCL memoryID MemoryIDTypeT := 0;
+            /* CIF ENDTEXT */
+            /* CIF START (526, 128), (76, 36) */
+            START;
+                /* CIF TASK (418, 184), (292, 113) */
+                TASK subnetworkMASVar!outputData := 
+    sendCommand:
+        write: {
+            memoryID              memoryID,
+            memoryAddress commandAddress,
+           data                          ReadStatus
+       };
+                /* CIF NEXTSTATE (529, 327), (70, 35) */
+                NEXTSTATE test;
+            /* CIF STATE (669, 130), (62, 35) */
+            STATE test;
+            ENDSTATE;
+        ENDPROCESS DemoDeviceDSAP;
+    ENDBLOCK;
+ENDSYSTEM;

@@ -1,0 +1,29 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+EmptySeq ::= SEQUENCE {}
+
+AnotherEmptySeq ::= SEQUENCE {}
+
+NullType ::= NULL
+
+ChoiceWithEmptySeq ::= CHOICE {
+  a NULL,
+  b EmptySeq,
+  c NullType
+}
+
+c1 EmptySeq ::= {}
+
+n1 NullType ::= NULL
+
+c2 ChoiceWithEmptySeq ::= a: NULL
+c3 ChoiceWithEmptySeq ::= b: {}
+c4 ChoiceWithEmptySeq ::= c: NULL
+c5 AnotherEmptySeq ::= {}
+
+-- Type below is accepted by ASN.1 compiler but that's wrong
+-- c6 ChoiceWithEmptySeq ::= b: c5
+
+
+END

@@ -1,0 +1,90 @@
+SYSTEM car;
+    /* CIF TEXT (159, 221), (356, 248) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview-uniq.asn';
+
+--use dv2 comment 'dataview2.asn';
+
+signal dd(MyInteger);
+signal we(Some_Thing);
+
+procedure hehe;
+fpar in/out a_param Type2;
+external;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO car WITH dd;
+        FROM car TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK car;
+        SIGNALROUTE r
+            FROM ENV TO car WITH dd;
+            FROM car TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        PROCESS car;
+            STATE nominal;
+            SUBSTRUCTURE
+                out (battery_discharged);
+                    STATE battery;
+                    SUBSTRUCTURE
+                        out (battery_discharged);
+                            /* CIF TEXT (23, 47), (356, 39) */
+                            dcl charge myinteger := 100;
+                            /* CIF ENDTEXT */
+                            /* CIF START (174, 147), (70, 35) */
+                            START;
+                                /* CIF NEXTSTATE (152, 197), (114, 35) */
+                                NEXTSTATE discharge;
+                            /* CIF STATE (152, 197), (114, 35) */
+                            STATE discharge;
+                                /* CIF INPUT (215, 252), (108, 35) */
+                                INPUT dd(charge);
+                                    /* CIF TASK (157, 302), (223, 35) */
+                                    TASK charge := (charge + 1) mod 255;
+                                    /* CIF NEXTSTATE (234, 352), (70, 35) */
+                                    NEXTSTATE -;
+                                /* CIF PROVIDED (-13, 252), (121, 35) */
+                                PROVIDED charge = 0;
+                                    /* CIF TASK (-4, 302), (104, 35) */
+                                    TASK charge := 5;
+                                    /* CIF RETURN (30, 352), (35, 35) */
+                                    RETURN battery_discharged;
+                                /* CIF PROVIDED (390, 252), (101, 35) */
+                                PROVIDED charge > 5;
+                                    /* CIF TASK (389, 302), (104, 35) */
+                                    TASK charge := 0;
+                                    /* CIF NEXTSTATE (406, 352), (70, 35) */
+                                    NEXTSTATE -;
+                            ENDSTATE;
+                    ENDSUBSTRUCTURE;
+                    /* CIF START (315, 314), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (307, 364), (85, 35) */
+                        NEXTSTATE battery;
+                    /* CIF STATE (564, 510), (98, 35) */
+                    STATE battery;
+                        /* CIF CONNECT (613, 565), (0, 35) */
+                        CONNECT battery_discharged;
+                            /* CIF RETURN (595, 615), (35, 35) */
+                            RETURN battery_discharged;
+                    ENDSTATE;
+            ENDSUBSTRUCTURE;
+            /* CIF START (155, 216), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (140, 266), (100, 35) */
+                NEXTSTATE nominal;
+            /* CIF STATE (422, 480), (100, 35) */
+            STATE nominal;
+                /* CIF CONNECT (472, 535), (0, 35) */
+                CONNECT battery_discharged;
+                    /* CIF NEXTSTATE (424, 585), (95, 35) */
+                    NEXTSTATE backup;
+            ENDSTATE;
+            /* CIF STATE (614, 272), (95, 35) */
+            STATE backup;
+            ENDSTATE;
+        ENDPROCESS car;
+    ENDBLOCK;
+ENDSYSTEM;

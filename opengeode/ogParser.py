@@ -32,6 +32,7 @@ import math
 import logging
 import traceback
 import binascii
+from textwrap import dedent
 from itertools import chain, permutations, combinations
 from collections import defaultdict, Counter
 import antlr3
@@ -68,17 +69,17 @@ EXPR_NODE = {
     lexer.NOT: ogAST.ExprNot,
     lexer.NEG: ogAST.ExprNeg,
     lexer.PRIMARY: ogAST.Primary,
-}
+} # type: Dict[int, ogAST.Expression]
 
 # Insert current path in the search list for importing modules
 sys.path.insert(0, '.')
 
-DV = None
+DV = None  # type: module
 
 # Code generator backends may need some intemediate variables to process
 # expressions. For convenience and to avoid multiple pass parsing, the parser
 # tries to guess where they may be useful, and adds a hint in the AST.
-TMPVAR = 0
+TMPVAR = 0  # type: int
 
 # ASN.1 types used to support the signature of special operators
 INTEGER = type('IntegerType', (object,), {'kind': 'IntegerType',
@@ -150,6 +151,7 @@ types = lambda: getattr(DV, 'types', {})
 
 
 def set_global_DV(asn1_filenames):
+    # type: (List[str]) -> None
     ''' Call ASN.1 parser and set the global dataview AST entry (DV) '''
     global DV
     if '--toC' in sys.argv:
@@ -160,7 +162,8 @@ def set_global_DV(asn1_filenames):
         DV = parse_asn1(tuple(asn1_filenames),
                         ast_version=ASN1.UniqueEnumeratedNames,
                         rename_policy=rename_policy,
-                        flags=[ASN1.AstOnly])
+                        flags=[ASN1.AstOnly],
+                        pretty_print=True)
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
@@ -171,6 +174,7 @@ def set_global_DV(asn1_filenames):
 
 
 def substring_range(substring):
+    # type: (ogAST.PrimSubstring) -> Tuple[str, str]
     ''' Return the range of a substring '''
     left, right = substring.value[1]['substring']
     left_bty = find_basic_type(left.exprType)
@@ -179,6 +183,7 @@ def substring_range(substring):
 
 
 def is_integer(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is an Integer Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
@@ -187,11 +192,13 @@ def is_integer(ty):
 
 
 def is_real(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Real Type '''
     return find_basic_type(ty).kind == 'RealType'
 
 
 def is_numeric(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Numeric Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
@@ -202,11 +209,19 @@ def is_numeric(ty):
 
 
 def is_boolean(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Boolean Type '''
     return find_basic_type(ty).kind == 'BooleanType'
 
 
+def is_null(ty):
+    # type: (Any) -> bool
+    ''' Return true if a type is a NULL Type '''
+    return find_basic_type(ty).kind == 'NullType'
+
+
 def is_string(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty).kind in (
         'StandardStringType',
@@ -216,31 +231,37 @@ def is_string(ty):
 
 
 def is_sequenceof(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a SequenceOf Type '''
     return find_basic_type(ty).kind == 'SequenceOfType'
 
 
 def is_list(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a List Type '''
     return is_string(ty) or is_sequenceof(ty) or ty == LIST
 
 
 def is_enumerated(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is an Enumerated Type '''
     return find_basic_type(ty).kind == 'EnumeratedType' or ty == ENUMERATED
 
 
 def is_sequence(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Sequence Type '''
     return find_basic_type(ty).kind == 'SequenceType'
 
 
 def is_choice(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Choice Type '''
     return find_basic_type(ty).kind == 'ChoiceType' or ty == CHOICE
 
 
 def is_timer(ty):
+    # type: (Any) -> bool
     ''' Return true if a type is a Timer Type '''
     return find_basic_type(ty).kind == 'TimerType'
 
@@ -299,7 +320,9 @@ def find_process_declaration(ast, process_name):
             return result
     try:
         for process in ast.processes:
-            if process.processName == process_name:
+            if process.processName.lower() == process_name.lower():
+                return process
+            elif process.instance_of_name.lower() == process_name.lower():
                 return process
     except AttributeError:
         return None
@@ -324,13 +347,15 @@ def get_interfaces(ast, process_name):
     '''
         Search for the list of input and output signals (async PI/RI)
         and procedures (sync RI) of a process in a given top-level AST
+        process_name can be the name of a process type, in which case the
+        interfaces can only be found by looking at an instance of the type
+        that is actually connected in the system
     '''
     all_signals, async_signals, errors = [], [], set()
-    system = None
+    system = ast
 
     # Move up to the system level, in case process is nested in a block
     # and not defined at root level as it is the case when it is referenced
-    system = ast
     while hasattr(system, 'parent'):
         system = system.parent
 
@@ -340,7 +365,10 @@ def get_interfaces(ast, process_name):
     for system in iterator:
         all_signals.extend(signals_in_system(system))
         process_ref = find_process_declaration(system, process_name)
+        # Update process name with the name of the instance if we are parsing
+        # a process type.
         if process_ref:
+            process_name = process_ref.processName
             # Go to the block where the process is defined
             process_parent = process_ref.parent
             break
@@ -389,16 +417,19 @@ def get_input_string(root):
 
 
 def error(root, msg):
+    # type: (Any, str) -> str
     ''' Return an error message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
 
 
 def warning(root, msg):
+    # type: (Any, str) -> str
     ''' Return a warning message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
 
 
 def tmp():
+    # type : () -> int
     ''' Return a temporary variable name '''
     global TMPVAR
     varname = TMPVAR
@@ -476,7 +507,7 @@ def check_call(name, params, context):
                 continue
             raise TypeError('Type {} not supported in call to {}'.
                 format(type_name(p.exprType), name))
-        return
+        return UNKNOWN_TYPE
 
     # (1) Find the signature of the function
     # signature will hold the list of parameters for the function
@@ -489,18 +520,24 @@ def check_call(name, params, context):
 
     # (3) Check each individual parameter type
     for idx, param in enumerate(params):
+        warnings = []
         expr = ogAST.ExprAssign()
         expr.left = ogAST.PrimVariable()
         expr.left.exprType = sign[idx]['type']
         expr.right = param
 
         try:
-            fix_expression_types(expr, context)
+            warnings.extend(fix_expression_types(expr, context))
             params[idx] = expr.right
         except TypeError:
             expected = type_name(sign[idx]['type'])
             received = type_name(expr.right.exprType)
             raise TypeError('Expected type {} in call to {} ({} received)'.
+                format(expected, name, received))
+        if (warnings):
+            expected = type_name(sign[idx]['type'])
+            received = type_name(expr.right.exprType)
+            raise Warning('Expected type {} in call to {} ({} received)'.
                 format(expected, name, received))
 
         if sign[idx].get('direction') != 'in' \
@@ -547,7 +584,7 @@ def check_call(name, params, context):
         })
 
     elif name == 'length':
-        return type('Length', (INTEGER,), {
+        return type('Length', (INT32,), {
             'Min': param_btys[0].Min,
             'Max': param_btys[0].Max
         })
@@ -625,12 +662,13 @@ def check_range(typeref, type_to_check):
         raise TypeError('Missing range')
 
 
-def check_type_compatibility(primary, type_ref, context):
+def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
         Does not return anything if OK, otherwise raises TypeError
     '''
+    warnings = []    # function returns a list of warnings
     assert type_ref is not None
     if type_ref is UNKNOWN_TYPE:
         #print traceback.print_stack()
@@ -647,7 +685,7 @@ def check_type_compatibility(primary, type_ref, context):
         for each in basic_type.EnumValues.keys():
             if each.lower() == enumerant:
                 # Found -> all OK
-                return
+                return warnings
         else:
             err = ('Value "' + primary.inputString +
                    '" not in this enumeration: ' +
@@ -659,37 +697,53 @@ def check_type_compatibility(primary, type_ref, context):
 
         for expr in (then_expr, else_expr):
             if expr.is_raw:
-                check_type_compatibility(expr, type_ref, context)
-        return
+                warnings.extend(check_type_compatibility(expr,
+                                                         type_ref,
+                                                         context))
+        return warnings
 
-    elif isinstance(primary, ogAST.PrimVariable):
+    elif isinstance(primary, (ogAST.PrimVariable, ogAST.PrimSelector)):
         try:
-            compare_types(primary.exprType, type_ref)
+            warnings.extend(compare_types(primary.exprType, type_ref))
         except TypeError as err:
             raise TypeError('{expr} should be of type {ty} - {err}'
                             .format(expr=primary.inputString,
                                     ty=type_name(type_ref),
                                     err=str(err)))
-        return
+        return warnings
 
     elif isinstance(primary, ogAST.PrimInteger) \
             and (is_integer(type_ref) or type_ref == NUMERICAL):
-        return
+        return warnings
 
     elif isinstance(primary, ogAST.PrimReal) \
             and (is_real(type_ref) or type_ref == NUMERICAL):
-        return
+        return warnings
+
+    elif isinstance(primary, ogAST.ExprNeg):
+        warnings.extend(check_type_compatibility(primary.expr,
+                                                 type_ref,
+                                                 context))
 
     elif isinstance(primary, ogAST.PrimBoolean) and is_boolean(type_ref):
-        return
+        return warnings
 
-    elif (isinstance(primary, ogAST.PrimEmptyString) and
-                                         basic_type.kind == 'SequenceOfType'):
-        if int(basic_type.Min) == 0:
-            return
+    elif isinstance(primary, ogAST.PrimNull) and is_null(type_ref):
+        return warnings
+
+    elif isinstance(primary, ogAST.PrimEmptyString):
+        # Empty strings ("{ }") can be used for arrays and empty records
+        if basic_type.kind == 'SequenceOfType':
+            if int(basic_type.Min) == 0:
+                return warnings
+            else:
+                raise TypeError('SEQUENCE OF has a minimum size of '
+                                + basic_type.Min + ')')
+        elif basic_type.kind == 'SequenceType':
+            if len(basic_type.Children.keys()) > 0:
+                raise TypeError('SEQUENCE is not empty, wrong "{}" syntax')
         else:
-            raise TypeError('SEQUENCE OF has a minimum size of '
-                            + basic_type.Min + ')')
+            raise TypeError('Not a type compatible with empty string syntax')
     elif isinstance(primary, ogAST.PrimSequenceOf) \
             and basic_type.kind == 'SequenceOfType':
         if type_ref.__name__ != 'Apnd' and \
@@ -699,11 +753,13 @@ def check_type_compatibility(primary, type_ref, context):
                       ' elements in SEQUENCE OF, while constraint is [' +
                       str(basic_type.Min) + '..' + str(basic_type.Max) + ']')
         for elem in primary.value:
-            check_type_compatibility(elem, basic_type.type, context)
+            warnings.extend(check_type_compatibility(elem,
+                                                     basic_type.type,
+                                                     context))
         if not hasattr(primary, 'expected_type') \
                and type_ref.__name__ not in ('Apnd', 'SubStr'):
             primary.expected_type = type_ref
-        return
+        return warnings
     elif isinstance(primary, ogAST.PrimSequence) \
             and basic_type.kind == 'SequenceType':
         user_nb_elem = len(primary.value.keys())
@@ -731,19 +787,21 @@ def check_type_compatibility(primary, type_ref, context):
                         casefield = each
                         break
                 if primary.value[casefield].is_raw:
-                    check_type_compatibility(primary.value[casefield],
-                                             fd_data.type, context)
+                    warnings.extend(check_type_compatibility
+                                         (primary.value[casefield],
+                                          fd_data.type,
+                                          context))
                 else:
                     # Compare the types for semantic equivalence
                     try:
-                        compare_types(
-                            primary.value[casefield].exprType, fd_data.type)
+                        warnings.extend(compare_types
+                                       (primary.value[casefield].exprType,
+                                        fd_data.type))
                     except TypeError as err:
-                        raise TypeError('Field ' + ufield +
-                                    ' is not of the proper type, i.e. ' +
+                        raise TypeError('Field "' + ufield + '" not of type ' +
                                     type_name(fd_data.type) +
                                     ' - ' + str(err))
-        return
+        return warnings
     elif isinstance(primary, ogAST.PrimChoiceItem) \
                               and basic_type.kind.startswith('Choice'):
         for choicekey, choice in basic_type.Children.viewitems():
@@ -760,11 +818,14 @@ def check_type_compatibility(primary, type_ref, context):
         choice_field_type = choice.type
         # if the user field is a raw value:
         if value.is_raw:
-            check_type_compatibility(value, choice_field_type, context)
+            warnings.extend(check_type_compatibility(value,
+                                                     choice_field_type,
+                                                     context))
         # Compare the types for semantic equivalence:
         else:
             try:
-                compare_types(value.exprType, choice_field_type)
+                warnings.extend(compare_types(value.exprType,
+                                              choice_field_type))
             except TypeError as err:
                 raise TypeError(
                             'Field {field} in CHOICE is not of type {t1} - {e}'
@@ -772,7 +833,7 @@ def check_type_compatibility(primary, type_ref, context):
                                     t1=type_name(choice_field_type),
                                     e=str(err)))
         value.exprType = choice_field_type         # XXX
-        return
+        return warnings
     elif isinstance(primary, ogAST.PrimChoiceDeterminant) \
                 and basic_type.kind.startswith('Choice'):
         for choicekey, choice in basic_type.EnumValues.viewitems():
@@ -788,12 +849,12 @@ def check_type_compatibility(primary, type_ref, context):
         # Octet strings
         basic_type = find_basic_type(type_ref)
         if basic_type.kind == 'StandardStringType':
-            return
+            return warnings
         elif basic_type.kind.endswith('StringType'):
             try:
                 if int(basic_type.Min) <= len(
                         primary.value[1:-1]) <= int(basic_type.Max):
-                    return
+                    return warnings
                 else:
                     raise TypeError('Invalid string literal'
                                     ' - check that length is'
@@ -803,74 +864,91 @@ def check_type_compatibility(primary, type_ref, context):
             except ValueError:
                 # No size constraint (or MIN/MAX)
                 LOG.debug('String literal size constraint discarded')
-                return
+                return warnings
         else:
             raise TypeError('String literal not expected')
     elif (isinstance(primary, ogAST.PrimMantissaBaseExp) and
                                             basic_type.kind == 'RealType'):
         LOG.debug('PROBABLY (it is a float but I did not check'
                   'if values are compatible)')
-        return
+        return warnings
     else:
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
                                 t1=type_name(type_ref)))
+    return warnings
 
 
-def compare_types(type_a, type_b):
+def compare_types(type_a, type_b):   # type -> [warnings]
     '''
        Compare two types, return if they are semantically equivalent,
        otherwise raise TypeError
     '''
-
+    warnings = []
+    mismatch = ''
+    if type_a.kind == 'ReferenceType' and type_b.kind == 'ReferenceType':
+        if type_a.ReferencedTypeName != type_b.ReferencedTypeName:
+            mismatch = '"{}" is not "{}"'.format(type_a.ReferencedTypeName,
+                                                 type_b.ReferencedTypeName)
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
 
     if type_a == type_b:
-        return
+        return warnings
     elif NUMERICAL in (type_a, type_b) and is_numeric(type_a) \
             and is_numeric(type_b):
-        return
+        return warnings
     elif LIST in (type_a, type_b) and is_list(type_a) and is_list(type_b):
-        return
+        return warnings
     elif ENUMERATED in (type_a, type_b) and is_enumerated(type_a) \
             and is_enumerated(type_b):
-        return
+        return warnings
     elif CHOICE in (type_a, type_b) and is_choice(type_a) and is_choice(type_b):
-        return
+        return warnings
 
     # Check if both types have basic compatibility
 
     if type_a.kind == type_b.kind:
         if type_a.kind == 'SequenceOfType':
+            if mismatch:
+                raise TypeError(mismatch)
             if type_a.Min == type_a.Max:
                 if type_a.Min == type_b.Min == type_b.Max:
-                    compare_types(type_a.type, type_b.type)
-                    return
+                    warnings.extend(compare_types(type_a.type, type_b.type))
+                    return warnings
                 else:
                     raise TypeError('Incompatible sizes - size of {} can vary'
                                     .format(type_name(type_b)))
             elif(int(type_b.Min) >= int(type_a.Min)
                  and int(type_b.Max) <= int(type_a.Max)):
-                compare_types(type_a.type, type_b.type)
-                return
+                warnings.extend(compare_types(type_a.type, type_b.type))
+                return warnings
             else:
-                compare_types(type_a.type, type_b.type)
-                raise Warning('Size constraints mismatch - risk of overflow')
+                warnings.extend(compare_types(type_a.type, type_b.type))
+                warnings.append('Size constraints mismatch - risk of overflow')
+                return warnings
         # TODO: Check that OctetString types have compatible range
-        return
+        elif type_a.kind == 'SequenceType' and mismatch:
+            raise TypeError(mismatch)
+        elif mismatch:
+            warnings.append(mismatch)
+        #print traceback.print_stack()
+        return warnings
     elif is_string(type_a) and is_string(type_b):
-        return
+        return warnings
     elif is_integer(type_a) and is_integer(type_b):
-        return
+        if mismatch:
+            warnings.append(mismatch)
+        return warnings
     elif is_real(type_a) and is_real(type_b):
-        return
+        if mismatch:
+            warnings.append(mismatch)
+        return warnings
     else:
         raise TypeError('Incompatible types {} and {}'.format(
             type_name(type_a),
             type_name(type_b)
         ))
-
 
 def find_variable_type(var, context):
     ''' Look for a variable name in the context and return its type '''
@@ -908,24 +986,29 @@ def find_variable_type(var, context):
 def fix_enumerated_and_choice(expr_enum, context):
     ''' If left side of the expression is of Enumerated or Choice type,
         check if right side is a literal of that sort, and update type '''
+    warnings = []
     kind = find_basic_type(expr_enum.left.exprType).kind
     if kind in ('EnumeratedType', 'StateEnumeratedType'):
         prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right)
     elif kind == 'ChoiceEnumeratedType':
         prim = ogAST.PrimChoiceDeterminant(primary=expr_enum.right)
     try:
-        check_type_compatibility(prim, expr_enum.left.exprType, context)
+        warnings.extend(check_type_compatibility(prim,
+                                                 expr_enum.left.exprType,
+                                                 context))
         expr_enum.right = prim
         expr_enum.right.exprType = expr_enum.left.exprType
     except (UnboundLocalError, AttributeError, TypeError):
         pass
+    return warnings
 
 
-def fix_expression_types(expr, context):
+def fix_expression_types(expr, context): # type: -> [warnings]
     ''' Check/ensure type consistency in binary expressions '''
+    warnings = []
     for _ in range(2):
-        # Check if an raw enumerated value is of a reference type
-        fix_enumerated_and_choice(expr, context)
+        # Check if a raw enumerated value is of a reference type
+        warnings.extend(fix_enumerated_and_choice(expr, context))
         expr.right, expr.left = expr.left, expr.right
 
     for side in (expr.right, expr.left):
@@ -934,7 +1017,6 @@ def fix_expression_types(expr, context):
         else:
             typed_expr = side
             ref_type = typed_expr.exprType
-
 
     # If a side is a raw Sequence Of with unknown type, try to resolve it
     for side_a, side_b in permutations(('left', 'right')):
@@ -952,13 +1034,13 @@ def fix_expression_types(expr, context):
                     check_expr.left = ogAST.PrimVariable()
                     check_expr.left.exprType = asn_type
                     check_expr.right = elem
-                    fix_expression_types(check_expr, context)
+                    warnings.extend(fix_expression_types(check_expr, context))
                     value.value[idx] = check_expr.right
             # the type of the raw PrimSequenceOf can be set now
             value.exprType.type = asn_type
 
     if isinstance(expr, ogAST.ExprIn):
-        return
+        return warnings
 
     if not expr.right.is_raw and not expr.left.is_raw:
         unknown = [uk_expr for uk_expr in expr.right, expr.left
@@ -987,7 +1069,7 @@ def fix_expression_types(expr, context):
                 check_expr.left = ogAST.PrimVariable()
                 check_expr.left.exprType = expected_type
                 check_expr.right = fd_expr
-                fix_expression_types(check_expr, context)
+                warnings.extend(fix_expression_types(check_expr, context))
                 # Id of fd_expr may have changed (enumerated, choice)
                 expr.right.value[field] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimChoiceItem):
@@ -1008,7 +1090,7 @@ def fix_expression_types(expr, context):
             check_expr.left = ogAST.PrimVariable()
             check_expr.left.exprType = expected_type
             check_expr.right = expr.right.value['value']
-            fix_expression_types(check_expr, context)
+            warnings.extend(fix_expression_types(check_expr, context))
             expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimConditional):
         for det in ('then', 'else'):
@@ -1017,11 +1099,13 @@ def fix_expression_types(expr, context):
             check_expr.left = ogAST.PrimVariable()
             check_expr.left.exprType = expr.left.exprType
             check_expr.right = expr.right.value[det]
-            fix_expression_types(check_expr, context)
+            warnings.extend(fix_expression_types(check_expr, context))
             expr.right.value[det] = check_expr.right
+            # Set the type of "then" and "else" to the reference type:
+            expr.right.value[det].exprType = expr.left.exprType
 
     if expr.right.is_raw != expr.left.is_raw:
-        check_type_compatibility(raw_expr, ref_type, context)
+        warnings.extend(check_type_compatibility(raw_expr, ref_type, context))
         if not raw_expr.exprType.kind.startswith(('Integer',
                                                   'Real',
                                                   'SequenceOf',
@@ -1035,7 +1119,8 @@ def fix_expression_types(expr, context):
             # removing SequenceOf and String from here should be OK.
             raw_expr.exprType = ref_type
     else:
-        compare_types(expr.left.exprType, expr.right.exprType)
+        warnings.extend(compare_types(expr.left.exprType, expr.right.exprType))
+    return list(set(warnings))
 
 
 def expression_list(root, context):
@@ -1056,8 +1141,10 @@ def primary_variable(root, context):
     name = getattr(root.getChild(0), 'text', 'error')
     errors, warnings = [], []
 
-    if is_asn1constant(name):
+    possible_constant = is_asn1constant(name)
+    if possible_constant:
         prim = ogAST.PrimConstant()
+        prim.constant_c_name = possible_constant
     elif is_fpar(name, context):
         prim = ogAST.PrimFPAR()
     else:
@@ -1090,7 +1177,7 @@ def is_asn1constant(name):
     try:
         for varname, vartype in DV.variables.viewitems():
             if varname.lower().replace('-', '_') == name:
-                return True
+                return vartype.varName
     except AttributeError:
         # Ignore - No DV - e.g. in syntax check mode
         pass
@@ -1119,17 +1206,15 @@ def binary_expression(root, context):
     warnings.extend(warn_right)
 
     try:
-        fix_expression_types(expr, context)
+        warnings.extend(fix_expression_types(expr, context))
     except (AttributeError, TypeError) as err:
         errors.append(error(root, str(err)))
-    except Warning as warn:
-        warnings.append(warning(root, str(warn)))
 
     return expr, errors, warnings
 
 
 def unary_expression(root, context):
-    ''' Unary expression analysys '''
+    ''' Unary expression analysis '''
     ExprNode = EXPR_NODE[root.type]
     expr = ExprNode(
         get_input_string(root),
@@ -1144,7 +1229,7 @@ def unary_expression(root, context):
     return expr, errors, warnings
 
 
-def expression(root, context):
+def expression(root, context, pos='right'):
     ''' Expression analysis (e.g. 5+5*hello(world)!foo) '''
     logic = (lexer.OR, lexer.AND, lexer.XOR, lexer.IMPLIES)
     arithmetic = (lexer.PLUS, lexer.ASTERISK, lexer.DASH,
@@ -1174,7 +1259,7 @@ def expression(root, context):
     elif root.type == lexer.CALL:
         return call_expression(root, context)
     elif root.type == lexer.SELECTOR:
-        return selector_expression(root, context)
+        return selector_expression(root, context, pos)
     else:
         raise NotImplementedError(sdl92Parser.tokenNames[root.type] +
                                 ' - line ' + str(root.getLine()))
@@ -1244,12 +1329,12 @@ def arithmetic_expression(root, context):
                      'Max': str(float(left.Max) * float(right.Max))}
             expr.exprType = type('Mul', (basic,), attrs)
         elif isinstance(expr, ogAST.ExprMinus):
-            attrs = {'Min': str(float(left.Min) - float(right.Min)),
-                     'Max': str(float(left.Max) - float(right.Max))}
+            attrs = {'Min': str(float(left.Min) - float(right.Max)),
+                     'Max': str(float(left.Max) - float(right.Min))}
             expr.exprType = type('Minus', (basic,), attrs)
         elif isinstance(expr, ogAST.ExprDiv):
-            attrs = {'Min': str(float(left.Min) / (float(right.Min) or 1)),
-                     'Max': str(float(left.Max) / (float(right.Max) or 1))}
+            attrs = {'Min': str(float(left.Min) / (float(right.Max) or 1)),
+                     'Max': str(float(left.Max) / (float(right.Min) or 1))}
             expr.exprType = type('Div', (basic,), attrs)
         elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
             attrs = {'Min': right.Min, 'Max': right.Max}
@@ -1312,7 +1397,7 @@ def in_expression(root, context):
     expr.left.exprType = left_type
 
     try:
-        compare_types(expr.right.exprType, ref_type)
+        warnings.extend(compare_types(expr.right.exprType, ref_type))
     except TypeError as err:
         errors.append(error(root, str(err)))
 
@@ -1440,7 +1525,7 @@ def conditional_expression(root, context):
     try:
         expr.left = then_expr
         expr.right = else_expr
-        fix_expression_types(expr, context)
+        warnings.extend(fix_expression_types(expr, context))
         expr.exprType = then_expr.exprType
     except (AttributeError, TypeError) as err:
         if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
@@ -1585,19 +1670,25 @@ def primary_substring(root, context):
 
     if receiver_bty.kind == 'SequenceOfType' or \
             receiver_bty.kind.endswith('StringType'):
+        # min0/max0 and min1/max1 are the values of the substring bounds
         min0 = float(find_basic_type(params[0].exprType).Min)
         min1 = float(find_basic_type(params[1].exprType).Min)
         max0 = float(find_basic_type(params[0].exprType).Max)
         max1 = float(find_basic_type(params[1].exprType).Max)
         node.exprType = type('SubStr', (receiver_bty,),
-                             {'Min':
-                                str(int(min1) - int(max0) + 1),
-                              'Max':
-                                str(int(max1) - int(min0) + 1)})
+                             {'Min': str(int(min1) - int(max0) + 1),
+                              'Max': str(int(max1) - int(min0) + 1)})
         basic = find_basic_type(node.exprType)
-        if int(min0) > int(min1) or int(max0) > int(max1):
-            msg = 'Substring bounds are invalid'
-            errors.append(error(root, msg))
+        if int(min0) > int(min1):
+            # right value lower range smaller than left value lower bound
+            msg = ('Substring end range could be lower than start range'
+                   ' ({}>{})'.format(min0, min1))
+            warnings.append(warning(root, msg))
+        if int(max0) > int(max1):
+            # left value upper bound can be bigger than right value upper bound
+            msg = ('Substring start range could be higher than end range'
+                   ' ({}>{})'.format(max0, max1))
+            warnings.append(warning(root, msg))
         if int(min0) > int(receiver_bty.Max) \
                 or int(max1) > int(receiver_bty.Max):
             msg = 'Substring bounds [{}..{}] outside range [{}..{}]'.format(
@@ -1610,7 +1701,7 @@ def primary_substring(root, context):
     return node, errors, warnings
 
 
-def selector_expression(root, context):
+def selector_expression(root, context, pos="right"):
     ''' Selector expression analysis '''
     errors, warnings = [], []
 
@@ -1620,15 +1711,16 @@ def selector_expression(root, context):
     node.tmpVar = tmp()
 
     receiver, receiver_err, receiver_warn = \
-                                expression(root.children[0], context)
+                                expression(root.children[0], context, pos)
     receiver_bty = find_basic_type(receiver.exprType)
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
 
     field_name = root.children[1].text.replace('_', '-').lower()
     try:
-        if receiver_bty.kind == 'ChoiceType':
-            warnings.append(warning(root, 'Choice assignment: '
+        if receiver_bty.kind == 'ChoiceType' and pos == "left":
+            # Error if this is the left part of an assignment
+            errors.append(warning(root, 'Choice assignment: '
                                       'use "var := {field}: value" instead of '
                                       '"var!{field} := value"'
                                       .format(field=field_name)))
@@ -1668,6 +1760,10 @@ def primary(root, context):
         prim = ogAST.PrimBoolean()
         prim.value = [root.text.lower()]
         prim.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
+#   elif root.type == lexer.NULL:
+#       prim = ogAST.PrimNull()
+#       prim.value = [root.text.lower()]
+#       prim.exprType = type('PrNull', (object,), {'kind': 'NullType'})
     elif root.type == lexer.FLOAT:
         prim = ogAST.PrimReal()
         prim.value = [root.text]
@@ -1714,13 +1810,18 @@ def primary(root, context):
             'Max': str(value)
         })
     elif root.type == lexer.EMPTYSTR:
-        # Empty SEQUENCE OF (i.e. "{}")
+        # Primary "{ }" used in empty SEQUENCE OF (i.e. "{}")
+        # and also in value notation of SEQUENCEs that have no fields
         prim = ogAST.PrimEmptyString()
-        prim.exprType = type('PrES', (object,), {
-            'kind': 'SequenceOfType',
-            'Min': '0',
-            'Max': '0'
-        })
+        prim.value = []
+        prim.exprType = UNKNOWN_TYPE
+        # Let fix_expression_type resolve this type
+#       prim.exprType = type('PrES', (object,), {
+#           'kind': 'SequenceOfType',
+#           'Min': '0',
+#           'Max': '0',
+#           'type': UNKNOWN_TYPE
+#       })
     elif root.type == lexer.CHOICE:
         prim = ogAST.PrimChoiceItem()
         choice = root.getChild(0).toString()
@@ -1736,7 +1837,7 @@ def primary(root, context):
             if elem.type == lexer.ID:
                 field_name = elem.text
             else:
-                prim.value[field_name], err, warn = (expression(elem, context))
+                prim.value[field_name], err, warn = expression(elem, context)
                 errors.extend(err)
                 warnings.extend(warn)
         prim.exprType = UNKNOWN_TYPE
@@ -1744,9 +1845,8 @@ def primary(root, context):
         prim = ogAST.PrimSequenceOf()
         prim.value = []
         for elem in root.getChildren():
-            # SEQUENCE OF elements cannot have fieldnames/indexes
             prim_elem, prim_elem_errors, prim_elem_warnings = \
-                                                        primary(elem, context)
+                                                      expression(elem, context)
             errors += prim_elem_errors
             warnings += prim_elem_warnings
             prim_elem.inputString = get_input_string(elem)
@@ -1806,7 +1906,7 @@ def variables(root, ta_ast, context):
             expr.left.exprType = asn1_sort
             expr.right = def_value
             try:
-                fix_expression_types(expr, context)
+                warnings.extend(fix_expression_types(expr, context))
                 def_value = expr.right
                 basic = find_basic_type(asn1_sort)
                 if basic.kind.startswith(('Integer', 'Real')):
@@ -1820,7 +1920,10 @@ def variables(root, ta_ast, context):
                     expr.right.inputString + ', type= ' +
                     type_name(expr.right.exprType) + ') ' + str(err))
             else:
-                if def_value.exprType == UNKNOWN_TYPE:
+                if def_value.exprType == UNKNOWN_TYPE or not \
+                         isinstance(def_value, (ogAST.ExprAppend,
+                                                ogAST.PrimSequenceOf,
+                                                ogAST.PrimStringLiteral)):
                     def_value.exprType = asn1_sort
                 def_value.expected_type = asn1_sort
 
@@ -1920,7 +2023,7 @@ def composite_state(root, parent=None, context=None):
         LOG.debug('Procedure context is undefined')
     inner_proc = []
     # Gather the list of states defined in the composite state
-    # and map a list of transitionsi to each state
+    # and map a list of transitions to each state
     comp.mapping = {name: [] for name in get_state_list(root)}
     inner_composite, states, floatings, starts = [], [], [], []
     for child in root.getChildren():
@@ -1955,8 +2058,16 @@ def composite_state(root, parent=None, context=None):
                 comp.entry_procedure = new_proc
             elif new_proc.inputString.strip().lower() == 'exit':
                 comp.exit_procedure = new_proc
-            comp.content.inner_procedures.append(new_proc)
+            # check for duplicate declaration
+            if any(each.inputString.lower() == new_proc.inputString.lower()
+                   for each in chain(comp.content.inner_procedures,
+                                     context.procedures)
+                   if each.inputString.lower() not in ('entry', 'exit')):
+                errors.append(['Duplicate procedure Declaration: {}'
+                              .format(new_proc.inputString),
+                              [new_proc.pos_x, new_proc.pos_y], []])
             # Add procedure to the context, to make it visible at scope level
+            comp.content.inner_procedures.append(new_proc)
             context.procedures.append(new_proc)
         elif child.type in (lexer.COMPOSITE_STATE, lexer.STATE_AGGREGATION):
             inner_composite.append(child)
@@ -2005,6 +2116,9 @@ def composite_state(root, parent=None, context=None):
             comp.content.start = st
         else:
             errors.append(['Only one unnamed START transition is allowed',
+                           [st.pos_x, st.pos_y], []])
+        if not comp.terminators:
+            errors.append(['Transition is incomplete',
                            [st.pos_x, st.pos_y], []])
     for each in floatings:
         lab, err, warn = floating_label(each, parent=None, context=comp)
@@ -2131,9 +2245,17 @@ def procedure_post(proc, content, parent=None, context=None):
             inner_proc.append((new_proc, content))
             errors.extend(err)
             warnings.extend(warn)
-            proc.content.inner_procedures.append(new_proc)
+            # check for duplicate declaration
+            err = any(each.inputString.lower() == new_proc.inputString.lower()
+                      for each in chain(proc.content.inner_procedures,
+                                        context.procedures))
             # Add procedure to the context, to make it visible at scope level
             context.procedures.append(new_proc)
+            proc.content.inner_procedures.append(new_proc)
+            if err:
+                errors.append(['Duplicate declaration of procedure {}'
+                              .format(new_proc.inputString),
+                              [0, 0], []])
         elif child.type == lexer.START:
             # START transition (fills the mapping structure)
             proc.content.start, err, warn = start(child, context=proc)
@@ -2167,7 +2289,7 @@ def procedure_post(proc, content, parent=None, context=None):
             check_expr.left.exprType = proc.return_type
             check_expr.right = each.return_expr
             try:
-                fix_expression_types(check_expr, context)
+                warnings.extend(fix_expression_types(check_expr, context))
             except (TypeError, AttributeError) as err:
                 errors.append(str(err))
             # Id of fd_expr may have changed (enumerated, choice)
@@ -2456,11 +2578,18 @@ def text_area_content(root, ta_ast, context):
         errors.extend(err)
         warnings.extend(warn)
         try:
-            # Add procedure to the container (process or procedure)
-            context.content.inner_procedures.append(proc)
+            content = context.content.inner_procedures
         except AttributeError:
             # May not be any content in current context (eg System)
-            pass
+            content = []
+        # check for duplicates
+        if any(each.inputString.lower() == proc.inputString.lower()
+               for each in chain(content, context.procedures)):
+            errors.append('Duplicate Procedure Declaration: {}'
+                          .format(proc.inputString))
+
+        # Add procedure to the container (process or procedure) if any
+        content.append(proc)
         # Add to context to make it visible at scope level
         context.procedures.append(proc)
         # And add it to the TextArea AST for the text autocompletion
@@ -2493,8 +2622,9 @@ def text_area(root, parent=None, context=None):
             warnings.extend(warn)
         elif child.type == lexer.ENDTEXT:
             userTextStopIndex = child.getTokenStartIndex() - 1
-            ta.inputString = token_stream(child).toString(
-                    userTextStartIndex, userTextStopIndex).strip()
+            string = token_stream(child).toString(userTextStartIndex,
+                                                  userTextStopIndex)
+            ta.inputString = dedent(string).strip()
         elif child.type == lexer.HYPERLINK:
             ta.hyperlink = child.getChild(0).toString()[1:-1]
         else:
@@ -2640,12 +2770,6 @@ def system_definition(root, parent):
         else:
             warnings.append('Unsupported construct in system: ' +
                     str(child.type))
-#   if asn1_files:
-#       # parse ASN.1 files before parsing the rest of the system
-#       try:
-#           set_global_DV(asn1_files)
-#       except TypeError as err:
-#           errors.append(str(err))
         if asn1_files:
             system.ast.asn1Modules = DV.asn1Modules
             system.ast.asn1_filenames = asn1_files
@@ -2738,8 +2862,15 @@ def process_definition(root, parent=None, context=None):
             inner_proc.append((proc, content))
             errors.extend(err)
             warnings.extend(warn)
-            process.content.inner_procedures.append(proc)
+            # check for duplicate declaration
+            if any(each.inputString.lower() == proc.inputString.lower()
+                   for each in chain(process.content.inner_procedures,
+                                     process.procedures)):
+                errors.append(['Duplicate Procedure declaration: {}'
+                              .format(proc.inputString),
+                              [proc.pos_x, proc.pos_y], []])
             # Add it at process level so that it is in the scope
+            process.content.inner_procedures.append(proc)
             process.procedures.append(proc)
         elif child.type == lexer.FLOATING_LABEL:
             lab, err, warn = floating_label(
@@ -2756,9 +2887,11 @@ def process_definition(root, parent=None, context=None):
             process.composite_states.append(comp)
         elif child.type == lexer.REFERENCED:
             process.referenced = True
+        elif child.type == lexer.TYPE:
+            process.process_type = True
         elif child.type == lexer.TYPE_INSTANCE:
-            # PROCESS Toto:ParentType; Not supported
-            pass
+            # PROCESS Toto:ParentType;
+            process.instance_of_name = child.children[0].text
         elif child.type == lexer.COMMENT:
             process.comment, _, _ = end(child)
         else:
@@ -2770,6 +2903,12 @@ def process_definition(root, parent=None, context=None):
         err, warn = procedure_post(proc, content, context=process)
         errors.extend(err)
         warnings.extend(warn)
+    if not process.referenced and not process.instance_of_name \
+                              and (not process.content.start or
+                                   not process.content.start.terminators):
+        # detect missing START transition
+        errors.append(['Mandatory START transition is missing in process',
+                      [process.pos_x, process.pos_y], []])
     for each in chain(errors, warnings):
         try:
             each[2].insert(0, 'PROCESS {}'.format(process.processName))
@@ -2811,6 +2950,7 @@ def continuous_signal(root, parent, context):
         elif child.type == lexer.INT:
             # Priority
             i.priority = int(child.text)
+            i.inputString += u';\npriority {}'.format(get_input_string(child))
         elif child.type == lexer.TRANSITION:
             trans, err, warn = transition(child, parent=i, context=context)
             errors.extend(err)
@@ -2894,7 +3034,8 @@ def input_part(root, parent, context):
                     user_param_type = find_variable_type(user_param.text,
                                                          context)
                     try:
-                        compare_types(sig_param_type, user_param_type)
+                        warnings.extend(compare_types(sig_param_type,
+                                                      user_param_type))
                     except TypeError as err:
                         errors.append('Parameter type does not match with '
                                       'signal declaration (expecting '
@@ -2978,7 +3119,7 @@ def state(root, parent, context):
             state_def.inputString = get_input_string(child)
             state_def.line = child.getLine()
             state_def.charPositionInLine = child.getCharPositionInLine()
-            exceptions = [c.toString() for c in child.getChildren()]
+            exceptions = [c.toString().lower() for c in child.getChildren()]
             for st in context.mapping:
                 if st not in exceptions + ['START']:
                     state_def.statelist.append(st)
@@ -3196,11 +3337,13 @@ def cif(root):
     ''' Return the CIF coordinates '''
     result = []
     for child in root.getChildren():
+        neg = False
         if child.type == lexer.DASH:
-            val = -int(child.getChild(0).toString())
+            neg = True
         else:
             val = int(child.toString())
-        result.append(val)
+            val = -val if neg else val
+            result.append(val)
     return result
 
 
@@ -3237,8 +3380,8 @@ def start(root, parent=None, context=None):
         elif child.type == lexer.HYPERLINK:
             s.hyperlink = child.getChild(0).toString()[1:-1]
         else:
-            warnings.append('START unsupported child type: ' +
-                    str(child.type))
+            warnings.append(['START unsupported child type: ' +
+                    str(child.type), [s.pos_x, s.pos_y], []])
     # At the end of the START parsing, get the the list of terminators that
     # follow the START transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the START)
@@ -3304,6 +3447,8 @@ def outputbody(root, context):
         LOG.debug('[outputbody] call check_and_fix_op_params : '
                     + get_input_string(root) + str(op_err))
         LOG.debug(str(traceback.format_exc()))
+    except Warning as warn:
+        warnings.append('{} - {}'.format(str(warn), get_input_string(root)))
     if body['params']:
         body['tmpVars'] = []
         for _ in body['params']:
@@ -3482,7 +3627,9 @@ def decision(root, parent, context):
             expr.left = dec.question
             expr.right = ans.constant
             try:
-                fix_expression_types(expr, context)
+                answarn = fix_expression_types(expr, context)
+                answarn = [[w, [ans_x, ans_y], []] for w in answarn]
+                warnings.extend(answarn)
                 if dec.question.exprType == UNKNOWN_TYPE:
                     dec.question = expr.left
                 ans.constant = expr.right
@@ -3567,12 +3714,16 @@ def decision(root, parent, context):
                                                 ans.inputString),
                                         [ans_x, ans_y], []])
             except (AttributeError, TypeError) as err:
+                LOG.debug('ogParser:\n' + str(traceback.format_exc()))
                 errors.append(['Type mismatch: '
                     'question (' + expr.left.inputString + ', type= ' +
                     type_name(expr.left.exprType) + '), answer (' +
                     expr.right.inputString + ', type= ' +
                     type_name(expr.right.exprType) + ') ' + str(err),
                     [ans_x, ans_y], []])
+            except Warning as warn:
+                warnings.append(['Type mismatch: ' + str(warn), [ans_x, ans_y],
+                                []])
         elif ans.kind == 'closed_range':
             if not is_numeric(dec.question.exprType):
                 errors.append(['Closed range are only for numerical types',
@@ -3583,7 +3734,7 @@ def decision(root, parent, context):
                 expr.left = dec.question
                 expr.right = ans.closedRange[idx]
                 try:
-                    fix_expression_types(expr, context)
+                    warnings.extend(fix_expression_types(expr, context))
                     if dec.question.exprType == UNKNOWN_TYPE:
                         dec.question = expr.left
                     ans.closedRange[idx] = expr.right
@@ -3901,8 +4052,7 @@ def transition(root, parent, context):
             trans.actions.append(out_ast)
             parent = out_ast
         elif child.type == lexer.DECISION:
-            dec, err, warn = decision(
-                            child, parent=parent, context=context)
+            dec, err, warn = decision(child, parent=parent, context=context)
             errors.extend(err)
             warnings.extend(warn)
             trans.actions.append(dec)
@@ -3927,7 +4077,7 @@ def transition(root, parent, context):
 
 
 def assign(root, context):
-    ''' Parse an assignation (a := b) in a task symbol '''
+    ''' Parse an assignment (a := b) in a task symbol '''
     errors = []
     warnings = []
     expr = ogAST.ExprAssign(
@@ -3943,7 +4093,8 @@ def assign(root, context):
     if root.children[0].type == lexer.CALL:
         expr.left, err, warn = call_expression(root.children[0], context)
     elif root.children[0].type == lexer.SELECTOR:
-        expr.left, err, warn = selector_expression(root.children[0], context)
+        expr.left, err, warn = selector_expression(root.children[0], context,
+                                                   pos="left")
     else:
         expr.left, err, warn = primary_variable(root.children[0], context)
     warnings.extend(warn)
@@ -3958,7 +4109,7 @@ def assign(root, context):
         warnings.extend(warn)
 
     try:
-        fix_expression_types(expr, context)
+        warnings.extend(fix_expression_types(expr, context))
         # Assignment with numerical value: check range
         basic = find_basic_type(expr.left.exprType)
         if basic.kind.startswith(('Integer', 'Real')):
@@ -3974,10 +4125,8 @@ def assign(root, context):
                                 else 'Undefined',
                               errstr=str(err)))
     except Warning as warn:
-        warnings.append('Expression "{}": {}'
-                        .format(expr.inputString, str(warn)))
-    else:
-        # In "else" branch because in case of exception right side may be None
+        warnings.append(str(warn))
+    if not errors:
         if expr.right.exprType == UNKNOWN_TYPE or not \
                 isinstance(expr.right, (ogAST.ExprAppend,
                                         ogAST.PrimSequenceOf,
@@ -4083,14 +4232,18 @@ def for_loop(root, context):
                 # basic may be UNKNOWN_TYPE if the expression is a
                 # reference to an ASN.1 constant - their values are not
                 # currently visible to the SDL parser
-                result_type = type('for_range', (INT32,), {'Min': r_min,
-                                                           'Max': r_max})
+                result_type = type('for_range', (INTEGER,), {'Min': r_min,
+                                                             'Max': r_max})
                 context.variables[forloop['var']] = (result_type, 0)
 
             forloop['transition'], err, warn = transition(
                                     child, parent=for_loop, context=context)
-            errors.extend(err)
-            warnings.extend(warn)
+            # if the transition contains tasks or other constructs that are
+            # normally inside a graphical symbol, the errors and warnings will
+            # contain coordinates. Remove them, they will be replaced by those
+            # of the TASK symbol that contains the for loop
+            errors.extend(e[0] if type(e) is list else e for e in err)
+            warnings.extend(w[0] if type(w) is list else w for w in warn)
         else:
             warnings.append('Unsupported child type in FOR body' +
                             str(child.type))
@@ -4132,7 +4285,7 @@ def task_body(root, context):
 
 
 def task(root, parent=None, context=None):
-    ''' Parse a TASK symbol (assignation or informal text) '''
+    ''' Parse a TASK symbol (assignment or informal text) '''
     errors = []
     warnings = []
     coord = False
@@ -4233,7 +4386,8 @@ def pr_file(root):
     # and data typess references.
     processes, uses, systems = [], [], []
     for child in root.getChildren():
-        ast.pr_files.add(node_filename(child))
+        if node_filename(child) is not None:
+            ast.pr_files.add(node_filename(child))
         if child.type == lexer.PROCESS:
             processes.append(child)
         elif child.type == lexer.USE:
@@ -4281,7 +4435,7 @@ def pr_file(root):
         ast.systems.append(system)
 
         def find_processes(block):
-            ''' Recursively find processes in a system '''
+            ''' Recursively find non-referenced processes in a system '''
             try:
                 result = [proc for proc in block.processes
                           if not proc.referenced]
@@ -4292,7 +4446,7 @@ def pr_file(root):
             return result
         ast.processes.extend(find_processes(system))
     for child in processes:
-        # process definition at root level (must be referenced in a system)
+        # process definition at root level (can be a process type)
         process, err, warn = process_definition(child, parent=ast)
         ast.processes.append(process)
         process.dataview = types()
@@ -4300,12 +4454,41 @@ def pr_file(root):
         process.dv = DV
         errors.extend(err)
         warnings.extend(warn)
+    # Check that process instance/types match
+    process_instances = []
+    process_types     = []
+    to_be_deleted     = []
+    for each in ast.processes:
+        if each.instance_of_name is not None or not each.process_type:
+            # standalone process or instance of a process type
+            process_instances.append(each)
+        elif each.process_type:
+            process_types.append(each)
+    for each in process_instances:
+        if each.instance_of_name is not None:
+            # Find corresponding process type definition
+            for p_type in process_types:
+                if p_type.processName == each.instance_of_name:
+                    each.instance_of_ref = p_type
+                    to_be_deleted.append(p_type)
+                    break
+            else:
+                warnings.append('"{}" PROCESS TYPE definition not found'
+                                .format(each.instance_of_name))
+    for each in to_be_deleted:
+        ast.processes.remove(each)
+        process_types.remove(each)
+    for each in process_types:
+        ast.processes.remove(each)
+        warnings.append('No instance of PROCESS TYPE "{}" found'
+                        .format(each.processName))
 
     # Since SDL type declarations are injected in ASN.1 ast,
     # The ASN.1 ASTs needs to be copied at the end of PR parsing process
     # and not just after the ASN1 specific parsing
     ast.dataview = types()
     ast.asn1_constants = DV.variables
+    ast.DV = DV
     return ast, errors, warnings
 
 
@@ -4318,7 +4501,7 @@ def add_to_ast(ast, filename=None, string=None):
         LOG.error('Parser error: ' + str(err))
         raise
     # Use Sam & Max output capturer to get errors from ANTLR parser
-    with samnmax.capture_ouput() as (stdout, stderr):
+    with samnmax.capture_output() as (stdout, stderr):
         tree_rule_return_scope = parser.pr_file()
     for e in stderr:
         errors.append([e.strip()])
@@ -4414,7 +4597,7 @@ def parseSingleElement(elem='', string='', context=None):
     warnings = []
     t = None
     if parser:
-        with samnmax.capture_ouput() as (stdout, stderr):
+        with samnmax.capture_output() as (stdout, stderr):
             r = parser_ptr()
         for e in stderr:
             syntax_errors.append(e.strip())

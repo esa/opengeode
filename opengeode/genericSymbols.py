@@ -52,7 +52,8 @@ __all__ = ['Symbol', 'VerticalSymbol', 'HorizontalSymbol', 'Comment']
 import os
 import logging
 
-from PySide.QtCore import Qt, QPoint, QPointF, QRect, QFile, QObject, Property
+from PySide.QtCore import (Qt, QPoint, QPointF, QRect, QFile, QObject,
+                           Signal, Property)
 
 from PySide.QtGui import(QGraphicsPathItem, QGraphicsPolygonItem, QPainterPath,
                          QGraphicsItem, QPen, QColor, QMenu, QFileDialog,
@@ -65,7 +66,7 @@ import undoCommands
 import ogAST
 import ogParser
 from Connectors import Connection, VerticalConnection, CommentConnection, \
-                       RakeConnection, JoinConnection
+                       RakeConnection, JoinConnection, Channel
 
 from TextInteraction import EditableText
 
@@ -78,19 +79,29 @@ class Symbol(QObject, QGraphicsPathItem, object):
         Top-level class used to handle all SDL symbols
         Inherits from QObject to allow animations
     '''
+    # Emit a signal when the symbol moved - can be caught by connectors to
+    # adjust connection points if the symbol is not the connection parent
+    moved = Signal(float, float)
     # Symbols of a given type share a text-autocompletion list:
     completion_list = set()
     # Flexible lists of symbol types that can be set as child of this symbol
     _unique_followers = []  # unique : e.g. comment symbol
     _insertable_followers = []  # no limit to insert below current symbol
     _terminal_followers = []  # cannot be inserted between two symbols
+    # List of symbols that can be connected, but without parent-child relation
+    _conn_sources = []   # source types that can connect to this symbol
+    _conn_targets = []   # target types that can connect to this symbol
     # By default a symbol is resizeable
     resizeable = True
     # By default symbol size may expand when inner text exceeds border
     auto_expand = True
+    # default size: "any" or "symbol_default" - optionally used at creation
+    default_size = "symbol_default"
     # By default connections between symbols are lines, not arrows
     arrow_head = None
     arrow_tail = None
+    # Define if a symbol can be manually connected to another one by user
+    user_can_connect = False
     # Default mouse cursor
     default_cursor = Qt.SizeAllCursor
     # Decide if a symbol can be copy-pasted several times
@@ -107,6 +118,8 @@ class Symbol(QObject, QGraphicsPathItem, object):
     # (e.g. a subscene that appears when double-clicking on the item)
     _allow_nesting = False
     _nested_scene = None
+    # name used to discriminate the scene context
+    context_name = ''
     # keywords for the syntax highlighter
     blackbold = ()
     redbold = ()
@@ -122,6 +135,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         '''
         super(Symbol, self).__init__(parent)
         QGraphicsPathItem.__init__(self, parent)
+        # Current mode, can be empty string, "Resize", or "Move"
         self.mode = ''
         self.comment = None
         self.text = None
@@ -143,7 +157,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
         # and default text alignment within a textbox
         self.text_alignment = Qt.AlignLeft
         # Activate cache mode to boost rendering by calling paint less often
-        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         # Apply symbol default mouse cursor
         self.setCursor(self.default_cursor)
         # De-ativate cache mode otherwise paint is not properly updated
@@ -214,6 +228,28 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def nested_scene(self, value):
         ''' Set the value of the nested scene '''
         self._nested_scene = value
+
+    # Connection zones (for start and end of connection) are lists of QRect
+    # that define areas for the mouse to grab the symbol and start a connection
+    # These zones depend on the shape of the symbol and must be defined in
+    # sub-classes. By default there are none. Example in SDL symbol "Process".
+    # Zones are defined as properties because they must be dynamically
+    # computed, e.g. based on the current size of the symbol.
+    @property
+    def conn_start_zones(self):
+        return []
+
+    @property
+    def conn_end_zones(self):
+        return []
+
+    def in_start_zone(self, point):   # type: QPoint
+        ''' Return true if "point" is in one of the connection start zones '''
+        return any(rect.contains(point) for rect in self.conn_start_zones)
+
+    def in_end_zone(self, point):   # type: QPoint
+        ''' Return true if "point" is in one of the connection end zones '''
+        return any(rect.contains(point) for rect in self.conn_end_zones)
 
     def closest_connection_point(self, coord):
         '''
@@ -297,6 +333,10 @@ class Symbol(QObject, QGraphicsPathItem, object):
         try:
             _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
                                            self.common_name, text)
+            # In case of syntax errors, it would be useful to return the text
+            # in addition to the error from ANTLR, in order to be very clear
+            # about the line number and character position to fix the error
+            # => TODO
         except (AssertionError, AttributeError):
             LOG.error('Checker failed - no parser for this construct?')
         else:
@@ -410,7 +450,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def loadHyperlinkDialog(self):
         ''' Load dialog from ui file for defining hyperlink '''
         loader = QUiLoader()
-        ui_file = QFile(':/hyperlink.ui')  # UI_DIALOG_FILE)
+        ui_file = QFile(':/hyperlink.ui')
         ui_file.open(QFile.ReadOnly)
         self.hyperlink_dialog = loader.load(ui_file)
         ui_file.close()
@@ -551,9 +591,9 @@ class Symbol(QObject, QGraphicsPathItem, object):
             # Minimum size is the size of the text inside the symbol
             try:
                 height = max(user_height,
-                             self.text.boundingRect().height() + 10)
+                             self.text.boundingRect().height())
                 width = max(user_width,
-                            self.text.boundingRect().width() + 30)
+                            self.text.boundingRect().width() + 15)
             except AttributeError:
                 height = max(user_height, 15)
                 width = max(user_width, 30)
@@ -575,6 +615,10 @@ class Symbol(QObject, QGraphicsPathItem, object):
                                             self, self.coord, self.position)
                 self.scene().undo_stack.push(undo_cmd)
                 self.cam(self.coord, self.position)
+                # Emit signal to indicate that the symbol moved
+                # typically caught by connectors
+                self.moved.emit(self.coord.x() - self.pos_x,
+                                self.coord.y() - self.pos_y)
         self.mode = ''
 
     def updateConnectionPoints(self):
@@ -605,7 +649,9 @@ class Symbol(QObject, QGraphicsPathItem, object):
         ''' Collision Avoidance Manoeuvre for top level symbols '''
         # Since the cam function is recursive it may be time consuming
         # Call the Qt event prcessing to avoid blocking the application
-        QApplication.processEvents()
+        # Removed (had bad visual side effects)
+        # QApplication.processEvents()
+        #print 'CAM', unicode(self)[slice(0, 20)]
         ignore = ignore or []
         if not self.scene():
             # Make sure the item is in a scene. For instance, when loading
@@ -707,6 +753,7 @@ class Comment(Symbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = ('TODO', 'FIXME', 'XXX')
     redbold = ()
+    textbox_alignment = Qt.AlignLeft | Qt.AlignVCenter
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Comment()
@@ -720,7 +767,6 @@ class Comment(Symbol):
         if parent:
             local_pos = parent.mapFromScene(ast.pos_x or 0, ast.pos_y or 0)
             self.insert_symbol(parent, local_pos.x(), local_pos.y())
-        #self.set_shape(ast.width, ast.height)
         self.common_name = 'end'
         self.parser = ogParser
 
@@ -742,7 +788,12 @@ class Comment(Symbol):
         self.pos_y = y if y is not None else (parent.boundingRect().height() -
                                               self.boundingRect().height()) / 2
         self.connection = self.connect_to_parent()
-        parent.cam(parent.position, parent.position)
+        try:
+            self.text.set_textbox_position()
+        except AttributeError:
+            # if called before text is initialized
+            pass
+        #parent.cam(parent.position, parent.position)
 
     def connect_to_parent(self):
         ''' Redefinition of the function to use a comment connector '''
@@ -765,6 +816,7 @@ class Comment(Symbol):
             return
         self.set_shape(rect.width(), rect.height())
         self.update_connections()
+
 
     def set_shape(self, width, height):
         ''' Set a box - actual shape is computed in the paint function '''
@@ -878,6 +930,8 @@ class Cornergrabber(QGraphicsPolygonItem, object):
             # Parent item may have changed its cursor (e.g. when inserting
             # items). In that case, don't override the cursor for that area
             cursor = self.parent.cursor()
+        elif self.parent.in_start_zone(event.pos().toPoint()):
+            cursor = Qt.CrossCursor
         elif not self.parent.resizeable:
             cursor = self.parent.default_cursor
             self.resize_mode = ''
@@ -992,7 +1046,7 @@ class HorizontalSymbol(Symbol, object):
         self.position = QPointF(pos_x, pos_y)
         self.connection = self.connect_to_parent()
         self.updateConnectionPoints()
-        self.cam(self.position, self.position)
+        #self.cam(self.position, self.position)
 
     def update_connections(self):
         '''
@@ -1011,8 +1065,11 @@ class HorizontalSymbol(Symbol, object):
         ''' Return all the items's sibling symbols '''
         try:
             return (item for item in self.parent.childItems()
-                    if item is not self and (isinstance(self, type(item)) or
-                        isinstance(item, type(self))))
+                    if item is not self and isinstance(item, HorizontalSymbol))
+            # Don't test only against the same type, that would exclude
+            # e.g. Inputs next to Continuous signals
+#                   if item is not self and (isinstance(self, type(item)) or
+#                       isinstance(item, type(self))))
         except:
             return ()
 
@@ -1036,7 +1093,7 @@ class HorizontalSymbol(Symbol, object):
     def cam(self, old_pos, new_pos, ignore=None):
         '''
             Collision avoidance manoeuvre for parallel branches
-            (for SDL: input, decision answers)
+            (for SDL: input, decision answers, continuous signals)
         '''
         if self.hasParent:
             # Rectangle of current group of item in scene coordinates
@@ -1209,11 +1266,17 @@ class VerticalSymbol(Symbol, object):
 
         # Create the connection with the parent symbol
         self.connection = self.connect_to_parent()
-        self.update_position()
+        #self.update_position()
         self.updateConnectionPoints()
         if y is not None:
             self.pos_y = y
-        self.cam(self.position, self.position)
+        if parent and y is None:
+            self.pos_y = self.parent.boundingRect().height() + 20
+        try:
+            self.text.set_textbox_position()
+        except AttributeError:
+            # if called before text is initialized - or if no textbox
+            pass
 
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''

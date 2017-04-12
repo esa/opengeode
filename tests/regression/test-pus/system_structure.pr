@@ -1,0 +1,28 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM flight;
+
+	/* CIF Keep Specific Geode PARAMNAMES tcdata */
+	SIGNAL telecommand (Telecommand);
+
+	/* CIF Keep Specific Geode PARAMNAMES instr */
+	SIGNAL Distribute_CPDU_Commands (TC_2_4);
+
+	CHANNEL c
+		FROM ENV TO flight WITH telecommand;
+		FROM flight TO ENV WITH Distribute_CPDU_Commands;
+	ENDCHANNEL;
+
+	BLOCK flight;
+
+		SIGNALROUTE r
+			FROM ENV TO flight WITH telecommand;
+			FROM flight TO ENV WITH Distribute_CPDU_Commands;
+
+		CONNECT c and r;
+
+		PROCESS flight REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

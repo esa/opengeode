@@ -50,6 +50,8 @@ class Expression(object):
         self.charPositionInLine = charPositionInLine
         # Binary expressions have two sides
         self.right = self.left = None
+        # Unary expressions are stored in "expr"
+        self.expr = None
 
         # exprType is an ASN.1 type (as exported by asn1scc)
         self.exprType = None
@@ -134,6 +136,11 @@ class ExprNot(Expression):
 
 class ExprNeg(Expression):
     operand = '-'
+
+    @property
+    def is_raw(self):
+        ''' Redefine is_raw - check the actual element '''
+        return self.expr.is_raw
 
 
 class ExprAssign(Expression):
@@ -220,6 +227,9 @@ class PrimReal(Primary):
 class PrimBoolean(Primary):
     pass
 
+
+class PrimNull(Primary):
+    pass
 
 class PrimConstant(Primary):
     is_raw = False
@@ -334,7 +344,7 @@ class Answer(object):
         self.charPositionInLine = None
         self.pos_x, self.pos_y = None, None
         self.width = 70
-        self.height = 10.5
+        self.height = 23
         # one of 'closed_range' 'constant' 'open_range' 'else' 'informal_text'
         self.kind = None
         # informalText is a string, when kind == 'informal_text'
@@ -824,6 +834,11 @@ class Process(object):
         self.processName = None
         # Optional filename containing this process (PR file)
         self.filename = None
+        # Optional type of this process instance (name = string, ref = Process)
+        self.instance_of_name = None
+        self.instance_of_ref  = None
+        # A process may be a process type (boolean)
+        self.process_type = False
         # Process parent context (Block or AST if defined at root level)
         self.parent = None
         # A process can be referenced (externally defined)
@@ -1013,6 +1028,8 @@ class AST(object):
         # Refs to the ASN.1 dataview AST (set with USE clauses)
         self.dataview = None
         self.asn1Modules = None
+        # DV is the Asn1scc imported module
+        self.DV = None
         # ASN.1-defined constants (constants in Ada but variables in C)
         # dictionnary: {ConstantName: type } - copied from dataview.py
         self.asn1_constants = {}

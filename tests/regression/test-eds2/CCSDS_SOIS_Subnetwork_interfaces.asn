@@ -1,0 +1,113 @@
+--
+--   Copyright (c) 2015 European Space Agency
+--    All Rights Reserved
+--
+--    Project:    SOIS Electronic Data Sheets
+--
+--    Module:     CCSDS_SOIS_Subnetwork_interfaces.asn
+--
+--    Author:     SOIS EDS Tooling  (internal unreleased version)
+--
+--
+
+
+CcsdsSoisSubnetworkInterfaces DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- imports
+IMPORTS
+  TelecommandTypeT,TelecommandTypeEnumTypeT,TelemetryTypeT,TelemetryTypeEnumTypeT,
+  ExtendedStatusModeEnumTypeT,ExtendedStatusOrModeTypeT,OpCountTypeT,QueryCountTypeT,
+  ReadStatusModeCommandTypeT,StatusFlag1TypeT,StatusFlag2TypeT,StatusTypeT FROM Demo
+  MemoryAddressTypeT,MemoryIDTypeT FROM CcsdsSoisSubnetwork
+;
+
+
+
+-- interface messages
+-- message types for SubnetworkPS
+PSInterfaceTypeDownType ::= CHOICE
+{
+  sendCommand CHOICE {
+    send SEQUENCE {
+     data TelecommandTypeT
+    }
+  }
+}
+
+PSInterfaceTypeUpType ::= CHOICE
+{
+  replyToCommand CHOICE {
+    receive SEQUENCE {
+     data TelemetryTypeT
+    }
+  }
+}
+
+PSInterfaceTypeProviderType ::= SEQUENCE
+{
+  inputReady BOOLEAN,
+  inputData PSInterfaceTypeDownType,
+  outputData PSInterfaceTypeUpType
+}
+
+PSInterfaceTypeClientType ::= SEQUENCE
+{
+  inputReady BOOLEAN,
+  inputData PSInterfaceTypeUpType,
+  outputData PSInterfaceTypeDownType
+}
+
+
+-- message types for SubnetworkMAS
+MASInterfaceTypeDownType ::= CHOICE
+{
+  sendCommand CHOICE {
+    readExtendedstatusormodetype SEQUENCE {
+    },
+    readStatustype SEQUENCE {
+    },
+    unacknowledgedWrite SEQUENCE {
+     memoryID MemoryIDTypeT (0..0),
+     memoryAddress MemoryAddressTypeT (100..100),
+     data ReadStatusModeCommandTypeT
+    },
+    write SEQUENCE {
+     memoryID MemoryIDTypeT (0..0),
+     memoryAddress MemoryAddressTypeT (100..100),
+     data ReadStatusModeCommandTypeT
+    }
+  }
+}
+
+MASInterfaceTypeUpType ::= CHOICE
+{
+  replyToCommand CHOICE {
+    readExtendedstatusormodetype SEQUENCE {
+     data ExtendedStatusOrModeTypeT
+    },
+    readStatustype SEQUENCE {
+     data StatusTypeT
+    },
+    writeme SEQUENCE {
+    }
+  }
+}
+
+MASInterfaceTypeProviderType ::= SEQUENCE
+{
+  inputReady BOOLEAN,
+  inputData MASInterfaceTypeDownType,
+  outputData MASInterfaceTypeUpType
+}
+
+MASInterfaceTypeClientType ::= SEQUENCE
+{
+  inputReady BOOLEAN,
+  inputData MASInterfaceTypeUpType,
+  outputData MASInterfaceTypeDownType
+}
+
+
+
+
+END

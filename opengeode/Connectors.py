@@ -53,6 +53,13 @@ class Connection(QGraphicsPathItem, object):
         self.childRect = child.sceneBoundingRect()
         # Activate cache mode to boost rendering by calling paint less often
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        # When the child moves, the connection may need to adjust the end point
+        self.child.moved.connect(self.child_moved)
+
+    @Slot(float, float)
+    def child_moved(self, delta_x, delta_y):
+        ''' When the connection child moves - redefine in subclasses '''
+        pass
 
     @property
     def start_point(self):
@@ -82,6 +89,10 @@ class Connection(QGraphicsPathItem, object):
             endp = self.start_point
         return (QPointF(endp.x() - 5, endp.y() - 5),
                 QPointF(endp.x() + 5, endp.y() - 5))
+
+    def select(self, selected=True):
+        ''' Select a connection - for future use? '''
+        return
 
     def angle_arrow(self, path, origin='head'):
         ''' Compute the two points of the arrow head with the right angle '''
@@ -272,9 +283,9 @@ class Signalroute(Connection):
     in_sig = out_sig = None
     completion_list = set()
 
-    def __init__(self, process):
+    def __init__(self, parent, child=None):
         ''' Set generic parameters from Connection class '''
-        super(Signalroute, self).__init__(process, process)
+        super(Signalroute, self).__init__(parent, child or parent)
         self.parser = ogParser
         self.blackbold = ()
         self.redbold = ()
@@ -282,23 +293,22 @@ class Signalroute(Connection):
         self.label_out = SignalList(parent=self)
         if not Signalroute.in_sig:
             # keep at class level as long as only one process is supported
-            # when copy-pasting a process the challel in/out signal lists
+            # when copy-pasting a process the channel in/out signal lists
             # are not parsed. Workaround is to keep the list "global"
             # to allow a copy of both process and channel
             # Needed for the image exporter, that copies the scene to a
             # temporary one
             Signalroute.in_sig = '{}'.format(',\n'.join(sig['name']
-                                   for sig in process.input_signals))
+                                   for sig in parent.input_signals))
             Signalroute.out_sig = '{}'.format(',\n'.join(sig['name']
-                                    for sig in process.output_signals))
+                                    for sig in parent.output_signals))
         self.label_in.setPlainText('[{}]'.format(self.in_sig))
         self.label_out.setPlainText('[{}]'.format(self.out_sig))
         self.label_in.document().contentsChanged.connect(self.change_siglist)
         self.label_out.document().contentsChanged.connect(self.change_siglist)
         for each in (self.label_in, self.label_out):
             each.show()
-        self.process = process
-        self.reshape()
+        #self.reshape()
 
     @Slot()
     def change_siglist(self):
@@ -316,7 +326,7 @@ class Signalroute(Connection):
     @property
     def start_point(self):
         ''' Compute connection origin - redefined function '''
-        parent_rect = self.process.boundingRect()
+        parent_rect = self.parent.boundingRect()
         return QPointF(parent_rect.x(), parent_rect.height() / 2)
 
     @property
@@ -356,12 +366,102 @@ class Signalroute(Connection):
 
     def update_completion_list(self, pr_text):
         ''' Called after text has been edited '''
-        # TODO - call parseSingleElement, check sdlSymbols for examples
-        pass
+        from sdlSymbols import CONTEXT
+        ast, _, _, _, _ = self.parser.parseSingleElement('signalroute',
+                                                         pr_text)
+        # ast is a dict:
+        # {'routes': [{'dest': str, 'source': str', 'signals': [str]}],
+        #  'name': u'c'} - dest and source can be 'ENV'
+        all_sigs = []
+        for each in ast['routes']:
+            source    = each['source']
+            dest      = each['dest']
+            sigs = [{'name': name} for name in each['signals']]
+            all_sigs.extend(sigs)
+            def get_sig(signal):
+                ''' If signal is declared, return the signature '''
+                for sig in CONTEXT.signals:
+                    if sig['name'].lower() == signal['name'].lower():
+                        return sig
+                return signal
+            if each['dest'] == 'ENV':
+                # output signals of process 'source'
+                process, = [p for p in CONTEXT.processes
+                            if p.processName.lower() == each['source'].lower()]
+                existing = [sig['name'].lower()
+                           for sig in process.output_signals]
+                for sig in sigs:
+                    if sig['name'].lower() not in existing:
+                        process.output_signals.append(get_sig(sig))
+            else:
+                # input signals of process 'source'
+                process, = [p for p in CONTEXT.processes
+                            if p.processName.lower() == each['dest'].lower()]
+                existing = [sig['name'].lower()
+                            for sig in process.input_signals]
+                for sig in sigs:
+                    if sig['name'].lower() not in existing:
+                        process.input_signals.append(get_sig(sig))
+        existing = [sig['name'].lower() for sig in CONTEXT.signals]
+        for each in all_sigs:
+            if each['name'].lower() not in existing:
+                CONTEXT.signals.append(each)
 
     def resize_item(self, new_rect):
         ''' Called after signallist text has been edited '''
         pass
+
+
+class Channel(Signalroute):
+    ''' Connection between two processes. Signalroute handles connections
+    between a function and the environment (edge of the screen). Here the
+    start, middle and end point are redefined. They are stored with
+    scene coordinates '''
+
+    @Slot(float, float)
+    def child_moved(self, delta_x, delta_y):
+        ''' When the connection child moves - redefined function '''
+        self._end_point.setX(self._end_point.x() - delta_x)
+        self._end_point.setY(self._end_point.y() - delta_y)
+
+    @property
+    def start_point(self):
+        ''' Compute connection origin - redefined function '''
+        return self._start_point
+
+    @start_point.setter
+    def start_point(self, scene_coord):  # type: QPointF
+        ''' value is in scene coordinates '''
+        self._start_point = self.parent.mapFromScene(scene_coord)
+
+    @property
+    def end_point(self):
+        ''' Compute connection end point - redefined function '''
+        return self.parent.mapFromScene(self._end_point)
+
+    @end_point.setter
+    def end_point(self, scene_coord):  # type: QPointF
+        ''' value is in scene coordinates '''
+        self._end_point = scene_coord
+
+    @property
+    def middle_points(self):
+        ''' Compute connection intermediate points - redefined function '''
+        for each in self._middle_points:
+            yield self.parent.mapFromScene(each)
+
+    @middle_points.setter
+    def middle_points(self, points_scene_coord):
+        self._middle_points = points_scene_coord
+
+    def add_point(self, scene_coord):
+        self._middle_points.append(scene_coord)
+
+    def paint(self, painter, _, ___):
+        ''' Apply anti-aliasing '''
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        super(Channel, self).paint(painter, _, ___)
+
 
 
 class Controlpoint(QGraphicsPathItem, object):

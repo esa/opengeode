@@ -1,0 +1,38 @@
+SYSTEM test;
+    /* CIF TEXT (164, 303), (287, 140) */
+    -- Text area for declarations and comments
+
+use datamodel comment 'dataview.asn';
+signal go(MyChoice);
+signal response(MyChoice);
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO test WITH go;
+        FROM test TO ENV WITH response;
+    ENDCHANNEL;
+    BLOCK test;
+        SIGNALROUTE r
+            FROM ENV TO test WITH go;
+            FROM test TO ENV WITH response;
+        CONNECT c AND r;
+        /* CIF PROCESS (202, 142), (150, 75) */
+        PROCESS test;
+            /* CIF TEXT (262, 258), (287, 140) */
+            dcl blah mychoice;
+            /* CIF ENDTEXT */
+            /* CIF START (106, 48), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (106, 98), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (106, 98), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (96, 153), (89, 35) */
+                INPUT go(blah);
+                    /* CIF OUTPUT (76, 203), (129, 35) */
+                    OUTPUT response(blah);
+                    /* CIF NEXTSTATE (105, 253), (70, 35) */
+                    NEXTSTATE -;
+            ENDSTATE;
+        ENDPROCESS test;
+    ENDBLOCK;
+ENDSYSTEM;
