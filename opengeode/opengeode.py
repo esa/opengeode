@@ -1100,6 +1100,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 LOG.debug(str(traceback.format_exc()))
                 LOG.error(str(err))
             other_scene.paste_symbols()
+            other_scene.scene_refresh()
             each.select(False)
         rect = other_scene.sceneRect()
 
@@ -1124,6 +1125,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         else:
             LOG.error('Output format not supported: ' + doc_format)
         painter = QtGui.QPainter(device)
+        other_scene.scene_refresh()
         other_scene.render(painter, source=rect)
         try:
             device.save(filename)
