@@ -190,6 +190,6 @@ def paste_below_item(parent, scene):
                 new_item.pos_x = new_item.pos_y = 0.0
                 symbols.append(new_item)
             else:
-                raise TypeError('Cannot paste here ({t1} cannot follow {t2}'
+                raise TypeError('Cannot paste here ({t1} cannot follow {t2})'
                                 .format(t1=type(new_item), t2=type(parent)))
     return symbols
