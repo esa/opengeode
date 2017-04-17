@@ -599,8 +599,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                 and symbol.ast.pos_y is not None):
                             relpos = symbol.mapFromScene(symbol.ast.pos_x,
                                                          symbol.ast.pos_y)
-                            #symbol.pos_x += relpos.x()
-                            #symbol.pos_y += relpos.y()
                             if not symbol.hasParent:
                                 symbol.pos_x = symbol.ast.pos_x
                                 symbol.pos_y = symbol.ast.pos_y
@@ -656,8 +654,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                         self.create_subscene(each.context_name,
                                              dest_scene)
 
-#                       self.create_subscene(each.__class__.__name__.lower(),
-#                                            dest_scene)
                 already_created.append(each.nested_scene)
                 subscene.name = unicode(each)
                 LOG.debug('Created scene: {}'.format(subscene.name))
@@ -2709,7 +2705,7 @@ def export(ast, options):
     scene = SDL_Scene(context='block')
     scene.render_everything(block)
     # Update connections, placements
-    scene.refresh()
+    scene.scene_refresh()
 
     scenes = [scene]
     for each in set(scene.all_nested_scenes):
