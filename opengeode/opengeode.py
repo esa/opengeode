@@ -406,7 +406,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.button_selected = None
         self.setBackgroundBrush(QtGui.QBrush(
                                            QtGui.QImage(':icons/texture.png')))
-        self.messages_window = None
+        self.messages_window = QtGui.QListWidget()  # default
         self.click_coordinates = None
         self.orig_pos = None
         # When connecting symbols, store list of intermediate points
@@ -425,6 +425,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # Keep a track of highlighted symbols: { symbol: brush }
         self.highlighted = {}
         self.refresh_requested = False
+
+    def close(self):
+        ''' close function is needed by py.test-qt '''
+        pass
 
     def set_readonly(self, readonly=True):
         ''' Set the current scene as read-only, discard all new actions '''
