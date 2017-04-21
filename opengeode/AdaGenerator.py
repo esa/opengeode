@@ -2208,17 +2208,14 @@ def _sequence_of(seqof):
     seqof_ty = seqof.exprType
     try:
         asn_type = find_basic_type(TYPES[seqof_ty.ReferencedTypeName].type)
-        min_size, max_size = asn_type.Min, asn_type.Max
     except AttributeError:
         asn_type = None
         min_size, max_size = seqof_ty.Min, seqof_ty.Max
         if hasattr(seqof, 'expected_type'):
-            asn_type = find_basic_type(
-                    TYPES[seqof.expected_type.ReferencedTypeName].type.type)
-            try:
-                min_size, max_size = asn_type.Min, asn_type.Max
-            except AttributeError:
-                pass
+            sortref = TYPES[seqof.expected_type.ReferencedTypeName]
+            while(hasattr(sortref, "type")):
+                sortref = sortref.type
+            asn_type = find_basic_type(sortref)
     tab = []
     for i in xrange(len(seqof.value)):
         item_stmts, item_str, local_var = expression(seqof.value[i])

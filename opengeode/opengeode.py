@@ -1548,7 +1548,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         ''' Create the SDL view holding the scene '''
         super(SDL_View, self).__init__(scene)
         self.wrapping_window = None
-        self.messages_window = None
+        # self.messages_window = None
+        self.messages_window = QtGui.QListWidget()  # default
         self.mode = ''
         self.phantom_rect = None
         self.filename = ''

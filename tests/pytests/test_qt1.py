@@ -1,15 +1,18 @@
 #!/usr/bin/env python
+import pytest
 
-from opengeode.opengeode import SDL_Scene
+from PySide import QtCore
+from opengeode.opengeode import SDL_Scene, SDL_View
 from opengeode.sdlSymbols import Label, Decision
 
 def test_1(qtbot):
     ''' Test the parsing of numbers '''
     scene = SDL_Scene(context="process")
-    qtbot.addWidget(scene)
     scene.add_symbol(Label)
-#   test = parser_init(string='''provided true=false; priority 5;''')
-#   res = test.continuous_signal()
+    view = SDL_View (scene)
+    view.show()
+    qtbot.addWidget(view)
+    qtbot.keyClick(view,25)
 #   assert(not isinstance(res.tree, antlr3.tree.CommonErrorNode))
 
 
