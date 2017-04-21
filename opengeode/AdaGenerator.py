@@ -1747,7 +1747,7 @@ def _equality(expr):
     if basic:
         if lbty.kind == 'IntegerType':
             # Cast right side to make sure it is the same integer type as left
-            right_str = '{}({})'.format(actual_type, right_str)
+            right_str = u'{}({})'.format(actual_type, right_str)
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)
     else:
@@ -1777,7 +1777,7 @@ def _assign_expression(expr):
     # assign the .Data and .Length parts properly
     basic_left = find_basic_type(expr.left.exprType)
     if basic_left.kind in ('SequenceOfType', 'OctetStringType'):
-        rlen = "{}'Length".format(right_str)
+        rlen = u"{}'Length".format(right_str)
         if isinstance(expr.right, ogAST.PrimSubstring):
             strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
                        .format(lvar=left_str, rvar=right_str))
