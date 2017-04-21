@@ -13,7 +13,8 @@ def test_1():
 
 def test_2():
     ''' Test the parsing of numbers '''
-    test = parser_init(string='''provided true priority 5;''')
+    # Test fails without the semicolon after "true"
+    test = parser_init(string='''provided true; priority 5;''')
     with samnmax.capture_output() as (stdout, stderr):
         test.continuous_signal()
     errCount = 0

@@ -834,6 +834,11 @@ class Process(object):
         self.processName = None
         # Optional filename containing this process (PR file)
         self.filename = None
+        # Optional type of this process instance (name = string, ref = Process)
+        self.instance_of_name = None
+        self.instance_of_ref  = None
+        # A process may be a process type (boolean)
+        self.process_type = False
         # Process parent context (Block or AST if defined at root level)
         self.parent = None
         # A process can be referenced (externally defined)

@@ -93,7 +93,7 @@ from genericSymbols import(Symbol, Comment, Cornergrabber, Connection, Channel)
 from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
         ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
         ProcedureStart, ProcedureStop, StateStart, Connect, Process,
-        ContinuousSignal)
+        ContinuousSignal, ProcessType)
 from TextInteraction import EditableText
 
 # Icons and png files generated from the resource file:
@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.26'
+__version__ = '1.5.29'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -174,7 +174,7 @@ G_SYMBOLS = set()
 
 # Lookup table used to configure the context-dependent toolbars
 ACTIONS = {
-    'block': [Process, Comment, TextSymbol],
+    'block': [Process, ProcessType, Comment, TextSymbol],
     'process': [Start, State, Input, Connect, ContinuousSignal, Task, Decision,
                 DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
                 Label, Join, Procedure],
@@ -406,7 +406,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.button_selected = None
         self.setBackgroundBrush(QtGui.QBrush(
                                            QtGui.QImage(':icons/texture.png')))
-        self.messages_window = None
+        self.messages_window = QtGui.QListWidget()  # default
         self.click_coordinates = None
         self.orig_pos = None
         # When connecting symbols, store list of intermediate points
@@ -425,6 +425,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # Keep a track of highlighted symbols: { symbol: brush }
         self.highlighted = {}
         self.refresh_requested = False
+
+    def close(self):
+        ''' close function is needed by py.test-qt '''
+        pass
 
     def set_readonly(self, readonly=True):
         ''' Set the current scene as read-only, discard all new actions '''
@@ -473,8 +477,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     @property
     def processes(self):
         ''' Return visible processes components of the scene '''
-        return (it for it in self.visible_symb if isinstance(it, Process) and
-                not isinstance(it, Procedure))
+        return (it for it in self.visible_symb
+                if (isinstance(it, Process) and not isinstance(it, Procedure))
+                or isinstance(it, ProcessType))
 
 
     @property
@@ -598,8 +603,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                 and symbol.ast.pos_y is not None):
                             relpos = symbol.mapFromScene(symbol.ast.pos_x,
                                                          symbol.ast.pos_y)
-                            #symbol.pos_x += relpos.x()
-                            #symbol.pos_y += relpos.y()
                             if not symbol.hasParent:
                                 symbol.pos_x = symbol.ast.pos_x
                                 symbol.pos_y = symbol.ast.pos_y
@@ -625,9 +628,10 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                                             symbol.boundingRect() |
                                             symbol.childrenBoundingRect())
                                 symbol.pos_x += (sc_br.width() - sy_br.x())
-                    except AttributeError:
+                    except AttributeError as err:
                         # no AST, ignore (e.g. Connections, Cornergrabbers)
                         pass
+                        #LOG.debug("[render everything] " + str(err))
                     else:
                         # Recursively fix pos of sub branches and followers
                         for branch in (elm for elm in symbol.childSymbols()
@@ -651,8 +655,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     LOG.debug('Subscene "{}" ignored'.format(unicode(each)))
                     continue
                 subscene = \
-                        self.create_subscene(each.__class__.__name__.lower(),
+                        self.create_subscene(each.context_name,
                                              dest_scene)
+
                 already_created.append(each.nested_scene)
                 subscene.name = unicode(each)
                 LOG.debug('Created scene: {}'.format(subscene.name))
@@ -825,6 +830,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                         line_nb = int(line_nb) - 1
                         split[1] = '{}:{}'.format(line_nb, col)
                 pos = each.scenePos()
+                split.append (u'in "{}"'.format(unicode(each)))
                 fmt = [[' '.join(split), [pos.x(), pos.y()], self.path]]
                 log_errors(self.messages_window, fmt, [], clearfirst=False)
 
@@ -1027,11 +1033,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         ast, _, _ = ogParser.parse_pr(string=pr_data)
         try:
             process_ast, = ast.processes
-            process_ast.input_signals = \
-                    sdlSymbols.CONTEXT.processes[0].input_signals
         except ValueError:
             LOG.debug('No statechart to render')
             return None
+        try:
+            process_ast.input_signals = \
+                    sdlSymbols.CONTEXT.processes[0].input_signals
+        except IndexError:
+            # No process context, eg. when called from cmd line
+            LOG.debug("Statechart rendering: no CONTEXT.processes[0]")
         # Flatten nested states (no, because neato does not support it,
         # dot supports only vertically-aligned states, and fdp does not
         # support curved edges and is buggy with pygraphviz anyway)
@@ -1090,6 +1100,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 LOG.debug(str(traceback.format_exc()))
                 LOG.error(str(err))
             other_scene.paste_symbols()
+            other_scene.scene_refresh()
             each.select(False)
         rect = other_scene.sceneRect()
 
@@ -1114,6 +1125,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         else:
             LOG.error('Output format not supported: ' + doc_format)
         painter = QtGui.QPainter(device)
+        other_scene.scene_refresh()
         other_scene.render(painter, source=rect)
         try:
             device.save(filename)
@@ -1536,7 +1548,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         ''' Create the SDL view holding the scene '''
         super(SDL_View, self).__init__(scene)
         self.wrapping_window = None
-        self.messages_window = None
+        # self.messages_window = None
+        self.messages_window = QtGui.QListWidget()  # default
         self.mode = ''
         self.phantom_rect = None
         self.filename = ''
@@ -1732,7 +1745,12 @@ class SDL_View(QtGui.QGraphicsView, object):
         ''' Enter a nested diagram (procedure, composite state) '''
         # Save context history
         self.context_history.append(sdlSymbols.CONTEXT)
-        subtype, subname = name.split()
+        try:
+            subtype, subname = name.split()
+        except ValueError as err:
+            LOG.debug("[go_down] name split fail (PROCESS TYPE?)" + str(err))
+            LOG.info("Can't refine content of a type instance")
+            return
         # Get AST of the element that is entered
         if subtype == 'procedure':
             for each in sdlSymbols.CONTEXT.procedures:
@@ -1767,6 +1785,8 @@ class SDL_View(QtGui.QGraphicsView, object):
                 new_context.processName = subname.lower()
                 sdlSymbols.CONTEXT.processes.append(new_context)
                 sdlSymbols.CONTEXT = new_context
+        else:
+            LOG.error("Please report BUG: miss support for " + subtype)
 
         horpos = self.horizontalScrollBar().value()
         verpos = self.verticalScrollBar().value()
@@ -1793,12 +1813,12 @@ class SDL_View(QtGui.QGraphicsView, object):
             try:
                 if item.allow_nesting:
                     item.double_click()
-                    ctx = unicode(item.__class__.__name__.lower())
+                    ctx = unicode(item.context_name)  #__class__.__name__.lower())
                     if not isinstance(item.nested_scene, SDL_Scene):
                         item.nested_scene = \
                                 self.scene().create_subscene(ctx, self.scene())
                     self.go_down(item.nested_scene,
-                                 name=ctx + u' ' + unicode(item))
+                                 name=u"{} {}".format(ctx, unicode(item)))
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))
@@ -1940,19 +1960,26 @@ class SDL_View(QtGui.QGraphicsView, object):
             LOG.error('Aborting: could not open or parse input file')
             sdlSymbols.CONTEXT = ogAST.Block()
             return
-        try:
-            process, = ast.processes
-            self.filename = process.filename
-            self.readonly_pr = ast.pr_files - {self.filename}
-        except ValueError:
-            LOG.error('Cannot load process')
+        if not ast.processes:
+            LOG.error("No PROCESS was parsed in the input file(s)")
             process = ogAST.Process()
-            process.processName = "SyntaxError"
+            process.processName = "Syntax_Error"
+        elif len(ast.processes) == 1:
+            process,         = ast.processes
+            if not process.instance_of_name:
+                self.filename    = process.filename
+            else:
+                self.filename    = process.instance_of_ref.filename
+            self.readonly_pr = ast.pr_files - {self.filename}
+        else:
+            # More than one process
+            LOG.error("More than one process is not supported")
+            return
         try:
             syst, = ast.systems
             block, = syst.blocks
             if block.processes[0].referenced:
-                LOG.debug('Process is referenced, fixing')
+                LOG.debug('[Load file] Process is referenced')
                 block.processes = [process]
         except ValueError:
             # No System/Block hierarchy, creating single block
@@ -1963,8 +1990,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         log_errors(self.messages_window, errors, warnings)
         try:
             self.scene().render_everything(block)
-        except AttributeError:
-            pass
+        except AttributeError as err:
+            LOG.debug("[Rendering] " + str(err))
         self.toolbar.update_menu(self.scene())
         self.scene().name = 'block {}[*]'.format(process.processName)
         self.wrapping_window.setWindowTitle(self.scene().name)
@@ -2034,6 +2061,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         if not scene.global_syntax_check():
             self.messages_window.addItem("Aborted. Fix syntax errors first")
             return
+        self.messages_window.addItem("No syntax errors")
         self.messages_window.addItem("Checking semantics")
 
         if scene.context not in ('process', 'state', 'procedure', 'block'):
@@ -2682,7 +2710,7 @@ def export(ast, options):
     scene = SDL_Scene(context='block')
     scene.render_everything(block)
     # Update connections, placements
-    scene.refresh()
+    scene.scene_refresh()
 
     scenes = [scene]
     for each in set(scene.all_nested_scenes):
@@ -2757,8 +2785,7 @@ def gui(options):
 
     # Set all encodings to utf-8 in Qt
     QtCore.QTextCodec.setCodecForCStrings(
-        QtCore.QTextCodec.codecForName('UTF-8')
-    )
+                                       QtCore.QTextCodec.codecForName('UTF-8'))
 
     # Bypass system-default font, to harmonize size on all platforms
     font_database = QtGui.QFontDatabase()

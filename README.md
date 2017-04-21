@@ -32,7 +32,6 @@ Features
 - Syntax highlighting
 - Undo/Redo, Copy-Paste
 - (Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern
-- SDL to LLVM code generation
 - Python API to parse and render SDL from other Python modules
 
 Installation
@@ -58,8 +57,8 @@ And optionally llvm and llvmpy
 On Debian, Ubuntu, and probably other distributions:
 
 ```bash
-$ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
-                       graphviz-dev libgraphviz-dev  python-pip gnat-4.8 \
+$ sudo apt install pkg-config python-pyside pyside-tools graphviz python-ply \
+                       graphviz-dev libgraphviz-dev  python-pip gnat \
                        libmono-system-runtime4.0-cil libmono-corlib4.0-cil \
                        libmono-system-runtime-serialization-formatters-soap4.0-cil \
                        libmono-system-web4.0-cil libmono-system-xml4.0-cil \
@@ -67,7 +66,9 @@ $ sudo apt-get install pkg-config python-pyside pyside-tools graphviz \
                        libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
 ```
 
-To install the ASN.1 compiler:
+Some of these packages may be more recent on your distribution.
+
+To install the ASN.1 compiler, run (possibly as root):
 
 ```bash
 $ cd /opt
@@ -82,33 +83,31 @@ Open a new terminal and check that it works:
 $ mono /opt/asn1scc/asn1.exe
 ```
 
-Optionally, to install llvmpy and LLVM follow the instructions [here](http://www.llvmpy.org/llvmpy-doc/0.12.7/doc/getting_started.html#installation)
-
-
 OpenGEODE installation
 ----------------------
 
 Make sure all dependencies are installed.
 
-If you see a certificate error, you may need to run the following commands:
+If you see a certificate error while cloning from [Gitlab](https://gitrepos.estec.esa.int/taste/opengeode), you may need to run the following commands:
 
 ```bash
 $ echo -n | openssl s_client -connect gitrepos.estec.esa.int:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > gitrepos.cert
 $ sudo cp gitrepos.cert /usr/local/share/ca-certificates/gitrepos.crt
-$ sudo update-ca-certificate
+$ sudo update-ca-certificates
 ```
 
-Then you can get the software with git:
+There is no such issue if you use Github:
+
 
 ```bash
-$ git clone --recursive https://github.com/maxime-esa/opengeode.git
+$ git clone --recursive https://github.com/esa/opengeode.git
 ```
 
 And install it:
 
 ```bash
 $ cd opengeode
-$ make install
+$ make full-install
 ```
 
 
@@ -122,7 +121,7 @@ maxime (dot) perrotin (at) esa (dot) int
 
 
 The LLVM backend was designed and implemented by Diego Barbera during the ESA
-Summer of Code 2014.
+Summer of Code 2014 (It is unfortunately unmaintained now and does not support all features of the tool).
 Some parts implemented by Laurent Meyer (native SDL type support in the parser)
 
 
@@ -141,6 +140,13 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+1.5.29 (04/2017)
+    - Unicode bugfixes in Ada backend
+    - Bugfix with SEQUENCE OF literals in Ada backend
+
+1.5.28 (03/2017)
+    - Added preliminary support for PROCESS TYPE and instances
 
 1.5.26 (02/2017)
     - Statecharts can be configured to filter out signals

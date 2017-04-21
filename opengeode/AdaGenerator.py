@@ -97,6 +97,45 @@ SHARED_LIB = False
 UNICODE_SEP = u'\u00dc'
 LPREFIX = u'ctxt'
 
+def external_ri_list(process):
+    ''' Helper function: create a list of RI with proper signature
+    Used for the formal parameters of generic packages when using process type
+    '''
+    result = []
+    for signal in process.output_signals:
+        param_name = signal.get('param_name') \
+                                or u'{}_param'.format(signal['name'])
+        param_spec = ''
+        if 'type' in signal:
+            typename = type_name(signal['type'])
+            param_spec = u'({pName}: access {sort})'.format(pName=param_name,
+                                                            sort=typename)
+        result.append(u"procedure RI{sep}{name}{param}".format(sep=UNICODE_SEP,
+                                                           name=signal['name'],
+                                                           param=param_spec))
+    for proc in (proc for proc in process.procedures if proc.external):
+        ri_header = u'procedure RI{sep}{sig_name}'.format(
+                                                     sep=UNICODE_SEP,
+                                                     sig_name=proc.inputString)
+        params = []
+        params_spec = ''
+        for param in proc.fpar:
+            typename = type_name(param['type'])
+            params.append(u'{par[name]}: access {sort}'.format(par=param,
+                                                               sort=typename))
+        if params:
+            params_spec = u"({})".format("; ".join(params))
+            ri_header += params_spec
+        result.append(ri_header)
+
+    for timer in process.timers:
+        result.append(u"procedure set_{}(val: access asn1SccT_Uint32)"
+                      .format(timer))
+        result.append(u"procedure reset_{}"
+                      .format(timer))
+    return result
+
+
 @singledispatch
 def generate(*args, **kwargs):
     ''' Generate the code for an item of the AST '''
@@ -106,9 +145,26 @@ def generate(*args, **kwargs):
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process, simu=False, **kwargs):
-    ''' Generate the code for a complete process (AST Top level) '''
-    process_name = process.processName
+def _process(process, simu=False, instance=False, **kwargs):
+    ''' Generate the code for a complete process (AST Top level)
+        use instance=True to generate the code for a process type instance
+        rather than the process type itself.
+    '''
+    # support generation of code of a process type
+    if not instance:
+        process_name = process.instance_of_name or process.processName
+        generic = process.instance_of_name  #  shortcut
+        process_instance = process
+        process = process.instance_of_ref or process
+    else:
+        process_name = process.processName
+        generic = False
+        process_instance = process
+
+    if process_instance is not process:
+        # Generate an instance of the process type, too.
+        generate(process_instance, simu, instance=True)
+
     global TYPES
     TYPES = process.dataview
     del OUT_SIGNALS[:]
@@ -294,55 +350,56 @@ LD_LIBRARY_PATH=. opengeode-simulator
         context_decl.append(u'pragma import (C, ctxt, "{}_ctxt");'
                                   .format(import_context))
 
-    if not simu:
+    if not simu and not instance:
         process_level_decl.extend(context_decl)
 
-    # Continuous State transition id
-    process_level_decl.append('CS_Only  : constant Integer := {};'
-                              .format(len(process.transitions)))
-
-
-    for name, val in process.mapping.viewitems():
-        # Test val, in principle there is a value but if the code targets
-        # generation of properties, the model may have been cleant up and
-        # in that case no value would be set..
-        if name.endswith(u'START') and name != u'START' and val:
-            process_level_decl.append(u'{name} : constant := {val};'
-                                      .format(name=name, val=str(val)))
-
-    # Declare start procedure for aggregate states XXX add in C generator
-    # should create one START per "via" clause, TODO later
     aggreg_start_proc = []
-    for name, substates in aggregates.viewitems():
-        proc_name = u'procedure {}{}START'.format(name, UNICODE_SEP)
-        process_level_decl.append(u'{};'.format(proc_name))
-        aggreg_start_proc.extend([u'{} is'.format(proc_name),
-                                  'begin'])
-        aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
-                                 .format(sub=subname.statename,
-                                         sep=UNICODE_SEP)
-                                 for subname in substates)
-        aggreg_start_proc.extend([u'end {}{}START;'
-                                 .format(name, UNICODE_SEP),
-                                 '\n'])
+    start_transition = []
+    # Continuous State transition id
+    if not instance:
+        process_level_decl.append('CS_Only  : constant Integer := {};'
+                                  .format(len(process.transitions)))
 
-    # Add the declaration of the runTransition procedure
-    process_level_decl.append('procedure runTransition(Id: Integer);')
+        for name, val in process.mapping.viewitems():
+            # Test val, in principle there is a value but if the code targets
+            # generation of properties, the model may have been cleant up and
+            # in that case no value would be set..
+            if name.endswith(u'START') and name != u'START' and val:
+                process_level_decl.append(u'{name} : constant := {val};'
+                                          .format(name=name, val=str(val)))
 
-    # Generate the code of the start transition (if process not empty)
-    initDone =  u'{ctxt}.initDone := True;'.format(ctxt=LPREFIX)
-    if not simu:
-        start_transition = [u'begin']
-        if process.transitions:
-            start_transition.append(u'runTransition(0);')
-        start_transition.append(initDone)
-    else:
-        start_transition = [u'procedure Startup is',
-                            u'begin',
-                            u'   runTransition(0);' if process.transitions
-                                                   else 'null;',
-                            initDone,
-                            u'end Startup;']
+        # Declare start procedure for aggregate states XXX add in C generator
+        # should create one START per "via" clause, TODO later
+        for name, substates in aggregates.viewitems():
+            proc_name = u'procedure {}{}START'.format(name, UNICODE_SEP)
+            process_level_decl.append(u'{};'.format(proc_name))
+            aggreg_start_proc.extend([u'{} is'.format(proc_name),
+                                      'begin'])
+            aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
+                                     .format(sub=subname.statename,
+                                             sep=UNICODE_SEP)
+                                     for subname in substates)
+            aggreg_start_proc.extend([u'end {}{}START;'
+                                     .format(name, UNICODE_SEP),
+                                     '\n'])
+
+        # Add the declaration of the runTransition procedure
+        process_level_decl.append('procedure runTransition(Id: Integer);')
+
+        # Generate the code of the start transition (if process not empty)
+        initDone =  u'{ctxt}.initDone := True;'.format(ctxt=LPREFIX)
+        if not simu:
+            start_transition = [u'begin']
+            if process.transitions:
+                start_transition.append(u'runTransition(0);')
+            start_transition.append(initDone)
+        else:
+            start_transition = [u'procedure Startup is',
+                                u'begin',
+                                u'   runTransition(0);' if process.transitions
+                                                       else 'null;',
+                                initDone,
+                                u'end Startup;']
 
     # Generate the TASTE template
     try:
@@ -353,7 +410,7 @@ LD_LIBRARY_PATH=. opengeode-simulator
             asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
     except TypeError:
         asn1_modules = '--  No ASN.1 data types are used in this model'
-    taste_template = ['''\
+    taste_template = [u'''\
 -- This file was generated automatically: DO NOT MODIFY IT !
 
 with System.IO;
@@ -371,21 +428,33 @@ package body {process_name} is'''.format(process_name=process_name,
                                          dataview=asn1_modules,
                                          C='with Interfaces.C.Strings;\n'
                                            'use Interfaces.C.Strings;'
-                                            if simu else '')]
+                                            if simu else '') if not instance
+                            else u"package body {} is".format(process_name)]
+
+    generic_spec, instance_decl = "", ""
+    if generic:
+        generic_spec = u"generic\n"
+        ri_list = external_ri_list(process)
+        if ri_list:
+            generic_spec += u"    with " + u";\n    with ".join(ri_list) + ';'
+    if instance:
+        instance_decl = u"with {};".format(process.instance_of_name)
 
     # Generate the source file (.ads) header
-    ads_template = ['''\
+    ads_template = [u'''\
 -- This file was generated automatically: DO NOT MODIFY IT !
 
 {dataview}
 {C}
-
-package {process_name} is'''.format(process_name=process_name,
+{instance}
+{generic}
+package {process_name} is'''.format(generic=generic_spec,
+                                    instance=instance_decl,
+                                    process_name=process_name,
                                     dataview=asn1_modules,
                                     C='with Interfaces.C.Strings;\n'
                                       'use Interfaces.C.Strings;'
                                         if simu else '')]
-
     dll_api = []
     if simu:
         ads_template.extend(context_decl)
@@ -473,7 +542,7 @@ package {process_name} is'''.format(process_name=process_name,
             # Exported procedures must be declared in the .ads
             pi_header = procedure_header(proc)
             ads_template.append(u'{};'.format(pi_header))
-            if not proc.external:
+            if not proc.external and not generic:
                 ads_template.append(u'pragma Export'
                                     u'(C, p{sep}{proc_name}, "_{proc_name}");'
                                     .format(sep=UNICODE_SEP,
@@ -510,8 +579,9 @@ package {process_name} is'''.format(process_name=process_name,
         # Add declaration of the provided interface in the .ads file
         ads_template.append(u'--  Provided interface "{}"'.format(signame))
         ads_template.append(pi_header + ';')
-        ads_template.append(u'pragma Export(C, {name}, "{proc}_{name}");'
-                             .format(name=signame, proc=process_name))
+        if not generic:
+            ads_template.append(u'pragma Export(C, {name}, "{proc}_{name}");'
+                                 .format(name=signame, proc=process_name))
 
         if simu:
             # Generate code for the mini-cv template
@@ -565,7 +635,8 @@ package {process_name} is'''.format(process_name=process_name,
             else:
                 taste_template.append('runTransition(CS_Only);')
 
-        taste_template.append('case {}.state is'.format(LPREFIX))
+        if not instance:
+            taste_template.append('case {}.state is'.format(LPREFIX))
 
         def case_state(state):
             ''' Recursive function (in case of state aggregation) to generate
@@ -605,11 +676,17 @@ package {process_name} is'''.format(process_name=process_name,
             else:
                 execute_transition(state)
 
-        map(case_state, reduced_statelist) # XXX update C generator
+        if not instance:
+            map(case_state, reduced_statelist) # XXX update C generator
+            taste_template.append('when others =>')
+            taste_template.append('runTransition(CS_Only);')
+            taste_template.append('end case;')
+        else:
+            inst_call = u"{}_Instance.{}".format(process_name, signame)
+            if 'type' in signal:
+                inst_call += u"({})".format(param_name)
+            taste_template.append(inst_call + ";")
 
-        taste_template.append('when others =>')
-        taste_template.append('runTransition(CS_Only);')
-        taste_template.append('end case;')
         taste_template.append(u'end {};'.format(signame))
         taste_template.append('\n')
 
@@ -631,9 +708,10 @@ package {process_name} is'''.format(process_name=process_name,
                                  sort=typename,
                                  shared=u'; Size: Integer'
                                         if SHARED_LIB else '')
-        ads_template.append(u'--  {}equired interface "{}"'
-                            .format("Paramless r" if not 'type' in signal
-                                else "R", signal['name']))
+        if not generic:
+            ads_template.append(u'--  {}equired interface "{}"'
+                                .format("Paramless r" if not 'type' in signal
+                                    else "R", signal['name']))
         if simu:
             # When generating a shared library, we need a callback mechanism
             ads_template.append(u'type {}_T is access procedure{};'
@@ -661,7 +739,7 @@ package {process_name} is'''.format(process_name=process_name,
                                   .format(sep=UNICODE_SEP, sig=signal['name']))
             taste_template.append(u'end Register_{};'.format(signal['name']))
             taste_template.append(u'')
-        else:
+        elif not generic:
             ads_template.append(u'procedure RI{}{}{};'
                                 .format(UNICODE_SEP,
                                         signal['name'],
@@ -718,7 +796,7 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append(u'end Register_{};'.format(proc.inputString))
             taste_template.append(u'')
 
-        else:
+        elif not generic:
             ads_template.append(ri_header + u';')
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
@@ -764,13 +842,32 @@ package {process_name} is'''.format(process_name=process_name,
         else:
             ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
                 .format(timer))
-            ads_template.append(
-                u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
-                .format(timer=timer, proc=process_name))
+            if not generic:
+                ads_template.append(
+                    u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
+                    .format(timer=timer, proc=process_name))
             ads_template.append(u'procedure RESET_{};'.format(timer))
-            ads_template.append(
-                u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
-                .format(timer=timer, proc=process_name))
+            if not generic:
+                ads_template.append(
+                 u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
+                 .format(timer=timer, proc=process_name))
+
+    if instance:
+        # Instance of a process type, all the RIs (including timers) must
+        # be gathered to instantiate the package
+        pkg_decl = (u"package {}_Instance is new {}"
+                    .format(process_name, process.instance_of_name))
+        ri_list = [u"RI{sep}{name}".format(sep=UNICODE_SEP, name=sig['name'])
+                   for sig in process.output_signals]
+        ri_list.extend ([u"RI{sep}{name}".format(sep=UNICODE_SEP,
+                                                 name=proc.inputString)
+                        for proc in process.procedures if proc.external])
+        ri_list.extend([u"set_{}".format(timer) for timer in process.timers])
+        ri_list.extend([u"reset_{}".format(timer) for timer in process.timers])
+        ri_inst = [u"{ri} => {ri}".format(ri=ri) for ri in ri_list]
+        if ri_inst:
+            pkg_decl += u" ({})".format(u", ".join(ri_inst))
+        ads_template.append(pkg_decl + u";")
 
     if simu and process.cs_mapping:
         # Callback registration for Check_Queue
@@ -806,7 +903,7 @@ package {process_name} is'''.format(process_name=process_name,
         code_labels.extend(code_label)
 
     # Generate the code of the runTransition procedure, if needed
-    if process.transitions:
+    if process.transitions and not instance:
         taste_template.append('procedure runTransition(Id: Integer) is')
         taste_template.append('trId : Integer := Id;')
         if process.cs_mapping:
@@ -861,9 +958,10 @@ package {process_name} is'''.format(process_name=process_name,
             taste_template.append('end if;')
             ads_template.append(
                     u'procedure Check_Queue(res: access Asn1Boolean);')
-            ads_template.append(
-                u'pragma import(C, Check_Queue, "{proc}_check_queue");'
-                .format(proc=process_name))
+            if not generic:
+                ads_template.append(
+                    u'pragma import(C, Check_Queue, "{proc}_check_queue");'
+                    .format(proc=process_name))
         elif process.cs_mapping and simu:
             taste_template.append('if {}.initDone then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")
@@ -950,7 +1048,7 @@ package {process_name} is'''.format(process_name=process_name,
         taste_template.append('end loop;')
         taste_template.append('end runTransition;')
         taste_template.append('\n')
-    else:
+    elif not instance:
         # No transitions defined, but keep the interface for CS_Only calls
         taste_template.append('procedure runTransition(Id: Integer) is')
         taste_template.append('begin')
@@ -1649,7 +1747,7 @@ def _equality(expr):
     if basic:
         if lbty.kind == 'IntegerType':
             # Cast right side to make sure it is the same integer type as left
-            right_str = '{}({})'.format(actual_type, right_str)
+            right_str = u'{}({})'.format(actual_type, right_str)
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)
     else:
@@ -1679,7 +1777,7 @@ def _assign_expression(expr):
     # assign the .Data and .Length parts properly
     basic_left = find_basic_type(expr.left.exprType)
     if basic_left.kind in ('SequenceOfType', 'OctetStringType'):
-        rlen = "{}'Length".format(right_str)
+        rlen = u"{}'Length".format(right_str)
         if isinstance(expr.right, ogAST.PrimSubstring):
             strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
                        .format(lvar=left_str, rvar=right_str))
@@ -2110,17 +2208,14 @@ def _sequence_of(seqof):
     seqof_ty = seqof.exprType
     try:
         asn_type = find_basic_type(TYPES[seqof_ty.ReferencedTypeName].type)
-        min_size, max_size = asn_type.Min, asn_type.Max
     except AttributeError:
         asn_type = None
         min_size, max_size = seqof_ty.Min, seqof_ty.Max
         if hasattr(seqof, 'expected_type'):
-            asn_type = find_basic_type(
-                    TYPES[seqof.expected_type.ReferencedTypeName].type.type)
-            try:
-                min_size, max_size = asn_type.Min, asn_type.Max
-            except AttributeError:
-                pass
+            sortref = TYPES[seqof.expected_type.ReferencedTypeName]
+            while(hasattr(sortref, "type")):
+                sortref = sortref.type
+            asn_type = find_basic_type(sortref)
     tab = []
     for i in xrange(len(seqof.value)):
         item_stmts, item_str, local_var = expression(seqof.value[i])

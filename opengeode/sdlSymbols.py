@@ -19,7 +19,7 @@
 
 __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
-           'Procedure', 'ProcedureStart', 'ProcedureStop',
+           'Procedure', 'ProcedureStart', 'ProcedureStop', 'ProcessType',
            'StateStart', 'Process', 'ContinuousSignal']
 
 #import traceback
@@ -892,6 +892,7 @@ class State(VerticalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
+    context_name = "state"
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.State()
@@ -1010,12 +1011,16 @@ class Process(HorizontalSymbol):
     user_can_connect = True
     _conn_sources = ['Process']
     _conn_targets = ['Process']
+    context_name = "process"
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()
         self.ast = ast
+        label = (ast.processName or "") + (': {}'
+                                            .format(ast.instance_of_name)
+                                            if ast.instance_of_name else '')
         super(Process, self).__init__(parent=None,
-                                      text=ast.processName,
+                                      text=label,
                                       x=ast.pos_x,
                                       y=ast.pos_y,
                                       hyperlink=ast.hyperlink)
@@ -1096,6 +1101,7 @@ class Procedure(Process):
     completion_list = set()
     is_singleton = False
     user_can_connect = False
+    context_name = "procedure"
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Procedure()
@@ -1141,7 +1147,68 @@ class Procedure(Process):
             new_proc.inputString = unicode(self.text).lower()
             CONTEXT.procedures.append(new_proc)
 
+class ProcessType(Procedure):
+    ''' PROCESS TYPE (floating symbol with no connections '''
+    _unique_followers = ['Comment']
+    _allow_nesting = True
+    common_name = 'process_definition'
+    context_name = 'process'
+    needs_parent = False
+    # Define reserved keywords for the syntax highlighter
+    blackbold = SDL_BLACKBOLD
+    redbold = SDL_REDBOLD
+    completion_list = set()
+    is_singleton = False
+    user_can_connect = False
 
+    def __init__(self, ast=None, subscene=None):
+        ast = ast or ogAST.Process()
+        ast.process_type = True
+        self.ast = ast
+        super(Process, self).__init__(parent=None,
+                                      text=ast.processName,
+                                      x=ast.pos_x or 0,
+                                      y=ast.pos_y or 0,
+                                      hyperlink=ast.hyperlink)
+        self.set_shape(ast.width, ast.height)
+        self.setBrush(QBrush(QColor(255, 255, 202)))
+        self.parser = ogParser
+        if ast.comment:
+            Comment(parent=self, ast=ast.comment)
+        self.nested_scene = subscene
+
+    def set_shape(self, width, height):
+        ''' Compute the polygon to fit in width, height '''
+        path = QPainterPath()
+        # Fill rule makes sure the full symbol is colored
+        path.setFillRule(Qt.WindingFill)
+        path.moveTo(7, 0)
+        path.lineTo(0, 7)
+        path.lineTo(0, height - 7)
+        path.lineTo(7, height)
+        path.lineTo(width - 7, height)
+        path.lineTo(width, height - 7)
+        path.lineTo(width, 7)
+        path.lineTo(width - 7, 0)
+        path.lineTo(7, 0)
+        # inner shape
+        path.moveTo(12, 7)
+        path.lineTo(7, 12)
+        path.lineTo(7, height - 12)
+        path.lineTo(12, height - 7)
+        path.lineTo(width - 12, height - 7)
+        path.lineTo(width - 7, height - 12)
+        path.lineTo(width - 7, 12)
+        path.lineTo(width - 12, 7)
+        path.lineTo(12, 7)
+        self.setPath(path)
+        super(Process, self).set_shape(width, height)
+
+
+    def update_completion_list(self, pr_text):
+        ''' After text is entered in process type, don't update any context '''
+        # Todo perhaps later for autocompletion of process instances
+        pass
 
 # pylint: disable=R0904
 class Start(HorizontalSymbol):
