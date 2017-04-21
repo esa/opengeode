@@ -141,6 +141,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.29 (04/2017)
+    - Unicode bugfixes in Ada backend
+    - Bugfix with SEQUENCE OF literals in Ada backend
+
 1.5.28 (03/2017)
     - Added preliminary support for PROCESS TYPE and instances
 
