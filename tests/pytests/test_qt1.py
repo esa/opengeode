@@ -2,10 +2,10 @@
 import pytest
 
 from PySide import QtCore
-from opengeode.opengeode import SDL_Scene, SDL_View
+from opengeode.opengeode import SDL_Scene, SDL_View, G_SYMBOLS
 from opengeode.sdlSymbols import Label, Decision
-from opengeode.ogParser import parser_init, floating_label
-from opengeode.ogAST import Process
+from opengeode.ogParser import parseSingleElement
+from opengeode.ogAST import Process, Automaton
 
 
 TEST_DATA = '''
@@ -23,13 +23,13 @@ TEST_DATA = '''
 '''
 def test_1(qtbot):
     ''' Test the parsing of numbers '''
-    test   = parser_init(string=TEST_DATA)
-    parsed = test.floating_label()
-    ast, err, warn = floating_label(parsed.tree, parent=None, context=Process())
+    ast = Automaton()
+    floating, _, _, _, _ = parseSingleElement('floating_label', TEST_DATA)
+    ast.floating_labels = [floating]
+    ast.parent = Process()
     scene = SDL_Scene(context="process")
     scene.render_everything(ast)
-    assert (ast == None) 
-    assert (len(list(scene.visible_symb))) 
+    assert (len(list(scene.floating_symb)) == 1)
 
 
 
