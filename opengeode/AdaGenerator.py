@@ -1233,7 +1233,6 @@ def _call_external_function(output, **kwargs):
                 # Not there? Impossible, the parser would have barked
                 raise ValueError(u'Probably a bug - please report')
         if out_sig:
-            #list_of_params = []
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
@@ -1255,21 +1254,24 @@ def _call_external_function(output, **kwargs):
                         and p_id.startswith(LPREFIX)) # NO FIXME WITH CTXT
                         or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
-                    local_decl.append('{tmp} : aliased {sort};'
+                    local_decl.append(u'{tmp} : aliased {sort};'
                                       .format(tmp=tmp_id,
                                               sort=typename))
+                    basic_param = find_basic_type (param_type)
+                    if basic_param.kind.startswith('Integer'):
+                        p_id = u"Asn1Int({})".format(p_id)
                     if isinstance(param,
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         p_id = array_content(param, p_id,
                                              find_basic_type(param_type))
-                    code.append('{} := {};'.format(tmp_id, p_id))
-                    list_of_params.append("{}'access{}"
+                    code.append(u'{} := {};'.format(tmp_id, p_id))
+                    list_of_params.append(u"{}'Access{}"
                                           .format(tmp_id,
-                                                  ", {}'Size".format(tmp_id)
+                                                  u", {}'Size".format(tmp_id)
                                                      if is_out_sig else ""))
                 else:
                     # Output parameters/local variables
-                    list_of_params.append(u"{var}'access{shared}"
+                    list_of_params.append(u"{var}'Access{shared}"
                                          .format(var=p_id,
                                                 shared=", {}'Size".format(p_id)
                                                   if is_out_sig else ""))
@@ -1445,7 +1447,6 @@ def _primary_variable(prim):
         sep = ''
     else:
         sep = LPREFIX + '.'
-    #sep = (LPREFIX + '.') if find_var(prim.value[0]) else u''
 
     ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
@@ -1617,19 +1618,19 @@ def _prim_index(prim):
 
     receiver = prim.value[0]
 
-    receiver_stms, reciver_string, receiver_decl = expression(receiver)
-    ada_string = reciver_string
+    receiver_stms, ada_string, receiver_decl = expression(receiver)
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0])
+    index = prim.value[1]['index'][0]
+    idx_stmts, idx_string, idx_var = expression(index)
     if unicode.isnumeric(idx_string):
         idx_string = int(idx_string) + 1
     else:
-        idx_string = '1+Integer({idx})'.format(idx=idx_string)
+        idx_string = u'1 + Integer({idx})'.format(idx=idx_string)
     if not isinstance(receiver, ogAST.PrimSubstring):
-        ada_string += '.Data'
-    ada_string += '({idx})'.format(idx=idx_string)
+        ada_string += u'.Data'
+    ada_string += u'({idx})'.format(idx=idx_string)
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
 
@@ -1735,19 +1736,29 @@ def _basic_operators(expr):
 @expression.register(ogAST.ExprEq)
 @expression.register(ogAST.ExprNeq)
 def _equality(expr):
-    code, left_str, local_decl = expression(expr.left)
+    code,        left_str,  local_decl  = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right)
+
     code.extend(right_stmts)
     local_decl.extend(right_local)
+
     asn1_type = getattr(expr.left.exprType, 'ReferencedTypeName', None)
     actual_type = type_name(expr.left.exprType)
+
     lbty = find_basic_type(expr.left.exprType)
-    basic = lbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
-                          'EnumeratedType', 'ChoiceEnumeratedType')
+    rbty = find_basic_type(expr.right.exprType)
+
+    basic = lbty.kind in ('IntegerType',
+                          'Integer32Type',
+                          'BooleanType',
+                          'EnumeratedType',
+                          'ChoiceEnumeratedType')
     if basic:
-        if lbty.kind == 'IntegerType':
-            # Cast right side to make sure it is the same integer type as left
-            right_str = u'{}({})'.format(actual_type, right_str)
+        # Cast in case a side is using a 32bits ints (eg when using Length(..))
+        if lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
+            right_str = u'Asn1Int({})'.format(right_str)
+        elif rbty.kind == 'IntegerType' and lbty.kind != rbty.kind:
+            left_str = u'Asn1Int({})'.format(left_str)
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)
     else:
@@ -2260,6 +2271,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
         XXX has to be done also in the C backend
     '''
     code, local_decl = [], []
+
     if dec.kind == 'any':
         LOG.warning('Ada backend does not support the "ANY" statement')
         code.append('-- "DECISION ANY" statement was ignored')
@@ -2269,29 +2281,36 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
         code.append('-- Informal decision was ignored: {}'
                     .format(dec.inputString))
         return code, local_decl
+
     question_type = dec.question.exprType
     actual_type = type_name(question_type)
     basic = find_basic_type(question_type).kind in ('IntegerType',
-                          'Integer32Type', 'BooleanType',
-                          'RealType', 'EnumeratedType', 'ChoiceEnumeratedType')
+                                                    'Integer32Type',
+                                                    'BooleanType',
+                                                    'RealType',
+                                                    'EnumeratedType',
+                                                    'ChoiceEnumeratedType')
     # for ASN.1 types, declare a local variable
     # to hold the evaluation of the question
     if not basic:
-        local_decl.append('tmp{idx} : aliased {actType};'.format(
-                          idx=dec.tmpVar, actType=actual_type))
+        local_decl.append('tmp{idx} : aliased {actType};'
+                          .format(idx=dec.tmpVar,
+                                  actType=actual_type))
+
     q_stmts, q_str, q_decl = expression(dec.question)
+
     # Add code-to-model traceability
     code.extend(traceability(dec))
     local_decl.extend(q_decl)
     code.extend(q_stmts)
+
     if not basic:
         code.append('tmp{idx} := {q};'.format(idx=dec.tmpVar, q=q_str))
+
     for a in dec.answers:
         code.extend(traceability(a))
+
         if a.kind in ('open_range', 'constant'):
-            # Note: removed and a.transition here because empty transitions
-            # have a different meaning, and a "null;" statement has to be
-            # generated, to go into the branch
             ans_stmts, ans_str, ans_decl = expression(a.constant)
             code.extend(ans_stmts)
             local_decl.extend(ans_decl)
@@ -2307,7 +2326,8 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
                         exp = u'not {}'.format(exp)
                 else:
                     exp = u'tmp{idx} {op} {ans}'.format(idx=dec.tmpVar,
-                            op=a.openRangeOp.operand, ans=ans_str)
+                                                      op=a.openRangeOp.operand,
+                                                      ans=ans_str)
             else:
                 exp = u'({q}) {op} {ans}'.format(q=q_str,
                                                  op=a.openRangeOp.operand,
@@ -2323,6 +2343,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
             else:
                 code.append('trId := {};'.format(branch_to))
             sep = 'elsif '
+
         elif a.kind == 'closed_range':
             cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0])
             cl1_stmts, cl1_str, cl1_decl = expression(a.closedRange[1])

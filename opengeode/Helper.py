@@ -367,6 +367,7 @@ def rename_everything(ast, from_name, to_name):
         in the scope of a composite state, so that they do not overwrite
         a variable with the same name declared at a higher scope.
     '''
+    LOG.debug ('rename_everything - ' + str(ast))
     _, _, _ = ast, from_name, to_name
 
 
@@ -497,6 +498,13 @@ def _rename_expr(ast, from_name, to_name):
     ''' Two-sided expressions '''
     rename_everything(ast.left, from_name, to_name)
     rename_everything(ast.right, from_name, to_name)
+
+
+@rename_everything.register(ogAST.PrimIndex)
+def _rename_index(ast, from_name, to_name):
+    ''' Index of an array '''
+    for each in ast.value[1]['index']:
+        rename_everything(each, from_name, to_name)
 
 
 @rename_everything.register(ogAST.PrimVariable)

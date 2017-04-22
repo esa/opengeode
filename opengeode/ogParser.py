@@ -4017,8 +4017,8 @@ def transition(root, parent, context):
             trans.actions.append(proc_call)
             parent = proc_call
         elif child.type == lexer.LABEL:
-            term_count = len(context.terminators)
-            lab, err, warn = label(child, parent=parent)
+            term_count       = len(context.terminators)
+            lab, err, warn   = label(child, parent=parent)
             terminators[lab] = term_count
             errors.extend(err)
             warnings.extend(warn)
