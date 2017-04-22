@@ -1443,11 +1443,11 @@ def expression(expr):
 def _primary_variable(prim):
     ''' Single variable reference '''
     var = find_var(prim.value[0])
+    #print prim.inputString, prim.value[0].encode('utf-8')
     if not var or is_local(var):
         sep = ''
     else:
         sep = LPREFIX + '.'
-    #sep = (LPREFIX + '.') if find_var(prim.value[0]) else u''
 
     ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
@@ -1619,19 +1619,19 @@ def _prim_index(prim):
 
     receiver = prim.value[0]
 
-    receiver_stms, reciver_string, receiver_decl = expression(receiver)
-    ada_string = reciver_string
+    receiver_stms, ada_string, receiver_decl = expression(receiver)
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0])
+    index = prim.value[1]['index'][0]
+    idx_stmts, idx_string, idx_var = expression(index)
     if unicode.isnumeric(idx_string):
         idx_string = int(idx_string) + 1
     else:
-        idx_string = '1+Integer({idx})'.format(idx=idx_string)
+        idx_string = u'1 + Integer({idx})'.format(idx=idx_string)
     if not isinstance(receiver, ogAST.PrimSubstring):
-        ada_string += '.Data'
-    ada_string += '({idx})'.format(idx=idx_string)
+        ada_string += u'.Data'
+    ada_string += u'({idx})'.format(idx=idx_string)
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
 
