@@ -1443,7 +1443,6 @@ def expression(expr):
 def _primary_variable(prim):
     ''' Single variable reference '''
     var = find_var(prim.value[0])
-    #print prim.inputString, prim.value[0].encode('utf-8')
     if not var or is_local(var):
         sep = ''
     else:
