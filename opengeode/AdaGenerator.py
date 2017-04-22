@@ -1737,19 +1737,29 @@ def _basic_operators(expr):
 @expression.register(ogAST.ExprEq)
 @expression.register(ogAST.ExprNeq)
 def _equality(expr):
-    code, left_str, local_decl = expression(expr.left)
+    code,        left_str,  local_decl  = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right)
+
     code.extend(right_stmts)
     local_decl.extend(right_local)
+
     asn1_type = getattr(expr.left.exprType, 'ReferencedTypeName', None)
     actual_type = type_name(expr.left.exprType)
+
     lbty = find_basic_type(expr.left.exprType)
-    basic = lbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType',
-                          'EnumeratedType', 'ChoiceEnumeratedType')
+    rbty = find_basic_type(expr.right.exprType)
+
+    basic = lbty.kind in ('IntegerType',
+                          'Integer32Type',
+                          'BooleanType',
+                          'EnumeratedType',
+                          'ChoiceEnumeratedType')
     if basic:
-        if lbty.kind == 'IntegerType':
-            # Cast right side to make sure it is the same integer type as left
-            right_str = u'{}({})'.format(actual_type, right_str)
+        # Cast in case a side is using a 32bits ints (eg when using Length(..))
+        if lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
+            right_str = u'Asn1Int({})'.format(right_str)
+        elif rbty.kind == 'IntegerType' and lbty.kind != rbty.kind:
+            left_str = u'Asn1Int({})'.format(left_str)
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)
     else:
@@ -2262,6 +2272,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
         XXX has to be done also in the C backend
     '''
     code, local_decl = [], []
+
     if dec.kind == 'any':
         LOG.warning('Ada backend does not support the "ANY" statement')
         code.append('-- "DECISION ANY" statement was ignored')
@@ -2271,29 +2282,36 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
         code.append('-- Informal decision was ignored: {}'
                     .format(dec.inputString))
         return code, local_decl
+
     question_type = dec.question.exprType
     actual_type = type_name(question_type)
     basic = find_basic_type(question_type).kind in ('IntegerType',
-                          'Integer32Type', 'BooleanType',
-                          'RealType', 'EnumeratedType', 'ChoiceEnumeratedType')
+                                                    'Integer32Type',
+                                                    'BooleanType',
+                                                    'RealType',
+                                                    'EnumeratedType',
+                                                    'ChoiceEnumeratedType')
     # for ASN.1 types, declare a local variable
     # to hold the evaluation of the question
     if not basic:
-        local_decl.append('tmp{idx} : aliased {actType};'.format(
-                          idx=dec.tmpVar, actType=actual_type))
+        local_decl.append('tmp{idx} : aliased {actType};'
+                          .format(idx=dec.tmpVar,
+                                  actType=actual_type))
+
     q_stmts, q_str, q_decl = expression(dec.question)
+
     # Add code-to-model traceability
     code.extend(traceability(dec))
     local_decl.extend(q_decl)
     code.extend(q_stmts)
+
     if not basic:
         code.append('tmp{idx} := {q};'.format(idx=dec.tmpVar, q=q_str))
+
     for a in dec.answers:
         code.extend(traceability(a))
+
         if a.kind in ('open_range', 'constant'):
-            # Note: removed and a.transition here because empty transitions
-            # have a different meaning, and a "null;" statement has to be
-            # generated, to go into the branch
             ans_stmts, ans_str, ans_decl = expression(a.constant)
             code.extend(ans_stmts)
             local_decl.extend(ans_decl)
@@ -2309,7 +2327,8 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
                         exp = u'not {}'.format(exp)
                 else:
                     exp = u'tmp{idx} {op} {ans}'.format(idx=dec.tmpVar,
-                            op=a.openRangeOp.operand, ans=ans_str)
+                                                      op=a.openRangeOp.operand,
+                                                      ans=ans_str)
             else:
                 exp = u'({q}) {op} {ans}'.format(q=q_str,
                                                  op=a.openRangeOp.operand,
@@ -2325,6 +2344,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
             else:
                 code.append('trId := {};'.format(branch_to))
             sep = 'elsif '
+
         elif a.kind == 'closed_range':
             cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0])
             cl1_stmts, cl1_str, cl1_decl = expression(a.closedRange[1])
