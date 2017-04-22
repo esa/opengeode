@@ -1233,7 +1233,6 @@ def _call_external_function(output, **kwargs):
                 # Not there? Impossible, the parser would have barked
                 raise ValueError(u'Probably a bug - please report')
         if out_sig:
-            #list_of_params = []
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
@@ -1255,21 +1254,24 @@ def _call_external_function(output, **kwargs):
                         and p_id.startswith(LPREFIX)) # NO FIXME WITH CTXT
                         or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
-                    local_decl.append('{tmp} : aliased {sort};'
+                    local_decl.append(u'{tmp} : aliased {sort};'
                                       .format(tmp=tmp_id,
                                               sort=typename))
+                    basic_param = find_basic_type (param_type)
+                    if basic_param.kind.startswith('Integer'):
+                        p_id = u"Asn1Int({})".format(p_id)
                     if isinstance(param,
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         p_id = array_content(param, p_id,
                                              find_basic_type(param_type))
-                    code.append('{} := {};'.format(tmp_id, p_id))
-                    list_of_params.append("{}'access{}"
+                    code.append(u'{} := {};'.format(tmp_id, p_id))
+                    list_of_params.append(u"{}'Access{}"
                                           .format(tmp_id,
-                                                  ", {}'Size".format(tmp_id)
+                                                  u", {}'Size".format(tmp_id)
                                                      if is_out_sig else ""))
                 else:
                     # Output parameters/local variables
-                    list_of_params.append(u"{var}'access{shared}"
+                    list_of_params.append(u"{var}'Access{shared}"
                                          .format(var=p_id,
                                                 shared=", {}'Size".format(p_id)
                                                   if is_out_sig else ""))
