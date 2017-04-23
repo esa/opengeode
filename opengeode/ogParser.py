@@ -4180,6 +4180,12 @@ def for_range(root, context):
         result['stop'] = expr[0]
     else:
         errors.append('Incorrect range expression')
+    # Basic check that range element basic types are all integers
+    for each in expr:
+        basic = find_basic_type(each.exprType)
+        if not basic.kind.startswith("Integer"):
+            errors.append(u"Expression {} is not evaluated to integer"
+                          .format(each.inputString))
     return result, errors, warnings
 
 
