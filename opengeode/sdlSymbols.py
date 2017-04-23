@@ -54,7 +54,8 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
-              'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE',
+              'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE', 'INTEGER',
+              'CHARACTER', 'ASN1INT',
               'TASK', 'PROCESS', 'LABEL', 'JOIN', 'CONNECTION', 'CONNECT')]
 
 

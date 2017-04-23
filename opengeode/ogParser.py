@@ -919,8 +919,8 @@ def compare_types(type_a, type_b):   # type -> [warnings]
                 else:
                     raise TypeError('Incompatible sizes - size of {} can vary'
                                     .format(type_name(type_b)))
-            elif(int(type_b.Min) >= int(type_a.Min)
-                 and int(type_b.Max) <= int(type_a.Max)):
+            elif(float(type_b.Min) >= float(type_a.Min)
+                 and float(type_b.Max) <= float(type_a.Max)):
                 warnings.extend(compare_types(type_a.type, type_b.type))
                 return warnings
             else:
@@ -1140,6 +1140,11 @@ def primary_variable(root, context):
     ''' Primary Variable analysis '''
     name = getattr(root.getChild(0), 'text', 'error')
     errors, warnings = [], []
+    # Detect reserved keywords
+    if name.lower() in ('integer', 'real', 'procedure', 'begin', 'end',
+                        'for', 'in', 'out', 'loop'):
+        errors.append(u"Use of forbidden keyword for a variable name : {}"
+                      .format(name))
 
     possible_constant = is_asn1constant(name)
     if possible_constant:
@@ -1533,6 +1538,7 @@ def conditional_expression(root, context):
         warnings.extend(fix_expression_types(expr, context))
         expr.exprType = then_expr.exprType
     except (AttributeError, TypeError) as err:
+        #print str(err), expr.inputString
         if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
             errors.append(error(root, str(err)))
 
