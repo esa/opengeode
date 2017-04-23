@@ -1316,9 +1316,14 @@ def arithmetic_expression(root, context):
 
     # Expressions returning a numerical type must have their range defined
     # accordingly with the kind of opration used between operand:
-    basic = find_basic_type(expr.left.exprType)
     left = find_basic_type(expr.left.exprType)
     right = find_basic_type(expr.right.exprType)
+    # Type of the resulting expression depends on whether there are raw numbers
+    # on one side of the expression (PrInt). By default when they are parsed,
+    # they are set to 64 bits integers ; but if they are in an expression where
+    # the other side is 32 bits (Length or for loop range) then the resulting
+    # expression is 32 bits.
+    basic = right if left.__name__ == 'PrInt' else left
     try:
         if isinstance(expr, ogAST.ExprPlus):
             attrs = {'Min': str(float(left.Min) + float(right.Min)),
@@ -4232,8 +4237,8 @@ def for_loop(root, context):
                 # basic may be UNKNOWN_TYPE if the expression is a
                 # reference to an ASN.1 constant - their values are not
                 # currently visible to the SDL parser
-                result_type = type('for_range', (INTEGER,), {'Min': r_min,
-                                                             'Max': r_max})
+                result_type = type('for_range', (INT32,), {'Min': r_min,
+                                                           'Max': r_max})
                 context.variables[forloop['var']] = (result_type, 0)
 
             forloop['transition'], err, warn = transition(

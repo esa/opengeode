@@ -1373,13 +1373,13 @@ def _task_forloop(task, **kwargs):
             else:
                 # Step is not directly supported in Ada, we need to use 'while'
                 stmt.extend(['declare',
-                             u'{it} : Asn1Int := {start};'
+                             u'{it} : Integer := Integer({start});'
                              .format(it=loop['var'],
                              start=start_str),
                              '',
                              'begin',
-                             u'while {it} < {stop} loop'.format(it=loop['var'],
-                                                               stop=stop_str)])
+                             u'while {it} < Integer({stop}) loop'
+                             .format(it=loop['var'], stop=stop_str)])
         else:
             # case of form: FOR x in SEQUENCE OF
             # Add iterator to the list of local variables
@@ -1450,9 +1450,9 @@ def _primary_variable(prim):
 
     ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
-    if prim.exprType.__name__ == 'for_range':
-        # Ada iterator in FOR loops is an Integer - we must cast to 64 bits
-        ada_string = u'Asn1Int({})'.format(ada_string)
+#   if prim.exprType.__name__ == 'for_range':
+#       # Ada iterator in FOR loops is an Integer - we must cast to 64 bits
+#       ada_string = u'Asn1Int({})'.format(ada_string)
     return [], unicode(ada_string), []
 
 
@@ -1722,10 +1722,26 @@ def _primary_state_reference(prim):
 def _basic_operators(expr):
     ''' Expressions with two sides '''
     code, local_decl = [], []
-    left_stmts, left_str, left_local = expression(expr.left)
+
+    left_stmts,  left_str,  left_local  = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right)
+
+    ##
+    lbty = find_basic_type(expr.left.exprType)
+    rbty = find_basic_type(expr.right.exprType)
+
+    if rbty.kind != lbty.kind and 'Integer32Type' in (lbty.kind, rbty.kind) \
+            and "PrInt" not in (expr.left.exprType.__name__,
+                                expr.right.exprType.__name__):
+        if lbty.kind == 'IntegerType':
+            right_str = u'Asn1Int({})'.format(right_str)
+        else:
+            left_str = u'Asn1Int({})'.format(left_str)
+    ##
+
     ada_string = u'({left} {op} {right})'.format(
             left=left_str, op=expr.operand, right=right_str)
+
     code.extend(left_stmts)
     code.extend(right_stmts)
     local_decl.extend(left_local)

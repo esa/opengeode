@@ -22,13 +22,20 @@ TEST_DATA = '''
         endconnection;
 '''
 def test_1(qtbot):
-    ''' Test the parsing of numbers '''
+    ''' Test objective is to check the Paste function on horizontal items
+        Render a floating label followed by a decision and 2 answers
+        Check the relative position of the answers
+        then Copy-Paste the floating labels (including children)
+        and verify that the relative position of the children is kept
+    '''
+    # Need an Automaton to render the scene with "render_everything"
     ast = Automaton()
     floating, _, _, _, _ = parseSingleElement('floating_label', TEST_DATA)
     ast.floating_labels = [floating]
     ast.parent = Process()
     scene = SDL_Scene(context="process")
     scene.render_everything(ast)
+
     assert (len(list(scene.floating_symb)) == 1)
 
 
