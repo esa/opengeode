@@ -1353,13 +1353,21 @@ def _task_forloop(task, **kwargs):
         if loop['range']:
             start_str, stop_str = '0', ''
             if loop['range']['start']:
+                basic = find_basic_type(loop['range']['start'].exprType)
                 start_stmt, start_str, start_local = expression(
                                                     loop['range']['start'])
+                if basic.kind == "IntegerType" \
+                       and loop['range']['start'].exprType.__name__ != 'PrInt':
+                    start_str = u"Integer({})".format(start_str)
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
             if loop['range']['step'] == 1:
-                start_str += '..'
+                start_str += ' .. '
+            basic = find_basic_type(loop['range']['stop'].exprType)
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
+            if basic.kind == "IntegerType" \
+                   and loop['range']['stop'].exprType.__name__ != 'PrInt':
+                stop_str = u"Integer({})".format(stop_str)
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
             if loop['range']['step'] == 1:
@@ -1380,6 +1388,8 @@ def _task_forloop(task, **kwargs):
                              'begin',
                              u'while {it} < Integer({stop}) loop'
                              .format(it=loop['var'], stop=stop_str)])
+            # Add iterator to the list of local variables
+            LOCAL_VAR.update({loop['var']: (loop['type'], None)})
         else:
             # case of form: FOR x in SEQUENCE OF
             # Add iterator to the list of local variables
@@ -1443,7 +1453,7 @@ def expression(expr):
 def _primary_variable(prim):
     ''' Single variable reference '''
     var = find_var(prim.value[0])
-    if not var or is_local(var):
+    if (not var) or is_local(var):
         sep = ''
     else:
         sep = LPREFIX + '.'
@@ -2789,7 +2799,7 @@ def find_var(var):
 def is_local(var):
     ''' Check if a variable is in the global context or in a local scope
         Typically needed to select the right prefix to use '''
-    return var in LOCAL_VAR.viewkeys()
+    return var.lower() in (loc.lower() for loc in LOCAL_VAR.viewkeys())
 
 
 def path_type(path):
