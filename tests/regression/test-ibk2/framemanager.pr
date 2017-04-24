@@ -1,0 +1,495 @@
+/* CIF PROCESS (249, 150), (150, 75) */
+process framemanager;
+    state aggregation Wait;
+    substructure
+            state dataReceival;
+            substructure
+                    /* CIF procedure (10, 232), (94, 35) */
+                    procedure InvertFcs;
+                        /* CIF TEXT (591, 93), (287, 143) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in fcs MyFcs,
+                          out invertedFcs MyFcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My16BitArrayInteger := 0;
+                        /* CIF ENDTEXT */
+                        /* CIF START (410, 81), (70, 35) */
+                        START;
+                            /* CIF task (335, 131), (220, 53) */
+                            task for ii in range(0, length(fcs), 1):
+  invertedFcs(15-ii) := fcs(i)
+endfor;
+                            /* CIF return (427, 199), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (1, 186), (116, 35) */
+                    procedure DeclareAddr;
+                        /* CIF TEXT (562, 10), (287, 123) */
+                        -- Procedure interface
+                        
+                        fpar
+                          out addr MyAddr;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (228, 0), (70, 35) */
+                        START;
+                            /* CIF task (0, 50), (526, 63) */
+                            task for i in range(0, 7, 1):
+  addr!destinationAddress(i) := { false, false, false, false, false, false, false, false }
+endfor;
+                            /* CIF task (14, 131), (498, 63) */
+                            task for i in range(0, 7, 1):
+  addr!sourceAddress(i) := { false, false, false, false, false, false, false, false }
+endfor;
+                            /* CIF return (245, 209), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (2, 95), (117, 35) */
+                    procedure CalculateFcs;
+                        /* CIF TEXT (922, 13), (287, 338) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in addr MyAddr,
+                          in control MyControl,
+                          in pid MyPid,
+                          in info MyInfo,
+                          out fcs MyFcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL dataStack MyDataStack;
+                        
+                        DCL fcsStack MyFcsStack;
+                        DCL fcsPolynomial MyFcsPolynomial;
+                        
+                        DCL k MyFcsStackInteger := 0;
+                        
+                        DCL fcsXorResult MyFcsPolynomial;
+                        
+                        DCL position My16BitArrayInteger;
+                        DCL fcsPosition MyFcsPolynomialInteger;
+                        /* CIF ENDTEXT */
+                        /* CIF START (551, 0), (70, 35) */
+                        START;
+                            /* CIF task (404, 50), (364, 83) */
+                            task for i in range(0, length(addr!destinationAddress), 1):
+  for j in range(0, length(addr!destinationAddress(i))):
+    fcsStack((i*8)+j) := addr!destinationAddress(i)(j)
+  endfor
+endfor;
+                            /* CIF task (408, 151), (357, 83) */
+                            task for i in range(0, length(addr!sourceAddress), 1):
+  for j in range(0, length(addr!sourceAddress(i))):
+    fcsStack(56+(i*8)+j) := addr!sourceAddress(i)(j)
+  endfor
+endfor;
+                            /* CIF task (478, 249), (217, 63) */
+                            task for i in range(112, 120, 1):
+    fcsStack(i) := control(i - 112)
+  endfor;
+                            /* CIF task (478, 327), (217, 53) */
+                            task for i in range(120, 128, 1):
+    fcsStack(i) := pid(i - 120)
+  endfor;
+                            /* CIF task (456, 395), (260, 63) */
+                            task for i in range(128, 132, 1):
+  fcsStack(i) := info!ba!srcAddr(i - 128)
+endfor;
+                            /* CIF task (455, 473), (262, 53) */
+                            task for i in range(132, 136, 1):
+  fcsStack(i) := info!ba!dstAddr(i - 132)
+endfor;
+                            /* CIF task (475, 541), (222, 63) */
+                            task for i in range(136, 144, 1):
+  fcsStack(i) := info!cntrl(i - 136)
+endfor;
+                            /* CIF task (474, 619), (224, 53) */
+                            task for i in range(144, 152, 1):
+  fcsStack(i) := info!code(i - 144)
+endfor;
+                            /* CIF task (419, 687), (335, 83) */
+                            task for i in range(0, length(info!operationData), 1):
+  for j in range(0, length(info!operationData(i)), 1):
+    dataStack((i*8)+j) := info!operationData(i)(j)
+  endfor
+endfor
+                            /* CIF comment (773, 711), (224, 35) */
+                            comment 'Array of octets to array of bits';
+                            /* CIF task (430, 785), (312, 53) */
+                            task for i in range(152, length(dataStack) + 152, 1):
+  fcsStack(i) := dataStack(i - 152)
+endfor;
+                            /* CIF task (368, 853), (437, 68) */
+                            task for i in range(length(dataStack) + 152, length(dataStack) + 168, 1):
+  position := i - (length(dataStack) + 152)
+  fcsStack(i) := info!ifcs(position)
+endfor;
+                            /* CIF task (368, 951), (437, 53) */
+                            task for i in range(length(dataStack) + 168, length(dataStack) + 184, 1):
+  fcsStack(i) := false
+endfor;
+                            /* CIF task (207, 1019), (758, 35) */
+                            task fcsPolynomial := {true, false, false, false, true, false, false, false, false, false, false, true, false, false, false, false, true};
+                            /* CIF label (534, 1069), (105, 46) */
+                            calculation:
+                            /* CIF decision (513, 1130), (146, 50) */
+                            decision fcsStack(k) = true;
+                                /* CIF ANSWER (347, 1200), (70, 23) */
+                                (true):
+                                    /* CIF task (0, 1238), (765, 35) */
+                                    task fcsXorResult := {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+                                    /* CIF task (89, 1288), (586, 68) */
+                                    task for l in range(k, k + length(fcsPolynomial), 1):
+  fcsPosition := l - k
+  fcsXorResult(fcsPosition) := if fcsStack(l) = fcsPolynomial(fcsPosition) then false else true fi
+endfor
+                                    /* CIF comment (692, 1304), (126, 35) */
+                                    comment 'XOR operation';
+                                    /* CIF task (232, 1386), (300, 68) */
+                                    task for l in range(k, length(fcsXorResult) + k, 1):
+  fcsPosition := l - k
+  fcsStack(l) := fcsXorResult(fcsPosition)
+endfor
+                                    /* CIF comment (547, 1402), (127, 35) */
+                                    comment 'Replace result';
+                                /* CIF ANSWER (828, 1200), (70, 23) */
+                                (false):
+                            enddecision;
+                            /* CIF decision (420, 1469), (332, 50) */
+                            decision k = length(fcsStack) - length(fcsPolynomial);
+                                /* CIF ANSWER (312, 1539), (70, 23) */
+                                (true):
+                                    /* CIF task (85, 1577), (525, 68) */
+                                    task for l in range (length(fcsStack) - (length(fcsPolynomial) - 2), length(fcsStack), 1):
+  position := l - (length(fcsStack) - (length(fcsPolynomial) - 2))
+  fcs(position) := fcsStack(l)
+endfor;
+                                    /* CIF return (330, 1660), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (795, 1539), (70, 23) */
+                                (false):
+                                    /* CIF task (712, 1577), (236, 35) */
+                                    task k := if k = 2175 then k else k + 1 fi
+                                    /* CIF comment (964, 1535), (100, 35) */
+                                    comment 'Shift right';
+                                    /* CIF join (813, 1627), (35, 35) */
+                                    join calculation;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (11, 140), (96, 35) */
+                    procedure PackData;
+                        /* CIF TEXT (273, 15), (287, 233) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in startFlag MyFlag,
+                          in addr MyAddr,
+                          in control MyControl,
+                          in pid MyPid,
+                          in info MyInfo,
+                          in fcs MyFcs,
+                          in endflag MyFlag,
+                          out frame MyFrame;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (72, 1), (70, 35) */
+                        START;
+                            /* CIF task (2, 51), (209, 113) */
+                            task frame!startFlag := startFlag,
+frame!addr := addr,
+frame!control := control,
+frame!pid := pid,
+frame!info := info,
+frame!fcs := fcs,
+frame!endFlag := endFlag;
+                            /* CIF return (89, 179), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF START (24, 0), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (0, 50), (119, 35) */
+                        NEXTSTATE dataReceival;
+                    /* CIF state (356, 0), (119, 35) */
+                    state dataReceival;
+                        /* CIF input (320, 55), (191, 35) */
+                        input ReceiveData(info);
+                            /* CIF task (153, 110), (526, 63) */
+                            task for i in range(0, 7, 1):
+  addr!destinationAddress(i) := { false, false, false, false, false, false, false, false }
+endfor;
+                            /* CIF task (167, 188), (498, 63) */
+                            task for i in range(0, 7, 1):
+  addr!sourceAddress(i) := { false, false, false, false, false, false, false, false }
+endfor;
+                            /* CIF task (216, 266), (400, 68) */
+                            task startFlag := { false, true, true, true, true, true, true, false },
+control := { false, false, false, false, false, false, true, true },
+pid := { true, true, true, true, false, false, false, false },
+endFlag := { false, true, true, true, true, true, true, false };
+                            /* CIF PROCEDURECALL (275, 349), (281, 35) */
+                            call CalculateFcs(addr, control, pid, info, fcs);
+                            /* CIF PROCEDURECALL (317, 399), (198, 35) */
+                            call InvertFcs(fcs, invertedFcs);
+                            /* CIF PROCEDURECALL (179, 449), (473, 35) */
+                            call PackData(startFlag, addr, control, pid, info, invertedFcs, endFlag, frame);
+                            /* CIF output (341, 499), (150, 35) */
+                            output SendFrame(frame);
+                            /* CIF return (398, 549), (35, 35) */
+                            return ;
+                    endstate;
+            endsubstructure;
+            state frameReceival;
+            substructure
+                    /* CIF TEXT (596, 14), (287, 140) */
+                    -- Text area for declarations and comments
+                    
+                    DCL calculatedFcs MyFcs;
+                    /* CIF ENDTEXT */
+                    /* CIF procedure (0, 101), (150, 35) */
+                    procedure UnpackFrame;
+                        /* CIF TEXT (254, 25), (287, 203) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in frame MyFrame,
+                          out addr MyAddr,
+                          out control MyControl,
+                          out pid MyPid,
+                          out info MyInfo,
+                          out fcs MyFcs;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (69, 8), (70, 35) */
+                        START;
+                            /* CIF task (10, 58), (187, 83) */
+                            task addr := frame!addr,
+control := frame!control,
+pid := frame!pid,
+info := frame!info,
+fcs := frame!fcs;
+                            /* CIF return (86, 156), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (4, 173), (140, 35) */
+                    procedure FrameCalculateFcs;
+                        /* CIF TEXT (922, 13), (287, 338) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in addr MyAddr,
+                          in control MyControl,
+                          in pid MyPid,
+                          in info MyInfo,
+                          out fcs MyFcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL dataStack MyDataStack;
+                        
+                        DCL fcsStack MyFcsStack;
+                        DCL fcsPolynomial MyFcsPolynomial;
+                        
+                        DCL k MyFcsStackInteger := 0;
+                        
+                        DCL fcsXorResult MyFcsPolynomial;
+                        
+                        DCL position My16BitArrayInteger;
+                        DCL fcsPosition MyFcsPolynomialInteger;
+                        /* CIF ENDTEXT */
+                        /* CIF START (551, 0), (70, 35) */
+                        START;
+                            /* CIF task (404, 50), (364, 83) */
+                            task for i in range(0, length(addr!destinationAddress), 1):
+  for j in range(0, length(addr!destinationAddress(i))):
+    fcsStack((i*8)+j) := addr!destinationAddress(i)(j)
+  endfor
+endfor;
+                            /* CIF task (408, 151), (357, 83) */
+                            task for i in range(0, length(addr!sourceAddress), 1):
+  for j in range(0, length(addr!sourceAddress(i))):
+    fcsStack(56+(i*8)+j) := addr!sourceAddress(i)(j)
+  endfor
+endfor;
+                            /* CIF task (478, 249), (217, 63) */
+                            task for i in range(112, 120, 1):
+    fcsStack(i) := control(i - 112)
+  endfor;
+                            /* CIF task (478, 327), (217, 53) */
+                            task for i in range(120, 128, 1):
+    fcsStack(i) := pid(i - 120)
+  endfor;
+                            /* CIF task (456, 395), (260, 63) */
+                            task for i in range(128, 132, 1):
+  fcsStack(i) := info!ba!srcAddr(i - 128)
+endfor;
+                            /* CIF task (455, 473), (262, 53) */
+                            task for i in range(132, 136, 1):
+  fcsStack(i) := info!ba!dstAddr(i - 132)
+endfor;
+                            /* CIF task (475, 541), (222, 63) */
+                            task for i in range(136, 144, 1):
+  fcsStack(i) := info!cntrl(i - 136)
+endfor;
+                            /* CIF task (474, 619), (224, 53) */
+                            task for i in range(144, 152, 1):
+  fcsStack(i) := info!code(i - 144)
+endfor;
+                            /* CIF task (419, 687), (335, 83) */
+                            task for i in range(0, length(info!operationData), 1):
+  for j in range(0, length(info!operationData(i)), 1):
+    dataStack((i*8)+j) := info!operationData(i)(j)
+  endfor
+endfor
+                            /* CIF comment (773, 711), (224, 35) */
+                            comment 'Array of octets to array of bits';
+                            /* CIF task (430, 785), (312, 53) */
+                            task for i in range(152, length(dataStack) + 152, 1):
+  fcsStack(i) := dataStack(i - 152)
+endfor;
+                            /* CIF task (368, 853), (437, 68) */
+                            task for i in range(length(dataStack) + 152, length(dataStack) + 168, 1):
+  position := i - (length(dataStack) + 152)
+  fcsStack(i) := info!ifcs(position)
+endfor;
+                            /* CIF task (368, 951), (437, 53) */
+                            task for i in range(length(dataStack) + 168, length(dataStack) + 184, 1):
+  fcsStack(i) := false
+endfor;
+                            /* CIF task (207, 1019), (758, 35) */
+                            task fcsPolynomial := {true, false, false, false, true, false, false, false, false, false, false, true, false, false, false, false, true};
+                            /* CIF label (534, 1069), (105, 46) */
+                            calculation:
+                            /* CIF decision (513, 1130), (146, 50) */
+                            decision fcsStack(k) = true;
+                                /* CIF ANSWER (347, 1200), (70, 23) */
+                                (true):
+                                    /* CIF task (0, 1238), (765, 35) */
+                                    task fcsXorResult := {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+                                    /* CIF task (89, 1288), (586, 68) */
+                                    task for l in range(k, k + length(fcsPolynomial), 1):
+  fcsPosition := l - k
+  fcsXorResult(fcsPosition) := if fcsStack(l) = fcsPolynomial(fcsPosition) then false else true fi
+endfor
+                                    /* CIF comment (692, 1304), (126, 35) */
+                                    comment 'XOR operation';
+                                    /* CIF task (232, 1386), (300, 68) */
+                                    task for l in range(k, length(fcsXorResult) + k, 1):
+  fcsPosition := l - k
+  fcsStack(l) := fcsXorResult(fcsPosition)
+endfor
+                                    /* CIF comment (547, 1402), (127, 35) */
+                                    comment 'Replace result';
+                                /* CIF ANSWER (828, 1200), (70, 23) */
+                                (false):
+                            enddecision;
+                            /* CIF decision (420, 1469), (332, 50) */
+                            decision k = length(fcsStack) - length(fcsPolynomial);
+                                /* CIF ANSWER (312, 1539), (70, 23) */
+                                (true):
+                                    /* CIF task (85, 1577), (525, 68) */
+                                    task for l in range (length(fcsStack) - (length(fcsPolynomial) - 2), length(fcsStack), 1):
+  position := l - (length(fcsStack) - (length(fcsPolynomial) - 2))
+  fcs(position) := fcsStack(l)
+endfor;
+                                    /* CIF return (330, 1660), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (795, 1539), (70, 23) */
+                                (false):
+                                    /* CIF task (712, 1577), (236, 35) */
+                                    task k := if k = 2175 then k else k + 1 fi
+                                    /* CIF comment (964, 1528), (100, 35) */
+                                    comment 'Shift right';
+                                    /* CIF join (813, 1627), (35, 35) */
+                                    join calculation;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (13, 224), (117, 35) */
+                    procedure FrameInvertFcs;
+                        /* CIF TEXT (591, 93), (287, 143) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in fcs MyFcs,
+                          out invertedFcs MyFcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My16BitArrayInteger := 0;
+                        /* CIF ENDTEXT */
+                        /* CIF START (410, 81), (70, 35) */
+                        START;
+                            /* CIF task (335, 131), (220, 53) */
+                            task for ii in range(0, length(fcs), 1):
+  invertedFcs(15-ii) := fcs(i)
+endfor;
+                            /* CIF return (427, 199), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF START (38, 1), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (6, 51), (134, 35) */
+                        NEXTSTATE frameReceival;
+                    /* CIF state (321, 1), (127, 35) */
+                    state frameReceival;
+                        /* CIF input (290, 56), (189, 35) */
+                        input ReceiveFrame(frame);
+                            /* CIF PROCEDURECALL (221, 106), (327, 35) */
+                            call UnpackFrame(frame, addr, control, pid, info, fcs);
+                            /* CIF PROCEDURECALL (199, 156), (371, 35) */
+                            call FrameCalculateFcs(addr, control, pid, info, calculatedFcs);
+                            /* CIF PROCEDURECALL (240, 206), (289, 35) */
+                            call FrameInvertFcs(calculatedFcs, invertedFcs);
+                            /* CIF decision (243, 256), (282, 50) */
+                            decision invertedFcs = fcs;
+                                /* CIF ANSWER (233, 326), (70, 23) */
+                                (true):
+                                    /* CIF output (204, 364), (128, 35) */
+                                    output SendData(info);
+                                /* CIF ANSWER (459, 326), (70, 23) */
+                                (false):
+                            enddecision;
+                            /* CIF return (367, 414), (35, 35) */
+                            return ;
+                    endstate;
+            endsubstructure;
+            /* CIF state (0, 163), (127, 35) */
+            state frameReceival;
+            endstate;
+            /* CIF state (4, 117), (119, 33) */
+            state dataReceival;
+            endstate;
+    endsubstructure;
+    /* CIF TEXT (689, 22), (287, 218) */
+    -- Text area for declarations and comments
+    
+    DCL info MyInfo;
+    
+    DCL startFlag MyFlag;
+    DCL addr MyAddr;
+    DCL control MyControl;
+    DCL pid MyPid;
+    DCL fcs MyFcs;
+    DCL endFlag MyFlag;
+    
+    DCL invertedFcs MyFcs;
+    
+    DCL frame MyFrame;
+    /* CIF ENDTEXT */
+    /* CIF START (309, 10), (70, 35) */
+    START;
+        /* CIF label (302, 60), (83, 35) */
+        waiting:
+        /* CIF NEXTSTATE (309, 110), (70, 35) */
+        NEXTSTATE Wait;
+    /* CIF state (488, 11), (70, 35) */
+    state Wait;
+    endstate;
+endprocess framemanager;

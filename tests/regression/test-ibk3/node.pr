@@ -1,0 +1,1844 @@
+/* CIF PROCESS (247, 150), (150, 75) */
+process node;
+    state aggregation Wait;
+    substructure
+            state acknowledgementReceival;
+            substructure
+                    /* CIF TEXT (867, 11), (275, 140) */
+                    -- Text area for declarations and comments
+                    
+                    DCL l3RrqPosition MyL3RrqInteger;
+                    /* CIF ENDTEXT */
+                    /* CIF procedure (52, 145), (181, 35) */
+                    procedure PackAckOperationData;
+                        /* CIF TEXT (429, 13), (287, 188) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in l3Tte MyL3Tte,
+                          in l3Mrt MyL3Mrt,
+                          in l3Lfn MyL3Lfn,
+                          in l3Hfn MyL3Hfn,
+                          in l3Data MyL3Rrq,
+                          out operationData MyOperationData;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (138, 1), (70, 35) */
+                        START;
+                            /* CIF task (20, 51), (306, 53) */
+                            task for i in range(0, length(operationData(0)), 1):
+  operationData(0)(i) := l3Tte(i)
+endfor;
+                            /* CIF task (20, 119), (306, 53) */
+                            task for i in range(0, length(operationData(1)), 1):
+  operationData(1)(i) := l3Tte(i + 8)
+endfor;
+                            /* CIF task (20, 187), (306, 53) */
+                            task for i in range(0, length(operationData(2)), 1):
+  operationData(2)(i) := l3Mrt(i)
+endfor;
+                            /* CIF task (20, 255), (306, 53) */
+                            task for i in range(0, length(operationData(3)), 1):
+  operationData(3)(i) := l3Mrt(i + 8)
+endfor;
+                            /* CIF task (20, 323), (306, 53) */
+                            task for i in range(0, length(operationData(4)), 1):
+  operationData(4)(i) := l3Lfn(i)
+endfor;
+                            /* CIF task (20, 391), (306, 53) */
+                            task for i in range(0, length(operationData(5)), 1):
+  operationData(5)(i) := l3Hfn(i)
+endfor;
+                            /* CIF task (46, 459), (254, 63) */
+                            task for i in range(6, length(l3Rrq) + 6, 1):
+  operationData(i) := l3Rrq(i - 6)
+endfor;
+                            /* CIF return (155, 543), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (74, 98), (140, 35) */
+                    procedure CalculateAckFcs;
+                        /* CIF TEXT (1109, 13), (289, 383) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ba MyBa,
+                          in code MyCode,
+                          in l3Tte MyL3Tte,
+                          in l3Mrt MyL3Mrt,
+                          in l3Lfn MyL3Lfn,
+                          in l3Hfn MyL3Hfn,
+                          in l3Rrq MyL3Rrq,
+                          out ifcs MyIfcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL l3AckDataStack MyL3AckDataStack;
+                        
+                        DCL l3AckFcsStack MyL3AckFcsStack;
+                        DCL l3FcsPolynomial MyL3FcsPolynomial;
+                        
+                        DCL k MyL3FcsStackInteger := 0;
+                        
+                        DCL l3FcsXorResult MyL3FcsPolynomial;
+                        
+                        DCL position My16BitArrayInteger;
+                        DCL fcsPosition MyFcsPolynomialInteger;
+                        /* CIF ENDTEXT */
+                        /* CIF START (628, 0), (70, 35) */
+                        START;
+                            /* CIF task (545, 50), (237, 63) */
+                            task for i in range(0, 4, 1):
+  l3AckFcsStack(i) := ba!srcAddr(i)
+endfor;
+                            /* CIF task (535, 133), (257, 63) */
+                            task for i in range(4, 8, 1):
+  l3AckFcsStack(i) := ba!dstAddr(i - 4)
+endfor;
+                            /* CIF task (554, 211), (219, 63) */
+                            task for i in range(8, 16, 1):
+  l3AckFcsStack(i) := code(i - 8)
+endfor;
+                            /* CIF task (550, 295), (227, 63) */
+                            task for i in range(16, 24, 1):
+  l3AckFcsStack(i) := l3Tte(i - 16)
+endfor;
+                            /* CIF task (550, 383), (227, 63) */
+                            task for i in range(24, 32, 1):
+  l3AckFcsStack(i) := l3Tte(i - 16)
+endfor;
+                            /* CIF task (549, 471), (228, 63) */
+                            task for i in range(32, 40, 1):
+  l3AckFcsStack(i) := l3Mrt(i - 32)
+endfor;
+                            /* CIF task (549, 559), (228, 63) */
+                            task for i in range(40, 48, 1):
+  l3AckFcsStack(i) := l3Mrt(i - 32)
+endfor;
+                            /* CIF task (551, 637), (225, 53) */
+                            task for i in range(48, 56, 1):
+  l3AckFcsStack(i) := l3Lfn(i - 48)
+endfor;
+                            /* CIF task (550, 709), (227, 53) */
+                            task for i in range(56, 64, 1):
+  l3AckFcsStack(i) := l3Hfn(i - 56)
+endfor;
+                            /* CIF task (534, 783), (259, 93) */
+                            task for i in range(0, length(l3Rrq), 1):
+  for j in range(0, length(l3Rrq(i)), 1):
+    l3AckDataStack((i*8)+j) := l3Rrq(i)(j)
+  endfor
+endfor;
+                            /* CIF task (497, 894), (333, 63) */
+                            task for i in range(64, length(l3AckDataStack) + 64, 1):
+  l3AckFcsStack(i) := l3AckDataStack(i - 72)
+endfor;
+                            /* CIF task (423, 975), (481, 63) */
+                            task for i in range(length(l3AckDataStack)+64, length(l3AckDataStack)+80, 1):
+  l3AckFcsStack(i) := false
+endfor;
+                            /* CIF task (278, 1060), (771, 35) */
+                            task l3FcsPolynomial := {true, false, false, false, true, false, false, false, false, false, false, true, false, false, false, false, true};
+                            /* CIF label (611, 1110), (105, 48) */
+                            calculation:
+                            /* CIF decision (572, 1173), (182, 50) */
+                            decision l3AckFcsStack(k) = true;
+                                /* CIF ANSWER (352, 1243), (70, 23) */
+                                (true):
+                                    /* CIF task (0, 1281), (775, 35) */
+                                    task l3FcsXorResult := {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+                                    /* CIF task (63, 1331), (648, 68) */
+                                    task for l in range(k, k + length(l3FcsPolynomial), 1):
+  fcsPosition := l - k
+  l3FcsXorResult(fcsPosition) := if l3AckFcsStack(l) = l3FcsPolynomial(fcsPosition) then false else true fi
+endfor
+                                    /* CIF comment (725, 1348), (126, 35) */
+                                    comment 'XOR operation';
+                                    /* CIF task (231, 1415), (311, 68) */
+                                    task for l in range(k, length(l3FcsXorResult) + k, 1):
+  fcsPosition := l - k
+  l3AckFcsStack(l) := l3FcsXorResult(fcsPosition)
+endfor
+                                    /* CIF comment (560, 1432), (127, 35) */
+                                    comment 'Replace result';
+                                /* CIF ANSWER (907, 1243), (70, 23) */
+                                (false):
+                            enddecision;
+                            /* CIF decision (473, 1498), (381, 63) */
+                            decision k = length(l3AckFcsStack) - length(l3FcsPolynomial);
+                                /* CIF ANSWER (285, 1581), (70, 23) */
+                                (true):
+                                    /* CIF task (17, 1619), (607, 68) */
+                                    task for l in range(length(l3AckFcsStack) - (length(l3FcsPolynomial) - 2), length(l3AckFcsStack), 1):
+  position := l - (length(l3AckFcsStack) - (length(l3FcsPolynomial) - 2))
+  ifcs(position) := l3AckFcsStack(l)
+endfor;
+                                    /* CIF return (303, 1710), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (859, 1581), (70, 23) */
+                                (false):
+                                    /* CIF task (776, 1619), (236, 35) */
+                                    task k := if k = 2023 then k else k + 1 fi
+                                    /* CIF comment (1029, 1619), (100, 35) */
+                                    comment 'Shift right';
+                                    /* CIF join (877, 1669), (35, 35) */
+                                    join calculation;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (57, 221), (170, 35) */
+                    procedure AckIntegerTo16BitArray;
+                        /* CIF TEXT (696, 13), (337, 188) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in inti My16BitArrayValueInteger,
+                          out bitArray My16BitArray;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My16BitArrayInteger := 0;
+                        
+                        DCL value My16BitArrayValueInteger := 0;
+                        DCL bitValue My16BitArrayValueInteger := 65535;
+                        /* CIF ENDTEXT */
+                        /* CIF START (345, 0), (70, 35) */
+                        START;
+                            /* CIF task (312, 50), (135, 35) */
+                            task value := inti;
+                            /* CIF label (328, 100), (104, 48) */
+                            conversion:
+                            /* CIF task (177, 163), (405, 48) */
+                            task bitArray(i) := if value>bitValue then true else false fi,
+value := if bitArray(i) = true then value-bitValue else value fi;
+                            /* CIF decision (342, 226), (75, 50) */
+                            decision i = 15;
+                                /* CIF ANSWER (189, 296), (70, 23) */
+                                (true):
+                                    /* CIF return (206, 334), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (503, 297), (70, 23) */
+                                (false):
+                                    /* CIF task (435, 335), (206, 38) */
+                                    task bitValue := bitValue / 2,
+i := if i = 15 then i else i + 1 fi;
+                                    /* CIF join (520, 388), (35, 35) */
+                                    join conversion;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (89, 270), (102, 35) */
+                    procedure AckInvertFcs;
+                        /* CIF TEXT (267, 12), (287, 203) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ifcs MyIfcs,
+                          out invertedIfcs MyIfcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My16BitArrayInteger := 0;
+                        /* CIF ENDTEXT */
+                        /* CIF START (82, 0), (70, 35) */
+                        START;
+                            /* CIF task (5, 50), (223, 53) */
+                            task for ii in range(0, length(ifcs), 1):
+  invertedIfcs(15-ii) := ifcs(i)
+endfor;
+                            /* CIF return (99, 118), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (89, 319), (98, 35) */
+                    procedure AckPackInfo;
+                        /* CIF TEXT (439, 12), (287, 203) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ba MyBa,
+                          in cntrl MyCntrl,
+                          in code MyCode,
+                          in operationData MyOperationData,
+                          in ifcs MyIfcs,
+                          out info MyInfo;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (143, 0), (70, 35) */
+                        START;
+                            /* CIF task (47, 50), (262, 93) */
+                            task info!ba := ba,
+info!cntrl := cntrl,
+info!code := code,
+info!operationData := operationData,
+info!ifcs := ifcs;
+                            /* CIF return (160, 158), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF START (111, 1), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (44, 51), (204, 35) */
+                        NEXTSTATE acknowledgementReceival;
+                    /* CIF state (528, 1), (204, 35) */
+                    state acknowledgementReceival;
+                        /* CIF input (548, 56), (165, 35) */
+                        input receiveAck(ackData);
+                            /* CIF task (438, 110), (384, 63) */
+                            task ba := ackData!ba,
+cntrl := { false, false, false, false, false, false, true, true },
+code := ackData!code;
+                            /* CIF task (542, 198), (177, 53) */
+                            task l3Mrt := ackData!l3Mrt,
+l3Lfn := ackData!l3Lfn,
+l3Hfn := ackData!l3Hfn;
+                            /* CIF decision (484, 271), (292, 50) */
+                            decision length(ackData!l3MissingData) < 244;
+                                /* CIF ANSWER (338, 341), (70, 23) */
+                                (true):
+                                    /* CIF task (208, 379), (329, 68) */
+                                    task for i in range(0, length(ackData!l3MissingData), 1):
+  l3RrqPosition := i
+  l3Rrq(l3RrqPosition) := ackData!l3MissingData(i)
+endfor;
+                                    /* CIF output (294, 477), (158, 35) */
+                                    output SendFrameCount(1);
+                                    /* CIF PROCEDURECALL (260, 527), (224, 33) */
+                                    call AckIntegerTo16BitArray(0, l3Tte);
+                                    /* CIF PROCEDURECALL (165, 575), (416, 35) */
+                                    call CalculateAckFcs(ba, code, l3Tte, l3Mrt, l3Lfn, l3Hfn, l3Rrq, ifcs);
+                                    /* CIF PROCEDURECALL (267, 625), (210, 35) */
+                                    call AckInvertFcs(ifcs, invertedIfcs);
+                                    /* CIF PROCEDURECALL (139, 675), (467, 35) */
+                                    call PackAckOperationData(l3Tte, l3Mrt, l3Lfn, l3Hfn, l3Rrq, operationData);
+                                    /* CIF PROCEDURECALL (174, 725), (396, 35) */
+                                    call AckPackInfo(ba, cntrl, code, operationData, invertedIfcs, info);
+                                    /* CIF output (276, 775), (194, 35) */
+                                    output SendData(info);
+                                    /* CIF return (355, 825), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (853, 341), (70, 23) */
+                                (false):
+                                    /* CIF return (870, 379), (35, 35) */
+                                    return ;
+                            enddecision;
+                    endstate;
+            endsubstructure;
+            state rawDataReceival;
+            substructure
+                    /* CIF TEXT (1497, 16), (339, 203) */
+                    -- Text area for declarations and comments
+                    
+                    DCL l3Stack MyL3Stack;
+                    
+                    DCL noOfFrame My8BitArrayValueInteger := 0;
+                    DCL timeToEnd MyRawDataInteger;
+                    
+                    DCL sentL3Stack MyL3Stack;
+                    DCL noOfSentFrames MyL3StackInteger := 0;
+                    
+                    DCL i MyL3AckMissingStackInteger := 0;
+                    
+                    DCL noOfMissingFrame My8BitArrayValueInteger;
+                    /* CIF ENDTEXT */
+                    /* CIF procedure (465, 144), (154, 35) */
+                    procedure IntegerTo8BitArray;
+                        /* CIF TEXT (528, 10), (337, 188) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in inti My8BitArrayValueInteger,
+                          out bitArray My8BitArray;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My8BitArrayInteger := 0;
+                        
+                        DCL value My8BitArrayValueInteger := 0;
+                        DCL bitValue My8BitArrayValueInteger := 255;
+                        /* CIF ENDTEXT */
+                        /* CIF START (192, 1), (70, 35) */
+                        START;
+                            /* CIF task (160, 51), (135, 35) */
+                            task value := inti;
+                            /* CIF label (175, 101), (104, 46) */
+                            conversion:
+                            /* CIF task (25, 162), (405, 48) */
+                            task bitArray(i) := if value>bitValue then true else false fi,
+value := if bitArray(i) = true then value-bitValue else value fi;
+                            /* CIF decision (190, 225), (75, 50) */
+                            decision i = 7;
+                                /* CIF ANSWER (316, 295), (70, 23) */
+                                (true):
+                                    /* CIF return (334, 333), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (64, 295), (70, 23) */
+                                (false):
+                                    /* CIF task (0, 333), (199, 38) */
+                                    task bitValue := bitValue / 2,
+i := if i = 7 then i else i + 1 fi;
+                                    /* CIF join (82, 386), (35, 35) */
+                                    join conversion;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (460, 287), (158, 35) */
+                    procedure PackOperationData;
+                        /* CIF TEXT (429, 13), (287, 183) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in l3Tte MyL3Tte,
+                          in l3Mrt MyL3Mrt,
+                          in l3Fnum MyL3Fnum,
+                          in l3Data MyL3Data,
+                          out operationData MyOperationData;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (138, 1), (70, 35) */
+                        START;
+                            /* CIF task (20, 51), (306, 53) */
+                            task for i in range(0, length(operationData(0)), 1):
+  operationData(0)(i) := l3Tte(i)
+endfor;
+                            /* CIF task (20, 119), (306, 53) */
+                            task for i in range(0, length(operationData(1)), 1):
+  operationData(1)(i) := l3Tte(i + 8)
+endfor;
+                            /* CIF task (20, 187), (306, 53) */
+                            task for i in range(0, length(operationData(2)), 1):
+  operationData(2)(i) := l3Mrt(i)
+endfor;
+                            /* CIF task (20, 255), (306, 53) */
+                            task for i in range(0, length(operationData(3)), 1):
+  operationData(3)(i) := l3Mrt(i + 8)
+endfor;
+                            /* CIF task (20, 323), (306, 53) */
+                            task for i in range(0, length(operationData(4)), 1):
+  operationData(4)(i) := l3Fnum(i)
+endfor;
+                            /* CIF task (42, 391), (262, 63) */
+                            task for i in range(5, length(l3Data) + 5, 1):
+  operationData(i) := l3Data(i - 5)
+endfor;
+                            /* CIF return (155, 473), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (493, 334), (90, 35) */
+                    procedure PackInfo;
+                        /* CIF TEXT (439, 12), (287, 203) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ba MyBa,
+                          in cntrl MyCntrl,
+                          in code MyCode,
+                          in operationData MyOperationData,
+                          in ifcs MyIfcs,
+                          out info MyInfo;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (143, 0), (70, 35) */
+                        START;
+                            /* CIF task (47, 50), (262, 93) */
+                            task info!ba := ba,
+info!cntrl := cntrl,
+info!code := code,
+info!operationData := operationData,
+info!ifcs := ifcs;
+                            /* CIF return (160, 158), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (473, 97), (139, 35) */
+                    procedure DataToL3Frames;
+                        /* CIF TEXT (1199, 15), (293, 233) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in rawData MyRawData,
+                          out l3Stack MyL3Stack;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL currentOctet MyRawDataInteger := 0;
+                        
+                        DCL lastOctet MyRawDataInteger;
+                        
+                        DCL l3Data MyL3Data;
+                        DCL l3DataPosition MyL3DataInteger;
+                        DCL frameCounter MyL3StackInteger := 0;
+                        /* CIF ENDTEXT */
+                        /* CIF START (652, 0), (70, 35) */
+                        START;
+                            /* CIF label (635, 50), (104, 47) */
+                            converting:
+                            /* CIF decision (554, 112), (265, 50) */
+                            decision length(rawData) - currentOctet > 244;
+                                /* CIF ANSWER (324, 182), (70, 23) */
+                                (true):
+                                    /* CIF task (102, 220), (513, 35) */
+                                    task lastOctet := if currentOctet = 62475 then lastOctet else currentOctet + 245 fi;
+                                    /* CIF task (194, 270), (329, 68) */
+                                    task for i in range(currentOctet, lastOctet, 1):
+  l3DataPosition := i - currentOctet
+  l3Data(l3DataPosition) := inputData!rawData(i)
+endfor
+                                    /* CIF comment (538, 285), (290, 38) */
+                                    comment 'Part of array of octets to array of L3 data';
+                                    /* CIF task (80, 368), (557, 53) */
+                                    task l3Stack(frameCounter) := l3Data,
+frameCounter := if frameCounter = 254 then frameCounter else frameCounter + 1 fi,
+currentOctet := if currentOctet = 62475 then currentOctet else currentOctet + 245 fi;
+                                /* CIF ANSWER (973, 182), (70, 23) */
+                                (false):
+                                    /* CIF task (843, 220), (329, 68) */
+                                    task for i in range(currentOctet, length(rawData), 1):
+  l3DataPosition := i - currentOctet
+  l3Data(l3DataPosition) := inputData!rawData(i)
+endfor;
+                                    /* CIF task (891, 318), (233, 35) */
+                                    task l3Stack(frameCounter) := l3Data;
+                                    /* CIF return (990, 372), (35, 35) */
+                                    return ;
+                            enddecision;
+                            /* CIF join (669, 436), (35, 35) */
+                            join converting;
+                    endprocedure;
+                    /* CIF procedure (460, 191), (161, 35) */
+                    procedure IntegerTo16BitArray;
+                        /* CIF TEXT (696, 13), (337, 188) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in inti My16BitArrayValueInteger,
+                          out bitArray My16BitArray;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My16BitArrayInteger := 0;
+                        
+                        DCL value My16BitArrayValueInteger := 0;
+                        DCL bitValue My16BitArrayValueInteger := 65535;
+                        /* CIF ENDTEXT */
+                        /* CIF START (345, 0), (70, 35) */
+                        START;
+                            /* CIF task (312, 50), (135, 35) */
+                            task value := inti;
+                            /* CIF label (328, 100), (104, 48) */
+                            conversion:
+                            /* CIF task (177, 163), (405, 48) */
+                            task bitArray(i) := if value>bitValue then true else false fi,
+value := if bitArray(i) = true then value-bitValue else value fi;
+                            /* CIF decision (342, 226), (75, 50) */
+                            decision i = 15;
+                                /* CIF ANSWER (189, 296), (70, 23) */
+                                (true):
+                                    /* CIF return (206, 334), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (503, 297), (70, 23) */
+                                (false):
+                                    /* CIF task (435, 335), (206, 38) */
+                                    task bitValue := bitValue / 2,
+i := if i = 15 then i else i + 1 fi;
+                                    /* CIF join (520, 388), (35, 35) */
+                                    join conversion;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (479, 239), (117, 35) */
+                    procedure CalculateFcs;
+                        /* CIF TEXT (1092, 13), (289, 368) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ba MyBa,
+                          in code MyCode,
+                          in l3Tte MyL3Tte,
+                          in l3Mrt MyL3Mrt,
+                          in l3Fnum MyL3Fnum,
+                          in l3Data MyL3Data,
+                          out ifcs MyIfcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL l3DataStack MyL3DataStack;
+                        
+                        DCL l3FcsStack MyL3FcsStack;
+                        DCL l3FcsPolynomial MyL3FcsPolynomial;
+                        
+                        DCL k MyL3FcsStackInteger := 0;
+                        
+                        DCL l3FcsXorResult MyL3FcsPolynomial;
+                        
+                        DCL position My16BitArrayInteger;
+                        DCL fcsPosition MyFcsPolynomialInteger;
+                        /* CIF ENDTEXT */
+                        /* CIF START (611, 0), (70, 35) */
+                        START;
+                            /* CIF task (539, 50), (214, 63) */
+                            task for i in range(0, 4, 1):
+  l3FcsStack(i) := ba!srcAddr(i)
+endfor;
+                            /* CIF task (529, 133), (234, 63) */
+                            task for i in range(4, 8, 1):
+  l3FcsStack(i) := ba!dstAddr(i - 4)
+endfor;
+                            /* CIF task (548, 211), (196, 63) */
+                            task for i in range(8, 16, 1):
+  l3FcsStack(i) := code(i - 8)
+endfor;
+                            /* CIF task (544, 295), (204, 63) */
+                            task for i in range(16, 24, 1):
+  l3FcsStack(i) := l3Tte(i - 16)
+endfor;
+                            /* CIF task (544, 383), (204, 63) */
+                            task for i in range(24, 32, 1):
+  l3FcsStack(i) := l3Tte(i - 16)
+endfor;
+                            /* CIF task (543, 471), (205, 63) */
+                            task for i in range(32, 40, 1):
+  l3FcsStack(i) := l3Mrt(i - 32)
+endfor;
+                            /* CIF task (543, 559), (205, 63) */
+                            task for i in range(40, 48, 1):
+  l3FcsStack(i) := l3Mrt(i - 32)
+endfor;
+                            /* CIF task (538, 642), (215, 63) */
+                            task for i in range(48, 56, 1):
+  l3FcsStack(i) := l3Fnum(i - 48)
+endfor;
+                            /* CIF task (508, 720), (276, 83) */
+                            task for i in range(0, length(l3Data), 1):
+  for j in range(0, length(l3Data(i)), 1):
+    l3DataStack((i*8)+j) := l3Data(i)(j)
+  endfor
+endfor
+                            /* CIF comment (804, 744), (224, 35) */
+                            comment 'Array of octets to array of bits';
+                            /* CIF task (491, 823), (310, 63) */
+                            task for i in range(56, length(l3DataStack) + 56, 1):
+  l3FcsStack(i) := l3DataStack(i - 56)
+endfor;
+                            /* CIF task (428, 901), (435, 63) */
+                            task for i in range(length(l3DataStack)+56, length(l3DataStack)+72, 1):
+  l3FcsStack(i) := false
+endfor;
+                            /* CIF task (260, 986), (771, 35) */
+                            task l3FcsPolynomial := {true, false, false, false, true, false, false, false, false, false, false, true, false, false, false, false, true};
+                            /* CIF label (593, 1036), (105, 48) */
+                            calculation:
+                            /* CIF decision (566, 1099), (159, 50) */
+                            decision l3FcsStack(k) = true;
+                                /* CIF ANSWER (409, 1169), (70, 23) */
+                                (true):
+                                    /* CIF task (56, 1207), (775, 35) */
+                                    task l3FcsXorResult := {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+                                    /* CIF task (131, 1257), (625, 68) */
+                                    task for l in range(k, k + length(l3FcsPolynomial), 1):
+  fcsPosition := l - k
+  l3FcsXorResult(fcsPosition) := if l3FcsStack(l) = l3FcsPolynomial(fcsPosition) then false else true fi
+endfor
+                                    /* CIF comment (770, 1273), (126, 35) */
+                                    comment 'XOR operation';
+                                    /* CIF task (287, 1355), (313, 68) */
+                                    task for l in range(k, length(l3FcsXorResult) + k, 1):
+  fcsPosition := l - k
+  l3FcsStack(l) := l3FcsXorResult(fcsPosition)
+endfor
+                                    /* CIF comment (616, 1371), (127, 35) */
+                                    comment 'Replace result';
+                                /* CIF ANSWER (906, 1169), (70, 23) */
+                                (false):
+                            enddecision;
+                            /* CIF decision (467, 1438), (358, 63) */
+                            decision k = length(l3FcsStack) - length(l3FcsPolynomial);
+                                /* CIF ANSWER (268, 1521), (70, 23) */
+                                (true):
+                                    /* CIF task (0, 1559), (606, 68) */
+                                    task for l in range(length(l3FcsStack) - (length(l3FcsPolynomial) - 2), length(l3FcsStack), 1):
+  position := l - (length(l3FcsStack) - (length(l3FcsPolynomial) - 2))
+  ifcs(position) := l3FcsStack(l)
+endfor;
+                                    /* CIF return (285, 1642), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (832, 1521), (70, 23) */
+                                (false):
+                                    /* CIF task (749, 1559), (236, 35) */
+                                    task k := if k = 2023 then k else k + 1 fi
+                                    /* CIF comment (1004, 1517), (100, 35) */
+                                    comment 'Shift right';
+                                    /* CIF join (849, 1609), (35, 35) */
+                                    join calculation;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (457, 381), (163, 35) */
+                    procedure CalculateResendTte;
+                        /* CIF TEXT (724, 10), (310, 153) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in l3AckMissingStack MyL3AckMissingStack,
+                          in l3Stack MyL3Stack,
+                          out timeToEnd MyRawDataInteger;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (322, 0), (70, 35) */
+                        START;
+                            /* CIF task (0, 50), (714, 63) */
+                            task for i in range(0, length(l3AckMissingStack), 1):
+  timeToEnd := if timeToEnd = 62475 then timeToEnd else timeToEnd + length(l3Stack(l3AckMissingStack(i) - 1)) fi
+endfor;
+                            /* CIF return (339, 138), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (492, 430), (94, 35) */
+                    procedure InvertFcs;
+                        /* CIF TEXT (267, 12), (287, 203) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ifcs MyIfcs,
+                          out invertedIfcs MyIfcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My16BitArrayInteger := 0;
+                        /* CIF ENDTEXT */
+                        /* CIF START (82, 0), (70, 35) */
+                        START;
+                            /* CIF task (5, 50), (223, 53) */
+                            task for ii in range(0, length(ifcs), 1):
+  invertedIfcs(15-ii) := ifcs(ii)
+endfor;
+                            /* CIF return (99, 118), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF START (508, 1), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (472, 51), (141, 35) */
+                        NEXTSTATE rawDataReceival;
+                    /* CIF state (1187, 1), (141, 38) */
+                    state rawDataReceival;
+                        /* CIF input (1162, 59), (190, 35) */
+                        input ReadRawData(inputData);
+                            /* CIF task (1065, 109), (384, 53) */
+                            task ba := inputData!ba,
+cntrl := { false, false, false, false, false, false, true, true },
+code := inputData!code;
+                            /* CIF decision (1189, 192), (136, 50) */
+                            decision code;
+                                /* CIF ANSWER (606, 262), (336, 23) */
+                                ({false, false, false, false, false, false, false, false}):
+                                    /* CIF return (756, 300), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (1088, 262), (338, 23) */
+                                ({false, false, false, false, false, false, false, true}):
+                                    /* CIF task (1148, 300), (218, 38) */
+                                    task l3Mrt := inputData!l3Mrt,
+timeToEnd := length(rawData);
+                                    /* CIF PROCEDURECALL (1101, 356), (312, 35) */
+                                    call DataToL3Frames(inputData!rawData, l3Stack);
+                                    /* CIF output (1134, 406), (246, 35) */
+                                    output SendFrameCount(length(l3Stack));
+                                    /* CIF label (1200, 456), (114, 53) */
+                                    dataSending:
+                                    /* CIF task (1022, 524), (470, 53) */
+                                    task noOfFrame := if noOfFrame = 255 then noOfFrame else noOfFrame+1 fi,
+l3Data := l3Stack(noOfFrame - 1),
+timeToEnd := timeToEnd - length(l3Data);
+                                    /* CIF PROCEDURECALL (1117, 597), (279, 35) */
+                                    call IntegerTo8BitArray(noOfFrame, l3Fnum);
+                                    /* CIF PROCEDURECALL (1121, 647), (271, 35) */
+                                    call IntegerTo16BitArray(timeToEnd, l3Tte);
+                                    /* CIF PROCEDURECALL (1069, 697), (376, 35) */
+                                    call CalculateFcs(ba, code, l3Tte, l3Mrt, l3Fnum, l3Data, ifcs);
+                                    /* CIF PROCEDURECALL (1156, 747), (202, 35) */
+                                    call InvertFcs(ifcs, invertedIfcs);
+                                    /* CIF PROCEDURECALL (1043, 797), (427, 35) */
+                                    call PackOperationData(l3Tte, l3Mrt, l3Fnum, l3Data, operationData);
+                                    /* CIF PROCEDURECALL (1063, 847), (388, 35) */
+                                    call PackInfo(ba, cntrl, code, operationData, invertedIfcs, info);
+                                    /* CIF output (1160, 897), (194, 35) */
+                                    output SendData(info);
+                                    /* CIF task (952, 947), (609, 48) */
+                                    task sentL3Stack(noOfSentFrames) := l3Data,
+noOfSentFrames := if noOfSentFrames = 254 then noOfSentFrames else noOfSentFrames + 1 fi;
+                                    /* CIF decision (1092, 1010), (329, 50) */
+                                    decision length(sentL3Stack) = length(l3Stack);
+                                        /* CIF ANSWER (1121, 1080), (70, 23) */
+                                        (true):
+                                            /* CIF return (1138, 1118), (35, 35) */
+                                            return ;
+                                        /* CIF ANSWER (1317, 1080), (70, 23) */
+                                        (false):
+                                            /* CIF join (1334, 1118), (35, 35) */
+                                            join dataSending;
+                                    enddecision;
+                                /* CIF ANSWER (1757, 262), (333, 23) */
+                                ({false, false, false, false, false, false, true, false}):
+                                    /* CIF task (1831, 300), (184, 35) */
+                                    task l3Mrt := inputData!l3Mrt;
+                                    /* CIF PROCEDURECALL (1674, 350), (498, 35) */
+                                    call CalculateResendTte(inputData!l3AckMissingStack, sentL3Stack, timeToEnd);
+                                    /* CIF output (1735, 400), (377, 35) */
+                                    output SendFrameCount(length(inputData!l3AckMissingStack));
+                                    /* CIF label (1859, 450), (129, 53) */
+                                    dataResending:
+                                    /* CIF task (1745, 518), (356, 53) */
+                                    task noOfMissingFrame := inputData!l3AckMissingStack(i),
+l3Data := sentL3Stack(noOfMissingFrame - 1),
+timeToEnd := timeToEnd - length(l3Data);
+                                    /* CIF PROCEDURECALL (1756, 588), (334, 35) */
+                                    call IntegerTo8BitArray(noOfMissingFrame, l3Fnum);
+                                    /* CIF PROCEDURECALL (1788, 638), (271, 35) */
+                                    call IntegerTo16BitArray(timeToEnd, l3Tte);
+                                    /* CIF PROCEDURECALL (1735, 688), (376, 35) */
+                                    call CalculateFcs(ba, code, l3Tte, l3Mrt, l3Fnum, l3Data, ifcs);
+                                    /* CIF PROCEDURECALL (1822, 738), (202, 35) */
+                                    call InvertFcs(ifcs, invertedIfcs);
+                                    /* CIF PROCEDURECALL (1710, 788), (427, 35) */
+                                    call PackOperationData(l3Tte, l3Mrt, l3Fnum, l3Data, operationData);
+                                    /* CIF PROCEDURECALL (1729, 838), (388, 35) */
+                                    call PackInfo(ba, cntrl, code, operationData, invertedIfcs, info);
+                                    /* CIF output (1826, 888), (194, 35) */
+                                    output SendData(info);
+                                    /* CIF decision (1774, 938), (298, 50) */
+                                    decision i = length(inputData!l3AckMissingStack) - 1;
+                                        /* CIF ANSWER (1747, 1008), (70, 23) */
+                                        (true):
+                                            /* CIF return (1764, 1046), (35, 35) */
+                                            return ;
+                                        /* CIF ANSWER (2014, 1008), (70, 23) */
+                                        (false):
+                                            /* CIF task (1827, 1046), (444, 38) */
+                                            task i := if i = (length(inputData!l3AckMissingStack) - 1) then i else i + 1 fi;
+                                            /* CIF join (2031, 1099), (35, 35) */
+                                            join dataResending;
+                                    enddecision;
+                            enddecision;
+                    endstate;
+            endsubstructure;
+            state dataReceival;
+            substructure
+                    /* CIF TEXT (3475, 8), (357, 398) */
+                    -- Text area for declarations and comments
+                    
+                    DCL frameCounter My8BitArrayValueInteger := 0;
+                    
+                    DCL calculatedIfcs MyL3Fcs;
+                    
+                    DCL currentFrame My8BitArrayValueInteger := 0;
+                    DCL previousFrame My8BitArrayValueInteger := 0;
+                    
+                    DCL frameNumber My8BitArrayValueInteger;
+                    DCL timeToEnd My16BitArrayValueInteger;
+                    
+                    DCL receivedL3Data MyL3Stack;
+                    DCL receivedL3DataFrames MyL3StackNumbers;
+                    
+                    DCL l3MissingDataFrames MyL3MissingStack;
+                    
+                    DCL ackData MyAckData;
+                    
+                    DCL l3Lfn My8BitArray;
+                    DCL l3Hfn My8BitArray;
+                    
+                    DCL l3AckMissingStack MyL3AckMissingStack;
+                    
+                    DCL lastWrittenFrame My8BitArrayValueInteger := 1;
+                    DCL writableFrame My8BitArrayValueInteger := 1;
+                    /* CIF ENDTEXT */
+                    /* CIF procedure (46, 490), (197, 35) */
+                    procedure UnpackAckOperationData;
+                        /* CIF TEXT (525, 15), (287, 173) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in operationData MyOperationData,
+                          out l3Tte MyL3Tte,
+                          out l3Mrt MyL3Mrt,
+                          out l3Lfn MyL3Lfn,
+                          out l3Hfn MyL3Hfn,
+                          out l3Rrq MyL3Rrq;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (242, 0), (70, 35) */
+                        START;
+                            /* CIF task (124, 50), (306, 53) */
+                            task for i in range(0, length(operationData(0)), 1):
+  l3Tte(i) := operationData(0)(i)
+endfor;
+                            /* CIF task (124, 118), (306, 53) */
+                            task for i in range(0, length(operationData(1)), 1):
+  l3Tte(i+8) := operationData(1)(i)
+endfor;
+                            /* CIF task (124, 186), (306, 53) */
+                            task for i in range(0, length(operationData(2)), 1):
+  l3Mrt(i) := operationData(2)(i)
+endfor;
+                            /* CIF task (124, 256), (306, 53) */
+                            task for i in range(0, length(operationData(3)), 1):
+  l3Mrt(i+8) := operationData(3)(i)
+endfor;
+                            /* CIF task (124, 324), (306, 53) */
+                            task for i in range(0, length(operationData(4)), 1):
+  l3Lfn(i) := operationData(4)(i)
+endfor;
+                            /* CIF task (124, 392), (306, 53) */
+                            task for i in range(0, length(operationData(5)), 1):
+  l3Hfn(i) := operationData(5)(i)
+endfor;
+                            /* CIF task (131, 465), (291, 63) */
+                            task for i in range(6, length(operationData), 1):
+  l3Rrq(i - 6) := operationData(i)
+endfor;
+                            /* CIF return (259, 543), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (92, 439), (109, 35) */
+                    procedure InitialiseHfn;
+                        /* CIF TEXT (740, 12), (335, 203) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in receivedL3DataFrames MyL3StackNumbers,
+                          out l3Hfn My8BitArray;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My8BitArrayValueInteger := 1;
+                        
+                        DCL highestFrame My8BitArrayValueInteger := 1;
+                        
+                        DCL frameNumber My8BitArray;
+                        /* CIF ENDTEXT */
+                        /* CIF START (330, 0), (70, 35) */
+                        START;
+                            /* CIF label (308, 50), (114, 51) */
+                            initialising:
+                            /* CIF decision (240, 116), (249, 50) */
+                            decision receivedL3DataFrames(i - 1) = true;
+                                /* CIF ANSWER (198, 186), (70, 23) */
+                                (true):
+                                    /* CIF task (152, 224), (162, 35) */
+                                    task highestFrame := i;
+                                /* CIF ANSWER (455, 186), (70, 23) */
+                                (false):
+                            enddecision;
+                            /* CIF decision (242, 274), (245, 50) */
+                            decision i < length(receivedL3DataFrames);
+                                /* CIF ANSWER (94, 344), (70, 23) */
+                                (true):
+                                    /* CIF task (22, 382), (213, 35) */
+                                    task i := if i = 255 then i else i + 1 fi;
+                                    /* CIF join (111, 432), (35, 35) */
+                                    join initialising;
+                                /* CIF ANSWER (502, 344), (70, 23) */
+                                (false):
+                                    /* CIF PROCEDURECALL (360, 382), (354, 35) */
+                                    call DataIntegerTo8BitArray(highestFrame, frameNumber);
+                                    /* CIF task (452, 432), (170, 35) */
+                                    task l3Hfn := frameNumber;
+                                    /* CIF return (519, 482), (35, 35) */
+                                    return ;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (93, 390), (107, 35) */
+                    procedure InitialiseLfn;
+                        /* CIF TEXT (769, 12), (326, 198) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in receivedL3DataFrames MyL3StackNumbers,
+                          out l3Lfn My8BitArray;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i MyL3StackInteger := 0;
+                        
+                        DCL frameNumber My8BitArray;
+                        /* CIF ENDTEXT */
+                        /* CIF START (376, 0), (70, 35) */
+                        START;
+                            /* CIF label (354, 50), (114, 51) */
+                            initialising:
+                            /* CIF decision (289, 116), (245, 50) */
+                            decision i < length(receivedL3DataFrames);
+                                /* CIF ANSWER (202, 186), (70, 23) */
+                                (true):
+                                    /* CIF decision (122, 224), (231, 50) */
+                                    decision receivedL3DataFrames(i) = true;
+                                        /* CIF ANSWER (71, 294), (70, 23) */
+                                        (true):
+                                            /* CIF task (0, 332), (213, 35) */
+                                            task i := if i = 255 then i else i + 1 fi;
+                                        /* CIF ANSWER (338, 294), (70, 23) */
+                                        (false):
+                                            /* CIF PROCEDURECALL (226, 332), (293, 35) */
+                                            call DataIntegerTo8BitArray(i + 1, frameNumber);
+                                            /* CIF task (289, 382), (168, 35) */
+                                            task l3Lfn := frameNumber;
+                                            /* CIF return (356, 432), (35, 35) */
+                                            return ;
+                                    enddecision;
+                                    /* CIF join (220, 482), (35, 35) */
+                                    join initialising;
+                                /* CIF ANSWER (548, 186), (70, 23) */
+                                (false):
+                                    /* CIF return (566, 224), (35, 35) */
+                                    return ;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (74, 291), (150, 35) */
+                    procedure CheckMissingData
+                    /* CIF comment (244, 291), (152, 35) */
+                    comment 'Currently not used';
+                        /* CIF TEXT (521, 25), (326, 143) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in receivedL3DataFrames MyL3StackNumbers,
+                          out l3MissingData MyBoolean;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My8BitArrayValueInteger := 1;
+                        /* CIF ENDTEXT */
+                        /* CIF START (187, 0), (70, 35) */
+                        START;
+                            /* CIF label (175, 50), (93, 46) */
+                            checking:
+                            /* CIF decision (97, 111), (249, 50) */
+                            decision receivedL3DataFrames(i - 1) = true;
+                                /* CIF ANSWER (83, 181), (70, 23) */
+                                (true):
+                                    /* CIF decision (80, 219), (75, 50) */
+                                    decision i = 255;
+                                        /* CIF ANSWER (0, 289), (70, 23) */
+                                        (true):
+                                            /* CIF return (17, 327), (35, 35) */
+                                            return ;
+                                        /* CIF ANSWER (164, 289), (70, 23) */
+                                        (false):
+                                            /* CIF task (92, 327), (213, 35) */
+                                            task i := if i = 255 then i else i + 1 fi;
+                                            /* CIF join (181, 377), (35, 35) */
+                                            join checking;
+                                    enddecision;
+                                /* CIF ANSWER (364, 181), (70, 23) */
+                                (false):
+                                    /* CIF task (316, 219), (166, 35) */
+                                    task l3MissingData := true;
+                                    /* CIF return (381, 269), (35, 35) */
+                                    return ;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (59, 240), (182, 35) */
+                    procedure ArrayOf16BitsToInteger;
+                        /* CIF TEXT (479, 13), (337, 183) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in bitArray My16BitArray,
+                          out inti My16BitArrayValueInteger;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My16BitArrayInteger := 15;
+                        
+                        DCL bitValue My16BitArrayValueInteger := 1;
+                        /* CIF ENDTEXT */
+                        /* CIF START (186, 0), (70, 35) */
+                        START;
+                            /* CIF label (169, 50), (104, 46) */
+                            conversion:
+                            /* CIF task (0, 111), (443, 33) */
+                            task inti := if bitArray(i) = true then inti+bitValue else inti fi;
+                            /* CIF decision (186, 159), (70, 50) */
+                            decision i = 0;
+                                /* CIF ANSWER (82, 229), (70, 23) */
+                                (true):
+                                    /* CIF return (100, 267), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (289, 229), (70, 23) */
+                                (false):
+                                    /* CIF task (222, 267), (204, 38) */
+                                    task bitValue := bitValue * 2,
+i := if i = 0 then i else i - 1 fi;
+                                    /* CIF join (307, 320), (35, 35) */
+                                    join conversion;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (62, 142), (174, 35) */
+                    procedure UnpackOperationData;
+                        /* CIF TEXT (525, 15), (287, 173) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in operationData MyOperationData,
+                          out l3Tte MyL3Tte,
+                          out l3Mrt MyL3Mrt,
+                          out l3Fnum MyL3Fnum,
+                          out l3Data MyL3Data;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (242, 0), (70, 35) */
+                        START;
+                            /* CIF task (124, 50), (306, 53) */
+                            task for i in range(0, length(operationData(0)), 1):
+  l3Tte(i) := operationData(0)(i)
+endfor;
+                            /* CIF task (124, 118), (306, 53) */
+                            task for i in range(0, length(operationData(1)), 1):
+  l3Tte(i+8) := operationData(1)(i)
+endfor;
+                            /* CIF task (124, 186), (306, 53) */
+                            task for i in range(0, length(operationData(2)), 1):
+  l3Mrt(i) := operationData(2)(i)
+endfor;
+                            /* CIF task (124, 256), (306, 53) */
+                            task for i in range(0, length(operationData(3)), 1):
+  l3Mrt(i+8) := operationData(3)(i)
+endfor;
+                            /* CIF task (124, 324), (306, 53) */
+                            task for i in range(0, length(operationData(4)), 1):
+  l3Fnum(i) := operationData(4)(i)
+endfor;
+                            /* CIF task (131, 395), (291, 63) */
+                            task for i in range(5, length(operationData), 1):
+  l3Data(i - 5) := operationData(i)
+endfor;
+                            /* CIF return (259, 473), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (95, 95), (112, 35) */
+                    procedure UnpackInfo;
+                        /* CIF TEXT (444, 15), (287, 198) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in info MyInfo,
+                          out ba MyBa,
+                          out cntrl MyCntrl,
+                          out code MyCode,
+                          out operationData MyOperationData,
+                          out ifcs MyIfcs;
+                        
+                        -- Text area for declarations and comments
+                        /* CIF ENDTEXT */
+                        /* CIF START (195, 0), (70, 35) */
+                        START;
+                            /* CIF task (99, 50), (262, 93) */
+                            task ba := info!ba,
+cntrl := info!cntrl,
+code := info!code,
+operationData := info!operationData,
+ifcs := info!ifcs;
+                            /* CIF return (212, 158), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (62, 190), (175, 35) */
+                    procedure ArrayOf8BitsToInteger;
+                        /* CIF TEXT (513, 15), (337, 183) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in bitArray My8BitArray,
+                          out inti My8BitArrayValueInteger;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My8BitArrayInteger := 7;
+                        
+                        DCL bitValue My8BitArrayValueInteger := 1;
+                        /* CIF ENDTEXT */
+                        /* CIF START (186, 0), (70, 35) */
+                        START;
+                            /* CIF label (169, 50), (104, 46) */
+                            conversion:
+                            /* CIF task (0, 111), (443, 33) */
+                            task inti := if bitArray(i) = true then inti+bitValue else inti fi;
+                            /* CIF decision (186, 159), (70, 50) */
+                            decision i = 0;
+                                /* CIF ANSWER (87, 229), (70, 23) */
+                                (true):
+                                    /* CIF return (105, 267), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (277, 229), (70, 23) */
+                                (false):
+                                    /* CIF task (183, 267), (258, 38) */
+                                    task bitValue := bitValue * 2,
+i := if i = 0 then i else i - 1 fi;
+                                    /* CIF join (295, 320), (35, 35) */
+                                    join conversion;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (67, 341), (161, 35) */
+                    procedure InitialiseMissingData;
+                        /* CIF TEXT (997, 19), (326, 218) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in receivedL3Data MyL3Stack,
+                          in receivedL3DataFrames MyL3StackNumbers,
+                          out l3MissingDataFrames MyL3MissingStack;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i MyL3StackInteger := 0;
+                        
+                        DCL frameCount My8BitArrayValueInteger := 1;
+                        
+                        DCL frameNumber My8BitArray;
+                        /* CIF ENDTEXT */
+                        /* CIF START (636, 0), (70, 35) */
+                        START;
+                            /* CIF label (622, 50), (98, 46) */
+                            initialising:
+                            /* CIF decision (549, 111), (245, 50) */
+                            decision i < length(receivedL3DataFrames);
+                                /* CIF ANSWER (414, 181), (70, 23) */
+                                (true):
+                                    /* CIF decision (332, 219), (234, 50) */
+                                    decision receivedL3DataFrames(i) = false;
+                                        /* CIF ANSWER (211, 289), (70, 23) */
+                                        (true):
+                                            /* CIF PROCEDURECALL (109, 327), (273, 35) */
+                                            call DataIntegerTo8BitArray(i, frameNumber);
+                                            /* CIF task (0, 377), (493, 38) */
+                                            task l3MissingDataFrames(frameCount - 1) := frameNumber,
+frameCount := if frameCount = 255 then frameCount else frameCount + 1 fi;
+                                        /* CIF ANSWER (621, 289), (70, 23) */
+                                        (false):
+                                    enddecision;
+                                /* CIF ANSWER (876, 181), (70, 23) */
+                                (false):
+                                    /* CIF return (894, 219), (35, 35) */
+                                    return ;
+                            enddecision;
+                            /* CIF task (565, 445), (213, 35) */
+                            task i := if i = 255 then i else i + 1 fi;
+                            /* CIF join (654, 495), (35, 35) */
+                            join initialising;
+                    endprocedure;
+                    /* CIF procedure (40, 539), (215, 35) */
+                    procedure InitialiseMissingDataNumbers;
+                        /* CIF TEXT (470, 10), (320, 173) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in l3Rrq MyL3Rrq,
+                          out l3AckMissingStack MyL3AckMissingStack;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i MyL3AckMissingStackInteger := 0;
+                        
+                        DCL frameNumber My8BitArrayValueInteger;
+                        /* CIF ENDTEXT */
+                        /* CIF START (155, 0), (70, 35) */
+                        START;
+                            /* CIF label (141, 50), (98, 45) */
+                            initialising:
+                            /* CIF PROCEDURECALL (32, 110), (316, 35) */
+                            call ArrayOf8BitsToInteger(l3Rrq(i), frameNumber);
+                            /* CIF task (57, 160), (265, 35) */
+                            task l3AckMissingStack(i) := frameNumber;
+                            /* CIF decision (113, 210), (154, 50) */
+                            decision i = length(l3Rrq) - 1;
+                                /* CIF ANSWER (8, 280), (70, 23) */
+                                (true):
+                                    /* CIF return (25, 318), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (313, 280), (70, 23) */
+                                (false):
+                                    /* CIF task (202, 318), (292, 35) */
+                                    task i := if i = length(l3Rrq) - 1 then i else i + 1 fi;
+                                    /* CIF join (330, 368), (35, 35) */
+                                    join initialising;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (72, 587), (141, 35) */
+                    procedure InitialiseRawData;
+                        /* CIF TEXT (575, 13), (344, 188) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in lastWrittenFrame My8BitArrayValueInteger, 
+                          in writableFrame My8BitArrayValueInteger,
+                          in receivedL3Data MyL3Stack,
+                          out rawData MyRawData;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL octetNumber MyRawDataInteger := 1;
+                        /* CIF ENDTEXT */
+                        /* CIF START (244, 0), (70, 35) */
+                        START;
+                            /* CIF task (0, 50), (559, 98) */
+                            task for i in range(lastWrittenFrame - 1, length(l3Lfn), 1):
+  for j in range(0, length(receivedL3Data(i)), 1):
+    rawData(octetNumber - 1) := receivedL3Data(i)(j)
+    octetNumber := if octetNumber = 62475 then octetNumber else octetNumber + 1 fi
+   endfor
+endfor;
+                            /* CIF return (262, 163), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (58, 666), (169, 35) */
+                    procedure DataIntegerTo8BitArray;
+                        /* CIF TEXT (528, 10), (337, 188) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in inti My8BitArrayValueInteger,
+                          out bitArray My8BitArray;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My8BitArrayInteger := 0;
+                        
+                        DCL value My8BitArrayValueInteger := 0;
+                        DCL bitValue My8BitArrayValueInteger := 255;
+                        /* CIF ENDTEXT */
+                        /* CIF START (192, 1), (70, 35) */
+                        START;
+                            /* CIF task (160, 51), (135, 35) */
+                            task value := inti;
+                            /* CIF label (175, 101), (104, 46) */
+                            conversion:
+                            /* CIF task (25, 162), (405, 48) */
+                            task bitArray(i) := if value>bitValue then true else false fi,
+value := if bitArray(i) = true then value-bitValue else value fi;
+                            /* CIF decision (190, 225), (75, 50) */
+                            decision i = 7;
+                                /* CIF ANSWER (316, 295), (70, 23) */
+                                (true):
+                                    /* CIF return (334, 333), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (64, 295), (70, 23) */
+                                (false):
+                                    /* CIF task (0, 333), (199, 38) */
+                                    task bitValue := bitValue / 2,
+i := if i = 7 then i else i + 1 fi;
+                                    /* CIF join (82, 386), (35, 35) */
+                                    join conversion;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (77, 714), (131, 35) */
+                    procedure DataCalculateFcs;
+                        /* CIF TEXT (1092, 13), (289, 368) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ba MyBa,
+                          in code MyCode,
+                          in l3Tte MyL3Tte,
+                          in l3Mrt MyL3Mrt,
+                          in l3Fnum MyL3Fnum,
+                          in l3Data MyL3Data,
+                          out ifcs MyIfcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL l3DataStack MyL3DataStack;
+                        
+                        DCL l3FcsStack MyL3FcsStack;
+                        DCL l3FcsPolynomial MyL3FcsPolynomial;
+                        
+                        DCL k MyL3FcsStackInteger := 0;
+                        
+                        DCL l3FcsXorResult MyL3FcsPolynomial;
+                        
+                        DCL position My16BitArrayInteger;
+                        DCL fcsPosition MyFcsPolynomialInteger;
+                        /* CIF ENDTEXT */
+                        /* CIF START (611, 0), (70, 35) */
+                        START;
+                            /* CIF task (539, 50), (214, 63) */
+                            task for i in range(0, 4, 1):
+  l3FcsStack(i) := ba!srcAddr(i)
+endfor;
+                            /* CIF task (529, 133), (234, 63) */
+                            task for i in range(4, 8, 1):
+  l3FcsStack(i) := ba!dstAddr(i - 4)
+endfor;
+                            /* CIF task (548, 211), (196, 63) */
+                            task for i in range(8, 16, 1):
+  l3FcsStack(i) := code(i - 8)
+endfor;
+                            /* CIF task (544, 295), (204, 63) */
+                            task for i in range(16, 24, 1):
+  l3FcsStack(i) := l3Tte(i - 16)
+endfor;
+                            /* CIF task (544, 383), (204, 63) */
+                            task for i in range(24, 32, 1):
+  l3FcsStack(i) := l3Tte(i - 16)
+endfor;
+                            /* CIF task (543, 471), (205, 63) */
+                            task for i in range(32, 40, 1):
+  l3FcsStack(i) := l3Mrt(i - 32)
+endfor;
+                            /* CIF task (543, 559), (205, 63) */
+                            task for i in range(40, 48, 1):
+  l3FcsStack(i) := l3Mrt(i - 32)
+endfor;
+                            /* CIF task (538, 642), (215, 63) */
+                            task for i in range(48, 56, 1):
+  l3FcsStack(i) := l3Fnum(i - 48)
+endfor;
+                            /* CIF task (508, 720), (276, 83) */
+                            task for i in range(0, length(l3Data), 1):
+  for j in range(0, length(l3Data(i)), 1):
+    l3DataStack((i*8)+j) := l3Data(i)(j)
+  endfor
+endfor
+                            /* CIF comment (804, 744), (224, 35) */
+                            comment 'Array of octets to array of bits';
+                            /* CIF task (491, 823), (310, 63) */
+                            task for i in range(56, length(l3DataStack) + 56, 1):
+  l3FcsStack(i) := l3DataStack(i - 56)
+endfor;
+                            /* CIF task (428, 901), (435, 63) */
+                            task for i in range(length(l3DataStack)+56, length(l3DataStack)+72, 1):
+  l3FcsStack(i) := false
+endfor;
+                            /* CIF task (260, 986), (771, 35) */
+                            task l3FcsPolynomial := {true, false, false, false, true, false, false, false, false, false, false, true, false, false, false, false, true};
+                            /* CIF label (593, 1036), (105, 48) */
+                            calculation:
+                            /* CIF decision (566, 1099), (159, 50) */
+                            decision l3FcsStack(k) = true;
+                                /* CIF ANSWER (409, 1169), (70, 23) */
+                                (true):
+                                    /* CIF task (56, 1207), (775, 35) */
+                                    task l3FcsXorResult := {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+                                    /* CIF task (131, 1257), (625, 68) */
+                                    task for l in range(k, k + length(l3FcsPolynomial), 1):
+  fcsPosition := l - k
+  l3FcsXorResult(fcsPosition) := if l3FcsStack(l) = l3FcsPolynomial(fcsPosition) then false else true fi
+endfor
+                                    /* CIF comment (770, 1273), (126, 35) */
+                                    comment 'XOR operation';
+                                    /* CIF task (287, 1355), (313, 68) */
+                                    task for l in range(k, length(l3FcsXorResult) + k, 1):
+  fcsPosition := l - k
+  l3FcsStack(l) := l3FcsXorResult(fcsPosition)
+endfor
+                                    /* CIF comment (616, 1371), (127, 35) */
+                                    comment 'Replace result';
+                                /* CIF ANSWER (906, 1169), (70, 23) */
+                                (false):
+                            enddecision;
+                            /* CIF decision (467, 1438), (358, 63) */
+                            decision k = length(l3FcsStack) - length(l3FcsPolynomial);
+                                /* CIF ANSWER (268, 1521), (70, 23) */
+                                (true):
+                                    /* CIF task (0, 1559), (606, 68) */
+                                    task for l in range(length(l3FcsStack) - (length(l3FcsPolynomial) - 2), length(l3FcsStack), 1):
+  position := l - (length(l3FcsStack) - (length(l3FcsPolynomial) - 2))
+  ifcs(position) := l3FcsStack(l)
+endfor;
+                                    /* CIF return (285, 1642), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (832, 1521), (70, 23) */
+                                (false):
+                                    /* CIF task (749, 1559), (236, 35) */
+                                    task k := if k = 2023 then k else k + 1 fi
+                                    /* CIF comment (1004, 1510), (100, 35) */
+                                    comment 'Shift right';
+                                    /* CIF join (849, 1609), (35, 35) */
+                                    join calculation;
+                            enddecision;
+                    endprocedure;
+                    /* CIF procedure (87, 762), (108, 35) */
+                    procedure DataInvertFcs;
+                        /* CIF TEXT (267, 12), (287, 203) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ifcs MyIfcs,
+                          out invertedIfcs MyIfcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL i My16BitArrayInteger := 0;
+                        /* CIF ENDTEXT */
+                        /* CIF START (82, 0), (70, 35) */
+                        START;
+                            /* CIF task (5, 50), (223, 53) */
+                            task for ii in range(0, length(ifcs), 1):
+  invertedIfcs(15-ii) := ifcs(ii)
+endfor;
+                            /* CIF return (99, 118), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (66, 811), (154, 35) */
+                    procedure DataCalculateAckFcs;
+                        /* CIF TEXT (1109, 13), (289, 383) */
+                        -- Procedure interface
+                        
+                        fpar
+                          in ba MyBa,
+                          in code MyCode,
+                          in l3Tte MyL3Tte,
+                          in l3Mrt MyL3Mrt,
+                          in l3Lfn MyL3Lfn,
+                          in l3Hfn MyL3Hfn,
+                          in l3Rrq MyL3Rrq,
+                          out ifcs MyIfcs;
+                        
+                        -- Text area for declarations and comments
+                        
+                        DCL l3AckDataStack MyL3AckDataStack;
+                        
+                        DCL l3AckFcsStack MyL3AckFcsStack;
+                        DCL l3FcsPolynomial MyL3FcsPolynomial;
+                        
+                        DCL k MyL3FcsStackInteger := 0;
+                        
+                        DCL l3FcsXorResult MyL3FcsPolynomial;
+                        
+                        DCL position My16BitArrayInteger;
+                        DCL fcsPosition MyFcsPolynomialInteger;
+                        /* CIF ENDTEXT */
+                        /* CIF START (628, 0), (70, 35) */
+                        START;
+                            /* CIF task (545, 50), (237, 63) */
+                            task for i in range(0, 4, 1):
+  l3AckFcsStack(i) := ba!srcAddr(i)
+endfor;
+                            /* CIF task (535, 133), (257, 63) */
+                            task for i in range(4, 8, 1):
+  l3AckFcsStack(i) := ba!dstAddr(i - 4)
+endfor;
+                            /* CIF task (554, 211), (219, 63) */
+                            task for i in range(8, 16, 1):
+  l3AckFcsStack(i) := code(i - 8)
+endfor;
+                            /* CIF task (550, 295), (227, 63) */
+                            task for i in range(16, 24, 1):
+  l3AckFcsStack(i) := l3Tte(i - 16)
+endfor;
+                            /* CIF task (550, 383), (227, 63) */
+                            task for i in range(24, 32, 1):
+  l3AckFcsStack(i) := l3Tte(i - 16)
+endfor;
+                            /* CIF task (549, 471), (228, 63) */
+                            task for i in range(32, 40, 1):
+  l3AckFcsStack(i) := l3Mrt(i - 32)
+endfor;
+                            /* CIF task (549, 559), (228, 63) */
+                            task for i in range(40, 48, 1):
+  l3AckFcsStack(i) := l3Mrt(i - 32)
+endfor;
+                            /* CIF task (551, 637), (225, 53) */
+                            task for i in range(48, 56, 1):
+  l3AckFcsStack(i) := l3Lfn(i - 48)
+endfor;
+                            /* CIF task (550, 709), (227, 53) */
+                            task for i in range(56, 64, 1):
+  l3AckFcsStack(i) := l3Hfn(i - 56)
+endfor;
+                            /* CIF task (534, 783), (259, 93) */
+                            task for i in range(0, length(l3Rrq), 1):
+  for j in range(0, length(l3Rrq(i)), 1):
+    l3AckDataStack((i*8)+j) := l3Rrq(i)(j)
+  endfor
+endfor;
+                            /* CIF task (497, 894), (333, 63) */
+                            task for i in range(64, length(l3AckDataStack) + 64, 1):
+  l3AckFcsStack(i) := l3AckDataStack(i - 72)
+endfor;
+                            /* CIF task (423, 975), (481, 63) */
+                            task for i in range(length(l3AckDataStack)+64, length(l3AckDataStack)+80, 1):
+  l3AckFcsStack(i) := false
+endfor;
+                            /* CIF task (278, 1060), (771, 35) */
+                            task l3FcsPolynomial := {true, false, false, false, true, false, false, false, false, false, false, true, false, false, false, false, true};
+                            /* CIF label (611, 1110), (105, 48) */
+                            calculation:
+                            /* CIF decision (572, 1173), (182, 50) */
+                            decision l3AckFcsStack(k) = true;
+                                /* CIF ANSWER (352, 1243), (70, 23) */
+                                (true):
+                                    /* CIF task (0, 1281), (775, 35) */
+                                    task l3FcsXorResult := {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+                                    /* CIF task (63, 1331), (648, 68) */
+                                    task for l in range(k, k + length(l3FcsPolynomial), 1):
+  fcsPosition := l - k
+  l3FcsXorResult(fcsPosition) := if l3AckFcsStack(l) = l3FcsPolynomial(fcsPosition) then false else true fi
+endfor
+                                    /* CIF comment (725, 1348), (126, 35) */
+                                    comment 'XOR operation';
+                                    /* CIF task (231, 1415), (311, 68) */
+                                    task for l in range(k, length(l3FcsXorResult) + k, 1):
+  fcsPosition := l - k
+  l3AckFcsStack(l) := l3FcsXorResult(fcsPosition)
+endfor
+                                    /* CIF comment (560, 1432), (127, 35) */
+                                    comment 'Replace result';
+                                /* CIF ANSWER (907, 1243), (70, 23) */
+                                (false):
+                            enddecision;
+                            /* CIF decision (473, 1498), (381, 63) */
+                            decision k = length(l3AckFcsStack) - length(l3FcsPolynomial);
+                                /* CIF ANSWER (285, 1581), (70, 23) */
+                                (true):
+                                    /* CIF task (17, 1619), (607, 68) */
+                                    task for l in range(length(l3AckFcsStack) - (length(l3FcsPolynomial) - 2), length(l3AckFcsStack), 1):
+  position := l - (length(l3AckFcsStack) - (length(l3FcsPolynomial) - 2))
+  ifcs(position) := l3AckFcsStack(l)
+endfor;
+                                    /* CIF return (303, 1710), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (859, 1581), (70, 23) */
+                                (false):
+                                    /* CIF task (776, 1619), (236, 35) */
+                                    task k := if k = 2023 then k else k + 1 fi
+                                    /* CIF comment (1029, 1619), (100, 35) */
+                                    comment 'Shift right';
+                                    /* CIF join (877, 1669), (35, 35) */
+                                    join calculation;
+                            enddecision;
+                    endprocedure;
+                    /* CIF START (118, 0), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (71, 50), (164, 35) */
+                        NEXTSTATE frameCountReceival;
+                    /* CIF state (325, 0), (164, 35) */
+                    state frameCountReceival;
+                        /* CIF input (286, 55), (243, 35) */
+                        input ReceiveFrameCount(frameCount);
+                            /* CIF NEXTSTATE (348, 110), (119, 35) */
+                            NEXTSTATE dataReceival;
+                    endstate;
+                    /* CIF state (1702, 1), (119, 35) */
+                    state dataReceival;
+                        /* CIF input (1655, 56), (213, 35) */
+                        input ReceiveData(info);
+                            /* CIF task (1489, 106), (545, 35) */
+                            task frameCounter := if frameCounter = 255 then frameCounter else frameCounter + 1 fi;
+                            /* CIF PROCEDURECALL (1585, 156), (352, 35) */
+                            call UnpackInfo(info, ba, cntrl, code, operationData, ifcs);
+                            /* CIF decision (1703, 206), (117, 50) */
+                            decision code;
+                                /* CIF ANSWER (406, 276), (336, 23) */
+                                ({false, false, false, false, false, false, false, false}):
+                                    /* CIF return (556, 314), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (1595, 276), (333, 23) */
+                                ({false, false, false, false, false, false, false, true}):
+                                    /* CIF PROCEDURECALL (1540, 314), (443, 35) */
+                                    call UnpackOperationData(operationData, l3Tte, l3Mrt, l3Fnum, l3Data);
+                                    /* CIF PROCEDURECALL (1603, 364), (316, 35) */
+                                    call ArrayOf8BitsToInteger(l3Fnum, frameNumber);
+                                    /* CIF task (1651, 414), (221, 35) */
+                                    task currentFrame := frameNumber;
+                                    /* CIF PROCEDURECALL (1532, 464), (458, 35) */
+                                    call DataCalculateFcs(ba, code, l3Tte, l3Mrt, l3Fnum, l3Data, calculatedIfcs);
+                                    /* CIF PROCEDURECALL (1619, 514), (284, 35) */
+                                    call DataInvertFcs(calculatedIfcs, invertedIfcs);
+                                    /* CIF decision (1620, 564), (282, 50) */
+                                    decision invertedIfcs = ifcs;
+                                        /* CIF ANSWER (1160, 634), (70, 23) */
+                                        (true):
+                                            /* CIF decision (1071, 672), (247, 50) */
+                                            decision currentFrame = previousFrame + 1;
+                                                /* CIF ANSWER (891, 742), (70, 23) */
+                                                (true):
+                                                /* CIF ANSWER (1304, 742), (70, 23) */
+                                                (false):
+                                                    /* CIF task (971, 780), (735, 53) */
+                                                    task for i in range(previousFrame, currentFrame, 1):
+  receivedL3DataFrames(i - 1) := if receivedL3DataFrames(i - 1) = true then receivedL3DataFrames(i - 1) else false fi
+endfor
+                                                    /* CIF comment (1726, 789), (386, 35) */
+                                                    comment 'Frames between current and previous frame went missing';
+                                            enddecision;
+                                            /* CIF task (1027, 848), (335, 53) */
+                                            task receivedL3Data(currentFrame - 1) := l3Data,
+receivedL3DataFrames(currentFrame - 1) := true,
+previousFrame := currentFrame
+                                            /* CIF comment (1382, 794), (180, 35) */
+                                            comment 'Current frame is stored';
+                                            /* CIF decision (1090, 916), (210, 50) */
+                                            decision frameCounter = frameCount;
+                                                /* CIF ANSWER (992, 986), (70, 23) */
+                                                (true):
+                                                    /* CIF PROCEDURECALL (753, 1024), (547, 35) */
+                                                    call InitialiseMissingData(receivedL3Data, receivedL3DataFrames, l3MissingDataFrames);
+                                                    /* CIF PROCEDURECALL (881, 1074), (292, 35) */
+                                                    call InitialiseLfn(receivedL3DataFrames, l3Lfn);
+                                                    /* CIF PROCEDURECALL (879, 1124), (296, 35) */
+                                                    call InitialiseHfn(receivedL3DataFrames, l3Hfn);
+                                                    /* CIF PROCEDURECALL (873, 1174), (307, 35) */
+                                                    call ArrayOf8BitsToInteger(l3Lfn, writableFrame);
+                                                    /* CIF PROCEDURECALL (772, 1224), (509, 35) */
+                                                    call InitialiseRawData(lastWrittenFrame, writableFrame, receivedL3Data, rawData);
+                                                    /* CIF task (898, 1274), (258, 53) */
+                                                    task inputData!ba!srcAddr := ba!srcAddr,
+inputData!ba!dstAddr := ba!dstAddr,
+inputData!rawData := rawData;
+                                                    /* CIF output (931, 1342), (192, 35) */
+                                                    output WriteRawData(inputData);
+                                                    /* CIF task (902, 1392), (249, 35) */
+                                                    task lastWrittenFrame := writableFrame;
+                                                    /* CIF task (808, 1442), (437, 113) */
+                                                    task ackData!ba!srcAddr := ba!dstAddr,
+ackData!ba!dstAddr := ba!srcAddr,
+ackData!code := {false, false, false, false, false, false, true, false},
+ackData!l3Mrt := l3Mrt,
+ackData!l3Lfn := l3Lfn,
+ackData!l3Hfn := l3Hfn,
+ackData!l3MissingData := l3MissingDataFrames;
+                                                    /* CIF output (952, 1570), (149, 35) */
+                                                    output SendAck(ackData);
+                                                    /* CIF return (1009, 1620), (35, 35) */
+                                                    return ;
+                                                /* CIF ANSWER (1387, 986), (70, 23) */
+                                                (false):
+                                            enddecision;
+                                        /* CIF ANSWER (2257, 634), (70, 23) */
+                                        (false):
+                                            /* CIF task (2122, 672), (339, 38) */
+                                            task receivedL3DataFrames(currentFrame - 1) := false,
+previousFrame := currentFrame
+                                            /* CIF comment (2480, 674), (137, 35) */
+                                            comment 'Frame is corrupt';
+                                    enddecision;
+                                    /* CIF PROCEDURECALL (1615, 1685), (292, 35) */
+                                    call ArrayOf16BitsToInteger(l3Tte, timeToEnd);
+                                    /* CIF decision (1698, 1735), (126, 43) */
+                                    decision timeToEnd > 0
+                                    /* CIF comment (1845, 1709), (283, 35) */
+                                    comment 'What if last frame has TTE bigger than 0?';
+                                        /* CIF ANSWER (1549, 1798), (70, 23) */
+                                        (true):
+                                        /* CIF ANSWER (1915, 1798), (70, 23) */
+                                        (false):
+                                            /* CIF PROCEDURECALL (1676, 1836), (547, 35) */
+                                            call InitialiseMissingData(receivedL3Data, receivedL3DataFrames, l3MissingDataFrames);
+                                            /* CIF PROCEDURECALL (1804, 1886), (292, 35) */
+                                            call InitialiseLfn(receivedL3DataFrames, l3Lfn);
+                                            /* CIF PROCEDURECALL (1802, 1936), (296, 35) */
+                                            call InitialiseHfn(receivedL3DataFrames, l3Hfn);
+                                            /* CIF PROCEDURECALL (1796, 1986), (307, 35) */
+                                            call ArrayOf8BitsToInteger(l3Lfn, writableFrame);
+                                            /* CIF PROCEDURECALL (1695, 2036), (509, 35) */
+                                            call InitialiseRawData(lastWrittenFrame, writableFrame, receivedL3Data, rawData);
+                                            /* CIF task (1821, 2086), (258, 53) */
+                                            task inputData!ba!srcAddr := ba!srcAddr,
+inputData!ba!dstAddr := ba!dstAddr,
+inputData!rawData := rawData;
+                                            /* CIF output (1854, 2154), (192, 35) */
+                                            output WriteRawData(inputData);
+                                            /* CIF task (1825, 2204), (249, 35) */
+                                            task lastWrittenFrame := writableFrame;
+                                            /* CIF task (1731, 2254), (437, 113) */
+                                            task ackData!ba!srcAddr := ba!dstAddr,
+ackData!ba!dstAddr := ba!srcAddr,
+ackData!code := {false, false, false, false, false, false, true, false},
+ackData!l3Mrt := l3Mrt,
+ackData!l3Lfn := l3Lfn,
+ackData!l3Hfn := l3Hfn,
+ackData!l3MissingData := l3MissingDataFrames;
+                                            /* CIF output (1875, 2382), (149, 35) */
+                                            output SendAck(ackData);
+                                            /* CIF return (1932, 2432), (35, 35) */
+                                            return ;
+                                    enddecision;
+                                /* CIF ANSWER (3053, 276), (333, 23) */
+                                ({false, false, false, false, false, false, true, false}):
+                                    /* CIF PROCEDURECALL (2974, 314), (491, 35) */
+                                    call UnpackAckOperationData(operationData, l3Tte, l3Mrt, l3Lfn, l3Hfn, l3Rrq);
+                                    /* CIF PROCEDURECALL (2970, 364), (498, 35) */
+                                    call DataCalculateAckFcs(ba, code, l3Tte, l3Mrt, l3Lfn, l3Hfn, l3Rrq, calculatedIfcs);
+                                    /* CIF PROCEDURECALL (3077, 414), (284, 35) */
+                                    call DataInvertFcs(calculatedIfcs, invertedIfcs);
+                                    /* CIF decision (3147, 464), (145, 50) */
+                                    decision invertedIfcs = ifcs;
+                                        /* CIF ANSWER (3059, 534), (70, 23) */
+                                        (true):
+                                            /* CIF decision (3024, 572), (140, 50) */
+                                            decision length(l3Rrq) > 0;
+                                                /* CIF ANSWER (2881, 642), (70, 23) */
+                                                (true):
+                                                    /* CIF PROCEDURECALL (2729, 680), (373, 35) */
+                                                    call InitialiseMissingDataNumbers(l3Rrq, l3AckMissingStack);
+                                                    /* CIF task (2692, 730), (447, 83) */
+                                                    task inputData!ba!srcAddr := ba!dstAddr,
+inputData!ba!dstAddr := ba!srcAddr,
+inputData!code := {false, false, false, false, false, false, true, false},
+inputData!l3Mrt := l3Mrt,
+inputData!l3AckMissingStack := l3AckMissingStack;
+                                                    /* CIF output (2814, 832), (204, 35) */
+                                                    output ResendRawData(inputData);
+                                                    /* CIF return (2898, 882), (35, 35) */
+                                                    return ;
+                                                /* CIF ANSWER (3281, 642), (70, 23) */
+                                                (false):
+                                                    /* CIF return (3298, 680), (35, 35) */
+                                                    return ;
+                                            enddecision;
+                                        /* CIF ANSWER (3379, 534), (70, 23) */
+                                        (false):
+                                            /* CIF return (3396, 572), (35, 35) */
+                                            return ;
+                                    enddecision;
+                            enddecision;
+                            /* CIF NEXTSTATE (1702, 2497), (119, 35) */
+                            NEXTSTATE dataReceival;
+                    endstate;
+            endsubstructure;
+            /* CIF state (186, 120), (119, 35) */
+            state dataReceival;
+            endstate;
+            /* CIF state (176, 24), (141, 35) */
+            state rawDataReceival;
+            endstate;
+            /* CIF state (144, 72), (204, 35) */
+            state acknowledgementReceival;
+            endstate;
+    endsubstructure;
+    /* CIF TEXT (724, 22), (300, 428) */
+    -- Text area for declarations and comments
+    
+    DCL inputData MyInputData;
+    
+    DCL info MyInfo;
+    
+    DCL ba MyBa;
+    DCL cntrl MyCntrl;
+    DCL code MyCode;
+    DCL operationData MyOperationData;
+    DCL ifcs MyIfcs;
+    
+    DCL invertedIfcs MyIfcs;
+    
+    DCL frameCount My8BitArrayValueInteger;
+    
+    DCL l3Tte MyL3Tte;
+    DCL l3Mrt MyL3Mrt;
+    DCL l3Fnum MyL3Fnum;
+    DCL l3Data MyL3Data;
+    
+    DCL rawData MyRawData;
+    
+    DCL ackData MyAckData;
+    
+    DCL l3Lfn MyL3Lfn;
+    DCL l3Hfn MyL3Hfn;
+    DCL l3Rrq MyL3Rrq;
+    /* CIF ENDTEXT */
+    /* CIF START (320, 10), (70, 35) */
+    START;
+        /* CIF label (314, 60), (81, 38) */
+        waiting:
+        /* CIF NEXTSTATE (320, 116), (70, 35) */
+        NEXTSTATE Wait;
+    /* CIF state (520, 10), (70, 35) */
+    state Wait;
+    endstate;
+endprocess node;

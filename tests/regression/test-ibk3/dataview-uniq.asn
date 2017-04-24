@@ -1,0 +1,270 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+-- Boolean
+MyBoolean ::= BOOLEAN
+
+-- 4 bit array
+My4BitArray ::= SEQUENCE (SIZE (4)) OF BOOLEAN
+
+-- 8 bit array
+My8BitArray ::= SEQUENCE (SIZE (8)) OF BOOLEAN
+
+-- Integer for 8 bit array numbering
+My8BitArrayInteger ::= INTEGER (0..7)
+
+-- Integer for 8 bit array value numbering
+My8BitArrayValueInteger ::= INTEGER (0..255)
+
+-- 16 bit array
+My16BitArray ::= SEQUENCE (SIZE (16)) OF BOOLEAN
+
+-- Integer for 16 bit array numbering
+My16BitArrayInteger ::= INTEGER (0..15)
+
+-- Integer for 16 bit array value numbering
+My16BitArrayValueInteger ::= INTEGER (0..65535)
+
+-- Packet structure
+MyPacket ::= SEQUENCE (SIZE (0..255)) OF MyFrame
+
+-- Stack for data in bits
+MyDataStack ::= SEQUENCE (SIZE (40..2000)) OF BOOLEAN
+
+-- Stack for data of FCS calculation 
+MyFcsStack ::= SEQUENCE (SIZE (224..2192)) OF BOOLEAN -- Frame has empty info or is full
+
+-- Integer for data of FCS calculation 
+MyFcsStackInteger ::= INTEGER (0..2175)
+
+-- Polynomial for FCS calculation
+MyFcsPolynomial ::= SEQUENCE (SIZE (17)) OF BOOLEAN
+
+-- Integer for polynomial numbering
+MyFcsPolynomialInteger ::= INTEGER (0..16)
+
+-- Frame structure
+MyFrame ::= SEQUENCE {
+  startFlag MyFlag,
+  addr MyAddr,
+  control MyControl,
+  pid MyPid,
+  info MyInfo,
+  fcs MyFcs,
+  endFlag MyFlag
+}
+
+-- FRAME: Frame delimiter
+MyFlag ::= My8BitArray -- Fixed value 0x7E
+
+-- FRAME: Source of frame and destination
+MyAddr ::= SEQUENCE {
+  destinationAddress MyDestinationAddress,
+  sourceAddress MySourceAddress
+}
+
+-- ADDR: Destination address
+MyDestinationAddress ::= SEQUENCE (SIZE (7)) OF My8BitArray
+
+-- ADDR: Source address
+MySourceAddress ::= SEQUENCE (SIZE (7)) OF My8BitArray
+
+-- FRAME: Type of frame
+MyControl ::= My8BitArray
+
+-- FRAME: Protocol of info
+MyPid ::= My8BitArray -- Fixed value 0xF0
+
+-- FRAME: Info structure
+MyInfo ::= SEQUENCE {
+  ba MyBa,
+  cntrl MyCntrl,
+  code MyCode,
+  operationData MyOperationData,
+  ifcs MyIfcs,
+  auth MyAuth OPTIONAL
+}
+
+-- INFO: Bus address
+MyBa ::= SEQUENCE {
+  srcAddr MySrcAddr,
+  dstAddr MyDstAddr
+}
+
+-- BA: Source address
+MySrcAddr ::= My4BitArray
+
+-- BA: Destination address
+MyDstAddr ::= My4BitArray
+
+-- INFO: Control - frame type
+MyCntrl ::= My8BitArray -- Fixed value 0x03
+
+-- INFO: Code - operation
+MyCode ::= My8BitArray
+
+-- INFO: Operation data
+MyOperationData ::= SEQUENCE (SIZE (0..250)) OF My8BitArray
+
+-- INFO: Info Frame check sequence
+MyIfcs ::= My16BitArray
+
+-- INFO: Authentication
+MyAuth ::= My16BitArray
+
+-- FRAME: Frame check sequence
+MyFcs ::= My16BitArray
+
+-- Stack of L3 frames
+MyL3Stack ::= SEQUENCE (SIZE (0..255)) OF MyL3Data
+
+-- Stack of L3 frame numbers
+MyL3StackNumbers ::= SEQUENCE (SIZE (0..255)) OF BOOLEAN
+
+-- Integer for L3 frame stack numbering
+MyL3StackInteger ::= INTEGER (0..254)
+
+-- Stack of L3 missing frame numbers in octets
+MyL3MissingStack ::= SEQUENCE (SIZE (0..255)) OF My8BitArray
+
+-- Stack for L3 data in bits
+MyL3DataStack ::= SEQUENCE (SIZE (0..1960)) OF BOOLEAN
+
+-- Stack for data of L3 FCS calculation 
+MyL3FcsStack ::= SEQUENCE (SIZE (80..2040)) OF BOOLEAN  -- L3 frame is empty or full
+
+-- Integer for data of L3 FCS calculation
+MyL3FcsStackInteger ::= INTEGER (0..2023)
+
+-- Polynomial for L3 FCS calculation
+MyL3FcsPolynomial ::= SEQUENCE (SIZE (17)) OF BOOLEAN
+
+-- L3 frame structure
+MyL3Frame ::= SEQUENCE {
+  l3Ba MyL3Ba,
+  l3Cntrl MyL3Cntrl,
+  l3Code MyL3Code,
+  l3Tte MyL3Tte,
+  l3Mrt MyL3Mrt,
+  l3Fnum MyL3Fnum,
+  l3Data MyL3Data,
+  l3Fcs MyL3Fcs
+}
+
+-- L3 FRAME: Bus address
+MyL3Ba ::= SEQUENCE {
+  l3SrcAddr MyL3SrcAddr,
+  l3DstAddr MyL3DstAddr
+}
+
+-- L3BA: Source address
+MyL3SrcAddr ::= My4BitArray
+
+-- L3BA: Destination address
+MyL3DstAddr ::= My4BitArray
+
+-- L3 FRAME: Control - frame type
+MyL3Cntrl ::= My8BitArray -- Fixed value 0x03
+
+-- L3 FRAME: Code - data frame identificator
+MyL3Code ::= My8BitArray
+
+-- L3 FRAME: Time to end
+MyL3Tte ::= My16BitArray
+
+-- L3 FRAME: Maximum response time
+MyL3Mrt ::= My16BitArray
+
+-- L3 FRAME: Frame counter
+MyL3Fnum ::= My8BitArray
+
+-- L3 FRAME: Data
+MyL3Data ::= SEQUENCE (SIZE (0..245)) OF My8BitArray
+
+-- Integer for L3 data
+MyL3DataInteger ::= INTEGER (0..244)
+
+-- Stack for L3 acknowledgement data in bits
+MyL3AckDataStack ::= SEQUENCE (SIZE (0..1952)) OF BOOLEAN
+
+-- Stack for data of L3 acknowledgement FCS calculation 
+MyL3AckFcsStack ::= SEQUENCE (SIZE (88..2040)) OF BOOLEAN  -- L3 acknowledgement frame is empty or full
+
+-- Stack of L3 missing frame numbers
+MyL3AckMissingStack ::= SEQUENCE (SIZE (0..244)) OF INTEGER (0..255)
+
+-- Integer for stack of L3 missing frame stack numbering
+MyL3AckMissingStackInteger ::= INTEGER (0..243)
+
+-- L3 FRAME: Frame check sequence
+MyL3Fcs ::= My16BitArray
+
+-- L3 acknowledgement frame structure
+MyL3AckFrame ::= SEQUENCE {
+  l3Ba MyL3Ba,
+  l3Cntrl MyL3Cntrl,
+  l3Code MyL3Code,
+  l3Tte MyL3Tte,
+  l3Mrt MyL3Mrt,
+  l3Lfn MyL3Lfn,
+  l3Hfn MyL3Hfn,
+  l3Rrq MyL3Rrq,
+  l3Fcs MyL3Fcs
+}
+
+-- L3 ACKNOWLEDGEMENT FRAME: Lowest sequential frame number
+MyL3Lfn ::= My8BitArray
+
+-- L3 ACKNOWLEDGEMENT FRAME: Highest frame sequence number
+MyL3Hfn ::= My8BitArray
+
+-- L3 ACKNOWLEDGEMENT FRAME: Frame numbers missing
+MyL3Rrq ::= SEQUENCE (SIZE (0..244)) OF My8BitArray
+
+-- Integer for L3 frame numbers missing
+MyL3RrqInteger ::= INTEGER (0..243)
+
+-- Input data structure
+MyInputData ::= SEQUENCE {
+  ba MyBa,
+  code MyCode,
+  rawData MyRawData OPTIONAL,
+  l3Mrt MyL3Mrt OPTIONAL,
+  l3AckMissingStack MyL3AckMissingStack OPTIONAL
+}
+
+-- INPUT DATA: Raw data
+MyRawData ::= SEQUENCE (SIZE (0..62475)) OF My8BitArray -- Up to 255 frames of data
+
+-- Integer for raw data numbering
+MyRawDataInteger ::= INTEGER (0..62475)
+
+-- Acknowledgement data structure
+MyAckData ::= SEQUENCE {
+  ba MyBa,
+  code MyCode,
+  l3Mrt MyL3Mrt,
+  l3Lfn MyL3Lfn,
+  l3Hfn MyL3Hfn,
+  l3MissingData MyL3MissingStack
+}
+
+END
+
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+END
+

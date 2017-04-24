@@ -1,0 +1,34 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM framemanager;
+
+	/* CIF Keep Specific Geode PARAMNAMES info */
+	SIGNAL ReceiveData (MyInfo);
+
+	/* CIF Keep Specific Geode PARAMNAMES frame */
+	SIGNAL ReceiveFrame (MyFrame);
+
+	/* CIF Keep Specific Geode PARAMNAMES frame */
+	SIGNAL SendFrame (MyFrame);
+
+	/* CIF Keep Specific Geode PARAMNAMES info */
+	SIGNAL SendData (MyInfo);
+
+	CHANNEL c
+		FROM ENV TO framemanager WITH ReceiveData,ReceiveFrame;
+		FROM framemanager TO ENV WITH SendFrame,SendData;
+	ENDCHANNEL;
+
+	BLOCK framemanager;
+
+		SIGNALROUTE r
+			FROM ENV TO framemanager WITH ReceiveData,ReceiveFrame;
+			FROM framemanager TO ENV WITH SendFrame,SendData;
+
+		CONNECT c and r;
+
+		PROCESS framemanager REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;
