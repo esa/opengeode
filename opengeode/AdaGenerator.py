@@ -1393,12 +1393,12 @@ def _task_forloop(task, **kwargs):
             else:
                 # Step is not directly supported in Ada, we need to use 'while'
                 stmt.extend(['declare',
-                             u'{it} : Integer := Integer({start});'
+                             u'{it} : Asn1Int := {start};'
                              .format(it=loop['var'],
                              start=start_str),
                              '',
                              'begin',
-                             u'while {it} < Integer({stop}) loop'
+                             u'while {it} < {stop} loop'
                              .format(it=loop['var'], stop=stop_str)])
             # Add iterator to the list of local variables
             LOCAL_VAR.update({loop['var']: (loop['type'], None)})

@@ -43,8 +43,8 @@ endfor;
                 /* CIF PROCEDURECALL (609, 306), (129, 35) */
                 CALL writeln(result);
                 /* CIF TASK (596, 356), (155, 53) */
-                TASK for sep in a:
-    call writeln(sep);
+                TASK for sep2 in a:
+    call writeln(sep2);
 endfor
                 /* CIF COMMENT (771, 365), (194, 38) */
                 COMMENT 'Test to check scope
