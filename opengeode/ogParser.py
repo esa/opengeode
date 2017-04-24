@@ -919,8 +919,8 @@ def compare_types(type_a, type_b):   # type -> [warnings]
                 else:
                     raise TypeError('Incompatible sizes - size of {} can vary'
                                     .format(type_name(type_b)))
-            elif(int(type_b.Min) >= int(type_a.Min)
-                 and int(type_b.Max) <= int(type_a.Max)):
+            elif(float(type_b.Min) >= float(type_a.Min)
+                 and float(type_b.Max) <= float(type_a.Max)):
                 warnings.extend(compare_types(type_a.type, type_b.type))
                 return warnings
             else:
@@ -1140,6 +1140,11 @@ def primary_variable(root, context):
     ''' Primary Variable analysis '''
     name = getattr(root.getChild(0), 'text', 'error')
     errors, warnings = [], []
+    # Detect reserved keywords
+    if name.lower() in ('integer', 'real', 'procedure', 'begin', 'end',
+                        'for', 'in', 'out', 'loop'):
+        errors.append(u"Use of forbidden keyword for a variable name : {}"
+                      .format(name))
 
     possible_constant = is_asn1constant(name)
     if possible_constant:
@@ -1316,9 +1321,14 @@ def arithmetic_expression(root, context):
 
     # Expressions returning a numerical type must have their range defined
     # accordingly with the kind of opration used between operand:
-    basic = find_basic_type(expr.left.exprType)
     left = find_basic_type(expr.left.exprType)
     right = find_basic_type(expr.right.exprType)
+    # Type of the resulting expression depends on whether there are raw numbers
+    # on one side of the expression (PrInt). By default when they are parsed,
+    # they are set to 64 bits integers ; but if they are in an expression where
+    # the other side is 32 bits (Length or for loop range) then the resulting
+    # expression is 32 bits.
+    basic = right if left.__name__ == 'PrInt' else left
     try:
         if isinstance(expr, ogAST.ExprPlus):
             attrs = {'Min': str(float(left.Min) + float(right.Min)),
@@ -1528,6 +1538,7 @@ def conditional_expression(root, context):
         warnings.extend(fix_expression_types(expr, context))
         expr.exprType = then_expr.exprType
     except (AttributeError, TypeError) as err:
+        #print str(err), expr.inputString
         if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
             errors.append(error(root, str(err)))
 
@@ -4175,6 +4186,12 @@ def for_range(root, context):
         result['stop'] = expr[0]
     else:
         errors.append('Incorrect range expression')
+    # Basic check that range element basic types are all integers
+    for each in expr:
+        basic = find_basic_type(each.exprType)
+        if not basic.kind.startswith("Integer"):
+            errors.append(u"Expression {} is not evaluated to integer"
+                          .format(each.inputString))
     return result, errors, warnings
 
 
@@ -4190,6 +4207,12 @@ def for_loop(root, context):
             forloop['var'] = child.text
             # Implicit variable declaration for the iterator
             context_scope = dict(context.variables)
+            if child.text.lower() in (var.lower()
+                      for var in chain (context.variables.viewkeys(),
+                                        context.global_variables.viewkeys())):
+                errors.append("FOR variable '{}' is already declared in the"
+                              " scope (shadow variable). Please rename it."
+                              .format(child.text))
         elif child.type == lexer.VARIABLE:
             forloop['list'], err, warn = primary_variable(child, context)
             warnings.extend(warn)
@@ -4234,6 +4257,7 @@ def for_loop(root, context):
                 # currently visible to the SDL parser
                 result_type = type('for_range', (INTEGER,), {'Min': r_min,
                                                              'Max': r_max})
+                forloop['type'] = result_type
                 context.variables[forloop['var']] = (result_type, 0)
 
             forloop['transition'], err, warn = transition(

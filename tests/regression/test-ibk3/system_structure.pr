@@ -1,0 +1,49 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM node;
+
+	/* CIF Keep Specific Geode PARAMNAMES info */
+	SIGNAL ReceiveData (MyInfo);
+
+	/* CIF Keep Specific Geode PARAMNAMES inputData */
+	SIGNAL ReadRawData (MyInputData);
+
+	/* CIF Keep Specific Geode PARAMNAMES frameCount */
+	SIGNAL ReceiveFrameCount (My8BitArrayValueInteger);
+
+	/* CIF Keep Specific Geode PARAMNAMES ackData */
+	SIGNAL ReceiveAck (MyAckData);
+
+	/* CIF Keep Specific Geode PARAMNAMES info */
+	SIGNAL SendData (MyInfo);
+
+	/* CIF Keep Specific Geode PARAMNAMES inputData */
+	SIGNAL WriteRawData (MyInputData);
+
+	/* CIF Keep Specific Geode PARAMNAMES frameCount */
+	SIGNAL SendFrameCount (My8BitArrayValueInteger);
+
+	/* CIF Keep Specific Geode PARAMNAMES ackData */
+	SIGNAL SendAck (MyAckData);
+
+	/* CIF Keep Specific Geode PARAMNAMES inputData */
+	SIGNAL ResendRawData (MyInputData);
+
+	CHANNEL c
+		FROM ENV TO node WITH ReceiveData,ReadRawData,ReceiveFrameCount,ReceiveAck;
+		FROM node TO ENV WITH SendData,WriteRawData,SendFrameCount,SendAck,ResendRawData;
+	ENDCHANNEL;
+
+	BLOCK node;
+
+		SIGNALROUTE r
+			FROM ENV TO node WITH ReceiveData,ReadRawData,ReceiveFrameCount,ReceiveAck;
+			FROM node TO ENV WITH SendData,WriteRawData,SendFrameCount,SendAck,ResendRawData;
+
+		CONNECT c and r;
+
+		PROCESS node REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

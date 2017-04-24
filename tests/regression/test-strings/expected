@@ -1,9 +1,7 @@
-foo, bar
-,  baz
+foo, bar, baz
 a
 b
 foo
 bar
-
- baz
+baz
 String literal (should be 'hello'):hello

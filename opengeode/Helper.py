@@ -367,7 +367,12 @@ def rename_everything(ast, from_name, to_name):
         in the scope of a composite state, so that they do not overwrite
         a variable with the same name declared at a higher scope.
     '''
-    LOG.debug ('rename_everything - ' + str(ast))
+#   LOG.debug ('rename_everything - ' + str(ast) + " - ")
+#   try:
+#       LOG.debug(ast.inputString)
+#   except:
+#       pass
+
     _, _, _ = ast, from_name, to_name
 
 
@@ -503,7 +508,16 @@ def _rename_expr(ast, from_name, to_name):
 @rename_everything.register(ogAST.PrimIndex)
 def _rename_index(ast, from_name, to_name):
     ''' Index of an array '''
+    rename_everything(ast.value[0], from_name, to_name)
     for each in ast.value[1]['index']:
+        rename_everything(each, from_name, to_name)
+
+
+@rename_everything.register(ogAST.PrimSubstring)
+def _rename_substring(ast, from_name, to_name):
+    ''' Substrings '''
+    rename_everything(ast.value[0], from_name, to_name)
+    for each in ast.value[1]['substring']:
         rename_everything(each, from_name, to_name)
 
 
@@ -512,6 +526,13 @@ def _rename_path(ast, from_name, to_name):
     ''' Ultimate seek point for the renaming: primary path/variables '''
     if ast.value[0].lower() == from_name.lower():
         ast.value[0] = to_name
+
+
+@rename_everything.register(ogAST.PrimCall)
+def _rename_primcall(ast, from_name, to_name):
+    ''' PrimCall is used e.g. by function "length" (special operators) '''
+    for each in ast.value[1]['procParams']:
+        rename_everything(each, from_name, to_name)
 
 
 @rename_everything.register(ogAST.PrimConditional)

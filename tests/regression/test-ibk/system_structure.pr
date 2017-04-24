@@ -1,0 +1,40 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM packetmanager;
+
+	/* CIF Keep Specific Geode PARAMNAMES frame */
+	SIGNAL ReceiveFrame (MyFrame);
+
+	/* CIF Keep Specific Geode PARAMNAMES packet */
+	SIGNAL ReceivePacket (MyPacket);
+
+	/* CIF Keep Specific Geode PARAMNAMES frameCount */
+	SIGNAL ReceiveFrameCount (My8BitArrayValueInteger);
+
+	/* CIF Keep Specific Geode PARAMNAMES frame */
+	SIGNAL SendFrame (MyFrame);
+
+	/* CIF Keep Specific Geode PARAMNAMES packet */
+	SIGNAL SendPacket (MyPacket);
+
+	/* CIF Keep Specific Geode PARAMNAMES frameCount */
+	SIGNAL SendFrameCount (My8BitArrayValueInteger);
+
+	CHANNEL c
+		FROM ENV TO packetmanager WITH ReceiveFrame,ReceivePacket,ReceiveFrameCount;
+		FROM packetmanager TO ENV WITH SendFrame,SendPacket,SendFrameCount;
+	ENDCHANNEL;
+
+	BLOCK packetmanager;
+
+		SIGNALROUTE r
+			FROM ENV TO packetmanager WITH ReceiveFrame,ReceivePacket,ReceiveFrameCount;
+			FROM packetmanager TO ENV WITH SendFrame,SendPacket,SendFrameCount;
+
+		CONNECT c and r;
+
+		PROCESS packetmanager REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;

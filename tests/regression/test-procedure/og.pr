@@ -1,0 +1,97 @@
+SYSTEM og;
+    /* CIF TEXT (159, 221), (304, 212) */
+    -- Text area for declarations and comments
+
+use dv comment 'dataview-uniq.asn';
+
+--use dv2 comment 'dataview2.asn';
+
+signal dd(Type2);
+signal we(Some_Thing);
+
+procedure hehe;
+fpar in/out a_param Type2;
+external;
+    /* CIF ENDTEXT */
+    CHANNEL c
+        FROM ENV TO og WITH dd;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH dd;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        /* CIF PROCESS (227, 28), (150, 73) */
+        PROCESS og;
+            /* CIF TEXT (57, 58), (304, 195) */
+            -- Text area for declarations and comments
+
+dcl haha SeqOf;
+
+dcl hihi type2;
+
+dcl test Some_Thing := 4;
+
+procedure hehe;
+fpar in toto SeqOf;
+endprocedure;
+            /* CIF ENDTEXT */
+            /* CIF PROCEDURE (451, 228), (73, 35) */
+            PROCEDURE aProc;
+                /* CIF TEXT (542, 127), (287, 140) */
+                dcl  tmp Some_Thing := 1;
+                /* CIF ENDTEXT */
+                /* CIF START (164, 113), (70, 35) */
+                START;
+                    /* CIF OUTPUT (154, 163), (89, 35) */
+                    OUTPUT we(test);
+                    /* CIF OUTPUT (155, 213), (88, 35) */
+                    OUTPUT we(tmp)
+                    /* CIF COMMENT (263, 213), (280, 35) */
+                    COMMENT 'check that local variables can be sent';
+                    /* CIF RETURN (181, 263), (35, 35) */
+                    RETURN ;
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (246, 309), (70, 35) */
+            PROCEDURE haha
+            /* CIF COMMENT (336, 309), (188, 35) */
+            COMMENT 'same name as a variable';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (184, 353), (124, 35) */
+            PROCEDURE default_seqof
+            /* CIF COMMENT (328, 353), (196, 35) */
+            COMMENT 'same name as a constant';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (209, 404), (78, 35) */
+            PROCEDURE enum1
+            /* CIF COMMENT (307, 404), (217, 35) */
+            COMMENT 'same name as an enum item';
+            ENDPROCEDURE;
+            /* CIF PROCEDURE (129, 401), (70, 35) */
+            PROCEDURE hehe;
+            ENDPROCEDURE;
+            /* CIF START (371, 216), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (371, 266), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF STATE (561, 231), (70, 35) */
+            STATE wait;
+                /* CIF INPUT (554, 286), (84, 35) */
+                INPUT dd(hihi);
+                    /* CIF PROCEDURECALL (546, 336), (100, 35) */
+                    CALL hehe(hihi);
+                    /* CIF OUTPUT (551, 386), (89, 35) */
+                    OUTPUT we(test);
+                    /* CIF PROCEDURECALL (561, 436), (70, 35) */
+                    CALL haha;
+                    /* CIF PROCEDURECALL (534, 486), (124, 35) */
+                    CALL default_seqof;
+                    /* CIF PROCEDURECALL (557, 536), (78, 35) */
+                    CALL enum1;
+                    /* CIF NEXTSTATE (561, 586), (70, 35) */
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
