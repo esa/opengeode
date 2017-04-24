@@ -4192,7 +4192,6 @@ def for_range(root, context):
         if not basic.kind.startswith("Integer"):
             errors.append(u"Expression {} is not evaluated to integer"
                           .format(each.inputString))
-    result['type'] = INT32
     return result, errors, warnings
 
 
@@ -4255,8 +4254,9 @@ def for_loop(root, context):
                 # basic may be UNKNOWN_TYPE if the expression is a
                 # reference to an ASN.1 constant - their values are not
                 # currently visible to the SDL parser
-                result_type = type('for_range', (INT32,), {'Min': r_min,
-                                                           'Max': r_max})
+                result_type = type('for_range', (INTEGER,), {'Min': r_min,
+                                                             'Max': r_max})
+                forloop['type'] = result_type
                 context.variables[forloop['var']] = (result_type, 0)
 
             forloop['transition'], err, warn = transition(

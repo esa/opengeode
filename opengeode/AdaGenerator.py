@@ -1352,22 +1352,33 @@ def _task_forloop(task, **kwargs):
     for loop in task.elems:
         if loop['range']:
             start_str, stop_str = '0', ''
+
             if loop['range']['start']:
                 basic = find_basic_type(loop['range']['start'].exprType)
-                start_stmt, start_str, start_local = expression(
-                                                    loop['range']['start'])
-                if basic.kind == "IntegerType" \
-                       and loop['range']['start'].exprType.__name__ != 'PrInt':
-                    start_str = u"Integer({})".format(start_str)
+                start_stmt, start_str, start_local = \
+                        expression(loop['range']['start'])
+
+               #if basic.kind == "IntegerType" \
+               #       and loop['range']['start'].exprType.__name__ != 'PrInt':
+               #    start_str = u"Integer({})".format(start_str)
+                if basic.kind == "Integer32Type":
+                    start_str = u"Asn1Int({})".format(start_str)
+
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
+
             if loop['range']['step'] == 1:
                 start_str += ' .. '
+
             basic = find_basic_type(loop['range']['stop'].exprType)
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
-            if basic.kind == "IntegerType" \
-                   and loop['range']['stop'].exprType.__name__ != 'PrInt':
-                stop_str = u"Integer({})".format(stop_str)
+
+           #if basic.kind == "IntegerType" \
+           #       and loop['range']['stop'].exprType.__name__ != 'PrInt':
+           #    stop_str = u"Integer({})".format(stop_str)
+            if basic.kind == "Integer32Type":
+                stop_str = u"Asn1Int({})".format(stop_str)
+
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
             if loop['range']['step'] == 1:
@@ -1375,9 +1386,10 @@ def _task_forloop(task, **kwargs):
                     stop_str = unicode(int(stop_str) - 1)
                 else:
                     stop_str = u'{} - 1'.format(stop_str)
-                stmt.append(
-                        u'for {it} in {start}{stop} loop'
-                        .format(it=loop['var'], start=start_str, stop=stop_str))
+                stmt.append(u'for {it} in Asn1Int range {start}{stop} loop'
+                            .format(it=loop['var'],
+                                    start=start_str,
+                                    stop=stop_str))
             else:
                 # Step is not directly supported in Ada, we need to use 'while'
                 stmt.extend(['declare',
@@ -1737,20 +1749,41 @@ def _basic_operators(expr):
     right_stmts, right_str, right_local = expression(expr.right)
 
     ##
+    #print expr.inputString, " ==> ", left_str, ' and ', right_str,
+
+    right_is_numeric, left_is_numeric = True, True
+    try:
+        float(left_str)
+    except ValueError:
+        left_is_numeric = False
+    try:
+        float(right_str)
+    except ValueError:
+        right_is_numeric = False
+
     lbty = find_basic_type(expr.left.exprType)
     rbty = find_basic_type(expr.right.exprType)
 
-    if rbty.kind != lbty.kind and 'Integer32Type' in (lbty.kind, rbty.kind) \
-            and "PrInt" not in (expr.left.exprType.__name__,
-                                expr.right.exprType.__name__):
-        if lbty.kind == 'IntegerType':
+    #print lbty.kind, rbty.kind
+
+    if rbty.kind != lbty.kind and 'Integer32Type' in (lbty.kind, rbty.kind):# \
+#           and "PrInt" not in (expr.left.exprType.__name__,
+#                               expr.right.exprType.__name__):
+        if lbty.kind == 'IntegerType' and not right_is_numeric:
             right_str = u'Asn1Int({})'.format(right_str)
-        else:
+        elif not left_is_numeric:
             left_str = u'Asn1Int({})'.format(left_str)
     ##
 
-    ada_string = u'({left} {op} {right})'.format(
-            left=left_str, op=expr.operand, right=right_str)
+    if left_is_numeric == right_is_numeric == True:
+        ada_string = u"{}".format(eval(u"{left} {op} {right}"
+                                       .format(left=left_str,
+                                               op=expr.operand,
+                                               right=right_str)))
+    else:
+        ada_string = u'({left} {op} {right})'.format(left=left_str,
+                                                     op=expr.operand,
+                                                     right=right_str)
 
     code.extend(left_stmts)
     code.extend(right_stmts)
