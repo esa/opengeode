@@ -1,61 +1,60 @@
-SYSTEM og;
+system og;
     /* CIF TEXT (279, 258), (356, 140) */
     -- Text area for declarations and comments
-
-use dv comment 'dataview-uniq.asn';
-
-signal run;
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    signal run;
     /* CIF ENDTEXT */
-    CHANNEL c
-        FROM ENV TO og WITH run;
-    ENDCHANNEL;
-    BLOCK og;
-        SIGNALROUTE r
-            FROM ENV TO og WITH run;
-        CONNECT c AND r;
+    channel c
+        from env to og with run;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with run;
+        connect c and r;
         /* CIF PROCESS (253, 105), (150, 75) */
-        PROCESS og;
+        process og;
             /* CIF TEXT (0, 33), (356, 203) */
             -- Text area for declarations and comments
-
-dcl a List := {'a', 'b', 'foo', 'bar
-', ' baz'};
-
-dcl result OutStr := '';
-
-dcl sep OutStr := ', ';
-dcl nosep OutStr := '';
-
-dcl strlit outStr := '68656c6c6f'H;
-
-dcl bitstrlit outStr := '01010110'B;
+            
+            dcl a List := {'a', 'b', 'foo', 'bar', 'baz'};
+            
+            dcl result OutStr := '';
+            
+            dcl sep OutStr := ', ';
+            dcl nosep OutStr := '';
+            
+            dcl strlit outStr := '68656c6c6f'H;
+            
+            dcl bitstrlit outStr := '01010110'B;
             /* CIF ENDTEXT */
             /* CIF START (639, 63), (70, 35) */
             START;
-                /* CIF TASK (581, 113), (185, 35) */
-                TASK result := result // 'Hello!';
-                /* CIF TASK (626, 163), (96, 35) */
-                TASK result := '';
-                /* CIF TASK (445, 213), (457, 78) */
-                TASK for each in a(2, length(a) - 1):
+                /* CIF task (581, 113), (185, 35) */
+                task result := result // 'Hello!';
+                /* CIF task (626, 163), (96, 35) */
+                task result := '';
+                /* CIF task (445, 213), (457, 78) */
+                task for each in a(2, length(a) - 1):
  result := result // (if length(result) > 0 then sep else nosep fi) // each
 endfor;
                 /* CIF PROCEDURECALL (609, 306), (129, 35) */
-                CALL writeln(result);
-                /* CIF TASK (596, 356), (155, 53) */
-                TASK for sep2 in a:
+                call writeln(result);
+                /* CIF task (596, 356), (155, 53) */
+                task for sep2 in a:
     call writeln(sep2);
 endfor
-                /* CIF COMMENT (771, 365), (194, 38) */
-                COMMENT 'Test to check scope
+                /* CIF comment (771, 365), (194, 38) */
+                comment 'Test to check scope
 (sep is also a dcl-variable)';
                 /* CIF PROCEDURECALL (509, 424), (330, 35) */
-                CALL writeln('String literal (should be "hello"):', strlit);
+                call writeln('String literal (should be "hello"):', strlit);
                 /* CIF NEXTSTATE (639, 474), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (366, 217), (70, 35) */
-            STATE wait;
-            ENDSTATE;
-        ENDPROCESS og;
-    ENDBLOCK;
-ENDSYSTEM;
+            /* CIF state (366, 217), (70, 35) */
+            state wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;
