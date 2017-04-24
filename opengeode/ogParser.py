@@ -4208,7 +4208,8 @@ def for_loop(root, context):
             # Implicit variable declaration for the iterator
             context_scope = dict(context.variables)
             if child.text.lower() in (var.lower()
-                                      for var in context.variables.viewkeys()):
+                      for var in chain (context.variables.viewkeys(),
+                                        context.global_variables.viewkeys())):
                 errors.append("FOR variable '{}' is already declared in the"
                               " scope (shadow variable). Please rename it."
                               .format(child.text))

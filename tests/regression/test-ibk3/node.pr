@@ -155,7 +155,7 @@ endfor;
 endfor
                                     /* CIF comment (725, 1348), (126, 35) */
                                     comment 'XOR operation';
-                                    /* CIF task (231, 1415), (311, 68) */
+                                    /* CIF task (232, 1415), (311, 68) */
                                     task for l in range(k, length(l3FcsXorResult) + k, 1):
   fcsPosition := l - k
   l3AckFcsStack(l) := l3FcsXorResult(fcsPosition)
@@ -301,15 +301,15 @@ l3Hfn := ackData!l3Hfn;
 endfor;
                                     /* CIF output (294, 477), (158, 35) */
                                     output SendFrameCount(1);
-                                    /* CIF PROCEDURECALL (260, 527), (224, 33) */
+                                    /* CIF PROCEDURECALL (261, 527), (224, 33) */
                                     call AckIntegerTo16BitArray(0, l3Tte);
                                     /* CIF PROCEDURECALL (165, 575), (416, 35) */
                                     call CalculateAckFcs(ba, code, l3Tte, l3Mrt, l3Lfn, l3Hfn, l3Rrq, ifcs);
-                                    /* CIF PROCEDURECALL (267, 625), (210, 35) */
+                                    /* CIF PROCEDURECALL (268, 625), (210, 35) */
                                     call AckInvertFcs(ifcs, invertedIfcs);
                                     /* CIF PROCEDURECALL (139, 675), (467, 35) */
                                     call PackAckOperationData(l3Tte, l3Mrt, l3Lfn, l3Hfn, l3Rrq, operationData);
-                                    /* CIF PROCEDURECALL (174, 725), (396, 35) */
+                                    /* CIF PROCEDURECALL (175, 725), (396, 35) */
                                     call AckPackInfo(ba, cntrl, code, operationData, invertedIfcs, info);
                                     /* CIF output (276, 775), (194, 35) */
                                     output SendData(info);
@@ -396,28 +396,28 @@ i := if i = 7 then i else i + 1 fi;
                         /* CIF START (138, 1), (70, 35) */
                         START;
                             /* CIF task (20, 51), (306, 53) */
-                            task for i in range(0, length(operationData(0)), 1):
-  operationData(0)(i) := l3Tte(i)
+                            task for ii in range(0, length(operationData(0)), 1):
+  operationData(0)(ii) := l3Tte(ii)
 endfor;
                             /* CIF task (20, 119), (306, 53) */
-                            task for i in range(0, length(operationData(1)), 1):
-  operationData(1)(i) := l3Tte(i + 8)
+                            task for ii in range(0, length(operationData(1)), 1):
+  operationData(1)(ii) := l3Tte(ii + 8)
 endfor;
                             /* CIF task (20, 187), (306, 53) */
-                            task for i in range(0, length(operationData(2)), 1):
-  operationData(2)(i) := l3Mrt(i)
+                            task for ii in range(0, length(operationData(2)), 1):
+  operationData(2)(ii) := l3Mrt(ii)
 endfor;
                             /* CIF task (20, 255), (306, 53) */
-                            task for i in range(0, length(operationData(3)), 1):
-  operationData(3)(i) := l3Mrt(i + 8)
+                            task for ii in range(0, length(operationData(3)), 1):
+  operationData(3)(ii) := l3Mrt(ii + 8)
 endfor;
                             /* CIF task (20, 323), (306, 53) */
-                            task for i in range(0, length(operationData(4)), 1):
-  operationData(4)(i) := l3Fnum(i)
+                            task for ii in range(0, length(operationData(4)), 1):
+  operationData(4)(ii) := l3Fnum(ii)
 endfor;
                             /* CIF task (42, 391), (262, 63) */
-                            task for i in range(5, length(l3Data) + 5, 1):
-  operationData(i) := l3Data(i - 5)
+                            task for ii in range(5, length(l3Data) + 5, 1):
+  operationData(ii) := l3Data(ii - 5)
 endfor;
                             /* CIF return (155, 473), (35, 35) */
                             return ;
@@ -478,9 +478,9 @@ info!ifcs := ifcs;
                                     /* CIF task (102, 220), (513, 35) */
                                     task lastOctet := if currentOctet = 62475 then lastOctet else currentOctet + 245 fi;
                                     /* CIF task (194, 270), (329, 68) */
-                                    task for i in range(currentOctet, lastOctet, 1):
-  l3DataPosition := i - currentOctet
-  l3Data(l3DataPosition) := inputData!rawData(i)
+                                    task for ii in range(currentOctet, lastOctet, 1):
+  l3DataPosition := ii - currentOctet
+  l3Data(l3DataPosition) := inputData!rawData(ii)
 endfor
                                     /* CIF comment (538, 285), (290, 38) */
                                     comment 'Part of array of octets to array of L3 data';
@@ -491,9 +491,9 @@ currentOctet := if currentOctet = 62475 then currentOctet else currentOctet + 24
                                 /* CIF ANSWER (973, 182), (70, 23) */
                                 (false):
                                     /* CIF task (843, 220), (329, 68) */
-                                    task for i in range(currentOctet, length(rawData), 1):
-  l3DataPosition := i - currentOctet
-  l3Data(l3DataPosition) := inputData!rawData(i)
+                                    task for ii in range(currentOctet, length(rawData), 1):
+  l3DataPosition := ii - currentOctet
+  l3Data(l3DataPosition) := inputData!rawData(ii)
 endfor;
                                     /* CIF task (891, 318), (233, 35) */
                                     task l3Stack(frameCounter) := l3Data;
@@ -574,52 +574,54 @@ i := if i = 15 then i else i + 1 fi;
                         /* CIF START (611, 0), (70, 35) */
                         START;
                             /* CIF task (539, 50), (214, 63) */
-                            task for i in range(0, 4, 1):
-  l3FcsStack(i) := ba!srcAddr(i)
-endfor;
+                            task for ii in range(0, 4, 1):
+  l3FcsStack(ii) := ba!srcAddr(ii)
+endfor
+                            /* CIF comment (773, 64), (98, 35) */
+                            comment 'ERROR HERE';
                             /* CIF task (529, 133), (234, 63) */
-                            task for i in range(4, 8, 1):
-  l3FcsStack(i) := ba!dstAddr(i - 4)
+                            task for ii in range(4, 8, 1):
+  l3FcsStack(ii) := ba!dstAddr(ii - 4)
 endfor;
                             /* CIF task (548, 211), (196, 63) */
-                            task for i in range(8, 16, 1):
-  l3FcsStack(i) := code(i - 8)
+                            task for ii in range(8, 16, 1):
+  l3FcsStack(ii) := code(ii - 8)
 endfor;
                             /* CIF task (544, 295), (204, 63) */
-                            task for i in range(16, 24, 1):
-  l3FcsStack(i) := l3Tte(i - 16)
+                            task for ii in range(16, 24, 1):
+  l3FcsStack(ii) := l3Tte(ii - 16)
 endfor;
                             /* CIF task (544, 383), (204, 63) */
-                            task for i in range(24, 32, 1):
-  l3FcsStack(i) := l3Tte(i - 16)
+                            task for ii in range(24, 32, 1):
+  l3FcsStack(ii) := l3Tte(ii - 16)
 endfor;
                             /* CIF task (543, 471), (205, 63) */
-                            task for i in range(32, 40, 1):
-  l3FcsStack(i) := l3Mrt(i - 32)
+                            task for ii in range(32, 40, 1):
+  l3FcsStack(ii) := l3Mrt(ii - 32)
 endfor;
                             /* CIF task (543, 559), (205, 63) */
-                            task for i in range(40, 48, 1):
-  l3FcsStack(i) := l3Mrt(i - 32)
+                            task for ii in range(40, 48, 1):
+  l3FcsStack(ii) := l3Mrt(ii - 32)
 endfor;
                             /* CIF task (538, 642), (215, 63) */
-                            task for i in range(48, 56, 1):
-  l3FcsStack(i) := l3Fnum(i - 48)
+                            task for ii in range(48, 56, 1):
+  l3FcsStack(ii) := l3Fnum(ii - 48)
 endfor;
                             /* CIF task (508, 720), (276, 83) */
-                            task for i in range(0, length(l3Data), 1):
-  for j in range(0, length(l3Data(i)), 1):
-    l3DataStack((i*8)+j) := l3Data(i)(j)
+                            task for ii in range(0, length(l3Data), 1):
+  for j in range(0, length(l3Data(ii)), 1):
+    l3DataStack((ii*8)+j) := l3Data(ii)(j)
   endfor
 endfor
                             /* CIF comment (804, 744), (224, 35) */
                             comment 'Array of octets to array of bits';
                             /* CIF task (491, 823), (310, 63) */
-                            task for i in range(56, length(l3DataStack) + 56, 1):
-  l3FcsStack(i) := l3DataStack(i - 56)
+                            task for ii in range(56, length(l3DataStack) + 56, 1):
+  l3FcsStack(ii) := l3DataStack(ii - 56)
 endfor;
                             /* CIF task (428, 901), (435, 63) */
-                            task for i in range(length(l3DataStack)+56, length(l3DataStack)+72, 1):
-  l3FcsStack(i) := false
+                            task for ii in range(length(l3DataStack)+56, length(l3DataStack)+72, 1):
+  l3FcsStack(ii) := false
 endfor;
                             /* CIF task (260, 986), (771, 35) */
                             task l3FcsPolynomial := {true, false, false, false, true, false, false, false, false, false, false, true, false, false, false, false, true};
@@ -663,7 +665,7 @@ endfor;
                                 (false):
                                     /* CIF task (749, 1559), (236, 35) */
                                     task k := if k = 2023 then k else k + 1 fi
-                                    /* CIF comment (1004, 1517), (100, 35) */
+                                    /* CIF comment (1004, 1503), (100, 35) */
                                     comment 'Shift right';
                                     /* CIF join (849, 1609), (35, 35) */
                                     join calculation;
@@ -684,8 +686,8 @@ endfor;
                         /* CIF START (322, 0), (70, 35) */
                         START;
                             /* CIF task (0, 50), (714, 63) */
-                            task for i in range(0, length(l3AckMissingStack), 1):
-  timeToEnd := if timeToEnd = 62475 then timeToEnd else timeToEnd + length(l3Stack(l3AckMissingStack(i) - 1)) fi
+                            task for ii in range(0, length(l3AckMissingStack), 1):
+  timeToEnd := if timeToEnd = 62475 then timeToEnd else timeToEnd + length(l3Stack(l3AckMissingStack(ii) - 1)) fi
 endfor;
                             /* CIF return (339, 138), (35, 35) */
                             return ;
@@ -974,7 +976,7 @@ endfor;
                                             task i := if i = 255 then i else i + 1 fi;
                                         /* CIF ANSWER (338, 294), (70, 23) */
                                         (false):
-                                            /* CIF PROCEDURECALL (226, 332), (293, 35) */
+                                            /* CIF PROCEDURECALL (227, 332), (293, 35) */
                                             call DataIntegerTo8BitArray(i + 1, frameNumber);
                                             /* CIF task (289, 382), (168, 35) */
                                             task l3Lfn := frameNumber;
@@ -1204,7 +1206,7 @@ i := if i = 0 then i else i - 1 fi;
                                     decision receivedL3DataFrames(i) = false;
                                         /* CIF ANSWER (211, 289), (70, 23) */
                                         (true):
-                                            /* CIF PROCEDURECALL (109, 327), (273, 35) */
+                                            /* CIF PROCEDURECALL (110, 327), (273, 35) */
                                             call DataIntegerTo8BitArray(i, frameNumber);
                                             /* CIF task (0, 377), (493, 38) */
                                             task l3MissingDataFrames(frameCount - 1) := frameNumber,
@@ -1446,7 +1448,7 @@ endfor;
                                 (false):
                                     /* CIF task (749, 1559), (236, 35) */
                                     task k := if k = 2023 then k else k + 1 fi
-                                    /* CIF comment (1004, 1510), (100, 35) */
+                                    /* CIF comment (1004, 1496), (100, 35) */
                                     comment 'Shift right';
                                     /* CIF join (849, 1609), (35, 35) */
                                     join calculation;
@@ -1572,7 +1574,7 @@ endfor;
 endfor
                                     /* CIF comment (725, 1348), (126, 35) */
                                     comment 'XOR operation';
-                                    /* CIF task (231, 1415), (311, 68) */
+                                    /* CIF task (232, 1415), (311, 68) */
                                     task for l in range(k, length(l3FcsXorResult) + k, 1):
   fcsPosition := l - k
   l3AckFcsStack(l) := l3FcsXorResult(fcsPosition)
@@ -1661,7 +1663,7 @@ endfor
                                             task receivedL3Data(currentFrame - 1) := l3Data,
 receivedL3DataFrames(currentFrame - 1) := true,
 previousFrame := currentFrame
-                                            /* CIF comment (1382, 794), (180, 35) */
+                                            /* CIF comment (1382, 780), (180, 35) */
                                             comment 'Current frame is stored';
                                             /* CIF decision (1090, 916), (210, 50) */
                                             decision frameCounter = frameCount;
@@ -1712,7 +1714,7 @@ previousFrame := currentFrame
                                     call ArrayOf16BitsToInteger(l3Tte, timeToEnd);
                                     /* CIF decision (1698, 1735), (126, 43) */
                                     decision timeToEnd > 0
-                                    /* CIF comment (1845, 1709), (283, 35) */
+                                    /* CIF comment (1845, 1695), (283, 35) */
                                     comment 'What if last frame has TTE bigger than 0?';
                                         /* CIF ANSWER (1549, 1798), (70, 23) */
                                         (true):

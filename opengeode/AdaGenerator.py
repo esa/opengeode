@@ -2364,7 +2364,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
     code.extend(q_stmts)
 
     if not basic:
-        code.append('tmp{idx} := {q};'.format(idx=dec.tmpVar, q=q_str))
+        code.append(u'tmp{idx} := {q};'.format(idx=dec.tmpVar, q=q_str))
 
     for a in dec.answers:
         code.extend(traceability(a))

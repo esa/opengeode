@@ -141,7 +141,7 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-1.5.31 (04/2017)
+1.5.32 (04/2017)
     - Unicode bugfixes in Ada backend
     - Bugfix with SEQUENCE OF literals in Ada backend
     - Various bugfixes with mixed int32/64 bits

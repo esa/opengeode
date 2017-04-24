@@ -367,11 +367,11 @@ def rename_everything(ast, from_name, to_name):
         in the scope of a composite state, so that they do not overwrite
         a variable with the same name declared at a higher scope.
     '''
-    LOG.debug ('rename_everything - ' + str(ast) + " - ")
-    try:
-        LOG.debug(ast.inputString)
-    except:
-        pass
+#   LOG.debug ('rename_everything - ' + str(ast) + " - ")
+#   try:
+#       LOG.debug(ast.inputString)
+#   except:
+#       pass
 
     _, _, _ = ast, from_name, to_name
 
