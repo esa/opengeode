@@ -250,9 +250,9 @@ asn1.exe -Ada -typePrefix asn1Scc -equal {asn1}
 asn1.exe -c -typePrefix asn1Scc -equal {asn1}'''.format(asn1=asn1_filenames)
 
     simu_script += '''
-gnatmake -gnat2012 -c *.adb
+gnatmake -fPIC -gnat2012 -c *.adb
 gnatbind -n -Llib{pr} {pr}
-gnatmake -c -gnat2012 b~{pr}.adb
+gnatmake -fPIC -c -gnat2012 b~{pr}.adb
 gcc -shared -fPIC -o lib{pr}.so b~{pr}.o {pr}.o {asn1_mod} adaasn1rtl.o -lgnat
 rm -f dataview-uniq.c dataview-uniq.h
 asn2aadlPlus dataview-uniq.asn DataView.aadl
@@ -513,23 +513,23 @@ package {process_name} is'''.format(generic=generic_spec,
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.viewitems():
             # Getters for external applications to view local variables via dll
-            process_level_decl.append("function l_{name}_value"
-                                     " return access {sort} "
-                                     "is ({prefix}.{name}'access) with Export,"
-                                     " Convention => C,"
-                                     ' Link_Name => "{name}_value";'
+            process_level_decl.append(u"function l_{name}_value"
+                                     u" return access {sort} "
+                                     u"is ({prefix}.{name}'access) with Export,"
+                                     u" Convention => C,"
+                                     u' Link_Name => "{name}_value";'
                                      .format(prefix=LPREFIX, name=var_name,
                                               sort=type_name(var_type)))
             # Setters for local variables
-            setter_decl = "procedure dll_set_l_{name}(value: access {sort})"\
+            setter_decl = u"procedure dll_set_l_{name}(value: access {sort})"\
                           .format(name=var_name, sort=type_name(var_type))
-            ads_template.append('{};'.format(setter_decl))
-            ads_template.append('pragma Export(C, dll_set_l_{name},'
+            ads_template.append(u'{};'.format(setter_decl))
+            ads_template.append(u'pragma Export(C, dll_set_l_{name},'
                                 ' "_set_{name}");'.format(name=var_name))
-            dll_api.append('{} is'.format(setter_decl))
-            dll_api.append('begin')
-            dll_api.append('{}.{} := value.all;'.format(LPREFIX, var_name))
-            dll_api.append('end dll_set_l_{};'.format(var_name))
+            dll_api.append(u'{} is'.format(setter_decl))
+            dll_api.append(u'begin')
+            dll_api.append(u'{}.{} := value.all;'.format(LPREFIX, var_name))
+            dll_api.append(u'end dll_set_l_{};'.format(var_name))
             dll_api.append('')
 
     # Generate the the code of the procedures
