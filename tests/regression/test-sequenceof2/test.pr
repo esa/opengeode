@@ -1,0 +1,51 @@
+system test;
+    /* CIF TEXT (164, 303), (356, 219) */
+    -- Text area for declarations and comments
+    
+    use datamodel comment 'dataview.asn';
+    signal seqof1(MySeqOf);
+    /* CIF ENDTEXT */
+    channel c
+        from env to test with seqof1;
+    endchannel;
+    block test;
+        signalroute r
+            from env to test with seqof1;
+        connect c and r;
+        /* CIF PROCESS (202, 142), (150, 75) */
+        process test;
+            /* CIF TEXT (438, 271), (287, 140) */
+            dcl s1, s2 MySeqof;
+            dcl boo MyBoolean;
+            /* CIF ENDTEXT */
+            /* CIF START (198, 56), (70, 35) */
+            START;
+                /* CIF task (133, 111), (199, 35) */
+                task s2 := { true, true, false, true };
+                /* CIF PROCEDURECALL (157, 161), (152, 35) */
+                call writeln ( length (s1) )
+                /* CIF comment (329, 161), (188, 35) */
+                comment 'Uninitialized => will return 0';
+                /* CIF task (183, 216), (99, 35) */
+                task s1  :=  s2 (1,3)
+                /* CIF comment (302, 216), (284, 38) */
+                comment 'Minimum size
+s1 (1, 3) := { true, false, true} provokes a bug';
+                /* CIF PROCEDURECALL (157, 271), (152, 35) */
+                call writeln ( length (s1) );
+                /* CIF task (170, 326), (126, 35) */
+                task s1 := s1 // { false };
+                /* CIF PROCEDURECALL (157, 381), (152, 35) */
+                call writeln ( length (s1) );
+                /* CIF task (170, 436), (126, 35) */
+                task s1 := s1 // {boo};
+                /* CIF PROCEDURECALL (157, 491), (152, 35) */
+                call writeln ( length (s1) );
+                /* CIF NEXTSTATE (198, 541), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (596, 470), (70, 35) */
+            state wait;
+            endstate;
+        endprocess test;
+    endblock;
+endsystem;
