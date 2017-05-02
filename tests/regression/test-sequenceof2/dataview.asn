@@ -1,7 +1,7 @@
 TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
-MySeqOf ::= SEQUENCE (SIZE (1..10)) OF BOOLEAN
+MySeqOf ::= SEQUENCE (SIZE (3..10)) OF BOOLEAN
 MyBoolean ::= BOOLEAN
 
 

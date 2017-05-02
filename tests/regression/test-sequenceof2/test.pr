@@ -20,11 +20,11 @@ system test;
             /* CIF ENDTEXT */
             /* CIF START (198, 56), (70, 35) */
             START;
-                /* CIF task (133, 111), (199, 35) */
+                /* CIF task (132, 111), (201, 35) */
                 task s2 := { true, true, false, true };
                 /* CIF PROCEDURECALL (157, 161), (152, 35) */
                 call writeln ( length (s1) )
-                /* CIF comment (329, 161), (188, 35) */
+                /* CIF comment (329, 161), (189, 35) */
                 comment 'Uninitialized => will return 0';
                 /* CIF task (183, 216), (99, 35) */
                 task s1  :=  s2 (1,3)
@@ -33,7 +33,7 @@ system test;
 s1 (1, 3) := { true, false, true} provokes a bug';
                 /* CIF PROCEDURECALL (157, 271), (152, 35) */
                 call writeln ( length (s1) );
-                /* CIF task (170, 326), (126, 35) */
+                /* CIF task (149, 326), (167, 35) */
                 task s1 := s1 // { false };
                 /* CIF PROCEDURECALL (157, 381), (152, 35) */
                 call writeln ( length (s1) );
