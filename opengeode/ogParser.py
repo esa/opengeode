@@ -1439,13 +1439,6 @@ def append_expression(root, context):
     left  = find_basic_type(expr.left.exprType)
     right = find_basic_type(expr.right.exprType)
 
-    # check that the appended value is of the right type
-    # TODO : need a complete analysis just like the in_expression above
-#   try:
-#       warnings.extend(compare_types(expr.right.exprType, ref_type))
-#   except TypeError as err:
-#       errors.append(error(root, str(err)))
-
     # check that both left and right are actual strings
     for bty in (left, right):
         if bty.kind != 'SequenceOfType' and not is_string(bty):
