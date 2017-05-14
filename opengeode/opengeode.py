@@ -138,7 +138,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.33'
+__version__ = '1.5.34'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1817,8 +1817,25 @@ class SDL_View(QtGui.QGraphicsView, object):
                     item.double_click()
                     ctx = unicode(item.context_name)  #__class__.__name__.lower())
                     if not isinstance(item.nested_scene, SDL_Scene):
-                        item.nested_scene = \
+                        msg_box = QtGui.QMessageBox(self)
+                        msg_box.setWindowTitle('Create nested symbol')
+                        msg_box.setText('Do you want to create a new sub-{} ?'
+                                        '\n\n'
+                                        'If you do, you can come back to the '
+                                        'current diagram using the up arrow '
+                                        'in the menu bar on the top of the '
+                                        'screen'
+                                        .format(item.context_name))
+                        msg_box.setStandardButtons(QtGui.QMessageBox.Yes |
+                                                   QtGui.QMessageBox.Cancel)
+                        msg_box.setDefaultButton(QtGui.QMessageBox.Yes)
+                        ret = msg_box.exec_()
+                        if ret == QtGui.QMessageBox.Yes:
+                            item.nested_scene = \
                                 self.scene().create_subscene(ctx, self.scene())
+                        else:
+                            item.edit_text(self.mapToScene(evt.pos()))
+                            return
                     self.go_down(item.nested_scene,
                                  name=u"{} {}".format(ctx, unicode(item)))
                 else:

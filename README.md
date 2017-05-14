@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.34 (05/2017)
+    - Fix statechart message selection box
+
 1.5.33 (04/2017)
     - Fix unicode issue with the simulation code
     - Use -fPIC when building the simulation library
