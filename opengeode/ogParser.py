@@ -666,7 +666,7 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
-        Does not return anything if OK, otherwise raises TypeError
+        Possibly returns a list of warnings; can raises TypeError
     '''
     warnings = []    # function returns a list of warnings
     assert type_ref is not None
@@ -749,9 +749,10 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
         if type_ref.__name__ != 'Apnd' and \
                 (len(primary.value) < int(basic_type.Min) or
                 len(primary.value) > int(basic_type.Max)):
+            #print traceback.print_stack()
             raise TypeError(str(len(primary.value)) +
-                      ' elements in SEQUENCE OF, while constraint is [' +
-                      str(basic_type.Min) + '..' + str(basic_type.Max) + ']')
+                      ' element(s) in SEQUENCE OF, while constraint is [' +
+                      str(basic_type.Min) + ' .. ' + str(basic_type.Max) + ']')
         for elem in primary.value:
             warnings.extend(check_type_compatibility(elem,
                                                      basic_type.type,
@@ -1039,7 +1040,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             # the type of the raw PrimSequenceOf can be set now
             value.exprType.type = asn_type
 
-    if isinstance(expr, ogAST.ExprIn):
+    if isinstance(expr, (ogAST.ExprIn, ogAST.ExprAppend)):
         return warnings
 
     if not expr.right.is_raw and not expr.left.is_raw:
@@ -1435,15 +1436,24 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    left = find_basic_type(expr.left.exprType)
+    left  = find_basic_type(expr.left.exprType)
     right = find_basic_type(expr.right.exprType)
 
+    # check that both left and right are actual strings
     for bty in (left, right):
         if bty.kind != 'SequenceOfType' and not is_string(bty):
             msg = 'Append can only be applied to types SequenceOf or String'
             errors.append(error(root, msg))
             break
     else:
+        try:
+            warnings.extend(compare_types(left.type, right.type))
+        except TypeError as err:
+            errors.append(error(root, str(err)))
+        except AttributeError:
+            # The above only applies to Sequence of, not strings
+            pass
+
         attrs = {'Min': str(int(right.Min) + int(left.Min)),
                  'Max': str(int(right.Max) + int(left.Max))}
         # It is wrong to set the type as inheriting from the left side FIXME

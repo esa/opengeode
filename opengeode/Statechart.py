@@ -569,7 +569,7 @@ def locked():
     return g_statechart_lock
 
 
-def create_dot_graph(root_ast, basic=False, scene=None):
+def create_dot_graph(root_ast, basic=False, scene=None, view=None):
     ''' Return a dot.AGraph item, from an ogAST.Process or child entry
         Set basic=True to generate a simple graph with at most one edge
         between two states and no diamond nodes
@@ -612,7 +612,7 @@ def create_dot_graph(root_ast, basic=False, scene=None):
     else:
         LOG.info ("Statechart settings read from configuration file")
 
-    if scene and scene.views():
+    if scene and view:
         # Load and display a table for the user to filter out messages that
         # are not relevant to display on the statechart - and make it lighter
         # Repeat for substates, too.
@@ -629,7 +629,7 @@ def create_dot_graph(root_ast, basic=False, scene=None):
         ui_file = QtCore.QFile(":/statechart_cfg.ui")
         ui_file.open(QtCore.QFile.ReadOnly)
         dialog = loader.load(ui_file)
-        dialog.setParent (scene.views()[0], QtCore.Qt.Dialog)
+        dialog.setParent (view, QtCore.Qt.Dialog)
         okButton = dialog.findChild(QtGui.QPushButton, "okButton")
         rightButton = dialog.findChild(QtGui.QToolButton, "toRight")
         leftButton = dialog.findChild(QtGui.QToolButton, "toLeft")

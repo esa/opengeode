@@ -124,6 +124,7 @@ MODULES = [
 # Define custom UserRoles
 ANCHOR = Qt.UserRole + 1
 
+
 try:
     import LlvmGenerator
     MODULES.append(LlvmGenerator)
@@ -138,7 +139,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.32'
+__version__ = '1.5.34'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -425,6 +426,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # Keep a track of highlighted symbols: { symbol: brush }
         self.highlighted = {}
         self.refresh_requested = False
+        # Flag indicating the presence of unsolved semantic errors in the model
+        self.semantic_errors = False
 
     def close(self):
         ''' close function is needed by py.test-qt '''
@@ -1026,11 +1029,13 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.refresh()
 
 
-    def sdl_to_statechart(self, basic=True):
-        ''' Create a graphviz representation of the SDL model '''
+    def sdl_to_statechart(self, basic=True, view=None):
+        ''' Create a graphviz representation of the SDL model 
+            Optionally take a QGraphicsView to use as parent for modals '''
         pr_raw = Pr.parse_scene(self)
         pr_data = unicode('\n'.join(pr_raw))
-        ast, _, _ = ogParser.parse_pr(string=pr_data)
+        ast, _, err = ogParser.parse_pr(string=pr_data)
+        self.semantic_errors = True if err else False
         try:
             process_ast, = ast.processes
         except ValueError:
@@ -1046,7 +1051,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # dot supports only vertically-aligned states, and fdp does not
         # support curved edges and is buggy with pygraphviz anyway)
         # Helper.flatten(process_ast)
-        return Statechart.create_dot_graph(process_ast, basic, scene=self)
+        return Statechart.create_dot_graph(process_ast, basic,
+                                           scene=self, view=view)
 
 
     def export_branch_to_picture(self, symbol, filename, doc_format):
@@ -1813,10 +1819,27 @@ class SDL_View(QtGui.QGraphicsView, object):
             try:
                 if item.allow_nesting:
                     item.double_click()
-                    ctx = unicode(item.context_name)  #__class__.__name__.lower())
+                    ctx = unicode(item.context_name)
                     if not isinstance(item.nested_scene, SDL_Scene):
-                        item.nested_scene = \
+                        msg_box = QtGui.QMessageBox(self)
+                        msg_box.setWindowTitle('Create nested symbol')
+                        msg_box.setText('Do you want to create a new sub-{} ?'
+                                        '\n\n'
+                                        'If you do, you can come back to the '
+                                        'current diagram using the up arrow '
+                                        'in the menu bar on the top of the '
+                                        'screen'
+                                        .format(item.context_name))
+                        msg_box.setStandardButtons(QtGui.QMessageBox.Yes |
+                                                   QtGui.QMessageBox.Cancel)
+                        msg_box.setDefaultButton(QtGui.QMessageBox.Yes)
+                        ret = msg_box.exec_()
+                        if ret == QtGui.QMessageBox.Yes:
+                            item.nested_scene = \
                                 self.scene().create_subscene(ctx, self.scene())
+                        else:
+                            item.edit_text(self.mapToScene(evt.pos()))
+                            return
                     self.go_down(item.nested_scene,
                                  name=u"{} {}".format(ctx, unicode(item)))
                 else:
@@ -1877,10 +1900,31 @@ class SDL_View(QtGui.QGraphicsView, object):
             LOG.info('No scene - nothing to save')
             return False
 
-        # check syntax and raise a big warning before saving
         if not autosave:
             self.messages_window.clear()
-        if not autosave and not scene.global_syntax_check():
+        # Propose to check semantics if the last check had errors
+        syntax_errors = None
+        if not autosave and (scene.semantic_errors
+                             or not self.is_model_clean()):
+            msg_box = QtGui.QMessageBox(self)
+            msg_box.setIcon(QtGui.QMessageBox.Question)
+            msg_box.setWindowTitle('OpenGEODE - Check Semantics')
+            msg_box.setText("We recommend to make a semantic check of the "
+                            "model now.\n\n"
+                            "Choose Apply to perform this check "
+                            "and Discard otherwise.")
+            msg_box.setStandardButtons(QtGui.QMessageBox.Apply
+                                       | QtGui.QMessageBox.Discard)
+            msg_box.setDefaultButton(QtGui.QMessageBox.Apply)
+            res = msg_box.exec_()
+            if res == QtGui.QMessageBox.Apply:
+                syntex_error = True if self.check_model() == "Syntax Errors" \
+                               else False
+
+        # check syntax (if not done) and raise a big warning before saving
+        if syntax_errors is True or (syntax_errors is None
+                                     and not autosave
+                                     and not scene.global_syntax_check()):
             LOG.error('Syntax errors must be fixed NOW '
                       'or you may not be able to reload the model')
             msg_box = QtGui.QMessageBox(self)
@@ -2060,22 +2104,24 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.messages_window.addItem("Checking syntax")
         if not scene.global_syntax_check():
             self.messages_window.addItem("Aborted. Fix syntax errors first")
-            return
+            return "Syntax Errors"
         self.messages_window.addItem("No syntax errors")
         self.messages_window.addItem("Checking semantics")
 
         if scene.context not in ('process', 'state', 'procedure', 'block'):
             # check can only be done on SDL diagrams
-            return
+            return "Non-SDL"
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
         pr_data = unicode('\n'.join(pr_raw))
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
+            scene.semantic_errors = True if errors else False
             log_errors(self.messages_window, errors, warnings,
                        clearfirst=False)
             self.update_asn1_dock.emit(ast)
+            return "Done"
 
     def show_item(self, item):
         '''
@@ -2146,6 +2192,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
+            scene.semantic_errors = True if errors else False
             process, = ast.processes
             log_errors(self.messages_window, errors, warnings)
             if len(errors) > 0:
@@ -2340,7 +2387,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             # so the lock is necessary to prevent recursive execution
             scene = self.view.top_scene()
             try:
-                graph = scene.sdl_to_statechart()
+                graph = scene.sdl_to_statechart(view=self.view)
                 Statechart.render_statechart(self.statechart_scene,
                                              graph)
                 self.statechart_view.refresh()

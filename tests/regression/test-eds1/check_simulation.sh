@@ -7,9 +7,9 @@ opengeode testsc.pr --shared
 cat dataview.asn >> dataview-uniq.asn 
 asn1.exe -Ada -typePrefix asn1Scc -equal dataview.asn
 asn1.exe -c -typePrefix asn1Scc -equal dataview.asn
-gnatmake -gnat2012 -c *.adb
+gnatmake -gnat2012 -fPIC -c *.adb
 gnatbind -n -Llibtestsc testsc
-gnatmake -c -gnat2012 b~testsc.adb
+gnatmake -c -fPIC -gnat2012 b~testsc.adb
 gcc -shared -fPIC -o libtestsc.so b~testsc.o testsc.o ccsdssoissubnetwork.o ccsdssoissubnetworkinterfaces.o demo.o demointerfaces.o environment.o environmentinterfaces.o adaasn1rtl.o -lgnat
 rm -f dataview-uniq.c dataview-uniq.h
 asn2aadlPlus dataview-uniq.asn DataView.aadl
