@@ -1026,8 +1026,9 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.refresh()
 
 
-    def sdl_to_statechart(self, basic=True):
-        ''' Create a graphviz representation of the SDL model '''
+    def sdl_to_statechart(self, basic=True, view=None):
+        ''' Create a graphviz representation of the SDL model 
+            Optionally take a QGraphicsView to use as parent for modals '''
         pr_raw = Pr.parse_scene(self)
         pr_data = unicode('\n'.join(pr_raw))
         ast, _, _ = ogParser.parse_pr(string=pr_data)
@@ -1046,7 +1047,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         # dot supports only vertically-aligned states, and fdp does not
         # support curved edges and is buggy with pygraphviz anyway)
         # Helper.flatten(process_ast)
-        return Statechart.create_dot_graph(process_ast, basic, scene=self)
+        return Statechart.create_dot_graph(process_ast, basic,
+                                           scene=self, view=view)
 
 
     def export_branch_to_picture(self, symbol, filename, doc_format):
@@ -2340,7 +2342,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             # so the lock is necessary to prevent recursive execution
             scene = self.view.top_scene()
             try:
-                graph = scene.sdl_to_statechart()
+                graph = scene.sdl_to_statechart(view=self.view)
                 Statechart.render_statechart(self.statechart_scene,
                                              graph)
                 self.statechart_view.refresh()
