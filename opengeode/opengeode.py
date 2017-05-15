@@ -1912,9 +1912,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             msg_box.setText("We recommend to make a semantic check of the "
                             "model now.\n\n"
                             "Choose Apply to perform this check "
-                            "and Discard otherwise.")
+                            "and Cancel otherwise.")
             msg_box.setStandardButtons(QtGui.QMessageBox.Apply
-                                       | QtGui.QMessageBox.Discard)
+                                       | QtGui.QMessageBox.Cancel)
             msg_box.setDefaultButton(QtGui.QMessageBox.Apply)
             res = msg_box.exec_()
             if res == QtGui.QMessageBox.Apply:
