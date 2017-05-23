@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.35 (05/2017)
+    - Fix FOR LOOPS code generation
+
 1.5.34 (05/2017)
     - Fix statechart message selection box
 
