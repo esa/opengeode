@@ -139,7 +139,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '1.5.34'
+__version__ = '1.5.35'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1912,9 +1912,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             msg_box.setText("We recommend to make a semantic check of the "
                             "model now.\n\n"
                             "Choose Apply to perform this check "
-                            "and Discard otherwise.")
+                            "and Cancel otherwise.")
             msg_box.setStandardButtons(QtGui.QMessageBox.Apply
-                                       | QtGui.QMessageBox.Discard)
+                                       | QtGui.QMessageBox.Cancel)
             msg_box.setDefaultButton(QtGui.QMessageBox.Apply)
             res = msg_box.exec_()
             if res == QtGui.QMessageBox.Apply:

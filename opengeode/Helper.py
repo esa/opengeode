@@ -475,9 +475,11 @@ def _rename_forloop(ast, from_name, to_name):
     ''' List of FOR loops '''
     for each in ast.elems:
         rename_everything(each['list'], from_name, to_name)
-        rename_everything(each['range']['start'], from_name, to_name)
-        rename_everything(each['range']['stop'], from_name, to_name)
-        rename_everything(each['transition'], from_name, to_name)
+        if each['range'] is not None:
+            rename_everything(each['range']['start'], from_name, to_name)
+            rename_everything(each['range']['stop'], from_name, to_name)
+        if each['transition'] is not None:
+            rename_everything(each['transition'], from_name, to_name)
 
 
 @rename_everything.register(ogAST.ExprPlus)
