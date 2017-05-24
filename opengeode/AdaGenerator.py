@@ -1991,15 +1991,15 @@ def _append(expr):
     local_decl.extend(left_local)
     local_decl.extend(right_local)
 
-    left = '{}{}'.format(left_str, string_payload(expr.left, left_str) if
+    left = u'{}{}'.format(left_str, string_payload(expr.left, left_str) if
                     isinstance(expr.left, (ogAST.PrimVariable,
                                            ogAST.PrimConstant)) else '')
-    right = '{}{}'.format(right_str, string_payload(expr.right, right_str) if
+    right = u'{}{}'.format(right_str, string_payload(expr.right, right_str) if
                     isinstance(expr.right, (ogAST.PrimVariable,
                                             ogAST.PrimConditional,
                                             ogAST.PrimConstant)) else '')
 
-    ada_string = '(({}) & ({}))'.format(left, right)
+    ada_string = u'(({}) & ({}))'.format(left, right)
 
     return stmts, unicode(ada_string), local_decl
 
@@ -2774,7 +2774,7 @@ def append_size(append):
             else:
                 # Must be a variable of type SEQOF
                 _, inner, _ = expression(each)
-                result += '{}.Length'.format(inner)
+                result += u'{}.Length'.format(inner)
     return result
 
 
