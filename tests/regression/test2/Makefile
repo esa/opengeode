@@ -1,12 +1,13 @@
 include ../shared.mk
 
-all: test-ada test-llvm
-
 edit:
 	$(OPENGEODE) orchestrator.pr system_structure.pr
 
 test-parse:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check
+
+test-qgen-parse:
+	$(TESTQGEN) orchestrator.pr system_structure.pr $(size)
 
 test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n orchestrator.ali
@@ -25,4 +26,4 @@ test-llvm: orchestrator.o
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: edit test-parse test-qgen-parse test-ada test-llvm coverage
