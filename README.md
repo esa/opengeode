@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.38 (06/2017)
+    - Fix unicode issue in Ada backend
+
 1.5.37 (05/2017)
     - Fix Ada backend bug with sequence of literals in nested states
 

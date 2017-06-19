@@ -1418,14 +1418,14 @@ def _task_forloop(task, **kwargs):
             stmt.extend(list_stmt)
             local_decl.extend(list_local)
             stmt.extend(['declare',
-                         '{} : {};'.format(loop['var'],
-                                           type_name(loop['type'])),
-                         '',
-                         'begin',
-                         'for {it}_idx in {rc} loop'.format(it=loop['var'],
-                                                            rc=range_str),
-                         '{it} := {var}({it}_idx);'.format(it=loop['var'],
-                                                          var=list_payload)])
+                         u'{} : {};'.format(loop['var'],
+                                            type_name(loop['type'])),
+                         u'',
+                         u'begin',
+                         u'for {it}_idx in {rc} loop'.format(it=loop['var'],
+                                                             rc=range_str),
+                         u'{it} := {var}({it}_idx);'.format(it=loop['var'],
+                                                            var=list_payload)])
         try:
             code_trans, local_trans = generate(loop['transition'])
             if local_trans:
@@ -1439,7 +1439,7 @@ def _task_forloop(task, **kwargs):
         except AttributeError:
             stmt.append('null;')
         if loop['range'] and loop['range']['step'] != 1:
-            stmt.append('{it} := {it} + {step};'.format(it=loop['var'],
+            stmt.append(u'{it} := {it} + {step};'.format(it=loop['var'],
                                                    step=loop['range']['step']))
         stmt.append('end loop;')
         if (loop['range'] and loop['range']['step'] != 1) or loop['list']:
