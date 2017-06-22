@@ -15,7 +15,7 @@ work3 = ['python', 'testqgen.py']
 testsWork = {
 'all': work1, 
 'test-parse' : work1,
-'test-qgen-parse' : work2,
+'test-qgen-parse' : work3,
 'test-ada' : work1,
 'test-c' : work1,
 'test-llvm' : work1,
@@ -31,9 +31,9 @@ def colorMe(result, msg):
 def parse_args():
     ''' Parse command line arguments '''
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s', '--size', type=int, default=0)
     parser.add_argument('rule', metavar='Rule', type=str)
     parser.add_argument('paths', metavar='Path', type=str, nargs='+')
+    parser.add_argument('-u', '--update', action='store_true')
     return parser.parse_args()
     
 def main():
@@ -42,7 +42,7 @@ def main():
     results = []
     op = parse_args()
     with futures.ProcessPoolExecutor(max_workers=cpu_count()) as executor:
-        for result in executor.map(partial(partial(make, op.rule), op.size), op.paths):
+        for result in executor.map(partial(partial(make, op.rule)), op.paths):
             print("%40s: %s" % (result[3], colorMe(result[0],
                                '[OK]' if result[0]==0 else '[FAILED]')))
             results.append(result)
@@ -53,7 +53,7 @@ def main():
     return summarize(results, elapsed)
 
 
-def make(rule, size, path):
+def make(rule, path):
     ''' Call a Makefile with the required rule (e.g. test-ada or clean) '''
     
     ''' Choose work settings based on the given rule '''
@@ -61,10 +61,11 @@ def make(rule, size, path):
     
     ''' Compose the command based on the rule'''
     if rule=='test-qgen-parse':
-      cmd=[work[0], work[1], path, rule, 'size='+ str(size)]
+      cmd=[work[0], work[1], rule, path]
     else:
       cmd=[work[0], work[1], path, rule]
     
+    print (cmd)
     proc = subprocess.Popen(
       cmd,
       stdout=subprocess.PIPE,

@@ -9,7 +9,7 @@ test-parse:
 	@python3 test.py test-parse $(TEST_CASES)
 
 test-qgen-parse:
-	@python3 test.py test-qgen-parse $(TEST_CASES) -s $(size)
+	@python3 test.py test-qgen-parse $(TEST_CASES)
 
 test-ada:
 	@python3 test.py test-ada $(TEST_CASES)

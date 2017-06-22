@@ -7,7 +7,7 @@ test-parse:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check
 
 test-qgen-parse:
-	$(TESTQGEN) orchestrator.pr system_structure.pr $(size)
+	$(TESTQGEN) orchestrator.pr system_structure.pr
 
 test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n orchestrator.ali

@@ -9,15 +9,17 @@ import os
 import sys
 import logging
 import argparse
+import subprocess
 __version__ = '1.0.0'
 LOG = logging.getLogger(__name__)
 
 def parse_args():
     ''' Parse command line arguments '''
     parser = argparse.ArgumentParser(version=__version__)
+    parser.add_argument('rule', metavar='Rule', type=str)
     parser.add_argument('files', metavar='file.pr', type=str, nargs='*',
-            help='SDL file(s)')
-    parser.add_argument('size', type=int)
+            help='SDL file(s)') 
+    parser.add_argument('-u', '--update', action='store_true')
     
     return parser.parse_args()             
 
@@ -40,14 +42,27 @@ def getSizeFiles(list,size):
             LOG.warning(file+ " size " + str(s))
 
     return err
-
+    
 def main():         
     options = parse_args()
     init_logging(options)
-    size = options.size
-    if size==0:
-        size = 9000  
-    return getSizeFiles(options.files,size)
+    files=''
+    
+    for file in options.files:
+       files = files + file + ' '
+       
+    cmd = ['make ', files, ' --check']
+    
+    print (cmd)
+    proc = subprocess.Popen(
+      cmd,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE
+    )
+        
+    stdout, stderr = proc.communicate()
+    errcode = proc.wait()
+    return (errcode, stdout, stderr)
 
 if __name__ == '__main__':
     ret = main()
