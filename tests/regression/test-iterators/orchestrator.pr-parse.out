@@ -1,0 +1,3 @@
+[INFO] Starting to parse model: test-iterators/orchestrator.pr
+[ERROR] Failed to parse model.
+    line 79:70 extraneous input ')' expecting ';'

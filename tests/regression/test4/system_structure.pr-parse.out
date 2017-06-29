@@ -1,0 +1,3 @@
+[INFO] Starting to parse model: test4/system_structure.pr
+[ERROR] Failed to parse model.
+    line 13:41 mismatched input ';' expecting '*/'

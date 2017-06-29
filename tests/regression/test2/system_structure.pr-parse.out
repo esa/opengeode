@@ -1,0 +1,3 @@
+[INFO] Starting to parse model: test2/system_structure.pr
+[ERROR] Failed to parse model.
+    line 31:52 mismatched input ';' expecting '*/'

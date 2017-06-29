@@ -1,0 +1,3 @@
+[INFO] Starting to parse model: test-aggregation3/challenge.pr
+[ERROR] Failed to parse model.
+    line 14:20 no viable alternative at input '/* CIF'
