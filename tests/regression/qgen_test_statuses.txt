@@ -1,98 +1,98 @@
-Parse ./test10/challenge.pr : exit 1
-Parse ./test10/system_structure.pr : exit 1
-Parse ./test11/og.pr : exit 1
-Parse ./test11/system_structure.pr : exit 0
-Parse ./test12/system_structure.pr : exit 0
-Parse ./test12/trafficlight.pr : exit 1
-Parse ./test1/og.pr : exit 1
-Parse ./test1/system_structure.pr : exit 0
-Parse ./test2/orchestrator.pr : exit 1
-Parse ./test2/system_structure.pr : exit 1
-Parse ./test3/fce.pr : exit 1
-Parse ./test3/system_structure.pr : exit 1
-Parse ./test4/orchestrator.pr : exit 1
-Parse ./test4/system_structure.pr : exit 1
-Parse ./test5/function0.pr : exit 1
-Parse ./test5/system_structure.pr : exit 1
-Parse ./test6/myfunction.pr : exit 1
-Parse ./test6/system_structure.pr : exit 0
-Parse ./test7/orchestrator.pr : exit 1
-Parse ./test7/system_structure.pr : exit 1
-Parse ./test8/orchestrator.pr : exit 1
-Parse ./test8/system_structure.pr : exit 1
-Parse ./test9/challenge.pr : exit 1
-Parse ./test9/system_structure.pr : exit 1
-Parse ./test-aggregation1/challenge.pr : exit 1
-Parse ./test-aggregation1/system_structure.pr : exit 1
-Parse ./test-aggregation2/og.pr : exit 1
-Parse ./test-aggregation3/challenge.pr : exit 1
-Parse ./test-aggregation3/system_structure.pr : exit 1
-Parse ./test-asn1constants/orchestrator.pr : exit 1
-Parse ./test-asn1constants/system_structure.pr : exit 0
-Parse ./test-battery/og.pr : exit 1
-Parse ./test-branchcoverage2/myfunction.pr : exit 1
-Parse ./test-branchcoverage2/system_structure.pr : exit 0
-Parse ./test-branchcoverage/myfunction.pr : exit 1
-Parse ./test-branchcoverage/system_structure.pr : exit 0
-Parse ./test-choice/og.pr : exit 1
-Parse ./test-controlflow/controlflow.pr : exit 1
-Parse ./test-controlflow/system_structure.pr : exit 0
-Parse ./test-debug/orchestrator.pr : exit 1
-Parse ./test-debug/system_structure.pr : exit 0
-Parse ./test-eds1/testsc.pr : exit 1
-Parse ./test-eds2/demodevicedsap.pr : exit 1
-Parse ./test-emptysequence2/test.pr : exit 1
-Parse ./test-emptysequence/og.pr : exit 1
-Parse ./test-equal/og.pr : exit 1
-Parse ./test-equal/system_structure.pr : exit 0
-Parse ./test-exitnested/challenge.pr : exit 0
-Parse ./test-exitnested/system_structure.pr : exit 1
-Parse ./test-expressions/expressions.pr : exit 1
-Parse ./test-expressions/system_structure.pr : exit 0
-Parse ./test-forloop/og.pr : exit 1
-Parse ./test-ibk2/framemanager.pr : exit 1
-Parse ./test-ibk2/system_structure.pr : exit 0
-Parse ./test-ibk3/node.pr : exit 1
-Parse ./test-ibk3/system_structure.pr : exit 0
-Parse ./test-ibk/packetmanager.pr : exit 1
-Parse ./test-ibk/system_structure.pr : exit 0
-Parse ./test-instance/og.pr : exit 1
-Parse ./test-instance/system_structure.pr : exit 0
-Parse ./test-iterators/orchestrator.pr : exit 1
-Parse ./test-llvm/orchestrator.pr : exit 1
-Parse ./test-llvm/system_structure.pr : exit 0
-Parse ./test-math/expressions.pr : exit 1
-Parse ./test-math/system_structure.pr : exit 0
-Parse ./test-nestedpriority/challenge.pr : exit 1
-Parse ./test-nestedpriority/system_structure.pr : exit 1
-Parse ./test-nocif2/DemoDeviceDSAP_fixed.pr : exit 1
-Parse ./test-nocif/orchestrator.pr : exit 1
-Parse ./test-nocif/system_structure.pr : exit 0
-Parse ./test-noparam/og.pr : exit 1
-Parse ./test-operators/operators.pr : exit 1
-Parse ./test-operators/system_structure.pr : exit 0
-Parse ./test-optionalfield/og.pr : exit 1
-Parse ./test-procedure/og.pr : exit 1
-Parse ./test-processfpar1/og.pr : exit 1
-Parse ./test-processfpar2/og.pr : exit 1
-Parse ./test-provided1/og.pr : exit 1
-Parse ./test-provided2/og.pr : exit 1
-Parse ./test-provided3/og.pr : exit 1
-Parse ./test-pus/flight.pr : exit 0
-Parse ./test-pus/system_structure.pr : exit 0
-Parse ./test-recursion/og.pr : exit 1
-Parse ./test-save/og.pr : exit 1
-Parse ./test-sequenceof2/test.pr : exit 1
-Parse ./test-sequenceof/test.pr : exit 1
-Parse ./test-simu/orchestrator.pr : exit 1
-Parse ./test-simu/system_structure.pr : exit 0
-Parse ./test-standalone/og.pr : exit 1
-Parse ./test-stateexclusion/test.pr : exit 1
-Parse ./test-strings/og.pr : exit 1
-Parse ./test-substrings/myfunction.pr : exit 1
-Parse ./test-substrings/system_structure.pr : exit 0
-Parse ./test-ternary/og.pr : exit 1
-Parse ./test-typecheck/og.pr : exit 1
-Parse ./test-types/DataView.pr : exit 1
-Parse ./test-types/function1.pr : exit 1
-Parse ./test-types/system_structure.pr : exit 0
+Parsing model: ./test10/challenge.pr (6394 lines) [FAIL]
+Parsing model: ./test10/system_structure.pr (552 lines) [FAIL]
+Parsing model: ./test11/og.pr (6096 lines) [FAIL]
+Parsing model: ./test11/system_structure.pr (506 lines) [OK]
+Parsing model: ./test12/system_structure.pr (857 lines) [OK]
+Parsing model: ./test12/trafficlight.pr (11951 lines) [FAIL]
+Parsing model: ./test1/og.pr (8574 lines) [FAIL]
+Parsing model: ./test1/system_structure.pr (483 lines) [OK]
+Parsing model: ./test2/orchestrator.pr (4522 lines) [FAIL]
+Parsing model: ./test2/system_structure.pr (1314 lines) [FAIL]
+Parsing model: ./test3/fce.pr (18420 lines) [FAIL]
+Parsing model: ./test3/system_structure.pr (1438 lines) [FAIL]
+Parsing model: ./test4/orchestrator.pr (5724 lines) [FAIL]
+Parsing model: ./test4/system_structure.pr (699 lines) [FAIL]
+Parsing model: ./test5/function0.pr (986 lines) [FAIL]
+Parsing model: ./test5/system_structure.pr (707 lines) [FAIL]
+Parsing model: ./test6/myfunction.pr (7829 lines) [FAIL]
+Parsing model: ./test6/system_structure.pr (579 lines) [OK]
+Parsing model: ./test7/orchestrator.pr (8803 lines) [FAIL]
+Parsing model: ./test7/system_structure.pr (1124 lines) [FAIL]
+Parsing model: ./test8/orchestrator.pr (1718 lines) [FAIL]
+Parsing model: ./test8/system_structure.pr (1124 lines) [FAIL]
+Parsing model: ./test9/challenge.pr (1915 lines) [FAIL]
+Parsing model: ./test9/system_structure.pr (431 lines) [FAIL]
+Parsing model: ./test-aggregation1/challenge.pr (9994 lines) [FAIL]
+Parsing model: ./test-aggregation1/system_structure.pr (552 lines) [FAIL]
+Parsing model: ./test-aggregation2/og.pr (6637 lines) [FAIL]
+Parsing model: ./test-aggregation3/challenge.pr (1537 lines) [FAIL]
+Parsing model: ./test-aggregation3/system_structure.pr (552 lines) [FAIL]
+Parsing model: ./test-asn1constants/orchestrator.pr (1070 lines) [FAIL]
+Parsing model: ./test-asn1constants/system_structure.pr (481 lines) [OK]
+Parsing model: ./test-battery/og.pr (3726 lines) [FAIL]
+Parsing model: ./test-branchcoverage2/myfunction.pr (4738 lines) [FAIL]
+Parsing model: ./test-branchcoverage2/system_structure.pr (579 lines) [OK]
+Parsing model: ./test-branchcoverage/myfunction.pr (4752 lines) [FAIL]
+Parsing model: ./test-branchcoverage/system_structure.pr (579 lines) [OK]
+Parsing model: ./test-choice/og.pr (1837 lines) [FAIL]
+Parsing model: ./test-controlflow/controlflow.pr (5101 lines) [FAIL]
+Parsing model: ./test-controlflow/system_structure.pr (555 lines) [OK]
+Parsing model: ./test-debug/orchestrator.pr (6350 lines) [FAIL]
+Parsing model: ./test-debug/system_structure.pr (461 lines) [OK]
+Parsing model: ./test-eds1/testsc.pr (1122 lines) [FAIL]
+Parsing model: ./test-eds2/demodevicedsap.pr (1676 lines) [FAIL]
+Parsing model: ./test-emptysequence2/test.pr (1218 lines) [FAIL]
+Parsing model: ./test-emptysequence/og.pr (1912 lines) [FAIL]
+Parsing model: ./test-equal/og.pr (8684 lines) [FAIL]
+Parsing model: ./test-equal/system_structure.pr (483 lines) [OK]
+Parsing model: ./test-exitnested/challenge.pr (3203 lines) [FAIL]
+Parsing model: ./test-exitnested/system_structure.pr (555 lines) [FAIL]
+Parsing model: ./test-expressions/expressions.pr (10460 lines) [FAIL]
+Parsing model: ./test-expressions/system_structure.pr (405 lines) [OK]
+Parsing model: ./test-forloop/og.pr (1237 lines) [FAIL]
+Parsing model: ./test-ibk2/framemanager.pr (24050 lines) [FAIL]
+Parsing model: ./test-ibk2/system_structure.pr (775 lines) [OK]
+Parsing model: ./test-ibk3/node.pr (99533 lines) [FAIL]
+Parsing model: ./test-ibk3/system_structure.pr (1337 lines) [OK]
+Parsing model: ./test-ibk/packetmanager.pr (4992 lines) [FAIL]
+Parsing model: ./test-ibk/system_structure.pr (1079 lines) [OK]
+Parsing model: ./test-instance/og.pr (8340 lines) [FAIL]
+Parsing model: ./test-instance/system_structure.pr (480 lines) [OK]
+Parsing model: ./test-iterators/orchestrator.pr (3589 lines) [FAIL]
+Parsing model: ./test-llvm/orchestrator.pr (2255 lines) [FAIL]
+Parsing model: ./test-llvm/system_structure.pr (445 lines) [OK]
+Parsing model: ./test-math/expressions.pr (912 lines) [FAIL]
+Parsing model: ./test-math/system_structure.pr (405 lines) [OK]
+Parsing model: ./test-nestedpriority/challenge.pr (3623 lines) [FAIL]
+Parsing model: ./test-nestedpriority/system_structure.pr (555 lines) [FAIL]
+Parsing model: ./test-nocif2/DemoDeviceDSAP_fixed.pr (3212 lines) [FAIL]
+Parsing model: ./test-nocif/orchestrator.pr (2961 lines) [FAIL]
+Parsing model: ./test-nocif/system_structure.pr (461 lines) [OK]
+Parsing model: ./test-noparam/og.pr (833 lines) [FAIL]
+Parsing model: ./test-operators/operators.pr (2562 lines) [FAIL]
+Parsing model: ./test-operators/system_structure.pr (395 lines) [OK]
+Parsing model: ./test-optionalfield/og.pr (2517 lines) [FAIL]
+Parsing model: ./test-procedure/og.pr (3262 lines) [FAIL]
+Parsing model: ./test-processfpar1/og.pr (3153 lines) [FAIL]
+Parsing model: ./test-processfpar2/og.pr (1551 lines) [FAIL]
+Parsing model: ./test-provided1/og.pr (5580 lines) [FAIL]
+Parsing model: ./test-provided2/og.pr (8631 lines) [FAIL]
+Parsing model: ./test-provided3/og.pr (5077 lines) [FAIL]
+Parsing model: ./test-pus/flight.pr (961 lines) [FAIL]
+Parsing model: ./test-pus/system_structure.pr (584 lines) [OK]
+Parsing model: ./test-recursion/og.pr (3926 lines) [FAIL]
+Parsing model: ./test-save/og.pr (4349 lines) [FAIL]
+Parsing model: ./test-sequenceof2/test.pr (1964 lines) [FAIL]
+Parsing model: ./test-sequenceof/test.pr (1966 lines) [FAIL]
+Parsing model: ./test-simu/orchestrator.pr (5166 lines) [FAIL]
+Parsing model: ./test-simu/system_structure.pr (847 lines) [OK]
+Parsing model: ./test-standalone/og.pr (3104 lines) [FAIL]
+Parsing model: ./test-stateexclusion/test.pr (1959 lines) [FAIL]
+Parsing model: ./test-strings/og.pr (2050 lines) [FAIL]
+Parsing model: ./test-substrings/myfunction.pr (7209 lines) [FAIL]
+Parsing model: ./test-substrings/system_structure.pr (579 lines) [OK]
+Parsing model: ./test-ternary/og.pr (3340 lines) [FAIL]
+Parsing model: ./test-typecheck/og.pr (1264 lines) [FAIL]
+Parsing model: ./test-types/DataView.pr (1008 lines) [FAIL]
+Parsing model: ./test-types/function1.pr (1317 lines) [FAIL]
+Parsing model: ./test-types/system_structure.pr (374 lines) [OK]

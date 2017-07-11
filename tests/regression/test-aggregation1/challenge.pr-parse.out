@@ -1,3 +1,3 @@
-[INFO] Starting to parse model: test-aggregation1/challenge.pr
+[INFO] Starting to parse model test-aggregation1/challenge.pr
 [ERROR] Failed to parse model.
-    line 5:8 no viable alternative at input 'in'
+    org.antlr.v4.runtime.misc.ParseCancellationException: line 5:8 mismatched input 'in' expecting STATE

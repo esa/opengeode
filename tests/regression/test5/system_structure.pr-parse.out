@@ -1,3 +1,3 @@
-[INFO] Starting to parse model: test5/system_structure.pr
+[INFO] Starting to parse model test5/system_structure.pr
 [ERROR] Failed to parse model.
-    line 8:34 mismatched input ';' expecting '*/'
+    org.antlr.v4.runtime.misc.ParseCancellationException: line 8:34 mismatched input ';' expecting '*/'

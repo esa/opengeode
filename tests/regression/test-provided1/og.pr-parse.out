@@ -1,3 +1,3 @@
-[INFO] Starting to parse model: test-provided1/og.pr
+[INFO] Starting to parse model test-provided1/og.pr
 [ERROR] Failed to parse model.
-    line 119:42 extraneous input ')' expecting ';'
+    org.antlr.v4.runtime.misc.ParseCancellationException: line 119:42 extraneous input ')' expecting ';'

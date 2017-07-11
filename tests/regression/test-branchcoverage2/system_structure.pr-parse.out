@@ -1,3 +1,7 @@
-[INFO] Starting to parse model: test-branchcoverage2/system_structure.pr
+[INFO] Starting to parse model test-branchcoverage2/system_structure.pr
+System: Entity not processed: ee.ibk.sdl.parser.grammar.SDLParser$Entity_in_systemContext
+System: Entity not processed: ee.ibk.sdl.parser.grammar.SDLParser$Entity_in_systemContext
+[TODO] System: Should process signal start_something
+[TODO] System: Should process signal result_data
 [INFO] Parsing completed
-[INFO] Parse result: 102
+[INFO] Output written to test-branchcoverage2/system_structure.xmi
