@@ -1,3 +1,25 @@
 [INFO] Starting to parse model test-provided1/og.pr
 [ERROR] Failed to parse model.
     org.antlr.v4.runtime.misc.ParseCancellationException: line 119:42 extraneous input ')' expecting ';'
+org.antlr.v4.runtime.misc.ParseCancellationException: line 119:42 extraneous input ')' expecting ';'
+	at ee.ibk.sdl.parser.ThrowingErrorListener.syntaxError(ThrowingErrorListener.java:18)
+	at org.antlr.v4.runtime.ProxyErrorListener.syntaxError(ProxyErrorListener.java:41)
+	at org.antlr.v4.runtime.Parser.notifyErrorListeners(Parser.java:544)
+	at org.antlr.v4.runtime.DefaultErrorStrategy.reportUnwantedToken(DefaultErrorStrategy.java:349)
+	at org.antlr.v4.runtime.DefaultErrorStrategy.singleTokenDeletion(DefaultErrorStrategy.java:513)
+	at org.antlr.v4.runtime.DefaultErrorStrategy.sync(DefaultErrorStrategy.java:238)
+	at ee.ibk.sdl.parser.grammar.SDLParser.end(SDLParser.java:10277)
+	at ee.ibk.sdl.parser.grammar.SDLParser.use_clause(SDLParser.java:476)
+	at ee.ibk.sdl.parser.grammar.SDLParser.content(SDLParser.java:2066)
+	at ee.ibk.sdl.parser.grammar.SDLParser.text_area(SDLParser.java:1949)
+	at ee.ibk.sdl.parser.grammar.SDLParser.entity_in_system(SDLParser.java:589)
+	at ee.ibk.sdl.parser.grammar.SDLParser.system_definition(SDLParser.java:383)
+	at ee.ibk.sdl.parser.grammar.SDLParser.pr_file(SDLParser.java:303)
+	at ee.ibk.sdl.parser.SDLParserMain.doParse(SDLParserMain.java:40)
+	at ee.ibk.sdl.parser.SDLParserMain.parseFile(SDLParserMain.java:72)
+	at ee.ibk.sdl.parser.SDLParserMain.main(SDLParserMain.java:117)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader.main(JarRsrcLoader.java:58)
