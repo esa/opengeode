@@ -1,20 +1,25 @@
 [INFO] Tool is executed in parse-only mode. Output file will not be created.
 [INFO] Starting to parse model test-aggregation2/og.pr
 [ERROR] Failed to parse model.
-    org.antlr.v4.runtime.misc.ParseCancellationException: line 79:28 mismatched input '/* CIF' expecting STATE
-org.antlr.v4.runtime.misc.ParseCancellationException: line 79:28 mismatched input '/* CIF' expecting STATE
+    org.antlr.v4.runtime.misc.ParseCancellationException: line 32:24 mismatched input 'in' expecting ENDSUBSTRUCTURE
+org.antlr.v4.runtime.misc.ParseCancellationException: line 32:24 mismatched input 'in' expecting ENDSUBSTRUCTURE
 	at ee.ibk.sdl.parser.ThrowingErrorListener.syntaxError(ThrowingErrorListener.java:18)
 	at org.antlr.v4.runtime.ProxyErrorListener.syntaxError(ProxyErrorListener.java:41)
 	at org.antlr.v4.runtime.Parser.notifyErrorListeners(Parser.java:544)
 	at org.antlr.v4.runtime.DefaultErrorStrategy.reportInputMismatch(DefaultErrorStrategy.java:299)
 	at org.antlr.v4.runtime.DefaultErrorStrategy.reportError(DefaultErrorStrategy.java:124)
-	at ee.ibk.sdl.parser.grammar.SDLParser.composite_state(SDLParser.java:4050)
-	at ee.ibk.sdl.parser.grammar.SDLParser.process_definition(SDLParser.java:1392)
-	at ee.ibk.sdl.parser.grammar.SDLParser.entity_in_block(SDLParser.java:1064)
-	at ee.ibk.sdl.parser.grammar.SDLParser.block_definition(SDLParser.java:966)
-	at ee.ibk.sdl.parser.grammar.SDLParser.entity_in_system(SDLParser.java:650)
-	at ee.ibk.sdl.parser.grammar.SDLParser.system_definition(SDLParser.java:399)
-	at ee.ibk.sdl.parser.grammar.SDLParser.pr_file(SDLParser.java:311)
+	at ee.ibk.sdl.parser.grammar.SDLParser.composite_state_graph(SDLParser.java:4124)
+	at ee.ibk.sdl.parser.grammar.SDLParser.composite_state(SDLParser.java:4025)
+	at ee.ibk.sdl.parser.grammar.SDLParser.state_partitioning(SDLParser.java:4459)
+	at ee.ibk.sdl.parser.grammar.SDLParser.state_aggregation_body(SDLParser.java:4384)
+	at ee.ibk.sdl.parser.grammar.SDLParser.state_aggregation(SDLParser.java:4237)
+	at ee.ibk.sdl.parser.grammar.SDLParser.composite_state(SDLParser.java:4032)
+	at ee.ibk.sdl.parser.grammar.SDLParser.process_definition(SDLParser.java:1381)
+	at ee.ibk.sdl.parser.grammar.SDLParser.entity_in_block(SDLParser.java:1063)
+	at ee.ibk.sdl.parser.grammar.SDLParser.block_definition(SDLParser.java:965)
+	at ee.ibk.sdl.parser.grammar.SDLParser.entity_in_system(SDLParser.java:649)
+	at ee.ibk.sdl.parser.grammar.SDLParser.system_definition(SDLParser.java:398)
+	at ee.ibk.sdl.parser.grammar.SDLParser.pr_file(SDLParser.java:310)
 	at ee.ibk.sdl.parser.SDLParserMain.doParse(SDLParserMain.java:43)
 	at ee.ibk.sdl.parser.SDLParserMain.parseFile(SDLParserMain.java:86)
 	at ee.ibk.sdl.parser.SDLParserMain.main(SDLParserMain.java:149)

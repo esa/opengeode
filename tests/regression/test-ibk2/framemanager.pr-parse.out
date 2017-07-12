@@ -1,21 +1,3 @@
 [INFO] Tool is executed in parse-only mode. Output file will not be created.
 [INFO] Starting to parse model test-ibk2/framemanager.pr
-[ERROR] Failed to parse model.
-    org.antlr.v4.runtime.misc.ParseCancellationException: line 250:20 mismatched input '/* CIF' expecting STATE
-org.antlr.v4.runtime.misc.ParseCancellationException: line 250:20 mismatched input '/* CIF' expecting STATE
-	at ee.ibk.sdl.parser.ThrowingErrorListener.syntaxError(ThrowingErrorListener.java:18)
-	at org.antlr.v4.runtime.ProxyErrorListener.syntaxError(ProxyErrorListener.java:41)
-	at org.antlr.v4.runtime.Parser.notifyErrorListeners(Parser.java:544)
-	at org.antlr.v4.runtime.DefaultErrorStrategy.reportInputMismatch(DefaultErrorStrategy.java:299)
-	at org.antlr.v4.runtime.DefaultErrorStrategy.reportError(DefaultErrorStrategy.java:124)
-	at ee.ibk.sdl.parser.grammar.SDLParser.composite_state(SDLParser.java:4050)
-	at ee.ibk.sdl.parser.grammar.SDLParser.process_definition(SDLParser.java:1392)
-	at ee.ibk.sdl.parser.grammar.SDLParser.pr_file(SDLParser.java:317)
-	at ee.ibk.sdl.parser.SDLParserMain.doParse(SDLParserMain.java:43)
-	at ee.ibk.sdl.parser.SDLParserMain.parseFile(SDLParserMain.java:86)
-	at ee.ibk.sdl.parser.SDLParserMain.main(SDLParserMain.java:149)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader.main(JarRsrcLoader.java:58)
+[INFO] Parsing completed. Nothing more to do.
