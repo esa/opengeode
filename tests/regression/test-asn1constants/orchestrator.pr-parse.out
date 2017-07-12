@@ -1,19 +1,3 @@
+[INFO] Tool is executed in parse-only mode. Output file will not be created.
 [INFO] Starting to parse model test-asn1constants/orchestrator.pr
-[ERROR] Failed to parse model.
-    org.antlr.v4.runtime.misc.ParseCancellationException: line 6:4 mismatched input '-- Text area for declarations and comments\n\ndcl toto NamedInt := one;\n\ndcl tutu Enum_with_dash := first_one;\n\ndcl titi NamedInt_with_dash := second_value;\n    /* CIF ENDTEXT */\n    /* CIF START (530, 150), (80, 36) */\n    START;\n        /* CIF NEXTSTATE (512, 201), (116, 33) */\n        NEXTSTATE Wait_for_GUI;\n    /* CIF STATE (1063, 119), (116, 33) */\n    STATE Wait_for_GUI;\n    ENDSTATE;\n    /* CIF STATE (512, 201), (116, 33) */\n    STATE Wait_for_GUI;\n        /* CIF INPUT (529, 254), (82, 35) */\n        INPUT pulse(titi);\n            /* CIF PROCEDURECALL (522, 309), (96, 35) */\n            CALL writeln(titi);\n            /* CIF OUTPUT (508, 359), (123, 35) */\n            OUTPUT telemetry(tutu);\n            /* CIF TASK (501, 414), (138, 35) */\n            TASK tutu := second_one;\n            /* CIF NEXTSTATE (535, 464), (70, 35) */\n            NEXTSTATE -;\n    ENDSTATE;\n' expecting PROCESS
-org.antlr.v4.runtime.misc.ParseCancellationException: line 6:4 mismatched input '-- Text area for declarations and comments\n\ndcl toto NamedInt := one;\n\ndcl tutu Enum_with_dash := first_one;\n\ndcl titi NamedInt_with_dash := second_value;\n    /* CIF ENDTEXT */\n    /* CIF START (530, 150), (80, 36) */\n    START;\n        /* CIF NEXTSTATE (512, 201), (116, 33) */\n        NEXTSTATE Wait_for_GUI;\n    /* CIF STATE (1063, 119), (116, 33) */\n    STATE Wait_for_GUI;\n    ENDSTATE;\n    /* CIF STATE (512, 201), (116, 33) */\n    STATE Wait_for_GUI;\n        /* CIF INPUT (529, 254), (82, 35) */\n        INPUT pulse(titi);\n            /* CIF PROCEDURECALL (522, 309), (96, 35) */\n            CALL writeln(titi);\n            /* CIF OUTPUT (508, 359), (123, 35) */\n            OUTPUT telemetry(tutu);\n            /* CIF TASK (501, 414), (138, 35) */\n            TASK tutu := second_one;\n            /* CIF NEXTSTATE (535, 464), (70, 35) */\n            NEXTSTATE -;\n    ENDSTATE;\n' expecting PROCESS
-	at ee.ibk.sdl.parser.ThrowingErrorListener.syntaxError(ThrowingErrorListener.java:18)
-	at org.antlr.v4.runtime.ProxyErrorListener.syntaxError(ProxyErrorListener.java:41)
-	at org.antlr.v4.runtime.Parser.notifyErrorListeners(Parser.java:544)
-	at org.antlr.v4.runtime.DefaultErrorStrategy.reportInputMismatch(DefaultErrorStrategy.java:299)
-	at org.antlr.v4.runtime.DefaultErrorStrategy.reportError(DefaultErrorStrategy.java:124)
-	at ee.ibk.sdl.parser.grammar.SDLParser.process_definition(SDLParser.java:1352)
-	at ee.ibk.sdl.parser.grammar.SDLParser.pr_file(SDLParser.java:309)
-	at ee.ibk.sdl.parser.SDLParserMain.doParse(SDLParserMain.java:40)
-	at ee.ibk.sdl.parser.SDLParserMain.parseFile(SDLParserMain.java:72)
-	at ee.ibk.sdl.parser.SDLParserMain.main(SDLParserMain.java:117)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader.main(JarRsrcLoader.java:58)
+[INFO] Parsing completed. Nothing more to do.

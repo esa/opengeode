@@ -1,7 +1,3 @@
+[INFO] Tool is executed in parse-only mode. Output file will not be created.
 [INFO] Starting to parse model test-operators/system_structure.pr
-System: Entity not processed: ee.ibk.sdl.parser.grammar.SDLParser$Entity_in_systemContext
-System: Entity not processed: ee.ibk.sdl.parser.grammar.SDLParser$Entity_in_systemContext
-System: Entity not processed: ee.ibk.sdl.parser.grammar.SDLParser$Entity_in_systemContext
-[TODO] System: Should process signal run
-[INFO] Parsing completed
-[INFO] Output written to test-operators/system_structure.xmi
+[INFO] Parsing completed. Nothing more to do.

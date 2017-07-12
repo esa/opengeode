@@ -1,14 +1,3 @@
+[INFO] Tool is executed in parse-only mode. Output file will not be created.
 [INFO] Starting to parse model test-ibk3/system_structure.pr
-System: Entity not processed: ee.ibk.sdl.parser.grammar.SDLParser$Entity_in_systemContext
-System: Entity not processed: ee.ibk.sdl.parser.grammar.SDLParser$Entity_in_systemContext
-[TODO] System: Should process signal ReceiveData
-[TODO] System: Should process signal ReadRawData
-[TODO] System: Should process signal ReceiveFrameCount
-[TODO] System: Should process signal ReceiveAck
-[TODO] System: Should process signal SendData
-[TODO] System: Should process signal WriteRawData
-[TODO] System: Should process signal SendFrameCount
-[TODO] System: Should process signal SendAck
-[TODO] System: Should process signal ResendRawData
-[INFO] Parsing completed
-[INFO] Output written to test-ibk3/system_structure.xmi
+[INFO] Parsing completed. Nothing more to do.

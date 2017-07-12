@@ -1,19 +1,3 @@
+[INFO] Tool is executed in parse-only mode. Output file will not be created.
 [INFO] Starting to parse model test-math/expressions.pr
-[ERROR] Failed to parse model.
-    org.antlr.v4.runtime.misc.ParseCancellationException: line 7:4 mismatched input '-- Declare an external procedure that has a return type\n-- Use this to get access to C libraries (eg. math lib)\n-- without having to write manually external code\n-- Just link your code with the SDL object.\nprocedure log;\nfpar in par real;\nreturns real\nexternal;\n    /* CIF ENDTEXT */\n    /* CIF START (625, 146), (70, 34) */\n    START;\n        /* CIF NEXTSTATE (625, 199), (70, 35) */\n        NEXTSTATE wait;\n    /* CIF STATE (625, 199), (70, 35) */\n    STATE wait;\n        /* CIF INPUT (620, 255), (81, 38) */\n        INPUT run;\n            /* CIF TASK (588, 308), (144, 35) */\n            TASK f := log(f);\n            /* CIF NEXTSTATE (624, 358), (72, 38) */\n            NEXTSTATE Wait;\n    ENDSTATE;\n' expecting PROCESS
-org.antlr.v4.runtime.misc.ParseCancellationException: line 7:4 mismatched input '-- Declare an external procedure that has a return type\n-- Use this to get access to C libraries (eg. math lib)\n-- without having to write manually external code\n-- Just link your code with the SDL object.\nprocedure log;\nfpar in par real;\nreturns real\nexternal;\n    /* CIF ENDTEXT */\n    /* CIF START (625, 146), (70, 34) */\n    START;\n        /* CIF NEXTSTATE (625, 199), (70, 35) */\n        NEXTSTATE wait;\n    /* CIF STATE (625, 199), (70, 35) */\n    STATE wait;\n        /* CIF INPUT (620, 255), (81, 38) */\n        INPUT run;\n            /* CIF TASK (588, 308), (144, 35) */\n            TASK f := log(f);\n            /* CIF NEXTSTATE (624, 358), (72, 38) */\n            NEXTSTATE Wait;\n    ENDSTATE;\n' expecting PROCESS
-	at ee.ibk.sdl.parser.ThrowingErrorListener.syntaxError(ThrowingErrorListener.java:18)
-	at org.antlr.v4.runtime.ProxyErrorListener.syntaxError(ProxyErrorListener.java:41)
-	at org.antlr.v4.runtime.Parser.notifyErrorListeners(Parser.java:544)
-	at org.antlr.v4.runtime.DefaultErrorStrategy.reportInputMismatch(DefaultErrorStrategy.java:299)
-	at org.antlr.v4.runtime.DefaultErrorStrategy.reportError(DefaultErrorStrategy.java:124)
-	at ee.ibk.sdl.parser.grammar.SDLParser.process_definition(SDLParser.java:1352)
-	at ee.ibk.sdl.parser.grammar.SDLParser.pr_file(SDLParser.java:309)
-	at ee.ibk.sdl.parser.SDLParserMain.doParse(SDLParserMain.java:40)
-	at ee.ibk.sdl.parser.SDLParserMain.parseFile(SDLParserMain.java:72)
-	at ee.ibk.sdl.parser.SDLParserMain.main(SDLParserMain.java:117)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader.main(JarRsrcLoader.java:58)
+[INFO] Parsing completed. Nothing more to do.
