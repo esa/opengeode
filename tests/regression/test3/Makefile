@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) fce.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) fce.pr system_structure.pr
+
 test-ada: fce.ali
 
 test-c: fce.c

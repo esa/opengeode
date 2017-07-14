@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) function0.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) function0.pr system_structure.pr
+
 test-ada: function0.ali
 
 test-c: function0.c

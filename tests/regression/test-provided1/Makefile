@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) og.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) og.pr
+
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn

@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) testsc.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) testsc.pr
+
 test-ada: 
 	./check_simulation.sh && rm -rf testsc_simu
 

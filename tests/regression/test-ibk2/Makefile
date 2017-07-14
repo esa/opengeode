@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) framemanager.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) framemanager.pr system_structure.pr
+
 test-ada: framemanager.ali
 
 test-c: framemanager.c

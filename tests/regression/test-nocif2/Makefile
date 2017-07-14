@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) DemoDeviceDSAP_fixed.pr
+
 test-ada: 
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toAda
 	

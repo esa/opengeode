@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) orchestrator.pr system_structure.pr
+
 test-ada: 
 	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(CC) -c -g test_ada.c

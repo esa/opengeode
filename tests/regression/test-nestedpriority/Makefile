@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) challenge.pr system_structure.pr --check 2>&1 | grep ERROR | wc | grep "1       9      61" && echo OK
 
+test-qgen-parse:
+	$(TESTQGEN) challenge.pr system_structure.pr
+
 test-ada: test-parse
 
 test-c: test-parse

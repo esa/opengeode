@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) packetmanager.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) packetmanager.pr system_structure.pr
+
 test-ada: packetmanager.ali
 
 test-c: packetmanager.c

@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) flight.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) flight.pr system_structure.pr
+
 test-ada: flight.ali
 
 test-c: flight.c

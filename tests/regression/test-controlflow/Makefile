@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) controlflow.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) controlflow.pr system_structure.pr
+
 test-ada: controlflow.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n controlflow.ali
 	$(GNATLINK) test_ada.o controlflow.ali -lgnat -lm -o test_ada

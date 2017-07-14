@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) trafficlight.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) trafficlight.pr system_structure.pr
+
 test-ada: trafficlight.ali
 
 test-c: trafficlight.c

@@ -13,6 +13,9 @@ edit:
 test-parse:
 	$(OPENGEODE) orchestrator.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) orchestrator.pr
+
 test-ada:
 	[ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ; \
 	mkdir -p build && cp *.pr *.asn model_checker.gpr properties build && cd build && \

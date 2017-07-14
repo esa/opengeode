@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) test.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) test.pr
+
 test-ada: 
 	$(OPENGEODE) test.pr --toAda
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview.asn

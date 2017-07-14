@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) myfunction.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) myfunction.pr system_structure.pr
+	
 test-ada: myfunction.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n myfunction.ali
 	$(GNATLINK) -o test_ada test_ada.o myfunction.ali -lgnat

@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) demodevicedsap.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) demodevicedsap.pr
+
 test-ada: 
 	$(OPENGEODE) demodevicedsap.pr --toAda
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn

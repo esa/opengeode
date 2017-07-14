@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) og.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) og.pr
+
 test-ada: 
 	@echo 'Nothing to test - test-parse must retun errors'
 

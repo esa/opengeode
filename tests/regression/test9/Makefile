@@ -8,6 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) challenge.pr system_structure.pr --check
 
+test-qgen-parse:
+	$(TESTQGEN) challenge.pr system_structure.pr
+
 test-ada: challenge.ali
 
 test-c: challenge.c
