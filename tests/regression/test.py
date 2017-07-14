@@ -15,7 +15,7 @@ work3 = ['python', 'testqgen.py']
 testsWork = {
 'all': work1, 
 'test-parse' : work1,
-'test-qgen-parse' : work3,
+'test-qgen-parse' : work1,
 'test-ada' : work1,
 'test-c' : work1,
 'test-llvm' : work1,
@@ -60,12 +60,8 @@ def make(rule, path):
     work=testsWork[rule]
     
     ''' Compose the command based on the rule'''
-    if rule=='test-qgen-parse':
-      cmd=[work[0], work[1], rule, path]
-    else:
-      cmd=[work[0], work[1], path, rule]
+    cmd=[work[0], work[1], path, rule]
     
-    print (cmd)
     proc = subprocess.Popen(
       cmd,
       stdout=subprocess.PIPE,
