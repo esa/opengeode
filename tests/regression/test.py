@@ -57,10 +57,10 @@ def summarize(results, elapsed):
         print("ERROR: %s %s" % (path, rule))
         if stdout:
             print("-- stdout " + "-" * 70)
-            print(stdout)
+            print(stdout.decode())
         if stderr:
             print("-- stderr " + "-" * 70)
-            print(stderr)
+            print(stderr.decode())
             print("-" * 80)
     print("Finished in %.3fs" % elapsed)
     print("%s tests, %s errors" % (len(results), failed))
