@@ -14,11 +14,12 @@ test-parse:
 	$(OPENGEODE) orchestrator.pr --check
 
 test-ada:
+	uname -a | grep x86_64 && EXTRAFLAG="--target=x86_64-linux" ; \
 	mkdir -p build && cp *.pr *.asn model_checker.gpr properties build && cd build && \
 	../../../../opengeode/opengeode.py orchestrator.pr --shared && \
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal && \
 	taste-properties -d -s properties orchestrator.pr && \
-	taste-asn1-iterators *.asn && gprbuild -Pmodel_checker && ./model_checker
+	taste-asn1-iterators *.asn && gprbuild -Pmodel_checker $$EXTRAFLAG && ./model_checker
 
 simu: test-ada
 	cd build && make -f Makefile.properties && \
