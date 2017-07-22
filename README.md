@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.39 (07/2017)
+    - Minor fix in testcase Makefile
+
 1.5.38 (06/2017)
     - Fix unicode issue in Ada backend
 

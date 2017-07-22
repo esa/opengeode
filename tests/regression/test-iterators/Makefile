@@ -1,5 +1,5 @@
 include ../shared.mk
-
+ARCH := $(shell getconf LONG_BIT)
 all: test-ada test-llvm
 
 clean:
@@ -14,7 +14,7 @@ test-parse:
 	$(OPENGEODE) orchestrator.pr --check
 
 test-ada:
-	uname -a | grep x86_64 && EXTRAFLAG="--target=x86_64-linux" ; \
+	[ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ; \
 	mkdir -p build && cp *.pr *.asn model_checker.gpr properties build && cd build && \
 	../../../../opengeode/opengeode.py orchestrator.pr --shared && \
 	$(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal && \
