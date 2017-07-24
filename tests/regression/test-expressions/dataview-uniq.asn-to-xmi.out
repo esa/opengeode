@@ -1,0 +1,8 @@
+[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
+[INFO] Starting to parse model test-expressions/dataview-uniq.asn
+[WARNING] ASN.1 Octet array will be currently imported as a custom TString. May not work as expected.  Input: 'OCTETSTRING' at pos 7:15
+[WARNING] Constraint for string type currently ignored.  Input: 'OCTETSTRING(SIZE(0..100))' at pos 7:15
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..100))OFInteger' at pos 10:13
+[INFO] Parsing completed
+[INFO] Starting to post-process
+[INFO] Output written to test-expressions/dataview-uniq.xmi

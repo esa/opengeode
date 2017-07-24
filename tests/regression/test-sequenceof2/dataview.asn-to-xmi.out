@@ -1,0 +1,6 @@
+[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
+[INFO] Starting to parse model test-sequenceof2/dataview.asn
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(3..10))OFBOOLEAN' at pos 4:12
+[INFO] Parsing completed
+[INFO] Starting to post-process
+[INFO] Output written to test-sequenceof2/dataview.xmi

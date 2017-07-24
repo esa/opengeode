@@ -1,0 +1,88 @@
+[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
+[INFO] Starting to parse model test-nocif2/dv.asn
+[ERROR] visitType: Unable to process: NULL
+[ERROR] Unsupported construct:  Input: 'X::=NULL' at pos 16:0
+[ERROR] visitType: Unable to process: ENUMERATED{reset(0),do-a-little-bit-of-stuff(1),do-lots-of-stuff(4),do-tonnes-of-stuff-badly(6),reveal-a-bug-and-malfunction(9)}
+[ERROR] Unsupported construct:  Input: 'DemoModeType::=ENUMERATED{reset(0),do-a-little-bit-of-stuff(1),do-lots-of-stuff(4),do-tonnes-of-stuff-badly(6),reveal-a-bug-and-malfunction(9)}' at pos 74:0
+[ERROR] visitType: Unable to process: ENUMERATED{event1(0),event2(1),event3(2)}
+[ERROR] Unsupported construct:  Input: 'DemoEventTypeType::=ENUMERATED{event1(0),event2(1),event3(2)}' at pos 83:0
+[ERROR] visitType: Unable to process: ENUMERATED{read-status(1),read-mode(2)}
+[ERROR] Unsupported construct:  Input: 'DemoReadStatusModeCommandType::=ENUMERATED{read-status(1),read-mode(2)}' at pos 90:0
+[ERROR] visitType: Unable to process: ENUMERATED{mode(0),status(1)}
+[ERROR] Unsupported construct:  Input: 'DemoExtendedStatusModeEnumType::=ENUMERATED{mode(0),status(1)}' at pos 96:0
+[ERROR] visitType: Unable to process: ENUMERATED{mode(0),user-data(1)}
+[ERROR] Unsupported construct:  Input: 'DemoTelecommandTypeEnumType::=ENUMERATED{mode(0),user-data(1)}' at pos 102:0
+[ERROR] visitType: Unable to process: ENUMERATED{ack(0),type1(1),type2(2),event(3)}
+[ERROR] Unsupported construct:  Input: 'DemoTelemetryTypeEnumType::=ENUMERATED{ack(0),type1(1),type2(2),event(3)}' at pos 108:0
+[ERROR] visitType: Unable to process: CHOICE{fldExtendedModeUnionTypeDemoExtendedModeUnionType,fldExtendedStatusUnionTypeDemoExtendedStatusUnionType}
+[ERROR] Unsupported construct:  Input: 'DemoExtendedstatusormodetype-BODY-CHOICE::=CHOICE{fldExtendedModeUnionTypeDemoExtendedModeUnionType,fldExtendedStatusUnionTypeDemoExtendedStatusUnionType}' at pos 168:0
+[ERROR] visitType: Unable to process: CHOICE{fldTelecommandModeTypeDemoTelecommandModeType,fldTelecommandUserDataTypeDemoTelecommandUserDataType}
+[ERROR] Unsupported construct:  Input: 'DemoTelecommandtype-BODY-CHOICE::=CHOICE{fldTelecommandModeTypeDemoTelecommandModeType,fldTelecommandUserDataTypeDemoTelecommandUserDataType}' at pos 202:0
+[FATAL] Failed to parse model
+      java.lang.NullPointerException: null
+
+java.lang.NullPointerException
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitSequenceOfType(ASN1ToGAVisitor.java:737)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitSequenceOfType(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$SequenceOfTypeContext.accept(ASN1Parser.java:3671)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visitChildren(AbstractParseTreeVisitor.java:46)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitType(ASN1ToGAVisitor.java:311)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitType(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$TypeContext.accept(ASN1Parser.java:1406)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitComponentType(ASN1ToGAVisitor.java:674)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitComponentType(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$ComponentTypeContext.accept(ASN1Parser.java:3570)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visitChildren(AbstractParseTreeVisitor.java:46)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitComponentTypeList(ASN1ToGAVisitor.java:662)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitComponentTypeList(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$ComponentTypeListContext.accept(ASN1Parser.java:3492)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visitChildren(AbstractParseTreeVisitor.java:46)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitSequenceOrSetBody(ASN1ToGAVisitor.java:627)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitSequenceOrSetBody(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$SequenceOrSetBodyContext.accept(ASN1Parser.java:3109)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visitChildren(AbstractParseTreeVisitor.java:46)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitSequenceType(ASN1ToGAVisitor.java:550)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitSequenceType(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$SequenceTypeContext.accept(ASN1Parser.java:2983)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visitChildren(AbstractParseTreeVisitor.java:46)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitType(ASN1ToGAVisitor.java:311)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitType(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$TypeContext.accept(ASN1Parser.java:1406)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitTypeAssigment(ASN1ToGAVisitor.java:204)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitTypeAssigment(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$TypeAssigmentContext.accept(ASN1Parser.java:1011)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinition(ASN1ToGAVisitor.java:141)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinition(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$ModuleDefinitionContext.accept(ASN1Parser.java:459)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinitions(ASN1ToGAVisitor.java:90)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinitions(ASN1ToGAVisitor.java:1)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$ModuleDefinitionsContext.accept(ASN1Parser.java:226)
+	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
+	at ee.ibk.sdl.parser.ParseHandler.doParseASN1(ParseHandler.java:111)
+	at ee.ibk.sdl.parser.ParseHandler.parseFile(ParseHandler.java:137)
+	at ee.ibk.sdl.parser.Main.processFile(Main.java:478)
+	at ee.ibk.sdl.parser.Main.processInputFiles(Main.java:451)
+	at ee.ibk.sdl.parser.Main.doMain(Main.java:185)
+	at ee.ibk.sdl.parser.Main.main(Main.java:122)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader.main(JarRsrcLoader.java:58)
+java.lang.RuntimeException: Fatal error occurred. The tool will stop now.
+	at ee.ibk.sdl.parser.utils.EventHandler.handle(EventHandler.java:133)
+	at ee.ibk.sdl.parser.utils.EventHandler.fatal(EventHandler.java:157)
+	at ee.ibk.sdl.parser.Main.processFile(Main.java:482)
+	at ee.ibk.sdl.parser.Main.processInputFiles(Main.java:451)
+	at ee.ibk.sdl.parser.Main.doMain(Main.java:185)
+	at ee.ibk.sdl.parser.Main.main(Main.java:122)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader.main(JarRsrcLoader.java:58)

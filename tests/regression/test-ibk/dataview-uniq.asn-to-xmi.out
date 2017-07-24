@@ -1,0 +1,20 @@
+[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
+[INFO] Starting to parse model test-ibk/dataview-uniq.asn
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..255))OFMyFrame' at pos 29:13
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(40..2000))OFBOOLEAN' at pos 32:16
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(224..2192))OFBOOLEAN' at pos 35:15
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..250))OFMy8BitArray' at pos 107:20
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..255))OFMyL3Data' at pos 119:14
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..255))OFBOOLEAN' at pos 122:21
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..255))OFMy8BitArray' at pos 128:21
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..1960))OFBOOLEAN' at pos 131:18
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(80..2040))OFBOOLEAN' at pos 134:17
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..245))OFMy8BitArray' at pos 182:13
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..1952))OFBOOLEAN' at pos 188:21
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(88..2040))OFBOOLEAN' at pos 191:20
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..244))OFINTEGER(0..255)' at pos 194:24
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..244))OFMy8BitArray' at pos 222:12
+[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..62475))OFMy8BitArray' at pos 237:14
+[INFO] Parsing completed
+[INFO] Starting to post-process
+[INFO] Output written to test-ibk/dataview-uniq.xmi
