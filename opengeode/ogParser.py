@@ -1651,7 +1651,7 @@ def primary_index(root, context):
         if not is_integer(idx_bty):
             errors.append(error(root, 'Index is not an integer'))
         else:
-            if float(idx_bty.Max) >= float(r_max):
+            if float(idx_bty.Max) > float(r_max):
                 errors.append(error(root,
                                     'Index range [{id1} .. {id2}] '
                                     'outside of range [{r1} .. {r2}]'
