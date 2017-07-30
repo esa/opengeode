@@ -1656,8 +1656,8 @@ def primary_index(root, context):
                                     'Index range [{id1} .. {id2}] '
                                     'outside of range [{r1} .. {r2}]'
                                     .format(id1=idx_bty.Min, id2=idx_bty.Max,
-                                        r1=int(r_min) - 1,
-                                        r2=int(r_max) - 1)))
+                                        r1=int(r_min) + 1,
+                                        r2=int(r_max) + 1)))
             elif float(idx_bty.Min) > float(r_min):
                 warnings.append(warning(root,
                                         'Index higher than range min value'))
