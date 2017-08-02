@@ -1,7 +1,5 @@
-[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
-[INFO] Starting to parse model test-sequenceof/dataview.asn
-[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..5))OFBOOLEAN' at pos 4:12
-[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..2))OFMySeqOf' at pos 6:13
+[INFO] Starting to parse model ./test-sequenceof/dataview.asn
 [INFO] Parsing completed
+[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
 [INFO] Starting to post-process
-[INFO] Output written to test-sequenceof/dataview.xmi
+[INFO] Model XMI written to ./test-sequenceof/TASTE-Dataview_generated/TASTE-Dataview.xmi

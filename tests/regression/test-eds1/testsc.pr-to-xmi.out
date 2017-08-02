@@ -1,4 +1,17 @@
-[INFO] Starting to parse model test-eds1/testsc.pr
+[INFO] Starting to parse model ./test-eds1/testsc.pr
 [INFO] Parsing completed
-[INFO] Starting to post-process
-[INFO] Output written to test-eds1/testsc.xmi
+[ERROR] Unable to resolve the state 'null'
+  	referenced from a transition in the process: testsc
+  	 NextStateNode [isDash=true, nextStateName=null, via=null]
+  	 Input: 'NEXTSTATE -' at pos 34:20
+  	 File: ./test-eds1/testsc.pr
+java.lang.RuntimeException: Errors have occured during the tool's execution. The tool will be stopped.
+	at ee.ibk.sdl.parser.utils.EventHandler.stopOnErrors(EventHandler.java:258)
+	at ee.ibk.sdl.parser.Main.processInputFiles(Main.java:503)
+	at ee.ibk.sdl.parser.Main.doMain(Main.java:190)
+	at ee.ibk.sdl.parser.Main.main(Main.java:132)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader.main(JarRsrcLoader.java:58)

@@ -1,5 +1,5 @@
-[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
-[INFO] Starting to parse model test-optionalfield/dataview.asn
+[INFO] Starting to parse model ./test-optionalfield/dataview.asn
 [INFO] Parsing completed
+[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
 [INFO] Starting to post-process
-[INFO] Output written to test-optionalfield/dataview.xmi
+[INFO] Model XMI written to ./test-optionalfield/TASTE-Dataview_generated/TASTE-Dataview.xmi

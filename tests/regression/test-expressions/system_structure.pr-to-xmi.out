@@ -1,4 +1,8 @@
-[INFO] Starting to parse model test-expressions/system_structure.pr
+[INFO] Starting to parse model ./test-expressions/system_structure.pr
+[INFO] Parsing completed
+[INFO] Starting to parse model ./test-expressions/dataview-uniq.asn
+[INFO] Parsing completed
+[INFO] Starting to parse model ./test-expressions/expressions.pr
 [INFO] Parsing completed
 [INFO] Starting to post-process
-[INFO] Output written to test-expressions/system_structure.xmi
+[INFO] Model XMI written to ./test-expressions/expressions_generated/expressions.xmi

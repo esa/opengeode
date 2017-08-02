@@ -1,46 +1,53 @@
-[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
-[INFO] Starting to parse model test-choice/dataview.asn
-[ERROR] (visitSequenceType) Unsupported construct:  Input: 'SEQUENCE{}' at pos 4:13
+[INFO] Starting to parse model ./test-choice/dataview.asn
+[ERROR] (visitSequenceType) Unsupported construct:  Input: 'SEQUENCE {}' at pos 4:13
+  	 File: ./test-choice/dataview.asn
   	Empty sequences are not yet supported.
-[WARNING] Variable-size sequence currently imported as fixed-size:  Input: 'SEQUENCE(SIZE(0..10))OFBOOLEAN' at pos 5:10
-[ERROR] (visitSequenceType) Unsupported construct:  Input: 'SEQUENCE{}' at pos 7:20
+[ERROR] (visitSequenceType) Unsupported construct:  Input: 'SEQUENCE {}' at pos 7:20
+  	 File: ./test-choice/dataview.asn
   	Empty sequences are not yet supported.
 [ERROR] visitType: Unable to process: NULL
-[ERROR] Unsupported construct:  Input: 'NullType::=NULL' at pos 9:0
+[ERROR] (visitTypeAssigment) Unsupported construct:  Input: 'NullType ::= N' at pos 9:0
+  	 File: ./test-choice/dataview.asn
 [ERROR] visitType: Unable to process: NULL
 [ERROR] visitType: Unable to process: CHOICE{aNULL,bEmptySeq,cNullType,dSEQUENCE{aBOOLEAN}}
-[ERROR] Unsupported construct:  Input: 'ChoiceWithEmptySeq::=CHOICE{aNULL,bEmptySeq,cNullType,dSEQUENCE{aBOOLEAN}}' at pos 11:0
+[ERROR] (visitTypeAssigment) Unsupported construct:  Input: 'ChoiceWithEmptySeq ::= CHOICE {
+    a NULL,
+    b EmptySeq,
+    c NullType,
+    d SEQUENCE { a BOOLEAN }
+  }' at pos 11:0
+  	 File: ./test-choice/dataview.asn
 [ERROR] Bad long integer value: {}
 [FATAL] Failed to parse model
       java.lang.ClassCastException: ee.ibk.sdl.parser.asn1.nodes.AggregateNode cannot be cast to ee.ibk.sdl.parser.asn1.nodes.ValueAssignmentNode
 
 java.lang.ClassCastException: ee.ibk.sdl.parser.asn1.nodes.AggregateNode cannot be cast to ee.ibk.sdl.parser.asn1.nodes.ValueAssignmentNode
-	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinition(ASN1ToGAVisitor.java:160)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinition(ASN1ToGAVisitor.java:162)
 	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinition(ASN1ToGAVisitor.java:1)
-	at ee.ibk.sdl.parser.asn1.ASN1Parser$ModuleDefinitionContext.accept(ASN1Parser.java:459)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$ModuleDefinitionContext.accept(ASN1Parser.java:427)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinitions(ASN1ToGAVisitor.java:90)
+	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinitions(ASN1ToGAVisitor.java:92)
 	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitModuleDefinitions(ASN1ToGAVisitor.java:1)
-	at ee.ibk.sdl.parser.asn1.ASN1Parser$ModuleDefinitionsContext.accept(ASN1Parser.java:226)
+	at ee.ibk.sdl.parser.asn1.ASN1Parser$ModuleDefinitionsContext.accept(ASN1Parser.java:218)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.ParseHandler.doParseASN1(ParseHandler.java:111)
-	at ee.ibk.sdl.parser.ParseHandler.parseFile(ParseHandler.java:137)
-	at ee.ibk.sdl.parser.Main.processFile(Main.java:478)
-	at ee.ibk.sdl.parser.Main.processInputFiles(Main.java:451)
-	at ee.ibk.sdl.parser.Main.doMain(Main.java:185)
-	at ee.ibk.sdl.parser.Main.main(Main.java:122)
+	at ee.ibk.sdl.parser.ParseHandler.doParseASN1(ParseHandler.java:107)
+	at ee.ibk.sdl.parser.ParseHandler.parseFile(ParseHandler.java:141)
+	at ee.ibk.sdl.parser.Main.processFile(Main.java:588)
+	at ee.ibk.sdl.parser.Main.processInputFiles(Main.java:478)
+	at ee.ibk.sdl.parser.Main.doMain(Main.java:190)
+	at ee.ibk.sdl.parser.Main.main(Main.java:132)
 	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
 	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
 	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
 	at java.lang.reflect.Method.invoke(Method.java:498)
 	at org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader.main(JarRsrcLoader.java:58)
 java.lang.RuntimeException: Fatal error occurred. The tool will stop now.
-	at ee.ibk.sdl.parser.utils.EventHandler.handle(EventHandler.java:133)
-	at ee.ibk.sdl.parser.utils.EventHandler.fatal(EventHandler.java:157)
-	at ee.ibk.sdl.parser.Main.processFile(Main.java:482)
-	at ee.ibk.sdl.parser.Main.processInputFiles(Main.java:451)
-	at ee.ibk.sdl.parser.Main.doMain(Main.java:185)
-	at ee.ibk.sdl.parser.Main.main(Main.java:122)
+	at ee.ibk.sdl.parser.utils.EventHandler.handle(EventHandler.java:141)
+	at ee.ibk.sdl.parser.utils.EventHandler.fatal(EventHandler.java:171)
+	at ee.ibk.sdl.parser.Main.processFile(Main.java:593)
+	at ee.ibk.sdl.parser.Main.processInputFiles(Main.java:478)
+	at ee.ibk.sdl.parser.Main.doMain(Main.java:190)
+	at ee.ibk.sdl.parser.Main.main(Main.java:132)
 	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
 	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
 	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
