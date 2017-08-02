@@ -25,15 +25,15 @@
       java.lang.ClassCastException: ee.ibk.sdl.parser.sdl.nodes.AggregateNode cannot be cast to ee.ibk.sdl.parser.sdl.nodes.ActionNode
 
 java.lang.ClassCastException: ee.ibk.sdl.parser.sdl.nodes.AggregateNode cannot be cast to ee.ibk.sdl.parser.sdl.nodes.ActionNode
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitTransition(SDLToGAVisitor.java:1166)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitTransition(SDLToGAVisitor.java:1172)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitTransition(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$TransitionContext.accept(SDLParser.java:5533)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitStart(SDLToGAVisitor.java:865)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitStart(SDLToGAVisitor.java:871)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitStart(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$StartContext.accept(SDLParser.java:3192)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:845)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:851)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$ProcessBodyContext.accept(SDLParser.java:3105)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)

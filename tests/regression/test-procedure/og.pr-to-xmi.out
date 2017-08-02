@@ -1,8 +1,8 @@
 [INFO] Starting to parse model ./test-procedure/og.pr
-[ERROR] (visitSystem_definition) Unsupported child node:  AggregateNode (3 nodes) [nodes=[SignalNode [name=dd, param=ParamRecord [paramName=null, typeName=Type2]], SignalNode [name=we, param=ParamRecord [paramName=null, typeName=Some_Thing]], ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@2c7b5824]]
+[ERROR] (visitSystem_definition) Unsupported child node:  AggregateNode (3 nodes) [nodes=[SignalNode [name=dd, param=ParamRecord [paramName=null, typeName=Type2]], SignalNode [name=we, param=ParamRecord [paramName=null, typeName=Some_Thing]], ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@61c9c3fd]]
   	 Input: 'signal dd(Type2);' at pos 9:0
   	 File: ./test-procedure/og.pr
-[ERROR] (visitProcess_definition. feature=text_area) Unsupported child node:  ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@4e2c95ee
+[ERROR] (visitProcess_definition. feature=text_area) Unsupported child node:  ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@7180e701
   	 Input: 'procedure hehe;
   fpar in toto SeqOf;
   endprocedure;' at pos 36:0
@@ -11,23 +11,23 @@
       java.lang.ClassCastException: ee.ibk.sdl.parser.sdl.nodes.AggregateNode cannot be cast to ee.ibk.sdl.parser.sdl.nodes.ActionNode
 
 java.lang.ClassCastException: ee.ibk.sdl.parser.sdl.nodes.AggregateNode cannot be cast to ee.ibk.sdl.parser.sdl.nodes.ActionNode
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitTransition(SDLToGAVisitor.java:1166)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitTransition(SDLToGAVisitor.java:1172)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitTransition(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$TransitionContext.accept(SDLParser.java:5533)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitInput_part(SDLToGAVisitor.java:1116)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitInput_part(SDLToGAVisitor.java:1122)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitInput_part(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$Input_partContext.accept(SDLParser.java:5257)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visitChildren(AbstractParseTreeVisitor.java:46)
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState_part(SDLToGAVisitor.java:1026)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState_part(SDLToGAVisitor.java:1032)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState_part(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$State_partContext.accept(SDLParser.java:4547)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:916)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:922)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$StateContext.accept(SDLParser.java:3397)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:849)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:855)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$ProcessBodyContext.accept(SDLParser.java:3105)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)

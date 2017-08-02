@@ -1,4 +1,6 @@
 [INFO] Starting to parse model ./test-aggregation3/challenge.pr
+[WARNING] The composite state definitions are currently ignored.  Input at pos 3:4
+  	 File: ./test-aggregation3/challenge.pr
 [INFO] Parsing completed
 [ERROR] Unable to find the interface definitions for the following processes: [challenge]
   If these interfaces are specified in separate files, please make sure to pass them also to the tool.

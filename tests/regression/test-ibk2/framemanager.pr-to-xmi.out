@@ -1,4 +1,6 @@
 [INFO] Starting to parse model ./test-ibk2/framemanager.pr
+[WARNING] The composite state definitions are currently ignored.  Input at pos 3:4
+  	 File: ./test-ibk2/framemanager.pr
 [INFO] Parsing completed
 [ERROR] Unable to find the interface definitions for the following processes: [framemanager]
   If these interfaces are specified in separate files, please make sure to pass them also to the tool.

@@ -1,5 +1,5 @@
 [INFO] Starting to parse model ./test-forloop/og.pr
-[ERROR] (visitSystem_definition) Unsupported child node:  AggregateNode (3 nodes) [nodes=[SignalNode [name=dd, param=ParamRecord [paramName=null, typeName=myinteger]], SignalNode [name=we, param=ParamRecord [paramName=null, typeName=myinteger]], ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@51fadaff]]
+[ERROR] (visitSystem_definition) Unsupported child node:  AggregateNode (3 nodes) [nodes=[SignalNode [name=dd, param=ParamRecord [paramName=null, typeName=myinteger]], SignalNode [name=we, param=ParamRecord [paramName=null, typeName=myinteger]], ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@1fa1cab1]]
   	 Input: 'signal dd(myinteger);' at pos 9:0
   	 File: ./test-forloop/og.pr
 [ERROR] Unable to find matching signal definition for event: dd

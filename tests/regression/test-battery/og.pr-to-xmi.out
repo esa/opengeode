@@ -1,16 +1,16 @@
 [INFO] Starting to parse model ./test-battery/og.pr
-[ERROR] (visitSystem_definition) Unsupported child node:  AggregateNode (3 nodes) [nodes=[SignalNode [name=dd, param=ParamRecord [paramName=null, typeName=MyInteger]], SignalNode [name=we, param=ParamRecord [paramName=null, typeName=Some_Thing]], ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@77d67cf3]]
+[ERROR] (visitSystem_definition) Unsupported child node:  AggregateNode (3 nodes) [nodes=[SignalNode [name=dd, param=ParamRecord [paramName=null, typeName=MyInteger]], SignalNode [name=we, param=ParamRecord [paramName=null, typeName=Some_Thing]], ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@6d1ef78d]]
   	 Input: 'signal dd(MyInteger);' at pos 9:0
   	 File: ./test-battery/og.pr
 [FATAL] Failed to parse model
       java.lang.ClassCastException: ee.ibk.sdl.parser.sdl.nodes.TransitionNode cannot be cast to ee.ibk.sdl.parser.sdl.nodes.StatePartNode
 
 java.lang.ClassCastException: ee.ibk.sdl.parser.sdl.nodes.TransitionNode cannot be cast to ee.ibk.sdl.parser.sdl.nodes.StatePartNode
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:916)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:922)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$StateContext.accept(SDLParser.java:3397)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:849)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:855)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$ProcessBodyContext.accept(SDLParser.java:3105)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)

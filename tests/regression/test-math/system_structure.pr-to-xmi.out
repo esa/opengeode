@@ -8,7 +8,7 @@
   returns real
   external;' at pos 11:0
   	 File: ./test-math/expressions.pr
-[ERROR] (visitProcess_definition. feature=text_area) Unsupported child node:  ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@7bc9e6ab
+[ERROR] (visitProcess_definition. feature=text_area) Unsupported child node:  ee.ibk.sdl.parser.sdl.nodes.ProcedureNode@54acff7d
   	 Input: 'procedure log;
   fpar in par real;
   returns real

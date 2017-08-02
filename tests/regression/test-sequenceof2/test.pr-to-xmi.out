@@ -1,22 +1,22 @@
 [INFO] Starting to parse model ./test-sequenceof2/test.pr
 [INFO] Parsing completed
 [INFO] Starting to post-process
-[ERROR] Unable to resolve custom type reference: MySeqOf
-  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/OutDataPortImpl::{name=seqof1_Out1}
-[ERROR] Unable to resolve custom type reference: MySeqof
-  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/VariableImpl::{name=s1}
-[ERROR] Unable to resolve custom type reference: MySeqOf
-  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/InterfaceBlockImpl::{name=seqof1_Out1}/InDataPortImpl::{name=in1}
 [ERROR] Unable to resolve custom type reference: MySeqof
   	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/VariableImpl::{name=s2}
-[ERROR] Unable to resolve custom type reference: MySeqOf
-  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/InterfaceBlockImpl::{name=seqof1_Out1}/InDataPortImpl::{name=in1}
+[ERROR] Unable to resolve custom type reference: MySeqof
+  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/VariableImpl::{name=s1}
 [ERROR] Unable to resolve custom type reference: MyBoolean
   	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/VariableImpl::{name=boo}
 [ERROR] Unable to resolve custom type reference: MySeqOf
+  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/OutDataPortImpl::{name=seqof1_Out1}
+[ERROR] Unable to resolve custom type reference: MySeqOf
   	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/FunctionImpl::{name=seqof1}/FunctionArgumentImpl::{name=Out1}
 [ERROR] Unable to resolve custom type reference: MySeqOf
-  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/OutDataPortImpl::{name=seqof1_Out1}
+  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/ChartBlockImpl::{name=test}/InterfaceBlockImpl::{name=seqof1_Out1}/InDataPortImpl::{name=in1}
+[ERROR] Unable to resolve custom type reference: MySeqOf
+  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/InterfaceBlockImpl::{name=seqof1_Out1}/InDataPortImpl::{name=in1}
+[ERROR] Unable to resolve custom type reference: MySeqOf
+  	Element: GASystemModelImpl::/SystemBlockImpl::{name=test_sys}/OutDataPortImpl::{name=seqof1_Out1}
 java.lang.RuntimeException: Errors have occured during the tool's execution. The tool will be stopped.
 	at ee.ibk.sdl.parser.utils.EventHandler.stopOnErrors(EventHandler.java:258)
 	at ee.ibk.sdl.parser.Main.createAndStoreModel(Main.java:945)

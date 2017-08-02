@@ -74,7 +74,7 @@ Too many errors (20)
 java.lang.RuntimeException: Fatal error occurred. The tool will stop now.
 	at ee.ibk.sdl.parser.utils.EventHandler.handle(EventHandler.java:141)
 	at ee.ibk.sdl.parser.utils.EventHandler.error(EventHandler.java:198)
-	at ee.ibk.sdl.parser.utils.ParserUtils.unsupported(ParserUtils.java:114)
+	at ee.ibk.sdl.parser.utils.ParserUtils.unsupported(ParserUtils.java:137)
 	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitSequenceType(ASN1ToGAVisitor.java:586)
 	at ee.ibk.sdl.parser.asn1.ASN1ToGAVisitor.visitSequenceType(ASN1ToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.asn1.ASN1Parser$SequenceTypeContext.accept(ASN1Parser.java:2727)

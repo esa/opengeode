@@ -2,6 +2,8 @@
 [ERROR] (visitSystem_definition) Unsupported child node:  AggregateNode (2 nodes) [nodes=[SignalNode [name=telecommand, param=ParamRecord [paramName=null, typeName=tc_type]], SignalNode [name=telemetry, param=ParamRecord [paramName=null, typeName=tm_type]]]]
   	 Input: 'signal telecommand(tc_type);' at pos 5:0
   	 File: ./test-provided3/og.pr
+[WARNING] The composite state definitions are currently ignored.  Input at pos 19:12
+  	 File: ./test-provided3/og.pr
 [ERROR] Unable to find matching signal definition for event: telecommand
 [ERROR] Unable to find matching signal definition for event: telemetry
 [INFO] Parsing completed

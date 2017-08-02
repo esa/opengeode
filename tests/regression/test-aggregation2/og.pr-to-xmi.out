@@ -6,11 +6,11 @@
       java.lang.ClassCastException: ee.ibk.sdl.parser.sdl.nodes.TransitionNode cannot be cast to ee.ibk.sdl.parser.sdl.nodes.StatePartNode
 
 java.lang.ClassCastException: ee.ibk.sdl.parser.sdl.nodes.TransitionNode cannot be cast to ee.ibk.sdl.parser.sdl.nodes.StatePartNode
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:916)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:922)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitState(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$StateContext.accept(SDLParser.java:3397)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
-	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:849)
+	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:855)
 	at ee.ibk.sdl.parser.sdl.SDLToGAVisitor.visitProcessBody(SDLToGAVisitor.java:1)
 	at ee.ibk.sdl.parser.sdl.SDLParser$ProcessBodyContext.accept(SDLParser.java:3105)
 	at org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visit(AbstractParseTreeVisitor.java:18)
