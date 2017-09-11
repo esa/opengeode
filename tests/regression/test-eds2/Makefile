@@ -10,13 +10,13 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) demodevicedsap.pr --toAda
-	$(ASN1SCC) -Ada *.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -Ada *.asn -typePrefix asn1Scc -equal
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n demodevicedsap.ali
 
 test-c: 
 	$(OPENGEODE) demodevicedsap.pr --toC
-	$(ASN1SCC) -c *.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -c *.asn -typePrefix asn1Scc -equal
 	$(CC) -O$(O) -c *.c
 
 

@@ -50,7 +50,7 @@ You need to install the following dependencies before you can run Opengeode:
     $ sudo apt-get install mono-runtime libmono-system-runtime4.0-cil libmono-i18n-west2.0-cil libmono-posix2.0-cil libmono-security2.0-cil
   libmono-system-runtime-serialization4.0-cil
     Check that it works:
-    $ asn1Comp/bin/asn1.exe
+    $ mono asn1Comp/bin/asn1.exe
 
     Then add to your PATH the bin directory in e.g. your .bashrc file
     $ echo 'export PATH=$PATH:/opt/asn1Comp/bin' >> ~/.bashrc

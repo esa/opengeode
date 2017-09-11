@@ -10,18 +10,18 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada dataview.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -Ada dataview.asn -typePrefix asn1Scc -equal
 	cp test_ada.ada test_ada.adb && gnat make test_ada.adb && ./test_ada
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c dataview.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -c dataview.asn -typePrefix asn1Scc -equal
 	$(CC) -O$(O) -c *.c
 
 test-python:
 	$(OPENGEODE) og.pr --shared
-	$(ASN1SCC) -Ada dataview.asn -typePrefix asn1Scc -equal
-	$(ASN1SCC) -c dataview.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -Ada dataview.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -c dataview.asn -typePrefix asn1Scc -equal
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Llibog og
 	$(GNATMAKE) -c -fPIC -gnat2012 b~og.adb

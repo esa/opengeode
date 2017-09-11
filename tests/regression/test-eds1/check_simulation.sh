@@ -5,8 +5,8 @@ cp testsc.pr dataview.asn testsc_simu
 cd testsc_simu
 opengeode testsc.pr --shared
 cat dataview.asn >> dataview-uniq.asn 
-asn1.exe -Ada -typePrefix asn1Scc -equal dataview.asn
-asn1.exe -c -typePrefix asn1Scc -equal dataview.asn
+mono $(which asn1.exe) -Ada -typePrefix asn1Scc -equal dataview.asn
+mono $(which asn1.exe) -c -typePrefix asn1Scc -equal dataview.asn
 gnatmake -gnat2012 -fPIC -c *.adb
 gnatbind -n -Llibtestsc testsc
 gnatmake -c -fPIC -gnat2012 b~testsc.adb
