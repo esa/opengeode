@@ -246,8 +246,9 @@ cat {uniq} >> dataview-uniq.asn '''.format(pr=process_name.lower(),
 
     if asn1_filenames:
         simu_script += '''
-asn1.exe -Ada -typePrefix asn1Scc -equal {asn1}
-asn1.exe -c -typePrefix asn1Scc -equal {asn1}'''.format(asn1=asn1_filenames)
+mono $(which asn1.exe) -Ada -typePrefix asn1Scc -equal {asn1}
+mono $(which asn1.exe) -c -typePrefix asn1Scc -equal {asn1}'''.format(
+                                                           asn1=asn1_filenames)
 
     simu_script += '''
 gnatmake -fPIC -gnat2012 -c *.adb
