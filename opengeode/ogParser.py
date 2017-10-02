@@ -4502,7 +4502,7 @@ def pr_file(root):
         if each.instance_of_name is not None:
             # Find corresponding process type definition
             for p_type in process_types:
-                if p_type.processName == each.instance_of_name:
+                if p_type.processName.lower() == each.instance_of_name.lower():
                     each.instance_of_ref = p_type
                     to_be_deleted.append(p_type)
                     break

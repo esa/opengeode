@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.41 (10/2017)
+    - Fix case issue with process types
+
 1.5.40 (07/2017)
     - Fix range check in arrays
 
