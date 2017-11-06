@@ -1,5 +1,7 @@
 include ../shared.mk
 
+ROOT_MODEL=system_structure.pr
+
 all: test-ada test-llvm
 
 edit:
@@ -9,7 +11,13 @@ test-parse:
 	$(OPENGEODE) challenge.pr system_structure.pr --check
 
 test-qgen-parse:
-	$(TESTQGEN) challenge.pr system_structure.pr
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
 
 test-ada: challenge.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n challenge.ali

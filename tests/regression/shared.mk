@@ -6,7 +6,9 @@ GNATMAKE=gnatmake -gnat2012
 GNATBIND=gnatbind
 GNATLINK=gnatlink -lgcov -coverage 
 O=0
-TESTQGEN=../testqgen.py
+TESTQGEN_PARSE=../testqgen.py test-qgen-parse
+TESTQGEN_ADA=../testqgen.py test-qgen-ada
+TESTQGEN_C=../testqgen.py test-qgen-c
 
 clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \

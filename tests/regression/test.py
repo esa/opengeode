@@ -16,6 +16,8 @@ testsWork = {
 'all': work1, 
 'test-parse' : work1,
 'test-qgen-parse' : work1,
+'test-qgen-ada' : work1,
+'test-qgen-c' : work1,
 'test-ada' : work1,
 'test-c' : work1,
 'test-llvm' : work1,

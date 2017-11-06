@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -14,15 +14,17 @@ import unittest
 import difflib
 import re
 import string
+import time
+import test
 
-__version__ = '1.0.0'
 LOG = logging.getLogger(__name__)
 
 def parse_args():
     ''' Parse command line arguments '''
-    parser = argparse.ArgumentParser(version=__version__)
-    parser.add_argument('files', metavar='file.pr', type=str, nargs='*',
-            help='SDL file(s)') 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('rule', metavar='Rule', type=str)
+    parser.add_argument('root_model', metavar='file.pr', type=str,
+            help='SDL root model') 
     parser.add_argument('-u', '--update', action='store_true')
     
     return parser.parse_args()             
@@ -33,19 +35,6 @@ def init_logging(options):
     handler_console = logging.StreamHandler()
     handler_console.setFormatter(terminal_formatter)
     LOG.addHandler(handler_console)
-
-def getSizeFiles(list,size):
-    err = 0
-    files = [os.path.abspath(file) for file in list]
-    for file in files:
-        s = os.path.getsize(file)
-        if s > size:
-            err = 1
-            LOG.error(file+ " too large - size " + str(s))
-        else:
-            LOG.warning(file+ " size " + str(s))
-
-    return err
     
 def diff(expected, actual, msg=None, count=1, case_sensitive=True,
          update=None, silent=False, directory=''):
@@ -123,26 +112,50 @@ def colored_unified_diff(a, b, fromfile='', tofile='',
         yield line
 
 def main():         
-    options = parse_args()
-    init_logging(options)
-    
+    start = time.time()
+    results = []
+    op = parse_args()
+    init_logging(op)
+
+    result = run_test(op)
+    print("%40s: %s" % (result[3], test.colorMe(result[0],
+          '[OK]' if result[0]==0 else '[FAILED]')))
+    results.append(result)
+    sys.stdout.write('\n')
+
+    elapsed = time.time() - start
+    return test.summarize(results, elapsed)
+
+def run_test(op):
+    ''' Call a SDL parser with the required arguments '''
+        
     jar_dir = os.environ.get('JAR_DIR')
     jar_name = os.environ.get('JAR_NAME')
     jar_path = os.path.join (jar_dir,jar_name)
+    
+    if op.rule == 'test-qgen-parse':
+        lang = 'xmi'
+    elif op.rule == 'test-qgen-ada':
+        lang = 'ada'
+    elif op.rule == 'test-qgen-c':
+        lang = 'c'
+    else:
+        # the importer crashes if any other value us used here,
+        # for now keep xmi as default value
+        lang = 'xmi'
+    
+    #expected = file + '.out'
+    cmd = ['java', '-jar', jar_path, op.root_model,
+           '--language', lang]
+    proc = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    errcode = proc.wait()
+    #diff(expected=expected, actual=proc.stdout
 
-    for file in options.files:
-        #expected = file + '.out'
-        cmd = ['java', '-jar', jar_path, os.path.abspath(file)]
-        print (cmd)
-        proc = subprocess.Popen(cmd,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        errcode = proc.wait()
-        #diff(expected=expected, actual=proc.stdout)
-
-    return (errcode, stdout, stderr)
-
+    return (errcode, stdout, stderr, op.root_model, op.rule)
+    
 if __name__ == '__main__':
     ret = main()
     sys.exit(ret)
