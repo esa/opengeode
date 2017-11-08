@@ -2,6 +2,8 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
+ROOT_MODEL=system_structure.pr
+
 all: test-ada test-llvm
 
 edit:

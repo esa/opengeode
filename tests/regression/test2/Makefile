@@ -1,5 +1,7 @@
 include ../shared.mk
 
+ROOT_MODEL=system_structure.pr
+
 edit:
 	$(OPENGEODE) orchestrator.pr system_structure.pr
 

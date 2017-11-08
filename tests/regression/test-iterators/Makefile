@@ -1,4 +1,6 @@
 include ../shared.mk
+
+ROOT_MODEL=system_structure.pr
 ARCH := $(shell getconf LONG_BIT)
 all: test-ada test-llvm
 

@@ -1,5 +1,7 @@
 include ../shared.mk
 
+ROOT_MODEL=system_structure.pr
+
 all: test-ada
 
 edit:
