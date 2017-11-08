@@ -1,6 +1,6 @@
 include ../shared.mk
 
-ROOT_MODEL=system_structure.pr
+ROOT_MODEL=og.pr
 
 all: test-ada test-llvm
 
@@ -11,7 +11,13 @@ test-parse:
 	$(OPENGEODE) og.pr --check
 
 test-qgen-parse:
-	$(TESTQGEN) og.pr
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
 
 test-ada: dataview-uniq.o | test_ada.o
 	$(OPENGEODE) og.pr --toAda

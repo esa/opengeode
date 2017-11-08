@@ -1,6 +1,6 @@
 include ../shared.mk
 
-ROOT_MODEL=system_structure.pr
+ROOT_MODEL=demodevicedsap.pr
 
 all: test-ada test-llvm
 
@@ -11,7 +11,13 @@ test-parse:
 	$(OPENGEODE) demodevicedsap.pr --check
 
 test-qgen-parse:
-	$(TESTQGEN) demodevicedsap.pr
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
 
 test-ada: 
 	$(OPENGEODE) demodevicedsap.pr --toAda

@@ -11,7 +11,13 @@ test-parse:
 	$(OPENGEODE) operators.pr system_structure.pr --check
 
 test-qgen-parse:
-	$(TESTQGEN) operators.pr system_structure.pr
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
 
 test-ada: operators.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n operators.ali

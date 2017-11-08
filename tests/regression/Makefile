@@ -11,6 +11,12 @@ test-parse:
 test-qgen-parse:
 	@python3 test.py test-qgen-parse $(TEST_CASES)
 
+test-qgen-ada:
+	@python3 test.py test-qgen-ada $(TEST_CASES)
+
+test-qgen-c:
+	@python3 test.py test-qgen-c $(TEST_CASES)
+
 test-ada:
 	@python3 test.py test-ada $(TEST_CASES)
 

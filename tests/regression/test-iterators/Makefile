@@ -1,6 +1,7 @@
 include ../shared.mk
 
-ROOT_MODEL=system_structure.pr
+ROOT_MODEL=orchestrator.pr
+
 ARCH := $(shell getconf LONG_BIT)
 all: test-ada test-llvm
 
@@ -16,7 +17,13 @@ test-parse:
 	$(OPENGEODE) orchestrator.pr --check
 
 test-qgen-parse:
-	$(TESTQGEN) orchestrator.pr
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
 
 test-ada:
 	[ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ; \

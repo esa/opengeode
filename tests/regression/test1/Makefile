@@ -9,7 +9,13 @@ test-parse:
 	$(OPENGEODE) og.pr system_structure.pr --check
 
 test-qgen-parse:
-	$(TESTQGEN) og.pr system_structure.pr
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
 
 test-ada: og.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n og.ali

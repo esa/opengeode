@@ -14,7 +14,13 @@ test-parse:
 	$(OPENGEODE) myfunction.pr system_structure.pr --check
 
 test-qgen-parse:
-	$(TESTQGEN) myfunction.pr system_structure.pr
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
 
 test-ada:
 	$(OPENGEODE) --toAda myfunction.pr system_structure.pr 2>&1 | sort | diff expected - || exit 0
