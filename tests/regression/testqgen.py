@@ -148,7 +148,8 @@ def run_test(op):
     #expected = file + '.out'
     cmd = ['java', '-jar', jar_path, op.root_model,
            '--language', lang, '--generate-types',
-           '--output', 'generated_' + lang]
+           '--output', 'generated_' + lang,
+           '--type-prefix', 'asn1QGen']
     p1 = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
