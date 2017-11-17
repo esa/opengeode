@@ -5,3 +5,22 @@
 # Ignore tmp directories in this folder and below
 
 **/tmp/
+**/build/
+
+*/*generated
+*/generated*
+*/*.adb
+*/*.ads
+*/*.ali
+*/*.o
+*/*.gcno
+*/*.c
+*/*.h
+*/*.cfg
+*/*.idx
+*/*.wrn
+*/*.gpr
+*/*.sh
+*/test_ada
+*/test_c
+*/*.gcda
