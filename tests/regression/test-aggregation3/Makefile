@@ -20,6 +20,12 @@ test-qgen-ada:
 
 test-qgen-c:
 	$(TESTQGEN_C) $(ROOT_MODEL)
+	
+test-qgen-ada-asn:
+	$(TESTQGEN_ADA_ASN) $(ROOT_MODEL)
+
+test-qgen-c-asn:
+	$(TESTQGEN_C_ASN) $(ROOT_MODEL)
 
 test-ada: challenge.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n challenge.ali

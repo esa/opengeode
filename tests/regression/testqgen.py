@@ -134,22 +134,46 @@ def run_test(op):
     jar_name = os.environ.get('JAR_NAME')
     jar_path = os.path.join (jar_dir,jar_name)
     
+    asntest = False
+    
     if op.rule == 'test-qgen-parse':
         lang = 'xmi'
     elif op.rule == 'test-qgen-ada':
         lang = 'ada'
     elif op.rule == 'test-qgen-c':
         lang = 'c'
+    elif op.rule == 'test-qgen-c-asn':
+        asntest = True
+        lang = 'c'
+    elif op.rule == 'test-qgen-ada-asn':
+        asntest = True
+        lang = 'ada'
     else:
         # the importer crashes if any other value us used here,
         # for now keep xmi as default value
         lang = 'xmi'
     
     #expected = file + '.out'
-    cmd = ['java', '-jar', jar_path, op.root_model,
-           '--language', lang, '--generate-types',
-           '--output', 'generated_' + lang,
-           '--type-prefix', 'asn1QGen']
+    if asntest:
+        asn_call = ['asn1.exe', 'dataview-uniq.asn']
+        p0 = subprocess.Popen(asn_call,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+        stdout, stderr = p0.communicate()
+        errcode = p0.wait()
+
+        if errcode != 0:
+            return (errcode, stdout, stderr, op.root_model, op.rule)
+        
+        cmd = ['java', '-jar', jar_path, op.root_model,
+               '--language', lang,
+               '--output', 'generated_asn_' + lang]
+    else:
+        cmd = ['java', '-jar', jar_path, op.root_model,
+               '--language', lang, '--generate-types',
+               '--output', 'generated_' + lang,
+               '--type-prefix', 'asn1QGen']
+           
     p1 = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
