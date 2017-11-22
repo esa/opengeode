@@ -142,36 +142,27 @@ def run_test(op):
         lang = 'ada'
     elif op.rule == 'test-qgen-c':
         lang = 'c'
-    elif op.rule == 'test-qgen-c-asn':
-        asntest = True
-        lang = 'c'
     elif op.rule == 'test-qgen-ada-asn':
         asntest = True
         lang = 'ada'
+    elif op.rule == 'test-qgen-c-asn':
+        asntest = True
+        lang = 'c'
     else:
         # the importer crashes if any other value us used here,
         # for now keep xmi as default value
         lang = 'xmi'
     
-    #expected = file + '.out'
     if asntest:
-        asn_call = ['asn1.exe', 'dataview-uniq.asn']
-        p0 = subprocess.Popen(asn_call,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-        stdout, stderr = p0.communicate()
-        errcode = p0.wait()
-
-        if errcode != 0:
-            return (errcode, stdout, stderr, op.root_model, op.rule)
-        
+        outfolder = 'generated_' + lang + '_asn'
         cmd = ['java', '-jar', jar_path, op.root_model,
                '--language', lang,
-               '--output', 'generated_asn_' + lang]
+               '--output', outfolder]
     else:
+        outfolder = 'generated_' + lang 
         cmd = ['java', '-jar', jar_path, op.root_model,
                '--language', lang, '--generate-types',
-               '--output', 'generated_' + lang,
+               '--output', outfolder,
                '--type-prefix', 'asn1QGen']
            
     p1 = subprocess.Popen(cmd,
@@ -183,10 +174,20 @@ def run_test(op):
     if errcode != 0:
         return (errcode, stdout, stderr, op.root_model, op.rule)
 
-    #diff(expected=expected, actual=proc.stdout
+    if asntest:
+        asn_call = ['asn1.exe', 'dataview-uniq.asn',
+                    '-o', outfolder, '-Ada']
+        p0 = subprocess.Popen(asn_call,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+        stdout, stderr = p0.communicate()
+        errcode = p0.wait()
+
+        if errcode != 0:
+            return (errcode, stdout, stderr, op.root_model, op.rule)
 
     if lang in ('ada', 'c'):
-        p2 = _compile (lang)
+        p2 = _compile (lang, asntest)
         stdout, stderr = p2.communicate()
         errcode = p2.wait()
     
@@ -205,7 +206,7 @@ def _run_gprbuild(gprfile):
                    stderr=subprocess.STDOUT)
     return proc
 
-def _compile (lang):
+def _compile (lang, asntest):
     source_dirs = '"."'
     main_file = ""
     compiler_pkg = ""
@@ -216,7 +217,10 @@ def _compile (lang):
     c_prj = ""
     ada_prj = ""
 
-    src_path = 'generated_' + lang
+    if asntest:
+        src_path = 'generated_' + lang + '_asn'
+    else:
+        src_path = 'generated_' + lang
 
     flags = ''
     c_std = 'c99'
