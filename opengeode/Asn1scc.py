@@ -123,7 +123,7 @@ def parse_asn1(*files, **options):
         html = ['-customIcdUper', stgfile + '::' + out_html]
     else:
         html = []
-    args = [arg0, '-customStgAstVerion', str(ast_version.value),
+    args = [arg0, '-customStgAstVersion', str(ast_version.value),
             '-customStg', stg + '::' + filepath,
             '-renamePolicy', str(rename_policy.value)] + html + list(*files)
     asn1scc = QProcess()
