@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.43 (01/2018)
+    - Add preliminary compatibility with asn1scc v4
+
 1.5.42 (10/2017)
     - Fix case issue with process types
     - Remove submodules
