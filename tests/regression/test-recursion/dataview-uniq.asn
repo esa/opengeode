@@ -68,9 +68,10 @@ Tree-Elem ::= SEQUENCE {
 Sons ::= SEQUENCE (SIZE (0..100)) OF Tree-Elem
 Tree ::= SEQUENCE (SIZE (26))     OF Sons
 
+Path-elem ::= SEQUENCE (SIZE(0..255)) OF Letter
 Path ::= SEQUENCE {
     cost Cost-ty,
-    elem SEQUENCE (SIZE(0..255)) OF Letter
+    elem Path-elem
 }
 
   
