@@ -100,7 +100,7 @@ There is no such issue if you use Github:
 
 
 ```bash
-$ git clone --recursive https://github.com/esa/opengeode.git
+$ git clone https://github.com/esa/opengeode.git
 ```
 
 And install it:
@@ -141,11 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-1.5.42 (01/2018)
-    - Add first level compatibility with ASN1SCC v4
-
-1.5.41 (10/2017)
+1.5.42 (10/2017)
     - Fix case issue with process types
+    - Remove submodules
 
 1.5.40 (07/2017)
     - Fix range check in arrays
