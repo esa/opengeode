@@ -2694,11 +2694,13 @@ def parse(files):
 
 def generate(process, options):
     ''' Generate code '''
+    ret = 0
     if options.toAda or options.shared or options.dll:
         LOG.info('Generating Ada code')
         try:
             AdaGenerator.generate(process, simu=options.shared)
         except (TypeError, ValueError, NameError) as err:
+            ret = 1
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('Ada code generation failed')
@@ -2707,6 +2709,7 @@ def generate(process, options):
         try:
             CGenerator.generate(process, simu=options.shared, options=options)
         except (TypeError, ValueError, NameError) as err:
+            ret = 1
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('C generation failed')
@@ -2715,6 +2718,7 @@ def generate(process, options):
         try:
             LlvmGenerator.generate(process, options=options)
         except (TypeError, ValueError, NameError) as err:
+            ret = 1
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('LLVM IR generation failed')
@@ -2722,6 +2726,7 @@ def generate(process, options):
     if options.stg:
         LOG.info('Using backend file {}'.format(options.stg))
         StgBackend.generate(process, simu=options.shared, stgfile=options.stg)
+    return ret
 
 
 def export(ast, options):
@@ -2806,7 +2811,7 @@ def cli(options):
     if any((options.toAda, options.llvm, options.shared,
            options.stg, options.dll, options.toC)):
         if not errors:
-            generate(ast.processes[0], options)
+            errors = generate(ast.processes[0], options)
         else:
             LOG.error('Too many errors, cannot generate code')
 

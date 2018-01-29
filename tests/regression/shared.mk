@@ -23,8 +23,8 @@ clean:
 	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
 
 %.ali: %.pr FORCE
-	$(OPENGEODE) $< system_structure.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(OPENGEODE) $< system_structure.pr --toAda && \
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn && \
 	$(GNATMAKE) -O$(O) -gnat2012 -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE
