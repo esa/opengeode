@@ -141,6 +141,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+1.5.44 (01/2018)
+    - Bugfix: Return error code when Ada generation fails
+    - Tests: reorder arguments to asn1scc for v4 compatibility
+
 1.5.43 (01/2018)
     - Add preliminary compatibility with asn1scc v4
 
