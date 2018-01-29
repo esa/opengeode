@@ -20,15 +20,15 @@ clean:
 
 %.c: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toC
-	mono $(ASN1SCC) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
 
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda
-	mono $(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn 
 	$(GNATMAKE) -O$(O) -gnat2012 -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE
-	mono $(ASN1SCC) -c $< -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal $<  
 	$(CC) -O$(O) -c -g $*.c
 
 %.o: %.c FORCE

@@ -17,7 +17,7 @@ test-ada:
 	[ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ; \
 	mkdir -p build && cp *.pr *.asn model_checker.gpr properties build && cd build && \
 	../../../../opengeode/opengeode.py orchestrator.pr --shared && \
-	mono $(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal && \
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn && \
 	taste-properties -d -s properties orchestrator.pr && \
 	taste-asn1-iterators *.asn && gprbuild -Pmodel_checker $$EXTRAFLAG && ./model_checker
 

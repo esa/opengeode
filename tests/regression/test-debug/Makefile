@@ -22,7 +22,7 @@ test-llvm: orchestrator.o
 
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
-	mono $(ASN1SCC) -Ada dataview-uniq.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
 	$(GNATMAKE) -c -gnat2012 b~orchestrator.adb

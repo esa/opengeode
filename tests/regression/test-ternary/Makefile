@@ -10,13 +10,13 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	mono $(ASN1SCC) -Ada dataview.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
-	mono $(ASN1SCC) -c dataview.asn -typePrefix asn1Scc -equal
+	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
 
