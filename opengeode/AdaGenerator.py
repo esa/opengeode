@@ -1129,14 +1129,15 @@ def write_statement(param, newline):
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
-        if type_kind == 'IntegerType':
-            cast = "Asn1Int"
-        elif type_kind == 'Integer32Type':
-            cast = "Integer"
-        elif type_kind == 'RealType':
-            cast = 'Long_Float'
-        elif type_kind == 'BooleanType':
-            cast = 'Boolean'
+        cast = type_name(param.exprType)
+#       if type_kind == 'IntegerType':
+#           cast = "ASN1Int"
+#       elif type_kind == 'Integer32Type':
+#           cast = "Integer"
+#       elif type_kind == 'RealType':
+#           cast = 'Long_Float'
+#       elif type_kind == 'BooleanType':
+#           cast = 'Boolean'
         code.append(u"Put({cast}'Image({s}));".format(cast=cast, s=string))
     elif type_kind == 'EnumeratedType':
         code, string, local = expression(param)
@@ -1260,7 +1261,8 @@ def _call_external_function(output, **kwargs):
                                               sort=typename))
                     basic_param = find_basic_type (param_type)
                     if basic_param.kind.startswith('Integer'):
-                        p_id = u"Asn1Int({})".format(p_id)
+                        p_id = u"{sort}({val})".format(sort=typename,
+                                                       val=p_id)
                     if isinstance(param,
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         p_id = array_content(param, p_id,
@@ -1363,7 +1365,7 @@ def _task_forloop(task, **kwargs):
                #       and loop['range']['start'].exprType.__name__ != 'PrInt':
                #    start_str = u"Integer({})".format(start_str)
                 if basic.kind == "Integer32Type":
-                    start_str = u"Asn1Int({})".format(start_str)
+                    start_str = u"ASN1INT({})".format(start_str)
 
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
@@ -1378,7 +1380,7 @@ def _task_forloop(task, **kwargs):
            #       and loop['range']['stop'].exprType.__name__ != 'PrInt':
            #    stop_str = u"Integer({})".format(stop_str)
             if basic.kind == "Integer32Type":
-                stop_str = u"Asn1Int({})".format(stop_str)
+                stop_str = u"Asn1INt({})".format(stop_str)
 
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
@@ -1387,7 +1389,7 @@ def _task_forloop(task, **kwargs):
                     stop_str = unicode(int(stop_str) - 1)
                 else:
                     stop_str = u'{} - 1'.format(stop_str)
-                stmt.append(u'for {it} in Asn1Int range {start}{stop} loop'
+                stmt.append(u'for {it} in {start}{stop} loop'
                             .format(it=loop['var'],
                                     start=start_str,
                                     stop=stop_str))
@@ -1874,7 +1876,9 @@ def _assign_expression(expr):
                            .format(lvar=left_str, rlen=rlen))
     elif basic_left.kind.startswith('Integer'):
         # Make sure that integers are cast to 64 bits
-        strings.append(u"{} := Asn1Int({});".format(left_str, right_str))
+        # No, casting to int64 isn't right if the type is unsigned (asn1scc v4)
+        # strings.append(u"{} := AsN1Int({});".format(left_str, right_str))
+        strings.append(u"{} := {};".format(left_str, right_str))
     else:
         strings.append(u"{} := {};".format(left_str, right_str))
     code.extend(left_stmts)
@@ -2796,14 +2800,16 @@ def type_name(a_type, use_prefix=True):
                                a_type.ReferencedTypeName.replace('-', '_'))
     elif a_type.kind == 'BooleanType':
         return u'Boolean'
+    elif a_type.kind.startswith('Integer32'):
+        return u'Integer'
     elif a_type.kind.startswith('Integer'):
-        return u'Asn1Int'
+        return u'ASN1INT'
     elif a_type.kind == 'RealType':
         return u'Asn1Real'
     elif a_type.kind.endswith('StringType'):
         return u'String'
     elif a_type.kind == 'ChoiceEnumeratedType':
-        return u'Asn1Int'
+        return u'Asn1INT'
     elif a_type.kind == 'StateEnumeratedType':
         return u''
     elif a_type.kind == 'EnumeratedType':
