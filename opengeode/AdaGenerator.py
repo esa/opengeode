@@ -1545,9 +1545,7 @@ def _prim_call(prim):
         param_stmts, param_str, local_var = expression(exp)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += ('{sort}_Kind({e})'
-                       .format(sort=exp_typename,
-                               e=param_str))
+        ada_string += ('{}.Kind'.format(param_str))
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
@@ -1711,10 +1709,10 @@ def _prim_selector(prim):
 
     receiver_bty = find_basic_type(receiver.exprType)
 
+    # for asn1scc v3, sort = type_name(receiver.exprType)
     if receiver_bty.kind == 'ChoiceType':
-        ada_string = ('{sort}_{field_name}_get({ada_string})'
-                    .format(sort=type_name(receiver.exprType),
-                            field_name=field_name,
+        ada_string = ('{ada_string}.{field_name}'
+                    .format(field_name=field_name,
                             ada_string=ada_string))
     else:
         # SEQUENCE, check for field optionality first
