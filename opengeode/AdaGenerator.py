@@ -2307,7 +2307,7 @@ def _choiceitem(choice):
                                           ogAST.PrimStringLiteral)):
         choice_str = array_content(choice.value['value'], choice_str,
                                find_basic_type(choice.value['value'].exprType))
-    ada_string = u'{cType}_{opt}_set({expr})'.format(
+    ada_string = u'(Kind => {opt}_PRESENT, {opt} => {expr})'.format(
                         cType=type_name(choice.exprType),
                         opt=choice.value['choice'],
                         expr=choice_str)
