@@ -97,6 +97,16 @@ SHARED_LIB = False
 UNICODE_SEP = u'\u00dc'
 LPREFIX = u'ctxt'
 
+
+def is_numeric(string):
+    ''' Return true if value is a number '''
+    try:
+        float(string)
+    except ValueError:
+        return False
+    return True
+
+
 def external_ri_list(process):
     ''' Helper function: create a list of RI with proper signature
     Used for the formal parameters of generic packages when using process type
@@ -1390,7 +1400,7 @@ def _task_forloop(task, **kwargs):
             else:
                 # Step is not directly supported in Ada, we need to use 'while'
                 stmt.extend(['declare',
-                             u'{it} : Asn1Int := {start};'
+                             u'{it} : Integer := {start};'
                              .format(it=loop['var'],
                              start=start_str),
                              '',
@@ -1490,9 +1500,11 @@ def _prim_call(prim):
         local_decl.extend(local_var)
         ada_string += '{op}({param})'.format(
                 param=param_str,
-                op='abs' if ident == 'abs' else
+                op='Asn1UInt (abs' if ident == 'abs' else
                 'Asn1Int' if ident == 'fix' else 'Asn1Real'
                 if ident == 'float' else 'ERROR')
+        if ident == 'abs':
+            ada_string += ')'
     elif ident == 'power':
         operands = [None, None]
         for idx, param in enumerate(params):
@@ -1730,7 +1742,6 @@ def _primary_state_reference(prim):
     ''' Reference to the current state '''
     return [], u'{}.state'.format(LPREFIX), []
 
-
 @expression.register(ogAST.ExprPlus)
 @expression.register(ogAST.ExprMul)
 @expression.register(ogAST.ExprMinus)
@@ -1751,15 +1762,9 @@ def _basic_operators(expr):
     if isinstance (expr, ogAST.ExprMod):
         bt = find_basic_type(expr.exprType)
 
-    right_is_numeric, left_is_numeric = True, True
-    try:
-        float(left_str)
-    except ValueError:
-        left_is_numeric = False
-    try:
-        float(right_str)
-    except ValueError:
-        right_is_numeric = False
+    # Check if either side is a literal number
+    right_is_numeric = is_numeric(right_str)
+    left_is_numeric  = is_numeric(left_str)
 
     lbty = find_basic_type(expr.left.exprType)
     rbty = find_basic_type(expr.right.exprType)
@@ -1988,7 +1993,11 @@ def _neg_expression(expr):
     ''' Generate the code for a negative expression '''
     code, local_decl = [], []
     expr_stmts, expr_str, expr_local = expression(expr.expr)
-    ada_string = u'(-Asn1Int({expr}))'.format(op=expr.operand, expr=expr_str)
+    if not is_numeric(expr_str):
+        ada_string = u'(-Asn1Int({expr}))'.format(op=expr.operand,
+                                                  expr=expr_str)
+    else:
+        ada_string = u'(-{expr})'.format(expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
     return code, unicode(ada_string), local_decl

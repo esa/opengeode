@@ -4163,7 +4163,11 @@ def assign(root, context):
                                         ogAST.ExprMod,
                                         ogAST.PrimSequenceOf,
                                         ogAST.PrimStringLiteral)):
-            expr.right.exprType = expr.left.exprType
+            if isinstance(expr.right, ogAST.PrimCall) \
+                    and expr.right.value[0] == 'abs':
+                pass
+            else:
+                expr.right.exprType = expr.left.exprType
         # XXX I don't understand why we don't set the type of right
         # to the same value as left in case of ExprAppend
         # Setting it - I did not see any place in the Ada backend where
