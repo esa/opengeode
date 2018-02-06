@@ -1361,11 +1361,8 @@ def _task_forloop(task, **kwargs):
                 start_stmt, start_str, start_local = \
                         expression(loop['range']['start'])
 
-               #if basic.kind == "IntegerType" \
-               #       and loop['range']['start'].exprType.__name__ != 'PrInt':
-               #    start_str = u"Integer({})".format(start_str)
                 if basic.kind == "Integer32Type":
-                    start_str = u"ASN1INT({})".format(start_str)
+                    start_str = u"AsN1InT({})".format(start_str)
 
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
@@ -1376,9 +1373,6 @@ def _task_forloop(task, **kwargs):
             basic = find_basic_type(loop['range']['stop'].exprType)
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
 
-           #if basic.kind == "IntegerType" \
-           #       and loop['range']['stop'].exprType.__name__ != 'PrInt':
-           #    stop_str = u"Integer({})".format(stop_str)
             if basic.kind == "Integer32Type":
                 stop_str = u"Asn1INt({})".format(stop_str)
 
@@ -1553,8 +1547,13 @@ def _prim_call(prim):
         exp = params[0]
         exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp)
+        if float(find_basic_type(prim.exprType).Min) >= 0:
+            asn1_sort = "Asn1UInt"
+        else:
+            asn1_sort = "Asn1Int"
         local_decl.append('function num_{sort} is new Ada.Unchecked_Conversion'
-                          '({sort}, Asn1Int);'.format(sort=exp_typename))
+                          '({sort}, {asn1Sort});'.format(sort=exp_typename,
+                                                         asn1Sort=asn1_sort))
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += ('num_{sort}({p})'
@@ -1749,7 +1748,6 @@ def _basic_operators(expr):
     left_stmts,  left_str,  left_local  = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right)
 
-    ##
     if isinstance (expr, ogAST.ExprMod):
         bt = find_basic_type(expr.exprType)
 
@@ -1766,16 +1764,15 @@ def _basic_operators(expr):
     lbty = find_basic_type(expr.left.exprType)
     rbty = find_basic_type(expr.right.exprType)
 
-    #print lbty.kind, rbty.kind
-
-    if rbty.kind != lbty.kind and 'Integer32Type' in (lbty.kind, rbty.kind):# \
-#           and "PrInt" not in (expr.left.exprType.__name__,
-#                               expr.right.exprType.__name__):
+    if rbty.kind != lbty.kind and 'Integer32Type' in (lbty.kind, rbty.kind):
+        # One of the sides is an int32 (eg a for loop iterator), must cast
+        # it to the left type which is either signed or unsigned 64 bits
         if lbty.kind == 'IntegerType' and not right_is_numeric:
-            right_str = u'Asn1Int({})'.format(right_str)
+            right_str = u'{cast}({val})'.format(cast=type_name
+                                                          (expr.left.exprType),
+                                                val=right_str)
         elif not left_is_numeric:
-            left_str = u'Asn1Int({})'.format(left_str)
-    ##
+            left_str = u'Asn1INT({})'.format(left_str)
 
     if left_is_numeric == right_is_numeric == True:
         ada_string = u"{}".format(eval(u"{left} {op} {right}"
@@ -1886,6 +1883,10 @@ def _assign_expression(expr):
         basic_right = find_basic_type (expr.right.exprType)
         if float(basic_right.Min) >= 0 and float (basic_left.Min) < 0:
             res = "Asn1Int({})".format(right_str)
+        # Modulo expressions: if left min range is >= 0, cast right to uint
+        elif isinstance(expr.right,
+                        ogAST.ExprMod) and float(basic_left.Min) >= 0:
+            res = u'Asn1UInt({})'.format(right_str)
         else:
             res = right_str
         strings.append(u"{} := {};".format(left_str, res))
@@ -1987,7 +1988,7 @@ def _neg_expression(expr):
     ''' Generate the code for a negative expression '''
     code, local_decl = [], []
     expr_stmts, expr_str, expr_local = expression(expr.expr)
-    ada_string = u'(-{expr})'.format(op=expr.operand, expr=expr_str)
+    ada_string = u'(-Asn1Int({expr}))'.format(op=expr.operand, expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
     return code, unicode(ada_string), local_decl
@@ -2813,7 +2814,10 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind.startswith('Integer32'):
         return u'Integer'
     elif a_type.kind.startswith('Integer'):
-        return u'ASN1INT'
+        if float(a_type.Min) >= 0:
+            return u'Asn1UInt'
+        else:
+            return u'AsN1INT'
     elif a_type.kind == 'RealType':
         return u'Asn1Real'
     elif a_type.kind.endswith('StringType'):
