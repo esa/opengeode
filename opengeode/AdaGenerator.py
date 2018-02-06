@@ -1750,7 +1750,8 @@ def _basic_operators(expr):
     right_stmts, right_str, right_local = expression(expr.right)
 
     ##
-    #print expr.inputString, " ==> ", left_str, ' and ', right_str,
+    if isinstance (expr, ogAST.ExprMod):
+        bt = find_basic_type(expr.exprType)
 
     right_is_numeric, left_is_numeric = True, True
     try:
@@ -1878,7 +1879,16 @@ def _assign_expression(expr):
         # Make sure that integers are cast to 64 bits
         # No, casting to int64 isn't right if the type is unsigned (asn1scc v4)
         # strings.append(u"{} := AsN1Int({});".format(left_str, right_str))
-        strings.append(u"{} := {};".format(left_str, right_str))
+        # It is possible that left and right are of different types
+        # (signed vs unsigned). The parser should have ensured that the
+        # ranges are compatible. So we can safely cast to the left type
+        # when right side is of different type.
+        basic_right = find_basic_type (expr.right.exprType)
+        if float(basic_right.Min) >= 0 and float (basic_left.Min) < 0:
+            res = "Asn1Int({})".format(right_str)
+        else:
+            res = right_str
+        strings.append(u"{} := {};".format(left_str, res))
     else:
         strings.append(u"{} := {};".format(left_str, right_str))
     code.extend(left_stmts)

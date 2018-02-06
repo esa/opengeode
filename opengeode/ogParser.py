@@ -29,6 +29,7 @@ __author__ = 'Maxime Perrotin'
 import sys
 import os
 import math
+import operator
 import logging
 import traceback
 import binascii
@@ -1318,12 +1319,23 @@ def logic_expression(root, context):
 
 def arithmetic_expression(root, context):
     ''' Arithmetic expression analysis '''
+    def find_bounds(operator, minL, maxL, minR, maxR):
+        candidates = [operator(float(l),float(r))
+                      for l in [minL, maxL]
+                      for r in [minR, maxR]]
+        return { 'Min': str(min(candidates)),
+                 'Max': str(max(candidates))}
+
     expr, errors, warnings = binary_expression(root, context)
 
     # Expressions returning a numerical type must have their range defined
-    # accordingly with the kind of opration used between operand:
+    # accordingly with the kind of operation used between operands:
     left = find_basic_type(expr.left.exprType)
     right = find_basic_type(expr.right.exprType)
+    minL = float(left.Min)
+    maxL = float(left.Max)
+    minR = float(right.Min)
+    maxR = float(right.Max)
     # Type of the resulting expression depends on whether there are raw numbers
     # on one side of the expression (PrInt). By default when they are parsed,
     # they are set to 64 bits integers ; but if they are in an expression where
@@ -1332,23 +1344,22 @@ def arithmetic_expression(root, context):
     basic = right if left.__name__ == 'PrInt' else left
     try:
         if isinstance(expr, ogAST.ExprPlus):
-            attrs = {'Min': str(float(left.Min) + float(right.Min)),
-                     'Max': str(float(left.Max) + float(right.Max))}
+            attrs = {'Min': str(minL + minR),
+                     'Max': str(maxL + maxR)}
             expr.exprType = type('Plus', (basic,), attrs)
         elif isinstance(expr, ogAST.ExprMul):
-            attrs = {'Min': str(float(left.Min) * float(right.Min)),
-                     'Max': str(float(left.Max) * float(right.Max))}
+            attrs = find_bounds(operator.mul, minL, maxL, minR, maxR)
             expr.exprType = type('Mul', (basic,), attrs)
         elif isinstance(expr, ogAST.ExprMinus):
-            attrs = {'Min': str(float(left.Min) - float(right.Max)),
-                     'Max': str(float(left.Max) - float(right.Min))}
+            attrs = {'Min': str(minL - maxR),
+                     'Max': str(maxL - minR)}
             expr.exprType = type('Minus', (basic,), attrs)
         elif isinstance(expr, ogAST.ExprDiv):
-            attrs = {'Min': str(float(left.Min) / (float(right.Max) or 1)),
-                     'Max': str(float(left.Max) / (float(right.Min) or 1))}
+            attrs = find_bounds(operator.truediv, minL, maxL, minR or 1,
+                                                              maxR or 1)
             expr.exprType = type('Div', (basic,), attrs)
         elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
-            attrs = {'Min': right.Min, 'Max': right.Max}
+            attrs = {'Min': '0', 'Max': right.Max}
             expr.exprType = type('Mod', (basic,), attrs)
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types '\
@@ -4150,6 +4161,7 @@ def assign(root, context):
     if not errors:
         if expr.right.exprType == UNKNOWN_TYPE or not \
                 isinstance(expr.right, (ogAST.ExprAppend,
+                                        ogAST.ExprMod,
                                         ogAST.PrimSequenceOf,
                                         ogAST.PrimStringLiteral)):
             expr.right.exprType = expr.left.exprType
@@ -4164,7 +4176,6 @@ def assign(root, context):
             # Set the expected type on the right, this is needed to know
             # if the expected size is variable or fixed in backends
             expr.right.expected_type = expr.left.exprType
-
     return expr, errors, warnings
 
 
