@@ -1341,6 +1341,14 @@ def arithmetic_expression(root, context):
     # the other side is 32 bits (Length or for loop range) then the resulting
     # expression is 32 bits.
     basic = right if left.__name__ == 'PrInt' else left
+    # When one side of the expression is a raw (universal) number, in backends
+    # the type is inherited from the other side of the expression
+    # e.g. x - 1 is of type x. Keep track of this resulting type in
+    # "expected_type" to make sure that backends know if the type is signed
+    # or unsigned, even if the computed range is lower than 0
+    expr.expected_type = expr.left.exprType if right.__name__ == 'PrInt' \
+            else expr.right.exprType if left.__name__ == 'PrInt' \
+            else None
     try:
         if isinstance(expr, ogAST.ExprPlus):
             attrs = {'Min': str(minL + minR),
@@ -4164,7 +4172,7 @@ def assign(root, context):
                                         ogAST.PrimSequenceOf,
                                         ogAST.PrimStringLiteral)):
             if isinstance(expr.right, ogAST.PrimCall) \
-                    and expr.right.value[0] == 'abs':
+                    and expr.right.value[0]  in ('abs', 'length'):
                 pass
             else:
                 expr.right.exprType = expr.left.exprType

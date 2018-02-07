@@ -1139,7 +1139,10 @@ def write_statement(param, newline):
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
         code, string, local = expression(param)
-        cast = type_name(param.exprType)
+        if hasattr(param, "expected_type"):
+            cast = type_name(param.expected_type)
+        else:
+            cast = type_name(param.exprType)
 #       if type_kind == 'IntegerType':
 #           cast = "ASN1Int"
 #       elif type_kind == 'Integer32Type':
@@ -1495,14 +1498,21 @@ def _prim_call(prim):
 
     if ident in ('abs', 'fix', 'float'):
         # Return absolute value of a number
+
+        # Fix operator: make a cast depending on the lower range
+        unsigned = False
+        if ident == "fix":
+            unsigned = float(find_basic_type(params[0].exprType).Min) >= 0
+
         param_stmts, param_str, local_var = expression(params[0])
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += '{op}({param})'.format(
                 param=param_str,
-                op='Asn1UInt (abs' if ident == 'abs' else
-                'Asn1Int' if ident == 'fix' else 'Asn1Real'
-                if ident == 'float' else 'ERROR')
+                op='Asn1UInt (abs' if ident == 'abs'
+                else 'Asn1Int'     if (ident == 'fix'  and not unsigned)
+                else 'Asn1UInt'    if (ident == 'fix'  and unsigned)
+                else 'Asn1Real'    if ident == 'float' else 'ERROR')
         if ident == 'abs':
             ada_string += ')'
     elif ident == 'power':
@@ -1514,6 +1524,7 @@ def _prim_call(prim):
         ada_string += '{op[0]} ** Natural({op[1]})'.format(op=operands)
     elif ident == 'length':
         # Length of sequence of: take only the first parameter
+        # return an Integer32 type
         exp = params[0]
         exp_type = find_basic_type(exp.exprType)
         min_length = getattr(exp_type, 'Min', None)
@@ -1534,9 +1545,6 @@ def _prim_call(prim):
                 range_str = u"{}'Length".format(param_str)
             else:
                 range_str = u"{}.Length".format(param_str)
-            #ada_string += ('Integer({})'.format(range_str))
-            # I removed the cast here, because it is not the right place
-            # length fields are already Integers, no?
             ada_string += range_str
     elif ident == 'present':
         # User wants to know what CHOICE element is present
@@ -1879,21 +1887,35 @@ def _assign_expression(expr):
                            .format(lvar=left_str, rlen=rlen))
     elif basic_left.kind.startswith('Integer'):
         # Make sure that integers are cast to 64 bits
-        # No, casting to int64 isn't right if the type is unsigned (asn1scc v4)
-        # strings.append(u"{} := AsN1Int({});".format(left_str, right_str))
         # It is possible that left and right are of different types
-        # (signed vs unsigned). The parser should have ensured that the
-        # ranges are compatible. So we can safely cast to the left type
-        # when right side is of different type.
+        # (signed vs unsigned and/or 32bits vs 64 bits).
+        # The parser should have ensured that the ranges are compatible.
+        # We can therefore safely cast to the left type
         basic_right = find_basic_type (expr.right.exprType)
-        if float(basic_right.Min) >= 0 and float (basic_left.Min) < 0:
-            res = "Asn1Int({})".format(right_str)
-        # Modulo expressions: if left min range is >= 0, cast right to uint
-        elif isinstance(expr.right,
-                        ogAST.ExprMod) and float(basic_left.Min) >= 0:
-            res = u'Asn1UInt({})'.format(right_str)
+        cast_left, cast_right = type_name(basic_left), type_name(basic_right)
+        if cast_left != cast_right:
+            res = '{cast}({val})'.format(cast=cast_left, val=right_str)
         else:
-            res = right_str
+            if hasattr (expr.right, "expected_type") \
+                    and expr.right.expected_type is not None:
+
+                cast_expected = type_name (expr.right.expected_type)
+                if cast_expected != cast_left:
+                    res = '{cast}({val})'.format(cast=cast_left,
+                                                 val=right_str)
+                else:
+                    res = right_str
+            else:
+                res = right_str
+
+#       if float(basic_right.Min) >= 0 and float (basic_left.Min) < 0:
+#           res = "Asn1Int({})".format(right_str)
+#       # Modulo expressions: if left min range is >= 0, cast right to uint
+#       elif isinstance(expr.right,
+#                       ogAST.ExprMod) and float(basic_left.Min) >= 0:
+#           res = u'Asn1UInt({})'.format(right_str)
+#       else:
+#           res = right_str
         strings.append(u"{} := {};".format(left_str, res))
     else:
         strings.append(u"{} := {};".format(left_str, right_str))
@@ -2331,8 +2353,18 @@ def _choiceitem(choice):
                                           ogAST.PrimStringLiteral)):
         choice_str = array_content(choice.value['value'], choice_str,
                                find_basic_type(choice.value['value'].exprType))
-    ada_string = u'(Kind => {opt}_PRESENT, {opt} => {expr})'.format(
+    # look for the right spelling of the choice discriminant
+    # (normally field_PRESENT, but can be prefixed by the type name if there
+    # is a namespace conflict)
+    basic = find_basic_type(choice.exprType)
+    prefix = 'CHOICE_NOT_FOUND'
+    for each in basic.Children:
+        if each.lower() == choice.value['choice'].lower():
+            prefix = basic.Children[each].EnumID
+            break
+    ada_string = u'(Kind => {kind}, {opt} => {expr})'.format(
                         cType=type_name(choice.exprType),
+                        kind=prefix,
                         opt=choice.value['choice'],
                         expr=choice_str)
     return stmts, unicode(ada_string), local_decl
