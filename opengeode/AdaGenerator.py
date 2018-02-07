@@ -1374,8 +1374,9 @@ def _task_forloop(task, **kwargs):
                 start_stmt, start_str, start_local = \
                         expression(loop['range']['start'])
 
-                if basic.kind == "Integer32Type":
-                    start_str = u"AsN1InT({})".format(start_str)
+                #if basic.kind == "Integer32Type":
+                #    start_str = u"AsN1InT({})".format(start_str)
+                start_str = u"Integer ({})".format(start_str)
 
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
@@ -1386,8 +1387,9 @@ def _task_forloop(task, **kwargs):
             basic = find_basic_type(loop['range']['stop'].exprType)
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
 
-            if basic.kind == "Integer32Type":
-                stop_str = u"Asn1INt({})".format(stop_str)
+           #if basic.kind == "Integer32Type":
+           #    stop_str = u"Asn1INt({})".format(stop_str)
+            stop_str = u"Integer ({})".format(stop_str)
 
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
