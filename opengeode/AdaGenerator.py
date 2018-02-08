@@ -1862,6 +1862,7 @@ def _assign_expression(expr):
     strings = []
     left_stmts, left_str, left_local = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right)
+
     # If left side is a string/seqOf and right side is a substring, we must
     # assign the .Data and .Length parts properly
     basic_left = find_basic_type(expr.left.exprType)
@@ -1893,6 +1894,10 @@ def _assign_expression(expr):
             strings.append(u"{lvar}.Length := {rlen};"
                            .format(lvar=left_str, rlen=rlen))
     elif basic_left.kind.startswith('Integer'):
+        print '\nASSIGN:', expr.inputString
+        print "   Left  type = ",type_name(find_basic_type (expr.left.exprType))
+        print "   Right type = ",type_name(find_basic_type (expr.right.exprType))
+
         # Make sure that integers are cast to 64 bits
         # It is possible that left and right are of different types
         # (signed vs unsigned and/or 32bits vs 64 bits).

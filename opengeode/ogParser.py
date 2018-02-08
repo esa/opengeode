@@ -4175,7 +4175,9 @@ def assign(root, context):
                     and expr.right.value[0]  in ('abs', 'length'):
                 pass
             else:
-                expr.right.exprType = expr.left.exprType
+                basic_right = find_basic_type(expr.right.exprType)
+                if not basic_right.kind.startswith('Integer'):
+                    expr.right.exprType = expr.left.exprType
         # XXX I don't understand why we don't set the type of right
         # to the same value as left in case of ExprAppend
         # Setting it - I did not see any place in the Ada backend where
