@@ -1906,14 +1906,14 @@ def _assign_expression(expr):
         basic_right = find_basic_type (expr.right.exprType)
         cast_left, cast_right = type_name(basic_left), type_name(basic_right)
         if cast_left != cast_right:
-            res = '{cast}({val})'.format(cast=cast_left, val=right_str)
+            res = u'{cast}({val})'.format(cast=cast_left, val=right_str)
         else:
             if hasattr (expr.right, "expected_type") \
                     and expr.right.expected_type is not None:
 
                 cast_expected = type_name (expr.right.expected_type)
                 if cast_expected != cast_left:
-                    res = '{cast}({val})'.format(cast=cast_left,
+                    res = u'{cast}({val})'.format(cast=cast_left,
                                                  val=right_str)
                 else:
                     res = right_str
@@ -2178,6 +2178,7 @@ def _conditional(cond):
     stmts = []
 
     tmp_type = type_name(cond.exprType)
+    print "CONDITIONAL : ", cond.inputString, tmp_type
 
     if tmp_type == 'String':
         then_str = cond.value['then'].value.replace("'", '"')
