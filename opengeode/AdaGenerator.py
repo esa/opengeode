@@ -1374,9 +1374,8 @@ def _task_forloop(task, **kwargs):
                 start_stmt, start_str, start_local = \
                         expression(loop['range']['start'])
 
-                #if basic.kind == "Integer32Type":
-                #    start_str = u"AsN1InT({})".format(start_str)
-                start_str = u"Integer ({})".format(start_str)
+                if not is_numeric(start_str):
+                    start_str = u"Integer ({})".format(start_str)
 
                 local_decl.extend(start_local)
                 stmt.extend(start_stmt)
@@ -1387,9 +1386,8 @@ def _task_forloop(task, **kwargs):
             basic = find_basic_type(loop['range']['stop'].exprType)
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
 
-           #if basic.kind == "Integer32Type":
-           #    stop_str = u"Asn1INt({})".format(stop_str)
-            stop_str = u"Integer ({})".format(stop_str)
+            if not is_numeric(stop_str):
+                stop_str = u"Integer ({})".format(stop_str)
 
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
@@ -1769,9 +1767,6 @@ def _basic_operators(expr):
     left_stmts,  left_str,  left_local  = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right)
 
-    if isinstance (expr, ogAST.ExprMod):
-        bt = find_basic_type(expr.exprType)
-
     # Check if either side is a literal number
     right_is_numeric = is_numeric(right_str)
     left_is_numeric  = is_numeric(left_str)
@@ -1779,22 +1774,32 @@ def _basic_operators(expr):
     lbty = find_basic_type(expr.left.exprType)
     rbty = find_basic_type(expr.right.exprType)
 
-    if rbty.kind != lbty.kind and 'Integer32Type' in (lbty.kind, rbty.kind):
-        # One of the sides is an int32 (eg a for loop iterator), must cast
-        # it to the left type which is either signed or unsigned 64 bits
-        if lbty.kind == 'IntegerType' and not right_is_numeric:
-            right_str = u'{cast}({val})'.format(cast=type_name
-                                                          (expr.left.exprType),
-                                                val=right_str)
-        elif not left_is_numeric:
-            left_str = u'Asn1INT({})'.format(left_str)
+    if left_is_numeric != right_is_numeric or rbty.kind == lbty.kind:
+        # No cast is needed if:
+        # - one of the two sides only is a literal : no cast is needed
+        # - or if the the basic types are identical
+        ada_string = u'({left} {op} {right})'.format(left=left_str,
+                                                     op=expr.operand,
+                                                     right=right_str)
 
-    if left_is_numeric == right_is_numeric == True:
+    elif left_is_numeric == right_is_numeric == True:
+        # Both sides are literals : compute the result on the fly
         ada_string = u"{}".format(eval(u"{left} {op} {right}"
                                        .format(left=left_str,
                                                op=expr.operand,
                                                right=right_str)))
-    else:
+
+    elif rbty.kind != lbty.kind:
+        # Basic types are different (one is an Integer32, eg. loop iterator)
+        # => We must cast it to the type of the other side
+        if lbty.kind == 'Integer32Type':
+            left_str = u'{cast}({val})'.format(cast=type_name
+                                                         (expr.right.exprType),
+                                               val=left_str)
+        else:
+            right_str = u'{cast}({val})'.format(cast=type_name
+                                                          (expr.left.exprType),
+                                                val=right_str)
         ada_string = u'({left} {op} {right})'.format(left=left_str,
                                                      op=expr.operand,
                                                      right=right_str)
@@ -1910,14 +1915,6 @@ def _assign_expression(expr):
             else:
                 res = right_str
 
-#       if float(basic_right.Min) >= 0 and float (basic_left.Min) < 0:
-#           res = "Asn1Int({})".format(right_str)
-#       # Modulo expressions: if left min range is >= 0, cast right to uint
-#       elif isinstance(expr.right,
-#                       ogAST.ExprMod) and float(basic_left.Min) >= 0:
-#           res = u'Asn1UInt({})'.format(right_str)
-#       else:
-#           res = right_str
         strings.append(u"{} := {};".format(left_str, res))
     else:
         strings.append(u"{} := {};".format(left_str, right_str))
@@ -2866,7 +2863,7 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind.endswith('StringType'):
         return u'String'
     elif a_type.kind == 'ChoiceEnumeratedType':
-        return u'Asn1INT'
+        return u'Asn1InT'
     elif a_type.kind == 'StateEnumeratedType':
         return u''
     elif a_type.kind == 'EnumeratedType':
