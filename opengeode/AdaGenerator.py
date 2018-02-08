@@ -1829,9 +1829,9 @@ def _equality(expr):
     if basic:
         # Cast in case a side is using a 32bits ints (eg when using Length(..))
         if lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
-            right_str = u'Asn1Int({})'.format(right_str)
+            right_str = u'{}({})'.format(type_name(lbty), right_str)
         elif rbty.kind == 'IntegerType' and lbty.kind != rbty.kind:
-            left_str = u'Asn1Int({})'.format(left_str)
+            left_str = u'{}({})'.format(type_name(rbty), left_str)
         ada_string = u'({left} {op} {right})'.format(
                 left=left_str, op=expr.operand, right=right_str)
     else:
