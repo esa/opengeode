@@ -1497,24 +1497,30 @@ def _prim_call(prim):
     params = prim.value[1]['procParams']
 
     if ident in ('abs', 'fix', 'float'):
-        # Return absolute value of a number
 
         # Fix operator: make a cast depending on the lower range
         unsigned = False
         if ident == "fix":
             unsigned = float(find_basic_type(params[0].exprType).Min) >= 0
 
+        # Debug output:
+        elif ident == "abs":
+            print "ABS EXPRESSION: ", prim.inputString,
+            print "- parameter type / expression type: ", \
+                    type_name (find_basic_type (params[0].exprType)), \
+                    type_name (find_basic_type (prim.exprType))
+
         param_stmts, param_str, local_var = expression(params[0])
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += '{op}({param})'.format(
                 param=param_str,
-                op='Asn1UInt (abs' if ident == 'abs'
+                op='abs' if ident == 'abs'
                 else 'Asn1Int'     if (ident == 'fix'  and not unsigned)
                 else 'Asn1UInt'    if (ident == 'fix'  and unsigned)
                 else 'Asn1Real'    if ident == 'float' else 'ERROR')
-        if ident == 'abs':
-            ada_string += ')'
+#        if ident == 'abs':
+#            ada_string += ')'
     elif ident == 'power':
         operands = [None, None]
         for idx, param in enumerate(params):
@@ -2019,11 +2025,14 @@ def _neg_expression(expr):
     ''' Generate the code for a negative expression '''
     code, local_decl = [], []
     expr_stmts, expr_str, expr_local = expression(expr.expr)
+    # Debug output:
+    print "NEG Expression: ", expr.inputString,
+    print " - Inner type: ", type_name (find_basic_type (expr.exprType))
+    cast = type_name (find_basic_type (expr.exprType))
     if not is_numeric(expr_str):
-        ada_string = u'(-Asn1Int({expr}))'.format(op=expr.operand,
-                                                  expr=expr_str)
+        ada_string = u'(-{cast}({expr}))'.format(cast=cast, expr=expr_str)
     else:
-        ada_string = u'(-{expr})'.format(expr=expr_str)
+         ada_string = u'(-{expr})'.format(expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
     return code, unicode(ada_string), local_decl

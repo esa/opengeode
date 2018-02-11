@@ -549,10 +549,14 @@ def check_call(name, params, context):
     # (4) Compute the type of the result
     param_btys = [find_basic_type(p.exprType) for p in params]
     if name == 'abs':
-        return type('Abs', (param_btys[0],), {
-            'Min': str(max(float(param_btys[0].Min), 0)),
-            'Max': str(max(float(param_btys[0].Max), 0))
-        })
+        # The implementation of abs in *all* progamming languages returns
+        # a type that is the same as the type of the parameter. The returned
+        # value is *not* unsigned. abs(integer'Min) returns a NEGATIVE number
+        return type('Abs', (param_btys[0],), {})
+#       return type('Abs', (param_btys[0],), {
+#           'Min': str(max(float(param_btys[0].Min), 0)),
+#           'Max': str(max(float(param_btys[0].Max), 0))
+#       })
 
     elif name == 'ceil':
         return type('Ceil', (REAL,), {
