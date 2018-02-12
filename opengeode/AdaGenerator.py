@@ -1504,11 +1504,11 @@ def _prim_call(prim):
             unsigned = float(find_basic_type(params[0].exprType).Min) >= 0
 
         # Debug output:
-        elif ident == "abs":
-            print "ABS EXPRESSION: ", prim.inputString,
-            print "- parameter type / expression type: ", \
-                    type_name (find_basic_type (params[0].exprType)), \
-                    type_name (find_basic_type (prim.exprType))
+#       elif ident == "abs":
+#           print "\nABS EXPRESSION: ", prim.inputString,
+#           print "- parameter type / expression type: ", \
+#                   type_name (find_basic_type (params[0].exprType)), \
+#                   type_name (find_basic_type (prim.exprType))
 
         param_stmts, param_str, local_var = expression(params[0])
         stmts.extend(param_stmts)
@@ -1773,6 +1773,10 @@ def _basic_operators(expr):
     left_stmts,  left_str,  left_local  = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right)
 
+#   print '\nBINARY EXPRESSION:', expr.inputString, type_name(find_basic_type(expr.exprType)),
+#   print "Left type = ", type_name(find_basic_type (expr.left.exprType)),
+#   print "- Right type = ", type_name(find_basic_type (expr.right.exprType))
+
     # Check if either side is a literal number
     right_is_numeric = is_numeric(right_str)
     left_is_numeric  = is_numeric(left_str)
@@ -1900,9 +1904,9 @@ def _assign_expression(expr):
             strings.append(u"{lvar}.Length := {rlen};"
                            .format(lvar=left_str, rlen=rlen))
     elif basic_left.kind.startswith('Integer'):
-        print '\nASSIGN:', expr.inputString
-        print "   Left  type = ",type_name(find_basic_type (expr.left.exprType))
-        print "   Right type = ",type_name(find_basic_type (expr.right.exprType))
+#       print '\nASSIGN:', expr.inputString,
+#       print "Left type = ",type_name(find_basic_type (expr.left.exprType)),
+#       print "- Right type = ",type_name(find_basic_type (expr.right.exprType))
 
         # Make sure that integers are cast to 64 bits
         # It is possible that left and right are of different types
@@ -2026,8 +2030,8 @@ def _neg_expression(expr):
     code, local_decl = [], []
     expr_stmts, expr_str, expr_local = expression(expr.expr)
     # Debug output:
-    print "NEG Expression: ", expr.inputString,
-    print " - Inner type: ", type_name (find_basic_type (expr.exprType))
+#   print "\nNEG Expression: ", expr.inputString,
+#   print " - Inner type: ", type_name (find_basic_type (expr.exprType))
     cast = type_name (find_basic_type (expr.exprType))
     if not is_numeric(expr_str):
         ada_string = u'(-{cast}({expr}))'.format(cast=cast, expr=expr_str)
@@ -2187,7 +2191,6 @@ def _conditional(cond):
     stmts = []
 
     tmp_type = type_name(cond.exprType)
-    print "CONDITIONAL : ", cond.inputString, tmp_type
 
     if tmp_type == 'String':
         then_str = cond.value['then'].value.replace("'", '"')
@@ -2208,6 +2211,9 @@ def _conditional(cond):
     if not tmp_type.startswith('String'):
         then_stmts, then_str, then_local = expression(cond.value['then'])
         else_stmts, else_str, else_local = expression(cond.value['else'])
+#       print "\nCONDITIONAL :", cond.inputString, tmp_type,
+#       print "THEN TYPE:", type_name(find_basic_type(cond.value['then'].exprType)),
+#       print "ELSE TYPE:", type_name(find_basic_type(cond.value['else'].exprType))
         stmts.extend(then_stmts)
         stmts.extend(else_stmts)
         local_decl.extend(then_local)
