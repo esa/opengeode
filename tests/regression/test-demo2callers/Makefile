@@ -8,11 +8,9 @@ edit:
 test-parse:
 	$(OPENGEODE) f1.pr system_structure.pr --check
 
-test-ada: f1.ali dataview-uniq.o | test_ada.o
-	$(GNATBIND) -n f1.ali
-	$(GNATLINK) -o test_ada test_ada.o dataview-uniq.o f1.ali -lgnat
-	./test_ada
-	#gcov f1.adb
+test-ada: f1.ali
+	cp check.ada check.adb && cp ris.ada ris.ads && \
+	$(GNATMAKE) -O$(O) -gnat2012 -g -fprofile-arcs -ftest-coverage check.adb && ./check
 
 test-c: f1.c test_c.o dataview-uniq.o
 	$(CC) f1.c -c -o f1.o
