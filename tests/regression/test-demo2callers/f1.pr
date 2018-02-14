@@ -1,0 +1,23 @@
+/* CIF PROCESS (250, 150), (150, 75) */
+PROCESS f1;
+    /* CIF TEXT (640, 106), (356, 46) */
+    dcl p myseq := {a 1, b f1};
+    /* CIF ENDTEXT */
+    /* CIF START (447, 88), (70, 35) */
+    START;
+        /* CIF NEXTSTATE (446, 138), (72, 35) */
+        NEXTSTATE Wait;
+    /* CIF STATE (446, 138), (72, 35) */
+    STATE Wait;
+        /* CIF INPUT (442, 193), (80, 35) */
+        INPUT pulse;
+            /* CIF OUTPUT (446, 243), (72, 35) */
+            OUTPUT AA(p);
+            /* CIF PROCEDURECALL (382, 293), (200, 35) */
+            CALL writeln('F1 Calls with', p!a);
+            /* CIF TASK (371, 343), (221, 35) */
+            TASK p!a := (p!a + 1) mod 255;
+            /* CIF NEXTSTATE (447, 393), (70, 35) */
+            NEXTSTATE -;
+    ENDSTATE;
+ENDPROCESS f1;

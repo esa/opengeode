@@ -1,0 +1,27 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM f1;
+
+	SIGNAL pulse;
+
+	/* CIF Keep Specific Geode PARAMNAMES p */
+	SIGNAL AA (MySeq);
+
+	CHANNEL c
+		FROM ENV TO f1 WITH pulse;
+		FROM f1 TO ENV WITH AA;
+	ENDCHANNEL;
+
+	BLOCK f1;
+
+		SIGNALROUTE r
+			FROM ENV TO f1 WITH pulse;
+			FROM f1 TO ENV WITH AA;
+
+		CONNECT c and r;
+
+		PROCESS f1 REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;
