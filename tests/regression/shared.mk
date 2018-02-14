@@ -11,7 +11,8 @@ clean:
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn *.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
-	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov
+	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
+	       check
 
 %.o: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --llvm -O$(O)
