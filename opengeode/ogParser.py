@@ -1108,6 +1108,8 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
             expr.right.value[det].exprType = expr.left.exprType
+            # We must also set the type of the overal expression to the same
+            expr.right.exprType = expr.left.exprType
 
     if expr.right.is_raw != expr.left.is_raw:
         warnings.extend(check_type_compatibility(raw_expr, ref_type, context))
@@ -1580,7 +1582,6 @@ def conditional_expression(root, context):
         'else': else_expr,
         'tmpVar': expr.tmpVar
     }
-
     return expr, errors, warnings
 
 
