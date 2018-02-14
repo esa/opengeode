@@ -10,7 +10,8 @@ test-parse:
 
 test-ada: f1.ali
 	cp check.ada check.adb && cp ris.ada ris.ads && \
-	$(GNATMAKE) -O$(O) -gnat2012 -g -fprofile-arcs -ftest-coverage check.adb && ./check
+	$(GNATMAKE) -O$(O) -gnat2012 -g -fprofile-arcs -ftest-coverage check.adb && \
+	./check | diff expected - && echo "[TEST] OK"
 
 test-c: f1.c test_c.o dataview-uniq.o
 	$(CC) f1.c -c -o f1.o

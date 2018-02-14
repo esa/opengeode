@@ -141,6 +141,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.0 (02/2018)
+    - V2 of Opengeode is based on ASN1SCC V4 and is not compatible with V3
+    - Main changes concern support of unsigned numbers in ASN.1 types
+
 1.5.44 (01/2018)
     - Bugfix: Return error code when Ada generation fails
     - Tests: reorder arguments to asn1scc for v4 compatibility
