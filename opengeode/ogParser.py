@@ -935,6 +935,13 @@ def compare_types(type_a, type_b):   # type -> [warnings]
         # TODO: Check that OctetString types have compatible range
         elif type_a.kind == 'SequenceType' and mismatch:
             raise TypeError(mismatch)
+        elif type_a.kind == 'IntegerType' and mismatch:
+            # Detect Signed/Unsigned type mismatch
+            min_a, min_b = float(type_a.Min), float(type_b.Min)
+            if (min_a >= 0) != (min_b >= 0):
+                raise TypeError(mismatch + "(signed vs unsigned type)")
+            else:
+                warnings.append(mismatch)
         elif mismatch:
             warnings.append(mismatch)
         #print traceback.print_stack()
@@ -1059,12 +1066,13 @@ def fix_expression_types(expr, context): # type: -> [warnings]
     # we must fix missing inner types
     # (due to similarities, the following should be refactored FIXME)
     if isinstance(expr.right, ogAST.PrimSequence):
+        #print "Left:", type_name(expr.left.exprType), "Right:", expr.right.inputString
         # left side must have a known type
         asn_type = find_basic_type(expr.left.exprType)
         if asn_type.kind != 'SequenceType':
             raise TypeError('left side must be a SEQUENCE type')
         for field, fd_expr in expr.right.value.viewitems():
-            if fd_expr.exprType == UNKNOWN_TYPE:
+#            if fd_expr.exprType == UNKNOWN_TYPE:
                 try:
                     expected_type = asn_type.Children.get(
                             field.replace('_', '-')).type
@@ -1098,6 +1106,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             warnings.extend(fix_expression_types(check_expr, context))
             expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimConditional):
+        #print "[Parser] [Conditional] ", expr.right.inputString
         for det in ('then', 'else'):
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
@@ -1108,8 +1117,8 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
             expr.right.value[det].exprType = expr.left.exprType
-            # We must also set the type of the overal expression to the same
-            expr.right.exprType = expr.left.exprType
+        # We must also set the type of the overal expression to the same
+        expr.right.exprType = expr.left.exprType
 
     if expr.right.is_raw != expr.left.is_raw:
         warnings.extend(check_type_compatibility(raw_expr, ref_type, context))
@@ -1566,6 +1575,9 @@ def conditional_expression(root, context):
         errors.append(error(root, msg))
 
     # TODO: Refactor this
+    # The type of the expression is set to the type of the "then" part,
+    # but this is not always right, in the case of raw numbers ("then" part
+    # may be unsigned, while the real expected type is signed)
     try:
         expr.left = then_expr
         expr.right = else_expr
@@ -1577,9 +1589,9 @@ def conditional_expression(root, context):
             errors.append(error(root, str(err)))
 
     expr.value = {
-        'if': if_expr,
-        'then': then_expr,
-        'else': else_expr,
+        'if'    : if_expr,
+        'then'  : then_expr,
+        'else'  : else_expr,
         'tmpVar': expr.tmpVar
     }
     return expr, errors, warnings

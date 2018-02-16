@@ -1,0 +1,1 @@
+This test should fail before generating code, due to a type mismatch (signed/unsigned integer mix)
