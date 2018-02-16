@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.1 (02/2018)
+    - Detect type mismatches when user mixes signed and unsigned variables
+
 2.0.0 (02/2018)
     - V2 of Opengeode is based on ASN1SCC V4 and is not compatible with V3
     - Main changes concern support of unsigned numbers in ASN.1 types
