@@ -72,12 +72,12 @@ MASInterfaceTypeDownType ::= CHOICE
     unacknowledgedWrite SEQUENCE {
      memoryID MemoryIDTypeT (0..0),
      memoryAddress MemoryAddressTypeT (100..100),
-     data ReadStatusModeCommandTypeT
+     data-value ReadStatusModeCommandTypeT
     },
     write SEQUENCE {
      memoryID MemoryIDTypeT (0..0),
      memoryAddress MemoryAddressTypeT (100..100),
-     data ReadStatusModeCommandTypeT
+     data-value ReadStatusModeCommandTypeT
     }
   }
 }
@@ -86,10 +86,10 @@ MASInterfaceTypeUpType ::= CHOICE
 {
   replyToCommand CHOICE {
     readExtendedstatusormodetype SEQUENCE {
-     data ExtendedStatusOrModeTypeT
+     data-value ExtendedStatusOrModeTypeT
     },
     readStatustype SEQUENCE {
-     data StatusTypeT
+     data-value StatusTypeT
     },
     write SEQUENCE {
     }
@@ -116,7 +116,7 @@ PSInterfaceTypeDownType ::= CHOICE
 {
   sendCommand CHOICE {
     send SEQUENCE {
-     data TelecommandTypeT
+     data-value TelecommandTypeT
     }
   }
 }
@@ -125,7 +125,7 @@ PSInterfaceTypeUpType ::= CHOICE
 {
   replyToCommand CHOICE {
     receive SEQUENCE {
-     data TelemetryTypeT
+     data-value TelemetryTypeT
     }
   }
 }
@@ -270,7 +270,7 @@ EventTypeT ::=
 SEQUENCE
 {
   typeKeyword EventTypeTypeT,
-  data EventDataTypeT
+  data-value EventDataTypeT
 }
 
 
@@ -493,7 +493,7 @@ DeviceAccessInterfaceDownType ::= CHOICE
      mode ModeTypeT
     },
     setUserData SEQUENCE {
-     data OctetTypeT
+     data-value OctetTypeT
     }
   }
 }
