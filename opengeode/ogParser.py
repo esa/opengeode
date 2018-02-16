@@ -1074,8 +1074,10 @@ def fix_expression_types(expr, context): # type: -> [warnings]
         for field, fd_expr in expr.right.value.viewitems():
 #            if fd_expr.exprType == UNKNOWN_TYPE:
                 try:
-                    expected_type = asn_type.Children.get(
-                            field.lower().replace('_', '-')).type
+                    for spelling in asn_type.Children:
+                        if field.lower().replace('_', '-') == spelling.lower():
+                            break
+                    expected_type = asn_type.Children[spelling].type
                 except AttributeError:
                     raise TypeError('Field not found: ' + field)
                 check_expr = ogAST.ExprAssign()
