@@ -850,18 +850,20 @@ package {process_name} is'''.format(generic=generic_spec,
                                       .format(re=each, t=timer))
                 taste_template.append('')
 
-        else:
-            ads_template.append(u'procedure SET_{}(val: access asn1SccT_UInt32);'
-                .format(timer))
-            if not generic:
-                ads_template.append(
+        elif not generic:
+            ads_template.append(
+               u'procedure SET_{}(val: access asn1SccT_UInt32);'.format(timer))
+            ads_template.append(
                     u'pragma import(C, SET_{timer}, "{proc}_RI_set_{timer}");'
                     .format(timer=timer, proc=process_name))
             ads_template.append(u'procedure RESET_{};'.format(timer))
-            if not generic:
-                ads_template.append(
+            ads_template.append(
                  u'pragma import(C, RESET_{timer}, "{proc}_RI_reset_{timer}");'
                  .format(timer=timer, proc=process_name))
+        else:
+            # Generic functions get the SET and RESET from template
+            pass
+
 
     if instance:
         # Instance of a process type, all the RIs (including timers) must
