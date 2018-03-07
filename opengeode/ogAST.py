@@ -231,8 +231,12 @@ class PrimBoolean(Primary):
 class PrimNull(Primary):
     pass
 
+
 class PrimConstant(Primary):
     is_raw = False
+    # other attributes set by the parser:
+    # constant_c_name : string
+    # constant_value : raw value from ASN.1
 
 
 class PrimStateReference(Primary):

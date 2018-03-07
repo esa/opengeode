@@ -1165,9 +1165,10 @@ def primary_variable(root, context):
                       .format(name))
 
     possible_constant = is_asn1constant(name)
-    if possible_constant:
+    if possible_constant is not None:
         prim = ogAST.PrimConstant()
-        prim.constant_c_name = possible_constant
+        prim.constant_c_name = possible_constant.varName
+        prim.constant_value = possible_constant.value
     elif is_fpar(name, context):
         prim = ogAST.PrimFPAR()
     else:
@@ -1200,11 +1201,11 @@ def is_asn1constant(name):
     try:
         for varname, vartype in DV.variables.viewitems():
             if varname.lower().replace('-', '_') == name:
-                return vartype.varName
+                return vartype
     except AttributeError:
         # Ignore - No DV - e.g. in syntax check mode
         pass
-    return False
+    return None
 
 
 def binary_expression(root, context):
@@ -1336,7 +1337,7 @@ def logic_expression(root, context):
 def arithmetic_expression(root, context):
     ''' Arithmetic expression analysis '''
     def find_bounds(operator, minL, maxL, minR, maxR):
-        candidates = [operator(float(l),float(r))
+        candidates = [operator(float(l), float(r))
                       for l in [minL, maxL]
                       for r in [minR, maxR]]
         return { 'Min': str(min(candidates)),
@@ -1352,6 +1353,11 @@ def arithmetic_expression(root, context):
     maxL = float(left.Max)
     minR = float(right.Min)
     maxR = float(right.Max)
+    # Constants defined in ASN.1 : take their value for the range
+    if isinstance(expr.left, ogAST.PrimConstant):
+        minL = maxL = float (expr.left.constant_value)
+    if isinstance(expr.right, ogAST.PrimConstant):
+        minR = maxR = float (expr.right.constant_value)
     # Type of the resulting expression depends on whether there are raw numbers
     # on one side of the expression (PrInt). By default when they are parsed,
     # they are set to 64 bits integers ; but if they are in an expression where
