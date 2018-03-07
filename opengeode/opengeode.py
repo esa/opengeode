@@ -139,7 +139,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.1'
+__version__ = '2.0.2'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1580,12 +1580,22 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.lander = None
         # handle view refresh - once per cycle only
         self.refresh_requested = False
+        # Flag indicating that something changed on the model since last time
+        # user clicked on the Check Model button
+        self.something_changed = True
 
     top_scene = lambda self: (self.scene_stack[0][0] if self.scene_stack
                               else self.scene())
 
     is_model_clean = lambda self: not any(not sc.undo_stack.isClean() for sc in
                  chain([self.top_scene()], self.top_scene().all_nested_scenes))
+
+    def change_cleanliness(self, idx):
+        ''' When something changed on the scene, notify the view
+        via the "something_changed" variable, used to monitor if
+        something changed since the last model check. This function is called
+        via a signal sent by the undo stack of the scene (indexChanged)'''
+        self.something_changed = True
 
     def set_toolbar(self):
         ''' Define the toolbar depending on the context '''
@@ -1746,6 +1756,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.update_datadict.emit()
         self.scene().undo_stack.cleanChanged.connect(
                 lambda x: self.wrapping_window.setWindowModified(not x))
+        self.scene().undo_stack.indexChanged.connect(lambda idx :
+                    self.change_cleanliness(idx))
 
     def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
@@ -1809,6 +1821,8 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.update_datadict.emit()
         self.scene().undo_stack.cleanChanged.connect(
                 lambda x: self.wrapping_window.setWindowModified(not x))
+        self.scene().undo_stack.indexChanged.connect(lambda idx :
+                    self.change_cleanliness(idx))
 
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
@@ -1904,8 +1918,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.messages_window.clear()
         # Propose to check semantics if the last check had errors
         syntax_errors = None
-        if not autosave and (scene.semantic_errors
-                             or not self.is_model_clean()):
+        if (not autosave) and self.something_changed:
+            #(scene.semantic_errors
+            #                 or not self.is_model_clean()):
             msg_box = QtGui.QMessageBox(self)
             msg_box.setIcon(QtGui.QMessageBox.Question)
             msg_box.setWindowTitle('OpenGEODE - Check Semantics')
@@ -2100,6 +2115,11 @@ class SDL_View(QtGui.QGraphicsView, object):
         # If the current scene is a nested one, save the top parent
         scene = self.top_scene()
 
+        # Keep track of this check - to avoid repeating if user wants to
+        # save the model. This flag is set back to True if anything is
+        # modified in any scene
+        self.something_changed = False
+
         self.messages_window.clear()
         self.messages_window.addItem("Checking syntax")
         if not scene.global_syntax_check():
@@ -2239,8 +2259,10 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             scene.messages_window = self.view.messages_window
             self.view.setScene(scene)
             self.view.refresh()
-            scene.undo_stack.cleanChanged.connect(
+            scene.undo_stack.cleanChanged.connect(lambda x :
                 lambda x: self.view.wrapping_window.setWindowModified(not x))
+            scene.undo_stack.indexChanged.connect(lambda idx :
+                    self.view.change_cleanliness(idx))
             scene.context_change.connect(self.update_datadict_window)
 
     def start(self, options):

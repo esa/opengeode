@@ -141,6 +141,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.2 (03/2018)
+    - Better support of ASN.1 constants
+    - Support timer when using process type
+    - Trigger model check proposal on save only if not checked recently
+
 2.0.1 (02/2018)
     - Detect type mismatches when user mixes signed and unsigned variables
 
