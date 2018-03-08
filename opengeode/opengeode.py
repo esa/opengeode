@@ -1615,8 +1615,12 @@ class SDL_View(QtGui.QGraphicsView, object):
         ''' Handle keyboard: Zoom, open/save diagram, etc. '''
         if event.matches(QtGui.QKeySequence.ZoomOut):
             self.scale(0.8, 0.8)
+            # Make sure the scene is resized when zooming in/out
+            self.update_phantom_rect()
         elif event.matches(QtGui.QKeySequence.ZoomIn):
             self.scale(1.2, 1.2)
+            # Make sure the scene is resized when zooming in/out
+            self.update_phantom_rect()
         elif event.key() == Qt.Key_Q and event.modifiers() == Qt.ControlModifier:
             # Reset zoom with Ctrl-Q
             self.resetTransform()
@@ -1666,6 +1670,20 @@ class SDL_View(QtGui.QGraphicsView, object):
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
 
+    def update_phantom_rect(self):
+        scene_rect = self.scene().itemsBoundingRect()
+        view_size = self.size()
+        scene_rect.setWidth(max(scene_rect.width(), view_size.width()))
+        scene_rect.setHeight(max(scene_rect.height(), view_size.height()))
+        if self.phantom_rect and self.phantom_rect in self.scene().items():
+            self.phantom_rect.setRect(scene_rect)
+        else:
+            self.phantom_rect = self.scene().addRect(scene_rect,
+                    pen=QtGui.QPen(QtGui.QColor(0, 0, 0, 0)))
+        # Hide the rectangle so that it does not collide with the symbols
+        self.phantom_rect.hide()
+        self.refresh()
+
     # pylint: disable=C0103
     def resizeEvent(self, event):
         '''
@@ -1677,20 +1695,8 @@ class SDL_View(QtGui.QGraphicsView, object):
            the user wants to place a symbol at an exact position - in
            that case, the automatic centering is not appropriate.
         '''
-        LOG.debug('resizing view')
-        scene_rect = self.scene().itemsBoundingRect()
-        view_size = self.size()
-        scene_rect.setWidth(max(scene_rect.width(), view_size.width()))
-        scene_rect.setHeight(max(scene_rect.height(), view_size.height()))
-        if self.phantom_rect and self.phantom_rect in self.scene().items():
-            #self.scene().removeItem(self.phantom_rect)
-            # XXX stop with removeItem, it provokes segfault
-            self.phantom_rect.hide()
-        self.phantom_rect = self.scene().addRect(scene_rect,
-                pen=QtGui.QPen(QtGui.QColor(0, 0, 0, 0)))
-        # Hide the rectangle so that it does not collide with the symbols
-        self.phantom_rect.hide()
-        self.refresh()
+        LOG.debug('[QGraphicsView] ResizeEvent')
+        self.update_phantom_rect()
         super(SDL_View, self).resizeEvent(event)
 
     def about_og(self):
@@ -1714,6 +1720,8 @@ class SDL_View(QtGui.QGraphicsView, object):
             else:
                 self.scale(1.1, 1.1)
             self.setTransformationAnchor(QtGui.QGraphicsView.AnchorViewCenter)
+            # Make sure the scene is resized when zooming in/out
+            self.update_phantom_rect()
         else:
             return super(SDL_View, self).wheelEvent(wheelEvent)
 

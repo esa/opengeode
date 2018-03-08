@@ -335,9 +335,12 @@ class Signalroute(Connection):
         # Arrow always bumps at the screen edge
         try:
             view = self.scene().views()[0]
+            #view.update_phantom_rect()
+            # view_pos is the position of the view relative to the scene
             view_pos = view.mapToScene(
                            view.viewport().geometry()).boundingRect().topLeft()
             scene_pos_x = self.mapFromScene(view_pos).x()
+            #print view_pos.x(), scene_pos_x, view.sceneRect().x()
             return QPointF(scene_pos_x, self.start_point.y())
         except (IndexError, AttributeError):
             # In case there is no view (e.g. Export PNG from cmd line)
@@ -395,13 +398,17 @@ class Signalroute(Connection):
                         process.output_signals.append(get_sig(sig))
             else:
                 # input signals of process 'source'
-                process, = [p for p in CONTEXT.processes
+                try:
+                    process, = [p for p in CONTEXT.processes
                             if p.processName.lower() == each['dest'].lower()]
-                existing = [sig['name'].lower()
+                    existing = [sig['name'].lower()
                             for sig in process.input_signals]
-                for sig in sigs:
-                    if sig['name'].lower() not in existing:
-                        process.input_signals.append(get_sig(sig))
+                    for sig in sigs:
+                        if sig['name'].lower() not in existing:
+                            process.input_signals.append(get_sig(sig))
+                except ValueError:
+                    # No process found
+                    pass
         existing = [sig['name'].lower() for sig in CONTEXT.signals]
         for each in all_sigs:
             if each['name'].lower() not in existing:
