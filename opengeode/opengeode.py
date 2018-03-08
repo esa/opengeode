@@ -2417,6 +2417,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                         self.statechart_scene.itemsBoundingRect(),
                         Qt.KeepAspectRatioByExpanding)
             except (AttributeError, IOError, TypeError) as err:
+                LOG.debug(str(traceback.format_exc()))
                 LOG.debug("Statechart error: " + str(err))
         if mdi is not None:
             # When leaving the focus, this signal is received with mdi == None
