@@ -1036,10 +1036,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         pr_data = unicode('\n'.join(pr_raw))
         ast, _, err = ogParser.parse_pr(string=pr_data)
         self.semantic_errors = True if err else False
-        try:
+        if len(ast.processes) == 1:
             process_ast, = ast.processes
-        except ValueError:
-            LOG.debug('No statechart to render')
+        elif len(ast.process_types) == 1:
+            process_ast, = ast.process_types
+        else:
+            LOG.debug('No statechart to render (no process or process type)')
             return None
         try:
             process_ast.input_signals = \

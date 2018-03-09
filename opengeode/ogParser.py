@@ -4522,14 +4522,20 @@ def pr_file(root):
         def find_processes(block):
             ''' Recursively find non-referenced processes in a system '''
             try:
-                result = [proc for proc in block.processes
-                          if not proc.referenced]
+                non_ref_processes = [proc for proc in block.processes
+                                     if not proc.referenced]
+                process_types = block.process_types
             except AttributeError:
-                result = []
+                non_ref_processes, process_types = [], []
             for nested in block.blocks:
-                result.extend(find_processes(nested))
-            return result
-        ast.processes.extend(find_processes(system))
+                add_p, add_t = find_processes(nested)
+                non_ref_processes.extend(add_p)
+                process_types.extend(add_t)
+            return non_ref_processes, process_types
+        non_ref_p, p_types = find_processes(system)
+
+        ast.processes.extend(non_ref_p)
+        ast.process_types.extend(p_types)
     for child in processes:
         # process definition at root level (can be a process type)
         process, err, warn = process_definition(child, parent=ast)
@@ -4549,6 +4555,7 @@ def pr_file(root):
             process_instances.append(each)
         elif each.process_type:
             process_types.append(each)
+            ast.process_types.append(each)
     for each in process_instances:
         if each.instance_of_name is not None:
             # Find corresponding process type definition

@@ -982,8 +982,9 @@ class Block(object):
         self.connections = []
         # list of class Block
         self.blocks = []
-        # list of class Process
+        # list of class Process / with separate process_types
         self.processes = []
+        self.process_types = []
         # list of ogAST.Procedure
         self.procedures = []
         # Block formal parameters - list of dict (unused)
@@ -1042,3 +1043,6 @@ class AST(object):
         self.systems = []
         # List of Process
         self.processes = []
+
+        # List of Process types
+        self.process_types = []

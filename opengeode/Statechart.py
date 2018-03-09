@@ -430,6 +430,9 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         input is resulting from sdl_to_statechart, it contains a tree of graphs
         in case of composite states.
     '''
+    if graphtree == None:
+        raise TypeError ("Statechart.py: 'render_statechart'"
+                         " called with no graph tree")
     # dot uses a 72 dpi value for converting its position coordinates
     # Get actual rendering DPI from Qt view
     for view in scene.views():
