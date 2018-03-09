@@ -1,18 +1,45 @@
 /* CIF PROCESS (250, 149), (150, 75) */
 process orchestrator;
     /* CIF TEXT (317, 19), (255, 143) */
-    
     -- MyInteger is a signed integer
     DCL  a MyInteger := 4;
     DCL e MyChoice;
     DCL j MyComplexType;
     
+    dcl uint_type t_uint8;
     /* CIF ENDTEXT */
     /* CIF START (697, 142), (69, 32) */
     START;
         /* CIF task (610, 189), (243, 41) */
-        task j := { a { x if e!a then 5 else a fi, y 6 } };
-        /* CIF NEXTSTATE (695, 246), (74, 34) */
+        task j := { a { x if e!a then 5 else a fi, y 6 } }
+        /* CIF comment (873, 192), (421, 35) */
+        comment 'error must be detected, a is signed, while the field type is unsigned';
+        /* CIF task (569, 250), (324, 41) */
+        task j := { a { x if e!a then 5 else (a mod 5) fi, y -2000 } }
+        /* CIF comment (913, 253), (444, 53) */
+        comment 'error must be detected, -2000 is not in range of field y! 
+a mod 5 is also going to fail at Ada level because it will return type of a';
+        /* CIF task (604, 306), (254, 41) */
+        task j := { a { x if e!a then 5 else -9 fi, y 6 } }
+        /* CIF comment (878, 309), (428, 35) */
+        comment 'error must be detected, -9 is not compliant with the type of the field';
+        /* CIF task (604, 367), (254, 41) */
+        task j := { a { x if e!a then -5 else 9 fi, y 6 } }
+        /* CIF comment (878, 370), (435, 35) */
+        comment 'error must be detected, -5 is not compliant with the type of the field';
+        /* CIF task (667, 428), (129, 35) */
+        task uint_type := -2000
+        /* CIF comment (816, 428), (423, 35) */
+        comment 'an erorr must be raised (unsigned/signed mismatch) not a warning!';
+        /* CIF task (659, 483), (145, 35) */
+        task uint_type := a mod 5
+        /* CIF comment (824, 483), (423, 35) */
+        comment 'a mod 5 at ada level must be cast';
+        /* CIF task (679, 533), (104, 35) */
+        task a := uint_type
+        /* CIF comment (803, 533), (289, 35) */
+        comment 'must raise error (signed/unsigned mismatch)';
+        /* CIF NEXTSTATE (694, 583), (74, 34) */
         NEXTSTATE Stopped;
     /* CIF state (139, 297), (73, 35) */
     state stopped;
