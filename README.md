@@ -145,6 +145,7 @@ Changelog
     - Better support of ASN.1 constants
     - Support timer when using process type
     - Trigger model check proposal on save only if not checked recently
+    - Fix Statechart rendering (incl. with process type)
 
 2.0.1 (02/2018)
     - Detect type mismatches when user mixes signed and unsigned variables
