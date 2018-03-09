@@ -2411,11 +2411,13 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
     if dec.kind == 'any':
         LOG.warning('Ada backend does not support the "ANY" statement')
         code.append('-- "DECISION ANY" statement was ignored')
+        code.append('null;')
         return code, local_decl
     elif dec.kind == 'informal_text':
         LOG.warning('Informal decision ignored')
         code.append('-- Informal decision was ignored: {}'
                     .format(dec.inputString))
+        code.append('null;')
         return code, local_decl
 
     question_type = dec.question.exprType
