@@ -139,9 +139,9 @@ def external_ri_list(process):
         result.append(ri_header)
 
     for timer in process.timers:
-        result.append(u"procedure set_{}(val: access asn1SccT_Uint32)"
+        result.append(u"procedure Set_{}(val: access asn1SccT_Uint32)"
                       .format(timer))
-        result.append(u"procedure reset_{}"
+        result.append(u"procedure Reset_{}"
                       .format(timer))
     return result
 
@@ -173,6 +173,9 @@ def _process(process, simu=False, instance=False, **kwargs):
 
     if process_instance is not process:
         # Generate an instance of the process type, too.
+        # First copy the list of timers to the instance (otherwise the
+        # instance would miss some PIs and RIs to set the actual timers)
+        process_instance.timers = process.timers
         generate(process_instance, simu, instance=True)
 
     global TYPES
@@ -591,8 +594,9 @@ package {process_name} is'''.format(generic=generic_spec,
         ads_template.append(u'--  Provided interface "{}"'.format(signame))
         ads_template.append(pi_header + ';')
         if not generic:
-            ads_template.append(u'pragma Export(C, {name}, "{proc}_{name}");'
-                                 .format(name=signame, proc=process_name))
+            ads_template.append(
+                    u'pragma Export(C, {name}, "{proc}_PI_{name}");'
+                     .format(name=signame.lower(), proc=process_name.lower()))
 
         if simu:
             # Generate code for the mini-cv template
