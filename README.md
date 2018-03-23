@@ -143,6 +143,7 @@ Changelog
 
 2.0.3 (03/2018)
     - Optimize calls to asn1scc
+    - Fix paste error when input symbol is selected
 
 2.0.2 (03/2018)
     - Better support of ASN.1 constants

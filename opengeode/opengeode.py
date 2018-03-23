@@ -990,7 +990,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             Paste previously copied symbols at selection point
         '''
         if self.context == 'process' and self.readonly:
-            # with readonly flag, forbid item delettion
+            # with readonly flag, forbid item deletion
             return
         parent = list(self.selected_symbols)
         if len(parent) > 1:
@@ -1027,6 +1027,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     item.cam(item.pos(), item.pos())
                 self.undo_stack.endMacro()
                 self.refresh()
+        self.selectionChanged.emit()
 
 
     def sdl_to_statechart(self, basic=True, view=None):
