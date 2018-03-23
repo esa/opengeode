@@ -21,6 +21,8 @@ import distutils.spawn as spawn
 import sys
 import importlib
 import logging
+import traceback
+import hashlib
 from PySide.QtCore import QProcess, QFile
 
 import icons
@@ -33,6 +35,7 @@ LOG.addHandler(handler_console)
 
 # global needed to store the imported module and list of modules ever loaded
 AST = {}
+
 # Same for the modules imported by the call to asn2DataModel
 ASN2DM = {}
 
@@ -78,6 +81,18 @@ def parse_asn1(*files, **options):
         This function uses QProcess to launch the ASN.1 compiler because
         the subprocess module from Python has issues on the Windows platform
     '''
+    # make sure the same files are not parsed more than once if not modified
+    filehash = hashlib.md5()
+    file_list = list(*files)
+    for each in file_list:
+        filehash.update(open(each).read())
+    new_hash = filehash.hexdigest()
+    fileset = "".join(file_list)
+    if fileset in AST.viewkeys() and AST[fileset]['hash'] == new_hash:
+        return AST[fileset]['ast']
+    else:
+        AST[fileset] = {'hash': new_hash}
+
     ast_version = options.get('ast_version', ASN1.UniqueEnumeratedNames)
     rename_policy = options.get('rename_policy', ASN1.NoRename)
     flags = options.get('flags', [ASN1.AstOnly])
@@ -133,13 +148,8 @@ def parse_asn1(*files, **options):
 
     _ = waitfor_qprocess(asn1scc, "ASN.1 Compiler")
 
-    if filename in AST.viewkeys():
-        # Re-import module if it was already loaded
-        ast = AST[filename]
-        reload(ast)
-    else:
-        ast = importlib.import_module(filename)
-        AST[filename] = ast
+    ast = importlib.import_module(filename)
+    AST[fileset]['ast'] = ast
     if pprint:
         # add the path to the optionally-gernated pretty-printed HTML file
         ast.html = out_html

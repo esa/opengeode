@@ -2122,7 +2122,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def check_model(self):
         ''' Parse the model and check for warnings and errors '''
-        # If the current scene is a nested one, save the top parent
+        # If the current scene is a nested one, go first to the top parent
         scene = self.top_scene()
 
         # Keep track of this check - to avoid repeating if user wants to
