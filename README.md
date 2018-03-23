@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.3 (03/2018)
+    - Optimize calls to asn1scc
+
 2.0.2 (03/2018)
     - Better support of ASN.1 constants
     - Support timer when using process type
