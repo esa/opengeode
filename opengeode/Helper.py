@@ -531,6 +531,12 @@ def _rename_substring(ast, from_name, to_name):
         rename_everything(each, from_name, to_name)
 
 
+@rename_everything.register(ogAST.PrimSelector)
+def _rename_primselector(ast, from_name, to_name):
+    ''' Rename variable name in field access (a.b.c) '''
+    rename_everything(ast.value[0], from_name, to_name)
+
+
 @rename_everything.register(ogAST.PrimVariable)
 def _rename_path(ast, from_name, to_name):
     ''' Ultimate seek point for the renaming: primary path/variables '''

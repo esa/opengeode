@@ -1729,13 +1729,14 @@ def _prim_substring(prim):
 
 @expression.register(ogAST.PrimSelector)
 def _prim_selector(prim):
-    ''' Selector (field access with '!' separation) '''
+    ''' Selector (field access with '!' or '.' separation) '''
     stmts, ada_string, local_decl = [], '', []
 
     receiver = prim.value[0]
     field_name = prim.value[1]
 
     receiver_stms, receiver_string, receiver_decl = expression(receiver)
+
     ada_string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)

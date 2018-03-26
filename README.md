@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.4 (03/2018)
+    - Fix issue with variable prefix in nested states (in generated code)
+
 2.0.3 (03/2018)
     - Optimize calls to asn1scc
     - Fix paste error when input symbol is selected
