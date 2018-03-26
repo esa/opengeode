@@ -139,7 +139,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.2'
+__version__ = '2.0.3'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -990,7 +990,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             Paste previously copied symbols at selection point
         '''
         if self.context == 'process' and self.readonly:
-            # with readonly flag, forbid item delettion
+            # with readonly flag, forbid item deletion
             return
         parent = list(self.selected_symbols)
         if len(parent) > 1:
@@ -1027,6 +1027,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     item.cam(item.pos(), item.pos())
                 self.undo_stack.endMacro()
                 self.refresh()
+        self.selectionChanged.emit()
 
 
     def sdl_to_statechart(self, basic=True, view=None):
@@ -2122,7 +2123,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def check_model(self):
         ''' Parse the model and check for warnings and errors '''
-        # If the current scene is a nested one, save the top parent
+        # If the current scene is a nested one, go first to the top parent
         scene = self.top_scene()
 
         # Keep track of this check - to avoid repeating if user wants to
