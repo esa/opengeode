@@ -1,90 +1,67 @@
-SYSTEM og;
-    /* CIF TEXT (159, 221), (287, 188) */
+system og;
+    /* CIF TEXT (160, 221), (287, 188) */
     -- Text area for declarations and comments
-
-use dv comment 'dataview-uniq.asn';
-
---use dv2 comment 'dataview2.asn';
-
-signal dd(Type2);
-signal we(Some_Thing);
-
-procedure hehe;
-fpar in/out a_param Type2;
-external;
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    signal doSomething;
     /* CIF ENDTEXT */
-    CHANNEL c
-        FROM ENV TO og WITH dd;
-        FROM og TO ENV WITH we;
-    ENDCHANNEL;
-    BLOCK og;
-        SIGNALROUTE r
-            FROM ENV TO og WITH dd;
-            FROM og TO ENV WITH we;
-        CONNECT c AND r;
+    channel c
+        from env to og with doSomething;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with doSomething;
+        connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
-        PROCESS og;
+        process og;
+            state NestedState;
+            substructure
+                out (getOut);
+                    /* CIF TEXT (80, 232), (366, 42) */
+                    -- Declare a variable with the same name as the level above
+                    dcl toto MySeq := { a FALSE, b 2 };
+                    /* CIF ENDTEXT */
+                    /* CIF START (747, 207), (70, 35) */
+                    START;
+                        /* CIF PROCEDURECALL (565, 262), (433, 35) */
+                        call writeln ('Entering state with ', toto.a, toto.b, ' (should be FALSE 2)' );
+                        /* CIF task (734, 317), (95, 35) */
+                        task toto := toto;
+                        /* CIF PROCEDURECALL (577, 372), (410, 35) */
+                        call writeln ('Value should be the same:  ', toto.a, toto.b);
+                        /* CIF task (705, 427), (153, 53) */
+                        task toto.a := TRUE,
+toto.b := 3,
+toto := { a FALSE, b 4 };
+                        /* CIF PROCEDURECALL (577, 500), (410, 35) */
+                        call writeln ('Value should be (FALSE 4) :  ', toto.a, toto.b);
+                        /* CIF return (764, 555), (35, 35) */
+                        return getOut;
+            endsubstructure;
             /* CIF TEXT (57, 58), (287, 140) */
-            -- Text area for declarations and comments
-
-dcl haha SeqOf;
-
-dcl hihi type2;
-
-dcl test Some_Thing := 4;
+            dcl toto MySeq;
             /* CIF ENDTEXT */
-            /* CIF PROCEDURE (404, 228), (73, 35) */
-            PROCEDURE aProc;
-                /* CIF TEXT (542, 127), (287, 140) */
-                dcl  tmp Some_Thing := 1;
-                /* CIF ENDTEXT */
-                /* CIF START (164, 113), (70, 35) */
-                START;
-                    /* CIF OUTPUT (154, 163), (89, 35) */
-                    OUTPUT we(test);
-                    /* CIF OUTPUT (155, 213), (88, 35) */
-                    OUTPUT we(tmp)
-                    /* CIF COMMENT (263, 213), (269, 35) */
-                    COMMENT 'check that local variables can be sent';
-                    /* CIF RETURN (181, 263), (35, 35) */
-                    RETURN ;
-            ENDPROCEDURE;
-            /* CIF PROCEDURE (439, 309), (70, 35) */
-            PROCEDURE haha
-            /* CIF COMMENT (529, 309), (184, 35) */
-            COMMENT 'same name as a variable';
-            ENDPROCEDURE;
-            /* CIF PROCEDURE (414, 353), (124, 35) */
-            PROCEDURE default_seqof
-            /* CIF COMMENT (558, 353), (189, 35) */
-            COMMENT 'same name as a constant';
-            ENDPROCEDURE;
-            /* CIF PROCEDURE (430, 404), (78, 35) */
-            PROCEDURE enum1
-            /* CIF COMMENT (528, 404), (206, 35) */
-            COMMENT 'same name as an enum item';
-            ENDPROCEDURE;
-            /* CIF START (155, 216), (70, 35) */
+            /* CIF START (475, 177), (70, 35) */
             START;
-                /* CIF NEXTSTATE (155, 266), (70, 35) */
+                /* CIF NEXTSTATE (475, 227), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (296, 231), (70, 35) */
-            STATE wait;
-                /* CIF INPUT (289, 286), (84, 35) */
-                INPUT dd(hihi);
-                    /* CIF PROCEDURECALL (281, 336), (100, 35) */
-                    CALL hehe(hihi);
-                    /* CIF OUTPUT (286, 386), (89, 35) */
-                    OUTPUT we(test);
-                    /* CIF PROCEDURECALL (296, 436), (70, 35) */
-                    CALL haha;
-                    /* CIF PROCEDURECALL (269, 486), (124, 35) */
-                    CALL default_seqof;
-                    /* CIF PROCEDURECALL (292, 536), (78, 35) */
-                    CALL enum1;
-                    /* CIF NEXTSTATE (296, 586), (70, 35) */
-                    NEXTSTATE wait;
-            ENDSTATE;
-        ENDPROCESS og;
-    ENDBLOCK;
-ENDSYSTEM;
+            /* CIF state (455, 392), (109, 35) */
+            state NestedState;
+                /* CIF connect (510, 447), (0, 35) */
+                connect getOut;
+                    /* CIF NEXTSTATE (475, 502), (70, 35) */
+                    NEXTSTATE Wait;
+            endstate;
+            /* CIF state (475, 227), (70, 35) */
+            state wait;
+                /* CIF input (457, 282), (105, 35) */
+                input doSomething;
+                    /* CIF task (435, 337), (150, 35) */
+                    task toto := { a TRUE, b 1 };
+                    /* CIF NEXTSTATE (455, 392), (109, 35) */
+                    NEXTSTATE NestedState;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;

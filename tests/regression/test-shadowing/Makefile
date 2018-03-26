@@ -10,9 +10,10 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn 
-	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n og.ali
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	gnat make test_toto.ada && ./test_toto
+	#$(GNATMAKE) -O$(O) -c *.adb
+	#$(GNATBIND) -n og.ali
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
