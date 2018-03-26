@@ -9,7 +9,7 @@ CharString ::= OCTET STRING (SIZE(0..100))
 FixSeqof ::= SEQUENCE (SIZE(3)) OF Integer
 VarSeqof ::= SEQUENCE (SIZE(0..100)) OF Integer
 
-Enum ::= ENUMERATED { one(12), two(13), three(111) }
+Enum-T ::= ENUMERATED { one(12), two(13), three(111) }
 
 Choice ::= CHOICE {
     b BOOLEAN,

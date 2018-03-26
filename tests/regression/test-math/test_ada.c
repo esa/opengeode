@@ -3,7 +3,7 @@
 #include "dataview-uniq.h"
 
 extern void adainit();
-extern void expressions_run();
+extern void expressions_PI_run();
 
 void expressions_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
     if (!*res) {
@@ -14,6 +14,6 @@ void expressions_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
 
 int main() {
     adainit();
-    expressions_run();
+    expressions_PI_run();
     return 0;
 }

@@ -5,7 +5,7 @@ PROCESS operators;
 DCL f Real := 2.0;
 DCL b Boolean := true;
 DCL s CharString := 'HELLO';
-DCL e Enum := one;
+DCL e Enum_T := one;
 DCL fixSeqOf FixSeqof := {1, 2, 3};
 DCL varSeqOf varSeqOf := {1, 2, 3};
 DCL c Choice := i:2;

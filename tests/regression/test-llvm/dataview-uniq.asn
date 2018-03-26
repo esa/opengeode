@@ -13,7 +13,7 @@ SeqBoolFix ::= SEQUENCE (SIZE(2)) OF BOOLEAN
 SeqEnum ::= SEQUENCE (SIZE(1..5)) OF ENUMERATED { hello, world }
 SeqEnumFix ::= SEQUENCE (SIZE(2)) OF ENUMERATED { hello, world }
 
-Enum ::= ENUMERATED {a, b, c, d, eE}
+Enum-T ::= ENUMERATED {a, b, c, d, eE}
 Choice ::= CHOICE {c1 BOOLEAN, cDe2 BOOLEAN}
 
 END

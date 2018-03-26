@@ -18,35 +18,40 @@ system og;
             state NestedState;
             substructure
                 out (getOut);
-                    /* CIF TEXT (80, 232), (366, 83) */
+                    /* CIF TEXT (80, 232), (368, 113) */
                     -- Declare a variable with the same name as the level above
                     dcl toto MySeq := { a FALSE, b 2 };
                     
                     -- Declare a non-shadowing variable
                     dcl tutu MySeq := { a TRUE, b 8 };
+                    
+                    dcl ghost MyInt := 3;
                     /* CIF ENDTEXT */
                     /* CIF START (747, 207), (70, 35) */
                     START;
                         /* CIF PROCEDURECALL (565, 262), (433, 35) */
                         call writeln ('Entering state with ', toto.a, toto.b, ' (should be FALSE 2)' );
-                        /* CIF task (733, 317), (98, 38) */
+                        /* CIF task (733, 317), (98, 53) */
                         task toto := toto,
-tutu := tutu;
-                        /* CIF PROCEDURECALL (577, 375), (410, 35) */
+tutu := tutu,
+ghost := 4;
+                        /* CIF PROCEDURECALL (577, 400), (410, 35) */
                         call writeln ('Value should be the same:  ', toto.a, toto.b);
-                        /* CIF task (705, 430), (153, 53) */
+                        /* CIF task (705, 455), (153, 53) */
                         task toto.a := TRUE,
 toto.b := 3,
 toto := { a FALSE, b 4 };
-                        /* CIF task (705, 503), (153, 53) */
+                        /* CIF task (705, 528), (153, 53) */
                         task tutu.a := TRUE;
-                        /* CIF PROCEDURECALL (577, 571), (410, 35) */
+                        /* CIF PROCEDURECALL (577, 596), (410, 35) */
                         call writeln ('Value should be (FALSE 4) :  ', toto.a, toto.b);
-                        /* CIF return (764, 626), (35, 35) */
+                        /* CIF return (764, 651), (35, 35) */
                         return getOut;
             endsubstructure;
             /* CIF TEXT (57, 58), (287, 140) */
             dcl toto MySeq;
+            
+            dcl ghost MySeq;
             /* CIF ENDTEXT */
             /* CIF START (475, 177), (70, 35) */
             START;

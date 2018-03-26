@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 /* Ada code external interface */
-extern void challenge_run();
-extern void challenge_go_off();
+extern void challenge_PI_run();
+extern void challenge_PI_go_off();
 extern int adainit();
 
 //extern long long l_result;
@@ -17,8 +17,8 @@ void challenge_RI_pow(long long *a, long long *b, long long *res)
 int main()
 {
     adainit();
-    challenge_run();
-    challenge_go_off();
+    challenge_PI_run();
+    challenge_PI_go_off();
     
     return 0;
 }

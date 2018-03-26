@@ -6,8 +6,8 @@
 #include "dataview-uniq.h"
 
 extern void adainit();
-extern void myfunction_start_something(asn1SccT_Int32 *);
-extern void myfunction_mytimer();
+extern void myfunction_PI_start_something(asn1SccT_Int32 *);
+extern void myfunction_PI_mytimer();
 
 volatile sig_atomic_t keep_going = 1;
 
@@ -25,7 +25,7 @@ void myfunction_RI_set_mytimer(asn1SccT_Int32 *val)
 
 void timer_expired()
 {
-    myfunction_mytimer();
+    myfunction_PI_mytimer();
     keep_going = 0;
 }
 
@@ -42,7 +42,7 @@ int main()
 
     printf("[C Code] Running test\n");
     adainit();
-    myfunction_start_something(&test);
+    myfunction_PI_start_something(&test);
     while (keep_going);    
     return 0;
 }

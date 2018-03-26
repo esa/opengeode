@@ -6,8 +6,8 @@
 #include "dataview-uniq.h"
 
 extern void adainit();
-extern void myfunction_start_something(asn1SccT_Int32 *);
-extern void myfunction_mytimer();
+extern void myfunction_PI_start_something(asn1SccT_Int32 *);
+extern void myfunction_PI_mytimer();
 
 
 void myfunction_RI_result_data(long long *val)
@@ -22,7 +22,7 @@ int main()
 
     printf("[C Code] Running test\n");
     adainit();
-    myfunction_start_something(&test);
+    myfunction_PI_start_something(&test);
     return 0;
 }
 
