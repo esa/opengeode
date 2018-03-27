@@ -65,15 +65,22 @@ toto := { a FALSE, b 4 };
                         task tutu.a := TRUE;
                         /* CIF PROCEDURECALL (719, 601), (126, 35) */
                         call abc (toto, ghost);
-                        /* CIF PROCEDURECALL (577, 651), (410, 35) */
+                        /* CIF PROCEDURECALL (577, 656), (410, 35) */
                         call writeln ('Value should be (FALSE 4) :  ', toto.a, toto.b);
-                        /* CIF return (764, 706), (35, 35) */
+                        /* CIF task (707, 711), (150, 68) */
+                        task toto := titi,
+titi := { a TRUE, b 42 },
+titi.a := FALSE,
+titi.b := 41;
+                        /* CIF return (764, 809), (35, 35) */
                         return getOut;
             endsubstructure;
             /* CIF TEXT (57, 58), (287, 140) */
             dcl toto MySeq;
             
             dcl ghost MySeq;
+            
+            dcl titi MySeq;
             /* CIF ENDTEXT */
             /* CIF START (475, 177), (70, 35) */
             START;
