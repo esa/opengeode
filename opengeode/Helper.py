@@ -404,7 +404,12 @@ def _rename_automaton(ast, from_name, to_name):
             if varname.lower() == from_name:
                 break
         else:
-            rename_everything(each.content, from_name, to_name)
+            # do the same for procedure input/output variables (FPAR section)
+            for fpar in each.fpar:
+                if fpar['name'].lower() == from_name:
+                    break
+            else:
+                rename_everything(each.content, from_name, to_name)
 
 
 @rename_everything.register(ogAST.Output)

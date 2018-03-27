@@ -27,6 +27,26 @@ system og;
                     
                     dcl ghost MyInt := 3;
                     /* CIF ENDTEXT */
+                    /* CIF procedure (880, 524), (70, 35) */
+                    procedure abc;
+                        /* CIF TEXT (213, 199), (272, 115) */
+                        -- Text area for declarations and comments
+                        
+                        fpar
+                           in toto MySeq,
+                           in/out tutu MyInt;
+                        
+                        dcl ghost MyBool := false;
+                        /* CIF ENDTEXT */
+                        /* CIF START (717, 172), (70, 35) */
+                        START;
+                            /* CIF task (700, 227), (104, 35) */
+                            task tutu := toto.b;
+                            /* CIF task (700, 282), (103, 35) */
+                            task ghost := true;
+                            /* CIF return (734, 332), (35, 35) */
+                            return ;
+                    endprocedure;
                     /* CIF START (747, 207), (70, 35) */
                     START;
                         /* CIF PROCEDURECALL (565, 262), (433, 35) */
@@ -43,9 +63,11 @@ toto.b := 3,
 toto := { a FALSE, b 4 };
                         /* CIF task (705, 528), (153, 53) */
                         task tutu.a := TRUE;
-                        /* CIF PROCEDURECALL (577, 596), (410, 35) */
+                        /* CIF PROCEDURECALL (719, 601), (126, 35) */
+                        call abc (toto, ghost);
+                        /* CIF PROCEDURECALL (577, 651), (410, 35) */
                         call writeln ('Value should be (FALSE 4) :  ', toto.a, toto.b);
-                        /* CIF return (764, 651), (35, 35) */
+                        /* CIF return (764, 706), (35, 35) */
                         return getOut;
             endsubstructure;
             /* CIF TEXT (57, 58), (287, 140) */
