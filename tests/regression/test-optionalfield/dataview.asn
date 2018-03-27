@@ -19,7 +19,11 @@ SeqDef ::= SEQUENCE {
     d SEQUENCE { thanassis BOOLEAN } DEFAULT { thanassis TRUE }
 }
 
---SeqPresent ::= Seq (WITH COMPONENTS {a PRESENT})
---SeqAbsent ::= Seq (WITH COMPONENTS {a ABSENT})
+SomeSeq ::= SEQUENCE { thanassis BOOLEAN }
+
+some-constant SomeSeq ::= { thanassis TRUE }
+
+SeqPresent ::= Seq (WITH COMPONENTS {a PRESENT})
+SeqAbsent ::= Seq (WITH COMPONENTS  {a ABSENT})
 
 END
