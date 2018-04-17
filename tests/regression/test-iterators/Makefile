@@ -25,6 +25,12 @@ test-qgen-ada:
 test-qgen-c:
 	$(TESTQGEN_C) $(ROOT_MODEL)
 
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
+
 test-ada:
 	[ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ; \
 	mkdir -p build && cp *.pr *.asn model_checker.gpr properties build && cd build && \

@@ -19,6 +19,12 @@ test-qgen-ada:
 test-qgen-c:
 	$(TESTQGEN_C) $(ROOT_MODEL)
 
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
+
 test-ada: test-parse
 
 test-c: test-parse

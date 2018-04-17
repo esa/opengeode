@@ -19,6 +19,12 @@ test-qgen-ada:
 test-qgen-c:
 	$(TESTQGEN_C) $(ROOT_MODEL)
 
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
+
 test-ada: 
 	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(CC) -c -g test_ada.c

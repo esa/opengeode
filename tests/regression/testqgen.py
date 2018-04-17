@@ -27,8 +27,8 @@ def parse_args():
     parser.add_argument('root_model', metavar='file.pr', type=str,
             help='SDL root model') 
     parser.add_argument('-u', '--update', action='store_true')
-    
-    return parser.parse_args()             
+
+    return parser.parse_args()
 
 def init_logging(options):
     ''' Initialize logging '''
@@ -73,7 +73,7 @@ def diff(expected, actual, msg=None, count=1, case_sensitive=True,
 
     if os.path.isfile(actual):
             actual = file(actual).read()
-    
+
     string.replace(actual, "\r", "")
 
     expected = str1 * count
@@ -112,7 +112,7 @@ def colored_unified_diff(a, b, fromfile='', tofile='',
     for line in difflib.unified_diff(a, b, fromfile, tofile):
         yield line
 
-def main():         
+def main():
     start = time.time()
     results = []
     op = parse_args()
@@ -128,43 +128,51 @@ def main():
     return test.summarize(results, elapsed)
 
 def run_test(op):
-    ''' Call a SDL parser with the required arguments '''
+    ''' Call SDL importer with the required arguments '''
 
-    jar_dir = os.environ.get('JAR_DIR')
-    jar_name = os.environ.get('JAR_NAME')
-    jar_path = os.path.join (jar_dir,jar_name)
-    
-    asntest = False
-    
+    qgen_dir = os.environ.get('QGEN_REPO_ROOT')
+    sdl_importer_proj_name = "ee.ibk.sdl.importer"
+    sdl_importer_launcher = "qgen-sdl"
+    sdl_importer_loc = "gms/eclipse/" + sdl_importer_proj_name + "/target" + \
+                    "/sdl-importer/lib/" + sdl_importer_launcher
+    sdl_importer_path = os.path.join (qgen_dir,sdl_importer_loc)
+
+    gentypes = False
+    lang=''
+    asnlang=''
+
     if op.rule == 'test-qgen-parse':
-        lang = 'xmi'
+        lang = 'xmi_ada'
     elif op.rule == 'test-qgen-ada':
         lang = 'ada'
+        asnlang = '-Ada'
     elif op.rule == 'test-qgen-c':
         lang = 'c'
-    elif op.rule == 'test-qgen-ada-asn':
-        asntest = True
+        asnlang = '-c'
+    elif op.rule == 'test-qgen-gt-ada':
+        gentypes = True
         lang = 'ada'
-    elif op.rule == 'test-qgen-c-asn':
-        asntest = True
+    elif op.rule == 'test-qgen-gt-c':
+        gentypes = True
         lang = 'c'
     else:
         # the importer crashes if any other value us used here,
         # for now keep xmi as default value
         lang = 'xmi'
-    
-    if asntest:
-        outfolder = 'generated_' + lang + '_asn'
-        cmd = ['java', '-jar', jar_path, op.root_model,
-               '--language', lang,
-               '--output', outfolder]
-    else:
-        outfolder = 'generated_' + lang 
-        cmd = ['java', '-jar', jar_path, op.root_model,
+
+    if gentypes:
+        outfolder = 'generated_gt_' + lang
+        cmd = [sdl_importer_path, op.root_model,
                '--language', lang, '--generate-types',
                '--output', outfolder,
                '--type-prefix', 'asn1QGen']
-           
+    else:
+        outfolder = 'generated_' + lang
+        cmd = [sdl_importer_path, op.root_model,
+               '--language', lang,
+               '--output', outfolder,
+               '--type-prefix', 'asn1Scc']
+
     p1 = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
@@ -174,9 +182,9 @@ def run_test(op):
     if errcode != 0:
         return (errcode, stdout, stderr, op.root_model, op.rule)
 
-    if asntest:
-        asn_call = ['asn1.exe', 'dataview-uniq.asn',
-                    '-o', outfolder, '-Ada']
+    if not gentypes:
+        asn_call = ['asn1.exe', "-equal", '-o', outfolder, asnlang,
+                    '--type-prefix', 'asn1Scc', 'dataview-uniq.asn']
         p0 = subprocess.Popen(asn_call,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
@@ -187,10 +195,10 @@ def run_test(op):
             return (errcode, stdout, stderr, op.root_model, op.rule)
 
     if lang in ('ada', 'c'):
-        p2 = _compile (lang, asntest)
+        p2 = _compile (lang, outfolder)
         stdout, stderr = p2.communicate()
         errcode = p2.wait()
-    
+
     return (errcode, stdout, stderr, op.root_model, op.rule)
 
 def _run_gprbuild(gprfile):
@@ -206,7 +214,7 @@ def _run_gprbuild(gprfile):
                    stderr=subprocess.STDOUT)
     return proc
 
-def _compile (lang, asntest):
+def _compile (lang, src_path):
     source_dirs = '"."'
     main_file = ""
     compiler_pkg = ""
@@ -216,11 +224,6 @@ def _compile (lang, asntest):
     do_ada = lang == "ada"
     c_prj = ""
     ada_prj = ""
-
-    if asntest:
-        src_path = 'generated_' + lang + '_asn'
-    else:
-        src_path = 'generated_' + lang
 
     flags = ''
     c_std = 'c99'
@@ -286,8 +289,7 @@ end Prj_C;""")
         return _run_gprbuild(gpr_filename_ada)
     if do_c:
         return _run_gprbuild(gpr_filename_c)
-            
+
 if __name__ == '__main__':
     ret = main()
     sys.exit(ret)
-    

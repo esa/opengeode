@@ -22,6 +22,12 @@ test-qgen-ada:
 test-qgen-c:
 	$(TESTQGEN_C) $(ROOT_MODEL)
 
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
+
 test-ada:
 	$(OPENGEODE) --toAda myfunction.pr system_structure.pr 2>&1 | sort | diff expected - || exit 0
 

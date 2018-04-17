@@ -19,6 +19,12 @@ test-qgen-ada:
 test-qgen-c:
 	$(TESTQGEN_C) $(ROOT_MODEL)
 
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
+
 test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n orchestrator.ali
 	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali -lgnat

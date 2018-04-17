@@ -17,6 +17,12 @@ test-qgen-ada:
 test-qgen-c:
 	@python3 test.py test-qgen-c $(TEST_CASES)
 
+test-qgen-gt-ada:
+	@python3 test.py test-qgen-gt-ada $(TEST_CASES)
+
+test-qgen-gt-c:
+	@python3 test.py test-qgen-gt-c $(TEST_CASES)
+
 test-ada:
 	@python3 test.py test-ada $(TEST_CASES)
 

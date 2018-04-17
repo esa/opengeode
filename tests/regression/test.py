@@ -18,6 +18,8 @@ testsWork = {
 'test-qgen-parse' : work1,
 'test-qgen-ada' : work1,
 'test-qgen-c' : work1,
+'test-qgen-gt-ada' : work1,
+'test-qgen-gt-c' : work1,
 'test-ada' : work1,
 'test-c' : work1,
 'test-llvm' : work1,
@@ -37,7 +39,7 @@ def parse_args():
     parser.add_argument('paths', metavar='Path', type=str, nargs='+')
     parser.add_argument('-u', '--update', action='store_true')
     return parser.parse_args()
-    
+
 def main():
     ''' Run the test cases in parallel on all available CPUs '''
     start = time.time()
@@ -57,19 +59,19 @@ def main():
 
 def make(rule, path):
     ''' Call a Makefile with the required rule (e.g. test-ada or clean) '''
-    
+
     ''' Choose work settings based on the given rule '''
     work=testsWork[rule]
-    
+
     ''' Compose the command based on the rule'''
     cmd=[work[0], work[1], path, rule]
-    
+
     proc = subprocess.Popen(
       cmd,
       stdout=subprocess.PIPE,
       stderr=subprocess.PIPE
     )
-        
+
     stdout, stderr = proc.communicate()
     errcode = proc.wait()
 
