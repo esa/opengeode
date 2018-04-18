@@ -17,6 +17,7 @@ import re
 import string
 import time
 import test
+import shutil
 
 LOG = logging.getLogger(__name__)
 
@@ -173,6 +174,9 @@ def run_test(op):
                '--output', outfolder,
                '--type-prefix', 'asn1Scc']
 
+    if os.path.exists(outfolder):
+            shutil.rmtree(outfolder, ignore_errors=True)
+
     p1 = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
@@ -208,7 +212,7 @@ def _run_gprbuild(gprfile):
             # being used by other tests.
             "-k",   # Do not stop on first error
             "-P%s" % gprfile,
-            "-gnatwa", "-gnatyg-dm", "-gnateE"]
+            "-gnatyg-dm", "-gnateE"]
 
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                    stderr=subprocess.STDOUT)
