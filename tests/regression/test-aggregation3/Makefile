@@ -17,6 +17,11 @@ test-qgen-parse:
 
 test-qgen-ada:
 	$(TESTQGEN_ADA) $(ROOT_MODEL)
+	cd generated_ada && cp ../test_qgen_ada.c test_ada.c; \
+		$(GNATBIND) -n obj_ada/challenge.ali; \
+		$(CC) -O$(O) -c -g test_ada.c ; \
+		$(GNATLINK) -o test_ada test_ada.o obj_ada/challenge.ali -lgnat -lm; \
+		./test_ada
 
 test-qgen-c:
 	$(TESTQGEN_C) $(ROOT_MODEL)
