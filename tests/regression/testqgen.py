@@ -18,6 +18,7 @@ import string
 import time
 import test
 import shutil
+import glob
 
 LOG = logging.getLogger(__name__)
 
@@ -187,9 +188,11 @@ def run_test(op):
         return (errcode, stdout, stderr, op.root_model, op.rule)
 
     if not gentypes:
-        if os.path.isfile('dataview-uniq.asn'):
+        asn_files = glob.glob ('*.asn')
+        asn_path = asn_files[0] if asn_files else None
+        if asn_path and os.path.isfile(asn_path):
             asn_call = ['asn1.exe', "-equal", '-o', outfolder, asnlang,
-                '--type-prefix', 'asn1Scc', 'dataview-uniq.asn']
+                '--type-prefix', 'asn1Scc', asn_path]
             p0 = subprocess.Popen(asn_call,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE)
