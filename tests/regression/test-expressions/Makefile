@@ -18,6 +18,10 @@ test-qgen-ada:
 
 test-qgen-c:
 	$(TESTQGEN_C) $(ROOT_MODEL)
+	cd generated_c && cp ../test_qgen_c.c test_qgen_c.c; \
+		$(CC) -O$(O) -c -g test_qgen_c.c; \
+		$(CC) test_qgen_c.o obj/*.o -lm -o test_qgen_c; \
+		./test_qgen_c
 
 test-qgen-gt-ada:
 	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
