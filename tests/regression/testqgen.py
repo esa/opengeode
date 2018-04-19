@@ -187,16 +187,16 @@ def run_test(op):
         return (errcode, stdout, stderr, op.root_model, op.rule)
 
     if not gentypes:
-        asn_call = ['asn1.exe', "-equal", '-o', outfolder, asnlang,
-                    '--type-prefix', 'asn1Scc', 'dataview-uniq.asn']
-        p0 = subprocess.Popen(asn_call,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-        stdout, stderr = p0.communicate()
-        errcode = p0.wait()
-
-        if errcode != 0:
-            return (errcode, stdout, stderr, op.root_model, op.rule)
+        if os.path.isfile('dataview-uniq.asn'):
+            asn_call = ['asn1.exe', "-equal", '-o', outfolder, asnlang,
+                '--type-prefix', 'asn1Scc', 'dataview-uniq.asn']
+            p0 = subprocess.Popen(asn_call,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
+            stdout, stderr = p0.communicate()
+            errcode = p0.wait()
+            if errcode != 0:
+                return (errcode, stdout, stderr, op.root_model, op.rule)
 
     if lang in ('ada', 'c'):
         p2 = _compile (lang, outfolder)
