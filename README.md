@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.5 (04/2018)
+    - Fix zoom-in on laptops keyboards with ctrl-shift-+
+
 2.0.4 (03/2018)
     - Fix issue with variable prefix in nested states (in generated code)
 
