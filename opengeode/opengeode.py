@@ -1620,7 +1620,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.scale(0.8, 0.8)
             # Make sure the scene is resized when zooming in/out
             self.update_phantom_rect()
-        elif event.matches(QtGui.QKeySequence.ZoomIn):
+        elif event.matches(QtGui.QKeySequence.ZoomIn) or \
+           (event.key() == Qt.Key_Plus
+            and event.modifiers() == Qt.ControlModifier | Qt.ShiftModifier):
             self.scale(1.2, 1.2)
             # Make sure the scene is resized when zooming in/out
             self.update_phantom_rect()
