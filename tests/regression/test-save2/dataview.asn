@@ -1,0 +1,13 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+SeqOf ::= SEQUENCE (SIZE(0..10)) OF BoolType
+
+--  Test with a more complex type than test-save
+BoolType ::= SEQUENCE {
+   a BOOLEAN,
+   b BOOLEAN
+}
+
+MyInteger ::= INTEGER (0..10)
+END
