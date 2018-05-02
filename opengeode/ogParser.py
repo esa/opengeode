@@ -17,7 +17,7 @@
     During the build of the AST this library makes a number of semantic
     checks on the SDL input mode.
 
-    Copyright (c) 2012-2013 European Space Agency
+    Copyright (c) 2012-2018 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -4210,7 +4210,19 @@ def assign(root, context):
         # Setting it - I did not see any place in the Ada backend where
         # this could cause a bug (and regression is OK)
         if isinstance(expr.right, ogAST.ExprAppend):
+            # all append components must be of the same type, which is the
+            # type of the left part of the expression. we must recursively
+            # fix the right type, in case we have the for a//b//c
+            # that is handled as (a//b)//c
+            def rec_append(inner_expr, set_type):
+                for each in (inner_expr.left, inner_expr.right):
+                    if isinstance(each, ogAST.ExprAppend):
+                        rec_append(each, set_type)
+                    each.expected_type = set_type
+            rec_append(expr.right, expr.left.exprType)
             expr.right.exprType = expr.left.exprType
+            expr.right.expected_type = expr.left.exprType
+            #print 'here in assign', expr.right.inputString
         if isinstance(expr.right, (ogAST.PrimSequenceOf,
                                    ogAST.PrimStringLiteral)):
             # Set the expected type on the right, this is needed to know

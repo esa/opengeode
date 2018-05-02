@@ -7,7 +7,7 @@ extern void og_PI_go(asn1SccMy_OctStr *);
 
 void og_RI_rezult (asn1SccMy_OctStr *val) 
 {
-    printf("[C] got something]\n");
+    printf("[C] got something\n");
 }
 
 int main() {
