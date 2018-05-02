@@ -1108,7 +1108,7 @@ def write_statement(param, newline):
     type_kind = basic_type.kind
     if isinstance(param, ogAST.ExprAppend):
         # Append: call Put_Line separately for each side of the expression
-        st1, _, lcl1= write_statement(param.left, newline = False)
+        st1, _, lcl1 = write_statement(param.left,  newline = False)
         st2, _, lcl2 = write_statement(param.right, newline = False)
         code.extend(st1)
         code.extend(st2)
@@ -2053,22 +2053,52 @@ def _neg_expression(expr):
 def _append(expr):
     ''' Generate code for the APPEND construct: a // b '''
     stmts, ada_string, local_decl = [], '', []
-    left_stmts, left_str, left_local = expression(expr.left)
+    left_stmts,  left_str,  left_local  = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right)
     stmts.extend(left_stmts)
     stmts.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
 
+    self_standing = False
     left = u'{}{}'.format(left_str, string_payload(expr.left, left_str) if
                     isinstance(expr.left, (ogAST.PrimVariable,
                                            ogAST.PrimConstant)) else '')
-    right = u'{}{}'.format(right_str, string_payload(expr.right, right_str) if
-                    isinstance(expr.right, (ogAST.PrimVariable,
-                                            ogAST.PrimConditional,
-                                            ogAST.PrimConstant)) else '')
+    if isinstance(expr.right, (ogAST.PrimVariable,
+                               ogAST.PrimConditional,
+                               ogAST.PrimConstant)):
+        payload = string_payload(expr.right, right_str)
+        self_standing = True
+    else:
+        payload = ''
+    if isinstance (expr.right, ogAST.PrimSubstring):
+        self_standing = True
+    right = u'{}{}'.format(right_str, payload)
+#   print "Append:", expr.inputString
+#   print "        LEFT      = ", left
+#   print "        RIGHT     = ", right, isinstance(expr.right, ogAST.PrimSubstring)
+#   print "        Payload   = ", payload
+    try:
+        name_of_type = type_name (expr.expected_type)
+    except (NotImplementedError, AttributeError):
+        name_of_type = type_name (expr.left.exprType)
+#   print "        Left type = ", name_of_type
+#   print "        Right range = ", expr.right.exprType.Max
 
-    ada_string = u'(({}) & ({}))'.format(left, right)
+    if not self_standing:
+        right = "{sort}_Array'({right}, others => <>)(1 .. {rMax})".format(
+                right=right,
+                sort=name_of_type,
+                rMax=expr.right.exprType.Max)
+
+    ada_string = \
+      u"(({left}) & {right})".format(left=left, right=right)
+#     u"(({left}) & {sort}_Array'({right}, others => <>)(1 .. {rMax}))".format(
+#        left=left,
+#        right=right,
+#        sort=name_of_type,
+#        rMax=expr.right.exprType.Max)
+
 
     return stmts, unicode(ada_string), local_decl
 
