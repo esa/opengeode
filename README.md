@@ -141,6 +141,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.6 (05/2018)
+    - Several fixes with the Append operator when working on complex types
+
 2.0.5 (04/2018)
     - Fix zoom-in on laptops keyboards with ctrl-shift-+
 
