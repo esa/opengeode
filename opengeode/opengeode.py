@@ -68,6 +68,7 @@ import Lander
 import Helper
 import Pr
 import CGenerator
+import QGenSDL
 
 # Enable mypy type checking
 try:
@@ -119,6 +120,7 @@ MODULES = [
     TextInteraction,
     Connectors,
     CGenerator,
+    QGenSDL,
 ] # type: List[module]
 
 # Define custom UserRoles
@@ -1635,6 +1637,14 @@ class SDL_View(QtGui.QGraphicsView, object):
                 event.modifiers() == Qt.ControlModifier):
             # F3 or Ctrl-G to generate Ada code
             self.generate_ada()
+        elif event.key() == Qt.Key_F6 or (event.key() == Qt.Key_K and
+                event.modifiers() == Qt.ControlModifier):
+            # F6 or Ctrl-Shift-A to generate Ada code with QGen
+            self.generate_qgen_ada()
+        elif event.key() == Qt.Key_F9 or (event.key() == Qt.Key_L and
+                event.modifiers() == Qt.ControlModifier):
+            # F7 or Ctrl-Shift-C to generate C code with QGen
+            self.generate_qgen_c()
         elif event.key() == Qt.Key_F7:
             self.check_model()
         elif event.key() == Qt.Key_F5:
@@ -2240,6 +2250,65 @@ class SDL_View(QtGui.QGraphicsView, object):
                     self.messages_window.addItem(
                             'Code generation failed:' + str(err))
                     LOG.error(str(traceback.format_exc()))
+            
+    def generate_qgen_ada(self):
+        ''' Generate Ada code using QGen '''
+        # If the current scene is a nested one, move to the top parent
+        scene = self.top_scene()
+        pr_raw = Pr.parse_scene(scene, full_model=True
+                                       if not self.readonly_pr else False)
+        pr_data = unicode('\n'.join(pr_raw))
+        if pr_data:
+            ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
+                                                      string=pr_data)
+            scene.semantic_errors = True if errors else False
+            process, = ast.processes
+            log_errors(self.messages_window, errors, warnings)
+            if len(errors) > 0:
+                self.messages_window.addItem(
+                        'Aborting: too many errors to generate code')
+            else:
+                self.messages_window.addItem('Generating Ada code with QGen')
+                try:
+                    options = parse_args()
+                    options.toAda = True
+                    options.QGen = True
+                    QGenSDL.call_qgensdl(options)
+                    self.messages_window.addItem('Done')
+                except (TypeError, ValueError, NameError) as err:
+                    self.messages_window.addItem(
+                            'Code generation with QGen failed:' + str(err))
+                    LOG.error(str(traceback.format_exc()))
+    
+    def generate_qgen_c(self):
+        ''' Generate C code using QGen '''
+        # If the current scene is a nested one, move to the top parent
+        scene = self.top_scene()
+        pr_raw = Pr.parse_scene(scene, full_model=True
+                                       if not self.readonly_pr else False)
+        pr_data = unicode('\n'.join(pr_raw))
+        if pr_data:
+            ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
+                                                      string=pr_data)
+            scene.semantic_errors = True if errors else False
+            process, = ast.processes
+            log_errors(self.messages_window, errors, warnings)
+            if len(errors) > 0:
+                self.messages_window.addItem(
+                        'Aborting: too many errors to generate code')
+            else:
+                self.messages_window.addItem('Generating C code with QGen')
+                try:
+                    options = parse_args()
+                    options.toC = True
+                    options.QGen = True
+                    QGenSDL.call_qgensdl(options)
+                    self.messages_window.addItem('Done')
+                except (TypeError, ValueError, NameError) as err:
+                    self.messages_window.addItem(
+                            'Code generation with QGen failed:' + str(err))
+                    LOG.error(str(traceback.format_exc()))
+
 
 
 class OG_MainWindow(QtGui.QMainWindow, object):
@@ -2303,6 +2372,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         check_action = self.findChild(QtGui.QAction, 'actionCheck_model')
         about_action = self.findChild(QtGui.QAction, 'actionAbout')
         ada_action = self.findChild(QtGui.QAction, 'actionGenerate_Ada_code')
+        qgen_ada_action = self.findChild(QtGui.QAction, 'actionGenerate_Ada_code_with_QGen')
+        qgen_c_action = self.findChild(QtGui.QAction, 'actionGenerate_C_code_with_QGen')
         png_action = self.findChild(QtGui.QAction, 'actionExport_to_PNG')
 
         # Connect menu actions
@@ -2314,6 +2385,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         check_action.triggered.connect(self.view.check_model)
         about_action.triggered.connect(self.view.about_og)
         ada_action.triggered.connect(self.view.generate_ada)
+        qgen_ada_action.triggered.connect(self.view.generate_qgen_ada)
+        qgen_c_action.triggered.connect(self.view.generate_qgen_c)
         png_action.triggered.connect(self.view.save_png)
 
         # Connect signal to let the view request a new scene
@@ -2344,7 +2417,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # it is a QtGui.QListWidget
         msg_dock = self.findChild(QtGui.QDockWidget, 'msgDock')
         msg_dock.setWindowTitle('Use F7 to check the model or update the '
-                                'Data view, and F3 to generate Ada code')
+                                'Data view, and F3 to generate Ada code, '
+                                'F6 to generate Ada code with QGen or '
+                                'F9 to generate C code with QGen')
         msg_dock.setStyleSheet('QDockWidget::title {background: lightgrey;}')
         messages = self.findChild(QtGui.QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
@@ -2669,10 +2744,12 @@ def parse_args():
             help='Check a .pr file for syntax and semantics')
     parser.add_argument('--toAda', dest='toAda', action='store_true',
             help='Generate Ada code for the .pr file')
+    parser.add_argument('--QGen', dest='QGen', action='store_true',
+            help='Use QGen for code generation')
     parser.add_argument('--llvm', dest='llvm', action='store_true',
             help='Generate LLVM IR code for the .pr file (experimental)')
     parser.add_argument('--toC', dest='toC', action='store_true',
-            help='Generate C code .pr file (experimental)')
+            help='Generate C code dor the .pr file (experimental, if not using QGen)')
     parser.add_argument("-O", dest="optimization", metavar="level", type=int,
             action="store", choices=[0, 1, 2, 3], default=0,
             help="Set optimization level for the generated LLVM IR code")
@@ -2732,23 +2809,31 @@ def generate(process, options):
     ''' Generate code '''
     ret = 0
     if options.toAda or options.shared or options.dll:
-        LOG.info('Generating Ada code')
-        try:
-            AdaGenerator.generate(process, simu=options.shared)
-        except (TypeError, ValueError, NameError) as err:
-            ret = 1
-            LOG.error(str(err))
-            LOG.debug(str(traceback.format_exc()))
-            LOG.error('Ada code generation failed')
+        if options.QGen:
+            LOG.info('Generating Ada code using QGen')
+            QGenSDL.call_qgensdl(options)
+        else:
+            LOG.info('Generating Ada code')
+            try:
+                AdaGenerator.generate(process, simu=options.shared)
+            except (TypeError, ValueError, NameError) as err:
+                ret = 1
+                LOG.error(str(err))
+                LOG.debug(str(traceback.format_exc()))
+                LOG.error('Ada code generation failed')
     if options.toC:
-        LOG.info('Generating C code')
-        try:
-            CGenerator.generate(process, simu=options.shared, options=options)
-        except (TypeError, ValueError, NameError) as err:
-            ret = 1
-            LOG.error(str(err))
-            LOG.debug(str(traceback.format_exc()))
-            LOG.error('C generation failed')
+        if options.QGen:
+            LOG.info('Generating C code using QGen')
+            QGenSDL.call_qgensdl(options)
+        else:
+            LOG.info('Generating C code')
+            try:
+                CGenerator.generate(process, simu=options.shared, options=options)
+            except (TypeError, ValueError, NameError) as err:
+                ret = 1
+                LOG.error(str(err))
+                LOG.debug(str(traceback.format_exc()))
+                LOG.error('C generation failed')
     if options.llvm:
         LOG.info('Generating LLVM code')
         try:
@@ -2844,12 +2929,20 @@ def cli(options):
     if options.png or options.pdf or options.svg:
         export(ast, options)
 
-    if any((options.toAda, options.llvm, options.shared,
-           options.stg, options.dll, options.toC)):
-        if not errors:
-            errors = generate(ast.processes[0], options)
-        else:
-            LOG.error('Too many errors, cannot generate code')
+    if options.QGen:
+        if  options.toC or options.toAda:
+            if not errors:
+                LOG.info('Generating Ada code using QGen')
+                errors = QGenSDL.call_qgensdl (options)
+            else:
+                LOG.error('Too many errors, cannot generate code')
+    else:
+        if any((options.toAda, options.llvm, options.shared,
+            options.stg, options.dll, options.toC)):
+            if not errors:
+                errors = generate(ast.processes[0], options)
+            else:
+                LOG.error('Too many errors, cannot generate code')
 
     return 0 if not errors else 1
 
