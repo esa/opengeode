@@ -2269,16 +2269,15 @@ class SDL_View(QtGui.QGraphicsView, object):
                         'Aborting: too many errors to generate code')
             else:
                 self.messages_window.addItem('Generating Ada code with QGen')
-                try:
-                    options = parse_args()
-                    options.toAda = True
-                    options.QGen = True
-                    QGenSDL.call_qgensdl(options)
-                    self.messages_window.addItem('Done')
-                except (TypeError, ValueError, NameError) as err:
+                options = parse_args()
+                options.toAda = True
+                options.QGen = True
+                errors = QGenSDL.call_qgensdl(options)
+                if errors:
                     self.messages_window.addItem(
-                            'Code generation with QGen failed:' + str(err))
-                    LOG.error(str(traceback.format_exc()))
+                        'Code generation with QGen failed!')
+                else:
+                    self.messages_window.addItem('Done')
     
     def generate_qgen_c(self):
         ''' Generate C code using QGen '''
@@ -2298,18 +2297,15 @@ class SDL_View(QtGui.QGraphicsView, object):
                         'Aborting: too many errors to generate code')
             else:
                 self.messages_window.addItem('Generating C code with QGen')
-                try:
-                    options = parse_args()
-                    options.toC = True
-                    options.QGen = True
-                    QGenSDL.call_qgensdl(options)
-                    self.messages_window.addItem('Done')
-                except (TypeError, ValueError, NameError) as err:
+                options = parse_args()
+                options.toC = True
+                options.QGen = True
+                errors = QGenSDL.call_qgensdl(options)
+                if errors:
                     self.messages_window.addItem(
-                            'Code generation with QGen failed:' + str(err))
-                    LOG.error(str(traceback.format_exc()))
-
-
+                        'Code generation with QGen failed!')
+                else:
+                    self.messages_window.addItem('Done')
 
 class OG_MainWindow(QtGui.QMainWindow, object):
     ''' Main GUI window '''
@@ -2745,11 +2741,14 @@ def parse_args():
     parser.add_argument('--toAda', dest='toAda', action='store_true',
             help='Generate Ada code for the .pr file')
     parser.add_argument('--QGen', dest='QGen', action='store_true',
-            help='Use QGen for code generation')
+            help='Use QGen for code generation. NOTE: the first .pr file '
+            'passed to OpenGEODE must be the root model when using QGen '
+            '(e.g. system_structure.pr)')
     parser.add_argument('--llvm', dest='llvm', action='store_true',
             help='Generate LLVM IR code for the .pr file (experimental)')
     parser.add_argument('--toC', dest='toC', action='store_true',
-            help='Generate C code dor the .pr file (experimental, if not using QGen)')
+            help='Generate C code for the .pr file '
+            '(experimental, if not using QGen)')
     parser.add_argument("-O", dest="optimization", metavar="level", type=int,
             action="store", choices=[0, 1, 2, 3], default=0,
             help="Set optimization level for the generated LLVM IR code")
@@ -2809,31 +2808,23 @@ def generate(process, options):
     ''' Generate code '''
     ret = 0
     if options.toAda or options.shared or options.dll:
-        if options.QGen:
-            LOG.info('Generating Ada code using QGen')
-            QGenSDL.call_qgensdl(options)
-        else:
-            LOG.info('Generating Ada code')
-            try:
-                AdaGenerator.generate(process, simu=options.shared)
-            except (TypeError, ValueError, NameError) as err:
-                ret = 1
-                LOG.error(str(err))
-                LOG.debug(str(traceback.format_exc()))
-                LOG.error('Ada code generation failed')
+        LOG.info('Generating Ada code')
+        try:
+            AdaGenerator.generate(process, simu=options.shared)
+        except (TypeError, ValueError, NameError) as err:
+            ret = 1
+            LOG.error(str(err))
+            LOG.debug(str(traceback.format_exc()))
+            LOG.error('Ada code generation failed')
     if options.toC:
-        if options.QGen:
-            LOG.info('Generating C code using QGen')
-            QGenSDL.call_qgensdl(options)
-        else:
-            LOG.info('Generating C code')
-            try:
-                CGenerator.generate(process, simu=options.shared, options=options)
-            except (TypeError, ValueError, NameError) as err:
-                ret = 1
-                LOG.error(str(err))
-                LOG.debug(str(traceback.format_exc()))
-                LOG.error('C generation failed')
+        LOG.info('Generating C code')
+        try:
+            CGenerator.generate(process, simu=options.shared, options=options)
+        except (TypeError, ValueError, NameError) as err:
+            ret = 1
+            LOG.error(str(err))
+            LOG.debug(str(traceback.format_exc()))
+            LOG.error('C generation failed')
     if options.llvm:
         LOG.info('Generating LLVM code')
         try:
@@ -2922,21 +2913,23 @@ def cli(options):
         LOG.error(str(err))
         return 1
 
-    if len(ast.processes) != 1:
-        LOG.error('Only one process at a time is supported')
-        return 1
-
-    if options.png or options.pdf or options.svg:
-        export(ast, options)
-
     if options.QGen:
         if  options.toC or options.toAda:
             if not errors:
                 LOG.info('Generating Ada code using QGen')
-                errors = QGenSDL.call_qgensdl (options)
+                errors = QGenSDL.call_qgensdl(options)
+                if errors:
+                    LOG.error('Code generation with QGen failed')
             else:
                 LOG.error('Too many errors, cannot generate code')
     else:
+        if len(ast.processes) != 1:
+            LOG.error('Only one process at a time is supported')
+            return 1
+
+        if options.png or options.pdf or options.svg:
+            export(ast, options)
+
         if any((options.toAda, options.llvm, options.shared,
             options.stg, options.dll, options.toC)):
             if not errors:

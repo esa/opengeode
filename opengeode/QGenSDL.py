@@ -50,15 +50,11 @@ def call_qgensdl(options):
         lang = 'c'
     elif options.toAda:
         lang = 'ada'
-    else:
-        # the importer crashes if any other value us used here,
-        # for now keep xmi as default value
-        lang = 'xmi'
 
     LOG.debug('Generating ' + lang + ' code using QGen from ' + str(options.files))
 
     outfolder = 'qgen_generated_' + lang
-    cmd = [sdl_importer_path, options.files[1],
+    cmd = [sdl_importer_path, options.files[0],
             '--language', lang,
             '--output', outfolder,
              '--type-prefix', 'asn1Scc']
@@ -74,5 +70,6 @@ def call_qgensdl(options):
     errcode = p1.wait()
 
     LOG.info(stdout)
-    LOG.debug(stderr)
+    if errcode:
+        LOG.error(stderr)
     return (errcode)
