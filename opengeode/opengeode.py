@@ -2050,8 +2050,12 @@ class SDL_View(QtGui.QGraphicsView, object):
             process,         = ast.processes
             if not process.instance_of_name:
                 self.filename    = process.filename
-            else:
+            elif process.instance_of_ref is not None:
                 self.filename    = process.instance_of_ref.filename
+            else:
+                LOG.error("Unrecoverable parsing errors were detected")
+                self.messages_window.addItem("Could not parse model")
+                return
             self.readonly_pr = ast.pr_files - {self.filename}
         else:
             # More than one process
