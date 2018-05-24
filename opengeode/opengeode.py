@@ -2236,7 +2236,10 @@ class SDL_View(QtGui.QGraphicsView, object):
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
             scene.semantic_errors = True if errors else False
-            process, = ast.processes
+            try:
+                process, = ast.processes
+            except ValueError:
+                process = None
             log_errors(self.messages_window, errors, warnings)
             if len(errors) > 0:
                 self.messages_window.addItem(
@@ -2249,7 +2252,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                 except (TypeError, ValueError, NameError) as err:
                     self.messages_window.addItem(
                             'Code generation failed:' + str(err))
-                    LOG.error(str(traceback.format_exc()))
+                    LOG.debug(str(traceback.format_exc()))
             
     def generate_qgen_ada(self):
         ''' Generate Ada code using QGen '''
@@ -2262,7 +2265,10 @@ class SDL_View(QtGui.QGraphicsView, object):
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
             scene.semantic_errors = True if errors else False
-            process, = ast.processes
+            try:
+                process, = ast.processes
+            except ValueError:
+                process = None
             log_errors(self.messages_window, errors, warnings)
             if len(errors) > 0:
                 self.messages_window.addItem(
@@ -2272,7 +2278,10 @@ class SDL_View(QtGui.QGraphicsView, object):
                 options = parse_args()
                 options.toAda = True
                 options.QGen = True
-                errors = QGenSDL.call_qgensdl(options)
+                try:
+                    errors = QGenSDL.call_qgensdl(options)
+                except AttributeError:
+                    errors = True
                 if errors:
                     self.messages_window.addItem(
                         'Code generation with QGen failed!')
@@ -2290,7 +2299,10 @@ class SDL_View(QtGui.QGraphicsView, object):
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
             scene.semantic_errors = True if errors else False
-            process, = ast.processes
+            try:
+                process, = ast.processes
+            except ValueError:
+                process = None
             log_errors(self.messages_window, errors, warnings)
             if len(errors) > 0:
                 self.messages_window.addItem(
@@ -2300,7 +2312,10 @@ class SDL_View(QtGui.QGraphicsView, object):
                 options = parse_args()
                 options.toC = True
                 options.QGen = True
-                errors = QGenSDL.call_qgensdl(options)
+                try:
+                    errors = QGenSDL.call_qgensdl(options)
+                except AttributeError:
+                    errors = True
                 if errors:
                     self.messages_window.addItem(
                         'Code generation with QGen failed!')
