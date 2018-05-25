@@ -40,9 +40,9 @@ test-llvm: orchestrator.o
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
-	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
+	$(GNATMAKE) -O$(O) -gnat2012 -c -fPIC *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
-	$(GNATMAKE) -c -gnat2012 b~orchestrator.adb
+	$(GNATMAKE) -c -fPIC -gnat2012 b~orchestrator.adb
 	$(CC) -shared -fPIC -o liborchestrator.so b~orchestrator.o orchestrator.o taste_basictypes.o adaasn1rtl.o -lgnat
 	python -c "from ctypes import *; test=CDLL('./liborchestrator.so'); test.liborchestratorinit()"
 
