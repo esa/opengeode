@@ -84,8 +84,11 @@ def parse_asn1(*files, **options):
     # make sure the same files are not parsed more than once if not modified
     filehash = hashlib.md5()
     file_list = list(*files)
-    for each in file_list:
-        filehash.update(open(each).read())
+    try:
+        for each in file_list:
+            filehash.update(open(each).read())
+    except IOError as err:
+        raise TypeError (str(err))
     new_hash = filehash.hexdigest()
     fileset = "".join(file_list)
     if fileset in AST.viewkeys() and AST[fileset]['hash'] == new_hash:
@@ -107,7 +110,7 @@ def parse_asn1(*files, **options):
     if os.name == 'posix':
         path_to_mono = spawn.find_executable('mono')
         if not path_to_mono:
-            raise TypeErorr('"mono" not found in path. Please install it.')
+            raise TypeError('"mono" not found in path. Please install it.')
         binary = path_to_mono
         arg0 = path_to_asn1scc
     else:

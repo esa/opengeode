@@ -142,9 +142,12 @@ Changelog
 =========
 
 2.0.7 (05/2018)
+    - Minor bugfix
+
+2.0.7 (05/2018)
     - Add option to generate code with QGen (C and Ada)
     - Better reporting of model parsing error
-\
+
 2.0.6 (05/2018)
     - Several fixes with the Append operator when working on complex types
 
