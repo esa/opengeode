@@ -17,18 +17,8 @@
                                                                               
 """
 import os
-import sys
-import logging
-import argparse
 import subprocess
-import unittest
-import difflib
-import re
-import string
-import time
-import test
 import shutil
-import glob
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -37,15 +27,7 @@ def call_qgensdl(options):
 
     ''' Call QGen-SDL tool with the required arguments '''
 
-    qgen_dir = os.environ.get('QGEN_REPO_ROOT')
-    sdl_importer_proj_name = "ee.ibk.sdl.importer"
-    sdl_importer_launcher = "qgen-sdl"
-    sdl_importer_loc = "gms/eclipse/" + sdl_importer_proj_name + "/target" + \
-                    "/sdl-importer/lib/" + sdl_importer_launcher
-    sdl_importer_path = os.path.join (qgen_dir,sdl_importer_loc)
-
     lang=''
-
     if options.toC:
         lang = 'c'
     elif options.toAda:
@@ -54,22 +36,29 @@ def call_qgensdl(options):
     LOG.debug('Generating ' + lang + ' code using QGen from ' + str(options.files))
 
     outfolder = 'qgen_generated_' + lang
-    cmd = [sdl_importer_path, options.files[0],
-            '--language', lang,
+    cmd = ["qgen-sdl", '--language', lang,
             '--output', outfolder,
-             '--type-prefix', 'asn1Scc']
+             '--type-prefix', 'asn1Scc',
+             options.files[0]]
 
     if os.path.exists(outfolder):
             shutil.rmtree(outfolder, ignore_errors=True)
 
-    LOG.debug('Qgen-sdl command: ' + str(cmd))
-    p1 = subprocess.Popen(cmd,
+    LOG.debug('QGen-sdl command: ' + str(cmd))
+    try:
+        p1 = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
-    stdout, stderr = p1.communicate()
-    errcode = p1.wait()
+        errcode = p1.wait()
+        stdout, stderr = p1.communicate()
+        if errcode:
+            LOG.error(stderr)
+        LOG.info(stdout)
+    except OSError as e:
+        errcode = 1
+        if e.errno == os.errno.ENOENT:
+            LOG.error ('QGen-SDL tool is not found on your path')
+        else:
+            raise
 
-    LOG.info(stdout)
-    if errcode:
-        LOG.error(stderr)
     return (errcode)
