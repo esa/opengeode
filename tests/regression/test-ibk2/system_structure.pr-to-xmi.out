@@ -1,0 +1,10 @@
+[INFO] Starting to parse model ./test-ibk2/system_structure.pr
+[INFO] Parsing completed
+[INFO] Starting to parse model ./test-ibk2/dataview-uniq.asn
+[INFO] Parsing completed
+[INFO] Starting to parse model ./test-ibk2/framemanager.pr
+[WARNING] The composite state definitions are currently ignored.  Input at pos 3:4
+  	 File: ./test-ibk2/framemanager.pr
+[INFO] Parsing completed
+[INFO] Starting to post-process
+[INFO] Model XMI written to ./test-ibk2/framemanager_generated/framemanager.xmi

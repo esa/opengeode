@@ -8,6 +8,21 @@ BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */)
 test-parse:
 	@python3 test.py test-parse $(TEST_CASES)
 
+test-qgen-parse:
+	@python3 test.py test-qgen-parse $(TEST_CASES)
+
+test-qgen-ada:
+	@python3 test.py test-qgen-ada $(TEST_CASES)
+
+test-qgen-c:
+	@python3 test.py test-qgen-c $(TEST_CASES)
+
+test-qgen-gt-ada:
+	@python3 test.py test-qgen-gt-ada $(TEST_CASES)
+
+test-qgen-gt-c:
+	@python3 test.py test-qgen-gt-c $(TEST_CASES)
+
 test-ada:
 	@python3 test.py test-ada $(TEST_CASES)
 
@@ -43,5 +58,5 @@ clean:
 		do $(MAKE) -s -C $$v clean ; \
 	done
 
-.PHONY: test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
+.PHONY: test-parse test-qgen-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
 	    benchmark-O3 coverage clean

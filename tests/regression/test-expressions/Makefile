@@ -1,5 +1,7 @@
 include ../shared.mk
 
+ROOT_MODEL=system_structure.pr
+
 all: test-ada test-llvm
 
 edit:
@@ -7,6 +9,34 @@ edit:
 
 test-parse:
 	$(OPENGEODE) expressions.pr system_structure.pr --check
+
+test-qgen-parse:
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+	cd generated_ada && cp ../test_qgen_ada.c test_qgen_ada.c; \
+		$(GNATBIND) -n obj_ada/expressions.ali; \
+		$(CC) -O$(O) -c -g test_qgen_ada.c ; \
+		$(GNATLINK) -o test_qgen_ada test_qgen_ada.o obj_ada/expressions.ali -lgnat -lm; \
+		./test_qgen_ada
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
+	cd generated_c && cp ../test_qgen_c.c test_qgen_c.c; \
+		$(CC) -O$(O) -c -g test_qgen_c.c; \
+		$(CC) test_qgen_c.o obj/*.o -lm -o test_qgen_c; \
+		./test_qgen_c
+
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
+	cd generated_gt_c && cp ../test_qgen_gt_c.c test_qgen_c.c; \
+		$(CC) -O$(O) -c -g test_qgen_c.c; \
+		$(CC) test_qgen_c.o obj/*.o -lm -o test_qgen_c; \
+		./test_qgen_c
 
 test-ada: expressions.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n expressions.ali

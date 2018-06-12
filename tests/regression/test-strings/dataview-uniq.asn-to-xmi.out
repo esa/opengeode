@@ -1,0 +1,5 @@
+[INFO] Starting to parse model ./test-strings/dataview-uniq.asn
+[INFO] Parsing completed
+[WARNING] Only ASN.1 files given as input. The generated code will import these types, but will not not contain any logic using them. Supply also an SDL model or use the --stub-system (-s) option, if you want to make use of these types.
+[INFO] Starting to post-process
+[INFO] Model XMI written to ./test-strings/TASTE-Dataview_generated/TASTE-Dataview.xmi

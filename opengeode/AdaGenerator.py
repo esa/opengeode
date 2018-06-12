@@ -149,7 +149,7 @@ def external_ri_list(process):
 @singledispatch
 def generate(*args, **kwargs):
     ''' Generate the code for an item of the AST '''
-    raise TypeError('[AdaGenerator] Unsupported AST construct')
+    raise TypeError('Incorrect, unsupported or missing data in model AST')
     return [], []
 
 

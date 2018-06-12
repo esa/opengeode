@@ -1,12 +1,27 @@
 include ../shared.mk
 
-all: test-ada test-llvm
+ROOT_MODEL=system_structure.pr
 
 edit:
 	$(OPENGEODE) og.pr system_structure.pr
 
 test-parse:
 	$(OPENGEODE) og.pr system_structure.pr --check
+
+test-qgen-parse:
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
+
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: og.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n og.ali
@@ -28,4 +43,4 @@ test-llvm: og.o dataview-uniq.o | test_llvm.o
 coverage:
 	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: edit test-parse test-qgen-parse test-ada test-llvm coverage

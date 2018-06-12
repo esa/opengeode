@@ -1,0 +1,10 @@
+[INFO] Starting to parse model ./test-ibk3/system_structure.pr
+[INFO] Parsing completed
+[INFO] Starting to parse model ./test-ibk3/dataview-uniq.asn
+[INFO] Parsing completed
+[INFO] Starting to parse model ./test-ibk3/node.pr
+[WARNING] The composite state definitions are currently ignored.  Input at pos 3:4
+  	 File: ./test-ibk3/node.pr
+[INFO] Parsing completed
+[INFO] Starting to post-process
+[INFO] Model XMI written to ./test-ibk3/node_generated/node.xmi

@@ -1,5 +1,7 @@
 include ../shared.mk
 
+ROOT_MODEL=testsc.pr
+
 all: test-ada test-llvm
 
 edit:
@@ -7,6 +9,21 @@ edit:
 
 test-parse:
 	$(OPENGEODE) testsc.pr --check
+
+test-qgen-parse:
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
+
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
 	./check_simulation.sh && rm -rf testsc_simu

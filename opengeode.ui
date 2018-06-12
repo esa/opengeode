@@ -114,6 +114,8 @@
     <addaction name="actionCheck_model"/>
     <addaction name="separator"/>
     <addaction name="actionGenerate_Ada_code"/>
+    <addaction name="actionGenerate_Ada_code_with_QGen"/>
+    <addaction name="actionGenerate_C_code_with_QGen"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
     <addaction name="actionQuit"/>
@@ -217,6 +219,22 @@
    </property>
    <property name="text">
     <string>Generate Ada code</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Ada_code_with_QGen">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Generate Ada code with QGen</string>
+   </property>
+  </action>
+  <action name="actionGenerate_C_code_with_QGen">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Generate C code with QGen</string>
    </property>
   </action>
   <action name="actionCheck_model">

@@ -1,0 +1,10 @@
+[INFO] Starting to parse model ./test-ibk/system_structure.pr
+[INFO] Parsing completed
+[INFO] Starting to parse model ./test-ibk/dataview-uniq.asn
+[INFO] Parsing completed
+[INFO] Starting to parse model ./test-ibk/packetmanager.pr
+[WARNING] The composite state definitions are currently ignored.  Input at pos 3:4
+  	 File: ./test-ibk/packetmanager.pr
+[INFO] Parsing completed
+[INFO] Starting to post-process
+[INFO] Model XMI written to ./test-ibk/packetmanager_generated/packetmanager.xmi
