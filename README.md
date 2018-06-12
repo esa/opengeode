@@ -41,6 +41,9 @@ On Windows, download the binary from [here](http://download.tuxfamily.org/taste/
 
 Uzip it and run opengeode.exe. It contains everything without any other external dependencies.
 
+Note: the Windows binary may not be up to date.. it is created mostly as a proof of concept.
+
+
 Linux Pre-requisites
 --------------------
 
@@ -49,7 +52,7 @@ To install OpenGEODE on Linux you need to install some system-level dependencies
 - Python 2.7 with pip (installed by default on nearly all Linux distributions)
 - Pyside
 - Graphviz
-- [ASN1SCC](https://github.com/ttsiodras/asn1scc)
+- [ASN1SCC V4](https://github.com/ttsiodras/asn1scc)
 - GNAT
 
 And optionally llvm and llvmpy
@@ -68,12 +71,13 @@ $ sudo apt install pkg-config python-pyside pyside-tools graphviz python-ply \
 
 Some of these packages may be more recent on your distribution.
 
-To install the ASN.1 compiler, run (possibly as root):
+To install the ASN.1 compiler, you must get the latest binary release of the version 4 from [here](https://github.com/ttsiodras/asn1scc/releases)
+
+Then run (possibly as root):
 
 ```bash
 $ cd /opt
-$ wget http://download.tuxfamily.org/taste/ASN1SCC/ASN1SCC-latest.tgz
-$ tar zxvf ASN1SCC-latest.tgz
+$ tar xvf asn1scc-bin-4.xx.tar.bz2    # Use the file name version you got
 $ echo 'export PATH=$PATH:/opt/asn1scc' >> ~/.bashrc
 ```
 
@@ -86,17 +90,7 @@ $ mono /opt/asn1scc/asn1.exe
 OpenGEODE installation
 ----------------------
 
-Make sure all dependencies are installed.
-
-If you see a certificate error while cloning from [Gitlab](https://gitrepos.estec.esa.int/taste/opengeode), you may need to run the following commands:
-
-```bash
-$ echo -n | openssl s_client -connect gitrepos.estec.esa.int:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > gitrepos.cert
-$ sudo cp gitrepos.cert /usr/local/share/ca-certificates/gitrepos.crt
-$ sudo update-ca-certificates
-```
-
-There is no such issue if you use Github:
+Make sure all dependencies are installed. In particular make sure you are using the version 4 of the ASN1SCC compiler.
 
 
 ```bash
