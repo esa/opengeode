@@ -135,7 +135,7 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-2.0.7 (05/2018)
+2.0.8 (05/2018)
     - Minor bugfix
 
 2.0.7 (05/2018)
