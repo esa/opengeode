@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.8'
+__version__ = '2.0.9'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1050,8 +1050,13 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             process_ast.input_signals = \
                     sdlSymbols.CONTEXT.processes[0].input_signals
         except IndexError:
-            # No process context, eg. when called from cmd line
-            LOG.debug("Statechart rendering: no CONTEXT.processes[0]")
+            try:
+                process_ast.input_signals = \
+                    view.context_history[0].processes[0].input_signals
+            except (AttributeError, IndexError):
+                # No process context, eg. when called from cmd line
+                LOG.debug("Statechart rendering: no CONTEXT.processes[0]")
+
         # Flatten nested states (no, because neato does not support it,
         # dot supports only vertically-aligned states, and fdp does not
         # support curved edges and is buggy with pygraphviz anyway)
@@ -2257,7 +2262,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                     self.messages_window.addItem(
                             'Code generation failed:' + str(err))
                     LOG.debug(str(traceback.format_exc()))
-            
+
     def generate_qgen_ada(self):
         ''' Generate Ada code using QGen '''
         # If the current scene is a nested one, move to the top parent
@@ -2291,7 +2296,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                         'Code generation with QGen failed!')
                 else:
                     self.messages_window.addItem('Done')
-    
+
     def generate_qgen_c(self):
         ''' Generate C code using QGen '''
         # If the current scene is a nested one, move to the top parent

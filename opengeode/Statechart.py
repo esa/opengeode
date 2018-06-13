@@ -582,7 +582,10 @@ def create_dot_graph(root_ast, basic=False, scene=None, view=None):
     diamond = 0
 
     input_signals = {sig['name'].lower() for sig in root_ast.input_signals}
-    # XXX misses the timers
+
+    # Add timers, in the statechart they are like other signals
+    for each in root_ast.timers:
+        input_signals.add (each)
 
     # valid_inputs: list of messages to be displayed in the statecharts
     # user can remove them from the file to make cleaner diagrams
