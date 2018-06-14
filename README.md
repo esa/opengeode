@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.10 (06/2018)
+    - Various fixes in statechart rendering, esp. from command line
+
 2.0.9 (06/2018)
     - Add timers in statecharts
     - Fix statechart list of signals when tab is activated from a sub-diagram

@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.9'
+__version__ = '2.0.10'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1032,13 +1032,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.selectionChanged.emit()
 
 
-    def sdl_to_statechart(self, basic=True, view=None):
+    def sdl_to_statechart(self, basic=True, view=None, ast=None):
         ''' Create a graphviz representation of the SDL model 
             Optionally take a QGraphicsView to use as parent for modals '''
-        pr_raw = Pr.parse_scene(self)
-        pr_data = unicode('\n'.join(pr_raw))
-        ast, _, err = ogParser.parse_pr(string=pr_data)
-        self.semantic_errors = True if err else False
+        if ast is None:
+            pr_raw = Pr.parse_scene(self)
+            pr_data = unicode('\n'.join(pr_raw))
+            ast, _, err = ogParser.parse_pr(string=pr_data)
+            self.semantic_errors = True if err else False
         if len(ast.processes) == 1:
             process_ast, = ast.processes
         elif len(ast.process_types) == 1:
@@ -1055,6 +1056,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                     view.context_history[0].processes[0].input_signals
             except (AttributeError, IndexError):
                 # No process context, eg. when called from cmd line
+                # in that case ast was provided in the parameters
                 LOG.debug("Statechart rendering: no CONTEXT.processes[0]")
 
         # Flatten nested states (no, because neato does not support it,
@@ -1105,20 +1107,27 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         self.clear_highlight()
         self.clear_focus()
         # Copy in a different scene to get the smallest rectangle
-        other_scene = SDL_Scene(context=self.context)
-        other_scene.messages_window = self.messages_window
-        other_scene.setBackgroundBrush(QtGui.QBrush())
-        for each in self.floating_symb:
-            each.select()
-            try:
-                self.copy_selected_symbols()
-            except AttributeError as err:
-                LOG.debug(str(traceback.format_exc()))
-                LOG.error(str(err))
-            other_scene.paste_symbols()
-            other_scene.scene_refresh()
-            each.select(False)
-        rect = other_scene.sceneRect()
+        # (except statecharts, they are already optimal)
+        if self.context != "statechart":
+            other_scene = SDL_Scene(context=self.context)
+            other_scene.messages_window = self.messages_window
+            other_scene.setBackgroundBrush(QtGui.QBrush())
+            for each in self.floating_symb:
+                each.select()
+                try:
+                    self.copy_selected_symbols()
+                except AttributeError as err:
+                    LOG.debug(str(traceback.format_exc()))
+                    LOG.error(str(err))
+                other_scene.paste_symbols()
+                other_scene.scene_refresh()
+                each.select(False)
+            rect = other_scene.sceneRect()
+        else:
+            # remove the background
+            self.setBackgroundBrush(QtGui.QBrush())
+            self.scene_refresh()
+            rect = self.sceneRect()
 
         # enlarge the rect to fit extra pixels due to antialiasing
         rect.adjust(-5, -5, 5, 5)
@@ -1141,8 +1150,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         else:
             LOG.error('Output format not supported: ' + doc_format)
         painter = QtGui.QPainter(device)
-        other_scene.scene_refresh()
-        other_scene.render(painter, source=rect)
+        if self.context == 'statechart':
+            self.render(painter, source=rect)
+        else:
+            other_scene.scene_refresh()
+            other_scene.render(painter, source=rect)
         try:
             device.save(filename)
         except AttributeError:
@@ -2866,7 +2878,7 @@ def generate(process, options):
 
 
 def export(ast, options):
-    ''' Export process '''
+    ''' Export process (command-line option to save model to png, pdf, svg) '''
     # Qt must be initialized before using SDL_Scene
     _ = init_qt()
 
@@ -2911,21 +2923,21 @@ def export(ast, options):
                                         process.processName,
                                         diagram.context,
                                         diagram.name or 'main')
-            LOG.info('Saving {ext} file: {name}.{ext}'
-                     .format(ext=doc_fmt, name=name))
+            LOG.info('Saving {}.{}'.format(name, doc_fmt))
             diagram.export_img(name, doc_format=doc_fmt, split=options.split)
         if diagram.context == 'block':
             # Also save the statechart view of the current scene
-            LOG.info('Saving statechart sc_{}.png'.format(process.processName))
             sc_scene = SDL_Scene(context='statechart')
             try:
-                graph = diagram.sdl_to_statechart()
-                Statechart.render_statechart(sc_scene, graph,
-                                             dump_gfx=process.processName)
-                sc_scene.refresh()
+                graph = diagram.sdl_to_statechart(ast=ast)
+                Statechart.render_statechart(sc_scene, graph)
+                for doc_fmt in export_fmt:
+                    name = 'sc-' + process.processName
+                    LOG.info('Saving {}.{}'.format(name, doc_fmt))
+                    sc_scene.export_img(name, doc_format=doc_fmt)
             except (AttributeError, IOError, TypeError) as err:
+                LOG.error(traceback.format_exc())
                 LOG.debug(str(err))
-
 
 
 def cli(options):

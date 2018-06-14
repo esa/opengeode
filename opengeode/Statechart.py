@@ -43,7 +43,7 @@ except ImportError:
 import genericSymbols
 from Connectors import Edge
 
-RENDER_DPI = {'X': None, 'Y': None}
+RENDER_DPI = {'X': 72, 'Y': 72}   # default to 72, in case there is no view
 G_SYMBOLS = set()
 EDGES = []
 
@@ -441,6 +441,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         break
 
     # Go recursive first: render children
+    count = 0
     for aname, agraph in graphtree['children'].viewitems():
         # Render each child in a temporary scene to get the size of the scene
         # in order to resize the parent node accordingly
@@ -605,7 +606,7 @@ def create_dot_graph(root_ast, basic=False, scene=None, view=None):
                 valid_inputs.add(each.lower())
     except IOError:
         valid_inputs = input_signals
-        config_params = {"-Nfontsize" : "12",
+        config_params = {"-Nfontsize" : "10",
                          "-Efontsize" : "8",
                          "-Gsplines"  : "curved",
                          "-Gsep"      : "0.3",
@@ -616,7 +617,8 @@ def create_dot_graph(root_ast, basic=False, scene=None, view=None):
                          "-Nshape"    : "record",
                          "-Elen"      : "1"}
     else:
-        LOG.info ("Statechart settings read from configuration file")
+        LOG.info ("Statechart settings read from " + identifier + ".cfg")
+        LOG.info ("... using signals: " + ", ".join(valid_inputs))
 
     if scene and view:
         # Load and display a table for the user to filter out messages that
