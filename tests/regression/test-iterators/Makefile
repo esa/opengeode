@@ -37,7 +37,7 @@ test-ada:
 	../../../../opengeode/opengeode.py orchestrator.pr --shared && \
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn && \
 	taste-properties -d -s properties orchestrator.pr && \
-	taste-asn1-iterators *.asn && gprbuild -Pmodel_checker $$EXTRAFLAG && ./model_checker
+	ADA_PROJECT_PATH=~/.local/share/gpr:$ADA_PROJECT_PATH taste-asn1-iterators *.asn && gprbuild -Pmodel_checker $$EXTRAFLAG && ./model_checker
 
 simu: test-ada
 	cd build && make -f Makefile.properties && \
