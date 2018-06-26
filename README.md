@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.11 (06/2018)
+    - Ada backend: fix choice determinant issue leading to CHOICE_NOT_FOUND bug
+
 2.0.10 (06/2018)
     - Various fixes in statechart rendering, esp. from command line
 

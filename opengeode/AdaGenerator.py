@@ -2415,8 +2415,10 @@ def _choiceitem(choice):
     # is a namespace conflict)
     basic = find_basic_type(choice.exprType)
     prefix = 'CHOICE_NOT_FOUND'
+    search = choice.value['choice'].lower().replace('-', '_')
     for each in basic.Children:
-        if each.lower() == choice.value['choice'].lower():
+        choice = each.lower().replace('-', '_')
+        if choice == search:
             prefix = basic.Children[each].EnumID
             break
     ada_string = u'(Kind => {kind}, {opt} => {expr})'.format(
