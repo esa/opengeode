@@ -1349,6 +1349,26 @@ def arithmetic_expression(root, context):
     # accordingly with the kind of operation used between operands:
     left = find_basic_type(expr.left.exprType)
     right = find_basic_type(expr.right.exprType)
+
+    def get_constant_value(const_val):
+        # value may be a reference to another constant. In that case we
+        # must find the actual value by following the path until we find it
+        # however, stop after 20 trials to avoid looping forever in case
+        # there is some circular dependency or other weird asn1 construct
+        first_str = const_val
+        while retry < 20:
+            try:
+                return float(const_val)
+            except ValueError:
+                possible_constant = is_asn1constant(const_val)
+                if possible_constant is not None:
+                    const_val = possible_constant.value
+                else:
+                    # Exceptional case - should be caught by asn1scc
+                    raise ValueError(str(first_str) + " could not be resolved")
+                retry += 1
+        raise ValueError(str(first_str) + " actual value not found" )
+
     try:
         minL = float(left.Min)
         maxL = float(left.Max)
@@ -1358,7 +1378,27 @@ def arithmetic_expression(root, context):
         if isinstance(expr.left, ogAST.PrimConstant):
             minL = maxL = float (expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
-            minR = maxR = float (expr.right.constant_value)
+            # value may be a reference to another constant. In that case we
+            # must find the actual value by following the path until we find it
+            # however, stop after 10 trials to avoid looping forever in case
+            # there is some circular dependency or other weird asn1 construct
+            const_val = expr.right.constant_value
+            retry = 0
+            while True:
+                try:
+                    minR = maxR = float (const_val)
+                except ValueError:
+                    possible_constant = is_asn1constant(const_val)
+                    if possible_constant is not None:
+                        const_val = possible_constant.value
+                    else:
+                        raise
+                    retry += 1
+                    if retry > 10:
+                        # Avoid infinite loop
+                        raise
+                else:
+                    break
         # Type of the resulting expression depends on whether there are raw
         # numbers on one side of the expression (PrInt). By default when they
         # are parsed, they are set to 64 bits integers ; but if they are in an
@@ -1396,6 +1436,7 @@ def arithmetic_expression(root, context):
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types '\
               'have a range constraint'
+        #print (traceback.format_exc())
         errors.append(error(root, msg))
 
     if root.type in (lexer.REM, lexer.MOD):

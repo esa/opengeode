@@ -135,6 +135,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.12 (06/2018)
+    - Fix resolution of ASN.1 constants - values were not use propertly when
+      a constant was referencing another constant (numerical operations only)
+
 2.0.11 (06/2018)
     - Ada backend: fix choice determinant issue leading to CHOICE_NOT_FOUND bug
 
