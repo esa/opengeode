@@ -2417,8 +2417,8 @@ def _choiceitem(choice):
     prefix = 'CHOICE_NOT_FOUND'
     search = choice.value['choice'].lower().replace('-', '_')
     for each in basic.Children:
-        choice = each.lower().replace('-', '_')
-        if choice == search:
+        curr_choice = each.lower().replace('-', '_')
+        if curr_choice == search:
             prefix = basic.Children[each].EnumID
             break
     ada_string = u'(Kind => {kind}, {opt} => {expr})'.format(
