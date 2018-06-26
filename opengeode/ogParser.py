@@ -1356,6 +1356,7 @@ def arithmetic_expression(root, context):
         # however, stop after 20 trials to avoid looping forever in case
         # there is some circular dependency or other weird asn1 construct
         first_str = const_val
+        retry = 0
         while retry < 20:
             try:
                 return float(const_val)
@@ -1376,29 +1377,9 @@ def arithmetic_expression(root, context):
         maxR = float(right.Max)
         # Constants defined in ASN.1 : take their value for the range
         if isinstance(expr.left, ogAST.PrimConstant):
-            minL = maxL = float (expr.left.constant_value)
+            minL = maxL = get_constant_value(expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
-            # value may be a reference to another constant. In that case we
-            # must find the actual value by following the path until we find it
-            # however, stop after 10 trials to avoid looping forever in case
-            # there is some circular dependency or other weird asn1 construct
-            const_val = expr.right.constant_value
-            retry = 0
-            while True:
-                try:
-                    minR = maxR = float (const_val)
-                except ValueError:
-                    possible_constant = is_asn1constant(const_val)
-                    if possible_constant is not None:
-                        const_val = possible_constant.value
-                    else:
-                        raise
-                    retry += 1
-                    if retry > 10:
-                        # Avoid infinite loop
-                        raise
-                else:
-                    break
+            minL = maxL = get_constant_value(expr.right.constant_value)
         # Type of the resulting expression depends on whether there are raw
         # numbers on one side of the expression (PrInt). By default when they
         # are parsed, they are set to 64 bits integers ; but if they are in an
