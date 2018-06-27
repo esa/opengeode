@@ -28,8 +28,8 @@ test-qgen-gt-c:
 test-ada: 
 	$(OPENGEODE) test.pr --toAda
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview.asn
-	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n test.ali
+	cp toto_timer.adasource toto_timer.ads
+	cp toto_timer.adabody toto_timer.adb
 	gnat make test_ada.ada
 
 simu:

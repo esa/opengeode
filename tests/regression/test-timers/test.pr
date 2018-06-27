@@ -25,6 +25,13 @@ system test;
             START;
                 /* CIF NEXTSTATE (524, 194), (70, 35) */
                 NEXTSTATE wait;
+            /* CIF state (642, 470), (81, 35) */
+            state timer_run;
+                /* CIF input (648, 525), (70, 35) */
+                input toto;
+                    /* CIF NEXTSTATE (648, 580), (70, 35) */
+                    NEXTSTATE wait;
+            endstate;
             /* CIF state (524, 194), (70, 35) */
             state wait;
                 /* CIF input (524, 249), (70, 35) */
@@ -33,19 +40,10 @@ system test;
                     call set_timer (100, toto);
                     /* CIF PROCEDURECALL (480, 359), (158, 35) */
                     call set_timer (-100, toto);
-                    /* CIF PROCEDURECALL (484, 414), (150, 35) */
-                    call set_timer (s, toto);
-                    /* CIF PROCEDURECALL (488, 469), (142, 35) */
+                    /* CIF PROCEDURECALL (488, 414), (142, 35) */
                     call set_timer(us, toto);
-                    /* CIF NEXTSTATE (518, 524), (82, 35) */
+                    /* CIF NEXTSTATE (518, 469), (82, 35) */
                     NEXTSTATE timer_run;
-            endstate;
-            /* CIF state (642, 470), (81, 35) */
-            state timer_run;
-                /* CIF input (648, 525), (70, 35) */
-                input toto;
-                    /* CIF NEXTSTATE (648, 580), (70, 35) */
-                    NEXTSTATE wait;
             endstate;
         endprocess test;
     endblock;

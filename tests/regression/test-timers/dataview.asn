@@ -1,7 +1,7 @@
 TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
-
+T-UInt32 ::= INTEGER (0..65535)
 Signed-Int ::= INTEGER (-1000..1000)
 
 Unsigned-Int ::= INTEGER (0..100)

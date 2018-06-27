@@ -1,5 +1,5 @@
-with text_io, test;
-use text_io, test;
+with text_io, test, taste_dataview, ada.real_time, toto_timer;
+use text_io, test, taste_dataview, ada.real_time;
 
 procedure test_ada is
 begin
