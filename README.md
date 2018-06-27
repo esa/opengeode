@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.14 (06/2018)
+    - fix numerical checks when setting timer parameters
+  
 2.0.13 (06/2018)
     - Add taste-compatible cache mechanism when calling asn1scc
   
