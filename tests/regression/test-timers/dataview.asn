@@ -1,0 +1,11 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+
+Signed-Int ::= INTEGER (-1000..1000)
+
+Unsigned-Int ::= INTEGER (0..100)
+
+
+END
+
