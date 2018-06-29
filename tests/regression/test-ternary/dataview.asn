@@ -4,4 +4,6 @@ BEGIN
 SeqOf ::= SEQUENCE (SIZE(0..10)) OF BoolType
 BoolType ::= BOOLEAN
 
+MyStr ::= OCTET STRING (SIZE (3..1000))
+
 END

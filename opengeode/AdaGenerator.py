@@ -1181,6 +1181,7 @@ def _call_external_function(output, **kwargs):
 
     # Add the traceability information
     code.extend(traceability(output))
+    #code.extend(debug_trace())
 
     for out in output.output:
         signal_name = out['outputName']
@@ -1275,6 +1276,7 @@ def _call_external_function(output, **kwargs):
                         and p_id.startswith(LPREFIX)) # NO FIXME WITH CTXT
                         or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
+                    local_decl.extend(debug_trace())
                     local_decl.append(u'{tmp} : aliased {sort};'
                                       .format(tmp=tmp_id,
                                               sort=typename))
@@ -1286,7 +1288,23 @@ def _call_external_function(output, **kwargs):
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         p_id = array_content(param, p_id,
                                              find_basic_type(param_type))
-                    code.append(u'{} := {};'.format(tmp_id, p_id))
+
+                    if isinstance(param, ogAST.ExprAppend):
+                        # Process Append constructs properly when they are
+                        # used as raw params (e.g. callme(a//b//c))
+                        # TODO: ogAST.PrimSubstring seem to be missing
+                        # Check the template in def _conditional
+                        app_len = append_size(param)
+                        code.extend(debug_trace())
+                        code.append(u'{tmp}.Data (1 .. {app_len}) := {val};'
+                               .format(tmp=tmp_id, app_len=app_len, val=p_id))
+                        if basic_param.Min != basic_param.Max:
+                            # Append should only apply to this case, i.e.
+                            # types of varying length...
+                            code.append(u'{tmp}.Length := {app_len};'
+                                    .format(tmp=tmp_id, app_len=app_len))
+                    else:
+                        code.append(u'{} := {};'.format(tmp_id, p_id))
                     list_of_params.append(u"{}'Access{}"
                                           .format(tmp_id,
                                                   u", {}'Size".format(tmp_id)
@@ -2999,17 +3017,28 @@ def path_type(path):
 
 def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
-    trace = [u'-- {line}'.format(line=l) for l in
+    trace = [u'--  {line}'.format(line=l) for l in
         symbol.trace().split('\n')]
     if hasattr(symbol, 'comment') and symbol.comment:
         trace.extend(traceability(symbol.comment))
     return trace
 
+def debug_trace(limit=2):
+    ''' Return a list of comments containing traceability to the code
+    generator, needed to know the origin of a statement in the code '''
+    result = []
+    for each in traceback.format_stack (limit=limit)[:-1]:
+        formatted = each.replace('\n', ' ').split(',')
+        function = formatted[2].strip().split(' ')[1]
+        line_nb  = formatted[1].strip()
+        added = [u'--  !! stack: {} {}'.format(function, line_nb)]
+        result.extend(added)
+    return result
 
 def format_ada_code(stmts):
     ''' Indent properly the Ada code '''
     indent = 0
-    indent_pattern = '    '
+    indent_pattern = '   '
     for line in stmts[:-1]:
         elems = line.strip().split()
         if elems and elems[0].startswith(('when', 'end', 'elsif', 'else')):

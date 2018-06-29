@@ -497,7 +497,8 @@ def signature(name, context):
 
 def check_call(name, params, context):
     ''' Check the parameter types of a procedure/output/operator call,
-        returning the type of its result '''
+        returning the type of its result (value-returning functions only,
+        i.e not signal sending '''
 
     # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
@@ -664,6 +665,26 @@ def check_range(typeref, type_to_check):
                             typeref.Min, typeref.Max))
     except (AttributeError, ValueError):
         raise TypeError('Missing range')
+
+
+def fix_append_expression_type(expr, expected_type):
+    ''' In an Append expression, all components must be of the same type,
+        which is the type expected by the user of the append, for example 
+        the left part of an assign expression.
+        We must recursively fix the Append type, in case we have a//b//c
+        that is handled as (a//b)//c
+        Inputs:
+           expr: the append expression (possibly recursive)
+           expected_type : the type to assign to the expression
+    '''
+    def rec_append(inner_expr, set_type):
+        for each in (inner_expr.left, inner_expr.right):
+            if isinstance(each, ogAST.ExprAppend):
+                rec_append(each, set_type)
+            each.expected_type = set_type
+    rec_append(expr, expected_type)
+    expr.exprType      = expected_type
+    expr.expected_type = expected_type
 
 
 def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
@@ -862,7 +883,7 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
                     return warnings
                 else:
                     raise TypeError('Invalid string literal'
-                                    ' - check that length is'
+                                    ' - check that length is '
                                     'within the bound limits {Min}..{Max}'
                                     .format(Min=str(basic_type.Min),
                                             Max=str(basic_type.Max)))
@@ -1072,21 +1093,20 @@ def fix_expression_types(expr, context): # type: -> [warnings]
         if asn_type.kind != 'SequenceType':
             raise TypeError('left side must be a SEQUENCE type')
         for field, fd_expr in expr.right.value.viewitems():
-#            if fd_expr.exprType == UNKNOWN_TYPE:
-                try:
-                    for spelling in asn_type.Children:
-                        if field.lower().replace('_', '-') == spelling.lower():
-                            break
-                    expected_type = asn_type.Children[spelling].type
-                except AttributeError:
-                    raise TypeError('Field not found: ' + field)
-                check_expr = ogAST.ExprAssign()
-                check_expr.left = ogAST.PrimVariable()
-                check_expr.left.exprType = expected_type
-                check_expr.right = fd_expr
-                warnings.extend(fix_expression_types(check_expr, context))
-                # Id of fd_expr may have changed (enumerated, choice)
-                expr.right.value[field] = check_expr.right
+            try:
+                for spelling in asn_type.Children:
+                    if field.lower().replace('_', '-') == spelling.lower():
+                        break
+                expected_type = asn_type.Children[spelling].type
+            except AttributeError:
+                raise TypeError('Field not found: ' + field)
+            check_expr = ogAST.ExprAssign()
+            check_expr.left = ogAST.PrimVariable()
+            check_expr.left.exprType = expected_type
+            check_expr.right = fd_expr
+            warnings.extend(fix_expression_types(check_expr, context))
+            # Id of fd_expr may have changed (enumerated, choice)
+            expr.right.value[field] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimChoiceItem):
         asn_type = find_basic_type(expr.left.exprType)
         field = expr.right.value['choice'].replace('_', '-')
@@ -1108,6 +1128,9 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             warnings.extend(fix_expression_types(check_expr, context))
             expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimConditional):
+        # in principle it could also be the left side that is a ternary
+        # in which case, its type would be unknown and would need to be
+        # set according to the right type.
         #print "[Parser] [Conditional] ", expr.right.inputString
         for det in ('then', 'else'):
             # Recursively fix possibly missing types in the expression
@@ -1121,6 +1144,8 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             expr.right.value[det].exprType = expr.left.exprType
         # We must also set the type of the overal expression to the same
         expr.right.exprType = expr.left.exprType
+    elif isinstance(expr.right, ogAST.ExprAppend):
+        fix_append_expression_type(expr.right, expr.left.exprType)
 
     if expr.right.is_raw != expr.left.is_raw:
         warnings.extend(check_type_compatibility(raw_expr, ref_type, context))
@@ -1584,13 +1609,12 @@ def conditional_expression(root, context):
         msg = 'Conditions in conditional expressions must be of type Boolean'
         errors.append(error(root, msg))
 
-    # TODO: Refactor this
-    # The type of the expression is set to the type of the "then" part,
-    # but this is not always right, in the case of raw numbers ("then" part
-    # may be unsigned, while the real expected type is signed)
     try:
         expr.left = then_expr
         expr.right = else_expr
+        # The type of the expression was set to the type of the "then" part,
+        # but this is not always right, in the case of raw numbers ("then" part
+        # may be unsigned, while the real expected type is signed)
         warnings.extend(fix_expression_types(expr, context))
         expr.exprType = then_expr.exprType
     except (AttributeError, TypeError) as err:
@@ -1604,6 +1628,10 @@ def conditional_expression(root, context):
         'else'  : else_expr,
         'tmpVar': expr.tmpVar
     }
+    # at the end, expr.exprType is still UNKNOWN TYPE
+    # it can only be resolved by from the context
+    # print traceback.print_stack()
+    #print traceback.format_stack (limit=2)
     return expr, errors, warnings
 
 
@@ -3491,8 +3519,7 @@ def outputbody(root, context):
                 errors.append('"' + child.text +
                               '" is not defined in the current scope')
         elif child.type == lexer.PARAMS:
-            body['params'], err, warn = expression_list(
-                                                    child, context)
+            body['params'], err, warn = expression_list(child, context)
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.TO:
@@ -4209,20 +4236,21 @@ def assign(root, context):
         # to the same value as left in case of ExprAppend
         # Setting it - I did not see any place in the Ada backend where
         # this could cause a bug (and regression is OK)
-        if isinstance(expr.right, ogAST.ExprAppend):
-            # all append components must be of the same type, which is the
-            # type of the left part of the expression. we must recursively
-            # fix the right type, in case we have the for a//b//c
-            # that is handled as (a//b)//c
-            def rec_append(inner_expr, set_type):
-                for each in (inner_expr.left, inner_expr.right):
-                    if isinstance(each, ogAST.ExprAppend):
-                        rec_append(each, set_type)
-                    each.expected_type = set_type
-            rec_append(expr.right, expr.left.exprType)
-            expr.right.exprType = expr.left.exprType
-            expr.right.expected_type = expr.left.exprType
-            #print 'here in assign', expr.right.inputString
+#       if isinstance(expr.right, ogAST.ExprAppend):
+#           fix_append_expression_type(expr.right, expr.left.exprType)
+#           # all append components must be of the same type, which is the
+#           # type of the left part of the expression. we must recursively
+#           # fix the right type, in case we have the for a//b//c
+#           # that is handled as (a//b)//c
+#           def rec_append(inner_expr, set_type):
+#               for each in (inner_expr.left, inner_expr.right):
+#                   if isinstance(each, ogAST.ExprAppend):
+#                       rec_append(each, set_type)
+#                   each.expected_type = set_type
+#           rec_append(expr.right, expr.left.exprType)
+#           expr.right.exprType      = expr.left.exprType
+#           expr.right.expected_type = expr.left.exprType
+#           #print 'here in assign', expr.right.inputString
         if isinstance(expr.right, (ogAST.PrimSequenceOf,
                                    ogAST.PrimStringLiteral)):
             # Set the expected type on the right, this is needed to know
