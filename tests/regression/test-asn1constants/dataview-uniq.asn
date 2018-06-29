@@ -32,6 +32,8 @@ myBool MyBoolean ::= TRUE
 
 myInt TASTE-Peek-id ::= 5
 
+myInt2 TASTE-Peek-id ::= myInt
+
 myString VariableString ::= 'DEADBEEF'H
 
 mySeqBool SeqBool ::= { TRUE, FALSE }

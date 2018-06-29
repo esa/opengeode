@@ -135,6 +135,19 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.14 (06/2018)
+    - fix numerical checks when setting timer parameters
+  
+2.0.13 (06/2018)
+    - Add taste-compatible cache mechanism when calling asn1scc
+  
+2.0.12 (06/2018)
+    - Fix resolution of ASN.1 constants - values were not use propertly when
+      a constant was referencing another constant (numerical operations only)
+
+2.0.11 (06/2018)
+    - Ada backend: fix choice determinant issue leading to CHOICE_NOT_FOUND bug
+
 2.0.10 (06/2018)
     - Various fixes in statechart rendering, esp. from command line
 

@@ -1,0 +1,8 @@
+with Ada.Real_Time;
+use Ada.Real_Time;
+package body Toto_Timer is
+   procedure Set_Toto (Dur : asn1SccT_UInt32) is
+   begin
+       delay To_Duration (Milliseconds (Integer(Dur)));
+   end Set_Toto;
+end Toto_Timer;

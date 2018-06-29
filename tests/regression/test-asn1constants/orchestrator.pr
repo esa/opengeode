@@ -1,34 +1,38 @@
 /* CIF PROCESS (295, 56), (150, 75) */
-PROCESS orchestrator
-/* CIF COMMENT (405, 192), (71, 35) */
-COMMENT 'Hello';
-    /* CIF TEXT (649, 323), (294, 140) */
+process orchestrator
+/* CIF comment (405, 192), (71, 35) */
+comment 'Hello';
+    /* CIF TEXT (649, 323), (294, 143) */
     -- Text area for declarations and comments
-
-dcl toto NamedInt := one;
-
-dcl tutu Enum_with_dash := first_one;
-
-dcl titi NamedInt_with_dash := second_value;
+    
+    dcl toto NamedInt := one;
+    
+    dcl tutu Enum_with_dash := first_one;
+    
+    dcl titi NamedInt_with_dash := second_value;
+    
+    dcl recursive TASTE_Peek_id := myInt2;
     /* CIF ENDTEXT */
     /* CIF START (530, 150), (80, 36) */
     START;
         /* CIF NEXTSTATE (512, 201), (116, 33) */
         NEXTSTATE Wait_for_GUI;
-    /* CIF STATE (1063, 119), (116, 33) */
-    STATE Wait_for_GUI;
-    ENDSTATE;
-    /* CIF STATE (512, 201), (116, 33) */
-    STATE Wait_for_GUI;
-        /* CIF INPUT (529, 254), (82, 35) */
-        INPUT pulse(titi);
+    /* CIF state (1063, 119), (116, 33) */
+    state Wait_for_GUI;
+    endstate;
+    /* CIF state (512, 201), (116, 33) */
+    state Wait_for_GUI;
+        /* CIF input (529, 254), (82, 35) */
+        input pulse(titi);
             /* CIF PROCEDURECALL (522, 309), (96, 35) */
-            CALL writeln(titi);
-            /* CIF OUTPUT (508, 359), (123, 35) */
-            OUTPUT telemetry(tutu);
-            /* CIF TASK (501, 414), (138, 35) */
-            TASK tutu := second_one;
-            /* CIF NEXTSTATE (535, 464), (70, 35) */
+            call writeln(titi);
+            /* CIF output (508, 359), (123, 35) */
+            output telemetry(tutu);
+            /* CIF task (501, 414), (138, 35) */
+            task tutu := second_one;
+            /* CIF task (492, 469), (156, 35) */
+            task recursive := 1 + myInt2;
+            /* CIF NEXTSTATE (535, 519), (70, 35) */
             NEXTSTATE -;
-    ENDSTATE;
-ENDPROCESS orchestrator;
+    endstate;
+endprocess orchestrator;

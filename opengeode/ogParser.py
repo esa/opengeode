@@ -86,6 +86,9 @@ TMPVAR = 0  # type: int
 INTEGER = type('IntegerType', (object,), {'kind': 'IntegerType',
                                           'Min': str(-(2 ** 63)),
                                           'Max': str(2 ** 63 - 1)})
+UNSIGNED = type('IntegerType', (object,), {'kind': 'IntegerType',
+                                          'Min': "0",
+                                          'Max': str(2 ** 64 - 1)})
 INT32 = type('Integer32Type', (object,), {'kind': 'Integer32Type',
                                           'Min': '-2147483648',
                                           'Max': '2147483647'})
@@ -122,7 +125,7 @@ SPECIAL_OPERATORS = {
     'reset_timer': [{'type': TIMER, 'direction': 'in'}],
     'round': [{'type': REAL, 'direction': 'in'}],
     'set_timer': [
-        {'type': INTEGER, 'direction': 'in'},
+        {'type': UNSIGNED, 'direction': 'in'},
         {'type': TIMER, 'direction': 'in'}
     ],
     'sin': [{'type': REAL, 'direction': 'in'}],
@@ -529,13 +532,17 @@ def check_call(name, params, context):
         expr.right = param
 
         try:
+            basic_left  = find_basic_type(expr.left.exprType)
+            basic_right = find_basic_type(expr.right.exprType)
+            #print getattr(basic_left, "Min", 0), getattr(basic_right, "Min", 0)
             warnings.extend(fix_expression_types(expr, context))
             params[idx] = expr.right
-        except TypeError:
+        except TypeError as err:
             expected = type_name(sign[idx]['type'])
             received = type_name(expr.right.exprType)
-            raise TypeError('Expected type {} in call to {} ({} received)'.
-                format(expected, name, received))
+            raise TypeError('In call to {}: Type of parameter {} is incorrect'
+                            ' ({}) - {}'
+                            .format(name, idx+1, received, str(err)))
         if (warnings):
             expected = type_name(sign[idx]['type'])
             received = type_name(expr.right.exprType)
@@ -933,7 +940,6 @@ def compare_types(type_a, type_b):   # type -> [warnings]
         return warnings
 
     # Check if both types have basic compatibility
-
     if type_a.kind == type_b.kind:
         if type_a.kind == 'SequenceOfType':
             if mismatch:
@@ -956,12 +962,13 @@ def compare_types(type_a, type_b):   # type -> [warnings]
         # TODO: Check that OctetString types have compatible range
         elif type_a.kind == 'SequenceType' and mismatch:
             raise TypeError(mismatch)
-        elif type_a.kind == 'IntegerType' and mismatch:
+        elif type_a.kind == 'IntegerType':
             # Detect Signed/Unsigned type mismatch
             min_a, min_b = float(type_a.Min), float(type_b.Min)
             if (min_a >= 0) != (min_b >= 0):
-                raise TypeError(mismatch + "(signed vs unsigned type)")
-            else:
+                raise TypeError("Signed vs Unsigned type mismatch " +
+                        mismatch)
+            elif mismatch:
                 warnings.append(mismatch)
         elif mismatch:
             warnings.append(mismatch)
@@ -1374,6 +1381,27 @@ def arithmetic_expression(root, context):
     # accordingly with the kind of operation used between operands:
     left = find_basic_type(expr.left.exprType)
     right = find_basic_type(expr.right.exprType)
+
+    def get_constant_value(const_val):
+        # value may be a reference to another constant. In that case we
+        # must find the actual value by following the path until we find it
+        # however, stop after 20 trials to avoid looping forever in case
+        # there is some circular dependency or other weird asn1 construct
+        first_str = const_val
+        retry = 0
+        while retry < 20:
+            try:
+                return float(const_val)
+            except ValueError:
+                possible_constant = is_asn1constant(const_val)
+                if possible_constant is not None:
+                    const_val = possible_constant.value
+                else:
+                    # Exceptional case - should be caught by asn1scc
+                    raise ValueError(str(first_str) + " could not be resolved")
+                retry += 1
+        raise ValueError(str(first_str) + " actual value not found" )
+
     try:
         minL = float(left.Min)
         maxL = float(left.Max)
@@ -1381,9 +1409,9 @@ def arithmetic_expression(root, context):
         maxR = float(right.Max)
         # Constants defined in ASN.1 : take their value for the range
         if isinstance(expr.left, ogAST.PrimConstant):
-            minL = maxL = float (expr.left.constant_value)
+            minL = maxL = get_constant_value(expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
-            minR = maxR = float (expr.right.constant_value)
+            minL = maxL = get_constant_value(expr.right.constant_value)
         # Type of the resulting expression depends on whether there are raw
         # numbers on one side of the expression (PrInt). By default when they
         # are parsed, they are set to 64 bits integers ; but if they are in an
@@ -1421,6 +1449,7 @@ def arithmetic_expression(root, context):
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types '\
               'have a range constraint'
+        #print (traceback.format_exc())
         errors.append(error(root, msg))
 
     if root.type in (lexer.REM, lexer.MOD):

@@ -1,0 +1,6 @@
+with Taste_Dataview;
+use  Taste_Dataview;
+package Toto_Timer is
+   procedure Set_Toto (Dur : asn1SccT_UInt32)
+      with Export, Convention => C, Link_Name => "test_RI_set_toto";
+end Toto_Timer;
