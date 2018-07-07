@@ -25,11 +25,10 @@ process og;
         /* CIF task (1370, 100), (214, 83) */
         task test := 5,
 test := power(test, 1),
-test := abs(-4+1),
 test := abs(test)
         /* CIF comment (1603, 123), (183, 35) */
         comment 'Task with unicode: voilà!';
-        /* CIF task (1378, 203), (198, 38) */
+        /* CIF task (1376, 203), (202, 38) */
         task Nonposint := abs (Nonposint),
 Nonposint := abs (-5);
         /* CIF task (1375, 259), (204, 50) */
@@ -152,7 +151,7 @@ element from a list)';
                     comment 'Substring
 TODO check range
 against current Length';
-                    /* CIF PROCEDURECALL (1992, 800), (200, 35) */
+                    /* CIF PROCEDURECALL (1991, 800), (201, 35) */
                     call writeln('first_msg(1,2)=',msg)
                     /* CIF comment (2212, 800), (100, 35) */
                     comment 'should be ay';

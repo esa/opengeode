@@ -1,200 +1,204 @@
 /* CIF PROCESS (200, 143), (150, 75) */
-PROCESS myfunction;
+process myfunction;
     /* CIF TEXT (0, 17), (345, 648) */
     -- Timers defined in the interface view
--- Use SET_TIMER (value, timer name)
--- and RESET_TIMER (timer name) in a
--- PROCEDURE CALL symbol to use them
-
-
-
-DCL toto T_Int32;
-
-TIMER myTimer;
-
--- Test default value for a complex type
-DCL def_val MySeq := { a 3, b taste };
-
--- To test power, fix, float
-dcl someReal MyReal := 1.5;
-dcl largeReal LargerReal := 0.0;
-dcl someInt t_uInt8 := 2;
-dcl otherint T_uint8 := 1;
-
--- To test 'op_not'
-dcl opnot T_boolean := false; -- not true;
--- To test writeln with octet strings
-dcl str MyOctStr := 'abc';
-dcl variable_str String := 'Hello!';
-dcl other String := 'World';
-
-dcl bar SeqInt := { 1,1 };
-
-dcl testenum MyEnum := world;
-
-dcl VeryTrue  t_boolean := not false;
+    -- Use SET_TIMER (value, timer name)
+    -- and RESET_TIMER (timer name) in a
+    -- PROCEDURE CALL symbol to use them
+    
+    
+    
+    DCL toto T_Int32;
+    
+    TIMER myTimer;
+    
+    -- Test default value for a complex type
+    DCL def_val MySeq := { a 3, b taste };
+    
+    -- To test power, fix, float
+    dcl someReal MyReal := 1.5;
+    dcl largeReal LargerReal := 0.0;
+    dcl someInt t_uInt8 := 2;
+    dcl otherint T_uint8 := 1;
+    
+    dcl negInt T_Int8 := -3;
+    
+    -- To test 'op_not'
+    dcl opnot T_boolean := false; -- not true;
+    -- To test writeln with octet strings
+    dcl str MyOctStr := 'abc';
+    dcl variable_str String := 'Hello!';
+    dcl other String := 'World';
+    
+    dcl bar SeqInt := { 1,1 };
+    
+    dcl testenum MyEnum := world;
+    
+    dcl VeryTrue  t_boolean := not false;
     /* CIF ENDTEXT */
-    /* CIF PROCEDURE (1172, 490), (104, 35) */
-    PROCEDURE factorial;
+    /* CIF procedure (1172, 490), (104, 35) */
+    procedure factorial;
         /* CIF TEXT (29, 42), (269, 53) */
         fpar in n MyInteger, 
           in/out result MyInteger;
         /* CIF ENDTEXT */
         /* CIF START (298, 33), (70, 35) */
         START;
-            /* CIF TASK (275, 83), (116, 35) */
-            TASK result := 1;
-            /* CIF TASK (194, 133), (278, 68) */
-            TASK for x in range(1, n+1):
+            /* CIF task (275, 83), (116, 35) */
+            task result := 1;
+            /* CIF task (194, 133), (278, 68) */
+            task for x in range(1, n+1):
     result := (result * x) mod 255
 endfor;
-            /* CIF RETURN (315, 216), (35, 35) */
-            RETURN ;
-    ENDPROCEDURE;
+            /* CIF return (315, 216), (35, 35) */
+            return ;
+    endprocedure;
     /* CIF START (603, 0), (76, 39) */
     START;
-        /* CIF TASK (541, 54), (200, 35) */
-        TASK verytrue := not false;
-        /* CIF DECISION (576, 104), (129, 50) */
-        DECISION someint + 1
-        /* CIF COMMENT (714, 111), (176, 35) */
-        COMMENT 'Test closed range';
-                /* CIF ANSWER (546, 174), (99, 33) */
-                (0:998):
-                /* CIF ANSWER (707, 174), (116, 28) */
-                (2:otherint):
-        ENDDECISION;
-        /* CIF TASK (542, 242), (198, 128) */
-        TASK for x in range(4):
+        /* CIF task (541, 54), (200, 35) */
+        task verytrue := not false;
+        /* CIF decision (576, 104), (129, 50) */
+        decision someint + 1
+        /* CIF comment (714, 111), (176, 35) */
+        comment 'Test closed range';
+            /* CIF ANSWER (546, 174), (99, 33) */
+            (0:998):
+            /* CIF ANSWER (707, 174), (116, 28) */
+            (2:otherint):
+        enddecision;
+        /* CIF task (542, 242), (198, 128) */
+        task for x in range(4):
  call writeln(x);
 endfor,
 for x in range(0,4,1):
  call writeln(x);
 endfor
-        /* CIF COMMENT (872, 280), (256, 35) */
-        COMMENT 'Check consistent behaviour';
+        /* CIF comment (872, 280), (256, 35) */
+        comment 'Check consistent behaviour';
         /* CIF PROCEDURECALL (532, 385), (217, 35) */
-        CALL writeln(-(someint + 1))
-        /* CIF COMMENT (850, 334), (283, 48) */
-        COMMENT 'Test unary on expression result
+        call writeln(-(someint + 1))
+        /* CIF comment (850, 334), (283, 48) */
+        comment 'Test unary on expression result
 should display -3';
         /* CIF PROCEDURECALL (519, 435), (244, 35) */
-        CALL writeln(not(true or false))
-        /* CIF COMMENT (759, 405), (232, 48) */
-        COMMENT 'test unary on expression
+        call writeln(not(true or false))
+        /* CIF comment (759, 405), (232, 48) */
+        comment 'test unary on expression
 should display FALSE';
         /* CIF PROCEDURECALL (576, 485), (130, 35) */
-        CALL writeln(str)
-        /* CIF COMMENT (716, 455), (285, 35) */
-        COMMENT 'Test writeln with an octet string';
+        call writeln(str)
+        /* CIF comment (716, 455), (285, 35) */
+        comment 'Test writeln with an octet string';
         /* CIF PROCEDURECALL (576, 535), (130, 35) */
-        CALL writeln(str)
-        /* CIF COMMENT (716, 505), (310, 35) */
-        COMMENT 'Write again to check local variables';
+        call writeln(str)
+        /* CIF comment (716, 505), (310, 35) */
+        comment 'Write again to check local variables';
         /* CIF PROCEDURECALL (541, 585), (199, 35) */
-        CALL writeln(variable_str)
-        /* CIF COMMENT (743, 555), (346, 35) */
-        COMMENT 'Write a non-fixed length OCTET STRING';
+        call writeln(variable_str)
+        /* CIF comment (743, 555), (346, 35) */
+        comment 'Write a non-fixed length OCTET STRING';
         /* CIF PROCEDURECALL (519, 635), (244, 38) */
-        CALL writeln(variable_str // '!!!')
-        /* CIF COMMENT (760, 606), (140, 35) */
-        COMMENT 'with APPEND';
+        call writeln(variable_str // '!!!')
+        /* CIF comment (760, 606), (140, 35) */
+        comment 'with APPEND';
         /* CIF PROCEDURECALL (421, 688), (440, 35) */
-        CALL writeln(if someint>0 then variable_str else other fi)
-        /* CIF COMMENT (837, 658), (346, 35) */
-        COMMENT 'Write a non-fixed lenght OCTET STRING';
+        call writeln(if someint>0 then variable_str else other fi)
+        /* CIF comment (837, 658), (346, 35) */
+        comment 'Write a non-fixed lenght OCTET STRING';
         /* CIF PROCEDURECALL (532, 738), (218, 35) */
-        CALL writeln(1 + (-otherint))
-        /* CIF COMMENT (749, 708), (333, 35) */
-        COMMENT 'Test the op_minus in a sub-expression';
+        call writeln(1 + (-otherint))
+        /* CIF comment (749, 708), (333, 35) */
+        comment 'Test the op_minus in a sub-expression';
         /* CIF PROCEDURECALL (382, 788), (518, 35) */
-        CALL writeln(-someint, if someint>0 then ' is ' else 'Foo' fi, not true)
-        /* CIF COMMENT (871, 758), (364, 35) */
-        COMMENT 'Various tests with strings, ternary, op_not';
+        call writeln(-someint, if someint>0 then ' is ' else 'Foo' fi, not true)
+        /* CIF comment (871, 758), (364, 35) */
+        comment 'Various tests with strings, ternary, op_not';
         /* CIF PROCEDURECALL (486, 838), (310, 35) */
-        CALL write(if someint>0 then 2 else 1 fi)
-        /* CIF COMMENT (894, 830), (277, 35) */
-        COMMENT 'test ternary with raw numbers';
+        call write(if someint>0 then 2 else 1 fi)
+        /* CIF comment (894, 830), (277, 35) */
+        comment 'test ternary with raw numbers';
         /* CIF PROCEDURECALL (459, 888), (363, 35) */
-        CALL write(if someint>0 then someint else 1 fi)
-        /* CIF COMMENT (863, 891), (388, 35) */
-        COMMENT 'test ternary with mixed variable/raw number';
+        call write(if someint>0 then someint else 1 fi)
+        /* CIF comment (863, 891), (388, 35) */
+        comment 'test ternary with mixed variable/raw number';
         /* CIF PROCEDURECALL (563, 938), (156, 35) */
-        CALL writeln(bar(1))
-        /* CIF COMMENT (744, 936), (116, 35) */
-        COMMENT 'test index';
+        call writeln(bar(1))
+        /* CIF comment (744, 936), (116, 35) */
+        comment 'test index';
         /* CIF PROCEDURECALL (510, 988), (261, 35) */
-        CALL writeln(opnot, ' ', not opnot)
-        /* CIF COMMENT (814, 994), (231, 35) */
-        COMMENT 'test op_not with variable';
-        /* CIF TASK (437, 1038), (408, 35) */
-        TASK someInt := if someint = 0 then someint else 0 fi;
-        /* CIF TASK (517, 1088), (248, 35) */
-        TASK otherint := num(testenum);
+        call writeln(opnot, ' ', not opnot)
+        /* CIF comment (814, 994), (231, 35) */
+        comment 'test op_not with variable';
+        /* CIF task (437, 1038), (408, 35) */
+        task someInt := if someint = 0 then someint else 0 fi;
+        /* CIF task (517, 1088), (248, 35) */
+        task otherint := num(testenum);
         /* CIF PROCEDURECALL (479, 1138), (324, 35) */
-        CALL writeln(otherint, num(testenum)+1)
-        /* CIF COMMENT (919, 1088), (506, 128) */
-        COMMENT 'Will display 1 2 with the Ada generator
+        call writeln(otherint, num(testenum)+1)
+        /* CIF comment (919, 1088), (506, 128) */
+        comment 'Will display 1 2 with the Ada generator
 * even if the ASN.1 model specifies explicit values *
 because Ada has no operator to get the explicit value,
 even if it is set as representation clause. Enumerated values
 are logical states, not integers in Ada - as in ASN.1
 ';
-        /* CIF DECISION (465, 1202), (352, 87) */
-        DECISION someint /=0 and then (10 / someInt > 0)
+        /* CIF decision (465, 1202), (352, 87) */
+        decision someint /=0 and then (10 / someInt > 0)
 or else someint = 0
-        /* CIF COMMENT (889, 1239), (219, 88) */
-        COMMENT 'Using "and else" is the
+        /* CIF comment (889, 1239), (219, 88) */
+        comment 'Using "and else" is the
 short-circuit form. The
 second part should not
 be evaluated.';
-                /* CIF ANSWER (561, 1309), (73, 28) */
-                (true):
-                    /* CIF TASK (530, 1352), (135, 35) */
-                    TASK someInt := 2;
-                    /* CIF PROCEDURECALL (527, 1402), (140, 38) */
-                    CALL writeln('OK');
-                /* CIF ANSWER (664, 1309), (78, 28) */
-                (false):
-        ENDDECISION;
+            /* CIF ANSWER (561, 1309), (73, 28) */
+            (true):
+                /* CIF task (530, 1352), (135, 35) */
+                task someInt := 2;
+                /* CIF PROCEDURECALL (527, 1402), (140, 38) */
+                call writeln('OK');
+            /* CIF ANSWER (664, 1309), (78, 28) */
+            (false):
+        enddecision;
         /* CIF NEXTSTATE (605, 1455), (72, 33) */
         NEXTSTATE Wait;
-    /* CIF STATE (605, 1455), (72, 33) */
-    STATE Wait;
-        /* CIF INPUT (865, 1508), (104, 33) */
-        INPUT mytimer;
-            /* CIF PROCEDURECALL (806, 1556), (221, 33) */
-            CALL writeln('timer expired');
-            /* CIF PROCEDURECALL (819, 1604), (196, 33) */
-            CALL factorial(3, someint);
-            /* CIF NEXTSTATE (881, 1652), (72, 33) */
+    /* CIF state (605, 1455), (72, 33) */
+    state Wait;
+        /* CIF input (1003, 1508), (104, 33) */
+        input mytimer;
+            /* CIF PROCEDURECALL (945, 1556), (221, 33) */
+            call writeln('timer expired');
+            /* CIF PROCEDURECALL (957, 1604), (196, 33) */
+            call factorial(3, someint);
+            /* CIF NEXTSTATE (1019, 1652), (72, 33) */
             NEXTSTATE Wait;
-        /* CIF INPUT (421, 1508), (217, 33) */
-        INPUT start_something (toto);
-            /* CIF OUTPUT (355, 1556), (348, 33) */
-            OUTPUT result_data((toto+1) mod 2147483647);
+        /* CIF input (421, 1508), (217, 33) */
+        input start_something (toto);
+            /* CIF output (355, 1556), (348, 33) */
+            output result_data((toto+1) mod 2147483647);
             /* CIF PROCEDURECALL (440, 1604), (178, 48) */
-            CALL writeln
+            call writeln
 ('Hello Toto', toto);
             /* CIF PROCEDURECALL (406, 1667), (246, 33) */
-            CALL set_timer(1000, myTimer);
-            /* CIF TASK (364, 1715), (330, 35) */
-            TASK largeReal := power(someReal, 2);
+            call set_timer(1000, myTimer);
+            /* CIF task (364, 1715), (330, 35) */
+            task largeReal := power(someReal, 2);
             /* CIF PROCEDURECALL (272, 1765), (515, 35) */
-            CALL writeln(someReal, ' ** 2' , ' == ', largeReal, ' (should be 2.25 )');
-            /* CIF TASK (403, 1815), (252, 35) */
-            TASK someReal := float(someInt);
-            /* CIF TASK (376, 1865), (307, 35) */
-            TASK someInt := fix(someReal) mod 255;
-            /* CIF TASK (437, 1915), (185, 35) */
-            TASK opnot := not opnot;
-            /* CIF TASK (429, 1965), (200, 35) */
-            TASK 'someint := -someint'
-            /* CIF COMMENT (613, 1951), (243, 35) */
-            COMMENT 'XXX should raise an error!';
-            /* CIF TASK (427, 2015), (204, 35) */
-            TASK someint := (-8) mod 5;
-            /* CIF NEXTSTATE (494, 2065), (70, 33) */
+            call writeln(someReal, ' ** 2' , ' == ', largeReal, ' (should be 2.25 )');
+            /* CIF task (403, 1815), (252, 35) */
+            task someReal := float(someInt);
+            /* CIF task (376, 1865), (307, 35) */
+            task someInt := fix(someReal) mod 255;
+            /* CIF task (437, 1915), (185, 35) */
+            task opnot := not opnot;
+            /* CIF task (429, 1965), (200, 35) */
+            task 'someint := -someint'
+            /* CIF comment (692, 1940), (243, 35) */
+            comment 'XXX should raise an error!';
+            /* CIF task (427, 2015), (204, 35) */
+            task someint := (-8) mod 5;
+            /* CIF task (459, 2070), (141, 35) */
+            task negint := (-8) mod 5;;
+            /* CIF NEXTSTATE (494, 2120), (70, 33) */
             NEXTSTATE wait;
-    ENDSTATE;
-ENDPROCESS myfunction;
+    endstate;
+endprocess myfunction;

@@ -50,7 +50,7 @@ class Expression(object):
         self.charPositionInLine = charPositionInLine
         # Binary expressions have two sides
         self.right = self.left = None
-        # Unary expressions are stored in "expr"
+        # Unary expressions (NOT and NEG) are stored in "expr"
         self.expr = None
 
         # exprType is an ASN.1 type (as exported by asn1scc)

@@ -14,13 +14,13 @@ MyChoice ::= CHOICE {
     f BOOLEAN
 }
 
-Some-Thing ::= MyInteger
+Some-Thing ::= INTEGER (-100 .. 100)
 
 MyInteger   ::= INTEGER (0..255)
 
 My-OctStr    ::= OCTET STRING (SIZE (0..20))
 
-SeqOf ::= SEQUENCE (SIZE(0..100)) OF MyInteger
+SeqOf ::= SEQUENCE (SIZE(0..100)) OF Some-Thing
 
 Type1 ::= INTEGER(0..1)
 Type2 ::= BOOLEAN

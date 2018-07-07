@@ -186,6 +186,11 @@ def substring_range(substring):
     return left_bty.Min, right_bty.Max
 
 
+def is_number(basic_ty):
+    ''' Return true if basic type is a raw number (i.e. not a variable) '''
+    return basic_ty.__name__ in ('Universal_Integer', 'PrReal')
+
+
 def is_integer(ty):
     # type: (Any) -> bool
     ''' Return true if a type is an Integer Type '''
@@ -526,10 +531,10 @@ def check_call(name, params, context):
     # (3) Check each individual parameter type
     for idx, param in enumerate(params):
         warnings = []
-        expr = ogAST.ExprAssign()
-        expr.left = ogAST.PrimVariable()
+        expr               = ogAST.ExprAssign()
+        expr.left          = ogAST.PrimVariable()
         expr.left.exprType = sign[idx]['type']
-        expr.right = param
+        expr.right         = param
 
         try:
             basic_left  = find_basic_type(expr.left.exprType)
@@ -557,9 +562,11 @@ def check_call(name, params, context):
     # (4) Compute the type of the result
     param_btys = [find_basic_type(p.exprType) for p in params]
     if name == 'abs':
-        # The implementation of abs in *all* progamming languages returns
+        # The implementation of abs in *all* programming languages returns
         # a type that is the same as the type of the parameter. The returned
         # value is *not* unsigned. abs(integer'Min) returns a NEGATIVE number
+        # this is an issue in an assign statement, if the recipient is
+        # unsigned .. A cast is necessary if the parameter of abs is negative
         return type('Abs', (param_btys[0],), {})
 #       return type('Abs', (param_btys[0],), {
 #           'Min': str(max(float(param_btys[0].Min), 0)),
@@ -744,7 +751,7 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
                                     err=str(err)))
         return warnings
 
-    elif isinstance(primary, ogAST.PrimInteger) \
+    elif isinstance(primary, (ogAST.PrimInteger, ogAST.ExprMod)) \
             and (is_integer(type_ref) or type_ref == NUMERICAL):
         return warnings
 
@@ -965,7 +972,8 @@ def compare_types(type_a, type_b):   # type -> [warnings]
         elif type_a.kind == 'IntegerType':
             # Detect Signed/Unsigned type mismatch
             min_a, min_b = float(type_a.Min), float(type_b.Min)
-            if (min_a >= 0) != (min_b >= 0):
+            if (min_a >= 0) != (min_b >= 0) \
+                    and not (is_number(type_a) or is_number(type_b)):
                 raise TypeError("Signed vs Unsigned type mismatch " +
                         mismatch)
             elif mismatch:
@@ -1169,7 +1177,18 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             # removing SequenceOf and String from here should be OK.
             raw_expr.exprType = ref_type
     else:
-        warnings.extend(compare_types(expr.left.exprType, expr.right.exprType))
+        try:
+            warnings.extend(compare_types(expr.left.exprType, expr.right.exprType))
+        except TypeError as err:
+            print "here", expr.left.inputString, " and right = ", expr.right.inputString
+            print expr.left.exprType, expr.right.exprType
+            print "--> ", str(err)
+            #print traceback.format_stack (limit=2)
+            left_type = find_basic_type(expr.left.exprType)
+            right_type = find_basic_type(expr.right.exprType)
+            print "    left min/max:", left_type.Min, left_type.Max
+            print "    right min/max:", right_type.Min, right_type.Max
+            raise
     return list(set(warnings))
 
 
@@ -1254,8 +1273,9 @@ def binary_expression(root, context):
     expr.tmpVar = tmp()
 
     left, right = root.children
-    expr.left, err_left, warn_left = expression(left, context)
+    expr.left,  err_left,  warn_left  = expression(left, context)
     expr.right, err_right, warn_right = expression(right, context)
+
     errors.extend(err_left)
     warnings.extend(warn_left)
     errors.extend(err_right)
@@ -1270,7 +1290,8 @@ def binary_expression(root, context):
 
 
 def unary_expression(root, context):
-    ''' Unary expression analysis '''
+    ''' Unary expression analysis
+    (NOT and NEG, i.e. "not bah" and "-4" or "-foo" '''
     ExprNode = EXPR_NODE[root.type]
     expr = ExprNode(
         get_input_string(root),
@@ -1278,7 +1299,7 @@ def unary_expression(root, context):
         root.getCharPositionInLine()
     )
     expr.exprType = UNKNOWN_TYPE
-    expr.tmpVar = tmp()
+    expr.tmpVar   = tmp()
 
     expr.expr, errors, warnings = expression(root.children[0], context)
 
@@ -1375,12 +1396,21 @@ def arithmetic_expression(root, context):
         return { 'Min': str(min(candidates)),
                  'Max': str(max(candidates))}
 
-    expr, errors, warnings = binary_expression(root, context)
+    # Call order is: expression -> arithmetic_expression -> binary_expression
+    # the latter calls fix_expression_types to determine the type of each side
+    # of the expression. The type of the expression should still be unknown
+    # at this point (expr.exprType).
 
-    # Expressions returning a numerical type must have their range defined
-    # accordingly with the kind of operation used between operands:
-    left = find_basic_type(expr.left.exprType)
-    right = find_basic_type(expr.right.exprType)
+    print "[DEBUG] Arithmetic expression:", get_input_string(root)
+    expr, errors, warnings = binary_expression(root, context)
+    print "[DEBUG] Left:", expr.left.exprType, "Right:", expr.right.exprType
+
+    # Get the basic types to have the ranges
+    basic_left  = find_basic_type(expr.left.exprType)
+    basic_right = find_basic_type(expr.right.exprType)
+
+    #print "[DEBUG] Left  Range:", basic_left.Min, basic_left.Max, basic_left.kind
+    #print "[DEBUG] Right Range:", basic_right.Min, basic_right.Max, basic_right.kind
 
     def get_constant_value(const_val):
         # value may be a reference to another constant. In that case we
@@ -1403,49 +1433,91 @@ def arithmetic_expression(root, context):
         raise ValueError(str(first_str) + " actual value not found" )
 
     try:
-        minL = float(left.Min)
-        maxL = float(left.Max)
-        minR = float(right.Min)
-        maxR = float(right.Max)
+        # set Min and Max.. Note, for Int32 types (e.g. For loop index)
+        # the Min must be compatible with the other side...
+        minL = float(basic_left.Min) \
+                if basic_left.kind != "Integer32Type" \
+                else float(basic_right.Min)
+        maxL = float(basic_left.Max)
+        minR = float(basic_right.Min) \
+                if basic_right.kind != "Integer32Type" \
+                else float(basic_left.Min)
+        maxR = float(basic_right.Max)
         # Constants defined in ASN.1 : take their value for the range
         if isinstance(expr.left, ogAST.PrimConstant):
             minL = maxL = get_constant_value(expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
             minL = maxL = get_constant_value(expr.right.constant_value)
         # Type of the resulting expression depends on whether there are raw
-        # numbers on one side of the expression (PrInt). By default when they
-        # are parsed, they are set to 64 bits integers ; but if they are in an
-        # expression where the other side is 32 bits (Length or for loop range)
-        # then the resulting expression is 32 bits.
-        basic = right if left.__name__ == 'PrInt' else left
-        # When one side of the expression is a raw (universal) number,
-        # in backends the type is inherited from the other side of the
-        # expression
-        # e.g. x - 1 is of type x. Keep track of this resulting type in
-        # "expected_type" to make sure that backends know if the type is signed
-        # or unsigned, even if the computed range is lower than 0
-        expr.expected_type = expr.left.exprType if right.__name__ == 'PrInt' \
-                else expr.right.exprType if left.__name__ == 'PrInt' \
-                else None
+        # numbers on one side of the expression (Universal_Integer):
+        #
+        # case 1:
+        # If there is a side with an ASN.1 type and a side with a raw number,
+        # the resulting type is the ASN.1 type
 
-        if isinstance(expr, ogAST.ExprPlus):
-            attrs = {'Min': str(minL + minR),
-                     'Max': str(maxL + maxR)}
-            expr.exprType = type('Plus', (basic,), attrs)
-        elif isinstance(expr, ogAST.ExprMul):
-            attrs = find_bounds(operator.mul, minL, maxL, minR, maxR)
-            expr.exprType = type('Mul', (basic,), attrs)
-        elif isinstance(expr, ogAST.ExprMinus):
-            attrs = {'Min': str(minL - maxR),
-                     'Max': str(maxL - minR)}
-            expr.exprType = type('Minus', (basic,), attrs)
-        elif isinstance(expr, ogAST.ExprDiv):
-            attrs = find_bounds(operator.truediv, minL, maxL, minR or 1,
-                                                              maxR or 1)
-            expr.exprType = type('Div', (basic,), attrs)
-        elif isinstance(expr, (ogAST.ExprMod, ogAST.ExprRem)):
-            attrs = {'Min': '0', 'Max': right.Max}
-            expr.exprType = type('Mod', (basic,), attrs)
+        if is_number(basic_right) != is_number(basic_left):
+            expr.exprType = expr.left.exprType if is_number(basic_right) \
+                else expr.right.exprType
+
+        # case 2:
+        # two numbers, then the result is also a number with a range depending
+        # on the result of the expression
+        elif is_number(basic_right) == is_number(basic_left) == True:
+
+            if isinstance(expr, ogAST.ExprPlus):
+                attrs = {'Min': str(minL + minR),
+                         'Max': str(maxL + maxR)}
+                expr.exprType = type('Plus', (basic_right,), attrs)
+            elif isinstance(expr, ogAST.ExprMul):
+                attrs = find_bounds(operator.mul, minL, maxL, minR, maxR)
+                expr.exprType = type('Mul', (basic_right,), attrs)
+            elif isinstance(expr, ogAST.ExprMinus):
+                attrs = {'Min': str(minL - maxR),
+                         'Max': str(maxL - minR)}
+                expr.exprType = type('Minus', (basic_right,), attrs)
+            elif isinstance(expr, ogAST.ExprDiv):
+                attrs = find_bounds(operator.truediv, minL, maxL, minR or 1,
+                                                                  maxR or 1)
+                expr.exprType = type('Div', (basic_right,), attrs)
+            elif isinstance(expr, ogAST.ExprMod):
+                # modulo returns an positive number, however it may not be
+                # unsigned, it returns a number of the same sign as its
+                # parameter (i.e. the left side of the expression)
+                # unless the left side is a universal number, in which case
+                # the type has to be deduced from the user of the expression
+                # (e.g. the left side of an assignment)
+                if not is_number (basic_left):
+                    attrs = {'Min': basic_left.Min, 'Max': basic_right.Max}
+                    expr.exprType = type('Mod', (basic_right,), attrs)
+                else:
+                    # set expression as raw, otherwise it will not be resolved
+                    expr.is_raw = True
+            elif isinstance(expr, ogAST.ExprRem):
+                # rem returns an positive or negative number
+                attrs = {'Min': basic_left.Min, 'Max': basic_right.Max}
+                expr.exprType = type('Rem', (basic_right,), attrs)
+
+        # case 3:
+        # no numbers, two ASN.1 types. raise an error if there is a
+        # signed/unsigned mismatch
+        # otherwise (sign ok), set the type with the min of both Min
+        # and the max of both Max for the range
+        else:
+            if (minL < 0) != (minR < 0):
+                msg = '"' + expr.left.inputString + '" is ' + ("un"
+                      if minL >= 0 else "") + 'signed while "' \
+                              + expr.right.inputString + '" is not'
+                errors.append(error(root, msg))
+                #print "[DEBUG] SIGNED/UNSIGNED MISMATCH", minL < 0, minR < 0
+            else:  #  sign is consistent on both sides
+                min_min = str(min(minL, minR))
+                max_max = str(max(maxL, maxR))
+                attrs = {'Min': min_min, 'Max': max_max}
+                expr.exprType = type('Number', (basic_right,), attrs)
+
+        if expr.exprType is not UNKNOWN_TYPE:
+            expr.expected_type = expr.exprType
+
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types '\
               'have a range constraint'
@@ -1458,7 +1530,7 @@ def arithmetic_expression(root, context):
                 msg = 'Mod/Rem expressions can only applied to Integer types'
                 errors.append(error(root, msg))
                 break
-
+    print "[DEBUG] Done"
     return expr, errors, warnings
 
 
@@ -1588,7 +1660,7 @@ def not_expression(root, context):
 
 
 def neg_expression(root, context):
-    ''' Negative expression analysis '''
+    ''' Negative expression analysis (root.type == lexer.NEG)'''
     expr, errors, warnings = unary_expression(root, context)
 
     basic = find_basic_type(expr.expr.exprType)
@@ -1596,6 +1668,15 @@ def neg_expression(root, context):
         msg = 'Negative expressions can only be applied to numeric types'
         errors.append(error(root, msg))
         return expr, errors, warnings
+
+    if is_number(basic):
+        # If the parameter is a raw number, no need for an Neg expression
+        expr.expr.value[0] = u'-{}'.format(expr.expr.value[0])
+        attrs = {'Min' : str(-float(basic.Max)),
+                 'Max' : str(-float(basic.Min)),
+                 'kind': 'IntegerType'}
+        expr.expr.exprType = type('Universal_Integer', (object,), attrs)
+        return expr.expr, errors, warnings
 
     try:
         attrs = {'Min': str(-float(basic.Max)), 'Max': str(-float(basic.Min))}
@@ -1748,6 +1829,8 @@ def primary_index(root, context):
             r_min, r_max = substring_range(receiver)
         else:
             r_min, r_max = receiver_bty.Min, receiver_bty.Max
+        # Is that correct for SEQOF ? the exprType of the node should be the
+        # type of the elements of the SEQOF, not the SEQOF type itself, no?
         node.exprType = receiver_bty.type
         idx_bty = find_basic_type(params[0].exprType)
         if not is_integer(idx_bty):
@@ -1874,14 +1957,14 @@ def primary(root, context):
     elif root.type == lexer.INT:
         prim = ogAST.PrimInteger()
         prim.value = [root.text.lower()]
-        prim.exprType = type('PrInt', (object,), {
+        prim.exprType = type('Universal_Integer', (object,), {
             'kind': 'IntegerType',
-            'Min': root.text,
-            'Max': root.text
+            'Min' : root.text,
+            'Max' : root.text
         })
     elif root.type in (lexer.TRUE, lexer.FALSE):
-        prim = ogAST.PrimBoolean()
-        prim.value = [root.text.lower()]
+        prim          = ogAST.PrimBoolean()
+        prim.value    = [root.text.lower()]
         prim.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
 #   elif root.type == lexer.NULL:
 #       prim = ogAST.PrimNull()
@@ -1892,8 +1975,8 @@ def primary(root, context):
         prim.value = [root.text]
         prim.exprType = type('PrReal', (object,), {
             'kind': 'RealType',
-            'Min': prim.value[0],
-            'Max': prim.value[0]
+            'Min':  prim.value[0],
+            'Max':  prim.value[0]
         })
     elif root.type == lexer.STRING:
         prim = ogAST.PrimStringLiteral()
@@ -4382,9 +4465,6 @@ def for_loop(root, context):
                 basic = find_basic_type(stop_expr.exprType)
                 r_max = str(int(float(basic.Max) - 1)) \
                         if basic != UNKNOWN_TYPE else '4294967295'
-                # basic may be UNKNOWN_TYPE if the expression is a
-                # reference to an ASN.1 constant - their values are not
-                # currently visible to the SDL parser
                 result_type = type('for_range', (INT32,), {'Min': r_min,
                                                            'Max': r_max})
                 forloop['type'] = result_type

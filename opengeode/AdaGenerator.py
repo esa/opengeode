@@ -1539,10 +1539,10 @@ def _prim_call(prim):
         local_decl.extend(local_var)
         ada_string += '{op}({param})'.format(
                 param=param_str,
-                op='abs' if ident == 'abs'
+                op='abs'           if ident == 'abs'
                 else 'Asn1Int'     if (ident == 'fix'  and not unsigned)
                 else 'Asn1UInt'    if (ident == 'fix'  and unsigned)
-                else 'Asn1Real'    if ident == 'float' else 'ERROR')
+                else 'Asn1Real'    if ident  == 'float' else 'ERROR')
 #        if ident == 'abs':
 #            ada_string += ')'
     elif ident == 'power':
@@ -1935,11 +1935,12 @@ def _assign_expression(expr):
 
         # Make sure that integers are cast to 64 bits
         # It is possible that left and right are of different types
-        # (signed vs unsigned and/or 32bits vs 64 bits).
+        # (signed vs unsigned and/or 32 bits vs 64 bits).
         # The parser should have ensured that the ranges are compatible.
         # We can therefore safely cast to the left type
         basic_right = find_basic_type (expr.right.exprType)
         cast_left, cast_right = type_name(basic_left), type_name(basic_right)
+        print cast_left, cast_right, right_str
         if cast_left != cast_right:
             res = u'{cast}({val})'.format(cast=cast_left, val=right_str)
         else:
