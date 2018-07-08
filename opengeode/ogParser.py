@@ -1205,16 +1205,17 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             raw_expr.exprType = ref_type
     else:
         try:
-            warnings.extend(compare_types(expr.left.exprType, expr.right.exprType))
+            warnings.extend(compare_types(expr.left.exprType,
+                                          expr.right.exprType))
         except TypeError as err:
-            print "here", expr.left.inputString, " and right = ", expr.right.inputString
-            print expr.left.exprType, expr.right.exprType
-            print "--> ", str(err)
-            #print traceback.format_stack (limit=2)
-            left_type = find_basic_type(expr.left.exprType)
-            right_type = find_basic_type(expr.right.exprType)
-            print "    left min/max:", left_type.Min, left_type.Max
-            print "    right min/max:", right_type.Min, right_type.Max
+           #print "here", expr.left.inputString, " and right = ", expr.right.inputString
+           #print expr.left.exprType, expr.right.exprType
+           #print "--> ", str(err)
+           ##print traceback.format_stack (limit=2)
+           #left_type = find_basic_type(expr.left.exprType)
+           #right_type = find_basic_type(expr.right.exprType)
+           #print "    left min/max:", left_type.Min, left_type.Max
+           #print "    right min/max:", right_type.Min, right_type.Max
             raise
     return list(set(warnings))
 
@@ -1481,6 +1482,7 @@ def arithmetic_expression(root, context):
         # case 1:
         # If there is a side with an ASN.1 type and a side with a raw number,
         # the resulting type is the ASN.1 type
+        # we ignore the computed range in that case
 
         if is_number(basic_right) != is_number(basic_left):
             expr.exprType = expr.left.exprType if is_number(basic_right) \
@@ -1882,7 +1884,8 @@ def primary_index(root, context):
         idx_bty = find_basic_type(params[0].exprType)
         if not is_integer(idx_bty):
             errors.append(error(root, 'Index is not an integer'))
-        else:
+        elif is_number(idx_bty):
+            # Check range only is index is given as a raw number
             if float(idx_bty.Max) >= float(r_max):
                 errors.append(error(root,
                                     'Index range [{id1} .. {id2}] '
