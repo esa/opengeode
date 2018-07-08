@@ -31,8 +31,15 @@ system og;
                 call writeln('Hello');
                 /* CIF NEXTSTATE (363, 264), (70, 35) */
                 NEXTSTATE wait;
+            /* CIF state (492, 510), (74, 35) */
+            state Running;
+            endstate;
             /* CIF state (363, 264), (70, 35) */
             state wait;
+                /* CIF input (473, 319), (70, 35) */
+                input Go;
+                    /* CIF NEXTSTATE (473, 374), (70, 35) */
+                    NEXTSTATE wait;
                 /* CIF provided (240, 319), (70, 35) */
                 provided true;
                     /* CIF output (199, 374), (152, 35) */
@@ -43,15 +50,10 @@ system og;
                     output send_to_uart ('How' // 'are' // 'you?');
                     /* CIF output (165, 542), (219, 35) */
                     output send_to_uart('I said' // msg // '!');
-                    /* CIF NEXTSTATE (239, 592), (71, 35) */
+                    /* CIF task (85, 597), (379, 35) */
+                    task msg := if msg = 'hi' then 'ping' else 'Received: ' // msg // ' ' fi;;
+                    /* CIF NEXTSTATE (239, 647), (71, 35) */
                     NEXTSTATE running;
-                /* CIF input (408, 319), (70, 35) */
-                input Go;
-                    /* CIF NEXTSTATE (408, 374), (70, 35) */
-                    NEXTSTATE wait;
-            endstate;
-            /* CIF state (492, 510), (74, 35) */
-            state Running;
             endstate;
         endprocess og;
     endblock;
