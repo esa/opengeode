@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.15 (07/2018)
+    - Fix many bugs in type checking system
+
 2.0.14 (06/2018)
     - fix numerical checks when setting timer parameters
   
