@@ -4,5 +4,5 @@ with RIs;
 
 procedure check is
 begin
-    null;
+   Go;
 end check;

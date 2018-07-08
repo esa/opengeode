@@ -6,18 +6,16 @@ system og;
     
     --use dv2 comment 'dataview2.asn';
     
-    signal pulse;
+    signal go;
     signal send_to_uart(OctStr);
-    
-    
     /* CIF ENDTEXT */
     channel c
-        from env to og with pulse;
+        from env to og with go;
         from og to env with send_to_uart;
     endchannel;
     block og;
         signalroute r
-            from env to og with pulse;
+            from env to og with go;
             from og to env with send_to_uart;
         connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
@@ -29,22 +27,31 @@ system og;
             /* CIF ENDTEXT */
             /* CIF START (363, 159), (70, 35) */
             START;
-                /* CIF NEXTSTATE (363, 214), (70, 35) */
+                /* CIF PROCEDURECALL (338, 214), (120, 35) */
+                call writeln('Hello');
+                /* CIF NEXTSTATE (363, 264), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF state (363, 214), (70, 35) */
+            /* CIF state (363, 264), (70, 35) */
             state wait;
-                /* CIF provided (363, 269), (70, 35) */
+                /* CIF provided (240, 319), (70, 35) */
                 provided true;
-                    /* CIF output (322, 324), (152, 35) */
+                    /* CIF output (199, 374), (152, 35) */
                     output send_to_uart ('hello');
-                    /* CIF output (293, 379), (209, 35) */
+                    /* CIF output (170, 429), (209, 35) */
                     output send_to_uart ('hello' // 'world');
-                    /* CIF output (275, 434), (246, 38) */
+                    /* CIF output (152, 484), (246, 38) */
                     output send_to_uart ('How' // 'are' // 'you?');
-                    /* CIF output (288, 492), (219, 35) */
-                    output send_to_uart('I said' // msg // '!');;
-                    /* CIF NEXTSTATE (363, 542), (70, 35) */
+                    /* CIF output (165, 542), (219, 35) */
+                    output send_to_uart('I said' // msg // '!');
+                    /* CIF NEXTSTATE (239, 592), (71, 35) */
+                    NEXTSTATE running;
+                /* CIF input (408, 319), (70, 35) */
+                input Go;
+                    /* CIF NEXTSTATE (408, 374), (70, 35) */
                     NEXTSTATE wait;
+            endstate;
+            /* CIF state (492, 510), (74, 35) */
+            state Running;
             endstate;
         endprocess og;
     endblock;
