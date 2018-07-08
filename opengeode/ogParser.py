@@ -712,14 +712,19 @@ def fix_append_expression_type(expr, expected_type):
            expr: the append expression (possibly recursive)
            expected_type : the type to assign to the expression
     '''
+    print "[DEBUG] Fix append expression: ", expr.inputString
     def rec_append(inner_expr, set_type):
         for each in (inner_expr.left, inner_expr.right):
             if isinstance(each, ogAST.ExprAppend):
                 rec_append(each, set_type)
+            if each.exprType == UNKNOWN_TYPE:
+                # eg. if the side is a PrimConditional (ternary)
+                each.exprType = set_type
             each.expected_type = set_type
     rec_append(expr, expected_type)
     expr.exprType      = expected_type
     expr.expected_type = expected_type
+    print expr.exprType
 
 
 def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
@@ -1627,31 +1632,45 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    left  = find_basic_type(expr.left.exprType)
-    right = find_basic_type(expr.right.exprType)
+    list_of_checks = []
 
-    # check that both left and right are actual strings
-    for bty in (left, right):
+    for each in (expr.left, expr.right):
+        if isinstance(each, ogAST.PrimConditional):
+            # We must check both 'then' and 'else' branches
+            list_of_checks.append(find_basic_type(each.value['then'].exprType))
+            list_of_checks.append(find_basic_type(each.value['else'].exprType))
+        else:
+            list_of_checks.append(find_basic_type(each.exprType))
+
+    #print 'Debugging', expr.left.inputString, 'APPEND', expr.right.inputString
+    # check that both sides are actual strings
+    for bty in list_of_checks:
         if bty.kind != 'SequenceOfType' and not is_string(bty):
             msg = 'Append can only be applied to types SequenceOf or String'
             errors.append(error(root, msg))
             break
     else:
-        try:
-            warnings.extend(compare_types(left.type, right.type))
-        except TypeError as err:
-            errors.append(error(root, str(err)))
-        except AttributeError:
-            # The above only applies to Sequence of, not strings
-            pass
+        # no errors
+        if not any(isinstance(each, ogAST.PrimConditional)
+                for each in (expr.left, expr.right)):
+            left  = find_basic_type(expr.left.exprType)
+            right = find_basic_type(expr.right.exprType)
+            try:
+                warnings.extend(compare_types(left.type, right.type))
+            except TypeError as err:
+                errors.append(error(root, str(err)))
+            except AttributeError:
+                # The above only applies to Sequence of, not strings
+                pass
 
-        attrs = {'Min': str(int(right.Min) + int(left.Min)),
-                 'Max': str(int(right.Max) + int(left.Max))}
-        # It is wrong to set the type as inheriting from the left side FIXME
-        # (only the computed range counts)
-        expr.exprType = type('Apnd', (left,), attrs)
-    #expr.exprType = expr.left.exprType
-
+            attrs = {'Min': str(int(right.Min) + int(left.Min)),
+                     'Max': str(int(right.Max) + int(left.Max))}
+            # It is wrong to set the type as inheriting from the left side FIXME
+            # (only the computed range counts)
+            expr.exprType = type('Apnd', (left,), attrs)
+        else:
+            # If one of the sides is a ternary, how should we know the range?
+            expr.exprType = expr.left.exprType
     return expr, errors, warnings
 
 

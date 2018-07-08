@@ -1899,8 +1899,10 @@ def _assign_expression(expr):
             strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
                        .format(lvar=left_str, rvar=right_str))
         elif isinstance(expr.right, ogAST.ExprAppend):
+            print '[ADA BACKEND] ', expr.right.inputString
             basic_right = find_basic_type(expr.right.exprType)
             rlen = append_size(expr.right)
+            print rlen
             strings.append(u"{lvar}.Data(1..{lstr}) := {rvar};"
                            .format(lvar=left_str,
                                    rvar=right_str,
