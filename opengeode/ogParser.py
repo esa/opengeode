@@ -83,56 +83,56 @@ DV = None  # type: module
 TMPVAR = 0  # type: int
 
 # ASN.1 types used to support the signature of special operators
-INTEGER = type('IntegerType', (object,), {'kind': 'IntegerType',
-                                          'Min': str(-(2 ** 63)),
-                                          'Max': str(2 ** 63 - 1)})
-UNSIGNED = type('IntegerType', (object,), {'kind': 'IntegerType',
-                                          'Min': "0",
-                                          'Max': str(2 ** 64 - 1)})
-INT32 = type('Integer32Type', (object,), {'kind': 'Integer32Type',
-                                          'Min': '-2147483648',
-                                          'Max': '2147483647'})
-NUMERICAL = type('NumericalType', (object,), {'kind': 'Numerical'})
-TIMER = type('TimerType', (object,), {'kind': 'TimerType'})
-REAL = type('RealType', (object,), {'kind': 'RealType',
-                                    'Min': str(1e-308),
-                                    'Max': str(1e308)})
-LIST = type('ListType', (object,), {'kind': 'ListType'})
-ANY_TYPE = type('AnyType', (object,), {'kind': 'AnyType'})
-CHOICE = type('ChoiceType', (object,), {'kind': 'ChoiceType'})
-BOOLEAN = type('BooleanType', (object,), {'kind': 'BooleanType'})
-RAWSTRING = type('RawString', (object,), {'kind': 'StandardStringType',
-                                          'Min': '0', 'Max': '255'})
-OCTETSTRING = type('OctetString', (object,), {'kind': 'OctetStringType'})
-ENUMERATED = type('EnumeratedType', (object,), {'kind': 'EnumeratedType'})
-
-UNKNOWN_TYPE = type('UnknownType', (object,), {'kind': 'UnknownType'})
+INTEGER      = type('IntegerType',    (object,), {'kind': 'IntegerType',
+                                                  'Min' : str(-(2 ** 63)),
+                                                  'Max' : str(2 ** 63 - 1)})
+UNSIGNED     = type('IntegerType',    (object,), {'kind': 'IntegerType',
+                                                  'Min' : "0",
+                                                  'Max' : str(2 ** 64 - 1)})
+INT32        = type('Integer32Type',  (object,), {'kind': 'Integer32Type',
+                                                  'Min' : '-2147483648',
+                                                  'Max' : '2147483647'})
+NUMERICAL    = type('NumericalType',  (object,), {'kind': 'Numerical'})
+TIMER        = type('TimerType',      (object,), {'kind': 'TimerType'})
+REAL         = type('RealType',       (object,), {'kind': 'RealType',
+                                                  'Min' : str(1e-308),
+                                                  'Max' : str(1e308)})
+LIST         = type('ListType',       (object,), {'kind': 'ListType'})
+ANY_TYPE     = type('AnyType',        (object,), {'kind': 'AnyType'})
+CHOICE       = type('ChoiceType',     (object,), {'kind': 'ChoiceType'})
+BOOLEAN      = type('BooleanType',    (object,), {'kind': 'BooleanType'})
+RAWSTRING    = type('RawString',      (object,), {'kind': 'StandardStringType',
+                                                  'Min' : '0',
+                                                  'Max' : '255'})
+OCTETSTRING  = type('OctetString',    (object,), {'kind': 'OctetStringType'})
+ENUMERATED   = type('EnumeratedType', (object,), {'kind': 'EnumeratedType'})
+UNKNOWN_TYPE = type('UnknownType',    (object,), {'kind': 'UnknownType'})
 
 SPECIAL_OPERATORS = {
-    'abs': [{'type': NUMERICAL, 'direction': 'in'}],
-    'ceil': [{'type': REAL, 'direction': 'in'}],
-    'cos': [{'type': REAL, 'direction': 'in'}],
-    'fix': [{'type': NUMERICAL, 'direction': 'in'}],
-    'float': [{'type': NUMERICAL, 'direction': 'in'}],
-    'floor': [{'type': REAL, 'direction': 'in'}],
-    'length': [{'type': LIST, 'direction': 'in'}],
-    'num': [{'type': ENUMERATED, 'direction': 'in'}],
-    'power': [
-        {'type': NUMERICAL, 'direction': 'in'},
-        {'type': INTEGER, 'direction': 'in'}
-    ],
-    'present': [{'type': CHOICE, 'direction': 'in'}],
-    'reset_timer': [{'type': TIMER, 'direction': 'in'}],
-    'round': [{'type': REAL, 'direction': 'in'}],
-    'set_timer': [
-        {'type': UNSIGNED, 'direction': 'in'},
-        {'type': TIMER, 'direction': 'in'}
-    ],
-    'sin': [{'type': REAL, 'direction': 'in'}],
-    'sqrt': [{'type': REAL, 'direction': 'in'}],
-    'trunc': [{'type': REAL, 'direction': 'in'}],
-    'write': [{'type': ANY_TYPE, 'direction': 'in'}],
-    'writeln': [{'type': ANY_TYPE, 'direction': 'in'}],
+    'abs'        : [{'type': NUMERICAL,  'direction': 'in'}],
+    'ceil'       : [{'type': REAL,       'direction': 'in'}],
+    'cos'        : [{'type': REAL,       'direction': 'in'}],
+    'fix'        : [{'type': NUMERICAL,  'direction': 'in'}],
+    'float'      : [{'type': NUMERICAL,  'direction': 'in'}],
+    'floor'      : [{'type': REAL,       'direction': 'in'}],
+    'length'     : [{'type': LIST,       'direction': 'in'}],
+    'num'        : [{'type': ENUMERATED, 'direction': 'in'}],
+    'power'      : [
+                    {'type': NUMERICAL,  'direction': 'in'},
+                    {'type': INTEGER,    'direction': 'in'}
+                   ],
+    'present'    : [{'type': CHOICE,     'direction': 'in'}],
+    'reset_timer': [{'type': TIMER,      'direction': 'in'}],
+    'round'      : [{'type': REAL,       'direction': 'in'}],
+    'set_timer'  : [
+                    {'type': UNSIGNED,   'direction': 'in'},
+                    {'type': TIMER,      'direction': 'in'}
+                   ],
+    'sin'        : [{'type': REAL,       'direction': 'in'}],
+    'sqrt'       : [{'type': REAL,       'direction': 'in'}],
+    'trunc'      : [{'type': REAL,       'direction': 'in'}],
+    'write'      : [{'type': ANY_TYPE,   'direction': 'in'}],
+    'writeln'    : [{'type': ANY_TYPE,   'direction': 'in'}],
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -510,13 +510,34 @@ def check_call(name, params, context):
 
     # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
-        for p in params:
+        def check_one_param(p, name):
             p_ty = p.exprType
             if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty) or \
                     is_enumerated(p_ty):
-                continue
+                return
             raise TypeError('Type {} not supported in call to {}'.
                 format(type_name(p.exprType), name))
+        for p in params:
+            if not isinstance(p, ogAST.PrimConditional):
+                check_one_param(p, name)
+            else:
+                for each in (p.value['then'], p.value['else']):
+                    check_one_param(each, name)
+                # check that both "then" and "else" are both of a similar type
+                # (string, int, or enumerated), this is necessary for the
+                # backends
+                if (is_numeric(p.value['then'].exprType) ==
+                   is_numeric(p.value['else'].exprType) == True) or \
+                   (is_boolean(p.value['then'].exprType) ==
+                   is_boolean(p.value['else'].exprType) == True) or \
+                   (is_string(p.value['then'].exprType) ==
+                   is_string(p.value['else'].exprType) == True) or \
+                   (is_enumerated(p.value['then'].exprType) ==
+                   is_enumerated(p.value['else'].exprType) == True):
+                      p.exprType = p.value['then'].exprType
+                else:
+                    raise TypeError('{}: both options must have the type type.'
+                                    .format(name))
         return UNKNOWN_TYPE
 
     # (1) Find the signature of the function
@@ -683,7 +704,7 @@ def check_range(typeref, type_to_check):
 
 def fix_append_expression_type(expr, expected_type):
     ''' In an Append expression, all components must be of the same type,
-        which is the type expected by the user of the append, for example 
+        which is the type expected by the user of the append, for example
         the left part of an assign expression.
         We must recursively fix the Append type, in case we have a//b//c
         that is handled as (a//b)//c
@@ -1627,6 +1648,7 @@ def append_expression(root, context):
         attrs = {'Min': str(int(right.Min) + int(left.Min)),
                  'Max': str(int(right.Max) + int(left.Max))}
         # It is wrong to set the type as inheriting from the left side FIXME
+        # (only the computed range counts)
         expr.exprType = type('Apnd', (left,), attrs)
     #expr.exprType = expr.left.exprType
 

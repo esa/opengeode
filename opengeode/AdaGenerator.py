@@ -1149,14 +1149,6 @@ def write_statement(param, newline):
             cast = type_name(param.expected_type)
         else:
             cast = type_name(param.exprType)
-#       if type_kind == 'IntegerType':
-#           cast = "ASN1Int"
-#       elif type_kind == 'Integer32Type':
-#           cast = "Integer"
-#       elif type_kind == 'RealType':
-#           cast = 'Long_Float'
-#       elif type_kind == 'BooleanType':
-#           cast = 'Boolean'
         code.append(u"Put({cast}'Image({s}));".format(cast=cast, s=string))
     elif type_kind == 'EnumeratedType':
         code, string, local = expression(param)
@@ -1164,7 +1156,7 @@ def write_statement(param, newline):
                                                  string))
     else:
         error = (u'Unsupported parameter in write call ' +
-                param.inputString)
+                param.inputString + '(type kind: ' + type_kind + ')')
         LOG.error(error)
         raise TypeError(error)
     if newline:

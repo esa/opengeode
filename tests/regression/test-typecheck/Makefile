@@ -26,7 +26,7 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	@echo 'Nothing to test - test-parse must retun errors'
+	@echo 'Nothing to test - test-parse must return errors'
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
