@@ -712,7 +712,7 @@ def fix_append_expression_type(expr, expected_type):
            expr: the append expression (possibly recursive)
            expected_type : the type to assign to the expression
     '''
-    print "[DEBUG] Fix append expression: ", expr.inputString
+    #print "[DEBUG] Fix append expression: ", expr.inputString
     def rec_append(inner_expr, set_type):
         for each in (inner_expr.left, inner_expr.right):
             if isinstance(each, ogAST.ExprAppend):
@@ -724,7 +724,7 @@ def fix_append_expression_type(expr, expected_type):
     rec_append(expr, expected_type)
     expr.exprType      = expected_type
     expr.expected_type = expected_type
-    print expr.exprType
+    #print expr.exprType
 
 
 def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
