@@ -1,0 +1,6 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+OctStr ::= OCTET STRING (SIZE (0..255))
+
+END

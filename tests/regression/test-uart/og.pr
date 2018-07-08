@@ -1,0 +1,51 @@
+system og;
+    /* CIF TEXT (159, 221), (287, 188) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    --use dv2 comment 'dataview2.asn';
+    
+    signal pulse;
+    signal send_to_uart(OctStr);
+    
+    
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with pulse;
+        from og to env with send_to_uart;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with pulse;
+            from og to env with send_to_uart;
+        connect c and r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        process og;
+            /* CIF TEXT (711, 132), (371, 280) */
+            -- Text area for declarations and comments
+            
+            dcl msg OctStr := 'hi';
+            /* CIF ENDTEXT */
+            /* CIF START (363, 159), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (363, 214), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (363, 214), (70, 35) */
+            state wait;
+                /* CIF provided (363, 269), (70, 35) */
+                provided true;
+                    /* CIF output (322, 324), (152, 35) */
+                    output send_to_uart ('hello');
+                    /* CIF output (293, 379), (209, 35) */
+                    output send_to_uart ('hello' // 'world');
+                    /* CIF output (275, 434), (246, 38) */
+                    output send_to_uart ('How' // 'are' // 'you?');
+                    /* CIF output (288, 492), (219, 35) */
+                    output send_to_uart('I said' // msg // '!');;
+                    /* CIF NEXTSTATE (363, 542), (70, 35) */
+                    NEXTSTATE wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;
