@@ -1940,7 +1940,7 @@ def _assign_expression(expr):
         # We can therefore safely cast to the left type
         basic_right = find_basic_type (expr.right.exprType)
         cast_left, cast_right = type_name(basic_left), type_name(basic_right)
-        print cast_left, cast_right, right_str
+        #print cast_left, cast_right, right_str
         if cast_left != cast_right:
             res = u'{cast}({val})'.format(cast=cast_left, val=right_str)
         else:

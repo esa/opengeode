@@ -896,6 +896,7 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
                         primary.value[1:-1]) <= int(basic_type.Max):
                     return warnings
                 else:
+                    #print traceback.print_stack()
                     raise TypeError('Invalid string literal'
                                     ' - check that length is '
                                     'within the bound limits {Min}..{Max}'
@@ -1146,7 +1147,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
         # in principle it could also be the left side that is a ternary
         # in which case, its type would be unknown and would need to be
         # set according to the right type.
-        #print "[Parser] [Conditional] ", expr.right.inputString
+       # print "[DEBUG] Conditional left = ", expr.left.inputString, ' and right =', expr.right.inputString
         for det in ('then', 'else'):
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
@@ -1401,9 +1402,9 @@ def arithmetic_expression(root, context):
     # of the expression. The type of the expression should still be unknown
     # at this point (expr.exprType).
 
-    print "[DEBUG] Arithmetic expression:", get_input_string(root)
+    #print "[DEBUG] Arithmetic expression:", get_input_string(root)
     expr, errors, warnings = binary_expression(root, context)
-    print "[DEBUG] Left:", expr.left.exprType, "Right:", expr.right.exprType
+    #print "[DEBUG] Left:", expr.left.exprType, "Right:", expr.right.exprType
 
     # Get the basic types to have the ranges
     basic_left  = find_basic_type(expr.left.exprType)
@@ -1530,7 +1531,7 @@ def arithmetic_expression(root, context):
                 msg = 'Mod/Rem expressions can only applied to Integer types'
                 errors.append(error(root, msg))
                 break
-    print "[DEBUG] Done"
+    #print "[DEBUG] Done"
     return expr, errors, warnings
 
 
@@ -1699,7 +1700,7 @@ def conditional_expression(root, context):
         root.getCharPositionInLine()
     )
     expr.exprType = UNKNOWN_TYPE
-    expr.tmpVar = tmp()
+    expr.tmpVar   = tmp()
 
     if_part, then_part, else_part = root.getChildren()
 
@@ -1719,18 +1720,21 @@ def conditional_expression(root, context):
         msg = 'Conditions in conditional expressions must be of type Boolean'
         errors.append(error(root, msg))
 
-    try:
-        expr.left = then_expr
-        expr.right = else_expr
-        # The type of the expression was set to the type of the "then" part,
-        # but this is not always right, in the case of raw numbers ("then" part
-        # may be unsigned, while the real expected type is signed)
-        warnings.extend(fix_expression_types(expr, context))
-        expr.exprType = then_expr.exprType
-    except (AttributeError, TypeError) as err:
-        #print str(err), expr.inputString
-        if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
-            errors.append(error(root, str(err)))
+    # this part is wrong, there is no check to be done between "then"
+    # and "else" sides. They are independent and must only be checked against
+    # the left side of the expression in which the ternary appears
+#   try:
+#       expr.left  = then_expr
+#       expr.right = else_expr
+#       # The type of the expression was set to the type of the "then" part,
+#       # but this is not always right, in the case of raw numbers ("then" part
+#       # may be unsigned, while the real expected type is signed)
+#       warnings.extend(fix_expression_types(expr, context))
+#       #expr.exprType = then_expr.exprType
+#   except (AttributeError, TypeError) as err:
+#       #print str(err), expr.inputString
+#       if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
+#           errors.append(error(root, str(err)))
 
     expr.value = {
         'if'    : if_expr,
@@ -1740,6 +1744,8 @@ def conditional_expression(root, context):
     }
     # at the end, expr.exprType is still UNKNOWN TYPE
     # it can only be resolved by from the context
+    # But do we care about expr.exprType? What counts is expr.value['then']
+    # and expr.value['else']  .exprType...
     # print traceback.print_stack()
     #print traceback.format_stack (limit=2)
     return expr, errors, warnings
