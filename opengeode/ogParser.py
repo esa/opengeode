@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 """
-    OpenGEODE SDL92 parser
+    OpenGEODE SDL parser
 
     This library builds the SDL AST (described in ogAST.py)
     The AST can then be used to build SDL backends such as the
@@ -49,27 +48,27 @@ from Asn1scc import parse_asn1, ASN1
 LOG = logging.getLogger(__name__)
 
 EXPR_NODE = {
-    lexer.PLUS: ogAST.ExprPlus,
+    lexer.PLUS:     ogAST.ExprPlus,
     lexer.ASTERISK: ogAST.ExprMul,
-    lexer.IMPLIES: ogAST.ExprImplies,
-    lexer.DASH: ogAST.ExprMinus,
-    lexer.OR: ogAST.ExprOr,
-    lexer.AND: ogAST.ExprAnd,
-    lexer.XOR: ogAST.ExprXor,
-    lexer.EQ: ogAST.ExprEq,
-    lexer.NEQ: ogAST.ExprNeq,
-    lexer.GT: ogAST.ExprGt,
-    lexer.GE: ogAST.ExprGe,
-    lexer.LT: ogAST.ExprLt,
-    lexer.LE: ogAST.ExprLe,
-    lexer.DIV: ogAST.ExprDiv,
-    lexer.MOD: ogAST.ExprMod,
-    lexer.APPEND: ogAST.ExprAppend,
-    lexer.IN: ogAST.ExprIn,
-    lexer.REM: ogAST.ExprRem,
-    lexer.NOT: ogAST.ExprNot,
-    lexer.NEG: ogAST.ExprNeg,
-    lexer.PRIMARY: ogAST.Primary,
+    lexer.IMPLIES:  ogAST.ExprImplies,
+    lexer.DASH:     ogAST.ExprMinus,
+    lexer.OR:       ogAST.ExprOr,
+    lexer.AND:      ogAST.ExprAnd,
+    lexer.XOR:      ogAST.ExprXor,
+    lexer.EQ:       ogAST.ExprEq,
+    lexer.NEQ:      ogAST.ExprNeq,
+    lexer.GT:       ogAST.ExprGt,
+    lexer.GE:       ogAST.ExprGe,
+    lexer.LT:       ogAST.ExprLt,
+    lexer.LE:       ogAST.ExprLe,
+    lexer.DIV:      ogAST.ExprDiv,
+    lexer.MOD:      ogAST.ExprMod,
+    lexer.APPEND:   ogAST.ExprAppend,
+    lexer.IN:       ogAST.ExprIn,
+    lexer.REM:      ogAST.ExprRem,
+    lexer.NOT:      ogAST.ExprNot,
+    lexer.NEG:      ogAST.ExprNeg,
+    lexer.PRIMARY:  ogAST.Primary,
 } # type: Dict[int, ogAST.Expression]
 
 # Insert current path in the search list for importing modules
@@ -1491,23 +1490,44 @@ def arithmetic_expression(root, context):
         # case 2:
         # two numbers, then the result is also a number with a range depending
         # on the result of the expression
+        # Compute the result on the fly and transform the expression into
+        # either a PrimInteger or a PrimReal
         elif is_number(basic_right) == is_number(basic_left) == True:
+            # create a primary to replace the original expression
+            if is_integer(basic_right) == is_integer(basic_left) == True:
+                prim = ogAST.PrimInteger()
+                sort = 'Universal_Integer'
+                kind = 'IntegerType'
+                op   = int
+            else:
+                prim = ogAST.PrimReal()
+                sort = 'PrReal'
+                kind = 'RealType'
+                op   = float
 
             if isinstance(expr, ogAST.ExprPlus):
-                attrs = {'Min': str(minL + minR),
-                         'Max': str(maxL + maxR)}
-                expr.exprType = type('Plus', (basic_right,), attrs)
+                result = minL + minR
+#               attrs = {'Min': str(minL + minR),
+#                        'Max': str(maxL + maxR)}
+#               expr.exprType = type('Plus', (basic_right,), attrs)
             elif isinstance(expr, ogAST.ExprMul):
-                attrs = find_bounds(operator.mul, minL, maxL, minR, maxR)
-                expr.exprType = type('Mul', (basic_right,), attrs)
+                result = minL * minR
+#               attrs = find_bounds(operator.mul, minL, maxL, minR, maxR)
+#               expr.exprType = type('Mul', (basic_right,), attrs)
             elif isinstance(expr, ogAST.ExprMinus):
-                attrs = {'Min': str(minL - maxR),
-                         'Max': str(maxL - minR)}
-                expr.exprType = type('Minus', (basic_right,), attrs)
+                result = minL - maxR
+#               attrs = {'Min': str(minL - maxR),
+#                        'Max': str(maxL - minR)}
+#               expr.exprType = type('Minus', (basic_right,), attrs)
             elif isinstance(expr, ogAST.ExprDiv):
-                attrs = find_bounds(operator.truediv, minL, maxL, minR or 1,
-                                                                  maxR or 1)
-                expr.exprType = type('Div', (basic_right,), attrs)
+                if maxR != 0:
+                    result = minL / maxR
+                else:
+                    msg = 'Division by zero is not allowed'
+                    errors.append(error(root, msg))
+#               attrs = find_bounds(operator.truediv, minL, maxL, minR or 1,
+#                                                                 maxR or 1)
+#               expr.exprType = type('Div', (basic_right,), attrs)
             elif isinstance(expr, ogAST.ExprMod):
                 # modulo returns an positive number, however it may not be
                 # unsigned, it returns a number of the same sign as its
@@ -1515,16 +1535,28 @@ def arithmetic_expression(root, context):
                 # unless the left side is a universal number, in which case
                 # the type has to be deduced from the user of the expression
                 # (e.g. the left side of an assignment)
-                if not is_number (basic_left):
-                    attrs = {'Min': basic_left.Min, 'Max': basic_right.Max}
-                    expr.exprType = type('Mod', (basic_right,), attrs)
-                else:
-                    # set expression as raw, otherwise it will not be resolved
-                    expr.is_raw = True
+                result = minL % minR
+#               if not is_number (basic_left):
+#                   attrs = {'Min': basic_left.Min, 'Max': basic_right.Max}
+#                   expr.exprType = type('Mod', (basic_right,), attrs)
+#               else:
+#                   # set expression as raw, otherwise it will not be resolved
+#                   expr.is_raw = True
             elif isinstance(expr, ogAST.ExprRem):
+                result = minL % minR
                 # rem returns an positive or negative number
-                attrs = {'Min': basic_left.Min, 'Max': basic_right.Max}
-                expr.exprType = type('Rem', (basic_right,), attrs)
+#               attrs = {'Min': basic_left.Min, 'Max': basic_right.Max}
+#               expr.exprType = type('Rem', (basic_right,), attrs)
+            # cast the result to the resulting type and make it a string
+            result = str(op(result))
+            prim.value = [result]
+            prim.exprType = type(sort, (object,), {
+                'kind': kind,
+                'Min' : result,
+                'Max' : result
+            })
+            # And replace the expression with this new computed value
+            expr = prim
 
         # case 3:
         # no numbers, two ASN.1 types. raise an error if there is a
@@ -1553,7 +1585,8 @@ def arithmetic_expression(root, context):
         #print (traceback.format_exc())
         errors.append(error(root, msg))
 
-    if root.type in (lexer.REM, lexer.MOD):
+    if root.type in (lexer.REM, lexer.MOD) and not isinstance(expr,
+                                                              ogAST.Primary):
         for ty in (expr.left.exprType, expr.right.exprType):
             if not is_integer(ty):
                 msg = 'Mod/Rem expressions can only applied to Integer types'
