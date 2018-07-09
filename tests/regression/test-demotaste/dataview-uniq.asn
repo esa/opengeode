@@ -1,0 +1,70 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+MyComplexType ::= SEQUENCE {
+	a SEQUENCE { x INTEGER(0..255), y MyInteger }
+}
+
+MyComplexSeqOf ::= SEQUENCE(SIZE(2)) OF SEQUENCE { x INTEGER (0..255) }
+
+MyComplexChoice ::= CHOICE { a SEQUENCE { x INTEGER (0..255) } }
+
+EnableDisable ::= ENUMERATED {scrubon, scruboff}
+
+MyRefSeqOf ::= SEQUENCE { seqof MySeqOf }
+
+-- A few simple types to start with ASN.1
+MyInteger   ::= INTEGER (-255..255)
+
+MyReal	    ::= REAL (-10.0 .. 1000.0)
+
+MyEnum	    ::= ENUMERATED { hello, world, howareyou }
+
+MySeq	    ::= SEQUENCE {
+		    a MyInteger,
+		    b ENUMERATED { taste(1), welcomes(2), you(3) }
+}
+
+MyChoice    ::= CHOICE {
+		    a BOOLEAN,
+		    b MySeq
+}
+
+MySeqOf	    ::= SEQUENCE (SIZE (2)) OF MyEnum
+MyPossiblyEmptySeqOf ::= SEQUENCE(SIZE(0..2)) OF INTEGER (1..2)
+
+MySeqWithEmbeddedSeqOf ::= SEQUENCE {
+    a SEQUENCE(SIZE(0..2)) OF BOOLEAN
+}
+
+
+MyOctStr    ::= OCTET STRING (SIZE (3))
+
+-- Include an embedded choice
+MyChoice2 ::= CHOICE {
+    a BOOLEAN,
+    b CHOICE {
+	c BOOLEAN,
+	d MyInteger
+    }
+}
+
+END
+
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+END
+
