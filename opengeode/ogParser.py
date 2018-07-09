@@ -1748,11 +1748,17 @@ def neg_expression(root, context):
 
     if is_number(basic):
         # If the parameter is a raw number, no need for an Neg expression
+        if is_real(basic):
+            kind = 'RealType'
+            sort = 'PrReal'
+        else:
+            kind = 'IntegerType'
+            sort = 'Universal_Integer'
         expr.expr.value[0] = u'-{}'.format(expr.expr.value[0])
         attrs = {'Min' : str(-float(basic.Max)),
                  'Max' : str(-float(basic.Min)),
-                 'kind': 'IntegerType'}
-        expr.expr.exprType = type('Universal_Integer', (object,), attrs)
+                 'kind': kind}
+        expr.expr.exprType = type(sort, (object,), attrs)
         return expr.expr, errors, warnings
 
     try:
