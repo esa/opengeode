@@ -6,7 +6,7 @@
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2013 European Space Agency
+    Copyright (c) 2012-2018 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -15,12 +15,14 @@
     This module is managing the Copy and Paste functions.
 """
 
+import os
 import traceback
 import logging
 from itertools import chain
 import PySide
 
 import ogAST
+import ogParser
 import sdlSymbols
 import genericSymbols
 import Renderer
@@ -36,6 +38,9 @@ COPY_PASTE = []
 # Actual scene clipboard
 CLIPBOARD = None
 
+# System clipboard used to copy-paste between instances of Opengeode
+# Value is set when Opengeode is initialized
+SYS_CLIPBOARD = None
 
 def copy(selection):
     ''' Create a copy (duplicate) of the selected symbols in AST form '''
@@ -82,9 +87,9 @@ def copy_branch(top_level_item):
     if not isinstance(top_level_item, genericSymbols.HorizontalSymbol):
         next_aligned = top_level_item.next_aligned_symbol()
         while next_aligned and next_aligned.grabber.isSelected():
-            pr_text = '\n'.join(Pr.generate(next_aligned, cpy=True,
+            next_pr_text = '\n'.join(Pr.generate(next_aligned, cpy=True,
                                             nextstate=False, recursive=True))
-            next_ast, next_terminators = next_aligned.get_ast(pr_text)
+            next_ast, next_terminators = next_aligned.get_ast(next_pr_text)
             terminators.extend(next_terminators)
             branch.append(next_ast)
             next_aligned = next_aligned.next_aligned_symbol()
@@ -102,6 +107,15 @@ def copy_branch(top_level_item):
                 term_branch, term_inators = copy_branch(symbol)
                 branch.extend(term_branch)
                 res_terminators.extend(term_inators)
+
+    if SYS_CLIPBOARD is not None:
+        #  Basic copy of a single branch to the system clipboard
+        ident = top_level_item.common_name \
+                if not isinstance(top_level_item, sdlSymbols.State) \
+                else 'state'
+        SYS_CLIPBOARD.setText("OG_SDL@-@{}@-@{}@-@{}".format(os.getpid(),
+                                                         ident,
+                                                         pr_text))
     return branch, res_terminators
 
 
@@ -109,11 +123,33 @@ def paste(parent, scene):
     '''
         Paste previously copied symbols at selection point
     '''
+    remove_after_paste = False
+    if SYS_CLIPBOARD is not None:
+        #  Get from clipboard only if it comes from another process
+        #  otherwise use the local clipboard which contains more data
+        #  (for the moment the shared clipboard only stores top-level items)
+        shared = SYS_CLIPBOARD.text().split('@-@') or []
+        if len(shared) >= 4 \
+                and shared[0] == "OG_SDL" \
+                and shared[1] != str(os.getpid()):
+            common_name = shared[2]
+            pr_text     = shared[3]
+            #  Copy to the local clipboard
+            ast, _, _, _, terminators = \
+                ogParser.parseSingleElement(common_name, pr_text)
+            COPY_PASTE.append(([ast], terminators))
+            remove_after_paste = True
+
     CLIPBOARD.clear()
     if not parent:
         new_symbols = paste_floating_objects(scene)
     else:
         new_symbols = paste_below_item(parent, scene)
+
+    if remove_after_paste:
+        #  Remove from local clipboard if it came from system clipboard
+        #  otherwise it would be added over and over
+        COPY_PASTE.pop()
     return new_symbols
 
 

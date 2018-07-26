@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.16 (07/2018)
+    - Added interaction with system clipboard (basic for floating items)
+
 2.0.15 (07/2018)
     - Fix many bugs in type checking system
 
