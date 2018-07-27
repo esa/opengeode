@@ -27,6 +27,8 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
+	mono $(shell which asn1.exe) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	gnat make orchestrator
 
 test-c:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check && 
