@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.15'
+__version__ = '2.0.16'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -3011,6 +3011,7 @@ def gui(options):
 
     # Initialize the clipboard
     Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')
+    Clipboard.SYS_CLIPBOARD = app.clipboard()
 
     # Load the application layout from the .ui file
     loader = QUiLoader()
