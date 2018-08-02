@@ -1,0 +1,68 @@
+SYSTEM og;
+    
+    use dv comment 'dataview.asn';
+    
+    signal run;
+    
+    signal we;
+    
+    CHANNEL c
+        FROM ENV TO og WITH run;
+        FROM og TO ENV WITH we;
+    ENDCHANNEL;
+    BLOCK og;
+        SIGNALROUTE r
+            FROM ENV TO og WITH run;
+            FROM og TO ENV WITH we;
+        CONNECT c AND r;
+        
+        PROCESS og;
+            
+            dcl s1 Seq := { a TRUE };
+            
+            dcl s2 Seq;
+            
+            -- Sequence containing DEFAULT values
+            -- When not initialized by the user, the fields should anyway
+            -- be set to their default (call to _Initialize should be done when declared!)
+            
+            dcl def SeqDef;
+            
+            dcl def2 SeqDef := { b 19, c 42 };
+            
+            
+            START;
+                
+                TASK s2 := { a FALSE};
+                
+                TASK s2.a := TRUE;
+                
+                TASK s2.b.b_c := TRUE;
+                
+                TASK s2 :={ b { b_c TRUE }};
+                
+                CALL writeln (def.b)
+                
+                COMMENT 'Uninitialized, expect garbage';
+                
+                CALL writeln (def2.b)
+                
+                COMMENT 'Should display 19';
+                
+                TASK def2.b := 16;
+                
+                CALL writeln (def2.b)
+                
+                COMMENT 'Should display 16';
+                
+                NEXTSTATE wait;
+            
+            STATE wait;
+                
+                INPUT run;
+                    
+                    NEXTSTATE wait;
+            ENDSTATE;
+        ENDPROCESS og;
+    ENDBLOCK;
+ENDSYSTEM;
