@@ -132,12 +132,7 @@ def main():
 def run_test(op):
     ''' Call SDL importer with the required arguments '''
 
-    qgen_dir = os.environ.get('QGEN_REPO_ROOT')
-    sdl_importer_proj_name = "ee.ibk.sdl.importer"
     sdl_importer_launcher = "qgen-sdl"
-    sdl_importer_loc = "gms/eclipse/" + sdl_importer_proj_name + "/target" + \
-                    "/sdl-importer/lib/" + sdl_importer_launcher
-    sdl_importer_path = os.path.join (qgen_dir,sdl_importer_loc)
 
     gentypes = False
     lang=''
@@ -164,16 +159,16 @@ def run_test(op):
 
     if gentypes:
         outfolder = 'generated_gt_' + lang
-        cmd = [sdl_importer_path, op.root_model,
+        cmd = [sdl_importer_launcher,
                '--language', lang, '--generate-types',
                '--output', outfolder,
-               '--type-prefix', 'asn1QGen']
+               '--type-prefix', 'asn1QGen', op.root_model]
     else:
         outfolder = 'generated_' + lang
-        cmd = [sdl_importer_path, op.root_model,
+        cmd = [sdl_importer_launcher,
                '--language', lang,
                '--output', outfolder,
-               '--type-prefix', 'asn1Scc']
+               '--type-prefix', 'asn1Scc', op.root_model]
 
     if os.path.exists(outfolder):
             shutil.rmtree(outfolder, ignore_errors=True)
@@ -202,13 +197,11 @@ def run_test(op):
                 return (errcode, stdout, stderr, op.root_model, op.rule)
 
     if lang in ('ada', 'c'):
-        p2 = _compile (lang, outfolder)
-        stdout, stderr = p2.communicate()
-        errcode = p2.wait()
+        errcode, stdout, stderr = _compile (lang, outfolder)
 
     return (errcode, stdout, stderr, op.root_model, op.rule)
 
-def _run_gprbuild(gprfile):
+def _run_gprbuild(gprfile, exec_file):
     args = ["gprbuild",
             "-p",   # Create obj dirs
             "-j1",  # when tests run in parallel, CPUs are already
@@ -219,16 +212,50 @@ def _run_gprbuild(gprfile):
 
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                    stderr=subprocess.STDOUT)
-    return proc
+    stdout, stderr = proc.communicate()
+    errcode = proc.wait()
+    if errcode != 0:
+        return (errcode, stdout, stderr)
+
+    if os.path.isfile (exec_file):
+        p = subprocess.Popen (exec_file, stdout=subprocess.PIPE,
+                   stderr=subprocess.STDOUT)
+        stdout, stderr = p.communicate()
+        errcode = p.wait()
+        return (errcode, stdout, stderr)
+    
+    return (errcode, stdout, stderr)
 
 def _compile (lang, src_path):
-    source_dirs = '"."'
+
+    c_executable = "test_qgen_c"
+    ada_executable = "test_qgen_ada"
+    c_main = c_executable + ".c"
+    ada_main = ada_executable + ".c"
     main_file = ""
+    ada_exe_path = ""
+    c_exe_path = ""
+    do_ada = False
+    do_c = False
+
+    if lang == "c":
+        do_c = True
+        if os.path.isfile (c_main):
+            main_file = """for main use ("%s");"""% c_main
+            shutil.copy (c_main, src_path)
+            c_exe_path = os.path.join(src_path, "exec", c_executable)
+    
+    if lang == "ada":
+        do_ada = True
+        if os.path.isfile (ada_main):
+            main_file = """for main use ("%s");"""% ada_main
+            shutil.copy (ada_main, src_path)
+            ada_exe_path = os.path.join(src_path, "exec", ada_executable)
+
+    source_dirs = '"."'
     compiler_pkg = ""
     linker_pkg = ""
     binder_pkg = ""
-    do_c = lang == "c"
-    do_ada = lang == "ada"
     c_prj = ""
     ada_prj = ""
 
@@ -261,7 +288,7 @@ project Prj_Ada is
 end Prj_Ada;""")
     ada_prj = template_ada.substitute(
         source_dirs=source_dirs,
-        main=main_file.format("main.adb"),
+        main=main_file,
         lang=languages.format('"Ada"'),
         compiler_pkg=compiler_pkg.format(
             "Ada", ', "-gnata"%s' % flags),
@@ -283,7 +310,7 @@ end Prj_Ada;""")
 end Prj_C;""")
     c_prj = template_c.substitute(
         source_dirs=source_dirs,
-        main=main_file.format("main.c"), lang=languages.format('"C"'),
+        main=main_file, lang=languages.format('"C"'),
         compiler_pkg=compiler_pkg.format("C", ', "-std=%s"%s' %
                                          (c_std, flags)),
         linker_pkg=linker_pkg.format("C"),
@@ -293,9 +320,9 @@ end Prj_C;""")
         f.write(c_prj)
 
     if do_ada:
-        return _run_gprbuild(gpr_filename_ada)
+        return _run_gprbuild(gpr_filename_ada, ada_exe_path)
     if do_c:
-        return _run_gprbuild(gpr_filename_c)
+        return _run_gprbuild(gpr_filename_c, c_exe_path)
 
 if __name__ == '__main__':
     ret = main()
