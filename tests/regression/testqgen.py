@@ -218,10 +218,18 @@ def _run_gprbuild(gprfile, exec_file):
         return (errcode, stdout, stderr)
 
     if os.path.isfile (exec_file):
-        p = subprocess.Popen (exec_file, stdout=subprocess.PIPE,
+        actual = open("actual","w+")
+        p = subprocess.Popen (exec_file, stdout=actual,
                    stderr=subprocess.STDOUT)
         stdout, stderr = p.communicate()
         errcode = p.wait()
+
+        if errcode != 0:
+            return (errcode, stdout, stderr)
+
+        if os.path.isfile ("expected"):
+            errcode = os.system ("diff expected actual")
+
         return (errcode, stdout, stderr)
     
     return (errcode, stdout, stderr)
