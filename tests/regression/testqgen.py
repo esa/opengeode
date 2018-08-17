@@ -62,6 +62,7 @@ def run_test(op):
     gentypes = False
     lang=''
     asnlang=''
+    asn_path=''
 
     if op.rule == 'test-qgen-parse':
         lang = 'xmi_ada'
@@ -109,10 +110,10 @@ def run_test(op):
 
     if not gentypes:
         asn_files = glob.glob ('*.asn')
-        asn_path = asn_files[0] if asn_files else None
-        if asn_path and os.path.isfile(asn_path):
+        if asn_files:
             asn_call = ['asn1.exe', "-equal", '-o', outfolder, asnlang,
-                '--type-prefix', 'asn1Scc', asn_path]
+                '--type-prefix', 'asn1Scc'] + asn_files
+
             p0 = subprocess.Popen(asn_call,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE)
@@ -121,6 +122,18 @@ def run_test(op):
 
             if errcode != 0:
                 return (errcode, stdout, stderr, op.root_model, op.rule)
+
+            if op.rule == 'test-qgen-ada' and os.path.isfile ("test_qgen_ada.c"):
+                asn_call = ['asn1.exe', "-equal", '-o', outfolder, "-c",
+                '--type-prefix', 'asn1Scc'] + asn_files
+                print (asn_call)
+                p0 = subprocess.Popen(asn_call,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE)
+                stdout, stderr = p0.communicate()
+                errcode = p0.wait()
+                if errcode != 0:
+                    return (errcode, stdout, stderr, op.root_model, op.rule)
 
     if lang in ('ada', 'c'):
         errcode, stdout, stderr = _compile (lang, outfolder)
