@@ -7,6 +7,7 @@ import signal
 from functools import partial
 from multiprocessing import cpu_count
 from concurrent import futures
+import os
 
 work1 = ['make', '-C']
 work2 = ['make', '-C']
@@ -45,10 +46,14 @@ def main():
     start = time.time()
     results = []
     op = parse_args()
+    xfails = os.environ['EXPECTED_FAILURES']
     with futures.ProcessPoolExecutor(max_workers=cpu_count()) as executor:
         for result in executor.map(partial(partial(make, op.rule)), op.paths):
             print("%40s: %s" % (result[3], colorMe(result[0],
-                               '[OK]' if result[0]==0 else '[FAILED]')))
+                               '[OK]' if result[0]==0 else
+                                ('[EXPECTED FAILURE]' 
+                                if result[3] in xfails
+                                else '[FAILED]'))))
             results.append(result)
         executor.map(partial(make, 'clean'), op.paths)
     sys.stdout.write('\n')
