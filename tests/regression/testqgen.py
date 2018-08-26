@@ -126,7 +126,6 @@ def run_test(op):
             if op.rule == 'test-qgen-ada' and os.path.isfile ("test_qgen_ada.c"):
                 asn_call = ['asn1.exe', "-equal", '-o', outfolder, "-c",
                 '--type-prefix', 'asn1Scc'] + asn_files
-                print (asn_call)
                 p0 = subprocess.Popen(asn_call,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE)
