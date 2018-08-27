@@ -1143,9 +1143,7 @@ def _prim_call(prim):
         param_stmts, param_str, local_var = expression(exp)
         ret_stmts.extend(param_stmts)
         ret_decls.extend(local_var)
-        ret_string += ('{sort}_Kind({e})'
-                       .format(sort=exp_typename,
-                               e=param_str))
+        ret_string += ('{e}.kind'.format(e=param_str))
     elif function_name == 'round':
         param_stmts, param_string, param_decls = expression(params[0])
         ret_stmts.extend(param_stmts)
@@ -1254,7 +1252,8 @@ def _prim_selector(prim):
     receiver_bty = find_basic_type(receiver.exprType)
 
     if receiver_bty.kind == 'ChoiceType':
-        string = ('{sort}_{field_name}_get({string})'.format(sort=type_name(receiver.exprType), field_name=field_name, string=string))
+        string = ('{string}.u.{field_name}'.format(field_name=field_name,
+                                                   string=string))
     else:
         # Sequence: we must get the right casing of the field
         for field_case in receiver_bty.Children:
