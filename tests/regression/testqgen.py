@@ -135,7 +135,7 @@ def run_test(op):
                     return (errcode, stdout, stderr, op.root_model, op.rule)
 
     if lang in ('ada', 'c'):
-        errcode, stdout, stderr = _compile (lang, outfolder)
+        errcode, stdout, stderr = _compile (lang, outfolder, gentypes)
 
     return (errcode, stdout, stderr, op.root_model, op.rule)
 
@@ -172,10 +172,14 @@ def _run_gprbuild(gprfile, exec_file):
     
     return (errcode, stdout, stderr)
 
-def _compile (lang, src_path):
+def _compile (lang, src_path, gentypes):
 
-    c_executable = "test_qgen_c"
-    ada_executable = "test_qgen_ada"
+    if gentypes:
+        c_executable = "test_qgen_gt_c"
+        ada_executable = "test_qgen_gt_ada"
+    else:
+        c_executable = "test_qgen_c"
+        ada_executable = "test_qgen_ada"
     c_main = c_executable + ".c"
     ada_main = ada_executable + ".c"
     main_file = ""

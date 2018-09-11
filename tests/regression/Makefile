@@ -6,6 +6,10 @@ DISABLED_BENCHMARKS=test1/ test2/ test3/ test4/ test5/ test6/ test7/ test9/ \
 BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */))))
 
 export EXPECTED_FAILURES=test-typecheck/ test-procedure/ test-demoopengeode/ test-branchcoverage/
+export QGEN_UNSUPPORTED=test3/ test4/ test7/ test10/ test-aggregation1/ test-aggregation2/\					      test-debug/ test-demotaste/ test-exitnested/ test-instance\
+					      test-nestedpriority/ test-nocif/ test-nocif2/ test-processfpar1/\
+					      test-processfpar2/ test-provided2/ test-pus/ test-recursion/\
+					      test-shadowing/ test-simu/ test-uart/
 
 test-parse:
 	@python3 test.py test-parse $(TEST_CASES)
