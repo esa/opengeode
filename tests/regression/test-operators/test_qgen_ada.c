@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include "dataview-uniq.h"
 
-extern void expressions_initStates();
-extern void expressions_PI_run();
+extern void adainit();
+extern void operators_PI_run();
 
-void expressions_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
+void operators_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
     if (!*res) {
         fprintf(stderr, "%.*s\n", (int)msg->nCount, msg->arr);
         exit(1);
@@ -13,7 +13,8 @@ void expressions_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
 }
 
 int main() {
-    expressions_initStates();
-    expressions_PI_run();
+    adainit();
+    operators_initStates();
+    operators_PI_run();
     return 0;
 }

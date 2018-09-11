@@ -5,7 +5,7 @@ DISABLED_BENCHMARKS=test1/ test2/ test3/ test4/ test5/ test6/ test7/ test9/ \
                     test12/ test-branchcoverage/
 BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */))))
 
-export EXPECTED_FAILURES=test-typecheck/ test-procedure/ test-demoopengeode/
+export EXPECTED_FAILURES=test-typecheck/ test-procedure/ test-demoopengeode/ test-branchcoverage/
 
 test-parse:
 	@python3 test.py test-parse $(TEST_CASES)
