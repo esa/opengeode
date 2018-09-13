@@ -118,7 +118,7 @@ SPECIAL_OPERATORS = {
     'num'        : [{'type': ENUMERATED, 'direction': 'in'}],
     'power'      : [
                     {'type': NUMERICAL,  'direction': 'in'},
-                    {'type': INTEGER,    'direction': 'in'}
+                    {'type': NUMERICAL,  'direction': 'in'}
                    ],
     'present'    : [{'type': CHOICE,     'direction': 'in'}],
     'reset_timer': [{'type': TIMER,      'direction': 'in'}],

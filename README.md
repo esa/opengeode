@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.17 (09/2018)
+    - Fix type checking of the "power" operator
+
 2.0.16 (07/2018)
     - Added interaction with system clipboard (basic for floating items)
 
