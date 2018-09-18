@@ -7,11 +7,9 @@ BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */)
 
 export EXPECTED_FAILURES=test-typecheck/ test-procedure/ test-demoopengeode/ test-branchcoverage/ \
 					      test-nestedpriority/
-export QGEN_UNSUPPORTED=test3/ test4/ test7/ test-aggregation1/ test-aggregation2/ \
-					      test-debug/ test-demotaste/ test-exitnested/ test-instance/ \
-					      test-nocif/ test-nocif2/ test-processfpar1/ \
-					      test-processfpar2/ test-provided2/ test-pus/ test-recursion/ \
-					      test-shadowing/ test-simu/ test-uart/
+export QGEN_UNSUPPORTED=test-debug/ test-demotaste/ test-instance/ test-eds2/ test-asn1constants/\
+					      test-nocif/ test-nocif2/ test-provided2/ test-processfpar1/ test-processfpar2/\
+					      test-recursion/
 
 test-parse:
 	@python3 test.py test-parse $(TEST_CASES)
@@ -67,4 +65,4 @@ clean:
 	done
 
 .PHONY: test-parse test-qgen-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
-	    benchmark-O3 coverage clean
+	     test-qgen-ada test-qgen-c test-qgen-gt-ada test-qgen-gt-c benchmark-O3 coverage clean
