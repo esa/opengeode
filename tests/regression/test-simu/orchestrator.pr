@@ -30,7 +30,7 @@ comment 'Hello';
     
     dcl fixed fixedIntList := { 1,2,3};
     
-    dcl anInt T_UInt32 :=0;
+    dcl anInt, otherInt T_UInt32 :=0;
     
     dcl simpleseq MySimpleSeq := {a 42, b true, c three};
     
@@ -55,6 +55,15 @@ comment 'Hello';
         call writeln('Simulation startup');
         /* CIF NEXTSTATE (1095, 251), (72, 34) */
         NEXTSTATE Wait;
+    /* CIF state (1680, 345), (74, 35) */
+    state next;
+        /* CIF input (1679, 400), (71, 35) */
+        input pulse(a);
+            /* CIF PROCEDURECALL (1609, 450), (213, 35) */
+            call reset_timer(mytimer);
+            /* CIF NEXTSTATE (1680, 500), (70, 35) */
+            NEXTSTATE wait;
+    endstate;
     /* CIF state (1674, 125), (100, 35) */
     state timeout;
         /* CIF input (1651, 180), (147, 35) */
@@ -63,15 +72,6 @@ comment 'Hello';
             call SET_timer(1000, mytimer);
             /* CIF NEXTSTATE (1687, 280), (74, 35) */
             NEXTSTATE next;
-    endstate;
-    /* CIF state (1680, 345), (74, 35) */
-    state next;
-        /* CIF input (1680, 400), (71, 35) */
-        input pulse(a);
-            /* CIF PROCEDURECALL (1609, 450), (213, 35) */
-            call reset_timer(mytimer);
-            /* CIF NEXTSTATE (1681, 500), (70, 35) */
-            NEXTSTATE wait;
     endstate;
     /* CIF state (1095, 251), (72, 34) */
     state Wait;
@@ -83,9 +83,9 @@ anint := 478;
             /* CIF PROCEDURECALL (728, 418), (259, 35) */
             call writeln('Input param', anint);
             /* CIF PROCEDURECALL (738, 468), (238, 35) */
-            call ExternalProc(anint, anint);
+            call ExternalProc(anint, otherint);
             /* CIF PROCEDURECALL (720, 518), (275, 35) */
-            call writeln('Output param', anint);
+            call writeln('Output param', otherint);
             /* CIF PROCEDURECALL (714, 568), (286, 35) */
             call write('Calling VDM with data');
             /* CIF task (664, 618), (386, 48) */
@@ -116,7 +116,7 @@ anint := 478;
             NEXTSTATE next;
         /* CIF input (1219, 305), (147, 35) */
         input Paramless_TC;
-            /* CIF task (1183, 360), (219, 35) */
+            /* CIF task (1180, 360), (223, 35) */
             task counter := (counter + 1)  mod 500;
             /* CIF PROCEDURECALL (1166, 410), (253, 35) */
             call writeln('Got Paramless TC');
