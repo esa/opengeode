@@ -47,7 +47,11 @@ def main():
     results = []
     op = parse_args()
     xfails = os.environ['EXPECTED_FAILURES']
-    qgen_unsup = os.environ['QGEN_UNSUPPORTED']
+    if op.rule in ['test-qgen-parse', 'test-qgen-ada', 'test-qgen-c', 'test-qgen-gt-ada', 'test-qgen-gt-c']:
+        qgen_unsup = os.environ['QGEN_UNSUPPORTED']
+    else:
+        qgen_unsup = ""
+
     with futures.ProcessPoolExecutor(max_workers=cpu_count()) as executor:
         for result in executor.map(partial(partial(make, op.rule)), op.paths):
             print("%40s: %s" % (result[3], colorMe(result[0],
