@@ -139,7 +139,7 @@ def run_test(op):
 
     return (errcode, stdout, stderr, op.root_model, op.rule)
 
-def _run_gprbuild(gprfile, exec_file):
+def _run_gprbuild(gprfile, exec_file, lang):
     args = ["gprbuild",
             "-p",   # Create obj dirs
             "-j1",  # when tests run in parallel, CPUs are already
@@ -165,8 +165,11 @@ def _run_gprbuild(gprfile, exec_file):
         if errcode != 0:
             return (errcode, stdout, stderr)
 
-        if os.path.isfile ("expected"):
-            errcode = os.system ("diff expected actual")
+        if lang == "c" and os.path.isfile ("expected_c"):
+            errcode = os.system ("diff expected_c actual")
+        else:
+            if os.path.isfile ("expected"):
+                errcode = os.system ("diff expected actual")
 
         return (errcode, stdout, stderr)
     
@@ -270,9 +273,9 @@ end Prj_C;""")
         f.write(c_prj)
 
     if do_ada:
-        return _run_gprbuild(gpr_filename_ada, ada_exe_path)
+        return _run_gprbuild(gpr_filename_ada, ada_exe_path, lang)
     if do_c:
-        return _run_gprbuild(gpr_filename_c, c_exe_path)
+        return _run_gprbuild(gpr_filename_c, c_exe_path, lang)
 
 if __name__ == '__main__':
     ret = main()
