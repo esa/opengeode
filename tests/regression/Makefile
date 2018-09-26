@@ -7,7 +7,7 @@ BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */)
 
 export EXPECTED_FAILURES=test-typecheck/ test-procedure/ test-demoopengeode/ test-branchcoverage/ \
 					      test-nestedpriority/
-export QGEN_UNSUPPORTED=test3/ test4/ test7/ test10/ test-aggregation1/ test-aggregation2/ \
+export QGEN_UNSUPPORTED=test3/ test4/ test7/ test-aggregation1/ test-aggregation2/ \
 					      test-debug/ test-demotaste/ test-exitnested/ test-instance/ \
 					      test-nocif/ test-nocif2/ test-processfpar1/ \
 					      test-processfpar2/ test-provided2/ test-pus/ test-recursion/ \
