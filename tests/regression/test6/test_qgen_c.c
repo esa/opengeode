@@ -1,11 +1,20 @@
 #include <signal.h>
 #include "dataview-uniq.h"
+
+volatile sig_atomic_t keep_going = 1;
+
 void myfunction_RI_result_data(long long *val)
 {
     printf("[C] result_data: %lld\n", *val);
 }
 
-volatile sig_atomic_t keep_going = 1;
+void myfunction_RI_SET_myTimer(asn1SccT_Int32 *val)
+{
+    printf("[C] SET MyTimer: %lld\n", *val);
+    alarm(((int)*val) / 1000);
+
+}
+
 void timer_expired()
 {
     myfunction_PI_myTimer();
