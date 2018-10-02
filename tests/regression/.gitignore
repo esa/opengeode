@@ -26,3 +26,4 @@
 */*.gcda
 **/*.log
 **actual
+*/*.xml
