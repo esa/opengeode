@@ -121,6 +121,7 @@ SPECIAL_OPERATORS = {
                     {'type': NUMERICAL,  'direction': 'in'}
                    ],
     'present'    : [{'type': CHOICE,     'direction': 'in'}],
+    'exist'      : [{'type': ANY_TYPE,   'direction': 'in'}],
     'reset_timer': [{'type': TIMER,      'direction': 'in'}],
     'round'      : [{'type': REAL,       'direction': 'in'}],
     'set_timer'  : [
@@ -522,7 +523,7 @@ def check_call(name, params, context):
             else:
                 for each in (p.value['then'], p.value['else']):
                     check_one_param(each, name)
-                # check that both "then" and "else" are both of a similar type
+                # check that both "then" and "else" are of a similar type
                 # (string, int, or enumerated), this is necessary for the
                 # backends
                 if (is_numeric(p.value['then'].exprType) ==
@@ -538,6 +539,47 @@ def check_call(name, params, context):
                     raise TypeError('{}: both options must have the type type.'
                                     .format(name))
         return UNKNOWN_TYPE
+
+    # Special case for "exist" function
+    elif name == 'exist':
+        # "exist" shall return true if an optional SEQUENCE field is present
+        # We have to check that the parameter is actually an optional field
+        # So we check first that there is only one param
+        # then that this is a PrimSelector (at least "a.b")
+        # Then we analyse from the variable to the last field if that is
+        # actually an optional field, using the ASN.1 data model
+        if len(params) != 1:
+            raise TypeError ('"exist" operator takes only one parameter')
+        param, = params
+        if not isinstance(param, ogAST.PrimSelector):
+            raise TypeError ('"exist" operator only works on optional fields')
+        left = param.value[0] # Can be a variable or another PrimSelector
+        field_list = [param.value[1]] # string of the field name
+        while isinstance(left, ogAST.PrimSelector):
+            field_list.append(left.value[1])
+            left = left.value[0]
+        sort = find_basic_type(left.exprType)  # must have Children
+        if sort.kind == 'UnknownType':
+            raise TypeError('Variable not found in call to "exist" operator')
+        # At this point we know that the expression is correct, so we will
+        # not miss any child in the dataview. We can follow the children
+        # in the ASN.1 model until we reach the last one, which shall be
+        # optional
+        while field_list:
+            child_name = field_list.pop().replace('_', '-').lower()
+            for child in sort.Children.viewkeys():
+                if child.lower() == child_name:
+                    break
+            optional = sort.Children[child].Optional
+            sort = sort.Children[child].type
+            if sort.kind == 'ReferenceType':
+                sort = find_basic_type (sort)
+        # At this point we should have found the last type
+        if optional != "True":
+            raise TypeError('Field is not optional in call to "exist"')
+        return type('Exist', (object,), {
+            'kind': 'BooleanType'
+        })
 
     # (1) Find the signature of the function
     # signature will hold the list of parameters for the function
@@ -2030,6 +2072,8 @@ def selector_expression(root, context, pos="right"):
     except AttributeError:
         # When parsing for syntax or copy-paste, receiver_bty may
         # not be found
+        # CHECKME: but then we don't detect nonexistent variable in a function
+        # call?!?!
         pass
 
     node.value = [receiver, field_name.replace('-', '_').lower()]

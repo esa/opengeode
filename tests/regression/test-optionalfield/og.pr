@@ -1,4 +1,4 @@
-SYSTEM og;
+system og;
     /* CIF TEXT (159, 221), (289, 188) */
     -- Text area for declarations and comments
     
@@ -8,17 +8,17 @@ SYSTEM og;
     
     signal we;
     /* CIF ENDTEXT */
-    CHANNEL c
-        FROM ENV TO og WITH run;
-        FROM og TO ENV WITH we;
-    ENDCHANNEL;
-    BLOCK og;
-        SIGNALROUTE r
-            FROM ENV TO og WITH run;
-            FROM og TO ENV WITH we;
-        CONNECT c AND r;
+    channel c
+        from env to og with run;
+        from og to env with we;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with run;
+            from og to env with we;
+        connect c and r;
         /* CIF PROCESS (225, 50), (150, 75) */
-        PROCESS og;
+        process og;
             /* CIF TEXT (531, 266), (448, 158) */
             dcl s1 Seq := { a TRUE };
             
@@ -33,37 +33,54 @@ SYSTEM og;
             /* CIF ENDTEXT */
             /* CIF START (269, 259), (70, 35) */
             START;
-                /* CIF TASK (239, 309), (130, 35) */
-                TASK s2 := { a FALSE};
-                /* CIF TASK (247, 359), (114, 35) */
-                TASK s2.a := TRUE;
-                /* CIF TASK (234, 409), (139, 35) */
-                TASK s2.b.b_c := TRUE;
-                /* CIF TASK (224, 459), (159, 35) */
-                TASK s2 :={ b { b_c TRUE }};
-                /* CIF PROCEDURECALL (244, 514), (119, 35) */
-                CALL writeln (def.b)
-                /* CIF COMMENT (383, 514), (201, 35) */
-                COMMENT 'Uninitialized, expect garbage';
-                /* CIF PROCEDURECALL (244, 569), (120, 35) */
-                CALL writeln (def2.b)
-                /* CIF COMMENT (384, 569), (145, 35) */
-                COMMENT 'Should display 19';
-                /* CIF TASK (258, 624), (92, 35) */
-                TASK def2.b := 16;
-                /* CIF PROCEDURECALL (244, 674), (120, 35) */
-                CALL writeln (def2.b)
-                /* CIF COMMENT (384, 674), (145, 35) */
-                COMMENT 'Should display 16';
-                /* CIF NEXTSTATE (269, 724), (70, 35) */
+                /* CIF task (239, 309), (130, 35) */
+                task s2 := { a FALSE};
+                /* CIF decision (261, 364), (85, 48) */
+                decision exist (s2.a)
+                /* CIF comment (366, 370), (122, 38) */
+                comment 'test presence of
+optional field';
+                    /* CIF ANSWER (224, 432), (70, 23) */
+                    (true):
+                    /* CIF ANSWER (314, 432), (70, 23) */
+                    (false):
+                enddecision;
+                /* CIF decision (249, 470), (110, 50) */
+                decision exist (s2.b.b_c);
+                    /* CIF ANSWER (224, 540), (70, 23) */
+                    (true):
+                    /* CIF ANSWER (314, 540), (70, 23) */
+                    (false):
+                enddecision;
+                /* CIF task (247, 578), (114, 35) */
+                task s2.a := TRUE;
+                /* CIF task (234, 628), (139, 35) */
+                task s2.b.b_c := TRUE;
+                /* CIF task (224, 678), (159, 35) */
+                task s2 :={ b { b_c TRUE }};
+                /* CIF PROCEDURECALL (244, 733), (119, 35) */
+                call writeln (def.b)
+                /* CIF comment (383, 733), (201, 35) */
+                comment 'Uninitialized, expect garbage';
+                /* CIF PROCEDURECALL (244, 788), (120, 35) */
+                call writeln (def2.b)
+                /* CIF comment (384, 788), (145, 35) */
+                comment 'Should display 19';
+                /* CIF task (258, 843), (92, 35) */
+                task def2.b := 16;
+                /* CIF PROCEDURECALL (244, 893), (120, 35) */
+                call writeln (def2.b)
+                /* CIF comment (384, 893), (145, 35) */
+                comment 'Should display 16';
+                /* CIF NEXTSTATE (269, 943), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (269, 724), (70, 35) */
-            STATE wait;
-                /* CIF INPUT (261, 779), (84, 35) */
-                INPUT run;
-                    /* CIF NEXTSTATE (259, 829), (88, 35) */
+            /* CIF state (269, 943), (70, 35) */
+            state wait;
+                /* CIF input (261, 998), (84, 35) */
+                input run;
+                    /* CIF NEXTSTATE (259, 1048), (88, 35) */
                     NEXTSTATE wait;
-            ENDSTATE;
-        ENDPROCESS og;
-    ENDBLOCK;
-ENDSYSTEM;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;

@@ -10,6 +10,10 @@ Seq ::= SEQUENCE {
         b-C BOOLEAN OPTIONAL
     } OPTIONAL
 }
+ChoiceWithInnerSeq ::= CHOICE {
+   ch1 Seq,
+   ch2 SEQUENCE { opt-field BOOLEAN OPTIONAL }
+}
 
 -- Type with DEFAULT values (similar to OPTIONAL in many ways)
 SeqDef ::= SEQUENCE {

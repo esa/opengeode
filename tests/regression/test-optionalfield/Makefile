@@ -8,7 +8,7 @@ edit:
 	$(OPENGEODE) og.pr
 
 test-parse:
-	$(OPENGEODE) og.pr --check
+	$(OPENGEODE) og.pr -g --check
 
 test-qgen-parse:
 	$(TESTQGEN_PARSE) $(ROOT_MODEL)
