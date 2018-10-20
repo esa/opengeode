@@ -1584,6 +1584,16 @@ def _prim_call(prim):
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += ('{}.Kind'.format(param_str))
+    elif ident == 'exist':
+        # User wants to know if an optional field is present or not
+        selector = params[0]  # type PrimSelector
+        receiver = selector.value[0]
+        field    = selector.value[1]
+        rec_stmt, rec_str, rec_decl = expression (receiver)
+        stmts.extend(rec_stmt)
+        local_decl.extend(rec_decl)
+        ada_string += '({rec}.exist.{field} = 1)'.format(rec   = rec_str,
+                                                         field = field)
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
