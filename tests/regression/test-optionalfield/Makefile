@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview.asn
-	cp test_ada.ada test_ada.adb && gnat make test_ada.adb && ./test_ada
+	cp test_ada.ada test_ada.adb && gnat make test_ada.adb -g && ./test_ada
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
@@ -42,7 +42,7 @@ test-python:
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Llibog og
 	$(GNATMAKE) -c -fPIC -gnat2012 b~og.adb
-	$(CC) -shared -fPIC -o libog.so b~og.o og.o taste_dataview.o adaasn1rtl.o -lgnat
+	$(CC) -shared -fPIC -o libog.so b~og.o og.o taste_dataview.o adaasn1rtl.o
 	python -c "from ctypes import *; test=CDLL('./libog.so'); test.liboginit()"
 
 simu:

@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n orchestrator.ali
-	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali -lgnat
+	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali
 	./test_ada | diff expected -
 
 test-c: orchestrator.c test_c.o dataview-uniq.o

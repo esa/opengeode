@@ -33,7 +33,7 @@ test-ada:
 	$(CC) -c external_proc.c
 	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
 	$(GNATBIND) -n orchestrator.ali
-	$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali -lgnat
+	$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali
 	./test_ada
 
 simu:
@@ -60,7 +60,7 @@ test-python:
 	$(GNATBIND) -n -Lliborchestrator orchestrator
 	$(GNATMAKE) -c -fPIC -gnat2012 b~orchestrator.adb
 	$(CC) -c -fPIC external_proc.c
-	$(CC) -shared -fPIC -o liborchestrator.so b~orchestrator.o orchestrator.o taste_basictypes.o adaasn1rtl.o external_proc.o -lgnat
+	$(CC) -shared -fPIC -o liborchestrator.so b~orchestrator.o orchestrator.o taste_basictypes.o adaasn1rtl.o external_proc.o
 	python -c "from ctypes import *; test=CDLL('./liborchestrator.so'); test.liborchestratorinit()"
 
 coverage:

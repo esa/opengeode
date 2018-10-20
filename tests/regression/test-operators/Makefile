@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: operators.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n operators.ali
-	$(GNATLINK) test_ada.o operators.ali -lgnat -lm -o test_ada
+	$(GNATLINK) test_ada.o operators.ali -lm -o test_ada
 	./test_ada | diff expected -
 
 test-c: operators.c test_c.o dataview-uniq.o

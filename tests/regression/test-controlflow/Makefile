@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: controlflow.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n controlflow.ali
-	$(GNATLINK) test_ada.o controlflow.ali -lgnat -lm -o test_ada
+	$(GNATLINK) test_ada.o controlflow.ali -o test_ada
 	./test_ada | diff expected -
 
 test-c: controlflow.c test_c.o dataview-uniq.o

@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: challenge.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n challenge.ali
-	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lgnat -lm
+	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm
 	./test_ada | diff expected -
 
 test-c: challenge.c test_c.o dataview-uniq.o

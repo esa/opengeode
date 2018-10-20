@@ -21,7 +21,7 @@ test-qgen-ada:
 		mono $(ASN1SCC) -c -typePrefix asn1Scc -equal ../dataview-uniq.asn; \
 		$(GNATBIND) -n obj_ada/challenge.ali; \
 		$(CC) -O$(O) -c -g test_qgen_ada.c ; \
-		$(GNATLINK) -o test_qgen_ada test_qgen_ada.o obj_ada/challenge.ali -lgnat -lm; \
+		$(GNATLINK) -o test_qgen_ada test_qgen_ada.o obj_ada/challenge.ali -lm; \
 		./test_qgen_ada
 
 test-qgen-c:
@@ -49,7 +49,7 @@ test-qgen-c-asn:
 
 test-ada: challenge.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n challenge.ali
-	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lgnat -lm
+	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm
 	./test_ada
 
 test-c: challenge.c test_c.o dataview-uniq.o

@@ -18,7 +18,7 @@ test-qgen-ada:
 	cd generated_ada && cp ../test_qgen_ada.c test_qgen_ada.c; \
 		$(GNATBIND) -n obj_ada/expressions.ali; \
 		$(CC) -O$(O) -c -g test_qgen_ada.c ; \
-		$(GNATLINK) -o test_qgen_ada test_qgen_ada.o obj_ada/expressions.ali -lgnat -lm; \
+		$(GNATLINK) -o test_qgen_ada test_qgen_ada.o obj_ada/expressions.ali -lm; \
 		./test_qgen_ada
 
 test-qgen-c:
@@ -40,7 +40,7 @@ test-qgen-gt-c:
 
 test-ada: expressions.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n expressions.ali
-	$(GNATLINK) test_ada.o expressions.ali -lgnat -lm -o test_ada
+	$(GNATLINK) test_ada.o expressions.ali -lm -o test_ada
 	./test_ada
 
 test-c: expressions.c test_c.o dataview-uniq.o

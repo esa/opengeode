@@ -30,7 +30,7 @@ test-ada: dataview-uniq.o test_ada.o
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
-	$(GNATLINK) -o test_ada test_ada.o dataview-uniq.o og.ali -lgnat
+	$(GNATLINK) -o test_ada test_ada.o dataview-uniq.o og.ali
 	./test_ada
 
 test-c: 

@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n orchestrator.ali
-	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali -lgnat
+	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali 
 	./test_ada
 
 test-c: orchestrator.c test_c.o dataview-uniq.o
@@ -43,7 +43,7 @@ test-python:
 	$(GNATMAKE) -O$(O) -gnat2012 -c -fPIC *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
 	$(GNATMAKE) -c -fPIC -gnat2012 b~orchestrator.adb
-	$(CC) -shared -fPIC -o liborchestrator.so b~orchestrator.o orchestrator.o taste_basictypes.o adaasn1rtl.o -lgnat
+	$(CC) -shared -fPIC -o liborchestrator.so b~orchestrator.o orchestrator.o taste_basictypes.o adaasn1rtl.o
 	python -c "from ctypes import *; test=CDLL('./liborchestrator.so'); test.liborchestratorinit()"
 
 test-vhdl : test-c

@@ -19,7 +19,7 @@ system og;
         connect c and r;
         /* CIF PROCESS (225, 50), (150, 75) */
         process og;
-            /* CIF TEXT (531, 266), (448, 158) */
+            /* CIF TEXT (706, 266), (448, 158) */
             dcl s1 Seq := { a TRUE };
             
             dcl s2 Seq;
@@ -31,54 +31,56 @@ system og;
             
             dcl def2 SeqDef := { b 19, c 42 };
             /* CIF ENDTEXT */
-            /* CIF START (269, 259), (70, 35) */
+            /* CIF START (381, 267), (70, 35) */
             START;
-                /* CIF task (239, 309), (130, 35) */
+                /* CIF task (351, 317), (130, 35) */
                 task s2 := { a FALSE};
-                /* CIF decision (261, 364), (85, 48) */
+                /* CIF decision (373, 372), (85, 48) */
                 decision exist (s2.a)
-                /* CIF comment (366, 370), (122, 38) */
+                /* CIF comment (478, 378), (122, 38) */
                 comment 'test presence of
 optional field';
-                    /* CIF ANSWER (224, 432), (70, 23) */
+                    /* CIF ANSWER (336, 440), (70, 23) */
                     (true):
-                    /* CIF ANSWER (314, 432), (70, 23) */
+                    /* CIF ANSWER (426, 440), (70, 23) */
                     (false):
                 enddecision;
-                /* CIF decision (249, 470), (110, 50) */
+                /* CIF decision (361, 478), (110, 50) */
                 decision exist (s2.b.b_c);
-                    /* CIF ANSWER (224, 540), (70, 23) */
+                    /* CIF ANSWER (336, 548), (70, 23) */
                     (true):
-                    /* CIF ANSWER (314, 540), (70, 23) */
+                    /* CIF ANSWER (426, 548), (70, 23) */
                     (false):
                 enddecision;
-                /* CIF task (247, 578), (114, 35) */
+                /* CIF PROCEDURECALL (279, 586), (273, 35) */
+                call writeln (exist(s2.a), ' and ', exist(s2.b));
+                /* CIF task (359, 636), (114, 35) */
                 task s2.a := TRUE;
-                /* CIF task (234, 628), (139, 35) */
+                /* CIF task (346, 686), (139, 35) */
                 task s2.b.b_c := TRUE;
-                /* CIF task (224, 678), (159, 35) */
+                /* CIF task (336, 736), (159, 35) */
                 task s2 :={ b { b_c TRUE }};
-                /* CIF PROCEDURECALL (244, 733), (119, 35) */
+                /* CIF PROCEDURECALL (356, 791), (119, 35) */
                 call writeln (def.b)
-                /* CIF comment (383, 733), (201, 35) */
+                /* CIF comment (495, 791), (201, 35) */
                 comment 'Uninitialized, expect garbage';
-                /* CIF PROCEDURECALL (244, 788), (120, 35) */
+                /* CIF PROCEDURECALL (356, 846), (120, 35) */
                 call writeln (def2.b)
-                /* CIF comment (384, 788), (145, 35) */
+                /* CIF comment (496, 846), (145, 35) */
                 comment 'Should display 19';
-                /* CIF task (258, 843), (92, 35) */
+                /* CIF task (370, 901), (92, 35) */
                 task def2.b := 16;
-                /* CIF PROCEDURECALL (244, 893), (120, 35) */
+                /* CIF PROCEDURECALL (356, 951), (120, 35) */
                 call writeln (def2.b)
-                /* CIF comment (384, 893), (145, 35) */
+                /* CIF comment (496, 951), (145, 35) */
                 comment 'Should display 16';
-                /* CIF NEXTSTATE (269, 943), (70, 35) */
+                /* CIF NEXTSTATE (381, 1001), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF state (269, 943), (70, 35) */
+            /* CIF state (381, 1001), (70, 35) */
             state wait;
-                /* CIF input (261, 998), (84, 35) */
+                /* CIF input (373, 1056), (84, 35) */
                 input run;
-                    /* CIF NEXTSTATE (259, 1048), (88, 35) */
+                    /* CIF NEXTSTATE (371, 1106), (88, 35) */
                     NEXTSTATE wait;
             endstate;
         endprocess og;

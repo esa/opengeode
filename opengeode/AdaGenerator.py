@@ -1120,7 +1120,7 @@ def write_statement(param, newline):
             code.append(u'Put("{}");'
                         .format(param.value[1:-1].replace('"', "'")))
         else:
-            code, string, local = expression(param)
+            code, string, local = expression(param, readonly=1)
             if type_kind == 'OctetStringType':
                 # Octet string -> convert to Ada string
                 last_it = u""
@@ -1144,14 +1144,14 @@ def write_statement(param, newline):
                 code.append("Put({});".format(string))
     elif type_kind in ('IntegerType', 'RealType',
                        'BooleanType', 'Integer32Type'):
-        code, string, local = expression(param)
+        code, string, local = expression(param, readonly=1)
         if hasattr(param, "expected_type"):
             cast = type_name(param.expected_type)
         else:
             cast = type_name(param.exprType)
         code.append(u"Put({cast}'Image({s}));".format(cast=cast, s=string))
     elif type_kind == 'EnumeratedType':
-        code, string, local = expression(param)
+        code, string, local = expression(param, readonly=1)
         code.append(u"Put({}'Image({}));".format(type_name(param.exprType),
                                                  string))
     else:
@@ -1197,7 +1197,7 @@ def _call_external_function(output, **kwargs):
         elif signal_name.lower() == 'reset_timer':
             # built-in operator for resetting timers. param = timer name
             param, = out['params']
-            p_code, p_id, p_local = expression(param)
+            p_code, p_id, p_local = expression(param, readonly=1)
             code.extend(p_code)
             local_decl.extend(p_local)
             if not SHARED_LIB:
@@ -1258,7 +1258,7 @@ def _call_external_function(output, **kwargs):
                     param_direction = out_sig.fpar[idx]['direction']
 
                 typename = type_name(param_type)
-                p_code, p_id, p_local = expression(param)
+                p_code, p_id, p_local = expression(param, readonly=1)
                 code.extend(p_code)
                 local_decl.extend(p_local)
                 # Create a temporary variable for input parameters only
@@ -1325,7 +1325,7 @@ def _call_external_function(output, **kwargs):
             # inner procedure call
             list_of_params = []
             for param in out.get('params', []):
-                p_code, p_id, p_local = expression(param)
+                p_code, p_id, p_local = expression(param, readonly=1)
                 code.extend(p_code)
                 local_decl.extend(p_local)
                 # no need to use temporary variables, we are in pure Ada
@@ -1488,7 +1488,7 @@ def expression(expr):
 
 
 @expression.register(ogAST.PrimVariable)
-def _primary_variable(prim):
+def _primary_variable(prim, **kwargs):
     ''' Single variable reference '''
     var = find_var(prim.value[0])
     if (not var) or is_local(var):
@@ -1498,14 +1498,11 @@ def _primary_variable(prim):
 
     ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
-#   if prim.exprType.__name__ == 'for_range':
-#       # Ada iterator in FOR loops is an Integer - we must cast to 64 bits
-#       ada_string = u'Asn1Int({})'.format(ada_string)
     return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimCall)
-def _prim_call(prim):
+def _prim_call(prim, **kwargs):
     ''' Cover all built-in functions and inner procedures with RETURN stmt '''
     stmts, ada_string, local_decl = [], '', []
 
@@ -1526,7 +1523,7 @@ def _prim_call(prim):
 #                   type_name (find_basic_type (params[0].exprType)), \
 #                   type_name (find_basic_type (prim.exprType))
 
-        param_stmts, param_str, local_var = expression(params[0])
+        param_stmts, param_str, local_var = expression(params[0], readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += '{op}({param})'.format(
@@ -1540,7 +1537,7 @@ def _prim_call(prim):
     elif ident == 'power':
         operands = [None, None]
         for idx, param in enumerate(params):
-            stmt, operands[idx], local = expression(param)
+            stmt, operands[idx], local = expression(param, readonly=1)
             stmts.extend(stmt)
             local_decl.extend(local)
         ada_string += '{op[0]} ** Natural({op[1]})'.format(op=operands)
@@ -1556,7 +1553,7 @@ def _prim_call(prim):
                     exp.inputString)
             LOG.error(error)
             raise TypeError(error)
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         if min_length == max_length \
@@ -1580,7 +1577,7 @@ def _prim_call(prim):
             error = '{} is not a CHOICE'.format(exp.inputString)
             LOG.error(error)
             raise TypeError(error)
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += ('{}.Kind'.format(param_str))
@@ -1589,7 +1586,7 @@ def _prim_call(prim):
         selector = params[0]  # type PrimSelector
         receiver = selector.value[0]
         field    = selector.value[1]
-        rec_stmt, rec_str, rec_decl = expression (receiver)
+        rec_stmt, rec_str, rec_decl = expression (receiver, readonly=1)
         stmts.extend(rec_stmt)
         local_decl.extend(rec_decl)
         ada_string += '({rec}.exist.{field} = 1)'.format(rec   = rec_str,
@@ -1598,7 +1595,7 @@ def _prim_call(prim):
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
         exp_typename = type_name(exp.exprType)
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         if float(find_basic_type(prim.exprType).Min) >= 0:
             asn1_sort = "Asn1UInt"
         else:
@@ -1614,7 +1611,7 @@ def _prim_call(prim):
     elif ident == 'floor':
         exp = params[0]
         exp_typename = type_name(exp.exprType)
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += "{sort}'Floor({p})".format(sort=exp_typename,
@@ -1622,14 +1619,14 @@ def _prim_call(prim):
     elif ident == 'ceil':
         exp = params[0]
         exp_typename = type_name(exp.exprType)
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += "{sort}'Ceiling({p})".format(sort=exp_typename,
                                                    p=param_str)
     elif ident == 'cos':
         exp = params[0]
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         local_decl.append('package Math is new '
@@ -1639,14 +1636,14 @@ def _prim_call(prim):
     elif ident == 'round':
         exp = params[0]
         exp_typename = type_name(exp.exprType)
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += "{sort}'Rounding({p})".format(sort=exp_typename,
                                                     p=param_str)
     elif ident == 'sin':
         exp = params[0]
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         local_decl.append('package Math is new '
@@ -1655,7 +1652,7 @@ def _prim_call(prim):
         ada_string += "Math.Sin({})".format(param_str)
     elif ident == 'sqrt':
         exp = params[0]
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         local_decl.append('package Math is new '
@@ -1665,7 +1662,7 @@ def _prim_call(prim):
     elif ident == 'trunc':
         exp = params[0]
         exp_typename = type_name(exp.exprType)
-        param_stmts, param_str, local_var = expression(exp)
+        param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += "{sort}'Truncation({p})".format(sort=exp_typename,
@@ -1676,7 +1673,7 @@ def _prim_call(prim):
         # Take all params and join them with commas
         list_of_params = []
         for param in params:
-            param_stmt, param_str, local_var = (expression(param))
+            param_stmt, param_str, local_var = expression(param, readonly=1)
             list_of_params.append(param_str)
             stmts.extend(param_stmt)
             local_decl.extend(local_var)
@@ -1687,17 +1684,19 @@ def _prim_call(prim):
 
 
 @expression.register(ogAST.PrimIndex)
-def _prim_index(prim):
+def _prim_index(prim, **kwargs):
     stmts, ada_string, local_decl = [], '', []
+    ro = kwargs.get("readonly", 0)
 
     receiver = prim.value[0]
 
-    receiver_stms, ada_string, receiver_decl = expression(receiver)
+    receiver_stms, ada_string, receiver_decl = expression(receiver,
+                                                          readonly=ro)
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
     index = prim.value[1]['index'][0]
-    idx_stmts, idx_string, idx_var = expression(index)
+    idx_stmts, idx_string, idx_var = expression(index, readonly=ro)
     if unicode.isnumeric(idx_string):
         idx_string = int(idx_string) + 1
     else:
@@ -1712,19 +1711,23 @@ def _prim_index(prim):
 
 
 @expression.register(ogAST.PrimSubstring)
-def _prim_substring(prim):
+def _prim_substring(prim, **kwargs):
     ''' Generate expression for SEQOF/OCT.STRING substrings, e.g. foo(1,2) '''
     stmts, ada_string, local_decl = [], '', []
+    ro = kwargs.get("readonly", 0)
 
     receiver = prim.value[0]
 
-    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    receiver_stms, receiver_string, receiver_decl = expression(receiver,
+                                                               readonly=ro)
     ada_string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0])
-    r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1])
+    r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0],
+                                               readonly=ro)
+    r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1],
+                                               readonly=ro)
 
     # Adding 1 because SDL starts indexes at 0, ASN1 Ada types at 1
     if unicode.isnumeric(r1_string):
@@ -1748,14 +1751,16 @@ def _prim_substring(prim):
 
 
 @expression.register(ogAST.PrimSelector)
-def _prim_selector(prim):
+def _prim_selector(prim, **kwargs):
     ''' Selector (field access with '!' or '.' separation) '''
     stmts, ada_string, local_decl = [], '', []
+    ro = kwargs.get("readonly", 0)
 
     receiver = prim.value[0]
     field_name = prim.value[1]
 
-    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    receiver_stms, receiver_string, receiver_decl = expression(receiver,
+                                                               readonly=ro)
 
     ada_string = receiver_string
     stmts.extend(receiver_stms)
@@ -1771,7 +1776,10 @@ def _prim_selector(prim):
     else:
         # SEQUENCE, check for field optionality first
         child = child_spelling(field_name, receiver_bty)
-        if receiver_bty.Children[child].Optional == 'True':
+        if receiver_bty.Children[child].Optional == 'True' \
+                and not kwargs.get("readonly", 0):
+            # Must set Exist only when assigning value, not each time it is
+            # accessed: this is what "readonly" ensures.
             stmts.append('{}.Exist.{} := 1;'.format(ada_string, field_name))
         ada_string += '.' + field_name
 
@@ -1779,7 +1787,7 @@ def _prim_selector(prim):
 
 
 @expression.register(ogAST.PrimStateReference)
-def _primary_state_reference(prim):
+def _primary_state_reference(prim, **kwargs):
     ''' Reference to the current state '''
     return [], u'{}.state'.format(LPREFIX), []
 
@@ -1793,12 +1801,12 @@ def _primary_state_reference(prim):
 @expression.register(ogAST.ExprDiv)
 @expression.register(ogAST.ExprMod)
 @expression.register(ogAST.ExprRem)
-def _basic_operators(expr):
+def _basic_operators(expr, **kwargs):
     ''' Expressions with two sides '''
     code, local_decl = [], []
 
-    left_stmts,  left_str,  left_local  = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts,  left_str,  left_local  = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
 #   print '\nBINARY EXPRESSION:', expr.inputString, type_name(find_basic_type(expr.exprType)),
 #   print "Left type = ", type_name(find_basic_type (expr.left.exprType)),
@@ -1850,9 +1858,9 @@ def _basic_operators(expr):
 
 @expression.register(ogAST.ExprEq)
 @expression.register(ogAST.ExprNeq)
-def _equality(expr):
-    code,        left_str,  local_decl  = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+def _equality(expr, **kwargs):
+    code,        left_str,  local_decl  = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     code.extend(right_stmts)
     local_decl.extend(right_local)
@@ -1893,12 +1901,12 @@ def _equality(expr):
 
 
 @expression.register(ogAST.ExprAssign)
-def _assign_expression(expr):
+def _assign_expression(expr, **kwargs):
     ''' Assignment: almost the same a basic operators, except for strings '''
     code, local_decl = [], []
     strings = []
     left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     # If left side is a string/seqOf and right side is a substring, we must
     # assign the .Data and .Length parts properly
@@ -1973,11 +1981,11 @@ def _assign_expression(expr):
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
 @expression.register(ogAST.ExprImplies)
-def _bitwise_operators(expr):
+def _bitwise_operators(expr, **kwargs):
     ''' Logical operators '''
     code, local_decl = [], []
-    left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
     basic_type = find_basic_type(expr.exprType)
     if basic_type.kind != 'BooleanType':
         # Sequence of boolean or bit string
@@ -2021,14 +2029,14 @@ def _bitwise_operators(expr):
 
 
 @expression.register(ogAST.ExprNot)
-def _not_expression(expr):
+def _not_expression(expr, **kwargs):
     ''' Generate the code for a not expression '''
     code, local_decl = [], []
     if isinstance(expr.expr, ogAST.PrimSequenceOf):
         # Raw sequence of boolean (e.g. not "{true, false}") -> flip values
         for each in expr.expr.value:
             each.value[0] = 'true' if each.value[0] == 'false' else 'false'
-    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    expr_stmts, expr_str, expr_local = expression(expr.expr, readonly=1)
 
     bty_inner = find_basic_type(expr.expr.exprType)
     bty_outer = find_basic_type(expr.exprType)
@@ -2053,10 +2061,10 @@ def _not_expression(expr):
 
 
 @expression.register(ogAST.ExprNeg)
-def _neg_expression(expr):
+def _neg_expression(expr, **kwargs):
     ''' Generate the code for a negative expression '''
     code, local_decl = [], []
-    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    expr_stmts, expr_str, expr_local = expression(expr.expr, readonly=1)
     # Debug output:
 #   print "\nNEG Expression: ", expr.inputString,
 #   print " - Inner type: ", type_name (find_basic_type (expr.exprType))
@@ -2071,11 +2079,11 @@ def _neg_expression(expr):
 
 
 @expression.register(ogAST.ExprAppend)
-def _append(expr):
+def _append(expr, **kwargs):
     ''' Generate code for the APPEND construct: a // b '''
     stmts, ada_string, local_decl = [], '', []
-    left_stmts,  left_str,  left_local  = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts,  left_str,  left_local  = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
     stmts.extend(left_stmts)
     stmts.extend(right_stmts)
     local_decl.extend(left_local)
@@ -2125,15 +2133,15 @@ def _append(expr):
 
 
 @expression.register(ogAST.ExprIn)
-def _expr_in(expr):
+def _expr_in(expr, **kwargs):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
     # Check if item is in a SEQUENCE OF
     # Temporary variable needed to hold the test result
     ada_string = 'tmp{}'.format(expr.tmpVar)
     stmts = []
     local_decl = ['{} : BOOLEAN := False;'.format(ada_string)]
-    left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
     stmts.extend(left_stmts)
     stmts.extend(right_stmts)
     local_decl.extend(left_local)
@@ -2160,7 +2168,7 @@ def _expr_in(expr):
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
-def _enumerated_value(primary):
+def _enumerated_value(primary, **kwargs):
     ''' Generate code for an enumerated value '''
     enumerant = primary.value[0].replace('_', '-').lower()
     basic = find_basic_type(primary.exprType)
@@ -2173,7 +2181,7 @@ def _enumerated_value(primary):
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
-def _choice_determinant(primary):
+def _choice_determinant(primary, **kwargs):
     ''' Generate code for a choice determinant (enumerated) '''
     enumerant = primary.value[0].replace('_', '-').lower()
     for each in primary.exprType.EnumValues:
@@ -2185,7 +2193,7 @@ def _choice_determinant(primary):
 
 @expression.register(ogAST.PrimInteger)
 @expression.register(ogAST.PrimReal)
-def _integer(primary):
+def _integer(primary, **kwargs):
     ''' Generate code for a raw numerical value  '''
     if float(primary.value[0]) < 0:
         # Put brackets around negative integers for maintaining
@@ -2197,28 +2205,28 @@ def _integer(primary):
 
 
 @expression.register(ogAST.PrimBoolean)
-def _boolean(primary):
+def _boolean(primary, **kwargs):
     ''' Generate code for a raw boolean value  '''
     ada_string = primary.value[0]
     return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimNull)
-def _boolean(primary):
+def _boolean(primary, **kwargs):
     ''' Generate code for a raw null value  '''
     ada_string = '0'
     return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimEmptyString)
-def _empty_string(primary):
+def _empty_string(primary, **kwargs):
     ''' Generate code for an empty SEQUENCE OF: {} '''
     ada_string = u'{}_Init'.format(type_name(primary.exprType))
     return [], unicode(ada_string), []
 
 
 @expression.register(ogAST.PrimStringLiteral)
-def _string_literal(primary):
+def _string_literal(primary, **kwargs):
     ''' Generate code for a string (Octet String) '''
     basic_type = find_basic_type(primary.exprType)
     # If user put a literal string to fill an Octet string,
@@ -2231,20 +2239,20 @@ def _string_literal(primary):
 
 
 @expression.register(ogAST.PrimConstant)
-def _constant(primary):
+def _constant(primary, **kwargs):
     ''' Generate code for a reference to an ASN.1 constant '''
     return [], unicode(primary.constant_c_name), []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
-def _mantissa_base_exp(primary):
+def _mantissa_base_exp(primary, **kwargs):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
     # TODO
     return [], u'', []
 
 
 @expression.register(ogAST.PrimConditional)
-def _conditional(cond):
+def _conditional(cond, **kwargs):
     ''' Return string and statements for conditional expressions '''
     stmts = []
 
@@ -2263,12 +2271,14 @@ def _conditional(cond):
 
     local_decl = ['tmp{idx} : {tmpType};'.format(idx=cond.value['tmpVar'],
                                                  tmpType=tmp_type)]
-    if_stmts, if_str, if_local = expression(cond.value['if'])
+    if_stmts, if_str, if_local = expression(cond.value['if'], readonly=1)
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
     if not tmp_type.startswith('String'):
-        then_stmts, then_str, then_local = expression(cond.value['then'])
-        else_stmts, else_str, else_local = expression(cond.value['else'])
+        then_stmts, then_str, then_local = expression(cond.value['then'],
+                                                      readonly=1)
+        else_stmts, else_str, else_local = expression(cond.value['else'],
+                                                      readonly=1)
 #       print "\nCONDITIONAL :", cond.inputString, tmp_type,
 #       print "THEN TYPE:", type_name(find_basic_type(cond.value['then'].exprType)),
 #       print "ELSE TYPE:", type_name(find_basic_type(cond.value['else'].exprType))
@@ -2331,7 +2341,7 @@ def _conditional(cond):
 
 
 @expression.register(ogAST.PrimSequence)
-def _sequence(seq):
+def _sequence(seq, **kwargs):
     ''' Return Ada string for an ASN.1 SEQUENCE '''
     stmts, local_decl = [], []
     try:
@@ -2356,7 +2366,7 @@ def _sequence(seq):
                 elem_spec = type_children[each]
                 break
         elem_specty = elem_spec.type
-        value_stmts, value_str, local_var = expression(value)
+        value_stmts, value_str, local_var = expression(value, readonly=1)
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             value_str = array_content(value, value_str,
                                       find_basic_type(elem_specty))
@@ -2395,7 +2405,7 @@ def _sequence(seq):
 
 
 @expression.register(ogAST.PrimSequenceOf)
-def _sequence_of(seqof):
+def _sequence_of(seqof, **kwargs):
     ''' Return Ada string for an ASN.1 SEQUENCE OF '''
     stmts, local_decl = [], []
     seqof_ty = seqof.exprType
@@ -2411,7 +2421,8 @@ def _sequence_of(seqof):
             asn_type = find_basic_type(sortref)
     tab = []
     for i in xrange(len(seqof.value)):
-        item_stmts, item_str, local_var = expression(seqof.value[i])
+        item_stmts, item_str, local_var = expression(seqof.value[i],
+                                                     readonly=1)
         if isinstance(seqof.value[i],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             item_str = array_content(seqof.value[i], item_str, asn_type or
@@ -2424,9 +2435,10 @@ def _sequence_of(seqof):
 
 
 @expression.register(ogAST.PrimChoiceItem)
-def _choiceitem(choice):
+def _choiceitem(choice, **kwargs):
     ''' Return the Ada code for a CHOICE expression '''
-    stmts, choice_str, local_decl = expression(choice.value['value'])
+    stmts, choice_str, local_decl = expression(choice.value['value'],
+                                               readonly=1)
     if isinstance(choice.value['value'], (ogAST.PrimSequenceOf,
                                           ogAST.PrimStringLiteral)):
         choice_str = array_content(choice.value['value'], choice_str,
@@ -2493,7 +2505,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
                           .format(idx=dec.tmpVar,
                                   actType=actual_type))
 
-    q_stmts, q_str, q_decl = expression(dec.question)
+    q_stmts, q_str, q_decl = expression(dec.question, readonly=1)
 
     # Add code-to-model traceability
     code.extend(traceability(dec))
@@ -2507,7 +2519,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
         code.extend(traceability(a))
 
         if a.kind in ('open_range', 'constant'):
-            ans_stmts, ans_str, ans_decl = expression(a.constant)
+            ans_stmts, ans_str, ans_decl = expression(a.constant, readonly=1)
             code.extend(ans_stmts)
             local_decl.extend(ans_decl)
             if not basic:
@@ -2541,8 +2553,10 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
             sep = 'elsif '
 
         elif a.kind == 'closed_range':
-            cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0])
-            cl1_stmts, cl1_str, cl1_decl = expression(a.closedRange[1])
+            cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0],
+                                                      readonly=1)
+            cl1_stmts, cl1_str, cl1_decl = expression(a.closedRange[1],
+                                                      readonly=1)
             code.extend(cl0_stmts)
             local_decl.extend(cl0_decl)
             code.extend(cl1_stmts)
@@ -2691,8 +2705,9 @@ def _transition(tr, **kwargs):
                     code.append(u'if {} then'.format(' and '.join(conds)))
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
-                        stmts, string, local = expression(
-                                                    tr.terminator.return_expr)
+                        stmts, string, local = \
+                                expression(tr.terminator.return_expr,
+                                           readonly=1)
                         code.extend(stmts)
                         local_decl.extend(local)
                     code.append(u'return{};'
@@ -2803,7 +2818,7 @@ def _inner_procedure(proc, **kwargs):
             if def_value:
                 # Expression must be a ground expression, i.e. must not
                 # require temporary variable to store computed result
-                dst, dstr, dlocal = expression(def_value)
+                dst, dstr, dlocal = expression(def_value, readonly=1)
                 varbty = find_basic_type(var_type)
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
@@ -2879,7 +2894,7 @@ def array_content(prim, values, asnty):
         df = '0'
     else:
         # Find a default value for the "others" field in case of SEQOF
-        _, df, _ = expression(prim.value[0])
+        _, df, _ = expression(prim.value[0], readonly=1)
         if isinstance(prim.value[0], (ogAST.PrimSequenceOf,
                                       ogAST.PrimStringLiteral)):
             df = array_content(prim.value[0], df, asnty.type)
@@ -2910,7 +2925,7 @@ def append_size(append):
                 result += bty.Min
             else:
                 # Must be a variable of type SEQOF
-                _, inner, _ = expression(each)
+                _, inner, _ = expression(each, readonly=1)
                 result += u'{}.Length'.format(inner)
     return result
 
