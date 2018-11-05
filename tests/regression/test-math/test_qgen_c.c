@@ -15,7 +15,7 @@ void expressions_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
 
 int main() {
     expressions_initStates();
-    expressions_run();
+    expressions_PI_run();
     return 0;
 }
 

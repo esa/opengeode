@@ -24,3 +24,6 @@
 */test_ada
 */test_c
 */*.gcda
+**/*.log
+**actual
+*/*.xml

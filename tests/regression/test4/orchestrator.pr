@@ -1,38 +1,8 @@
 /* CIF PROCESS (148, 150), (150, 75) */
 process orchestrator;
-    /* CIF TEXT (2022, 238), (276, 283) */
-    -- You can manually declare an
-    -- external procedure:
-    
-    -- procedure tototo;
-    -- fpar titi MyInteger;
-    -- external;
-    
-    -- In that case you are responsible for
-    -- providing the body code.
-    
-    -- toto is used to check that
-    -- the FPAR in myproc that also
-    -- has a param called toto does
-    -- not conflict.
-    dcl toto MySeqOf;
-    /* CIF ENDTEXT */
-    /* CIF TEXT (1974, 690), (366, 195) */
-    -- This demo shows the main features
-    -- and syntax currently supported by
-    -- OpenGEODE
-    
-    -- The description of the signal and
-    -- external procedures is in the file called
-    -- "system_structure.pr".
-    
-    -- To open this model you must load both
-    -- files from the command line:
-    -- $ opengeode system_structure.pr orchestrator.pr
-    /* CIF ENDTEXT */
     /* CIF TEXT (2350, 703), (319, 392) */
     -- Some test data
-    DCL  a MyInteger;
+    DCL  a, a2 MyInteger;
     
     DCL b MySeqOf;
     
@@ -55,6 +25,36 @@ process orchestrator;
     DCL myCmd MyInteger;
     
     dcl deep DeepSeq;
+    /* CIF ENDTEXT */
+    /* CIF TEXT (1974, 690), (366, 195) */
+    -- This demo shows the main features
+    -- and syntax currently supported by
+    -- OpenGEODE
+    
+    -- The description of the signal and
+    -- external procedures is in the file called
+    -- "system_structure.pr".
+    
+    -- To open this model you must load both
+    -- files from the command line:
+    -- $ opengeode system_structure.pr orchestrator.pr
+    /* CIF ENDTEXT */
+    /* CIF TEXT (2022, 238), (276, 283) */
+    -- You can manually declare an
+    -- external procedure:
+    
+    -- procedure tototo;
+    -- fpar titi MyInteger;
+    -- external;
+    
+    -- In that case you are responsible for
+    -- providing the body code.
+    
+    -- toto is used to check that
+    -- the FPAR in myproc that also
+    -- has a param called toto does
+    -- not conflict.
+    dcl toto MySeqOf;
     /* CIF ENDTEXT */
     /* CIF procedure (1397, 181), (91, 50) */
     procedure myproc;
@@ -118,7 +118,7 @@ deep!a := { b { c 4, d e:TRUE } },
 -- deep!a!b!d!e := FALSE
 -- Use the following syntax instead:
 deep!a!b!d := e:FALSE
-        /* CIF comment (1740, 758), (190, 68) */
+        /* CIF comment (1740, 758), (190, 72) */
         comment 'This is a multiline
 comment - should
 we reflected as so
@@ -164,6 +164,22 @@ in the generated code';
         NEXTSTATE Stopped;
     /* CIF End Label */
     endconnection;
+    /* CIF state (1073, 613), (100, 50) */
+    state Running;
+        /* CIF input (1073, 683), (100, 50) */
+        input pulse;
+            /* CIF task (1026, 748), (193, 50) */
+            task a := (a+1) mod 10;
+            /* CIF PROCEDURECALL (1057, 813), (132, 50) */
+            call writeln
+('Calling GNC');
+            /* CIF PROCEDURECALL (1044, 878), (158, 50) */
+            call computeGNC(a, a2);
+            /* CIF output (1049, 943), (148, 50) */
+            output housekeeping(a2);
+            /* CIF NEXTSTATE (1073, 1008), (100, 50) */
+            NEXTSTATE Running;
+    endstate;
     /* CIF state (119, 1283), (100, 50) */
     state Running;
         /* CIF input (130, 1353), (120, 50) */
@@ -212,21 +228,5 @@ processed. Must be "pulse"';
             NEXTSTATE -
             /* CIF comment (562, 970), (185, 50) */
             comment 'Stay in the same state';
-    endstate;
-    /* CIF state (1073, 613), (100, 50) */
-    state Running;
-        /* CIF input (1073, 683), (100, 50) */
-        input pulse;
-            /* CIF task (1026, 748), (193, 50) */
-            task a := (a+1) mod 10;
-            /* CIF PROCEDURECALL (1057, 813), (132, 50) */
-            call writeln
-('Calling GNC');
-            /* CIF PROCEDURECALL (1044, 878), (158, 50) */
-            call computeGNC(a, a);
-            /* CIF output (1049, 943), (148, 50) */
-            output housekeeping(a);
-            /* CIF NEXTSTATE (1073, 1008), (100, 50) */
-            NEXTSTATE Running;
     endstate;
 endprocess orchestrator;

@@ -1,0 +1,31 @@
+ASN1SCC:=$(shell which asn1.exe)
+ASN2DATAMODEL:=asn2dataModel
+GRAMMAR := dataview-uniq
+BASEGRAMMAR := dataview-uniq
+BDIR:= .
+OBJ     := $(BDIR)/$(GRAMMAR).o $(BDIR)/asn1crt.o $(BDIR)/real.o $(BDIR)/acn.o $(BDIR)/$(BASEGRAMMAR)_getset.o
+
+all:    $(BDIR)/$(BASEGRAMMAR)_getset.so $(BDIR)/DV.py
+
+$(BDIR)/$(GRAMMAR)_getset.c:       $(GRAMMAR).asn
+	mkdir -p $(BDIR)
+	$(ASN2DATAMODEL) -toPython -o $(BDIR) $<
+
+$(BDIR)/asn1crt.c $(BDIR)/$(GRAMMAR).c $(BDIR)/real.c $(BDIR)/acn.c $(BDIR)/$(GRAMMAR).h $(BDIR)/asn1crt.h:       $(GRAMMAR).asn
+	if [ ! -f "$(GRAMMAR).acn" ] ; then mono $(ASN1SCC) -ACND -o $(BDIR) $< ; fi
+	mono $(ASN1SCC) -ACN -c -uPER -equal -wordSize 8 -o $(BDIR) $< $(GRAMMAR).acn
+
+$(BDIR)/DV.py:       $(GRAMMAR).asn
+	grep 'REQUIRED_BYTES_FOR_.*ENCODING' $(BDIR)/$(GRAMMAR).h | awk '{print $$2 " = " $$3}' > $@
+	python learn_CHOICE_enums.py dataview-uniq >> $@
+
+$(BDIR)/%.o:       $(BDIR)/%.c
+	gcc -g -fPIC -c `python-config --includes` -o $@ $<
+
+$(BDIR)/$(BASEGRAMMAR)_getset.so:	${OBJ}
+	gcc -g -fPIC -shared `python-config --ldflags` -o $@ $^
+
+clean:
+	rm -f $(BDIR)/asn1crt.?  $(BDIR)/real.?  $(BDIR)/$(GRAMMAR).?  $(BDIR)/acn.?
+	rm -f $(BDIR)/DV.py $(BDIR)/*.pyc $(BDIR)/$(BASEGRAMMAR)_getset.? $(BDIR)/$(BASEGRAMMAR)_getset.so
+	rm -f $(BDIR)/$(GRAMMAR)_asn.py

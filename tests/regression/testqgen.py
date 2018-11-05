@@ -38,81 +38,6 @@ def init_logging(options):
     handler_console = logging.StreamHandler()
     handler_console.setFormatter(terminal_formatter)
     LOG.addHandler(handler_console)
-    
-def diff(expected, actual, msg=None, count=1, case_sensitive=True,
-         update=None, silent=False, directory=''):
-    """Compare EXPECTED and str2. If not equal, display a diff and raise an
-       error.
-    """
-    # try looking in self.directory
-    full_expected = os.path.join(directory, expected)
-
-    if isinstance(expected, file):
-        str1 = expected.read()
-        frm = expected.name
-    elif os.path.isfile(expected):
-        str1 = file(expected).read()
-        frm = expected
-    elif os.path.isfile(full_expected):
-        expected = full_expected
-        str1 = file(expected).read()
-        frm = expected
-    elif update:
-        # Check if it's a valid file path, in which case use it. Because of
-        # --update, the file will be created and filled with the expected
-        # output further below.
-        try:
-            file(full_expected, 'w')
-            expected = full_expected
-            str1 = ''
-            frm = expected
-        except:
-            str1 = expected
-            frm = "Expected"
-    else:
-        str1 = expected
-        frm = "Expected"
-
-    if os.path.isfile(actual):
-            actual = file(actual).read()
-
-    string.replace(actual, "\r", "")
-
-    expected = str1 * count
-
-    diff = colored_unified_diff(
-        expected, actual, fromfile=frm, tofile="Output")
-
-    if diff:
-        if msg:
-            msg = msg + "\n"
-        else:
-            msg = ""
-
-        msg = msg + "------- EXPECTED: ----\n" \
-                + expected + "\n" \
-                + "------- ACTUAL: --------\n" + actual + "\n"
-
-        if update:
-            # If updating baselines, do not stop at the first difference
-
-            if frm != "Expected":
-                f = file(frm, "w")
-                f.close()
-
-        else:
-            d = re.sub("\n", "$\n", "\n".join(diff))
-            if not silent:
-                unittest.TestCase.fail(msg + "\n" + d)
-            else:
-                return msg + "\n" + d
-
-def colored_unified_diff(a, b, fromfile='', tofile='',
-                         fromfiledate='', tofiledate='', n=3, lineterm='\n',
-                         onequal=None, onreplaceA=None, onreplaceB=None):
-
-    for line in difflib.unified_diff(a, b, fromfile, tofile):
-        yield line
 
 def main():
     start = time.time()
@@ -132,16 +57,12 @@ def main():
 def run_test(op):
     ''' Call SDL importer with the required arguments '''
 
-    qgen_dir = os.environ.get('QGEN_REPO_ROOT')
-    sdl_importer_proj_name = "ee.ibk.sdl.importer"
     sdl_importer_launcher = "qgen-sdl"
-    sdl_importer_loc = "gms/eclipse/" + sdl_importer_proj_name + "/target" + \
-                    "/sdl-importer/lib/" + sdl_importer_launcher
-    sdl_importer_path = os.path.join (qgen_dir,sdl_importer_loc)
 
     gentypes = False
     lang=''
     asnlang=''
+    asn_path=''
 
     if op.rule == 'test-qgen-parse':
         lang = 'xmi_ada'
@@ -164,16 +85,16 @@ def run_test(op):
 
     if gentypes:
         outfolder = 'generated_gt_' + lang
-        cmd = [sdl_importer_path, op.root_model,
+        cmd = [sdl_importer_launcher,
                '--language', lang, '--generate-types',
                '--output', outfolder,
-               '--type-prefix', 'asn1QGen']
+               '--type-prefix', 'asn1QGen', op.root_model]
     else:
         outfolder = 'generated_' + lang
-        cmd = [sdl_importer_path, op.root_model,
+        cmd = [sdl_importer_launcher,
                '--language', lang,
                '--output', outfolder,
-               '--type-prefix', 'asn1Scc']
+               '--type-prefix', 'asn1Scc', op.root_model]
 
     if os.path.exists(outfolder):
             shutil.rmtree(outfolder, ignore_errors=True)
@@ -189,26 +110,36 @@ def run_test(op):
 
     if not gentypes:
         asn_files = glob.glob ('*.asn')
-        asn_path = asn_files[0] if asn_files else None
-        if asn_path and os.path.isfile(asn_path):
+        if asn_files:
             asn_call = ['asn1.exe', "-equal", '-o', outfolder, asnlang,
-                '--type-prefix', 'asn1Scc', asn_path]
+                '--type-prefix', 'asn1Scc'] + asn_files
+
             p0 = subprocess.Popen(asn_call,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE)
             stdout, stderr = p0.communicate()
             errcode = p0.wait()
+
             if errcode != 0:
                 return (errcode, stdout, stderr, op.root_model, op.rule)
 
+            if op.rule == 'test-qgen-ada' and os.path.isfile ("test_qgen_ada.c"):
+                asn_call = ['asn1.exe', "-equal", '-o', outfolder, "-c",
+                '--type-prefix', 'asn1Scc'] + asn_files
+                p0 = subprocess.Popen(asn_call,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE)
+                stdout, stderr = p0.communicate()
+                errcode = p0.wait()
+                if errcode != 0:
+                    return (errcode, stdout, stderr, op.root_model, op.rule)
+
     if lang in ('ada', 'c'):
-        p2 = _compile (lang, outfolder)
-        stdout, stderr = p2.communicate()
-        errcode = p2.wait()
+        errcode, stdout, stderr = _compile (lang, outfolder, gentypes)
 
     return (errcode, stdout, stderr, op.root_model, op.rule)
 
-def _run_gprbuild(gprfile):
+def _run_gprbuild(gprfile, exec_file, lang):
     args = ["gprbuild",
             "-p",   # Create obj dirs
             "-j1",  # when tests run in parallel, CPUs are already
@@ -219,16 +150,65 @@ def _run_gprbuild(gprfile):
 
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                    stderr=subprocess.STDOUT)
-    return proc
+    stdout, stderr = proc.communicate()
+    errcode = proc.wait()
+    if errcode != 0:
+        return (errcode, stdout, stderr)
 
-def _compile (lang, src_path):
-    source_dirs = '"."'
+    if os.path.isfile (exec_file):
+        actual = open("actual","w+")
+        p = subprocess.Popen (exec_file, stdout=actual,
+                   stderr=subprocess.STDOUT)
+        stdout, stderr = p.communicate()
+        errcode = p.wait()
+
+        if errcode != 0:
+            return (errcode, stdout, stderr)
+
+        if lang == "c" and os.path.isfile ("expected_c"):
+            errcode = os.system ("diff expected_c actual")
+        else:
+            if os.path.isfile ("expected"):
+                errcode = os.system ("diff expected actual")
+
+        return (errcode, stdout, stderr)
+    
+    return (errcode, stdout, stderr)
+
+def _compile (lang, src_path, gentypes):
+
+    if gentypes:
+        c_executable = "test_qgen_gt_c"
+        ada_executable = "test_qgen_gt_ada"
+    else:
+        c_executable = "test_qgen_c"
+        ada_executable = "test_qgen_ada"
+    c_main = c_executable + ".c"
+    ada_main = ada_executable + ".c"
     main_file = ""
+    ada_exe_path = ""
+    c_exe_path = ""
+    do_ada = False
+    do_c = False
+
+    if lang == "c":
+        do_c = True
+        if os.path.isfile (c_main):
+            main_file = """for main use ("%s");"""% c_main
+            shutil.copy (c_main, src_path)
+            c_exe_path = os.path.join(src_path, "exec", c_executable)
+    
+    if lang == "ada":
+        do_ada = True
+        if os.path.isfile (ada_main):
+            main_file = """for main use ("%s");"""% ada_main
+            shutil.copy (ada_main, src_path)
+            ada_exe_path = os.path.join(src_path, "exec", ada_executable)
+
+    source_dirs = '"."'
     compiler_pkg = ""
     linker_pkg = ""
     binder_pkg = ""
-    do_c = lang == "c"
-    do_ada = lang == "ada"
     c_prj = ""
     ada_prj = ""
 
@@ -261,7 +241,7 @@ project Prj_Ada is
 end Prj_Ada;""")
     ada_prj = template_ada.substitute(
         source_dirs=source_dirs,
-        main=main_file.format("main.adb"),
+        main=main_file,
         lang=languages.format('"Ada"'),
         compiler_pkg=compiler_pkg.format(
             "Ada", ', "-gnata"%s' % flags),
@@ -283,7 +263,7 @@ end Prj_Ada;""")
 end Prj_C;""")
     c_prj = template_c.substitute(
         source_dirs=source_dirs,
-        main=main_file.format("main.c"), lang=languages.format('"C"'),
+        main=main_file, lang=languages.format('"C"'),
         compiler_pkg=compiler_pkg.format("C", ', "-std=%s"%s' %
                                          (c_std, flags)),
         linker_pkg=linker_pkg.format("C"),
@@ -293,9 +273,9 @@ end Prj_C;""")
         f.write(c_prj)
 
     if do_ada:
-        return _run_gprbuild(gpr_filename_ada)
+        return _run_gprbuild(gpr_filename_ada, ada_exe_path, lang)
     if do_c:
-        return _run_gprbuild(gpr_filename_c)
+        return _run_gprbuild(gpr_filename_c, c_exe_path, lang)
 
 if __name__ == '__main__':
     ret = main()

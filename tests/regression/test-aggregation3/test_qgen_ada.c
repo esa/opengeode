@@ -19,11 +19,11 @@ int main()
 {
     adainit();
     challenge_initStates();
-    challenge_run();
-    challenge_run();
+    challenge_PI_run();
+    challenge_PI_run();
     //printf("Internal state: %lld\n", l_result);
-    challenge_any_one();
-    challenge_run();
+    challenge_PI_any_one();
+    challenge_PI_run();
     
     return 0;
 }

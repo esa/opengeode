@@ -1,0 +1,12 @@
+TASTE-BasicTypes DEFINITIONS ::= BEGIN
+    T-UInt32[]
+    TASTE-Peek-id[]
+    TASTE-Peek-id-list[]
+    FixedIntList[]
+    MyEnum[]
+    MyChoice[]
+    MySeq[]
+    MySetOf[]
+    MySeqOf[]
+    MySimpleSeq[]
+END
