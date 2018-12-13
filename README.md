@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.18 (12/2018)
+    - Generate code in the current directory, not in the one of the .pr
+
 2.0.17 (09/2018)
     - Fix type checking of the "power" operator
 

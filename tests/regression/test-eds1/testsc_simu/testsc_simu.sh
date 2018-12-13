@@ -1,7 +1,7 @@
 #!/bin/bash -e
 rm -rf testsc_simu
 mkdir -p testsc_simu
-cp /mnt/s1/home/andres/esa/taste/opengeode/tests/regression/test-eds1/testsc_simu/testsc.pr dataview.asn testsc_simu
+cp /home/taste/opengeode-github/tests/regression/test-eds1/testsc_simu/testsc.pr dataview.asn testsc_simu
 cd testsc_simu
 opengeode testsc.pr --shared
 cat dataview.asn >> dataview-uniq.asn 

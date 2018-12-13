@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.17'
+__version__ = '2.0.18'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2046,6 +2046,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def load_file(self, files):
         ''' Parse a PR file and render it on the scene '''
+        cwd = os.getcwd()
         dir_pool = set(os.path.dirname(each) for each in files)
         if len(dir_pool) != 1:
             LOG.warning('Files are spread in several directories - '
@@ -2107,6 +2108,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
         self.update_datadict.emit()
+        os.chdir(cwd)
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -2823,6 +2825,7 @@ def parse(files):
     ''' Parse files '''
     if not files:
         raise IOError('No input .pr files')
+    cwd = os.getcwd()
     LOG.info('Checking ' + str(files))
     # move to the directory of the .pr files (needed for ASN.1 parsing)
     path = os.path.dirname(files[0])
@@ -2836,6 +2839,7 @@ def parse(files):
         LOG.warning(warning[0])
     for error in errors:
         LOG.error(error[0])
+    os.chdir (cwd)
 
     return ast, warnings, errors
 
