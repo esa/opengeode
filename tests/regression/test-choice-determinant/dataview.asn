@@ -1,0 +1,9 @@
+DV DEFINITIONS ::=
+BEGIN
+ MyChoice ::= CHOICE {
+     foo BOOLEAN,
+     bar INTEGER (0 .. 255)
+ }
+
+ MyEnum ::= ENUMERATED { foo, bar }
+END

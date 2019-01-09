@@ -1,0 +1,44 @@
+system toto;
+    /* CIF TEXT (810, 226), (304, 292) */
+    -- Text area for declarations and comments
+    use dataview comment 'dataview.asn';
+    
+    signal hello;
+    /* CIF ENDTEXT */
+    channel c
+        from env to toto with hello;
+    endchannel;
+    block toto;
+        signalroute r
+            from env to toto with hello;
+        connect c and r;
+        /* CIF PROCESS (360, 132), (231, 231) */
+        process toto;
+            /* CIF TEXT (693, 124), (394, 239) */
+            -- Model used to demonstrate how to work with enumerated
+            -- and choice determinants
+            
+            dcl val MyChoice,  det MyEnum;
+            /* CIF ENDTEXT */
+            /* CIF START (240, 89), (70, 35) */
+            START;
+                /* CIF decision (222, 144), (106, 50) */
+                decision present (val);
+                    /* CIF ANSWER (195, 214), (70, 24) */
+                    (foo):
+                    /* CIF ANSWER (285, 214), (70, 24) */
+                    (bar):
+                enddecision;
+                /* CIF decision (222, 253), (106, 50) */
+                decision present (val);
+                    /* CIF ANSWER (241, 323), (70, 24) */
+                    else:
+                enddecision;
+                /* CIF NEXTSTATE (243, 362), (64, 35) */
+                NEXTSTATE hop;
+            /* CIF state (528, 360), (70, 35) */
+            state hop;
+            endstate;
+        endprocess toto;
+    endblock;
+endsystem;

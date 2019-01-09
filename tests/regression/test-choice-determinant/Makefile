@@ -1,0 +1,48 @@
+include ../shared.mk
+
+ROOT_MODEL=toto.pr
+
+all: test-ada test-llvm
+
+edit:
+	$(OPENGEODE) toto.pr
+
+test-parse:
+	$(OPENGEODE) toto.pr --check
+
+test-qgen-parse:
+	$(TESTQGEN_PARSE) $(ROOT_MODEL)
+
+test-qgen-ada:
+	$(TESTQGEN_ADA) $(ROOT_MODEL)
+
+test-qgen-c:
+	$(TESTQGEN_C) $(ROOT_MODEL)
+
+test-qgen-gt-ada:
+	$(TESTQGEN_GT_ADA) $(ROOT_MODEL)
+
+test-qgen-gt-c:
+	$(TESTQGEN_GT_C) $(ROOT_MODEL)
+
+test-ada: 
+	mkdir -p src && cd src && ../$(OPENGEODE) ../toto.pr --toAda && \
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal ../dataview.asn 
+	mkdir -p obj && cd obj && gnat make -O$(O) ../src/toto.adb
+
+test-c: 
+	$(OPENGEODE) toto.pr --toC
+	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn 
+	$(CC) -O$(O) -c *.c
+
+
+test-llvm:
+	$(OPENGEODE) toto.pr --llvm -O$(O)
+	$(LLC) *.ll
+	$(CC) -O$(O) -c *.s
+
+
+coverage:
+	coverage run -p $(OPENGEODE) toto.pr --toAda
+
+.PHONY: all edit test-parse test-ada test-llvm coverage
