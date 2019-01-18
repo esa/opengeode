@@ -1591,6 +1591,19 @@ def _prim_call(prim, **kwargs):
         local_decl.extend(rec_decl)
         ada_string += '({rec}.exist.{field} = 1)'.format(rec   = rec_str,
                                                          field = field)
+    elif ident in ('to_selector', 'to_enum'):
+        variable, target_type = params
+        var_typename = type_name (variable.exprType)
+        var_stmts, var_str, var_decl = expression (variable, readonly=1)
+        stmts.extend(var_stmts)
+        local_decl.extend(var_decl)
+        sort_name = 'asn1Scc' + target_type.value[0].replace('-', '_')
+        if ident == 'to_selector':
+            sort_name += '_selection'
+        ada_string += "{sort}'Val ({var_type}'Pos ({var_str}))"\
+                .format(sort=sort_name,
+                        var_type=var_typename,
+                        var_str=var_str)
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
