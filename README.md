@@ -138,6 +138,8 @@ Changelog
     - for CHOICE types variables can be declared with enumerated type
       corresponding to the choice distriminant. CHOICE type is suffixed by
       "-selection", and the "present" operator now returns type type
+    - If there is an enumerated type with the exact same content as the list
+      of CHOICE determinants, cast is possible using to_selector and to_enum
 
 2.0.18 (12/2018)
     - Generate code in the current directory, not in the one of the .pr
