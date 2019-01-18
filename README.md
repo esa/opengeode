@@ -134,6 +134,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.19 (01/2019)
+    - for CHOICE types variables can be declared with enumerated type
+      corresponding to the choice distriminant. CHOICE type is suffixed by
+      "-selection", and the "present" operator now returns type type
 
 2.0.18 (12/2018)
     - Generate code in the current directory, not in the one of the .pr
