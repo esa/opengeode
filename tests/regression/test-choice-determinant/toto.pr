@@ -24,19 +24,30 @@ system toto;
             /* CIF ENDTEXT */
             /* CIF START (240, 89), (70, 35) */
             START;
-                /* CIF decision (222, 144), (106, 50) */
+                /* CIF task (160, 144), (229, 35) */
+                task choice_selectors := present(val);
+                /* CIF decision (222, 194), (106, 50) */
                 decision present (val);
-                    /* CIF ANSWER (195, 214), (70, 24) */
+                    /* CIF ANSWER (195, 264), (70, 24) */
                     (foo):
-                    /* CIF ANSWER (285, 214), (70, 24) */
+                    /* CIF ANSWER (285, 264), (70, 24) */
                     (bar):
                 enddecision;
-                /* CIF decision (222, 253), (106, 50) */
+                /* CIF decision (222, 303), (106, 50) */
                 decision present (val);
-                    /* CIF ANSWER (241, 323), (70, 24) */
+                    /* CIF ANSWER (166, 373), (129, 24) */
+                    (choice_selectors):
+                    /* CIF ANSWER (315, 373), (70, 24) */
                     else:
                 enddecision;
-                /* CIF NEXTSTATE (243, 362), (64, 35) */
+                /* CIF decision (210, 412), (129, 50) */
+                decision choice_selectors;
+                    /* CIF ANSWER (223, 482), (103, 24) */
+                    (present(val)):
+                    /* CIF ANSWER (346, 482), (70, 24) */
+                    else:
+                enddecision;
+                /* CIF NEXTSTATE (243, 521), (64, 35) */
                 NEXTSTATE hop;
             /* CIF state (528, 360), (70, 35) */
             state hop;

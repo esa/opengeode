@@ -691,11 +691,15 @@ def check_call(name, params, context):
         })
 
     elif name == 'present':
-        return type('Present', (object,), {
-            'kind': 'ChoiceEnumeratedType',
-            'EnumValues': param_btys[0].Children
-        })
+        # now there is a proper type defined for choice selectors
+        sort = type_name (p.exprType) + "-selection"
+        return types()[sort].type
 
+#       return type('Present', (object,), {
+#           'kind': 'ChoiceEnumeratedType',
+#           'EnumValues': param_btys[0].Children
+#       })
+#
     elif name == 'round':
         return type('Round', (REAL,), {
             'Min': str(round(float(param_btys[0].Min))),
@@ -2774,7 +2778,7 @@ def syntype(root, ta_ast, context):
         "kind": reftype + "Type"
     })
 
-    types[str(newtypename)] = newtype
+    types()[str(newtypename)] = newtype
     LOG.debug("Found new SYNTYPE " + newtypename)
     return errors, warnings
 
@@ -2794,19 +2798,19 @@ def newtype(root, ta_ast, context):
     if len(root.children) < 2:
         warnings.append('Use newtype definitions for arrays and records only')
         newtype.kind = "BooleanType"
-        types[str(newtypename)] = newtype
+        types()[str(newtypename)] = newtype
         LOG.debug("Boolean newtype " + newtypename)
     elif (root.getChild(1).type == lexer.ARRAY):
         newtype.kind = "SequenceOfType"
         newtype.type = get_array_type(root.getChild(1))
         newtype.Min = "Min"
         newtype.Max = "Max"
-        types[str(newtypename)] = newtype
+        types()[str(newtypename)] = newtype
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):
         newtype.kind = "SequenceType"
         newtype.Children = get_struct_children(root.getChild(1))
-        types[str(newtypename)] = newtype
+        types()[str(newtypename)] = newtype
         LOG.debug("Found new STRUCT type " + newtypename)
     else:
         warnings.append(
