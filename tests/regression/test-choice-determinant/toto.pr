@@ -53,9 +53,27 @@ system toto;
                 task choice_selectors := bar;
                 /* CIF task (113, 636), (324, 40) */
                 task choice_selectors := to_selector (det, MyChoice);
-                /* CIF task (124, 696), (302, 40) */
+                /* CIF PROCEDURECALL (120, 696), (309, 35) */
+                call writeln (choice_selectors, ' (should be FOO)');
+                /* CIF task (233, 751), (83, 35) */
+                task det := bar;
+                /* CIF task (124, 801), (302, 40) */
                 task det := to_enum (choice_selectors, MyEnum);
-                /* CIF NEXTSTATE (243, 751), (64, 35) */
+                /* CIF PROCEDURECALL (120, 861), (309, 35) */
+                call writeln (det, ' (should be FOO)');
+                /* CIF task (233, 916), (83, 35) */
+                task det := bar;
+                /* CIF task (113, 971), (324, 40) */
+                task choice_selectors := to_selector (det, MyChoice);
+                /* CIF PROCEDURECALL (120, 1031), (309, 35) */
+                call writeln (choice_selectors, ' (should be BAR)');
+                /* CIF task (233, 1086), (83, 35) */
+                task det := foo;
+                /* CIF task (124, 1141), (302, 40) */
+                task det := to_enum (choice_selectors, MyEnum);
+                /* CIF PROCEDURECALL (120, 1201), (309, 35) */
+                call writeln (det, ' (should be BAR)');
+                /* CIF NEXTSTATE (243, 1251), (64, 35) */
                 NEXTSTATE hop;
             /* CIF state (528, 360), (70, 35) */
             state hop;
