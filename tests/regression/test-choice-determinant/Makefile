@@ -26,7 +26,7 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	mkdir -p src && cd src && ../$(OPENGEODE) ../toto.pr --toAda && \
+	mkdir -p src && cd src && ../$(OPENGEODE) ../toto.pr -g --toAda && \
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal ../dataview.asn 
 	mkdir -p obj && cd obj && gnat make -O$(O) ../src/toto.adb
 

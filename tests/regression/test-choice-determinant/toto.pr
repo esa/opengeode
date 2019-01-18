@@ -19,6 +19,8 @@ system toto;
             -- and choice determinants
             
             dcl val MyChoice,  det MyEnum;
+            
+            dcl choice_selectors MyChoice_selection := foo;
             /* CIF ENDTEXT */
             /* CIF START (240, 89), (70, 35) */
             START;

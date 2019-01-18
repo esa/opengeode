@@ -43,7 +43,7 @@ from sdl92Parser import sdl92Parser
 
 import samnmax
 import ogAST
-from Asn1scc import parse_asn1, ASN1
+from Asn1scc import parse_asn1, ASN1, create_choice_determinant_types
 
 LOG = logging.getLogger(__name__)
 
@@ -168,6 +168,9 @@ def set_global_DV(asn1_filenames):
                         rename_policy=rename_policy,
                         flags=[ASN1.AstOnly],
                         pretty_print=True)
+        # Create new types corresponding to CHOICE determinants as enum
+        choice_selectors = create_choice_determinant_types (DV)
+        DV.types.update(choice_selectors)
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
@@ -2771,7 +2774,7 @@ def syntype(root, ta_ast, context):
         "kind": reftype + "Type"
     })
 
-    DV.types[str(newtypename)] = newtype
+    types[str(newtypename)] = newtype
     LOG.debug("Found new SYNTYPE " + newtypename)
     return errors, warnings
 
@@ -2791,19 +2794,19 @@ def newtype(root, ta_ast, context):
     if len(root.children) < 2:
         warnings.append('Use newtype definitions for arrays and records only')
         newtype.kind = "BooleanType"
-        DV.types[str(newtypename)] = newtype
+        types[str(newtypename)] = newtype
         LOG.debug("Boolean newtype " + newtypename)
     elif (root.getChild(1).type == lexer.ARRAY):
         newtype.kind = "SequenceOfType"
         newtype.type = get_array_type(root.getChild(1))
         newtype.Min = "Min"
         newtype.Max = "Max"
-        DV.types[str(newtypename)] = newtype
+        types[str(newtypename)] = newtype
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):
         newtype.kind = "SequenceType"
         newtype.Children = get_struct_children(root.getChild(1))
-        DV.types[str(newtypename)] = newtype
+        types[str(newtypename)] = newtype
         LOG.debug("Found new STRUCT type " + newtypename)
     else:
         warnings.append(

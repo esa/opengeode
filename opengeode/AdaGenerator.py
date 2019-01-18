@@ -2175,7 +2175,9 @@ def _enumerated_value(primary, **kwargs):
     for each in basic.EnumValues:
         if each.lower() == enumerant:
             break
-    prefix = type_name(basic)
+    # no "asn1Scc" prefix if the enumerated is a choice selector
+    use_prefix = getattr(basic.EnumValues[each], "IsStandardEnum", True)
+    prefix = type_name(basic, use_prefix=use_prefix)
     ada_string = (prefix + basic.EnumValues[each].EnumID)
     return [], unicode(ada_string), []
 
@@ -2965,7 +2967,7 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind == 'StateEnumeratedType':
         return u''
     elif a_type.kind == 'EnumeratedType':
-        return u'asn1Scc'
+        return u'asn1Scc' if use_prefix else ''
     else:
         raise NotImplementedError('Type name for {}'.format(a_type.kind))
 

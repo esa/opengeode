@@ -4,7 +4,7 @@
 """
     Python API for the ASN1Scc compiler
 
-    Copyright (c) 2013-2018 European Space Agency
+    Copyright (c) 2013-2019 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -45,7 +45,7 @@ except ImportError:
     raise ImportError('Enum module not found. Run pip install --user enum34')
 
 
-__all__ = ['ASN1', 'parse_asn1']
+__all__ = ['ASN1', 'parse_asn1', 'create_choice_determinant_types']
 
 
 class ASN1(Enum):
@@ -178,6 +178,41 @@ def parse_asn1(*files, **options):
         ast.html = html_filepath
     return ast
 
+def create_choice_determinant_types(ast):
+    ''' Postprocess the AST to add extra types corresponding to the CHOICE
+    determinants. This allows the user to declare variables of these types,
+    for local storage and comparison purposes.
+    input: ast is the module generate by asn1scc. ast.types are the types 
+    returns the newly created types (does not modify input AST)
+    '''
+    new_sorts = {}
+    for each in (sort for sort in ast.types.viewvalues()
+                 if sort.type.kind == 'ChoiceType'):
+        new_sort = each.__name__ + '-selection'
+        if new_sort in ast.types:
+            continue
+        choices = {key : type (key, (object,), {
+            "IntValue": 0,
+            "Line": each.Line,
+            "CharPositionInLine": each.CharPositionInLine,
+            "EnumID": each.type.Children[key].EnumID,
+            "IsStandardEnum" : False
+            }) for key in each.type.Children.keys()
+        }
+        new_sorts[new_sort] = \
+                type(new_sort, (object,), {
+                    "Line": each.Line,
+                    "CharPositionInLine": each.CharPositionInLine,
+                    "type": type(new_sort + "_type", (object,), {
+                        "Line" : each.Line,
+                        "CharPositionInLine": each.CharPositionInLine,
+                        "kind": "EnumeratedType",
+                        "Extensible": "False",
+                        "ValuesAutoCalculated": "False",
+                        "EnumValues": choices
+                    })
+                })
+    return new_sorts
 
 def asn2dataModel(*files):
     ''' Call asn1DataModel, including the Makefile.python and return
