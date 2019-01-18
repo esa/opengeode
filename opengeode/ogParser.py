@@ -133,6 +133,14 @@ SPECIAL_OPERATORS = {
     'trunc'      : [{'type': REAL,       'direction': 'in'}],
     'write'      : [{'type': ANY_TYPE,   'direction': 'in'}],
     'writeln'    : [{'type': ANY_TYPE,   'direction': 'in'}],
+    'to_selector': [  #  to convert an enum to a choice discriminant
+                    {'type': ENUMERATED, 'direction': 'in'},
+                    {'type': ANY_TYPE,   'direction': 'in'}
+                   ],
+    'to_enum'    : [  #  to convert a choice discriminant to an enum
+                    {'type': ENUMERATED, 'direction': 'in'},
+                    {'type': ANY_TYPE,   'direction': 'in'}
+                   ],
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -552,10 +560,10 @@ def check_call(name, params, context):
         # Then we analyse from the variable to the last field if that is
         # actually an optional field, using the ASN.1 data model
         if len(params) != 1:
-            raise TypeError ('"exist" operator takes only one parameter')
+            raise TypeError('"exist" operator takes only one parameter')
         param, = params
         if not isinstance(param, ogAST.PrimSelector):
-            raise TypeError ('"exist" operator only works on optional fields')
+            raise TypeError('"exist" operator only works on optional fields')
         left = param.value[0] # Can be a variable or another PrimSelector
         field_list = [param.value[1]] # string of the field name
         while isinstance(left, ogAST.PrimSelector):
@@ -583,6 +591,36 @@ def check_call(name, params, context):
         return type('Exist', (object,), {
             'kind': 'BooleanType'
         })
+
+    elif name in ('to_selector', 'to_enum'):
+        if len(params) != 2:
+            raise TypeError(name + " takes 2 parameters: variable, type")
+        variable, target_type = params
+        variable_sort = find_basic_type(variable.exprType)
+        if variable_sort.kind == 'UnknownType':
+            raise TypeError(name + ': variable not found (parameter 1)')
+        if variable_sort.kind != 'EnumeratedType':
+            raise TypeError(name + ': First parameter is not an enumerated')
+        sort_name = target_type.value[0]  #  raw string of the type to cast
+        for sort in types().keys():
+            if sort.lower().replace('-', '_') == \
+                    sort_name.lower().replace('-', '_'):
+                break
+        else:
+            raise TypeError(name + ': type ' + sort_name + 'not found')
+        # check that the list of enumerants are identical. unfortunately we
+        # cannot check the ordering, as it is an unordered dict
+        if name == 'to_selector':
+            return_type = types()[sort + '-selection'].type
+        else:
+            return_type = types()[sort].type
+        if return_type.kind != 'EnumeratedType':
+            raise TypeError(name + ': Second parameter is incorrect')
+        return_type_keys = return_type.EnumValues.keys()
+        variable_sort_keys = variable_sort.EnumValues.keys()
+        if return_type_keys != variable_sort_keys:
+            raise TypeError(name + ': Enumerated type are not equivalent')
+        return return_type
 
     # (1) Find the signature of the function
     # signature will hold the list of parameters for the function
@@ -691,7 +729,7 @@ def check_call(name, params, context):
         })
 
     elif name == 'present':
-        # now there is a proper type defined for choice selectors
+        p, = params
         sort = type_name (p.exprType) + "-selection"
         return types()[sort].type
 
@@ -1113,7 +1151,7 @@ def fix_enumerated_and_choice(expr_enum, context):
     kind = find_basic_type(expr_enum.left.exprType).kind
     if kind in ('EnumeratedType', 'StateEnumeratedType'):
         prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right)
-    elif kind == 'ChoiceEnumeratedType':
+    elif kind == 'ChoiceEnumeratedType':  # does not exist anymore, REMOVE
         prim = ogAST.PrimChoiceDeterminant(primary=expr_enum.right)
     try:
         warnings.extend(check_type_compatibility(prim,
