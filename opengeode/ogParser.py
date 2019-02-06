@@ -3156,7 +3156,15 @@ def system_definition(root, parent):
                     str(child.type))
         if asn1_files:
             system.ast.asn1Modules = DV.asn1Modules
-            system.ast.asn1_filenames = asn1_files
+            system.ast.asn1_filenames = []
+            for each in asn1_files:
+                # check presence of ASN.1 file and store absolute path
+                # so that further parsing is insensitive to os.chdir calls
+                if not os.path.isfile(each):
+                    errors.append("File not found: " + each)
+                else:
+                    system.ast.asn1_filenames.append(os.path.abspath(each))
+            #system.ast.asn1_filenames = asn1_files
     for each in signals:
         sig, err, warn = signal(each)
         errors.extend(err)
@@ -4816,7 +4824,11 @@ def pr_file(root):
             entities = []
             if clause.type == lexer.ASN1:
                 asn1_filename = clause.getChild(0).text[1:-1]
-                ast.asn1_filenames.append(asn1_filename)
+                if not os.path.isfile(asn1_filename):
+                    errors.append("File not found: " + asn1_filename)
+                else:
+                    ast.asn1_filenames.append(os.path.abspath(asn1_filename))
+                #ast.asn1_filenames.append(asn1_filename)
             else:
                 entities.append(clause.text)
             if len(entities) == 1:
