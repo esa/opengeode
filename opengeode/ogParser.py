@@ -141,6 +141,10 @@ SPECIAL_OPERATORS = {
                     {'type': ENUMERATED, 'direction': 'in'},
                     {'type': ANY_TYPE,   'direction': 'in'}
                    ],
+    'val'    : [  #  to convert a number to an enumerated type value
+                    {'type': UNSIGNED,   'direction': 'in'},  # eg. 1
+                    {'type': ANY_TYPE,   'direction': 'in'}   # eg. MyChoice
+                   ],
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -591,6 +595,27 @@ def check_call(name, params, context):
         return type('Exist', (object,), {
             'kind': 'BooleanType'
         })
+    elif name == 'val':
+        # val converts a positive number to a enumeration literal
+        # the first parameter is the number and the second is the type name
+        # of the enumeration. It is equivalent in Ada to EnumType'Val(number)
+        if len(params) != 2:
+            raise TypeError(name + " takes 2 parameters: number, type")
+        variable, target_type = params
+        variable_sort = find_basic_type(variable.exprType)
+        if variable_sort.kind != 'IntegerType':
+            raise TypeError(name + ': First parameter is not an number')
+        sort_name = target_type.value[0]  #  raw string of the type to cast
+        for sort in types().keys():
+            if sort.lower().replace('-', '_') == \
+                    sort_name.lower().replace('-', '_'):
+                break
+        else:
+            raise TypeError(name + ': type ' + sort_name + 'not found')
+        # we could check if the range of the number is compatible with the
+        # number of values...
+        return_type = types()[sort].type
+        return return_type
 
     elif name in ('to_selector', 'to_enum'):
         if len(params) != 2:

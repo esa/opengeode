@@ -1,12 +1,12 @@
 #!/bin/bash -e
 rm -rf testsc_simu
 mkdir -p testsc_simu
-cp /home/taste/opengeode-github/tests/regression/test-eds1/testsc_simu/testsc.pr dataview.asn testsc_simu
+cp /home/taste/opengeode-github/tests/regression/test-eds1/testsc_simu/testsc.pr /home/taste/opengeode-github/tests/regression/test-eds1/testsc_simu/dataview.asn testsc_simu
 cd testsc_simu
 opengeode testsc.pr --shared
-cat dataview.asn >> dataview-uniq.asn 
-mono $(which asn1.exe) -Ada -typePrefix asn1Scc -equal dataview.asn
-mono $(which asn1.exe) -c -typePrefix asn1Scc -equal dataview.asn
+cat /home/taste/opengeode-github/tests/regression/test-eds1/testsc_simu/dataview.asn >> dataview-uniq.asn 
+mono $(which asn1.exe) -Ada -typePrefix asn1Scc -equal /home/taste/opengeode-github/tests/regression/test-eds1/testsc_simu/dataview.asn
+mono $(which asn1.exe) -c -typePrefix asn1Scc -equal /home/taste/opengeode-github/tests/regression/test-eds1/testsc_simu/dataview.asn
 gnatmake -fPIC -gnat2012 -c *.adb
 gnatbind -n -Llibtestsc testsc
 gnatmake -fPIC -c -gnat2012 b~testsc.adb

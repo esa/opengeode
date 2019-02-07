@@ -21,59 +21,71 @@ system toto;
             dcl val MyChoice,  det MyEnum;
             
             dcl choice_selectors MyChoice_selection := foo;
+            
+            dcl pos MyInt;
             /* CIF ENDTEXT */
             /* CIF START (240, 89), (70, 35) */
             START;
                 /* CIF task (160, 144), (229, 35) */
                 task choice_selectors := present(val);
-                /* CIF decision (222, 194), (106, 50) */
+                /* CIF decision (222, 199), (106, 50) */
                 decision present (val);
-                    /* CIF ANSWER (195, 264), (70, 24) */
+                    /* CIF ANSWER (195, 269), (70, 24) */
                     (foo):
-                    /* CIF ANSWER (285, 264), (70, 24) */
+                    /* CIF ANSWER (285, 269), (70, 24) */
                     (bar):
                 enddecision;
-                /* CIF decision (222, 303), (106, 50) */
+                /* CIF decision (222, 308), (106, 50) */
                 decision present (val);
-                    /* CIF ANSWER (166, 373), (129, 24) */
+                    /* CIF ANSWER (166, 378), (129, 24) */
                     (choice_selectors):
-                    /* CIF ANSWER (315, 373), (70, 24) */
+                    /* CIF ANSWER (315, 378), (70, 24) */
                     else:
                 enddecision;
-                /* CIF decision (210, 412), (129, 50) */
+                /* CIF decision (210, 417), (129, 50) */
                 decision choice_selectors;
-                    /* CIF ANSWER (223, 482), (103, 24) */
+                    /* CIF ANSWER (223, 487), (103, 24) */
                     (present(val)):
-                    /* CIF ANSWER (346, 482), (70, 24) */
+                    /* CIF ANSWER (346, 487), (70, 24) */
                     else:
                 enddecision;
-                /* CIF task (233, 521), (83, 35) */
+                /* CIF task (233, 526), (83, 35) */
                 task det := foo;
-                /* CIF task (189, 576), (171, 40) */
+                /* CIF task (215, 581), (119, 35) */
+                task pos := num (det);
+                /* CIF PROCEDURECALL (137, 636), (276, 35) */
+                call writeln ('num(det) = ', pos, ' (should be 0)');
+                /* CIF task (189, 686), (171, 40) */
                 task choice_selectors := bar;
-                /* CIF task (113, 636), (324, 40) */
+                /* CIF task (113, 746), (324, 40) */
                 task choice_selectors := to_selector (det, MyChoice);
-                /* CIF PROCEDURECALL (120, 696), (309, 35) */
+                /* CIF PROCEDURECALL (120, 806), (309, 35) */
                 call writeln (choice_selectors, ' (should be FOO)');
-                /* CIF task (233, 751), (83, 35) */
+                /* CIF task (233, 861), (83, 35) */
                 task det := bar;
-                /* CIF task (124, 801), (302, 40) */
+                /* CIF task (124, 911), (302, 40) */
                 task det := to_enum (choice_selectors, MyEnum);
-                /* CIF PROCEDURECALL (120, 861), (309, 35) */
+                /* CIF PROCEDURECALL (120, 971), (309, 35) */
                 call writeln (det, ' (should be FOO)');
-                /* CIF task (233, 916), (83, 35) */
+                /* CIF task (233, 1026), (83, 35) */
                 task det := bar;
-                /* CIF task (113, 971), (324, 40) */
+                /* CIF task (113, 1081), (324, 40) */
                 task choice_selectors := to_selector (det, MyChoice);
-                /* CIF PROCEDURECALL (120, 1031), (309, 35) */
+                /* CIF PROCEDURECALL (120, 1141), (309, 35) */
                 call writeln (choice_selectors, ' (should be BAR)');
-                /* CIF task (233, 1086), (83, 35) */
+                /* CIF task (233, 1196), (83, 35) */
                 task det := foo;
-                /* CIF task (124, 1141), (302, 40) */
+                /* CIF task (124, 1251), (302, 40) */
                 task det := to_enum (choice_selectors, MyEnum);
-                /* CIF PROCEDURECALL (120, 1201), (309, 35) */
+                /* CIF PROCEDURECALL (120, 1311), (309, 35) */
                 call writeln (det, ' (should be BAR)');
-                /* CIF NEXTSTATE (243, 1251), (64, 35) */
+                /* CIF task (193, 1366), (164, 35) */
+                task det := val (0, MyEnum)
+                /* CIF comment (377, 1366), (133, 35) */
+                comment 'convert 0 to foo';
+                /* CIF PROCEDURECALL (120, 1421), (309, 35) */
+                call writeln (det, ' (should be FOO)');
+                /* CIF NEXTSTATE (243, 1471), (64, 35) */
                 NEXTSTATE hop;
             /* CIF state (528, 360), (70, 35) */
             state hop;

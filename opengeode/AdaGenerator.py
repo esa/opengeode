@@ -1604,6 +1604,16 @@ def _prim_call(prim, **kwargs):
                 .format(sort=sort_name,
                         var_type=var_typename,
                         var_str=var_str)
+    elif ident == 'val':
+        variable, target_type = params
+        var_typename = type_name (variable.exprType)
+        var_stmts, var_str, var_decl = expression (variable, readonly=1)
+        stmts.extend(var_stmts)
+        local_decl.extend(var_decl)
+        sort_name = 'asn1Scc' + target_type.value[0].replace('-', '_')
+        ada_string += "{sort}'Val ({var_str})"\
+                .format(sort=sort_name,
+                        var_str=var_str)
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]

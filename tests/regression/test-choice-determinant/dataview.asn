@@ -6,4 +6,7 @@ BEGIN
  }
 
  MyEnum ::= ENUMERATED { foo, bar }
+
+ MyInt ::= INTEGER (0 .. 1)
+
 END
