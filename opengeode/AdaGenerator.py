@@ -238,7 +238,7 @@ def _process(process, simu=False, instance=False, **kwargs):
         parent = parent.ast
     asn1_filenames = ' '.join(parent.asn1_filenames)
     asn1_uniq = ' '.join(each for each in parent.asn1_filenames
-                         if each != 'dataview-uniq.asn')
+                         if not each.endswith('dataview-uniq.asn'))
     pr_path = ' '.join(parent.pr_files) if None not in parent.pr_files else ''
     pr_names = ' '.join(
                       os.path.basename(pr_file) for pr_file in parent.pr_files)
