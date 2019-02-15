@@ -134,6 +134,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.21 (02/2019)
+    - Fix regression in simulation build script
+
 2.0.20 (02/2019)
     - Added "val" operator to convert a number to an enumerant
       useage: someVal := val (0, MyEnumeratedType)
