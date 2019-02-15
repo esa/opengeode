@@ -242,8 +242,31 @@ def _process(process, simu=False, instance=False, **kwargs):
     pr_path = ' '.join(parent.pr_files) if None not in parent.pr_files else ''
     pr_names = ' '.join(
                       os.path.basename(pr_file) for pr_file in parent.pr_files)
-    asn1_modules = (name.lower().replace('-', '_') + '.o'
+    asn1_modules_o = (name.lower().replace('-', '_') + '.o'
                     for name in process.asn1Modules)
+
+    asn1_mods = ("\"{}\"".format(mod.lower().replace('-', '_'))
+                for mod in process.asn1Modules)
+
+    #  Create a .gpr to build the library for the simulator
+    lib_gpr = '''project {pr}_Lib is
+   for Languages use ("Ada");
+   for Library_Name use "{pr}";
+   for Library_Interface use ("{pr}", "adaasn1rtl", {other_asn1_modules});
+   for Object_Dir use "obj";
+   for Library_Dir use "lib";
+   for Library_Standalone use "encapsulated";
+   for Library_Kind use "dynamic";
+   for Source_Dirs use (".");
+end {pr}_Lib;'''.format(pr=process_name.lower(),
+                        other_asn1_modules=", ".join(asn1_mods))
+
+    #  Create a .gpr to build the Ada generated code
+    ada_gpr = '''project {pr}_Ada is
+   for Languages use ("Ada");
+      for Source_Dirs use ("code");
+      for Object_Dir use "obj";
+   end {pr}_Ada;'''.format(pr=process_name.lower())
 
     simu_script = '''#!/bin/bash -e
 rm -rf {pr}_simu
@@ -264,20 +287,17 @@ mono $(which asn1.exe) -c -typePrefix asn1Scc -equal {asn1}'''.format(
                                                            asn1=asn1_filenames)
 
     simu_script += '''
-gnatmake -fPIC -gnat2012 -c *.adb
-gnatbind -n -Llib{pr} {pr}
-gnatmake -fPIC -c -gnat2012 b~{pr}.adb
-gcc -shared -fPIC -o lib{pr}.so b~{pr}.o {pr}.o {asn1_mod} adaasn1rtl.o -lgnat
+gprbuild -p -P ../{pr}_lib.gpr
 rm -f dataview-uniq.c dataview-uniq.h
 asn2aadlPlus dataview-uniq.asn DataView.aadl
 aadl2glueC DataView.aadl {pr}_interface.aadl
 asn2dataModel -toPython dataview-uniq.asn
 make -f Makefile.python
 echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
-LD_LIBRARY_PATH=. opengeode-simulator
+LD_LIBRARY_PATH=../lib:. opengeode-simulator
 '''.format(pr=process_name.lower(),
            asn1_files=asn1_filenames,
-           asn1_mod=' '.join(asn1_modules))
+           asn1_mod=' '.join(asn1_modules_o))
 
 
     LOG.info('Generating Ada code for process ' + str(process_name))
@@ -1089,6 +1109,9 @@ package {process_name} is'''.format(generic=generic_spec,
         ada_file.write(
                 u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
 
+    with open("{}_ada.gpr".format(process_name.lower()), "w") as gprada:
+        gprada.write(ada_gpr)
+
     if simu:
         with open(u'{}_interface.aadl'
                   .format(process_name.lower()), 'w') as aadl:
@@ -1096,6 +1119,8 @@ package {process_name} is'''.format(generic=generic_spec,
         script = '{}_simu.sh'.format(process_name.lower())
         with open(script, 'w') as bash_script:
             bash_script.write(simu_script)
+        with open("{}_lib.gpr".format(process_name.lower()), 'w') as gprlib:
+            gprlib.write(lib_gpr)
         os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
 
 

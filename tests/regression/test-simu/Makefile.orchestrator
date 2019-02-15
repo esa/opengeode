@@ -1,0 +1,5 @@
+all:
+	gprbuild -p -P orchestrator.gpr     # generate Ada code from the SDL and ASN.1 models
+	gprbuild -p -P orchestrator_ada.gpr # build the Ada code
+clean:
+	rm -rf obj code

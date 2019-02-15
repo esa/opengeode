@@ -85,7 +85,7 @@ except ImportError:
 
 from PySide import QtGui, QtCore
 from PySide.QtCore import (Qt, QSize, QFile, QIODevice, QRectF, QTimer, QPoint,
-                           QPointF, QLineF)
+                           QPointF, QLineF, QFileInfo)
 
 from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
@@ -1938,6 +1938,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def save_diagram(self, save_as=False, autosave=False):
         ''' Save the diagram to a .pr file '''
+
         if (not self.filename or save_as) and not autosave:
             save_as = True
             self.filename = QtGui.QFileDialog.getSaveFileName(
@@ -1946,6 +1947,50 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.filename += ".pr"
         filename = ((self.filename or '_opengeode')
                     + '.autosave') if autosave else self.filename
+
+        prj_name = ''.join(
+                filename.split(os.path.extsep)[0:-1]).split(os.path.sep)[-1]
+
+        template_gpr_sdl = '''with "dataview_ada";
+project {pr} is
+   for Languages use ("SDL");
+   for Source_Dirs use (".");
+   for Object_Dir use "code";
+
+   package Naming is
+      for Body_Suffix ("SDL") use ".pr";
+   end Naming;
+
+   package Compiler is
+      for Driver ("SDL") use "opengeode";
+      for Object_File_Suffix ("SDL") use ".adb";
+      for Leading_Required_Switches ("SDL") use ("--toAda");
+    end Compiler;
+end {pr};'''.format(pr=prj_name)
+
+        # ASN1 template to be filled with "Ada" or "c"
+        template_gpr_asn1 = '''project DataView_{lang} is
+   for Languages use ("ASN1");
+   for Source_Dirs use (".");
+   for Object_Dir use "code";
+
+   package Naming is
+       for Body_Suffix ("ASN1") use ".asn";
+   end Naming;
+
+   package Compiler is
+       for Driver ("ASN1") use "asn1.exe";
+
+       for Leading_Required_Switches ("ASN1") use ("-{lang}", "-typePrefix", "Asn1Scc");
+   end Compiler;
+end DataView_{lang};'''
+
+        #  Template for the Makefile
+        template_makefile = '''all:
+\tgprbuild -p -P {pr}.gpr     # generate Ada code from the SDL and ASN.1 models
+\tgprbuild -p -P {pr}_ada.gpr # build the Ada code
+clean:
+\trm -rf obj code'''.format(pr=prj_name)
 
         # If the current scene is a nested one, save the top parent
         scene = self.top_scene()
@@ -2000,6 +2045,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
         else:
             pr_file = QFile(filename)
+            pr_path = QFileInfo(pr_file).path()
             pr_file.open(QIODevice.WriteOnly | QIODevice.Text)
             if not autosave and save_as:
                 scene.name = 'block {}[*]'.format(''.join(filename
@@ -2028,6 +2074,21 @@ class SDL_View(QtGui.QGraphicsView, object):
             pr_file.write(pr_data.encode('utf-8'))
             pr_file.close()
             if not autosave:
+                # also create gpr files to compile the model
+                with open(pr_path + os.sep + prj_name + '.gpr', 'w') as gpr:
+                    gpr.write(template_gpr_sdl)
+
+                with open(pr_path + '/dataview_ada.gpr', 'w') as gpr:
+                    gpr.write(template_gpr_asn1.format(lang='Ada'))
+
+                #  dataview_c.gpr is needed for the simulator
+                with open(pr_path + '/dataview_c.gpr', 'w') as gpr:
+                    gpr.write(template_gpr_asn1.format(lang='c'))
+
+                # and generate a Makefile.project to build everything
+                with open(pr_path + '/Makefile.{}'.format(prj_name), 'w') as f:
+                    f.write(template_makefile)
+
                 self.scene().clear_focus()
                 for each in chain([scene], scene.all_nested_scenes):
                     each.undo_stack.setClean()

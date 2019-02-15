@@ -57,11 +57,11 @@ comment 'Hello';
         NEXTSTATE Wait;
     /* CIF state (1680, 345), (74, 35) */
     state next;
-        /* CIF input (1679, 400), (71, 35) */
+        /* CIF input (1677, 400), (74, 35) */
         input pulse(a);
-            /* CIF PROCEDURECALL (1609, 450), (213, 35) */
+            /* CIF PROCEDURECALL (1607, 450), (213, 35) */
             call reset_timer(mytimer);
-            /* CIF NEXTSTATE (1680, 500), (70, 35) */
+            /* CIF NEXTSTATE (1679, 500), (70, 35) */
             NEXTSTATE wait;
     endstate;
     /* CIF state (1674, 125), (100, 35) */
@@ -116,7 +116,7 @@ anint := 478;
             NEXTSTATE next;
         /* CIF input (1219, 305), (147, 35) */
         input Paramless_TC;
-            /* CIF task (1180, 360), (223, 35) */
+            /* CIF task (1175, 360), (234, 35) */
             task counter := (counter + 1)  mod 500;
             /* CIF PROCEDURECALL (1166, 410), (253, 35) */
             call writeln('Got Paramless TC');
