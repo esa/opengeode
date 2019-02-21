@@ -27,9 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn 
-	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n og.ali
+	gprbuild -p -P og.gpr && gprbuild -p -P og_ada.gpr
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
