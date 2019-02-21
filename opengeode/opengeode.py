@@ -1951,11 +1951,19 @@ class SDL_View(QtGui.QGraphicsView, object):
         prj_name = ''.join(
                 filename.split(os.path.extsep)[0:-1]).split(os.path.sep)[-1]
 
+        # Neet to get the list of .pr (incl e.g. system_structure.pr)
+        # for the gpr file
+        pr_names = ['"' + os.path.basename(pr_file) + '"'
+                    for pr_file in sdlSymbols.AST.pr_files]
+        first_pr = pr_names.pop()
+        other_pr = ", ".join(pr_names)
+
         template_gpr_sdl = '''with "dataview_ada";
 project {pr} is
    for Languages use ("SDL");
    for Source_Dirs use (".");
    for Object_Dir use "code";
+   for Source_Files use ({first_pr});
 
    package Naming is
       for Body_Suffix ("SDL") use ".pr";
@@ -1964,9 +1972,11 @@ project {pr} is
    package Compiler is
       for Driver ("SDL") use "opengeode";
       for Object_File_Suffix ("SDL") use ".adb";
-      for Leading_Required_Switches ("SDL") use ("--toAda");
+      for Leading_Required_Switches ("SDL") use ("--toAda"{other_pr});
     end Compiler;
-end {pr};'''.format(pr=prj_name)
+end {pr};'''.format(pr=prj_name,
+                    first_pr=first_pr,
+                    other_pr=", " + other_pr if other_pr else "")
 
         # ASN1 template to be filled with "Ada" or "c"
         template_gpr_asn1 = '''project DataView_{lang} is

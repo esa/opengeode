@@ -3,7 +3,7 @@ project orchestrator is
    for Languages use ("SDL");
    for Source_Dirs use (".");
    for Object_Dir use "code";
-   for Source_Files use ("orchestrator.pr");
+   for Source_Files use ("system_structure.pr");
 
    package Naming is
       for Body_Suffix ("SDL") use ".pr";
@@ -12,6 +12,6 @@ project orchestrator is
    package Compiler is
       for Driver ("SDL") use "opengeode";
       for Object_File_Suffix ("SDL") use ".adb";
-      for Leading_Required_Switches ("SDL") use ("--toAda", "../system_structure.pr");
+      for Leading_Required_Switches ("SDL") use ("--toAda", "orchestrator.pr");
     end Compiler;
 end orchestrator;

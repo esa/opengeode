@@ -55,15 +55,6 @@ comment 'Hello';
         call writeln('Simulation startup');
         /* CIF NEXTSTATE (1095, 251), (72, 34) */
         NEXTSTATE Wait;
-    /* CIF state (1680, 345), (74, 35) */
-    state next;
-        /* CIF input (1677, 400), (74, 35) */
-        input pulse(a);
-            /* CIF PROCEDURECALL (1607, 450), (213, 35) */
-            call reset_timer(mytimer);
-            /* CIF NEXTSTATE (1679, 500), (70, 35) */
-            NEXTSTATE wait;
-    endstate;
     /* CIF state (1674, 125), (100, 35) */
     state timeout;
         /* CIF input (1651, 180), (147, 35) */
@@ -72,6 +63,15 @@ comment 'Hello';
             call SET_timer(1000, mytimer);
             /* CIF NEXTSTATE (1687, 280), (74, 35) */
             NEXTSTATE next;
+    endstate;
+    /* CIF state (1680, 345), (74, 35) */
+    state next;
+        /* CIF input (1677, 400), (74, 35) */
+        input pulse(a);
+            /* CIF PROCEDURECALL (1607, 450), (213, 35) */
+            call reset_timer(mytimer);
+            /* CIF NEXTSTATE (1679, 500), (70, 35) */
+            NEXTSTATE wait;
     endstate;
     /* CIF state (1095, 251), (72, 34) */
     state Wait;
