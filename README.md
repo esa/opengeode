@@ -134,6 +134,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.22 (02/2019)
+    - Generate GPR files to ease the build using gprbuild
+
 2.0.21 (02/2019)
     - Fix regression in simulation build script
 
