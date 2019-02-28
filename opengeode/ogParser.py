@@ -16,7 +16,7 @@
     During the build of the AST this library makes a number of semantic
     checks on the SDL input mode.
 
-    Copyright (c) 2012-2018 European Space Agency
+    Copyright (c) 2012-2019 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -163,7 +163,17 @@ new_ref_type = lambda refname: \
 type_name = lambda t: \
                 t.kind if t.kind != 'ReferenceType' else t.ReferencedTypeName
 
-types = lambda: getattr(DV, 'types', {})
+# user may create SDL (non-asn1) types with the newtype keyword
+# they are stored in a dedicated dictionary with the same structure
+# as the ASN1SCC generated python AST
+USER_DEFINED_TYPES = dict()
+
+def types():
+    ''' Return all ASN.1 and user defined types '''
+    ret = getattr(DV, 'types', {}).copy()
+    ret.update(USER_DEFINED_TYPES)
+    return ret
+#types = lambda: getattr(DV, 'types', {}) or USER_DEFINED_TYPES
 
 
 def set_global_DV(asn1_filenames):
@@ -2779,29 +2789,22 @@ def newtype_gettype(root, ta_ast, context):
     return newtypename, errors, warnings
 
 
-def get_array_type(root):
+def get_array_type(newtypename, root):
     ''' Returns the subtype associated to an NEWTYPE ARRAY construction '''
-    # indexSort = root.getChild(0).text
-    typeSort = root.getChild(1).text
+    # root contains two sort names, the indexing one and the element
+    indexSort = root.getChild(0).getChild(0).text
+    elementSort = root.getChild(1).getChild(0).text
     typeSortLine = root.getChild(1).getLine()
     typeSortChar = root.getChild(1).getCharPositionInLine()
 
+    # we must look for indexSort and elementSort in the AST of
+    # asn1scc and check if they are valid for this construct
+    refSort = sdl_to_asn1(elementSort)
+
     # Constructing ASN.1 AST subtype
-    # This is completly wrong, we must create a proper SeqOf type !
-    # This is the correct template:
-    #types["SeqOf"] = type("SeqOf", (object,), {
-    #"Line": 5, "CharPositionInLine": 14, "type": type("SeqOf_type", (object,), {
-    #    "Line": 5, "CharPositionInLine": 14, "kind": "SequenceOfType", "Min": "0", "Max": "100", "type": type("SeqOf_type", (object,), {
-    #        "Line": 5, "CharPositionInLine": 41, "kind": "ReferenceType", "ReferencedTypeName": "MyInteger", "Min": "0", "Max": "255"
-    #    })
-    #})
-    #})
     minValue = 0    # TBD
     maxValue = 10   # TBD
-    refTypeMin = 0  # TBD
-    refTypeMax = 5  # TBD
-    referenceTypeName = "HelloType"
-    newtype = type(typeSort, (object,), {
+    newtype = type(str(newtypename), (object,), {
         "Line": typeSortLine,
         "CharPositionInLine": typeSortChar,
         "type": type ("SeqOf_type", (object,), {
@@ -2810,14 +2813,7 @@ def get_array_type(root):
             "kind": "SequenceOfType",
             "Min": minValue,
             "Max": maxValue,
-            "type": type ("SeqOf_type", (object,), {
-                "Line": typeSortLine,
-                "CharPositionInLine": typeSortChar,
-                "kind": "ReferenceType",
-                "ReferencedTypeName": referenceTypeName,
-                "Min": refTypeMin,
-                "Max": refTypeMax
-            })
+            "type": refSort
         })
     })
 
@@ -2870,7 +2866,7 @@ def syntype(root, ta_ast, context):
         "kind": reftype + "Type"
     })
 
-    types()[str(newtypename)] = newtype
+    #types()[str(newtypename)] = newtype
     LOG.debug("Found new SYNTYPE " + newtypename)
     return errors, warnings
 
@@ -2884,22 +2880,16 @@ def newtype(root, ta_ast, context):
     if (newtypename == ""):
         return errors, warnings
 
-    newtype = type(str(newtypename), (object,), {
-                   "Line": root.getLine(),
-                   "CharPositionInLine": root.getCharPositionInLine()})
     if len(root.children) < 2:
-        warnings.append('Use newtype definitions for arrays and records only')
-        newtype.kind = "BooleanType"
-        types()[str(newtypename)] = newtype
-        LOG.debug("Boolean newtype " + newtypename)
+        errors.append('Use newtype definitions for arrays and records only')
     elif (root.getChild(1).type == lexer.ARRAY):
-        newtype = get_array_type(root.getChild(1))
-        types()[str(newtypename)] = newtype
+        newType = get_array_type(newtypename, root.getChild(1))
+        USER_DEFINED_TYPES.update({str(newtypename): newType})
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):
-        newtype.kind = "SequenceType"
-        newtype.Children = get_struct_children(root.getChild(1))
-        types()[str(newtypename)] = newtype
+        newType.kind = "SequenceType"
+        newType.Children = get_struct_children(root.getChild(1))
+        #types()[str(newtypename)] = newType
         LOG.debug("Found new STRUCT type " + newtypename)
     else:
         warnings.append(
@@ -3242,6 +3232,21 @@ def process_definition(root, parent=None, context=None):
     process.parent = parent
     proc_x, proc_y = 0, 0
     inner_proc = []
+
+    # first look for all text areas to find type declarations
+    USER_DEFINED_TYPES.clear()
+    tas = (x for x in root.getChildren() if x.type == lexer.TEXTAREA)
+    for child in tas:
+        content = (x for x in child.getChildren()
+                   if x.type == lexer.TEXTAREA_CONTENT)
+        for each in content:
+            newtypes = (x for x in each.getChildren()
+                        if x.type == lexer.NEWTYPE)
+            for sort in newtypes:
+                # ignore errors, warnings here
+                # we just need the types to be visible
+                _, _ = newtype(sort, None, context)
+
     # Prepare the transition/state mapping
     process.mapping = {name: [] for name in get_state_list(root)}
     for child in root.getChildren():
