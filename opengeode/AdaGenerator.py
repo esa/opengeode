@@ -365,6 +365,10 @@ LD_LIBRARY_PATH=../lib:. opengeode-simulator
                         .format(n=var_name,
                                 sort=type_name(var_type),
                                 default=u' := ' + dstr if def_value else u''))
+    
+    for sort in process.user_defined_types:
+        # TODO: declare array types....
+        print "Need to declare type ", sort
 
     context_decl.append('end record;')
     # context is aliased so that the model checker can work with access type

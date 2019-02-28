@@ -2895,7 +2895,8 @@ def newtype(root, ta_ast, context):
         warnings.append(
                     'Unsupported type definition in newtype, type: ' +
                     str(root.type))
-     # STRUCT CASE
+    if isinstance(context, ogAST.Process):
+        context.user_defined_types = USER_DEFINED_TYPES
     return errors, warnings
 
 

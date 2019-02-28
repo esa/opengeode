@@ -867,6 +867,8 @@ class Process(object):
         self.dataview = None
         # Reference to the Python module containing the ASN.1 AST
         self.DV = None
+        # user-defined datatypes (using "newtype" SDL keyword)
+        self.user_defined_types = dict()
 
         # input and output signal lists:
         # [{'name': str, 'type': str, 'direction':'in'/'out'}]
