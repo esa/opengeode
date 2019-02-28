@@ -2787,9 +2787,38 @@ def get_array_type(root):
     typeSortChar = root.getChild(1).getCharPositionInLine()
 
     # Constructing ASN.1 AST subtype
-    newtype = type("SeqOf_type", (object,), {
-        "Line": typeSortLine, "CharPositionInLine": typeSortChar,
-        "kind": "ReferenceType", "ReferencedTypeName": typeSort
+    # This is completly wrong, we must create a proper SeqOf type !
+    # This is the correct template:
+    #types["SeqOf"] = type("SeqOf", (object,), {
+    #"Line": 5, "CharPositionInLine": 14, "type": type("SeqOf_type", (object,), {
+    #    "Line": 5, "CharPositionInLine": 14, "kind": "SequenceOfType", "Min": "0", "Max": "100", "type": type("SeqOf_type", (object,), {
+    #        "Line": 5, "CharPositionInLine": 41, "kind": "ReferenceType", "ReferencedTypeName": "MyInteger", "Min": "0", "Max": "255"
+    #    })
+    #})
+    #})
+    minValue = 0    # TBD
+    maxValue = 10   # TBD
+    refTypeMin = 0  # TBD
+    refTypeMax = 5  # TBD
+    referenceTypeName = "HelloType"
+    newtype = type(typeSort, (object,), {
+        "Line": typeSortLine,
+        "CharPositionInLine": typeSortChar,
+        "type": type ("SeqOf_type", (object,), {
+            "Line": typeSortLine,
+            "CharPositionInLine": typeSortChar,
+            "kind": "SequenceOfType",
+            "Min": minValue,
+            "Max": maxValue,
+            "type": type ("SeqOf_type", (object,), {
+                "Line": typeSortLine,
+                "CharPositionInLine": typeSortChar,
+                "kind": "ReferenceType",
+                "ReferencedTypeName": referenceTypeName,
+                "Min": refTypeMin,
+                "Max": refTypeMax
+            })
+        })
     })
 
     return newtype
@@ -2864,10 +2893,7 @@ def newtype(root, ta_ast, context):
         types()[str(newtypename)] = newtype
         LOG.debug("Boolean newtype " + newtypename)
     elif (root.getChild(1).type == lexer.ARRAY):
-        newtype.kind = "SequenceOfType"
-        newtype.type = get_array_type(root.getChild(1))
-        newtype.Min = "Min"
-        newtype.Max = "Max"
+        newtype = get_array_type(root.getChild(1))
         types()[str(newtypename)] = newtype
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):
