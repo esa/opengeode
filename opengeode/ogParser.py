@@ -2789,7 +2789,7 @@ def get_array_type(root):
     # Constructing ASN.1 AST subtype
     newtype = type("SeqOf_type", (object,), {
         "Line": typeSortLine, "CharPositionInLine": typeSortChar,
-        "Kind": "ReferenceType", "ReferencedTypeName": typeSort
+        "kind": "ReferenceType", "ReferencedTypeName": typeSort
     })
 
     return newtype
