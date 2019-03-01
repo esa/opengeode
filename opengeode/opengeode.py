@@ -1982,6 +1982,7 @@ end {pr};'''.format(pr=prj_name,
         template_gpr_asn1 = '''project DataView_{lang} is
    for Languages use ("ASN1");
    for Source_Dirs use (".");
+   for Source_Files use ("__dataview_uniq.asn");
    for Object_Dir use "code";
 
    package Naming is
@@ -1997,6 +1998,7 @@ end DataView_{lang};'''
 
         #  Template for the Makefile
         template_makefile = '''all:
+\tcat *.asn > __dataview_uniq.asn
 \tgprbuild -p -P {pr}.gpr     # generate Ada code from the SDL and ASN.1 models
 \tgprbuild -p -P {pr}_ada.gpr # build the Ada code
 clean:

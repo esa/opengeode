@@ -482,7 +482,8 @@ LD_LIBRARY_PATH=../lib:. opengeode-simulator
         asn1_modules = '--  No ASN.1 data types are used in this model'
 
     include_custom_types = u'''with {process_name}_newtypes;
-use {process_name}_newtypes;''' if process.user_defined_types else u''
+use {process_name}_newtypes;'''.format(process_name=process_name) \
+        if process.user_defined_types else u''
 
     taste_template = [u'''\
 -- This file was generated automatically: DO NOT MODIFY IT !
