@@ -2792,18 +2792,26 @@ def newtype_gettype(root, ta_ast, context):
 def get_array_type(newtypename, root):
     ''' Returns the subtype associated to an NEWTYPE ARRAY construction '''
     # root contains two sort names, the indexing one and the element
-    indexSort = root.getChild(0).getChild(0).text
+    indexSortName = root.getChild(0).getChild(0).text
     elementSort = root.getChild(1).getChild(0).text
     typeSortLine = root.getChild(1).getLine()
     typeSortChar = root.getChild(1).getCharPositionInLine()
 
-    # we must look for indexSort and elementSort in the AST of
+    # we must look for indexSortName and elementSort in the AST of
     # asn1scc and check if they are valid for this construct
-    refSort = sdl_to_asn1(elementSort)
+    indexSort = sdl_to_asn1(indexSortName)
+    refSort   = sdl_to_asn1(elementSort)
 
+    # Check if indexSort is a numerical type
+    # it is not possible to index with enumerated or string in asn1
+    # (the type must be equivalent to a SEQUENCE (SIZE ...) OF)
+    if not is_numeric(indexSort):
+        raise TypeError("Array indexing type must be numerical")
+
+    basicIndex = find_basic_type(indexSort)
     # Constructing ASN.1 AST subtype
-    minValue = 0    # TBD
-    maxValue = 10   # TBD
+    minValue = basicIndex.Min
+    maxValue = basicIndex.Max
     newtype = type(str(newtypename), (object,), {
         "Line": typeSortLine,
         "CharPositionInLine": typeSortChar,
@@ -2883,7 +2891,10 @@ def newtype(root, ta_ast, context):
     if len(root.children) < 2:
         errors.append('Use newtype definitions for arrays and records only')
     elif (root.getChild(1).type == lexer.ARRAY):
-        newType = get_array_type(newtypename, root.getChild(1))
+        try:
+            newType = get_array_type(newtypename, root.getChild(1))
+        except TypeError as err:
+            errors.append(str(err))
         USER_DEFINED_TYPES.update({str(newtypename): newType})
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):

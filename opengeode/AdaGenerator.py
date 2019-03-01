@@ -337,20 +337,41 @@ LD_LIBRARY_PATH=../lib:. opengeode-simulator
         context_decl.append(u'type States is ({});'
                             .format(u', '.join(full_statelist) or u'No_State'))
 
-    # Generate code for the NEWTYPEs
-    # this approach will cause issues with the simulator and model checker
-    # that rely on asn1 ctypes interface.
-    # Creating asn1 types on the fly could be an option for the
-    # simulator, but not for TASTE...
-    # another issue is that asn1 does not support array indexed by something
-    # not a numerical type
-    for sortname, sortdef in process.user_defined_types.viewitems():
-        rangeMin = sortdef.type.Min
-        rangeMax = sortdef.type.Max
-        refType  = sortdef.type.type.ReferencedTypeName
-        context_decl.append(
-              'type asn1Scc{} is array (Integer range {} .. {}) of asn1Scc{};'
-              .format (sortname, rangeMin, rangeMax, refType))
+    # Generate ASN.1 model for the NEWTYPEs (types defined in SDL)
+    if process.user_defined_types:
+        asn1_template = [u'{}-Newtypes DEFINITIONS ::='.format(
+            process_name.upper().replace('_', '-')), 'BEGIN']
+        types_with_proper_case = []
+
+        # The ASN.1 module must import the types from other asn1 modules
+        for _, sortdef in process.user_defined_types.viewitems():
+            sort = sortdef.type.type.ReferencedTypeName
+            for moduleName, sorts in process.DV.exportedTypes.viewitems():
+                for each in sorts:
+                    if sort.lower().replace('-', '_') == \
+                            each.lower().replace('-', '_'):
+                        asn1_template.append(u'IMPORTS {t} FROM {m};'
+                                .format (t=each, m=moduleName))
+                        types_with_proper_case.append (each)
+
+        for sortname, sortdef in process.user_defined_types.viewitems():
+            rangeMin = sortdef.type.Min
+            rangeMax = sortdef.type.Max
+            refType  = sortdef.type.type.ReferencedTypeName
+            for refTypeCase in types_with_proper_case:
+                if refTypeCase.lower().replace('-', '_') == \
+                        refType.lower().replace('-', '_'):
+                    break
+            asn1_template.append(
+                    '{sort} ::= SEQUENCE (SIZE ({rangeMin} .. {rangeMax})) '
+                    'OF {refType}'
+                    .format(sort=sortname.upper().replace('_', '-'),
+                            rangeMin=rangeMin,
+                            rangeMax=rangeMax,
+                            refType=refTypeCase.replace('_', '-')))
+        asn1_template.append('END')
+        with open(process_name + '_newtypes.asn', 'w') as asn1_file:
+            asn1_file.write('\n'.join(asn1_template))
 
     # Generate the code to declare process-level context
     context_decl.extend(['type {}_Ty is'.format(LPREFIX), 'record'])
@@ -459,6 +480,10 @@ LD_LIBRARY_PATH=../lib:. opengeode-simulator
             asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
     except TypeError:
         asn1_modules = '--  No ASN.1 data types are used in this model'
+
+    include_custom_types = u'''with {process_name}_newtypes;
+use {process_name}_newtypes;''' if process.user_defined_types else u''
+
     taste_template = [u'''\
 -- This file was generated automatically: DO NOT MODIFY IT !
 
@@ -469,16 +494,19 @@ with Ada.Unchecked_Conversion;
 with Ada.Numerics.Generic_Elementary_Functions;
 
 {dataview}
+{custom_data_types}
 
 with Interfaces;
 use Interfaces;
 {C}
-package body {process_name} is'''.format(process_name=process_name,
-                                         dataview=asn1_modules,
-                                         C='with Interfaces.C.Strings;\n'
-                                           'use Interfaces.C.Strings;'
-                                            if simu else '') if not instance
-                            else u"package body {} is".format(process_name)]
+package body {process_name} is'''.format(
+    process_name=process_name,
+    dataview=asn1_modules,
+    custom_data_types=include_custom_types,
+    C='with Interfaces.C.Strings;\n'
+      'use Interfaces.C.Strings;'
+      if simu else '') if not instance
+                       else u"package body {} is".format(process_name)]
 
     generic_spec, instance_decl = "", ""
     if generic:
