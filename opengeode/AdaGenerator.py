@@ -337,6 +337,21 @@ LD_LIBRARY_PATH=../lib:. opengeode-simulator
         context_decl.append(u'type States is ({});'
                             .format(u', '.join(full_statelist) or u'No_State'))
 
+    # Generate code for the NEWTYPEs
+    # this approach will cause issues with the simulator and model checker
+    # that rely on asn1 ctypes interface.
+    # Creating asn1 types on the fly could be an option for the
+    # simulator, but not for TASTE...
+    # another issue is that asn1 does not support array indexed by something
+    # not a numerical type
+    for sortname, sortdef in process.user_defined_types.viewitems():
+        rangeMin = sortdef.type.Min
+        rangeMax = sortdef.type.Max
+        refType  = sortdef.type.type.ReferencedTypeName
+        context_decl.append(
+              'type asn1Scc{} is array (Integer range {} .. {}) of asn1Scc{};'
+              .format (sortname, rangeMin, rangeMax, refType))
+
     # Generate the code to declare process-level context
     context_decl.extend(['type {}_Ty is'.format(LPREFIX), 'record'])
 
@@ -365,10 +380,6 @@ LD_LIBRARY_PATH=../lib:. opengeode-simulator
                         .format(n=var_name,
                                 sort=type_name(var_type),
                                 default=u' := ' + dstr if def_value else u''))
-    
-    for sort in process.user_defined_types:
-        # TODO: declare array types....
-        print "Need to declare type ", sort
 
     context_decl.append('end record;')
     # context is aliased so that the model checker can work with access type
