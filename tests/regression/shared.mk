@@ -17,7 +17,7 @@ clean:
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
-	       check obj src
+	       check obj src code
 
 %.o: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --llvm -O$(O)
