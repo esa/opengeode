@@ -1,4 +1,3 @@
-with "dataview_ada";
 project og is
    for Languages use ("SDL");
    for Source_Dirs use (".");

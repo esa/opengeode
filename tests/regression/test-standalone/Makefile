@@ -26,8 +26,7 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	$(OPENGEODE) og.pr --toAda
-	gprbuild -p -P og.gpr && gprbuild -p -P og_ada.gpr
+	make -f Makefile.og
 
 test-c: 
 	$(OPENGEODE) og.pr --toC

@@ -1,6 +1,7 @@
 project DataView_Ada is
    for Languages use ("ASN1");
    for Source_Dirs use (".");
+   for Source_Files use ("dataview-uniq.asn");
    for Object_Dir use "code";
 
    package Naming is
