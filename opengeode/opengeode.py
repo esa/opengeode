@@ -1951,21 +1951,14 @@ class SDL_View(QtGui.QGraphicsView, object):
         prj_name = ''.join(
                 filename.split(os.path.extsep)[0:-1]).split(os.path.sep)[-1]
 
-        # Neet to get the list of .pr (incl e.g. system_structure.pr)
+        # Need to get the list of .pr (incl e.g. system_structure.pr)
         # for the gpr file
         pr_names = ['"' + os.path.basename(pr_file) + '"'
                     for pr_file in sdlSymbols.AST.pr_files]
         first_pr = pr_names.pop()
         other_pr = ", ".join(pr_names)
 
-        print "*** LIST OF ASN1 FILENAMES ***"
-        print sdlSymbols.AST.asn1_filenames
-        if ogParser.USER_DEFINED_TYPES:
-            print "model contains user defined types"
-
-
-        template_gpr_sdl = '''with "dataview_ada";
-project {pr} is
+        template_gpr_sdl = '''project {pr} is
    for Languages use ("SDL");
    for Source_Dirs use (".");
    for Object_Dir use "code";
@@ -1988,7 +1981,7 @@ end {pr};'''.format(pr=prj_name,
         template_gpr_asn1 = '''project DataView_{lang} is
    for Languages use ("ASN1");
    for Source_Dirs use (".");
-   for Source_Files use ("__dataview_uniq.asn");
+   for Source_Files use ("{firstAsn}");
    for Object_Dir use "code";
 
    package Naming is
@@ -1998,15 +1991,15 @@ end {pr};'''.format(pr=prj_name,
    package Compiler is
        for Driver ("ASN1") use "asn1.exe";
 
-       for Leading_Required_Switches ("ASN1") use ("-{lang}", "-typePrefix", "Asn1Scc");
+       for Leading_Required_Switches ("ASN1") use ("-{lang}", "-typePrefix", "Asn1Scc"{otherAsn});
    end Compiler;
 end DataView_{lang};'''
 
         #  Template for the Makefile
         template_makefile = '''all:
-\tcat *.asn > __dataview_uniq.asn
-\tgprbuild -p -P {pr}.gpr     # generate Ada code from the SDL and ASN.1 models
-\tgprbuild -p -P {pr}_ada.gpr # build the Ada code
+\tgprbuild -p -P {pr}.gpr          # generate Ada code from the SDL model
+\tgprbuild -p -P dataview_ada.gpr  # generate Ada code from the ASN.1 model
+\tgprbuild -p -P {pr}_ada.gpr      # build the Ada code
 clean:
 \trm -rf obj code'''.format(pr=prj_name)
 
@@ -2086,6 +2079,27 @@ clean:
             item.pos_x -= delta_x
             item.pos_y -= delta_y
 
+        # Gather list of ASN.1 files (+possibly custom types definitions)
+        try:
+            firstAsn1File = ogParser.DV.asn1Files[0]
+            otherAsn1Files = ogParser.DV.asn1Files[1:]
+        except (AttributeError, IndexError):
+            firstAsn1File, otherAsn1Files = "", []
+
+        if ogParser.USER_DEFINED_TYPES:
+            newtypesAsn = '{}_newtypes.asn'.format(prj_name)
+        else:
+            newtypesAsn = ''
+
+        if newtypesAsn:
+            if not firstAsn1File:
+                firstAsn1File = newtypesAsn
+            else:
+                otherAsn1Files.append(newtypesAsn)
+
+        asn1Quotes = ['"{}"'.format(name) for name in otherAsn1Files]
+        otherAsn = ", ".join(asn1Quotes)
+
         pr_data = unicode('\n'.join(pr_raw))
         try:
             pr_file.write(pr_data.encode('utf-8'))
@@ -2095,12 +2109,22 @@ clean:
                 with open(pr_path + os.sep + prj_name + '.gpr', 'w') as gpr:
                     gpr.write(template_gpr_sdl)
 
-                with open(pr_path + '/dataview_ada.gpr', 'w') as gpr:
-                    gpr.write(template_gpr_asn1.format(lang='Ada'))
+                if firstAsn1File:
+                    # generate gpr files to compile the ASN.1 models
+                    with open(pr_path + '/dataview_ada.gpr', 'w') as gpr:
+                        gpr.write(template_gpr_asn1
+                                .format(firstAsn=firstAsn1File,
+                                        otherAsn=", " + otherAsn
+                                        if otherAsn else "",
+                                        lang='Ada'))
 
-                #  dataview_c.gpr is needed for the simulator
-                with open(pr_path + '/dataview_c.gpr', 'w') as gpr:
-                    gpr.write(template_gpr_asn1.format(lang='c'))
+                    #  dataview_c.gpr is needed for the simulator
+                    with open(pr_path + '/dataview_c.gpr', 'w') as gpr:
+                        gpr.write(template_gpr_asn1
+                                  .format(firstAsn=firstAsn1File,
+                                          otherAsn=", " + otherAsn
+                                          if otherAsn else "",
+                                          lang='c'))
 
                 # and generate a Makefile.project to build everything
                 with open(pr_path + '/Makefile.{}'.format(prj_name), 'w') as f:
