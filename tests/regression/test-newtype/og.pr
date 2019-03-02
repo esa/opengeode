@@ -1,0 +1,42 @@
+system og;
+    /* CIF TEXT (228, 136), (391, 216) */
+    -- demonstrating how to create custom types with the newtype
+    -- sdl construct
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    signal dd;
+    signal we;
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with dd;
+        from og to env with we;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with dd;
+            from og to env with we;
+        connect c and r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        process og;
+            /* CIF TEXT (121, 80), (342, 114) */
+            newtype MyArray
+            array (myinteger, myinteger)
+            endnewtype;
+            
+            dcl x MyArray := { 1,2,3 };
+            /* CIF ENDTEXT */
+            /* CIF START (155, 216), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (155, 266), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (296, 231), (70, 35) */
+            state wait;
+                /* CIF input (289, 286), (84, 35) */
+                input dd;
+                    /* CIF NEXTSTATE (296, 336), (70, 35) */
+                    NEXTSTATE wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;

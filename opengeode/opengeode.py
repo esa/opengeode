@@ -1999,7 +1999,7 @@ end DataView_{lang};'''
         template_makefile = '''all:
 \tgprbuild -p -P {pr}.gpr          # generate Ada code from the SDL model
 \tgprbuild -p -P dataview_ada.gpr  # generate Ada code from the ASN.1 model
-\tgprbuild -p -P {pr}_ada.gpr      # build the Ada code
+\tgprbuild -p -P code/{pr}_ada.gpr      # build the Ada code
 clean:
 \trm -rf obj code'''.format(pr=prj_name)
 

@@ -1,0 +1,7 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+MyInteger ::= INTEGER (0..255)
+SeqOf     ::= SEQUENCE (SIZE(0..100)) OF MyInteger
+
+END
