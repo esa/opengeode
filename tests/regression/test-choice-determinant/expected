@@ -1,0 +1,6 @@
+num(det) =  0 (should be 0)
+FOO_PRESENT (should be FOO)
+ASN1SCCFOO (should be FOO)
+BAR_PRESENT (should be BAR)
+ASN1SCCBAR (should be BAR)
+ASN1SCCFOO (should be FOO)
