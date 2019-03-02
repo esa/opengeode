@@ -1958,6 +1958,12 @@ class SDL_View(QtGui.QGraphicsView, object):
         first_pr = pr_names.pop()
         other_pr = ", ".join(pr_names)
 
+        print "*** LIST OF ASN1 FILENAMES ***"
+        print sdlSymbols.AST.asn1_filenames
+        if ogParser.USER_DEFINED_TYPES:
+            print "model contains user defined types"
+
+
         template_gpr_sdl = '''with "dataview_ada";
 project {pr} is
    for Languages use ("SDL");
@@ -2042,7 +2048,6 @@ clean:
             msg_box = QtGui.QMessageBox(self)
             msg_box.setIcon(QtGui.QMessageBox.Critical)
             msg_box.setWindowTitle('OpenGEODE - Syntax Error')
-            #msg_box.setInformativeText('\n'.join(errs))
             msg_box.setText("Syntax errors were found. It is not advised to "
                             "save the model now, as you may not be able to "
                             "open it again. Are you sure you want to save?")

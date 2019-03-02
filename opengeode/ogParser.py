@@ -2893,9 +2893,9 @@ def newtype(root, ta_ast, context):
     elif (root.getChild(1).type == lexer.ARRAY):
         try:
             newType = get_array_type(newtypename, root.getChild(1))
+            USER_DEFINED_TYPES.update({str(newtypename): newType})
         except TypeError as err:
             errors.append(str(err))
-        USER_DEFINED_TYPES.update({str(newtypename): newType})
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):
         newType.kind = "SequenceType"
