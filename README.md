@@ -134,6 +134,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.23 (03/2019)
+    - Add basic support for NEWTYPE definitions
+
 2.0.22 (02/2019)
     - Generate GPR files to ease the build using gprbuild
 
