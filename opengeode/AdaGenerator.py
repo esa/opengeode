@@ -1663,16 +1663,31 @@ def _prim_call(prim, **kwargs):
         ada_string += (u'(case {var}.Kind is '.format(var=varstr))
         choices = []
         need_default = False
+        # all choice elements must be either signed or unsigned
+        # a mix would result in inconsistencies
+        # therefore we have to cast to signed as if there is at least one
+        # signed element (with the risk of cutting very big values)
+        has_unsigned = False
+        has_signed   = False
+        for each in sort.Children.viewvalues():
+            child_sort = find_basic_type(each.type)
+            if child_sort.kind.startswith('Integer'):
+                if float(child_sort.Min) < 0.0:
+                    has_signed = True
+                else:
+                    has_unsigned = True
+        need_cast = has_signed and has_unsigned
         for child_name, descr in sort.Children.viewitems():
             child_id   = descr.EnumID
             child_sort = find_basic_type(descr.type)
             if not child_sort.kind.startswith('Integer'):
                 need_default = True
                 continue
-            choices.append(u'when {child_id} => {var}.{name}'
-                           .format(child_id=child_id,
-                                   var=varstr,
-                                   name=child_name))
+            set_value = '{var}.{name}'.format(var=varstr, name=child_name)
+            if need_cast and float(child_sort.Min) >= 0.0:
+                set_value = 'Asn1Int({})'.format(set_value)
+            choices.append(u'when {child_id} => {set_value}'
+                           .format(child_id=child_id, set_value=set_value))
         if need_default:
             choices.append(u'when others => {}'.format(defaultstr))
         ada_string += u', '.join(choices) + ')'

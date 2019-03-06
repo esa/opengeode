@@ -134,6 +134,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.24 (03/2019)
+    - Add choice_to_int operator
+
 2.0.23 (03/2019)
     - Add basic support for NEWTYPE definitions
 
