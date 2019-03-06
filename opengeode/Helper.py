@@ -518,6 +518,16 @@ def _rename_prim_seq_of(ast, from_name, to_name):
     for each in ast.value:
         rename_everything(each, from_name, to_name)
 
+@rename_everything.register(ogAST.PrimSequence)
+def _rename_prim_seq_of(ast, from_name, to_name):
+    ''' Values in the fields of a SEQUENCE '''
+    for each in ast.value.viewvalues():
+        rename_everything(each, from_name, to_name)
+
+@rename_everything.register(ogAST.PrimChoiceItem)
+def _rename_prim_seq_of(ast, from_name, to_name):
+    ''' Value of a CHOICE item '''
+    rename_everything(ast.value['value'], from_name, to_name)
 
 
 @rename_everything.register(ogAST.PrimIndex)
