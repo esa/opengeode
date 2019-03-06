@@ -24,6 +24,17 @@ c3 ChoiceWithEmptySeq ::= b: {}
 c4 ChoiceWithEmptySeq ::= c: NULL
 c5 AnotherEmptySeq ::= {}
 
+MyInt ::= INTEGER (-10..10)
+
+-- choice to test the choice_to_int internal operator
+Parameters ::= CHOICE {
+  one INTEGER (0..255),
+  two MyInt,
+  three BOOLEAN
+}
+
+
+
 -- Type below is accepted by ASN.1 compiler but that's wrong
 -- c6 ChoiceWithEmptySeq ::= b: c5
 

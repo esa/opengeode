@@ -145,6 +145,11 @@ SPECIAL_OPERATORS = {
                     {'type': UNSIGNED,   'direction': 'in'},  # eg. 1
                     {'type': ANY_TYPE,   'direction': 'in'}   # eg. MyChoice
                    ],
+    'choice_to_int' : [  #  to return the value of a numerical choice item
+                    {'type': CHOICE,     'direction': 'in'},  # choice variable
+                    {'type': NUMERICAL,  'direction': 'in'}   # default value
+                   ],
+
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -768,11 +773,16 @@ def check_call(name, params, context):
         sort = type_name (p.exprType) + "-selection"
         return types()[sort].type
 
-#       return type('Present', (object,), {
-#           'kind': 'ChoiceEnumeratedType',
-#           'EnumValues': param_btys[0].Children
-#       })
-#
+    # choice_to_int: returns an integer corresponding to either the currently
+    # selected choice value (e.g. foo in CHOICE { foo INTEGER (..), ... } when
+    # foo is the current choice). or a default, user-defined value if the
+    # current choice is not numerical. The first parameter is an instance of
+    # a CHOICE type, and the second parameter is the default value.
+    elif name == 'choice_to_int':
+        p1, _ = params
+        #sort = type_name (p1.exprType)
+        return type('choice_to_int', (INTEGER,), {})
+
     elif name == 'round':
         return type('Round', (REAL,), {
             'Min': str(round(float(param_btys[0].Min))),

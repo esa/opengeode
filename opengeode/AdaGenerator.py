@@ -1650,6 +1650,32 @@ def _prim_call(prim, **kwargs):
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += ('{}.Kind'.format(param_str))
+    elif ident == 'choice_to_int':
+        p1, p2 = params
+        sort = find_basic_type (p1.exprType)
+        assert (sort.kind == 'ChoiceType')  # normally checked by the parser
+        param_stmts, varstr, local_var = expression(p1, readonly=1)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        param_stmts, defaultstr, local_var = expression(p2, readonly=1)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        ada_string += (u'(case {var}.Kind is '.format(var=varstr))
+        choices = []
+        need_default = False
+        for child_name, descr in sort.Children.viewitems():
+            child_id   = descr.EnumID
+            child_sort = find_basic_type(descr.type)
+            if not child_sort.kind.startswith('Integer'):
+                need_default = True
+                continue
+            choices.append(u'when {child_id} => {var}.{name}'
+                           .format(child_id=child_id,
+                                   var=varstr,
+                                   name=child_name))
+        if need_default:
+            choices.append(u'when others => {}'.format(defaultstr))
+        ada_string += u', '.join(choices) + ')'
     elif ident == 'exist':
         # User wants to know if an optional field is present or not
         selector = params[0]  # type PrimSelector
