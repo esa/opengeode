@@ -134,6 +134,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.26 (03/2019)
+    - minor bugfix with underscore/dash confusion
+
 2.0.25 (03/2019)
     - fixed variable renaming bug in code generation for nested states
 
