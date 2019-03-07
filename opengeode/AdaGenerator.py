@@ -1678,12 +1678,13 @@ def _prim_call(prim, **kwargs):
                     has_unsigned = True
         need_cast = has_signed and has_unsigned
         for child_name, descr in sort.Children.viewitems():
+            child_name_ada = child_name.replace('-', '_')
             child_id   = descr.EnumID
             child_sort = find_basic_type(descr.type)
             if not child_sort.kind.startswith('Integer'):
                 need_default = True
                 continue
-            set_value = '{var}.{name}'.format(var=varstr, name=child_name)
+            set_value = '{var}.{name}'.format(var=varstr, name=child_name_ada)
             if need_cast and float(child_sort.Min) >= 0.0:
                 set_value = 'Asn1Int({})'.format(set_value)
             choices.append(u'when {child_id} => {set_value}'

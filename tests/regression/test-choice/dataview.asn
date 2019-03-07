@@ -30,7 +30,8 @@ MyInt ::= INTEGER (-10..10)
 Parameters ::= CHOICE {
   one INTEGER (0..255),
   two MyInt,
-  three BOOLEAN
+  three BOOLEAN,
+  four-ty-to MyInt
 }
 
 
