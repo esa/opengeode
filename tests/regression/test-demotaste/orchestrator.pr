@@ -1,36 +1,6 @@
 /* CIF PROCESS (250, 149), (150, 75) */
 process orchestrator;
-    /* CIF TEXT (81, 252), (276, 283) */
-    -- You can manually declare an
-    -- external procedure:
-    
-    -- procedure tototo;
-    -- fpar titi MyInteger;
-    -- external;
-    
-    -- In that case you are responsible for
-    -- providing the body code.
-    
-    -- toto is used to check that
-    -- the FPAR in myproc that also
-    -- has a param called toto does
-    -- not conflict.
-    dcl toto MySeqOf;
-    /* CIF ENDTEXT */
-    /* CIF TEXT (59, 8), (366, 195) */
-    -- This demo shows the main features
-    -- and syntax currently supported by
-    -- OpenGEODE
-    
-    -- The description of the signal and
-    -- external procedures is in the file called
-    -- "system_structure.pr".
-    
-    -- To open this model you must load both
-    -- files from the command line:
-    -- $ opengeode system_structure.pr orchestrator.pr
-    /* CIF ENDTEXT */
-    /* CIF TEXT (437, 19), (319, 382) */
+    /* CIF TEXT (437, 19), (319, 392) */
     -- Some test data
     DCL  a MyInteger := 4;
     
@@ -55,6 +25,36 @@ process orchestrator;
     DCL myCmd MyInteger;
     
     dcl m MyChoice2;
+    /* CIF ENDTEXT */
+    /* CIF TEXT (59, 8), (366, 195) */
+    -- This demo shows the main features
+    -- and syntax currently supported by
+    -- OpenGEODE
+    
+    -- The description of the signal and
+    -- external procedures is in the file called
+    -- "system_structure.pr".
+    
+    -- To open this model you must load both
+    -- files from the command line:
+    -- $ opengeode system_structure.pr orchestrator.pr
+    /* CIF ENDTEXT */
+    /* CIF TEXT (81, 252), (276, 283) */
+    -- You can manually declare an
+    -- external procedure:
+    
+    -- procedure tototo;
+    -- fpar titi MyInteger;
+    -- external;
+    
+    -- In that case you are responsible for
+    -- providing the body code.
+    
+    -- toto is used to check that
+    -- the FPAR in myproc that also
+    -- has a param called toto does
+    -- not conflict.
+    dcl toto MySeqOf;
     /* CIF ENDTEXT */
     /* CIF procedure (146, 614), (91, 50) */
     procedure myproc;
@@ -89,7 +89,7 @@ process orchestrator;
     endprocedure;
     /* CIF START (953, 3), (100, 50) */
     START;
-        /* CIF task (796, 73), (413, 368) */
+        /* CIF task (796, 73), (413, 408) */
         task a := 42 + 5 * 3 - 1,
 b := { hello, world },
 a := length(b),
@@ -100,7 +100,7 @@ e:=g,
 e := a:TRUE,
 b(1) := hello,
 --h := {mantissa 1, base 2, exponent 5},
-h := -42.5,
+h := -9.5,
 i := {},
 i := { 1 },
 a := length(i),
@@ -109,49 +109,50 @@ j := { a { x if e!a then 5 else 9 fi, y 6 } },
 k := { {x 4}, {x 5} },
 l := a:{ x 5 },
 a := if present(e)=b then 42 else 43 fi,
-a := abs(-5),
+a := abs(fix(h)),
+a := abs (-42),
 h := abs(-42.5),
 h := abs(h),
 i := {1, 2},
 m := B:C:TRUE
-        /* CIF comment (1273, 237), (160, 40) */
+        /* CIF comment (1273, 257), (167, 40) */
         comment 'This is a comment
 A multiline one, I mean';
-        /* CIF task (939, 456), (128, 53) */
+        /* CIF task (939, 520), (128, 56) */
         task for x in i:
 call writeln(x);
 endfor;
-        /* CIF PROCEDURECALL (875, 524), (255, 50) */
+        /* CIF PROCEDURECALL (875, 594), (255, 50) */
         call writeln('Should show "5 42.5": ', a, h);
-        /* CIF decision (947, 589), (112, 70) */
+        /* CIF decision (947, 659), (112, 70) */
         decision present(e);
-            /* CIF ANSWER (953, 679), (100, 31) */
+            /* CIF ANSWER (953, 749), (100, 31) */
             (a):
-                /* CIF task (949, 729), (108, 50) */
+                /* CIF task (949, 799), (108, 50) */
                 task a := 37;
-            /* CIF ANSWER (1106, 679), (100, 35) */
+            /* CIF ANSWER (1106, 749), (100, 35) */
             (b):
-                /* CIF task (1066, 729), (179, 50) */
+                /* CIF task (1066, 799), (179, 50) */
                 task a := 38;
-            /* CIF ANSWER (1256, 679), (100, 35) */
+            /* CIF ANSWER (1256, 749), (100, 35) */
             ELSE:
         enddecision;
-        /* CIF decision (953, 794), (100, 70) */
+        /* CIF decision (953, 864), (100, 70) */
         decision e;
-            /* CIF ANSWER (840, 884), (100, 35) */
+            /* CIF ANSWER (840, 954), (100, 35) */
             (a:TRUE):
-                /* CIF task (840, 939), (100, 50) */
+                /* CIF task (840, 1009), (100, 50) */
                 task a := 41;
-            /* CIF ANSWER (646, 884), (100, 35) */
+            /* CIF ANSWER (646, 954), (100, 35) */
             (g):
-                /* CIF task (646, 939), (100, 50) */
+                /* CIF task (646, 1009), (100, 50) */
                 task a := 40;
-            /* CIF ANSWER (1077, 884), (100, 35) */
+            /* CIF ANSWER (1077, 954), (100, 35) */
             ELSE:
-                /* CIF task (1077, 939), (100, 50) */
+                /* CIF task (1077, 1009), (100, 50) */
                 task a := 42;
         enddecision;
-        /* CIF NEXTSTATE (956, 1004), (94, 38) */
+        /* CIF NEXTSTATE (956, 1074), (94, 38) */
         NEXTSTATE Stopped;
     /* CIF label (452, 491), (152, 50) */
     connection Transition_to_Stop:
@@ -161,6 +162,22 @@ endfor;
         NEXTSTATE Stopped;
     /* CIF End Label */
     endconnection;
+    /* CIF state (1503, 29), (100, 50) */
+    state Running;
+        /* CIF input (1503, 99), (100, 50) */
+        input pulse;
+            /* CIF task (1456, 164), (193, 50) */
+            task a := (a+1) mod 10;
+            /* CIF PROCEDURECALL (1450, 229), (205, 50) */
+            call writeln
+('Calling GNC with value ', a);
+            /* CIF PROCEDURECALL (1474, 294), (158, 50) */
+            call computeGNC(a, a);
+            /* CIF output (1479, 359), (148, 50) */
+            output housekeeping(a);
+            /* CIF NEXTSTATE (1503, 424), (100, 50) */
+            NEXTSTATE Running;
+    endstate;
     /* CIF state (2396, 617), (100, 50) */
     state Running;
         /* CIF input (2386, 687), (120, 50) */
@@ -203,23 +220,7 @@ endfor;
             output housekeeping (1);
             /* CIF NEXTSTATE (1750, 220), (91, 46) */
             NEXTSTATE -
-            /* CIF comment (1909, 213), (153, 50) */
+            /* CIF comment (1909, 213), (162, 50) */
             comment 'Stay in the same state';
-    endstate;
-    /* CIF state (1503, 29), (100, 50) */
-    state Running;
-        /* CIF input (1503, 99), (100, 50) */
-        input pulse;
-            /* CIF task (1456, 164), (193, 50) */
-            task a := (a+1) mod 10;
-            /* CIF PROCEDURECALL (1450, 229), (205, 50) */
-            call writeln
-('Calling GNC with value ', a);
-            /* CIF PROCEDURECALL (1474, 294), (158, 50) */
-            call computeGNC(a, a);
-            /* CIF output (1479, 359), (148, 50) */
-            output housekeeping(a);
-            /* CIF NEXTSTATE (1503, 424), (100, 50) */
-            NEXTSTATE Running;
     endstate;
 endprocess orchestrator;

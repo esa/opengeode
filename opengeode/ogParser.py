@@ -496,10 +496,21 @@ def find_basic_type(a_type, pool=None):
     basic_type = a_type or UNKNOWN_TYPE
     pool = pool or types()
     while basic_type.kind == 'ReferenceType':
+        Min = getattr(basic_type, "Min", None)
+        Max = getattr(basic_type, "Max", None)
+
         # Find type with proper case in the data view
         for typename in pool.viewkeys():
             if typename.lower() == basic_type.ReferencedTypeName.lower():
                 basic_type = pool[typename].type
+                if Min is not None and Max is not None \
+                        and is_numeric(basic_type):
+                    # Subtypes may have defined subranges
+                    new_type = type('Subtype',  basic_type.__bases__,
+                            dict (basic_type.__dict__))
+                    new_type.Min = Min
+                    new_type.Max = Max
+                    basic_type = new_type
                 break
         else:
             raise TypeError('Type "' + type_name(basic_type) +
@@ -710,11 +721,17 @@ def check_call(name, params, context):
         # value is *not* unsigned. abs(integer'Min) returns a NEGATIVE number
         # this is an issue in an assign statement, if the recipient is
         # unsigned .. A cast is necessary if the parameter of abs is negative
-        return type('Abs', (param_btys[0],), {})
-#       return type('Abs', (param_btys[0],), {
-#           'Min': str(max(float(param_btys[0].Min), 0)),
-#           'Max': str(max(float(param_btys[0].Max), 0))
-#       })
+        Min = float(param_btys[0].Min)
+        Max = float(param_btys[0].Max)
+        if p.exprType.kind != 'ReferenceType' and Min == Max:
+            # if param is a raw number, return a positive range
+            # otherwise return the same type as the variable
+            return type('Universal_Integer', (param_btys[0],), {
+               'Min': str(max(Min, 0)),
+               'Max': str(max(Max, 0))
+           })
+        else:
+            return type('Abs', (param_btys[0],), {})
 
     elif name == 'ceil':
         return type('Ceil', (REAL,), {
@@ -823,10 +840,18 @@ def check_range(typeref, type_to_check):
         both types assumed to be basic types
     '''
     try:
-        if float(type_to_check.Min) < float(typeref.Min) \
-                or float(type_to_check.Max) > float(typeref.Max):
-            raise Warning('Expression evaluation in range [{}..{}], '
-                          'could be outside expected range [{}..{}]'
+        min1, max1 = float(type_to_check.Min), float(type_to_check.Max)
+        min2, max2 = float(typeref.Min), float(typeref.Max)
+        error   = min1 > max2 or max1 < min2
+        warning = min1 < min2 or max1 > max2
+        if error:
+            raise TypeError(
+                    'Expression in range {} .. {} is outside range {} .. {}'
+                    .format(type_to_check.Min, type_to_check.Max,
+                            typeref.Min, typeref.Max))
+        elif warning:
+            raise Warning('Expression in range {} .. {}, '
+                          'could be outside expected range {} .. {}'
                     .format(type_to_check.Min, type_to_check.Max,
                             typeref.Min, typeref.Max))
     except (AttributeError, ValueError):
@@ -4597,6 +4622,7 @@ def assign(root, context):
         if basic.kind.startswith(('Integer', 'Real')):
             check_range(basic, find_basic_type(expr.right.exprType))
     except(AttributeError, TypeError) as err:
+        LOG.debug(str(traceback.format_exc()))
         errors.append(u'In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'
                       .format(exp=expr.inputString,
                               lty=type_name(expr.left.exprType) if
