@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.27'
+__version__ = '2.0.28'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1955,7 +1955,11 @@ class SDL_View(QtGui.QGraphicsView, object):
         # for the gpr file
         pr_names = ['"' + os.path.basename(pr_file) + '"'
                     for pr_file in sdlSymbols.AST.pr_files]
-        first_pr = pr_names.pop()
+        try:
+            first_pr = pr_names.pop()
+        except IndexError:
+            # case of a new file: use the filename chosen from the file dialog
+            first_pr = '"{}"'.format(os.path.basename(filename))
         other_pr = ", ".join(pr_names)
 
         template_gpr_sdl = '''project {pr} is

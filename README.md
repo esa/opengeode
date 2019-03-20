@@ -134,6 +134,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.28 (03/2019)
+    - Fix saving issue on new non-taste models
+
 2.0.27 (03/2019)
     - Fix type checking when using substrings
 
