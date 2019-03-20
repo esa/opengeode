@@ -2098,10 +2098,23 @@ def primary_substring(root, context):
     if receiver_bty.kind == 'SequenceOfType' or \
             receiver_bty.kind.endswith('StringType'):
         # min0/max0 and min1/max1 are the values of the substring bounds
-        min0 = float(find_basic_type(params[0].exprType).Min)
-        min1 = float(find_basic_type(params[1].exprType).Min)
-        max0 = float(find_basic_type(params[0].exprType).Max)
-        max1 = float(find_basic_type(params[1].exprType).Max)
+        try:
+            min0 = float(find_basic_type(params[0].exprType).Min)
+            max0 = float(find_basic_type(params[0].exprType).Max)
+        except AttributeError as err:
+            msg = 'First parameter of substring: could not resolve type'
+            errors.append(error(root, msg))
+            LOG.debug('In primary_substring: ' + str(err))
+            min0, max0 = 0, 0
+        try:
+            min1 = float(find_basic_type(params[1].exprType).Min)
+            max1 = float(find_basic_type(params[1].exprType).Max)
+        except AttributeError as err:
+            msg = 'Second parameter of substring: could not resolve type'
+            errors.append(error(root, msg))
+            LOG.debug('In primary_substring: ' + str(err))
+            min1, max1 = 0, 0
+
         node.exprType = type('SubStr', (receiver_bty,),
                              {'Min': str(int(min1) - int(max0) + 1),
                               'Max': str(int(max1) - int(min0) + 1)})

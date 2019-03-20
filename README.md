@@ -134,6 +134,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.27 (03/2019)
+    - Fix type checking when using substrings
+
 2.0.26 (03/2019)
     - minor bugfix with underscore/dash confusion
 
