@@ -35,6 +35,7 @@
 """
 
 import logging
+import operator
 from collections import defaultdict
 LOG = logging.getLogger(__name__)
 
@@ -67,14 +68,17 @@ class Expression(object):
 
 class ExprPlus(Expression):
     operand = '+'
+    op = operator.add
 
 
 class ExprMul(Expression):
     operand = '*'
+    op = operator.mul
 
 
 class ExprMinus(Expression):
     operand = '-'
+    op = operator.sub
 
 
 class ExprOr(Expression):
@@ -120,14 +124,17 @@ class ExprLe(Expression):
 
 class ExprDiv(Expression):
     operand = '/'
+    op = operator.div
 
 
 class ExprMod(Expression):
     operand = 'mod'
+    op = operator.mod
 
 
 class ExprRem(Expression):
     operand = 'rem'
+    op = operator.mod
 
 
 class ExprNot(Expression):
