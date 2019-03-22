@@ -1642,7 +1642,14 @@ def arithmetic_expression(root, context):
             # unless the left side is a universal number, in which case
             # the type has to be deduced from the user of the expression
             # (e.g. the left side of an assignment)
-            b = sorted([minL % maxR, maxL % maxR])
+            if minR < 0 or minL < 0:
+                msg = "Negative ranges and modulo don't fit well. " \
+                        "Use with caution (check Wikipedia for details)"
+                warnings.append(warning(root, msg))
+            if minR < maxL:
+                b = sorted ([minL % maxR, minR])
+            else:
+                b = sorted([minL % maxR, maxL % maxR])
             bounds["Min"] = b[0]
             bounds["Max"] = b[1]
         else:
