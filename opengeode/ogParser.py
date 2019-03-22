@@ -1585,7 +1585,7 @@ def arithmetic_expression(root, context):
         return { 'Min': min(candidates),
                  'Max': max(candidates)}
 
-    print "[DEBUG] Arithmetic expression:", get_input_string(root)
+    #print "[DEBUG] Arithmetic expression:", get_input_string(root)
     expr, errors, warnings = binary_expression(root, context)
 
     # Get the basic types to have the ranges
@@ -1623,7 +1623,7 @@ def arithmetic_expression(root, context):
         if isinstance(expr.right, ogAST.PrimConstant):
             minL = maxL = get_constant_value(expr.right.constant_value)
 
-        print "...left/right [{} .. {}]   [{} .. {}]".format(minL, maxL, minR, maxR)
+        #print "...left/right [{} .. {}]   [{} .. {}]".format(minL, maxL, minR, maxR)
 
         # compute the bounds, independently from anything else
         bounds = {"Min" : "0", "Max": "0"}
@@ -1711,7 +1711,6 @@ def arithmetic_expression(root, context):
                    'Min' : bound_min,
                    'Max' : bound_max
                    })
-                print "[DEBUG] Kind =", kind, bound_min
         # case 3:
         # no numbers, two ASN.1 types. raise an error if there is a
         # signed/unsigned mismatch
@@ -1729,7 +1728,7 @@ def arithmetic_expression(root, context):
                       if minL >= 0 else "") + 'signed while "' \
                               + expr.right.inputString + '" is not'
                 errors.append(error(root, msg))
-                print "[DEBUG] SIGNED/UNSIGNED MISMATCH", minL < 0, minR < 0
+                #print "[DEBUG] SIGNED/UNSIGNED MISMATCH", minL < 0, minR < 0
             else:  #  sign is consistent on both sides
                 bound_min = str(float(bounds['Min']))
                 # Must check that sign of resulting bound is still compatible
@@ -1749,8 +1748,8 @@ def arithmetic_expression(root, context):
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types '\
               'have a range constraint'
-        print msg
-        print (traceback.format_exc())
+        #print msg
+        #print (traceback.format_exc())
         errors.append(error(root, msg))
 
     if root.type in (lexer.REM, lexer.MOD) and not isinstance(expr,
@@ -1760,12 +1759,12 @@ def arithmetic_expression(root, context):
                 msg = 'Mod/Rem expressions can only applied to Integer types'
                 errors.append(error(root, msg))
                 break
-    print "[DEBUG] Done: ", get_input_string(root)
-    if expr.exprType is not UNKNOWN_TYPE:
-        print "[DEBUG] -->", find_basic_type(expr.exprType).Min, \
-                find_basic_type(expr.exprType).Max
-    else:
-        print "[DEBUG] Type of expression could not be resolved"
+    #print "[DEBUG] Done: ", get_input_string(root)
+#   if expr.exprType is not UNKNOWN_TYPE:
+#       print "[DEBUG] -->", find_basic_type(expr.exprType).Min, \
+#               find_basic_type(expr.exprType).Max
+#   else:
+#       print "[DEBUG] Type of expression could not be resolved"
     return expr, errors, warnings
 
 
