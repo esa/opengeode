@@ -1613,19 +1613,8 @@ def arithmetic_expression(root, context):
         raise ValueError(str(first_str) + " actual value not found" )
 
     try:
-        # set Min and Max.. Note, for Int32 types (e.g. For loop index)
-        # the Min must be compatible with the other side...
-        # EDIT: not understood, and not right
-        # EDIT2 : in a foor loop, the index is of type Integer, so it is
-        # signed, even if its range is positive.
-#       minL = float(basic_left.Min) \
-#               if basic_left.kind != "Integer32Type" \
-#               else float(basic_right.Min)
         minL = float(basic_left.Min)
         maxL = float(basic_left.Max)
-#       minR = float(basic_right.Min) \
-#               if basic_right.kind != "Integer32Type" \
-#               else float(basic_left.Min)
         minR = float(basic_right.Min)
         maxR = float(basic_right.Max)
         # Constants defined in ASN.1 : take their value for the range
@@ -1653,8 +1642,9 @@ def arithmetic_expression(root, context):
             # unless the left side is a universal number, in which case
             # the type has to be deduced from the user of the expression
             # (e.g. the left side of an assignment)
-            bounds["Min"] = maxR
-            bounds["Max"] = maxR
+            b = sorted([minL % maxR, maxL % maxR])
+            bounds["Min"] = b[0]
+            bounds["Max"] = b[1]
         else:
             bounds = find_bounds(expr.op, minL, maxL, minR, maxR)
 
