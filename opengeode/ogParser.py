@@ -1616,6 +1616,8 @@ def arithmetic_expression(root, context):
         # set Min and Max.. Note, for Int32 types (e.g. For loop index)
         # the Min must be compatible with the other side...
         # EDIT: not understood, and not right
+        # EDIT2 : in a foor loop, the index is of type Integer, so it is
+        # signed, even if its range is positive.
 #       minL = float(basic_left.Min) \
 #               if basic_left.kind != "Integer32Type" \
 #               else float(basic_right.Min)
@@ -1631,37 +1633,26 @@ def arithmetic_expression(root, context):
             minL = maxL = get_constant_value(expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
             minL = maxL = get_constant_value(expr.right.constant_value)
-        # Type of the resulting expression depends on whether there are raw
-        # numbers on one side of the expression (Universal_Integer):
-        #
-        # case 1:
-        # If there is a side with an ASN.1 type and a side with a raw number,
-        # the resulting type is the ASN.1 type
-        # we ignore the computed range in that case
-
-#       if is_number(basic_right) != is_number(basic_left):
-#           expr.exprType = expr.left.exprType if is_number(basic_right) \
-#               else expr.right.exprType
-#           print "[DEBUG] Ignoring the computed range"
 
         print "...left/right [{} .. {}]   [{} .. {}]".format(minL, maxL, minR, maxR)
-        # case 2:
-        # two numbers, then the result is also a number with a range depending
-        # on the result of the expression
-        # Compute the result on the fly and transform the expression into
-        # either a PrimInteger or a PrimReal
-        #elif is_number(basic_right) == is_number(basic_left) == True:
-        # EDIT : merge case 1 and case 2
-        # the range must be computed, but the result in the case where one
-        # side is a variable needs to have a range that is compatible in terms
-        # of basic type: signed or unsigned
 
         # compute the bounds, independently from anything else
         bounds = {"Min" : "0", "Max": "0"}
         if isinstance(expr, ogAST.ExprDiv) and (minR == 0 or maxR == 0):
-            msg = 'Division by zero is not allowed'
-            errors.append(error(root, msg))
+            if minR == maxR == 0:
+                msg = 'Division by zero is not allowed'
+                errors.append(error(root, msg))
+            else:
+                msg = "Range of right operand may trigger division by zero"
+                warnings.append(warning(root, msg))
+                bounds = find_bounds(expr.op, minL, maxL, minR or 1, maxR or 1)
         elif isinstance(expr, (ogAST.ExprRem, ogAST.ExprMod)):
+            # modulo returns an positive number, however it may not be
+            # unsigned, it returns a number of the same sign as its
+            # parameter (i.e. the left side of the expression)
+            # unless the left side is a universal number, in which case
+            # the type has to be deduced from the user of the expression
+            # (e.g. the left side of an assignment)
             bounds["Min"] = maxR
             bounds["Max"] = maxR
         else:
@@ -1672,50 +1663,25 @@ def arithmetic_expression(root, context):
                         or (not is_number(basic_left)) and minL < 0.0
 
             # create a primary to replace the original expression
+            # in case both sides are raw number (int or float)
             if is_integer(basic_right) == is_integer(basic_left) == True:
                 prim = ogAST.PrimInteger()
                 sort = 'Universal_Integer'
                 kind = 'IntegerType'
                 op   = int
-            else:
+            elif is_real(basic_right) == is_real(basic_left) == True:
                 prim = ogAST.PrimReal()
                 sort = 'PrReal'
                 kind = 'RealType'
                 op   = float
+            else:
+                # default : signed type
+                kind = 'Integer32Type'
 
-#           if isinstance(expr, ogAST.ExprPlus):
-#               #result = minL + minR
-#               bounds = find_bounds(operator.add, minL, maxL, minR, maxR)
-#           elif isinstance(expr, ogAST.ExprMul):
-#               #result = minL * minR
-#               bounds = find_bounds(operator.mul, minL, maxL, minR, maxR)
-#           elif isinstance(expr, ogAST.ExprMinus):
-#               #result = minL - maxR
-#               bounds = find_bounds(operator.sub, minL, maxL, minR, maxR)
-#
-#           elif isinstance(expr, ogAST.ExprDiv):
-#               if maxR != 0:
-#                   #result = minL / maxR
-#                   bounds = find_bounds(operator.div, minL, maxL, minR, maxR)
-#               else:
-#                   msg = 'Division by zero is not allowed'
-#                   errors.append(error(root, msg))
-#           elif isinstance(expr, ogAST.ExprMod):
-#               # modulo returns an positive number, however it may not be
-#               # unsigned, it returns a number of the same sign as its
-#               # parameter (i.e. the left side of the expression)
-#               # unless the left side is a universal number, in which case
-#               # the type has to be deduced from the user of the expression
-#               # (e.g. the left side of an assignment)
-#               #result = minL % minR
-#               bounds = find_bounds(operator.mod, minL, maxL, minR, maxR)
-#           elif isinstance(expr, ogAST.ExprRem):
-#               #result = minL % minR
-#               bounds = find_bounds(operator.mod, minL, maxL, minR, maxR)
-#               # rem returns an positive or negative number
-#           # cast the result to the resulting type and make it a string
+            # cast the result to the resulting type and make it a string
             bound_min = str(op(bounds['Min']))
             bound_max = str(op(bounds['Max']))
+
             if is_number(basic_right) == is_number(basic_left) == True:
                 # two numbers: replace the expression with the computed result
                 prim.value = [bound_min]
@@ -1727,11 +1693,27 @@ def arithmetic_expression(root, context):
                 expr = prim
             # Check and possibly set result as signed if one side had an ASN.1
             # type that was signed. Don't set to unsigned if the result of the
-            # computed range is negative, because this would be a real error
+            # In the other case: unsigned number Minus something, the result
+            # may be negative and therefore go out of range. We have to respect
+            # the type of the unsigned type and can't emit an error, but
+            # we have to raise a warning to let the user know that the
+            # operation may result in a negative number
+            # example: x := x - 1 with range of x being [0 .. i]
             elif is_number(basic_right) != is_number(basic_left):
                 if is_signed and float(bound_min) >= 0:
                     bound_min = str(minR) \
                             if not is_number(basic_right) else str(minL)
+                elif not is_signed and float(bound_min) < 0:
+                    bound_min = str(minR) \
+                            if not is_number(basic_right) else str(minL)
+                    msg = "This expression may result in a negative (signed) "\
+                          "number while type of operand is unsigned"
+                    warnings.append(warning(root, msg))
+                if (not is_number(basic_left)
+                    and basic_left.kind == 'Integer32Type') or (not is_number
+                    (basic_right) and basic_right.kind == 'Integer32Type'):
+                    # One of the operand is a loop index (SIGNED)
+                    kind = 'Integer32Type'
                 expr.exprType = type("Computed_Range",
                         (basic_right if not is_number(basic_right)
                             else basic_left,), {
@@ -1739,17 +1721,25 @@ def arithmetic_expression(root, context):
                    'Min' : bound_min,
                    'Max' : bound_max
                    })
+                print "[DEBUG] Kind =", kind, bound_min
         # case 3:
         # no numbers, two ASN.1 types. raise an error if there is a
         # signed/unsigned mismatch
         # otherwise (sign ok), set the computed bounds
+        # before concluding on the mismatch, check that one side is not
+        # a forloop index with positive values (it is signed!)
         else:
+            sign_mismatch = False
             if (minL < 0) != (minR < 0):
+                sign_mismatch = \
+                        (minL >= 0 and basic_left.kind  != 'Integer32Type')\
+                     or (minR >= 0 and basic_right.kind != 'Integer32Type')
+            if sign_mismatch:
                 msg = '"' + expr.left.inputString + '" is ' + ("un"
                       if minL >= 0 else "") + 'signed while "' \
                               + expr.right.inputString + '" is not'
                 errors.append(error(root, msg))
-                #print "[DEBUG] SIGNED/UNSIGNED MISMATCH", minL < 0, minR < 0
+                print "[DEBUG] SIGNED/UNSIGNED MISMATCH", minL < 0, minR < 0
             else:  #  sign is consistent on both sides
                 bound_min = str(float(bounds['Min']))
                 # Must check that sign of resulting bound is still compatible
@@ -1781,8 +1771,11 @@ def arithmetic_expression(root, context):
                 errors.append(error(root, msg))
                 break
     print "[DEBUG] Done: ", get_input_string(root)
-    print "[DEBUG] -->", find_basic_type(expr.exprType).Min, \
-            find_basic_type(expr.exprType).Max
+    if expr.exprType is not UNKNOWN_TYPE:
+        print "[DEBUG] -->", find_basic_type(expr.exprType).Min, \
+                find_basic_type(expr.exprType).Max
+    else:
+        print "[DEBUG] Type of expression could not be resolved"
     return expr, errors, warnings
 
 
