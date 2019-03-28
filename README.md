@@ -134,6 +134,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.0.30 (03/2019)
+    - Fix bug when double clicking in an autocompletion box in text areas
+
 2.0.29 (03/2019)
     - Fix range computations and modulo operator
 

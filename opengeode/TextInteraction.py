@@ -145,8 +145,7 @@ class EditableText(QGraphicsTextItem, object):
         self.parent = parent
         self.setFont(QFont('Ubuntu', 10))
         self.completer = Completer(self)
-        self.completer.widget().itemActivated.connect(
-                self.completion_selected)
+        self.completer.widget().itemActivated.connect(self.completion_selected)
         self.hyperlink = hyperlink
         self.setOpenExternalLinks(True)
         if hyperlink:
@@ -175,6 +174,7 @@ class EditableText(QGraphicsTextItem, object):
         # Activate cache mode to boost rendering by calling paint less often
         # Removed - does not render text properly (eats up the right part)
         # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        self.force_focus = False
 
     def set_text_alignment(self):
         ''' Apply the required text alignment within the text box '''
@@ -209,11 +209,6 @@ class EditableText(QGraphicsTextItem, object):
         else:
             y_pos = 0
         self.setPos(x_pos, y_pos)
-
-#   def paint(self, painter, _, ___):
-#       ''' Place the textbox in the parent symbol and draw it '''
-#       self.set_textbox_position()
-#       super(EditableText, self).paint(painter, _, ___)
 
     def try_resize(self):
         '''
@@ -321,6 +316,7 @@ class EditableText(QGraphicsTextItem, object):
 
             self.completer.setPos(pos_x, pos_y)
             self.completer.show()
+            self.force_focus = True   # avoid unwanted syntax checks
             # Make sure parent item has higher visibility than its siblings
             # (useful in decision branches)
             self.parent.setZValue(1)
@@ -332,6 +328,16 @@ class EditableText(QGraphicsTextItem, object):
             self.completer.resize(0, 0)
             self.setFocus()
         self.completer_has_focus = False
+
+    def mousePressEvent(self, event):
+        '''
+            If the completer box is active while the user clicks on another
+            area of the text box, make it disappear first
+        '''
+        if self.completer.isVisible():
+            self.completer.hide()
+            self.completer.resize(0, 0)
+        super(EditableText, self).mousePressEvent(event)
 
     # pylint: disable=C0103
     def focusOutEvent(self, event):
@@ -345,6 +351,14 @@ class EditableText(QGraphicsTextItem, object):
         if self.completer and not self.completer_has_focus:
             self.completer.hide()
             self.completer.resize(0, 0)
+        if self.force_focus:
+            # when user double-clicks on the Completer, it may be out of
+            # the editable text. It is not right to leave the focus in that
+            # case, as this would generate a synatx check while in fact
+            # user is not done editing text
+            self.setFocus()
+            self.force_focus = False
+            return
         if not self.completer or not self.completer.isVisible():
             # Trigger a select - side effect makes the toolbar update
             try:
