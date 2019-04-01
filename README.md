@@ -134,6 +134,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+2.0.31 (04/2019)
+    - Can cut/paste nested states (nested content was lost before)
+    - Can copy/paste and then rename states with nested content
+
 2.0.30 (03/2019)
     - Fix bug when double clicking in an autocompletion box in text areas
 
