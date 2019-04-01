@@ -66,12 +66,19 @@ class ReplaceText(QUndoCommand):
     def undo(self):
         self.text.setPlainText(self.old_text)
         if self.text.parent in self.scene.states:
-            # Rename the nested state if relevant
-            try:
-                self.scene.composite_states[self.old_text.lower()] = \
-                        self.scene.composite_states.pop(self.new_text.lower())
-            except KeyError as err:
+            # see explanations in the redo() function below
+            if self.count_instances_new != 0:
                 pass
+            else:
+                if self.count_instances_old == 1:
+                    try:
+                        self.scene.composite_states[self.old_text.lower()] = \
+                         self.scene.composite_states.pop(self.new_text.lower())
+                    except KeyError:
+                        pass
+                else:
+                    # scene was created with redo, delete reference
+                    self.scene.composite_states.pop(self.new_text.lower())
 
     def redo(self):
         self.text.setPlainText(self.new_text)
