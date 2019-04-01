@@ -170,6 +170,11 @@ def paste_floating_objects(scene):
         procedures = (i for i in item_list if isinstance(i, ogAST.Procedure))
         processes = (i for i in item_list if isinstance(i, ogAST.Process))
         for state in states:
+            # nesting is not copied, because the nested content is a scene
+            # that is just referenced.. content must be actually copied
+            # to a new scene only if a state is renamed (this will preserve
+            # the nesting content of the original state)
+
             # First check if state has already been pasted
             try:
                 new_item = Renderer.render(state, scene=CLIPBOARD,

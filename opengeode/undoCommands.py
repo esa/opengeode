@@ -21,6 +21,9 @@ import logging
 from PySide.QtGui import QUndoCommand
 from PySide.QtCore import QPropertyAnimation, QEasingCurve, QAbstractAnimation
 
+import Pr
+import ogParser
+
 LOG = logging.getLogger(__name__)
 
 
@@ -49,12 +52,70 @@ class ReplaceText(QUndoCommand):
         self.text = text_id
         self.old_text = old_text
         self.new_text = new_text
+        self.scene = self.text.parent.scene()
+        self.count_instances_old, self.count_instances_new = 1, -1
+        for each in self.scene.states:
+            # count the number of instances of the states in the scene
+            # the text is already renamed, values are initialized to -1 and 1
+            state_name = unicode(each).lower()
+            if self.old_text.lower() == state_name:
+                self.count_instances_old += 1
+            if self.new_text.lower() == state_name:
+                self.count_instances_new += 1
 
     def undo(self):
         self.text.setPlainText(self.old_text)
+        if self.text.parent in self.scene.states:
+            # Rename the nested state if relevant
+            try:
+                self.scene.composite_states[self.old_text.lower()] = \
+                        self.scene.composite_states.pop(self.new_text.lower())
+            except KeyError as err:
+                pass
 
     def redo(self):
         self.text.setPlainText(self.new_text)
+
+        if self.text.parent in self.scene.states:
+            # renaming a state in case of a nested state:
+            # 1) if renamed state already exists, do nothing special
+            # 2) if renamed state is a new state:
+            #    a. if this was the only instance of the state, just rename
+            #       the list of composite state to reflect the new state name
+            #    b. otherwise, parse the composite state, create a new scene
+            #       and render the same content in the new scene, then
+            #       update the list of composite states with the new copy
+            if self.count_instances_new != 0:
+                # case 1: do nothing, state is already initialized
+                pass
+            else:
+                if self.count_instances_old == 1:
+                    # case 2a. rename the list of composite states
+                    try:
+                        self.scene.composite_states[self.new_text.lower()] = \
+                         self.scene.composite_states.pop(self.old_text.lower())
+                    except KeyError:
+                        pass
+                else:
+                    # case 2b: create a new scene and really copy the state
+                    state = self.text.parent
+                    if state.is_composite():
+                        # Parse the scene of the nested state:
+                        sub_state = u'\n'.join(Pr.generate(state,
+                                                           composite=True,
+                                                           nextstate=False))
+                        if sub_state:
+                            new_scene = self.scene.create_subscene(
+                                    context=state.context_name,
+                                    parent=self.scene)
+                            # get the AST of type ogAST.CompositeState
+                            ast, _, _, _, _ = ogParser.parseSingleElement(
+                                    elem='composite_state',
+                                    string=sub_state)
+                            # render the composite state content
+                            new_scene.render_everything(ast.content)
+                            self.scene.composite_states[
+                                    self.new_text.lower()] = new_scene
 
 
 class ResizeSymbol(QUndoCommand):

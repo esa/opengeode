@@ -5148,7 +5148,7 @@ def parseSingleElement(elem='', string='', context=None):
             'terminator_statement', 'label', 'task', 'procedure_call', 'end',
             'text_area', 'state', 'start', 'procedure', 'floating_label',
             'connect_part', 'process_definition', 'proc_start', 'state_start',
-            'signalroute', 'stop_if', 'continuous_signal'))
+            'signalroute', 'stop_if', 'continuous_signal', 'composite_state'))
     # Create a dummy context, needed to place context data
     if elem == 'proc_start':
         elem = 'start'
