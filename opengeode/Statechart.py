@@ -552,8 +552,10 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
                     # that all children items are moved together with their
                     # parent. Unfortunately calls to setParentItem provoke
                     # a segfault. To be tried again when PySide is fixed...
-                    #each.setParent(symb)
-                    scene.addItem(each)
+                    # Update (04/2019) Workaround found (see sdlSymbols.py)
+                    if symb.scene() != each.scene():
+                        symb.scene().addItem(each)
+                    each.setParent(symb)
                     each.position += deltapos
                     each.setZValue(each.zValue() + symb.zValue() + 1)
 

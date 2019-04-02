@@ -378,6 +378,15 @@ class Decision(VerticalSymbol):
                     isinstance(c, Connection) and not
                     isinstance(c.child, (Comment, HorizontalSymbol)))
                 # Don't set parent item to None to avoid Qt segfault
+                # The bug with setParentItem is a Qt bug documented here:
+                # https://bugreports.qt.io/browse/QTBUG-18616
+                # the crash may happen if the scene of the new parent
+                # is different from the scene of the object. the doc says
+                # it is allowed but an assert in the code makes it crash
+                # workaround: first put the item manually in the right scene
+                # then call setParentItem
+                if self.scene() != last_cnx.scene():
+                    self.scene().addItem(last_cnx)
                 last_cnx.setParentItem(self)
             except ValueError:
                 pass
@@ -385,6 +394,8 @@ class Decision(VerticalSymbol):
                     branch.boundingRect() |
                     branch.childrenBoundingRect()).height()
             try:
+                if last.scene() != last_cnx.scene():
+                    last.scene().addItem(last_cnx) # workaround Qt's bug 18616
                 last_cnx.setParentItem(last)
             except AttributeError:
                 pass
