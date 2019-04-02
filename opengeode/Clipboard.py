@@ -6,7 +6,7 @@
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2018 European Space Agency
+    Copyright (c) 2012-2019 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -148,6 +148,13 @@ def paste(parent, scene):
             each.double_click()
     else:
         new_symbols = paste_below_item(parent, scene)
+        def rec_double_click(next):
+            if next is not None:
+                next.double_click()
+                rec_double_click(next.next_aligned_symbol())
+        for each in new_symbols:
+            #  Make sure nested scenes are set properly
+            rec_double_click(each)
 
     if remove_after_paste:
         #  Remove from local clipboard if it came from system clipboard
@@ -221,6 +228,7 @@ def paste_below_item(parent, scene):
     symbols = []
     for item_list, _ in COPY_PASTE:
         states = [i for i in item_list if isinstance(i, ogAST.State)]
+        print [state.inputString for state in states]
         for i in [c for c in item_list if not isinstance
                 (c, (ogAST.State, ogAST.TextArea, ogAST.Start))]:
             LOG.debug('PASTE ' + str(i))

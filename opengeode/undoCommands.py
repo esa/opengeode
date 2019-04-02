@@ -78,7 +78,10 @@ class ReplaceText(QUndoCommand):
                         pass
                 else:
                     # scene was created with redo, delete reference
-                    self.scene.composite_states.pop(self.new_text.lower())
+                    try:
+                        self.scene.composite_states.pop(self.new_text.lower())
+                    except KeyError:
+                        pass
 
     def redo(self):
         self.text.setPlainText(self.new_text)

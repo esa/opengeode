@@ -1736,7 +1736,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         QtGui.QMessageBox.about(self, 'About OpenGEODE',
                 'OpenGEODE - a tiny SDL editor for TASTE\n\n'
                 'Version {}\n\n'
-                'Copyright (c) 2012-2018 European Space Agency\n\n'
+                'Copyright (c) 2012-2019 Maxime Perrotin / European Space Agency\n\n'
                 'Contact: Maxime.Perrotin@esa.int\n\n'.format(__version__))
 
     # pylint: disable=C0103
