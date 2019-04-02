@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.32 (04/2019)
+    - Fix segfault and improve copy paste of nested states in branches
+
 2.0.31 (04/2019)
     - Can cut/paste nested states (nested content was lost before)
     - Can copy/paste and then rename states with nested content

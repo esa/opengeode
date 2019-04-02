@@ -228,7 +228,6 @@ def paste_below_item(parent, scene):
     symbols = []
     for item_list, _ in COPY_PASTE:
         states = [i for i in item_list if isinstance(i, ogAST.State)]
-        print [state.inputString for state in states]
         for i in [c for c in item_list if not isinstance
                 (c, (ogAST.State, ogAST.TextArea, ogAST.Start))]:
             LOG.debug('PASTE ' + str(i))
