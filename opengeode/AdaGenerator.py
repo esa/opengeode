@@ -1875,7 +1875,7 @@ def _prim_substring(prim, **kwargs):
 
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'
-    ada_string += '({r1}..{r2})'.format(r1=r1_string, r2=r2_string)
+    ada_string += u'({r1}..{r2})'.format(r1=r1_string, r2=r2_string)
     stmts.extend(r1_stmts)
     stmts.extend(r2_stmts)
     local_decl.extend(r1_local)
