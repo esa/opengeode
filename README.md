@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.33 (04/2019)
+    - Fix unicode issue in Ada backend when using substrings
+
 2.0.32 (04/2019)
     - Fix segfault and improve copy paste of nested states in branches
 
