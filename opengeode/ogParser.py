@@ -2176,11 +2176,15 @@ def primary_substring(root, context):
             msg = ('Substring start range could be higher than end range'
                    ' ({}>{})'.format(max0, max1))
             warnings.append(warning(root, msg))
-        if int(min0) > int(receiver_bty.Max) \
-                or int(max1) > int(receiver_bty.Max):
-            msg = 'Substring bounds [{}..{}] outside range [{}..{}]'.format(
-                    min0, max1, receiver_bty.Min, receiver_bty.Max)
+        if int(min0) > int(receiver_bty.Max):
+            # real error: range starts with a clearly out of range value
+            msg = 'Substring left bounds ({}) bigger than index higher bound '\
+                  '({})'.format(min0, receiver_bty.Max)
             errors.append(error(root, msg))
+        if  int(max1) > int(receiver_bty.Max):
+            msg = 'Substring right bound ({}) bigger than index higher bound '\
+                  '({})'.format(max1, receiver_bty.Max)
+            warnings.append(warning(root, msg))
     else:
         msg = 'Substring can only be applied to types SequenceOf or String'
         errors.append(error(root, msg))
