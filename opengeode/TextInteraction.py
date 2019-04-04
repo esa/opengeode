@@ -7,7 +7,7 @@
         - Syntax highlighing
         - Automatic placement
 
-    Copyright (c) 2012-2014 European Space Agency
+    Copyright (c) 2012-2019 European Space Agency
 
     Designed and implemented by Maxime Perrotin for the TASTE project
 
@@ -17,7 +17,7 @@
 import string
 import logging
 
-from PySide.QtCore import Qt, QRegExp, Slot
+from PySide.QtCore import Qt, QRegExp, Slot, Signal
 
 from PySide.QtGui import(QGraphicsTextItem, QGraphicsProxyWidget, QListWidget,
                          QStringListModel, QCompleter, QListWidgetItem, QFont,
@@ -139,6 +139,7 @@ class EditableText(QGraphicsTextItem, object):
     '''
     default_cursor = Qt.IBeamCursor
     hasParent = False
+    word_under_cursor = Signal(str)
 
     def __init__(self, parent, text='...', hyperlink=None):
         super(EditableText, self).__init__(parent)
@@ -162,6 +163,7 @@ class EditableText(QGraphicsTextItem, object):
         self.highlighter = Highlighter(
                 self.document(), parent.blackbold, parent.redbold)
         self.completion_prefix = ''
+        self.old_word = ''  # needed to detect change of word under cursor
         #self.set_textbox_position()
         self.set_text_alignment()
         # Increase the Z value of the text area so that the autocompleter
@@ -293,6 +295,11 @@ class EditableText(QGraphicsTextItem, object):
         text_cursor = self.textCursor()
         text_cursor.select(QTextCursor.WordUnderCursor)
         self.completion_prefix = text_cursor.selectedText()
+
+        # "self.completion_prefix" is the complete word under the cursor
+        if self.completion_prefix != self.old_word:
+            self.word_under_cursor.emit(self.completion_prefix)
+            self.old_word = self.completion_prefix
 
         self.context_completion_list(force=(event.key()==Qt.Key_F8))
 

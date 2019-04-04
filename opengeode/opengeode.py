@@ -376,6 +376,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     # Signal to be emitted when the scene is left (e.g. UP button)
     scene_left = QtCore.Signal()
     context_change = QtCore.Signal()
+    word_under_cursor = QtCore.Signal(str)
 
     def __init__(self, context='process', readonly=False):
         ''' Create a Scene for a given context:
@@ -724,6 +725,8 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             #symbol.set_textbox_position()
             symbol.try_resize()
             symbol.set_text_alignment()
+            # connect the signal that is emitted when text edit changes word
+            symbol.word_under_cursor.connect(self.word_under_cursor.emit)
         for symbol in self.visible_symb:
             symbol.update_connections()
 
@@ -1211,6 +1214,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         subscene.messages_window = self.messages_window
         subscene.parent_scene = parent
         subscene.context_change.connect(self.context_change.emit)
+        subscene.word_under_cursor.connect(self.word_under_cursor.emit)
         return subscene
 
 
@@ -2487,6 +2491,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             scene.undo_stack.indexChanged.connect(lambda idx :
                     self.view.change_cleanliness(idx))
             scene.context_change.connect(self.update_datadict_window)
+            scene.word_under_cursor.connect(self.select_in_datadict_window)
 
     def start(self, options):
         ''' Initializes all objects to start the application '''
@@ -2731,6 +2736,20 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         item_types.setExpanded(True)
         item_constants.setExpanded(True)
         self.datadict.resizeColumnToContents(0)
+
+    def select_in_datadict_window(self, str):
+        ''' This function is called upon reception of a signal emitted by
+        text boxes when the current word under the cursor has changed. This
+        function then looks in the data dictionary and if the text is found,
+        the relevant row is selected. This allows user to easily retrieve
+        the type of a variable for instance '''
+        (in_sig, out_sig, states, labels,
+         dcl, timers) = [self.datadict.topLevelItem(i) for i in range(2, 8)]
+        for idx in xrange(dcl.childCount()):
+            child = dcl.child(idx)
+            if child.text(0).lower() == str.lower():
+                child.treeWidget().setCurrentItem(child)
+                child.treeWidget().scrollToItem(child)
 
 
     def update_datadict_window(self):

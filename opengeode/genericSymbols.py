@@ -41,7 +41,7 @@
     For a complete example, look at the "sdlSymbols.py" module, that
     provide symbol definitions that correspond to an SDL editor.
 
-    Copyright (c) 2012-2013 European Space Agency
+    Copyright (c) 2012-2019 European Space Agency
 
     Designed and implemented by Maxime Perrotin for the TASTE project
 
@@ -82,6 +82,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
     # Emit a signal when the symbol moved - can be caught by connectors to
     # adjust connection points if the symbol is not the connection parent
     moved = Signal(float, float)
+    # when editing text, signal is emitted when the word under cursor changes
     # Symbols of a given type share a text-autocompletion list:
     completion_list = set()
     # Flexible lists of symbol types that can be set as child of this symbol
