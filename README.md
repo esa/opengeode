@@ -137,6 +137,8 @@ Changelog
 
 2.0.34 (04/2019)
     - Relax range check for substrings
+    - Save/restore windows geometry when quitting/opening the tool
+    - Make datatypes fully visible in the data dictionary window
 
 2.0.33 (04/2019)
     - Fix unicode issue in Ada backend when using substrings
