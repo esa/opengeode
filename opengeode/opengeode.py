@@ -85,7 +85,7 @@ except ImportError:
 
 from PySide import QtGui, QtCore
 from PySide.QtCore import (Qt, QSize, QFile, QIODevice, QRectF, QTimer, QPoint,
-                           QPointF, QLineF, QFileInfo)
+                           QPointF, QLineF, QFileInfo, QSettings)
 
 from PySide.QtUiTools import QUiLoader
 from PySide import QtSvg
@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.33'
+__version__ = '2.0.34'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
