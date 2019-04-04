@@ -2629,6 +2629,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         # After file was loaded, try to restore window geometry
         self.restoreApplicationState()
 
+
     @QtCore.Slot(QtGui.QMdiSubWindow)
     def upd_statechart(self, mdi):
         ''' Signal sent by Qt when the MDI area tab changes
@@ -2707,23 +2708,28 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.asn1_browser.setFont(QtGui.QFont('UbuntuMono', 12))
 
         # Update the data dictionary
-        item = self.datadict.topLevelItem(0)
-        item.takeChildren() # remove old children
+        item_types = self.datadict.topLevelItem(0)
+        item_types.takeChildren() # remove old children
         for name, sort in sorted(ast.dataview.viewitems(),
                                  key=lambda (name, sort): name):
-            new_item = QtGui.QTreeWidgetItem(item,
+            new_item = QtGui.QTreeWidgetItem(item_types,
                                              [name.replace('-', '_'),
                                               'view'])
             new_item.setForeground(1, Qt.blue)
             # Save type anchor for html
             new_item.setData(0, ANCHOR, "ASN1_" + name.replace('-', '_'))
-        item = self.datadict.topLevelItem(1)
-        item.takeChildren()
+        item_constants = self.datadict.topLevelItem(1)
+        item_constants.takeChildren()
         for name, sort in ast.asn1_constants.viewitems():
             sortname = sort.type.ReferencedTypeName \
                     if sort.type.kind.startswith('Reference') \
                     else sort.type.kind[:-4]
-            QtGui.QTreeWidgetItem(item, [name.replace('-', '_'), sortname])
+            QtGui.QTreeWidgetItem(item_constants,
+                                 [name.replace('-', '_'),
+                                 sortname])
+        # Expand the types tree to make sure the size of the colum is ok
+        item_types.setExpanded(True)
+        item_constants.setExpanded(True)
         self.datadict.resizeColumnToContents(0)
 
 
