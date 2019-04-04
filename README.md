@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.35 (04/2019)
+    - Add helper when editing text (update data dictionary selection)
+
 2.0.34 (04/2019)
     - Relax range check for substrings
     - Save/restore windows geometry when quitting/opening the tool
