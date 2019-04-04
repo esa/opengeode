@@ -268,6 +268,7 @@ class File_toolbar(QtGui.QToolBar, object):
     def __init__(self, parent):
         ''' Create the toolbar using standard icons '''
         super(File_toolbar, self).__init__(parent)
+        self.setObjectName("File Toolbar")  # needed to save geometry
         self.setMovable(False)
         self.setFloatable(False)
         self.new_button = self.addAction(self.style().standardIcon(
@@ -296,6 +297,7 @@ class Sdl_toolbar(QtGui.QToolBar, object):
     def __init__(self, parent):
         ''' Create the toolbar, get icons and link actions '''
         super(Sdl_toolbar, self).__init__(parent)
+        self.setObjectName("SDL Toolbar")  # needed to save geometry
         self.setMovable(False)
         self.setFloatable(False)
         self.setIconSize(QSize(35, 35))
@@ -2470,7 +2472,6 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_mdi = None
         self.current_window = None
         self.datadict = None
-        self.setWindowState(Qt.WindowMaximized)
 
     def new_scene(self, readonly=False):
         ''' Create a new, clean SDL scene. This function is necessary because
@@ -2625,6 +2626,8 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             # Create a default context - at Block level - for the autocompleter
             sdlSymbols.CONTEXT = ogAST.Block()
             self.update_datadict_window()
+        # After file was loaded, try to restore window geometry
+        self.restoreApplicationState()
 
     @QtCore.Slot(QtGui.QMdiSubWindow)
     def upd_statechart(self, mdi):
@@ -2845,10 +2848,17 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
     # pylint: disable=C0103
     def closeEvent(self, event):
-        ''' Close main application '''
+        ''' Close main application after saving application state '''
         if not self.view.is_model_clean() and not self.view.propose_to_save():
             event.ignore()
         else:
+            # save windows geometry to a setting file
+            if self.view.filename:
+                ini_filename = self.view.filename + ".ini"
+                settings = QSettings(ini_filename, QSettings.IniFormat)
+                settings.setValue('geometry', self.saveGeometry())
+                settings.setValue('windowState', self.saveState())
+
             # Clear the list of top-level symbols to avoid possible exit-crash
             # due to pyside badly handling items that are not part of any scene
             G_SYMBOLS.clear()
@@ -2857,6 +2867,16 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             for each in chain([scene], scene.all_nested_scenes):
                 each.undo_stack.clear()
             super(OG_MainWindow, self).closeEvent(event)
+
+    def restoreApplicationState(self):
+        ''' Restore windows geometry and state '''
+        if self.view.filename:
+            ini_filename = self.view.filename + ".ini"
+            settings = QSettings(ini_filename, QSettings.IniFormat)
+            self.restoreGeometry(settings.value('geometry'))
+            self.restoreState(settings.value('windowState'))
+        else:
+            self.setWindowState(Qt.WindowMaximized)
 
 
 class FilterEvent(QtCore.QObject):
