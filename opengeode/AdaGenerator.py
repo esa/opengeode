@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2013 European Space Agency
+    Copyright (c) 2012-2019 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -1186,8 +1186,12 @@ def write_statement(param, newline):
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimStringLiteral):
             # Raw string
-            code.append(u'Put("{}");'
-                        .format(param.value[1:-1].replace('"', "'")))
+            # First remove the newline statements
+            text = param.value[1:-1].replace('"', "'").split('\n')
+            for idx, val in enumerate(text):
+                code.append(u'Put("{}");'.format(val))
+                if len(text) > 1 and idx < len(text) - 1:
+                    code.append(u'New_Line;')
         else:
             code, string, local = expression(param, readonly=1)
             if type_kind == 'OctetStringType':

@@ -139,6 +139,7 @@ Changelog
     - Relax range check for substrings
     - Save/restore windows geometry when quitting/opening the tool
     - Make datatypes fully visible in the data dictionary window
+    - write[ln] operator now supports embedded newlines
 
 2.0.33 (04/2019)
     - Fix unicode issue in Ada backend when using substrings

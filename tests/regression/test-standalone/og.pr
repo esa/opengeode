@@ -33,6 +33,21 @@ system og;
             
             dcl test Some_Thing := 4;
             /* CIF ENDTEXT */
+            /* CIF procedure (430, 404), (78, 35) */
+            procedure enum1
+            /* CIF comment (528, 404), (206, 35) */
+            comment 'same name as an enum item';
+            endprocedure;
+            /* CIF procedure (414, 353), (124, 35) */
+            procedure default_seqof
+            /* CIF comment (558, 353), (189, 35) */
+            comment 'same name as a constant';
+            endprocedure;
+            /* CIF procedure (439, 309), (70, 35) */
+            procedure haha
+            /* CIF comment (529, 309), (184, 35) */
+            comment 'same name as a variable';
+            endprocedure;
             /* CIF procedure (404, 228), (73, 35) */
             procedure aProc;
                 /* CIF TEXT (542, 127), (287, 140) */
@@ -49,24 +64,12 @@ system og;
                     /* CIF return (181, 263), (35, 35) */
                     return ;
             endprocedure;
-            /* CIF procedure (439, 309), (70, 35) */
-            procedure haha
-            /* CIF comment (529, 309), (184, 35) */
-            comment 'same name as a variable';
-            endprocedure;
-            /* CIF procedure (414, 353), (124, 35) */
-            procedure default_seqof
-            /* CIF comment (558, 353), (189, 35) */
-            comment 'same name as a constant';
-            endprocedure;
-            /* CIF procedure (430, 404), (78, 35) */
-            procedure enum1
-            /* CIF comment (528, 404), (206, 35) */
-            comment 'same name as an enum item';
-            endprocedure;
             /* CIF START (155, 216), (70, 35) */
             START;
-                /* CIF NEXTSTATE (155, 266), (70, 35) */
+                /* CIF PROCEDURECALL (135, 271), (109, 38) */
+                call writeln('hello
+world');
+                /* CIF NEXTSTATE (155, 327), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (296, 231), (70, 35) */
             state wait;
