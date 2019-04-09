@@ -1908,7 +1908,7 @@ def _prim_selector(prim, **kwargs):
 
     # for asn1scc v3, sort = type_name(receiver.exprType)
     if receiver_bty.kind == 'ChoiceType':
-        ada_string = ('{ada_string}.{field_name}'
+        ada_string = (u'{ada_string}.{field_name}'
                     .format(field_name=field_name,
                             ada_string=ada_string))
     else:
