@@ -1,0 +1,89 @@
+system og;
+    /* CIF TEXT (159, 221), (290, 200) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    --use dv2 comment 'dataview2.asn';
+    
+    signal dd(Type2);
+    signal we(Some_Thing);
+    
+    procedure hehe;
+    fpar in/out a_param Type2;
+    external;
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with dd;
+        from og to env with we;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with dd;
+            from og to env with we;
+        connect c and r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        process og;
+            /* CIF TEXT (57, 58), (290, 173) */
+            dcl test Some_Thing := 4;
+            
+            dcl someEnum Enum_T := enum2;
+            
+            dcl somSeq Toto := {elem_1 1, elem_2 false};
+            /* CIF ENDTEXT */
+            /* CIF START (371, 221), (70, 35) */
+            START;
+                /* CIF decision (348, 276), (115, 50) */
+                decision test in { 1,2,3,4};
+                    /* CIF ANSWER (287, 346), (70, 23) */
+                    (true):
+                        /* CIF PROCEDURECALL (266, 389), (112, 35) */
+                        call writeln('OK 1');
+                    /* CIF ANSWER (416, 346), (70, 23) */
+                    (false):
+                        /* CIF PROCEDURECALL (383, 389), (135, 35) */
+                        call writeln('ERROR 1');
+                enddecision;
+                /* CIF decision (359, 439), (93, 50) */
+                decision 3 in {1,2,3,4};
+                    /* CIF ANSWER (293, 509), (70, 23) */
+                    (true):
+                        /* CIF PROCEDURECALL (268, 552), (119, 35) */
+                        call writeln('OK 2');
+                    /* CIF ANSWER (427, 509), (70, 23) */
+                    (false):
+                        /* CIF PROCEDURECALL (391, 552), (142, 35) */
+                        call writeln('ERROR 2');
+                enddecision;
+                /* CIF decision (306, 602), (200, 50) */
+                decision someEnum in {enum1, enum2};
+                    /* CIF ANSWER (290, 672), (70, 23) */
+                    (true):
+                        /* CIF PROCEDURECALL (265, 715), (119, 35) */
+                        call writeln('OK 3');
+                    /* CIF ANSWER (430, 672), (70, 23) */
+                    (false):
+                        /* CIF PROCEDURECALL (394, 715), (142, 35) */
+                        call writeln('ERROR 3');
+                enddecision;
+                /* CIF decision (203, 765), (406, 50) */
+                decision 'someSeq in {{elem_1 1, elem_2 false}, {elem_1 0, elem_2 true}}'
+                /* CIF comment (629, 772), (226, 35) */
+                comment 'cause bug in Ada backend: FIXME';
+                    /* CIF ANSWER (290, 835), (70, 23) */
+                    (true):
+                        /* CIF PROCEDURECALL (265, 878), (119, 35) */
+                        call writeln('OK 5');
+                    /* CIF ANSWER (430, 835), (70, 23) */
+                    (false):
+                        /* CIF PROCEDURECALL (394, 878), (142, 35) */
+                        call writeln('ERROR 5');
+                enddecision;
+                /* CIF NEXTSTATE (371, 928), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (826, 332), (70, 35) */
+            state wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;
