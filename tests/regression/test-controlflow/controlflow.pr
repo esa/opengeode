@@ -14,14 +14,6 @@ process controlflow;
     START;
         /* CIF NEXTSTATE (290, 50), (70, 35) */
         NEXTSTATE Wait;
-    /* CIF label (31, 1747), (78, 35) */
-    connection label1:
-        /* CIF PROCEDURECALL (0, 1797), (141, 35) */
-        call writeln('label1');
-        /* CIF join (53, 1847), (35, 35) */
-        join label2;
-    /* CIF End Label */
-    endconnection;
     /* CIF label (289, 1904), (75, 35) */
     connection label2:
         /* CIF PROCEDURECALL (259, 1954), (136, 35) */
@@ -34,11 +26,19 @@ process controlflow;
         NEXTSTATE wait;
     /* CIF End Label */
     endconnection;
+    /* CIF label (31, 1747), (78, 35) */
+    connection label1:
+        /* CIF PROCEDURECALL (0, 1797), (141, 35) */
+        call writeln('label1');
+        /* CIF join (53, 1847), (35, 35) */
+        join label2;
+    /* CIF End Label */
+    endconnection;
     /* CIF state (290, 50), (70, 35) */
     state Wait;
         /* CIF input (290, 105), (70, 35) */
         input run;
-            /* CIF task (154, 155), (343, 35) */
+            /* CIF task (127, 155), (396, 35) */
             task '------------------------------- Decision -------------------------------';
             /* CIF task (290, 205), (70, 35) */
             task n := 2;
@@ -86,7 +86,7 @@ process controlflow;
                     /* CIF PROCEDURECALL (47, 841), (205, 35) */
                     call fail('decision closed range');
             enddecision;
-            /* CIF task (151, 891), (348, 35) */
+            /* CIF task (126, 891), (398, 35) */
             task '------------------------------- For loops -------------------------------';
             /* CIF task (290, 941), (70, 35) */
             task n := 0;
@@ -122,9 +122,16 @@ endfor;
 endfor;
             /* CIF PROCEDURECALL (220, 1625), (210, 35) */
             call assert(n = 34, 'for x in seq1' );
-            /* CIF task (163, 1675), (325, 35) */
+            /* CIF task (137, 1675), (376, 35) */
             task '------------------------------- Join -------------------------------  ';
-            /* CIF join (308, 1725), (35, 35) */
+            /* CIF decision (285, 1730), (80, 50) */
+            decision n in {1,2};
+                /* CIF ANSWER (245, 1800), (70, 23) */
+                (true):
+                /* CIF ANSWER (335, 1800), (70, 23) */
+                (false):
+            enddecision;
+            /* CIF join (308, 1838), (35, 35) */
             join label1;
     endstate;
 endprocess controlflow;

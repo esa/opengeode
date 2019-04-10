@@ -2285,35 +2285,57 @@ def _append(expr, **kwargs):
 @expression.register(ogAST.ExprIn)
 def _expr_in(expr, **kwargs):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
-    # Check if item is in a SEQUENCE OF
-    # Temporary variable needed to hold the test result
-    ada_string = 'tmp{}'.format(expr.tmpVar)
-    stmts = []
-    local_decl = ['{} : BOOLEAN := False;'.format(ada_string)]
-    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    stmts, local_decl = [], []
+    ada_string = ""
+
+    left_stmts,  left_str,  left_local  = expression(expr.left, readonly=1)
     right_stmts, right_str, right_local = expression(expr.right, readonly=1)
-    stmts.extend(left_stmts)
-    stmts.extend(right_stmts)
+
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    stmts.append("in_loop_{}:".format(ada_string))
-    left_type = find_basic_type(expr.left.exprType)
-    if isinstance(expr.left, ogAST.PrimSubstring):
-        len_str = u"{}'Length".format(left_str)
+
+    stmts.extend(left_stmts)
+    stmts.extend(right_stmts)
+
+    # it is possible to test against a raw sequence of: x in { 1,2,3 }
+    # in that case we create an array on the type of x, and we test
+    # presence using the form "for some Value of tmpXXX => x = Value"
+    if isinstance(expr.left, ogAST.PrimSequenceOf):
+        sort = type_name(expr.right.exprType)
+        size = expr.left.exprType.Max
+
+        local_decl.extend([u'tmp{} : constant array (1 .. {}) of {} := ({});'
+                .format(expr.tmpVar, size, sort, left_str)])
+        ada_string = u'for some var of tmp{} => var = {}'.format(expr.tmpVar,
+                                                                 right_str)
     else:
-        len_str = u"{}.Length".format(left_str)
-        left_str += u".Data"
-    if left_type.Min != left_type.Max:
-        stmts.append("for elem in 1..{} loop".format(len_str))
-    else:
-        stmts.append("for elem in {}'Range loop".format(left_str))
-    stmts.append("if {container}(elem) = {pattern} then".format
-            (container=left_str, pattern=right_str))
-    stmts.append("{} := True;".format(ada_string))
-    stmts.append("end if;")
-    stmts.append("exit in_loop_{tmp} when {tmp} = True;"
-                  .format(tmp=ada_string))
-    stmts.append("end loop in_loop_{};".format(ada_string))
+        local_decl.extend([u'tmp{} : Boolean := False;'.format(expr.tmpVar)])
+        ada_string = u'tmp{}'.format(expr.tmpVar)
+
+        stmts.append(u"in_loop_{}:".format(ada_string))
+        left_type = find_basic_type(expr.left.exprType)
+
+        if isinstance(expr.left, ogAST.PrimSubstring):
+            len_str = u"{}'Length".format(left_str)
+        else:
+            len_str = u"{}.Length".format(left_str)
+            left_str += u".Data"
+
+        if left_type.Min != left_type.Max:
+            stmts.append(u"for elem in 1..{} loop".format(len_str))
+        else:
+            stmts.append(u"for elem in {}'Range loop".format(left_str))
+
+        stmts.append(u"if {container}(elem) = {pattern} then".format
+                (container=left_str, pattern=right_str))
+
+        stmts.append(u"{} := True;".format(ada_string))
+        stmts.append(u"end if;")
+
+        stmts.append(u"exit in_loop_{tmp} when {tmp} = True;"
+                      .format(tmp=ada_string))
+        stmts.append(u"end loop in_loop_{};".format(ada_string))
+
     return stmts, unicode(ada_string), local_decl
 
 
