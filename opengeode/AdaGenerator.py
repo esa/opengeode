@@ -1855,7 +1855,6 @@ def _prim_substring(prim, **kwargs):
     ro = kwargs.get("readonly", 0)
 
     receiver = prim.value[0]
-
     receiver_stms, receiver_string, receiver_decl = expression(receiver,
                                                                readonly=ro)
     ada_string = receiver_string
@@ -2043,7 +2042,7 @@ def _assign_expression(expr, **kwargs):
     ''' Assignment: almost the same a basic operators, except for strings '''
     code, local_decl = [], []
     strings = []
-    left_stmts, left_str, left_local = expression(expr.left)
+    left_stmts,  left_str,  left_local  = expression(expr.left)
     right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     # If left side is a string/seqOf and right side is a substring, we must
@@ -2051,9 +2050,21 @@ def _assign_expression(expr, **kwargs):
     basic_left = find_basic_type(expr.left.exprType)
     if basic_left.kind in ('SequenceOfType', 'OctetStringType'):
         rlen = u"{}'Length".format(right_str)
+
         if isinstance(expr.right, ogAST.PrimSubstring):
-            strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
-                       .format(lvar=left_str, rvar=right_str))
+            if not isinstance(expr.left, ogAST.PrimSubstring):
+                # only if left is not a substring, otherwise syntax
+                # would be wrong due to result of _prim_substring
+                strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
+                               .format(lvar=left_str,
+                                       rvar=right_str))
+            else:
+               # left is substring: no length, direct assignment
+               rlen = ""
+               strings.append(u"{lvar} := {rvar};"
+                               .format(lvar=left_str,
+                                       rvar=right_str))
+
         elif isinstance(expr.right, ogAST.ExprAppend):
             basic_right = find_basic_type(expr.right.exprType)
             rlen = append_size(expr.right)
@@ -2061,6 +2072,7 @@ def _assign_expression(expr, **kwargs):
                            .format(lvar=left_str,
                                    rvar=right_str,
                                    lstr=rlen))
+
         elif isinstance(expr.right, (ogAST.PrimSequenceOf,
                                     ogAST.PrimStringLiteral)):
             strings.append(u"{lvar} := {value};"

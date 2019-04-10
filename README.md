@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.37 (04/2019)
+    - Support substrings on the left part of an expression (a(1,2) := ...)
+
 2.0.36 (04/2019)
     - Fix unicode issue in Ada backend
 
