@@ -29,11 +29,9 @@ system og;
             
             dcl someEnum Enum_T := enum2;
             
-            dcl somSeq Toto := {elem_1 1, elem_2 false};
+            dcl someSeq Toto := {elem_1 1, elem_2 false};
             
             dcl testincase ForTheSakeOfIt := {enum1, enum2};
-            
-            
             /* CIF ENDTEXT */
             /* CIF START (556, 221), (70, 35) */
             START;
@@ -73,7 +71,7 @@ system og;
                         call writeln('ERROR 3');
                 enddecision;
                 /* CIF decision (388, 815), (406, 50) */
-                decision 'someSeq in {{elem_1 1, elem_2 false}, {elem_1 0, elem_2 true}}'
+                decision someSeq in {{elem_1 1, elem_2 false}, {elem_1 0, elem_2 true}}
                 /* CIF comment (814, 822), (226, 35) */
                 comment 'cause bug in Ada backend: FIXME';
                     /* CIF ANSWER (475, 885), (70, 23) */

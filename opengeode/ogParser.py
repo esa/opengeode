@@ -1289,6 +1289,8 @@ def fix_expression_types(expr, context): # type: -> [warnings]
     # (due to similarities, the following should be refactored FIXME)
     if isinstance(expr.right, ogAST.PrimSequence):
         #print "Left:", type_name(expr.left.exprType), "Right:", expr.right.inputString
+        #print traceback.print_stack()
+
         # left side must have a known type
         asn_type = find_basic_type(expr.left.exprType)
         if asn_type.kind != 'SequenceType':
@@ -1828,13 +1830,13 @@ def in_expression(root, context):
     # in "foo in {enum1, enum2}" we must check that enum1 and enum2 are both
     # of the same type as foo
     if expr.left.is_raw and not expr.right.is_raw:
-        # we must check that all entries are compatible with ref_type
+        # we must check that all entries are compatible with the other side
         # and if they were variables, but are in fact raw enumerants, they
         # must be changed from ogAST.PrimVariable to ogAST.PrimEnumeratedValue
         for idx, value in enumerate(expr.left.value):
             check_expr = ogAST.ExprAssign()
             check_expr.left = ogAST.PrimVariable(debugLine=lineno())
-            check_expr.left.exprType = ref_type
+            check_expr.left.exprType = expr.right.exprType
             check_expr.right = value
             try:
                 warnings.extend(fix_expression_types(check_expr, context))

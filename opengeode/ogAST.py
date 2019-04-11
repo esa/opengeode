@@ -183,7 +183,6 @@ class Primary(Expression):
             self.charPositionInLine = primary.charPositionInLine
             self.value = primary.value
             self.exprType = primary.exprType
-            self.debugLine = primary.debugLine
         else:
             self.inputString = inputString
             self.line = line

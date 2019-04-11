@@ -2306,7 +2306,7 @@ def _expr_in(expr, **kwargs):
 
         local_decl.extend([u'tmp{} : constant array (1 .. {}) of {} := ({});'
                 .format(expr.tmpVar, size, sort, left_str)])
-        ada_string = u'for some var of tmp{} => var = {}'.format(expr.tmpVar,
+        ada_string = u'(for some var of tmp{} => var = {})'.format(expr.tmpVar,
                                                                  right_str)
     else:
         local_decl.extend([u'tmp{} : Boolean := False;'.format(expr.tmpVar)])

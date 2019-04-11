@@ -135,6 +135,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.38 (04/2019)
+    - Support advanced "in" expressions (e.g. "someVar in {enum1, enum2}",
+      or "someVar in {{a 4, b false}, {a 1, b true}}"
+
 2.0.37 (04/2019)
     - Support substrings on the left part of an expression (a(1,2) := ...)
 
