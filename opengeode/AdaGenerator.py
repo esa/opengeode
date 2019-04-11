@@ -2265,7 +2265,7 @@ def _append(expr, **kwargs):
 #   print "        Right range = ", expr.right.exprType.Max
 
     if not self_standing:
-        right = "{sort}_Array'({right}, others => <>)(1 .. {rMax})".format(
+        right = u"{sort}_Array'({right}, others => <>)(1 .. {rMax})".format(
                 right=right,
                 sort=name_of_type,
                 rMax=expr.right.exprType.Max)
