@@ -174,14 +174,16 @@ class Primary(Expression):
     is_raw = True
 
     def __init__(self, inputString='', line=-1, charPositionInLine=-1,
-                 primary=None):
+                 primary=None, debugLine=-1):
         ''' Initialize common primary attributes '''
+        self.debugLine = debugLine
         if primary:
             self.inputString = primary.inputString
             self.line = primary.line
             self.charPositionInLine = primary.charPositionInLine
             self.value = primary.value
             self.exprType = primary.exprType
+            self.debugLine = primary.debugLine
         else:
             self.inputString = inputString
             self.line = line

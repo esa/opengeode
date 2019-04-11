@@ -31,6 +31,7 @@ import math
 import operator
 import logging
 import traceback
+from inspect import currentframe, getframeinfo
 import binascii
 from textwrap import dedent
 from itertools import chain, permutations, combinations
@@ -167,6 +168,9 @@ new_ref_type = lambda refname: \
 # Shortcut to return a type name (Reference name or basic type)
 type_name = lambda t: \
                 t.kind if t.kind != 'ReferenceType' else t.ReferencedTypeName
+
+# return the line number of this python module, useful for debugging
+lineno = lambda : currentframe().f_back.f_lineno
 
 # user may create SDL (non-asn1) types with the newtype keyword
 # they are stored in a dedicated dictionary with the same structure
@@ -686,7 +690,7 @@ def check_call(name, params, context):
     for idx, param in enumerate(params):
         warnings = []
         expr               = ogAST.ExprAssign()
-        expr.left          = ogAST.PrimVariable()
+        expr.left          = ogAST.PrimVariable(debugLine=lineno())
         expr.left.exprType = sign[idx]['type']
         expr.right         = param
 
@@ -1220,9 +1224,8 @@ def fix_enumerated_and_choice(expr_enum, context):
     warnings = []
     kind = find_basic_type(expr_enum.left.exprType).kind
     if kind in ('EnumeratedType', 'StateEnumeratedType'):
-        prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right)
-    elif kind == 'ChoiceEnumeratedType':  # does not exist anymore, REMOVE
-        prim = ogAST.PrimChoiceDeterminant(primary=expr_enum.right)
+        prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right,
+                                         debugLine=lineno())
     try:
         warnings.extend(check_type_compatibility(prim,
                                                  expr_enum.left.exprType,
@@ -1262,7 +1265,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
                 asn_type = asn_type.type
                 for idx, elem in enumerate(value.value):
                     check_expr = ogAST.ExprAssign()
-                    check_expr.left = ogAST.PrimVariable()
+                    check_expr.left = ogAST.PrimVariable(debugLine=lineno())
                     check_expr.left.exprType = asn_type
                     check_expr.right = elem
                     warnings.extend(fix_expression_types(check_expr, context))
@@ -1299,7 +1302,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             except AttributeError:
                 raise TypeError('Field not found: ' + field)
             check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimVariable()
+            check_expr.left = ogAST.PrimVariable(debugLine=lineno())
             check_expr.left.exprType = expected_type
             check_expr.right = fd_expr
             warnings.extend(fix_expression_types(check_expr, context))
@@ -1320,7 +1323,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
             except AttributeError:
                 raise TypeError('Field not found in CHOICE: ' + field)
             check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimVariable()
+            check_expr.left = ogAST.PrimVariable(debugLine=lineno())
             check_expr.left.exprType = expected_type
             check_expr.right = expr.right.value['value']
             warnings.extend(fix_expression_types(check_expr, context))
@@ -1333,7 +1336,8 @@ def fix_expression_types(expr, context): # type: -> [warnings]
         for det in ('then', 'else'):
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimVariable()
+            check_expr.left = ogAST.PrimVariable(debugLine=lineno())
+            check_expr.left.inputString = expr.left.inputString  # for debug
             check_expr.left.exprType = expr.left.exprType
             check_expr.right = expr.right.value[det]
             warnings.extend(fix_expression_types(check_expr, context))
@@ -1407,7 +1411,9 @@ def primary_variable(root, context):
     elif is_fpar(name, context):
         prim = ogAST.PrimFPAR()
     else:
-        prim = ogAST.PrimVariable()
+        # We create a variable reference , but it may be a enumerated value,
+        # it will be replaced later during type resolution
+        prim = ogAST.PrimVariable(debugLine=lineno())
 
     prim.value = [name]
     prim.exprType = UNKNOWN_TYPE
@@ -1793,7 +1799,7 @@ def relational_expression(root, context):
 
 def in_expression(root, context):
     ''' In expression analysis '''
-    # Left and right are reversed for IN operator
+    # WARNING: Left and right are reversed for IN operator
     root.children[0], root.children[1] = root.children[1], root.children[0]
 
     expr, errors, warnings = binary_expression(root, context)
@@ -1810,12 +1816,31 @@ def in_expression(root, context):
         msg = 'IN expression: right part must be a list'
         errors.append(error(root, msg))
         return expr, errors, warnings
+
     expr.left.exprType = ref_type
 
     if find_basic_type(ref_type).kind == 'EnumeratedType':
         fix_enumerated_and_choice(expr, context)
 
     expr.left.exprType = left_type
+
+    # if left is raw we must check each element with the type on the right
+    # in "foo in {enum1, enum2}" we must check that enum1 and enum2 are both
+    # of the same type as foo
+    if expr.left.is_raw and not expr.right.is_raw:
+        # we must check that all entries are compatible with ref_type
+        # and if they were variables, but are in fact raw enumerants, they
+        # must be changed from ogAST.PrimVariable to ogAST.PrimEnumeratedValue
+        for idx, value in enumerate(expr.left.value):
+            check_expr = ogAST.ExprAssign()
+            check_expr.left = ogAST.PrimVariable(debugLine=lineno())
+            check_expr.left.exprType = ref_type
+            check_expr.right = value
+            try:
+                warnings.extend(fix_expression_types(check_expr, context))
+            except TypeError as err:
+                errors.append(error(root, str(err)))
+            expr.left.value[idx] = check_expr.right
 
     try:
         warnings.extend(compare_types(expr.right.exprType, ref_type))
@@ -2394,7 +2419,7 @@ def variables(root, ta_ast, context):
             errors.extend(err)
             warnings.extend(warn)
             expr = ogAST.ExprAssign()
-            expr.left = ogAST.PrimVariable()
+            expr.left = ogAST.PrimVariable(debugLine=lineno())
             expr.left.inputString = var[-1]
             expr.left.exprType = asn1_sort
             expr.right = def_value
@@ -2778,7 +2803,7 @@ def procedure_post(proc, content, parent=None, context=None):
                            [0, 0], []])
         elif proc.return_type and each.return_expr:
             check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimVariable()
+            check_expr.left = ogAST.PrimVariable(debugLine=lineno())
             check_expr.left.exprType = proc.return_type
             check_expr.right = each.return_expr
             try:

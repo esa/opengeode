@@ -24,62 +24,68 @@ system og;
         connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
         process og;
-            /* CIF TEXT (57, 58), (290, 173) */
+            /* CIF TEXT (57, 58), (321, 173) */
             dcl test Some_Thing := 4;
             
             dcl someEnum Enum_T := enum2;
             
             dcl somSeq Toto := {elem_1 1, elem_2 false};
+            
+            dcl testincase ForTheSakeOfIt := {enum1, enum2};
+            
+            
             /* CIF ENDTEXT */
-            /* CIF START (371, 221), (70, 35) */
+            /* CIF START (556, 221), (70, 35) */
             START;
-                /* CIF decision (348, 276), (115, 50) */
+                /* CIF task (492, 276), (197, 35) */
+                task testincase := {enum1, enum2};
+                /* CIF decision (533, 326), (115, 50) */
                 decision test in { 1,2,3,4};
-                    /* CIF ANSWER (287, 346), (70, 23) */
+                    /* CIF ANSWER (472, 396), (70, 23) */
                     (true):
-                        /* CIF PROCEDURECALL (266, 389), (112, 35) */
+                        /* CIF PROCEDURECALL (451, 439), (112, 35) */
                         call writeln('OK 1');
-                    /* CIF ANSWER (416, 346), (70, 23) */
+                    /* CIF ANSWER (601, 396), (70, 23) */
                     (false):
-                        /* CIF PROCEDURECALL (383, 389), (135, 35) */
+                        /* CIF PROCEDURECALL (568, 439), (135, 35) */
                         call writeln('ERROR 1');
                 enddecision;
-                /* CIF decision (359, 439), (93, 50) */
+                /* CIF decision (544, 489), (93, 50) */
                 decision 3 in {1,2,3,4};
-                    /* CIF ANSWER (293, 509), (70, 23) */
+                    /* CIF ANSWER (478, 559), (70, 23) */
                     (true):
-                        /* CIF PROCEDURECALL (268, 552), (119, 35) */
+                        /* CIF PROCEDURECALL (453, 602), (119, 35) */
                         call writeln('OK 2');
-                    /* CIF ANSWER (427, 509), (70, 23) */
+                    /* CIF ANSWER (612, 559), (70, 23) */
                     (false):
-                        /* CIF PROCEDURECALL (391, 552), (142, 35) */
+                        /* CIF PROCEDURECALL (576, 602), (142, 35) */
                         call writeln('ERROR 2');
                 enddecision;
-                /* CIF decision (306, 602), (200, 50) */
+                /* CIF decision (491, 652), (200, 50) */
                 decision someEnum in {enum1, enum2};
-                    /* CIF ANSWER (290, 672), (70, 23) */
+                    /* CIF ANSWER (475, 722), (70, 23) */
                     (true):
-                        /* CIF PROCEDURECALL (265, 715), (119, 35) */
+                        /* CIF PROCEDURECALL (450, 765), (119, 35) */
                         call writeln('OK 3');
-                    /* CIF ANSWER (430, 672), (70, 23) */
+                    /* CIF ANSWER (615, 722), (70, 23) */
                     (false):
-                        /* CIF PROCEDURECALL (394, 715), (142, 35) */
+                        /* CIF PROCEDURECALL (579, 765), (142, 35) */
                         call writeln('ERROR 3');
                 enddecision;
-                /* CIF decision (203, 765), (406, 50) */
+                /* CIF decision (388, 815), (406, 50) */
                 decision 'someSeq in {{elem_1 1, elem_2 false}, {elem_1 0, elem_2 true}}'
-                /* CIF comment (629, 772), (226, 35) */
+                /* CIF comment (814, 822), (226, 35) */
                 comment 'cause bug in Ada backend: FIXME';
-                    /* CIF ANSWER (290, 835), (70, 23) */
+                    /* CIF ANSWER (475, 885), (70, 23) */
                     (true):
-                        /* CIF PROCEDURECALL (265, 878), (119, 35) */
+                        /* CIF PROCEDURECALL (450, 928), (119, 35) */
                         call writeln('OK 5');
-                    /* CIF ANSWER (430, 835), (70, 23) */
+                    /* CIF ANSWER (615, 885), (70, 23) */
                     (false):
-                        /* CIF PROCEDURECALL (394, 878), (142, 35) */
+                        /* CIF PROCEDURECALL (579, 928), (142, 35) */
                         call writeln('ERROR 5');
                 enddecision;
-                /* CIF NEXTSTATE (371, 928), (70, 35) */
+                /* CIF NEXTSTATE (556, 978), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (826, 332), (70, 35) */
             state wait;
