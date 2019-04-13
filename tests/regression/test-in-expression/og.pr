@@ -45,10 +45,10 @@ system og;
                         call writeln('OK 1');
                     /* CIF ANSWER (601, 396), (70, 23) */
                     (false):
-                        /* CIF PROCEDURECALL (568, 439), (135, 35) */
+                        /* CIF PROCEDURECALL (568, 439), (136, 35) */
                         call writeln('ERROR 1');
                 enddecision;
-                /* CIF decision (544, 489), (93, 50) */
+                /* CIF decision (543, 489), (95, 50) */
                 decision 3 in {1,2,3,4};
                     /* CIF ANSWER (478, 559), (70, 23) */
                     (true):
@@ -59,7 +59,7 @@ system og;
                         /* CIF PROCEDURECALL (576, 602), (142, 35) */
                         call writeln('ERROR 2');
                 enddecision;
-                /* CIF decision (491, 652), (200, 50) */
+                /* CIF decision (488, 652), (206, 50) */
                 decision someEnum in {enum1, enum2};
                     /* CIF ANSWER (475, 722), (70, 23) */
                     (true):

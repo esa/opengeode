@@ -19,7 +19,6 @@
 */*.cfg
 */*.idx
 */*.wrn
-*/*.gpr
 */*.sh
 */test_ada
 */test_c
