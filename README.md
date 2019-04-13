@@ -135,6 +135,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.39 (04/2019)
+    - Fix append operator when using substrings
+    - Fix unicode issue
+
 2.0.38 (04/2019)
     - Support advanced "in" expressions (e.g. "someVar in {enum1, enum2}",
       or "someVar in {{a 4, b false}, {a 1, b true}}"

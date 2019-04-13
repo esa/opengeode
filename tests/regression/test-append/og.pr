@@ -34,7 +34,7 @@ system og;
                 task foo := { true, false},
 bar := {false, true, true, false, false};
                 /* CIF task (503, 334), (176, 35) */
-                task foo := foo // bar (0, idx - 1);
+                task foo := foo // bar (0, idx );
                 /* CIF NEXTSTATE (556, 384), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (826, 332), (70, 35) */

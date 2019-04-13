@@ -3100,7 +3100,10 @@ def append_size(append):
             else:
                 # Must be a variable of type SEQOF
                 _, inner, _ = expression(each, readonly=1)
-                result += u'{}.Length'.format(inner)
+                if isinstance (each, ogAST.PrimSubstring):
+                    result += u"{}'Length".format(inner)
+                else:
+                    result += u"{}.Length".format(inner)
     return result
 
 
