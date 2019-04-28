@@ -264,7 +264,7 @@ end {pr}_Lib;'''.format(pr=process_name.lower(),
     #  Create a .gpr to build the Ada generated code
     ada_gpr = '''project {pr}_Ada is
    for Languages use ("Ada");
-      for Source_Dirs use (".");
+      for Source_Dirs use (".") & External_As_List ("CODE_PATH", ":");
       for Object_Dir use "obj";
    end {pr}_Ada;'''.format(pr=process_name.lower())
 

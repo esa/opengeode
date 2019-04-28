@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.40 (04/2019)
+    - Improve generated gpr file
+
 2.0.39 (04/2019)
     - Fix append operator when using substrings
     - Fix unicode issue
