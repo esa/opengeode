@@ -823,8 +823,8 @@ package {process_name} is'''.format(generic=generic_spec,
                                 .format(UNICODE_SEP,
                                         signal['name'],
                                         param_spec))
-            signame = lower(signal['name']) if taste else signal['name']
-            procname = lower (process_name) if taste else process_name
+            signame = signal['name'].lower() if taste else signal['name']
+            procname = process_name.lower() if taste else process_name
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
                                 .format(sep=UNICODE_SEP,
@@ -879,8 +879,8 @@ package {process_name} is'''.format(generic=generic_spec,
 
         elif not generic:
             ads_template.append(ri_header + u';')
-            signame = lower(proc.inputString) if taste else proc.inputString
-            procname = lower (process_name) if taste else process_name
+            signame = proc.inputString.lower() if taste else proc.inputString
+            procname = process_name.lower() if taste else process_name
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
                                 .format(sep=UNICODE_SEP,
