@@ -264,7 +264,7 @@ end {pr}_Lib;'''.format(pr=process_name.lower(),
     #  Create a .gpr to build the Ada generated code
     ada_gpr = '''project {pr}_Ada is
    for Languages use ("Ada");
-      for Source_Dirs use (".");
+      for Source_Dirs use (".") & External_As_List ("CODE_PATH", ":");
       for Object_Dir use "obj";
    end {pr}_Ada;'''.format(pr=process_name.lower())
 
@@ -2265,7 +2265,7 @@ def _append(expr, **kwargs):
 #   print "        Right range = ", expr.right.exprType.Max
 
     if not self_standing:
-        right = "{sort}_Array'({right}, others => <>)(1 .. {rMax})".format(
+        right = u"{sort}_Array'({right}, others => <>)(1 .. {rMax})".format(
                 right=right,
                 sort=name_of_type,
                 rMax=expr.right.exprType.Max)
@@ -3100,7 +3100,10 @@ def append_size(append):
             else:
                 # Must be a variable of type SEQOF
                 _, inner, _ = expression(each, readonly=1)
-                result += u'{}.Length'.format(inner)
+                if isinstance (each, ogAST.PrimSubstring):
+                    result += u"{}'Length".format(inner)
+                else:
+                    result += u"{}.Length".format(inner)
     return result
 
 
