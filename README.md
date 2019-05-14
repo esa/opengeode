@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.41 (05/2019)
+    - Add --taste flag to target taste integration with kazoo
+
 2.0.40 (04/2019)
     - Improve generated gpr file
 

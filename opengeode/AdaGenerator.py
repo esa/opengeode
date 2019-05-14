@@ -155,7 +155,7 @@ def generate(*args, **kwargs):
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process, simu=False, instance=False, **kwargs):
+def _process(process, simu=False, instance=False, taste=False, **kwargs):
     ''' Generate the code for a complete process (AST Top level)
         use instance=True to generate the code for a process type instance
         rather than the process type itself.
@@ -823,11 +823,13 @@ package {process_name} is'''.format(generic=generic_spec,
                                 .format(UNICODE_SEP,
                                         signal['name'],
                                         param_spec))
+            signame = signal['name'].lower() if taste else signal['name']
+            procname = process_name.lower() if taste else process_name
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
                                 .format(sep=UNICODE_SEP,
-                                        sig=signal['name'],
-                                        proc=process_name))
+                                        sig=signame,
+                                        proc=procname))
 
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
@@ -877,11 +879,13 @@ package {process_name} is'''.format(generic=generic_spec,
 
         elif not generic:
             ads_template.append(ri_header + u';')
+            signame = proc.inputString.lower() if taste else proc.inputString
+            procname = process_name.lower() if taste else process_name
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
                                 .format(sep=UNICODE_SEP,
-                                        sig=proc.inputString,
-                                        proc=process_name))
+                                        sig=signame,
+                                        proc=procname))
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:

@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.40'
+__version__ = '2.0.41'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2951,6 +2951,8 @@ def parse_args():
             help='Save pictures in multiple files (one per floating item)')
     parser.add_argument('--readonly', dest='readonly', action='store_true',
             help='Set process diagram as read-only')
+    parser.add_argument('--taste', dest='taste_target', action='store_true',
+            help='Generate code for TASTE targets')
     parser.add_argument('files', metavar='file.pr', type=str, nargs='*',
             help='SDL file(s)')
     return parser.parse_args()
@@ -3001,7 +3003,9 @@ def generate(process, options):
     if options.toAda or options.shared or options.dll:
         LOG.info('Generating Ada code')
         try:
-            AdaGenerator.generate(process, simu=options.shared)
+            AdaGenerator.generate(process,
+                                  simu=options.shared,
+                                  taste=options.taste_target)
         except (TypeError, ValueError, NameError) as err:
             ret = 1
             LOG.error(str(err))
