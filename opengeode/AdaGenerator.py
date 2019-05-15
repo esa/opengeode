@@ -2079,11 +2079,18 @@ def _assign_expression(expr, **kwargs):
 
         elif isinstance(expr.right, (ogAST.PrimSequenceOf,
                                     ogAST.PrimStringLiteral)):
-            strings.append(u"{lvar} := {value};"
+            if not isinstance(expr.left, ogAST.PrimSubstring):
+                strings.append(u"{lvar} := {value};"
                            .format(lvar=left_str,
                                    value=array_content(expr.right,
                                                        right_str,
                                                        basic_left)))
+            else:
+               # left is substring: no length, direct assignment
+               strings.append(u"{lvar} := ({rvar});"
+                               .format(lvar=left_str,
+                                       rvar=right_str))
+
             rlen = None
         else:
             # Right part is a variable

@@ -136,6 +136,9 @@ Changelog
 =========
 
 2.0.41 (05/2019)
+    - Fix substring support (can now write var(1,2) := {1,2})
+
+2.0.41 (05/2019)
     - Add --taste flag to target taste integration with kazoo
 
 2.0.40 (04/2019)
