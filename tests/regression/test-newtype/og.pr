@@ -1,5 +1,5 @@
 system og;
-    /* CIF TEXT (228, 136), (391, 216) */
+    /* CIF TEXT (228, 136), (409, 216) */
     -- demonstrating how to create custom types with the newtype
     -- sdl construct
     

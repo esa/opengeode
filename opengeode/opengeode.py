@@ -2097,7 +2097,7 @@ clean:
         try:
             firstAsn1File = os.path.basename(ogParser.DV.asn1Files[0])
             source_dir = os.path.relpath\
-                    (os.path.dirname(ogParser.DV.asn1Files[0]))
+                    (os.path.dirname(ogParser.DV.asn1Files[0]) or ".")
             otherAsn1Files = [os.path.relpath(path, "code")
                     for path in ogParser.DV.asn1Files[1:]]
         except (AttributeError, IndexError):
@@ -2113,7 +2113,7 @@ clean:
             if not firstAsn1File:
                 firstAsn1File = newtypesAsn
             else:
-                otherAsn1Files.append(os.path.relpath(newtypesAsn, "code"))
+                otherAsn1Files.append(newtypesAsn)
 
         asn1Quotes = ['"{}"'.format(name) for name in otherAsn1Files]
         otherAsn = ", ".join(asn1Quotes)
