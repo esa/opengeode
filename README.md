@@ -135,7 +135,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
-2.0.41 (05/2019)
+2.0.43 (05/2019)
+    - Better handling of path in generated gpr files
+
+2.0.42 (05/2019)
     - Fix substring support (can now write var(1,2) := {1,2})
 
 2.0.41 (05/2019)

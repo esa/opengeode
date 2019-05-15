@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.0.42'
+__version__ = '2.0.43'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -1959,14 +1959,18 @@ class SDL_View(QtGui.QGraphicsView, object):
 
         # Need to get the list of .pr (incl e.g. system_structure.pr)
         # for the gpr file
-        pr_names = ['"' + os.path.basename(pr_file) + '"'
-                    for pr_file in sdlSymbols.AST.pr_files]
-        try:
-            first_pr = pr_names.pop()
-        except IndexError:
-            # case of a new file: use the filename chosen from the file dialog
+        if len(sdlSymbols.AST.pr_files) > 0:
+            first = sdlSymbols.AST.pr_files.pop()
+            source_dir = os.path.dirname(first) or '.'
+            first_pr = '"' + os.path.basename(first) + '"'
+        else:
+            source_dir = os.path.dirname(filename) or "."
             first_pr = '"{}"'.format(os.path.basename(filename))
-        other_pr = ", ".join(pr_names)
+
+        # other pr files: use relative path to "code" because gprbuild
+        # moves to this folder when calling opengeode
+        other_pr = ", ".join('"' + os.path.relpath(pr_file, 'code') + '"'
+                             for pr_file in sdlSymbols.AST.pr_files)
 
         template_gpr_sdl = '''project {pr} is
    for Languages use ("SDL");
@@ -1990,7 +1994,7 @@ end {pr};'''.format(pr=prj_name,
         # ASN1 template to be filled with "Ada" or "c"
         template_gpr_asn1 = '''project DataView_{lang} is
    for Languages use ("ASN1");
-   for Source_Dirs use (".");
+   for Source_Dirs use ("{source_dir}");
    for Source_Files use ("{firstAsn}");
    for Object_Dir use "code";
 
@@ -2091,9 +2095,13 @@ clean:
 
         # Gather list of ASN.1 files (+possibly custom types definitions)
         try:
-            firstAsn1File = ogParser.DV.asn1Files[0]
-            otherAsn1Files = ogParser.DV.asn1Files[1:]
+            firstAsn1File = os.path.basename(ogParser.DV.asn1Files[0])
+            source_dir = os.path.relpath\
+                    (os.path.dirname(ogParser.DV.asn1Files[0]))
+            otherAsn1Files = [os.path.relpath(path, "code")
+                    for path in ogParser.DV.asn1Files[1:]]
         except (AttributeError, IndexError):
+            source_dir = "."
             firstAsn1File, otherAsn1Files = "", []
 
         if ogParser.USER_DEFINED_TYPES:
@@ -2105,7 +2113,7 @@ clean:
             if not firstAsn1File:
                 firstAsn1File = newtypesAsn
             else:
-                otherAsn1Files.append(newtypesAsn)
+                otherAsn1Files.append(os.path.relpath(newtypesAsn, "code"))
 
         asn1Quotes = ['"{}"'.format(name) for name in otherAsn1Files]
         otherAsn = ", ".join(asn1Quotes)
@@ -2123,7 +2131,8 @@ clean:
                     # generate gpr files to compile the ASN.1 models
                     with open(pr_path + '/dataview_ada.gpr', 'w') as gpr:
                         gpr.write(template_gpr_asn1
-                                .format(firstAsn=firstAsn1File,
+                                .format(source_dir=source_dir,
+                                        firstAsn=firstAsn1File,
                                         otherAsn=", " + otherAsn
                                         if otherAsn else "",
                                         lang='Ada'))
@@ -2131,7 +2140,8 @@ clean:
                     #  dataview_c.gpr is needed for the simulator
                     with open(pr_path + '/dataview_c.gpr', 'w') as gpr:
                         gpr.write(template_gpr_asn1
-                                  .format(firstAsn=firstAsn1File,
+                                  .format(source_dir=source_dir,
+                                          firstAsn=firstAsn1File,
                                           otherAsn=", " + otherAsn
                                           if otherAsn else "",
                                           lang='c'))

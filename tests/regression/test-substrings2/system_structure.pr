@@ -1,0 +1,28 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM function2;
+
+	/* CIF Keep Specific Geode PARAMNAMES a */
+	SIGNAL oneStep (TASTE_Boolean);
+
+	/* CIF Keep Specific Geode PARAMNAMES a */
+	SIGNAL response (Seq);
+
+	CHANNEL c
+		FROM ENV TO function2 WITH oneStep;
+		FROM function2 TO ENV WITH response;
+	ENDCHANNEL;
+
+	BLOCK function2;
+
+		SIGNALROUTE r
+			FROM ENV TO function2 WITH oneStep;
+			FROM function2 TO ENV WITH response;
+
+		CONNECT c and r;
+
+		PROCESS function2 REFERENCED;
+
+	ENDBLOCK;
+
+ENDSYSTEM;
