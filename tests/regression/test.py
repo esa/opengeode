@@ -4,9 +4,9 @@ import sys
 import argparse
 import time
 import signal
-from functools import partial
+from functools       import partial
 from multiprocessing import cpu_count
-from concurrent import futures
+from concurrent      import futures
 import os
 
 work1 = ['make', '-C']
@@ -14,17 +14,17 @@ work2 = ['make', '-C']
 work3 = ['python', 'testqgen.py']
 
 testsWork = {
-'all': work1, 
-'test-parse' : work1,
-'test-qgen-parse' : work1,
-'test-qgen-ada' : work1,
-'test-qgen-c' : work1,
-'test-qgen-gt-ada' : work1,
-'test-qgen-gt-c' : work1,
-'test-ada' : work1,
-'test-c' : work1,
-'test-llvm' : work1,
-'test-vhdl': work1
+    'all':               work1,
+    'test-parse' :       work1,
+    'test-qgen-parse' :  work1,
+    'test-qgen-ada' :    work1,
+    'test-qgen-c' :      work1,
+    'test-qgen-gt-ada' : work1,
+    'test-qgen-gt-c' :   work1,
+    'test-ada' :         work1,
+    'test-c' :           work1,
+    'test-llvm' :        work1,
+    'test-vhdl':         work1
 }
 
 def colorMe(result, msg):
@@ -53,14 +53,36 @@ def main():
         qgen_unsup = ""
 
     with futures.ProcessPoolExecutor(max_workers=cpu_count()) as executor:
-        for result in executor.map(partial(partial(make, op.rule)), op.paths):
-            print("%40s: %s" % (result[3], colorMe(result[0],
-                               '[OK]' if result[0]==0 else
-                                ('[EXPECTED FAILURE]' 
-                                if result[3] in xfails
-                                else ('[QGEN UNSUPPORTED]' 
-                                if result[3] in qgen_unsup
-                                else '[FAILED]')))))
+        fs = [executor.submit(partial(partial(make, op.rule)), path)
+              for path in op.paths]
+        # don't use the map function, because it keeps the order of
+        # submission, meaning that even if a job finishes before the
+        # previous one started, the log output will be delayed
+        # use as_completed instead of map
+        for each in futures.as_completed(fs):
+            result = each.result()
+            errcode, stdout, stderr, path, rule = result
+            name = path.replace("/", "")
+            print("%40s: %s" % (name, colorMe(errcode,
+                               '[OK]' if errcode==0 else
+                                ('[EXPECTED FAILURE]'
+                                if path in xfails
+                                else ('[QGEN UNSUPPORTED]'
+                                if path in qgen_unsup
+                 else '[FAILED] ... build log in /tmp/{}.err'.format(name))))))
+            sys.stdout.flush()
+            if errcode != 0:
+                # Failure: save the log immediately
+                with open("/tmp/{}.err".format(name), 'w') as f:
+                    f.write("=" * 80)
+                    f.write("ERROR: %s %s" % (name, rule))
+                    if stdout:
+                        f.write("-- stdout " + "-" * 70)
+                        f.write(stdout.decode())
+                    if stderr:
+                        f.write("-- stderr " + "-" * 70)
+                        f.write(stderr.decode())
+                        f.write("-" * 80)
             results.append(result)
         executor.map(partial(make, 'clean'), op.paths)
     sys.stdout.write('\n')
@@ -93,19 +115,23 @@ def make(rule, path):
 def summarize(results, elapsed):
     ''' At the end display the errors of project that failed '''
     failed = 0
+    with open("/tmp/opengeode.err", "w") as f:
+        f.write("opengeode test report")
+        f.write("---------------------")
     for errcode, stdout, stderr, path, rule in results:
         if errcode == 0:
             continue
         failed += 1
-        print("=" * 80)
-        print("ERROR: %s %s" % (path, rule))
-        if stdout:
-            print("-- stdout " + "-" * 70)
-            print(stdout.decode("latin-1"))
-        if stderr:
-            print("-- stderr " + "-" * 70)
-            print(stderr.decode("latin-1"))
-            print("-" * 80)
+        with open("/tmp/kazoo.err", 'a') as f:
+            f.write("=" * 80)
+            f.write("ERROR: %s %s" % (path, rule))
+            if stdout:
+                f.write("-- stdout " + "-" * 70)
+                f.write(stdout.decode("latin-1"))
+            if stderr:
+                f.write("-- stderr " + "-" * 70)
+                f.write(stderr.decode("latin-1"))
+                f.write("-" * 80)
     print("Finished in %.3fs" % elapsed)
     print("%s tests, %s errors" % (len(results), failed))
 
