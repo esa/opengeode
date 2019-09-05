@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.0.44 (09/2019)
+    - Fix case issue when used combined with kazoo
+
 2.0.43 (05/2019)
     - Better handling of path in generated gpr files
 

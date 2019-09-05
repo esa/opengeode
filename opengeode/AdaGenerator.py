@@ -660,7 +660,9 @@ package {process_name} is'''.format(generic=generic_spec,
         if not generic:
             ads_template.append(
                     u'pragma Export(C, {name}, "{proc}_PI_{name}");'
-                     .format(name=signame.lower(), proc=process_name.lower()))
+                     .format(name=signame, proc=process_name.lower()))
+                     # don't lower case the signal name, not for kazoo at least
+                     #.format(name=signame.lower(), proc=process_name.lower()))
 
         if simu:
             # Generate code for the mini-cv template
@@ -823,8 +825,10 @@ package {process_name} is'''.format(generic=generic_spec,
                                 .format(UNICODE_SEP,
                                         signal['name'],
                                         param_spec))
-            signame = signal['name'].lower() if taste else signal['name']
             procname = process_name.lower() if taste else process_name
+            # no: taste target keeps the case (with kazoo)
+            #signame = signal['name'].lower() if taste else signal['name']
+            signame = signal['name']
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
                                 .format(sep=UNICODE_SEP,
@@ -879,8 +883,10 @@ package {process_name} is'''.format(generic=generic_spec,
 
         elif not generic:
             ads_template.append(ri_header + u';')
-            signame = proc.inputString.lower() if taste else proc.inputString
+            # don't lower in case of taste (kazoo)
+            #signame = proc.inputString.lower() if taste else proc.inputString
             procname = process_name.lower() if taste else process_name
+            signame = proc.inputString
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
                                 .format(sep=UNICODE_SEP,
