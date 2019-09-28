@@ -2039,11 +2039,16 @@ def conditional_expression(root, context):
     return expr, errors, warnings
 
 
-def call_expression(root, context):
+def call_expression(root, context, pos="right"):
     ''' Call expression analysis '''
+    # contains "pos" because it can be on the left side of an "assign"
+    # therefore this has to be propagated, in particular to check
+    # if the root (which has not been analysed before) is a choice field
+    # (this being not permitted - choice must be set via asn1 notation)
     errors, warnings = [], []
 
     if root.children[0].type == lexer.PRIMARY:
+        # check if it is a call to a special operator or procedure
         primary = root.children[0]
         if primary.children[0].type == lexer.VARIABLE:
             variable = primary.children[0]
@@ -2053,14 +2058,18 @@ def call_expression(root, context):
             if ident in (SPECIAL_OPERATORS.keys() + proc_list):
                 return primary_call(root, context)
 
+    # not a call to a special operator or procedure
+    # => it is either an index or a substring
+
     num_params = len(root.children[1].children)
 
     if num_params == 1:
-        return primary_index(root, context)
+        return primary_index(root, context, pos)
 
     elif num_params == 2:
-        return primary_substring(root, context)
+        return primary_substring(root, context, pos)
 
+    #  more than 2 parameters? that does not correspond to anything -> error
     else:
         node = ogAST.PrimCall()  # Use error node instead?
         node.inputString = get_input_string(root)
@@ -2070,7 +2079,7 @@ def call_expression(root, context):
 
 
 def primary_call(root, context):
-    ''' Primary call analysis '''
+    ''' Primary call analysis (procedure or special operator) '''
     node, errors, warnings = ogAST.PrimCall(), [], []
 
     node.exprType = UNKNOWN_TYPE
@@ -2096,16 +2105,22 @@ def primary_call(root, context):
     return node, errors, warnings
 
 
-def primary_index(root, context):
+def primary_index(root, context, pos):
     ''' Primary index analysis '''
+
+    # root.children[0] is the variable (with possible selector)
+    # pos is either right or left. left if it is an assigned variable
+    # root.children[1] is the index
+
     node, errors, warnings = ogAST.PrimIndex(), [], []
 
-    node.exprType = UNKNOWN_TYPE
+    node.exprType    = UNKNOWN_TYPE
     node.inputString = get_input_string(root)
-    node.tmpVar = tmp()
+    node.tmpVar      = tmp()
 
     receiver, receiver_err, receiver_warn = \
-                                expression(root.children[0], context)
+                                expression(root.children[0], context, pos)
+
     receiver_bty = find_basic_type(receiver.exprType)
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
@@ -2148,7 +2163,7 @@ def primary_index(root, context):
     return node, errors, warnings
 
 
-def primary_substring(root, context):
+def primary_substring(root, context, pos):
     ''' Primary substring analysis '''
     node, errors, warnings = ogAST.PrimSubstring(), [], []
 
@@ -2157,7 +2172,7 @@ def primary_substring(root, context):
     node.tmpVar = tmp()
 
     receiver, receiver_err, receiver_warn = \
-                                    expression(root.children[0], context)
+                                    expression(root.children[0], context, pos)
     receiver_bty = find_basic_type(receiver.exprType)
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
@@ -2232,7 +2247,8 @@ def selector_expression(root, context, pos="right"):
     node.exprType = UNKNOWN_TYPE
     node.inputString = get_input_string(root)
     node.tmpVar = tmp()
-
+    #print "selector expression"
+    #print traceback.print_stack()
     receiver, receiver_err, receiver_warn = \
                                 expression(root.children[0], context, pos)
     receiver_bty = find_basic_type(receiver.exprType)
@@ -4656,7 +4672,8 @@ def assign(root, context):
         errors.append('Syntax error: {}'.format(expr.inputString))
 
     if root.children[0].type == lexer.CALL:
-        expr.left, err, warn = call_expression(root.children[0], context)
+        expr.left, err, warn = call_expression(root.children[0], context,
+                                               pos="left")
     elif root.children[0].type == lexer.SELECTOR:
         expr.left, err, warn = selector_expression(root.children[0], context,
                                                    pos="left")
