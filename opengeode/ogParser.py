@@ -2112,6 +2112,11 @@ def primary_index(root, context, pos):
     # pos is either right or left. left if it is an assigned variable
     # root.children[1] is the index
 
+    # if pos is left, we check here if the type is mutable or not
+    # an array of variable size is immutable and must be assigned
+    # with an ASN.1 Value notation (to set the size)
+    # an array of fixed size is mutable - individual values can be updated
+
     node, errors, warnings = ogAST.PrimIndex(), [], []
 
     node.exprType    = UNKNOWN_TYPE
@@ -2138,15 +2143,26 @@ def primary_index(root, context, pos):
             r_min, r_max = substring_range(receiver)
         else:
             r_min, r_max = receiver_bty.Min, receiver_bty.Max
+
+        # check if the type is mutable (explanation above)
+        mutable_type = (pos == "right") or (r_min == r_max)
+
+        if not mutable_type:
+            errors.append(error(root, "Variable-length type is immutable, "
+                "you must assign all values at once to set the size "
+                "(syntax: variable := {3, 14, 15})"))
+
         # Is that correct for SEQOF ? the exprType of the node should be the
         # type of the elements of the SEQOF, not the SEQOF type itself, no?
         node.exprType = receiver_bty.type
+
         idx_bty = find_basic_type(params[0].exprType)
         if not is_integer(idx_bty):
             errors.append(error(root, 'Index is not an integer'))
         elif is_number(idx_bty):
             # Check range only is index is given as a raw number
-            if float(idx_bty.Max) >= float(r_max):
+            if float(idx_bty.Max) >= float(r_max) \
+                    or float(idx_bty.Min) < 1:
                 errors.append(error(root,
                                     'Index range [{id1} .. {id2}] '
                                     'outside of range [{r1} .. {r2}]'
@@ -2165,6 +2181,8 @@ def primary_index(root, context, pos):
 
 def primary_substring(root, context, pos):
     ''' Primary substring analysis '''
+    # Check documentation of primary_index
+
     node, errors, warnings = ogAST.PrimSubstring(), [], []
 
     node.exprType = UNKNOWN_TYPE
@@ -2203,6 +2221,18 @@ def primary_substring(root, context, pos):
             errors.append(error(root, msg))
             LOG.debug('In primary_substring: ' + str(err))
             min1, max1 = 0, 0
+
+        # check if the type is mutable
+        if isinstance(receiver, ogAST.PrimSubstring):
+            r_min, r_max = substring_range(receiver)
+        else:
+            r_min, r_max = receiver_bty.Min, receiver_bty.Max
+        mutable_type = (pos == "right") or (r_min == r_max)
+
+        if not mutable_type:
+            errors.append(error(root, "Variable-length type is immutable, "
+                "you must assign all values at once to set the size "
+                "(syntax: variable := {3, 14, 15})"))
 
         #node.exprType = type('SubStr', (receiver_bty,),
         # The substring has to be subtyping the original type to get its name
