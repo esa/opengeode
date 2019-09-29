@@ -26,13 +26,13 @@ My16BitArrayInteger ::= INTEGER (0..15)
 My16BitArrayValueInteger ::= INTEGER (0..65535)
 
 -- Packet structure
-MyPacket ::= SEQUENCE (SIZE (0..255)) OF MyFrame
+MyPacket ::= SEQUENCE (SIZE (255)) OF MyFrame
 
 -- Stack for data in bits
-MyDataStack ::= SEQUENCE (SIZE (40..2000)) OF BOOLEAN
+MyDataStack ::= SEQUENCE (SIZE (2000)) OF BOOLEAN
 
 -- Stack for data of FCS calculation 
-MyFcsStack ::= SEQUENCE (SIZE (224..2192)) OF BOOLEAN -- Frame has empty info or is full
+MyFcsStack ::= SEQUENCE (SIZE (2192)) OF BOOLEAN -- Frame has empty info or is full
 
 -- Integer for data of FCS calculation 
 MyFcsStackInteger ::= INTEGER (0..2175)
@@ -104,7 +104,7 @@ MyCntrl ::= My8BitArray -- Fixed value 0x03
 MyCode ::= My8BitArray
 
 -- INFO: Operation data
-MyOperationData ::= SEQUENCE (SIZE (0..250)) OF My8BitArray
+MyOperationData ::= SEQUENCE (SIZE (250)) OF My8BitArray
 
 -- INFO: Info Frame check sequence
 MyIfcs ::= My16BitArray
@@ -116,22 +116,22 @@ MyAuth ::= My16BitArray
 MyFcs ::= My16BitArray
 
 -- Stack of L3 frames
-MyL3Stack ::= SEQUENCE (SIZE (0..255)) OF MyL3Data
+MyL3Stack ::= SEQUENCE (SIZE (255)) OF MyL3Data
 
 -- Stack of L3 frame numbers
-MyL3StackNumbers ::= SEQUENCE (SIZE (0..255)) OF BOOLEAN
+MyL3StackNumbers ::= SEQUENCE (SIZE (255)) OF BOOLEAN
 
 -- Integer for L3 frame stack numbering
 MyL3StackInteger ::= INTEGER (0..254)
 
 -- Stack of L3 missing frame numbers in octets
-MyL3MissingStack ::= SEQUENCE (SIZE (0..255)) OF My8BitArray
+MyL3MissingStack ::= SEQUENCE (SIZE (255)) OF My8BitArray
 
 -- Stack for L3 data in bits
-MyL3DataStack ::= SEQUENCE (SIZE (0..1960)) OF BOOLEAN
+MyL3DataStack ::= SEQUENCE (SIZE (1960)) OF BOOLEAN
 
 -- Stack for data of L3 FCS calculation 
-MyL3FcsStack ::= SEQUENCE (SIZE (80..2040)) OF BOOLEAN  -- L3 frame is empty or full
+MyL3FcsStack ::= SEQUENCE (SIZE (2040)) OF BOOLEAN  -- L3 frame is empty or full
 
 -- Integer for data of L3 FCS calculation
 MyL3FcsStackInteger ::= INTEGER (0..2023)
@@ -179,19 +179,19 @@ MyL3Mrt ::= My16BitArray
 MyL3Fnum ::= My8BitArray
 
 -- L3 FRAME: Data
-MyL3Data ::= SEQUENCE (SIZE (0..245)) OF My8BitArray
+MyL3Data ::= SEQUENCE (SIZE (245)) OF My8BitArray
 
 -- Integer for L3 data
 MyL3DataInteger ::= INTEGER (0..244)
 
 -- Stack for L3 acknowledgement data in bits
-MyL3AckDataStack ::= SEQUENCE (SIZE (0..1952)) OF BOOLEAN
+MyL3AckDataStack ::= SEQUENCE (SIZE (1952)) OF BOOLEAN
 
 -- Stack for data of L3 acknowledgement FCS calculation 
-MyL3AckFcsStack ::= SEQUENCE (SIZE (88..2040)) OF BOOLEAN  -- L3 acknowledgement frame is empty or full
+MyL3AckFcsStack ::= SEQUENCE (SIZE (2040)) OF BOOLEAN  -- L3 acknowledgement frame is empty or full
 
 -- Stack of L3 missing frame numbers
-MyL3AckMissingStack ::= SEQUENCE (SIZE (0..244)) OF INTEGER (0..255)
+MyL3AckMissingStack ::= SEQUENCE (SIZE (244)) OF INTEGER (0..255)
 
 -- Integer for stack of L3 missing frame stack numbering
 MyL3AckMissingStackInteger ::= INTEGER (0..243)
@@ -219,7 +219,7 @@ MyL3Lfn ::= My8BitArray
 MyL3Hfn ::= My8BitArray
 
 -- L3 ACKNOWLEDGEMENT FRAME: Frame numbers missing
-MyL3Rrq ::= SEQUENCE (SIZE (0..244)) OF My8BitArray
+MyL3Rrq ::= SEQUENCE (SIZE (244)) OF My8BitArray
 
 -- Integer for L3 frame numbers missing
 MyL3RrqInteger ::= INTEGER (0..243)
@@ -234,7 +234,7 @@ MyInputData ::= SEQUENCE {
 }
 
 -- INPUT DATA: Raw data
-MyRawData ::= SEQUENCE (SIZE (0..62475)) OF My8BitArray -- Up to 255 frames of data
+MyRawData ::= SEQUENCE (SIZE (62475)) OF My8BitArray -- Up to 255 frames of data
 
 -- Integer for raw data numbering
 MyRawDataInteger ::= INTEGER (0..62475)

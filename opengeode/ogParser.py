@@ -2172,7 +2172,7 @@ def primary_index(root, context, pos):
         elif is_number(idx_bty):
             # Check range only is index is given as a raw number
             if float(idx_bty.Max) >= float(r_max) \
-                    or float(idx_bty.Min) < 1:
+                    or float(idx_bty.Min) < 0:
                 errors.append(error(root,
                                     'Index range [{id1} .. {id2}] '
                                     'outside of range [{r1} .. {r2}]'
@@ -2192,9 +2192,10 @@ def primary_index(root, context, pos):
 def primary_substring(root, context, pos):
     ''' Primary substring analysis '''
     # Check documentation of primary_index
-    # Substring parameters must be ground expression : var (3, 5)
+    # Substring parameters should be ground expression : var (3, 5)
     # and not var (a, b), because allowing a and b to have a range does
     # not allow to compute a fixed size for the substring
+    # It is only reported as a warning but this is questionable
 
     node, errors, warnings = ogAST.PrimSubstring(), [], []
 
@@ -2236,9 +2237,8 @@ def primary_substring(root, context, pos):
             min1, max1 = 0, 0
 
         if min0 != max0 or min1 != max1:
-            msg = 'Substring bounds must be ground expressions, not variables'
-            errors.append(error(root, msg))
-            min1, max1 = 0, 0
+            msg = 'Substring bounds should be ground expressions'
+            warnings.append(warning(root, msg))
 
         if min0 < 0 or min1 < 0:
             msg = 'Substring bounds cannot be negative'

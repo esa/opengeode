@@ -1,45 +1,9 @@
 /* CIF PROCESS (250, 150), (150, 75) */
-PROCESS packetmanager;
-    STATE AGGREGATION wait;
-    SUBSTRUCTURE
-            STATE packetReceival;
-            SUBSTRUCTURE
-                    /* CIF TEXT (673, 16), (357, 140) */
-                    -- Text area for declarations and comments
-                    
-                    DCL noOfSentPackets My8BitArrayValueInteger := 1;
-                    /* CIF ENDTEXT */
-                    /* CIF START (28, 0), (70, 35) */
-                    START;
-                        /* CIF NEXTSTATE (0, 58), (127, 35) */
-                        NEXTSTATE frameReceival;
-                    /* CIF STATE (345, 0), (127, 35) */
-                    STATE frameReceival;
-                        /* CIF INPUT (318, 55), (181, 35) */
-                        INPUT ReceivePacket(packet);
-                            /* CIF OUTPUT (287, 105), (244, 35) */
-                            OUTPUT SendFrameCount(length(packet));
-                            /* CIF LABEL (348, 155), (122, 54) */
-                            frameSending:
-                            /* CIF OUTPUT (264, 224), (290, 35) */
-                            OUTPUT SendFrame(packet(noOfSentPackets - 1));
-                            /* CIF DECISION (258, 274), (301, 50) */
-                            DECISION length(packet) = noOfSentPackets;
-                                /* CIF ANSWER (137, 344), (70, 23) */
-                                (true):
-                                    /* CIF RETURN (155, 382), (35, 35) */
-                                    RETURN ;
-                                /* CIF ANSWER (618, 344), (70, 23) */
-                                (false):
-                                    /* CIF TASK (339, 382), (628, 35) */
-                                    TASK noOfSentPackets := if noOfsentPackets = 255 then noOfSentPackets else noOfSentPackets + 1 fi;
-                                    /* CIF JOIN (636, 432), (35, 35) */
-                                    JOIN frameSending;
-                            ENDDECISION;
-                    ENDSTATE;
-            ENDSUBSTRUCTURE;
-            STATE frameReceival;
-            SUBSTRUCTURE
+process packetmanager;
+    state aggregation wait;
+    substructure
+            state frameReceival;
+            substructure
                     /* CIF TEXT (1100, 14), (336, 140) */
                     -- Text area for declarations and comments
                     
@@ -49,42 +13,79 @@ PROCESS packetmanager;
                     START;
                         /* CIF NEXTSTATE (22, 50), (164, 35) */
                         NEXTSTATE frameCountReceival;
-                    /* CIF STATE (270, 0), (164, 35) */
-                    STATE frameCountReceival;
-                        /* CIF INPUT (231, 55), (243, 35) */
-                        INPUT ReceiveFrameCount(frameCount);
+                    /* CIF state (726, 0), (127, 35) */
+                    state frameReceival;
+                        /* CIF input (695, 55), (189, 35) */
+                        input ReceiveFrame(frame);
+                            /* CIF task (515, 105), (548, 40) */
+                            task frameCounter := if frameCounter = 255 then frameCounter else frameCounter + 1 fi;
+                            /* CIF task (498, 165), (582, 35) */
+                            task packet := packet (0, frameCounter -1) //  { frame } // packet (frameCounter, length(packet));
+                            /* CIF decision (675, 215), (229, 41) */
+                            decision frameCounter = frameCount;
+                                /* CIF ANSWER (631, 276), (70, 24) */
+                                (true):
+                                    /* CIF output (585, 316), (162, 35) */
+                                    output SendPacket(packet);
+                                    /* CIF return (648, 366), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (873, 276), (70, 24) */
+                                (false):
+                                    /* CIF NEXTSTATE (844, 316), (127, 35) */
+                                    NEXTSTATE frameReceival;
+                            enddecision;
+                    endstate;
+                    /* CIF state (270, 0), (164, 35) */
+                    state frameCountReceival;
+                        /* CIF input (231, 55), (243, 35) */
+                        input ReceiveFrameCount(frameCount);
                             /* CIF NEXTSTATE (289, 105), (127, 35) */
                             NEXTSTATE frameReceival;
-                    ENDSTATE;
-                    /* CIF STATE (726, 0), (127, 35) */
-                    STATE frameReceival;
-                        /* CIF INPUT (695, 55), (189, 35) */
-                        INPUT ReceiveFrame(frame);
-                            /* CIF TASK (515, 105), (548, 38) */
-                            TASK frameCounter := if frameCounter = 255 then frameCounter else frameCounter + 1 fi,
-packet(frameCounter - 1) := frame;
-                            /* CIF DECISION (675, 161), (229, 41) */
-                            DECISION frameCounter = frameCount;
-                                /* CIF ANSWER (631, 222), (70, 23) */
+                    endstate;
+            endsubstructure;
+            state packetReceival;
+            substructure
+                    /* CIF TEXT (673, 16), (357, 140) */
+                    -- Text area for declarations and comments
+                    
+                    DCL noOfSentPackets My8BitArrayValueInteger := 1;
+                    /* CIF ENDTEXT */
+                    /* CIF START (28, 0), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (0, 58), (127, 35) */
+                        NEXTSTATE frameReceival;
+                    /* CIF state (345, 0), (127, 35) */
+                    state frameReceival;
+                        /* CIF input (318, 55), (181, 35) */
+                        input ReceivePacket(packet);
+                            /* CIF output (287, 105), (244, 35) */
+                            output SendFrameCount(length(packet));
+                            /* CIF label (348, 155), (122, 54) */
+                            frameSending:
+                            /* CIF output (264, 224), (290, 35) */
+                            output SendFrame(packet(noOfSentPackets - 1));
+                            /* CIF decision (258, 274), (301, 50) */
+                            decision length(packet) = noOfSentPackets;
+                                /* CIF ANSWER (137, 344), (70, 24) */
                                 (true):
-                                    /* CIF OUTPUT (585, 260), (162, 35) */
-                                    OUTPUT SendPacket(packet);
-                                    /* CIF RETURN (648, 310), (35, 35) */
-                                    RETURN ;
-                                /* CIF ANSWER (873, 222), (70, 23) */
+                                    /* CIF return (155, 384), (35, 35) */
+                                    return ;
+                                /* CIF ANSWER (618, 344), (70, 24) */
                                 (false):
-                                    /* CIF NEXTSTATE (844, 260), (127, 35) */
-                                    NEXTSTATE frameReceival;
-                            ENDDECISION;
-                    ENDSTATE;
-            ENDSUBSTRUCTURE;
-            /* CIF STATE (11, 0), (134, 35) */
-            STATE frameReceival;
-            ENDSTATE;
-            /* CIF STATE (0, 49), (159, 35) */
-            STATE packetReceival;
-            ENDSTATE;
-    ENDSUBSTRUCTURE;
+                                    /* CIF task (339, 384), (628, 35) */
+                                    task noOfSentPackets := if noOfsentPackets = 255 then noOfSentPackets else noOfSentPackets + 1 fi;
+                                    /* CIF join (636, 434), (35, 35) */
+                                    join frameSending;
+                            enddecision;
+                    endstate;
+            endsubstructure;
+            /* CIF state (0, 49), (159, 35) */
+            state packetReceival;
+            endstate;
+            /* CIF state (11, 0), (134, 35) */
+            state frameReceival;
+            endstate;
+    endsubstructure;
     /* CIF TEXT (328, 13), (300, 140) */
     -- Text area for declarations and comments
     
@@ -96,11 +97,11 @@ packet(frameCounter - 1) := frame;
     /* CIF ENDTEXT */
     /* CIF START (49, 1), (70, 35) */
     START;
-        /* CIF LABEL (49, 56), (70, 35) */
+        /* CIF label (49, 56), (70, 35) */
         waiting:
         /* CIF NEXTSTATE (49, 111), (70, 35) */
         NEXTSTATE wait;
-    /* CIF STATE (175, 1), (70, 35) */
-    STATE wait;
-    ENDSTATE;
-ENDPROCESS packetmanager;
+    /* CIF state (175, 1), (70, 35) */
+    state wait;
+    endstate;
+endprocess packetmanager;
