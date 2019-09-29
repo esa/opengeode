@@ -135,6 +135,15 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.1.0 (09/2019)
+    - Reinforce type checks when using substrings and indexes, and
+      variable-length arrays. the latter can no longer be indexed on the
+      left side of an assignment, as the size cannot be set that way
+      The proper ways to set values of a variable-length array are:
+      1) ASN.1 value notation var := { a, b, c }
+      2) New assignment to replace a value using append statements:
+         var := var (0) // { b } // var (2, 3)
+
 2.0.44 (09/2019)
     - Fix case issue when used combined with kazoo
 
