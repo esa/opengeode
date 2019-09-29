@@ -884,7 +884,6 @@ def fix_append_expression_type(expr, expected_type):
     rec_append(expr, expected_type)
     expr.exprType      = expected_type
     expr.expected_type = expected_type
-    #print expr.exprType
 
 
 def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
@@ -900,6 +899,16 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
         raise TypeError('Type reference is unknown')
 
     basic_type = find_basic_type(type_ref)
+    # watch out: type_ref may be a subtype of basic_type with different
+    # min/max constraint, in particular in case of substrings
+    if type_ref.__name__ == 'SubStr':
+        minR, maxR = type_ref.Min, type_ref.Max
+    else:
+        try:
+            minR, maxR = basic_type.Min, basic_type.Max
+        except AttributeError:
+            # some types do not have Min/Max ranges
+            pass
 
     if (isinstance(primary, ogAST.PrimEnumeratedValue)
             and basic_type.kind.endswith('EnumeratedType')):
@@ -959,11 +968,11 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
     elif isinstance(primary, ogAST.PrimEmptyString):
         # Empty strings ("{ }") can be used for arrays and empty records
         if basic_type.kind == 'SequenceOfType':
-            if int(basic_type.Min) == 0:
+            if int(minR) == 0:
                 return warnings
             else:
                 raise TypeError('SEQUENCE OF has a minimum size of '
-                                + basic_type.Min + ')')
+                                + minR + ')')
         elif basic_type.kind == 'SequenceType':
             if len(basic_type.Children.keys()) > 0:
                 raise TypeError('SEQUENCE is not empty, wrong "{}" syntax')
@@ -971,13 +980,14 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
             raise TypeError('Not a type compatible with empty string syntax')
     elif isinstance(primary, ogAST.PrimSequenceOf) \
             and basic_type.kind == 'SequenceOfType':
-        if type_ref.__name__ != 'Apnd' and \
-                (len(primary.value) < int(basic_type.Min) or
-                len(primary.value) > int(basic_type.Max)):
+        #  left is a sequenceof, but we check it is not an append
+        if type_ref.__name__ not in ('Apnd') and \
+                (len(primary.value) < int(minR) or
+                len(primary.value) > int(maxR)):
             #print traceback.print_stack()
             raise TypeError(str(len(primary.value)) +
                       ' element(s) in SEQUENCE OF, while constraint is [' +
-                      str(basic_type.Min) + ' .. ' + str(basic_type.Max) + ']')
+                      str(minR) + ' .. ' + str(maxR) + ']')
         for elem in primary.value:
             warnings.extend(check_type_compatibility(elem,
                                                      basic_type.type,
@@ -1078,16 +1088,16 @@ def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
             return warnings
         elif basic_type.kind.endswith('StringType'):
             try:
-                if int(basic_type.Min) <= len(
-                        primary.value[1:-1]) <= int(basic_type.Max):
+                if int(minR) <= len(
+                        primary.value[1:-1]) <= int(maxR):
                     return warnings
                 else:
                     #print traceback.print_stack()
                     raise TypeError('Invalid string literal'
                                     ' - check that length is '
                                     'within the bound limits {Min}..{Max}'
-                                    .format(Min=str(basic_type.Min),
-                                            Max=str(basic_type.Max)))
+                                    .format(Min=str(minR),
+                                            Max=str(maxR)))
             except ValueError:
                 # No size constraint (or MIN/MAX)
                 LOG.debug('String literal size constraint discarded')
@@ -2114,7 +2124,7 @@ def primary_index(root, context, pos):
 
     # if pos is left, we check here if the type is mutable or not
     # an array of variable size is immutable and must be assigned
-    # with an ASN.1 Value notation (to set the size)
+    # with an ASN.1 Value notation (to set the size) or append
     # an array of fixed size is mutable - individual values can be updated
 
     node, errors, warnings = ogAST.PrimIndex(), [], []
@@ -2138,7 +2148,7 @@ def primary_index(root, context, pos):
     node.value = [receiver, {'index': params}]
 
     if receiver_bty.kind == 'SequenceOfType':
-        # Range check
+        # Range of the receiver (SEQUENCE(SIZE(XXX)) - check XXX
         if isinstance(receiver, ogAST.PrimSubstring):
             r_min, r_max = substring_range(receiver)
         else:
@@ -2182,12 +2192,15 @@ def primary_index(root, context, pos):
 def primary_substring(root, context, pos):
     ''' Primary substring analysis '''
     # Check documentation of primary_index
+    # Substring parameters must be ground expression : var (3, 5)
+    # and not var (a, b), because allowing a and b to have a range does
+    # not allow to compute a fixed size for the substring
 
     node, errors, warnings = ogAST.PrimSubstring(), [], []
 
-    node.exprType = UNKNOWN_TYPE
+    node.exprType    = UNKNOWN_TYPE
     node.inputString = get_input_string(root)
-    node.tmpVar = tmp()
+    node.tmpVar      = tmp()
 
     receiver, receiver_err, receiver_warn = \
                                     expression(root.children[0], context, pos)
@@ -2222,11 +2235,23 @@ def primary_substring(root, context, pos):
             LOG.debug('In primary_substring: ' + str(err))
             min1, max1 = 0, 0
 
-        # check if the type is mutable
+        if min0 != max0 or min1 != max1:
+            msg = 'Substring bounds must be ground expressions, not variables'
+            errors.append(error(root, msg))
+            min1, max1 = 0, 0
+
+        if min0 < 0 or min1 < 0:
+            msg = 'Substring bounds cannot be negative'
+            errors.append(error(root, msg))
+            min1, max1 = 0, 0
+
+        # Range of the receiver (SEQUENCE(SIZE(XXX)) - check XXX
         if isinstance(receiver, ogAST.PrimSubstring):
             r_min, r_max = substring_range(receiver)
         else:
             r_min, r_max = receiver_bty.Min, receiver_bty.Max
+
+        # check if the type is mutable if user tries to assign value
         mutable_type = (pos == "right") or (r_min == r_max)
 
         if not mutable_type:
@@ -4702,6 +4727,8 @@ def assign(root, context):
         errors.append('Syntax error: {}'.format(expr.inputString))
 
     if root.children[0].type == lexer.CALL:
+        # usually index or substring, should not be a procedure call
+        # on the left side of the expression
         expr.left, err, warn = call_expression(root.children[0], context,
                                                pos="left")
     elif root.children[0].type == lexer.SELECTOR:
