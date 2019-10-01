@@ -84,9 +84,12 @@ def parse_asn1(*files, **options):
     # use basic caching to avoid re-parsing when loading the model
     project_cache = os.getenv ("PROJECT_CACHE")
     if project_cache is not None and not os.path.isdir(project_cache):
-        raise TypeError (
-            "The configured cache folder \""
-            + project_cache + "\" is not there!\n")
+        try:
+            print("[INFO] Creating cache folder {}".format(project_cache))
+            os.makedirs(project_cache)
+        except OSError:
+            raise TypeError ("The configured cache folder \""
+            + project_cache + "\" is not there and could not be created\n")
     # make sure the same files are not parsed more than once if not modified
     filehash = hashlib.md5()
     file_list = sorted(list(*files))

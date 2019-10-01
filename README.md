@@ -135,6 +135,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+2.1.1 (10/2019)
+    - Create cache folder if it was missing
+
 2.1.0 (09/2019)
     - Reinforce type checks when using substrings and indexes, and
       variable-length arrays. the latter can no longer be indexed on the
