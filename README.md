@@ -1,18 +1,16 @@
 OpenGEODE
 =========
 
-OpenGEODE is a tiny open-source SDL editor that is developed for
+OpenGEODE is an open-source SDL editor that is developed for
 the purpose of providing an easy to use and free state machine editor and
 Ada code generator to the TASTE toolchain from the European Space Agency,
-running in combination with ESA's ASN.1 "Space Certifiable" ASN.1 compiler.
+running in combination with ESA's "Space Certifiable" ASN.1 compiler.
 
 SDL is the Specification and Description Language (Z100 standard from ITU-T).
 
 This is NOT related to the graphical Simple DirectMedia Layer libraries!
 
 Visit http://sdl-forum.org for more information about SDL.
-Visit http://www.pragmadev.com to get a full-featured commercial SDL tool and support
-
 
 ![alt tag](icons/opengeode-screenshot.png)
 
@@ -21,9 +19,9 @@ Features
 --------
 
 - Graphical editor of SDL processes and procedures.
-- SDL2010 features: state composition and state aggregation
+- Includes support for state composition and state aggregation (parallel/nested states)
 - Works on pure PR+CIF files (textual SDL notation)
-- Supports ASN.1 data types - using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
+- Supports ASN.1 data types using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
 - Generates Ada code
 - Automatic conversion to Statechart diagrams
 - Save the complete or parts of the model to PNG/SVG/PDF files
@@ -37,25 +35,22 @@ Features
 Installation
 ============
 
-On Windows, download the binary from [here](http://download.tuxfamily.org/taste/opengeode_windows.zip)
+OpenGEODE is made primarily for Linux.
 
-Uzip it and run opengeode.exe. It contains everything without any other external dependencies.
+It is part of the [TASTE project](https://taste.tools)
 
-Note: the Windows binary may not be up to date.. it is created mostly as a proof of concept.
-
+It is installed with all dependencies in the TASTE virtual machine that you can download from this link.
 
 Linux Pre-requisites
 --------------------
 
 To install OpenGEODE on Linux you need to install some system-level dependencies:
 
-- Python 2.7 with pip (installed by default on nearly all Linux distributions)
-- Pyside
+- Python 2.7 with pip
+- PySide
 - Graphviz
 - [ASN1SCC V4](https://github.com/ttsiodras/asn1scc)
 - GNAT
-
-And optionally llvm and llvmpy
 
 On Debian, Ubuntu, and probably other distributions:
 
@@ -90,16 +85,11 @@ $ mono /opt/asn1scc/asn1.exe
 OpenGEODE installation
 ----------------------
 
-Make sure all dependencies are installed. In particular make sure you are using the version 4 of the ASN1SCC compiler.
+Once all dependencies are installed, run:
 
 
 ```bash
 $ git clone https://github.com/esa/opengeode.git
-```
-
-And install it:
-
-```bash
 $ cd opengeode
 $ make full-install
 ```
@@ -108,16 +98,14 @@ $ make full-install
 Information and contact
 =======================
 
-OpenGEODE is part of the [TASTE project](http://taste.tuxfamily.org)
 
 For additional information please contact:
 maxime (dot) perrotin (at) esa (dot) int
 
 
 The LLVM backend was designed and implemented by Diego Barbera during the ESA
-Summer of Code 2014 (It is unfortunately unmaintained now and does not support all features of the tool).
+Summer of Code 2014. This component is not maintained.
 Some parts implemented by Laurent Meyer (native SDL type support in the parser)
-
 
 The ASN.1 compiler (ASN1Scc) that OpenGEODE is based on was
 developed by George Mamais and Thanassis Tsiodras for the European
