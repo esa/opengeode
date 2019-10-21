@@ -122,6 +122,8 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.1.2 (10/2019)
+    - Change import name case for set/reset of timer (for taste compatibility)
 
 2.1.1 (10/2019)
     - Create cache folder if it was missing

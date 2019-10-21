@@ -41,12 +41,13 @@ compile-all:
 	@mv sdl92*.py opengeode
 
 update:
-	@git submodule update --remote
+	git pull
+	#@git submodule update --remote
 
 dependencies:
 	@pip2 install --user --upgrade ./antlr3-python
-	@pip2 install --user --upgrade ./singledispatch
-	@pip2 install --user --upgrade ./enum34
+	@pip2 install --user --upgrade singledispatch
+	@pip2 install --user --upgrade enum34
 	@pip2 install --user --upgrade ./speedometer
 	#@pip2 install --user --upgrade ./properties
 	@pip3 install --user --upgrade ./dmt
