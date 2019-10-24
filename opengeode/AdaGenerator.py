@@ -112,6 +112,7 @@ def external_ri_list(process):
     Used for the formal parameters of generic packages when using process type
     '''
     result = []
+    #print process.fpar
     for signal in process.output_signals:
         param_name = signal.get('param_name') \
                                 or u'{}_param'.format(signal['name'])
@@ -517,6 +518,9 @@ package body {process_name} is'''.format(
             generic_spec += u"    with " + u";\n    with ".join(ri_list) + ';'
     if instance:
         instance_decl = u"with {};".format(process.instance_of_name)
+
+    # print process.fpar
+    # FPAR could be set for Context Parameters. They are available here
 
     # Generate the source file (.ads) header
     ads_template = [u'''\

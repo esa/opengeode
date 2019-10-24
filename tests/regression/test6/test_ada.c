@@ -16,7 +16,7 @@ void myfunction_RI_result_data(long long *val)
     printf("[C] result_data: %lld\n", *val);
 }
 
-void myfunction_RI_set_mytimer(asn1SccT_Int32 *val)
+void myfunction_RI_SET_mytimer(asn1SccT_Int32 *val)
 {
     printf("[C] SET MyTimer: %lld\n", *val);
     alarm(((int)*val) / 1000);
@@ -30,7 +30,7 @@ void timer_expired()
 }
 
 
-void myfunction_RI_reset_mytimer()
+void myfunction_RI_RESET_mytimer()
 {
     printf("RESET MyTimer\n");
 }

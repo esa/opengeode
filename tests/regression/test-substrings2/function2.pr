@@ -27,7 +27,9 @@ val2 := {9, 10, 11, 12};
             /* CIF output (429, 1217), (119, 35) */
             output response (val1);
             /* CIF task (407, 1272), (162, 35) */
-            task val1 (0, 1) := val2 (3, 4);
+            task 'val1 (0, 1) := val2 (3, 4)'
+            /* CIF comment (589, 1272), (285, 35) */
+            comment 'Cannot do that, because Seq size is variable';
             /* CIF NEXTSTATE (453, 1322), (70, 35) */
             NEXTSTATE Wait;
     endstate;
@@ -49,7 +51,7 @@ val2 := {9, 10, 11, 12};
             /* CIF output (429, 777), (119, 35) */
             output response (val1);
             /* CIF task (411, 832), (155, 35) */
-            task val1 (0, 1) := {42, 43};
+            task 'val1 (0, 1) := {42, 43}';
             /* CIF NEXTSTATE (453, 887), (70, 35) */
             NEXTSTATE Step3;
     endstate;
