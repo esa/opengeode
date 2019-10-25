@@ -38,3 +38,11 @@ tests/regression/test6/myfunction.*
 tests/regression/test7/orchestrator.*
 tests/regression/test8/orchestrator.*
 tests/regression/test9/challenge.*
+tests/regression/test-choice/og.pr.ini
+tests/regression/test-choice/og_ada.gpr
+tests/regression/test-controlflow/controlflow_ada.gpr
+tests/regression/test-sequenceof2/test.pr.ini
+tests/regression/test-simu/Makefile.properties
+tests/regression/test-simu/liborchestrator_stop_conditions.so
+tests/regression/test-simu/orchestrator_simu/
+tests/regression/test-simu/orchestrator_stop_conditions_interface.aadl
