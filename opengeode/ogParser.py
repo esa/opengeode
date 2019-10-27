@@ -5100,6 +5100,7 @@ def pr_file(root):
             errors.append(str(err))
 
     ast.asn1Modules = DV.asn1Modules
+    ref_p_with_fpar = []
 
     for child in systems:
         system, err, warn = system_definition(child, parent=ast)
@@ -5122,11 +5123,29 @@ def pr_file(root):
             return non_ref_processes, process_types
         non_ref_p, p_types = find_processes(system)
 
+        def find_ref_processes_with_fpar(block):
+            ''' Recursively find referenced processes having FPAR '''
+            # They may contain FPAR sections that must not be lost...
+            try:
+                ref_processes = [proc for proc in block.processes
+                        if proc.referenced and proc.fpar]
+            except AttributeError:
+                ref_processes = []
+            for nested in block.blocks:
+                add_p = find_ref_processes_with_fpar(nested)
+                ref_processes.extend(add_p)
+            return ref_processes
+        ref_p_with_fpar = find_ref_processes_with_fpar(system)
+
         ast.processes.extend(non_ref_p)
         ast.process_types.extend(p_types)
     for child in processes:
         # process definition at root level (can be a process type)
         process, err, warn = process_definition(child, parent=ast)
+        # check if the process was declared as referenced with FPAR
+        for each in ref_p_with_fpar:
+            if each.processName == process.processName:
+                process.fpar = each.fpar
         ast.processes.append(process)
         process.dataview = types()
         process.asn1Modules = ast.asn1Modules

@@ -112,6 +112,7 @@ def external_ri_list(process):
     Used for the formal parameters of generic packages when using process type
     '''
     result = []
+    #print process.fpar
     for signal in process.output_signals:
         param_name = signal.get('param_name') \
                                 or u'{}_param'.format(signal['name'])
@@ -518,6 +519,9 @@ package body {process_name} is'''.format(
     if instance:
         instance_decl = u"with {};".format(process.instance_of_name)
 
+    # print process.fpar
+    # FPAR could be set for Context Parameters. They are available here
+
     # Generate the source file (.ads) header
     ads_template = [u'''\
 -- This file was generated automatically: DO NOT MODIFY IT !
@@ -905,7 +909,7 @@ package {process_name} is'''.format(generic=generic_spec,
             ads_template.append(u'type RESET_{}_T is access procedure'
                                 '(name: chars_ptr);'.format(timer))
             for each in ('', 'RE'):
-                ads_template.append(u'pragma Convention(Convention => C,'
+                ads_template.append(u'pragma Convention (Convention => C,'
                                     u' Entity => {re}SET_{t}_T);'
                                     .format(re=each, t=timer))
                 ads_template.append(u'{re}SET_{t} : {re}SET_{t}_T;'
@@ -933,11 +937,11 @@ package {process_name} is'''.format(generic=generic_spec,
                u'procedure SET_{}(val: access asn1SccT_UInt32);'.format(timer))
             ads_template.append(
                     u'pragma Import(C, SET_{timer}, "{proc}_RI_SET_{timer}");'
-                    .format(timer=timer, proc=process_name))
+                    .format(timer=timer, proc=process_name.lower()))
             ads_template.append(u'procedure RESET_{};'.format(timer))
             ads_template.append(
                  u'pragma Import(C, RESET_{timer}, "{proc}_RI_RESET_{timer}");'
-                 .format(timer=timer, proc=process_name))
+                 .format(timer=timer, proc=process_name.lower()))
         else:
             # Generic functions get the SET and RESET from template
             pass
