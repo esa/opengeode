@@ -5100,6 +5100,7 @@ def pr_file(root):
             errors.append(str(err))
 
     ast.asn1Modules = DV.asn1Modules
+    ref_p_with_fpar = []
 
     for child in systems:
         system, err, warn = system_definition(child, parent=ast)
