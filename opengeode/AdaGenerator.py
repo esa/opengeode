@@ -288,14 +288,14 @@ mono $(which asn1.exe) -c -typePrefix asn1Scc -equal {asn1}'''.format(
                                                            asn1=asn1_filenames)
 
     simu_script += '''
-gprbuild -p -P ../{pr}_lib.gpr
+gprbuild -p -P {pr}_lib.gpr
 rm -f dataview-uniq.c dataview-uniq.h
 asn2aadlPlus dataview-uniq.asn DataView.aadl
 aadl2glueC DataView.aadl {pr}_interface.aadl
 asn2dataModel -toPython dataview-uniq.asn
 make -f Makefile.python
 echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
-LD_LIBRARY_PATH=../lib:. opengeode-simulator
+LD_LIBRARY_PATH=./lib:. opengeode-simulator
 '''.format(pr=process_name.lower(),
            asn1_files=asn1_filenames,
            asn1_mod=' '.join(asn1_modules_o))

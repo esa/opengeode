@@ -1,0 +1,6 @@
+all:
+	gprbuild -p -P controller.gpr          # generate Ada code from the SDL model
+	gprbuild -p -P dataview_ada.gpr  # generate Ada code from the ASN.1 model
+	gprbuild -p -P code/controller_ada.gpr      # build the Ada code
+clean:
+	rm -rf obj code

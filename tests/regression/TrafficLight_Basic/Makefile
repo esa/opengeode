@@ -10,6 +10,11 @@ edit:
 test-parse:
 	$(OPENGEODE) controller.pr system_structure.pr --check
 
+simu:
+	$(OPENGEODE) --shared controller.pr system_structure.pr
+	gprbuild -p -P dataview_ada
+	./controller_simu.sh
+
 test-qgen-parse:
 	$(TESTQGEN_PARSE) $(ROOT_MODEL)
 
@@ -44,4 +49,4 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) controller.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm coverage simu
