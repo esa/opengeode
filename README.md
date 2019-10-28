@@ -122,6 +122,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.1.3 (10/2019)
+    - Improve statechart rendering (in particular with nested states)
+
 2.1.2 (10/2019)
     - Change import name case for set/reset of timer (for taste compatibility)
 
