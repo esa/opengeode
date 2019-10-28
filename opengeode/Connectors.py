@@ -473,6 +473,7 @@ class Channel(Signalroute):
 
 class Controlpoint(QGraphicsPathItem, object):
     ''' Class handling one edge control point (to change bezier curves) '''
+    user_can_connect = False  # not used but will avoid exceptions
     def __init__(self, pos, edge):
         ''' Set the original control point - with color, shape '''
         path = QPainterPath()

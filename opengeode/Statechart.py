@@ -5,7 +5,7 @@
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2013 European Space Agency
+    Copyright (c) 2012-2019 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -108,19 +108,25 @@ class Point(genericSymbols.HorizontalSymbol, object):
     _unique_followers = []
     _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
-    textbox_alignment = (QtCore.Qt.AlignTop
+    textbox_alignment = (QtCore.Qt.AlignBottom
                          | QtCore.Qt.AlignHCenter)
-    has_text_area = False
+    has_text_area = True # False (in nested state, START can have a label)
 
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
         self.name = node['name']
-        super(Point, self).__init__(x=node['pos'][0], y=node['pos'][1])
+        if len (self.name) > 5:
+            #  remove the _START suffix in nested state named label
+            label = self.name[0:-6]
+        else:
+            label=''
+        super(Point, self).__init__(x=node['pos'][0], y=node['pos'][1],
+                text=label)
         self.set_shape(node['width'], node['height'])
         self.setBrush(QtGui.QBrush(QtCore.Qt.black))
         self.graph = graph
         # Text is read only
-        #self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
@@ -217,6 +223,7 @@ class Stop(genericSymbols.HorizontalSymbol, object):
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
+        width, height = width, height
         path = QtGui.QPainterPath()
         path.lineTo(width, height)
         path.moveTo(width, 0)
@@ -473,13 +480,14 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         for node in graphtree['graph'].iternodes():
             if node.attr['shape'] != 'record':
                 continue
-            node.attr['width'] = node.attr.get('width') or (min_width / 3.0)
+            node.attr['width']  = node.attr.get('width') or (min_width / 3.0)
             node.attr['height'] = node.attr.get('height') or (min_height / 3.0)
 
-
     # Statechart symbols lookup table
-    lookup = {'point': Point, 'record': Record,
-              'diamond': Diamond, 'square': Stop}
+    lookup = {'point'  : Point,
+              'record' : Record,
+              'diamond': Diamond,
+              'square' : Stop}
     try:
         # Bonus: the tool can render any dot graph...
         graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
@@ -575,29 +583,41 @@ def locked():
     return g_statechart_lock
 
 
-def create_dot_graph(root_ast, basic=False, scene=None, view=None):
+def create_dot_graph(root_ast,
+                     basic=False,
+                     scene=None,
+                     view=None,
+                     is_root=True):
     ''' Return a dot.AGraph item, from an ogAST.Process or child entry
         Set basic=True to generate a simple graph with at most one edge
         between two states and no diamond nodes
+        is_root is set to False for nested diagrams
     '''
     graph = dotgraph.AGraph(strict=False, directed=True)
     ret = {'graph': graph, 'children': {}, 'config': {}}
     diamond = 0
 
-    input_signals = {sig['name'].lower() for sig in root_ast.input_signals}
+    # input_signals include timers (set by caller)
+    input_signals = root_ast.all_signals
 
-    # Add timers, in the statechart they are like other signals
-    for each in root_ast.timers:
-        input_signals.add (each)
+    # Add the Connect parts below nested states
+    for each in root_ast.content.states:
+        for connect in each.connects:
+            input_signals |= set(connect.connect_list)
 
     # valid_inputs: list of messages to be displayed in the statecharts
     # user can remove them from the file to make cleaner diagrams
     # config_params can be set to tune the call to graphviz
     valid_inputs = set()
     config_params = {}
-    inputs_to_save = set()
     identifier = getattr(root_ast, "statename", root_ast.processName)
+    #LOG.info("Statechart: rendering scene " + identifier)
+    #LOG.info("Input signals from model: " + str (input_signals))
+
     try:
+        if not is_root:
+            # Read config file only for the top-level diagram
+            raise IOError
         with open (identifier + ".cfg", "r") as cfg_file:
             all_lines = (line.strip() for line in cfg_file.readlines())
         for each in all_lines:
@@ -611,7 +631,7 @@ def create_dot_graph(root_ast, basic=False, scene=None, view=None):
         config_params = {"-Nfontsize" : "10",
                          "-Efontsize" : "8",
                          "-Gsplines"  : "curved",
-                         "-Gsep"      : "0.3",
+                         "-Gsep"      : "0.2",
                          "-Gdpi"      : "72",
                          "-Gstart"    : "random10",
                          "-Goverlap"  : "scale",
@@ -625,7 +645,7 @@ def create_dot_graph(root_ast, basic=False, scene=None, view=None):
     if scene and view:
         # Load and display a table for the user to filter out messages that
         # are not relevant to display on the statechart - and make it lighter
-        # Repeat for substates, too.
+        # Do not repeat for substates (view is None and no cfg is saved)
         lock()
         def right(leftList, rightList):
             for each in leftList.selectedItems():
@@ -657,21 +677,44 @@ def create_dot_graph(root_ast, basic=False, scene=None, view=None):
             valid_inputs.add(rightList.item(idx).text())
         unlock()
 
+    inputs_to_save = set(valid_inputs)
     for state in root_ast.mapping.viewkeys():
         # create a new node for each state (including nested states)
         if state.endswith('START'):
-            graph.add_node(state, label='', shape='point',
-                           fixedsize='true', width=10.0 / 72.0)
+            if len(state) > 5:
+                label=state[0:-6]
+            else:
+                label=''
+            graph.add_node(state,
+                           label=label,
+                           shape='point',
+                           fixedsize='true',
+                           width=10.0 / 72.0)
         else:
-            graph.add_node(state, label=state, shape='record', style='rounded')
+            graph.add_node(state,
+                           label=state,
+                           shape='record',
+                           style='rounded')
 
     for each in [term for term in root_ast.terminators
                  if term.kind == 'return']:
         # create a new node for each RETURN statement (in nested states)
-        ident = each.inputString or ' '
-        graph.add_node(ident, label=ident, shape='square', width=10.0 / 72.0)
+        ident = each.inputString.lower() or ' '
+        graph.add_node(ident,
+                       label='X', #ident, (no, otherwise size isn't ok)
+                       shape='square',
+                       width=1.0 / 72.0)
+
+    # the AST does not contain a mapping the Connect parts below a state
+    # Create it here on the spot
+    connect_mapping = defaultdict(list)
+    for each in root_ast.content.states:
+        for stateName in each.statelist:
+            connect_mapping[stateName.lower()].extend(each.connects)
+
     for state, inputs in chain(root_ast.mapping.viewitems(),
-                               root_ast.cs_mapping.viewitems()):
+                               root_ast.cs_mapping.viewitems(),
+                               connect_mapping.viewitems()):
         # Add edges
         transitions = \
             inputs if not state.endswith('START') \
@@ -734,7 +777,9 @@ def create_dot_graph(root_ast, basic=False, scene=None, view=None):
                                width=15.0 / 72.0,
                                height=15.0 / 72.0, label='')
                 if label.lower() in valid_inputs or not label.strip():
-                    graph.add_edge(source, str(diamond), label=label)
+                    graph.add_edge(source,
+                                   str(diamond),
+                                   label=label)
                     inputs_to_save.add(label.lower())
                 source = str(diamond)
                 label = ''
@@ -750,29 +795,42 @@ def create_dot_graph(root_ast, basic=False, scene=None, view=None):
                     labs = set(lab.strip() for lab in label.split(',') if
                                     lab.strip().lower() in valid_inputs | {""})
                     actual = ',\n'.join(labs)
-                    graph.add_edge(source, target, label=actual)
+                    graph.add_edge(source,
+                                   target,
+                                   label=actual)
                     inputs_to_save |= set(lab.lower() for lab in labs)
         for target, labels in target_states.viewitems():
             sublab = [lab.strip() for lab in labels if
                       lab.strip().lower() in valid_inputs | {""}]
             # Basic mode
             if sublab:
-                graph.add_edge(source, target, label=',\n'.join(sublab))
+                label=',\n'.join(sublab)
                 inputs_to_save |= set(lab.lower() for lab in sublab)
-#   with open('statechart.dot', 'w') as output:
-#       output.write(graph.to_string())
+            else:
+                label = ''
+            graph.add_edge(source,
+                           target,
+                           label=label)
+    # Uncomment for debugging the generated dot graph:
+    #with open('statechart.dot', 'w') as output:
+    #   output.write(graph.to_string())
     #return graph
-    with open(identifier + ".cfg", "w") as cfg_file:
-        for name, value in config_params.viewitems():
-            cfg_file.write("cfg {} {}\n".format(name, value))
-        for each in inputs_to_save:
-            cfg_file.write(each + "\n")
+    if is_root:
+        with open(identifier + ".cfg", "w") as cfg_file:
+            for name, value in config_params.viewitems():
+                cfg_file.write("cfg {} {}\n".format(name, value))
+            for each in inputs_to_save:
+                cfg_file.write(each + "\n")
     ret['config'] = config_params
     for each in root_ast.composite_states:
         # Recursively generate the graphs for nested states
         # Inherit from the list of signals from the higer level state
-        each.input_signals = root_ast.input_signals
-        ret['children'][each.statename] = create_dot_graph(each, basic, scene)
+        #each.input_signals = root_ast.input_signals
+        each.all_signals = valid_inputs
+        ret['children'][each.statename] = create_dot_graph(each,
+                                                           basic,
+                                                           scene,
+                                                           is_root=False)
     return ret
 
 

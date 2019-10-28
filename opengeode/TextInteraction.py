@@ -195,7 +195,7 @@ class EditableText(QGraphicsTextItem, object):
         parent_rect = self.parent.boundingRect()
         rect = self.boundingRect()
         # Use parent symbol alignment requirement
-        # Does not support right nor bottom alignment
+        # Does not support right alignment (just add it when needed)
         alignment = self.parent.textbox_alignment
         rect_center = parent_rect.center() - rect.center()
         if alignment & Qt.AlignLeft:
@@ -208,6 +208,8 @@ class EditableText(QGraphicsTextItem, object):
             y_pos = 0
         elif alignment & Qt.AlignVCenter:
             y_pos = rect_center.y()
+        elif alignment & Qt.AlignBottom:
+            y_pos = parent_rect.height()
         else:
             y_pos = 0
         self.setPos(x_pos, y_pos)
