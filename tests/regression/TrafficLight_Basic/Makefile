@@ -12,7 +12,9 @@ test-parse:
 
 simu:
 	$(OPENGEODE) --shared controller.pr system_structure.pr
-	gprbuild -p -P dataview_ada
+	mkdir -p controller_simu
+	cp *.png controller_simu
+	cp UserWidgets.py controller_simu
 	./controller_simu.sh
 
 test-qgen-parse:

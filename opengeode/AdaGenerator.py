@@ -270,7 +270,7 @@ end {pr}_Lib;'''.format(pr=process_name.lower(),
    end {pr}_Ada;'''.format(pr=process_name.lower())
 
     simu_script = '''#!/bin/bash -e
-rm -rf {pr}_simu
+#rm -rf {pr}_simu
 mkdir -p {pr}_simu
 cp {pr_path} {asn1} {pr}_simu
 cd {pr}_simu
