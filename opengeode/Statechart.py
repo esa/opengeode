@@ -597,8 +597,15 @@ def create_dot_graph(root_ast,
     ret = {'graph': graph, 'children': {}, 'config': {}}
     diamond = 0
 
-    # input_signals include timers (set by caller)
-    input_signals = root_ast.all_signals
+    # Define the list of input signals including timers
+    if is_root:
+        input_signals = {sig['name'].lower() for sig in root_ast.input_signals}
+        for each in root_ast.timers:
+            input_signals.add(each)
+        # TODO: add continuous signals
+    else:
+        # set by recursive caller:
+        input_signals = root_ast.all_signals
 
     # Add the Connect parts below nested states
     for each in root_ast.content.states:
@@ -631,7 +638,7 @@ def create_dot_graph(root_ast,
         config_params = {"-Nfontsize" : "10",
                          "-Efontsize" : "8",
                          "-Gsplines"  : "curved",
-                         "-Gsep"      : "0.2",
+                         "-Gsep"      : "0.3",
                          "-Gdpi"      : "72",
                          "-Gstart"    : "random10",
                          "-Goverlap"  : "scale",

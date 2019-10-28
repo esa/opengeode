@@ -1064,13 +1064,6 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # in that case ast was provided in the parameters
                 LOG.debug("Statechart rendering: no CONTEXT.processes[0]")
 
-        # Create a simpler list of input signals including the timers
-        process_ast.all_signals = {sig['name'].lower()
-                for sig in process_ast.input_signals}
-        for each in process_ast.timers:
-            process_ast.all_signals.add(each)
-        # TODO: add continuous signals
-
         # Flatten nested states (no, because neato does not support it,
         # dot supports only vertically-aligned states, and fdp does not
         # support curved edges and is buggy with pygraphviz anyway)
