@@ -1,0 +1,31 @@
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+END
+
+
+TRAFFICLIGHT-BASIC-DATAVIEW DEFINITIONS ::=
+BEGIN
+IMPORTS T-Int32, T-UInt32, T-Int8, T-UInt8, T-Boolean FROM TASTE-BasicTypes;
+
+   TL-Color ::= ENUMERATED { red, orange, green}
+
+    P-Light ::= ENUMERATED { go, wait }
+
+    Command ::= ENUMERATED { request-passage }
+
+END
+
+
