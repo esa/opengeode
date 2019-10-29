@@ -122,6 +122,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.1.4 (10/2019)
+    - Improve code generated for simulation
+
 2.1.3 (10/2019)
     - Improve statechart rendering (in particular with nested states)
 
