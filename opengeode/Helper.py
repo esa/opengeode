@@ -45,6 +45,7 @@ __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
 def statenames(context, sep=u'\u00dc'):
     ''' Return the list of states (just the names) of a given context
     Format the output by replacing unicode separator symbol with a dot '''
+    # note: if model has been flattened, all contexts are already merged
     return (s.replace(sep, u'.') for s in context.mapping.viewkeys()
             if not s.endswith(u'START'))
 

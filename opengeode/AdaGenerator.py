@@ -534,8 +534,10 @@ package {process_name} is'''.format(generic=generic_spec,
                                     instance=instance_decl,
                                     process_name=process_name,
                                     dataview=asn1_modules,
-                                    C='with Interfaces.C.Strings;\n'
-                                      'use Interfaces.C.Strings;'
+                                    C='with Interfaces.C.Strings,\n'
+                                      '     Ada.Characters.Handling;\n'
+                                      'use Interfaces.C.Strings,\n'
+                                      '    Ada.Characters.Handling;'
                                         if simu else '')]
     dll_api = []
     if simu:
@@ -553,8 +555,13 @@ package {process_name} is'''.format(generic=generic_spec,
         ads_template.append('pragma Export(C, set_state, "_set_state");')
         dll_api.append("{} is".format(set_state_decl))
         dll_api.append("begin")
-        dll_api.append("{}.state := States'Value(Value(new_state));"
+        dll_api.append("for S in States loop")
+        dll_api.append("if To_Upper (Value (New_State))"
+                        " = States'Image (S) then")
+        dll_api.append("{}.state := S;"
                        .format(LPREFIX))
+        dll_api.append("end if;")
+        dll_api.append("end loop;")
         dll_api.append("end set_state;")
         dll_api.append("")
 

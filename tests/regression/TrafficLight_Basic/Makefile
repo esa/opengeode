@@ -12,6 +12,7 @@ test-parse:
 
 simu:
 	$(OPENGEODE) --shared controller.pr system_structure.pr
+	rm -rf controller_simu
 	mkdir -p controller_simu
 	cp *.png controller_simu
 	cp UserWidgets.py controller_simu
