@@ -2395,6 +2395,7 @@ clean:
                     AdaGenerator.generate(process)
                     self.messages_window.addItem('Done')
                 except (TypeError, ValueError, NameError) as err:
+                    err=unicode(err).encode('utf8')
                     self.messages_window.addItem(
                             'Code generation failed:' + str(err))
                     LOG.debug(str(traceback.format_exc()))
@@ -3018,6 +3019,8 @@ def generate(process, options):
                                   taste=options.taste_target)
         except (TypeError, ValueError, NameError) as err:
             ret = 1
+            err = unicode(err).replace(u'\u00fc', '.')
+            err = err.encode('utf-8')
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('Ada code generation failed')

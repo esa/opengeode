@@ -1339,7 +1339,8 @@ def _call_external_function(output, **kwargs):
                                               .format(out['outputName'])]
             except ValueError:
                 # Not there? Impossible, the parser would have barked
-                raise ValueError(u'Probably a bug - please report')
+                raise ValueError(u'Probably a bug - please report'
+                        ' (related to ' + signal_name.lower() + ')')
         if out_sig:
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
@@ -1938,7 +1939,7 @@ def _prim_selector(prim, **kwargs):
                 and not kwargs.get("readonly", 0):
             # Must set Exist only when assigning value, not each time it is
             # accessed: this is what "readonly" ensures.
-            stmts.append('{}.Exist.{} := 1;'.format(ada_string, field_name))
+            stmts.append(u'{}.Exist.{} := 1;'.format(ada_string, field_name))
         ada_string += '.' + field_name
 
     return stmts, unicode(ada_string), local_decl
