@@ -252,7 +252,7 @@ class Lander(object):
             self.animation.setDuration(abs(self.rocket.y()) * 500)
             self.animation.start()
         else:
-            print 'GAME OVER'
+            print('GAME OVER')
 
     def quit_scene(self):
         ''' Redefinition of the quit_scene: Stop the game and the music '''

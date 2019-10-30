@@ -286,7 +286,7 @@ if __name__ == '__main__':
         ast = parse_asn1('dataview-uniq.asn',
                           ast_version=ASN1.NoParameterizedTypes,
                           flags=[ASN1.AstOnly])
-        print ast.types.keys()
+        print(ast.types.keys())
         sys.exit(0)
     except TypeError as err:
         print(str(err))

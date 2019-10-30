@@ -295,7 +295,7 @@ class Symbol(QObject, QGraphicsPathItem, object):
     def __str__(self):
         ''' Print the text inside the symbol '''
         import traceback
-        print traceback.print_stack()
+        print (traceback.print_stack())
         raise TypeError('Use unicode() not str()')
 
     def __unicode__(self):

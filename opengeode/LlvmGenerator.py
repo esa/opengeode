@@ -19,7 +19,12 @@
 
 import logging
 
-from singledispatch import singledispatch
+try:
+    # python2
+    from singledispatch import singledispatch
+except ModuleNotFoundError:
+    # python3
+    from functools import singledispatch
 
 from llvm import core as lc
 from llvm import ee as le
