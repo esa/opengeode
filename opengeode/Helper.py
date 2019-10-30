@@ -28,10 +28,15 @@
 
 import operator
 import logging
-from itertools import chain, ifilterfalse
+from itertools import chain
 from collections import defaultdict
 
-from singledispatch import singledispatch
+try:
+    # python2
+    from singledispatch import singledispatch
+except ModuleNotFoundError:
+    # python3
+    from functools import singledispatch
 
 import ogAST
 
@@ -48,15 +53,6 @@ def statenames(context, sep=u'\u00dc'):
     # note: if model has been flattened, all contexts are already merged
     return (s.replace(sep, u'.') for s in context.mapping.viewkeys()
             if not s.endswith(u'START'))
-
-
-#def non_composite_statenames(context, sep=u'\u00dc'):
-#   ''' Return a list of statenames excluding parents of state compositions '''
-#   composites = []
-#   for each in context.composite_states:
-#       if not isinstance(each, ofAST.StateAggregation):
-#
-#   return ifilterfalse(lambda x: , statenames(context, sep))
 
 
 def rec_findstates(context, prefix=''):

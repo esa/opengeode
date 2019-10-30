@@ -15,7 +15,12 @@
 
 import logging
 import os
-from singledispatch import singledispatch
+try:
+    # python2
+    from singledispatch import singledispatch
+except ModuleNotFoundError:
+    # python3
+    from functools import singledispatch
 
 import Helper
 import ogAST

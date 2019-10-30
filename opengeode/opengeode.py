@@ -2726,7 +2726,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         item_types = self.datadict.topLevelItem(0)
         item_types.takeChildren() # remove old children
         for name, sort in sorted(ast.dataview.viewitems(),
-                                 key=lambda (name, sort): name):
+                                 key=lambda name, sort: name):
             new_item = QtGui.QTreeWidgetItem(item_types,
                                              [name.replace('-', '_'),
                                               'view'])

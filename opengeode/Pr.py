@@ -18,7 +18,12 @@
 import logging
 from collections import deque
 from itertools import chain
-from singledispatch import singledispatch
+try:
+    # python2
+    from singledispatch import singledispatch
+except ModuleNotFoundError:
+    # python3
+    from functools import singledispatch
 
 import genericSymbols, sdlSymbols, Connectors
 

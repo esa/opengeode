@@ -1287,7 +1287,7 @@ def fix_expression_types(expr, context): # type: -> [warnings]
         return warnings
 
     if not expr.right.is_raw and not expr.left.is_raw:
-        unknown = [uk_expr for uk_expr in expr.right, expr.left
+        unknown = [uk_expr for uk_expr in (expr.right, expr.left)
                    if uk_expr.exprType == UNKNOWN_TYPE]
         if unknown:
             #print traceback.print_stack()
@@ -3449,10 +3449,10 @@ def process_definition(root, parent=None, context=None):
             process.processName = child.text
             try:
                 # Retrieve process interface (PI/RI)
-                async, procedures, err = get_interfaces(parent, child.text)
-                process.input_signals.extend([sig for sig in async
+                asyncI, procedures, err = get_interfaces(parent, child.text)
+                process.input_signals.extend([sig for sig in asyncI
                                              if sig['direction'] == 'in'])
-                process.output_signals.extend([sig for sig in async
+                process.output_signals.extend([sig for sig in asyncI
                                               if sig['direction'] == 'out'])
                 process.procedures.extend(procedures)
                 perr.extend(err)
@@ -5341,4 +5341,4 @@ def parser_init(filename=None, string=None):
 
 
 if __name__ == '__main__':
-    print 'This module is not callable'
+    print ('This module is not callable')

@@ -124,7 +124,11 @@ class ExprLe(Expression):
 
 class ExprDiv(Expression):
     operand = '/'
-    op = operator.div
+    try:
+        op = operator.div
+    except AttributeError:
+        # for Python3:
+        op = operator.truediv
 
 
 class ExprMod(Expression):
