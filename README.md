@@ -122,6 +122,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+2.1.5 (10/2019)
+    - Fix unicode issues
+
 2.1.4 (10/2019)
     - Improve code generated for simulation
 
