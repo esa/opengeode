@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 Setup file for Linux distribution
@@ -17,7 +17,7 @@ setup(
     packages=find_packages(),
     author='Maxime Perrotin',
     author_email='maxime.perrotin@esa.int',
-    description='A tiny, free SDL editor for TASTE',
+    description='A free SDL editor for TASTE',
     long_description=open('README.md').read(),
     install_requires=[],
     tests_require=['tabulate'],
@@ -27,7 +27,7 @@ setup(
         'Programming Language :: Python',
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 3.7'
     ],
     entry_points={
         'console_scripts': [
