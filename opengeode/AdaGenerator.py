@@ -325,7 +325,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
 
     # Establish the list of states (excluding START states) XXX update C backend
     full_statelist = set(chain(aggregates.keys(),
-                               (name for name in process.mapping.iterkeys()
+                               (name for name in process.mapping.keys()
                                     if not name.endswith(u'START'))))
     reduced_statelist = {s for s in full_statelist if s not in parallel_states}
     if aggregates:
@@ -1165,25 +1165,25 @@ package {process_name} is'''.format(generic=generic_spec,
     ads_template.append('end {process_name};'
             .format(process_name=process_name))
 
-    with open(process_name.lower() + os.extsep + 'adb', 'w') as ada_file:
-        ada_file.write(
-                u'\n'.join(format_ada_code(taste_template)).encode('latin1'))
+    with open(process_name.lower() + os.extsep + 'adb', 'wb') as ada_file:
+        code = u'\n'.join(format_ada_code(taste_template)).encode('latin1')
+        ada_file.write(code)
 
-    with open(process_name.lower() + os.extsep + 'ads', 'w') as ada_file:
+    with open(process_name.lower() + os.extsep + 'ads', 'wb') as ada_file:
         ada_file.write(
                 u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
 
-    with open("{}_ada.gpr".format(process_name.lower()), "w") as gprada:
-        gprada.write(ada_gpr)
+    with open("{}_ada.gpr".format(process_name.lower()), "wb") as gprada:
+        gprada.write(ada_gpr.encode('utf-8'))
 
     if simu:
         with open(u'{}_interface.aadl'
-                  .format(process_name.lower()), 'w') as aadl:
+                  .format(process_name.lower()), 'wb') as aadl:
             aadl.write(u'\n'.join(minicv).encode('latin1'))
         script = '{}_simu.sh'.format(process_name.lower())
         with open(script, 'w') as bash_script:
             bash_script.write(simu_script)
-        with open("{}_lib.gpr".format(process_name.lower()), 'w') as gprlib:
+        with open("{}_lib.gpr".format(process_name.lower()), 'wb') as gprlib:
             gprlib.write(lib_gpr)
         os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
 

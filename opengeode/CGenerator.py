@@ -517,7 +517,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     VARIABLES.update(process.variables)
 
     #Computing state lists
-    state_list = ', '.join(name for name in process.mapping.iterkeys() if not name.endswith(u'START')) or 'No_State'
+    state_list = ', '.join(name for name in process.mapping.keys() if not name.endswith(u'START')) or 'No_State'
 
     #Declaring global type modeling the state
     if state_list:
@@ -582,7 +582,7 @@ LD_LIBRARY_PATH=. taste-gui -l
         # Add function allowing to trace current state as a string
         global_decls.append(u'char * {pn}_state()'.format(pn=process_name))
         global_decls.append(u'{')
-        for state_name in process.mapping.iterkeys():
+        for state_name in process.mapping.keys():
             if not state_name.endswith(u'START') and  state_name != 'No_State':
                 global_decls.append(u'if({ctxt}.state == {sn}) return \"{sn}\\0\";'.format(ctxt=LPREFIX, sn=state_name))
         global_decls.append(u'return \"\\0\";')
@@ -593,7 +593,7 @@ LD_LIBRARY_PATH=. taste-gui -l
 
         dll_code.append(u'{}'.format(set_state_decl))
         dll_code.append(u'{')
-        for state_name in process.mapping.iterkeys():
+        for state_name in process.mapping.keys():
             if not state_name.endswith(u'START') and  state_name != 'No_State':
                 dll_code.append(u'if(strcmp(new_state, \"{st}\") == 0) {ctxt}.state = {st};'.format(st=state_name, ctxt=LPREFIX))
         dll_code.append(u'}')

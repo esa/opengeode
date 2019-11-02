@@ -196,11 +196,12 @@ def flatten(process, sep=u'_'):
         set_terminator_states(state, prefix)
         set_transition_states(state, prefix)
 
+        keys = list (state.mapping.keys())
         state.mapping = {prefix + key: state.mapping.pop(key)
-                         for key in state.mapping.keys()}
+                         for key in list(state.mapping.keys())}
         # Continuous signal mappings
         state.cs_mapping = {prefix + key: state.cs_mapping.pop(key)
-                            for key in state.cs_mapping.keys()}
+                            for key in list(state.cs_mapping.keys())}
         process.transitions.extend(state.transitions)
 
         # Add prefix to local variable names and push them at process level
