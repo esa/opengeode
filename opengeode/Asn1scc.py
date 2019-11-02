@@ -95,11 +95,11 @@ def parse_asn1(*files, **options):
     file_list = sorted(list(*files))
     try:
         for each in file_list:
-            filehash.update(open(each).read())
+            filehash.update(open(each).read().encode('utf-8'))
             # also hash the file path: it is used in the AST, so it is
             # not enough to hash the content of the ASN.1 files, as two sets
             # of input files may have the same hash
-            filehash.update(each)
+            filehash.update(each.encode('utf-8'))
     except IOError as err:
         raise TypeError (str(err))
     new_hash = filehash.hexdigest()

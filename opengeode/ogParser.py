@@ -5325,7 +5325,8 @@ def parser_init(filename=None, string=None):
     ''' Initialize the parser (to be called first) '''
     if filename is not None:
         try:
-            char_stream = antlr3.ANTLRFileStream(filename, encoding='utf-8')
+            # encoding not available in python3 runtime, seems to default ok
+            char_stream = antlr3.ANTLRFileStream(filename) #, encoding='utf-8')
         except (IOError, TypeError) as err:
             LOG.debug(str(traceback.format_exc()))
             raise
