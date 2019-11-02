@@ -18,20 +18,17 @@
 import math
 import logging
 
-from PySide.QtCore import Qt, QPointF, QLineF, Slot
-
-from PySide.QtGui import(QGraphicsPathItem, QPainterPath, QGraphicsItem, QPen,
-                         QPainter, QFont, QGraphicsTextItem, QColor,
-                         QFontMetrics, QTextBlockFormat, QTextCursor)
-
-import ogParser
-from TextInteraction import EditableText
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
+from . import ogParser
+from .TextInteraction import EditableText
 
 LOG = logging.getLogger(__name__)
 
 
 # pylint: disable=R0904
-class Connection(QGraphicsPathItem, object):
+class Connection(QGraphicsPathItem):
     ''' Connection between two symbols (top-level class) '''
     # Default connections are not selectable
     default_cursor = Qt.ArrowCursor
@@ -471,7 +468,7 @@ class Channel(Signalroute):
 
 
 
-class Controlpoint(QGraphicsPathItem, object):
+class Controlpoint(QGraphicsPathItem):
     ''' Class handling one edge control point (to change bezier curves) '''
     user_can_connect = False  # not used but will avoid exceptions
     def __init__(self, pos, edge):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -19,14 +19,11 @@ import os
 import traceback
 import logging
 from itertools import chain
-import PySide
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
 
-import ogAST
-import ogParser
-import sdlSymbols
-import genericSymbols
-import Renderer
-import Pr
+from . import ogAST, ogParser, sdlSymbols, genericSymbols, Renderer, Pr
 
 __all__ = ['copy', 'paste']
 
@@ -98,7 +95,7 @@ def copy_branch(top_level_item):
     res_terminators = terminators
     for term in terminators:
         # Get symbol at terminator coordinates
-        symbols = top_level_item.scene().items(PySide.QtCore.QRectF
+        symbols = top_level_item.scene().items(QRectF
                 (term.pos_x, term.pos_y, term.width, term.height).center())
         for symbol in symbols:
             if (isinstance(symbol, sdlSymbols.State) and [c for c in

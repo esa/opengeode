@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -74,15 +74,9 @@ import traceback
 import os
 import stat
 from itertools import chain, product
-try:
-    # python2
-    from singledispatch import singledispatch
-except ModuleNotFoundError:
-    # python3
-    from functools import singledispatch
+from functools import singledispatch
 
-import ogAST
-import Helper
+from . import ogAST, Helper
 
 LOG = logging.getLogger(__name__)
 
@@ -330,7 +324,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
     process_level_decl = []
 
     # Establish the list of states (excluding START states) XXX update C backend
-    full_statelist = set(chain(aggregates.viewkeys(),
+    full_statelist = set(chain(aggregates.keys(),
                                (name for name in process.mapping.iterkeys()
                                     if not name.endswith(u'START'))))
     reduced_statelist = {s for s in full_statelist if s not in parallel_states}
@@ -350,9 +344,9 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         types_with_proper_case = []
 
         # The ASN.1 module must import the types from other asn1 modules
-        for _, sortdef in process.user_defined_types.viewitems():
+        for _, sortdef in process.user_defined_types.items():
             sort = sortdef.type.type.ReferencedTypeName
-            for moduleName, sorts in process.DV.exportedTypes.viewitems():
+            for moduleName, sorts in process.DV.exportedTypes.items():
                 for each in sorts:
                     if sort.lower().replace('-', '_') == \
                             each.lower().replace('-', '_'):
@@ -360,7 +354,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                                 .format (t=each, m=moduleName))
                         types_with_proper_case.append (each)
 
-        for sortname, sortdef in process.user_defined_types.viewitems():
+        for sortname, sortdef in process.user_defined_types.items():
             rangeMin = sortdef.type.Min
             rangeMax = sortdef.type.Max
             refType  = sortdef.type.type.ReferencedTypeName
@@ -388,12 +382,12 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
     context_decl.append('initDone : Boolean := False;')
 
     # State aggregation: add list of substates (XXX to be added in C generator)
-    for substates in aggregates.viewvalues():
+    for substates in aggregates.values():
         for each in substates:
             context_decl.append(u'{}{}state: States;'
                                       .format(each.statename, UNICODE_SEP))
 
-    for var_name, (var_type, def_value) in process.variables.viewitems():
+    for var_name, (var_type, def_value) in process.variables.items():
         if def_value:
             # Expression must be a ground expression, i.e. must not
             # require temporary variable to store computed result
@@ -436,7 +430,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         process_level_decl.append('CS_Only  : constant Integer := {};'
                                   .format(len(process.transitions)))
 
-        for name, val in process.mapping.viewitems():
+        for name, val in process.mapping.items():
             # Test val, in principle there is a value but if the code targets
             # generation of properties, the model may have been cleant up and
             # in that case no value would be set..
@@ -446,7 +440,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
 
         # Declare start procedure for aggregate states XXX add in C generator
         # should create one START per "via" clause, TODO later
-        for name, substates in aggregates.viewitems():
+        for name, substates in aggregates.items():
             proc_name = u'procedure {}{}START'.format(name, UNICODE_SEP)
             process_level_decl.append(u'{};'.format(proc_name))
             aggreg_start_proc.extend([u'{} is'.format(proc_name),
@@ -594,7 +588,7 @@ package {process_name} is'''.format(generic=generic_spec,
                             .format(process_name))
 
         # interface to get/set state aggregations XXX add to C generator
-        for substates in aggregates.viewvalues():
+        for substates in aggregates.values():
             for each in substates:
                 process_level_decl.append(
                         u"function get_{name}_state return chars_ptr "
@@ -605,7 +599,7 @@ package {process_name} is'''.format(generic=generic_spec,
                                 proc=process_name, sep=UNICODE_SEP))
 
         # Functions to get gobal variables (length and value)
-        for var_name, (var_type, _) in process.variables.viewitems():
+        for var_name, (var_type, _) in process.variables.items():
             # Getters for external applications to view local variables via dll
             process_level_decl.append(u"function l_{name}_value"
                                      u" return access {sort} "
@@ -745,20 +739,20 @@ package {process_name} is'''.format(generic=generic_spec,
                 return
             taste_template.append(u'when {state} =>'.format(state=state))
             input_def = mapping[signame].get(state)
-            if state in aggregates.viewkeys():
+            if state in aggregates.keys():
                 # State aggregation:
                 # - find which substate manages this input
                 # - add a swich case on the corresponding substate
                 taste_template.append(u'-- this is a state aggregation')
                 for sub in aggregates[state]:
-                    if [a for a in sub.mapping.viewkeys()
-                            if a in mapping[signame].viewkeys()]:
+                    if [a for a in sub.mapping.keys()
+                            if a in mapping[signame].keys()]:
                         taste_template.append(u'case '
                                               u'{ctxt}.{sub}{sep}state is'
                                               .format(ctxt=LPREFIX,
                                                      sub=sub.statename,
                                                      sep=UNICODE_SEP))
-                        for par in sub.mapping.viewkeys():
+                        for par in sub.mapping.keys():
                             case_state(par)
                         taste_template.append('when others =>')
                         taste_template.append('null;')
@@ -1092,11 +1086,11 @@ package {process_name} is'''.format(generic=generic_spec,
         last = ''
         # flag indicating there are CS in nested states but not at root
         need_final_endif = False
-        for cs, agg in product(process.cs_mapping.viewitems(),
-                               aggregates.viewitems()):
+        for cs, agg in product(process.cs_mapping.items(),
+                               aggregates.items()):
             (statename, cs_item), (agg_name, substates) = cs, agg
             for each in substates:
-                if statename in each.mapping.viewkeys():
+                if statename in each.mapping.keys():
                     need_final_endif = True
                     taste_template.append(u'{first}if not msgPending and '
                             u'trId = -1 and '
@@ -1125,7 +1119,7 @@ package {process_name} is'''.format(generic=generic_spec,
                     taste_template.append(u'end if;')  # inner if
                     sep = 'if '
                     break
-        for statename in process.cs_mapping.viewkeys() - done:
+        for statename in process.cs_mapping.keys() - done:
             need_final_endif = False
             cs_item = process.cs_mapping[statename]
             taste_template.append(u'{first}if not msgPending and '
@@ -1700,7 +1694,7 @@ def _prim_call(prim, **kwargs):
         # signed element (with the risk of cutting very big values)
         has_unsigned = False
         has_signed   = False
-        for each in sort.Children.viewvalues():
+        for each in sort.Children.values():
             child_sort = find_basic_type(each.type)
             if child_sort.kind.startswith('Integer'):
                 if float(child_sort.Min) < 0.0:
@@ -1708,7 +1702,7 @@ def _prim_call(prim, **kwargs):
                 else:
                     has_unsigned = True
         need_cast = has_signed and has_unsigned
-        for child_name, descr in sort.Children.viewitems():
+        for child_name, descr in sort.Children.items():
             child_name_ada = child_name.replace('-', '_')
             child_id   = descr.EnumID
             child_sort = find_basic_type(descr.type)
@@ -2562,11 +2556,11 @@ def _sequence(seq, **kwargs):
     type_children = find_basic_type(seq.exprType).Children
     optional_fields = {field.lower().replace('-', '_'): {'present': False,
                                                          'ref': (field, val)}
-                       for field, val in type_children.viewitems()
+                       for field, val in type_children.items()
                        if val.Optional == 'True'}
     present_fields = []
     absent_fields = []
-    for elem, value in seq.value.viewitems():
+    for elem, value in seq.value.items():
         # Set the type of the field - easy thanks to ASN.1 flattened AST
         delem = elem.replace('_', '-')
         for each in type_children:
@@ -2588,7 +2582,7 @@ def _sequence(seq, **kwargs):
     # Process optional fields
     if optional_fields:
         absent_fields = ((fd_name, fd_data['ref'])
-                          for fd_name, fd_data in optional_fields.viewitems()
+                          for fd_name, fd_data in optional_fields.items()
                           if not fd_data['present'])
         for fd_name, fd_data in absent_fields:
             fd_type = fd_data[1].type
@@ -2602,7 +2596,7 @@ def _sequence(seq, **kwargs):
             sep = u', '
         ada_string += u', Exist => ('
         sep = ''
-        for fd_name, fd_data in optional_fields.viewitems():
+        for fd_name, fd_data in optional_fields.items():
             ada_string += u'{}{} => {}'.format(sep, fd_name,
                                             '1' if fd_data['present'] else '0')
             sep = u', '
@@ -2864,10 +2858,10 @@ def _transition(tr, **kwargs):
                     # "nextstate -": switch case to re-run the entry transition
                     # in case of a composite state or state aggregation
                     if any(next_id
-                           for next_id in tr.terminator.candidate_id.viewkeys()
+                           for next_id in tr.terminator.candidate_id.keys()
                            if next_id != -1):
                         code.append('case {}.state is'.format(LPREFIX))
-                        for nid, sta in tr.terminator.candidate_id.viewitems():
+                        for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 if tr.terminator.next_is_aggregation:
                                     statement = u'{};'.format(nid)
@@ -3021,7 +3015,7 @@ def _inner_procedure(proc, **kwargs):
             local_decl.extend(inner_local)
             code.extend(inner_code)
         code.append(pi_header + u' is')
-        for var_name, (var_type, def_value) in proc.variables.viewitems():
+        for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
             if def_value:
                 # Expression must be a ground expression, i.e. must not
@@ -3146,7 +3140,7 @@ def find_basic_type(a_type):
     basic_type = a_type
     while basic_type.kind == 'ReferenceType':
         # Find type with proper case in the data view
-        for typename in TYPES.viewkeys():
+        for typename in TYPES.keys():
             if typename.lower() == basic_type.ReferencedTypeName.lower():
                 basic_type = TYPES[typename].type
                 break
@@ -3191,7 +3185,7 @@ def child_spelling(name, bty):
 
 def find_var(var):
     ''' Return a variable from the scope, with proper case '''
-    for visible_var in VARIABLES.viewkeys():
+    for visible_var in VARIABLES.keys():
         if var.lower() == visible_var.lower():
             return visible_var
     return None
@@ -3200,7 +3194,7 @@ def find_var(var):
 def is_local(var):
     ''' Check if a variable is in the global context or in a local scope
         Typically needed to select the right prefix to use '''
-    return var.lower() in (loc.lower() for loc in LOCAL_VAR.viewkeys())
+    return var.lower() in (loc.lower() for loc in LOCAL_VAR.keys())
 
 
 def path_type(path):

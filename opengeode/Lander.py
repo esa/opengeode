@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
     OpenGEODE - A tiny, free SDL Editor for TASTE
@@ -21,18 +21,20 @@ import logging
 import math
 import random
 
-from PySide import QtGui, QtCore
-from PySide.QtCore import QPointF
-from PySide.QtGui import QPainterPath
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
+from PySide2.QtUiTools import QUiLoader
 
 try:
     from PySide import phonon
 except ImportError:
     # In some distributions, phonon cannot be installed properly
     # Discard - but sound will not work.
+    # alternative to be checked for pyside2
     pass
-import genericSymbols
-import icons
+
+from . import genericSymbols, icons
 
 LOG = logging.getLogger(__name__)
 
@@ -84,7 +86,7 @@ class Rocket(genericSymbols.Symbol, object):
         ''' Qt Property that can be used in animations '''
         self.setRotation(value)
 
-    angle = QtCore.Property(float, _rotation, _set_rotation)
+    angle = Property(float, _rotation, _set_rotation)
 
     def resize_item(self, _):
         ''' Redefine the resizing function - forbid resizing '''
@@ -146,10 +148,10 @@ class Lander(object):
         except NameError:
             LOG.warning('Could not initialise phonon')
         # Initialize the animation for the translation of the rocket
-        self.animation = QtCore.QPropertyAnimation(self.rocket, "position")
+        self.animation = QPropertyAnimation(self.rocket, "position")
         self.rocket_position = None
         # Initialize the animation for the rotation of the rocket
-        self.rotation = QtCore.QPropertyAnimation(self.rocket, "angle")
+        self.rotation = QPropertyAnimation(self.rocket, "angle")
 
         # Catch the key events to add user interaction:
         self.scene.keyPressEvent = lambda x: self.key(x)
@@ -162,7 +164,7 @@ class Lander(object):
     def time_progress(self, time_value):
         ''' Called when time changes - used to estimate rocket speed '''
         # Call super function - it computes the new position
-        super(QtCore.QPropertyAnimation,
+        super(QPropertyAnimation,
                 self.animation).updateCurrentTime(time_value)
         if self.rocket.pos().y() - self.rocket_position.y() > 0.1:
             self.rocket.speed = 'high'
@@ -173,18 +175,18 @@ class Lander(object):
     def key(self, evt):
         ''' Handling of key press event '''
         # Discard keys if there is a running rotation animation
-        if self.rotation.state() != QtCore.QAbstractAnimation.Stopped:
+        if self.rotation.state() != QAbstractAnimation.Stopped:
             return
         self.rotation.setDuration(500)
         self.rotation.setStartValue(self.rocket.angle)
-        self.rotation.setEasingCurve(QtCore.QEasingCurve.Linear)
-        if evt.key() == QtCore.Qt.Key_Right:
+        self.rotation.setEasingCurve(QEasingCurve.Linear)
+        if evt.key() == Qt.Key_Right:
             self.rotation.setEndValue(self.rocket.angle + 30.0)
             self.rotation.start()
-        elif evt.key() == QtCore.Qt.Key_Left:
+        elif evt.key() == Qt.Key_Left:
             self.rotation.setEndValue(self.rocket.angle - 30.0)
             self.rotation.start()
-        elif evt.key() == QtCore.Qt.Key_Up:
+        elif evt.key() == Qt.Key_Up:
             # Up key action depends on current speed and angle
             self.animation.stop()
             end_value = self.animation.endValue()
@@ -215,12 +217,12 @@ class Lander(object):
                 end_value.setX(end_value.x() + delta_x)
                 end_value.setY(end_value.y() - delta_y)
             self.animation.setDuration(2000)
-            self.animation.setEasingCurve(QtCore.QEasingCurve.InOutExpo)
+            self.animation.setEasingCurve(QEasingCurve.InOutExpo)
             self.animation.setStartValue(self.rocket.pos())
             self.animation.setEndValue(end_value)
             self.animation.start()
 
-        elif evt.key() == QtCore.Qt.Key_Down:
+        elif evt.key() == Qt.Key_Down:
             # Down key has no effect
             pass
         else:
@@ -237,8 +239,8 @@ class Lander(object):
         self.animation.setStartValue(self.rocket.pos())
         # Store initial position - used to compute rocket speed
         self.rocket_position = self.rocket.pos()
-        self.animation.setEndValue(QtCore.QPointF(350, self.screen_bottom))
-        self.animation.setEasingCurve(QtCore.QEasingCurve.InCirc)
+        self.animation.setEndValue(QPointF(350, self.screen_bottom))
+        self.animation.setEasingCurve(QEasingCurve.InCirc)
         self.animation.start()
 
     def animation_finished(self):
@@ -248,7 +250,7 @@ class Lander(object):
             end_value.setY(self.screen_bottom)
             self.animation.setStartValue(self.rocket.pos())
             self.animation.setEndValue(end_value)
-            self.animation.setEasingCurve(QtCore.QEasingCurve.InCirc)
+            self.animation.setEasingCurve(QEasingCurve.InCirc)
             self.animation.setDuration(abs(self.rocket.y()) * 500)
             self.animation.start()
         else:

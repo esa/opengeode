@@ -23,9 +23,9 @@ import importlib
 import logging
 import traceback
 import hashlib
-from PySide.QtCore import QProcess, QFile
+from PySide2.QtCore import QProcess, QFile
 
-import icons
+from . import icons
 
 LOG = logging.getLogger(__name__)
 terminal_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")

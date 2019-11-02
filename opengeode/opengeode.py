@@ -43,62 +43,62 @@ import importlib  # NOQA
 import antlr3  # NOQA
 import antlr3.tree  # NOQA
 import importlib  # NOQA
-import PySide  # NOQA
-import PySide.QtCore  # NOQA
-import PySide.QtGui  # NOQA
-import PySide.QtUiTools  # NOQA
-import undoCommands  # NOQA
-import sdl92Lexer  # NOQA
-import sdl92Parser  # NOQA
-import genericSymbols  # NOQA
-import PySide.QtXml  # NOQA
-import singledispatch  # NOQA
-import Asn1scc  # NOQA
-import Connectors  # NOQA
-import TextInteraction  # NOQA
+from functools import singledispatch
+
+from . import(undoCommands,  # NOQA
+              sdl92Lexer,  # NOQA
+              sdl92Parser,  # NOQA
+              genericSymbols,  # NOQA
+              Asn1scc,  # NOQA
+              sdlSymbols,
+              AdaGenerator,
+              ogParser,
+              ogAST,
+              Renderer,
+              Clipboard,
+              Statechart,
+              Lander,
+              Helper,
+              Pr,
+              CGenerator,
+              QGenSDL,
+              Connectors,  # NOQA
+              TextInteraction)  # NOQA
 import pygraphviz  # NOQA
-import sdlSymbols
-import AdaGenerator
-import ogParser
-import ogAST
-import Renderer
-import Clipboard
-import Statechart
-import Lander
-import Helper
-import Pr
-import CGenerator
-import QGenSDL
+from typing import List, Union, Dict, Set, Any, Tuple
 
-# Enable mypy type checking
-try:
-    from typing import List, Union, Dict, Set, Any, Tuple
-except ImportError:
-    pass
 
-try:
-    import stringtemplate3  # NOQA
-except ImportError:
-    pass
+from PySide2.QtGui import *
+from PySide2.QtCore import *
+from PySide2.QtWidgets import *
+from PySide2.QtUiTools import *
+from PySide2 import QtSvg
 
-#from PySide import phonon
+from .genericSymbols import Symbol, Comment, Cornergrabber, Connection, Channel
+from .sdlSymbols import(Input,
+                        Output,
+                        Decision,
+                        DecisionAnswer,
+                        Task,
+                        ProcedureCall,
+                        TextSymbol,
+                        State,
+                        Start,
+                        Join,
+                        Label,
+                        Procedure,
+                        ProcedureStart,
+                        ProcedureStop,
+                        StateStart,
+                        Connect,
+                        Process,
+                        ContinuousSignal,
+                        ProcessType)
 
-from PySide import QtGui, QtCore
-from PySide.QtCore import (Qt, QSize, QFile, QIODevice, QRectF, QTimer, QPoint,
-                           QPointF, QLineF, QFileInfo, QSettings)
-
-from PySide.QtUiTools import QUiLoader
-from PySide import QtSvg
-
-from genericSymbols import(Symbol, Comment, Cornergrabber, Connection, Channel)
-from sdlSymbols import(Input, Output, Decision, DecisionAnswer, Task,
-        ProcedureCall, TextSymbol, State, Start, Join, Label, Procedure,
-        ProcedureStart, ProcedureStop, StateStart, Connect, Process,
-        ContinuousSignal, ProcessType)
-from TextInteraction import EditableText
+from .TextInteraction import EditableText
 
 # Icons and png files generated from the resource file:
-import icons  # NOQA
+from . import icons  # NOQA
 
 # Logging: ist of properly loaded modules that will use it
 LOG = logging.getLogger(__name__)
@@ -125,7 +125,6 @@ MODULES = [
 
 # Define custom UserRoles
 ANCHOR = Qt.UserRole + 1
-
 
 try:
     import LlvmGenerator
@@ -207,7 +206,7 @@ def log_errors(window, errors, warnings, clearfirst=True):
             # problem is in decision answers branches
             error[0] = 'Internal error - ' + str(error[0])
         LOG.error(error[0])
-        item = QtGui.QListWidgetItem(u'[ERROR] ' + error[0])
+        item = QListWidgetItem(u'[ERROR] ' + error[0])
         if len(error) == 3:
             item.setData(Qt.UserRole, error[1])
             #found = self.scene().symbol_near(QPoint(*error[1]), 1)
@@ -218,7 +217,7 @@ def log_errors(window, errors, warnings, clearfirst=True):
             window.addItem(item)
     for warning in warnings:
         LOG.warning(warning[0])
-        item = QtGui.QListWidgetItem(u'[WARNING] ' + str(warning[0]))
+        item = QListWidgetItem(u'[WARNING] ' + str(warning[0]))
         if len(warning) == 3:
             item.setData(Qt.UserRole, warning[1])
             item.setData(Qt.UserRole + 1, warning[2])
@@ -229,7 +228,7 @@ def log_errors(window, errors, warnings, clearfirst=True):
 
 
 
-class Vi_bar(QtGui.QLineEdit, object):
+class Vi_bar(QLineEdit, object):
     ''' Line editor for the Vi-like command mode '''
     def __init__(self):
         ''' Create the bar - no need for parent '''
@@ -263,7 +262,7 @@ class Vi_bar(QtGui.QLineEdit, object):
             pass
 
 
-class File_toolbar(QtGui.QToolBar, object):
+class File_toolbar(QToolBar, object):
     ''' Toolbar with file open, save, etc '''
     def __init__(self, parent):
         ''' Create the toolbar using standard icons '''
@@ -272,21 +271,21 @@ class File_toolbar(QtGui.QToolBar, object):
         self.setMovable(False)
         self.setFloatable(False)
         self.new_button = self.addAction(self.style().standardIcon(
-            QtGui.QStyle.SP_FileIcon), 'New model')
+            QStyle.SP_FileIcon), 'New model')
         self.open_button = self.addAction(self.style().standardIcon(
-            QtGui.QStyle.SP_DialogOpenButton), 'Open model')
+            QStyle.SP_DialogOpenButton), 'Open model')
         self.save_button = self.addAction(self.style().standardIcon(
-            QtGui.QStyle.SP_DialogSaveButton), 'Save model')
+            QStyle.SP_DialogSaveButton), 'Save model')
         self.check_button = self.addAction(self.style().standardIcon(
-            QtGui.QStyle.SP_DialogApplyButton), 'Check model')
+            QStyle.SP_DialogApplyButton), 'Check model')
         self.addSeparator()
         # Up arrow to come back from a subscene (e.g. procedure)
         self.up_button = self.addAction(self.style().standardIcon(
-            QtGui.QStyle.SP_ArrowUp), 'Go one level above')
+            QStyle.SP_ArrowUp), 'Go one level above')
         self.up_button.setEnabled(False)
 
 
-class Sdl_toolbar(QtGui.QToolBar, object):
+class Sdl_toolbar(QToolBar, object):
     '''
         Toolbar with SDL symbols
         The list of symbols is passed as paramters at creation time ; the class
@@ -310,7 +309,7 @@ class Sdl_toolbar(QtGui.QToolBar, object):
         for item in bar_items:
             item_name = item.__name__
             self.actions[item_name] = self.addAction(
-                           QtGui.QIcon(':icons/{}.png'
+                           QIcon(':icons/{}.png'
                                        .format(item_name.lower())), item_name)
         self.update_menu()
 
@@ -371,12 +370,12 @@ class Sdl_toolbar(QtGui.QToolBar, object):
                     #LOG.debug('No menu item for symbol "' + action + '"')
 
 
-class SDL_Scene(QtGui.QGraphicsScene, object):
+class SDL_Scene(QGraphicsScene):
     ''' Main graphic scene (canvas) where the user can place SDL symbols '''
     # Signal to be emitted when the scene is left (e.g. UP button)
-    scene_left = QtCore.Signal()
-    context_change = QtCore.Signal()
-    word_under_cursor = QtCore.Signal(str)
+    scene_left = Signal()
+    context_change = Signal()
+    word_under_cursor = Signal(str)
 
     def __init__(self, context='process', readonly=False):
         ''' Create a Scene for a given context:
@@ -406,13 +405,12 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
         # Create a stack for handling undo/redo commands
         # (defined in undoCommands.py)
-        self.undo_stack = QtGui.QUndoStack(self)
+        self.undo_stack = QUndoStack(self)
         # buttonSelected is used to set which symbol to draw
         # on next scene click (see mousePressEvent)
         self.button_selected = None
-        self.setBackgroundBrush(QtGui.QBrush(
-                                           QtGui.QImage(':icons/texture.png')))
-        self.messages_window = QtGui.QListWidget()  # default
+        self.setBackgroundBrush(QBrush(QImage(':icons/texture.png')))
+        self.messages_window = QListWidget()  # default
         self.click_coordinates = None
         self.orig_pos = None
         # When connecting symbols, store list of intermediate points
@@ -806,13 +804,13 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 else:
                     errs.append(error)
             self.clear_focus()
-            msg_box = QtGui.QMessageBox(view)
-            msg_box.setIcon(QtGui.QMessageBox.Warning)
+            msg_box = QMessageBox(view)
+            msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('OpenGEODE - Syntax Error')
             msg_box.setInformativeText('\n'.join(errs))
             msg_box.setText("Syntax error!")
-            msg_box.setStandardButtons(QtGui.QMessageBox.Discard)
-            msg_box.setDefaultButton(QtGui.QMessageBox.Discard)
+            msg_box.setStandardButtons(QMessageBox.Discard)
+            msg_box.setDefaultButton(QMessageBox.Discard)
             msg_box.exec_()
 
 
@@ -868,11 +866,11 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             return
         bound = item.boundingRect()
         center = bound.center().x()
-        gradient = QtGui.QLinearGradient(center, 0, center, bound.height())
+        gradient = QLinearGradient(center, 0, center, bound.height())
         gradient.setColorAt(0, Qt.cyan)
         gradient.setColorAt(1, Qt.white)
         self.highlighted[item] = item.brush()
-        item.setBrush(QtGui.QBrush(gradient))
+        item.setBrush(QBrush(gradient))
 
     def clear_highlight(self, item=None, reset=True):
         ''' Remove the highlighting of one item or all items on the scene '''
@@ -1116,7 +1114,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         if self.context != "statechart":
             other_scene = SDL_Scene(context=self.context)
             other_scene.messages_window = self.messages_window
-            other_scene.setBackgroundBrush(QtGui.QBrush())
+            other_scene.setBackgroundBrush(QBrush())
             for each in self.floating_symb:
                 each.select()
                 try:
@@ -1130,15 +1128,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             rect = other_scene.sceneRect()
         else:
             # remove the background
-            self.setBackgroundBrush(QtGui.QBrush())
+            self.setBackgroundBrush(QBrush())
             self.scene_refresh()
             rect = self.sceneRect()
 
         # enlarge the rect to fit extra pixels due to antialiasing
         rect.adjust(-5, -5, 5, 5)
         if doc_format == 'png':
-            device = QtGui.QImage(rect.size().toSize(),
-                                  QtGui.QImage.Format_ARGB32)
+            device = QImage(rect.size().toSize(), QImage.Format_ARGB32)
             device.fill(Qt.transparent)
         elif doc_format == 'svg':
             device = QtSvg.QSvgGenerator()
@@ -1146,15 +1143,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             device.setTitle('OpenGEODE SDL Diagram')
             device.setSize(rect.size().toSize())
         elif doc_format == 'pdf':
-            device = QtGui.QPrinter()
-            device.setOutputFormat(QtGui.QPrinter.PdfFormat)
+            device = QPrinter()
+            device.setOutputFormat(QPrinter.PdfFormat)
             device.setPaperSize(
-                    rect.size().toSize(), QtGui.QPrinter.Point)
+                    rect.size().toSize(), QPrinter.Point)
             device.setFullPage(True)
             device.setOutputFileName(filename)
         else:
             LOG.error('Output format not supported: ' + doc_format)
-        painter = QtGui.QPainter(device)
+        painter = QPainter(device)
         if self.context == 'statechart':
             self.render(painter, source=rect)
         else:
@@ -1163,7 +1160,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
         try:
             device.save(filename)
         except AttributeError:
-            # Due to inconsistencies in Qt API - only QtGui.QImage has the save
+            # Due to inconsistencies in Qt API - only QImage has the save
             pass
         if painter.isActive():
             painter.end()
@@ -1184,7 +1181,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 QRectF(pos.x() - dist, pos.y() - dist, 2 * dist, 2 * dist))
         for item in items:
             if((selectable_only and item.flags() &
-                    QtGui.QGraphicsItem.ItemIsSelectable)
+                    QGraphicsItem.ItemIsSelectable)
                     or not selectable_only):
                 return item.parent if isinstance(item, Cornergrabber) else item
 
@@ -1400,7 +1397,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def quick_menu(self, pos, rect):
         ''' Add actions on the fly to the context-dependent menu that is
         displayed when the user draws a box on the screen '''
-        menu       = QtGui.QMenu('Select item to add')
+        menu       = QMenu('Select item to add')
         singletons = (i.__class__ for i in self.visible_symb if i.is_singleton)
         candidates = filter(lambda x: not x.needs_parent
                                       and not x in singletons,
@@ -1413,7 +1410,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
 
         def setup_action(sort):
             name   = sort.__name__
-            icon   = QtGui.QIcon(':icons/{}.png'.format(name.lower()))
+            icon   = QIcon(':icons/{}.png'.format(name.lower()))
             action = menu.addAction(icon, name)
             action.triggered.connect(partial(add_symbol,
                                              sort,
@@ -1496,14 +1493,14 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
     def keyPressEvent(self, event):
         ''' Handle keyboard: Delete, Undo/Redo '''
         super(SDL_Scene, self).keyPressEvent(event)
-        if event.matches(QtGui.QKeySequence.Delete) and self.selectedItems():
+        if event.matches(QKeySequence.Delete) and self.selectedItems():
             self.delete_selected_symbols()
             self.clearSelection()
             self.clear_highlight()
             self.clear_focus()
         elif event.key() == Qt.Key_Escape:
             self.cancel()
-        elif event.matches(QtGui.QKeySequence.Undo):
+        elif event.matches(QKeySequence.Undo):
             if not isinstance(self.focusItem(), EditableText):
                 LOG.debug('UNDO ' + self.undo_stack.undoText())
                 self.undo_stack.undo()
@@ -1514,7 +1511,7 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 # (e.g. when Undoing a Place START symbol)
                 self.selectionChanged.emit()
                 self.clear_focus()
-        elif event.matches(QtGui.QKeySequence.Redo):
+        elif event.matches(QKeySequence.Redo):
             if not isinstance(self.focusItem(), EditableText):
                 LOG.debug('REDO ' + self.undo_stack.redoText())
                 self.undo_stack.redo()
@@ -1524,15 +1521,15 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
                 self.clear_focus()
                 # Emit a selection change to make sure the toolbar is updated
                 self.selectionChanged.emit()
-        elif event.matches(QtGui.QKeySequence.Copy):
+        elif event.matches(QKeySequence.Copy):
             if not isinstance(self.focusItem(), EditableText):
                 try:
                     self.copy_selected_symbols()
                 except TypeError:
                     LOG.error('Cannot copy')
-        elif event.matches(QtGui.QKeySequence.Cut):
+        elif event.matches(QKeySequence.Cut):
             self.cut_selected_symbols()
-        elif event.matches(QtGui.QKeySequence.Paste):
+        elif event.matches(QKeySequence.Paste):
             if not isinstance(self.focusItem(), EditableText):
                 self.paste_symbols()
                 self.refresh()
@@ -1570,20 +1567,20 @@ class SDL_Scene(QtGui.QGraphicsScene, object):
             code.interact('type your command:', local=locals())
 
 
-class SDL_View(QtGui.QGraphicsView, object):
+class SDL_View(QGraphicsView):
     ''' Main graphic view used to display the SDL scene and handle zoom '''
     # signal to ask the main application that a new scene is needed
-    need_new_scene = QtCore.Signal()
-    update_asn1_dock = QtCore.Signal(ogAST.AST)
+    need_new_scene = Signal()
+    update_asn1_dock = Signal(ogAST.AST)
     # When changing scene the data dictionary has to be updated
-    update_datadict = QtCore.Signal()
+    update_datadict = Signal()
 
     def __init__(self, scene):
         ''' Create the SDL view holding the scene '''
         super(SDL_View, self).__init__(scene)
         self.wrapping_window = None
         # self.messages_window = None
-        self.messages_window = QtGui.QListWidget()  # default
+        self.messages_window = QListWidget()  # default
         self.mode = ''
         self.phantom_rect = None
         self.filename = ''
@@ -1641,11 +1638,11 @@ class SDL_View(QtGui.QGraphicsView, object):
     # pylint: disable=C0103
     def keyPressEvent(self, event):
         ''' Handle keyboard: Zoom, open/save diagram, etc. '''
-        if event.matches(QtGui.QKeySequence.ZoomOut):
+        if event.matches(QKeySequence.ZoomOut):
             self.scale(0.8, 0.8)
             # Make sure the scene is resized when zooming in/out
             self.update_phantom_rect()
-        elif event.matches(QtGui.QKeySequence.ZoomIn) or \
+        elif event.matches(QKeySequence.ZoomIn) or \
            (event.key() == Qt.Key_Plus
             and event.modifiers() == Qt.ControlModifier | Qt.ShiftModifier):
             self.scale(1.2, 1.2)
@@ -1654,7 +1651,7 @@ class SDL_View(QtGui.QGraphicsView, object):
         elif event.key() == Qt.Key_Q and event.modifiers() == Qt.ControlModifier:
             # Reset zoom with Ctrl-Q
             self.resetTransform()
-        elif event.matches(QtGui.QKeySequence.Save):
+        elif event.matches(QKeySequence.Save):
             self.save_diagram()
         elif event.key() == Qt.Key_F3 or (event.key() == Qt.Key_G and
                 event.modifiers() == Qt.ControlModifier):
@@ -1672,9 +1669,9 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.check_model()
         elif event.key() == Qt.Key_F5:
             self.refresh()
-        elif event.matches(QtGui.QKeySequence.Open):
+        elif event.matches(QKeySequence.Open):
             self.open_diagram()
-        elif event.matches(QtGui.QKeySequence.New):
+        elif event.matches(QKeySequence.New):
             self.new_diagram()
         elif (event.key() == Qt.Key_F12 and
                 event.modifiers() == Qt.ControlModifier and
@@ -1717,7 +1714,7 @@ class SDL_View(QtGui.QGraphicsView, object):
             self.phantom_rect.setRect(scene_rect)
         else:
             self.phantom_rect = self.scene().addRect(scene_rect,
-                    pen=QtGui.QPen(QtGui.QColor(0, 0, 0, 0)))
+                    pen=QPen(QColor(0, 0, 0, 0)))
         # Hide the rectangle so that it does not collide with the symbols
         self.phantom_rect.hide()
         self.refresh()
@@ -1739,8 +1736,8 @@ class SDL_View(QtGui.QGraphicsView, object):
 
     def about_og(self):
         ''' Display the About dialog '''
-        QtGui.QMessageBox.about(self, 'About OpenGEODE',
-                'OpenGEODE - a tiny SDL editor for TASTE\n\n'
+        QMessageBox.about(self, 'About OpenGEODE',
+                'OpenGEODE SDL editor for TASTE\n\n'
                 'Version {}\n\n'
                 'Copyright (c) 2012-2019 Maxime Perrotin / European Space Agency\n\n'
                 'Contact: Maxime.Perrotin@esa.int\n\n'.format(__version__))
@@ -1752,12 +1749,12 @@ class SDL_View(QtGui.QGraphicsView, object):
         '''
         if wheelEvent.modifiers() == Qt.ControlModifier:
             # Google-Earth zoom mode (Zoom with center on the mouse position)
-            self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+            self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
             if wheelEvent.delta() < 0:
                 self.scale(0.9, 0.9)
             else:
                 self.scale(1.1, 1.1)
-            self.setTransformationAnchor(QtGui.QGraphicsView.AnchorViewCenter)
+            self.setTransformationAnchor(QGraphicsView.AnchorViewCenter)
             # Make sure the scene is resized when zooming in/out
             self.update_phantom_rect()
         else:
@@ -1881,7 +1878,7 @@ class SDL_View(QtGui.QGraphicsView, object):
                     item.double_click()
                     ctx = unicode(item.context_name)
                     if not isinstance(item.nested_scene, SDL_Scene):
-                        msg_box = QtGui.QMessageBox(self)
+                        msg_box = QMessageBox(self)
                         msg_box.setWindowTitle('Create nested symbol')
                         msg_box.setText('Do you want to create a new sub-{} ?'
                                         '\n\n'
@@ -1890,11 +1887,11 @@ class SDL_View(QtGui.QGraphicsView, object):
                                         'in the menu bar on the top of the '
                                         'screen'
                                         .format(item.context_name))
-                        msg_box.setStandardButtons(QtGui.QMessageBox.Yes |
-                                                   QtGui.QMessageBox.Cancel)
-                        msg_box.setDefaultButton(QtGui.QMessageBox.Yes)
+                        msg_box.setStandardButtons(QMessageBox.Yes |
+                                                   QMessageBox.Cancel)
+                        msg_box.setDefaultButton(QMessageBox.Yes)
                         ret = msg_box.exec_()
-                        if ret == QtGui.QMessageBox.Yes:
+                        if ret == QMessageBox.Yes:
                             item.nested_scene = \
                                 self.scene().create_subscene(ctx, self.scene())
                         else:
@@ -1947,7 +1944,7 @@ class SDL_View(QtGui.QGraphicsView, object):
 
         if (not self.filename or save_as) and not autosave:
             save_as = True
-            self.filename = QtGui.QFileDialog.getSaveFileName(
+            self.filename = QFileDialog.getSaveFileName(
                     self, "Save model", ".", "SDL Model (*.pr)")[0]
         if self.filename and self.filename.split('.')[-1] != 'pr':
             self.filename += ".pr"
@@ -2031,18 +2028,18 @@ clean:
         if (not autosave) and self.something_changed:
             #(scene.semantic_errors
             #                 or not self.is_model_clean()):
-            msg_box = QtGui.QMessageBox(self)
-            msg_box.setIcon(QtGui.QMessageBox.Question)
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Question)
             msg_box.setWindowTitle('OpenGEODE - Check Semantics')
             msg_box.setText("We recommend to make a semantic check of the "
                             "model now.\n\n"
                             "Choose Apply to perform this check "
                             "and Cancel otherwise.")
-            msg_box.setStandardButtons(QtGui.QMessageBox.Apply
-                                       | QtGui.QMessageBox.Cancel)
-            msg_box.setDefaultButton(QtGui.QMessageBox.Apply)
+            msg_box.setStandardButtons(QMessageBox.Apply
+                                       | QMessageBox.Cancel)
+            msg_box.setDefaultButton(QMessageBox.Apply)
             res = msg_box.exec_()
-            if res == QtGui.QMessageBox.Apply:
+            if res == QMessageBox.Apply:
                 syntex_error = True if self.check_model() == "Syntax Errors" \
                                else False
 
@@ -2052,16 +2049,15 @@ clean:
                                      and not scene.global_syntax_check()):
             LOG.error('Syntax errors must be fixed NOW '
                       'or you may not be able to reload the model')
-            msg_box = QtGui.QMessageBox(self)
-            msg_box.setIcon(QtGui.QMessageBox.Critical)
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Critical)
             msg_box.setWindowTitle('OpenGEODE - Syntax Error')
             msg_box.setText("Syntax errors were found. It is not advised to "
                             "save the model now, as you may not be able to "
                             "open it again. Are you sure you want to save?")
-            msg_box.setStandardButtons(QtGui.QMessageBox.Save
-                                       | QtGui.QMessageBox.Cancel)
+            msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Cancel)
             res = msg_box.exec_()
-            if res == QtGui.QMessageBox.Cancel:
+            if res == QMessageBox.Cancel:
                 return False
 
         if not filename and not autosave:
@@ -2162,7 +2158,7 @@ clean:
 
     def save_png(self):
         ''' Save the current view as a PNG image '''
-        filename = QtGui.QFileDialog.getSaveFileName(
+        filename = QFileDialog.getSaveFileName(
                 self, "Save picture", ".", "Image (*.png)")[0]
         self.scene().export_img(filename, doc_format='png')
 
@@ -2236,7 +2232,7 @@ clean:
         ''' Load one or several .pr file and display the state machine '''
         if not self.new_diagram():
             return
-        filenames, _ = QtGui.QFileDialog.getOpenFileNames(self,
+        filenames, _ = QFileDialog.getOpenFileNames(self,
                 "Open model(s)", ".", "SDL model (*.pr)")
         if not filenames:
             return
@@ -2246,19 +2242,19 @@ clean:
 
     def propose_to_save(self):
         ''' Display a dialog to let the user save his diagram '''
-        msg_box = QtGui.QMessageBox(self)
+        msg_box = QMessageBox(self)
         msg_box.setWindowTitle('OpenGEODE')
         msg_box.setText("The model has been modified.")
         msg_box.setInformativeText("Do you want to save your changes?")
-        msg_box.setStandardButtons(QtGui.QMessageBox.Save |
-                QtGui.QMessageBox.Discard |
-                QtGui.QMessageBox.Cancel)
-        msg_box.setDefaultButton(QtGui.QMessageBox.Save)
+        msg_box.setStandardButtons(QMessageBox.Save |
+                QMessageBox.Discard |
+                QMessageBox.Cancel)
+        msg_box.setDefaultButton(QMessageBox.Save)
         ret = msg_box.exec_()
-        if ret == QtGui.QMessageBox.Save:
+        if ret == QMessageBox.Save:
             if not self.save_diagram():
                 return False
-        elif ret == QtGui.QMessageBox.Cancel:
+        elif ret == QMessageBox.Cancel:
             return False
         return True
 
@@ -2468,7 +2464,7 @@ clean:
                 else:
                     self.messages_window.addItem('Done')
 
-class OG_MainWindow(QtGui.QMainWindow, object):
+class OG_MainWindow(QMainWindow):
     ''' Main GUI window '''
     def __init__(self, parent=None):
         ''' Create the main window '''
@@ -2478,7 +2474,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_scene = None
         self.vi_bar = Vi_bar()
         # Docking areas
-        self.datatypes_browser = None  # type: QtGui.QTextBrowser
+        self.datatypes_browser = None  # type: QTextBrowser
         #self.datatypes_scene = None
         self.asn1_area = None
         # MDI area (need to keep them to avoid segfault due to pyside bugs)
@@ -2509,7 +2505,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
         file_name = options.files
         # widget wrapping the view. We have to maximize it
-        process_widget = self.findChild(QtGui.QWidget, 'process')
+        process_widget = self.findChild(QWidget, 'process')
         process_widget.showMaximized()
 
         # Find SDL_View widget
@@ -2521,17 +2517,19 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.new_scene(options.readonly)
 
         # Find Menu Actions
-        open_action = self.findChild(QtGui.QAction, 'actionOpen')
-        new_action = self.findChild(QtGui.QAction, 'actionNew')
-        save_action = self.findChild(QtGui.QAction, 'actionSave')
-        save_as_action = self.findChild(QtGui.QAction, 'actionSaveAs')
-        quit_action = self.findChild(QtGui.QAction, 'actionQuit')
-        check_action = self.findChild(QtGui.QAction, 'actionCheck_model')
-        about_action = self.findChild(QtGui.QAction, 'actionAbout')
-        ada_action = self.findChild(QtGui.QAction, 'actionGenerate_Ada_code')
-        qgen_ada_action = self.findChild(QtGui.QAction, 'actionGenerate_Ada_code_with_QGen')
-        qgen_c_action = self.findChild(QtGui.QAction, 'actionGenerate_C_code_with_QGen')
-        png_action = self.findChild(QtGui.QAction, 'actionExport_to_PNG')
+        open_action = self.findChild(QAction, 'actionOpen')
+        new_action = self.findChild(QAction, 'actionNew')
+        save_action = self.findChild(QAction, 'actionSave')
+        save_as_action = self.findChild(QAction, 'actionSaveAs')
+        quit_action = self.findChild(QAction, 'actionQuit')
+        check_action = self.findChild(QAction, 'actionCheck_model')
+        about_action = self.findChild(QAction, 'actionAbout')
+        ada_action = self.findChild(QAction, 'actionGenerate_Ada_code')
+        qgen_ada_action = self.findChild(QAction,
+                'actionGenerate_Ada_code_with_QGen')
+        qgen_c_action = self.findChild(QAction,
+                'actionGenerate_C_code_with_QGen')
+        png_action = self.findChild(QAction, 'actionExport_to_PNG')
 
         # Connect menu actions
         open_action.triggered.connect(self.view.open_diagram)
@@ -2571,19 +2569,19 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.addToolBar(Qt.TopToolBarArea, filebar)
 
         # get the messages list window (to display errors and warnings)
-        # it is a QtGui.QListWidget
-        msg_dock = self.findChild(QtGui.QDockWidget, 'msgDock')
+        # it is a QListWidget
+        msg_dock = self.findChild(QDockWidget, 'msgDock')
         msg_dock.setWindowTitle('Use F7 to check the model or update the '
                                 'Data view, and F3 to generate Ada code, '
                                 'F6 to generate Ada code with QGen or '
                                 'F9 to generate C code with QGen')
         msg_dock.setStyleSheet('QDockWidget::title {background: lightgrey;}')
-        messages = self.findChild(QtGui.QListWidget, 'messages')
+        messages = self.findChild(QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
         self.view.messages_window = messages
         self.view.scene().messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
-        self.mdi_area = self.findChild(QtGui.QMdiArea, 'mdiArea')
+        self.mdi_area = self.findChild(QMdiArea, 'mdiArea')
         self.sub_mdi = self.mdi_area.subWindowList()
         self.filter_event = FilterEvent()
         for each in self.sub_mdi:
@@ -2598,26 +2596,26 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.statechart_view.setScene(self.statechart_scene)
 
         # Set up the dock area to display the ASN.1 Data model
-        asn1_dock = self.findChild(QtGui.QDockWidget, 'datatypes_dock')
-        dict_dock = self.findChild(QtGui.QDockWidget, 'datadict_dock')
+        asn1_dock = self.findChild(QDockWidget, 'datatypes_dock')
+        dict_dock = self.findChild(QDockWidget, 'datadict_dock')
         self.tabifyDockWidget(asn1_dock, dict_dock)
-        self.asn1_browser = self.findChild(QtGui.QTextBrowser, 'asn1_browser')
+        self.asn1_browser = self.findChild(QTextBrowser, 'asn1_browser')
         self.view.update_asn1_dock.connect(self.set_asn1_view)
 
         # Set up the data dictionary window
-        self.datadict = self.findChild(QtGui.QTreeWidget, 'datadict')
+        self.datadict = self.findChild(QTreeWidget, 'datadict')
         self.datadict.setAlternatingRowColors(True)
         self.datadict.setColumnCount(2)
         self.datadict.itemClicked.connect(self.datadict_item_selected)
 
-        QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Data types"])
-        QtGui.QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
-        QtGui.QTreeWidgetItem(self.datadict, ["Input signals"])
-        QtGui.QTreeWidgetItem(self.datadict, ["Output signals"])
-        QtGui.QTreeWidgetItem(self.datadict, ["States"])
-        QtGui.QTreeWidgetItem(self.datadict, ["Labels"])
-        QtGui.QTreeWidgetItem(self.datadict, ["Variables"])
-        QtGui.QTreeWidgetItem(self.datadict, ["Timers"])
+        QTreeWidgetItem(self.datadict, ["ASN.1 Data types"])
+        QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
+        QTreeWidgetItem(self.datadict, ["Input signals"])
+        QTreeWidgetItem(self.datadict, ["Output signals"])
+        QTreeWidgetItem(self.datadict, ["States"])
+        QTreeWidgetItem(self.datadict, ["Labels"])
+        QTreeWidgetItem(self.datadict, ["Variables"])
+        QTreeWidgetItem(self.datadict, ["Timers"])
         self.view.update_datadict.connect(self.update_datadict_window)
 
         # Create a timer for periodically saving a backup of the model
@@ -2646,7 +2644,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
         self.restoreApplicationState()
 
 
-    @QtCore.Slot(QtGui.QMdiSubWindow)
+    @Slot(QMdiSubWindow)
     def upd_statechart(self, mdi):
         ''' Signal sent by Qt when the MDI area tab changes
         Here we check if the Statechart tab is selected, and we draw/refresh
@@ -2673,7 +2671,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             self.current_window = mdi
 
 
-    @QtCore.Slot(QtGui.QTreeWidgetItem, int)
+    @Slot(QTreeWidgetItem, int)
     def datadict_item_selected(self, item, column):
         ''' Slot called when user clicks on an item of the data dictionary '''
         parent = item.parent()
@@ -2698,9 +2696,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                 self.view.setFocus()
             else:
                 # Already selected, show next match
-                key_event = QtGui.QKeyEvent(QtCore.QEvent.KeyPress, Qt.Key_N,
+                key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_N,
                                             Qt.NoModifier)
-                QtGui.QApplication.sendEvent(self.view.scene(), key_event)
+                QApplication.sendEvent(self.view.scene(), key_event)
         elif root == 'states' and column == 1:
             state = item.text(0)
             self.vi_bar.setText(':%state,{},new_name,'.format(state))
@@ -2710,7 +2708,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             self.vi_bar.setFocus()
 
 
-    @QtCore.Slot(ogAST.AST)
+    @Slot(ogAST.AST)
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
         # Update the dock widget with ASN.1 files content
@@ -2721,14 +2719,14 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             return
         html_content = html_file.read()
         self.asn1_browser.setHtml(html_content)
-        self.asn1_browser.setFont(QtGui.QFont('UbuntuMono', 12))
+        self.asn1_browser.setFont(QFont('UbuntuMono', 12))
 
         # Update the data dictionary
         item_types = self.datadict.topLevelItem(0)
         item_types.takeChildren() # remove old children
         for name, sort in sorted(ast.dataview.viewitems(),
                                  key=lambda name, sort: name):
-            new_item = QtGui.QTreeWidgetItem(item_types,
+            new_item = QTreeWidgetItem(item_types,
                                              [name.replace('-', '_'),
                                               'view'])
             new_item.setForeground(1, Qt.blue)
@@ -2740,7 +2738,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             sortname = sort.type.ReferencedTypeName \
                     if sort.type.kind.startswith('Reference') \
                     else sort.type.kind[:-4]
-            QtGui.QTreeWidgetItem(item_constants,
+            QTreeWidgetItem(item_constants,
                                  [name.replace('-', '_'),
                                  sortname])
         # Expand the types tree to make sure the size of the colum is ok
@@ -2780,9 +2778,9 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             for each in signals:
                 sort = each.get('type', '')
                 sort = sort.ReferencedTypeName if sort else ''
-                QtGui.QTreeWidgetItem(root, [each['name'], sort])
+                QTreeWidgetItem(root, [each['name'], sort])
 
-        add_elem = lambda root, elem: QtGui.QTreeWidgetItem(root, [elem])
+        add_elem = lambda root, elem: QTreeWidgetItem(root, [elem])
 
         if self.view.scene().context == 'block':
             map(lambda elem: change_state(elem, True),
@@ -2795,7 +2793,7 @@ class OG_MainWindow(QtGui.QMainWindow, object):
 
             for each in sorted(context.mapping.viewkeys()):
                 if each != 'START':
-                    state = QtGui.QTreeWidgetItem(states, [each, 'refactor'])
+                    state = QTreeWidgetItem(states, [each, 'refactor'])
                     state.setForeground(1, Qt.blue)
 
             map(partial(add_elem, labels), sorted(l.inputString
@@ -2810,14 +2808,14 @@ class OG_MainWindow(QtGui.QMainWindow, object):
                     self.view.messages_window.addItem(
                             'Warning: Type of variable "{}" is undefined'
                             .format(var))
-                QtGui.QTreeWidgetItem(dcl, [var, sort_name])
+                QTreeWidgetItem(dcl, [var, sort_name])
 
         elif self.view.scene().context == 'procedure':
             map(lambda elem: change_state(elem, True), (in_sig, states))
             map(lambda elem: change_state(elem, False),
                 (dcl, timers, labels, out_sig))
             for var, (sort, _) in context.variables.viewitems():
-                QtGui.QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
+                QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
             map(partial(add_elem, timers), sorted(context.timers))
             map(partial(add_elem, labels), sorted(l.inputString
                                                   for l in context.labels))
@@ -2915,14 +2913,14 @@ class OG_MainWindow(QtGui.QMainWindow, object):
             self.setWindowState(Qt.WindowMaximized)
 
 
-class FilterEvent(QtCore.QObject):
+class FilterEvent(QObject):
     def eventFilter(self, obj, event):
         ''' Used to intercept the close event sent of the Mdi windows '''
-        if event.type() == QtCore.QEvent.Close:
+        if event.type() == QEvent.Close:
             event.ignore()
             return True
         else:
-            return QtCore.QObject.eventFilter(self, obj, event)
+            return QObject.eventFilter(self, obj, event)
 
 
 def parse_args():
@@ -3150,9 +3148,9 @@ def cli(options):
 
 def init_qt():
     ''' Initialize Qt '''
-    app = QtGui.QApplication.instance()
+    app = QApplication.instance()
     if app is None:
-        app = QtGui.QApplication(sys.argv)
+        app = QApplication(sys.argv)
     return app
 
 
@@ -3163,14 +3161,13 @@ def gui(options):
 
     app = init_qt()
     app.setApplicationName('OpenGEODE')
-    app.setWindowIcon(QtGui.QIcon(':icons/input.png'))
+    app.setWindowIcon(QIcon(':icons/input.png'))
 
     # Set all encodings to utf-8 in Qt
-    QtCore.QTextCodec.setCodecForCStrings(
-                                       QtCore.QTextCodec.codecForName('UTF-8'))
+    QTextCodec.setCodecForCStrings(QTextCodec.codecForName('UTF-8'))
 
     # Bypass system-default font, to harmonize size on all platforms
-    font_database = QtGui.QFontDatabase()
+    font_database = QFontDatabase()
     font_database.addApplicationFont(':fonts/Ubuntu-RI.ttf')
     font_database.addApplicationFont(':fonts/Ubuntu-R.ttf')
     font_database.addApplicationFont(':fonts/Ubuntu-B.ttf')
@@ -3179,7 +3176,7 @@ def gui(options):
     font_database.addApplicationFont(':fonts/UbuntuMono-R.ttf')
     font_database.addApplicationFont(':fonts/UbuntuMono-B.ttf')
     font_database.addApplicationFont(':fonts/UbuntuMono-BI.ttf')
-    app.setFont(QtGui.QFont('Ubuntu', 10))
+    app.setFont(QFont('Ubuntu', 10))
 
     # Initialize the clipboard
     Clipboard.CLIPBOARD = SDL_Scene(context='clipboard')

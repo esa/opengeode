@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
     OpenGEODE - A tiny, free SDL Editor for TASTE
@@ -25,11 +25,14 @@ from collections import defaultdict
 from functools import partial
 from itertools import chain
 import re
-from PySide import QtGui, QtCore
+
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
+from PySide2.QtUiTools import QUiLoader
 
 # import resource file to get the configuration widget
-from PySide.QtUiTools import QUiLoader
-import icons
+from . import icons
 
 g_statechart_lock = False
 
@@ -38,10 +41,10 @@ try:
 except ImportError:
     print('pygraphviz not found. Statechart module will not work\n'
           'If you are using Debian (or Ubuntu) you can install it from\n'
-          'the official repos: sudo apt-get install python-pygraphviz')
+          'the official repos: sudo apt-get install python3-pygraphviz')
 
-import genericSymbols
-from Connectors import Edge
+from . import genericSymbols
+from .Connectors import Edge
 
 RENDER_DPI = {'X': 72, 'Y': 72}   # default to 72, in case there is no view
 G_SYMBOLS = set()
@@ -56,7 +59,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
     _unique_followers = []
     _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
-    textbox_alignment = (QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
+    textbox_alignment = (Qt.AlignTop | Qt.AlignHCenter)
 
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
@@ -108,8 +111,7 @@ class Point(genericSymbols.HorizontalSymbol, object):
     _unique_followers = []
     _insertable_followers = ['Record', 'Diamond', 'Stop']
     _terminal_followers = []
-    textbox_alignment = (QtCore.Qt.AlignBottom
-                         | QtCore.Qt.AlignHCenter)
+    textbox_alignment = (Qt.AlignBottom | Qt.AlignHCenter)
     has_text_area = True # False (in nested state, START can have a label)
 
     def __init__(self, node, graph):
@@ -123,10 +125,10 @@ class Point(genericSymbols.HorizontalSymbol, object):
         super(Point, self).__init__(x=node['pos'][0], y=node['pos'][1],
                 text=label)
         self.set_shape(node['width'], node['height'])
-        self.setBrush(QtGui.QBrush(QtCore.Qt.black))
+        self.setBrush(QtGui.QBrush(Qt.black))
         self.graph = graph
         # Text is read only
-        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.text.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
@@ -160,8 +162,8 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
     _unique_followers = []
     _insertable_followers = ['Record', 'Stop']
     _terminal_followers = []
-    textbox_alignment = (QtCore.Qt.AlignTop
-                         | QtCore.Qt.AlignHCenter)
+    textbox_alignment = (Qt.AlignTop
+                         | Qt.AlignHCenter)
     has_text_area = False
 
     def __init__(self, node, graph):
@@ -207,8 +209,8 @@ class Stop(genericSymbols.HorizontalSymbol, object):
     _unique_followers = []
     _insertable_followers = []
     _terminal_followers = []
-    textbox_alignment = (QtCore.Qt.AlignTop
-                         | QtCore.Qt.AlignHCenter)
+    textbox_alignment = (Qt.AlignTop
+                         | Qt.AlignHCenter)
     has_text_area = True
 
     def __init__(self, node, graph):
@@ -219,7 +221,7 @@ class Stop(genericSymbols.HorizontalSymbol, object):
         self.set_shape(node['width'], node['height'])
         self.graph = graph
         # Text in statecharts is read-only:
-        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.text.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
@@ -428,7 +430,7 @@ def update(scene):
         # graphviz translates the graph to pos (0, 0) -> move it back
         # to the exact graphical position where the user clicked
         for item in scene.visible_symb:
-            item.position = QtCore.QPointF(item.position - delta)
+            item.position = QPointF(item.position - delta)
 
 
 def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
@@ -554,7 +556,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         # in the symbol by moving them from their temporary scene
         for symb in scene.visible_symb:
             if unicode(symb) == aname:
-                deltapos = symb.scenePos() + QtCore.QPointF(30.0, 30.0)
+                deltapos = symb.scenePos() + QPointF(30.0, 30.0)
                 for each in agraph['scene'].floating_symb:
                     # In principle we should change the parentItem to make sure
                     # that all children items are moved together with their
@@ -663,10 +665,10 @@ def create_dot_graph(root_ast,
                 item = rightList.takeItem(rightList.row(each))
                 leftList.addItem(item)
         loader = QUiLoader()
-        ui_file = QtCore.QFile(":/statechart_cfg.ui")
-        ui_file.open(QtCore.QFile.ReadOnly)
+        ui_file = QFile(":/statechart_cfg.ui")
+        ui_file.open(QFile.ReadOnly)
         dialog = loader.load(ui_file)
-        dialog.setParent (view, QtCore.Qt.Dialog)
+        dialog.setParent (view, Qt.Dialog)
         okButton = dialog.findChild(QtGui.QPushButton, "okButton")
         rightButton = dialog.findChild(QtGui.QToolButton, "toRight")
         leftButton = dialog.findChild(QtGui.QToolButton, "toLeft")

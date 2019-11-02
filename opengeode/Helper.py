@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -31,14 +31,9 @@ import logging
 from itertools import chain
 from collections import defaultdict
 
-try:
-    # python2
-    from singledispatch import singledispatch
-except ModuleNotFoundError:
-    # python3
-    from functools import singledispatch
+from functools import singledispatch
 
-import ogAST
+from . import ogAST
 
 LOG = logging.getLogger(__name__)
 
@@ -51,7 +46,7 @@ def statenames(context, sep=u'\u00dc'):
     ''' Return the list of states (just the names) of a given context
     Format the output by replacing unicode separator symbol with a dot '''
     # note: if model has been flattened, all contexts are already merged
-    return (s.replace(sep, u'.') for s in context.mapping.viewkeys()
+    return (s.replace(sep, u'.') for s in context.mapping.keys()
             if not s.endswith(u'START'))
 
 
@@ -103,7 +98,7 @@ def state_aggregations(process):
     for each in process.terminators:
         if each.inputString.lower() in aggregates:
             each.next_is_aggregation = True
-    for name, comp in aggregates.viewitems():
+    for name, comp in aggregates.items():
         # for each state aggregation. update the terminators
         # of each parallel state with the name of all sibling states
         # useful for backends to handle parallel state termination (return)
@@ -118,9 +113,9 @@ def parallel_states(aggregates):
     ''' Given a mapping obtained with state_aggregation(process), extract
         all parallel states and return a list of state names '''
     parallel_states = []
-    for name, comp in aggregates.viewitems():
+    for name, comp in aggregates.items():
         for each in comp:
-            parallel_states.extend(name for name in each.mapping.viewkeys()
+            parallel_states.extend(name for name in each.mapping.keys()
                     if not name.endswith(u'START'))
     return parallel_states
 
@@ -132,7 +127,7 @@ def map_input_state(process):
     # Add timers to the mapping
     input_signals.extend(process.timers)
     for input_signal in input_signals:
-        for state_name, input_symbols in process.mapping.viewitems():
+        for state_name, input_symbols in process.mapping.items():
             if isinstance(input_symbols, list):
                 # Start symbols have no list of inputs
                 for i in input_symbols:
@@ -187,7 +182,7 @@ def flatten(process, sep=u'_'):
                             term.candidate_id[each + sep + u'START'] = [each]
                         else:
                             term.candidate_id[each + sep + u'START'] = \
-                                       [st for st in process.mapping.viewkeys()
+                                       [st for st in process.mapping.keys()
                                         if st.startswith(each)
                                         and not st.endswith(u'START')]
                         continue
@@ -209,7 +204,7 @@ def flatten(process, sep=u'_'):
         process.transitions.extend(state.transitions)
 
         # Add prefix to local variable names and push them at process level
-        for dcl in state.variables.viewkeys():
+        for dcl in state.variables.keys():
             rename_everything(state.content, dcl, prefix + dcl)
         state.variables = {prefix + key: state.variables.pop(key)
                            for key in state.variables.keys()}
@@ -224,7 +219,7 @@ def flatten(process, sep=u'_'):
                         break
 
         values = []
-        for key, value in state.mapping.viewitems():
+        for key, value in state.mapping.items():
             # Update transition indices
             if isinstance(value, int):
                 # START transitions
@@ -232,7 +227,7 @@ def flatten(process, sep=u'_'):
             else:
                 values.extend(value)
 
-        for each in state.cs_mapping.viewvalues():
+        for each in state.cs_mapping.values():
             # Update transition indices of continuous signals
             # XXX shouldn't we do it also for CONNECT parts?
             values.extend(each)
@@ -248,7 +243,7 @@ def flatten(process, sep=u'_'):
 
         # If composite state has entry procedures, add the call
         if state.entry_procedure:
-            for each in (trans for trans in state.mapping.viewvalues()
+            for each in (trans for trans in state.mapping.values()
                          if isinstance(trans, int)):
                 call_entry = ogAST.ProcedureCall()
                 call_entry.inputString = 'entry'
@@ -310,7 +305,7 @@ def flatten(process, sep=u'_'):
             processed by each of the substates.
         '''
         if not isinstance(nested_state, ogAST.StateAggregation):
-            for _, val in nested_state.mapping.viewitems():
+            for _, val in nested_state.mapping.items():
                 try:
                     inputlist = context.mapping[nested_state.statename]
                     val.extend(inputlist)
@@ -397,7 +392,7 @@ def _rename_automaton(ast, from_name, to_name):
             rename_everything(each.composite.content, from_name, to_name)
     for each in ast.inner_procedures:
         # Check that from_name is not a redefined variable in the procedure
-        for varname in each.variables.viewkeys():
+        for varname in each.variables.keys():
             if varname.lower() == from_name:
                 break
         else:
@@ -518,7 +513,7 @@ def _rename_prim_seq_of(ast, from_name, to_name):
 @rename_everything.register(ogAST.PrimSequence)
 def _rename_prim_seq_of(ast, from_name, to_name):
     ''' Values in the fields of a SEQUENCE '''
-    for each in ast.value.viewvalues():
+    for each in ast.value.values():
         rename_everything(each, from_name, to_name)
 
 @rename_everything.register(ogAST.PrimChoiceItem)
@@ -621,5 +616,5 @@ def sorted_fields(atype):
     if atype.kind not in ('SequenceType', 'ChoiceType'):
         raise TypeError('Not a SEQUENCE nor a CHOICE')
     tmp = ([k, val.Line, val.CharPositionInLine]
-             for k, val in atype.Children.viewitems())
+             for k, val in atype.Children.items())
     return (x[0] for x in sorted(tmp, key=operator.itemgetter(1,2)))

@@ -32,31 +32,23 @@ flake8:
 	        Statechart.py TextInteraction.py > flake8_report
 
 compile-all:
-	@pyside-rcc opengeode.qrc -o opengeode/icons.py
-	@if [ ! -f antlr-3.1.3.tar.bz2 ] ; \
-		then wget http://download.tuxfamily.org/taste/misc/antlr-3.1.3.tar.bz2 ; \
-		tar jxvf antlr-3.1.3.tar.bz2 ; \
-	fi
-	@CLASSPATH=$$PWD/antlr-3.1.3/lib/antlr-3.1.3.jar java org.antlr.Tool sdl92.g
-	@mv sdl92*.py opengeode
+	@pyside2-rcc opengeode.qrc -o opengeode/icons.py
+	# use antlr3 from Debian's python3-antlr3 package
+	antlr3 -o opengeode sdl92.g
 
 update:
 	git pull
-	#@git submodule update --remote
 
 dependencies:
-	@pip2 install --user --upgrade ./antlr3-python
-	@pip2 install --user --upgrade singledispatch
-	@pip2 install --user --upgrade enum34
-	@pip2 install --user --upgrade ./speedometer
-	#@pip2 install --user --upgrade ./properties
-	@pip3 install --user --upgrade ./dmt
-	@pip2 install --user --upgrade ./pymsc
-	#@pip2 install --user --upgrade ./asn1-value-editor
-	@pip2 install --user --upgrade ./pygraphviz
+	apt install pyside2*
+	apt install python3-antlr3
+	apt install pyside2-tools
+	pip3 install --user --upgrade pygraphviz
+	pip3 install --user --upgrade stringtemplate3
+	# optional dependencies from taste: spedometer, properties, dmt, pymsc, asn1-value-editor
 
 install:
-	@pip2 install --user --upgrade .
+	@pip3 install --user --upgrade .
 
 full-install: update dependencies install
 

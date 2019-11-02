@@ -26,14 +26,14 @@ __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
 import logging
 from itertools import chain
 
-from PySide.QtCore import Qt, QPoint, QRect, QRectF, QPointF
-from PySide.QtGui import(QPainterPath, QBrush, QColor, QRadialGradient, QPen)
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
 
-from genericSymbols import HorizontalSymbol, VerticalSymbol, Comment
-from Connectors import Connection, JoinConnection, Signalroute
+from .genericSymbols import HorizontalSymbol, VerticalSymbol, Comment
+from .Connectors import Connection, JoinConnection, Signalroute
 
-import ogParser
-import ogAST
+from . import ogParser, ogAST
 
 
 LOG = logging.getLogger('sdlSymbols')

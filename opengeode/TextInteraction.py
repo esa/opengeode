@@ -17,21 +17,17 @@
 import string
 import logging
 
-from PySide.QtCore import Qt, QRegExp, Slot, Signal
-
-from PySide.QtGui import(QGraphicsTextItem, QGraphicsProxyWidget, QListWidget,
-                         QStringListModel, QCompleter, QListWidgetItem, QFont,
-                         QTextCursor, QSyntaxHighlighter, QTextCharFormat,
-                         QTextBlockFormat, QStringListModel)
-
-import undoCommands
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
+from . import undoCommands
 
 __all__ = ['EditableText']
 
 LOG = logging.getLogger(__name__)
 
 # pylint: disable=R0904
-class Completer(QGraphicsProxyWidget, object):
+class Completer(QGraphicsProxyWidget):
     ''' Class for handling text autocompletion in the SDL scene '''
     def __init__(self, parent):
         ''' Create an autocompletion list popup '''
@@ -93,7 +89,7 @@ class Completer(QGraphicsProxyWidget, object):
 
 
 # pylint: disable=R0904
-class Highlighter(QSyntaxHighlighter, object):
+class Highlighter(QSyntaxHighlighter):
     ''' Class for handling syntax highlighting in editable text '''
     def __init__(self, parent, blackbold_patterns, redbold_patterns):
         ''' Define highlighting rules - inputs = lists of patterns '''
@@ -132,7 +128,7 @@ class Highlighter(QSyntaxHighlighter, object):
 
 
 # pylint: disable=R0902
-class EditableText(QGraphicsTextItem, object):
+class EditableText(QGraphicsTextItem):
     '''
         Editable text area inside symbols
         Includes autocompletion when parent item needs it

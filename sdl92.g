@@ -12,7 +12,7 @@
 grammar sdl92;
 
 options {
-    language=Python;
+    language=Python3;
     output=AST;
     ASTLabelType=CommonTree;
     backtrack=true;

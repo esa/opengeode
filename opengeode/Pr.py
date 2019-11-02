@@ -18,14 +18,9 @@
 import logging
 from collections import deque
 from itertools import chain
-try:
-    # python2
-    from singledispatch import singledispatch
-except ModuleNotFoundError:
-    # python3
-    from functools import singledispatch
+from functools import singledispatch
 
-import genericSymbols, sdlSymbols, Connectors
+from . import genericSymbols, sdlSymbols, Connectors
 
 LOG = logging.getLogger(__name__)
 

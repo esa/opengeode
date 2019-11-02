@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -15,15 +15,9 @@
 
 import logging
 import os
-try:
-    # python2
-    from singledispatch import singledispatch
-except ModuleNotFoundError:
-    # python3
-    from functools import singledispatch
+from functools import singledispatch
 
-import Helper
-import ogAST
+from . import Helper, ogAST
 
 LOG = logging.getLogger(__name__)
 
@@ -371,7 +365,7 @@ def _inner_procedure(proc, **kwargs):
             code.extend(inner_code)
         code.append(pi_header)
         code.append(u'{')
-        for var_name, (var_type, def_value) in proc.variables.viewitems():
+        for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
             if def_value:
                 # Expression must be a ground expression, i.e. must not
@@ -541,7 +535,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     if state_list:
         context_type.append(u'states_t state;')
 
-    for var_name, (var_type, init) in process.variables.viewitems():
+    for var_name, (var_type, init) in process.variables.items():
         init_stmt = []
         init_string = ''
         init_decl = []
@@ -570,7 +564,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     global_decls.append(u'context_t {ct};'.format(ct=LPREFIX))
     global_decls.extend(context_init_code)
 
-    for name, val in process.mapping.viewitems():
+    for name, val in process.mapping.items():
         if name.endswith(u'START') and name != u'START':
             global_decls.append(u'#define {name} {val}'.format(name=name, val=str(val)))
 
@@ -606,7 +600,7 @@ LD_LIBRARY_PATH=. taste-gui -l
         dll_code.append(u'')
 
         # Functions to get gobal variables (length and value)
-        for var_name, (var_type, _) in process.variables.viewitems():
+        for var_name, (var_type, _) in process.variables.items():
             # Getters for local variables
             global_decls.append(u'int {name}_size()'.format(name=var_name))
             global_decls.append(u'{')
@@ -658,7 +652,7 @@ LD_LIBRARY_PATH=. taste-gui -l
         input_signals_code.append(u'{')
         input_signals_code.append(u'switch({ct}.state)'.format(ct=LPREFIX))
         input_signals_code.append(u'{')
-        for state in process.mapping.viewkeys():
+        for state in process.mapping.keys():
             if state.endswith(u'START'):
                 continue
             input_signals_code.append(u'case {st}:'.format(st=state))
@@ -988,10 +982,10 @@ def _transition(tr, **kwargs):
                     if tr.terminator.next_id == -1:
                         stmts.append(u'{ctxt}.state = {nextState};'.format(ctxt=LPREFIX, nextState=tr.terminator.inputString.lower()))
                 else:
-                    if any(next_id for next_id in tr.terminator.candidate_id.viewkeys()if next_id != -1):
+                    if any(next_id for next_id in tr.terminator.candidate_id.keys()if next_id != -1):
                         stmts.append('switch ({}.state)'.format(LPREFIX))
                         stmts.append('{')
-                        for nid, sta in tr.terminator.candidate_id.viewitems():
+                        for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 for each in sta:
                                     stmts.append(u'case {} :'.format(each))
@@ -1932,10 +1926,10 @@ def _sequence(seq):
     string = u"({}) {{".format(type_name(seq.exprType))
     sep = ''
     type_children = find_basic_type(seq.exprType).Children
-    optional_fields = {field.lower().replace('-', '_'): {'present': False,'ref': (field, val)} for field, val in type_children.viewitems() if val.Optional == 'True'}
+    optional_fields = {field.lower().replace('-', '_'): {'present': False,'ref': (field, val)} for field, val in type_children.items() if val.Optional == 'True'}
     present_fields = []
     absent_fields = []
-    for elem, value in seq.value.viewitems():
+    for elem, value in seq.value.items():
         # Set the type of the field - easy thanks to ASN.1 flattened AST
         delem = elem.replace('_', '-')
         for each in type_children:
@@ -1957,7 +1951,7 @@ def _sequence(seq):
         local_decl.extend(local_var)
     # Process optional fields
     if optional_fields:
-        absent_fields = ((fd_name, fd_data['ref']) for fd_name, fd_data in optional_fields.viewitems() if not fd_data['present'])
+        absent_fields = ((fd_name, fd_data['ref']) for fd_name, fd_data in optional_fields.items() if not fd_data['present'])
         for fd_name, fd_data in absent_fields:
             fd_type = fd_data[1].type
             if fd_type.kind == 'ReferenceType':
@@ -1970,7 +1964,7 @@ def _sequence(seq):
             sep = u', '
         string += u', .exist = {'
         sep = ''
-        for fd_name, fd_data in optional_fields.viewitems():
+        for fd_name, fd_data in optional_fields.items():
             string += u'{} {}'.format(sep, '1' if fd_data['present'] else '0')
             sep = u', '
         string += u'}'
@@ -2107,7 +2101,7 @@ def find_basic_type(a_type):
     basic_type = a_type
     while basic_type.kind == 'ReferenceType':
         # Find type with proper case in the data view
-        for typename in TYPES.viewkeys():
+        for typename in TYPES.keys():
             if typename.lower() == basic_type.ReferencedTypeName.lower():
                 basic_type = TYPES[typename].type
                 break
@@ -2115,7 +2109,7 @@ def find_basic_type(a_type):
 
 def find_var(var):
     ''' Return a variable from the scope, with proper case '''
-    for visible_var in VARIABLES.viewkeys():
+    for visible_var in VARIABLES.keys():
         if var.lower() == visible_var.lower():
             return visible_var
     return None
@@ -2137,7 +2131,7 @@ def indent_c_code(lines):
 def is_local(var):
     ''' Check if a variable is in the global context or in a local scope
         Typically needed to select the right prefix to use '''
-    return var in LOCAL_VAR.viewkeys()
+    return var in LOCAL_VAR.keys()
 
 
 def string_payload(prim, string):

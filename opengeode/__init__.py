@@ -24,5 +24,5 @@
         app.exec_()
 """
 
-
-from opengeode import opengeode, __version__, SDL_Scene, SDL_View, parse, init_qt
+from . import opengeode
+from .opengeode import __version__, SDL_Scene, SDL_View, parse, init_qt

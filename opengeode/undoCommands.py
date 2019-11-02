@@ -9,7 +9,7 @@
         the redo() function is *called* when the command is created.
         No need to perform the action before.
 
-    Copyright (c) 2012-2015 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -18,16 +18,17 @@
 
 
 import logging
-from PySide.QtGui import QUndoCommand
-from PySide.QtCore import QPropertyAnimation, QEasingCurve, QAbstractAnimation
+from PySide2.QtGui import *
+from PySide2.QtCore import *
+from PySide2.QtWidgets import *
 
-import Pr
-import ogParser
+from . import Pr
+from . import ogParser
 
 LOG = logging.getLogger(__name__)
 
 
-class UndoMacro(object):
+class UndoMacro:
     ''' Context manager for Undo macros '''
 
     def __init__(self, stack, text):

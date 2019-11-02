@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -30,13 +30,13 @@
     When rendering a (set of) symbol(s), update text autocompletion list(s).
 """
 
-import ogAST
-import sdlSymbols
-import genericSymbols
 import logging
 from itertools import chain
-from singledispatch import singledispatch
-from ogParser import type_name
+from functools import singledispatch
+
+from .ogParser import type_name
+from . import ogAST, sdlSymbols, genericSymbols
+
 
 LOG = logging.getLogger(__name__)
 

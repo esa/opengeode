@@ -52,29 +52,22 @@ __all__ = ['Symbol', 'VerticalSymbol', 'HorizontalSymbol', 'Comment']
 import os
 import logging
 
-from PySide.QtCore import (Qt, QPoint, QPointF, QRect, QFile, QObject,
-                           Signal, Property)
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
+from PySide2.QtUiTools import QUiLoader
 
-from PySide.QtGui import(QGraphicsPathItem, QGraphicsPolygonItem, QPainterPath,
-                         QGraphicsItem, QPen, QColor, QMenu, QFileDialog,
-                         QPainter, QLineEdit, QTextBlockFormat, QPolygonF,
-                         QApplication)
-
-from PySide.QtUiTools import QUiLoader
-
-import undoCommands
-import ogAST
-import ogParser
-from Connectors import Connection, VerticalConnection, CommentConnection, \
+from . import undoCommands, ogAST, ogParser
+from .Connectors import Connection, VerticalConnection, CommentConnection, \
                        RakeConnection, JoinConnection, Channel
 
-from TextInteraction import EditableText
+from .TextInteraction import EditableText
 
 LOG = logging.getLogger(__name__)
 
 
 # pylint: disable=R0904, R0902
-class Symbol(QObject, QGraphicsPathItem, object):
+class Symbol(QObject, QGraphicsPathItem):
     '''
         Top-level class used to handle all SDL symbols
         Inherits from QObject to allow animations
@@ -873,7 +866,7 @@ class Comment(Symbol):
         pass
 
 
-class Cornergrabber(QGraphicsPolygonItem, object):
+class Cornergrabber(QGraphicsPolygonItem):
     '''
         Corner grabber is used to resize an item, whatever its shape.
         Such an item is needed because when symbols have a non-rectangular
@@ -971,7 +964,7 @@ class Cornergrabber(QGraphicsPolygonItem, object):
 
 
 # pylint: disable=R0904
-class HorizontalSymbol(Symbol, object):
+class HorizontalSymbol(Symbol):
     '''
         Class used to handle horizontal symbols
         In case of SDL: INPUT, DECISION answers, Text Symbol, Start
@@ -1155,7 +1148,7 @@ class HorizontalSymbol(Symbol, object):
         self.update_connections()
 
 
-class VerticalSymbol(Symbol, object):
+class VerticalSymbol(Symbol):
     '''
         Class used to handle vertically-aligned symbols
         In case of SDL: STATE, OUTPUT, PROCEDURE, DECISION, TASK
