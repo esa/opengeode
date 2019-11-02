@@ -404,7 +404,7 @@ def update(scene):
         center_x = center_pos.x() * (dpi / RENDER_DPI['X'])
         center_y = (bb_height - center_pos.y()) * (dpi / RENDER_DPI['Y'])
 
-        pos = unicode('{x},{y}'.format(x=float(center_x), y=float(center_y)))
+        pos = str('{x},{y}'.format(x=float(center_x), y=float(center_y)))
 
         if node['shape'] in (Point, Diamond, Stop):
             graph.add_node(node['name'], pos=pos, shape=lookup[node['shape']],
@@ -451,7 +451,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
 
     # Go recursive first: render children
     count = 0
-    for aname, agraph in graphtree['children'].viewitems():
+    for aname, agraph in graphtree['children'].items():
         # Render each child in a temporary scene to get the size of the scene
         # in order to resize the parent node accordingly
         temp_scene = type(scene)()
@@ -494,7 +494,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         # Bonus: the tool can render any dot graph...
         graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
         config = " ".join("{name}={val}".format(name=name, val=val)
-                for name, val in graphtree['config'].viewitems())
+                for name, val in graphtree['config'].items())
     except IOError:
         LOG.info('No statechart to display....')
         raise
@@ -534,7 +534,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         shape = node.get('shape')
         try:
             node_symbol = lookup[shape](node, graph)
-            if unicode(node_symbol) in graphtree['children'] \
+            if str(node_symbol) in graphtree['children'] \
                     and shape == 'record':
                 # Use a different color for non-terminal states
                 node_symbol.setBrush(QtGui.QBrush(QtGui.QColor(249, 249, 249)))
@@ -551,11 +551,11 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     # Make sure the scene has no negative coordinates
     scene.translate_to_origin()
 
-    for aname, agraph in graphtree['children'].viewitems():
+    for aname, agraph in graphtree['children'].items():
         # At the end, place the content of the scene of the composite states
         # in the symbol by moving them from their temporary scene
         for symb in scene.visible_symb:
-            if unicode(symb) == aname:
+            if str(symb) == aname:
                 deltapos = symb.scenePos() + QPointF(30.0, 30.0)
                 for each in agraph['scene'].floating_symb:
                     # In principle we should change the parentItem to make sure
@@ -682,12 +682,12 @@ def create_dot_graph(root_ast,
         leftList.addItems(list(input_signals - valid_inputs))
         go = dialog.exec_()
         valid_inputs.clear()
-        for idx in xrange(rightList.count()):
+        for idx in range(rightList.count()):
             valid_inputs.add(rightList.item(idx).text())
         unlock()
 
     inputs_to_save = set(valid_inputs)
-    for state in root_ast.mapping.viewkeys():
+    for state in root_ast.mapping.keys():
         # create a new node for each state (including nested states)
         if state.endswith('START'):
             if len(state) > 5:
@@ -721,9 +721,9 @@ def create_dot_graph(root_ast,
         for stateName in each.statelist:
             connect_mapping[stateName.lower()].extend(each.connects)
 
-    for state, inputs in chain(root_ast.mapping.viewitems(),
-                               root_ast.cs_mapping.viewitems(),
-                               connect_mapping.viewitems()):
+    for state, inputs in chain(root_ast.mapping.items(),
+                               root_ast.cs_mapping.items(),
+                               connect_mapping.items()):
         # Add edges
         transitions = \
             inputs if not state.endswith('START') \
@@ -808,7 +808,7 @@ def create_dot_graph(root_ast,
                                    target,
                                    label=actual)
                     inputs_to_save |= set(lab.lower() for lab in labs)
-        for target, labels in target_states.viewitems():
+        for target, labels in target_states.items():
             sublab = [lab.strip() for lab in labels if
                       lab.strip().lower() in valid_inputs | {""}]
             # Basic mode
@@ -826,7 +826,7 @@ def create_dot_graph(root_ast,
     #return graph
     if is_root:
         with open(identifier + ".cfg", "w") as cfg_file:
-            for name, value in config_params.viewitems():
+            for name, value in config_params.items():
                 cfg_file.write("cfg {} {}\n".format(name, value))
             for each in inputs_to_save:
                 cfg_file.write(each + "\n")

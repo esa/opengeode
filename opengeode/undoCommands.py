@@ -58,7 +58,7 @@ class ReplaceText(QUndoCommand):
         for each in self.scene.states:
             # count the number of instances of the states in the scene
             # the text is already renamed, values are initialized to -1 and 1
-            state_name = unicode(each).lower()
+            state_name = str(each).lower()
             if self.old_text.lower() == state_name:
                 self.count_instances_old += 1
             if self.new_text.lower() == state_name:

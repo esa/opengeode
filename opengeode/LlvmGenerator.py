@@ -159,7 +159,7 @@ class Context():
 
         basic_asn1ty = asn1ty
         while basic_asn1ty.kind == 'ReferenceType':
-            for typename in self.dataview.viewkeys():
+            for typename in self.dataview.keys():
                 if typename.lower() == basic_asn1ty.ReferencedTypeName.lower():
                     basic_asn1ty = self.dataview[typename].type
                     break
@@ -406,7 +406,7 @@ def _process(process, ctx=None, options=None):
     mapping = Helper.map_input_state(process)
 
     # Initialize states
-    for name, val in process.mapping.viewitems():
+    for name, val in process.mapping.items():
         if not name.endswith('START'):
             cons_val = lc.Constant.int(ctx.i32, len(ctx.states))
             ctx.states[name.lower()] = cons_val
@@ -420,14 +420,14 @@ def _process(process, ctx=None, options=None):
     ctx.scope.define('.state', state_cons)
 
     # Generate ASN.1 constants
-    for name, t in process.dv.variables.viewitems():
+    for name, t in process.dv.variables.items():
         var_llty = ctx.lltype_of(t.type)
         name = str(name).replace('-', '_').lower()
         global_var = ctx.module.add_global_variable(var_llty, name)
         ctx.scope.define(name, global_var)
 
     # Generare process-level vars
-    for name, (asn1ty, expr) in process.variables.viewitems():
+    for name, (asn1ty, expr) in process.variables.items():
         var_llty = ctx.lltype_of(asn1ty)
         global_var = ctx.module.add_global_variable(var_llty, str(name))
         global_var.initializer = lc.Constant.null(var_llty)
@@ -559,7 +559,7 @@ def generate_startup_func(process, ctx):
     ctx.builder = lc.Builder.new(entry_block)
 
     # Initialize process level variables
-    for name, (ty, expr) in process.variables.viewitems():
+    for name, (ty, expr) in process.variables.items():
         if expr:
             global_var = ctx.scope.resolve(str(name))
             right = expression(expr, ctx)
@@ -1601,7 +1601,7 @@ def _prim_sequence(prim, ctx):
 
     seq_asn1ty = ctx.dataview[prim.exprType.ReferencedTypeName]
 
-    for field_name, field_expr in prim.value.viewitems():
+    for field_name, field_expr in prim.value.items():
         # Workaround for unknown types in nested sequences
         #field_expr.exprType = seq_asn1ty.type.Children[field_name.replace('_', '-')].type
         field_expr.exprType = ctx.basic_asn1type_of(prim.exprType).Children[\
@@ -1756,7 +1756,7 @@ def generate_next_state_terminator(term, ctx):
             next_id_val = ctx.states[term.next_id.lower()]
         ctx.builder.store(next_id_val, ctx.scope.resolve('id'))
     else:
-        nexts = [(n, s) for (n, s) in term.candidate_id.viewitems() if n != -1]
+        nexts = [(n, s) for (n, s) in term.candidate_id.items() if n != -1]
         if nexts:
             # Calculate next transition id in base of the current state
             func = ctx.builder.basic_block.function
@@ -1841,7 +1841,7 @@ def _procedure(proc, ctx):
     entry_block = func.append_basic_block('proc:entry')
     ctx.builder = lc.Builder.new(entry_block)
 
-    for name, (ty, expr) in proc.variables.viewitems():
+    for name, (ty, expr) in proc.variables.items():
         var_llty = ctx.lltype_of(ty)
         var_ptr = ctx.builder.alloca(var_llty)
         ctx.scope.define(name, var_ptr)

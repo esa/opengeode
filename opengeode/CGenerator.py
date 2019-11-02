@@ -978,7 +978,7 @@ def _transition(tr, **kwargs):
                     label=tr.terminator.label.inputString))
             if tr.terminator.kind == 'next_state':
                 if tr.terminator.inputString.strip() != '-':
-                    stmts.append(u'trId = ' + unicode(tr.terminator.next_id) + u';')
+                    stmts.append(u'trId = ' + str(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
                         stmts.append(u'{ctxt}.state = {nextState};'.format(ctxt=LPREFIX, nextState=tr.terminator.inputString.lower()))
                 else:
@@ -1040,7 +1040,7 @@ def _primary_variable(prim):
     else:
         string = u'{lp}.{name}'.format(lp=LPREFIX, name=prim.value[0])
 
-    return [], unicode(string.lower()), []
+    return [], str(string.lower()), []
 
 
 @expression.register(ogAST.PrimCall)
@@ -1197,7 +1197,7 @@ def _prim_index(prim):
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
 
-    return stmts, unicode(string), local_decl
+    return stmts, str(string), local_decl
 
 
 
@@ -1215,7 +1215,7 @@ def _prim_substring(prim):
         ret_decls.extend(base_decls)
         r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0])
         r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1])
-        if unicode.isnumeric(r1_string) and unicode.isnumeric(r2_string):
+        if str.isnumeric(r1_string) and str.isnumeric(r2_string):
             ret_decls.extend(['char var' + tmp_var_id + '[' + (int(r2_string) - int(r1_string) + 1) + '];'])
         else:
             ret_decls.extend(['char * var' + tmp_var_id + ';'])
@@ -1262,7 +1262,7 @@ def _prim_selector(prim):
             field_case = field_name
         string += '.' + field_case
 
-    return stmts, unicode(string), local_decl
+    return stmts, str(string), local_decl
 
 
 @expression.register(ogAST.PrimStateReference)
@@ -1294,7 +1294,7 @@ def _basic_operators(expr):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    return code, unicode(string), local_decl
+    return code, str(string), local_decl
 
 
 @expression.register(ogAST.ExprMod)
@@ -1308,7 +1308,7 @@ def _basic_operators(expr):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    return code, unicode(string), local_decl
+    return code, str(string), local_decl
 
 
 @expression.register(ogAST.ExprEq)
@@ -1366,7 +1366,7 @@ def _equality(expr):
                 string = u"({left}) {op} ({right})".format(left=left_string, op=operand, right=right_string)
         if isinstance(expr, ogAST.ExprNeq):
             string = u'! {}'.format(string)
-    return stmts, unicode(string), decls
+    return stmts, str(string), decls
 
 
 @expression.register(ogAST.ExprAssign)
@@ -1470,7 +1470,7 @@ def _bitwise_operators(expr):
     stmts.extend(right_stmts)
     decls.extend(left_local)
     decls.extend(right_local)
-    return stmts, unicode(string), decls
+    return stmts, str(string), decls
 
 
 @expression.register(ogAST.ExprNot)
@@ -1516,7 +1516,7 @@ def _not_expression(expr):
     else:
         string = u'!{expr}'.format(expr=expr_str.replace(',',',!'))
 
-    return stmts, unicode(string), decls
+    return stmts, str(string), decls
 
 
 @expression.register(ogAST.ExprNeg)
@@ -1527,7 +1527,7 @@ def _neg_expression(expr):
     string = u'(-{expr})'.format( expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
-    return code, unicode(string), local_decl
+    return code, str(string), local_decl
 
 
 @expression.register(ogAST.ExprAppend)
@@ -1769,7 +1769,7 @@ def _append(expr):
     else:
         raise NotImplementedError(str(type(expr.left)) + str(type(expr.right)))
     stmts.append(u'}')
-    return stmts, unicode(string), decls
+    return stmts, str(string), decls
 
 
 @expression.register(ogAST.ExprIn)
@@ -1809,7 +1809,7 @@ def _expr_in(expr):
     stmts.append(u'break;')
     stmts.append(u'}')
     stmts.append(u'}')
-    return stmts, unicode(string), decls
+    return stmts, str(string), decls
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
@@ -1822,7 +1822,7 @@ def _enumerated_value(primary):
             break
     prefix = type_name(basic)
     string = (prefix + basic.EnumValues[each].EnumID)
-    return [], unicode(string), []
+    return [], str(string), []
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
@@ -1833,7 +1833,7 @@ def _choice_determinant(primary):
         if each.lower() == enumerant:
             break
     string = primary.exprType.EnumValues[each].EnumID
-    return [], unicode(string), []
+    return [], str(string), []
 
 
 @expression.register(ogAST.PrimInteger)
@@ -1841,21 +1841,21 @@ def _choice_determinant(primary):
 def _integer(primary):
     ''' Generate code for a raw numerical value  '''
     string = primary.value[0]
-    return [], unicode(string), []
+    return [], str(string), []
 
 
 @expression.register(ogAST.PrimBoolean)
 def _boolean(primary):
     ''' Generate code for a raw boolean value  '''
     string = primary.value[0]
-    return [], unicode(string.lower()), []
+    return [], str(string.lower()), []
 
 
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary):
     ''' Generate code for an empty SEQUENCE OF: {} '''
     string = u'{}_Init()'.format(type_name(primary.exprType))
-    return [], unicode(string), []
+    return [], str(string), []
 
 
 @expression.register(ogAST.PrimStringLiteral)
@@ -1868,13 +1868,13 @@ def _string_literal(primary):
     unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
 
     string = u', '.join(unsigned_8)
-    return [], unicode(string), []
+    return [], str(string), []
 
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary):
     ''' Generate code for a reference to an ASN.1 constant '''
-    return [], unicode(primary.value[0]), []
+    return [], str(primary.value[0]), []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
@@ -1916,7 +1916,7 @@ def _conditional(cond):
     stmts.append(u'tmp{idx} = {else_str};'.format(idx=cond.value['tmpVar'], else_str=else_str))
     stmts.append(u'}')
     string = u'tmp{idx}'.format(idx=cond.value['tmpVar'])
-    return stmts, unicode(string), local_decl
+    return stmts, str(string), local_decl
 
 
 @expression.register(ogAST.PrimSequence)
@@ -1970,7 +1970,7 @@ def _sequence(seq):
         string += u'}'
 
     string += '}'
-    return stmts, unicode(string), local_decl
+    return stmts, str(string), local_decl
 
 
 @expression.register(ogAST.PrimSequenceOf)
@@ -1992,7 +1992,7 @@ def _sequence_of(seqof):
             except AttributeError:
                 pass
     tab = []
-    for i in xrange(len(seqof.value)):
+    for i in range(len(seqof.value)):
         temp = ''
         item_stmts, item_str, local_var = expression(seqof.value[i])
         if isinstance(seqof.value[i], (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
@@ -2002,7 +2002,7 @@ def _sequence_of(seqof):
         local_decl.extend(local_var)
         tab.append(temp)
     string += u', '.join(tab)
-    return stmts, unicode(string), local_decl
+    return stmts, str(string), local_decl
 
 
 @expression.register(ogAST.PrimChoiceItem)
@@ -2013,7 +2013,7 @@ def _choiceitem(choice):
         choice_str = array_content(choice.value['value'], choice_str, find_basic_type(choice.value['value'].exprType))
         choice_str = u'({ty}) {cs}'.format(ty=u'asn1Scc' + find_basic_type(choice.value['value'].exprType).__name__[:-5], cs=choice_str)
     string = u'{cType}_{opt}_set({expr})'.format(cType=type_name(choice.exprType), opt=choice.value['choice'], expr=choice_str)
-    return stmts, unicode(string), local_decl
+    return stmts, str(string), local_decl
 
 def append_size(append):
     ''' Return a string corresponding to the length of an APPEND construct
@@ -2067,7 +2067,7 @@ def _prim_substring(prim):
     local_decl.extend(r2_local)
     local_decl.append(u'unsigned int max_range_{var_counter};'.format(var_counter=VAR_COUNTER))
 
-    return stmts, unicode(string), local_decl
+    return stmts, str(string), local_decl
 
 
 

@@ -3796,7 +3796,7 @@ def state(root, parent, context):
                     for each in inp.inputlist:
                         for ex_input in (name for i in existing
                                          for name in i.inputlist):
-                            if unicode(each) == unicode(ex_input):
+                            if str(each) == str(ex_input):
                                 dupl.add(each)
                     for each in dupl:
                         sterr.append('Input "{}" is defined more '

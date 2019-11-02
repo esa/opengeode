@@ -140,13 +140,13 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '2.1.5'
+__version__ = '3.0.0'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
     try:
-        CUR_DIR = os.path.dirname(unicode
-                (sys.executable, sys.getfilesystemencoding()))
+        CUR_DIR = os.path.dirname(
+                str(sys.executable, sys.getfilesystemencoding()))
     except TypeError:
         CUR_DIR = os.path.dirname(os.path.realpath(__file__))
     else:
@@ -337,13 +337,13 @@ class Sdl_toolbar(QToolBar, object):
                 pass
         if len(selection) > 1:
             # When several items are selected, disable all menu entries
-            for _, action in self.actions.viewitems():
+            for _, action in self.actions.items():
                 action.setEnabled(False)
         elif not selection:
             # When nothing is selected:
             # activate everything, and when user selects an icon,
             # keep the action on hold until he clicks on the scene
-            for action in self.actions.viewkeys():
+            for action in self.actions.keys():
                 self.actions[action].setEnabled(True)
 
             # Check for singletons (e.g. START symbol)
@@ -360,7 +360,7 @@ class Sdl_toolbar(QToolBar, object):
         else:
             # Only one selected item
             selection, = selection
-            for action in self.actions.viewkeys():
+            for action in self.actions.keys():
                 self.actions[action].setEnabled(False)
             for action in getattr(selection, 'allowed_followers', []):
                 try:
@@ -398,7 +398,7 @@ class SDL_Scene(QGraphicsScene):
         self.set_readonly(readonly)
         # Configure the action menu
         all_possible_actions = set()
-        for action in ACTIONS.viewvalues():
+        for action in ACTIONS.values():
             all_possible_actions |= set(action)
         self.actions = {action.__name__: partial(self.add_symbol, action)
                 for action in all_possible_actions}
@@ -537,8 +537,8 @@ class SDL_Scene(QGraphicsScene):
         # Update the list first
         for each in self.states:
             if each.is_composite() and \
-                  each.nested_scene not in self._composite_states.viewvalues():
-                self._composite_states[unicode(each).split()[0].lower()] = \
+                  each.nested_scene not in self._composite_states.values():
+                self._composite_states[str(each).split()[0].lower()] = \
                                                             each.nested_scene
         return self._composite_states
 
@@ -653,19 +653,19 @@ class SDL_Scene(QGraphicsScene):
             # Render nested scenes, recursively:
             for each in (item for item in dest_scene.visible_symb
                          if item.nested_scene):
-                LOG.debug(u'Recursive scene: ' + unicode(each))
+                LOG.debug(u'Recursive scene: ' + str(each))
                 if isinstance(each.nested_scene, ogAST.CompositeState) \
                         and (not each.nested_scene.statename
                              or each.nested_scene in already_created):
                     # Ignore nested state scenes that already exist
-                    LOG.debug('Subscene "{}" ignored'.format(unicode(each)))
+                    LOG.debug('Subscene "{}" ignored'.format(str(each)))
                     continue
                 subscene = \
                         self.create_subscene(each.context_name,
                                              dest_scene)
 
                 already_created.append(each.nested_scene)
-                subscene.name = unicode(each)
+                subscene.name = str(each)
                 LOG.debug('Created scene: {}'.format(subscene.name))
                 recursive_render(each.nested_scene.content, subscene)
                 each.nested_scene = subscene
@@ -673,10 +673,10 @@ class SDL_Scene(QGraphicsScene):
             # Make sure all composite states are initially up to date
             # (Needed for the symbol shape to have dashed lines)
             for each in dest_scene.states:
-                if unicode(each).lower() in \
-                        dest_scene.composite_states.viewkeys():
+                if str(each).lower() in \
+                        dest_scene.composite_states.keys():
                     each.nested_scene = dest_scene.composite_states[
-                                                         unicode(each).lower()]
+                                                         str(each).lower()]
 
             # Readonly user flag
             if dest_scene.context == 'process' and dest_scene.readonly:
@@ -838,7 +838,7 @@ class SDL_Scene(QGraphicsScene):
                         line_nb = int(line_nb) - 1
                         split[1] = '{}:{}'.format(line_nb, col)
                 pos = each.scenePos()
-                split.append (u'in "{}"'.format(unicode(each)))
+                split.append (u'in "{}"'.format(str(each)))
                 fmt = [[' '.join(split), [pos.x(), pos.y()], self.path]]
                 log_errors(self.messages_window, fmt, [], clearfirst=False)
 
@@ -877,7 +877,7 @@ class SDL_Scene(QGraphicsScene):
         if item in self.highlighted:
             self.setBrush(self.highlighted.pop(item))
         if reset:
-            for item, brush in self.highlighted.viewitems():
+            for item, brush in self.highlighted.items():
                 item.setBrush(brush)
             self.highlighted = {}
 
@@ -888,7 +888,7 @@ class SDL_Scene(QGraphicsScene):
                      if isinstance(symbol, EditableText)
                      and symbol.isVisible()):
             try:
-                res = re.search(pattern, unicode(item), flags=re.IGNORECASE)
+                res = re.search(pattern, str(item), flags=re.IGNORECASE)
             except re.error:
                 # invalid pattern
                 raise StopIteration
@@ -919,10 +919,10 @@ class SDL_Scene(QGraphicsScene):
                         continue
                     new_string = re.sub(pattern,
                                         replace_with,
-                                        unicode(item),
+                                        str(item),
                                         flags=re.IGNORECASE)
                     undo_cmd = undoCommands.ReplaceText(
-                                     item, unicode(item), new_string)
+                                     item, str(item), new_string)
                     self.undo_stack.push(undo_cmd)
                     item.try_resize()
                     item.parentItem().select()
@@ -972,9 +972,9 @@ class SDL_Scene(QGraphicsScene):
             Clipboard.copy(self.selected_symbols)
         except TypeError as error_msg:
             try:
-                self.messages_window.addItem(unicode(error_msg))
+                self.messages_window.addItem(str(error_msg))
             except AttributeError:
-                LOG.error(unicode(error_msg))
+                LOG.error(str(error_msg))
             raise
 
 
@@ -1040,7 +1040,7 @@ class SDL_Scene(QGraphicsScene):
             Optionally take a QGraphicsView to use as parent for modals '''
         if ast is None:
             pr_raw = Pr.parse_scene(self)
-            pr_data = unicode('\n'.join(pr_raw))
+            pr_data = str('\n'.join(pr_raw))
             ast, _, err = ogParser.parse_pr(string=pr_data)
             self.semantic_errors = True if err else False
         if len(ast.processes) == 1:
@@ -1556,7 +1556,7 @@ class SDL_Scene(QGraphicsScene):
                 event.modifiers() == Qt.ControlModifier):
             # Debug mode
             for selection in self.selected_symbols:
-                LOG.info(unicode(selection))
+                LOG.info(str(selection))
                 LOG.info('Position: ' + str(selection.pos()))
                 LOG.info('ScenePos: ' + str(selection.scenePos()))
                 LOG.info('BoundingRect: ' + str(selection.boundingRect()))
@@ -1630,7 +1630,7 @@ class SDL_View(QGraphicsView):
         # Connect toolbar actions
         self.scene().selectionChanged.connect(partial(
                                     self.scene().set_selection, self.toolbar))
-        for item in self.toolbar.actions.viewkeys():
+        for item in self.toolbar.actions.keys():
             self.toolbar.actions[item].triggered.connect(
                                                    self.scene().actions[item])
         self.toolbar.update_menu(self.scene())
@@ -1876,7 +1876,7 @@ class SDL_View(QGraphicsView):
             try:
                 if item.allow_nesting:
                     item.double_click()
-                    ctx = unicode(item.context_name)
+                    ctx = str(item.context_name)
                     if not isinstance(item.nested_scene, SDL_Scene):
                         msg_box = QMessageBox(self)
                         msg_box.setWindowTitle('Create nested symbol')
@@ -1898,7 +1898,7 @@ class SDL_View(QGraphicsView):
                             item.edit_text(self.mapToScene(evt.pos()))
                             return
                     self.go_down(item.nested_scene,
-                                 name=u"{} {}".format(ctx, unicode(item)))
+                                 name=u"{} {}".format(ctx, str(item)))
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))
@@ -2114,7 +2114,7 @@ clean:
         asn1Quotes = ['"{}"'.format(name) for name in otherAsn1Files]
         otherAsn = ", ".join(asn1Quotes)
 
-        pr_data = unicode('\n'.join(pr_raw))
+        pr_data = str('\n'.join(pr_raw))
         try:
             pr_file.write(pr_data.encode('utf-8'))
             pr_file.close()
@@ -2297,7 +2297,7 @@ clean:
             return "Non-SDL"
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
-        pr_data = unicode('\n'.join(pr_raw))
+        pr_data = str('\n'.join(pr_raw))
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
@@ -2328,10 +2328,10 @@ clean:
             except ValueError as err:
                 LOG.error('Cannot locate item: ' + str(each))
                 continue
-            name = unicode(name).lower()
+            name = str(name).lower()
             if kind.lower() == 'process':
                 for process in self.scene().processes:
-                    if unicode(process).lower() == name:
+                    if str(process).lower() == name:
                         self.go_down(process.nested_scene,
                                      name=u'process {}'.format(name))
                         break
@@ -2339,7 +2339,7 @@ clean:
                     LOG.error('Process {} not found'.format(name))
             elif kind.lower() == 'state':
                 for state in self.scene().states:
-                    if unicode(state).lower() == name:
+                    if str(state).lower() == name:
                         self.go_down(state.nested_scene,
                                      name=u'state {}'.format(name))
                         break
@@ -2347,7 +2347,7 @@ clean:
                     LOG.error('Composite state {} not found'.format(name))
             elif kind.lower() == 'procedure':
                 for proc in self.scene().procedures:
-                    if unicode(proc).lower() == name:
+                    if str(proc).lower() == name:
                         self.go_down(proc.nested_scene,
                                      name=u'procedure {}'.format(name))
                         break
@@ -2372,7 +2372,7 @@ clean:
         scene = self.top_scene()
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
-        pr_data = unicode('\n'.join(pr_raw))
+        pr_data = str('\n'.join(pr_raw))
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
@@ -2391,7 +2391,7 @@ clean:
                     AdaGenerator.generate(process)
                     self.messages_window.addItem('Done')
                 except (TypeError, ValueError, NameError) as err:
-                    err=unicode(err).encode('utf8')
+                    err=str(err).encode('utf8')
                     self.messages_window.addItem(
                             'Code generation failed:' + str(err))
                     LOG.debug(str(traceback.format_exc()))
@@ -2402,7 +2402,7 @@ clean:
         scene = self.top_scene()
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
-        pr_data = unicode('\n'.join(pr_raw))
+        pr_data = str('\n'.join(pr_raw))
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
@@ -2436,7 +2436,7 @@ clean:
         scene = self.top_scene()
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
-        pr_data = unicode('\n'.join(pr_raw))
+        pr_data = str('\n'.join(pr_raw))
         if pr_data:
             ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
                                                       string=pr_data)
@@ -2724,7 +2724,7 @@ class OG_MainWindow(QMainWindow):
         # Update the data dictionary
         item_types = self.datadict.topLevelItem(0)
         item_types.takeChildren() # remove old children
-        for name, sort in sorted(ast.dataview.viewitems(),
+        for name, sort in sorted(ast.dataview.items(),
                                  key=lambda name, sort: name):
             new_item = QTreeWidgetItem(item_types,
                                              [name.replace('-', '_'),
@@ -2734,7 +2734,7 @@ class OG_MainWindow(QMainWindow):
             new_item.setData(0, ANCHOR, "ASN1_" + name.replace('-', '_'))
         item_constants = self.datadict.topLevelItem(1)
         item_constants.takeChildren()
-        for name, sort in ast.asn1_constants.viewitems():
+        for name, sort in ast.asn1_constants.items():
             sortname = sort.type.ReferencedTypeName \
                     if sort.type.kind.startswith('Reference') \
                     else sort.type.kind[:-4]
@@ -2754,7 +2754,7 @@ class OG_MainWindow(QMainWindow):
         the type of a variable for instance '''
         (in_sig, out_sig, states, labels,
          dcl, timers) = [self.datadict.topLevelItem(i) for i in range(2, 8)]
-        for idx in xrange(dcl.childCount()):
+        for idx in range(dcl.childCount()):
             child = dcl.child(idx)
             if child.text(0).lower() == str.lower():
                 child.treeWidget().setCurrentItem(child)
@@ -2791,7 +2791,7 @@ class OG_MainWindow(QMainWindow):
             refresh_signals(in_sig, context.input_signals)
             refresh_signals(out_sig, context.output_signals)
 
-            for each in sorted(context.mapping.viewkeys()):
+            for each in sorted(context.mapping.keys()):
                 if each != 'START':
                     state = QTreeWidgetItem(states, [each, 'refactor'])
                     state.setForeground(1, Qt.blue)
@@ -2800,7 +2800,7 @@ class OG_MainWindow(QMainWindow):
                                                   for l in context.labels))
             map(partial(add_elem, timers), sorted(context.timers))
 
-            for var, (sort, _) in context.variables.viewitems():
+            for var, (sort, _) in context.variables.items():
                 try:
                     sort_name = sort.ReferencedTypeName
                 except AttributeError:
@@ -2814,7 +2814,7 @@ class OG_MainWindow(QMainWindow):
             map(lambda elem: change_state(elem, True), (in_sig, states))
             map(lambda elem: change_state(elem, False),
                 (dcl, timers, labels, out_sig))
-            for var, (sort, _) in context.variables.viewitems():
+            for var, (sort, _) in context.variables.items():
                 QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
             map(partial(add_elem, timers), sorted(context.timers))
             map(partial(add_elem, labels), sorted(l.inputString
@@ -2925,7 +2925,9 @@ class FilterEvent(QObject):
 
 def parse_args():
     ''' Parse command line arguments '''
-    parser = argparse.ArgumentParser(version=__version__)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--version', action='version',
+                        version=__version__)
     parser.add_argument('-g', '--debug', action='store_true', default=False,
             help='Display debug information')
     parser.add_argument('--shared', action='store_true', default=False,
@@ -3017,7 +3019,7 @@ def generate(process, options):
                                   taste=options.taste_target)
         except (TypeError, ValueError, NameError) as err:
             ret = 1
-            err = unicode(err).replace(u'\u00fc', '.')
+            err = str(err).replace(u'\u00fc', '.')
             err = err.encode('utf-8')
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
@@ -3164,7 +3166,8 @@ def gui(options):
     app.setWindowIcon(QIcon(':icons/input.png'))
 
     # Set all encodings to utf-8 in Qt
-    QTextCodec.setCodecForCStrings(QTextCodec.codecForName('UTF-8'))
+    # Ths was removed in Qt5, the consequences are unclear
+    #QTextCodec.setCodecForCStrings(QTextCodec.codecForName('UTF-8'))
 
     # Bypass system-default font, to harmonize size on all platforms
     font_database = QFontDatabase()

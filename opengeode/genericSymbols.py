@@ -286,14 +286,8 @@ class Symbol(QObject, QGraphicsPathItem):
         self._terminal_symbol = value
 
     def __str__(self):
-        ''' Print the text inside the symbol '''
-        import traceback
-        print (traceback.print_stack())
-        raise TypeError('Use unicode() not str()')
-
-    def __unicode__(self):
         ''' Return the text inside the symbol '''
-        return unicode(self.text) or u'no_name'
+        return str(self.text) or u'no_name'
 
     def get_ast(self, pr_text):
         ''' Return the symbol in the AST form, as returned by the parser '''
@@ -458,11 +452,11 @@ class Symbol(QObject, QGraphicsPathItem):
         hlink = self.hlink_field.text()
         if hlink:
             self.text.setHtml('<a href="{hlink}">{text}</a>'.format
-                  (hlink=hlink, text=unicode(self.text).replace('\n', '<br>')))
+                  (hlink=hlink, text=str(self.text).replace('\n', '<br>')))
             self.text.hyperlink = hlink
         else:
             self.text.hyperlink = None
-            self.text.setPlainText(unicode(self.text))
+            self.text.setPlainText(str(self.text))
 
     def contextMenuEvent(self, event):
         ''' When user right-clicks: display context menu '''
@@ -645,7 +639,7 @@ class Symbol(QObject, QGraphicsPathItem):
         # Call the Qt event prcessing to avoid blocking the application
         # Removed (had bad visual side effects)
         # QApplication.processEvents()
-        #print 'CAM', unicode(self)[slice(0, 20)]
+        #print 'CAM', str(self)[slice(0, 20)]
         ignore = ignore or []
         if not self.scene():
             # Make sure the item is in a scene. For instance, when loading
@@ -722,7 +716,7 @@ class Symbol(QObject, QGraphicsPathItem):
                         collider_rect.width() - 10 + rect.x())
                 delta.setY(col.y())
             if col.position == col_pos[col]:
-                #print unicode(self), 'collides with', unicode(col)
+                #print str(self), 'collides with', str(col)
                 col.cam(col.position, delta, ignore=ignore + [self])
                 # Put it back at the new position to make sure recursive
                 # CAM can happen properly with all object in new positions
@@ -894,7 +888,7 @@ class Cornergrabber(QGraphicsPolygonItem):
 
     def __repr__(self):
         ''' Pretty string for the print function '''
-        return u'Cornergrabber of ' + unicode(self.parentItem())
+        return u'Cornergrabber of ' + str(self.parentItem())
 
     def display(self):
         ''' Polygon is a rectangle of the size of the parent item '''

@@ -61,7 +61,7 @@ class Completer(QGraphicsProxyWidget):
         self._completer.setCompletionPrefix(completion_prefix)
         self.widget().clear()
         count = self._completer.completionCount()
-        for i in xrange(count):
+        for i in range(count):
             self._completer.setCurrentRow(i)
             self.widget().addItem(self._completer.currentCompletion())
         self.prepareGeometryChange()
@@ -378,7 +378,7 @@ class EditableText(QGraphicsTextItem):
                 self.setTextCursor(text_cursor)
             # If something has changed, check syntax and create undo command
             if(self.oldSize != self.parent.boundingRect() or
-                                                self.oldText != unicode(self)):
+                                                self.oldText != str(self)):
                 # Call syntax checker from item containing the text (if any)
                 self.scene().check_syntax(self.parent)
                 # Update class completion list
@@ -397,7 +397,7 @@ class EditableText(QGraphicsTextItem):
                         pass
 
                     undo_cmd = undoCommands.ReplaceText(self, self.oldText,
-                                                        unicode(self))
+                                                        str(self))
                     self.scene().undo_stack.push(undo_cmd)
         self.set_text_alignment()
         # Reset Z-Values that were increased when getting focus
@@ -430,7 +430,7 @@ class EditableText(QGraphicsTextItem):
         # Set width to auto-expand, and disables alignment, while editing:
         self.setTextWidth(-1)
         if not self.editing:
-            self.oldText = unicode(self)
+            self.oldText = str(self)
             self.oldSize = self.parent.boundingRect()
             self.editing = True
 
@@ -438,7 +438,7 @@ class EditableText(QGraphicsTextItem):
         ''' Print the text inside the symbol '''
         raise TypeError('Use UNICODE, not string!')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.toPlainText()
 
 

@@ -312,12 +312,12 @@ class Signalroute(Connection):
         ''' Called when user modified the text of label_in or label_out '''
         for each in self.label_in, self.label_out:
             if not each.hasFocus():
-                if not unicode(each).startswith('['):
-                    each.setPlainText('[{}'.format(unicode(each)))
-                if not unicode(each).endswith(']'):
-                    each.setPlainText('{}]'.format(unicode(each)))
-        Signalroute.in_sig = unicode(self.label_in)[1:-1]
-        Signalroute.out_sig = unicode(self.label_out)[1:-1]
+                if not str(each).startswith('['):
+                    each.setPlainText('[{}'.format(str(each)))
+                if not str(each).endswith(']'):
+                    each.setPlainText('{}]'.format(str(each)))
+        Signalroute.in_sig = str(self.label_in)[1:-1]
+        Signalroute.out_sig = str(self.label_out)[1:-1]
 
 
     @property
@@ -556,7 +556,7 @@ class Edge(Connection):
         self.bezier = [self.mapFromScene(*self.edge['spline'][0])]
         # Bezier control points (groups of three points):
         assert(len(self.edge['spline']) % 3 == 1)
-        for i in xrange(1, len(self.edge['spline']), 3):
+        for i in range(1, len(self.edge['spline']), 3):
             self.bezier.append([Controlpoint(
                           self.mapFromScene(*self.edge['spline'][i + j]), self)
                           for j in range(3)])

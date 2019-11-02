@@ -144,7 +144,7 @@ def inner_labels_to_floating(process):
         section of code, where they are in the scope of everybody
         Works with processes, procedures and nested states
     '''
-    for idx in xrange(len(process.content.floating_labels)):
+    for idx in range(len(process.content.floating_labels)):
         for new_floating in find_labels(
                       process.content.floating_labels[idx].transition):
             process.content.floating_labels.append(new_floating)

@@ -108,7 +108,7 @@ def parse_asn1(*files, **options):
     out_py_name   = new_hash + ".py"
     out_html_name = new_hash + ".html"
 
-    if new_hash in AST.viewkeys():
+    if new_hash in AST.keys():
         return AST[new_hash]
     elif project_cache is not None:
         outdir = project_cache
@@ -189,7 +189,7 @@ def create_choice_determinant_types(ast):
     returns the newly created types (does not modify input AST)
     '''
     new_sorts = {}
-    for each in (sort for sort in ast.types.viewvalues()
+    for each in (sort for sort in ast.types.values()
                  if sort.type.kind == 'ChoiceType'):
         new_sort = each.__name__ + '-selection'
         if new_sort in ast.types:
@@ -262,7 +262,7 @@ def asn2dataModel(*files):
     make.start(make_bin, args)
     waitfor_qprocess(make, 'make -f Makefile.python')
 
-    if concat_prefix in ASN2DM.viewkeys():
+    if concat_prefix in ASN2DM.keys():
         # Re-import module if it was already loaded
         asn1mod = ASN2DM[concat_prefix]
         reload(asn1mod)

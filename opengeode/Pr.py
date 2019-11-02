@@ -46,7 +46,7 @@ def parse_scene(scene, full_model=False):
         # (2) get signal directions from the connection of the process to env
         # (3) generate all the text
         processes = list(scene.processes)
-        system_name = unicode(processes[0]) if processes else u'OpenGEODE'
+        system_name = str(processes[0]) if processes else u'OpenGEODE'
         pr_data.append('system {};'.format(system_name))
         Indent.indent += 1
         channels, routes = Indent(), Indent()
@@ -95,7 +95,7 @@ def parse_scene(scene, full_model=False):
 
     else:
         for each in scene.processes:
-            if ":" in unicode(each):
+            if ":" in str(each):
                 # ignore instances of process type
                 continue
             #pr_data.extend(generate(each))
@@ -113,7 +113,7 @@ def parse_scene(scene, full_model=False):
         for each in scene.states:
             if each.is_composite():
                 # Ignore via clause:
-                statename = unicode(each).split()[0].lower()
+                statename = str(each).split()[0].lower()
                 try:
                     composite.remove(statename)
                     sub_state = generate(each, composite=True, nextstate=False)
@@ -147,7 +147,7 @@ def common(name, symbol):
     result.append(cif_coord(name, symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append(u'{} {}{}'.format(name, unicode(symbol.text), ';'
+    result.append(u'{} {}{}'.format(name, str(symbol.text), ';'
                                 if not symbol.comment else ''))
     if symbol.comment:
         result.extend(generate(symbol.comment))
@@ -183,7 +183,7 @@ def _comment(symbol, **kwargs):
     result.append(cif_coord('comment', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append(u'comment \'{}\';'.format(unicode(symbol.text)))
+    result.append(u'comment \'{}\';'.format(str(symbol.text)))
     return result
 
 
@@ -228,7 +228,7 @@ def _decision(symbol, recursive=True, **kwargs):
         else_branch = None
         Indent.indent += 1
         for answer in symbol.branches():
-            if unicode(answer).lower().strip() == 'else':
+            if str(answer).lower().strip() == 'else':
                 else_branch = generate(answer)
             else:
                 result.extend(generate(answer))
@@ -244,7 +244,7 @@ def _decisionanswer(symbol, recursive=True, **kwargs):
     ''' Decision Answer symbol or branch if recursive is set '''
     result = Indent()
     result.append(cif_coord('ANSWER', symbol))
-    ans = unicode(symbol)
+    ans = str(symbol)
     if ans.lower().strip() != u'else':
         ans = u'({})'.format(ans)
     if symbol.text.hyperlink:
@@ -280,7 +280,7 @@ def _procedurecall(symbol, **kwargs):
     result.append(cif_coord('PROCEDURECALL', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append(u'call {}{}'.format(unicode(symbol.text), ';'
+    result.append(u'call {}{}'.format(str(symbol.text), ';'
                                       if not symbol.comment else ''))
     if symbol.comment:
         result.extend(generate(symbol.comment))
@@ -295,7 +295,7 @@ def _textsymbol(symbol, **kwargs):
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
     # Align nicely the text (parser will dedent it)
-    for line in unicode(symbol.text).split('\n'):
+    for line in str(symbol.text).split('\n'):
         result.append(line)
     result.append(u'/* CIF ENDTEXT */')
     return result
@@ -309,13 +309,13 @@ def _label(symbol, recursive=True, **kwargs):
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
     if symbol.common_name == 'floating_label':
-        result.append(u'connection {}:'.format(unicode(symbol)))
+        result.append(u'connection {}:'.format(str(symbol)))
         if recursive:
             result.extend(recursive_aligned(symbol))
         result.append(u'/* CIF End Label */')
         result.append(u'endconnection;')
     else:
-        result.append(u'{}:'.format(unicode(symbol)))
+        result.append(u'{}:'.format(str(symbol)))
     return result
 
 
@@ -345,16 +345,16 @@ def _state(symbol, recursive=True, nextstate=True, composite=False, cpy=False,
         # Generate code for a nested state
         result = Indent()
         agg = ' aggregation' if symbol.nested_scene.is_aggregation() else ''#if not list(symbol.nested_scene.start) else ''
-        result.append('state{} {};'.format(agg, unicode(symbol).split()[0]))
+        result.append('state{} {};'.format(agg, str(symbol).split()[0]))
         result.append('substructure')
         Indent.indent += 1
         entry_points, exit_points = [], []
         for each in symbol.nested_scene.start:
-            if unicode(each):
-                entry_points.append(unicode(each))
+            if str(each):
+                entry_points.append(str(each))
         for each in symbol.nested_scene.returns:
-            if unicode(each) != u'no_name':
-                exit_points.append(unicode(each))
+            if str(each) != u'no_name':
+                exit_points.append(str(each))
         if entry_points:
             result.append(u'in ({});'.format(','.join(entry_points)))
         if exit_points:
@@ -376,7 +376,7 @@ def _process(symbol, recursive=True, **kwargs):
     #result = common(name, symbol)
     result = Indent()
     result.append(cif_coord('PROCESS', symbol))
-    result.append(u"{} {}{}".format(name, unicode(symbol.text), ";" if
+    result.append(u"{} {}{}".format(name, str(symbol.text), ";" if
         not symbol.comment else ""))
     if symbol.comment:
         result.extend(generate(symbol.comment))
@@ -385,11 +385,11 @@ def _process(symbol, recursive=True, **kwargs):
         Indent.indent += 1
         result.extend(parse_scene(symbol.nested_scene))
         Indent.indent -= 1
-    if ":" not in unicode(symbol):
+    if ":" not in str(symbol):
         result.append(u'endprocess {}{};'
                 .format("type " if isinstance(symbol, sdlSymbols.ProcessType)
                                 else "",
-                        unicode(symbol)))
+                        str(symbol)))
     return result
 
 
@@ -401,7 +401,7 @@ def _procedure(symbol, recursive=True, **kwargs):
         Indent.indent += 1
         result.extend(parse_scene(symbol.nested_scene))
         Indent.indent -= 1
-    result.append(u'endprocedure;'.format(unicode(symbol)))
+    result.append(u'endprocedure;'.format(str(symbol)))
     return result
 
 
@@ -411,8 +411,8 @@ def _start(symbol, recursive=True, **kwargs):
     result = Indent()
     result.append(cif_coord('START', symbol))
     result.append(u'START{via}{comment}'
-                  .format(via=(' ' + unicode(symbol) + ' ')
-                          if unicode(symbol).replace('START', '') else '',
+                  .format(via=(' ' + str(symbol) + ' ')
+                          if str(symbol).replace('START', '') else '',
                           comment=';' if not symbol.comment else ''))
     if symbol.comment:
         result.extend(generate(symbol.comment))
@@ -428,10 +428,10 @@ def _channel(symbol, recursive=True, **kwargs):
     result.append('signalroute c')
     Indent.indent += 1
     if symbol.out_sig:
-        result.append('from {} to env with {};'.format(unicode(symbol.parent),
+        result.append('from {} to env with {};'.format(str(symbol.parent),
                                                        symbol.out_sig))
     if symbol.in_sig:
-        result.append('from env to {} with {};'.format(unicode(symbol.parent),
+        result.append('from env to {} with {};'.format(str(symbol.parent),
                                                        symbol.in_sig))
     Indent.indent -= 1
     return result

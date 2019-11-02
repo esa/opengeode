@@ -1502,8 +1502,8 @@ def _task_forloop(task, **kwargs):
             local_decl.extend(stop_local)
             stmt.extend(stop_stmt)
             if loop['range']['step'] == 1:
-                if unicode.isnumeric(stop_str):
-                    stop_str = unicode(int(stop_str) - 1)
+                if str.isnumeric(stop_str):
+                    stop_str = str(int(stop_str) - 1)
                 else:
                     stop_str = u'{} - 1'.format(stop_str)
                 stmt.append(u'for {it} in {start}{stop} loop'
@@ -1592,7 +1592,7 @@ def _primary_variable(prim, **kwargs):
 
     ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
 
-    return [], unicode(ada_string), []
+    return [], str(ada_string), []
 
 
 @expression.register(ogAST.PrimCall)
@@ -1839,7 +1839,7 @@ def _prim_call(prim, **kwargs):
         ada_string += ', '.join(list_of_params)
         ada_string += ')'
 
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimIndex)
@@ -1856,7 +1856,7 @@ def _prim_index(prim, **kwargs):
 
     index = prim.value[1]['index'][0]
     idx_stmts, idx_string, idx_var = expression(index, readonly=ro)
-    if unicode.isnumeric(idx_string):
+    if str.isnumeric(idx_string):
         idx_string = int(idx_string) + 1
     else:
         idx_string = u'1 + Integer({idx})'.format(idx=idx_string)
@@ -1866,7 +1866,7 @@ def _prim_index(prim, **kwargs):
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
 
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimSubstring)
@@ -1888,12 +1888,12 @@ def _prim_substring(prim, **kwargs):
                                                readonly=ro)
 
     # Adding 1 because SDL starts indexes at 0, ASN1 Ada types at 1
-    if unicode.isnumeric(r1_string):
-        r1_string = unicode(int(r1_string) + 1)
+    if str.isnumeric(r1_string):
+        r1_string = str(int(r1_string) + 1)
     else:
         r1_string = u"Integer({}) + 1".format(r1_string)
-    if unicode.isnumeric(r2_string):
-        r2_string = unicode(int(r2_string) + 1)
+    if str.isnumeric(r2_string):
+        r2_string = str(int(r2_string) + 1)
     else:
         r2_string = u"Integer({}) + 1".format(r2_string)
 
@@ -1905,7 +1905,7 @@ def _prim_substring(prim, **kwargs):
     local_decl.extend(r1_local)
     local_decl.extend(r2_local)
 
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimSelector)
@@ -1941,7 +1941,7 @@ def _prim_selector(prim, **kwargs):
             stmts.append(u'{}.Exist.{} := 1;'.format(ada_string, field_name))
         ada_string += '.' + field_name
 
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimStateReference)
@@ -2011,7 +2011,7 @@ def _basic_operators(expr, **kwargs):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    return code, unicode(ada_string), local_decl
+    return code, str(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprEq)
@@ -2055,7 +2055,7 @@ def _equality(expr, **kwargs):
                     op=expr.operand, right=right_str)
         if isinstance(expr, ogAST.ExprNeq):
             ada_string = u'not {}'.format(ada_string)
-    return code, unicode(ada_string), local_decl
+    return code, str(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprAssign)
@@ -2203,7 +2203,7 @@ def _bitwise_operators(expr, **kwargs):
     code.extend(right_stmts)
     local_decl.extend(left_local)
     local_decl.extend(right_local)
-    return code, unicode(ada_string), local_decl
+    return code, str(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprNot)
@@ -2235,7 +2235,7 @@ def _not_expression(expr, **kwargs):
 
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
-    return code, unicode(ada_string), local_decl
+    return code, str(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprNeg)
@@ -2253,7 +2253,7 @@ def _neg_expression(expr, **kwargs):
          ada_string = u'(-{expr})'.format(expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
-    return code, unicode(ada_string), local_decl
+    return code, str(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprAppend)
@@ -2307,7 +2307,7 @@ def _append(expr, **kwargs):
 #        rMax=expr.right.exprType.Max)
 
 
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.ExprIn)
@@ -2364,7 +2364,7 @@ def _expr_in(expr, **kwargs):
                       .format(tmp=ada_string))
         stmts.append(u"end loop in_loop_{};".format(ada_string))
 
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
@@ -2379,7 +2379,7 @@ def _enumerated_value(primary, **kwargs):
     use_prefix = getattr(basic.EnumValues[each], "IsStandardEnum", True)
     prefix = type_name(basic, use_prefix=use_prefix)
     ada_string = (prefix + basic.EnumValues[each].EnumID)
-    return [], unicode(ada_string), []
+    return [], str(ada_string), []
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
@@ -2390,7 +2390,7 @@ def _choice_determinant(primary, **kwargs):
         if each.lower() == enumerant:
             break
     ada_string = primary.exprType.EnumValues[each].EnumID
-    return [], unicode(ada_string), []
+    return [], str(ada_string), []
 
 
 @expression.register(ogAST.PrimInteger)
@@ -2403,28 +2403,28 @@ def _integer(primary, **kwargs):
         ada_string = u'({})'.format(primary.value[0])
     else:
         ada_string = primary.value[0]
-    return [], unicode(ada_string), []
+    return [], str(ada_string), []
 
 
 @expression.register(ogAST.PrimBoolean)
 def _boolean(primary, **kwargs):
     ''' Generate code for a raw boolean value  '''
     ada_string = primary.value[0]
-    return [], unicode(ada_string), []
+    return [], str(ada_string), []
 
 
 @expression.register(ogAST.PrimNull)
 def _boolean(primary, **kwargs):
     ''' Generate code for a raw null value  '''
     ada_string = '0'
-    return [], unicode(ada_string), []
+    return [], str(ada_string), []
 
 
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary, **kwargs):
     ''' Generate code for an empty SEQUENCE OF: {} '''
     ada_string = u'{}_Init'.format(type_name(primary.exprType))
-    return [], unicode(ada_string), []
+    return [], str(ada_string), []
 
 
 @expression.register(ogAST.PrimStringLiteral)
@@ -2437,13 +2437,13 @@ def _string_literal(primary, **kwargs):
     unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
 
     ada_string = u', '.join(unsigned_8)
-    return [], unicode(ada_string), []
+    return [], str(ada_string), []
 
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary, **kwargs):
     ''' Generate code for a reference to an ASN.1 constant '''
-    return [], unicode(primary.constant_c_name), []
+    return [], str(primary.constant_c_name), []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
@@ -2539,7 +2539,7 @@ def _conditional(cond, **kwargs):
                      .format(idx=cond.value['tmpVar'], else_len=else_len))
     stmts.append('end if;')
     ada_string = u'tmp{idx}'.format(idx=cond.value['tmpVar'])
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimSequence)
@@ -2603,7 +2603,7 @@ def _sequence(seq, **kwargs):
         ada_string += u')'
 
     ada_string += ')'
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimSequenceOf)
@@ -2622,7 +2622,7 @@ def _sequence_of(seqof, **kwargs):
                 sortref = sortref.type
             asn_type = find_basic_type(sortref)
     tab = []
-    for i in xrange(len(seqof.value)):
+    for i in range(len(seqof.value)):
         item_stmts, item_str, local_var = expression(seqof.value[i],
                                                      readonly=1)
         if isinstance(seqof.value[i],
@@ -2633,7 +2633,7 @@ def _sequence_of(seqof, **kwargs):
         local_decl.extend(local_var)
         tab.append(u'{i} => {value}'.format(i=i + 1, value=item_str))
     ada_string = u', '.join(tab)
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @expression.register(ogAST.PrimChoiceItem)
@@ -2661,7 +2661,7 @@ def _choiceitem(choice, **kwargs):
                         kind=prefix,
                         opt=choice.value['choice'],
                         expr=choice_str)
-    return stmts, unicode(ada_string), local_decl
+    return stmts, str(ada_string), local_decl
 
 
 @generate.register(ogAST.Decision)
@@ -2841,7 +2841,7 @@ def _transition(tr, **kwargs):
                     code.append(u'trId := -1;')
                 elif not history: # tr.terminator.inputString.strip() != '-':
                     code.append(u'trId := ' +
-                                unicode(tr.terminator.next_id) + u';')
+                                str(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate: # XXX add to C generator
                             code.append(u'{ctxt}.state := {nextState};'
