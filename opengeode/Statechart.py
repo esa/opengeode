@@ -471,9 +471,9 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     # next to single, small states. Rule: there can't be a state with a size
     # that is less than a third of the biggest state.
     try:
-        min_width = float(max(node.attr.get('width', 0.0) or 0.0
+        min_width = float(max(float(node.attr.get('width', 0.0)) or 0.0
                         for node in graphtree['graph'].iternodes()))
-        min_height = float(max(node.attr.get('height', 0.0) or 0.0
+        min_height = float(max(float(node.attr.get('height', 0.0)) or 0.0
                         for node in graphtree['graph'].iternodes()))
     except ValueError as err:
         LOG.debug(str(err))
@@ -520,8 +520,8 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
                     dump=('-Tpng -o' + dump_gfx) if dump_gfx else ''))
     # bb is not visible directly - extract it from the low level api:
     bounding_rect = [float(val) for val in
-            dotgraph.graphviz.agget(graph.handle, 'bb').split(',')]
-    dot_dpi = float(dotgraph.graphviz.agget(graph.handle, 'dpi'))
+            dotgraph.graphviz.agget(graph.handle, b'bb').split(b',')]
+    dot_dpi = float(dotgraph.graphviz.agget(graph.handle, b'dpi'))
 
     #fontname = graph.graph_attr.get('fontname')
     #fontsize = graph.graph_attr.get('fontsize')
