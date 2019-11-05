@@ -2724,8 +2724,7 @@ class OG_MainWindow(QMainWindow):
         # Update the data dictionary
         item_types = self.datadict.topLevelItem(0)
         item_types.takeChildren() # remove old children
-        for name, sort in sorted(ast.dataview.items(),
-                                 key=lambda name, sort: name):
+        for name, sort in sorted(ast.dataview.items()):
             new_item = QTreeWidgetItem(item_types,
                                              [name.replace('-', '_'),
                                               'view'])

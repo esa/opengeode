@@ -67,19 +67,19 @@ class Record(genericSymbols.HorizontalSymbol, object):
         super(Record, self).__init__(x=node['pos'][0],
                 y=node['pos'][1], text=self.name)
         self.set_shape(node['width'], node['height'])
-        self.setBrush(QtGui.QBrush(QtGui.QColor(255, 255, 202)))
+        self.setBrush(QBrush(QColor(255, 255, 202)))
         self.graph = graph
         if 'properties' in node:
-            property_box = QtGui.QGraphicsTextItem(self)
+            property_box = QGraphicsTextItem(self)
             property_box.setPos(5, 30)
             property_box.setPlainText(node['properties'])
         # Text in statecharts is read-only:
-        self.text.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.text.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self.text.set_textbox_position()
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
-        path = QtGui.QPainterPath()
+        path = QPainterPath()
         path.moveTo(0, 25)
         path.lineTo(width, 25)
         path.addRoundedRect(0, 0, width, height, 15, 15)
@@ -125,14 +125,14 @@ class Point(genericSymbols.HorizontalSymbol, object):
         super(Point, self).__init__(x=node['pos'][0], y=node['pos'][1],
                 text=label)
         self.set_shape(node['width'], node['height'])
-        self.setBrush(QtGui.QBrush(Qt.black))
+        self.setBrush(QBrush(Qt.black))
         self.graph = graph
         # Text is read only
         self.text.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
-        path = QtGui.QPainterPath()
+        path = QPainterPath()
         path.addEllipse(0, 0, width, height)
         self.setPath(path)
         super(Point, self).set_shape(width, height)
@@ -175,7 +175,7 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
-        path = QtGui.QPainterPath()
+        path = QPainterPath()
         path.moveTo(width / 2, 0)
         path.lineTo(width, height / 2)
         path.lineTo(width / 2, height)
@@ -226,7 +226,7 @@ class Stop(genericSymbols.HorizontalSymbol, object):
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
         width, height = width, height
-        path = QtGui.QPainterPath()
+        path = QPainterPath()
         path.lineTo(width, height)
         path.moveTo(width, 0)
         path.lineTo(0, height)
@@ -537,7 +537,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
             if str(node_symbol) in graphtree['children'] \
                     and shape == 'record':
                 # Use a different color for non-terminal states
-                node_symbol.setBrush(QtGui.QBrush(QtGui.QColor(249, 249, 249)))
+                node_symbol.setBrush(QBrush(QColor(249, 249, 249)))
             G_SYMBOLS.add(node_symbol)
             node_symbols.append(node_symbol)
             scene.addItem(node_symbol)
@@ -669,11 +669,11 @@ def create_dot_graph(root_ast,
         ui_file.open(QFile.ReadOnly)
         dialog = loader.load(ui_file)
         dialog.setParent (view, Qt.Dialog)
-        okButton = dialog.findChild(QtGui.QPushButton, "okButton")
-        rightButton = dialog.findChild(QtGui.QToolButton, "toRight")
-        leftButton = dialog.findChild(QtGui.QToolButton, "toLeft")
-        rightList = dialog.findChild(QtGui.QListWidget, "rightList")
-        leftList = dialog.findChild(QtGui.QListWidget, "leftList")
+        okButton = dialog.findChild(QPushButton, "okButton")
+        rightButton = dialog.findChild(QToolButton, "toRight")
+        leftButton = dialog.findChild(QToolButton, "toLeft")
+        rightList = dialog.findChild(QListWidget, "rightList")
+        leftList = dialog.findChild(QListWidget, "leftList")
         okButton.pressed.connect(dialog.accept)
         rightButton.pressed.connect(partial(right, leftList, rightList))
         leftButton.pressed.connect(partial(left, leftList, rightList))
