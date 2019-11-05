@@ -930,7 +930,7 @@ class SDL_Scene(QGraphicsScene):
             self.refresh()
         else:
             try:
-                item = self.search_item.next()
+                item = next(self.search_item)
                 item = item.parentItem()
                 item.select()
                 self.highlight(item)
@@ -1542,7 +1542,7 @@ class SDL_Scene(QGraphicsScene):
             try:
                 self.clearSelection()
                 self.clear_highlight()
-                item = self.search_item.next()
+                item = next(self.search_item)
                 item = item.parentItem()
                 item.select()
                 self.highlight(item)
