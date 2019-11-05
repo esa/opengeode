@@ -366,7 +366,7 @@ class Signalroute(Connection):
 
     def update_completion_list(self, pr_text):
         ''' Called after text has been edited '''
-        from sdlSymbols import CONTEXT
+        from .sdlSymbols import CONTEXT
         ast, _, _, _, _ = self.parser.parseSingleElement('signalroute',
                                                          pr_text)
         # ast is a dict:

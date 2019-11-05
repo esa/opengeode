@@ -159,8 +159,8 @@ def parse_asn1(*files, **options):
             stg_qrc.open(1)
             content = stg_qrc.readAll()
             stgfile = outdir + os.sep + 'pretty_print_asn1.stg'
-            with open(stgfile, 'w') as tmpfile:
-                tmpfile.write(content.data().encode('utf-8'))
+            with open(stgfile, 'wb') as tmpfile:
+                tmpfile.write(content.data())
             html = ['-customIcdUper', stgfile + '::' + html_filepath]
         else:
             html = []

@@ -727,7 +727,7 @@ def check_call(name, params, context):
         # unsigned .. A cast is necessary if the parameter of abs is negative
         Min = float(param_btys[0].Min)
         Max = float(param_btys[0].Max)
-        if p.exprType.kind != 'ReferenceType' and Min == Max:
+        if params[0].exprType.kind != 'ReferenceType' and Min == Max:
             # if param is a raw number, return a positive range
             # otherwise return the same type as the variable
             return type('Universal_Integer', (param_btys[0],), {
@@ -2065,7 +2065,7 @@ def call_expression(root, context, pos="right"):
             ident = variable.children[0].text.lower()
             proc_list = [proc.inputString.lower()
                          for proc in context.procedures]
-            if ident in (SPECIAL_OPERATORS.keys() + proc_list):
+            if ident in (list(SPECIAL_OPERATORS.keys()) + proc_list):
                 return primary_call(root, context)
 
     # not a call to a special operator or procedure
@@ -5338,6 +5338,9 @@ def parser_init(filename=None, string=None):
     lex = lexer.sdl92Lexer(char_stream)
     tokens = antlr3.CommonTokenStream(lex)
     parser = sdl92Parser(tokens)
+    # bug in the antlr3.5 runtime for python3 - attribute "error_list"
+    # is missing - we have to add it manually here
+    parser.error_list=[]
     return parser
 
 

@@ -1077,6 +1077,7 @@ class Process(HorizontalSymbol):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
+        #LOG.debug ("process set_shape " + str(width) + " " + str(height))
         path = QPainterPath()
         path.moveTo(7, 0)
         path.lineTo(0, 7)

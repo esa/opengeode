@@ -51,6 +51,7 @@
 __all__ = ['Symbol', 'VerticalSymbol', 'HorizontalSymbol', 'Comment']
 import os
 import logging
+import traceback
 
 from PySide2.QtCore import *
 from PySide2.QtGui import *
@@ -325,7 +326,9 @@ class Symbol(QObject, QGraphicsPathItem):
             # in addition to the error from ANTLR, in order to be very clear
             # about the line number and character position to fix the error
             # => TODO
-        except (AssertionError, AttributeError):
+        except (AssertionError, AttributeError) as err:
+            LOG.debug(self.common_name + " - error parsing - " + str(err))
+            LOG.debug(str(traceback.format_exc()))
             LOG.error('Checker failed - no parser for this construct?')
         else:
             return syntax_errors
@@ -492,11 +495,23 @@ class Symbol(QObject, QGraphicsPathItem):
 
     def resize_item(self, rect):
         ''' resize item, e.g. when editing text - move children accordingly '''
+        # Call stack:
+        # scene_refresh() => Text_Interaction.try_resize() => resize_item()
+        LOG.debug("resize item")
+        #LOG.debug(traceback.print_stack())
         if not self.resizeable:
             return
         delta_x = (self.boundingRect().width() - rect.width()) / 2.0
         delta_y = self.boundingRect().height() - rect.height()
-        self.set_shape(rect.width(), rect.height())
+        # Qt5 behaves differently from Qt4 (most likely a bug in Qt5)
+        # when setting the shape, the bounnding rect of the parent is not set
+        # to the same value as the bounding rect of the shape! The value
+        # is increased by 1 for some reason.. To compensate we have to
+        # decrease by 1 the width and height here.
+        # It is likely that if this bug is fixed at some point (in Qt5 or
+        # PySide2), the effect will be that the symbols will SHRINK in size
+        # when user clicks on the scene or edits the text...
+        self.set_shape(rect.width()-1, rect.height()-1)
         # Align children properly when resizing
         try:
             self.text.set_textbox_position()
@@ -531,7 +546,8 @@ class Symbol(QObject, QGraphicsPathItem):
 
     def set_shape(self, width, height):
         ''' to be implemented per symbol in subclasses '''
-        _, ___ = width, height
+        #LOG.debug("generic set_shape")
+        _, _ = width, height
         self.prepareGeometryChange()
         self.updateConnectionPoints()
         # Update grabber size to fit the new shape size
