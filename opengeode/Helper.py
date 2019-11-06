@@ -208,7 +208,7 @@ def flatten(process, sep=u'_'):
         for dcl in state.variables.keys():
             rename_everything(state.content, dcl, prefix + dcl)
         state.variables = {prefix + key: state.variables.pop(key)
-                           for key in state.variables.keys()}
+                           for key in list(state.variables.keys())}
         process.variables.update(state.variables)
 
         # Update return transition indices
