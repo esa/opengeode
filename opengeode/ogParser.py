@@ -31,6 +31,7 @@ import math
 import operator
 import logging
 import traceback
+import codecs
 from inspect import currentframe, getframeinfo
 import binascii
 from textwrap import dedent
@@ -2380,7 +2381,9 @@ def primary(root, context):
                 prim.value = "''"
         elif root.text[-1] in ('H', 'h'):
             try:
-                prim.value = "'{}'".format(root.text[1:-2].decode('hex'))
+                hexstring = codecs.decode(root.text[1:-2], 'hex')  # -> bytes
+                hexstring = hexstring.decode('utf-8')   # -> string
+                prim.value = ("'{}'".format(hexstring))
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Octet string literal: {}'.format(err)))
