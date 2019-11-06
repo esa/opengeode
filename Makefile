@@ -55,6 +55,11 @@ full-install: update dependencies install
 publish: 
 	@python setup.py sdist upload
 
+pytest:
+	# make sure you have installed pytest-qt:
+	# pip3 install --user --upgrade pytest-qt
+	cd tests/pytests && py.test
+
 freeze-linux:
 	@bash -c "test -f pyinstaller-opengeode.tar.gz || wget http://download.tuxfamily.org/taste/misc/pyinstaller-opengeode.tar.gz"
 	@tar zxvf pyinstaller-opengeode.tar.gz
