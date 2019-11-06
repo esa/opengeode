@@ -768,7 +768,8 @@ package {process_name} is'''.format(generic=generic_spec,
                 execute_transition(state)
 
         if not instance:
-            map(case_state, reduced_statelist) # XXX update C generator
+            for each_state in reduced_statelist:
+                case_state(each_state)
             taste_template.append('when others =>')
             taste_template.append('runTransition(CS_Only);')
             taste_template.append('end case;')

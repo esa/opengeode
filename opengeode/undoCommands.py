@@ -233,7 +233,7 @@ class MoveSymbol(QUndoCommand):
         self.old_pos = old_pos
         self.new_pos = new_pos
         if animate:
-            self.animation = QPropertyAnimation(self.symbol, "position")
+            self.animation = QPropertyAnimation(self.symbol, b"position")
             self.animation.setDuration(500)
             self.animation.setStartValue(self.old_pos)
             self.animation.setEndValue(self.new_pos)
