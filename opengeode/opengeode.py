@@ -646,7 +646,8 @@ class SDL_Scene(QGraphicsScene):
                             fix_pos_from_ast(branch)
                         fix_pos_from_ast(symbol.next_aligned_symbol())
                         fix_pos_from_ast(symbol.comment)
-                map(fix_pos_from_ast, dest_scene.floating_symb)
+                for each in dest_scene.floating_symb:
+                    fix_pos_from_ast(each)
             except TypeError:
                 LOG.error(traceback.format_exc())
 

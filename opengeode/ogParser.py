@@ -3778,7 +3778,8 @@ def state(root, parent, context):
                               if not isinstance(inps, int)):
                     res.extend(li for i in lists for li in i.inputlist)
                 subinputs = map(gather_inputlist, state_ast.composite_states)
-                map(res.extend, subinputs)
+                for each in subinputs:
+                    res.extend(each)
                 return res
             for comp in context.composite_states:
                 # if the current state is a composite state, check that none of
@@ -3964,7 +3965,8 @@ def connect_part(root, parent, context):
                             yield each
             all_terms = map(check_terminators, siblings(nested))
             terminators = []
-            map(terminators.extend, all_terms)
+            for each in all_terms:
+                terminators.extend(each)
         for each in terminators:
             # Set next transition, exact id to be found in postprocessing
             each.next_trans = trans
