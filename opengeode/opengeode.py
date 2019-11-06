@@ -1415,7 +1415,7 @@ class SDL_Scene(QGraphicsScene):
             action.triggered.connect(partial(add_symbol,
                                              sort,
                                              rect=rect))
-        if map(setup_action, candidates):
+        if list(map(setup_action, candidates)):
             menu.exec_(pos)
 
     def cancel(self):
