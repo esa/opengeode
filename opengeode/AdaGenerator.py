@@ -1184,7 +1184,7 @@ package {process_name} is'''.format(generic=generic_spec,
         script = '{}_simu.sh'.format(process_name.lower())
         with open(script, 'w') as bash_script:
             bash_script.write(simu_script)
-        with open("{}_lib.gpr".format(process_name.lower()), 'wb') as gprlib:
+        with open("{}_lib.gpr".format(process_name.lower()), 'w') as gprlib:
             gprlib.write(lib_gpr)
         os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
 
