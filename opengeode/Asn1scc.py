@@ -241,7 +241,7 @@ def asn2dataModel(*files):
     cat.start(cat_bin, args)
     merged = waitfor_qprocess(cat, 'Merge dataviews')
     with open(concat_path + '.asn', 'wt') as merged_file:
-        merged_file.write(merged)
+        merged_file.write(merged.data().decode('utf-8'))
 
     # 3) Run asn2dataModel
     asn2dm_bin = spawn.find_executable('asn2dataModel')
@@ -265,16 +265,16 @@ def asn2dataModel(*files):
     if concat_prefix in ASN2DM.keys():
         # Re-import module if it was already loaded
         asn1mod = ASN2DM[concat_prefix]
-        reload(asn1mod)
-        reload(asn1mod.DV)
+        importlib.reload(asn1mod)
+        importlib.reload(asn1mod.DV)
         import Stubs
-        reload(Stubs)
+        importlib.reload(Stubs)
     else:
         asn1mod = importlib.import_module(concat_prefix + '_asn')
         # force reload of modules in case of multiple calls
-        reload(asn1mod.DV)
+        importlib.reload(asn1mod.DV)
         import Stubs
-        reload(Stubs)
+        importlib.reload(Stubs)
         ASN2DM[concat_prefix] = asn1mod
     sys.path.pop(0)
     return asn1mod

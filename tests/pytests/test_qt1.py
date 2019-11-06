@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import pytest
 
-from PySide import QtCore
 from opengeode.opengeode import SDL_Scene, SDL_View, G_SYMBOLS
 from opengeode.sdlSymbols import Label, Decision
 from opengeode.ogParser import parseSingleElement
