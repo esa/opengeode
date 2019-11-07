@@ -22,7 +22,7 @@ __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Procedure', 'ProcedureStart', 'ProcedureStop', 'ProcessType',
            'StateStart', 'Process', 'ContinuousSignal']
 
-#import traceback
+import traceback
 import logging
 from itertools import chain
 
@@ -77,10 +77,10 @@ def variables_autocompletion(symbol, type_filter=None):
             fpar = {}
         # Return the list of variables, possibly filterd by type
         if not type_filter:
-            res = set(CONTEXT.variables.keys()
-                      + CONTEXT.global_variables.keys()
-                      + AST.asn1_constants.keys()
-                      + fpar.keys())
+            res = set( list(CONTEXT.variables.keys())
+                      + list(CONTEXT.global_variables.keys())
+                      + list(AST.asn1_constants.keys())
+                      + list(fpar.keys()))
         else:
             constants = {name: (cty.type, None)
                          for name, cty in AST.asn1_constants.items()}
@@ -151,11 +151,15 @@ class Input(HorizontalSymbol):
         ast = ast or ogAST.Input()
         self.ast = ast
         self.branch_entrypoint = None
+        self.width, self.height = 0, 0
         if not ast.pos_y and parent:
             # Make sure the item is placed below its parent
             ast.pos_y = parent.y() + parent.boundingRect().height() + 10
-        super(Input, self).__init__(parent, text=ast.inputString,
-                x=ast.pos_x or 0, y=ast.pos_y or 0, hyperlink=ast.hyperlink)
+        super(Input, self).__init__(parent,
+                                    text=ast.inputString,
+                                    x=ast.pos_x or 0,
+                                    y=ast.pos_y or 0,
+                                    hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
         gradient = QRadialGradient(50, 50, 50, 50, 50)
         gradient.setColorAt(0, QColor(255, 240, 170))
@@ -175,16 +179,21 @@ class Input(HorizontalSymbol):
         self.branch_entrypoint = item_parent.branch_entrypoint
         super(Input, self).insert_symbol(item_parent, x, y)
 
+    def boundingRect(self):
+        return QRectF(0, 0, self.width, self.height)
+
+
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        path.lineTo(width, 0)
-        path.lineTo(width - 11, height / 2)
-        path.lineTo(width, height)
-        path.lineTo(0, height)
-        path.lineTo(0, 0)
-        self.setPath(path)
-        super(Input, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.lineTo(width, 0)
+            path.lineTo(width - 11, height / 2)
+            path.lineTo(width, height)
+            path.lineTo(0, height)
+            path.lineTo(0, 0)
+            self.setPath(path)
+            super(Input, self).set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -211,15 +220,16 @@ class Connect(Input):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        self.setPen(QPen(Qt.blue))
-        self.textbox_alignment = Qt.AlignLeft | Qt.AlignTop
-        path = QPainterPath()
-        path.moveTo(0, 0)
-        path.lineTo(0, height)
-        #path.moveTo(0, height / 2)
-        #path.lineTo(width, height / 2)
-        self.setPath(path)
-        super(Input, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            self.setPen(QPen(Qt.blue))
+            self.textbox_alignment = Qt.AlignLeft | Qt.AlignTop
+            path = QPainterPath()
+            path.moveTo(0, 0)
+            path.lineTo(0, height)
+            #path.moveTo(0, height / 2)
+            #path.lineTo(width, height / 2)
+            self.setPath(path)
+            super(Input, self).set_shape(width, height)
 
     def resize_item(self, rect):
         ''' Symbol cannot be resized '''
@@ -251,6 +261,7 @@ class Output(VerticalSymbol):
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Output()
         self.ast = ast
+        self.width, self.height = 0, 0
         super(Output, self).__init__(parent=parent,
                 text=ast.inputString, x=ast.pos_x or 0, y=ast.pos_y or 0,
                 hyperlink=ast.hyperlink)
@@ -264,14 +275,15 @@ class Output(VerticalSymbol):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        path.lineTo(width - 11, 0)
-        path.lineTo(width, height / 2)
-        path.lineTo(width - 11, height)
-        path.lineTo(0, height)
-        path.lineTo(0, 0)
-        self.setPath(path)
-        super(Output, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.lineTo(width - 11, 0)
+            path.lineTo(width, height / 2)
+            path.lineTo(width - 11, height)
+            path.lineTo(0, height)
+            path.lineTo(0, 0)
+            self.setPath(path)
+            super(Output, self).set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -303,6 +315,7 @@ class Decision(VerticalSymbol):
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Decision()
         self.ast = ast
+        self.width, self.height = 0, 0
         # Define the point where all branches of the decision can join again
         self.connectionPoint = QPoint(ast.width / 2, ast.height + 30)
         super(Decision, self).__init__(parent, text=ast.inputString,
@@ -338,14 +351,15 @@ class Decision(VerticalSymbol):
 
     def set_shape(self, width, height):
         ''' Define polygon points to draw the symbol '''
-        path = QPainterPath()
-        path.moveTo(width / 2, 0)
-        path.lineTo(width, height / 2)
-        path.lineTo(width / 2, height)
-        path.lineTo(0, height / 2)
-        path.lineTo(width / 2, 0)
-        self.setPath(path)
-        super(Decision, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.moveTo(width / 2, 0)
+            path.lineTo(width, height / 2)
+            path.lineTo(width / 2, height)
+            path.lineTo(0, height / 2)
+            path.lineTo(width / 2, 0)
+            self.setPath(path)
+            super(Decision, self).set_shape(width, height)
 
     def resize_item(self, rect):
         ''' On resize event, make sure connection points are updated '''
@@ -437,7 +451,7 @@ class DecisionAnswer(HorizontalSymbol):
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Answer()
         self.ast = ast
-        self.width, self.height = ast.width, ast.height
+        self.width, self.height = 0, 0 #ast.width, ast.height
         self.terminal_symbol = False
         # last_branch_item is used to compute branch length
         # for the connection point positionning
@@ -468,18 +482,18 @@ class DecisionAnswer(HorizontalSymbol):
 
     def set_shape(self, width, height):
         ''' ANSWER has round, disjoint sides - does not fit in a polygon '''
-        self.width, self.height = width, height
-        point = 20
-        path = QPainterPath()
-        left = QRect(0, 0, point, height)
-        right = QRect(width - point, 0, point, height)
-        path.arcMoveTo(left, 125)
-        path.arcTo(left, 125, 110)
-        path.arcMoveTo(right, -55)
-        path.arcTo(right, -55, 110)
-        path.moveTo(width, height)
-        self.setPath(path)
-        super(DecisionAnswer, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            point = 20
+            path = QPainterPath()
+            left = QRect(0, 0, point, height)
+            right = QRect(width - point, 0, point, height)
+            path.arcMoveTo(left, 125)
+            path.arcTo(left, 125, 110)
+            path.arcMoveTo(right, -55)
+            path.arcTo(right, -55, 110)
+            path.moveTo(width, height)
+            self.setPath(path)
+            super(DecisionAnswer, self).set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -499,6 +513,7 @@ class Join(VerticalSymbol):
 
     def __init__(self, parent=None, ast=None):
         self.ast = ast
+        self.width, self.height = 0, 0
         if not ast:
             ast = ogAST.Terminator(defName='')
             ast.pos_y = 0
@@ -523,11 +538,12 @@ class Join(VerticalSymbol):
 
     def set_shape(self, width, height):
         ''' Define the bouding rectangle of the JOIN symbol '''
-        circ = min(width, height)
-        path = QPainterPath()
-        path.addEllipse(0, 0, circ, circ)
-        self.setPath(path)
-        super(Join, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            circ = min(width, height)
+            path = QPainterPath()
+            path.addEllipse(0, 0, circ, circ)
+            self.setPath(path)
+            super(Join, self).set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -554,6 +570,7 @@ class ProcedureStop(Join):
 
     def __init__(self, parent=None, ast=None):
         self.ast = ast
+        self.width, self.height = 0, 0
         if not ast:
             ast = ogAST.Terminator(defName='')
             ast.pos_y = 0
@@ -563,20 +580,21 @@ class ProcedureStop(Join):
 
     def set_shape(self, width, height):
         ''' Define the symbol shape '''
-        circ = min(width, height)
-        path = QPainterPath()
-        path.addEllipse(0, 0, circ, circ)
-        point1 = path.pointAtPercent(0.625)
-        point2 = path.pointAtPercent(0.125)
-        point3 = path.pointAtPercent(0.875)
-        point4 = path.pointAtPercent(0.375)
-        path.moveTo(point1)
-        path.lineTo(point2)
-        path.moveTo(point3)
-        path.lineTo(point4)
-        self.setPath(path)
-        # call Join superclass, otherwise symbol will take Join shape
-        super(Join, self).set_shape(circ, circ)
+        if width != self.width or height != self.height:
+            circ = min(width, height)
+            path = QPainterPath()
+            path.addEllipse(0, 0, circ, circ)
+            point1 = path.pointAtPercent(0.625)
+            point2 = path.pointAtPercent(0.125)
+            point3 = path.pointAtPercent(0.875)
+            point4 = path.pointAtPercent(0.375)
+            path.moveTo(point1)
+            path.lineTo(point2)
+            path.moveTo(point3)
+            path.lineTo(point4)
+            self.setPath(path)
+            # call Join superclass, otherwise symbol will take Join shape
+            super(Join, self).set_shape(circ, circ)
 
     @property
     def completion_list(self):
@@ -615,6 +633,7 @@ class Label(VerticalSymbol):
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Label()
         self.ast = ast
+        self.width, self.height = 0, 0
         super(Label, self).__init__(parent,
                                     text=ast.inputString,
                                     x=ast.pos_x or 0,
@@ -632,21 +651,22 @@ class Label(VerticalSymbol):
 
     def set_shape(self, width, height):
         ''' Define the shape of the LABEL symbol '''
-        path = QPainterPath()
-        path.addEllipse(0, height / 2, width / 4, height / 2)
-        path.moveTo(width / 4, height * 3 / 4)
-        path.lineTo(width / 2, height * 3 / 4)
-        # Add arrow head
-        path.moveTo(width / 2 - 5, height * 3 / 4 - 5)
-        path.lineTo(width / 2, height * 3 / 4)
-        path.lineTo(width / 2 - 5, height * 3 / 4 + 5)
-        # Add vertical line in the middle of the symbol
-        path.moveTo(width / 2, 0)
-        path.lineTo(width / 2, height)
-        # Make sure the bounding rect is withing specifications
-        path.moveTo(width, height)
-        self.setPath(path)
-        super(Label, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.addEllipse(0, height / 2, width / 4, height / 2)
+            path.moveTo(width / 4, height * 3 / 4)
+            path.lineTo(width / 2, height * 3 / 4)
+            # Add arrow head
+            path.moveTo(width / 2 - 5, height * 3 / 4 - 5)
+            path.lineTo(width / 2, height * 3 / 4)
+            path.lineTo(width / 2 - 5, height * 3 / 4 + 5)
+            # Add vertical line in the middle of the symbol
+            path.moveTo(width / 2, 0)
+            path.lineTo(width / 2, height)
+            # Make sure the bounding rect is withing specifications
+            path.moveTo(width, height)
+            self.setPath(path)
+            super(Label, self).set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -682,6 +702,7 @@ class Task(VerticalSymbol):
         ''' Initializes the TASK symbol '''
         ast = ast or ogAST.Task()
         self.ast = ast
+        self.width, self.height = 0, 0
         super(Task, self).__init__(parent,
                                    text=ast.inputString,
                                    x=ast.pos_x or 0,
@@ -696,13 +717,14 @@ class Task(VerticalSymbol):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        path.lineTo(width, 0)
-        path.lineTo(width, height)
-        path.lineTo(0, height)
-        path.lineTo(0, 0)
-        self.setPath(path)
-        super(Task, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.lineTo(width, 0)
+            path.lineTo(width, height)
+            path.lineTo(0, height)
+            path.lineTo(0, 0)
+            self.setPath(path)
+            super(Task, self).set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -745,6 +767,7 @@ class ProcedureCall(VerticalSymbol):
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Output(defName='')
         self.ast = ast
+        self.width, self.height = 0, 0
         super(ProcedureCall, self).__init__(parent,
                                             text=ast.inputString,
                                             x=ast.pos_x or 0,
@@ -759,14 +782,15 @@ class ProcedureCall(VerticalSymbol):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        path.addRect(0, 0, width, height)
-        path.moveTo(7, 0)
-        path.lineTo(7, height)
-        path.moveTo(width - 7, 0)
-        path.lineTo(width - 7, height)
-        self.setPath(path)
-        super(ProcedureCall, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.addRect(0, 0, width, height)
+            path.moveTo(7, 0)
+            path.lineTo(7, height)
+            path.moveTo(width - 7, 0)
+            path.lineTo(width - 7, height)
+            self.setPath(path)
+            super(ProcedureCall, self).set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -815,6 +839,7 @@ class TextSymbol(HorizontalSymbol):
         ''' Create a Text Symbol '''
         ast = ast or ogAST.TextArea()
         self.ast = ast
+        self.width, self.height = 0, 0
         super(TextSymbol, self).__init__(parent=None,
                                          text=ast.inputString,
                                          x=ast.pos_x or 0,
@@ -873,17 +898,18 @@ class TextSymbol(HorizontalSymbol):
 
     def set_shape(self, width, height):
         ''' Define the polygon of the text symbol '''
-        path = QPainterPath()
-        path.moveTo(width - 10, 0)
-        path.lineTo(0, 0)
-        path.lineTo(0, height)
-        path.lineTo(width, height)
-        path.lineTo(width, 10)
-        path.lineTo(width - 10, 10)
-        path.lineTo(width - 10, 0)
-        path.lineTo(width, 10)
-        self.setPath(path)
-        super(TextSymbol, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.moveTo(width - 10, 0)
+            path.lineTo(0, 0)
+            path.lineTo(0, height)
+            path.lineTo(width, height)
+            path.lineTo(width, 10)
+            path.lineTo(width - 10, 10)
+            path.lineTo(width - 10, 0)
+            path.lineTo(width, 10)
+            self.setPath(path)
+            super(TextSymbol, self).set_shape(width, height)
 
     def resize_item(self, rect):
         ''' Text Symbol only resizes down or right '''
@@ -909,6 +935,7 @@ class State(VerticalSymbol):
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.State()
         self.ast = ast
+        self.width, self.height = 0, 0
         ast.inputString = getattr(ast, 'via', None) or ast.inputString
         super(State, self).__init__(parent=parent,
                                     text=ast.inputString,
@@ -980,16 +1007,17 @@ class State(VerticalSymbol):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        path.addRoundedRect(0, 0, width, height, height / 4, height)
-
         if self.nested_scene and self.is_composite():
             # Distinguish composite states with dash line
             self.setPen(QPen(Qt.DashLine))
         else:
             self.setPen(QPen(Qt.SolidLine))
-        self.setPath(path)
-        super(State, self).set_shape(width, height)
+
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.addRoundedRect(0, 0, width, height, height / 4, height)
+            self.setPath(path)
+            super(State, self).set_shape(width, height)
 
     def get_ast(self, pr_text):
         ''' Redefinition of the get_ast function for the state '''
@@ -1028,9 +1056,15 @@ class Process(HorizontalSymbol):
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()
         self.ast = ast
+        self.width, self.height = 0, 0
         label = (ast.processName or "") + (': {}'
                                             .format(ast.instance_of_name)
                                             if ast.instance_of_name else '')
+        # At creation, call the init of Horizontal symbol, which creates
+        # the TextInteraction instance, which calls try_resize, which
+        # makes a call to resize_item, which calls set_shape using a size
+        # defined by the label. set shape will then be called again using
+        # the ast-defined size.
         super(Process, self).__init__(parent=None,
                                       text=label,
                                       x=ast.pos_x,
@@ -1077,19 +1111,21 @@ class Process(HorizontalSymbol):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        #LOG.debug ("process set_shape " + str(width) + " " + str(height))
-        path = QPainterPath()
-        path.moveTo(7, 0)
-        path.lineTo(0, 7)
-        path.lineTo(0, height - 7)
-        path.lineTo(7, height)
-        path.lineTo(width - 7, height)
-        path.lineTo(width, height - 7)
-        path.lineTo(width, 7)
-        path.lineTo(width - 7, 0)
-        path.lineTo(7, 0)
-        self.setPath(path)
-        super(Process, self).set_shape(width, height)
+        #LOG.debug(traceback.print_stack())
+        if width != self.width or height != self.height:
+            # Don't compute a new path if size has not changed
+            path = QPainterPath()
+            path.moveTo(7, 0)
+            path.lineTo(0, 7)
+            path.lineTo(0, height - 7)
+            path.lineTo(7, height)
+            path.lineTo(width - 7, height)
+            path.lineTo(width, height - 7)
+            path.lineTo(width, 7)
+            path.lineTo(width - 7, 0)
+            path.lineTo(7, 0)
+            self.setPath(path)
+            super(Process, self).set_shape(width, height)
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update completion list at block level '''
@@ -1119,6 +1155,7 @@ class Procedure(Process):
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Procedure()
         self.ast = ast
+        self.width, self.height = 0, 0
         super(Process, self).__init__(parent=None,
                                       text=ast.inputString,
                                       x=ast.pos_x or 0,
@@ -1137,18 +1174,19 @@ class Procedure(Process):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        path.addRect(7, 0, width - 14, height)
-        path.moveTo(7, 0)
-        path.lineTo(0, 7)
-        path.lineTo(0, height - 7)
-        path.lineTo(7, height)
-        path.moveTo(width - 7, 0)
-        path.lineTo(width, 7)
-        path.lineTo(width, height - 7)
-        path.lineTo(width - 7, height)
-        self.setPath(path)
-        super(Process, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.addRect(7, 0, width - 14, height)
+            path.moveTo(7, 0)
+            path.lineTo(0, 7)
+            path.lineTo(0, height - 7)
+            path.lineTo(7, height)
+            path.moveTo(width - 7, 0)
+            path.lineTo(width, 7)
+            path.lineTo(width, height - 7)
+            path.lineTo(width - 7, height)
+            self.setPath(path)
+            super(Process, self).set_shape(width, height)
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update completion list of ProcedureCall '''
@@ -1178,6 +1216,7 @@ class ProcessType(Procedure):
         ast = ast or ogAST.Process()
         ast.process_type = True
         self.ast = ast
+        self.width, self.height = 0, 0
         super(Process, self).__init__(parent=None,
                                       text=ast.processName,
                                       x=ast.pos_x or 0,
@@ -1192,30 +1231,31 @@ class ProcessType(Procedure):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        # Fill rule makes sure the full symbol is colored
-        path.setFillRule(Qt.WindingFill)
-        path.moveTo(7, 0)
-        path.lineTo(0, 7)
-        path.lineTo(0, height - 7)
-        path.lineTo(7, height)
-        path.lineTo(width - 7, height)
-        path.lineTo(width, height - 7)
-        path.lineTo(width, 7)
-        path.lineTo(width - 7, 0)
-        path.lineTo(7, 0)
-        # inner shape
-        path.moveTo(12, 7)
-        path.lineTo(7, 12)
-        path.lineTo(7, height - 12)
-        path.lineTo(12, height - 7)
-        path.lineTo(width - 12, height - 7)
-        path.lineTo(width - 7, height - 12)
-        path.lineTo(width - 7, 12)
-        path.lineTo(width - 12, 7)
-        path.lineTo(12, 7)
-        self.setPath(path)
-        super(Process, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            # Fill rule makes sure the full symbol is colored
+            path.setFillRule(Qt.WindingFill)
+            path.moveTo(7, 0)
+            path.lineTo(0, 7)
+            path.lineTo(0, height - 7)
+            path.lineTo(7, height)
+            path.lineTo(width - 7, height)
+            path.lineTo(width, height - 7)
+            path.lineTo(width, 7)
+            path.lineTo(width - 7, 0)
+            path.lineTo(7, 0)
+            # inner shape
+            path.moveTo(12, 7)
+            path.lineTo(7, 12)
+            path.lineTo(7, height - 12)
+            path.lineTo(12, height - 7)
+            path.lineTo(width - 12, height - 7)
+            path.lineTo(width - 7, height - 12)
+            path.lineTo(width - 7, 12)
+            path.lineTo(width - 12, 7)
+            path.lineTo(12, 7)
+            self.setPath(path)
+            super(Process, self).set_shape(width, height)
 
 
     def update_completion_list(self, pr_text):
@@ -1244,6 +1284,7 @@ class Start(HorizontalSymbol):
         ast = ast or ogAST.Start()
         self.ast = ast
         self.terminal_symbol = False
+        self.width, self.height = 0, 0
         super(Start, self).__init__(parent=None,
                                     text=ast.inputString[slice(0, -6)],
                                     x=ast.pos_x or 0,
@@ -1263,10 +1304,11 @@ class Start(HorizontalSymbol):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        path.addRoundedRect(0, 0, width, height, height / 2, height / 2)
-        self.setPath(path)
-        super(Start, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.addRoundedRect(0, 0, width, height, height / 2, height / 2)
+            self.setPath(path)
+            super(Start, self).set_shape(width, height)
 
 
 class ProcedureStart(Start):
@@ -1278,14 +1320,15 @@ class ProcedureStart(Start):
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
-        path = QPainterPath()
-        path.addRoundedRect(0, 0, width, height, height / 2, height / 2)
-        path.moveTo(min(width / 2, height / 2), 0)
-        path.lineTo(min(width / 2, height / 2), height)
-        path.moveTo(max(width / 2, width - height / 2), 0)
-        path.lineTo(max(width / 2, width - height / 2), height)
-        self.setPath(path)
-        super(Start, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.addRoundedRect(0, 0, width, height, height / 2, height / 2)
+            path.moveTo(min(width / 2, height / 2), 0)
+            path.lineTo(min(width / 2, height / 2), height)
+            path.moveTo(max(width / 2, width - height / 2), 0)
+            path.lineTo(max(width / 2, width - height / 2), height)
+            self.setPath(path)
+            super(Start, self).set_shape(width, height)
 
 
 class StateStart(Start):
@@ -1320,6 +1363,7 @@ class ContinuousSignal(HorizontalSymbol):
         ast = ast or ogAST.ContinuousSignal()
         self.ast = ast
         self.branch_entrypoint = None
+        self.width, self.height = 0, 0
         if not ast.pos_y and parent:
             # Make sure the item is placed below its parent
             ast.pos_y = parent.y() + parent.boundingRect().height() + 10
@@ -1342,15 +1386,16 @@ class ContinuousSignal(HorizontalSymbol):
 
     def set_shape(self, width, height):
         ''' Define the shape '''
-        path = QPainterPath()
-        path.moveTo(15, 0)
-        path.lineTo(0, height / 2.0)
-        path.lineTo(15, height)
-        path.moveTo(width - 15, 0)
-        path.lineTo(width, height / 2.0)
-        path.lineTo(width - 15, height)
-        self.setPath(path)
-        super(ContinuousSignal, self).set_shape(width, height)
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.moveTo(15, 0)
+            path.lineTo(0, height / 2.0)
+            path.lineTo(15, height)
+            path.moveTo(width - 15, 0)
+            path.lineTo(width, height / 2.0)
+            path.lineTo(width - 15, height)
+            self.setPath(path)
+            super(ContinuousSignal, self).set_shape(width, height)
 
     @property
     def completion_list(self):

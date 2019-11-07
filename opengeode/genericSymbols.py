@@ -160,7 +160,7 @@ class Symbol(QObject, QGraphicsPathItem):
         self.setCacheMode(QGraphicsItem.NoCache)
         # Initialize variables used when moving/resizing
         self.coord = self.position
-        self.height = 0
+        # self.height = 0 defined at subclass level
         self.old_rect = self.boundingRect()
         # List of visible connection points (that can move)
         self.movable_points = []
@@ -190,6 +190,9 @@ class Symbol(QObject, QGraphicsPathItem):
             return any(self._nested_scene.visible_symb)
         except AttributeError:
             return False
+
+    def boundingRect(self):
+        return QRectF(0, 0, self.width, self.height)
 
     @property
     def allowed_followers(self):
@@ -503,15 +506,7 @@ class Symbol(QObject, QGraphicsPathItem):
             return
         delta_x = (self.boundingRect().width() - rect.width()) / 2.0
         delta_y = self.boundingRect().height() - rect.height()
-        # Qt5 behaves differently from Qt4 (most likely a bug in Qt5)
-        # when setting the shape, the bounnding rect of the parent is not set
-        # to the same value as the bounding rect of the shape! The value
-        # is increased by 1 for some reason.. To compensate we have to
-        # decrease by 1 the width and height here.
-        # It is likely that if this bug is fixed at some point (in Qt5 or
-        # PySide2), the effect will be that the symbols will SHRINK in size
-        # when user clicks on the scene or edits the text...
-        self.set_shape(rect.width()-1, rect.height()-1)
+        self.set_shape(rect.width(), rect.height())
         # Align children properly when resizing
         try:
             self.text.set_textbox_position()
@@ -547,6 +542,9 @@ class Symbol(QObject, QGraphicsPathItem):
     def set_shape(self, width, height):
         ''' to be implemented per symbol in subclasses '''
         #LOG.debug("generic set_shape")
+        #rect = self.boundingRect()
+        #self.width, self.height = rect.width(), rect.height()
+        self.width, self.height = width, height
         _, _ = width, height
         self.prepareGeometryChange()
         self.updateConnectionPoints()
