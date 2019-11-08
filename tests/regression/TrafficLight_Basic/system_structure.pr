@@ -16,9 +16,9 @@ use Datamodel;
 system Controller;
 
    /* CIF Keep Specific Geode PARAMNAMES req */
-   signal Button (Command);
+   signal Button;
    /* CIF Keep Specific Geode PARAMNAMES a */
-   signal Initialize (T_Boolean);
+   signal Initialize;
    ;
 
    /* CIF Keep Specific Geode PARAMNAMES current_color */

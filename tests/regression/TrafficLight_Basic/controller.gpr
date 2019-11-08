@@ -11,6 +11,6 @@ project controller is
    package Compiler is
       for Driver ("SDL") use "opengeode";
       for Object_File_Suffix ("SDL") use ".adb";
-      for Leading_Required_Switches ("SDL") use ("--toAda", "../system_structure.pr");
+      for Leading_Required_Switches ("SDL") use ("--toAda");
     end Compiler;
 end controller;
