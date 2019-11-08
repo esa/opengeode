@@ -122,6 +122,11 @@ class Symbol(QObject, QGraphicsPathItem):
     _antialiasing = True
     # Specify if the symbol has a text area
     has_text_area = True
+    # To keep track of the size of the symbol, set width and height
+    # the boundingRect() function is redefined to return these values
+    # this is essential because anti-aliasing or the QPen may sometimes alter
+    # the size in an unwanted manner.
+    width, height = 0, 0
 
     def __init__(self, parent=None):
         '''

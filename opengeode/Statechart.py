@@ -21,6 +21,7 @@
 
 import os
 import logging
+import traceback
 from collections import defaultdict
 from functools import partial
 from itertools import chain
@@ -54,7 +55,7 @@ LOG = logging.getLogger(__name__)
 
 
 # pylint: disable=R0904
-class Record(genericSymbols.HorizontalSymbol, object):
+class Record(genericSymbols.HorizontalSymbol):
     ''' Graphviz node - it is floating and has no parent'''
     _unique_followers = []
     _insertable_followers = ['Record', 'Diamond', 'Stop']
@@ -84,6 +85,8 @@ class Record(genericSymbols.HorizontalSymbol, object):
         path.lineTo(width, 25)
         path.addRoundedRect(0, 0, width, height, 15, 15)
         self.setPath(path)
+        LOG.debug ("Set shape of state " + str(self))
+        #LOG.debug(traceback.print_stack())
         super(Record, self).set_shape(width, height)
 
     def resize_item(self, _):
@@ -92,8 +95,11 @@ class Record(genericSymbols.HorizontalSymbol, object):
 
     def __str__(self):
         ''' User-friendly information about the node '''
-        return('Record ' + self.name + ' at pos ' + str(self.pos()) +
-               ' bounding rect = ' + str(self.boundingRect()))
+        # must return the state name only, as it is used in the renderer
+        # in V2, there was a separate __unicode__ function
+        return self.name
+        #return('Record ' + self.name + ' at pos ' + str(self.pos()) +
+        #       ' bounding rect = ' + str(self.boundingRect()))
 
     def mouse_release(self, _):
         ''' After moving item, ask dot to recompute the edges '''
@@ -106,7 +112,7 @@ class Record(genericSymbols.HorizontalSymbol, object):
 
 
 # pylint: disable=R0904
-class Point(genericSymbols.HorizontalSymbol, object):
+class Point(genericSymbols.HorizontalSymbol):
     ''' Graphviz point node - used for START transition'''
     _unique_followers = []
     _insertable_followers = ['Record', 'Diamond', 'Stop']
@@ -157,7 +163,7 @@ class Point(genericSymbols.HorizontalSymbol, object):
 
 
 # pylint: disable=R0904
-class Diamond(genericSymbols.HorizontalSymbol, object):
+class Diamond(genericSymbols.HorizontalSymbol):
     ''' Graphviz node - it is floating and has no parent'''
     _unique_followers = []
     _insertable_followers = ['Record', 'Stop']
@@ -204,7 +210,7 @@ class Diamond(genericSymbols.HorizontalSymbol, object):
 
 
 # pylint: disable=R0904
-class Stop(genericSymbols.HorizontalSymbol, object):
+class Stop(genericSymbols.HorizontalSymbol):
     ''' Graphviz state exit node - it is floating and has no parent'''
     _unique_followers = []
     _insertable_followers = []
@@ -452,6 +458,7 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
     # Go recursive first: render children
     count = 0
     for aname, agraph in graphtree['children'].items():
+        LOG.debug("Rendering child scene: " + aname)
         # Render each child in a temporary scene to get the size of the scene
         # in order to resize the parent node accordingly
         temp_scene = type(scene)()
@@ -465,18 +472,20 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
                 node.attr['height'] = ((temp_scene.height() + 35)
                                       / RENDER_DPI['Y'])
                 graphtree['children'][aname]['scene'] = temp_scene
+                LOG.debug ("done")
                 break
 
     # Harmonize the size of states to avoid having huge composite state(s)
     # next to single, small states. Rule: there can't be a state with a size
     # that is less than a third of the biggest state.
     try:
-        min_width = float(max(float(node.attr.get('width', 0.0)) or 0.0
+        min_width = float(max(float(node.attr.get('width', 0.0) or 0.0)
                         for node in graphtree['graph'].iternodes()))
-        min_height = float(max(float(node.attr.get('height', 0.0)) or 0.0
+        min_height = float(max(float(node.attr.get('height', 0.0) or 0.0)
                         for node in graphtree['graph'].iternodes()))
     except ValueError as err:
         LOG.debug(str(err))
+        LOG.debug(traceback.format_exc())
         min_width, min_height = 0, 0
     if min_width and min_height:
         for node in graphtree['graph'].iternodes():
@@ -589,7 +598,8 @@ def create_dot_graph(root_ast,
                      basic=False,
                      scene=None,
                      view=None,
-                     is_root=True):
+                     is_root=True,
+                     config=None):
     ''' Return a dot.AGraph item, from an ogAST.Process or child entry
         Set basic=True to generate a simple graph with at most one edge
         between two states and no diamond nodes
@@ -626,6 +636,9 @@ def create_dot_graph(root_ast,
     try:
         if not is_root:
             # Read config file only for the top-level diagram
+            config_params = config
+            # Adjust edge len for inner states. 1 is too small
+            config_params["-Elen"] = "1.5"
             raise IOError
         with open (identifier + ".cfg", "r") as cfg_file:
             all_lines = (line.strip() for line in cfg_file.readlines())
@@ -637,7 +650,7 @@ def create_dot_graph(root_ast,
                 valid_inputs.add(each.lower())
     except IOError:
         valid_inputs = input_signals
-        config_params = {"-Nfontsize" : "10",
+        config_params = config_params or {"-Nfontsize" : "14",
                          "-Efontsize" : "8",
                          "-Gsplines"  : "curved",
                          "-Gsep"      : "0.3",
@@ -650,6 +663,8 @@ def create_dot_graph(root_ast,
     else:
         LOG.info ("Statechart settings read from " + identifier + ".cfg")
         LOG.info ("... using signals: " + ", ".join(valid_inputs))
+
+    LOG.debug(str(config_params))
 
     if scene and view:
         # Load and display a table for the user to filter out messages that
@@ -739,7 +754,8 @@ def create_dot_graph(root_ast,
                 # (newlines are not supported by graphviz)
                 label, = re.match(r'([^(]+)', trans.inputString).groups()
                 label = label.strip().replace('\n', ' ')
-            except AttributeError:
+            except AttributeError as err:
+                LOG.debug ("Start transition: " + str(err))
                 # START transition may have no inputString
                 for each in root_ast.content.named_start:
                     # each is of type ogAST.Start
@@ -832,14 +848,16 @@ def create_dot_graph(root_ast,
                 cfg_file.write(each + "\n")
     ret['config'] = config_params
     for each in root_ast.composite_states:
+        LOG.debug ("Recursive generation of statechart: " + each.statename)
         # Recursively generate the graphs for nested states
         # Inherit from the list of signals from the higer level state
         #each.input_signals = root_ast.input_signals
         each.all_signals = valid_inputs
         ret['children'][each.statename] = create_dot_graph(each,
-                                                           basic,
-                                                           scene,
-                                                           is_root=False)
+                                                          basic,
+                                                          scene,
+                                                          is_root=False,
+                                                          config=config_params)
     return ret
 
 
