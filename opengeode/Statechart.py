@@ -614,15 +614,17 @@ def create_dot_graph(root_ast,
         input_signals = {sig['name'].lower() for sig in root_ast.input_signals}
         for each in root_ast.timers:
             input_signals.add(each)
-        # TODO: add continuous signals
     else:
         # set by recursive caller:
         input_signals = root_ast.all_signals
 
-    # Add the Connect parts below nested states
+    # Add the Connect parts below nested states, and continuous signals
     for each in root_ast.content.states:
         for connect in each.connects:
             input_signals |= set(connect.connect_list)
+        for cs in each.continuous_signals:
+            LOG.debug("Continuous signal: " + cs.trigger.inputString)
+            input_signals.add("[" + cs.trigger.inputString.strip() + "]")
 
     # valid_inputs: list of messages to be displayed in the statecharts
     # user can remove them from the file to make cleaner diagrams
@@ -660,11 +662,12 @@ def create_dot_graph(root_ast,
                          "-Nstyle"    : "rounded",
                          "-Nshape"    : "record",
                          "-Elen"      : "1"}
+        LOG.info ("... valid signals: " + ", ".join(valid_inputs))
     else:
         LOG.info ("Statechart settings read from " + identifier + ".cfg")
         LOG.info ("... using signals: " + ", ".join(valid_inputs))
 
-    LOG.debug(str(config_params))
+    #LOG.debug(str(config_params))
 
     if scene and view:
         # Load and display a table for the user to filter out messages that
@@ -752,8 +755,15 @@ def create_dot_graph(root_ast,
             try:
                 # Keep only message name, remove params and newlines
                 # (newlines are not supported by graphviz)
-                label, = re.match(r'([^(]+)', trans.inputString).groups()
-                label = label.strip().replace('\n', ' ')
+                LOG.debug("Transition trigger: " + trans.inputString.strip())
+                is_cs = "[" + trans.inputString.split(';')[0].strip() + "]"
+                if is_cs in valid_inputs:
+                    #  Make sure continuous signal strings are not filtered
+                    #  split on semicolon because of the "priority" statement
+                    label = is_cs #"[" + trans.inputString.strip() + "]"
+                else:
+                    label, = re.match(r'([^(]+)', trans.inputString).groups()
+                    label = label.strip().replace('\n', ' ')
             except AttributeError as err:
                 LOG.debug ("Start transition: " + str(err))
                 # START transition may have no inputString
@@ -825,6 +835,7 @@ def create_dot_graph(root_ast,
                                    label=actual)
                     inputs_to_save |= set(lab.lower() for lab in labs)
         for target, labels in target_states.items():
+            # Here we add the label if in valid_inputs.
             sublab = [lab.strip() for lab in labels if
                       lab.strip().lower() in valid_inputs | {""}]
             # Basic mode
