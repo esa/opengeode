@@ -844,7 +844,7 @@ package {process_name} is'''.format(generic=generic_spec,
                                 u' "{proc}_RI_{sig}");'
                                 .format(sep=UNICODE_SEP,
                                         sig=signame,
-                                        proc=procname))
+                                        proc=procname.lower()))
 
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
@@ -902,7 +902,7 @@ package {process_name} is'''.format(generic=generic_spec,
                                 u' "{proc}_RI_{sig}");'
                                 .format(sep=UNICODE_SEP,
                                         sig=signame,
-                                        proc=procname))
+                                        proc=procname.lower()))
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
