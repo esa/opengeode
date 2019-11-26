@@ -1235,16 +1235,19 @@ def fix_enumerated_and_choice(expr_enum, context):
     warnings = []
     kind = find_basic_type(expr_enum.left.exprType).kind
     if kind in ('EnumeratedType', 'StateEnumeratedType'):
+        LOG.debug ("Fix raw enumerated type: " + expr_enum.right.inputString)
         prim = ogAST.PrimEnumeratedValue(primary=expr_enum.right,
                                          debugLine=lineno())
-    try:
-        warnings.extend(check_type_compatibility(prim,
-                                                 expr_enum.left.exprType,
-                                                 context))
-        expr_enum.right = prim
-        expr_enum.right.exprType = expr_enum.left.exprType
-    except (UnboundLocalError, AttributeError, TypeError):
-        pass
+        try:
+            warnings.extend(check_type_compatibility(prim,
+                                                     expr_enum.left.exprType,
+                                                     context))
+            expr_enum.right = prim
+            expr_enum.right.exprType = expr_enum.left.exprType
+        except (UnboundLocalError, AttributeError, TypeError) as err:
+            LOG.debug ("Failed: " + str(err))
+            LOG.debug(traceback.format_exc())
+            pass
     return warnings
 
 
@@ -1291,7 +1294,9 @@ def fix_expression_types(expr, context): # type: -> [warnings]
         unknown = [uk_expr for uk_expr in (expr.right, expr.left)
                    if uk_expr.exprType == UNKNOWN_TYPE]
         if unknown:
-            #print traceback.print_stack()
+            LOG.debug("right: " + expr.right.inputString)
+            LOG.debug("left: " + expr.left.inputString)
+            #LOG.debug(traceback.print_stack())
             raise TypeError('Cannot resolve type of "{}"'
                             .format(unknown[0].inputString))
 
@@ -2459,10 +2464,12 @@ def primary(root, context):
             'type': prim_elem.exprType
         })
     elif root.type == lexer.STATE:
+        LOG.debug("Primary is state")
         prim = ogAST.PrimStateReference()
-        prim.exprType = ENUMERATED()
+        prim.exprType = type ("StateEnumeratedType", (ENUMERATED,), {})
         prim.exprType.kind = 'StateEnumeratedType'
-        prim.exprType.EnumValues = {value: type('', (object,),
+        prim.exprType.EnumValues = {value: type('',
+                                               (object,),
                                                {'EnumID': value})
                                     for value in context.mapping.keys()}
     else:

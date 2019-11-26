@@ -1,6 +1,7 @@
 include ../shared.mk
 
 ROOT_MODEL=orchestrator.pr
+OPENGEODE=opengeode
 
 ARCH := $(shell getconf LONG_BIT)
 all: test-ada test-llvm
@@ -34,7 +35,7 @@ test-qgen-gt-c:
 test-ada:
 	[ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ; \
 	mkdir -p build && cp *.pr *.asn model_checker.gpr properties build && cd build && \
-	../../../../opengeode/opengeode.py orchestrator.pr --shared && \
+	$(OPENGEODE) orchestrator.pr --shared && \
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn && \
 	taste-properties -d -s properties orchestrator.pr && \
 	taste-asn1-iterators *.asn && \
