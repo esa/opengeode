@@ -122,6 +122,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.0 (12/2019)
+    - Port of Opengeode to Python3
+    - Use PySide2 instead of PySide
+    - Asn1scc module supports additional options
+
 2.1.5 (10/2019)
     - Fix unicode issues
 

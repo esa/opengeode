@@ -1,28 +1,28 @@
 all: compile-all
 
 test-parse:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 
 test-ada:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 
 test-llvm:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 
 benchmark:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 
 benchmark-O1:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 
 benchmark-O2:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 
 benchmark-O3:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 
 coverage:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 
 flake8:
 	@echo Generating flake8_report file
@@ -67,7 +67,7 @@ freeze-linux:
 	@echo binary installed in ./dist-linux/
 
 clean:
-	@$(MAKE) -s -C tests/regression $@
+	@$(MAKE) -s -C tests/testsuite $@
 	@find . -name '*~' | xargs rm -f
 	@find . -name '*.o' | xargs rm -f
 	@rm -f pyinstaller-opengeode.tar.gz

@@ -122,6 +122,7 @@ def parse_asn1(*files, **options):
     rename_policy = options.get('rename_policy', ASN1.NoRename)
     flags = options.get('flags', [ASN1.AstOnly])
     pprint = options.get('pretty_print', False)
+    extraflags = options.get('extraflags', [])
     assert isinstance(ast_version, ASN1)
     assert isinstance(rename_policy, ASN1)
     assert isinstance(flags, list)
@@ -166,9 +167,10 @@ def parse_asn1(*files, **options):
             html = []
         args = [arg0, '-customStgAstVersion', str(ast_version.value),
                 '-customStg', stg + '::' + py_filepath,
-                '-renamePolicy', str(rename_policy.value)] + html + file_list
+                '-renamePolicy', str(rename_policy.value)] + html + extraflags + file_list
         asn1scc = QProcess()
         LOG.debug(os.getcwd())
+        LOG.debug (args)
         LOG.debug(binary + ' ' + ' '.join(args))
         asn1scc.start(binary, args)
 
