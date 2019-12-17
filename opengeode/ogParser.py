@@ -32,6 +32,7 @@ import operator
 import logging
 import traceback
 import codecs
+from typing import Dict, Tuple
 from inspect import currentframe, getframeinfo
 import binascii
 from textwrap import dedent
@@ -49,7 +50,7 @@ from .Asn1scc import parse_asn1, ASN1, create_choice_determinant_types
 
 LOG = logging.getLogger(__name__)
 
-EXPR_NODE = {
+EXPR_NODE: Dict[int, ogAST.Expression] = {
     lexer.PLUS:     ogAST.ExprPlus,
     lexer.ASTERISK: ogAST.ExprMul,
     lexer.IMPLIES:  ogAST.ExprImplies,
@@ -71,7 +72,7 @@ EXPR_NODE = {
     lexer.NOT:      ogAST.ExprNot,
     lexer.NEG:      ogAST.ExprNeg,
     lexer.PRIMARY:  ogAST.Primary,
-} # type: Dict[int, ogAST.Expression]
+}
 
 # Insert current path in the search list for importing modules
 sys.path.insert(0, '.')
@@ -212,8 +213,7 @@ def set_global_DV(asn1_filenames):
         raise TypeError('ASN.1 compiler failed - {}'.format(str(err)))
 
 
-def substring_range(substring):
-    # type: (ogAST.PrimSubstring) -> Tuple[str, str]
+def substring_range(substring: ogAST.PrimSubString) -> Tuple[str, str]:
     ''' Return the range of a substring '''
     left, right = substring.value[1]['substring']
     left_bty = find_basic_type(left.exprType)
@@ -221,13 +221,12 @@ def substring_range(substring):
     return left_bty.Min, right_bty.Max
 
 
-def is_number(basic_ty):
+def is_number(basic_ty) -> bool:
     ''' Return true if basic type is a raw number (i.e. not a variable) '''
     return basic_ty.__name__ in ('Universal_Integer', 'PrReal')
 
 
-def is_integer(ty):
-    # type: (Any) -> bool
+def is_integer(ty) -> bool:
     ''' Return true if a type is an Integer Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
@@ -235,14 +234,12 @@ def is_integer(ty):
     )
 
 
-def is_real(ty):
-    # type: (Any) -> bool
+def is_real(ty) -> bool:
     ''' Return true if a type is a Real Type '''
     return find_basic_type(ty).kind == 'RealType'
 
 
-def is_numeric(ty):
-    # type: (Any) -> bool
+def is_numeric(ty) -> bool:
     ''' Return true if a type is a Numeric Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
@@ -252,20 +249,17 @@ def is_numeric(ty):
     )
 
 
-def is_boolean(ty):
-    # type: (Any) -> bool
+def is_boolean(ty) -> bool:
     ''' Return true if a type is a Boolean Type '''
     return find_basic_type(ty).kind == 'BooleanType'
 
 
-def is_null(ty):
-    # type: (Any) -> bool
+def is_null(ty) -> bool:
     ''' Return true if a type is a NULL Type '''
     return find_basic_type(ty).kind == 'NullType'
 
 
-def is_string(ty):
-    # type: (Any) -> bool
+def is_string(ty) -> bool:
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty).kind in (
         'StandardStringType',
@@ -274,43 +268,37 @@ def is_string(ty):
     )
 
 
-def is_sequenceof(ty):
-    # type: (Any) -> bool
+def is_sequenceof(ty) -> bool:
     ''' Return true if a type is a SequenceOf Type '''
     return find_basic_type(ty).kind == 'SequenceOfType'
 
 
-def is_list(ty):
-    # type: (Any) -> bool
+def is_list(ty) -> bool:
     ''' Return true if a type is a List Type '''
     return is_string(ty) or is_sequenceof(ty) or ty == LIST
 
 
-def is_enumerated(ty):
-    # type: (Any) -> bool
+def is_enumerated(ty) -> bool:
     ''' Return true if a type is an Enumerated Type '''
     return find_basic_type(ty).kind == 'EnumeratedType' or ty == ENUMERATED
 
 
-def is_sequence(ty):
-    # type: (Any) -> bool
+def is_sequence(ty) -> bool:
     ''' Return true if a type is a Sequence Type '''
     return find_basic_type(ty).kind == 'SequenceType'
 
 
-def is_choice(ty):
-    # type: (Any) -> bool
+def is_choice(ty) -> bool:
     ''' Return true if a type is a Choice Type '''
     return find_basic_type(ty).kind == 'ChoiceType' or ty == CHOICE
 
 
-def is_timer(ty):
-    # type: (Any) -> bool
+def is_timer(ty) -> bool:
     ''' Return true if a type is a Timer Type '''
     return find_basic_type(ty).kind == 'TimerType'
 
 
-def sdl_to_asn1(sort):
+def sdl_to_asn1(sort: str):
     '''
         Convert case insensitive type reference to the actual type as found
         in the ASN.1 datamodel
@@ -460,20 +448,17 @@ def get_input_string(root):
             root.getTokenStopIndex())
 
 
-def error(root, msg):
-    # type: (Any, str) -> str
+def error(root, msg: str) -> str:
     ''' Return an error message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
 
 
-def warning(root, msg):
-    # type: (Any, str) -> str
+def warning(root, msg: str) -> str:
     ''' Return a warning message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
 
 
-def tmp():
-    # type : () -> int
+def tmp() -> int:
     ''' Return a temporary variable name '''
     global TMPVAR
     varname = TMPVAR
@@ -887,7 +872,7 @@ def fix_append_expression_type(expr, expected_type):
     expr.expected_type = expected_type
 
 
-def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
+def check_type_compatibility(primary, type_ref, context):
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
@@ -1251,7 +1236,7 @@ def fix_enumerated_and_choice(expr_enum, context):
     return warnings
 
 
-def fix_expression_types(expr, context): # type: -> [warnings]
+def fix_expression_types(expr, context):
     ''' Check/ensure type consistency in binary expressions '''
     warnings = []
     for _ in range(2):

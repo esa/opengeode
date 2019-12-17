@@ -414,8 +414,8 @@ class SDL_Scene(QGraphicsScene):
         self.click_coordinates = None
         self.orig_pos = None
         # When connecting symbols, store list of intermediate points
-        self.edge_points = []   # type: List[QPointF] in scene coordinates
-        self.temp_lines = []    # type: List[QGraphicsLineItem]
+        self.edge_points = []   # type is List[QPointF] in scene coordinates
+        self.temp_lines = []    # type is List[QGraphicsLineItem]
         self.process_name = 'opengeode'
         # Scene name is used to update the tab window name when scene changes
         self.name = ''

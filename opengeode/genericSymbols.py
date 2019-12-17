@@ -246,11 +246,11 @@ class Symbol(QObject, QGraphicsPathItem):
     def conn_end_zones(self):
         return []
 
-    def in_start_zone(self, point):   # type: QPoint
+    def in_start_zone(self, point: QPoint) -> bool:
         ''' Return true if "point" is in one of the connection start zones '''
         return any(rect.contains(point) for rect in self.conn_start_zones)
 
-    def in_end_zone(self, point):   # type: QPoint
+    def in_end_zone(self, point: QPoint) -> bool:
         ''' Return true if "point" is in one of the connection end zones '''
         return any(rect.contains(point) for rect in self.conn_end_zones)
 

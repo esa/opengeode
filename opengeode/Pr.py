@@ -401,7 +401,7 @@ def _procedure(symbol, recursive=True, **kwargs):
         Indent.indent += 1
         result.extend(parse_scene(symbol.nested_scene))
         Indent.indent -= 1
-    result.append(u'endprocedure;'.format(str(symbol)))
+    result.append('endprocedure;')
     return result
 
 
