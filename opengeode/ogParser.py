@@ -213,7 +213,7 @@ def set_global_DV(asn1_filenames):
         raise TypeError('ASN.1 compiler failed - {}'.format(str(err)))
 
 
-def substring_range(substring: ogAST.PrimSubString) -> Tuple[str, str]:
+def substring_range(substring: ogAST.PrimSubstring) -> Tuple[str, str]:
     ''' Return the range of a substring '''
     left, right = substring.value[1]['substring']
     left_bty = find_basic_type(left.exprType)
