@@ -1,4 +1,4 @@
-These notes explain how to load a model and render it as a statachart
+These notes explain how to load a model and render it as a statechart
 
 This can be done for example using ptpython3
 
