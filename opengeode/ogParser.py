@@ -5252,10 +5252,11 @@ def parse_pr(files=None, string=None):
     # check that all NEXTSTATEs have a correspondingly defined STATE
     # (except the '-' state, which means "stay in the same state')
     for process in og_ast.processes:
-        for ns in [t.inputString.lower() for t in process.terminators
-                if t.kind == 'next_state']:
-            if not ns in [s.lower() for s in
-                    process.mapping.keys()] + ['-']:
+        for t in process.terminators:
+            if t.kind != 'next_state':
+                continue
+            ns = t.inputString.lower()
+            if not ns in [s.lower() for s in process.mapping.keys()] + ['-']:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
                 errors.append(['State definition missing: ' + ns.upper(),
                               [t_x, t_y],
