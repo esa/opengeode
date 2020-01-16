@@ -3734,7 +3734,10 @@ def state(root, parent, context):
     asterisk_input = None
     st_x, st_y = 0, 0
     for child in root.getChildren():
-        if child.type == lexer.CIF:
+        if isinstance(child, antlr3.tree.CommonErrorNode):
+            # There was a parsing error
+            sterr.append(f"Error parsing state: {child.getText()}")
+        elif child.type == lexer.CIF:
             # Get symbol coordinates
             (state_def.pos_x, state_def.pos_y,
             state_def.width, state_def.height) = cif(child)
@@ -3840,6 +3843,12 @@ def state(root, parent, context):
                     context.cs_mapping[statename.lower()].append(provided_part)
             warnings.extend(warn)
             errors.extend(err)
+        elif child.type == lexer.VIA:
+            # case of a state to be merged with a NEXTSTATE having a via clause
+            # stopped HERE: have to extract the string "statename via blah"
+            # to make sure it matches the NEXTSTATE
+            print ("state via:", get_input_string(root))
+            state_def.via = child.getChild(0).text
         elif child.type == 0:
             # Parser error, already caught
             pass
@@ -5054,7 +5063,10 @@ def pr_file(root):
     for child in root.getChildren():
         if node_filename(child) is not None:
             ast.pr_files.add(node_filename(child))
-        if child.type == lexer.PROCESS:
+        if isinstance(child, antlr3.tree.CommonErrorNode):
+            # There was a parsing error
+            errors.append(f"Error parsing PR file: {child.getText()}")
+        elif child.type == lexer.PROCESS:
             processes.append(child)
         elif child.type == lexer.USE:
             uses.append(child)
@@ -5062,6 +5074,10 @@ def pr_file(root):
             systems.append(child)
         else:
             LOG.error('Unsupported construct in PR:' + str(child.type))
+            LOG.error(str(child))
+    LOG.debug(f"Parsed {len(processes)} process(es), "
+             f" {len(uses)} use statatement(s), "
+             f" and {len(systems)} systems")
     for child in uses:
         # USE clauses can contain a CIF comment with the ASN.1 filename
         use_clause_subs = child.getChildren()
@@ -5197,12 +5213,14 @@ def add_to_ast(ast, filename=None, string=None):
         LOG.error('Parser error: ' + str(err))
         raise
     # Use Sam & Max output capturer to get errors from ANTLR parser
-    with samnmax.capture_output() as (stdout, stderr):
-        tree_rule_return_scope = parser.pr_file()
-    for e in stderr:
-        errors.append([e.strip()])
-    for w in stdout:
-        warnings.append([w.strip()])
+    # (not anymore, antlr3 for python3 does not print anything)
+    tree_rule_return_scope = parser.pr_file()
+#   with samnmax.capture_output() as (stdout, stderr):
+#       tree_rule_return_scope = parser.pr_file()
+#   for e in stderr:
+#       errors.append([e.strip()])
+#   for w in stdout:
+#       warnings.append([w.strip()])
     # Root of the AST is of type antlr3.tree.CommonTree
     # Add it as a child of the common tree
     subtree = tree_rule_return_scope.tree
@@ -5294,14 +5312,15 @@ def parseSingleElement(elem='', string='', context=None):
     warnings = []
     t = None
     if parser:
-        with samnmax.capture_output() as (stdout, stderr):
-            r = parser_ptr()
-        for e in stderr:
-            syntax_errors.append(e.strip())
-        for w in stdout:
-            syntax_errors.append(w.strip())
+        #with samnmax.capture_output() as (stdout, stderr):
+        r = parser_ptr()
+        #for e in stderr:
+        #    syntax_errors.append(e.strip())
+        #for w in stdout:
+        #    syntax_errors.append(w.strip())
         # Get the root of the Antlr-AST to build our own AST entry
         root = r.tree
+        print (isinstance(tree, antlr3.tree.CommonErrorNode))
         root.token_stream = parser.getTokenStream()
         backend_ptr = eval(elem)
         try:

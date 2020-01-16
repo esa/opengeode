@@ -729,6 +729,9 @@ class State(object):
         self.hyperlink = None
         # optional composite state content (type CompositeState)
         self.composite = None
+        # via clause, used for entering nested state with an entry point
+        # 'via' is the string for the renderer (e.g. "hello via foo")
+        self.via = None
 
     def trace(self):
         ''' Debug output for a STATE symbol '''
