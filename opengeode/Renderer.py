@@ -180,10 +180,11 @@ def _state(ast, scene, states, terminators, parent=None):
     # state in that case: it will be rendered together with all its (possible)
     # INPUT children in the render_terminator function.
     for term in terminators:
+        state_label = ast.via or ast.inputString
         if(term.kind == 'next_state' and
                 term.pos_x == ast.pos_x and
                 term.pos_y == ast.pos_y and
-                term.inputString == ast.inputString):
+                term.inputString == state_label):
             raise TypeError('This state is a terminator')
     new_state = sdlSymbols.State(parent=None, ast=ast)
     if new_state not in scene.items():
@@ -345,7 +346,8 @@ def _terminator(ast, scene, parent, states):
         symbol = sdlSymbols.State(parent=parent, ast=ast)
         # If the terminator is also a new state, render the inputs below
         for state_ast in states:
-            if (state_ast.inputString == ast.inputString and
+            state_label = state_ast.via or state_ast.inputString
+            if (state_label == ast.inputString and
                     state_ast.pos_x == ast.pos_x and
                     state_ast.pos_y == ast.pos_y):
                 symbol.nested_scene = state_ast.composite or \

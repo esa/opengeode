@@ -3733,6 +3733,7 @@ def state(root, parent, context):
     asterisk_state = False
     asterisk_input = None
     st_x, st_y = 0, 0
+    via_stop = None
     for child in root.getChildren():
         if isinstance(child, antlr3.tree.CommonErrorNode):
             # There was a parsing error
@@ -3749,6 +3750,7 @@ def state(root, parent, context):
             state_def.charPositionInLine = child.getCharPositionInLine()
             for statename in child.getChildren():
                 state_def.statelist.append(statename.toString())
+            via_stop = child.getTokenStopIndex()
         elif child.type == lexer.ASTERISK:
             asterisk_state = True
             state_def.inputString = get_input_string(child)
@@ -3845,10 +3847,10 @@ def state(root, parent, context):
             errors.extend(err)
         elif child.type == lexer.VIA:
             # case of a state to be merged with a NEXTSTATE having a via clause
-            # stopped HERE: have to extract the string "statename via blah"
-            # to make sure it matches the NEXTSTATE
-            print ("state via:", get_input_string(root))
-            state_def.via = child.getChild(0).text
+            # in the via field we keep "state via entrypoint"
+            start = via_stop
+            stop = child.getTokenStopIndex()
+            state_def.via = token_stream(root).toString(start, stop)
         elif child.type == 0:
             # Parser error, already caught
             pass
@@ -5320,7 +5322,7 @@ def parseSingleElement(elem='', string='', context=None):
         #    syntax_errors.append(w.strip())
         # Get the root of the Antlr-AST to build our own AST entry
         root = r.tree
-        print (isinstance(tree, antlr3.tree.CommonErrorNode))
+        #print (isinstance(tree, antlr3.tree.CommonErrorNode))
         root.token_stream = parser.getTokenStream()
         backend_ptr = eval(elem)
         try:
