@@ -16,7 +16,7 @@
     During the build of the AST this library makes a number of semantic
     checks on the SDL input mode.
 
-    Copyright (c) 2012-2019 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -178,6 +178,7 @@ lineno = lambda : currentframe().f_back.f_lineno
 # they are stored in a dedicated dictionary with the same structure
 # as the ASN1SCC generated python AST
 USER_DEFINED_TYPES = dict()
+
 
 def types():
     ''' Return all ASN.1 and user defined types '''
@@ -444,8 +445,13 @@ def get_interfaces(ast, process_name):
 
 def get_input_string(root):
     ''' Return the input string of a tree node '''
-    return token_stream(root).toString(root.getTokenStartIndex(),
-            root.getTokenStopIndex())
+    try:
+       res = token_stream(root).toString(root.getTokenStartIndex(),
+                root.getTokenStopIndex())
+       return res
+    except AttributeError as err:
+        # in case there is no token_strem(root)
+        return ""
 
 
 def error(root, msg: str) -> str:
@@ -456,6 +462,32 @@ def error(root, msg: str) -> str:
 def warning(root, msg: str) -> str:
     ''' Return a warning message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
+
+
+def check_syntax(node: antlr3.tree.CommonTree,
+                 recursive:bool = False) -> None:
+    ''' Check if the ANTLR node is valid, otherwise raise an excption,
+    meaning there is a syntax error, and report the string that could not be
+    parsed '''
+    def check(root: antlr3.tree.CommonTree,
+              parent: antlr3.tree.CommonTree,
+              rec: bool) -> None:
+        if rec:
+            for child in root.getChildren():
+                check(child, parent, rec)
+        if isinstance(root, antlr3.tree.CommonErrorNode):
+            token = root.trappedException.token
+            token_str = token.text
+            line = token.line
+            pos = token.charPositionInLine + 1
+            if parent != root:
+                text = get_input_string(parent)
+            else:
+                text = parent.getText()  # take full node to get correct line/pos
+            syntax_error = f'In this code:\n{text}\n' \
+                    f'Unexpected "{token_str}" at line {line}, position {pos}'
+            raise SyntaxError(syntax_error)
+    check(node, parent=node, rec=recursive)
 
 
 def tmp() -> int:
@@ -3735,10 +3767,7 @@ def state(root, parent, context):
     st_x, st_y = 0, 0
     via_stop = None
     for child in root.getChildren():
-        if isinstance(child, antlr3.tree.CommonErrorNode):
-            # There was a parsing error
-            sterr.append(f"Error parsing state: {child.getText()}")
-        elif child.type == lexer.CIF:
+        if child.type == lexer.CIF:
             # Get symbol coordinates
             (state_def.pos_x, state_def.pos_y,
             state_def.width, state_def.height) = cif(child)
@@ -5062,13 +5091,11 @@ def pr_file(root):
     # are parsed before process definition - to get signal definitions
     # and data typess references.
     processes, uses, systems = [], [], []
+
     for child in root.getChildren():
         if node_filename(child) is not None:
             ast.pr_files.add(node_filename(child))
-        if isinstance(child, antlr3.tree.CommonErrorNode):
-            # There was a parsing error
-            errors.append(f"Error parsing PR file: {child.getText()}")
-        elif child.type == lexer.PROCESS:
+        if child.type == lexer.PROCESS:
             processes.append(child)
         elif child.type == lexer.USE:
             uses.append(child)
@@ -5226,6 +5253,11 @@ def add_to_ast(ast, filename=None, string=None):
     # Root of the AST is of type antlr3.tree.CommonTree
     # Add it as a child of the common tree
     subtree = tree_rule_return_scope.tree
+    try:
+        check_syntax(node=subtree, recursive=True)
+    except SyntaxError as err:
+        LOG.error(str(err))
+        raise
     token_str = parser.getTokenStream()
     children_before = set(ast.children)
     # addChild does not simply add the subtree - it flattens it if necessary
@@ -5246,14 +5278,19 @@ def parse_pr(files=None, string=None):
     common_tree = antlr3.tree.CommonTree(None)
     for filename in files:
         sys.path.insert(0, os.path.dirname(filename))
-    for filename in files:
-        err, warn = add_to_ast(common_tree, filename=filename)
-        errors.extend(err)
-        warnings.extend(warn)
-    if string:
-        err, warn = add_to_ast(common_tree, string=string)
-        errors.extend(err)
-        warnings.extend(warn)
+    try:
+        for filename in files:
+            err, warn = add_to_ast(common_tree, filename=filename)
+            errors.extend(err)
+            warnings.extend(warn)
+        if string:
+            err, warn = add_to_ast(common_tree, string=string)
+            errors.extend(err)
+            warnings.extend(warn)
+    except SyntaxError as err:
+        errors.append([f"Parser error: syntax error!\n{str(err)}",
+                      [0, 0],
+                      ['- -']])
 
     # If syntax errors were found, raise an alarm and try to continue anyway
     if errors:
@@ -5326,6 +5363,7 @@ def parseSingleElement(elem='', string='', context=None):
         root.token_stream = parser.getTokenStream()
         backend_ptr = eval(elem)
         try:
+            check_syntax(node=root, recursive=True)
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
         except AttributeError as err:
@@ -5336,6 +5374,8 @@ def parseSingleElement(elem='', string='', context=None):
             pass
         except NotImplementedError as err:
             syntax_errors.append('Syntax error in expression - Fix it.')
+        except SyntaxError as err:
+            syntax_errors.append(str(err))
     return(t, syntax_errors, semantic_errors, warnings,
             context.terminators)
 

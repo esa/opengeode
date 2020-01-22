@@ -3132,7 +3132,7 @@ def cli(options):
                 LOG.error('Too many errors, cannot generate code')
     else:
         if len(ast.processes) != 1:
-            LOG.error('Only one process at a time is supported')
+            LOG.error(f'Found {len(ast.processes)} process(es) instead of one')
             return 1
 
         if options.png or options.pdf or options.svg:
