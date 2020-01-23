@@ -550,10 +550,13 @@ class Join(VerticalSymbol):
         ''' Set auto-completion list - list of labels '''
         return (label.inputString for label in CONTEXT.labels)
 
-    def update_completion_list(self, pr_text):
+    def update_completion_list(self, pr_text: str) -> None:
         ''' When text was entered, update list of join terminators '''
         ast, _, _, _, _ = self.parser.parseSingleElement(self.common_name,
                                                          pr_text)
+        if not ast:
+            # in case of syntax error in the symbol text
+            return
         for each in (t for t in CONTEXT.terminators if t.kind == 'join'):
             if each.inputString == str(self):
                 # Ignore if already defined
@@ -609,6 +612,9 @@ class ProcedureStop(Join):
         ''' When text was entered, if in a nested state update exit points '''
         ast, _, _, _, _ = self.parser.parseSingleElement(self.common_name,
                                                          pr_text)
+        if not ast:
+            # in case of syntax error in the symbol text
+            return
         try:
             CONTEXT.state_exitpoints = \
                     set(CONTEXT.state_exitpoints) | set(str(self))
@@ -678,6 +684,9 @@ class Label(VerticalSymbol):
         ''' When text was entered, update list of labels in current context '''
         ast, _, _, _, _ = self.parser.parseSingleElement(self.common_name,
                                                          pr_text)
+        if not ast:
+            # in case of syntax error in the symbol text
+            return
         for each in CONTEXT.labels:
             if each.inputString == str(self):
                 # Ignore if already defined
@@ -863,6 +872,9 @@ class TextSymbol(HorizontalSymbol):
         # it it is not! - no need to investigate performance issues here
         # Get AST for the symbol
         ast, _, _, _, _ = self.parser.parseSingleElement('text_area', pr_text)
+        if not ast:
+            # in case of syntax error in the symbol text
+            return
         try:
             CONTEXT.variables.update(ast.variables)
             CONTEXT.timers = list(set(CONTEXT.timers + ast.timers))
@@ -989,8 +1001,10 @@ class State(VerticalSymbol):
         ''' When text was entered, update state completion list '''
         # Get AST for the symbol and update the context dictionnary
         ast, _, _, _, _ = self.parser.parseSingleElement('state', pr_text)
-        for each in ast.statelist:
-            CONTEXT.mapping[each.lower()] = None
+        if ast:
+            # None if there were syntax errors in the symbol
+            for each in ast.statelist:
+                CONTEXT.mapping[each.lower()] = None
 
     @property
     def completion_list(self):

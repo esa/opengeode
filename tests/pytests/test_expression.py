@@ -2,8 +2,6 @@
 
 from opengeode.ogParser import parser_init, antlr3, sdl92Parser
 
-# return a string corresponding to a token number:
-token = lambda num: sdl92Parser.tokenNames[num]
 
 def test_minus():
     ''' Test the parsing of numbers '''

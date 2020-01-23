@@ -124,11 +124,7 @@ class ExprLe(Expression):
 
 class ExprDiv(Expression):
     operand = '/'
-    try:
-        op = operator.div
-    except AttributeError:
-        # for Python3:
-        op = operator.truediv
+    op = operator.truediv  # python3 only
 
 
 class ExprMod(Expression):
@@ -733,6 +729,9 @@ class State(object):
         self.hyperlink = None
         # optional composite state content (type CompositeState)
         self.composite = None
+        # via clause, used for entering nested state with an entry point
+        # 'via' is the string for the renderer (e.g. "hello via foo")
+        self.via = None
 
     def trace(self):
         ''' Debug output for a STATE symbol '''

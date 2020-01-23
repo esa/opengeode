@@ -246,11 +246,11 @@ class Symbol(QObject, QGraphicsPathItem):
     def conn_end_zones(self):
         return []
 
-    def in_start_zone(self, point):   # type: QPoint
+    def in_start_zone(self, point: QPoint) -> bool:
         ''' Return true if "point" is in one of the connection start zones '''
         return any(rect.contains(point) for rect in self.conn_start_zones)
 
-    def in_end_zone(self, point):   # type: QPoint
+    def in_end_zone(self, point: QPoint) -> bool:
         ''' Return true if "point" is in one of the connection end zones '''
         return any(rect.contains(point) for rect in self.conn_end_zones)
 
@@ -330,10 +330,6 @@ class Symbol(QObject, QGraphicsPathItem):
         try:
             _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
                                            self.common_name, text)
-            # In case of syntax errors, it would be useful to return the text
-            # in addition to the error from ANTLR, in order to be very clear
-            # about the line number and character position to fix the error
-            # => TODO
         except (AssertionError, AttributeError) as err:
             LOG.debug(self.common_name + " - error parsing - " + str(err))
             LOG.debug(str(traceback.format_exc()))

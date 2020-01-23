@@ -16,7 +16,7 @@
     During the build of the AST this library makes a number of semantic
     checks on the SDL input mode.
 
-    Copyright (c) 2012-2019 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -32,6 +32,7 @@ import operator
 import logging
 import traceback
 import codecs
+from typing import Dict, Tuple
 from inspect import currentframe, getframeinfo
 import binascii
 from textwrap import dedent
@@ -49,7 +50,7 @@ from .Asn1scc import parse_asn1, ASN1, create_choice_determinant_types
 
 LOG = logging.getLogger(__name__)
 
-EXPR_NODE = {
+EXPR_NODE: Dict[int, ogAST.Expression] = {
     lexer.PLUS:     ogAST.ExprPlus,
     lexer.ASTERISK: ogAST.ExprMul,
     lexer.IMPLIES:  ogAST.ExprImplies,
@@ -71,7 +72,7 @@ EXPR_NODE = {
     lexer.NOT:      ogAST.ExprNot,
     lexer.NEG:      ogAST.ExprNeg,
     lexer.PRIMARY:  ogAST.Primary,
-} # type: Dict[int, ogAST.Expression]
+}
 
 # Insert current path in the search list for importing modules
 sys.path.insert(0, '.')
@@ -178,6 +179,7 @@ lineno = lambda : currentframe().f_back.f_lineno
 # as the ASN1SCC generated python AST
 USER_DEFINED_TYPES = dict()
 
+
 def types():
     ''' Return all ASN.1 and user defined types '''
     ret = getattr(DV, 'types', {}).copy()
@@ -212,8 +214,7 @@ def set_global_DV(asn1_filenames):
         raise TypeError('ASN.1 compiler failed - {}'.format(str(err)))
 
 
-def substring_range(substring):
-    # type: (ogAST.PrimSubstring) -> Tuple[str, str]
+def substring_range(substring: ogAST.PrimSubstring) -> Tuple[str, str]:
     ''' Return the range of a substring '''
     left, right = substring.value[1]['substring']
     left_bty = find_basic_type(left.exprType)
@@ -221,13 +222,12 @@ def substring_range(substring):
     return left_bty.Min, right_bty.Max
 
 
-def is_number(basic_ty):
+def is_number(basic_ty) -> bool:
     ''' Return true if basic type is a raw number (i.e. not a variable) '''
     return basic_ty.__name__ in ('Universal_Integer', 'PrReal')
 
 
-def is_integer(ty):
-    # type: (Any) -> bool
+def is_integer(ty) -> bool:
     ''' Return true if a type is an Integer Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
@@ -235,14 +235,12 @@ def is_integer(ty):
     )
 
 
-def is_real(ty):
-    # type: (Any) -> bool
+def is_real(ty) -> bool:
     ''' Return true if a type is a Real Type '''
     return find_basic_type(ty).kind == 'RealType'
 
 
-def is_numeric(ty):
-    # type: (Any) -> bool
+def is_numeric(ty) -> bool:
     ''' Return true if a type is a Numeric Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
@@ -252,20 +250,17 @@ def is_numeric(ty):
     )
 
 
-def is_boolean(ty):
-    # type: (Any) -> bool
+def is_boolean(ty) -> bool:
     ''' Return true if a type is a Boolean Type '''
     return find_basic_type(ty).kind == 'BooleanType'
 
 
-def is_null(ty):
-    # type: (Any) -> bool
+def is_null(ty) -> bool:
     ''' Return true if a type is a NULL Type '''
     return find_basic_type(ty).kind == 'NullType'
 
 
-def is_string(ty):
-    # type: (Any) -> bool
+def is_string(ty) -> bool:
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty).kind in (
         'StandardStringType',
@@ -274,43 +269,37 @@ def is_string(ty):
     )
 
 
-def is_sequenceof(ty):
-    # type: (Any) -> bool
+def is_sequenceof(ty) -> bool:
     ''' Return true if a type is a SequenceOf Type '''
     return find_basic_type(ty).kind == 'SequenceOfType'
 
 
-def is_list(ty):
-    # type: (Any) -> bool
+def is_list(ty) -> bool:
     ''' Return true if a type is a List Type '''
     return is_string(ty) or is_sequenceof(ty) or ty == LIST
 
 
-def is_enumerated(ty):
-    # type: (Any) -> bool
+def is_enumerated(ty) -> bool:
     ''' Return true if a type is an Enumerated Type '''
     return find_basic_type(ty).kind == 'EnumeratedType' or ty == ENUMERATED
 
 
-def is_sequence(ty):
-    # type: (Any) -> bool
+def is_sequence(ty) -> bool:
     ''' Return true if a type is a Sequence Type '''
     return find_basic_type(ty).kind == 'SequenceType'
 
 
-def is_choice(ty):
-    # type: (Any) -> bool
+def is_choice(ty) -> bool:
     ''' Return true if a type is a Choice Type '''
     return find_basic_type(ty).kind == 'ChoiceType' or ty == CHOICE
 
 
-def is_timer(ty):
-    # type: (Any) -> bool
+def is_timer(ty) -> bool:
     ''' Return true if a type is a Timer Type '''
     return find_basic_type(ty).kind == 'TimerType'
 
 
-def sdl_to_asn1(sort):
+def sdl_to_asn1(sort: str):
     '''
         Convert case insensitive type reference to the actual type as found
         in the ASN.1 datamodel
@@ -456,24 +445,70 @@ def get_interfaces(ast, process_name):
 
 def get_input_string(root):
     ''' Return the input string of a tree node '''
-    return token_stream(root).toString(root.getTokenStartIndex(),
-            root.getTokenStopIndex())
+    try:
+       res = token_stream(root).toString(root.getTokenStartIndex(),
+                root.getTokenStopIndex())
+       return res
+    except AttributeError as err:
+        # in case there is no token_strem(root)
+        return ""
 
 
-def error(root, msg):
-    # type: (Any, str) -> str
+def error(root, msg: str) -> str:
     ''' Return an error message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
 
 
-def warning(root, msg):
-    # type: (Any, str) -> str
+def warning(root, msg: str) -> str:
     ''' Return a warning message '''
     return '{} - "{}"'.format(msg, get_input_string(root))
 
 
-def tmp():
-    # type : () -> int
+def check_syntax(node: antlr3.tree.CommonTree,
+                 recursive:bool = False,
+                 filename:str = "",
+                 input_string:str = "") -> None:
+    ''' Check if the ANTLR node is valid, otherwise raise an excption,
+    meaning there is a syntax error, and report the string that could not be
+    parsed '''
+    def check(root: antlr3.tree.CommonTree,
+              parent: antlr3.tree.CommonTree,
+              rec: bool) -> None:
+        if rec:
+            for child in root.getChildren():
+                check(child, parent, rec)
+        if isinstance(root, antlr3.tree.CommonErrorNode):  #  in tree.py
+            exc = root.trappedException    # in exceptions.py
+            token = exc.token
+            token_str = token.text
+            line = token.line
+            pos = token.charPositionInLine + 1
+            if filename:
+                text = open(filename, 'r').readlines()
+            else:
+                text = input_string.split('\n')
+            if isinstance(exc, antlr3.exceptions.MismatchedTokenException):
+                err_msg = f'{" "*(pos-1)}^__ Expected ' \
+                          f'"{lexer.tokenNamesMap[exc.expecting]}", ' \
+                          f'got "{token_str}"'
+            else:
+                err_msg = f'{" "*(pos-1)}^__ Unexpected "{token_str}"'
+            if len(text) >= line:
+                syntax_error = f'{text[line-1]}\n{err_msg}'
+            else:
+                LOG.error("Unrecoverable Error with text input")
+                syntax_error = f'{err_msg} (line {line} offset {pos}) {len(text)} {text} {str(exc)}'
+            se_exc          = SyntaxError(syntax_error)
+            se_exc.filename = filename
+            se_exc.lineno   = line
+            se_exc.offset   = pos
+            se_exc.text     = syntax_error
+            raise se_exc
+            #raise SyntaxError(syntax_error)
+    check(node, parent=node, rec=recursive)
+
+
+def tmp() -> int:
     ''' Return a temporary variable name '''
     global TMPVAR
     varname = TMPVAR
@@ -887,7 +922,7 @@ def fix_append_expression_type(expr, expected_type):
     expr.expected_type = expected_type
 
 
-def check_type_compatibility(primary, type_ref, context):  # type: -> [warnings]
+def check_type_compatibility(primary, type_ref, context):
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
@@ -1251,7 +1286,7 @@ def fix_enumerated_and_choice(expr_enum, context):
     return warnings
 
 
-def fix_expression_types(expr, context): # type: -> [warnings]
+def fix_expression_types(expr, context):
     ''' Check/ensure type consistency in binary expressions '''
     warnings = []
     for _ in range(2):
@@ -1546,7 +1581,7 @@ def expression(root, context, pos='right'):
     elif root.type == lexer.SELECTOR:
         return selector_expression(root, context, pos)
     else:
-        raise NotImplementedError(sdl92Parser.tokenNames[root.type] +
+        raise NotImplementedError(sdl92Parser.tokenNamesMap[root.type] +
                                 ' - line ' + str(root.getLine()))
 
 
@@ -2474,7 +2509,7 @@ def primary(root, context):
                                     for value in context.mapping.keys()}
     else:
         errors.append('Parsing error (token {}, line {}, "{}")'
-                      .format(sdl92Parser.tokenNames[root.type],
+                      .format(sdl92Parser.tokenNamesMap[root.type],
                               root.getLine(),
                               get_input_string(root)))
         prim = ogAST.Primary()
@@ -2809,7 +2844,7 @@ def procedure_pre(root, parent=None, context=None):
         else:
             warnings.append(
                     'Unsupported construct in procedure, type: ' +
-                    sdl92Parser.tokenNames[child.type] +
+                    sdl92Parser.tokenNamesMap[child.type] +
                     ' - line ' + str(child.getLine()) +
                     ' - in procedure ' + str(proc.inputString))
     return proc, content, errors, warnings
@@ -3543,7 +3578,7 @@ def process_definition(root, parent=None, context=None):
             process.comment, _, _ = end(child)
         else:
             warnings.append(['Unsupported process definition child: ' +
-                             sdl92Parser.tokenNames[child.type] +
+                             sdl92Parser.tokenNamesMap[child.type] +
                             ' - line ' + str(child.getLine()),
                             [proc_x, proc_y], []])
     for proc, content in inner_proc:
@@ -3748,6 +3783,7 @@ def state(root, parent, context):
     asterisk_state = False
     asterisk_input = None
     st_x, st_y = 0, 0
+    via_stop = None
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -3761,6 +3797,7 @@ def state(root, parent, context):
             state_def.charPositionInLine = child.getCharPositionInLine()
             for statename in child.getChildren():
                 state_def.statelist.append(statename.toString())
+            via_stop = child.getTokenStopIndex()
         elif child.type == lexer.ASTERISK:
             asterisk_state = True
             state_def.inputString = get_input_string(child)
@@ -3855,12 +3892,18 @@ def state(root, parent, context):
                     context.cs_mapping[statename.lower()].append(provided_part)
             warnings.extend(warn)
             errors.extend(err)
+        elif child.type == lexer.VIA:
+            # case of a state to be merged with a NEXTSTATE having a via clause
+            # in the via field we keep "state via entrypoint"
+            start = via_stop
+            stop = child.getTokenStopIndex()
+            state_def.via = token_stream(root).toString(start, stop)
         elif child.type == 0:
             # Parser error, already caught
             pass
         else:
             stwarn.append('Unsupported STATE definition child type: ' +
-                            sdl92Parser.tokenNames[child.type])
+                            sdl92Parser.tokenNamesMap[child.type])
     # post-processing: if state is followed by an ASTERISK input, the exact
     # list of inputs can be updated. Possible only if context has signals
     if context.input_signals and asterisk_input:
@@ -3929,7 +3972,7 @@ def connect_part(root, parent, context):
             conn.comment, _, _ = end(child)
         else:
             warnings.append('Unsupported CONNECT PART child type: ' +
-                            sdl92Parser.tokenNames[child.type])
+                            sdl92Parser.tokenNamesMap[child.type])
     if not conn.connect_list:
         conn.connect_list.append('')
     if not id_token:
@@ -5066,6 +5109,7 @@ def pr_file(root):
     # are parsed before process definition - to get signal definitions
     # and data typess references.
     processes, uses, systems = [], [], []
+
     for child in root.getChildren():
         if node_filename(child) is not None:
             ast.pr_files.add(node_filename(child))
@@ -5077,6 +5121,10 @@ def pr_file(root):
             systems.append(child)
         else:
             LOG.error('Unsupported construct in PR:' + str(child.type))
+            LOG.error(str(child))
+    LOG.debug(f"Parsed {len(processes)} process(es), "
+             f" {len(uses)} use statatement(s), "
+             f" and {len(systems)} systems")
     for child in uses:
         # USE clauses can contain a CIF comment with the ASN.1 filename
         use_clause_subs = child.getChildren()
@@ -5209,18 +5257,21 @@ def add_to_ast(ast, filename=None, string=None):
     try:
         parser = parser_init(filename=filename, string=string)
     except IOError as err:
-        LOG.error('Parser error: ' + str(err))
+        LOG.error('Parser initialization error: ' + str(err))
         raise
     # Use Sam & Max output capturer to get errors from ANTLR parser
-    with samnmax.capture_output() as (stdout, stderr):
-        tree_rule_return_scope = parser.pr_file()
-    for e in stderr:
-        errors.append([e.strip()])
-    for w in stdout:
-        warnings.append([w.strip()])
+    # (not anymore, antlr3 for python3 does not print anything)
+    tree_rule_return_scope = parser.pr_file()
+#   with samnmax.capture_output() as (stdout, stderr):
+#       tree_rule_return_scope = parser.pr_file()
+#   for e in stderr:
+#       errors.append([e.strip()])
+#   for w in stdout:
+#       warnings.append([w.strip()])
     # Root of the AST is of type antlr3.tree.CommonTree
     # Add it as a child of the common tree
     subtree = tree_rule_return_scope.tree
+    check_syntax(node=subtree, recursive=True, filename=filename or "")
     token_str = parser.getTokenStream()
     children_before = set(ast.children)
     # addChild does not simply add the subtree - it flattens it if necessary
@@ -5241,14 +5292,24 @@ def parse_pr(files=None, string=None):
     common_tree = antlr3.tree.CommonTree(None)
     for filename in files:
         sys.path.insert(0, os.path.dirname(filename))
-    for filename in files:
-        err, warn = add_to_ast(common_tree, filename=filename)
-        errors.extend(err)
-        warnings.extend(warn)
-    if string:
-        err, warn = add_to_ast(common_tree, string=string)
-        errors.extend(err)
-        warnings.extend(warn)
+    try:
+        for filename in files:
+            err, warn = add_to_ast(common_tree, filename=filename)
+            errors.extend(err)
+            warnings.extend(warn)
+        if string:
+            err, warn = add_to_ast(common_tree, string=string)
+            errors.extend(err)
+            warnings.extend(warn)
+    except SyntaxError as err:
+        if err.filename:
+            msg = f"{err.filename}:{err.lineno}:{err.offset} Syntax error"\
+                  f"\n{err.text}"
+        else:
+            msg=f"Syntax error\n{str(err)}"
+        errors.append([msg,
+                      [0, 0],
+                      ['- -']])
 
     # If syntax errors were found, raise an alarm and try to continue anyway
     if errors:
@@ -5267,10 +5328,11 @@ def parse_pr(files=None, string=None):
     # check that all NEXTSTATEs have a correspondingly defined STATE
     # (except the '-' state, which means "stay in the same state')
     for process in og_ast.processes:
-        for ns in [t.inputString.lower() for t in process.terminators
-                if t.kind == 'next_state']:
-            if not ns in [s.lower() for s in
-                    process.mapping.keys()] + ['-']:
+        for t in process.terminators:
+            if t.kind != 'next_state':
+                continue
+            ns = t.inputString.lower()
+            if not ns in [s.lower() for s in process.mapping.keys()] + ['-']:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
                 errors.append(['State definition missing: ' + ns.upper(),
                               [t_x, t_y],
@@ -5308,17 +5370,19 @@ def parseSingleElement(elem='', string='', context=None):
     warnings = []
     t = None
     if parser:
-        with samnmax.capture_output() as (stdout, stderr):
-            r = parser_ptr()
-        for e in stderr:
-            syntax_errors.append(e.strip())
-        for w in stdout:
-            syntax_errors.append(w.strip())
+        #with samnmax.capture_output() as (stdout, stderr):
+        r = parser_ptr()
+        #for e in stderr:
+        #    syntax_errors.append(e.strip())
+        #for w in stdout:
+        #    syntax_errors.append(w.strip())
         # Get the root of the Antlr-AST to build our own AST entry
         root = r.tree
+        #print (isinstance(tree, antlr3.tree.CommonErrorNode))
         root.token_stream = parser.getTokenStream()
         backend_ptr = eval(elem)
         try:
+            check_syntax(node=root, recursive=True, input_string=string)
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
         except AttributeError as err:
@@ -5329,6 +5393,8 @@ def parseSingleElement(elem='', string='', context=None):
             pass
         except NotImplementedError as err:
             syntax_errors.append('Syntax error in expression - Fix it.')
+        except SyntaxError as err:
+            syntax_errors.append(err.text)
     return(t, syntax_errors, semantic_errors, warnings,
             context.terminators)
 
@@ -5353,6 +5419,7 @@ def parser_init(filename=None, string=None):
     # bug in the antlr3.5 runtime for python3 - attribute "error_list"
     # is missing - we have to add it manually here
     parser.error_list=[]
+    lexer.sdl92Lexer.error_list=[]
     return parser
 
 

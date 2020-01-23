@@ -34,7 +34,7 @@ paramless;
             START;
                 /* CIF PROCEDURECALL (476, 102), (220, 35) */
                 call writeln( 'Orchestrator startup');
-                /* CIF NEXTSTATE (553, 152), (67, 35) */
+                /* CIF NEXTSTATE (552, 152), (67, 35) */
                 NEXTSTATE wait;
             /* CIF state (1421, 94), (72, 35) */
             state running;
@@ -43,60 +43,55 @@ paramless;
                     /* CIF NEXTSTATE (1423, 204), (70, 35) */
                     NEXTSTATE wait;
             endstate;
-            /* CIF state (553, 152), (67, 35) */
+            /* CIF state (552, 152), (67, 35) */
             state wait;
-                /* CIF input (91, 207), (71, 35) */
+                /* CIF input (175, 207), (71, 35) */
                 input pulse(t);
-                    /* CIF decision (92, 262), (70, 50) */
+                    /* CIF decision (175, 262), (70, 50) */
                     decision t;
-                        /* CIF ANSWER (30, 332), (70, 25) */
+                        /* CIF ANSWER (114, 332), (70, 25) */
                         (0):
-                            /* CIF task (0, 377), (131, 59) */
+                            /* CIF task (83, 377), (131, 59) */
                             task seqof := {1,1,1,1},
 counter := 0,
 t := 0;
-                            /* CIF NEXTSTATE (30, 454), (70, 35) */
+                            /* CIF NEXTSTATE (114, 454), (70, 35) */
                             NEXTSTATE wait;
-                        /* CIF ANSWER (164, 332), (70, 25) */
+                        /* CIF ANSWER (248, 332), (70, 25) */
                         else:
-                            /* CIF task (134, 377), (131, 59) */
+                            /* CIF task (217, 377), (131, 59) */
                             task seqof := {1,1,1,1},
 counter := 0,
 t := 0;
-                            /* CIF NEXTSTATE (163, 454), (72, 35) */
+                            /* CIF NEXTSTATE (247, 454), (72, 35) */
                             NEXTSTATE running;
                     enddecision;
-                /* CIF input (490, 207), (86, 35) */
+                /* CIF input (570, 207), (86, 35) */
                 input arr(seqof);
-                    /* CIF task (426, 262), (214, 35) */
+                    /* CIF task (506, 262), (214, 35) */
                     task counter := (counter + 1) mod 4;
-                    /* CIF decision (471, 317), (124, 50) */
+                    /* CIF decision (551, 317), (124, 50) */
                     decision seqof = {4,4,4,4}
 and counter = 0;
-                        /* CIF ANSWER (368, 387), (70, 25) */
+                        /* CIF ANSWER (448, 387), (70, 25) */
                         (true):
-                            /* CIF PROCEDURECALL (270, 432), (265, 35) */
+                            /* CIF PROCEDURECALL (359, 432), (248, 35) */
                             call writeln( 'Property should be checked');
-                        /* CIF ANSWER (643, 387), (70, 25) */
+                        /* CIF ANSWER (723, 387), (70, 25) */
                         (false):
-                            /* CIF task (624, 432), (108, 35) */
-                            task 'seqof(1) := 1'
-                            /* CIF comment (753, 432), (237, 42) */
-                            comment 'This is not possible because seqof
-has a variable size.';
-                            /* CIF task (537, 487), (281, 35) */
+                            /* CIF task (618, 432), (281, 35) */
                             task seqof := { 1 } // seqof (1, length(seqof)-1);
                     enddecision;
-                    /* CIF NEXTSTATE (498, 538), (70, 35) */
+                    /* CIF NEXTSTATE (578, 483), (70, 35) */
                     NEXTSTATE -;
-                /* CIF input (1013, 207), (87, 35) */
+                /* CIF input (927, 207), (87, 35) */
                 input paramless;
-                    /* CIF task (1005, 262), (104, 42) */
+                    /* CIF task (918, 262), (104, 42) */
                     task counter := 4,
 t := 1;
-                    /* CIF task (993, 324), (127, 38) */
+                    /* CIF task (907, 324), (127, 38) */
                     task seqof := {1,1,1,1};
-                    /* CIF NEXTSTATE (1021, 377), (72, 35) */
+                    /* CIF NEXTSTATE (934, 377), (72, 35) */
                     NEXTSTATE running;
             endstate;
         endprocess orchestrator;

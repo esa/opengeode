@@ -414,8 +414,8 @@ class SDL_Scene(QGraphicsScene):
         self.click_coordinates = None
         self.orig_pos = None
         # When connecting symbols, store list of intermediate points
-        self.edge_points = []   # type: List[QPointF] in scene coordinates
-        self.temp_lines = []    # type: List[QGraphicsLineItem]
+        self.edge_points = []   # type is List[QPointF] in scene coordinates
+        self.temp_lines = []    # type is List[QGraphicsLineItem]
         self.process_name = 'opengeode'
         # Scene name is used to update the tab window name when scene changes
         self.name = ''
@@ -806,6 +806,7 @@ class SDL_Scene(QGraphicsScene):
                     errs.append(error)
             self.clear_focus()
             msg_box = QMessageBox(view)
+            msg_box.setFont(QFont('UbuntuMono', 10))
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('OpenGEODE - Syntax Error')
             msg_box.setInformativeText('\n'.join(errs))
@@ -3132,7 +3133,7 @@ def cli(options):
                 LOG.error('Too many errors, cannot generate code')
     else:
         if len(ast.processes) != 1:
-            LOG.error('Only one process at a time is supported')
+            LOG.error(f'Found {len(ast.processes)} process(es) instead of one')
             return 1
 
         if options.png or options.pdf or options.svg:

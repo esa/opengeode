@@ -295,10 +295,7 @@ asn2dataModel -toPython dataview-uniq.asn
 make -f Makefile.python
 echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
 LD_LIBRARY_PATH=./lib:. opengeode-simulator
-'''.format(pr=process_name.lower(),
-           asn1_files=asn1_filenames,
-           asn1_mod=' '.join(asn1_modules_o))
-
+'''.format(pr=process_name.lower())
 
     LOG.info('Generating Ada code for process ' + str(process_name))
 
@@ -333,7 +330,8 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         full_statelist.add(u'{}finished'.format(UNICODE_SEP))
 
     context_decl = []
-    if full_statelist:
+    if full_statelist and not import_context:
+        #  don't generate state type in stop condition automaton
         context_decl.append(u'type States is ({});'
                             .format(u', '.join(full_statelist) or u'No_State'))
 
@@ -374,37 +372,47 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
             asn1_file.write('\n'.join(asn1_template))
 
     # Generate the code to declare process-level context
-    context_decl.extend(['type {}_Ty is'.format(LPREFIX), 'record'])
+    if not import_context:
+        # but not in stop condition code, since we reuse the context type
+        # of the state machine being observed
+        context_decl.extend([f'type {LPREFIX}_Ty is', 'record'])
 
-    if full_statelist:
-        context_decl.append('state : States;')
+        if full_statelist:
+            context_decl.append('State : States;')
 
-    context_decl.append('initDone : Boolean := False;')
+        context_decl.append('Init_Done : Boolean := False;')
 
-    # State aggregation: add list of substates (XXX to be added in C generator)
-    for substates in aggregates.values():
-        for each in substates:
-            context_decl.append(u'{}{}state: States;'
-                                      .format(each.statename, UNICODE_SEP))
+        # State aggregation: add list of substates
+        for substates in aggregates.values():
+            for each in substates:
+                context_decl.append('{}{}state: States;'
+                                    .format(each.statename, UNICODE_SEP))
 
-    for var_name, (var_type, def_value) in process.variables.items():
-        if def_value:
-            # Expression must be a ground expression, i.e. must not
-            # require temporary variable to store computed result
-            dst, dstr, dlocal = expression(def_value)
-            varbty = find_basic_type(var_type)
-            if varbty.kind in ('SequenceOfType', 'OctetStringType'):
-                dstr = array_content(def_value, dstr, varbty)
-            assert not dst and not dlocal, 'DCL: Expecting a ground expression'
-        context_decl.append(
-                        u'{n} : aliased {sort}{default};'
-                        .format(n=var_name,
-                                sort=type_name(var_type),
-                                default=u' := ' + dstr if def_value else u''))
+        for var_name, (var_type, def_value) in process.variables.items():
+            if def_value:
+                # Expression must be a ground expression, i.e. must not
+                # require temporary variable to store computed result
+                dst, dstr, dlocal = expression(def_value)
+                varbty = find_basic_type(var_type)
+                if varbty.kind in ('SequenceOfType', 'OctetStringType'):
+                    dstr = array_content(def_value, dstr, varbty)
+                assert not dst and not dlocal,\
+                        'DCL: Expecting a ground expression'
+            context_decl.append(
+                            '{n} : aliased {sort}{default};'
+                            .format(n=var_name,
+                                   sort=type_name(var_type),
+                                   default=' := ' + dstr if def_value else ''))
 
-    context_decl.append('end record;')
+        context_decl.append('end record;')
     # context is aliased so that the model checker can work with access type
-    context_decl.append('{ctxt}: aliased {ctxt}_Ty;'.format(ctxt=LPREFIX))
+    if import_context:
+        #  code of stop conditions must use the same type as the main process
+        context_decl.append(
+                f'{LPREFIX}: {import_context}.{import_context}_Ctxt_Ty '
+                f'renames {import_context}.{import_context}_ctxt;')
+    else:
+        context_decl.append('{ctxt}: aliased {ctxt}_Ty;'.format(ctxt=LPREFIX))
     if simu:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
@@ -413,12 +421,6 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         # Exhaustive simulation needs a backup of the context to quickly undo
         context_decl.append(u'{ctxt}_bk: {ctxt}_Ty;'
                                   .format(ctxt=LPREFIX))
-    elif import_context:
-        # Possibility to have the context defined outside the module
-        # in order for a model checker to view/modify internals without any
-        # copy at runtime
-        context_decl.append(u'pragma import (C, ctxt, "{}_ctxt");'
-                                  .format(import_context))
 
     if not simu and not instance:
         process_level_decl.extend(context_decl)
@@ -457,18 +459,18 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         process_level_decl.append('procedure runTransition(Id: Integer);')
 
         # Generate the code of the start transition (if process not empty)
-        initDone =  u'{ctxt}.initDone := True;'.format(ctxt=LPREFIX)
+        Init_Done =  u'{ctxt}.Init_Done := True;'.format(ctxt=LPREFIX)
         if not simu:
             start_transition = [u'begin']
             if process.transitions:
                 start_transition.append(u'runTransition(0);')
-            start_transition.append(initDone)
+            start_transition.append(Init_Done)
         else:
             start_transition = [u'procedure Startup is',
                                 u'begin',
                                 u'   runTransition(0);' if process.transitions
                                                        else 'null;',
-                                initDone,
+                                Init_Done,
                                 u'end Startup;']
 
     # Generate the TASTE template
@@ -500,14 +502,17 @@ with Ada.Numerics.Generic_Elementary_Functions;
 with Interfaces;
 use Interfaces;
 {C}
+{Context}
 package body {process_name} is'''.format(
     process_name=process_name,
     dataview=asn1_modules,
     custom_data_types=include_custom_types,
     C='with Interfaces.C.Strings;\n'
       'use Interfaces.C.Strings;'
-      if simu else '') if not instance
-                       else u"package body {} is".format(process_name)]
+      if simu else '',
+    Context=f"with {import_context}; use {import_context};"
+      if import_context else '')
+    if not instance else u"package body {} is".format(process_name)]
 
     generic_spec, instance_decl = "", ""
     if generic:
@@ -652,6 +657,10 @@ package {process_name} is'''.format(generic=generic_spec,
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
                         {'name': timer.lower()} for timer in process.timers]:
+        if import_context:
+            # dont generate anything in stop_condition functions
+            break
+
         signame = signal.get('name', u'START')
         if signame == u'START':
             continue
@@ -1055,7 +1064,7 @@ package {process_name} is'''.format(generic=generic_spec,
         # XXX add to C backend
         if process.cs_mapping and not simu:
             taste_template.append('--  Process continuous signals')
-            taste_template.append('if {}.initDone then'.format(LPREFIX))
+            taste_template.append('if {}.Init_Done then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")
             taste_template.append('end if;')
             ads_template.append(
@@ -1065,7 +1074,7 @@ package {process_name} is'''.format(generic=generic_spec,
                     u'pragma import(C, Check_Queue, "{proc}_check_queue");'
                     .format(proc=process_name))
         elif process.cs_mapping and simu:
-            taste_template.append('if {}.initDone then'.format(LPREFIX))
+            taste_template.append('if {}.Init_Done then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")
             taste_template.append('end if;')
             # simulation: create a callback registration function
@@ -1095,8 +1104,8 @@ package {process_name} is'''.format(generic=generic_spec,
                     need_final_endif = True
                     taste_template.append(u'{first}if not msgPending and '
                             u'trId = -1 and '
-                            u'{ctxt}.state = {s1} and '
-                            u'{ctxt}.{s2}{unisep}state = {s3} then'
+                            u'{ctxt}.State = {s1} and '
+                            u'{ctxt}.{s2}{unisep}State = {s3} then'
                             .format(ctxt=LPREFIX, s1=agg_name,
                                 s2=each.statename, unisep=UNICODE_SEP,
                                 s3=statename, first='els' if done else ''))
@@ -2415,7 +2424,7 @@ def _boolean(primary, **kwargs):
 
 
 @expression.register(ogAST.PrimNull)
-def _boolean(primary, **kwargs):
+def _null(primary, **kwargs):
     ''' Generate code for a raw null value  '''
     ada_string = '0'
     return [], str(ada_string), []
@@ -2658,7 +2667,6 @@ def _choiceitem(choice, **kwargs):
             prefix = basic.Children[each].EnumID
             break
     ada_string = u'(Kind => {kind}, {opt} => {expr})'.format(
-                        cType=type_name(choice.exprType),
                         kind=prefix,
                         opt=choice.value['choice'],
                         expr=choice_str)
@@ -2836,7 +2844,7 @@ def _transition(tr, **kwargs):
                                 .format(tr.terminator.inputString))
                     # Call the START function of the state aggregation
                     code.append(u'{};'.format(tr.terminator.next_id))
-                    code.append(u'{ctxt}.state := {nextState};'
+                    code.append(u'{ctxt}.State := {nextState};'
                                 .format(ctxt=LPREFIX,
                                         nextState=tr.terminator.inputString))
                     code.append(u'trId := -1;')
@@ -2845,11 +2853,11 @@ def _transition(tr, **kwargs):
                                 str(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate: # XXX add to C generator
-                            code.append(u'{ctxt}.state := {nextState};'
+                            code.append(u'{ctxt}.State := {nextState};'
                                         .format(ctxt=LPREFIX,
                                           nextState=tr.terminator.inputString))
                         else:
-                            code.append(u'{ctxt}.{sub}{sep}state :='
+                            code.append(u'{ctxt}.{sub}{sep}State :='
                                         u' {nextState};'
                                         .format(ctxt=LPREFIX,
                                           sub=tr.terminator.substate,
@@ -2861,7 +2869,7 @@ def _transition(tr, **kwargs):
                     if any(next_id
                            for next_id in tr.terminator.candidate_id.keys()
                            if next_id != -1):
-                        code.append('case {}.state is'.format(LPREFIX))
+                        code.append('case {}.State is'.format(LPREFIX))
                         for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 if tr.terminator.next_is_aggregation:
@@ -2895,11 +2903,11 @@ def _transition(tr, **kwargs):
                     # exited. We must set this substate to a "finished"
                     # state until all the substates are returned. Then only
                     # call the overall state aggregation exit procedures.
-                    code.append(u'{ctxt}.{sub}{sep}state := {sep}finished;'
+                    code.append(u'{ctxt}.{sub}{sep}State := {sep}finished;'
                                 .format(ctxt=LPREFIX,
                                   sub=tr.terminator.substate,
                                   sep=UNICODE_SEP))
-                    cond = u'{ctxt}.{sib}{sep}state = {sep}finished'
+                    cond = u'{ctxt}.{sib}{sep}State = {sep}finished'
                     conds = [cond.format(sib=sib,
                                          ctxt=LPREFIX,
                                          sep=UNICODE_SEP)

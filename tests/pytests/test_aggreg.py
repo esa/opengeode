@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from opengeode.ogParser import parser_init, antlr3, sdl92Parser
+from opengeode.ogParser import parser_init, antlr3, sdl92Parser, lexer
 
 # return a string corresponding to a token number:
-token = lambda num: sdl92Parser.tokenNames[num]
+token = lambda num: lexer.tokenNamesMap[num]
 
 
 def test_composite_state_body_1():
@@ -18,7 +18,7 @@ def test_composite_state_body_1():
     res = test.composite_state_body()
     assert(not isinstance(res.tree, antlr3.tree.CommonErrorNode))
     composite = res.tree.children[0]
-    compo_type = sdl92Parser.tokenNames[composite.type]
+    compo_type = token(composite.type)
     assert(compo_type == 'COMPOSITE_STATE')
     for each in composite.children:
         if isinstance(each, antlr3.tree.CommonErrorNode):

@@ -434,7 +434,7 @@ class Channel(Signalroute):
         return self._start_point
 
     @start_point.setter
-    def start_point(self, scene_coord):  # type: QPointF
+    def start_point(self, scene_coord : QPointF):
         ''' value is in scene coordinates '''
         self._start_point = self.parent.mapFromScene(scene_coord)
 
@@ -444,7 +444,7 @@ class Channel(Signalroute):
         return self.parent.mapFromScene(self._end_point)
 
     @end_point.setter
-    def end_point(self, scene_coord):  # type: QPointF
+    def end_point(self, scene_coord : QPointF):
         ''' value is in scene coordinates '''
         self._end_point = scene_coord
 
