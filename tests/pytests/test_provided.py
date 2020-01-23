@@ -28,7 +28,7 @@ def test_3():
     try:
         ast = test.continuous_signal()
         node = ast.tree
-        check_syntax(node, node, True)
+        check_syntax(node, recursive=True)
     except SyntaxError as err:
         errCount = 1
         print(f'[EXPECTED ERROR]\n {err.text}')

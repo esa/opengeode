@@ -806,6 +806,7 @@ class SDL_Scene(QGraphicsScene):
                     errs.append(error)
             self.clear_focus()
             msg_box = QMessageBox(view)
+            msg_box.setFont(QFont('UbuntuMono', 10))
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('OpenGEODE - Syntax Error')
             msg_box.setInformativeText('\n'.join(errs))

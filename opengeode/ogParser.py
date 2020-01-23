@@ -465,7 +465,9 @@ def warning(root, msg: str) -> str:
 
 
 def check_syntax(node: antlr3.tree.CommonTree,
-                 recursive:bool = False) -> None:
+                 recursive:bool = False,
+                 filename:str = "",
+                 input_string:str = "") -> None:
     ''' Check if the ANTLR node is valid, otherwise raise an excption,
     meaning there is a syntax error, and report the string that could not be
     parsed '''
@@ -475,18 +477,34 @@ def check_syntax(node: antlr3.tree.CommonTree,
         if rec:
             for child in root.getChildren():
                 check(child, parent, rec)
-        if isinstance(root, antlr3.tree.CommonErrorNode):
-            token = root.trappedException.token
+        if isinstance(root, antlr3.tree.CommonErrorNode):  #  in tree.py
+            exc = root.trappedException    # in exceptions.py
+            token = exc.token
             token_str = token.text
             line = token.line
             pos = token.charPositionInLine + 1
-            if parent != root:
-                text = get_input_string(parent)
+            if filename:
+                text = open(filename, 'r').readlines()
             else:
-                text = parent.getText()  # take full node to get correct line/pos
-            syntax_error = f'In this code:\n{text}\n' \
-                    f'Unexpected "{token_str}" at line {line}, position {pos}'
-            raise SyntaxError(syntax_error)
+                text = input_string.split('\n')
+            if isinstance(exc, antlr3.exceptions.MismatchedTokenException):
+                err_msg = f'{" "*(pos-1)}^__ Expected ' \
+                          f'"{lexer.tokenNamesMap[exc.expecting]}", ' \
+                          f'got "{token_str}"'
+            else:
+                err_msg = f'{" "*(pos-1)}^__ Unexpected "{token_str}"'
+            if len(text) >= line:
+                syntax_error = f'{text[line-1]}\n{err_msg}'
+            else:
+                LOG.error("Unrecoverable Error with text input")
+                syntax_error = f'{err_msg} (line {line} offset {pos}) {len(text)} {text} {str(exc)}'
+            se_exc          = SyntaxError(syntax_error)
+            se_exc.filename = filename
+            se_exc.lineno   = line
+            se_exc.offset   = pos
+            se_exc.text     = syntax_error
+            raise se_exc
+            #raise SyntaxError(syntax_error)
     check(node, parent=node, rec=recursive)
 
 
@@ -1563,7 +1581,7 @@ def expression(root, context, pos='right'):
     elif root.type == lexer.SELECTOR:
         return selector_expression(root, context, pos)
     else:
-        raise NotImplementedError(sdl92Parser.tokenNames[root.type] +
+        raise NotImplementedError(sdl92Parser.tokenNamesMap[root.type] +
                                 ' - line ' + str(root.getLine()))
 
 
@@ -2491,7 +2509,7 @@ def primary(root, context):
                                     for value in context.mapping.keys()}
     else:
         errors.append('Parsing error (token {}, line {}, "{}")'
-                      .format(sdl92Parser.tokenNames[root.type],
+                      .format(sdl92Parser.tokenNamesMap[root.type],
                               root.getLine(),
                               get_input_string(root)))
         prim = ogAST.Primary()
@@ -2826,7 +2844,7 @@ def procedure_pre(root, parent=None, context=None):
         else:
             warnings.append(
                     'Unsupported construct in procedure, type: ' +
-                    sdl92Parser.tokenNames[child.type] +
+                    sdl92Parser.tokenNamesMap[child.type] +
                     ' - line ' + str(child.getLine()) +
                     ' - in procedure ' + str(proc.inputString))
     return proc, content, errors, warnings
@@ -3560,7 +3578,7 @@ def process_definition(root, parent=None, context=None):
             process.comment, _, _ = end(child)
         else:
             warnings.append(['Unsupported process definition child: ' +
-                             sdl92Parser.tokenNames[child.type] +
+                             sdl92Parser.tokenNamesMap[child.type] +
                             ' - line ' + str(child.getLine()),
                             [proc_x, proc_y], []])
     for proc, content in inner_proc:
@@ -3885,7 +3903,7 @@ def state(root, parent, context):
             pass
         else:
             stwarn.append('Unsupported STATE definition child type: ' +
-                            sdl92Parser.tokenNames[child.type])
+                            sdl92Parser.tokenNamesMap[child.type])
     # post-processing: if state is followed by an ASTERISK input, the exact
     # list of inputs can be updated. Possible only if context has signals
     if context.input_signals and asterisk_input:
@@ -3954,7 +3972,7 @@ def connect_part(root, parent, context):
             conn.comment, _, _ = end(child)
         else:
             warnings.append('Unsupported CONNECT PART child type: ' +
-                            sdl92Parser.tokenNames[child.type])
+                            sdl92Parser.tokenNamesMap[child.type])
     if not conn.connect_list:
         conn.connect_list.append('')
     if not id_token:
@@ -5239,7 +5257,7 @@ def add_to_ast(ast, filename=None, string=None):
     try:
         parser = parser_init(filename=filename, string=string)
     except IOError as err:
-        LOG.error('Parser error: ' + str(err))
+        LOG.error('Parser initialization error: ' + str(err))
         raise
     # Use Sam & Max output capturer to get errors from ANTLR parser
     # (not anymore, antlr3 for python3 does not print anything)
@@ -5253,11 +5271,7 @@ def add_to_ast(ast, filename=None, string=None):
     # Root of the AST is of type antlr3.tree.CommonTree
     # Add it as a child of the common tree
     subtree = tree_rule_return_scope.tree
-    try:
-        check_syntax(node=subtree, recursive=True)
-    except SyntaxError as err:
-        LOG.error(str(err))
-        raise
+    check_syntax(node=subtree, recursive=True, filename=filename or "")
     token_str = parser.getTokenStream()
     children_before = set(ast.children)
     # addChild does not simply add the subtree - it flattens it if necessary
@@ -5288,7 +5302,12 @@ def parse_pr(files=None, string=None):
             errors.extend(err)
             warnings.extend(warn)
     except SyntaxError as err:
-        errors.append([f"Parser error: syntax error!\n{str(err)}",
+        if err.filename:
+            msg = f"{err.filename}:{err.lineno}:{err.offset} Syntax error"\
+                  f"\n{err.text}"
+        else:
+            msg=f"Syntax error\n{str(err)}"
+        errors.append([msg,
                       [0, 0],
                       ['- -']])
 
@@ -5363,7 +5382,7 @@ def parseSingleElement(elem='', string='', context=None):
         root.token_stream = parser.getTokenStream()
         backend_ptr = eval(elem)
         try:
-            check_syntax(node=root, recursive=True)
+            check_syntax(node=root, recursive=True, input_string=string)
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
         except AttributeError as err:
@@ -5375,7 +5394,7 @@ def parseSingleElement(elem='', string='', context=None):
         except NotImplementedError as err:
             syntax_errors.append('Syntax error in expression - Fix it.')
         except SyntaxError as err:
-            syntax_errors.append(str(err))
+            syntax_errors.append(err.text)
     return(t, syntax_errors, semantic_errors, warnings,
             context.terminators)
 
@@ -5400,6 +5419,7 @@ def parser_init(filename=None, string=None):
     # bug in the antlr3.5 runtime for python3 - attribute "error_list"
     # is missing - we have to add it manually here
     parser.error_list=[]
+    lexer.sdl92Lexer.error_list=[]
     return parser
 
 
