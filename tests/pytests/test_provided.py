@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-from opengeode.ogParser import parser_init, antlr3, sdl92Parser, samnmax
-
-# return a string corresponding to a token number:
-token = lambda num: sdl92Parser.tokenNames[num]
+from opengeode.ogParser import parser_init, antlr3, sdl92Parser, check_syntax
 
 def test_1():
     ''' Test the parsing of numbers '''
@@ -15,13 +12,27 @@ def test_2():
     ''' Test the parsing of numbers '''
     # Test fails without the semicolon after "true"
     test = parser_init(string='''provided true; priority 5;''')
-    with samnmax.capture_output() as (stdout, stderr):
-        test.continuous_signal()
     errCount = 0
-    for each in stderr:
-        print('[ERROR] ' + str(each))
-        errCount += 1
+    try:
+        test.continuous_signal()
+    except SyntaxError as err:
+        errCount = 1
+        print(f'[ERROR] {err.text}')
     assert not errCount
+
+def test_3():
+    ''' Test detection of syntax error '''
+    # Test fails without the semicolon after "true"
+    test = parser_init(string='''provided true; priority !;''')
+    errCount = 0
+    try:
+        ast = test.continuous_signal()
+        node = ast.tree
+        check_syntax(node, node, True)
+    except SyntaxError as err:
+        errCount = 1
+        print(f'[EXPECTED ERROR]\n {err.text}')
+    assert errCount
 
 
 if __name__ == '__main__':
