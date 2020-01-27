@@ -5260,6 +5260,10 @@ def add_to_ast(ast, filename=None, string=None):
         LOG.error('Parser initialization error: ' + str(err))
         raise
     tree_rule_return_scope = parser.pr_file()
+    for each in parser.error_list:
+        LOG.error(each)
+    for each in lexer.sdl92Lexer.error_list:
+        LOG.error(each)
     # Root of the AST is of type antlr3.tree.CommonTree
     # Add it as a child of the common tree
     subtree = tree_rule_return_scope.tree
