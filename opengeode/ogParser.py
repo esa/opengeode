@@ -45,7 +45,7 @@ from antlr3 import tree
 from . import sdl92Lexer as lexer
 from .sdl92Parser import sdl92Parser
 
-from . import samnmax, ogAST
+from . import ogAST
 from .Asn1scc import parse_asn1, ASN1, create_choice_determinant_types
 
 LOG = logging.getLogger(__name__)
@@ -5259,15 +5259,7 @@ def add_to_ast(ast, filename=None, string=None):
     except IOError as err:
         LOG.error('Parser initialization error: ' + str(err))
         raise
-    # Use Sam & Max output capturer to get errors from ANTLR parser
-    # (not anymore, antlr3 for python3 does not print anything)
     tree_rule_return_scope = parser.pr_file()
-#   with samnmax.capture_output() as (stdout, stderr):
-#       tree_rule_return_scope = parser.pr_file()
-#   for e in stderr:
-#       errors.append([e.strip()])
-#   for w in stdout:
-#       warnings.append([w.strip()])
     # Root of the AST is of type antlr3.tree.CommonTree
     # Add it as a child of the common tree
     subtree = tree_rule_return_scope.tree
@@ -5370,12 +5362,7 @@ def parseSingleElement(elem='', string='', context=None):
     warnings = []
     t = None
     if parser:
-        #with samnmax.capture_output() as (stdout, stderr):
         r = parser_ptr()
-        #for e in stderr:
-        #    syntax_errors.append(e.strip())
-        #for w in stdout:
-        #    syntax_errors.append(w.strip())
         # Get the root of the Antlr-AST to build our own AST entry
         root = r.tree
         #print (isinstance(tree, antlr3.tree.CommonErrorNode))
