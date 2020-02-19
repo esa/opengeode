@@ -7,7 +7,7 @@
 
 extern void adainit();
 extern void myfunction_PI_start_something(asn1SccT_Int32 *);
-extern void myfunction_PI_mytimer();
+extern void myfunction_PI_myTimer();
 
 volatile sig_atomic_t keep_going = 1;
 
@@ -16,7 +16,7 @@ void myfunction_RI_result_data(long long *val)
     printf("[C] result_data: %lld\n", *val);
 }
 
-void myfunction_RI_SET_mytimer(asn1SccT_Int32 *val)
+void myfunction_RI_SET_myTimer(asn1SccT_Int32 *val)
 {
     printf("[C] SET MyTimer: %lld\n", *val);
     alarm(((int)*val) / 1000);
@@ -25,12 +25,12 @@ void myfunction_RI_SET_mytimer(asn1SccT_Int32 *val)
 
 void timer_expired()
 {
-    myfunction_PI_mytimer();
+    myfunction_PI_myTimer();
     keep_going = 0;
 }
 
 
-void myfunction_RI_RESET_mytimer()
+void myfunction_RI_RESET_myTimer()
 {
     printf("RESET MyTimer\n");
 }

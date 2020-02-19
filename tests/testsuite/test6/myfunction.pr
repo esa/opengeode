@@ -159,45 +159,45 @@ be evaluated.';
             /* CIF ANSWER (664, 1309), (78, 28) */
             (false):
         enddecision;
-        /* CIF NEXTSTATE (605, 1455), (72, 33) */
+        /* CIF NEXTSTATE (605, 1456), (72, 33) */
         NEXTSTATE Wait;
-    /* CIF state (605, 1455), (72, 33) */
+    /* CIF state (605, 1456), (72, 33) */
     state Wait;
-        /* CIF input (1003, 1508), (104, 33) */
+        /* CIF input (1003, 1509), (104, 33) */
         input mytimer;
-            /* CIF PROCEDURECALL (945, 1556), (221, 33) */
+            /* CIF PROCEDURECALL (944, 1557), (221, 33) */
             call writeln('timer expired');
-            /* CIF PROCEDURECALL (957, 1604), (196, 33) */
+            /* CIF PROCEDURECALL (957, 1605), (196, 33) */
             call factorial(3, someint);
-            /* CIF NEXTSTATE (1019, 1652), (72, 33) */
+            /* CIF NEXTSTATE (1019, 1653), (72, 33) */
             NEXTSTATE Wait;
-        /* CIF input (421, 1508), (217, 33) */
+        /* CIF input (421, 1509), (217, 33) */
         input start_something (toto);
-            /* CIF output (355, 1556), (348, 33) */
+            /* CIF output (355, 1557), (348, 33) */
             output result_data((toto+1) mod 2147483647);
-            /* CIF PROCEDURECALL (440, 1604), (178, 48) */
+            /* CIF PROCEDURECALL (440, 1605), (178, 48) */
             call writeln
 ('Hello Toto', toto);
-            /* CIF PROCEDURECALL (406, 1667), (246, 33) */
+            /* CIF PROCEDURECALL (406, 1668), (246, 33) */
             call set_timer(1000, myTimer);
-            /* CIF task (364, 1715), (330, 35) */
+            /* CIF task (364, 1716), (330, 35) */
             task largeReal := power(someReal, 2);
-            /* CIF PROCEDURECALL (272, 1765), (515, 35) */
+            /* CIF PROCEDURECALL (272, 1766), (515, 35) */
             call writeln(someReal, ' ** 2' , ' == ', largeReal, ' (should be 2.25 )');
-            /* CIF task (403, 1815), (252, 35) */
+            /* CIF task (403, 1816), (252, 35) */
             task someReal := float(someInt);
-            /* CIF task (376, 1865), (307, 35) */
+            /* CIF task (376, 1866), (307, 35) */
             task someInt := fix(someReal) mod 255;
-            /* CIF task (437, 1915), (185, 35) */
+            /* CIF task (437, 1916), (185, 35) */
             task opnot := not opnot;
-            /* CIF task (429, 1965), (200, 35) */
+            /* CIF task (429, 1966), (200, 35) */
             task 'someint := -someint'
             /* CIF comment (692, 1940), (243, 35) */
-            comment 'XXX should raise an error!';
-            /* CIF task (427, 2015), (204, 35) */
+            comment 'raises an error (as expected)';
+            /* CIF task (427, 2016), (204, 35) */
             task someint := (-8) mod 5;
-            /* CIF task (459, 2070), (141, 35) */
-            task negint := (-8) mod 5;;
+            /* CIF task (456, 2070), (146, 35) */
+            task negint := (-8) mod 5;
             /* CIF NEXTSTATE (494, 2120), (70, 33) */
             NEXTSTATE wait;
     endstate;
