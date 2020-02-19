@@ -1636,6 +1636,7 @@ def arithmetic_expression(root, context):
     # the latter calls fix_expression_types to determine the type of each side
     # of the expression. The type of the expression should still be unknown
     # at this point (expr.exprType).
+    op = None
     def find_bounds(op, minL, maxL, minR, maxR):
         # op must be an arithmetic operator from python
         candidates = [op(float(l), float(r))
@@ -1734,6 +1735,10 @@ def arithmetic_expression(root, context):
                 # default : signed type
                 kind = 'Integer32Type'
 
+            if op is None:
+                raise TypeError(
+                        error(root, "Invalid operator was used in expression"))
+
             # cast the result to the resulting type and make it a string
             bound_min = str(op(bounds['Min']))
             bound_max = str(op(bounds['Max']))
@@ -1817,6 +1822,8 @@ def arithmetic_expression(root, context):
         #print msg
         #print (traceback.format_exc())
         errors.append(error(root, msg))
+    except TypeError as err:
+        errors.append(str(err))
 
     if root.type in (lexer.REM, lexer.MOD) and not isinstance(expr,
                                                               ogAST.Primary):
@@ -3195,7 +3202,11 @@ def text_area_content(root, ta_ast, context):
             if context.return_var:
                 warnings.append('Procedure return variable not supported')
         elif child.type == lexer.TIMER:
-            timers = [timer.text.lower() for timer in child.children]
+            # Don't lowercase the timer name, keep it as declared
+            # otherwise the code generator cannot make the connection with
+            # the corresponding functions in C to set/reset the timer.
+            # timers = [timer.text.lower() for timer in child.children]
+            timers = [timer.text for timer in child.children]
             context.timers.extend(timers)
             ta_ast.timers = timers
         elif child.type == lexer.SIGNAL:

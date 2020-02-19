@@ -488,7 +488,7 @@ use {process_name}_newtypes;'''.format(process_name=process_name) \
         if process.user_defined_types else u''
 
     taste_template = [u'''\
--- This file was generated automatically: DO NOT MODIFY IT !
+-- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
 
 with System.IO;
 use System.IO;
@@ -528,7 +528,7 @@ package body {process_name} is'''.format(
 
     # Generate the source file (.ads) header
     ads_template = [u'''\
--- This file was generated automatically: DO NOT MODIFY IT !
+-- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
 
 {dataview}
 {C}
@@ -656,7 +656,7 @@ package {process_name} is'''.format(generic=generic_spec,
 
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
-                        {'name': timer.lower()} for timer in process.timers]:
+                        {'name': timer} for timer in process.timers]:
         if import_context:
             # dont generate anything in stop_condition functions
             break
