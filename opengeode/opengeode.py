@@ -2002,10 +2002,11 @@ end {pr};'''.format(pr=prj_name,
    end Naming;
 
    package Compiler is
-       for Driver ("ASN1") use external("ASN1SCC");
+       for Driver ("ASN1") use "mono";
 
        for Leading_Required_Switches ("ASN1") use
-         ("-{lang}",
+         (external("ASN1SCC"),
+         "-{lang}",
           "-typePrefix",
           "Asn1Scc"{otherAsn});
    end Compiler;
