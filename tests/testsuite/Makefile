@@ -1,4 +1,6 @@
-DISABLED_TESTS=test-branchcoverage/
+DISABLED_TESTS=test-branchcoverage/ logs/
+MAKEFILE_PATH   := $(abspath $(lastword $(MAKEFILE_LIST)))
+TEST_BASE_DIR   := $(dir $(MAKEFILE_PATH))
 TEST_CASES=$(filter-out $(DISABLED_TESTS), $(sort $(dir $(wildcard */))))
 
 DISABLED_BENCHMARKS=test1/ test2/ test3/ test4/ test5/ test6/ test7/ test9/ \
@@ -6,7 +8,7 @@ DISABLED_BENCHMARKS=test1/ test2/ test3/ test4/ test5/ test6/ test7/ test9/ \
 BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */))))
 
 export EXPECTED_FAILURES=test-typecheck/ test-procedure/ test-demoopengeode/ test-branchcoverage/ \
-					      test-nestedpriority/
+					      test-nestedpriority/ test-iterators/
 export QGEN_UNSUPPORTED=test-debug/ test-demotaste/ test-instance/ test-eds2/ test-asn1constants/\
 					      test-nocif/ test-nocif2/ test-provided2/ test-processfpar1/ test-processfpar2/\
 					      test-recursion/
@@ -30,6 +32,7 @@ test-qgen-gt-c:
 	@python3 test.py test-qgen-gt-c $(TEST_CASES)
 
 test-ada:
+	rm -f ${TEST_BASE_DIR}/logs/*
 	@python3 test.py test-ada $(TEST_CASES)
 
 test-c:
