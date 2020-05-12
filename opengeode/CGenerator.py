@@ -6,7 +6,8 @@
 
     This module generates C code from SDL process models.
 
-    Copyright (c) 2015 Politecnico di Milano
+    Copyright (c) 2015-2020 Politecnico di Milano & ESA
+    Copyright (c) 2020 N7Space & ESA
 
     Designed and implemented by Marco Lattuada
 
@@ -175,7 +176,7 @@ def _floating_label(label, **kwargs):
 @generate.register(ogAST.Label)
 def _label(lab, **kwargs):
     ''' Transition following labels are generated in a separate section
-        for visibility reasons 
+        for visibility reasons
     '''
     return ['goto {label};'.format(label=lab.inputString)], []
 
@@ -450,6 +451,8 @@ def _process(process, simu=False, **kwargs):
     if simu:
         SHARED_LIB = True
         LPREFIX = process_name + u'_ctxt'
+    else:
+        LPREFIX = process_name.lower() + u'_context'
 
     # When building a shared library (with simu=True), generate a "mini-cv"
     # for aadl2glueC to create the code interfacing with asn1scc
@@ -529,7 +532,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     context_init_code = []
     context_type.append(u'typedef struct')
     context_type.append(u'{')
-    context_init_code.append(u'void CInit()')
+    context_init_code.append(u'void CInit{}()'.format(process_name))
     context_init_code.append(u'{')
 
     if state_list:
@@ -557,23 +560,23 @@ LD_LIBRARY_PATH=. taste-gui -l
 
 
     context_type.extend(['} context_t;'])
+    if process.transitions:
+        context_init_code.append(u'runTransition{}(0);'.format(process_name))
     context_init_code.append(u'}')
     global_decls.extend(context_type)
 
     # Adding the declaration of the state variable
-    global_decls.append(u'context_t {ct};'.format(ct=LPREFIX))
+    global_decls.append(u'__attribute__ ((persistent)) context_t {ct} = {{0}};'.format(ct=LPREFIX))
+
+    # Add the declaration of the runTransition procedure, if needed
+    if process.transitions:
+        global_decls.append('void runTransition{}(int Id);'.format(process_name))
+
     global_decls.extend(context_init_code)
 
     for name, val in process.mapping.items():
         if name.endswith(u'START') and name != u'START':
             global_decls.append(u'#define {name} {val}'.format(name=name, val=str(val)))
-
-    # Add the declaration of the runTransition procedure, if needed
-    if process.transitions:
-        global_decls.append('void runTransition(int Id);')
-
-    # Generate the code of the start transition (if process not empty)
-    start_transition = ['runTransition(0);'] if process.transitions else []
 
     dll_code = []
     if simu:
@@ -632,7 +635,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     for signal in process.input_signals + [{'name': timer.lower()} for timer in process.timers]:
         if signal.get('name', u'START') == u'START':
             continue
-        pi_header = u'void {sig_name}'.format(sig_name=signal['name'])
+        pi_header = u'void {pn}_PI_{sig_name}'.format(sig_name=signal['name'], pn=process_name.lower())
         param_name = signal.get('param_name') or u'{}_param'.format(signal['name'])
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
@@ -684,7 +687,7 @@ LD_LIBRARY_PATH=. taste-gui -l
                     input_signals_code.append(u'{ctxt}.{inp} = *{tInp};'.format(ctxt=LPREFIX,inp=inp,tInp=param_name));
                 # Execute the correponding transition
                 if input_def.transition:
-                    input_signals_code.append('runTransition({idx});'.format(idx=input_def.transition_id))
+                    input_signals_code.append('runTransition{pn}({idx});'.format(pn=process_name, idx=input_def.transition_id))
             input_signals_code.append('break;')
             input_signals_code.append('}')
         input_signals_code.append('default:')
@@ -724,12 +727,14 @@ LD_LIBRARY_PATH=. taste-gui -l
             simu_code.append(u'}')
             simu_code.append(u'')
         else:
-            output_signals_code.append(u'void {}{};'.format(signal['name'], param_spec))
+            output_signals_code.append(u'#define {} {}_RI_{}'.format(signal['name'], process_name.lower(), signal['name']))
+            h_source_code.append(u'//  Output signal "' + signal['name'])
+            h_source_code.append(u'void {}_RI_{}{};'.format(process_name.lower(), signal['name'], param_spec))
+
 
     # for the .h file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
-        h_source_code.append(u'#define {fn} {pn}_RI_{fn}'.format(fn=proc.inputString, pn=process_name))
-        ri_header = u'void {sig_name}'.format(sig_name=proc.inputString)
+        ri_header = u'void {pn}_RI_{sig_name}'.format(sig_name=proc.inputString, pn=process_name.lower())
         params = []
         for param in proc.fpar:
             typename = type_name(param['type'])
@@ -740,6 +745,9 @@ LD_LIBRARY_PATH=. taste-gui -l
             ri_header += u'()'
         h_source_code.append(u'//  Sync required interface "' + proc.inputString)
         h_source_code.append(ri_header + u';')
+
+        output_signals_code.append(u'#define {sig_name} {pn}_RI_{sig_name}'
+                                   .format(sig_name=proc.inputString, pn=process_name.lower()))
 
     timers_code = []
 
@@ -786,7 +794,7 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     # Generate the code of the runTransition procedure, if needed
     if process.transitions:
-        transition_source_code.append('void runTransition(int Id)')
+        transition_source_code.append('void runTransition{}(int Id)'.format(process_name))
         transition_source_code.append('{')
         transition_source_code.append('int trId = Id;')
 
@@ -841,7 +849,7 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     for each in process.DV.asn1Files:
         hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
-        c_source_code.extend(['#include "{}"'.format(hname)])
+        c_source_code.extend(['#include "{}"'.format(hname.split(os.sep)[-1])])
     c_source_code.append('#include \"{pn}.h\"'.format(pn=process_name))
 
     c_source_code.extend(global_decls)
@@ -1251,16 +1259,22 @@ def _prim_selector(prim):
     receiver_bty = find_basic_type(receiver.exprType)
 
     if receiver_bty.kind == 'ChoiceType':
-        string = ('{string}.u.{field_name}'.format(field_name=field_name,
+        # try to use original children selector since field_name is always lowercase
+        for field_case in receiver_bty.Children:
+            if field_case.replace('-','_').lower() == field_name.lower():
+                break
+        else:
+            field_case = field_name
+        string = ('{string}.u.{field_name}'.format(field_name=field_case.replace('-','_'),
                                                    string=string))
     else:
         # Sequence: we must get the right casing of the field
         for field_case in receiver_bty.Children:
-            if field_case.lower() == field_name.lower():
+            if field_case.replace('-','_').lower() == field_name.lower():
                 break
         else:
             field_case = field_name
-        string += '.' + field_case
+        string += '.' + field_case.replace('-','_')
 
     return stmts, str(string), local_decl
 
@@ -1820,7 +1834,10 @@ def _enumerated_value(primary):
     for each in basic.EnumValues:
         if each.lower() == enumerant:
             break
-    prefix = type_name(basic)
+    # do not add "asn1Scc" prefix if the enumerated is standard enum
+    # (e.g. it is a choice selector)
+    use_prefix = getattr(basic.EnumValues[each], "IsStandardEnum", True)
+    prefix = type_name(basic, use_prefix=use_prefix)
     string = (prefix + basic.EnumValues[each].EnumID)
     return [], str(string), []
 
@@ -1942,7 +1959,7 @@ def _sequence(seq):
             value_str = array_content(value, value_str, find_basic_type(elem_specty))
         elif isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             value_str = array_content(value, value_str, find_basic_type(elem_specty))
-        string += u"{}.{} = {}".format(sep, elem.lower(), value_str)
+        string += u"{}.{} = {}".format(sep, each.replace('-', '_'), value_str)
         if elem.lower() in optional_fields:
             # Set optional field presence
             optional_fields[elem.lower()]['present'] = True
@@ -2011,8 +2028,8 @@ def _choiceitem(choice):
     stmts, choice_str, local_decl = expression(choice.value['value'])
     if isinstance(choice.value['value'], (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         choice_str = array_content(choice.value['value'], choice_str, find_basic_type(choice.value['value'].exprType))
-        choice_str = u'({ty}) {cs}'.format(ty=u'asn1Scc' + find_basic_type(choice.value['value'].exprType).__name__[:-5], cs=choice_str)
-    string = u'{cType}_{opt}_set({expr})'.format(cType=type_name(choice.exprType), opt=choice.value['choice'], expr=choice_str)
+        choice_str = u'{cs}'.format(cs=choice_str)
+    string = u'({cType}){{ .kind = {opt}_PRESENT, .u.{opt} = {expr} }}'.format(cType=type_name(choice.exprType), opt=choice.value['choice'], expr=choice_str)
     return stmts, str(string), local_decl
 
 def append_size(append):
@@ -2175,7 +2192,7 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind == 'StateEnumeratedType':
         return u''
     elif a_type.kind == 'EnumeratedType':
-        return u'asn1Scc'
+        return u'asn1Scc' if use_prefix else ''
     else:
         raise NotImplementedError('Type name for {}'.format(a_type.kind))
 
