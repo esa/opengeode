@@ -1949,17 +1949,22 @@ def _sequence(seq):
     for elem, value in seq.value.items():
         # Set the type of the field - easy thanks to ASN.1 flattened AST
         delem = elem.replace('_', '-')
+        found = False
         for each in type_children:
             if each.lower() == delem.lower():
                 elem_spec = type_children[each]
+                found = True
                 break
+        # try to use original children selector since elem is always lowercase
+        elem_name = each.replace('-', '_') if found else elem
+
         elem_specty = elem_spec.type
         value_stmts, value_str, local_var = expression(value)
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             value_str = array_content(value, value_str, find_basic_type(elem_specty))
         elif isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             value_str = array_content(value, value_str, find_basic_type(elem_specty))
-        string += u"{}.{} = {}".format(sep, each.replace('-', '_'), value_str)
+        string += u"{}.{} = {}".format(sep, elem_name, value_str)
         if elem.lower() in optional_fields:
             # Set optional field presence
             optional_fields[elem.lower()]['present'] = True
