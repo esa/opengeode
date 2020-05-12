@@ -45,7 +45,7 @@ from antlr3 import tree
 from . import sdl92Lexer as lexer
 from .sdl92Parser import sdl92Parser
 
-from . import samnmax, ogAST
+from . import ogAST
 from .Asn1scc import parse_asn1, ASN1, create_choice_determinant_types
 
 LOG = logging.getLogger(__name__)
@@ -1636,6 +1636,7 @@ def arithmetic_expression(root, context):
     # the latter calls fix_expression_types to determine the type of each side
     # of the expression. The type of the expression should still be unknown
     # at this point (expr.exprType).
+    op = None
     def find_bounds(op, minL, maxL, minR, maxR):
         # op must be an arithmetic operator from python
         candidates = [op(float(l), float(r))
@@ -1734,6 +1735,10 @@ def arithmetic_expression(root, context):
                 # default : signed type
                 kind = 'Integer32Type'
 
+            if op is None:
+                raise TypeError(
+                        error(root, "Invalid operator was used in expression"))
+
             # cast the result to the resulting type and make it a string
             bound_min = str(op(bounds['Min']))
             bound_max = str(op(bounds['Max']))
@@ -1817,6 +1822,8 @@ def arithmetic_expression(root, context):
         #print msg
         #print (traceback.format_exc())
         errors.append(error(root, msg))
+    except TypeError as err:
+        errors.append(str(err))
 
     if root.type in (lexer.REM, lexer.MOD) and not isinstance(expr,
                                                               ogAST.Primary):
@@ -3195,7 +3202,11 @@ def text_area_content(root, ta_ast, context):
             if context.return_var:
                 warnings.append('Procedure return variable not supported')
         elif child.type == lexer.TIMER:
-            timers = [timer.text.lower() for timer in child.children]
+            # Don't lowercase the timer name, keep it as declared
+            # otherwise the code generator cannot make the connection with
+            # the corresponding functions in C to set/reset the timer.
+            # timers = [timer.text.lower() for timer in child.children]
+            timers = [timer.text for timer in child.children]
             context.timers.extend(timers)
             ta_ast.timers = timers
         elif child.type == lexer.SIGNAL:
@@ -5259,15 +5270,11 @@ def add_to_ast(ast, filename=None, string=None):
     except IOError as err:
         LOG.error('Parser initialization error: ' + str(err))
         raise
-    # Use Sam & Max output capturer to get errors from ANTLR parser
-    # (not anymore, antlr3 for python3 does not print anything)
     tree_rule_return_scope = parser.pr_file()
-#   with samnmax.capture_output() as (stdout, stderr):
-#       tree_rule_return_scope = parser.pr_file()
-#   for e in stderr:
-#       errors.append([e.strip()])
-#   for w in stdout:
-#       warnings.append([w.strip()])
+    for each in parser.error_list:
+        LOG.error(each)
+    for each in lexer.sdl92Lexer.error_list:
+        LOG.error(each)
     # Root of the AST is of type antlr3.tree.CommonTree
     # Add it as a child of the common tree
     subtree = tree_rule_return_scope.tree
@@ -5370,12 +5377,7 @@ def parseSingleElement(elem='', string='', context=None):
     warnings = []
     t = None
     if parser:
-        #with samnmax.capture_output() as (stdout, stderr):
         r = parser_ptr()
-        #for e in stderr:
-        #    syntax_errors.append(e.strip())
-        #for w in stdout:
-        #    syntax_errors.append(w.strip())
         # Get the root of the Antlr-AST to build our own AST entry
         root = r.tree
         #print (isinstance(tree, antlr3.tree.CommonErrorNode))

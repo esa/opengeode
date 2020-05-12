@@ -51,6 +51,36 @@ endsystem;
     else:
         assert False
 
+def test_system_with_error_2():
+    ''' Detect the syntax error (missing SEMI after "procedure entry") '''
+    string='''system huuh;
+block huuh;
+process huuh;
+/* CIF START (171, 77), (70, 35) */
+START;
+/* CIF NEXTSTATE (171, 132), (70, 35) */
+NEXTSTATE a-;
+/* CIF state (386, 90), (70, 35) */
+state a;
+endstate;
+endprocess huuh;
+endblock;
+endsystem;
+'''
+    test = parser_init(string=string)
+    # Parse and then check that the reported error is the expected one
+
+    #res = test.system_definition()
+    res = test.pr_file()
+    node = res.tree
+    try:
+        check_syntax(node, recursive=True, input_string=string)
+    except SyntaxError:
+        err = "\n".join(test.error_list)
+        raise SyntaxError(err)
+    else:
+        assert False
+
 if __name__ == '__main__':
     for name, value in dict(globals()).viewitems():
         if name.startswith('test_'):

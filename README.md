@@ -122,6 +122,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.1 (05/2020)
+    - Improve generated Makefile/gpr project file
+
 3.0.0 (12/2019)
     - Port of Opengeode to Python3
     - Use PySide2 instead of PySide

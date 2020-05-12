@@ -7,7 +7,7 @@
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2019 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -140,7 +140,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.0.0'
+__version__ = '3.0.1'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2002,14 +2002,20 @@ end {pr};'''.format(pr=prj_name,
    end Naming;
 
    package Compiler is
-       for Driver ("ASN1") use "asn1.exe";
+       for Driver ("ASN1") use "mono";
 
-       for Leading_Required_Switches ("ASN1") use ("-{lang}", "-typePrefix", "Asn1Scc"{otherAsn});
+       for Leading_Required_Switches ("ASN1") use
+         (external("ASN1SCC"),
+         "-{lang}",
+          "-typePrefix",
+          "Asn1Scc"{otherAsn});
    end Compiler;
 end DataView_{lang};'''
 
         #  Template for the Makefile
-        template_makefile = '''all:
+        template_makefile = '''export ASN1SCC=$(shell which asn1.exe)
+
+all:
 \tgprbuild -p -P {pr}.gpr          # generate Ada code from the SDL model
 \tgprbuild -p -P dataview_ada.gpr  # generate Ada code from the ASN.1 model
 \tgprbuild -p -P code/{pr}_ada.gpr      # build the Ada code
