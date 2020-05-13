@@ -215,7 +215,7 @@ def _call_external_function(output, **kwargs):
             stmts.extend(param_stmts)
             decls.extend(p_local)
             if not SHARED_LIB:
-                stmts.append('RESET_{};'.format(p_id))
+                stmts.append('RESET_{}();'.format(p_id))
             else:
                 stmts.append('RESET_{t}("{t}");'.format(t=p_id))
             continue
@@ -770,8 +770,13 @@ LD_LIBRARY_PATH=. taste-gui -l
                 timers_code.append(u'')
 
         else:
-            h_source_code.append(u'void SET_{}(asn1SccUint32 * val);'.format(timer))
-            h_source_code.append(u'void RESET_{}();'.format(timer))
+            h_source_code.append(u'void {}_RI_SET_{}(asn1SccUint32 * val);'.format(process_name.lower(), timer))
+            h_source_code.append(u'void {}_RI_RESET_{}();'.format(process_name.lower(), timer))
+            output_signals_code.append(u'#define SET_{timer} {pn}_RI_SET_{timer}'
+                    .format(timer=timer, pn=process_name.lower()))
+            output_signals_code.append(u'#define RESET_{timer} {pn}_RI_RESET_{timer}'
+                    .format(timer=timer, pn=process_name.lower())) 
+
     # Transform inner labels to floating labels
     Helper.inner_labels_to_floating(process)
 
