@@ -40,11 +40,14 @@ update:
 	git pull
 
 dependencies:
-	apt install pyside2*
+	apt install python3-pyside2.* || echo 'PySide2 is not available in your system. Try to run "sudo pip3 install --user --upgrade pyside2'
 	apt install python3-antlr3
-	apt install pyside2-tools
-	pip3 install --user --upgrade pygraphviz
-	pip3 install --user --upgrade stringtemplate3
+	apt install pyside2-tools || :
+	#apt install python3-matplotlib
+	apt install python3-pygraphviz
+	apt install python3-stringtemplate3
+	apt install python3-singledispatch
+	
 	# optional dependencies from taste: spedometer, properties, dmt, pymsc, asn1-value-editor
 
 install:
@@ -53,7 +56,7 @@ install:
 full-install: update dependencies install
 
 publish: 
-	@python setup.py sdist upload
+	@python3 setup.py sdist upload
 
 pytest:
 	# make sure you have installed pytest-qt:
