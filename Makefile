@@ -40,9 +40,9 @@ update:
 	git pull
 
 dependencies:
-	apt install python3-pyside2.*
+	apt install python3-pyside2.* || echo 'PySide2 is not available in your system. Try to run "sudo pip3 install --user --upgrade pyside2'
 	apt install python3-antlr3
-	apt install pyside2-tools
+	apt install pyside2-tools || :
 	#apt install python3-matplotlib
 	apt install python3-pygraphviz
 	apt install python3-stringtemplate3
