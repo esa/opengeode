@@ -122,6 +122,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.2 (05/2020)
+    - Fix API change in Pyside2
+
 3.0.1 (05/2020)
     - Improve generated Makefile/gpr project file
 

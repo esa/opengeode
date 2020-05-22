@@ -23,7 +23,7 @@ import importlib
 import logging
 import traceback
 import hashlib
-from PySide2.QtCore import QProcess, QFile
+from PySide2.QtCore import QProcess, QFile, QIODevice
 
 from . import icons
 
@@ -157,7 +157,7 @@ def parse_asn1(*files, **options):
         if pprint:
             # Generate an html file with pretty-printed ASN.1 types
             stg_qrc = QFile(':misc/pretty_print_asn1.stg')
-            stg_qrc.open(1)
+            stg_qrc.open(QIODevice.ReadOnly)
             content = stg_qrc.readAll()
             stgfile = outdir + os.sep + 'pretty_print_asn1.stg'
             with open(stgfile, 'wb') as tmpfile:
