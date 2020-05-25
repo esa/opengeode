@@ -1,3 +1,5 @@
+![alt tag](icons/opengeode3.png)
+
 OpenGEODE
 =========
 
@@ -19,7 +21,7 @@ Features
 --------
 
 - Graphical editor of SDL processes and procedures.
-- Includes support for state composition and state aggregation (parallel/nested states)
+- Support for state composition and state aggregation (parallel/nested states)
 - Works on pure PR+CIF files (textual SDL notation)
 - Supports ASN.1 data types using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
 - Generates Ada code
@@ -31,6 +33,14 @@ Features
 - Undo/Redo, Copy-Paste
 - (Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern
 - Python API to parse and render SDL from other Python modules
+- Simulator (prototype)
+
+Main limitations
+-----------
+
+- Supports only one process at a time (use [TASTE](https://taste.tools) to connect processes to form a complete system)
+- Minimal support of legacy SDL datatypes (newtypes/synonyms..): use ASN.1 instead
+
 
 Installation
 ============
@@ -39,34 +49,21 @@ OpenGEODE is made primarily for Linux.
 
 It is part of the [TASTE project](https://taste.tools)
 
-It is installed with all dependencies in the TASTE virtual machine that you can download from this link.
+It is installed with all dependencies in the TASTE virtual machine that you can download from this link. Manual installation is possible in a native Linux environment.
+Debian 10 (buster) is the baseline. Recent versions of Ubuntu (20.x) should work as well.
 
-Linux Pre-requisites
---------------------
+The following commands should automate the installation:
 
-To install OpenGEODE on Linux you need to install some system-level dependencies:
-
-- Python 2.7 with pip
-- PySide
-- Graphviz
-- [ASN1SCC V4](https://github.com/ttsiodras/asn1scc)
-- GNAT
-
-On Debian, Ubuntu, and probably other distributions:
-
-```bash
-$ sudo apt install pkg-config python-pyside pyside-tools graphviz python-ply \
-                       graphviz-dev libgraphviz-dev  python-pip gnat \
-                       libmono-system-runtime4.0-cil libmono-corlib4.0-cil \
-                       libmono-system-runtime-serialization-formatters-soap4.0-cil \
-                       libmono-system-web4.0-cil libmono-system-xml4.0-cil \
-                       libmono-system4.0-cil mono-runtime libmono-system-numerics4.0-cil \
-                       libmono-system-data-linq4.0-cil libmono-corlib2.0-cil libmono-system2.0-cil
+```
+$ git clone https://github.com/esa/opengeode
+$ cd opengeode
+$ sudo make full-install   # it will use apt to get dependencies
 ```
 
-Some of these packages may be more recent on your distribution.
 
-To install the ASN.1 compiler, you must get the latest binary release of the version 4 from [here](https://github.com/ttsiodras/asn1scc/releases)
+OpenGEODE uses the ASN1 [ASN1SCC](https://github.com/ttsiodras/asn1scc) for the datatypes. You must install it manually:
+
+Get the latest binary release from [here](https://github.com/ttsiodras/asn1scc/releases)
 
 Then run (possibly as root):
 
@@ -82,16 +79,11 @@ Open a new terminal and check that it works:
 $ mono /opt/asn1scc/asn1.exe
 ```
 
-OpenGEODE installation
-----------------------
+Once you have the dependencies installed you can update the tool by running the following commands:
 
-Once all dependencies are installed, run:
-
-
-```bash
-$ git clone https://github.com/esa/opengeode.git
-$ cd opengeode
-$ make full-install
+```
+$ git pull
+$ make install    # alternatively:  pip3 install --user --upgrade . 
 ```
 
 
@@ -107,9 +99,7 @@ The LLVM backend was designed and implemented by Diego Barbera during the ESA
 Summer of Code 2014. This component is not maintained.
 Some parts implemented by Laurent Meyer (native SDL type support in the parser)
 
-The ASN.1 compiler (ASN1Scc) that OpenGEODE is based on was
-developed by George Mamais and Thanassis Tsiodras for the European
-Space Agency. Information at https://github.com/ttsiodras/asn1scc
+The ASN.1 compiler (ASN1SCC) that OpenGEODE is based on was developed by George Mamais and Thanassis Tsiodras for the European Space Agency.
 
 Licence
 =======
