@@ -93,7 +93,9 @@ PROCEDURES = []
 # Specify that the target is a shared library
 SHARED_LIB = False
 
-UNICODE_SEP = u'\u00dc'
+#SEPARATOR = u'\u00dc'
+# Avoid Unicode characters, they cause occasional annoying issues
+SEPARATOR = "_0_"
 LPREFIX = u'ctxt'
 
 
@@ -120,12 +122,12 @@ def external_ri_list(process):
             typename = type_name(signal['type'])
             param_spec = u'({pName}: access {sort})'.format(pName=param_name,
                                                             sort=typename)
-        result.append(u"procedure RI{sep}{name}{param}".format(sep=UNICODE_SEP,
+        result.append(u"procedure RI{sep}{name}{param}".format(sep=SEPARATOR,
                                                            name=signal['name'],
                                                            param=param_spec))
     for proc in (proc for proc in process.procedures if proc.external):
         ri_header = u'procedure RI{sep}{sig_name}'.format(
-                                                     sep=UNICODE_SEP,
+                                                     sep=SEPARATOR,
                                                      sig_name=proc.inputString)
         params = []
         params_spec = ''
@@ -300,7 +302,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
     LOG.info('Generating Ada code for process ' + str(process_name))
 
     # In case model has nested states, flatten everything
-    Helper.flatten(process, sep=UNICODE_SEP)
+    Helper.flatten(process, sep=SEPARATOR)
 
     # Process State aggregations (Parallel states) XXX Add to C backend
 
@@ -327,7 +329,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
     reduced_statelist = {s for s in full_statelist if s not in parallel_states}
     if aggregates:
         # Parallel states in a state aggregation may terminate
-        full_statelist.add(u'{}finished'.format(UNICODE_SEP))
+        full_statelist.add(u'state{}end'.format(SEPARATOR))
 
     context_decl = []
     if full_statelist and not import_context:
@@ -386,7 +388,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         for substates in aggregates.values():
             for each in substates:
                 context_decl.append('{}{}state: States;'
-                                    .format(each.statename, UNICODE_SEP))
+                                    .format(each.statename, SEPARATOR))
 
         for var_name, (var_type, def_value) in process.variables.items():
             if def_value:
@@ -443,16 +445,16 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         # Declare start procedure for aggregate states XXX add in C generator
         # should create one START per "via" clause, TODO later
         for name, substates in aggregates.items():
-            proc_name = u'procedure {}{}START'.format(name, UNICODE_SEP)
+            proc_name = u'procedure {}{}START'.format(name, SEPARATOR)
             process_level_decl.append(u'{};'.format(proc_name))
             aggreg_start_proc.extend([u'{} is'.format(proc_name),
                                       'begin'])
             aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
                                      .format(sub=subname.statename,
-                                             sep=UNICODE_SEP)
+                                             sep=SEPARATOR)
                                      for subname in substates)
             aggreg_start_proc.extend([u'end {}{}START;'
-                                     .format(name, UNICODE_SEP),
+                                     .format(name, SEPARATOR),
                                      '\n'])
 
         # Add the declaration of the runTransition procedure
@@ -601,7 +603,7 @@ package {process_name} is'''.format(generic=generic_spec,
                         ")) with Export, Convention => C, "
                         'Link_Name => "{proc}_{name}_state";'
                         .format(name=each.statename, ctxt=LPREFIX,
-                                proc=process_name, sep=UNICODE_SEP))
+                                proc=process_name, sep=SEPARATOR))
 
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.items():
@@ -638,7 +640,7 @@ package {process_name} is'''.format(generic=generic_spec,
             if not proc.external and not generic:
                 ads_template.append(u'pragma Export'
                                     u'(C, p{sep}{proc_name}, "_{proc_name}");'
-                                    .format(sep=UNICODE_SEP,
+                                    .format(sep=SEPARATOR,
                                             proc_name=proc.inputString))
 
     # Generate the code for the process-level variable declarations
@@ -698,7 +700,7 @@ package {process_name} is'''.format(generic=generic_spec,
                 state/input combination '''
             input_def = mapping[signame].get(state)
             # Check for nested states to call optional exit procedure
-            state_tree = state.split(UNICODE_SEP)
+            state_tree = state.split(SEPARATOR)
             context = process
             exitlist = []
             current = ''
@@ -710,13 +712,13 @@ package {process_name} is'''.format(generic=generic_spec,
                         if comp.exit_procedure:
                             exitlist.append(current)
                         context = comp
-                        current = current + UNICODE_SEP
+                        current = current + SEPARATOR
                         break
             for each in reversed(exitlist):
                 if trans and all(each.startswith(trans_st)
                                  for trans_st in trans.possible_states):
                     taste_template.append(u'p{sep}{ref}{sep}exit;'
-                                          .format(ref=each, sep=UNICODE_SEP))
+                                          .format(ref=each, sep=SEPARATOR))
 
             if input_def:
                 for inp in input_def.parameters:
@@ -760,7 +762,7 @@ package {process_name} is'''.format(generic=generic_spec,
                                               u'{ctxt}.{sub}{sep}state is'
                                               .format(ctxt=LPREFIX,
                                                      sub=sub.statename,
-                                                     sep=UNICODE_SEP))
+                                                     sep=SEPARATOR))
                         for par in sub.mapping.keys():
                             case_state(par)
                         taste_template.append('when others =>')
@@ -820,7 +822,7 @@ package {process_name} is'''.format(generic=generic_spec,
             ads_template.append(u'pragma Convention(Convention => C,'
                                 u' Entity => {}_T);'.format(signal['name']))
             ads_template.append(u'RI{sep}{sig} : {sig}_T;'
-                                .format(sep=UNICODE_SEP, sig=signal['name']))
+                                .format(sep=SEPARATOR, sig=signal['name']))
             ads_template.append(u'procedure Register_{sig}(Callback: {sig}_T);'
                                 .format(sig=signal['name']))
             ads_template.append(u'pragma Export(C, Register_{sig},'
@@ -837,12 +839,12 @@ package {process_name} is'''.format(generic=generic_spec,
                                   .format(sig=signal['name']))
             taste_template.append(u'begin')
             taste_template.append(u'RI{sep}{sig} := Callback;'
-                                  .format(sep=UNICODE_SEP, sig=signal['name']))
+                                  .format(sep=SEPARATOR, sig=signal['name']))
             taste_template.append(u'end Register_{};'.format(signal['name']))
             taste_template.append(u'')
         elif not generic:
             ads_template.append(u'procedure RI{}{}{};'
-                                .format(UNICODE_SEP,
+                                .format(SEPARATOR,
                                         signal['name'],
                                         param_spec))
             procname = process_name.lower() if taste else process_name
@@ -851,14 +853,14 @@ package {process_name} is'''.format(generic=generic_spec,
             signame = signal['name']
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
-                                .format(sep=UNICODE_SEP,
+                                .format(sep=SEPARATOR,
                                         sig=signame,
                                         proc=procname.lower()))
 
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
         ri_header = u'procedure RI{sep}{sig_name}'.format(
-                                                     sep=UNICODE_SEP,
+                                                     sep=SEPARATOR,
                                                      sig_name=proc.inputString)
         params = []
         params_spec = u""
@@ -885,7 +887,7 @@ package {process_name} is'''.format(generic=generic_spec,
             ads_template.append(u'pragma Convention(Convention => C,'
                                 u' Entity => {}_T);'.format(proc.inputString))
             ads_template.append(u'RI{sep}{sig} : {sig}_T;'
-                                .format(sep=UNICODE_SEP, sig=proc.inputString))
+                                .format(sep=SEPARATOR, sig=proc.inputString))
             ads_template.append(u'procedure Register_{sig}(Callback: {sig}_T);'
                                 .format(sig=proc.inputString))
             ads_template.append(u'pragma Export(C, Register_{sig},'
@@ -896,7 +898,7 @@ package {process_name} is'''.format(generic=generic_spec,
                                   .format(sig=proc.inputString))
             taste_template.append(u'begin')
             taste_template.append(u'RI{sep}{sig} := Callback;'
-                                  .format(sep=UNICODE_SEP,
+                                  .format(sep=SEPARATOR,
                                           sig=proc.inputString))
             taste_template.append(u'end Register_{};'.format(proc.inputString))
             taste_template.append(u'')
@@ -909,7 +911,7 @@ package {process_name} is'''.format(generic=generic_spec,
             signame = proc.inputString
             ads_template.append(u'pragma import(C, RI{sep}{sig},'
                                 u' "{proc}_RI_{sig}");'
-                                .format(sep=UNICODE_SEP,
+                                .format(sep=SEPARATOR,
                                         sig=signame,
                                         proc=procname.lower()))
 
@@ -968,9 +970,9 @@ package {process_name} is'''.format(generic=generic_spec,
         # be gathered to instantiate the package
         pkg_decl = (u"package {}_Instance is new {}"
                     .format(process_name, process.instance_of_name))
-        ri_list = [u"RI{sep}{name}".format(sep=UNICODE_SEP, name=sig['name'])
+        ri_list = [u"RI{sep}{name}".format(sep=SEPARATOR, name=sig['name'])
                    for sig in process.output_signals]
-        ri_list.extend ([u"RI{sep}{name}".format(sep=UNICODE_SEP,
+        ri_list.extend ([u"RI{sep}{name}".format(sep=SEPARATOR,
                                                  name=proc.inputString)
                         for proc in process.procedures if proc.external])
         ri_list.extend([u"set_{}".format(timer) for timer in process.timers])
@@ -1107,7 +1109,7 @@ package {process_name} is'''.format(generic=generic_spec,
                             u'{ctxt}.State = {s1} and '
                             u'{ctxt}.{s2}{unisep}State = {s3} then'
                             .format(ctxt=LPREFIX, s1=agg_name,
-                                s2=each.statename, unisep=UNICODE_SEP,
+                                s2=each.statename, unisep=SEPARATOR,
                                 s3=statename, first='els' if done else ''))
                     # Change priority 0 (no priority set) to lowest priority
                     lowest_priority = max(item.priority for item in cs_item)
@@ -1413,17 +1415,17 @@ def _call_external_function(output, **kwargs):
                                                   if is_out_sig else ""))
             if list_of_params:
                 code.append(u'RI{sep}{RI}({params});'
-                            .format(sep=UNICODE_SEP,
+                            .format(sep=SEPARATOR,
                                     RI=out['outputName'],
                                     params=', '.join(list_of_params)))
             else:
                 if not SHARED_LIB:
                     code.append(u'RI{sep}{RI};'
-                                .format(sep=UNICODE_SEP,
+                                .format(sep=SEPARATOR,
                                         RI=out['outputName']))
                 else:
                     code.append(u'RI{sep}{RI}(New_String("{RI}"));'
-                                .format(sep=UNICODE_SEP,
+                                .format(sep=SEPARATOR,
                                         RI=out['outputName']))
         else:
             # inner procedure call
@@ -1436,11 +1438,11 @@ def _call_external_function(output, **kwargs):
                 list_of_params.append(p_id)
             if list_of_params:
                 code.append(u'p{sep}{proc}({params});'.format(
-                    sep=UNICODE_SEP,
+                    sep=SEPARATOR,
                     proc=proc.inputString,
                     params=', '.join(list_of_params)))
             else:
-                code.append(u'p{}{};'.format(UNICODE_SEP, proc.inputString))
+                code.append(u'p{}{};'.format(SEPARATOR, proc.inputString))
     return code, local_decl
 
 
@@ -1838,7 +1840,7 @@ def _prim_call(prim, **kwargs):
                                                       p=param_str)
     else:
         # inner procedure call (with a RETURN statement)
-        ada_string += u'p{}{}('.format(UNICODE_SEP, ident)
+        ada_string += u'p{}{}('.format(SEPARATOR, ident)
         # Take all params and join them with commas
         list_of_params = []
         for param in params:
@@ -2861,7 +2863,7 @@ def _transition(tr, **kwargs):
                                         u' {nextState};'
                                         .format(ctxt=LPREFIX,
                                           sub=tr.terminator.substate,
-                                          sep=UNICODE_SEP,
+                                          sep=SEPARATOR,
                                           nextState=tr.terminator.inputString))
                 else:
                     # "nextstate -": switch case to re-run the entry transition
@@ -2903,14 +2905,14 @@ def _transition(tr, **kwargs):
                     # exited. We must set this substate to a "finished"
                     # state until all the substates are returned. Then only
                     # call the overall state aggregation exit procedures.
-                    code.append(u'{ctxt}.{sub}{sep}State := {sep}finished;'
+                    code.append(u'{ctxt}.{sub}{sep}State := state{sep}end;'
                                 .format(ctxt=LPREFIX,
                                   sub=tr.terminator.substate,
-                                  sep=UNICODE_SEP))
-                    cond = u'{ctxt}.{sib}{sep}State = {sep}finished'
+                                  sep=SEPARATOR))
+                    cond = u'{ctxt}.{sib}{sep}State = state{sep}end'
                     conds = [cond.format(sib=sib,
                                          ctxt=LPREFIX,
-                                         sep=UNICODE_SEP)
+                                         sep=SEPARATOR)
                             for sib in tr.terminator.siblings
                             if sib.lower() != tr.terminator.substate.lower()]
                     code.append(u'if {} then'.format(' and '.join(conds)))
@@ -2960,7 +2962,7 @@ def procedure_header(proc):
     pi_header = u'{kind} {sep}{proc_name}'.format(kind='procedure'
                                                   if not proc.return_type
                                                   else 'function',
-                                                  sep=(u'p' + UNICODE_SEP),
+                                                  sep=(u'p' + SEPARATOR),
                                                   proc_name=proc.inputString)
     if proc.fpar:
         pi_header += '('
@@ -3013,7 +3015,7 @@ def _inner_procedure(proc, **kwargs):
         # taste for required interfaces.
         local_decl.append(u'pragma import(C, p{sep}{proc_name}, '
                           u'"{proc_name}");'
-                          .format(sep=UNICODE_SEP,
+                          .format(sep=SEPARATOR,
                                   proc_name=proc.inputString))
     else:
         # Generate the code for the procedure itself
@@ -3055,7 +3057,7 @@ def _inner_procedure(proc, **kwargs):
         code.append('begin')
         code.extend(tr_code)
         code.extend(code_labels)
-        code.append(u'end p{sep}{procName};'.format(sep=UNICODE_SEP,
+        code.append(u'end p{sep}{procName};'.format(sep=SEPARATOR,
                                                     procName=proc.inputString))
     code.append('\n')
 

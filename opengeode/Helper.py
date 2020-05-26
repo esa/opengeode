@@ -19,7 +19,7 @@
         statenames: return a list of properly-formatted state names
         rec_findstates: recursively find parallel/composite statenames
 
-    Copyright (c) 2012-2015 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -36,13 +36,15 @@ from functools import singledispatch
 from . import ogAST
 
 LOG = logging.getLogger(__name__)
+#DEFAULT_SEPARATOR=u'\00dc'
+DEFAULT_SEPARATOR='_0_'
 
 __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
            'map_input_state', 'sorted_fields', 'state_aggregations',
            'parallel_states', 'statenames', 'rec_findstates']
 
 
-def statenames(context, sep=u'\u00dc'):
+def statenames(context, sep=DEFAULT_SEPARATOR):
     ''' Return the list of states (just the names) of a given context
     Format the output by replacing unicode separator symbol with a dot '''
     # note: if model has been flattened, all contexts are already merged
