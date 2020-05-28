@@ -79,7 +79,7 @@ def main():
                                 if path in xfails
                                 else ('[QGEN UNSUPPORTED]'
                                 if path in qgen_unsup
-                 else '[FAILED] ... build log in /tmp/{}.err'.format(name))))))
+                 else '[FAILED] ... build log in logs/{}.err'.format(name))))))
             sys.stdout.flush()
             if errcode != 0:
                 # Failure: save the log immediately
