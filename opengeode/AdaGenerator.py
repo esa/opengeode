@@ -431,7 +431,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
     start_transition = []
     # Continuous State transition id
     if not instance:
-        process_level_decl.append('CS_Only  : constant Integer := {};'
+        process_level_decl.append('CS_Only : constant := {};'
                                   .format(len(process.transitions)))
 
         for name, val in process.mapping.items():
@@ -449,7 +449,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
             process_level_decl.append(u'{};'.format(proc_name))
             aggreg_start_proc.extend([u'{} is'.format(proc_name),
                                       'begin'])
-            aggreg_start_proc.extend(u'runTransition({sub}{sep}START);'
+            aggreg_start_proc.extend(u'Execute_Transition ({sub}{sep}START);'
                                      .format(sub=subname.statename,
                                              sep=SEPARATOR)
                                      for subname in substates)
@@ -457,23 +457,24 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                                      .format(name, SEPARATOR),
                                      '\n'])
 
-        # Add the declaration of the runTransition procedure
-        process_level_decl.append('procedure runTransition(Id: Integer);')
+        # Add the declaration of the Execute_Transition  procedure
+        process_level_decl.append(
+                'procedure Execute_Transition (Id: Integer);')
 
         # Generate the code of the start transition (if process not empty)
         Init_Done =  u'{ctxt}.Init_Done := True;'.format(ctxt=LPREFIX)
         if not simu:
             start_transition = [u'begin']
             if process.transitions:
-                start_transition.append(u'runTransition(0);')
+                start_transition.append(u'Execute_Transition (0);')
             start_transition.append(Init_Done)
         else:
-            start_transition = [u'procedure Startup is',
-                                u'begin',
-                                u'   runTransition(0);' if process.transitions
-                                                       else 'null;',
+            start_transition = ['procedure Startup is',
+                                'begin',
+                                '   Execute_Transition (0);'
+                                   if process.transitions else 'null;',
                                 Init_Done,
-                                u'end Startup;']
+                                'end Startup;']
 
     # Generate the TASTE template
     try:
@@ -551,14 +552,14 @@ package {process_name} is'''.format(generic=generic_spec,
         ads_template.append('--  API for simulation via DLL')
         dll_api.append('-- API to remotely change internal data')
         # Add function allowing to trace current state as a string
-        process_level_decl.append("function get_state return chars_ptr "
+        process_level_decl.append("function Get_State return chars_ptr "
                                   "is (New_String(states'Image({ctxt}.state)))"
                                   " with Export, Convention => C, "
                                   'Link_Name => "{name}_state";'
                                   .format(name=process_name, ctxt=LPREFIX))
-        set_state_decl = "procedure set_state(new_state: chars_ptr)"
+        set_state_decl = "procedure Set_State(New_State : chars_ptr)"
         ads_template.append("{};".format(set_state_decl))
-        ads_template.append('pragma Export(C, set_state, "_set_state");')
+        ads_template.append('pragma Export(C, Set_State, "_set_state");')
         dll_api.append("{} is".format(set_state_decl))
         dll_api.append("begin")
         dll_api.append("for S in States loop")
@@ -568,38 +569,40 @@ package {process_name} is'''.format(generic=generic_spec,
                        .format(LPREFIX))
         dll_api.append("end if;")
         dll_api.append("end loop;")
-        dll_api.append("end set_state;")
+        dll_api.append("end Set_State;")
         dll_api.append("")
 
         # Save/restore state allow one step undo, as needed for model checking
-        save_state_decl = "procedure save_context"
-        restore_state_decl = "procedure restore_context"
+        save_state_decl = "procedure Save_Context"
+        restore_state_decl = "procedure Restore_Context"
         ads_template.append("{};".format(save_state_decl))
-        ads_template.append('pragma Export(C, save_context, "_save_context");')
+        ads_template.append('pragma Export (C, Save_Context,'
+                            ' "_save_context");')
         ads_template.append("{};".format(restore_state_decl))
-        ads_template.append('pragma Export(C, restore_context, "_restore_context");')
+        ads_template.append('pragma Export (C, Restore_Context,'
+                            ' "_restore_context");')
         dll_api.append("{} is".format(save_state_decl))
         dll_api.append("begin")
         dll_api.append("{ctxt}_bk := {ctxt};".format(ctxt=LPREFIX))
-        dll_api.append("end save_context;")
+        dll_api.append("end Save_Context;")
         dll_api.append("")
         dll_api.append("{} is".format(restore_state_decl))
         dll_api.append("begin")
         dll_api.append("{ctxt} := {ctxt}_bk;".format(ctxt=LPREFIX))
-        dll_api.append("end restore_context;")
+        dll_api.append("end Restore_Context;")
         dll_api.append("")
 
         # Declare procedure Startup in .ads
         ads_template.append(u'procedure Startup;')
-        ads_template.append(u'pragma Export(C, Startup, "{}_startup");'
+        ads_template.append(u'pragma Export (C, Startup, "{}_startup");'
                             .format(process_name))
 
         # interface to get/set state aggregations XXX add to C generator
         for substates in aggregates.values():
             for each in substates:
                 process_level_decl.append(
-                        u"function get_{name}_state return chars_ptr "
-                        u"is (New_String(states'Image({ctxt}.{name}{sep}state)"
+                        u"function Get_{name}_State return chars_ptr "
+                        u"is (New_String (States'Image ({ctxt}.{name}{sep}state)"
                         ")) with Export, Convention => C, "
                         'Link_Name => "{proc}_{name}_state";'
                         .format(name=each.statename, ctxt=LPREFIX,
@@ -699,7 +702,9 @@ package {process_name} is'''.format(generic=generic_spec,
             ''' Generate the code that triggers the transition for the current
                 state/input combination '''
             input_def = mapping[signame].get(state)
-            # Check for nested states to call optional exit procedure
+            # Check for nested states to call optional exit procedures
+            # (we may exit from more than one state, the exit procedures must
+            #  be called in the right order)
             state_tree = state.split(SEPARATOR)
             context = process
             exitlist = []
@@ -715,6 +720,13 @@ package {process_name} is'''.format(generic=generic_spec,
                         current = current + SEPARATOR
                         break
             for each in reversed(exitlist):
+                # Here we add a call to the exit procedure of nested states
+                # when we exit the state due to a transition in the superstate
+                # not due to a return statement from within the substate
+                # this other case is handled in Helper.py when flattening
+                # the model.
+                # The exit here is added only for transitions triggered by an
+                # INPUT. The continuous signals are not processed here
                 if trans and all(each.startswith(trans_st)
                                  for trans_st in trans.possible_states):
                     taste_template.append(u'p{sep}{ref}{sep}exit;'
@@ -730,12 +742,12 @@ package {process_name} is'''.format(generic=generic_spec,
                                                   tInp=param_name))
                 # Execute the correponding transition
                 if input_def.transition:
-                    taste_template.append(u'runTransition({idx});'.format(
-                        idx=input_def.transition_id))
+                    taste_template.append(u'Execute_Transition ({idx});'
+                            .format(idx=input_def.transition_id))
                 else:
-                    taste_template.append('runTransition(CS_Only);')
+                    taste_template.append('Execute_Transition (CS_Only);')
             else:
-                taste_template.append('runTransition(CS_Only);')
+                taste_template.append('Execute_Transition (CS_Only);')
 
         if not instance:
             taste_template.append('case {}.state is'.format(LPREFIX))
@@ -782,7 +794,7 @@ package {process_name} is'''.format(generic=generic_spec,
             for each_state in reduced_statelist:
                 case_state(each_state)
             taste_template.append('when others =>')
-            taste_template.append('runTransition(CS_Only);')
+            taste_template.append('Execute_Transition (CS_Only);')
             taste_template.append('end case;')
         else:
             inst_call = u"{}_Instance.{}".format(process_name, signame)
@@ -982,7 +994,9 @@ package {process_name} is'''.format(generic=generic_spec,
             pkg_decl += u" ({})".format(u", ".join(ri_inst))
         ads_template.append(pkg_decl + u";")
 
-    if simu and process.cs_mapping:
+    has_cs = any(process.cs_mapping.values())
+
+    if simu and has_cs:
         # Callback registration for Check_Queue
         taste_template.append(u'procedure Register_Check_Queue'
                               u'(Callback: Check_Queue_T) is')
@@ -1015,11 +1029,11 @@ package {process_name} is'''.format(generic=generic_spec,
         local_decl_transitions.extend(label_decl)
         code_labels.extend(code_label)
 
-    # Generate the code of the runTransition procedure, if needed
+    # Generate the code of the Execute_Transition  procedure, if needed
     if process.transitions and not instance:
-        taste_template.append('procedure runTransition(Id: Integer) is')
+        taste_template.append('procedure Execute_Transition (Id : Integer) is')
         taste_template.append('trId : Integer := Id;')
-        if process.cs_mapping:
+        if has_cs:
             taste_template.append(
                               'msgPending : aliased Asn1Boolean := True;')
 
@@ -1052,7 +1066,7 @@ package {process_name} is'''.format(generic=generic_spec,
         taste_template.append('end case;')
         if code_labels:
             # Due to nested states (chained transitions) jump over label code
-            # (NEXTSTATEs do not return from runTransition)
+            # (NEXTSTATEs do not return from Execute_Transition)
             taste_template.append('goto next_transition;')
 
         # Add the code for the floating labels
@@ -1064,7 +1078,7 @@ package {process_name} is'''.format(generic=generic_spec,
         #     - Check current state(s)
         #     - For each continuous signal generate code (test+transition)
         # XXX add to C backend
-        if process.cs_mapping and not simu:
+        if has_cs and not simu:
             taste_template.append('--  Process continuous signals')
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")
@@ -1075,7 +1089,7 @@ package {process_name} is'''.format(generic=generic_spec,
                 ads_template.append(
                     u'pragma import(C, Check_Queue, "{proc}_check_queue");'
                     .format(proc=process_name))
-        elif process.cs_mapping and simu:
+        elif has_cs and simu:
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
             taste_template.append("Check_Queue(msgPending'access);")
             taste_template.append('end if;')
@@ -1093,6 +1107,7 @@ package {process_name} is'''.format(generic=generic_spec,
             taste_template.append('null;')
 
         # Process the continuous signals in state aggregations first
+        # (reminder: state aggregations = parallel states)
         done = []
         sep = 'if '
         last = ''
@@ -1100,11 +1115,20 @@ package {process_name} is'''.format(generic=generic_spec,
         need_final_endif = False
         for cs, agg in product(process.cs_mapping.items(),
                                aggregates.items()):
-            (statename, cs_item), (agg_name, substates) = cs, agg
+            (statename, cs_item)  = cs
+            (agg_name, substates) = agg
+
+            if not cs_item:
+                continue
             for each in substates:
-                if statename in each.mapping.keys():
+                if statename in each.cs_mapping and each.cs_mapping[statename]:
+                    #print("statename --->", statename)
+                    #print("cs_item   --->", cs_item)
+                    #print("agg_name  --->", agg_name)
+                    #print("substates --->", substates)
                     need_final_endif = True
-                    taste_template.append(u'{first}if not msgPending and '
+                    taste_template.append(
+                            '{first}if not msgPending and '
                             u'trId = -1 and '
                             u'{ctxt}.State = {s1} and '
                             u'{ctxt}.{s2}{unisep}State = {s3} then'
@@ -1118,7 +1142,7 @@ package {process_name} is'''.format(generic=generic_spec,
                             each.priority = lowest_priority + 1
                     for provided_clause in sorted(cs_item,
                                                  key=lambda itm: itm.priority):
-                        taste_template.append(u'-- Priority {}'
+                        taste_template.append(u'--  CS Priority {}'
                                              .format(provided_clause.priority))
                         trId = process.transitions.index\
                                             (provided_clause.transition)
@@ -1131,42 +1155,69 @@ package {process_name} is'''.format(generic=generic_spec,
                     taste_template.append(u'end if;')  # inner if
                     sep = 'if '
                     break
+
         for statename in process.cs_mapping.keys() - done:
-            need_final_endif = False
             cs_item = process.cs_mapping[statename]
-            taste_template.append(u'{first}if not msgPending and '
-                    u'trId = -1 and {}.state = {} then'
-                    .format(LPREFIX, statename, first='els' if done else ''))
+            if cs_item:
+                need_final_endif = False
+                taste_template.append(u'{first}if not msgPending and '
+                        u'trId = -1 and {}.state = {} then'
+                        .format(LPREFIX, statename,
+                            first='els' if done else ''))
             # Change priority 0 (no priority set) to lowest priority
-            lowest_priority = max(item.priority for item in cs_item)
+            if cs_item:
+                lowest_priority = max(item.priority for item in cs_item)
             for each in cs_item:
                 if each.priority == 0:
                     each.priority = lowest_priority + 1
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
-                taste_template.append(u'-- Priority {}'
+                taste_template.append(u'--  Priority {}'
                                       .format(provided_clause.priority))
                 trId = process.transitions.index(provided_clause.transition)
+
+                # check if we are leaving a nested state with a CS
+                state_tree = statename.split(SEPARATOR)
+                context = process
+                exitlist, exitcalls = [], []
+                current = ''
+                while state_tree:
+                    current = current + state_tree.pop(0)
+                    for comp in context.composite_states:
+                        if current.lower() == comp.statename.lower():
+                            if comp.exit_procedure:
+                                exitlist.append(current)
+                            context = comp
+                            current = current + SEPARATOR
+                            break
+                trans = process.transitions[trId]
+                for each in reversed (exitlist):
+                    if trans and all(each.startswith(trans_st)
+                            for trans_st in trans.possible_states):
+                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit;")
+
                 code, loc = generate(provided_clause.trigger,
-                                     branch_to=trId, sep=sep, last=last)
+                                     branch_to=trId, sep=sep, last=last,
+                                     exitcalls=exitcalls)
                 sep='elsif '
                 taste_template.extend(code)
-            taste_template.append(u'end if;') # inner if
-            taste_template.append(u'end if;') # current state
+            if cs_item:
+                taste_template.append(u'end if;') # inner if
+                taste_template.append(u'end if;') # current state
             sep = 'if '
 
         if need_final_endif:
             taste_template.append(u'end if;')
 
         taste_template.append('end loop;')
-        taste_template.append('end runTransition;')
+        taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
     elif not instance:
         # No transitions defined, but keep the interface for CS_Only calls
-        taste_template.append('procedure runTransition(Id: Integer) is')
+        taste_template.append('procedure Execute_Transition (Id : Integer) is')
         taste_template.append('begin')
         taste_template.append('null;')
-        taste_template.append('end runTransition;')
+        taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
 
     # Add code of the package elaboration
@@ -2676,13 +2727,17 @@ def _choiceitem(choice, **kwargs):
 
 
 @generate.register(ogAST.Decision)
-def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
+def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
+        **kwargs):
     ''' Generate the code for a decision
         A decision is made of a question and some answers ; each answer may
         be followed by a transition (ogAST.Transition). The code of the
         transition is by default generated, but it is possible to generate only
         the code of the question and reference a transition Id (trId) if
-        the reference number is passed to the branch_to parameter.
+        the reference number is passed to the branch_to parameter. In addition
+        it is possible to passs a list of exit calls: this is for nested
+        functions when they are exited with a continuous signal at a level
+        above, a chain a calls to exit procedures has to be added.
         This option is used for example when generating the code of
         continuous signal: the code is generated in the <<next_transition>>
         part, while the code of the transition already exists in the
@@ -2762,7 +2817,11 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
                 code.extend(stmt)
                 local_decl.extend(tr_decl)
             else:
-                code.append('trId := {};'.format(branch_to))
+                # Before branching we should optionally execute the exit
+                # procedures of the nested states we may be leaving
+                for exit in exitcalls:
+                    code.append(exit);
+                code.append(f'trId := {branch_to};')
             sep = 'elsif '
 
         elif a.kind == 'closed_range':
@@ -2784,6 +2843,8 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', **kwargs):
                 code.extend(stmt)
                 local_decl.extend(tr_decl)
             else:
+                # Before branching we should optionally execute the exit
+                # procedures of the nested states we may be leaving
                 code.append('trId := {};'.format(branch_to))
             sep = 'elsif '
         elif a.kind == 'informal_text':

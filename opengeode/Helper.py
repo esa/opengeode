@@ -198,12 +198,12 @@ def flatten(process, sep=u'_'):
         set_terminator_states(state, prefix)
         set_transition_states(state, prefix)
 
-        keys = list (state.mapping.keys())
         state.mapping = {prefix + key: state.mapping.pop(key)
                          for key in list(state.mapping.keys())}
         # Continuous signal mappings
         state.cs_mapping = {prefix + key: state.cs_mapping.pop(key)
                             for key in list(state.cs_mapping.keys())}
+
         process.transitions.extend(state.transitions)
 
         # Add prefix to local variable names and push them at process level
@@ -255,17 +255,35 @@ def flatten(process, sep=u'_'):
                                      'params': [], 'tmpVars': []}]
                 process.transitions[each].actions.insert(0, call_entry)
 
-        # If composite state has exit procedure, add the call
+        # If composite state has exit procedure, add an call to this
+        # procedure if the transition ends up existing the state with
+        # a return statement. There are other calls to the exit procedure
+        # that the code generation backend must add when the state is exited
+        # from a transition trigger in the super state. See AdaGenerator.py
         if state.exit_procedure:
+            # Build up a list of transitions that contain a return statement
+            trans_with_return = []
             for each in chain(state.transitions, (lab.transition for lab in
                                               state.content.floating_labels)):
-                if each.terminator.kind == 'return':
-                    call_exit = ogAST.ProcedureCall()
-                    call_exit.inputString = 'exit'
-                    exitproc = u'{pre}exit'.format(pre=prefix)
-                    call_exit.output = [{'outputName': exitproc,
-                                         'params': [], 'tmpVars': []}]
-                    each.actions.append(call_exit)
+                def rec_transition(trans : ogAST.Transition):
+                    if trans.terminator:
+                        if trans.terminator.kind == 'return':
+                            trans_with_return.append (trans)
+                    elif isinstance(trans.actions[-1], ogAST.Decision):
+                        # There is no terminator, so the transition may finish
+                        # with a DECISION, we must check it recursively
+                        for answer in trans.actions[-1].answers:
+                            rec_transition (answer.transition)
+
+                rec_transition (each)
+
+            for trans in trans_with_return:
+                call_exit = ogAST.ProcedureCall()
+                call_exit.inputString = 'exit'
+                exitproc = u'{pre}exit'.format(pre=prefix)
+                call_exit.output = [{'outputName': exitproc,
+                                     'params': [], 'tmpVars': []}]
+                trans.actions.append(call_exit)
 
         for inner in state.composite_states:
             # Go recursively in inner composite states
@@ -308,9 +326,16 @@ def flatten(process, sep=u'_'):
             processed by each of the substates.
         '''
         if not isinstance(nested_state, ogAST.StateAggregation):
-            for _, val in nested_state.mapping.items():
+            for val in nested_state.mapping.values():
                 try:
                     inputlist = context.mapping[nested_state.statename]
+                    val.extend(inputlist)
+                except (AttributeError, KeyError):
+                    # KeyError in case of StateAggregation
+                    pass
+            for val in nested_state.cs_mapping.values():
+                try:
+                    inputlist = context.cs_mapping[nested_state.statename]
                     val.extend(inputlist)
                 except (AttributeError, KeyError):
                     # KeyError in case of StateAggregation
@@ -321,6 +346,7 @@ def flatten(process, sep=u'_'):
             #del nested_state.mapping[each.statename]
         if not isinstance(nested_state, ogAST.StateAggregation):
             del context.mapping[nested_state.statename]
+            del context.cs_mapping[nested_state.statename]
 
     def set_terminator_states(context, prefix=''):
         ''' Associate state to terminators, needed to process properly

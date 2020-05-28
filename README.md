@@ -112,6 +112,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.3 (05/2020)
+    - Replace the unicode separator when flattening the model for code generation
+    - Fix calls to the exit procedure in nested states
+
 3.0.2 (05/2020)
     - Fix API change in Pyside2
 
