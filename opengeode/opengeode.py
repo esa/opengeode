@@ -140,7 +140,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2016,11 +2016,11 @@ end DataView_{lang};'''
         template_makefile = '''export ASN1SCC=$(shell which asn1.exe)
 
 all:
-\tgprbuild -p -P {pr}.gpr          # generate Ada code from the SDL model
+\tgprbuild -p -P {prFile}.gpr          # generate Ada code from the SDL model
 \tgprbuild -p -P dataview_ada.gpr  # generate Ada code from the ASN.1 model
-\tgprbuild -p -P code/{pr}_ada.gpr      # build the Ada code
+\tgprbuild -p -P code/{processName}_ada.gpr      # build the Ada code
 clean:
-\trm -rf obj code'''.format(pr=prj_name)
+\trm -rf obj code'''
 
         # If the current scene is a nested one, save the top parent
         scene = self.top_scene()
@@ -2092,6 +2092,12 @@ clean:
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
 
+        # Read the processs name for the Makefile
+        for each in scene.processes:
+            if not isinstance(each, ProcessType):
+                process_name = str(each.text)
+                break
+
         # Move items back to original place to avoid scrollbar jumps
         for item in self.scene().floating_symb:
             item.pos_x -= delta_x
@@ -2152,7 +2158,9 @@ clean:
 
                 # and generate a Makefile.project to build everything
                 with open(pr_path + '/Makefile.{}'.format(prj_name), 'w') as f:
-                    f.write(template_makefile)
+                    f.write(template_makefile
+                            .format(prFile=prj_name,
+                                    processName=process_name.lower()))
 
                 self.scene().clear_focus()
                 for each in chain([scene], scene.all_nested_scenes):

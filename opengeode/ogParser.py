@@ -2462,12 +2462,6 @@ def primary(root, context):
         prim.value = []
         prim.exprType = UNKNOWN_TYPE
         # Let fix_expression_type resolve this type
-#       prim.exprType = type('PrES', (object,), {
-#           'kind': 'SequenceOfType',
-#           'Min': '0',
-#           'Max': '0',
-#           'type': UNKNOWN_TYPE
-#       })
     elif root.type == lexer.CHOICE:
         prim = ogAST.PrimChoiceItem()
         choice = root.getChild(0).toString()
@@ -2506,7 +2500,6 @@ def primary(root, context):
             'type': prim_elem.exprType
         })
     elif root.type == lexer.STATE:
-        LOG.debug("Primary is state")
         prim = ogAST.PrimStateReference()
         prim.exprType = type ("StateEnumeratedType", (ENUMERATED,), {})
         prim.exprType.kind = 'StateEnumeratedType'
@@ -2673,6 +2666,8 @@ def composite_state(root, parent=None, context=None):
     # Gather the list of states defined in the composite state
     # and map a list of transitions to each state
     comp.mapping = {name: [] for name in get_state_list(root)}
+    # Same for continuous signal mapping
+    comp.cs_mapping = {name: [] for name in get_state_list(root)}
     inner_composite, states, floatings, starts = [], [], [], []
     for child in root.getChildren():
         if child.type == lexer.ID:
@@ -2749,6 +2744,7 @@ def composite_state(root, parent=None, context=None):
             # State aggregation contain only composite states, so we must
             # add empty mapping information since there are no transitions
             comp.mapping[inner.statename.lower()] = []
+            comp.cs_mapping[inner.statename.lower()] = []
         errors.extend(err)
         warnings.extend(warn)
         comp.composite_states.append(inner)
@@ -3494,6 +3490,7 @@ def process_definition(root, parent=None, context=None):
 
     # Prepare the transition/state mapping
     process.mapping = {name: [] for name in get_state_list(root)}
+    process.cs_mapping = {name: [] for name in get_state_list(root)}
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates

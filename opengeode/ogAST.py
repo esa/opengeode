@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2019 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -369,7 +369,7 @@ class Answer(object):
         # one of ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, ExprLe (types)
         self.openRangeOp = None
         # transition is of type Transition
-        self.transition = None
+        self.transition : Transition = None
         # optional comment symbol
         self.comment = None
         # optional hyperlink
