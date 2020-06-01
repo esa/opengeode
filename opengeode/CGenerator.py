@@ -775,7 +775,7 @@ LD_LIBRARY_PATH=. taste-gui -l
             output_signals_code.append(u'#define SET_{timer} {pn}_RI_SET_{timer}'
                     .format(timer=timer, pn=process_name.lower()))
             output_signals_code.append(u'#define RESET_{timer} {pn}_RI_RESET_{timer}'
-                    .format(timer=timer, pn=process_name.lower())) 
+                    .format(timer=timer, pn=process_name.lower()))
 
     # Transform inner labels to floating labels
     Helper.inner_labels_to_floating(process)
@@ -866,9 +866,9 @@ LD_LIBRARY_PATH=. taste-gui -l
     c_source_code.extend(dll_code)
     c_source_code.extend(transition_source_code)
 
-    with open(process_name + '.c', 'w') as c_file:
+    with open(process_name + '.c', 'wb') as c_file:
         c_file.write(u'\n'.join(indent_c_code(c_source_code)).encode('latin1'))
-    with open(process_name + '.h', 'w') as h_file:
+    with open(process_name + '.h', 'wb') as h_file:
         h_file.write(u'\n'.join(indent_c_code(h_source_code)).encode('latin1'))
 
 
