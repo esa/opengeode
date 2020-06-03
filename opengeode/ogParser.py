@@ -4364,7 +4364,6 @@ def decision(root, parent, context):
                 # numeric type -> find the range covered by this answer
                 if a_basic_Min != a_basic_Max:
                     # Not a constant or a raw number, range is not fix
-                    print ("gloubi", a_basic_Min, a_basic_Max)
                     need_else = True
                     continue
                 val_a = float(a_basic_Min)
