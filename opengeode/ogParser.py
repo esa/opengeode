@@ -4336,14 +4336,6 @@ def decision(root, parent, context):
                 q_basic = find_basic_type(dec.question.exprType)
                 a_basic = find_basic_type(ans.constant.exprType)
 
-                # If the answer is an ASN.1 constant we must not use
-                # the range of its type when we check the decision branches
-                if isinstance(ans.constant, ogAST.PrimConstant):
-                    a_basic_Min = a_basic_Max = \
-                          get_asn1_constant_value (ans.constant.constant_value)
-                else:
-                    a_basic_Min, a_basic_Max = a_basic.Min, a_basic.Max
-
                 if q_basic.kind.endswith('EnumeratedType'):
                     if not ans.constant.is_raw:
                         # Ref to a variable -> can't guarantee coverage
@@ -4360,6 +4352,14 @@ def decision(root, parent, context):
                 if not q_basic.kind.startswith(('Integer', 'Real')):
                     # Check numeric questions - ignore others
                     continue
+                # If the answer is an ASN.1 constant we must not use
+                # the range of its type when we check the decision branches
+                if isinstance(ans.constant, ogAST.PrimConstant):
+                    a_basic_Min = a_basic_Max = \
+                          get_asn1_constant_value (ans.constant.constant_value)
+                else:
+                    a_basic_Min, a_basic_Max = a_basic.Min, a_basic.Max
+
                 delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
                 # numeric type -> find the range covered by this answer
                 if a_basic_Min != a_basic_Max:
