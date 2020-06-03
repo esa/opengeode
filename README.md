@@ -112,6 +112,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.4 (06/2020)
+    - Fix use of ASN.1 constants in decision branches
+
 3.0.3 (05/2020)
     - Replace the unicode separator when flattening the model for code generation
     - Fix calls to the exit procedure in nested states

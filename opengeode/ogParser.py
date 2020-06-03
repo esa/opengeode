@@ -1256,7 +1256,7 @@ def find_variable_type(var, context):
         if var.lower() == timer.lower():
             return TIMER
 
-    # check if is a ASN.1 constant
+    # check if it is an ASN.1 constant
     for varname, vartype in DV.variables.items():
         if var.lower() == varname.lower().replace('-', '_'):
             return vartype.type
@@ -1629,6 +1629,27 @@ def logic_expression(root, context):
 
     return expr, errors, warnings
 
+def get_asn1_constant_value(const_val):
+    # Return the numerical value of an ASN.1 constant
+    # value may be a reference to another constant. In that case we
+    # must find the actual value by following the path until we find it
+    # however, stop after 20 trials to avoid looping forever in case
+    # there is some circular dependency or other weird asn1 construct
+    first_str = const_val
+    retry = 0
+    while retry < 20:
+        try:
+            return float(const_val)
+        except ValueError:
+            possible_constant = is_asn1constant(const_val)
+            if possible_constant is not None:
+                const_val = possible_constant.value
+            else:
+                # Exceptional case - should be caught by asn1scc
+                raise ValueError(str(first_str) + " could not be resolved")
+            retry += 1
+    raise ValueError(str(first_str) + " actual value not found" )
+
 
 def arithmetic_expression(root, context):
     ''' Arithmetic expression (+ * - / mod rem) analysis '''
@@ -1652,26 +1673,6 @@ def arithmetic_expression(root, context):
     basic_left  = find_basic_type(expr.left.exprType)
     basic_right = find_basic_type(expr.right.exprType)
 
-    def get_constant_value(const_val):
-        # value may be a reference to another constant. In that case we
-        # must find the actual value by following the path until we find it
-        # however, stop after 20 trials to avoid looping forever in case
-        # there is some circular dependency or other weird asn1 construct
-        first_str = const_val
-        retry = 0
-        while retry < 20:
-            try:
-                return float(const_val)
-            except ValueError:
-                possible_constant = is_asn1constant(const_val)
-                if possible_constant is not None:
-                    const_val = possible_constant.value
-                else:
-                    # Exceptional case - should be caught by asn1scc
-                    raise ValueError(str(first_str) + " could not be resolved")
-                retry += 1
-        raise ValueError(str(first_str) + " actual value not found" )
-
     try:
         minL = float(basic_left.Min)
         maxL = float(basic_left.Max)
@@ -1679,9 +1680,9 @@ def arithmetic_expression(root, context):
         maxR = float(basic_right.Max)
         # Constants defined in ASN.1 : take their value for the range
         if isinstance(expr.left, ogAST.PrimConstant):
-            minL = maxL = get_constant_value(expr.left.constant_value)
+            minL = maxL = get_asn1_constant_value(expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
-            minL = maxL = get_constant_value(expr.right.constant_value)
+            minL = maxL = get_asn1_constant_value(expr.right.constant_value)
 
         #print "...left/right [{} .. {}]   [{} .. {}]".format(minL, maxL, minR, maxR)
 
@@ -4334,6 +4335,15 @@ def decision(root, parent, context):
                 ans.constant = expr.right
                 q_basic = find_basic_type(dec.question.exprType)
                 a_basic = find_basic_type(ans.constant.exprType)
+
+                # If the answer is an ASN.1 constant we must not use
+                # the range of its type when we check the decision branches
+                if isinstance(ans.constant, ogAST.PrimConstant):
+                    a_basic_Min = a_basic_Max = \
+                          get_asn1_constant_value (ans.constant.constant_value)
+                else:
+                    a_basic_Min, a_basic_Max = a_basic.Min, a_basic.Max
+
                 if q_basic.kind.endswith('EnumeratedType'):
                     if not ans.constant.is_raw:
                         # Ref to a variable -> can't guarantee coverage
@@ -4352,11 +4362,12 @@ def decision(root, parent, context):
                     continue
                 delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
                 # numeric type -> find the range covered by this answer
-                if a_basic.Min != a_basic.Max:
+                if a_basic_Min != a_basic_Max:
                     # Not a constant or a raw number, range is not fix
+                    print ("gloubi", a_basic_Min, a_basic_Max)
                     need_else = True
                     continue
-                val_a = float(a_basic.Min)
+                val_a = float(a_basic_Min)
                 qmin, qmax = float(q_basic.Min), float(q_basic.Max)
                 # Check the operator to compute the range
                 reachable = True
