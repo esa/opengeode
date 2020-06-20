@@ -1880,18 +1880,17 @@ def _prim_call(prim, **kwargs):
         local_decl.append('package Math is new '
                           'Ada.Numerics.Generic_Elementary_Functions'
                           '(Asn1Real);')
-        ada_string += "Math.Sqrt({})".format(param_str)
+        ada_string += f"Math.Sqrt({param_str})"
     elif ident == 'trunc':
         exp = params[0]
         exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += "{sort}'Truncation({p})".format(sort=exp_typename,
-                                                      p=param_str)
+        ada_string += f"{exp_typename}'Truncation({param_str})"
     else:
         # inner procedure call (with a RETURN statement)
-        ada_string += u'p{}{}('.format(SEPARATOR, ident)
+        ada_string += f'p{SEPARATOR}{ident}' + (' (' if params else '')
         # Take all params and join them with commas
         list_of_params = []
         for param in params:
@@ -1900,7 +1899,7 @@ def _prim_call(prim, **kwargs):
             stmts.extend(param_stmt)
             local_decl.extend(local_var)
         ada_string += ', '.join(list_of_params)
-        ada_string += ')'
+        ada_string += ')' if params else ''
 
     return stmts, str(ada_string), local_decl
 

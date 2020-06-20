@@ -1055,7 +1055,8 @@ unary_expression
         :       postfix_expression
         |       primary_expression
         |       NOT^ unary_expression
-        |       DASH unary_expression -> ^(NEG unary_expression)
+        |       DASH unary_expression    -> ^(NEG unary_expression)
+        |       CALL procedure_call_body -> ^(PROCEDURE_CALL procedure_call_body)
         ;
 
 

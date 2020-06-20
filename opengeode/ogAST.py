@@ -40,7 +40,7 @@ from collections import defaultdict
 LOG = logging.getLogger(__name__)
 
 
-class Expression(object):
+class Expression:
     ''' AST Entry for expressions - Always use subtype '''
     is_raw = False
 
@@ -316,7 +316,7 @@ class PrimSequence(Primary):
     pass
 
 
-class Decision(object):
+class Decision:
     ''' AST Entry for a decision '''
     def __init__(self):
         ''' A DECISION statement '''
@@ -347,7 +347,7 @@ class Decision(object):
                 l=self.line, c=self.charPositionInLine)
 
 
-class Answer(object):
+class Answer:
     ''' AST Entry for a decision answer '''
     def __init__(self):
         ''' One ANSWER of a DECISION '''
@@ -381,7 +381,7 @@ class Answer(object):
                 l=self.line, c=self.charPositionInLine)
 
 
-class Task(object):
+class Task:
     ''' AST Entry for TASKS '''
     def __init__(self):
         ''' Initialize TASK attributes (set of ASSIGN statements) '''
@@ -422,7 +422,7 @@ class TaskForLoop(Task):
     pass
 
 
-class Output(object):
+class Output:
     ''' AST Entry for OUTPUT statements '''
     def __init__(self, defName=''):
         ''' Set of OUTPUT statements '''
@@ -446,11 +446,16 @@ class Output(object):
 
 
 class ProcedureCall(Output):
-    ''' Procedure calls content is identical to Outputs '''
-    pass
+    ''' Procedure calls content is identical to Outputs
+    with exception that it may have a return type (exprType) '''
+    def __init__(self, defName=''):
+        super().__init__(defName)
+        # exprType is an ASN.1 type (as exported by asn1scc)
+        self.exprType = None
+        self.is_raw = False
 
 
-class Terminator(object):
+class Terminator:
     ''' Terminator elements (join, nextstate, stop, return) '''
     def __init__(self, defName=''):
         ''' Initialize terminator attributes '''
@@ -510,7 +515,7 @@ class Terminator(object):
                 x=self.pos_x, y=self.pos_y)
 
 
-class Label(object):
+class Label:
     ''' AST Entry for a Label '''
     def __init__(self):
         ''' Initialize the label attributes '''
@@ -559,7 +564,7 @@ class Floating_label(Label):
                 l=self.line, c=self.charPositionInLine)
 
 
-class Transition(object):
+class Transition:
     ''' AST Entry for a complete transition '''
     def __init__(self):
         ''' Initialize the transition attributes '''
@@ -584,7 +589,7 @@ class Transition(object):
         return u'\n'.join(data)
 
 
-class Input(object):
+class Input:
     ''' AST Entry for the INPUT symbol '''
     def __init__(self):
         ''' Initialize the Input attributes '''
@@ -649,7 +654,7 @@ class ContinuousSignal(Input):
                 l=self.line, c=self.charPositionInLine)
 
 
-class Start(object):
+class Start:
     ''' AST Entry for the START symbol '''
     def __init__(self):
         ''' Initialize the Start symbol attributes '''
@@ -681,7 +686,7 @@ class CompositeState_start(Start):
     pass
 
 
-class Comment(object):
+class Comment:
     ''' AST Entry for COMMENT symbols '''
     def __init__(self):
         ''' Comment symbol '''
@@ -703,7 +708,7 @@ class Comment(object):
                 l=self.line, c=self.charPositionInLine)
 
 
-class State(object):
+class State:
     ''' AST Entry for STATE symbols '''
     def __init__(self, defName=''):
         ''' Used only for rendering backends - not for code generation '''
@@ -740,7 +745,7 @@ class State(object):
                 x=self.pos_x, y=self.pos_y)
 
 
-class TextArea(object):
+class TextArea:
     ''' AST Entry for text areas (containing declarations/comments) '''
     def __init__(self):
         ''' Text area (raw content for rendering only) '''
@@ -773,7 +778,7 @@ class TextArea(object):
                 l=self.line, c=self.charPositionInLine)
 
 
-class Automaton(object):
+class Automaton:
     ''' Elements contained in a process, procedure or composite state'''
     def __init__(self, parent=None):
         ''' AST grouping the elements that can be rendered graphically '''
@@ -786,7 +791,7 @@ class Automaton(object):
         self.named_start = []
 
 
-class Procedure(object):
+class Procedure:
     ''' Internal procedure definition '''
     def __init__(self):
         ''' Procedure AST default value '''
@@ -842,7 +847,7 @@ class Procedure(object):
         self.output_signals = []
 
 
-class Process(object):
+class Process:
     ''' SDL Process entry point '''
     def __init__(self):
         ''' Process AST default values '''
@@ -974,7 +979,7 @@ class StateAggregation(CompositeState):
                 l=self.line, c=self.charPositionInLine)
 
 
-class Block(object):
+class Block:
     ''' AST for a BLOCK entity '''
     def __init__(self):
         '''
@@ -1005,7 +1010,7 @@ class Block(object):
         self.fpar = []
 
 
-class System(object):
+class System:
     ''' AST for a SYSTEM entity '''
     def __init__(self):
         '''
@@ -1030,7 +1035,7 @@ class System(object):
         self.text_areas = []
 
 
-class AST(object):
+class AST:
     ''' Top-level AST entry point '''
     def __init__(self):
         '''

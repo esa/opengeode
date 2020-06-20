@@ -43,7 +43,7 @@ import antlr3
 from antlr3 import tree
 
 from . import sdl92Lexer as lexer
-from .sdl92Parser import sdl92Parser
+from . import sdl92Parser
 
 from . import ogAST
 from .Asn1scc import parse_asn1, ASN1, create_choice_determinant_types
@@ -1580,6 +1580,20 @@ def expression(root, context, pos='right'):
         return call_expression(root, context)
     elif root.type == lexer.SELECTOR:
         return selector_expression(root, context, pos)
+    elif root.type == lexer.PROCEDURE_CALL:
+        pc, err, warn = procedure_call(root, parent=None, context=context)
+        # when used as an expression, the error coordinates must be stripped
+        # as they are set for standalone PROCEDURE CALL symbols
+        errs = [each[0] for each in err]
+        warns = [each[0] for each in warn]
+        # Transform the into a PrimCall
+        prim = ogAST.PrimCall()
+        prim.exprType = pc.exprType
+        prim.inputString = pc.inputString
+        prim.tmpVar = tmp()
+        prim.value = [pc.output[0]['outputName'],
+                     {'procParams': pc.output[0]['params']}]
+        return prim, errs, warns
     else:
         raise NotImplementedError(sdl92Parser.tokenNamesMap[root.type] +
                                 ' - line ' + str(root.getLine()))
@@ -3475,7 +3489,7 @@ def process_definition(root, parent=None, context=None):
     proc_x, proc_y = 0, 0
     inner_proc = []
 
-    # first look for all text areas to find type declarations
+    # first look for all text areas to find NEWTYPE declarations
     USER_DEFINED_TYPES.clear()
     tas = (x for x in root.getChildren() if x.type == lexer.TEXTAREA)
     for child in tas:
@@ -3488,6 +3502,25 @@ def process_definition(root, parent=None, context=None):
                 # ignore errors, warnings here
                 # we just need the types to be visible
                 _, _ = newtype(sort, None, context)
+
+    # then parse procedures, so that their signature is set in the ast
+    procedures = (x for x in root.getChildren() if x.type == lexer.PROCEDURE)
+    for child in procedures:
+        proc, content, err, warn = procedure_pre(
+                child, parent=None, context=process)
+        inner_proc.append((proc, content))
+        errors.extend(err)
+        warnings.extend(warn)
+        # check for duplicate declaration
+        if any(each.inputString.lower() == proc.inputString.lower()
+               for each in chain(process.content.inner_procedures,
+                                 process.procedures)):
+            errors.append(['Duplicate Procedure declaration: {}'
+                          .format(proc.inputString),
+                          [proc.pos_x, proc.pos_y], []])
+        # Add it at process level so that it is in the scope
+        process.content.inner_procedures.append(proc)
+        process.procedures.append(proc)
 
     # Prepare the transition/state mapping
     process.mapping = {name: [] for name in get_state_list(root)}
@@ -3548,21 +3581,7 @@ def process_definition(root, parent=None, context=None):
             warnings.extend(warn)
             process.fpar = params
         elif child.type == lexer.PROCEDURE:
-            proc, content, err, warn = procedure_pre(
-                    child, parent=None, context=process)
-            inner_proc.append((proc, content))
-            errors.extend(err)
-            warnings.extend(warn)
-            # check for duplicate declaration
-            if any(each.inputString.lower() == proc.inputString.lower()
-                   for each in chain(process.content.inner_procedures,
-                                     process.procedures)):
-                errors.append(['Duplicate Procedure declaration: {}'
-                              .format(proc.inputString),
-                              [proc.pos_x, proc.pos_y], []])
-            # Add it at process level so that it is in the scope
-            process.content.inner_procedures.append(proc)
-            process.procedures.append(proc)
+            continue
         elif child.type == lexer.FLOATING_LABEL:
             lab, err, warn = floating_label(
                     child, parent=None, context=process)
@@ -4106,11 +4125,19 @@ def end(root, parent=None, context=None):
     return c, [], []
 
 
-def procedure_call(root, parent, context):
-    ''' Parse a PROCEDURE CALL (synchronous required interface) '''
-    # Same as OUTPUT for external procedures
+def procedure_call(root: antlr3.tree.CommonTree,
+                  parent,
+                  context: ogAST.Process):
+    ''' Parse a PROCEDURE CALL '''
     out_ast = ogAST.ProcedureCall()
     _, err, warn = output(root, parent, out_ast, context)
+    # Check if the procedure exists, and assign an exprType to
+    # the procedure call in case it has a Return statement
+    call_name = out_ast.output[0]['outputName'].lower()
+    for each in context.procedures:
+        if each.inputString.lower() == call_name:
+            out_ast.exprType = each.return_type
+            break
     return out_ast, err, warn
 
 
@@ -5424,7 +5451,7 @@ def parser_init(filename=None, string=None):
             raise IOError('String parsing error: ' + str(err))
     lex = lexer.sdl92Lexer(char_stream)
     tokens = antlr3.CommonTokenStream(lex)
-    parser = sdl92Parser(tokens)
+    parser = sdl92Parser.sdl92Parser(tokens)
     # bug in the antlr3.5 runtime for python3 - attribute "error_list"
     # is missing - we have to add it manually here
     parser.error_list=[]

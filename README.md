@@ -112,6 +112,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.5 (06/2020)
+    - Add support to standard SDL syntax x := CALL procedure
+      in tasks
+
 3.0.4 (06/2020)
     - Fix use of ASN.1 constants in decision branches
 
