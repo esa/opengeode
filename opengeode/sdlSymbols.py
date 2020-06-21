@@ -224,8 +224,8 @@ class Connect(Input):
             self.setPen(QPen(Qt.blue))
             self.textbox_alignment = Qt.AlignLeft | Qt.AlignTop
             path = QPainterPath()
-            path.moveTo(0, 0)
-            path.lineTo(0, height)
+            path.moveTo(width / 2, 0)
+            path.lineTo(width / 2, height)
             #path.moveTo(0, height / 2)
             #path.lineTo(width, height / 2)
             self.setPath(path)

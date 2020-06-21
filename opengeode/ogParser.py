@@ -1159,6 +1159,8 @@ def compare_types(type_a, type_b):   # type -> [warnings]
     '''
     warnings = []
     mismatch = ''
+    if not type_a or not type_b:
+        raise TypeError("Missing type definition")
     if type_a.kind == 'ReferenceType' and type_b.kind == 'ReferenceType':
         if type_a.ReferencedTypeName != type_b.ReferencedTypeName:
             mismatch = '"{}" is not "{}"'.format(type_a.ReferencedTypeName,
@@ -1591,8 +1593,11 @@ def expression(root, context, pos='right'):
         prim.exprType = pc.exprType
         prim.inputString = pc.inputString
         prim.tmpVar = tmp()
-        prim.value = [pc.output[0]['outputName'],
+        procedureName = pc.output[0]['outputName']
+        prim.value = [procedureName,
                      {'procParams': pc.output[0]['params']}]
+        # If the procedure is not defined with a return value, a TypeError
+        # has been raised in compare_type, so no need to check it again here
         return prim, errs, warns
     else:
         raise NotImplementedError(sdl92Parser.tokenNamesMap[root.type] +

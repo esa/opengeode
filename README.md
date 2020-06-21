@@ -112,6 +112,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.6 (06/2020)
+    - Fix CONNECT symbol
+
 3.0.5 (06/2020)
     - Add support to standard SDL syntax x := CALL procedure
       in tasks
