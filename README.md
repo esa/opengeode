@@ -112,6 +112,14 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.8 (06/2020)
+    - Support ASN.1 integer constants with no range (plain x INTEGER ::= 5)
+    - Check that procedures with a return type are called only from TASKs
+
+3.0.7 (06/2020)
+    - Fix update of data dictionary window
+    - Fix unconstained constants support
+
 3.0.6 (06/2020)
     - Fix CONNECT symbol
 

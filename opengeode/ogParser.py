@@ -4762,6 +4762,15 @@ def transition(root, parent, context):
         if child.type == lexer.PROCEDURE_CALL:
             proc_call, err, warn = procedure_call(
                             child, parent=parent, context=context)
+            # Check if the procedure call has a return type
+            # In that case it is an error, it must be called from
+            # a TASK to assign the result to a variable
+            if proc_call.exprType is not None:
+                call_name = proc_call.output[0]['outputName']
+                err.append([f"A procedure with a return type must be called"
+                    f" from a TASK symbol (syntax: ret := call {call_name}"
+                    " (params))",
+                            [proc_call.pos_x or 0, proc_call.pos_y or 0], []])
             errors.extend(err)
             warnings.extend(warn)
             trans.actions.append(proc_call)
