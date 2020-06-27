@@ -140,7 +140,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.0.6'
+__version__ = '3.0.7'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2798,11 +2798,11 @@ class OG_MainWindow(QMainWindow):
         add_elem = lambda root, elem: QTreeWidgetItem(root, [elem])
 
         if self.view.scene().context == 'block':
-            map(lambda elem: change_state(elem, True),
-                (in_sig, out_sig, states, labels, dcl, timers))
+            for each in (in_sig, out_sig, states, labels, dcl, timers):
+                change_state(each, True)
         elif self.view.scene().context == 'process':
-            map(lambda elem: change_state(elem, False),
-                (in_sig, out_sig, states, labels, dcl, timers))
+            for each in (in_sig, out_sig, states, labels, dcl, timers):
+                change_state(each, False)
             refresh_signals(in_sig, context.input_signals)
             refresh_signals(out_sig, context.output_signals)
 
@@ -2811,9 +2811,11 @@ class OG_MainWindow(QMainWindow):
                     state = QTreeWidgetItem(states, [each, 'refactor'])
                     state.setForeground(1, Qt.blue)
 
-            map(partial(add_elem, labels), sorted(l.inputString
-                                                  for l in context.labels))
-            map(partial(add_elem, timers), sorted(context.timers))
+            for each in sorted(l.inputString for l in context.labels):
+                add_elem(labels, each)
+
+            for each in sorted(context.timers):
+                add_elem(timers, each)
 
             for var, (sort, _) in context.variables.items():
                 try:
@@ -2826,14 +2828,19 @@ class OG_MainWindow(QMainWindow):
                 QTreeWidgetItem(dcl, [var, sort_name])
 
         elif self.view.scene().context == 'procedure':
-            map(lambda elem: change_state(elem, True), (in_sig, states))
-            map(lambda elem: change_state(elem, False),
-                (dcl, timers, labels, out_sig))
+            for each in (in_sig, states):
+                change_state(each, True)
+            for each in (dcl, timers, labels, out_sig):
+                change_state(each, False)
+
             for var, (sort, _) in context.variables.items():
                 QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
-            map(partial(add_elem, timers), sorted(context.timers))
-            map(partial(add_elem, labels), sorted(l.inputString
-                                                  for l in context.labels))
+
+            for each in sorted(l.inputString for l in context.labels):
+                add_elem(labels, each)
+
+            for each in sorted(context.timers):
+                add_elem(timers, each)
             refresh_signals(out_sig, context.output_signals)
         self.datadict.resizeColumnToContents(0)
 

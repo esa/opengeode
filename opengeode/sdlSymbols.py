@@ -10,7 +10,7 @@
     All symbols inherit the generic Vertical- and Horizontal-
     Symbol classes defined in the "genericSymbols.py" module.
 
-    Copyright (c) 2012-2013 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
