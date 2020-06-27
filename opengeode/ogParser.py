@@ -1206,7 +1206,16 @@ def compare_types(type_a, type_b):   # type -> [warnings]
             raise TypeError(mismatch)
         elif type_a.kind == 'IntegerType':
             # Detect Signed/Unsigned type mismatch
-            min_a, min_b = float(type_a.Min), float(type_b.Min)
+            try:
+                min_a = float(type_a.Min)
+            except ValueError:
+                # "MIN" instead of a number
+                # Since we only want to check sign compatibility, set -1
+                min_a = -1
+            try:
+                min_b = float(type_b.Min)
+            except ValueError:
+                min_b = -1
             if (min_a >= 0) != (min_b >= 0) \
                     and not (is_number(type_a) or is_number(type_b)):
                 raise TypeError("Signed vs Unsigned type mismatch " +
