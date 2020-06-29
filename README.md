@@ -52,14 +52,19 @@ It is part of the [TASTE project](https://taste.tools)
 It is installed with all dependencies in the TASTE virtual machine that you can download from this link. Manual installation is possible in a native Linux environment.
 Debian 10 (buster) is the baseline. Recent versions of Ubuntu (20.x) should work as well.
 
-The following commands should automate the installation:
+The following commands should automate the installation (with exception of ASN1SCC - see below):
 
 ```
 $ git clone https://github.com/esa/opengeode
 $ cd opengeode
-$ sudo make full-install   # it will use apt to get dependencies
+$ make full-install   # it will prompt for sudo password to call apt
 ```
 
+The installation will be done in the `~/.local` folder by the Python3 pip tool. Make sure you add this to your .bashrc (or equivalent):
+
+```
+export PATH=~/.local/bin:$PATH
+```
 
 OpenGEODE uses the ASN1 [ASN1SCC](https://github.com/ttsiodras/asn1scc) for the datatypes. You must install it manually:
 

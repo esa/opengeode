@@ -53,7 +53,9 @@ dependencies:
 install:
 	@pip3 install --user --upgrade .
 
-full-install: update dependencies install
+full-install: update
+	sudo $(MAKE) dependencies
+	$(MAKE) install
 
 publish: 
 	@python3 setup.py sdist upload
