@@ -1020,7 +1020,7 @@ def _transition(tr, **kwargs):
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
                         return_stmt, return_string, return_decls = expression(tr.terminator.return_expr)
-                        stmts.extend(return_stmts)
+                        stmts.extend(return_stmt)
                         decls.extend(return_decls)
                     stmts.append('return{};'.format(' ' + return_string if return_string else ''))
                 else:
