@@ -1,0 +1,9 @@
+DV DEFINITIONS ::=
+BEGIN
+Temperature ::= REAL (0.0 .. 10.0)
+Temperature-Difference ::= Temperature (-100.0 .. 100.0)
+
+SomeInt ::= INTEGER (-100..200)
+low SomeInt ::= 5
+high SomeInt ::= 10
+END
