@@ -934,6 +934,9 @@ def check_type_compatibility(primary, type_ref, context):
         #print traceback.print_stack()
         raise TypeError('Type reference is unknown')
 
+    #if primary.exprType == type_ref:
+    #    return warnings
+
     basic_type = find_basic_type(type_ref)
     # watch out: type_ref may be a subtype of basic_type with different
     # min/max constraint, in particular in case of substrings
@@ -1145,7 +1148,14 @@ def check_type_compatibility(primary, type_ref, context):
         LOG.debug('PROBABLY (it is a float but I did not check'
                   'if values are compatible)')
         return warnings
+    elif isinstance(primary, ogAST.PrimIndex):
+        if primary.exprType != type_ref:
+            raise TypeError(f'Type of array element {primary.inputString} '
+                    f'does not match expected type "{type_name(type_ref)}"')
     else:
+        print( isinstance(primary, ogAST.PrimIndex))
+        print( primary.exprType != type_ref)
+        print (f"{primary} {primary.exprType} vs {type_ref}")
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
                                 t1=type_name(type_ref)))
@@ -2150,7 +2160,8 @@ def call_expression(root, context, pos="right"):
     num_params = len(root.children[1].children)
 
     if num_params == 1:
-        return primary_index(root, context, pos)
+        res = primary_index(root, context, pos)
+        return res
 
     elif num_params == 2:
         return primary_substring(root, context, pos)
@@ -2244,8 +2255,7 @@ def primary_index(root, context, pos):
                 "you must assign all values at once to set the size "
                 "(syntax: variable := {3, 14, 15})"))
 
-        # Is that correct for SEQOF ? the exprType of the node should be the
-        # type of the elements of the SEQOF, not the SEQOF type itself, no?
+        # receiver_bty.type is the type of the array elements
         node.exprType = receiver_bty.type
 
         idx_bty = find_basic_type(params[0].exprType)
@@ -4882,6 +4892,7 @@ def assign(root, context):
         warnings.extend(warn)
 
     try:
+        #import pdb; pdb.set_trace()
         warnings.extend(fix_expression_types(expr, context))
         # Assignment with numerical value: check range
         basic = find_basic_type(expr.left.exprType)

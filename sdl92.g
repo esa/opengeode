@@ -1076,7 +1076,10 @@ primary_expression
         |       conditional_expression
         ;
 
-
+//  primary covers most expressions with ASN.1 value notation
+//  note that mkstring is the SDL operator transforming an element
+//  into an array. The regular sytanx { hello(1) } is ambiguous because
+//  it could be a record element with value 1 as well as an array with index 1
 primary
         :       TRUE^
         |       FALSE^
@@ -1099,6 +1102,8 @@ primary
         |       '{'
                 expression (COMMA expression)*
                 '}'                         -> ^(SEQOF expression+)
+        |       MKSTRING '(' expression (COMMA expression)* ')'
+                                            -> ^(SEQOF expression+)
         |       STATE^
         ;
 
@@ -1456,6 +1461,7 @@ PARAMNAMES      :       P A R A M N A M E S;
 SPECIFIC        :       S P E C I F I C;
 GEODE           :       G E O D E;
 HYPERLINK       :       H Y P E R L I N K;
+MKSTRING        :       M K S T R I N G;
 ENDTEXT         :       E N D T E X T;
 RETURN          :       R E T U R N;
 RETURNS         :       R E T U R N S;

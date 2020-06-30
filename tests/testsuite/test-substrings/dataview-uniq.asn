@@ -49,6 +49,5 @@ FixedIntSeq ::= SEQUENCE (SIZE(5)) OF T-UInt8
 
 -- You can also declare variables (they will be visible in C, Ada and SDL)
 myVar	    MySeqOf	::= { hello, world }
-
 END
 
