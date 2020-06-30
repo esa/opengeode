@@ -117,6 +117,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.0.9 (06/2020)
+    - Minor fixes in C backend related to case sensitivity
+
 3.0.8 (06/2020)
     - Support ASN.1 integer constants with no range (plain x INTEGER ::= 5)
     - Check that procedures with a return type are called only from TASKs
