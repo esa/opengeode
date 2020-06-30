@@ -369,11 +369,11 @@ def valid_output(scope):
         (does not mean it IS valid - caller still has to check it)
     '''
     for out_sig in scope.output_signals:
-        yield out_sig['name'].lower()
+        yield out_sig['name']
     for proc in scope.procedures:
-        yield proc.inputString.lower()
+        yield proc.inputString
     for special_op in SPECIAL_OPERATORS:
-        yield special_op.lower()
+        yield special_op
 
 
 def get_interfaces(ast, process_name):
@@ -2140,10 +2140,9 @@ def call_expression(root, context, pos="right"):
         if primary.children[0].type == lexer.VARIABLE:
             variable = primary.children[0]
             ident = variable.children[0].text.lower()
-            proc_list = [proc.inputString.lower()
-                         for proc in context.procedures]
-            if ident in (list(SPECIAL_OPERATORS.keys()) + proc_list):
-                return primary_call(root, context)
+            for each in valid_output (context):
+                if ident == each.lower():
+                    return primary_call(root, context)
 
     # not a call to a special operator or procedure
     # => it is either an index or a substring
@@ -2173,7 +2172,13 @@ def primary_call(root, context):
     node.inputString = get_input_string(root)
     node.tmpVar = tmp()
 
-    name = root.children[0].children[0].children[0].text.lower()
+    nameLower = root.children[0].children[0].children[0].text.lower()
+    # Retrieve the right casing from the declaration
+    for name in valid_output (context):
+        if nameLower == name.lower():
+            break
+    else:
+        name = nameLower
 
     params, params_errors, param_warnings = \
                                 expression_list(root.children[1], context)
@@ -2183,7 +2188,7 @@ def primary_call(root, context):
     node.value = [name, {'procParams': params}]
 
     try:
-        node.exprType = check_call(name, params, context)
+        node.exprType = check_call(nameLower, params, context)
     except (TypeError, ValueError) as err:
         errors.append(error(root, str(err)))
     except OverflowError:
@@ -4151,6 +4156,9 @@ def procedure_call(root: antlr3.tree.CommonTree,
     for each in context.procedures:
         if each.inputString.lower() == call_name:
             out_ast.exprType = each.return_type
+            # Take the right casing from prcedure declaration - always useful
+            # for case-sensitive backends like C code generators
+            out_ast.output[0]['outputName'] = each.inputString
             break
     return out_ast, err, warn
 
@@ -4162,10 +4170,13 @@ def outputbody(root, context):
     body = {'outputName': '', 'params': []}
     for child in root.getChildren():
         if child.type == lexer.ID:
-            body['outputName'] = child.text
-            if child.text.lower() not in valid_output(context):
-                errors.append('"' + child.text +
-                              '" is not defined in the current scope')
+            for each in valid_output(context):
+                if each.lower() == child.text.lower():
+                    # Take the right casing from the declaration
+                    body['outputName'] = each
+                    break
+            else:
+                errors.append(f'"{child.text}" is not defined or not visible')
         elif child.type == lexer.PARAMS:
             body['params'], err, warn = expression_list(child, context)
             errors.extend(err)

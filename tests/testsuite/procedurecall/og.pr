@@ -21,7 +21,24 @@ system titi;
             
             dcl u SomeInt;
             /* CIF ENDTEXT */
-            /* CIF procedure (347, 552), (117, 35) */
+            /* CIF procedure (342, 620), (171, 35) */
+            procedure procNoParamsButReturn;
+                /* CIF TEXT (103, 121), (267, 137) */
+                returns Temperature;
+                /* CIF ENDTEXT */
+                /* CIF START (639, 218), (70, 35) */
+                START;
+                    /* CIF return (656, 273), (35, 35) */
+                    return 5.0;
+            endprocedure;
+            /* CIF procedure (352, 505), (107, 35) */
+            procedure procNoReturn;
+                /* CIF START (117, 52), (70, 35) */
+                START;
+                    /* CIF return (134, 107), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF procedure (346, 552), (117, 35) */
             procedure procWithReturn;
                 /* CIF TEXT (142, 194), (267, 140) */
                 -- Text area for declarations and comments
@@ -34,23 +51,6 @@ system titi;
                     /* CIF return (871, 192), (35, 35) */
                     return 5.0;
             endprocedure;
-            /* CIF procedure (353, 505), (107, 35) */
-            procedure procNoReturn;
-                /* CIF START (117, 52), (70, 35) */
-                START;
-                    /* CIF return (134, 107), (35, 35) */
-                    return ;
-            endprocedure;
-            /* CIF procedure (343, 620), (171, 35) */
-            procedure procNoParamsButReturn;
-                /* CIF TEXT (103, 121), (267, 137) */
-                returns Temperature;
-                /* CIF ENDTEXT */
-                /* CIF START (639, 218), (70, 35) */
-                START;
-                    /* CIF return (656, 273), (35, 35) */
-                    return 5.0;
-            endprocedure;
             /* CIF START (669, 229), (70, 35) */
             START;
                 /* CIF task (642, 284), (124, 35) */
@@ -60,7 +60,7 @@ system titi;
                 /* CIF task (613, 394), (181, 40) */
                 task one := procwithreturn(1.1);
                 /* CIF task (579, 454), (250, 35) */
-                task one := call procNoParamsButReturn;
+                task one := call procnoparamsButReturn;
                 /* CIF decision (669, 509), (70, 50) */
                 decision u;
                     /* CIF ANSWER (579, 579), (70, 24) */

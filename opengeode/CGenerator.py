@@ -1181,10 +1181,13 @@ def _prim_call(prim):
         ret_decls.extend(param_decls)
         math_include = True
     else:
-        ret_string = function_name + '('
+        ret_string = f"{UNICODE_SEP}{prim.value[0]} ("
         list_of_params = []
         for param in params:
-            list_of_params.append(expression(param))
+            param_stmt, param_str, local_var = expression(param)
+            list_of_params.append(param_str)
+            ret_stmts.extend(param_stmt)
+            ret_decls.extend(local_var)
         ret_string += ', '.join(list_of_params)
         ret_string += ')'
     return ret_stmts, ret_string, ret_decls
