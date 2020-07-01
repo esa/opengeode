@@ -117,6 +117,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.1.1 (07/2020)
+    - Reinforce syntax error checking and reporting
+      Don't allow user escape a symbol syntax error: refocus text until fixed
+
 3.1.0 (06/2020)
     - Add support for mkstring operator to transform an element into an array
       mkstring (a, b, c) is in principle equivalent to ASN.1 Value Notation {a, b, c}

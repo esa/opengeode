@@ -359,7 +359,7 @@ class EditableText(QGraphicsTextItem):
         if self.force_focus:
             # when user double-clicks on the Completer, it may be out of
             # the editable text. It is not right to leave the focus in that
-            # case, as this would generate a synatx check while in fact
+            # case, as this would generate a syntax check while in fact
             # user is not done editing text
             self.setFocus()
             self.force_focus = False
@@ -377,8 +377,8 @@ class EditableText(QGraphicsTextItem):
                 text_cursor.clearSelection()
                 self.setTextCursor(text_cursor)
             # If something has changed, check syntax and create undo command
-            if(self.oldSize != self.parent.boundingRect() or
-                                                self.oldText != str(self)):
+            if(self.oldSize != self.parent.boundingRect()
+                    or self.parent.syntax_error or self.oldText != str(self)):
                 # Call syntax checker from item containing the text (if any)
                 self.scene().check_syntax(self.parent)
                 # Update class completion list

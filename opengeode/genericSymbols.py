@@ -169,6 +169,9 @@ class Symbol(QObject, QGraphicsPathItem):
         self.old_rect = self.boundingRect()
         # List of visible connection points (that can move)
         self.movable_points = []
+        # Flag to indicate a detected syntax error, used to force the
+        # refocus of the text area to make sure user fixes it before saving
+        self.syntax_error: Boolean = False
 
     def set_valid_pos(self, pos):
         ''' Hook that can be redefined by sub classes to forbid wrong
@@ -325,8 +328,14 @@ class Symbol(QObject, QGraphicsPathItem):
         '''
         pass
 
-    def check_syntax(self, text):
+    def check_syntax(self, text, check_last_semi=True):
         ''' Check the syntax of the text inside the symbol (if any) '''
+        # if check_last_semi=True, will raise an error if the text ends
+        # with a semicolon (inserted by the user). This is the case for 
+        # all symbols except the text boxes. A semi colon there would
+        # prevent a COMMENT, and would only be deteted when parsing the
+        # full model - without precise identication of the location.
+        # By doing it here we can spot the issue immediately
         try:
             _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
                                            self.common_name, text)
@@ -335,6 +344,10 @@ class Symbol(QObject, QGraphicsPathItem):
             LOG.debug(str(traceback.format_exc()))
             LOG.error('Checker failed - no parser for this construct?')
         else:
+            if check_last_semi:
+                if str(self).strip()[-1] == ';':
+                    syntax_errors.append("Remove the semi-colon at the end"
+                            " of the text.")
             return syntax_errors
 
     def paint(self, painter, _, ___):

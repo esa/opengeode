@@ -140,7 +140,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.1.0'
+__version__ = '3.1.1'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -788,6 +788,7 @@ class SDL_Scene(QGraphicsScene):
         errors = self.syntax_errors(symbol)
 
         if not errors:
+            symbol.syntax_error = False
             return
 
         for view in self.views():
@@ -814,6 +815,9 @@ class SDL_Scene(QGraphicsScene):
             msg_box.setStandardButtons(QMessageBox.Discard)
             msg_box.setDefaultButton(QMessageBox.Discard)
             msg_box.exec_()
+        # There were syntax errors: force user to fix them
+        symbol.syntax_error = True
+        symbol.edit_text()
 
 
     def global_syntax_check(self, ignore=set()):

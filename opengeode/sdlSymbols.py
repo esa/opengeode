@@ -864,6 +864,14 @@ class TextSymbol(HorizontalSymbol):
         self.textbox_alignment = Qt.AlignLeft | Qt.AlignTop
         self.parser = ogParser
 
+    def check_syntax(self, pr_text):
+        ''' Redefinition of the check syntax function for the text symbol '''
+        # Standard behaviour except that we permit the last character to be
+        # a semi-colon, since that is always the case with declarations
+        # and the text box cannot be followed by a COMMENT symbol
+        return super().check_syntax(pr_text, check_last_semi=False);
+        
+
     def update_completion_list(self, pr_text):
         ''' When text was entered, update list of variables/FPAR/Timers '''
         # note, on standalone systems, if the textbox contains a
