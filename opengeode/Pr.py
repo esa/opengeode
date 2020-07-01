@@ -54,9 +54,12 @@ def parse_scene(scene, full_model=False):
             # Parse text areas to retrieve signal names USELESS
            pr = generate(each)
            pr_data.extend(pr)
-        if processes:
-            to_env = processes[0].connection.out_sig
-            from_env = processes[0].connection.in_sig
+        for pro in processes:
+            if isinstance(pro, sdlSymbols.ProcessType):
+                # process type does not have connections
+                continue
+            to_env = pro.connection.out_sig
+            from_env = pro.connection.in_sig
             if to_env or from_env:
                 channels.append('channel c')
                 Indent.indent += 1
