@@ -31,6 +31,7 @@ import math
 import operator
 import logging
 import traceback
+from functools import partial
 import codecs
 from typing import Dict, Tuple
 from inspect import currentframe, getframeinfo
@@ -5427,17 +5428,35 @@ def parse_pr(files=None, string=None):
     return og_ast, warnings, errors
 
 
-def parseSingleElement(elem='', string='', context=None):
+def parseSingleElement(elem:str='', string:str='', context=None):
     '''
         Parse any symbol and return syntax error and AST entry
         Used for on-the-fly checks when user edits text
         and for copy/cut to create a new object
     '''
-    assert(elem in ('input_part', 'output', 'decision', 'alternative_part',
-            'terminator_statement', 'label', 'task', 'procedure_call', 'end',
-            'text_area', 'state', 'start', 'procedure', 'floating_label',
-            'connect_part', 'process_definition', 'proc_start', 'state_start',
-            'signalroute', 'stop_if', 'continuous_signal', 'composite_state'))
+    assert(elem in
+            ('input_part',
+             'output',
+             'decision',
+             'alternative_part',
+             'terminator_statement',
+             'label',
+             'task',
+             'procedure_call',
+             'end',
+             'text_area',
+             'state',
+             'start',
+             'procedure',
+             'floating_label',
+             'connect_part',
+             'process_definition',
+             'proc_start',
+             'state_start',
+             'signalroute',
+             'stop_if',
+             'continuous_signal',
+             'composite_state'))
     # Create a dummy context, needed to place context data
     if elem == 'proc_start':
         elem = 'start'
@@ -5448,7 +5467,26 @@ def parseSingleElement(elem='', string='', context=None):
     else:
         context = context or ogAST.Process()
     LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
+
+    # some syntax errors are only displayed on screen by ANTLR and never
+    # reported otherwise. Override the function to collect the messages
+    def catchErrors(self, e):
+        # Overriding the function from recognizers.py
+        if self._state.errorRecovery:
+            return
+
+        self._state.syntaxErrors += 1 # don't count spurious
+        self._state.errorRecovery = True
+
+        hdr = self.getErrorHeader(e)
+        msg = self.getErrorMessage(e)
+        self._state.syntaxErrorMsgs.append(f"{hdr} {msg}")
+        #super(sdl92Parser.sdl92Parser, self).reportError(e)
+
     parser = parser_init(string=string)
+    parser.reportError = partial(catchErrors, parser)
+    parser._state.syntaxErrorMsgs = []
+
     parser_ptr = getattr(parser, elem)
     assert parser_ptr is not None
     syntax_errors = []
@@ -5456,6 +5494,11 @@ def parseSingleElement(elem='', string='', context=None):
     warnings = []
     t = None
     if parser:
+        # we get there twice in a row, both from focusOutEvent:
+        # first by the call to check_syntax
+        # then by the call to update_completion_list
+        # this could be improved..
+        #print (traceback.print_stack())
         r = parser_ptr()
         # Get the root of the Antlr-AST to build our own AST entry
         root = r.tree
@@ -5476,6 +5519,15 @@ def parseSingleElement(elem='', string='', context=None):
             syntax_errors.append('Syntax error in expression - Fix it.')
         except SyntaxError as err:
             syntax_errors.append(err.text)
+        # Check that the whole string has been consumed (ANTLR may stop parsing
+        # after the last expected token, leaving invisible syntax errors)
+        moreToken = parser.getTokenStream().LT(1).start
+        if moreToken != None and moreToken < len(string):
+            syntax_errors.append (f"Issue at character {moreToken}:"
+                    f" {string[moreToken]}")
+        # Add syntax errors from ANTLR recognizer
+        if parser._state.syntaxErrors:
+            syntax_errors.extend(parser._state.syntaxErrorMsgs)
     return(t, syntax_errors, semantic_errors, warnings,
             context.terminators)
 
