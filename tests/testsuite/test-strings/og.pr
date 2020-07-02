@@ -31,30 +31,28 @@ system og;
             /* CIF ENDTEXT */
             /* CIF START (639, 63), (70, 35) */
             START;
-                /* CIF PROCEDURECALL (624, 118), (98, 35) */
-                call writeln(a(0));
-                /* CIF task (581, 168), (185, 35) */
+                /* CIF task (581, 118), (185, 35) */
                 task result := result // 'Hello!';
-                /* CIF task (623, 219), (102, 35) */
+                /* CIF task (623, 169), (102, 35) */
                 task result := '';
-                /* CIF task (459, 269), (429, 78) */
+                /* CIF task (459, 219), (429, 78) */
                 task for each in a(2, length(a) - 1):
  result := result // (if length(result) > 0 then sep else nosep fi) // each
 endfor
-                /* CIF comment (907, 290), (70, 35) */
+                /* CIF comment (907, 240), (70, 35) */
                 comment 'pop ';
-                /* CIF PROCEDURECALL (609, 362), (129, 35) */
+                /* CIF PROCEDURECALL (609, 312), (129, 35) */
                 call writeln(result);
-                /* CIF task (596, 417), (155, 56) */
+                /* CIF task (596, 367), (155, 56) */
                 task for sep2 in a:
     call writeln(sep2);
 endfor
-                /* CIF comment (771, 427), (194, 40) */
+                /* CIF comment (771, 377), (194, 40) */
                 comment 'Test to check scope
 (sep is also a dcl-variable)';
-                /* CIF PROCEDURECALL (509, 491), (330, 35) */
+                /* CIF PROCEDURECALL (509, 441), (330, 35) */
                 call writeln('String literal (should be "hello"):', strlit);
-                /* CIF NEXTSTATE (639, 541), (70, 35) */
+                /* CIF NEXTSTATE (639, 491), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (366, 217), (70, 35) */
             state wait;
