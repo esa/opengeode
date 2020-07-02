@@ -112,7 +112,7 @@ Licence
 License is LGPL (see file [LICENSE](https://github.com/esa/opengeode/blob/master/LICENSE))
 There is no runtime, and the generated code is not subject to any license.
 
-The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
+The fonts are the fonts from Ubuntu, check licence in file [FONT-LICENSE.TXT](https://github.com/esa/opengeode/blob/master/FONT-LICENCE.txt)
 The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
