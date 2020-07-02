@@ -14,7 +14,7 @@ This is NOT related to the graphical Simple DirectMedia Layer libraries!
 
 Visit http://sdl-forum.org for more information about SDL.
 
-![alt tag](icons/opengeode-screenshot.png)
+![OpenGEODE Screenshot](icons/opengeode-screenshot.png)
 
 
 Features
