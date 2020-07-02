@@ -109,7 +109,7 @@ The ASN.1 compiler (ASN1SCC) that OpenGEODE is based on was developed by George 
 Licence
 =======
 
-License is LGPL (see file LICENSE)
+License is LGPL (see file [LICENSE](https://github.com/esa/opengeode/blob/master/LICENSE))
 There is no runtime, and the generated code is not subject to any license.
 
 The fonts are the fonts from Ubuntu, check licence in file FONT-LICENSE.TXT
