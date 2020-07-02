@@ -117,6 +117,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+3.1.2 (07/2020)
+    - Reinforce syntax error checking and reporting
+
 3.1.1 (07/2020)
     - Reinforce syntax error checking and reporting
       Don't allow user escape a symbol syntax error: refocus text until fixed
