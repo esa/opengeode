@@ -1,4 +1,3 @@
 include *.md
 include LICENSE
 include FONT-LICENCE.txt
-include README
