@@ -117,6 +117,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.1.3 (07/2020)**
+- Fix issue finding ASN.1 files when model loaded from another folder
+
 **3.1.2 (07/2020)**
     - Reinforce syntax error checking and reporting
 
