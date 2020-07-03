@@ -2184,7 +2184,7 @@ clean:
 
     def load_file(self, files):
         ''' Parse a PR file and render it on the scene '''
-        cwd = os.getcwd()
+        #cwd = os.getcwd()
         dir_pool = set(os.path.dirname(each) for each in files)
         if len(dir_pool) != 1:
             LOG.warning('Files are spread in several directories - '
@@ -2246,7 +2246,7 @@ clean:
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
         self.update_datadict.emit()
-        os.chdir(cwd)
+        #os.chdir(cwd)
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
