@@ -1,4 +1,4 @@
-![alt tag](icons/opengeode4.png)
+![OpenGEODE Logo](icons/opengeode4.png)
 
 OpenGEODE
 =========
