@@ -49,7 +49,7 @@ OpenGEODE is made primarily for Linux.
 
 It is part of the [TASTE project](https://taste.tools)
 
-It is installed with all dependencies in the TASTE virtual machine that you can download from this link. Manual installation is possible in a native Linux environment.
+It is installed with all dependencies in the TASTE virtual machine that you can download from [this link](https://taste.tools/#install). Manual installation is possible in a native Linux environment.
 Debian 10 (buster) is the baseline. Recent versions of Ubuntu (20.x) should work as well.
 
 The following commands should automate the installation (with exception of ASN1SCC - see below):
