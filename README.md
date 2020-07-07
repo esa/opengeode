@@ -91,6 +91,16 @@ $ git pull
 $ make install    # alternatively:  pip3 install --user --upgrade . 
 ```
 
+OpenGEODE Website
+=================
+
+A [wiki page](http://taste.tuxfamily.org/wiki/index.php?title=Technical_topic:_OpenGEODE%2C_an_SDL_editor_for_TASTE)
+has been created with more information about OpenGEODE.
+
+The [source](https://github.com/esa/opengeode/blob/master/wiki/opengeode.mediawiki)
+for the page can be found in the [wiki](https://github.com/esa/opengeode/tree/master/wiki)
+folder of this repository. Any changes to the wiki source will be subsequently
+merged into the wiki by the wiki maintainers.
 
 Information and contact
 =======================
