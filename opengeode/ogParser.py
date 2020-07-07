@@ -930,8 +930,8 @@ def check_type_compatibility(primary, type_ref, context):
         Possibly returns a list of warnings; can raises TypeError
     '''
     warnings = []    # function returns a list of warnings
-    assert type_ref is not None
-    if type_ref is UNKNOWN_TYPE:
+    # assert type_ref is not None
+    if type_ref is UNKNOWN_TYPE or type_ref is None:
         #print traceback.print_stack()
         raise TypeError('Type reference is unknown')
 
@@ -2205,6 +2205,8 @@ def primary_call(root, context):
         errors.append(error(root, str(err)))
     except OverflowError:
         errors.append(error(root, 'Result can exceeds 64-bits'))
+    except Warning as warn:
+        warnings.append(warning(root, str(warn)))
 
     return node, errors, warnings
 

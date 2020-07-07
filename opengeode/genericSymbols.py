@@ -344,7 +344,7 @@ class Symbol(QObject, QGraphicsPathItem):
             LOG.debug(str(traceback.format_exc()))
             LOG.error('Checker failed - no parser for this construct?')
         else:
-            if check_last_semi:
+            if check_last_semi and str(self).strip():
                 if str(self).strip()[-1] == ';':
                     syntax_errors.append("Remove the semi-colon at the end"
                             " of the text.")
