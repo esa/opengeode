@@ -1,0 +1,217 @@
+:[[File:ClipCapIt-200611-113731.PNG|500 px|center|OpenGEODE]]
+
+= Introduction =
+
+[[File:og-complete.png|700 px|right|Opengeode overview]]
+
+SDL (Specification and Description Language) is a powerful modelling language for visually yet '''formally describing state machines'''. As any programming language, SDL comes with a textual syntax, but in addition has an intuitive graphical notation that can be used to build models using interactive editors. The well-defined semantics of SDL makes it a good candidate for describing the behaviour of embedded, real-time systems.
+ 
+
+The standard has been established by ITU-T under reference Z100. Among others, it is widely used in the telecommunication industry. See [http://www.sdl-forum.org] for more information.
+
+
+Thanks to its formalism, its well-defined concepts and ease of use, the SDL language is sized for the production of safe, robust software. 
+
+TASTE now includes an open-source SDL graphical editor that generates Ada code. It is free software, implemented in Python with the Qt graphical framework. The name "OpenGEODE" was chosen as a tribute to the former ObjectGEODE tool, which has unfortunately been discontinued several years ago. OpenGEODE is freely inspired from the ergonomy of its ancestor, and is trying to show how modern languages and tools can help providing a great user experience to programmers, even those who are not enclined to use a visual approach for development.
+
+
+''Important notice:''
+
+We are developing OpenGEODE as a ''technology demonstrator''. Please consider it as such, and use it for your lab experiments, discovery of SDL, and for enriching your understanding of embedded, communicating systems. SDL and [http://ttsiodras.github.io/asn1.html ASN.1] are powerful languages. They are also excellent languages that can be studied to concretely understand what state machines and data types are about.
+
+Feel free to browse the source code [https://github.com/esa/opengeode here], that was also meant to show how Python and Qt allow, with little effort, to create amazing applications.
+
+'''For professional applications, we recommend the use of the [http://www.pragmadev.com Pragmadev Studio tool]''', possibly in combination with TASTE. It is a complete, large scale tool that comes with commercial support. A free version of the tool exists for evaluation, check it out!
+
+= OpenGEODE Features =
+
+* Graphical editor of SDL '''processes''' and '''procedures'''. The communication diagram is captured with the TASTE interface view editor.
+
+* SDL2010 features: FOR loops in task symbols, '''hierarchical''' and '''parallel''' states
+
+* Reads and save .pr files (textual SDL notation), with CIF support for the graphical information
+
+* Supports ASN.1 data types, including the Value notation - check [http://ttsiodras.github.io/asn1.html this page] to know more about our ASN.1 compiler and tools
+
+* Supports a subset of symbols that are sufficient to develop real-time applications (excluding the ''SAVE'' symbol)
+
+* Generates Ada code with ASN.1 types using TASTE ASN.1 "space-certified" (SPARK) compiler
+
+* Generates optimized LLVM code for speed and performance on targets without Ada runtime
+
+* Complete syntax and semantic checks
+
+* Automatic conversion to Statechart diagrams
+
+* Save the complete or parts of the model to PNG/SVG/PDF files
+
+* Hyperlinks (link a symbol content to any external document or web page)
+
+* Zoom in, zoom-out
+
+* Context-dependent text auto-completion
+
+* Syntax highlighting
+
+* Undo/Redo, Copy-Paste
+
+* (Limited) VIM mode - You can use :wq or :%s,search,replace,g, and /search pattern
+
+== SDL Restrictions ==
+
+The following features from the SDL language are not supported, mostly because they are incompatible with embedded systems or because they are rarely used. Please contact us for more details:
+
+* the SAVE symbol
+* Enabling conditions
+* States inside procedures
+* Some loop syntax / textual algorithms (see SDL extensions)
+* Macros
+* SDL data types (use ASN.1 instead) - including operators (use procedures)
+* Signallists
+* `Alternative` symbol
+* Full CIF support
+
+== SDL Extensions ==
+
+There are almost no extensions to the SDL language:
+
+* The syntax of the `FOR` loops differs from the one of the standard
+The syntax in OpenGEODE is:
+  for iterator in sequence_of_variable | RANGE([start], stop, [step]):
+    list of SDL statements
+  endfor
+
+NOTE: The semantics is the same as the range operator in Python: the last value is excluded from the iteration,
+meaning that range (4) will yield 4 elements (0, 1, 2, 3) and range (1, 3) will yield 2 elements (1, 2).
+
+* A directive allows to specify the path/name of the ASN.1 file:
+  USE Datamodel COMMENT 'path/to/file.asn';   -- In a text box
+  
+
+* Some math operators are natively supported: abs, ceil, cos, floor, round, sin, sqrt, trunc
+
+* The num(enumerated) operator gives the numerical value of an enumerated
+
+* use Present(variable of CHOICE type) to know which item is chosen
+
+* As in ObjectGeode you can use the built-in procedures "write" and "writeln" to display text
+
+* String concatenation is done using ASN.1 value notation : string1_in_ASN.1 // string2_in_ASN.1
+e.g.
+  TASK result := {1,2,3} // {4,5,6};
+
+= Why SDL and OpenGEODE ? =
+
+SDL has formal semantics and syntax. It has yet a simple textual syntax and advanced checking capabilities. Because SDL uses ASN.1 data types, many checks are possible with SDL that do not exist with most other programming languages. 
+
+Non-determinism is detected by the tool as error. 
+
+Here are examples of errors caught by the tool. If you declare these variables:
+
+  '''DCL''' var1 t_int32,    -- with T-Int32 ::= '''INTEGER''' (-2147483648 .. 2147483647)
+      var2 t_uint8,    -- with T-UInt8 ::= '''INTEGER''' (0..255)
+      var4 MyChoice,   -- with MyChoice ::= '''CHOICE''' { a '''BOOLEAN''', b Whatever }
+      var5 MyEnum;     -- with MyEnum ::= '''ENUMERATED''' { hello, world, howareyou }
+
+You can test the value of these variable in a DECISION symbol - think of a switch-case in C:
+
+[[File:Range_check_1.png|300 px|thumb|left|Check1]]
+The tool catches the following errors:
+
+  [ERROR] Decision "var1": answers =0 and /=1 are overlapping in range [0 .. 0]
+  [ERROR] Decision "var1": answers =0 and -500:500 are overlapping in range [0 .. 0]
+  [ERROR] Decision "var1": answers /=1 and >0 are overlapping in range [2 .. 2147483647]
+  [ERROR] Decision "var1": answers /=1 and -500:500 are overlapping in range [-500 .. 0]
+  [ERROR] Decision "var1": answers /=1 and -500:500 are overlapping in range [2 .. 500]
+  [ERROR] Decision "var1": answers >0 and -500:500 are overlapping in range [1 .. 500]
+
+
+[[File:Range_check_2.png|300 px|thumb|left|Check2]] 
+The tool catches the following issues:
+  [WARNING] Decision "var2": Unreachable branch "<0"
+  [WARNING] Decision "var2": Unreachable branch ">300"
+  [WARNING] Decision "var2": Unreachable branch -10:-5
+  [WARNING] Decision "var2": Unreachable branch 256:300
+  [WARNING] Decision "var2": Range [-10 .. -1] is unreachable
+  [WARNING] Decision "var2": Range [256 .. 300] is unreachable
+  [ERROR] Decision "var2": No answer to cover range [0 .. 255]
+
+
+[[File:Range_check_3.png|300 px|thumb|left|Check3]]
+The tool catches the following error:
+  [ERROR] Decision "present(var4)": Missing branches for answer(s) "b"
+
+
+[[File:Range_check_4.png|300 px|thumb|left|Check4]]
+The tool catches the following errors:
+  [ERROR] Decision "var5": duplicate answers "world", "hello"
+  [ERROR] Decision "var5": Missing branches for answer(s) "howareyou"
+
+
+[[File:Range_check_5.png|300 px|thumb|left|Check5]]
+The tool detects the risk of overflow in the first TASK box and raises an error:
+  [ERROR] Types are incompatible in assignment: left (var2, type= T-UInt8), right (var2 + 1, type= IntegerType) Expression evaluation in range [1.0..256.0], outside expected range [0..255]
+
+= Standalone installation =
+
+Check the [https://github.com/maxime-esa/opengeode GitHub] page for installation instruction on your own machine.
+
+You can also use the Windows version here: [http://download.tuxfamily.org/taste/opengeode_windows.zip OpenGEODE] and [http://download.tuxfamily.org/taste/asn1scc.zip ASN.1 Compiler]
+
+The ASN.1 compiler must be in your system path.
+
+= How to use it in TASTE =
+
+OpenGEODE is already installed in the TASTE Virtual Machine, and fully integrated with the toolset.
+
+In the interface view, select the SDL language for the implementation of the blocks you want to model using OpenGEODE.
+
+Then when you right-click on the SDL block you can select the option "Open SDL Editor".
+
+The code is automatically generated when you exit the tool.
+
+= Screenshots =
+
+* Overview of the editor
+
+[[File:Opengeode.png|600px|border|center|thumb|Opengeode]]
+
+The editor is meant to be simple and straightforward to use. 
+
+Based on the example you can find in the VM here are the main capabilities of the tool:
+
+* Support of composite states and FOR loops
+
+[[File:Nested-state.png|800px|border|center|thumb|Nested states]]
+
+* Simulation using the TASTE tools
+
+[[File:Ogsimu.gif|center|Executing the model]]
+
+= Credits =
+
+Designed and implemented by Maxime Perrotin (European Space Agency)
+
+Additional contributions from:
+ * Diego Barberá (LLVM backend)
+ * Laurent Meyer (basic parsing of standard SDL types)
+ * Thanassis Tsiodras (Python API for ASN.1)
+ * Angel Esquinas (MSC Streaming scene)
+ * George Mamais (ASN.1 Compiler)
+
+The ASN.1 Compiler was developed for ESA by Neuropublic using F# and ANTLR
+
+The OpenGEODE logo was designed by Maxime Perrotin
+
+The background pattern was downloaded from www.subtlepatterns.com
+
+The tool is developed mainly using Python3, PySide2 (Qt bindings for Python), and ANTLR3 (parser)
+
+= How to extend OpenGEODE =
+
+Some [[documentation]] gives step-by-step instructions on how to extend the tool.
+
+= Licence =
+
+Licence for OpenGEODE is LGPL
+

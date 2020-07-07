@@ -16,7 +16,6 @@ Visit http://sdl-forum.org for more information about SDL.
 
 ![OpenGEODE Screenshot](icons/opengeode-screenshot.png)
 
-
 Features
 --------
 
@@ -40,7 +39,6 @@ Main limitations
 
 - Supports only one process at a time (use [TASTE](https://taste.tools) to connect processes to form a complete system)
 - Minimal support of legacy SDL datatypes (newtypes/synonyms..): use ASN.1 instead
-
 
 Installation
 ============
@@ -91,14 +89,22 @@ $ git pull
 $ make install    # alternatively:  pip3 install --user --upgrade . 
 ```
 
+OpenGEODE Website
+=================
+
+A [web page](http://opengeode.net/) has been created with more information about
+OpenGEODE.
+
+The [source](https://github.com/esa/opengeode/blob/master/wiki/opengeode.mediawiki)
+for the page can be found in the [wiki](https://github.com/esa/opengeode/tree/master/wiki)
+folder of this repository. Any changes to the wiki source will be subsequently
+merged into the wiki by the wiki maintainers.
 
 Information and contact
 =======================
 
-
 For additional information please contact:
 maxime (dot) perrotin (at) esa (dot) int
-
 
 The LLVM backend was designed and implemented by Diego Barbera during the ESA
 Summer of Code 2014. This component is not maintained.
@@ -490,7 +496,6 @@ Changelog
 - Callback function for timers use 64bits integer
 - RIs use prefix with unicode separation to avoid name clashes
 
-
 **1.4.4 (06/2016)**
 - Minor bugfix in Ada backend to support typeless systems
 
@@ -615,7 +620,6 @@ Changelog
 
 **1.0.1 (06/2015)**
 - Bugfix: use mono when calling asn1.exe by default (needed redhat-based
-                                                     distros)
 
 **1.0.0 (06/2015)**
 - Bugfixes and minor improvements
@@ -645,14 +649,12 @@ Changelog
 - Support of hierachical states
 - Minor bugfixes
 
-
 **0.98**
 - Added support for FOR loops
   In a task, use "for x in range([start], stop, [range]): ... endfor"
   or "for x in sequenceOfvariable: ... endfor"
 - Default symbol size is smaller
 - Various minor bugfixes
-
 
 **0.97**
 - added support for default value when declaring a variable
