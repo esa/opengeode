@@ -380,7 +380,10 @@ class EditableText(QGraphicsTextItem):
             if(self.oldSize != self.parent.boundingRect()
                     or self.parent.syntax_error or self.oldText != str(self)):
                 # Call syntax checker from item containing the text (if any)
-                self.scene().check_syntax(self.parent)
+                if self.scene().check_syntax(self.parent):
+                    # Keep focus
+                    self.setFocus()
+                    return
                 # Update class completion list
                 self.scene().update_completion_list(self.parentItem())
                 # Create undo command, including possible CAM

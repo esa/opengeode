@@ -737,6 +737,8 @@ class State:
         # via clause, used for entering nested state with an entry point
         # 'via' is the string for the renderer (e.g. "hello via foo")
         self.via = None
+        # a state can be an instance of a state stype
+        self.instance_of = None
 
     def trace(self):
         ''' Debug output for a STATE symbol '''

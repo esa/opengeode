@@ -3843,13 +3843,27 @@ def state(root, parent, context):
     asterisk_state = False
     asterisk_input = None
     st_x, st_y = 0, 0
-    via_stop = None
+    via_stop, inst_stop = None, None
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
             (state_def.pos_x, state_def.pos_y,
             state_def.width, state_def.height) = cif(child)
             st_x, st_y = state_def.pos_x, state_def.pos_y
+        elif child.type == lexer.ID:
+            # a single ID is only for state instances
+            state_def.inputString = get_input_string(child)
+            state_def.line = child.getLine()
+            state_def.charPositionInLine = child.getCharPositionInLine()
+            state_def.statelist = [state_def.inputString]
+            inst_stop = child.getTokenStopIndex()
+        elif child.type == lexer.TYPE_INSTANCE:
+            #  Extract the complete string "state: instance"
+            start = inst_stop
+            stop = child.getTokenStopIndex()
+            full_string = token_stream(root).toString(start, stop)
+            state_def.inputString, state_def.instance_of = \
+                    full_string, state_def.instance_of
         elif child.type == lexer.STATELIST:
             # State name(state_def)
             state_def.inputString = get_input_string(child)

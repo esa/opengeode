@@ -8,7 +8,7 @@
     The "Connection" class is the mother class, all other connectors must
     inherit from it and possibly redefine some functions or shape.
 
-    Copyright (c) 2012-2014 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -52,6 +52,8 @@ class Connection(QGraphicsPathItem):
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         # When the child moves, the connection may need to adjust the end point
         self.child.moved.connect(self.child_moved)
+        # Syntax error indicator
+        self.syntax_error: Boolean = False
 
     @Slot(float, float)
     def child_moved(self, delta_x, delta_y):

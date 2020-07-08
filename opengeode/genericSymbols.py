@@ -171,7 +171,7 @@ class Symbol(QObject, QGraphicsPathItem):
         self.movable_points = []
         # Flag to indicate a detected syntax error, used to force the
         # refocus of the text area to make sure user fixes it before saving
-        self.syntax_error: Boolean = False
+        self.syntax_error: bool = False
 
     def set_valid_pos(self, pos):
         ''' Hook that can be redefined by sub classes to forbid wrong

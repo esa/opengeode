@@ -783,13 +783,15 @@ class SDL_Scene(QGraphicsScene):
         return symb.check_syntax('\n'.join(Pr.generate(symb, recursive=False)))
 
 
-    def check_syntax(self, symbol):
+    def check_syntax(self, symbol) -> bool:
         ''' Check syntax of a symbol and display a pop-up in case of errors '''
+        # return True if syntax errors were found
+
         errors = self.syntax_errors(symbol)
 
         if not errors:
             symbol.syntax_error = False
-            return
+            return False
 
         for view in self.views():
             errs = []
@@ -816,8 +818,11 @@ class SDL_Scene(QGraphicsScene):
             msg_box.setDefaultButton(QMessageBox.Discard)
             msg_box.exec_()
         # There were syntax errors: force user to fix them
+        # by returning True to the caller (TextInteraction), which
+        # will keep focus
         symbol.syntax_error = True
-        symbol.edit_text()
+        return True
+        #symbol.edit_text()
 
 
     def global_syntax_check(self, ignore=set()):
