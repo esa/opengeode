@@ -2726,11 +2726,11 @@ def composite_state(root, parent=None, context=None):
         elif child.type == lexer.IN:
             # state entry point
             for point in child.getChildren():
-                comp.state_entrypoints.append(point.toString().lower())
+                comp.state_entrypoints.add(point.toString().lower())
         elif child.type == lexer.OUT:
             # state exit point
             for point in child.getChildren():
-                comp.state_exitpoints.append(point.toString().lower())
+                comp.state_exitpoints.add(point.toString().lower())
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=comp)
             if textarea.signals:
@@ -4675,9 +4675,9 @@ def decision(root, parent, context):
 
 
 def nextstate(root, context):
-    ''' Parse a NEXTSTATE [VIA State_Entry_Point] - detect various kinds of
-        errors when trying to enter a nested state '''
-    next_state_id, via, entrypoint = '', None, None
+    ''' Parse a NEXTSTATE [: type] [VIA State_Entry_Point] 
+        detect various kinds of errors when trying to enter a nested state '''
+    next_state_id, via, entrypoint, instance_of = '', None, None, None
     errors = []
     for child in root.getChildren():
         if child.type == lexer.ID:
@@ -4709,8 +4709,13 @@ def nextstate(root, context):
                                       (s=next_state_id, p=entrypoint))
             else:
                 errors.append('"History" NEXTSTATE cannot have a "via" clause')
+        elif child.type == lexer.TYPE_INSTANCE:
+            instance_of = child.getChild(0).text
+            via = get_input_string(root).replace(
+                                                'NEXTSTATE', '', 1).strip()
         else:
-            errors.append('NEXTSTATE undefined construct')
+            errors.append('NEXTSTATE undefined construct: ' +
+                            sdl92Parser.tokenNamesMap[child.type])
         if not via:
             # check that if the nextstate is nested, it has a START symbol
             try:
@@ -4722,7 +4727,7 @@ def nextstate(root, context):
                                   'START symbol'.format(composite.statename))
             except ValueError:
                 pass
-    return next_state_id, via, entrypoint, errors
+    return next_state_id, via, entrypoint, instance_of, errors
 
 
 def terminator_statement(root, parent, context):
@@ -4742,7 +4747,8 @@ def terminator_statement(root, parent, context):
             lab.terminators = [t]
         elif term.type == lexer.NEXTSTATE:
             t.kind = 'next_state'
-            t.inputString, t.via, t.entrypoint, err = nextstate(term, context)
+            t.inputString, t.via, t.entrypoint, t.instance_of, err = \
+                    nextstate(term, context)
             if err:
                 errors.extend(err)
             t.line = term.getChild(0).getLine()
@@ -5434,7 +5440,7 @@ def parse_pr(files=None, string=None):
         for t in process.terminators:
             if t.kind != 'next_state':
                 continue
-            ns = t.inputString.lower()
+            ns = t.instance_of or t.inputString.lower()
             if not ns in [s.lower() for s in process.mapping.keys()] + ['-']:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
                 errors.append(['State definition missing: ' + ns.upper(),

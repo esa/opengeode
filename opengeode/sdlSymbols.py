@@ -616,8 +616,7 @@ class ProcedureStop(Join):
             # in case of syntax error in the symbol text
             return
         try:
-            CONTEXT.state_exitpoints = \
-                    set(CONTEXT.state_exitpoints) | set(str(self))
+            CONTEXT.state_exitpoints.add(str(self))
         except AttributeError:
             # No state exit points in a procedure
             pass
@@ -1020,10 +1019,17 @@ class State(VerticalSymbol):
         elems = str(self).lower().strip().split()
         if len(elems) == 2 and elems[1] == 'via':
             # Get list of entry point of the nested state
-            statename = elems[0]
+            # check if it is an instance
+            name = elems[0].split(':')
+            if len(name) == 2:
+                statename = name[1]
+            else:
+                statename = name[0]
             for each in CONTEXT.composite_states:
                 if each.statename == statename:
                     return each.state_entrypoints
+            # the entry points may not be defined yet
+            return set()
         else:
             return set(state for state in CONTEXT.mapping if state != 'START')
 
@@ -1365,8 +1371,8 @@ class StateStart(Start):
 
     def update_completion_list(self, pr_text):
         ''' Update nested state entry points '''
-        CONTEXT.state_entrypoints = \
-                set(CONTEXT.state_entrypoints) | set(str(self))
+        CONTEXT.state_entrypoints.add(str(self))
+        
 
 # pylint: disable=R0904
 class ContinuousSignal(HorizontalSymbol):

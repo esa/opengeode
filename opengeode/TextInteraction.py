@@ -263,7 +263,7 @@ class EditableText(QGraphicsTextItem):
         try:
             # If not the first line of the text, Qt adds u+2029 as 1st char
             line = cursor.selectedText().replace(u'\u2029', '')
-            if line[pos] in string.ascii_letters + '!' + '.' + '_':
+            if line[pos] in string.ascii_letters + '!' + '.' + '_' + ':':
                 self.context = line[slice(0, pos + 1)].split()[-1]
             else:
                 self.context = ''

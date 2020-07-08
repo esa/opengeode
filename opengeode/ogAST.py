@@ -481,6 +481,8 @@ class Terminator:
         self.via = None
         # 'entrypoint' is the string of the entry point (e.g. "foo")
         self.entrypoint = None
+        # If the nextstate is an instance of a type (foo : bar)
+        self.instance_of = None
         # some transitions can be chained, when entering/leaving nested states
         self.next_id = -1
         # Pointer to the next transition, when using return/connect
@@ -944,8 +946,8 @@ class CompositeState(Process):
     def __init__(self):
         super(CompositeState, self).__init__()
         self.statename = ''
-        self.state_entrypoints = []
-        self.state_exitpoints = []
+        self.state_entrypoints = set()
+        self.state_exitpoints = set()
         # Special entry and exit procedures (named "entry" and "exit")
         self.entry_procedure = None
         self.exit_procedure = None

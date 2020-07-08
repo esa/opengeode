@@ -1314,7 +1314,7 @@ nextstate
 
 
 nextstatebody
-        :       statename via?
+        :       statename (':'! type_inst)? via?
                 | dash_nextstate
         ;
 
