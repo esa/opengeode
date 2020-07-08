@@ -26,7 +26,10 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	make -f Makefile.og
+	#make -f Makefile.og
+	$(OPENGEODE) og.pr --toAda
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview.asn
+	gnat make titi
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
