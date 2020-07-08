@@ -230,11 +230,13 @@ entity_in_block
                 | process_definition
         ;
 
-
+// There should be at least one route in the signal route
+// However it is now optional (* and not +) to appease the
+// syntax checker in the tool.
 signalroute
-        :       SIGNALROUTE route_id
-                route+
-        ->      ^(SIGNALROUTE route_id route+)
+        :       SIGNALROUTE route_id end?
+                route*
+        ->      ^(SIGNALROUTE route_id route*)
         ;
 
 
