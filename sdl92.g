@@ -487,10 +487,10 @@ state
 state_definition
         :       cif?
                 hyperlink?
-                STATE statelist via? (e=end | SEMI) // "via" part may be in NEXTSTATE
+                STATE statelist (e=end | SEMI) // "via" part may be in NEXTSTATE
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? hyperlink? $e? statelist via? state_part*)
+        ->      ^(STATE cif? hyperlink? $e? statelist state_part*)
         ;
 
 

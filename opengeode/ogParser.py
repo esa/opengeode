@@ -4675,7 +4675,7 @@ def decision(root, parent, context):
 
 
 def nextstate(root, context):
-    ''' Parse a NEXTSTATE [: type] [VIA State_Entry_Point] 
+    ''' Parse a NEXTSTATE [: type] [VIA State_Entry_Point]
         detect various kinds of errors when trying to enter a nested state '''
     next_state_id, via, entrypoint, instance_of = '', None, None, None
     errors = []
@@ -4689,24 +4689,6 @@ def nextstate(root, context):
                 via = get_input_string(root).replace(
                                                 'NEXTSTATE', '', 1).strip()
                 entrypoint = child.getChild(0).text
-                try:
-                    composite, = (comp for comp in context.composite_states
-                                  if comp.statename.lower()
-                                                == next_state_id.lower())
-                except ValueError:
-                    errors.append('State {} is not a composite state'
-                                    .format(next_state_id))
-                else:
-                    if entrypoint.lower() not in composite.state_entrypoints:
-                        errors.append('State {s} has no "{p}" entrypoint'
-                                       .format(s=next_state_id, p=entrypoint))
-                    for each in composite.content.named_start:
-                        if each.inputString == entrypoint.lower() + '_START':
-                            break
-                    else:
-                        errors.append('Entrypoint {p} in state {s} is '
-                                      'declared but not defined'.format
-                                      (s=next_state_id, p=entrypoint))
             else:
                 errors.append('"History" NEXTSTATE cannot have a "via" clause')
         elif child.type == lexer.TYPE_INSTANCE:
@@ -4716,17 +4698,40 @@ def nextstate(root, context):
         else:
             errors.append('NEXTSTATE undefined construct: ' +
                             sdl92Parser.tokenNamesMap[child.type])
-        if not via:
-            # check that if the nextstate is nested, it has a START symbol
-            try:
-                composite, = (comp for comp in context.composite_states
-                          if comp.statename.lower() == next_state_id.lower())
-                if not isinstance(composite, ogAST.StateAggregation) \
-                        and not composite.content.start:
-                    errors.append('Composite state "{}" has no unnamed '
-                                  'START symbol'.format(composite.statename))
-            except ValueError:
+
+    # Checks on the NEXTSTATE
+    if via:  # instance and/or via clause
+        state_id = instance_of or next_state_id
+        try:
+            composite, = (comp for comp in context.composite_states
+                          if comp.statename.lower() == state_id.lower())
+        except ValueError:
+            errors.append(f'State {state_id} is not a composite state')
+        else:
+            if entrypoint is None:
                 pass
+            elif entrypoint.lower() not in composite.state_entrypoints:
+                errors.append(
+                        f'State {state_id} has no "{entrypoint}" entrypoint')
+            # The test below seems identical to the one just done
+#           for each in composite.content.named_start:
+#               if not entrypoint or \
+#                       each.inputString == entrypoint.lower() + '_START':
+#                   break
+#           else:
+#               errors.append(f'Entrypoint {entrypoint} in state'
+#                       f' {state_id} is declared but not defined')
+    else: # not via and/or instance
+        # check that if the nextstate is nested, it has a START symbol
+        try:
+            composite, = (comp for comp in context.composite_states
+                      if comp.statename.lower() == next_state_id.lower())
+            if not isinstance(composite, ogAST.StateAggregation) \
+                    and not composite.content.start:
+                errors.append('Composite state "{}" has no unnamed '
+                              'START symbol'.format(composite.statename))
+        except ValueError:
+            pass
     return next_state_id, via, entrypoint, instance_of, errors
 
 
