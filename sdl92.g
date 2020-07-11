@@ -478,28 +478,30 @@ floating_label
         ->      ^(FLOATING_LABEL cif? hyperlink? connector_name transition?)
         ;
 
-// state is either a full state definition, or a declaration of an instance
+// state is either a full state definition, or a state instance
 state
         : state_definition
           | state_instance
         ;
 
+// the "via" part is needed to allow the graphical merge with a nextstate
 state_definition
         :       cif?
                 hyperlink?
-                STATE statelist (e=end | SEMI) // "via" part may be in NEXTSTATE
+                STATE statelist via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? hyperlink? $e? statelist state_part*)
+        ->      ^(STATE cif? hyperlink? $e? statelist via? state_part*)
         ;
 
 
 state_instance
         :       cif?
                 hyperlink?
-                STATE statename ':' type_inst e=end
+                STATE statename ':' type_inst via? (e=end | SEMI)
+                (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? hyperlink? $e? statename type_inst)
+        ->      ^(STATE cif? hyperlink? $e? statename via? type_inst state_part*)
         ;
 
 

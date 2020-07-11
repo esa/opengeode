@@ -3857,6 +3857,7 @@ def state(root, parent, context):
             state_def.charPositionInLine = child.getCharPositionInLine()
             state_def.statelist = [state_def.inputString]
             inst_stop = child.getTokenStopIndex()
+            via_stop = inst_stop # in case there is also a via clause
         elif child.type == lexer.TYPE_INSTANCE:
             #  Extract the complete string "state: instance"
             start = inst_stop
@@ -3926,8 +3927,8 @@ def state(root, parent, context):
                                      .format(each, statename.lower()))
                     # then update the mapping state-input
                     context.mapping[statename.lower()].append(inp)
-            except KeyError:
-                stwarn.append('State definition missing')
+            except KeyError as err:
+                stwarn.append(f'State definition missing - {str(err)}')
             state_def.inputs.append(inp)
             if inp.inputString.strip() == '*':
                 if asterisk_input:
