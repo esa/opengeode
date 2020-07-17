@@ -50,6 +50,58 @@ It is part of the [TASTE project](https://taste.tools)
 It is installed with all dependencies in the TASTE virtual machine that you can download from [this link](https://taste.tools/#install). Manual installation is possible in a native Linux environment.
 Debian 10 (buster) is the baseline. Recent versions of Ubuntu (20.x) should work as well.
 
+Using TASTE
+-----------
+
+__Important: OpenGEODE is already installed in the TASTE Virtual Machine, and fully integrated with the toolset, however, the current TASTE VM is a bit old - it is based on Debian 9 which does not have important dependencies to support the latest version of OpenGEODE. It is missing Python 3.7+ and PySide2. An upgrade is in the works, but it's not ready yet. If you are familiar enough with Linux, you can manually upgrade by completing the following steps.__
+
+_Install the [TASTE VM](https://taste.tools/#install). Once logged in, enter a new shell and:_
+```
+# Switch to root
+sudo su
+
+# Make sure VM image is up to date
+apt-get update
+apt-get upgrade
+apt-get dist-upgrade
+
+# Point APT to Buster to prepare for upgrade
+sed -i 's/stretch/buster/g' /etc/apt/sources.list
+
+# Upgrade packages to Buster; when prompted allow services to be restarted automatically
+apt-get upgrade
+
+# Upgrade distribution to Buster
+apt-get dist-upgrade
+
+# Remove packages no longer needed
+apt-get autoremove
+
+# Return to taste user; exit root
+exit
+
+# Navigate to TASTE source; upgrade
+cd ~/tool-src
+git pull
+git checkout feature_buster
+./Update-TASTE.sh
+```
+
+After this upgrade, you can work with the latest version of the tools, in particular the new Kazoo build system and Opengeode 3.xx (which you can update at any time). The Quick Reference Card has not been updated to reflect this yet.
+
+The main differences to create/edit a project is that you must just run `taste<` (and not `taste-create-project/taste-edit-project` anymore). To build, run `make`.
+
+You can check an example of a system using Opengeode if you go in `~/tool-src/kazoo/tests/Demo_ABB_Opengeode` and run `make` to build it. Then `taste` to edit.
+
+In the interface view, select the SDL language for the implementation of the blocks you want to model using OpenGEODE.
+
+Then when you right-click on the SDL block you can select the option "Open SDL Editor".
+
+The code is automatically generated when you exit the tool.
+
+Manual
+------
+
 The following commands should automate the installation (with exception of ASN1SCC - see below):
 
 ```

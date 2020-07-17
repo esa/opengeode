@@ -5,15 +5,12 @@
 [[File:og-complete.png|700 px|right|Opengeode overview]]
 
 SDL (Specification and Description Language) is a powerful modelling language for visually yet '''formally describing state machines'''. As any programming language, SDL comes with a textual syntax, but in addition has an intuitive graphical notation that can be used to build models using interactive editors. The well-defined semantics of SDL makes it a good candidate for describing the behaviour of embedded, real-time systems.
- 
 
 The standard has been established by ITU-T under reference Z100. Among others, it is widely used in the telecommunication industry. See [http://www.sdl-forum.org] for more information.
-
 
 Thanks to its formalism, its well-defined concepts and ease of use, the SDL language is sized for the production of safe, robust software. 
 
 TASTE now includes an open-source SDL graphical editor that generates Ada code. It is free software, implemented in Python with the Qt graphical framework. The name "OpenGEODE" was chosen as a tribute to the former ObjectGEODE tool, which has unfortunately been discontinued several years ago. OpenGEODE is freely inspired from the ergonomy of its ancestor, and is trying to show how modern languages and tools can help providing a great user experience to programmers, even those who are not enclined to use a visual approach for development.
-
 
 ''Important notice:''
 
@@ -86,7 +83,6 @@ meaning that range (4) will yield 4 elements (0, 1, 2, 3) and range (1, 3) will 
 
 * A directive allows to specify the path/name of the ASN.1 file:
   USE Datamodel COMMENT 'path/to/file.asn';   -- In a text box
-  
 
 * Some math operators are natively supported: abs, ceil, cos, floor, round, sin, sqrt, trunc
 
@@ -102,7 +98,7 @@ e.g.
 
 = Why SDL and OpenGEODE ? =
 
-SDL has formal semantics and syntax. It has yet a simple textual syntax and advanced checking capabilities. Because SDL uses ASN.1 data types, many checks are possible with SDL that do not exist with most other programming languages. 
+SDL has formal semantics and syntax. It has yet a simple textual syntax and advanced checking capabilities. Because SDL uses ASN.1 data types, many checks are possible with SDL that do not exist with most other programming languages.
 
 Non-determinism is detected by the tool as error. 
 
@@ -162,7 +158,43 @@ The ASN.1 compiler must be in your system path.
 
 = How to use it in TASTE =
 
-OpenGEODE is already installed in the TASTE Virtual Machine, and fully integrated with the toolset.
+'''Important: OpenGEODE is already installed in the TASTE Virtual Machine, and fully integrated with the toolset, however, the current TASTE VM is a bit old - it is based on Debian 9 which does not have important dependencies to support the latest version of OpenGEODE. It is missing Python 3.7+ and PySide2. An upgrade is in the works, but it's not ready yet. If you are familiar enough with Linux, you can manually upgrade.'''
+
+''To upgrade, enter the shell in the TASTE VM and:''
+  # Switch to root
+  sudo su
+
+  # Make sure VM image is up to date
+  apt-get update
+  apt-get upgrade
+  apt-get dist-upgrade
+
+  # Point APT to Buster to prepare for upgrade
+  sed -i 's/stretch/buster/g' /etc/apt/sources.list
+
+  # Upgrade packages to Buster; when prompted allow services to be restarted automatically
+  apt-get upgrade
+
+  # Upgrade distribution to Buster
+  apt-get dist-upgrade
+
+  # Remove packages no longer needed
+  apt-get autoremove
+
+  # Return to taste user; exit root
+  exit
+
+  # Navigate to TASTE source; upgrade
+  cd ~/tool-src
+  git pull
+  git checkout feature_buster
+  ./Update-TASTE.sh
+
+After this upgrade, you can work with the latest version of the tools, in particular the new Kazoo build system and Opengeode 3.xx (which you can update at any time). The Quick Reference Card has not been updated to reflect this yet.
+
+The main differences to create/edit a project is that you must just run <code>taste</code> (and not <code>taste-create-project/taste-edit-project</code> anymore). To build, run <code>make</code>.
+
+You can check an example of a system using Opengeode if you go in <code>~/tool-src/kazoo/tests/Demo_ABB_Opengeode</code> and run <code>make</code> to build it. Then <code>taste</code> to edit.
 
 In the interface view, select the SDL language for the implementation of the blocks you want to model using OpenGEODE.
 
@@ -176,7 +208,7 @@ The code is automatically generated when you exit the tool.
 
 [[File:Opengeode.png|600px|border|center|thumb|Opengeode]]
 
-The editor is meant to be simple and straightforward to use. 
+The editor is meant to be simple and straightforward to use.
 
 Based on the example you can find in the VM here are the main capabilities of the tool:
 
