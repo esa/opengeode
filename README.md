@@ -53,9 +53,9 @@ Debian 10 (buster) is the baseline. Recent versions of Ubuntu (20.x) should work
 Using TASTE
 -----------
 
-__Important: OpenGEODE is already installed in the TASTE Virtual Machine, and fully integrated with the toolset, however, the current TASTE VM is a bit old - it is based on Debian 9 which does not have important dependencies to support the latest version of OpenGEODE. It is missing Python 3.7+ and PySide2. An upgrade is in the works, but it's not ready yet. If you are familiar enough with Linux, you can manually upgrade.__
+__Important: OpenGEODE is already installed in the TASTE Virtual Machine, and fully integrated with the toolset, however, the current TASTE VM is a bit old - it is based on Debian 9 which does not have important dependencies to support the latest version of OpenGEODE. It is missing Python 3.7+ and PySide2. An upgrade is in the works, but it's not ready yet. If you are familiar enough with Linux, you can manually upgrade by completing the following steps.__
 
-_To upgrade, enter the shell in the TASTE VM and:_
+_Install the [TASTE VM](https://taste.tools/#install). Once logged in, enter a new shell and:_
 ```
 # Switch to root
 sudo su
