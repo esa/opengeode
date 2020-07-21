@@ -175,6 +175,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.2.1 (07/2020)**
+- Fix issue with the "present" operator
+
 **3.2.0 (07/2020)**
 - Add basic support for state type/instance
 
