@@ -177,6 +177,8 @@ Changelog
 =========
 **3.2.1 (07/2020)**
 - Fix issue with the "present" operator
+- Move the context declaration to the .ads
+- Always expose the Get_State function (returns char * to C)
 
 **3.2.0 (07/2020)**
 - Add basic support for state type/instance

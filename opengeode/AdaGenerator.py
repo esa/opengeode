@@ -424,8 +424,9 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         context_decl.append(u'{ctxt}_bk: {ctxt}_Ty;'
                                   .format(ctxt=LPREFIX))
 
-    if not simu and not instance:
-        process_level_decl.extend(context_decl)
+    # Don't declare the context in the adb - declare it in the ads
+    #if not simu and not instance:
+    #    process_level_decl.extend(context_decl)
 
     aggreg_start_proc = []
     start_transition = []
@@ -490,7 +491,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
 use {process_name}_newtypes;'''.format(process_name=process_name) \
         if process.user_defined_types else u''
 
-    taste_template = [u'''\
+    taste_template = [f'''\
 -- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
 
 with System.IO;
@@ -499,22 +500,7 @@ use System.IO;
 with Ada.Unchecked_Conversion;
 with Ada.Numerics.Generic_Elementary_Functions;
 
-{dataview}
-{custom_data_types}
-
-with Interfaces;
-use Interfaces;
-{C}
-{Context}
-package body {process_name} is'''.format(
-    process_name=process_name,
-    dataview=asn1_modules,
-    custom_data_types=include_custom_types,
-    C='with Interfaces.C.Strings;\n'
-      'use Interfaces.C.Strings;'
-      if simu else '',
-    Context=f"with {import_context}; use {import_context};"
-      if import_context else '')
+package body {process_name} is'''
     if not instance else u"package body {} is".format(process_name)]
 
     generic_spec, instance_decl = "", ""
@@ -530,43 +516,51 @@ package body {process_name} is'''.format(
     # FPAR could be set for Context Parameters. They are available here
 
     # Generate the source file (.ads) header
-    ads_template = [u'''\
+
+    # Stop conditions must import the SDL model they observe
+    imp_str = f"with {import_context}; use {import_context};" \
+            if import_context else ''
+
+    ads_template = [f'''\
 -- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
 
-{dataview}
-{C}
-{instance}
-{generic}
-package {process_name} is'''.format(generic=generic_spec,
-                                    instance=instance_decl,
-                                    process_name=process_name,
-                                    dataview=asn1_modules,
-                                    C='with Interfaces.C.Strings,\n'
-                                      '     Ada.Characters.Handling;\n'
-                                      'use Interfaces.C.Strings,\n'
-                                      '    Ada.Characters.Handling;'
-                                        if simu else '')]
+with Interfaces,
+     Interfaces.C.Strings,
+     Ada.Characters.Handling;
+
+use Interfaces,
+    Interfaces.C.Strings,
+    Ada.Characters.Handling;
+
+{asn1_modules}
+{include_custom_types}
+{imp_str}
+{instance_decl}
+{generic_spec}
+package {process_name} with Elaborate_Body is''']
     dll_api = []
-    if simu:
+    if not instance:
         ads_template.extend(context_decl)
+    if not generic and not instance:
+        # Add function allowing to trace current state as a string
+        ads_template.append(
+                f"function Get_State return chars_ptr "
+                f"is (New_String (States'Image ({LPREFIX}.State)))"
+                f" with Export, Convention => C, "
+                f'Link_Name => "{process_name.lower()}_state";')
+
+    if simu:
         ads_template.append('--  API for simulation via DLL')
         dll_api.append('-- API to remotely change internal data')
-        # Add function allowing to trace current state as a string
-        process_level_decl.append("function Get_State return chars_ptr "
-                                  "is (New_String(states'Image({ctxt}.state)))"
-                                  " with Export, Convention => C, "
-                                  'Link_Name => "{name}_state";'
-                                  .format(name=process_name, ctxt=LPREFIX))
-        set_state_decl = "procedure Set_State(New_State : chars_ptr)"
-        ads_template.append("{};".format(set_state_decl))
-        ads_template.append('pragma Export(C, Set_State, "_set_state");')
-        dll_api.append("{} is".format(set_state_decl))
+        set_state_decl = "procedure Set_State (New_State : chars_ptr)"
+        ads_template.append(f'{set_state_decl} with Export, Convention => C, '
+                            f' Link_Name => "_set_state";')
+        dll_api.append(f"{set_state_decl} is")
         dll_api.append("begin")
         dll_api.append("for S in States loop")
         dll_api.append("if To_Upper (Value (New_State))"
                         " = States'Image (S) then")
-        dll_api.append("{}.state := S;"
-                       .format(LPREFIX))
+        dll_api.append(f"{LPREFIX}.State := S;")
         dll_api.append("end if;")
         dll_api.append("end loop;")
         dll_api.append("end Set_State;")
@@ -993,6 +987,11 @@ package {process_name} is'''.format(generic=generic_spec,
         if ri_inst:
             pkg_decl += u" ({})".format(u", ".join(ri_inst))
         ads_template.append(pkg_decl + u";")
+        ads_template.append(
+                f"function Get_State return chars_ptr "
+                f"is (New_String ({process_name}_Instance.{LPREFIX}.State'Img))"
+                f" with Export, Convention => C, "
+                f'Link_Name => "{process_name.lower()}_state";')
 
     has_cs = any(process.cs_mapping.values())
 
