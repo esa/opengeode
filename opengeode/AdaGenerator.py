@@ -536,7 +536,7 @@ use Interfaces,
 {include_custom_types}
 {imp_str}
 {instance_decl}
-{generic_spec}
+{generic_spec}'''.strip() + f'''
 package {process_name} with Elaborate_Body is''']
     dll_api = []
     if not instance:
