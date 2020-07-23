@@ -703,6 +703,9 @@ def check_call(name, params, context):
         # check that the list of enumerants are identical. unfortunately we
         # cannot check the ordering, as it is an unordered dict
         if name == 'to_selector':
+            # if the sort is a subtype, it may not have a -selection suffix
+            # and an exception may be raised. FIXME : check "present" operator
+            # as the issue is already fixed there
             return_type = types()[sort + '-selection'].type
         else:
             return_type = types()[sort].type
@@ -828,8 +831,21 @@ def check_call(name, params, context):
 
     elif name == 'present':
         p, = params
-        sort = type_name (p.exprType) + "-selection"
-        return types()[sort].type
+        # When we get there, the parameter has been checked already and we
+        # know it is a CHOICE type.
+        # However it may be a subtype, and in the AST the choices are defined
+        # in the supertype, so we must find it and and the -selection suffix
+        # This suffix is added by the Asn1scc module.
+        sort = p.exprType
+        sort_name = type_name (sort)
+        try:
+            while sort.kind == "ReferenceType":
+                sort_name = sort.ReferencedTypeName
+                sort = types()[sort.ReferencedTypeName].type
+        except AttributeError:
+            # Native choice types don't have the kind field here
+            pass
+        return types()[sort_name + "-selection"].type
 
     # choice_to_int: returns an integer corresponding to either the currently
     # selected choice value (e.g. foo in CHOICE { foo INTEGER (..), ... } when
@@ -3857,13 +3873,13 @@ def state(root, parent, context):
             state_def.charPositionInLine = child.getCharPositionInLine()
             state_def.statelist = [state_def.inputString]
             inst_stop = child.getTokenStopIndex()
+            via_stop = inst_stop # in case there is also a via clause
         elif child.type == lexer.TYPE_INSTANCE:
             #  Extract the complete string "state: instance"
             start = inst_stop
             stop = child.getTokenStopIndex()
-            full_string = token_stream(root).toString(start, stop)
-            state_def.inputString, state_def.instance_of = \
-                    full_string, state_def.instance_of
+            state_def.inputString = token_stream(root).toString(start, stop)
+            state_def.instance_of = child.getChild(0).toString()
         elif child.type == lexer.STATELIST:
             # State name(state_def)
             state_def.inputString = get_input_string(child)
@@ -3911,7 +3927,12 @@ def state(root, parent, context):
                                          'in substate "{}"'
                                          .format(each, comp.statename.lower()))
             try:
-                for statename in state_def.statelist:
+                # Use the statelist unless the state is an instance
+                if not state_def.instance_of:
+                    statelist = state_def.statelist
+                else:
+                    statelist = [state_def.instance_of]
+                for statename in statelist:
                     # check that input is not already defined
                     existing = context.mapping.get(statename.lower(), [])
                     dupl = set()
@@ -3926,8 +3947,11 @@ def state(root, parent, context):
                                      .format(each, statename.lower()))
                     # then update the mapping state-input
                     context.mapping[statename.lower()].append(inp)
-            except KeyError:
-                stwarn.append('State definition missing')
+            except KeyError as err:
+                # missing state definition is caught at other places, no
+                # need to report here
+                pass
+                #stwarn.append(f'State definition missing - {str(err)}')
             state_def.inputs.append(inp)
             if inp.inputString.strip() == '*':
                 if asterisk_input:
@@ -4675,7 +4699,7 @@ def decision(root, parent, context):
 
 
 def nextstate(root, context):
-    ''' Parse a NEXTSTATE [: type] [VIA State_Entry_Point] 
+    ''' Parse a NEXTSTATE [: type] [VIA State_Entry_Point]
         detect various kinds of errors when trying to enter a nested state '''
     next_state_id, via, entrypoint, instance_of = '', None, None, None
     errors = []
@@ -4689,24 +4713,6 @@ def nextstate(root, context):
                 via = get_input_string(root).replace(
                                                 'NEXTSTATE', '', 1).strip()
                 entrypoint = child.getChild(0).text
-                try:
-                    composite, = (comp for comp in context.composite_states
-                                  if comp.statename.lower()
-                                                == next_state_id.lower())
-                except ValueError:
-                    errors.append('State {} is not a composite state'
-                                    .format(next_state_id))
-                else:
-                    if entrypoint.lower() not in composite.state_entrypoints:
-                        errors.append('State {s} has no "{p}" entrypoint'
-                                       .format(s=next_state_id, p=entrypoint))
-                    for each in composite.content.named_start:
-                        if each.inputString == entrypoint.lower() + '_START':
-                            break
-                    else:
-                        errors.append('Entrypoint {p} in state {s} is '
-                                      'declared but not defined'.format
-                                      (s=next_state_id, p=entrypoint))
             else:
                 errors.append('"History" NEXTSTATE cannot have a "via" clause')
         elif child.type == lexer.TYPE_INSTANCE:
@@ -4716,17 +4722,40 @@ def nextstate(root, context):
         else:
             errors.append('NEXTSTATE undefined construct: ' +
                             sdl92Parser.tokenNamesMap[child.type])
-        if not via:
-            # check that if the nextstate is nested, it has a START symbol
-            try:
-                composite, = (comp for comp in context.composite_states
-                          if comp.statename.lower() == next_state_id.lower())
-                if not isinstance(composite, ogAST.StateAggregation) \
-                        and not composite.content.start:
-                    errors.append('Composite state "{}" has no unnamed '
-                                  'START symbol'.format(composite.statename))
-            except ValueError:
+
+    # Checks on the NEXTSTATE
+    if via:  # instance and/or via clause
+        state_id = instance_of or next_state_id
+        try:
+            composite, = (comp for comp in context.composite_states
+                          if comp.statename.lower() == state_id.lower())
+        except ValueError:
+            errors.append(f'State {state_id} is not a composite state')
+        else:
+            if entrypoint is None:
                 pass
+            elif entrypoint.lower() not in composite.state_entrypoints:
+                errors.append(
+                        f'State {state_id} has no "{entrypoint}" entrypoint')
+            # The test below seems identical to the one just done
+#           for each in composite.content.named_start:
+#               if not entrypoint or \
+#                       each.inputString == entrypoint.lower() + '_START':
+#                   break
+#           else:
+#               errors.append(f'Entrypoint {entrypoint} in state'
+#                       f' {state_id} is declared but not defined')
+    else: # not via and/or instance
+        # check that if the nextstate is nested, it has a START symbol
+        try:
+            composite, = (comp for comp in context.composite_states
+                      if comp.statename.lower() == next_state_id.lower())
+            if not isinstance(composite, ogAST.StateAggregation) \
+                    and not composite.content.start:
+                errors.append('Composite state "{}" has no unnamed '
+                              'START symbol'.format(composite.statename))
+        except ValueError:
+            pass
     return next_state_id, via, entrypoint, instance_of, errors
 
 
@@ -5447,6 +5476,18 @@ def parse_pr(files=None, string=None):
                               [t_x, t_y],
                               ['PROCESS {}'.format(process.processName)]])
         # TODO: do the same with JOIN/LABEL
+
+        # Check that all floating state instances (foo:bar) have a correspoding
+        # nested state defined.
+        state_types = set(st.instance_of.lower()
+                for st in process.content.states if st.instance_of)
+        comp_states = set(comp.statename.lower()
+                for comp in process.composite_states)
+        for missing in state_types - comp_states:
+            errors.append([f'Nested state definition missing : {missing}',
+                [0, 0],
+                ['PROCESS {}'.format(process.processName)]])
+
     return og_ast, warnings, errors
 
 

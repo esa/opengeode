@@ -140,7 +140,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.1.3'
+__version__ = '3.2.1'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2323,14 +2323,21 @@ clean:
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
         pr_data = str('\n'.join(pr_raw))
-        if pr_data:
-            ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
-                                                      string=pr_data)
-            scene.semantic_errors = True if errors else False
-            log_errors(self.messages_window, errors, warnings,
-                       clearfirst=False)
-            self.update_asn1_dock.emit(ast)
-            return "Done"
+        try:
+            if pr_data:
+                ast, warnings, errors = ogParser.parse_pr(
+                        files=self.readonly_pr,
+                        string=pr_data)
+                scene.semantic_errors = True if errors else False
+                log_errors(self.messages_window, errors, warnings,
+                           clearfirst=False)
+                self.update_asn1_dock.emit(ast)
+                return "Done"
+        except Exception as err:
+            self.messages_window.addItem("Opengeode bug, PLEASE REPORT: "
+                    + str(err))
+            LOG.debug(str(traceback.format_exc()))
+        return "Syntax Errors"
 
     def show_item(self, item):
         '''

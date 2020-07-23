@@ -981,8 +981,9 @@ class State(VerticalSymbol):
     @property
     def allow_nesting(self):
         ''' Redefinition - must be checked according to context '''
+        # nesting permitted only if single plain state
         result = not any(elem in str(self).lower().strip()
-                       for elem in ('-', ',', '*'))
+                for elem in ('-', ',', '*', ':', 'via'))
         return result
 
     @property
