@@ -334,6 +334,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
     context_decl = []
     if full_statelist and not import_context:
         #  don't generate state type in stop condition automaton
+        #  (model checking) as it is defined in the observed process
         context_decl.append(u'type States is ({});'
                             .format(u', '.join(full_statelist) or u'No_State'))
 
