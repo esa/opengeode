@@ -27,6 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 

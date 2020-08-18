@@ -30,7 +30,7 @@ clean:
 
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda && \
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn && \
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn && \
 	$(GNATMAKE) -O$(O) -gnat2012 -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE

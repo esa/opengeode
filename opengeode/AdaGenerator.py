@@ -96,7 +96,8 @@ SHARED_LIB = False
 #SEPARATOR = u'\u00dc'
 # Avoid Unicode characters, they cause occasional annoying issues
 SEPARATOR = "_0_"
-LPREFIX = u'ctxt'
+LPREFIX = 'ctxt'
+ASN1SCC = 'asn1Scc'
 
 
 def is_numeric(string):
@@ -141,10 +142,9 @@ def external_ri_list(process):
         result.append(ri_header)
 
     for timer in process.timers:
-        result.append(u"procedure Set_{}(val: access asn1SccT_Uint32)"
-                      .format(timer))
-        result.append(u"procedure Reset_{}"
-                      .format(timer))
+        result.append(
+                f"procedure Set_{timer} (Val : access {ASN1SCC}T_Uint32)")
+        result.append(f"procedure Reset_{timer}")
     return result
 
 
@@ -238,9 +238,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         parent = parent.parent
     if isinstance(parent, ogAST.System):
         parent = parent.ast
-    asn1_filenames = ' '.join(parent.asn1_filenames)
+    asn1_filenames = (f"{' '.join(parent.asn1_filenames)} "
+                      f"{process_name.lower()}_datamodel.asn")
     asn1_uniq = ' '.join(each for each in parent.asn1_filenames
                          if not each.endswith('dataview-uniq.asn'))
+    asn1_uniq += f" {process_name.lower()}_datamodel.asn"
     pr_path = ' '.join(parent.pr_files) if None not in parent.pr_files else ''
     pr_names = ' '.join(
                       os.path.basename(pr_file) for pr_file in parent.pr_files)
@@ -270,34 +272,26 @@ end {pr}_Lib;'''.format(pr=process_name.lower(),
       for Object_Dir use "../obj";
    end {pr}_Ada;'''.format(pr=process_name.lower())
 
-    simu_script = '''#!/bin/bash -e
-#rm -rf {pr}_simu
+    pr = process_name.lower()
+    simu_script = f'''#!/bin/bash -e
 mkdir -p {pr}_simu
-cp {pr_path} {asn1} {pr}_simu
+cp {pr_path} {asn1_filenames} {pr}_simu
 cd {pr}_simu
 opengeode {pr_names} --shared
-cat {uniq} >> dataview-uniq.asn '''.format(pr=process_name.lower(),
-                                           asn1=asn1_filenames,
-                                           pr_path=pr_path,
-                                           uniq=asn1_uniq or '/dev/null',
-                                           pr_names=pr_names)
+cat {asn1_uniq} >> dataview-uniq.asn
 
-    if asn1_filenames:
-        simu_script += '''
-mono $(which asn1.exe) -Ada -typePrefix asn1Scc -equal {asn1}
-mono $(which asn1.exe) -c -typePrefix asn1Scc -equal {asn1}'''.format(
-                                                           asn1=asn1_filenames)
+mono $(which asn1.exe) -Ada -typePrefix {ASN1SCC} -equal dataview-uniq.asn
+mono $(which asn1.exe) -c -typePrefix {ASN1SCC} -equal dataview-uniq.asn
 
-    simu_script += '''
-gprbuild -p -P {pr}_lib.gpr
+gprbuild -p -P {process_name.lower()}_lib.gpr
 rm -f dataview-uniq.c dataview-uniq.h
 asn2aadlPlus dataview-uniq.asn DataView.aadl
-aadl2glueC DataView.aadl {pr}_interface.aadl
+aadl2glueC DataView.aadl {process_name.lower()}_interface.aadl
 asn2dataModel -toPython dataview-uniq.asn
 make -f Makefile.python
 echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
 LD_LIBRARY_PATH=./lib:. opengeode-simulator
-'''.format(pr=process_name.lower())
+'''
 
     LOG.info('Generating Ada code for process ' + str(process_name))
 
@@ -327,21 +321,32 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                                (name for name in process.mapping.keys()
                                     if not name.endswith(u'START'))))
     reduced_statelist = {s for s in full_statelist if s not in parallel_states}
+
     if aggregates:
         # Parallel states in a state aggregation may terminate
-        full_statelist.add(u'state{}end'.format(SEPARATOR))
+        full_statelist.add(f'state{SEPARATOR}end')
+
+    # Format the state list with ASN.1-compatible syntax
+    process_asn1 = process_name.upper().replace('_', '-')
+    statelist_asn1 = (state.lower().replace('_', '-')
+                      for state in full_statelist)
+    states_asn1 = ", ".join(statelist_asn1) \
+            or f'{process_asn1.lower()}-has-no-state'
+    # Create an ASN.1 definition of the list of states, instead of
+    # a native Ada type - this allows external tools to access
+    # information about the model without having to parse SDL
+    asn1_states_def = f"{process_asn1}-States ::= ENUMERATED" \
+                      f" {{{states_asn1}}}"
 
     context_decl = []
-    if full_statelist and not import_context:
-        #  don't generate state type in stop condition automaton
-        #  (model checking) as it is defined in the observed process
-        context_decl.append(u'type States is ({});'
-                            .format(u', '.join(full_statelist) or u'No_State'))
 
-    # Generate ASN.1 model for the NEWTYPEs (types defined in SDL)
+    # Generate an ASN.1 model containing the state definition, as well as
+    # all the user-defined SDL type (NEWTYPEs...)
+    asn1_template = [f'{process_asn1}-Datamodel DEFINITIONS ::=',
+                      'BEGIN']
+
+    # Add user-defined NEWTYPEs
     if process.user_defined_types:
-        asn1_template = [u'{}-Newtypes DEFINITIONS ::='.format(
-            process_name.upper().replace('_', '-')), 'BEGIN']
         types_with_proper_case = []
 
         # The ASN.1 module must import the types from other asn1 modules
@@ -370,9 +375,15 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                             rangeMin=rangeMin,
                             rangeMax=rangeMax,
                             refType=refTypeCase.replace('_', '-')))
-        asn1_template.append('END')
-        with open(process_name + '_newtypes.asn', 'w') as asn1_file:
-            asn1_file.write('\n'.join(asn1_template))
+    if not import_context:
+        #  don't generate state type in Stop Condition/Observer
+        #  automaton as it is defined in the observed process
+        asn1_template.append(asn1_states_def)
+    asn1_template.append('END')
+
+    # Write the ASN.1 file
+    with open(process_name.lower() + '_datamodel.asn', 'w') as asn1_file:
+        asn1_file.write('\n'.join(asn1_template))
 
     # Generate the code to declare process-level context
     if not import_context:
@@ -381,15 +392,16 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         context_decl.extend([f'type {LPREFIX}_Ty is', 'record'])
 
         if full_statelist:
-            context_decl.append('State : States;')
+            context_decl.append(f'State : {ASN1SCC}{process_name}_States;')
 
         context_decl.append('Init_Done : Boolean := False;')
 
         # State aggregation: add list of substates
         for substates in aggregates.values():
             for each in substates:
-                context_decl.append('{}{}state: States;'
-                                    .format(each.statename, SEPARATOR))
+                context_decl.append(
+                   f'{each.statename}{SEPARATOR}state:'
+                   f' {ASN1SCC}{process_name}_States;')
 
         for var_name, (var_type, def_value) in process.variables.items():
             if def_value:
@@ -447,21 +459,20 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         # Declare start procedure for aggregate states XXX add in C generator
         # should create one START per "via" clause, TODO later
         for name, substates in aggregates.items():
-            proc_name = u'procedure {}{}START'.format(name, SEPARATOR)
-            process_level_decl.append(u'{};'.format(proc_name))
-            aggreg_start_proc.extend([u'{} is'.format(proc_name),
+            proc_name = f'procedure {name}{SEPARATOR}START'
+            process_level_decl.append(f'{proc_name};')
+            aggreg_start_proc.extend([f'{proc_name} is',
                                       'begin'])
             aggreg_start_proc.extend(u'Execute_Transition ({sub}{sep}START);'
                                      .format(sub=subname.statename,
                                              sep=SEPARATOR)
                                      for subname in substates)
-            aggreg_start_proc.extend([u'end {}{}START;'
-                                     .format(name, SEPARATOR),
+            aggreg_start_proc.extend([f'end {name}{SEPARATOR}START;',
                                      '\n'])
 
         # Add the declaration of the Execute_Transition  procedure
         process_level_decl.append(
-                'procedure Execute_Transition (Id: Integer);')
+                'procedure Execute_Transition (Id : Integer);')
 
         # Generate the code of the start transition (if process not empty)
         Init_Done =  u'{ctxt}.Init_Done := True;'.format(ctxt=LPREFIX)
@@ -487,10 +498,6 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
             asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
     except TypeError:
         asn1_modules = '--  No ASN.1 data types are used in this model'
-
-    include_custom_types = u'''with {process_name}_newtypes;
-use {process_name}_newtypes;'''.format(process_name=process_name) \
-        if process.user_defined_types else u''
 
     taste_template = [f'''\
 -- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
@@ -522,6 +529,10 @@ package body {process_name} is'''
     imp_str = f"with {import_context}; use {import_context};" \
             if import_context else ''
 
+    imp_datamodel = (f"with {process_name}_Datamodel; "
+                     f"use {process_name}_Datamodel;") if not import_context else ""
+
+
     ads_template = [f'''\
 -- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
 
@@ -534,7 +545,7 @@ use Interfaces,
     Ada.Characters.Handling;
 
 {asn1_modules}
-{include_custom_types}
+{imp_datamodel}
 {imp_str}
 {instance_decl}
 {generic_spec}'''.strip() + f'''
@@ -546,7 +557,8 @@ package {process_name} with Elaborate_Body is''']
         # Add function allowing to trace current state as a string
         ads_template.append(
                 f"function Get_State return chars_ptr "
-                f"is (New_String (States'Image ({LPREFIX}.State)))"
+                f"is (New_String "
+                f"({ASN1SCC}{process_name}_States'Image ({LPREFIX}.State)))"
                 f" with Export, Convention => C, "
                 f'Link_Name => "{process_name.lower()}_state";')
 
@@ -558,9 +570,9 @@ package {process_name} with Elaborate_Body is''']
                             f' Link_Name => "_set_state";')
         dll_api.append(f"{set_state_decl} is")
         dll_api.append("begin")
-        dll_api.append("for S in States loop")
-        dll_api.append("if To_Upper (Value (New_State))"
-                        " = States'Image (S) then")
+        dll_api.append(f"for S in {ASN1SCC}{process_name}_States loop")
+        dll_api.append(f"if To_Upper (Value (New_State))"
+                       f" = {ASN1SCC}{process_name}_States'Image (S) then")
         dll_api.append(f"{LPREFIX}.State := S;")
         dll_api.append("end if;")
         dll_api.append("end loop;")
@@ -596,12 +608,11 @@ package {process_name} with Elaborate_Body is''']
         for substates in aggregates.values():
             for each in substates:
                 process_level_decl.append(
-                        u"function Get_{name}_State return chars_ptr "
-                        u"is (New_String (States'Image ({ctxt}.{name}{sep}state)"
-                        ")) with Export, Convention => C, "
-                        'Link_Name => "{proc}_{name}_state";'
-                        .format(name=each.statename, ctxt=LPREFIX,
-                                proc=process_name, sep=SEPARATOR))
+                      f"function Get_{each.statename}_State return chars_ptr "
+                      f"is (New_String ({ASN1SCC}{process_name}_States'Image"
+                      f" ({LPREFIX}.{each.statename}{SEPARATOR}state)"
+                      f")) with Export, Convention => C, "
+                      f'Link_Name => "{process_name}_{each.statename}_state";')
 
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.items():
@@ -724,17 +735,13 @@ package {process_name} with Elaborate_Body is''']
                 # INPUT. The continuous signals are not processed here
                 if trans and all(each.startswith(trans_st)
                                  for trans_st in trans.possible_states):
-                    taste_template.append(u'p{sep}{ref}{sep}exit;'
-                                          .format(ref=each, sep=SEPARATOR))
+                    taste_template.append(f'p{SEPARATOR}{each}{SEPARATOR}exit;')
 
             if input_def:
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    taste_template.append(u'{ctxt}.{inp} := {tInp}.all;'
-                                          .format(ctxt=LPREFIX,
-                                                  inp=inp,
-                                                  tInp=param_name))
+                    taste_template.append(f'{LPREFIX}.{inp} := {param_name}.all;')
                 # Execute the correponding transition
                 if input_def.transition:
                     taste_template.append(u'Execute_Transition ({idx});'
@@ -755,7 +762,7 @@ package {process_name} with Elaborate_Body is''']
             '''
             if state.endswith(u'START'):
                 return
-            taste_template.append(u'when {state} =>'.format(state=state))
+            taste_template.append(f'when {ASN1SCC}{state} =>')
             input_def = mapping[signame].get(state)
             if state in aggregates.keys():
                 # State aggregation:
@@ -1058,7 +1065,7 @@ package {process_name} with Elaborate_Body is''']
 
         taste_template.append('when CS_Only =>')
         taste_template.append('trId := -1;')
-        taste_template.append('goto next_transition;')
+        taste_template.append('goto Next_Transition;')
 
         taste_template.append('when others =>')
         taste_template.append('null;')
@@ -1067,12 +1074,12 @@ package {process_name} with Elaborate_Body is''']
         if code_labels:
             # Due to nested states (chained transitions) jump over label code
             # (NEXTSTATEs do not return from Execute_Transition)
-            taste_template.append('goto next_transition;')
+            taste_template.append('goto Next_Transition;')
 
         # Add the code for the floating labels
         taste_template.extend(code_labels)
 
-        taste_template.append('<<next_transition>>')
+        taste_template.append('<<Next_Transition>>')
 
         # After completing active transition(s), check continuous signals:
         #     - Check current state(s)
@@ -1081,27 +1088,27 @@ package {process_name} with Elaborate_Body is''']
         if has_cs and not simu:
             taste_template.append('--  Process continuous signals')
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
-            taste_template.append("Check_Queue(msgPending'access);")
+            taste_template.append("Check_Queue (msgPending'access);")
             taste_template.append('end if;')
             ads_template.append(
-                    u'procedure Check_Queue(res: access Asn1Boolean);')
+                    u'procedure Check_Queue (Res : access Asn1Boolean);')
             if not generic:
                 ads_template.append(
-                    u'pragma import(C, Check_Queue, "{proc}_check_queue");'
+                    u'pragma Import(C, Check_Queue, "{proc}_check_queue");'
                     .format(proc=process_name))
         elif has_cs and simu:
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
-            taste_template.append("Check_Queue(msgPending'access);")
+            taste_template.append("Check_Queue (msgPending'access);")
             taste_template.append('end if;')
             # simulation: create a callback registration function
             ads_template.append(u'type Check_Queue_T is access procedure'
-                                u'(res: access Asn1Boolean);')
+                                u'(Res : access Asn1Boolean);')
             ads_template.append(u'pragma Convention(Convention => C,'
                                 u' Entity => Check_Queue_T);')
             ads_template.append(u'Check_Queue : Check_Queue_T;')
             ads_template.append(u'procedure Register_Check_Queue'
-                                u'(Callback: Check_Queue_T);')
-            ads_template.append(u'pragma Export(C, Register_Check_Queue,'
+                                u'(Callback : Check_Queue_T);')
+            ads_template.append(u'pragma Export (C, Register_Check_Queue,'
                                 ' "register_check_queue");')
         else:
             taste_template.append('null;')
@@ -1127,14 +1134,13 @@ package {process_name} with Elaborate_Body is''']
                     #print("agg_name  --->", agg_name)
                     #print("substates --->", substates)
                     need_final_endif = True
+                    first = "els" if done else ""
                     taste_template.append(
-                            '{first}if not msgPending and '
-                            u'trId = -1 and '
-                            u'{ctxt}.State = {s1} and '
-                            u'{ctxt}.{s2}{unisep}State = {s3} then'
-                            .format(ctxt=LPREFIX, s1=agg_name,
-                                s2=each.statename, unisep=SEPARATOR,
-                                s3=statename, first='els' if done else ''))
+                            f'{first}if not msgPending and '
+                            f'trId = -1 and '
+                            f'{LPREFIX}.State = {ASN1SCC}{agg_name} and '
+                            f'{LPREFIX}.{each.statename}{SEPARATOR}State = '
+                            f'{ASN1SCC}{statename} then')
                     # Change priority 0 (no priority set) to lowest priority
                     lowest_priority = max(item.priority for item in cs_item)
                     for each in cs_item:
@@ -1160,10 +1166,11 @@ package {process_name} with Elaborate_Body is''']
             cs_item = process.cs_mapping[statename]
             if cs_item:
                 need_final_endif = False
-                taste_template.append(u'{first}if not msgPending and '
-                        u'trId = -1 and {}.state = {} then'
-                        .format(LPREFIX, statename,
-                            first='els' if done else ''))
+                first = "els" if done else ""
+                taste_template.append(
+                        f'{first}if not msgPending and '
+                        f'trId = -1 and {LPREFIX}.State = {ASN1SCC}{statename}'
+                        ' then')
             # Change priority 0 (no priority set) to lowest priority
             if cs_item:
                 lowest_priority = max(item.priority for item in cs_item)
@@ -1493,7 +1500,7 @@ def _call_external_function(output, **kwargs):
                     proc=proc.inputString,
                     params=', '.join(list_of_params)))
             else:
-                code.append(u'p{}{};'.format(SEPARATOR, proc.inputString))
+                code.append(f'p{SEPARATOR}{proc.inputString};')
     return code, local_decl
 
 
@@ -1775,11 +1782,10 @@ def _prim_call(prim, **kwargs):
             set_value = '{var}.{name}'.format(var=varstr, name=child_name_ada)
             if need_cast and float(child_sort.Min) >= 0.0:
                 set_value = 'Asn1Int({})'.format(set_value)
-            choices.append(u'when {child_id} => {set_value}'
-                           .format(child_id=child_id, set_value=set_value))
+            choices.append(f'when {child_id} => {set_value}')
         if need_default:
-            choices.append(u'when others => {}'.format(defaultstr))
-        ada_string += u', '.join(choices) + ')'
+            choices.append(f'when others => {defaultstr}')
+        ada_string += ', '.join(choices) + ')'
     elif ident == 'exist':
         # User wants to know if an optional field is present or not
         selector = params[0]  # type PrimSelector
@@ -2738,7 +2744,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         functions when they are exited with a continuous signal at a level
         above, a chain a calls to exit procedures has to be added.
         This option is used for example when generating the code of
-        continuous signal: the code is generated in the <<next_transition>>
+        continuous signal: the code is generated in the <<Next_Transition>>
         part, while the code of the transition already exists in the
         part above. The need is only to set the id of the next transition.
         XXX has to be done also in the C backend
@@ -2905,26 +2911,19 @@ def _transition(tr, **kwargs):
                     code.append(u'-- Entering state aggregation {}'
                                 .format(tr.terminator.inputString))
                     # Call the START function of the state aggregation
-                    code.append(u'{};'.format(tr.terminator.next_id))
-                    code.append(u'{ctxt}.State := {nextState};'
-                                .format(ctxt=LPREFIX,
-                                        nextState=tr.terminator.inputString))
-                    code.append(u'trId := -1;')
+                    code.append(f'{tr.terminator.next_id};')
+                    code.append(
+                      f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
+                    code.append('trId := -1;')
                 elif not history: # tr.terminator.inputString.strip() != '-':
                     code.append(u'trId := ' +
                                 str(tr.terminator.next_id) + u';')
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate: # XXX add to C generator
-                            code.append(u'{ctxt}.State := {nextState};'
-                                        .format(ctxt=LPREFIX,
-                                          nextState=tr.terminator.inputString))
+                            code.append(f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
                         else:
-                            code.append(u'{ctxt}.{sub}{sep}State :='
-                                        u' {nextState};'
-                                        .format(ctxt=LPREFIX,
-                                          sub=tr.terminator.substate,
-                                          sep=SEPARATOR,
-                                          nextState=tr.terminator.inputString))
+                            code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State :='
+                                        f' {ASN1SCC}{tr.terminator.inputString};')
                 else:
                     # "nextstate -": switch case to re-run the entry transition
                     # in case of a composite state or state aggregation
@@ -2938,16 +2937,18 @@ def _transition(tr, **kwargs):
                                     statement = u'{};'.format(nid)
                                 else:
                                     statement = u'trId := {};'.format(nid)
-                                code.extend([u'when {} =>'
-                                                .format(u'|'.join(sta)),
-                                                 statement])
+                                states_prefix = (f"{ASN1SCC}{s}" for s in sta)
+                                joined_states = " | ".join(states_prefix)
+                                code.extend(
+                                        [f'when {joined_states} =>',
+                                         statement])
 
                         code.extend(['when others =>',
                                         'trId := -1;',
                                      'end case;'])
                     else:
                         code.append('trId := -1;')
-                code.append('goto next_transition;')
+                code.append('goto Next_Transition;')
             elif tr.terminator.kind == 'join':
                 code.append(u'goto {label};'.format(
                     label=tr.terminator.inputString))
@@ -2965,14 +2966,14 @@ def _transition(tr, **kwargs):
                     # exited. We must set this substate to a "finished"
                     # state until all the substates are returned. Then only
                     # call the overall state aggregation exit procedures.
-                    code.append(u'{ctxt}.{sub}{sep}State := state{sep}end;'
-                                .format(ctxt=LPREFIX,
-                                  sub=tr.terminator.substate,
-                                  sep=SEPARATOR))
-                    cond = u'{ctxt}.{sib}{sep}State = state{sep}end'
+                    code.append(
+                        f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State '
+                        f':= {ASN1SCC}state{SEPARATOR}end;')
+                    cond = u'{ctxt}.{sib}{sep}State = {asn1scc}state{sep}end'
                     conds = [cond.format(sib=sib,
                                          ctxt=LPREFIX,
-                                         sep=SEPARATOR)
+                                         sep=SEPARATOR,
+                                         asn1scc=ASN1SCC)
                             for sib in tr.terminator.siblings
                             if sib.lower() != tr.terminator.substate.lower()]
                     code.append(u'if {} then'.format(' and '.join(conds)))
@@ -2987,11 +2988,11 @@ def _transition(tr, **kwargs):
                                 .format(' ' + string if string else ''))
                 else:
                     code.append(u'trId := ' + str(tr.terminator.next_id) + ';')
-                    code.append(u'goto next_transition;')
+                    code.append(u'goto Next_Transition;')
                 if aggregate:
                     code.append(u'else')
                     code.append(u'trId := -1;')
-                    code.append(u'goto next_transition;')
+                    code.append(u'goto Next_Transition;')
                     code.append(u'end if;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'

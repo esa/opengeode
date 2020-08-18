@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: dataview-uniq.o test_ada.o
 	$(OPENGEODE) og.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 	$(GNATLINK) -o test_ada test_ada.o dataview-uniq.o og.ali
