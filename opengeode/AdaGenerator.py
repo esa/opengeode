@@ -121,7 +121,7 @@ def external_ri_list(process):
         param_spec = ''
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = u'({pName}: access {sort})'.format(pName=param_name,
+            param_spec = u'({pName}: in out {sort})'.format(pName=param_name,
                                                             sort=typename)
         result.append(u"procedure RI{sep}{name}{param}".format(sep=SEPARATOR,
                                                            name=signal['name'],
@@ -134,8 +134,11 @@ def external_ri_list(process):
         params_spec = ''
         for param in proc.fpar:
             typename = type_name(param['type'])
-            params.append(u'{par[name]}: access {sort}'.format(par=param,
-                                                               sort=typename))
+            if param['direction'] == 'in':
+                direct = 'in out'
+            else:
+                direct = 'out'
+            params.append(f'{param["name"]} : {direct} {typename}')
         if params:
             params_spec = u"({})".format("; ".join(params))
             ri_header += params_spec
@@ -143,7 +146,7 @@ def external_ri_list(process):
 
     for timer in process.timers:
         result.append(
-                f"procedure Set_{timer} (Val : access {ASN1SCC}T_Uint32)")
+                f"procedure Set_{timer} (Val : in out {ASN1SCC}T_Uint32)")
         result.append(f"procedure Reset_{timer}")
     return result
 
@@ -414,7 +417,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                 assert not dst and not dlocal,\
                         'DCL: Expecting a ground expression'
             context_decl.append(
-                            '{n} : aliased {sort}{default};'
+                            '{n} : {sort}{default};'
                             .format(n=var_name,
                                    sort=type_name(var_type),
                                    default=' := ' + dstr if def_value else ''))
@@ -427,7 +430,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                 f'{LPREFIX}: {import_context}.{import_context}_Ctxt_Ty '
                 f'renames {import_context}.{import_context}_ctxt;')
     else:
-        context_decl.append('{ctxt}: aliased {ctxt}_Ty;'.format(ctxt=LPREFIX))
+        context_decl.append('{ctxt} : {ctxt}_Ty;'.format(ctxt=LPREFIX))
     if simu:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
@@ -530,7 +533,8 @@ package body {process_name} is'''
             if import_context else ''
 
     imp_datamodel = (f"with {process_name}_Datamodel; "
-                     f"use {process_name}_Datamodel;") if not import_context else ""
+                     f"use {process_name}_Datamodel;") \
+                             if not import_context  and not instance else ""
 
 
     ads_template = [f'''\
@@ -632,7 +636,7 @@ package {process_name} with Elaborate_Body is''']
                                 ' "_set_{name}");'.format(name=var_name))
             dll_api.append(u'{} is'.format(setter_decl))
             dll_api.append(u'begin')
-            dll_api.append(u'{}.{} := value.all;'.format(LPREFIX, var_name))
+            dll_api.append(u'{}.{} := value;'.format(LPREFIX, var_name))
             dll_api.append(u'end dll_set_l_{};'.format(var_name))
             dll_api.append('')
 
@@ -681,7 +685,7 @@ package {process_name} with Elaborate_Body is''']
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
-            pi_header += u'({pName}: access {sort})'.format(
+            pi_header += u'({pName}: in out {sort})'.format(
                                         pName=param_name, sort=typename)
 
         # Add declaration of the provided interface in the .ads file
@@ -741,7 +745,7 @@ package {process_name} with Elaborate_Body is''']
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    taste_template.append(f'{LPREFIX}.{inp} := {param_name}.all;')
+                    taste_template.append(f'{LPREFIX}.{inp} := {param_name};')
                 # Execute the correponding transition
                 if input_def.transition:
                     taste_template.append(u'Execute_Transition ({idx});'
@@ -820,7 +824,7 @@ package {process_name} with Elaborate_Body is''']
         param_spec = '' if not simu else "(tm: chars_ptr)"
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = u'({pName}: access {sort}{shared})' \
+            param_spec = u'({pName}: in out {sort}{shared})' \
                          .format(pName=param_name,
                                  sort=typename,
                                  shared=u'; Size: Integer'
@@ -883,8 +887,13 @@ package {process_name} with Elaborate_Body is''']
             params.append("tm: chars_ptr")
         for param in proc.fpar:
             typename = type_name(param['type'])
-            params.append(u'{par[name]}: access {sort}{shared}'
+            if param['direction'] == 'in':
+                direct = 'in out'
+            else:
+                direct = 'out'
+            params.append(u'{par[name]}: {direct} {sort}{shared}'
                           .format(par=param,
+                                  direct=direct,
                                   sort=typename,
                                   shared=u"; {}_Size: Integer"
                                          .format(param['name'])
@@ -892,8 +901,7 @@ package {process_name} with Elaborate_Body is''']
         if params:
             params_spec = "({})".format("; ".join(params))
             ri_header += params_spec
-        ads_template.append(u'--  Sync required interface "{}"'
-                            .format(proc.inputString))
+        ads_template.append(f'--  Sync required interface "{proc.inputString}"')
         if simu:
             # As for async TM, generate a callback mechanism
             ads_template.append(u"type {}_T is access procedure{};"
@@ -966,7 +974,7 @@ package {process_name} with Elaborate_Body is''']
 
         elif not generic:
             ads_template.append(
-               u'procedure SET_{}(val: access asn1SccT_UInt32);'.format(timer))
+               u'procedure SET_{}(val: in out asn1SccT_UInt32);'.format(timer))
             ads_template.append(
                     u'pragma Import(C, SET_{timer}, "{proc}_RI_SET_{timer}");'
                     .format(timer=timer, proc=process_name.lower()))
@@ -1042,7 +1050,7 @@ package {process_name} with Elaborate_Body is''']
         taste_template.append('trId : Integer := Id;')
         if has_cs:
             taste_template.append(
-                              'msgPending : aliased Asn1Boolean := True;')
+                              'msgPending : Asn1Boolean := True;')
 
         # Declare the local variables needed by the transitions in the template
         taste_template.extend(set(local_decl_transitions))
@@ -1088,21 +1096,21 @@ package {process_name} with Elaborate_Body is''']
         if has_cs and not simu:
             taste_template.append('--  Process continuous signals')
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
-            taste_template.append("Check_Queue (msgPending'access);")
+            taste_template.append("Check_Queue (msgPending);")
             taste_template.append('end if;')
             ads_template.append(
-                    u'procedure Check_Queue (Res : access Asn1Boolean);')
+                    u'procedure Check_Queue (Res : out Asn1Boolean);')
             if not generic:
                 ads_template.append(
                     u'pragma Import(C, Check_Queue, "{proc}_check_queue");'
                     .format(proc=process_name))
         elif has_cs and simu:
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
-            taste_template.append("Check_Queue (msgPending'access);")
+            taste_template.append("Check_Queue (msgPending);")
             taste_template.append('end if;')
             # simulation: create a callback registration function
             ads_template.append(u'type Check_Queue_T is access procedure'
-                                u'(Res : access Asn1Boolean);')
+                                u'(Res : out Asn1Boolean);')
             ads_template.append(u'pragma Convention(Convention => C,'
                                 u' Entity => Check_Queue_T);')
             ads_template.append(u'Check_Queue : Check_Queue_T;')
@@ -1380,10 +1388,10 @@ def _call_external_function(output, **kwargs):
             if not SHARED_LIB:
                 # Use a temporary variable to store the timer value
                 tmp_id = 'tmp' + str(out['tmpVars'][0])
-                local_decl.append('{} : aliased asn1SccT_UInt32;'
+                local_decl.append('{} : asn1SccT_UInt32;'
                                   .format(tmp_id))
                 code.append('{tmp} := {val};'.format(tmp=tmp_id, val=t_val))
-                code.append("SET_{timer}({value}'access);"
+                code.append("SET_{timer}({value});"
                             .format(timer=p_id, value=tmp_id))
             else:
                 code.append('SET_{t}(New_String("{t}"), {val});'
@@ -1433,7 +1441,7 @@ def _call_external_function(output, **kwargs):
                         or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
                     local_decl.extend(debug_trace())
-                    local_decl.append(u'{tmp} : aliased {sort};'
+                    local_decl.append(u'{tmp} : {sort};'
                                       .format(tmp=tmp_id,
                                               sort=typename))
                     basic_param = find_basic_type (param_type)
@@ -1461,13 +1469,13 @@ def _call_external_function(output, **kwargs):
                                     .format(tmp=tmp_id, app_len=app_len))
                     else:
                         code.append(u'{} := {};'.format(tmp_id, p_id))
-                    list_of_params.append(u"{}'Access{}"
+                    list_of_params.append(u"{}{}"
                                           .format(tmp_id,
                                                   u", {}'Size".format(tmp_id)
                                                      if is_out_sig else ""))
                 else:
                     # Output parameters/local variables
-                    list_of_params.append(u"{var}'Access{shared}"
+                    list_of_params.append(u"{var}{shared}"
                                          .format(var=p_id,
                                                 shared=", {}'Size".format(p_id)
                                                   if is_out_sig else ""))
@@ -2238,7 +2246,7 @@ def _bitwise_operators(expr, **kwargs):
         if expr.right.is_raw:
             # Declare a temporary variable to store the raw value
             tmp_string = u'tmp{}'.format(expr.right.tmpVar)
-            local_decl.append(u'{tmp} : aliased {sort};'.format(
+            local_decl.append(u'{tmp} : {sort};'.format(
                         tmp=tmp_string,
                         sort=type_name(expr.right.exprType)))
             code.append(u'{tmp} := {right};'.format(tmp=tmp_string,
@@ -2774,7 +2782,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
     # for ASN.1 types, declare a local variable
     # to hold the evaluation of the question
     if not basic:
-        local_decl.append('tmp{idx} : aliased {actType};'
+        local_decl.append('tmp{idx} : {actType};'
                           .format(idx=dec.tmpVar,
                                   actType=actual_type))
 
@@ -3097,7 +3105,7 @@ def _inner_procedure(proc, **kwargs):
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'{name} : aliased {sort}{default};'
+            code.append(u'{name} : {sort}{default};'
                         .format(name=var_name,
                                 sort=typename,
                                 default=' := ' + dstr if def_value else ''))
