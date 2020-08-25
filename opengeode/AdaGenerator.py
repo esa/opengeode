@@ -814,14 +814,13 @@ package {process_name} with Elaborate_Body is''']
     # for the .ads file, generate the declaration of the required interfaces
     # output signals are the asynchronous RI - only one parameter
     for signal in process.output_signals:
-
         param_name = signal.get('param_name') \
                                 or u'{}_param'.format(signal['name'])
         # Add (optional) RI parameter
         # Paramless TMs: when targetting simulation, the name of the TM is
         # passed as single parameter. This allows the simualor to handle them
         # dynamically, with a single callback function for all TMs
-        param_spec = '' if not simu else "(tm: chars_ptr)"
+        param_spec = '' if not simu else "(TM : chars_ptr)"
         if 'type' in signal:
             typename = type_name(signal['type'])
             param_spec = u'({pName}: in out {sort}{shared})' \
@@ -861,10 +860,7 @@ package {process_name} with Elaborate_Body is''']
             taste_template.append(u'end Register_{};'.format(signal['name']))
             taste_template.append(u'')
         elif not generic:
-            ads_template.append(u'procedure RI{}{}{};'
-                                .format(SEPARATOR,
-                                        signal['name'],
-                                        param_spec))
+            ads_template.append(f'procedure RI{SEPARATOR}{signal["name"]}{param_spec};')
             procname = process_name.lower() if taste else process_name
             # no: taste target keeps the case (with kazoo)
             #signame = signal['name'].lower() if taste else signal['name']
@@ -877,9 +873,7 @@ package {process_name} with Elaborate_Body is''']
 
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
-        ri_header = u'procedure RI{sep}{sig_name}'.format(
-                                                     sep=SEPARATOR,
-                                                     sig_name=proc.inputString)
+        ri_header = f'procedure RI{SEPARATOR}{proc.inputString}'
         params = []
         params_spec = u""
         if simu:
