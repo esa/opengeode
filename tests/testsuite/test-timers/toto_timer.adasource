@@ -1,6 +1,14 @@
-with Taste_Dataview;
-use  Taste_Dataview;
-package Toto_Timer is
-   procedure Set_Toto (Dur : asn1SccT_UInt32)
-      with Export, Convention => C, Link_Name => "test_RI_SET_toto";
-end Toto_Timer;
+--  This file is a stub for the implementation of the required interfaces
+--  It is normally overwritten by TASTE with the actual connection to the
+--  middleware. If you use Opengeode independently from TASTE you may
+--  add a .adb with your own implementation of these functions.
+
+with TASTE_Dataview;
+use TASTE_Dataview;
+with adaasn1rtl;
+use adaasn1rtl;
+
+package test_RI is
+   procedure SET_toto (Val : in out asn1SccT_UInt32);
+   procedure RESET_toto;
+end test_RI;

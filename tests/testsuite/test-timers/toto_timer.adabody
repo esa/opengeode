@@ -1,8 +1,20 @@
+--  This file is a stub for the implementation of the required interfaces
+--  It is normally overwritten by TASTE with the actual connection to the
+--  middleware. If you use Opengeode independently from TASTE you may
+--  add a .adb with your own implementation of these functions.
+
+with TASTE_Dataview;
+use TASTE_Dataview;
+with adaasn1rtl;
+use adaasn1rtl;
+
 with Ada.Real_Time;
 use Ada.Real_Time;
-package body Toto_Timer is
-   procedure Set_Toto (Dur : asn1SccT_UInt32) is
+package body test_RI is
+   procedure SET_toto (Val : in out asn1SccT_UInt32) is
    begin
-       delay To_Duration (Milliseconds (Integer(Dur)));
-   end Set_Toto;
-end Toto_Timer;
+       delay To_Duration (Milliseconds (Integer (Val)));
+   end Set_toto;
+
+   procedure RESET_toto is null;
+end test_RI;

@@ -1,4 +1,4 @@
-with text_io, test, taste_dataview, ada.real_time, toto_timer;
+with text_io, test, taste_dataview, ada.real_time;
 use text_io, test, taste_dataview, ada.real_time;
 
 procedure test_ada is
