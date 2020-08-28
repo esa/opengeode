@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2019 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -116,20 +116,14 @@ def external_ri_list(process):
     result = []
     #print process.fpar
     for signal in process.output_signals:
-        param_name = signal.get('param_name') \
-                                or u'{}_param'.format(signal['name'])
+        param_name = signal.get('param_name') or f'{signal["name"]}_param'
         param_spec = ''
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = u'({pName}: in out {sort})'.format(pName=param_name,
-                                                            sort=typename)
-        result.append(u"procedure RI{sep}{name}{param}".format(sep=SEPARATOR,
-                                                           name=signal['name'],
-                                                           param=param_spec))
+            param_spec = f'({param_name}: in out {typename})'
+        result.append(f"procedure RI{SEPARATOR}{signal['name']}{param_spec}")
     for proc in (proc for proc in process.procedures if proc.external):
-        ri_header = u'procedure RI{sep}{sig_name}'.format(
-                                                     sep=SEPARATOR,
-                                                     sig_name=proc.inputString)
+        ri_header = f'procedure RI{SEPARATOR}{proc.inputString}'
         params = []
         params_spec = ''
         for param in proc.fpar:
@@ -536,6 +530,7 @@ package body {process_name} is'''
                      f"use {process_name}_Datamodel;") \
                              if not import_context  and not instance else ""
 
+    imp_ri = f"with {process_name}_RI;" if not simu else ""
 
     ads_template = [f'''\
 -- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
@@ -551,6 +546,7 @@ use Interfaces,
 {asn1_modules}
 {imp_datamodel}
 {imp_str}
+{imp_ri}
 {instance_decl}
 {generic_spec}'''.strip() + f'''
 package {process_name} with Elaborate_Body is''']
@@ -814,8 +810,8 @@ package {process_name} with Elaborate_Body is''']
     # for the .ads file, generate the declaration of the required interfaces
     # output signals are the asynchronous RI - only one parameter
     for signal in process.output_signals:
-        param_name = signal.get('param_name') \
-                                or u'{}_param'.format(signal['name'])
+        sig = signal['name']
+        param_name = signal.get('param_name') or f'{sig}_param'
         # Add (optional) RI parameter
         # Paramless TMs: when targetting simulation, the name of the TM is
         # passed as single parameter. This allows the simualor to handle them
@@ -823,113 +819,85 @@ package {process_name} with Elaborate_Body is''']
         param_spec = '' if not simu else "(TM : chars_ptr)"
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = u'({pName}: in out {sort}{shared})' \
-                         .format(pName=param_name,
-                                 sort=typename,
-                                 shared=u'; Size: Integer'
-                                        if SHARED_LIB else '')
+            param_spec = f' ({param_name} : in out {typename}{"; Size : Integer" if SHARED_LIB else ""})'
         if not generic:
             ads_template.append(u'--  {}equired interface "{}"'
                                 .format("Paramless r" if not 'type' in signal
-                                    else "R", signal['name']))
+                                    else "R", sig))
         if simu:
             # When generating a shared library, we need a callback mechanism
-            ads_template.append(u'type {}_T is access procedure{};'
-                                .format(signal['name'], param_spec))
-            ads_template.append(u'pragma Convention(Convention => C,'
-                                u' Entity => {}_T);'.format(signal['name']))
-            ads_template.append(u'RI{sep}{sig} : {sig}_T;'
-                                .format(sep=SEPARATOR, sig=signal['name']))
-            ads_template.append(u'procedure Register_{sig}(Callback: {sig}_T);'
-                                .format(sig=signal['name']))
-            ads_template.append(u'pragma Export(C, Register_{sig},'
-                                ' "register_{sig}");'
-                                .format(sig=signal['name']))
+            code = [f'type {sig}_T is access procedure{param_spec};',
+                    f'pragma Convention(Convention => C, Entity => {sig}_T);',
+                    f'RI{SEPARATOR}{sig} : {sig}_T;',
+                    f'procedure Register_{sig} (Callback : {sig}_T);',
+                    f'pragma Export(C, Register_{sig}, "register_{sig}");']
+            ads_template.extend(code)
 
             # Generate code for the mini-cv template
-            params = [(param_name, type_name(signal['type'], use_prefix=False),
+            params = [(param_name,
+                       type_name(signal['type'], use_prefix=False),
                       'IN')] if 'type' in signal else []
-            minicv.append(aadl_template(signal['name'], params, 'PI'))
 
-            taste_template.append(u'procedure Register_{sig}'
-                                  u'(Callback:{sig}_T) is'
-                                  .format(sig=signal['name']))
-            taste_template.append(u'begin')
-            taste_template.append(u'RI{sep}{sig} := Callback;'
-                                  .format(sep=SEPARATOR, sig=signal['name']))
-            taste_template.append(u'end Register_{};'.format(signal['name']))
-            taste_template.append(u'')
+            minicv.append(aadl_template(sig, params, 'PI'))
+
+            code = [f'procedure Register_{sig} (Callback : {sig}_T) is',
+                     'begin',
+                    f'RI{SEPARATOR}{sig} := Callback;',
+                    f'end Register_{sig};',
+                    '']
+            taste_template.extend(code)
         elif not generic:
-            ads_template.append(f'procedure RI{SEPARATOR}{signal["name"]}{param_spec};')
-            procname = process_name.lower() if taste else process_name
-            # no: taste target keeps the case (with kazoo)
-            #signame = signal['name'].lower() if taste else signal['name']
-            signame = signal['name']
-            ads_template.append(u'pragma import(C, RI{sep}{sig},'
-                                u' "{proc}_RI_{sig}");'
-                                .format(sep=SEPARATOR,
-                                        sig=signame,
-                                        proc=procname.lower()))
+            pass
+            ads_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} '
+                    f'renames {process_name}_RI.{sig};')
+            #  TASTE generates the pragma import in <function>_ri.ads
+            #  therefore do not generate it in the .ads
+            # ads_template.append(f'pragma Import (C, RI{SEPARATOR}{sig}, "{process_name.lower()}_RI_{sig}");')
 
     # for the .ads file, generate the declaration of the external procedures
     for proc in (proc for proc in process.procedures if proc.external):
-        ri_header = f'procedure RI{SEPARATOR}{proc.inputString}'
+        sig = proc.inputString
+        ri_header = f'procedure RI{SEPARATOR}{sig}'
         params = []
-        params_spec = u""
+        params_spec = ""
         if simu:
             # For simulators: add the TM name as first parameter
-            params.append("tm: chars_ptr")
+            params.append("TM : chars_ptr")
         for param in proc.fpar:
             typename = type_name(param['type'])
+            name     = param['name']
             if param['direction'] == 'in':
                 direct = 'in out'
             else:
                 direct = 'out'
-            params.append(u'{par[name]}: {direct} {sort}{shared}'
-                          .format(par=param,
-                                  direct=direct,
-                                  sort=typename,
-                                  shared=u"; {}_Size: Integer"
-                                         .format(param['name'])
-                                         if SHARED_LIB else ""))
+            shared=f"; {name}_Size : Integer" if SHARED_LIB else ""
+
+            params.append(f'{name} : {direct} {typename}{shared}')
         if params:
-            params_spec = "({})".format("; ".join(params))
+            params_spec = " ({})".format("; ".join(params))
             ri_header += params_spec
-        ads_template.append(f'--  Sync required interface "{proc.inputString}"')
+        ads_template.append(f'--  Sync required interface "{sig}"')
         if simu:
             # As for async TM, generate a callback mechanism
-            ads_template.append(u"type {}_T is access procedure{};"
-                                .format(proc.inputString, params_spec))
-            ads_template.append(u'pragma Convention(Convention => C,'
-                                u' Entity => {}_T);'.format(proc.inputString))
-            ads_template.append(u'RI{sep}{sig} : {sig}_T;'
-                                .format(sep=SEPARATOR, sig=proc.inputString))
-            ads_template.append(u'procedure Register_{sig}(Callback: {sig}_T);'
-                                .format(sig=proc.inputString))
-            ads_template.append(u'pragma Export(C, Register_{sig},'
-                                u' "register_{sig}");'
-                                .format(sig=proc.inputString))
-            taste_template.append(u'procedure Register_{sig}'
-                                  '(Callback:{sig}_T) is'
-                                  .format(sig=proc.inputString))
-            taste_template.append(u'begin')
-            taste_template.append(u'RI{sep}{sig} := Callback;'
-                                  .format(sep=SEPARATOR,
-                                          sig=proc.inputString))
-            taste_template.append(u'end Register_{};'.format(proc.inputString))
-            taste_template.append(u'')
+            code = [f"type {sig}_T is access procedure{param_spec};",
+                    f'pragma Convention(Convention => C, Entity => {sig}_T);',
+                    f'RI{SEPARATOR}{sig} : {sig}_T;',
+                    f'procedure Register_{sig}(Callback: {sig}_T);',
+                    f'pragma Export(C, Register_{sig}, "register_{sig}");']
+
+            ads_template.extend(code)
+
+            code = [f'procedure Register_{sig} (Callback : {sig}_T) is',
+                     'begin',
+                    f'RI{SEPARATOR}{sig} := Callback;',
+                    f'end Register_{sig};',
+                     '']
+            taste_template.extend(code)
 
         elif not generic:
-            ads_template.append(ri_header + u';')
-            # don't lower in case of taste (kazoo)
-            #signame = proc.inputString.lower() if taste else proc.inputString
-            procname = process_name.lower() if taste else process_name
-            signame = proc.inputString
-            ads_template.append(u'pragma import(C, RI{sep}{sig},'
-                                u' "{proc}_RI_{sig}");'
-                                .format(sep=SEPARATOR,
-                                        sig=signame,
-                                        proc=procname.lower()))
+            ads_template.append(f'{ri_header} renames {process_name}_RI.{sig};')
+            #procname = process_name.lower()
+            #ads_template.append(f'pragma Import(C, RI{SEPARATOR}{sig}, "{procname}_RI_{sig}");')
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
@@ -967,15 +935,16 @@ package {process_name} with Elaborate_Body is''']
                 taste_template.append('')
 
         elif not generic:
+            procname = process_name.lower()
             ads_template.append(
-               u'procedure SET_{}(val: in out asn1SccT_UInt32);'.format(timer))
-            ads_template.append(
-                    u'pragma Import(C, SET_{timer}, "{proc}_RI_SET_{timer}");'
-                    .format(timer=timer, proc=process_name.lower()))
-            ads_template.append(u'procedure RESET_{};'.format(timer))
-            ads_template.append(
-                 u'pragma Import(C, RESET_{timer}, "{proc}_RI_RESET_{timer}");'
-                 .format(timer=timer, proc=process_name.lower()))
+               f'procedure SET_{timer} (Val : in out asn1SccT_UInt32) '
+               f'renames {process_name}_RI.Set_{timer};')
+            #ads_template.append(
+            #        f'pragma Import (C, SET_{timer}, "{procname}_RI_SET_{timer}");')
+            ads_template.append(f'procedure RESET_{timer} '
+                    f'renames {process_name}_RI.Reset_{timer};')
+            #ads_template.append(
+            #     f'pragma Import (C, RESET_{timer}, "{procname}_RI_RESET_{timer}");')
         else:
             # Generic functions get the SET and RESET from template
             pass
@@ -986,7 +955,7 @@ package {process_name} with Elaborate_Body is''']
         # be gathered to instantiate the package
         pkg_decl = (u"package {}_Instance is new {}"
                     .format(process_name, process.instance_of_name))
-        ri_list = [u"RI{sep}{name}".format(sep=SEPARATOR, name=sig['name'])
+        ri_list = [f"RI{SEPARATOR}{sig['name']}"
                    for sig in process.output_signals]
         ri_list.extend ([u"RI{sep}{name}".format(sep=SEPARATOR,
                                                  name=proc.inputString)
@@ -1473,20 +1442,16 @@ def _call_external_function(output, **kwargs):
                                          .format(var=p_id,
                                                 shared=", {}'Size".format(p_id)
                                                   if is_out_sig else ""))
+            name = out["outputName"]
             if list_of_params:
-                code.append(u'RI{sep}{RI}({params});'
-                            .format(sep=SEPARATOR,
-                                    RI=out['outputName'],
-                                    params=', '.join(list_of_params)))
+                params=', '.join(list_of_params)
+                code.append(f'RI{SEPARATOR}{name}({params});')
+
             else:
                 if not SHARED_LIB:
-                    code.append(u'RI{sep}{RI};'
-                                .format(sep=SEPARATOR,
-                                        RI=out['outputName']))
+                    code.append(f'RI{SEPARATOR}{name};')
                 else:
-                    code.append(u'RI{sep}{RI}(New_String("{RI}"));'
-                                .format(sep=SEPARATOR,
-                                        RI=out['outputName']))
+                    code.append(f'RI{SEPARATROR}{name} (New_String ("{name}"));')
         else:
             # inner procedure call
             list_of_params = []
