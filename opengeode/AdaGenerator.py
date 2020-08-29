@@ -342,6 +342,11 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
     asn1_template = [f'{process_asn1}-Datamodel DEFINITIONS ::=',
                       'BEGIN']
 
+    #  When a signal is sent from the model a call to a function is emitted
+    #  This function has to be provided - either by TASTE (kazoo), or by
+    #  the user. Opengeode will generate a stub package for this.
+    ri_stub_template = []
+
     # Add user-defined NEWTYPEs
     if process.user_defined_types:
         types_with_proper_case = []
@@ -550,6 +555,17 @@ use Interfaces,
 {instance_decl}
 {generic_spec}'''.strip() + f'''
 package {process_name} with Elaborate_Body is''']
+
+    ri_stub_template = [f'''\
+--  This file is a stub for the implementation of the required interfaces
+--  It is normally overwritten by TASTE with the actual connection to the
+--  middleware. If you use Opengeode independently from TASTE you may
+--  add a .adb with your own implementation of these functions.
+
+{asn1_modules}
+
+package {process_name}_RI is''']
+
     dll_api = []
     if not instance:
         ads_template.extend(context_decl)
@@ -799,12 +815,12 @@ package {process_name} with Elaborate_Body is''']
             taste_template.append('Execute_Transition (CS_Only);')
             taste_template.append('end case;')
         else:
-            inst_call = u"{}_Instance.{}".format(process_name, signame)
+            inst_call = f"{process_name}_Instance.{signame}"
             if 'type' in signal:
-                inst_call += u"({})".format(param_name)
-            taste_template.append(inst_call + ";")
+                inst_call += f" ({param_name})"
+            taste_template.append(f"{inst_call};")
 
-        taste_template.append(u'end {};'.format(signame))
+        taste_template.append(f'end {signame};')
         taste_template.append('\n')
 
     # for the .ads file, generate the declaration of the required interfaces
@@ -850,6 +866,7 @@ package {process_name} with Elaborate_Body is''']
             pass
             ads_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} '
                     f'renames {process_name}_RI.{sig};')
+            ri_stub_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} is null;')
             #  TASTE generates the pragma import in <function>_ri.ads
             #  therefore do not generate it in the .ads
             # ads_template.append(f'pragma Import (C, RI{SEPARATOR}{sig}, "{process_name.lower()}_RI_{sig}");')
@@ -896,6 +913,7 @@ package {process_name} with Elaborate_Body is''']
 
         elif not generic:
             ads_template.append(f'{ri_header} renames {process_name}_RI.{sig};')
+            ri_stub_template.append(f'{ri_header} is null;')
             #procname = process_name.lower()
             #ads_template.append(f'pragma Import(C, RI{SEPARATOR}{sig}, "{procname}_RI_{sig}");')
 
@@ -939,10 +957,12 @@ package {process_name} with Elaborate_Body is''']
             ads_template.append(
                f'procedure SET_{timer} (Val : in out asn1SccT_UInt32) '
                f'renames {process_name}_RI.Set_{timer};')
+            ri_stub_template.append(f'procedure SET_{timer} (Val : in out asn1SccT_UInt32) is null;')
             #ads_template.append(
             #        f'pragma Import (C, SET_{timer}, "{procname}_RI_SET_{timer}");')
             ads_template.append(f'procedure RESET_{timer} '
                     f'renames {process_name}_RI.Reset_{timer};')
+            ri_stub_template.append(f'procedure RESET_{timer} is null;')
             #ads_template.append(
             #     f'pragma Import (C, RESET_{timer}, "{procname}_RI_RESET_{timer}");')
         else:
@@ -1200,19 +1220,23 @@ package {process_name} with Elaborate_Body is''']
 
     # Add code of the package elaboration
     taste_template.extend(start_transition)
-    taste_template.append('end {process_name};'
-            .format(process_name=process_name))
+    taste_template.append(f'end {process_name};')
 
-    ads_template.append('end {process_name};'
-            .format(process_name=process_name))
+    ads_template.append(f'end {process_name};')
+
+    ri_stub_template.append(f'end {process_name}_RI;')
 
     with open(process_name.lower() + os.extsep + 'adb', 'wb') as ada_file:
-        code = u'\n'.join(format_ada_code(taste_template)).encode('latin1')
+        code = '\n'.join(format_ada_code(taste_template)).encode('latin1')
         ada_file.write(code)
 
     with open(process_name.lower() + os.extsep + 'ads', 'wb') as ada_file:
         ada_file.write(
-                u'\n'.join(format_ada_code(ads_template)).encode('latin1'))
+                '\n'.join(format_ada_code(ads_template)).encode('latin1'))
+
+    with open(f"{process_name.lower()}_ri.ads", "wb") as ri_stub:
+        ri_stub.write (
+                "\n".join(format_ada_code(ri_stub_template)).encode('latin1'))
 
     with open("{}_ada.gpr".format(process_name.lower()), "wb") as gprada:
         gprada.write(ada_gpr.encode('utf-8'))
