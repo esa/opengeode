@@ -545,7 +545,8 @@ def find_basic_type(a_type, pool=None):
             if typename.lower() == basic_type.ReferencedTypeName.lower():
                 basic_type = pool[typename].type
                 if Min is not None and Max is not None \
-                        and is_numeric(basic_type):
+                        and (is_numeric(basic_type) or is_string(basic_type)
+                                or is_sequenceof(basic_type)):
                     # Subtypes may have defined subranges
                     new_type = type('Subtype',  basic_type.__bases__,
                             dict (basic_type.__dict__))
@@ -2249,6 +2250,7 @@ def primary_index(root, context, pos):
                                 expression(root.children[0], context, pos)
 
     receiver_bty = find_basic_type(receiver.exprType)
+
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
 
