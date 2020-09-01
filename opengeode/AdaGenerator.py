@@ -1234,9 +1234,10 @@ package {process_name}_RI is''']
         ada_file.write(
                 '\n'.join(format_ada_code(ads_template)).encode('latin1'))
 
-    with open(f"{process_name.lower()}_ri.ads", "wb") as ri_stub:
-        ri_stub.write (
-                "\n".join(format_ada_code(ri_stub_template)).encode('latin1'))
+    if not taste:
+        with open(f"{process_name.lower()}_ri.ads", "wb") as ri_stub:
+            ri_stub.write (
+                 "\n".join(format_ada_code(ri_stub_template)).encode('latin1'))
 
     with open("{}_ada.gpr".format(process_name.lower()), "wb") as gprada:
         gprada.write(ada_gpr.encode('utf-8'))
