@@ -175,7 +175,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         # First copy the list of timers to the instance (otherwise the
         # instance would miss some PIs and RIs to set the actual timers)
         process_instance.timers = process.timers
-        generate(process_instance, simu, instance=True)
+        generate(process_instance, simu, instance=True, taste=taste)
 
     global TYPES
     TYPES = process.dataview
@@ -535,7 +535,7 @@ package body {process_name} is'''
                      f"use {process_name}_Datamodel;") \
                              if not import_context  and not instance else ""
 
-    imp_ri = f"with {process_name}_RI;" if not simu else ""
+    imp_ri = f"with {process_name}_RI;" if not simu and not generic else ""
 
     ads_template = [f'''\
 -- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
