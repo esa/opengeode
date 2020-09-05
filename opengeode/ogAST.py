@@ -849,6 +849,8 @@ class Procedure:
         # input/output signal lists - unused but for context information
         self.input_signals = []
         self.output_signals = []
+        # The "DECISION ANY" construct requires random number generators
+        self.random_generator = set()
 
 
 class Process:
@@ -934,6 +936,9 @@ class Process:
 
         # list of processes used for context management of the GUI
         self.processes = []
+
+        # The "DECISION ANY" construct requires random number generators
+        self.random_generator = set()
 
 
 class CompositeState(Process):

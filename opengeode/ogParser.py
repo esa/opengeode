@@ -4365,6 +4365,8 @@ def decision(root, parent, context):
     dec.tmpVar = tmp()
     has_else = False
     dec_x, dec_y = 0, 0
+    # To support the "decision any" construct:
+    need_random_generator = False
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -4386,6 +4388,7 @@ def decision(root, parent, context):
             warnings.append(['Use of "ANY" introduces non-determinism ',
                             [dec.pos_x, dec.pos_y], []])
             dec.kind = 'any'
+            need_random_generator = True
             dec.inputString = get_input_string(child)
             dec.question = ogAST.PrimStringLiteral()
             dec.question.value = 'ANY'
@@ -4418,6 +4421,10 @@ def decision(root, parent, context):
         else:
             warnings.append(['Unsupported DECISION child type: ' +
                 str(child.type), [dec.pos_x, dec.pos_y], []])
+    if need_random_generator:
+        # If there are N answers, code generators will need a random
+        # number from 0 to N.
+        context.random_generator.add(len(dec.answers))
     # Make type checks to be sure that question and answers are compatible
     covered_ranges = defaultdict(list)
     qmin, qmax = 0, 0

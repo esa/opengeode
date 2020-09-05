@@ -189,6 +189,9 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         SHARED_LIB = True
         LPREFIX = process_name + u'_ctxt'
 
+    for each in PROCEDURES:
+        process.random_generator.update(each.random_generator)
+
     # taste-properties module-specific flag for the Ada backend:
     # import the state data from an external module
     import_context = kwargs["ppty_check"] if "ppty_check" in kwargs else ""
@@ -477,19 +480,28 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                 'procedure Execute_Transition (Id : Integer);')
 
         # Generate the code of the start transition (if process not empty)
-        Init_Done =  u'{ctxt}.Init_Done := True;'.format(ctxt=LPREFIX)
-        if not simu:
-            start_transition = [u'begin']
-            if process.transitions:
-                start_transition.append(u'Execute_Transition (0);')
-            start_transition.append(Init_Done)
-        else:
-            start_transition = ['procedure Startup is',
-                                'begin',
-                                '   Execute_Transition (0);'
-                                   if process.transitions else 'null;',
-                                Init_Done,
-                                'end Startup;']
+        Init_Done = f'{LPREFIX}.Init_Done := True;'
+#       if not simu:
+#           start_transition = ['begin']
+#           if process.transitions:
+#               start_transition.append('Execute_Transition (0);')
+#           start_transition.append(Init_Done)
+#       else:
+        rand_reset_decl = []
+        for rand_g in process.random_generator:
+            rand_reset_decl.append(f'Rand_{rand_g}_Pkg.Reset (Gen_{rand_g});');
+
+        start_transition = [
+                'procedure Startup is',
+                'begin',
+                *rand_reset_decl,
+                'Execute_Transition (0);'
+                if process.transitions else 'null;',
+                Init_Done,
+                'end Startup;',
+                '',
+                'begin',
+                'Startup;']
 
     # Generate the TASTE template
     try:
@@ -533,9 +545,20 @@ package body {process_name} is'''
 
     imp_datamodel = (f"with {process_name}_Datamodel; "
                      f"use {process_name}_Datamodel;") \
-                             if not import_context  and not instance else ""
+                             if not import_context and not instance else ""
 
     imp_ri = f"with {process_name}_RI;" if not simu and not generic else ""
+
+    rand = ('with Ada.Numerics.Discrete_Random;'
+            if process.random_generator else "")
+    rand_decl = []
+    for each in process.random_generator:
+        rand_decl.extend([
+            f'type Rand_{each}_ty is new Integer range 1 .. {each};',
+            f'package Rand_{each}_Pkg is new  Ada.Numerics.Discrete_Random'\
+                    f' (Rand_{each}_ty);',
+            f'Gen_{each} : Rand_{each}_Pkg.Generator;',
+            f'Num_{each} : Rand_{each}_ty;'])
 
     ads_template = [f'''\
 -- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
@@ -553,6 +576,7 @@ use Interfaces,
 {imp_str}
 {imp_ri}
 {instance_decl}
+{rand}
 {generic_spec}'''.strip() + f'''
 package {process_name} with Elaborate_Body is''']
 
@@ -567,6 +591,7 @@ package {process_name} with Elaborate_Body is''']
 package {process_name}_RI is''']
 
     dll_api = []
+    ads_template.extend(rand_decl)
     if not instance:
         ads_template.extend(context_decl)
     if not generic and not instance:
@@ -866,7 +891,7 @@ package {process_name}_RI is''']
             pass
             ads_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} '
                     f'renames {process_name}_RI.{sig};')
-            ri_stub_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} is null;')
+            ri_stub_template.append(f'procedure {sig}{param_spec} is null;')
             #  TASTE generates the pragma import in <function>_ri.ads
             #  therefore do not generate it in the .ads
             # ads_template.append(f'pragma Import (C, RI{SEPARATOR}{sig}, "{process_name.lower()}_RI_{sig}");')
@@ -1400,8 +1425,8 @@ def _call_external_function(output, **kwargs):
                     out_sig = proc
                     if SHARED_LIB:
                         is_out_sig = True
-                        list_of_params = ['New_String("{}")'
-                                              .format(out['outputName'])]
+                        list_of_params = [
+                                f'New_String ("{out["outputName"]}")']
             except ValueError:
                 # Not there? Impossible, the parser would have barked
                 raise ValueError(u'Probably a bug - please report'
@@ -2742,48 +2767,64 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         XXX has to be done also in the C backend
     '''
     code, local_decl = [], []
+    basic = True
 
     if dec.kind == 'any':
-        LOG.warning('Ada backend does not support the "ANY" statement')
-        code.append('-- "DECISION ANY" statement was ignored')
-        code.append('null;')
-        return code, local_decl
+        #LOG.warning('Ada backend does not support the "ANY" statement')
+        code.extend(traceability(dec))
+        #code.append('null;')
+        #return code, local_decl
+        nb = len(dec.answers)
+        code.append(f'case Rand_{nb}_Pkg.Random (Gen_{nb}) is')
     elif dec.kind == 'informal_text':
         LOG.warning('Informal decision ignored')
         code.append('-- Informal decision was ignored: {}'
                     .format(dec.inputString))
         code.append('null;')
         return code, local_decl
+    else:
+        question_type = dec.question.exprType
+        actual_type = type_name(question_type)
+        basic = find_basic_type(question_type).kind in ('IntegerType',
+                                                        'Integer32Type',
+                                                        'BooleanType',
+                                                        'RealType',
+                                                        'EnumeratedType',
+                                                        'ChoiceEnumeratedType')
+        # for ASN.1 types, declare a local variable
+        # to hold the evaluation of the question
+        if not basic:
+            local_decl.append(f'tmp{dec.tmpVar} : {actual_type};')
 
-    question_type = dec.question.exprType
-    actual_type = type_name(question_type)
-    basic = find_basic_type(question_type).kind in ('IntegerType',
-                                                    'Integer32Type',
-                                                    'BooleanType',
-                                                    'RealType',
-                                                    'EnumeratedType',
-                                                    'ChoiceEnumeratedType')
-    # for ASN.1 types, declare a local variable
-    # to hold the evaluation of the question
-    if not basic:
-        local_decl.append('tmp{idx} : {actType};'
-                          .format(idx=dec.tmpVar,
-                                  actType=actual_type))
+        q_stmts, q_str, q_decl = expression(dec.question, readonly=1)
 
-    q_stmts, q_str, q_decl = expression(dec.question, readonly=1)
+        # Add code-to-model traceability
+        code.extend(traceability(dec))
+        local_decl.extend(q_decl)
+        code.extend(q_stmts)
 
-    # Add code-to-model traceability
-    code.extend(traceability(dec))
-    local_decl.extend(q_decl)
-    code.extend(q_stmts)
+        if not basic:
+            code.append(f'tmp{dec.tmpVar} := {q_str};')
 
-    if not basic:
-        code.append(u'tmp{idx} := {q};'.format(idx=dec.tmpVar, q=q_str))
-
-    for a in dec.answers:
+    for idx, a in enumerate(dec.answers):
         code.extend(traceability(a))
+        if dec.kind == 'any':
+            code.append(f'when {idx+1} =>');
+            if not branch_to:
+                if a.transition:
+                    stmt, tr_decl = generate(a.transition)
+                else:
+                    stmt, tr_decl = ['null;'], []
+                code.extend(stmt)
+                local_decl.extend(tr_decl)
+            else:
+                # Before branching we should optionally execute the exit
+                # procedures of the nested states we may be leaving
+                for exit in exitcalls:
+                    code.append(exit);
+                code.append(f'trId := {branch_to};')
 
-        if a.kind in ('open_range', 'constant'):
+        elif a.kind in ('open_range', 'constant'):
             ans_stmts, ans_str, ans_decl = expression(a.constant, readonly=1)
             code.extend(ans_stmts)
             local_decl.extend(ans_decl)
@@ -2793,18 +2834,14 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                                                ogAST.PrimStringLiteral)):
                         ans_str = array_content(a.constant, ans_str,
                                                 find_basic_type(question_type))
-                    exp = u'{actType}_Equal(tmp{idx}, {ans})'.format(
-                            actType=actual_type, idx=dec.tmpVar, ans=ans_str)
+                    exp = f'{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
                     if a.openRangeOp == ogAST.ExprNeq:
-                        exp = u'not {}'.format(exp)
+                        exp = f'not {exp}'
                 else:
-                    exp = u'tmp{idx} {op} {ans}'.format(idx=dec.tmpVar,
-                                                      op=a.openRangeOp.operand,
-                                                      ans=ans_str)
+                    exp = f'tmp{dec.tmpVar} {a.openRangeOp.operand} {ans_str}'
             else:
-                exp = u'({q}) {op} {ans}'.format(q=q_str,
-                                                 op=a.openRangeOp.operand,
-                                                 ans=ans_str)
+                exp = f'({q_str}) {a.openRangeOp.operand} {ans_str}'
+
             code.append(sep + exp + ' then')
             if not branch_to:
                 if a.transition:
@@ -2867,6 +2904,9 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         # "last" is usually "end if;" but it can be changed by parameter
         # e.g. if the decision is chained with other tests with "elsif"
         code.append(last)
+
+    if dec.kind == 'any':
+        code.append ('end case;')
     return code, local_decl
 
 
