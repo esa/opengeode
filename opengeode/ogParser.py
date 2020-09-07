@@ -3010,7 +3010,7 @@ def procedure_post(proc, content, parent=None, context=None):
                 errors.append(str(err))
             # Id of fd_expr may have changed (enumerated, choice)
             each.return_expr = check_expr.right
-        elif proc.return_type and not each.return_expr:
+        elif proc.return_type and each.kind == 'return' and not each.return_expr:
             errors.append(['Missing return value in procedure {}'
                            .format(proc.inputString),
                            [0, 0], []])
