@@ -1830,7 +1830,7 @@ def arithmetic_expression(root, context):
                 if (not is_number(basic_left)
                     and basic_left.kind == 'Integer32Type') or (not is_number
                     (basic_right) and basic_right.kind == 'Integer32Type'):
-                    # One of the operand is a loop index (SIGNED)
+                    # One of the operands is a loop index (SIGNED)
                     kind = 'Integer32Type'
                 expr.exprType = type("Computed_Range",
                         (basic_right if not is_number(basic_right)
@@ -1868,7 +1868,14 @@ def arithmetic_expression(root, context):
 
                 bound_max = str(float(bounds['Max']))
                 attrs = {'Min': bound_min, 'Max': bound_max}
-                expr.exprType = type('Computed_Range_2', (basic_right,), attrs)
+                # If a side is an Integer32 and the other side a Integer64
+                # then the base type should be Integer64
+                if (basic_right.kind == basic_left.kind
+                        or basic_right.kind == "IntegerType"):
+                    base_type = basic_right   # Any is ok
+                else:
+                    base_type = basic_left
+                expr.exprType = type('Computed_Range_2', (base_type,), attrs)
 
         if expr.exprType is not UNKNOWN_TYPE:
             expr.expected_type = expr.exprType
@@ -3010,7 +3017,8 @@ def procedure_post(proc, content, parent=None, context=None):
         else:
             continue
     for each in chain(errors, warnings):
-        each[2].insert(0, 'PROCEDURE {}'.format(proc.inputString))
+        # XXX Major bug here, errors may be string FIXME
+        each[2].insert(0, f'PROCEDURE {proc.inputString}')
 
     return errors, warnings
 
@@ -5102,8 +5110,16 @@ def for_loop(root, context):
                     r_min = '0'
                 else:
                     basic = find_basic_type(start_expr.exprType)
+                    # ASN.1 constant -> use the constant value
+                    if isinstance(start_expr, ogAST.PrimConstant):
+                       basic.Min = \
+                             get_asn1_constant_value(start_expr.constant_value)
                     r_min = basic.Min if basic != UNKNOWN_TYPE else '0'
                 basic = find_basic_type(stop_expr.exprType)
+                # ASN.1 constant -> get the value in place of the type's Max
+                if isinstance(stop_expr, ogAST.PrimConstant):
+                   basic.Max = \
+                           get_asn1_constant_value(stop_expr.constant_value)
                 r_max = str(int(float(basic.Max) - 1)) \
                         if basic != UNKNOWN_TYPE else '4294967295'
                 result_type = type('for_range', (INT32,), {'Min': r_min,

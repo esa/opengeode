@@ -177,6 +177,7 @@ Changelog
 =========
 **3.3.0 (08/2020)**
 - Save the state as an ASN.1 model instead of a native Ada type
+- Ada backend basic support for "decision any"
 
 **3.2.1 (07/2020)**
 - Fix issue with the "present" operator
