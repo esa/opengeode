@@ -175,6 +175,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.2.2 (09/2020)
+- Fix a regression with legacy, non-kazoo taste systems, related to the import of check_queue symbol
+
 **3.2.1 (07/2020)**
 - Fix issue with the "present" operator
 - Move the context declaration to the .ads

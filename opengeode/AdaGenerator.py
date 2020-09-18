@@ -1080,13 +1080,13 @@ package {process_name} with Elaborate_Body is''']
         if has_cs and not simu:
             taste_template.append('--  Process continuous signals')
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
-            taste_template.append("Check_Queue(msgPending'access);")
+            taste_template.append("Check_Queue (msgPending'access);")
             taste_template.append('end if;')
             ads_template.append(
-                    u'procedure Check_Queue(res: access Asn1Boolean);')
+                    f'procedure Check_Queue (Res : access Asn1Boolean);')
             if not generic:
                 ads_template.append(
-                    u'pragma import(C, Check_Queue, "{proc}_check_queue");'
+                    u'pragma Import(C, Check_Queue, "{proc}_RI_check_queue");'
                     .format(proc=process_name))
         elif has_cs and simu:
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
