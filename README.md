@@ -175,6 +175,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.2.3 (09/2020)
+- Fix type checks when a type inherits another type with different constraints
+
 **3.2.2 (09/2020)
 - Fix a regression with legacy, non-kazoo taste systems, related to the import of check_queue symbol
 
