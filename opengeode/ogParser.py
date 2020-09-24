@@ -559,6 +559,29 @@ def find_basic_type(a_type, pool=None):
                             '" was not found in Dataview')
     return basic_type
 
+def find_type_name(a_type, pool=None) -> str:
+    ''' A Type may be an alias of another type, if it has a ReferencedTypeName
+    and the same constraints as the referenced type. This function finds the
+    name of the original type definition '''
+    if a_type.kind != 'ReferenceType':
+        raise TypeError('Not a referenced type')
+    pool = pool or types()
+    refname = a_type.ReferencedTypeName
+    Min = getattr(a_type, "Min", None)
+    Max = getattr(a_type, "Max", None)
+    for typename in pool.keys():
+        # Find the referenced type in the dataview
+        if refname.lower() == typename.lower():
+            parent = pool[typename].type
+            parent_Min = getattr(parent, "Min", None)
+            parent_Max = getattr(parent, "Max", None)
+            if((Min != None and parent_Min != Min)
+                    or (Max != None and parent_Max != Max)
+                    or parent.kind != 'ReferenceType'):
+                # Parent has different constraints or is a basic type
+                return refname
+            else:
+                return find_type_name(parent)
 
 def signature(name, context):
     ''' Return the signature of a procecure/output/operator '''
@@ -1190,7 +1213,18 @@ def compare_types(type_a, type_b):   # type -> [warnings]
     if not type_a or not type_b:
         raise TypeError("Missing type definition")
     if type_a.kind == 'ReferenceType' and type_b.kind == 'ReferenceType':
-        if type_a.ReferencedTypeName != type_b.ReferencedTypeName:
+        # The type names may be different but the types may still be
+        # the same, eg : TypeB ::= TypeA
+        # In that case TypeB is just an alias (renaming) of TypeA and it
+        # is correct to assign value of one to the other
+        # We must find the lowest common type name denominator before
+        # concluding that there is a mismatch
+        # The check must verify that the constraints are strictly the same, too
+        ref_a = type_a.ReferencedTypeName
+        ref_b = type_b.ReferencedTypeName
+        lowest_a = find_type_name (type_a)
+        lowest_b = find_type_name (type_b)
+        if lowest_a != lowest_b:
             mismatch = '"{}" is not "{}"'.format(type_a.ReferencedTypeName,
                                                  type_b.ReferencedTypeName)
     type_a = find_basic_type(type_a)
