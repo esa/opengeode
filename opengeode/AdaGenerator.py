@@ -419,8 +419,9 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                 assert not dst and not dlocal,\
                         'DCL: Expecting a ground expression'
             context_decl.append(
-                            '{n} : {sort}{default};'
+                            '{n} : {aliased}{sort}{default};'
                             .format(n=var_name,
+                                   aliased="aliased " if simu else "",
                                    sort=type_name(var_type),
                                    default=' := ' + dstr if def_value else ''))
 
@@ -658,23 +659,22 @@ package {process_name}_RI is''']
         # Functions to get gobal variables (length and value)
         for var_name, (var_type, _) in process.variables.items():
             # Getters for external applications to view local variables via dll
-            process_level_decl.append(u"function l_{name}_value"
-                                     u" return access {sort} "
-                                     u"is ({prefix}.{name}'access) with Export,"
-                                     u" Convention => C,"
-                                     u' Link_Name => "{name}_value";'
-                                     .format(prefix=LPREFIX, name=var_name,
-                                              sort=type_name(var_type)))
+            process_level_decl.append(
+                    f"function l_{var_name}_value"
+                    f" return access {type_name(var_type)} "
+                    f"is ({LPREFIX}.{var_name}'access) with Export,"
+                    f" Convention => C,"
+                    f' Link_Name => "{var_name}_value";')
             # Setters for local variables
-            setter_decl = u"procedure dll_set_l_{name}(value: access {sort})"\
+            setter_decl = u"procedure DLL_Set_l_{name} (Value: in out {sort})"\
                           .format(name=var_name, sort=type_name(var_type))
-            ads_template.append(u'{};'.format(setter_decl))
-            ads_template.append(u'pragma Export(C, dll_set_l_{name},'
-                                ' "_set_{name}");'.format(name=var_name))
-            dll_api.append(u'{} is'.format(setter_decl))
-            dll_api.append(u'begin')
-            dll_api.append(u'{}.{} := value;'.format(LPREFIX, var_name))
-            dll_api.append(u'end dll_set_l_{};'.format(var_name))
+            ads_template.append(
+                    f'{setter_decl} with Export, Convention => C, '
+                    f'Link_Name => "_set_{var_name}";')
+            dll_api.append(f'{setter_decl} is')
+            dll_api.append('begin')
+            dll_api.append(f'{LPREFIX}.{var_name} := Value;')
+            dll_api.append(f'end DLL_Set_l_{var_name};')
             dll_api.append('')
 
     # Generate the the code of the procedures
