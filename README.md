@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.3.2 (10/2020)**
+- Fix reporting of semantic errors in procedures
+
 **3.3.1 (09/2020)**
 - Fix issue with type synonyms
 - Update installation procedure

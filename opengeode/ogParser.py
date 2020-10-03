@@ -1194,9 +1194,6 @@ def check_type_compatibility(primary, type_ref, context):
             raise TypeError(f'Type of array element {primary.inputString} '
                     f'does not match expected type "{type_name(type_ref)}"')
     else:
-        print( isinstance(primary, ogAST.PrimIndex))
-        print( primary.exprType != type_ref)
-        print (f"{primary} {primary.exprType} vs {type_ref}")
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
                                 t1=type_name(type_ref)))
@@ -2929,7 +2926,9 @@ def procedure_pre(root, parent=None, context=None):
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=proc)
             if textarea.signals:
-                errors.append('Signals shall not be declared in a procedure')
+                errors.append([f'In procedure {proc.inputString}:'
+                    ' signals shall not be declared in a procedure',
+                    [textarea.pos_x or 0, textarea.pos_y or 0], []])
             errors.extend(err)
             warnings.extend(warn)
             proc.content.textAreas.append(textarea)
@@ -2941,10 +2940,15 @@ def procedure_pre(root, parent=None, context=None):
             warnings.extend(warn)
             proc.fpar = params
         elif child.type == lexer.RETURNS:
+            #  Declaration not in a text area...
+            if proc.return_type is not None:
+                errors.append([f'In procedure {proc.inputString}: '
+                        'duplicate "returns" statement', [0, 0], []])
             try:
                 proc.return_type, proc.return_var = procedure_returns(child)
             except TypeError as err:
-                errors.append(str(err))
+                errors.append([f"In procdure {proc.inputString}: {str(err)}",
+                    [0, 0], []])
             if proc.return_var:
                 warnings.append('Procedure return variable not supported')
         elif child.type in (lexer.PROCEDURE, lexer.START,
@@ -2956,6 +2960,8 @@ def procedure_pre(root, parent=None, context=None):
                     sdl92Parser.tokenNamesMap[child.type] +
                     ' - line ' + str(child.getLine()) +
                     ' - in procedure ' + str(proc.inputString))
+    for each in chain(errors, warnings):
+        each[2].insert(0, f'PROCEDURE {proc.inputString}')
     return proc, content, errors, warnings
 
 
@@ -3041,19 +3047,17 @@ def procedure_post(proc, content, parent=None, context=None):
             try:
                 warnings.extend(fix_expression_types(check_expr, context))
             except (TypeError, AttributeError) as err:
-                errors.append(str(err))
+                errors.append([f"In procedure {proc.inputString}: {str(err)}",
+                    [0, 0], []])
             # Id of fd_expr may have changed (enumerated, choice)
             each.return_expr = check_expr.right
         elif proc.return_type and each.kind == 'return' and not each.return_expr:
-            errors.append(['Missing return value in procedure {}'
-                           .format(proc.inputString),
+            errors.append([f'Missing return value in procedure {proc.inputString}',
                            [0, 0], []])
         else:
             continue
     for each in chain(errors, warnings):
-        # XXX Major bug here, errors may be string FIXME
         each[2].insert(0, f'PROCEDURE {proc.inputString}')
-
     return errors, warnings
 
 
@@ -3297,6 +3301,8 @@ def text_area_content(root, ta_ast, context):
             except AttributeError:
                 errors.append('Entity cannot have an FPAR section')
         elif child.type == lexer.RETURNS:
+            if context.return_type is not None:
+                errors.append('Duplicate "returns" statement')
             try:
                 context.return_type, context.return_var =\
                         procedure_returns(child)

@@ -1614,7 +1614,7 @@ def _task_forloop(task, **kwargs):
             stmt.extend(list_stmt)
             local_decl.extend(list_local)
             stmt.extend(['declare',
-                         f'{loop["var"]} : {loop["type"]};',
+                         f'{loop["var"]} : {type_name(loop["type"])};',
                          '',
                          'begin',
                          f'for {loop["var"]}_idx in {range_str} loop',
