@@ -857,7 +857,7 @@ package {process_name}_RI is''']
         # Paramless TMs: when targetting simulation, the name of the TM is
         # passed as single parameter. This allows the simualor to handle them
         # dynamically, with a single callback function for all TMs
-        param_spec = '' if not simu else "(TM : chars_ptr)"
+        param_spec = '' if not simu else " (TM : chars_ptr)"
         if 'type' in signal:
             typename = type_name(signal['type'])
             param_spec = f' ({param_name} : in out {typename}{"; Size : Integer" if SHARED_LIB else ""})'
@@ -868,7 +868,7 @@ package {process_name}_RI is''']
         if simu:
             # When generating a shared library, we need a callback mechanism
             code = [f'type {sig}_T is access procedure{param_spec};',
-                    f'pragma Convention(Convention => C, Entity => {sig}_T);',
+                    f'pragma Convention (Convention => C, Entity => {sig}_T);',
                     f'RI{SEPARATOR}{sig} : {sig}_T;',
                     f'procedure Register_{sig} (Callback : {sig}_T);',
                     f'pragma Export(C, Register_{sig}, "register_{sig}");']
@@ -888,7 +888,6 @@ package {process_name}_RI is''']
                     '']
             taste_template.extend(code)
         elif not generic:
-            pass
             ads_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} '
                     f'renames {process_name}_RI.{sig};')
             ri_stub_template.append(f'procedure {sig}{param_spec} is null;')
@@ -921,7 +920,7 @@ package {process_name}_RI is''']
         ads_template.append(f'--  Sync required interface "{sig}"')
         if simu:
             # As for async TM, generate a callback mechanism
-            code = [f"type {sig}_T is access procedure{param_spec};",
+            code = [f"type {sig}_T is access procedure{params_spec};",
                     f'pragma Convention(Convention => C, Entity => {sig}_T);',
                     f'RI{SEPARATOR}{sig} : {sig}_T;',
                     f'procedure Register_{sig}(Callback: {sig}_T);',
@@ -938,7 +937,8 @@ package {process_name}_RI is''']
 
         elif not generic:
             ads_template.append(f'{ri_header} renames {process_name}_RI.{sig};')
-            ri_stub_template.append(f'{ri_header} is null;')
+            ri_stub_template.append(f'procedure {sig}{params_spec} is null;')
+            #ri_stub_template.append(f'{ri_header} is null;')
             #procname = process_name.lower()
             #ads_template.append(f'pragma Import(C, RI{SEPARATOR}{sig}, "{procname}_RI_{sig}");')
 
@@ -1316,7 +1316,7 @@ def write_statement(param, newline):
                     string += ".Data"
                     iterator = "i"
                 else:
-                    range_str = "1 .. {string}.Length"
+                    range_str = f"1 .. {string}.Length"
                     string += ".Data"
                     iterator = "i"
                     last_it = f"({range_str})"
@@ -1493,7 +1493,7 @@ def _call_external_function(output, **kwargs):
                 if not SHARED_LIB:
                     code.append(f'RI{SEPARATOR}{name};')
                 else:
-                    code.append(f'RI{SEPARATROR}{name} (New_String ("{name}"));')
+                    code.append(f'RI{SEPARATOR}{name} (New_String ("{name}"));')
         else:
             # inner procedure call
             list_of_params = []
