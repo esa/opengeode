@@ -6,7 +6,7 @@
 
 **/tmp/
 **/build/
-
+logs/
 */code/
 */GPS_project.gpr
 */*generated
@@ -28,3 +28,7 @@
 **/*.log
 **actual
 */*.xml
+**/*.pr.ini
+**/asn1_x86.gpr
+**/*_datamodel.asn
+**/*_ada.gpr

@@ -26,10 +26,10 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn
-	$(CC) -c -g test_ada.c
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
+	$(CC) -c -g test_ada.c
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
 	$(CC) -c external_proc.c
 	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
 	$(GNATBIND) -n orchestrator.ali

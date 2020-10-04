@@ -52,14 +52,14 @@ endsystem;
         assert False
 
 def test_system_with_error_2():
-    ''' Detect the syntax error (missing SEMI after "procedure entry") '''
+    ''' no error '''
     string='''system huuh;
 block huuh;
 process huuh;
 /* CIF START (171, 77), (70, 35) */
 START;
 /* CIF NEXTSTATE (171, 132), (70, 35) */
-NEXTSTATE a-;
+NEXTSTATE -;
 /* CIF state (386, 90), (70, 35) */
 state a;
 endstate;
@@ -79,7 +79,7 @@ endsystem;
         err = "\n".join(test.error_list)
         raise SyntaxError(err)
     else:
-        assert False
+        pass
 
 if __name__ == '__main__':
     for name, value in dict(globals()).viewitems():

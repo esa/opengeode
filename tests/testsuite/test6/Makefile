@@ -25,7 +25,11 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 	
-test-ada: myfunction.ali dataview-uniq.o | test_ada.o
+test-ada: dataview-uniq.o | test_ada.o
+	cp myfunction_ri.ada myfunction_ri.adb
+	$(OPENGEODE) myfunction.pr system_structure.pr --toAda
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	gnat make myfunction
 	$(GNATBIND) -n myfunction.ali
 	$(GNATLINK) -o test_ada test_ada.o myfunction.ali
 	./test_ada | diff expected -

@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: 
 	#make -f Makefile.og
 	$(OPENGEODE) og.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make og
 
 

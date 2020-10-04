@@ -1194,9 +1194,6 @@ def check_type_compatibility(primary, type_ref, context):
             raise TypeError(f'Type of array element {primary.inputString} '
                     f'does not match expected type "{type_name(type_ref)}"')
     else:
-        print( isinstance(primary, ogAST.PrimIndex))
-        print( primary.exprType != type_ref)
-        print (f"{primary} {primary.exprType} vs {type_ref}")
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
                                 t1=type_name(type_ref)))
@@ -1864,7 +1861,7 @@ def arithmetic_expression(root, context):
                 if (not is_number(basic_left)
                     and basic_left.kind == 'Integer32Type') or (not is_number
                     (basic_right) and basic_right.kind == 'Integer32Type'):
-                    # One of the operand is a loop index (SIGNED)
+                    # One of the operands is a loop index (SIGNED)
                     kind = 'Integer32Type'
                 expr.exprType = type("Computed_Range",
                         (basic_right if not is_number(basic_right)
@@ -1902,7 +1899,14 @@ def arithmetic_expression(root, context):
 
                 bound_max = str(float(bounds['Max']))
                 attrs = {'Min': bound_min, 'Max': bound_max}
-                expr.exprType = type('Computed_Range_2', (basic_right,), attrs)
+                # If a side is an Integer32 and the other side a Integer64
+                # then the base type should be Integer64
+                if (basic_right.kind == basic_left.kind
+                        or basic_right.kind == "IntegerType"):
+                    base_type = basic_right   # Any is ok
+                else:
+                    base_type = basic_left
+                expr.exprType = type('Computed_Range_2', (base_type,), attrs)
 
         if expr.exprType is not UNKNOWN_TYPE:
             expr.expected_type = expr.exprType
@@ -2284,6 +2288,7 @@ def primary_index(root, context, pos):
                                 expression(root.children[0], context, pos)
 
     receiver_bty = find_basic_type(receiver.exprType)
+
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
 
@@ -2921,7 +2926,9 @@ def procedure_pre(root, parent=None, context=None):
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=proc)
             if textarea.signals:
-                errors.append('Signals shall not be declared in a procedure')
+                errors.append([f'In procedure {proc.inputString}:'
+                    ' signals shall not be declared in a procedure',
+                    [textarea.pos_x or 0, textarea.pos_y or 0], []])
             errors.extend(err)
             warnings.extend(warn)
             proc.content.textAreas.append(textarea)
@@ -2933,10 +2940,15 @@ def procedure_pre(root, parent=None, context=None):
             warnings.extend(warn)
             proc.fpar = params
         elif child.type == lexer.RETURNS:
+            #  Declaration not in a text area...
+            if proc.return_type is not None:
+                errors.append([f'In procedure {proc.inputString}: '
+                        'duplicate "returns" statement', [0, 0], []])
             try:
                 proc.return_type, proc.return_var = procedure_returns(child)
             except TypeError as err:
-                errors.append(str(err))
+                errors.append([f"In procdure {proc.inputString}: {str(err)}",
+                    [0, 0], []])
             if proc.return_var:
                 warnings.append('Procedure return variable not supported')
         elif child.type in (lexer.PROCEDURE, lexer.START,
@@ -2948,6 +2960,8 @@ def procedure_pre(root, parent=None, context=None):
                     sdl92Parser.tokenNamesMap[child.type] +
                     ' - line ' + str(child.getLine()) +
                     ' - in procedure ' + str(proc.inputString))
+    for each in chain(errors, warnings):
+        each[2].insert(0, f'PROCEDURE {proc.inputString}')
     return proc, content, errors, warnings
 
 
@@ -3033,18 +3047,17 @@ def procedure_post(proc, content, parent=None, context=None):
             try:
                 warnings.extend(fix_expression_types(check_expr, context))
             except (TypeError, AttributeError) as err:
-                errors.append(str(err))
+                errors.append([f"In procedure {proc.inputString}: {str(err)}",
+                    [0, 0], []])
             # Id of fd_expr may have changed (enumerated, choice)
             each.return_expr = check_expr.right
-        elif proc.return_type and not each.return_expr:
-            errors.append(['Missing return value in procedure {}'
-                           .format(proc.inputString),
+        elif proc.return_type and each.kind == 'return' and not each.return_expr:
+            errors.append([f'Missing return value in procedure {proc.inputString}',
                            [0, 0], []])
         else:
             continue
     for each in chain(errors, warnings):
-        each[2].insert(0, 'PROCEDURE {}'.format(proc.inputString))
-
+        each[2].insert(0, f'PROCEDURE {proc.inputString}')
     return errors, warnings
 
 
@@ -3288,6 +3301,8 @@ def text_area_content(root, ta_ast, context):
             except AttributeError:
                 errors.append('Entity cannot have an FPAR section')
         elif child.type == lexer.RETURNS:
+            if context.return_type is not None:
+                errors.append('Duplicate "returns" statement')
             try:
                 context.return_type, context.return_var =\
                         procedure_returns(child)
@@ -4398,6 +4413,8 @@ def decision(root, parent, context):
     dec.tmpVar = tmp()
     has_else = False
     dec_x, dec_y = 0, 0
+    # To support the "decision any" construct:
+    need_random_generator = False
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -4419,6 +4436,7 @@ def decision(root, parent, context):
             warnings.append(['Use of "ANY" introduces non-determinism ',
                             [dec.pos_x, dec.pos_y], []])
             dec.kind = 'any'
+            need_random_generator = True
             dec.inputString = get_input_string(child)
             dec.question = ogAST.PrimStringLiteral()
             dec.question.value = 'ANY'
@@ -4451,6 +4469,10 @@ def decision(root, parent, context):
         else:
             warnings.append(['Unsupported DECISION child type: ' +
                 str(child.type), [dec.pos_x, dec.pos_y], []])
+    if need_random_generator:
+        # If there are N answers, code generators will need a random
+        # number from 0 to N.
+        context.random_generator.add(len(dec.answers))
     # Make type checks to be sure that question and answers are compatible
     covered_ranges = defaultdict(list)
     qmin, qmax = 0, 0
@@ -5128,8 +5150,16 @@ def for_loop(root, context):
                     r_min = '0'
                 else:
                     basic = find_basic_type(start_expr.exprType)
+                    # ASN.1 constant -> use the constant value
+                    if isinstance(start_expr, ogAST.PrimConstant):
+                       basic.Min = \
+                             get_asn1_constant_value(start_expr.constant_value)
                     r_min = basic.Min if basic != UNKNOWN_TYPE else '0'
                 basic = find_basic_type(stop_expr.exprType)
+                # ASN.1 constant -> get the value in place of the type's Max
+                if isinstance(stop_expr, ogAST.PrimConstant):
+                   basic.Max = \
+                           get_asn1_constant_value(stop_expr.constant_value)
                 r_max = str(int(float(basic.Max) - 1)) \
                         if basic != UNKNOWN_TYPE else '4294967295'
                 result_type = type('for_range', (INT32,), {'Min': r_min,

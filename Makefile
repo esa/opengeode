@@ -58,7 +58,9 @@ full-install: update
 	$(MAKE) install
 
 publish: 
-	@python3 setup.py sdist upload
+	@rm -f dist/*
+	@python3 setup.py sdist bdist_wheel
+	@twine upload dist/*
 
 pytest:
 	# make sure you have installed pytest-qt:

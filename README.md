@@ -53,49 +53,16 @@ Debian 10 (buster) is the baseline. Recent versions of Ubuntu (20.x) should work
 Using TASTE
 -----------
 
-__Important: OpenGEODE is already installed in the TASTE Virtual Machine, and fully integrated with the toolset, however, the current TASTE VM is a bit old - it is based on Debian 9 which does not have important dependencies to support the latest version of OpenGEODE. It is missing Python 3.7+ and PySide2. An upgrade is in the works, but it's not ready yet. If you are familiar enough with Linux, you can manually upgrade by completing the following steps.__
+__Important: OpenGEODE is already installed in the TASTE10 Virtual Machine (based on Debian Buster), and fully integrated with the toolset. It is the easiest way to get started with OpenGEODE__
 
-_Install the [TASTE VM](https://taste.tools/#install). Once logged in, enter a new shell and:_
+To start a new project run:
 ```
-# Switch to root
-sudo su
-
-# Make sure VM image is up to date
-apt-get update
-apt-get upgrade
-apt-get dist-upgrade
-
-# Point APT to Buster to prepare for upgrade
-sed -i 's/stretch/buster/g' /etc/apt/sources.list
-
-# Upgrade packages to Buster; when prompted allow services to be restarted automatically
-apt-get upgrade
-
-# Upgrade distribution to Buster
-apt-get dist-upgrade
-
-# Remove packages no longer needed
-apt-get autoremove
-
-# Return to taste user; exit root
-exit
-
-# Navigate to TASTE source; upgrade
-cd ~/tool-src
-git pull
-git checkout feature_buster
-./Update-TASTE.sh
+$ taste
 ```
 
-After this upgrade, you can work with the latest version of the tools, in particular the new Kazoo build system and Opengeode 3.xx (which you can update at any time). The Quick Reference Card has not been updated to reflect this yet.
-
-The main differences to create/edit a project is that you must just run `taste<` (and not `taste-create-project/taste-edit-project` anymore). To build, run `make`.
+Select a project name and the graphical editor will pop-up shortly after. You can add functions to the system and specify the imnplementation language to __SDL__. When you edit the function, the OpenGEODE editor will start.
 
 You can check an example of a system using Opengeode if you go in `~/tool-src/kazoo/tests/Demo_ABB_Opengeode` and run `make` to build it. Then `taste` to edit.
-
-In the interface view, select the SDL language for the implementation of the blocks you want to model using OpenGEODE.
-
-Then when you right-click on the SDL block you can select the option "Open SDL Editor".
 
 The code is automatically generated when you exit the tool.
 
@@ -138,7 +105,7 @@ Once you have the dependencies installed you can update the tool by running the 
 
 ```
 $ git pull
-$ make install    # alternatively:  pip3 install --user --upgrade . 
+$ make install    # alternatively:  pip3 install --user --upgrade opengeode
 ```
 
 OpenGEODE Website
@@ -175,6 +142,18 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.3.2 (10/2020)**
+- Fix reporting of semantic errors in procedures
+
+**3.3.1 (09/2020)**
+- Fix issue with type synonyms
+- Update installation procedure
+- Enable pip3 installations from PyPI
+
+**3.3.0 (08/2020)**
+- Save the state as an ASN.1 model instead of a native Ada type
+
+- Ada backend basic support for "decision any"
 **3.2.3 (09/2020)
 - Fix type checks when a type inherits another type with different constraints
 

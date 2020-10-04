@@ -25,9 +25,12 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
-	$(GNATBIND) -n orchestrator.ali
-	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali
+test-ada: dataview-uniq.o | test_ada.o
+	cp orchestrator_ri.ada orchestrator_ri.adb
+	cp test_ada.ada test_ada.adb
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	gnat make -g test_ada
 	./test_ada | diff expected -
 
 test-c: orchestrator.c test_c.o dataview-uniq.o

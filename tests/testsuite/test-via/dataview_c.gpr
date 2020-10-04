@@ -1,4 +1,4 @@
-project DataView_Ada is
+project DataView_c is
    for Languages use ("ASN1");
    for Source_Dirs use (".");
    for Source_Files use ("dataview-uniq.asn");
@@ -9,12 +9,8 @@ project DataView_Ada is
    end Naming;
 
    package Compiler is
-       for Driver ("ASN1") use "mono";
+       for Driver ("ASN1") use "asn1.exe";
 
-       for Leading_Required_Switches ("ASN1") use
-         (external("ASN1SCC"),
-         "-Ada",
-          "-typePrefix",
-          "Asn1Scc");
+       for Leading_Required_Switches ("ASN1") use ("-c", "-typePrefix", "Asn1Scc");
    end Compiler;
-end DataView_Ada;
+end DataView_c;

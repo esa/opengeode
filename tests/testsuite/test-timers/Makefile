@@ -27,10 +27,11 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) test.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview.asn
-	cp toto_timer.adasource toto_timer.ads
-	cp toto_timer.adabody toto_timer.adb
-	gnat make test_ada.ada
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	cp toto_timer.adasource test_ri.ads
+	cp toto_timer.adabody test_ri.adb
+	gnat make test_ada.ada -Iboards/x86 -Isrc -Iasn1rtl
+	./test_ada
 
 simu:
 	$(OPENGEODE) test.pr --shared

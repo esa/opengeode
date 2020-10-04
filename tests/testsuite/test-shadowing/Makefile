@@ -27,7 +27,7 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make test_ada.ada && ./test_ada | diff expected -
 
 test-c: 
