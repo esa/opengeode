@@ -25,7 +25,11 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: challenge.ali dataview-uniq.o | test_ada.o
+test-ada: dataview-uniq.o | test_ada.o
+	cp challenge_ri.ada challenge_ri.adb
+	$(OPENGEODE) challenge.pr system_structure.pr --toAda
+	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	gnat make challenge
 	$(GNATBIND) -n challenge.ali
 	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm
 	./test_ada | diff expected -
