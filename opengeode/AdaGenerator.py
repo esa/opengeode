@@ -1269,7 +1269,8 @@ package body {process_name}_RI is''']
             ri_stub.write ("\n".join(format_ada_code(ri_stub_ads)).encode('latin1'))
         stub_adb = f'{process_name.lower()}_ri.adb'
         # don't overwrite adb as it may contain user code
-        if not os.path.exists(stub_adb):
+        # also don't generate if there are no RI in the system
+        if not os.path.exists(stub_adb) and len(ri_stub_adb) > 2:
             with open(stub_adb, "wb") as ri_stub:
                 ri_stub.write ("\n".join(format_ada_code(ri_stub_adb)).encode('latin1'))
 
