@@ -435,7 +435,7 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                 f'renames {import_context}.{import_context}_ctxt;')
     else:
         context_decl.append('{ctxt} : {ctxt}_Ty;'.format(ctxt=LPREFIX))
-    if simu:
+    if simu and not import_context:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
         context_decl.append(u'pragma export (C, {ctxt}, "{ctxt}");'
@@ -549,7 +549,8 @@ package body {process_name} is'''
                      f"use {process_name}_Datamodel;") \
                              if not import_context and not instance else (
                                      f"with {import_context}_Datamodel; "
-                                     f"use {import_context}_Datamodel;")
+                                     f"use {import_context}_Datamodel;"
+                                     if import_context else "")
 
     imp_ri = f"with {process_name}_RI;" if not simu and not generic else ""
 
@@ -612,7 +613,7 @@ package body {process_name}_RI is''']
                 f" with Export, Convention => C, "
                 f'Link_Name => "{process_name.lower()}_state";')
 
-    if simu:
+    if simu and not import_context:   # import_context = stop condition
         ads_template.append('--  API for simulation via DLL')
         dll_api.append('-- API to remotely change internal data')
         set_state_decl = "procedure Set_State (New_State : chars_ptr)"
@@ -951,8 +952,10 @@ package body {process_name}_RI is''']
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
-        ads_template.append(u'--  Timer {} SET and RESET functions'
-                            .format(timer))
+        if import_context:
+            # don't generte timer code for stop conditions
+            break
+        ads_template.append(f'--  Timer {timer} SET and RESET functions')
         if simu:
             # Declare callback registration for the SET and RESET functions
             ads_template.append(u'type SET_{}_T is access procedure'
