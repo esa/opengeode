@@ -6,7 +6,7 @@
 
 **/tmp/
 **/build/
-
+logs/
 */code/
 */GPS_project.gpr
 */*generated
