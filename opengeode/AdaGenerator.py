@@ -547,7 +547,9 @@ package body {process_name} is'''
 
     imp_datamodel = (f"with {process_name}_Datamodel; "
                      f"use {process_name}_Datamodel;") \
-                             if not import_context and not instance else ""
+                             if not import_context and not instance else (
+                                     f"with {import_context}_Datamodel; "
+                                     f"use {import_context}_Datamodel;")
 
     imp_ri = f"with {process_name}_RI;" if not simu and not generic else ""
 
@@ -601,7 +603,7 @@ package body {process_name}_RI is''']
     ads_template.extend(rand_decl)
     if not instance:
         ads_template.extend(context_decl)
-    if not generic and not instance:
+    if not generic and not instance and not import_context:
         # Add function allowing to trace current state as a string
         ads_template.append(
                 f"function Get_State return chars_ptr "
@@ -1673,7 +1675,7 @@ def _primary_variable(prim, **kwargs):
     else:
         sep = LPREFIX + '.'
 
-    ada_string = u'{sep}{name}'.format(sep=sep, name=prim.value[0])
+    ada_string = f'{sep}{prim.value[0]}'
 
     return [], str(ada_string), []
 
@@ -2009,9 +2011,7 @@ def _prim_selector(prim, **kwargs):
 
     # for asn1scc v3, sort = type_name(receiver.exprType)
     if receiver_bty.kind == 'ChoiceType':
-        ada_string = (u'{ada_string}.{field_name}'
-                    .format(field_name=field_name,
-                            ada_string=ada_string))
+        ada_string = f'{ada_string}.{field_name}'
     else:
         # SEQUENCE, check for field optionality first
         child = child_spelling(field_name, receiver_bty)
@@ -2019,7 +2019,7 @@ def _prim_selector(prim, **kwargs):
                 and not kwargs.get("readonly", 0):
             # Must set Exist only when assigning value, not each time it is
             # accessed: this is what "readonly" ensures.
-            stmts.append(u'{}.Exist.{} := 1;'.format(ada_string, field_name))
+            stmts.append(f'{ada_string}.Exist.{field_name} := 1;')
         ada_string += '.' + field_name
 
     return stmts, str(ada_string), local_decl
@@ -2028,7 +2028,7 @@ def _prim_selector(prim, **kwargs):
 @expression.register(ogAST.PrimStateReference)
 def _primary_state_reference(prim, **kwargs):
     ''' Reference to the current state '''
-    return [], u'{}.state'.format(LPREFIX), []
+    return [], f'{LPREFIX}.state', []
 
 @expression.register(ogAST.ExprPlus)
 @expression.register(ogAST.ExprMul)
@@ -3257,7 +3257,7 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind == 'ChoiceEnumeratedType':
         return 'Asn1InT'
     elif a_type.kind == 'StateEnumeratedType':
-        return ''
+        return 'asn1Scc'
     elif a_type.kind == 'EnumeratedType':
         return 'asn1Scc' if use_prefix else ''
     else:
