@@ -13,6 +13,7 @@ TESTQGEN_GT_ADA=../testqgen.py test-qgen-gt-ada
 TESTQGEN_GT_C=../testqgen.py test-qgen-gt-c
 
 clean:
+	gnat clean *.adb
 	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
@@ -31,7 +32,7 @@ clean:
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda && \
 	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn && \
-	$(GNATMAKE) -O$(O) -gnat2012 -c -g -fprofile-arcs -ftest-coverage *.adb
+	$(GNATMAKE) -O$(O) -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE
 	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal $<  
