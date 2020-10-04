@@ -4,7 +4,7 @@
 
 extern void adainit();
 
-void orchestrator_RI_VESAT_one_step(asn1SccT_GNC_LV_SIM_INPUTS *inp)
+void vesat_one_step(asn1SccT_GNC_LV_SIM_INPUTS *inp)
 {
     printf("[C Code] Received T_GNC_LV_SIM_INPUTS\n");
 }
