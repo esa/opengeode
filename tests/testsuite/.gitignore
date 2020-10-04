@@ -28,3 +28,6 @@
 **/*.log
 **actual
 */*.xml
+*/*.pr.init
+*/asn1_x86.gpr
+*/*_datamodel.asn
