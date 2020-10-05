@@ -142,6 +142,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.3.3 (10/2020)**
+- Refactoring : Generate all data types in ASN.1
+
 **3.3.2 (10/2020)**
 - Fix reporting of semantic errors in procedures
 

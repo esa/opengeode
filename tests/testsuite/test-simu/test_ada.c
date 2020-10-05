@@ -10,7 +10,7 @@ extern char *orchestrator_state();
 void orchestrator_RI_peek_list(void *_) {}
 void orchestrator_RI_peek_fixed(void *_) {}
 void orchestrator_RI_telemetry(void *_){}
-extern char *fixed_value();
+//extern char *fixed_value();
 //extern int fixed_size();
 int main()
 {
@@ -20,7 +20,7 @@ int main()
     printf("[C Code] Running test\n");
     adainit();
     orchestrator_startup();
-    toto = fixed_value(); 
+//    toto = fixed_value(); 
     printf("%s\n", orchestrator_state());
     orchestrator_PI_other();
     printf("%s\n", orchestrator_state());

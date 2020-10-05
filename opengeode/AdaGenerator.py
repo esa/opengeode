@@ -82,8 +82,15 @@ LOG = logging.getLogger(__name__)
 
 __all__ = ['generate']
 
+
+PROCESS_NAME = ""
+
 # reference to the ASN.1 Data view and to the visible variables (in scope)
 TYPES = None
+
+# look-up table to find the module name containing a type
+MAPPING_SORT_MODULE = dict()
+
 VARIABLES = {}
 LOCAL_VAR = {}
 # List of output signals and procedures
@@ -170,6 +177,9 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         generic = False
         process_instance = process
 
+    global PROCESS_NAME
+    PROCESS_NAME = process_name
+
     if process_instance is not process:
         # Generate an instance of the process type, too.
         # First copy the list of timers to the instance (otherwise the
@@ -187,7 +197,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     global LPREFIX
     if simu:
         SHARED_LIB = True
-        LPREFIX = process_name + u'_ctxt'
+        LPREFIX = f'{process_name}_ctxt'
 
     for each in PROCEDURES:
         process.random_generator.update(each.random_generator)
@@ -326,8 +336,38 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
         # Parallel states in a state aggregation may terminate
         full_statelist.add(f'state{SEPARATOR}end')
 
+    #  When a signal is sent from the model a call to a function is emitted
+    #  This function has to be provided - either by TASTE (kazoo), or by
+    #  the user. Opengeode will generate a stub package for this.
+    ri_stub_ads = []
+    ri_stub_adb = []
+
+    # Generate an ASN.1 model containing:
+    # - the state definition
+    # - a type describing the SDL context
+    # - all user-defined SDL type (NEWTYPEs...)
+    process_asn1 = process_name.capitalize().replace('_', '-')
+    asn1_template = [f'{process_asn1}-Datamodel DEFINITIONS ::=',
+                      'BEGIN']
+
+    # The ASN.1 module must import the types from other asn1 modules
+    types_with_proper_case = []
+    imports = []
+    for moduleName, sorts in process.DV.exportedTypes.items():
+        actual_sorts = []
+        for each in sorts:
+            MAPPING_SORT_MODULE[each] = moduleName
+            if process.DV.types[each].AddedType == "False":
+                actual_sorts.append(each)
+                types_with_proper_case.append (each)
+        sortsAsList = ", ".join(actual_sorts)
+        if sortsAsList:
+            imports.append(f'{sortsAsList} FROM {moduleName}')
+    if types_with_proper_case:
+        asn1_template.append(
+                "IMPORTS\n   " + "\n   ".join(imports) + ";")
+
     # Format the state list with ASN.1-compatible syntax
-    process_asn1 = process_name.upper().replace('_', '-')
     statelist_asn1 = (state.lower().replace('_', '-')
                       for state in full_statelist)
     states_asn1 = ", ".join(statelist_asn1) \
@@ -335,38 +375,38 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
     # Create an ASN.1 definition of the list of states, instead of
     # a native Ada type - this allows external tools to access
     # information about the model without having to parse SDL
-    asn1_states_def = f"{process_asn1}-States ::= ENUMERATED" \
+    asn1_states_def = f"\n{process_asn1}-States ::= ENUMERATED" \
                       f" {{{states_asn1}}}"
 
-    context_decl = []
+    asn1_template.append(asn1_states_def)
 
-    # Generate an ASN.1 model containing the state definition, as well as
-    # all the user-defined SDL type (NEWTYPEs...)
-    asn1_template = [f'{process_asn1}-Datamodel DEFINITIONS ::=',
-                      'BEGIN']
+    # Template to generate the full SDL context as a single ASN.1 type
+    # This is very useful then to manipulate it from C, Ada or Python as
+    # it is then directly accessible and uPER-encodable
+    context_elems = []
+    if full_statelist:
+        # Some systems may have no states - only a start transition
+        context_elems.append(f'   state {process_asn1}-States')
 
-    #  When a signal is sent from the model a call to a function is emitted
-    #  This function has to be provided - either by TASTE (kazoo), or by
-    #  the user. Opengeode will generate a stub package for this.
-    ri_stub_ads = []
-    ri_stub_adb = []
+    context_elems.append ('init-done BOOLEAN')
+    # State aggregation: add list of substates
+    for substates in aggregates.values():
+        for each in substates:
+            context_elems.append(f'{each.statename.lower()}{SEPARATOR}state {process_asn1}-States')
 
-    # Add user-defined NEWTYPEs
-    if process.user_defined_types:
-        types_with_proper_case = []
+    for var_name, (var_type, def_value) in process.variables.items():
+        context_elems.append(f'{var_name.lower()} {type_name(var_type, False)}')
 
-        # The ASN.1 module must import the types from other asn1 modules
-        for _, sortdef in process.user_defined_types.items():
-            sort = sortdef.type.type.ReferencedTypeName
-            for moduleName, sorts in process.DV.exportedTypes.items():
-                for each in sorts:
-                    if sort.lower().replace('-', '_') == \
-                            each.lower().replace('-', '_'):
-                        asn1_template.append(u'IMPORTS {t} FROM {m};'
-                                .format (t=each, m=moduleName))
-                        types_with_proper_case.append (each)
+    asn1_context = (f'\n{process_asn1}-Context ::='' SEQUENCE {\n'
+            + ",\n   ".join(line.replace("_", "-").replace("'", '"') for line in context_elems)
+            + "\n}\n")
 
-        for sortname, sortdef in process.user_defined_types.items():
+    asn1_template.append(asn1_context)
+
+    # Add user-defined NEWTYPEs and CHOICE selector types
+    choice_selections = []
+    for sortname, sortdef in process.user_defined_types.items():
+        if sortdef.type.kind == "SequenceOfType":
             rangeMin = sortdef.type.Min
             rangeMax = sortdef.type.Max
             refType  = sortdef.type.type.ReferencedTypeName
@@ -375,40 +415,43 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                         refType.lower().replace('-', '_'):
                     break
             asn1_template.append(
-                    '{sort} ::= SEQUENCE (SIZE ({rangeMin} .. {rangeMax})) '
-                    'OF {refType}'
-                    .format(sort=sortname.upper().replace('_', '-'),
-                            rangeMin=rangeMin,
-                            rangeMax=rangeMax,
-                            refType=refTypeCase.replace('_', '-')))
-    if not import_context:
-        #  don't generate state type in Stop Condition/Observer
-        #  automaton as it is defined in the observed process
-        asn1_template.append(asn1_states_def)
+                    f'{sortname.replace("_", "-")} ::= SEQUENCE '
+                    f'(SIZE ({rangeMin} .. {rangeMax})) OF '
+                    f'{refTypeCase.replace("_", "-")}')
+        elif sortdef.type.kind == "EnumeratedType":
+            keys = []
+            for idx, key in enumerate(sortdef.type.EnumValues.keys()):
+                # give an index to the enumerations to align with -selection
+                # types used in choice index
+                keys.append(f'{key}-present({idx+1})')
+            asn1_template.append(
+                    f'{sortname} ::= ENUMERATED {{' + ", ".join(keys) + '}')
+            # We need to convert from the ASN.1 enumerated to the one we created
+            choiceTypeModule = MAPPING_SORT_MODULE[sortdef.ChoiceTypeName].replace('-', '_')
+            sortAda = sortname.replace('-', '_')
+            fromMod = f'{choiceTypeModule}.{ASN1SCC}{sortAda}'
+            toMod = f'{process_name}_Datamodel.{ASN1SCC}{sortAda}'
+            choice_selections.append(
+                    f'function To_{sortAda} (Src : {fromMod}) return {toMod} '
+                    f"is ({toMod}'Enum_Val (Src'Enum_Rep));")
+
     asn1_template.append('END')
 
-    # Write the ASN.1 file
-    with open(process_name.lower() + '_datamodel.asn', 'w') as asn1_file:
-        asn1_file.write('\n'.join(asn1_template))
+    # Write the ASN.1 file (not in case of Stop Condition)
+    if not import_context:
+        with open(process_name.lower() + '_datamodel.asn', 'w') as asn1_file:
+            asn1_file.write('\n'.join(asn1_template))
 
     # Generate the code to declare process-level context
+    context_decl = []
     if not import_context:
         # but not in stop condition code, since we reuse the context type
         # of the state machine being observed
-        context_decl.extend([f'type {LPREFIX}_Ty is', 'record'])
 
-        if full_statelist:
-            context_decl.append(f'State : {ASN1SCC}{process_name}_States;')
-
-        context_decl.append('Init_Done : Boolean := False;')
-
-        # State aggregation: add list of substates
-        for substates in aggregates.values():
-            for each in substates:
-                context_decl.append(
-                   f'{each.statename}{SEPARATOR}state:'
-                   f' {ASN1SCC}{process_name}_States;')
-
+        ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process_name.capitalize()}_Context :=\n'
+                '      (Init_Done => False,\n       ')
+        initial_values = []
+        # some parts of the context may have initial values
         for var_name, (var_type, def_value) in process.variables.items():
             if def_value:
                 # Expression must be a ground expression, i.e. must not
@@ -419,34 +462,27 @@ LD_LIBRARY_PATH=./lib:. opengeode-simulator
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal,\
                         'DCL: Expecting a ground expression'
-            context_decl.append(
-                            '{n} : {aliased}{sort}{default};'
-                            .format(n=var_name,
-                                   aliased="aliased " if simu else "",
-                                   sort=type_name(var_type),
-                                   default=' := ' + dstr if def_value else ''))
+                initial_values.append(f'{var_name} => {dstr}')
 
-        context_decl.append('end record;')
-    # context is aliased so that the model checker can work with access type
+        if initial_values:
+            ctxt += ",\n       ".join(initial_values) + ",\n      "
+        ctxt += "others => <>);"
+        context_decl.append(ctxt)
+
+        # The choice selections will allow to use the present operator
+        # together with a variable of the -selection type
+        context_decl.extend(choice_selections)
     if import_context:
         #  code of stop conditions must use the same type as the main process
         context_decl.append(
-                f'{LPREFIX}: {import_context}.{import_context}_Ctxt_Ty '
+                f'{LPREFIX} : {ASN1SCC}{import_context}_Context '
                 f'renames {import_context}.{import_context}_ctxt;')
-    else:
-        context_decl.append('{ctxt} : {ctxt}_Ty;'.format(ctxt=LPREFIX))
     if simu and not import_context:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
-        context_decl.append(u'pragma export (C, {ctxt}, "{ctxt}");'
-                                  .format(ctxt=LPREFIX))
+        context_decl.append(f'pragma export (C, {LPREFIX}, "{LPREFIX}");')
         # Exhaustive simulation needs a backup of the context to quickly undo
-        context_decl.append(u'{ctxt}_bk: {ctxt}_Ty;'
-                                  .format(ctxt=LPREFIX))
-
-    # Don't declare the context in the adb - declare it in the ads
-    #if not simu and not instance:
-    #    process_level_decl.extend(context_decl)
+        context_decl.append(f'{LPREFIX}_bk: {ASN1SCC}{process_name.capitalize()}_Context;')
 
     aggreg_start_proc = []
     start_transition = []
@@ -616,76 +652,30 @@ package body {process_name}_RI is''']
     if simu and not import_context:   # import_context = stop condition
         ads_template.append('--  API for simulation via DLL')
         dll_api.append('-- API to remotely change internal data')
-        set_state_decl = "procedure Set_State (New_State : chars_ptr)"
-        ads_template.append(f'{set_state_decl} with Export, Convention => C, '
-                            f' Link_Name => "_set_state";')
-        dll_api.append(f"{set_state_decl} is")
-        dll_api.append("begin")
-        dll_api.append(f"for S in {ASN1SCC}{process_name}_States loop")
-        dll_api.append(f"if To_Upper (Value (New_State))"
-                       f" = {ASN1SCC}{process_name}_States'Image (S) then")
-        dll_api.append(f"{LPREFIX}.State := S;")
-        dll_api.append("end if;")
-        dll_api.append("end loop;")
-        dll_api.append("end Set_State;")
-        dll_api.append("")
 
         # Save/restore state allow one step undo, as needed for model checking
-        save_state_decl = "procedure Save_Context"
-        restore_state_decl = "procedure Restore_Context"
-        ads_template.append("{};".format(save_state_decl))
-        ads_template.append('pragma Export (C, Save_Context,'
-                            ' "_save_context");')
-        ads_template.append("{};".format(restore_state_decl))
-        ads_template.append('pragma Export (C, Restore_Context,'
-                            ' "_restore_context");')
-        dll_api.append("{} is".format(save_state_decl))
+        save_state_decl = 'procedure Save_Context with Export, Convention => C, Link_Name => "_save_context";'
+        ads_template.append(save_state_decl)
+        restore_state_decl = 'procedure Restore_Context with Export, Convention => C, Link_Name => "_restore_context";'
+        ads_template.append(restore_state_decl)
+        dll_api.append("procedure Save_Context is")
         dll_api.append("begin")
         dll_api.append("{ctxt}_bk := {ctxt};".format(ctxt=LPREFIX))
         dll_api.append("end Save_Context;")
         dll_api.append("")
-        dll_api.append("{} is".format(restore_state_decl))
+        dll_api.append("procedure Restore_Context is".format(restore_state_decl))
         dll_api.append("begin")
         dll_api.append("{ctxt} := {ctxt}_bk;".format(ctxt=LPREFIX))
         dll_api.append("end Restore_Context;")
         dll_api.append("")
 
         # Declare procedure Startup in .ads
-        ads_template.append(u'procedure Startup;')
-        ads_template.append(u'pragma Export (C, Startup, "{}_startup");'
-                            .format(process_name))
+        ads_template.append(f'procedure Startup with Export, Convention => C, Link_Name => "{process_name}_startup";')
 
-        # interface to get/set state aggregations XXX add to C generator
-        for substates in aggregates.values():
-            for each in substates:
-                process_level_decl.append(
-                      f"function Get_{each.statename}_State return chars_ptr "
-                      f"is (New_String ({ASN1SCC}{process_name}_States'Image"
-                      f" ({LPREFIX}.{each.statename}{SEPARATOR}state)"
-                      f")) with Export, Convention => C, "
-                      f'Link_Name => "{process_name}_{each.statename}_state";')
-
-        # Functions to get gobal variables (length and value)
-        for var_name, (var_type, _) in process.variables.items():
-            # Getters for external applications to view local variables via dll
-            process_level_decl.append(
-                    f"function l_{var_name}_value"
-                    f" return access {type_name(var_type)} "
-                    f"is ({LPREFIX}.{var_name}'access) with Export,"
-                    f" Convention => C,"
-                    f' Link_Name => "{var_name}_value";')
-            # Setters for local variables
-            setter_decl = u"procedure DLL_Set_l_{name} (Value: in out {sort})"\
-                          .format(name=var_name, sort=type_name(var_type))
-            ads_template.append(
-                    f'{setter_decl} with Export, Convention => C, '
-                    f'Link_Name => "_set_{var_name}";')
-            dll_api.append(f'{setter_decl} is')
-            dll_api.append('begin')
-            dll_api.append(f'{LPREFIX}.{var_name} := Value;')
-            dll_api.append(f'end DLL_Set_l_{var_name};')
-            dll_api.append('')
-
+        # Functions to get global context
+        process_level_decl.append(
+                f"function Get_Context return access {ASN1SCC}{process_name}_Context is ({LPREFIX}'access)\n"
+                f'   with Export, Convention => C, Link_Name => "{process_name.lower()}_context";')
     # Generate the the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
@@ -1350,7 +1340,9 @@ def write_statement(param, newline):
         code.append(f"Put ({cast}'Image ({string}));")
     elif type_kind == 'EnumeratedType':
         code, string, local = expression(param, readonly=1)
-        code.append(f"Put ({type_name(param.exprType)}'Image ({string}));")
+        #code.append(f"Put ({type_name(param.exprType)}'Image ({string}));")
+        # enumerated must be variable, so we can use 'Img
+        code.append(f"Put ({string}'Img);")
     else:
         error = ('Unsupported parameter in write call ' +
                 param.inputString + '(type kind: ' + type_kind + ')')
@@ -1754,7 +1746,7 @@ def _prim_call(prim, **kwargs):
         exp_type = find_basic_type(exp.exprType)
         # Also get the ASN.1 type name as it is
         # needed to build the Ada expression
-        exp_typename = type_name(exp.exprType)
+        exp_typename = type_name(exp.exprType, use_prefix=False)
         if exp_type.kind != 'ChoiceType':
             error = '{} is not a CHOICE'.format(exp.inputString)
             LOG.error(error)
@@ -1762,7 +1754,7 @@ def _prim_call(prim, **kwargs):
         param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += ('{}.Kind'.format(param_str))
+        ada_string += f'To_{exp_typename}_Selection ({param_str}.Kind)'
     elif ident == 'choice_to_int':
         p1, p2 = params
         sort = find_basic_type (p1.exprType)
@@ -1820,13 +1812,15 @@ def _prim_call(prim, **kwargs):
         var_stmts, var_str, var_decl = expression (variable, readonly=1)
         stmts.extend(var_stmts)
         local_decl.extend(var_decl)
-        sort_name = 'asn1Scc' + target_type.value[0].replace('-', '_')
+        destSort = target_type.value[0]
+        sortAda = destSort.replace('-', '_')
+        #moduleAda = MAPPING_SORT_MODULE[destSort].replace('-', '_')
+        sort_name = f'asn1Scc{sortAda}'
         if ident == 'to_selector':
-            sort_name += '_selection'
-        ada_string += "{sort}'Val ({var_type}'Pos ({var_str}))"\
-                .format(sort=sort_name,
-                        var_type=var_typename,
-                        var_str=var_str)
+            sort_name = f'{PROCESS_NAME}_Datamodel.{sort_name}_selection'
+            ada_string += f"{sort_name}'Val ({var_typename}'Pos ({var_str}))"
+        elif ident == 'to_enum':
+            ada_string += f"{sort_name}'Val ({PROCESS_NAME}_Datamodel.{var_typename}'Pos ({var_str}))"
     elif ident == 'val':
         variable, target_type = params
         var_typename = type_name (variable.exprType)
@@ -1842,18 +1836,11 @@ def _prim_call(prim, **kwargs):
         exp = params[0]
         exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp, readonly=1)
-        if float(find_basic_type(prim.exprType).Min) >= 0:
-            asn1_sort = "Asn1UInt"
-        else:
-            asn1_sort = "Asn1Int"
-        local_decl.append('function num_{sort} is new Ada.Unchecked_Conversion'
-                          '({sort}, {asn1Sort});'.format(sort=exp_typename,
-                                                         asn1Sort=asn1_sort))
+        # 'Enum_Rep gives directly the universal integer of an enumerated
+        # (was in GNAT, now in Ada 2020)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += ('num_{sort}({p})'
-                       .format(sort=exp_typename,
-                               p=param_str))
+        ada_string += f"{param_str}'Enum_Rep"
     elif ident == 'floor':
         exp = params[0]
         exp_typename = type_name(exp.exprType)
@@ -3238,6 +3225,13 @@ def find_basic_type(a_type):
                 break
     return basic_type
 
+def asn1_type_name(a_type):
+    ''' Return the type name with the proper casing as defined in ASN.1 '''
+    assert a_type.kind == 'ReferenceType'
+    for typename in TYPES.keys():
+        if typename.lower() == a_type.ReferencedTypeName.lower():
+            return typename
+    return f"ERROR: Type Not Found: {a_type.ReferencedTypeName}"
 
 def type_name(a_type, use_prefix=True):
     ''' Check the type kind and return an Ada usable type name '''
