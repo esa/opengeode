@@ -658,24 +658,37 @@ package body {process_name}_RI is''']
         ads_template.append(save_state_decl)
         restore_state_decl = 'procedure Restore_Context with Export, Convention => C, Link_Name => "_restore_context";'
         ads_template.append(restore_state_decl)
-        dll_api.append("procedure Save_Context is")
-        dll_api.append("begin")
-        dll_api.append("{ctxt}_bk := {ctxt};".format(ctxt=LPREFIX))
-        dll_api.append("end Save_Context;")
-        dll_api.append("")
-        dll_api.append("procedure Restore_Context is".format(restore_state_decl))
-        dll_api.append("begin")
-        dll_api.append("{ctxt} := {ctxt}_bk;".format(ctxt=LPREFIX))
-        dll_api.append("end Restore_Context;")
-        dll_api.append("")
+        dll_api.extend([
+             "procedure Save_Context is",
+             "begin",
+            f"{LPREFIX}_bk := {LPREFIX};",
+             "end Save_Context;",
+             "",
+             "procedure Restore_Context is",
+             "begin",
+            f"{LPREFIX} := {LPREFIX}_bk;",
+             "end Restore_Context;",
+             ""])
 
         # Declare procedure Startup in .ads
         ads_template.append(f'procedure Startup with Export, Convention => C, Link_Name => "{process_name}_startup";')
 
         # Functions to get global context
-        process_level_decl.append(
+        ads_template.append(
                 f"function Get_Context return access {ASN1SCC}{process_name}_Context is ({LPREFIX}'access)\n"
                 f'   with Export, Convention => C, Link_Name => "{process_name.lower()}_context";')
+        ads_template.append(
+                f"procedure Set_Context (Context : access {ASN1SCC}{process_name}_Context)\n"
+                f'   with Export, Convention => C, Link_Name => "set_{process_name.lower()}_context";')
+
+        dll_api.extend([
+                f"procedure Set_Context (Context : access {ASN1SCC}{process_name}_Context) is",
+                 "begin",
+                f"{LPREFIX} := Context.all;",
+                 '--  System.IO.Put_Line ("Changed context. State = " & Context.state\'Img);',
+                 "end Set_Context;",
+                 ""])
+
     # Generate the the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
@@ -685,12 +698,10 @@ package body {process_name}_RI is''']
         if proc.exported:
             # Exported procedures must be declared in the .ads
             pi_header = procedure_header(proc)
-            ads_template.append(u'{};'.format(pi_header))
+            ads_template.append(f'{pi_header};')
             if not proc.external and not generic:
-                ads_template.append(u'pragma Export'
-                                    u'(C, p{sep}{proc_name}, "_{proc_name}");'
-                                    .format(sep=SEPARATOR,
-                                            proc_name=proc.inputString))
+                ads_template.append(
+                   f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "_{proc.inputString}");')
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
@@ -712,27 +723,22 @@ package body {process_name}_RI is''']
             # dont generate anything in stop_condition functions
             break
 
-        signame = signal.get('name', u'START')
-        if signame == u'START':
+        signame = signal.get('name', 'START')
+        if signame == 'START':
             continue
-        pi_header = u'procedure {sig_name}'.format(sig_name=signame)
-        param_name = signal.get('param_name') \
-                                or u'{}_param'.format(signame)
+        pi_header = f'procedure {signame}'
+        param_name = signal.get('param_name') or f'{signame}_param'
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
-            pi_header += u'({pName}: in out {sort})'.format(
-                                        pName=param_name, sort=typename)
+            pi_header += f'({param_name}: in out {typename})'
 
         # Add declaration of the provided interface in the .ads file
-        ads_template.append(u'--  Provided interface "{}"'.format(signame))
+        ads_template.append(f'--  Provided interface "{signame}"')
         ads_template.append(pi_header + ';')
         if not generic:
             ads_template.append(
-                    u'pragma Export(C, {name}, "{proc}_PI_{name}");'
-                     .format(name=signame, proc=process_name.lower()))
-                     # don't lower case the signal name, not for kazoo at least
-                     #.format(name=signame.lower(), proc=process_name.lower()))
+                    f'pragma Export(C, {signame}, "{process_name.lower()}_PI_{signame}");')
 
         if simu:
             # Generate code for the mini-cv template

@@ -37,6 +37,7 @@ test-ada:
 	./test_ada
 
 simu:
+	rm -rf orchestrator_simu
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
 	taste-properties -s properties orchestrator.pr system_structure.pr
 	make -f Makefile.properties
