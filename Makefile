@@ -40,15 +40,17 @@ update:
 	git pull
 
 dependencies:
-	apt install python3-pyside2.* || echo 'PySide2 is not available in your system. Try to run "sudo pip3 install --user --upgrade pyside2'
-	apt install python3-antlr3
-	apt install pyside2-tools || :
+	sudo apt install python3-pyside2.* || echo 'PySide2 is not available in your system. Try to run "sudo pip3 install --user --upgrade pyside2'
+	sudo apt install python3-antlr3
+	sudo apt install pyside2-tools || :
 	#apt install python3-matplotlib
-	apt install python3-pygraphviz
-	apt install python3-stringtemplate3
-	apt install python3-singledispatch
-	
-	# optional dependencies from taste: spedometer, properties, dmt, pymsc, asn1-value-editor
+	sudo apt install python3-pygraphviz
+	sudo apt install python3-stringtemplate3
+	sudo apt install python3-singledispatch
+	# install ASN1SCC in ~/.local/bin
+	mkdir -p ~/.local/bin
+	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.4.0f/asn1scc-bin-4.2.4.0f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
+	# make sure that ~/.local/bin is in your PATH
 
 install:
 	@pip3 install --user --upgrade .

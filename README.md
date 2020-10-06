@@ -83,24 +83,6 @@ The installation will be done in the `~/.local` folder by the Python3 pip tool. 
 export PATH=~/.local/bin:$PATH
 ```
 
-OpenGEODE uses the ASN1 [ASN1SCC](https://github.com/ttsiodras/asn1scc) for the datatypes. You must install it manually:
-
-Get the latest binary release from [here](https://github.com/ttsiodras/asn1scc/releases)
-
-Then run (possibly as root):
-
-```bash
-$ cd /opt
-$ tar xvf asn1scc-bin-4.xx.tar.bz2    # Use the file name version you got
-$ echo 'export PATH=$PATH:/opt/asn1scc' >> ~/.bashrc
-```
-
-Open a new terminal and check that it works:
-
-```bash
-$ mono /opt/asn1scc/asn1.exe
-```
-
 Once you have the dependencies installed you can update the tool by running the following commands:
 
 ```
