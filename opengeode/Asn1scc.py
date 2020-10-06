@@ -201,13 +201,15 @@ def create_choice_determinant_types(ast):
             "Line": each.Line,
             "CharPositionInLine": each.CharPositionInLine,
             "EnumID": each.type.Children[key].EnumID,
-            "IsStandardEnum" : False
+            #"IsStandardEnum" : False
             }) for key in each.type.Children.keys()
         }
         new_sorts[new_sort] = \
                 type(new_sort, (object,), {
                     "Line": each.Line,
                     "CharPositionInLine": each.CharPositionInLine,
+                    "AddedType" : "False",
+                    "ChoiceTypeName" : each.__name__,
                     "type": type(new_sort + "_type", (object,), {
                         "Line" : each.Line,
                         "CharPositionInLine": each.CharPositionInLine,
@@ -220,7 +222,7 @@ def create_choice_determinant_types(ast):
     return new_sorts
 
 def asn2dataModel(*files):
-    ''' Call asn1DataModel, including the Makefile.python and return
+    ''' Call asn2DataModel, including the Makefile.python and return
     the imported module "name_of_dataview_asn.py"
     From this module it is possible to create native Asn1scc instances of
     ASN.1 data types, and to access to DV.py, which contains constants

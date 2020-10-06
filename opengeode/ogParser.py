@@ -179,6 +179,7 @@ lineno = lambda : currentframe().f_back.f_lineno
 # they are stored in a dedicated dictionary with the same structure
 # as the ASN1SCC generated python AST
 USER_DEFINED_TYPES = dict()
+CHOICE_SELECTORS = dict()
 
 
 def types():
@@ -186,13 +187,13 @@ def types():
     ret = getattr(DV, 'types', {}).copy()
     ret.update(USER_DEFINED_TYPES)
     return ret
-#types = lambda: getattr(DV, 'types', {}) or USER_DEFINED_TYPES
 
 
 def set_global_DV(asn1_filenames):
     # type: (List[str]) -> None
     ''' Call ASN.1 parser and set the global dataview AST entry (DV) '''
     global DV
+    global USER_DEFINED_TYPES
     if '--toC' in sys.argv:
         rename_policy = ASN1.RenameOnlyConflicting
     else:
@@ -205,7 +206,11 @@ def set_global_DV(asn1_filenames):
                         pretty_print=True)
         # Create new types corresponding to CHOICE determinants as enum
         choice_selectors = create_choice_determinant_types (DV)
-        DV.types.update(choice_selectors)
+        #  Add to user defined types, so that they wil be generated
+        #  as explicit ASN.1 types
+        CHOICE_SELECTORS.update(choice_selectors)
+        USER_DEFINED_TYPES=CHOICE_SELECTORS.copy()
+        #DV.types.update(choice_selectors)
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
@@ -3151,6 +3156,7 @@ def get_array_type(newtypename, root):
     newtype = type(str(newtypename), (object,), {
         "Line": typeSortLine,
         "CharPositionInLine": typeSortChar,
+        "AddedType": "False",
         "type": type ("SeqOf_type", (object,), {
             "Line": typeSortLine,
             "CharPositionInLine": typeSortChar,
@@ -3588,7 +3594,8 @@ def process_definition(root, parent=None, context=None):
     inner_proc = []
 
     # first look for all text areas to find NEWTYPE declarations
-    USER_DEFINED_TYPES.clear()
+    USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
+    process.user_defined_types = USER_DEFINED_TYPES
     tas = (x for x in root.getChildren() if x.type == lexer.TEXTAREA)
     for child in tas:
         content = (x for x in child.getChildren()
@@ -5310,7 +5317,7 @@ def pr_file(root):
     # This to allow SDL types injection in ASN1 ASTs
     DV = type("ASNParseTree", (object, ),
               {"types": {}, "exportedVariables": {}, "asn1Modules": [],
-               "variables": {}})
+                  "exportedTypes": {}, "variables": {}})
 
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions
