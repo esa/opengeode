@@ -172,6 +172,7 @@ def parse_asn1(*files, **options):
         LOG.debug(os.getcwd())
         LOG.debug (args)
         LOG.debug(binary + ' ' + ' '.join(args))
+        LOG.debug(f"Python AST: {py_filepath}")
         asn1scc.start(binary, args)
 
         _ = waitfor_qprocess(asn1scc, "ASN.1 Compiler")

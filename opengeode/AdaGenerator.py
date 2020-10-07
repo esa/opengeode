@@ -300,7 +300,7 @@ aadl2glueC DataView.aadl {process_name.lower()}_interface.aadl
 asn2dataModel -toPython dataview-uniq.asn
 make -f Makefile.python
 echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
-LD_LIBRARY_PATH=./lib:. opengeode-simulator
+LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
 '''
 
     LOG.info('Generating Ada code for process ' + str(process_name))
