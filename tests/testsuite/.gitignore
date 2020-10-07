@@ -22,8 +22,6 @@ logs/
 */*.idx
 */*.wrn
 */*.sh
-*/test_ada
-*/test_c
 */*.gcda
 **/*.log
 **actual
