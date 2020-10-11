@@ -7,7 +7,7 @@
         - Syntax highlighing
         - Automatic placement
 
-    Copyright (c) 2012-2019 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin for the TASTE project
 
@@ -32,7 +32,7 @@ class Completer(QGraphicsProxyWidget):
     def __init__(self, parent):
         ''' Create an autocompletion list popup '''
         widget = QListWidget()
-        super(Completer, self).__init__(parent)
+        super().__init__(parent)
         self.setWidget(widget)
         self.string_list = QStringListModel()
         self._completer = QCompleter()
@@ -73,7 +73,7 @@ class Completer(QGraphicsProxyWidget):
 
     # pylint: disable=C0103
     def keyPressEvent(self, e):
-        super(Completer, self).keyPressEvent(e)
+        super().keyPressEvent(e)
         if e.key() == Qt.Key_Escape:
             self.parentItem().setFocus()
         # Consume the event so that it is not repeated at EditableText level
@@ -82,7 +82,7 @@ class Completer(QGraphicsProxyWidget):
     # pylint: disable=C0103
     def focusOutEvent(self, event):
         ''' When the user leaves the popup, return focus to parent '''
-        super(Completer, self).focusOutEvent(event)
+        super().focusOutEvent(event)
         self.hide()
         self.resize(0, 0)
         self.parentItem().setFocus()
@@ -93,7 +93,7 @@ class Highlighter(QSyntaxHighlighter):
     ''' Class for handling syntax highlighting in editable text '''
     def __init__(self, parent, blackbold_patterns, redbold_patterns):
         ''' Define highlighting rules - inputs = lists of patterns '''
-        super(Highlighter, self).__init__(parent)
+        super().__init__(parent)
         self.highlighting_rules = []
 
         # Black bold items (allowed keywords)
@@ -138,7 +138,7 @@ class EditableText(QGraphicsTextItem):
     word_under_cursor = Signal(str)
 
     def __init__(self, parent, text='...', hyperlink=None):
-        super(EditableText, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.setFont(QFont('Ubuntu', 10))
         self.completer = Completer(self)
@@ -278,7 +278,7 @@ class EditableText(QGraphicsTextItem):
         '''
             Activate the autocompletion window if relevant
         '''
-        super(EditableText, self).keyPressEvent(event)
+        super().keyPressEvent(event)
         # Typing Esc allows to stop editing text:
         if event.key() == Qt.Key_Escape:
             self.clearFocus()
@@ -342,7 +342,7 @@ class EditableText(QGraphicsTextItem):
         if self.completer.isVisible():
             self.completer.hide()
             self.completer.resize(0, 0)
-        super(EditableText, self).mousePressEvent(event)
+        super().mousePressEvent(event)
 
     # pylint: disable=C0103
     def focusOutEvent(self, event):
@@ -352,7 +352,7 @@ class EditableText(QGraphicsTextItem):
             that got the focus.
         '''
         if not self.editing:
-            return super(EditableText, self).focusOutEvent(event)
+            return super().focusOutEvent(event)
         if self.completer and not self.completer_has_focus:
             self.completer.hide()
             self.completer.resize(0, 0)
@@ -407,12 +407,12 @@ class EditableText(QGraphicsTextItem):
         top_level = self.parent.top_level()
         top_level.setZValue(top_level.zValue() - 1)
         self.parent.setZValue(self.parent.zValue() - 1)
-        super(EditableText, self).focusOutEvent(event)
+        super().focusOutEvent(event)
 
     # pylint: disable=C0103
     def focusInEvent(self, event):
         ''' When user starts editing text, save previous state for Undo '''
-        super(EditableText, self).focusInEvent(event)
+        super().focusInEvent(event)
         # Change the Z-value of items to make sure the
         # completer is always be on top of other symbols
         top_level = self.parent.top_level()

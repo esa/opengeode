@@ -33,7 +33,7 @@ class Indent(deque):
 
     def append(self, string):
         ''' Redefinition of the append to insert the indent pattern '''
-        super(Indent, self).append('    ' * Indent.indent + string)
+        super().append('    ' * Indent.indent + string)
 
 
 def parse_scene(scene, full_model=False):
@@ -55,7 +55,7 @@ def parse_scene(scene, full_model=False):
            pr = generate(each)
            pr_data.extend(pr)
         for pro in processes:
-            if isinstance(pro, sdlSymbols.ProcessType):
+            if isinstance(pro, sdlSymbols.ProcessType) or not pro.connection:
                 # process type does not have connections
                 continue
             to_env = pro.connection.out_sig

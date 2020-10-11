@@ -36,7 +36,7 @@ class Connection(QGraphicsPathItem):
 
     def __init__(self, parent, child):
         ''' Create a new connection between a parent and a child item '''
-        super(Connection, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.child = child
         self._start_point = None
@@ -179,7 +179,7 @@ class JoinConnection(Connection):
         if self.parentItem().terminal_symbol:
             self.setPath(QPainterPath())
         else:
-            super(JoinConnection, self).reshape()
+            super().reshape()
 
     @property
     def start_point(self):
@@ -256,7 +256,7 @@ class SignalList(EditableText):
     ''' Simplified text editor for signal lists '''
     def __init__(self, parent, text='', hyperlink = None):
         ''' Smaller font than normal text '''
-        super(SignalList, self).__init__(parent, text)
+        super().__init__(parent, text)
         self.setFont(QFont('Ubuntu', pointSize=8))
 
     def set_text_alignment(self):
@@ -274,7 +274,7 @@ class SignalList(EditableText):
     # pylint: disable=C0103
     def focusOutEvent(self, event):
         ''' Redefined function - update in_sig and out_sig in parent '''
-        super(SignalList, self).focusOutEvent(event)
+        super().focusOutEvent(event)
 
 
 class Signalroute(Connection):
@@ -284,7 +284,7 @@ class Signalroute(Connection):
 
     def __init__(self, parent, child=None):
         ''' Set generic parameters from Connection class '''
-        super(Signalroute, self).__init__(parent, child or parent)
+        super().__init__(parent, child or parent)
         self.parser = ogParser
         self.blackbold = ()
         self.redbold = ()
@@ -347,7 +347,7 @@ class Signalroute(Connection):
 
     def reshape(self):
         ''' Redefine shape function to add the text areas '''
-        super(Signalroute, self).reshape()
+        super().reshape()
 
         width_in = self.label_in.boundingRect().width()
 
@@ -466,7 +466,7 @@ class Channel(Signalroute):
     def paint(self, painter, _, ___):
         ''' Apply anti-aliasing '''
         painter.setRenderHint(QPainter.Antialiasing, True)
-        super(Channel, self).paint(painter, _, ___)
+        super().paint(painter, _, ___)
 
 
 
@@ -477,7 +477,7 @@ class Controlpoint(QGraphicsPathItem):
         ''' Set the original control point - with color, shape '''
         path = QPainterPath()
         path.addEllipse(pos.x() - 5, pos.y() - 5, 10, 10)
-        super(Controlpoint, self).__init__(path, parent=edge)
+        super().__init__(path, parent=edge)
         self.setPen(QColor(50, 100, 120, 200))
         self.setBrush(QColor(200, 200, 210, 120))
         self.setFlags(QGraphicsItem.ItemIsSelectable |
@@ -492,7 +492,7 @@ class Controlpoint(QGraphicsPathItem):
 
     def mouseMoveEvent(self, event):
         ''' When user moves a control point, update the connection shape '''
-        super(Controlpoint, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
         self.edge.reshape()
 
 
@@ -504,7 +504,7 @@ class Connectionpoint(Controlpoint):
     '''
     def __init__(self, pos, edge, symbol):
         ''' Create the point - as a small, lightblue box '''
-        super(Connectionpoint, self).__init__(pos, edge=edge)
+        super().__init__(pos, edge=edge)
         path = QPainterPath()
         path.addRect(0, 0, 10, 10)
         self.setPath(path)
@@ -538,7 +538,7 @@ class Connectionpoint(Controlpoint):
             where the actual connection point should be placed
         '''
         # calling super function moves to the new point
-        super(Connectionpoint, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
         # Then compute a valid position, based on the owning symbol
         self.update_position()
 
@@ -548,7 +548,7 @@ class Edge(Connection):
     def __init__(self, edge, graph):
         ''' Set generic parameters from Connection class '''
         self.text_label = None
-        super(Edge, self).__init__(edge['source'], edge['target'])
+        super().__init__(edge['source'], edge['target'])
         self.edge = edge
         self.graph = graph
         # Set connection points as not visible, by default
@@ -670,7 +670,7 @@ class Edge(Connection):
     def paint(self, painter, option, widget):
         ''' Apply anti-aliasing to Edge Connections '''
         painter.setRenderHint(QPainter.Antialiasing, True)
-        super(Edge, self).paint(painter, option, widget)
+        super().paint(painter, option, widget)
         # Draw lines between connection points, if visible
         if self.bezier_visible:
             painter.setPen(

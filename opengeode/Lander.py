@@ -48,7 +48,7 @@ class Rocket(genericSymbols.Symbol, object):
 
     def __init__(self):
         ''' Initialization: compute the polygon shape '''
-        super(Rocket, self).__init__(parent=None)
+        super().__init__(parent=None)
         self.set_shape(30, 60)
         self.setBrush(QtGui.QBrush(QtGui.QColor(255, 255, 202)))
         # Set the rotation origin point
@@ -76,7 +76,7 @@ class Rocket(genericSymbols.Symbol, object):
         path.lineTo(width - width / 3, height)
         path.lineTo(width - width / 3, height - height / 6)
         self.setPath(path)
-        super(Rocket, self).set_shape(width, height)
+        super().set_shape(width, height)
 
     def _rotation(self):
         ''' Qt Property that can be used in animations '''

@@ -48,7 +48,7 @@ class UndoMacro:
 class ReplaceText(QUndoCommand):
     ''' Undo/Redo command for updating the text in a symbol '''
     def __init__(self, text_id, old_text, new_text):
-        super(ReplaceText, self).__init__()
+        super().__init__()
         self.setText('Replace text')
         self.text = text_id
         self.old_text = old_text
@@ -132,7 +132,7 @@ class ReplaceText(QUndoCommand):
 class ResizeSymbol(QUndoCommand):
     ''' Undo/Redo command for resizing a symbol '''
     def __init__(self, symbol_id, old_rect, new_rect):
-        super(ResizeSymbol, self).__init__()
+        super().__init__()
         self.setText('Resize symbol')
         self.symbol = symbol_id
         self.old_rect = old_rect
@@ -160,7 +160,7 @@ class ResizeSymbol(QUndoCommand):
 class InsertSymbol(QUndoCommand):
     ''' Undo/Redo command for inserting a new item '''
     def __init__(self, item, parent, pos):
-        super(InsertSymbol, self).__init__()
+        super().__init__()
         self.item = item
         self.parent = parent
         self.pos_x = pos.x() if pos else None
@@ -200,7 +200,7 @@ class InsertSymbol(QUndoCommand):
 class DeleteSymbol(QUndoCommand):
     ''' Undo/Redo command for a symbol deletion '''
     def __init__(self, item):
-        super(DeleteSymbol, self).__init__()
+        super().__init__()
         self.item = item
         self.scene = item.scene()
         self.parent = item.parentItem() if item.hasParent else None
@@ -227,7 +227,7 @@ class DeleteSymbol(QUndoCommand):
 class MoveSymbol(QUndoCommand):
     ''' Undo/Redo command for moving symbols '''
     def __init__(self, symbol_id, old_pos, new_pos, animate=False):
-        super(MoveSymbol, self).__init__()
+        super().__init__()
         self.setText('Move symbol')
         self.symbol = symbol_id
         self.old_pos = old_pos

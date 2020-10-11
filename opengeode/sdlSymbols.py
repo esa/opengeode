@@ -155,7 +155,7 @@ class Input(HorizontalSymbol):
         if not ast.pos_y and parent:
             # Make sure the item is placed below its parent
             ast.pos_y = parent.y() + parent.boundingRect().height() + 10
-        super(Input, self).__init__(parent,
+        super().__init__(parent,
                                     text=ast.inputString,
                                     x=ast.pos_x or 0,
                                     y=ast.pos_y or 0,
@@ -177,7 +177,7 @@ class Input(HorizontalSymbol):
                                                          ContinuousSignal))
                        else parent.parentItem())
         self.branch_entrypoint = item_parent.branch_entrypoint
-        super(Input, self).insert_symbol(item_parent, x, y)
+        super().insert_symbol(item_parent, x, y)
 
     def boundingRect(self):
         return QRectF(0, 0, self.width, self.height)
@@ -193,7 +193,7 @@ class Input(HorizontalSymbol):
             path.lineTo(0, height)
             path.lineTo(0, 0)
             self.setPath(path)
-            super(Input, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -262,7 +262,7 @@ class Output(VerticalSymbol):
         ast = ast or ogAST.Output()
         self.ast = ast
         self.width, self.height = 0, 0
-        super(Output, self).__init__(parent=parent,
+        super().__init__(parent=parent,
                 text=ast.inputString, x=ast.pos_x or 0, y=ast.pos_y or 0,
                 hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
@@ -283,7 +283,7 @@ class Output(VerticalSymbol):
             path.lineTo(0, height)
             path.lineTo(0, 0)
             self.setPath(path)
-            super(Output, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -318,7 +318,7 @@ class Decision(VerticalSymbol):
         self.width, self.height = 0, 0
         # Define the point where all branches of the decision can join again
         self.connectionPoint = QPoint(ast.width / 2, ast.height + 30)
-        super(Decision, self).__init__(parent, text=ast.inputString,
+        super().__init__(parent, text=ast.inputString,
                 x=ast.pos_x or 0, y=ast.pos_y or 0, hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
         self.setBrush(QColor(255, 255, 202))
@@ -359,22 +359,23 @@ class Decision(VerticalSymbol):
             path.lineTo(0, height / 2)
             path.lineTo(width / 2, 0)
             self.setPath(path)
-            super(Decision, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     def resize_item(self, rect):
         ''' On resize event, make sure connection points are updated '''
         delta_y = self.boundingRect().height() - rect.height()
-        super(Decision, self).resize_item(rect)
+        super().resize_item(rect)
         self.connectionPoint.setX(self.boundingRect().center().x())
         self.connectionPoint.setY(self.connectionPoint.y() - delta_y)
         self.update_connections()
 
     def update_connections(self):
         ''' Redefined - update arrows shape below connection point '''
-        super(Decision, self).update_connections()
+        super().update_connections()
         for branch in self.branches():
             for cnx in branch.last_branch_item.connections():
                 cnx.reshape()
+        self.updateConnectionPointPosition()
 
     def updateConnectionPointPosition(self):
         ''' Compute the joining point of decision branches '''
@@ -434,7 +435,7 @@ class Decision(VerticalSymbol):
                 child.pos_y += delta
             except AttributeError:
                 pass
-        self.update_connections()
+        #self.update_connections()
 
 
 # pylint: disable=R0904
@@ -456,11 +457,11 @@ class DecisionAnswer(HorizontalSymbol):
         # last_branch_item is used to compute branch length
         # for the connection point positionning
         self.last_branch_item = self
-        super(DecisionAnswer, self).__init__(parent,
-                                             text=ast.inputString,
-                                             x=ast.pos_x or 0,
-                                             y=ast.pos_y or 0,
-                                             hyperlink=ast.hyperlink)
+        super().__init__(parent,
+                         text=ast.inputString,
+                         x=ast.pos_x or 0,
+                         y=ast.pos_y or 0,
+                         hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
         self.branch_entrypoint = self
         self.parser = ogParser
@@ -472,7 +473,7 @@ class DecisionAnswer(HorizontalSymbol):
         # Make sure that parent is not a sibling answer
         item_parent = (parent if not isinstance(parent, DecisionAnswer)
                        else parent.parentItem())
-        super(DecisionAnswer, self).insert_symbol(item_parent, x, y)
+        super().insert_symbol(item_parent, x, y)
         self.last_branch_item.connectionBelow = \
                 JoinConnection(self.last_branch_item, item_parent)
         self.text.try_resize()
@@ -493,7 +494,7 @@ class DecisionAnswer(HorizontalSymbol):
             path.arcTo(right, -55, 110)
             path.moveTo(width, height)
             self.setPath(path)
-            super(DecisionAnswer, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -519,7 +520,7 @@ class Join(VerticalSymbol):
             ast.pos_y = 0
             ast.width = 35
             ast.height = 35
-        super(Join, self).__init__(parent,
+        super().__init__(parent,
                                    text=ast.inputString,
                                    x=ast.pos_x,
                                    y=ast.pos_y,
@@ -534,7 +535,7 @@ class Join(VerticalSymbol):
         size = min(rect.width(), rect.height())
         rect.setWidth(size)
         rect.setHeight(size)
-        super(Join, self).resize_item(rect)
+        super().resize_item(rect)
 
     def set_shape(self, width, height):
         ''' Define the bouding rectangle of the JOIN symbol '''
@@ -543,7 +544,7 @@ class Join(VerticalSymbol):
             path = QPainterPath()
             path.addEllipse(0, 0, circ, circ)
             self.setPath(path)
-            super(Join, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -579,7 +580,7 @@ class ProcedureStop(Join):
             ast.pos_y = 0
             ast.width = 35
             ast.height = 35
-        super(ProcedureStop, self).__init__(parent, ast)
+        super().__init__(parent, ast)
 
     def set_shape(self, width, height):
         ''' Define the symbol shape '''
@@ -639,7 +640,7 @@ class Label(VerticalSymbol):
         ast = ast or ogAST.Label()
         self.ast = ast
         self.width, self.height = 0, 0
-        super(Label, self).__init__(parent,
+        super().__init__(parent,
                                     text=ast.inputString,
                                     x=ast.pos_x or 0,
                                     y=ast.pos_y or 0,
@@ -671,7 +672,7 @@ class Label(VerticalSymbol):
             # Make sure the bounding rect is withing specifications
             path.moveTo(width, height)
             self.setPath(path)
-            super(Label, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -711,7 +712,7 @@ class Task(VerticalSymbol):
         ast = ast or ogAST.Task()
         self.ast = ast
         self.width, self.height = 0, 0
-        super(Task, self).__init__(parent,
+        super().__init__(parent,
                                    text=ast.inputString,
                                    x=ast.pos_x or 0,
                                    y=ast.pos_y or 0,
@@ -732,7 +733,7 @@ class Task(VerticalSymbol):
             path.lineTo(0, height)
             path.lineTo(0, 0)
             self.setPath(path)
-            super(Task, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -776,7 +777,7 @@ class ProcedureCall(VerticalSymbol):
         ast = ast or ogAST.Output(defName='')
         self.ast = ast
         self.width, self.height = 0, 0
-        super(ProcedureCall, self).__init__(parent,
+        super().__init__(parent,
                                             text=ast.inputString,
                                             x=ast.pos_x or 0,
                                             y=ast.pos_y or 0,
@@ -798,7 +799,7 @@ class ProcedureCall(VerticalSymbol):
             path.moveTo(width - 7, 0)
             path.lineTo(width - 7, height)
             self.setPath(path)
-            super(ProcedureCall, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     @property
     def completion_list(self):
@@ -848,7 +849,7 @@ class TextSymbol(HorizontalSymbol):
         ast = ast or ogAST.TextArea()
         self.ast = ast
         self.width, self.height = 0, 0
-        super(TextSymbol, self).__init__(parent=None,
+        super().__init__(parent=None,
                                          text=ast.inputString,
                                          x=ast.pos_x or 0,
                                          y=ast.pos_y or 0,
@@ -869,7 +870,7 @@ class TextSymbol(HorizontalSymbol):
         # a semi-colon, since that is always the case with declarations
         # and the text box cannot be followed by a COMMENT symbol
         return super().check_syntax(pr_text, check_last_semi=False);
-        
+
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update list of variables/FPAR/Timers '''
@@ -928,7 +929,7 @@ class TextSymbol(HorizontalSymbol):
             path.lineTo(width - 10, 0)
             path.lineTo(width, 10)
             self.setPath(path)
-            super(TextSymbol, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     def resize_item(self, rect):
         ''' Text Symbol only resizes down or right '''
@@ -956,7 +957,7 @@ class State(VerticalSymbol):
         self.ast = ast
         self.width, self.height = 0, 0
         ast.inputString = getattr(ast, 'via', None) or ast.inputString
-        super(State, self).__init__(parent=parent,
+        super().__init__(parent=parent,
                                     text=ast.inputString,
                                     x=ast.pos_x or 0,
                                     y=ast.pos_y or 0,
@@ -1046,7 +1047,7 @@ class State(VerticalSymbol):
             path = QPainterPath()
             path.addRoundedRect(0, 0, width, height, height / 4, height)
             self.setPath(path)
-            super(State, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     def get_ast(self, pr_text):
         ''' Redefinition of the get_ast function for the state '''
@@ -1082,7 +1083,9 @@ class Process(HorizontalSymbol):
     _conn_targets = ['Process']
     context_name = "process"
 
-    def __init__(self, ast=None, subscene=None):
+    def __init__(self,
+                 ast=None,
+                 subscene=None):
         ast = ast or ogAST.Process()
         self.ast = ast
         self.width, self.height = 0, 0
@@ -1094,11 +1097,11 @@ class Process(HorizontalSymbol):
         # makes a call to resize_item, which calls set_shape using a size
         # defined by the label. set shape will then be called again using
         # the ast-defined size.
-        super(Process, self).__init__(parent=None,
-                                      text=label,
-                                      x=ast.pos_x,
-                                      y=ast.pos_y,
-                                      hyperlink=ast.hyperlink)
+        super().__init__(parent=None,
+                         text=label,
+                         x=ast.pos_x,
+                         y=ast.pos_y,
+                         hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
         self.setBrush(QBrush(QColor(255, 255, 202)))
         self.parser = ogParser
@@ -1130,7 +1133,7 @@ class Process(HorizontalSymbol):
 
     def insert_symbol(self, parent, x, y):
         ''' Redefinition - adds connection line to env '''
-        super(Process, self).insert_symbol(parent, x, y)
+        super().insert_symbol(parent, x, y)
         if not self.connection:
             self.connection = self.connect_to_parent()
 
@@ -1154,7 +1157,7 @@ class Process(HorizontalSymbol):
             path.lineTo(width - 7, 0)
             path.lineTo(7, 0)
             self.setPath(path)
-            super(Process, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update completion list at block level '''
@@ -1286,7 +1289,6 @@ class ProcessType(Procedure):
             self.setPath(path)
             super(Process, self).set_shape(width, height)
 
-
     def update_completion_list(self, pr_text):
         ''' After text is entered in process type, don't update any context '''
         # Todo perhaps later for autocompletion of process instances
@@ -1314,7 +1316,7 @@ class Start(HorizontalSymbol):
         self.ast = ast
         self.terminal_symbol = False
         self.width, self.height = 0, 0
-        super(Start, self).__init__(parent=None,
+        super().__init__(parent=None,
                                     text=ast.inputString[slice(0, -6)],
                                     x=ast.pos_x or 0,
                                     y=ast.pos_y or 0,
@@ -1337,7 +1339,7 @@ class Start(HorizontalSymbol):
             path = QPainterPath()
             path.addRoundedRect(0, 0, width, height, height / 2, height / 2)
             self.setPath(path)
-            super(Start, self).set_shape(width, height)
+            super().set_shape(width, height)
 
 
 class ProcedureStart(Start):
@@ -1373,7 +1375,7 @@ class StateStart(Start):
     def update_completion_list(self, pr_text):
         ''' Update nested state entry points '''
         CONTEXT.state_entrypoints.add(str(self))
-        
+
 
 # pylint: disable=R0904
 class ContinuousSignal(HorizontalSymbol):
@@ -1396,7 +1398,7 @@ class ContinuousSignal(HorizontalSymbol):
         if not ast.pos_y and parent:
             # Make sure the item is placed below its parent
             ast.pos_y = parent.y() + parent.boundingRect().height() + 10
-        super(ContinuousSignal, self).__init__(parent, text=ast.inputString,
+        super().__init__(parent, text=ast.inputString,
                 x=ast.pos_x or 0, y=ast.pos_y or 0, hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
         self.terminal_symbol = False
@@ -1411,7 +1413,7 @@ class ContinuousSignal(HorizontalSymbol):
                                                          ContinuousSignal))
                        else parent.parentItem())
         self.branch_entrypoint = item_parent.branch_entrypoint
-        super(ContinuousSignal, self).insert_symbol(item_parent, x, y)
+        super().insert_symbol(item_parent, x, y)
 
     def set_shape(self, width, height):
         ''' Define the shape '''
@@ -1424,7 +1426,7 @@ class ContinuousSignal(HorizontalSymbol):
             path.lineTo(width, height / 2.0)
             path.lineTo(width - 15, height)
             self.setPath(path)
-            super(ContinuousSignal, self).set_shape(width, height)
+            super().set_shape(width, height)
 
     @property
     def completion_list(self):
