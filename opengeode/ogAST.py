@@ -548,7 +548,7 @@ class Floating_label(Label):
     ''' AST Entry for a floating label '''
     def __init__(self, label=None):
         ''' Initialize the floating label attributes '''
-        super(Floating_label, self).__init__()
+        super().__init__()
         if label:
             self.inputString = label.inputString
             self.pos_x = label.pos_x
@@ -630,7 +630,7 @@ class Connect(Input):
     ''' AST Entry for the CONNECT part (transition below a nested state) '''
     def __init__(self):
         ''' Only one difference with INPUT: the connect_list attribute '''
-        super(Connect, self).__init__()
+        super().__init__()
         # List of strings
         self.connect_list = []
         self.width = 1
@@ -644,7 +644,7 @@ class ContinuousSignal(Input):
     ''' AST Entry for the Continuous Signal '''
     def __init__(self):
         ''' Difference with Input: trigger is an expression '''
-        super(ContinuousSignal, self).__init__()
+        super().__init__()
         # Decision triggering the transition
         self.trigger = None
         # Priority (integer)
@@ -949,7 +949,7 @@ class CompositeState(Process):
         - entry and exit procedures
     '''
     def __init__(self):
-        super(CompositeState, self).__init__()
+        super().__init__()
         self.statename = ''
         self.state_entrypoints = set()
         self.state_exitpoints = set()
@@ -976,7 +976,7 @@ class StateAggregation(CompositeState):
         But no state machine definition
     '''
     def __init__(self):
-        super(StateAggregation, self).__init__()
+        super().__init__()
         # List of partition connections:
         # [{'outer': {'state_part_id': str, 'point': str},
         #   'inner': {'state_part_id': str, 'point': str}}]

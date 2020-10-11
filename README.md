@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.3.4 (10/2020)**
+- Fix bug when drawing connections in decision branches
+
 **3.3.3 (10/2020)**
 - Refactoring : Generate all data types in ASN.1
 

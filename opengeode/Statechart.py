@@ -65,7 +65,7 @@ class Record(genericSymbols.HorizontalSymbol):
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
         self.name = node['name']
-        super(Record, self).__init__(x=node['pos'][0],
+        super().__init__(x=node['pos'][0],
                 y=node['pos'][1], text=self.name)
         self.set_shape(node['width'], node['height'])
         self.setBrush(QBrush(QColor(255, 255, 202)))
@@ -87,7 +87,7 @@ class Record(genericSymbols.HorizontalSymbol):
         self.setPath(path)
         LOG.debug ("Set shape of state " + str(self))
         #LOG.debug(traceback.print_stack())
-        super(Record, self).set_shape(width, height)
+        super().set_shape(width, height)
 
     def resize_item(self, _):
         ''' Redefine the resizing function - forbid resizing '''
@@ -128,7 +128,7 @@ class Point(genericSymbols.HorizontalSymbol):
             label = self.name[0:-6]
         else:
             label=''
-        super(Point, self).__init__(x=node['pos'][0], y=node['pos'][1],
+        super().__init__(x=node['pos'][0], y=node['pos'][1],
                 text=label)
         self.set_shape(node['width'], node['height'])
         self.setBrush(QBrush(Qt.black))
@@ -141,7 +141,7 @@ class Point(genericSymbols.HorizontalSymbol):
         path = QPainterPath()
         path.addEllipse(0, 0, width, height)
         self.setPath(path)
-        super(Point, self).set_shape(width, height)
+        super().set_shape(width, height)
 
     def resize_item(self, _):
         ''' Redefine the resizing function - forbid resizing '''
@@ -175,7 +175,7 @@ class Diamond(genericSymbols.HorizontalSymbol):
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
         self.name = node['name']
-        super(Diamond, self).__init__(x=node['pos'][0], y=node['pos'][1])
+        super().__init__(x=node['pos'][0], y=node['pos'][1])
         self.set_shape(node['width'], node['height'])
         self.graph = graph
 
@@ -188,7 +188,7 @@ class Diamond(genericSymbols.HorizontalSymbol):
         path.lineTo(0, height / 2)
         path.lineTo(width / 2, 0)
         self.setPath(path)
-        super(Diamond, self).set_shape(width, height)
+        super().set_shape(width, height)
 
     def resize_item(self, _):
         ''' Redefine the resizing function - forbid resizing '''
@@ -222,7 +222,7 @@ class Stop(genericSymbols.HorizontalSymbol):
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
         self.name = node['name']
-        super(Stop, self).__init__(x=node['pos'][0], y=node['pos'][1],
+        super().__init__(x=node['pos'][0], y=node['pos'][1],
                                    text=self.name)
         self.set_shape(node['width'], node['height'])
         self.graph = graph
@@ -237,7 +237,7 @@ class Stop(genericSymbols.HorizontalSymbol):
         path.moveTo(width, 0)
         path.lineTo(0, height)
         self.setPath(path)
-        super(Stop, self).set_shape(width, height)
+        super().set_shape(width, height)
 
     def resize_item(self, _):
         ''' Redefine the resizing function - forbid resizing '''

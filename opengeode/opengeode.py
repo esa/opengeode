@@ -26,6 +26,7 @@ import pprint
 import random
 from functools import partial
 from itertools import chain
+from importlib import reload
 
 # To freeze the application on Windows, all modules must be imported even
 # when they are not directly used from this module (py2exe bug)
@@ -140,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.3.3'
+__version__ = '3.3.4'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -232,13 +233,13 @@ class Vi_bar(QLineEdit, object):
     ''' Line editor for the Vi-like command mode '''
     def __init__(self):
         ''' Create the bar - no need for parent '''
-        super(Vi_bar, self).__init__()
+        super().__init__()
         self.history = []
         self.pointer = 0
 
     def keyPressEvent(self, key_event):
         ''' Handle key press - Escape, command history '''
-        super(Vi_bar, self).keyPressEvent(key_event)
+        super().keyPressEvent(key_event)
         if key_event.key() == Qt.Key_Escape:
             self.clearFocus()
             self.pointer = len(self.history)
@@ -266,7 +267,7 @@ class File_toolbar(QToolBar, object):
     ''' Toolbar with file open, save, etc '''
     def __init__(self, parent):
         ''' Create the toolbar using standard icons '''
-        super(File_toolbar, self).__init__(parent)
+        super().__init__(parent)
         self.setObjectName("File Toolbar")  # needed to save geometry
         self.setMovable(False)
         self.setFloatable(False)
@@ -295,7 +296,7 @@ class Sdl_toolbar(QToolBar, object):
     '''
     def __init__(self, parent):
         ''' Create the toolbar, get icons and link actions '''
-        super(Sdl_toolbar, self).__init__(parent)
+        super().__init__(parent)
         self.setObjectName("SDL Toolbar")  # needed to save geometry
         self.setMovable(False)
         self.setFloatable(False)
@@ -386,7 +387,7 @@ class SDL_Scene(QGraphicsScene):
             "readonly" is a command line argument that allows to prevent some
             scenes to be modified by the user.
         '''
-        super(SDL_Scene, self).__init__()
+        super().__init__()
         # Reference to the parent scene
         self.parent_scene = None
         # mode can be "idle", "wait_connection_source", "select_items",
@@ -1324,7 +1325,7 @@ class SDL_Scene(QGraphicsScene):
         '''
         self.reset_cursor()
         # First propagate event to symbols for specific treatment
-        super(SDL_Scene, self).mousePressEvent(event)
+        super().mousePressEvent(event)
         # Store mouse coordinates as possible paste position
         self.click_coordinates = event.scenePos()
         # Enter state machine
@@ -1393,7 +1394,7 @@ class SDL_Scene(QGraphicsScene):
         ''' Handle Click + Mouse move, based on the mode '''
         if(event.buttons() == Qt.NoButton and
             self.mode != 'wait_next_connection_point') or self.mode == 'idle':
-            return super(SDL_Scene, self).mouseMoveEvent(event)
+            return super().mouseMoveEvent(event)
         elif self.mode == 'select_items':
             rect = QRectF(self.orig_pos, event.scenePos())
             self.select_rect.setRect(rect.normalized())
@@ -1497,13 +1498,13 @@ class SDL_Scene(QGraphicsScene):
                 connector.end_point = self.border_point(symb, point)
                 self.cancel()
 
-        super(SDL_Scene, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
 
 
     # pylint: disable=C0103
     def keyPressEvent(self, event):
         ''' Handle keyboard: Delete, Undo/Redo '''
-        super(SDL_Scene, self).keyPressEvent(event)
+        super().keyPressEvent(event)
         if event.matches(QKeySequence.Delete) and self.selectedItems():
             self.delete_selected_symbols()
             self.clearSelection()
@@ -1588,7 +1589,7 @@ class SDL_View(QGraphicsView):
 
     def __init__(self, scene):
         ''' Create the SDL view holding the scene '''
-        super(SDL_View, self).__init__(scene)
+        super().__init__(scene)
         self.wrapping_window = None
         # self.messages_window = None
         self.messages_window = QListWidget()  # default
@@ -1698,7 +1699,7 @@ class SDL_View(QGraphicsView):
             self.up_button.setEnabled(True)
             self.set_toolbar()
             self.lander.play()
-        super(SDL_View, self).keyPressEvent(event)
+        super().keyPressEvent(event)
 
     def refresh(self):
         ''' View refresh - make sure it happens only once per cycle '''
@@ -1743,7 +1744,7 @@ class SDL_View(QGraphicsView):
         '''
         LOG.debug('[QGraphicsView] ResizeEvent')
         self.update_phantom_rect()
-        super(SDL_View, self).resizeEvent(event)
+        super().resizeEvent(event)
 
     def about_og(self):
         ''' Display the About dialog '''
@@ -1769,7 +1770,7 @@ class SDL_View(QGraphicsView):
             # Make sure the scene is resized when zooming in/out
             self.update_phantom_rect()
         else:
-            return super(SDL_View, self).wheelEvent(wheelEvent)
+            return super().wheelEvent(wheelEvent)
 
     # pylint: disable=C0103
     def mousePressEvent(self, evt):
@@ -1778,7 +1779,7 @@ class SDL_View(QGraphicsView):
             or to select multiple items
         '''
         # First propagate the click (then scene will receive it first):
-        super(SDL_View, self).mousePressEvent(evt)
+        super().mousePressEvent(evt)
         try:
             self.toolbar.update_menu(self.scene())
         except AttributeError:
@@ -1881,7 +1882,7 @@ class SDL_View(QGraphicsView):
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
         ''' Catch a double click - possibly change the scene '''
-        super(SDL_View, self).mouseDoubleClickEvent(evt)
+        super().mouseDoubleClickEvent(evt)
         if evt.button() == Qt.LeftButton:
             item = self.scene().symbol_near(self.mapToScene(evt.pos()))
             try:
@@ -1920,7 +1921,7 @@ class SDL_View(QGraphicsView):
     def mouseMoveEvent(self, evt):
         ''' Handle the screen move when user clicks '''
         if evt.buttons() == Qt.NoButton:
-            return super(SDL_View, self).mouseMoveEvent(evt)
+            return super().mouseMoveEvent(evt)
         new_pos = evt.pos()
         if self.mode == 'moveScreen':
             diff_x = self.mouse_pos.x() - new_pos.x()
@@ -1931,7 +1932,7 @@ class SDL_View(QGraphicsView):
             v_scroll.setValue(v_scroll.value() + diff_y)
             self.mouse_pos = new_pos
         else:
-            return super(SDL_View, self).mouseMoveEvent(evt)
+            return super().mouseMoveEvent(evt)
 
     # pylint: disable=C0103
     def mouseReleaseEvent(self, evt):
@@ -1944,7 +1945,7 @@ class SDL_View(QGraphicsView):
             if not isinstance(self.scene().focusItem(), EditableText):
                 LOG.debug('mouseRelease refresh')
                 self.refresh()
-        super(SDL_View, self).mouseReleaseEvent(evt)
+        super().mouseReleaseEvent(evt)
 
     def save_as(self):
         ''' Save As function '''
@@ -2500,7 +2501,7 @@ class OG_MainWindow(QMainWindow):
     ''' Main GUI window '''
     def __init__(self, parent=None):
         ''' Create the main window '''
-        super(OG_MainWindow, self).__init__(parent)
+        super().__init__(parent)
         self.view = None
         self.statechart_view = None
         self.statechart_scene = None
@@ -2688,12 +2689,13 @@ class OG_MainWindow(QMainWindow):
             scene = self.view.top_scene()
             try:
                 graph = scene.sdl_to_statechart(view=self.view)
-                Statechart.render_statechart(self.statechart_scene,
-                                             graph)
-                self.statechart_view.refresh()
-                self.statechart_view.fitInView(
-                        self.statechart_scene.itemsBoundingRect(),
-                        Qt.KeepAspectRatioByExpanding)
+                if graph:
+                    Statechart.render_statechart(self.statechart_scene,
+                                                 graph)
+                    self.statechart_view.refresh()
+                    self.statechart_view.fitInView(
+                            self.statechart_scene.itemsBoundingRect(),
+                            Qt.KeepAspectRatioByExpanding)
             except (AttributeError, IOError, TypeError) as err:
                 LOG.debug(str(traceback.format_exc()))
                 LOG.debug("Statechart error: " + str(err))
@@ -2886,7 +2888,34 @@ class OG_MainWindow(QMainWindow):
                 for each in chain([scene], scene.all_nested_scenes):
                     each.search(pattern, replace_with=new, cmd=cmd)
         except AttributeError as err:
-            if command.startswith('/') and len(command) > 1:
+            # Developer command allowing to dynamically reload a
+            # python module, to avoid heavy roundtrips while debugging
+            # (quit tool, fix bugs, reload, test)
+            cmd = command.split()
+            LOG.debug(cmd)
+            if len(cmd) == 2 and cmd[0] == ":reload":
+                mod = cmd[1]
+                if mod == "ogParser":
+                    LOG.debug (f"Reloading {ogParser.__file__}")
+                    # save context
+                    dv = ogParser.DV
+                    tmp = ogParser.TMPVAR
+                    reload(ogParser)
+                    ogParser.DV = dv
+                    ogParser.TMPVAR = tmp
+                elif mod == "sdlSymbols":
+                    LOG.debug (f"Reloading {sdlSymbols.__file__}")
+                    ast = sdlSymbols.AST
+                    ctxt = sdlSymbols.CONTEXT
+                    reload(sdlSymbols)
+                    sdlSymbols.AST = ast
+                    sdlSymbols.CONTEXT = ctxt
+                elif mod == "genericSymbols":
+                    LOG.debug (f"Reloading {genericSymbols.__file__}")
+                    reload(genericSymbols)
+                else:
+                    LOG.error(f"Cannot reload {mod} module")
+            elif command.startswith('/') and len(command) > 1:
                 LOG.debug('Searching for ' + command[1:])
                 self.view.scene().search(command[1:])
                 self.view.setFocus()
@@ -2902,6 +2931,7 @@ class OG_MainWindow(QMainWindow):
                         self.view.scene().undo_stack.clear()
                     if close_app:
                         self.close()
+                    return
                 except AttributeError:
                     pass
 
@@ -2916,7 +2946,7 @@ class OG_MainWindow(QMainWindow):
             self.vi_bar.show()
             self.vi_bar.setFocus()
             self.vi_bar.setText('/')
-        super(OG_MainWindow, self).keyPressEvent(key_event)
+        super().keyPressEvent(key_event)
 
     # pylint: disable=C0103
     def closeEvent(self, event):
@@ -2938,7 +2968,7 @@ class OG_MainWindow(QMainWindow):
             scene = self.view.top_scene()
             for each in chain([scene], scene.all_nested_scenes):
                 each.undo_stack.clear()
-            super(OG_MainWindow, self).closeEvent(event)
+            super().closeEvent(event)
 
     def restoreApplicationState(self):
         ''' Restore windows geometry and state '''

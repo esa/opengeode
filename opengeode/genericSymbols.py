@@ -41,7 +41,7 @@
     For a complete example, look at the "sdlSymbols.py" module, that
     provide symbol definitions that correspond to an SDL editor.
 
-    Copyright (c) 2012-2019 European Space Agency
+    Copyright (c) 2012-2020 European Space Agency
 
     Designed and implemented by Maxime Perrotin for the TASTE project
 
@@ -133,7 +133,7 @@ class Symbol(QObject, QGraphicsPathItem):
             Create top level symbol and propagate important properties
             from parent items
         '''
-        super(Symbol, self).__init__(parent)
+        super().__init__(parent)
         QGraphicsPathItem.__init__(self, parent)
         # Current mode, can be empty string, "Resize", or "Move"
         self.mode = ''
@@ -353,7 +353,7 @@ class Symbol(QObject, QGraphicsPathItem):
     def paint(self, painter, _, ___):
         ''' Apply anti-aliasing or not (symbol attribute) '''
         painter.setRenderHint(QPainter.Antialiasing, self._antialiasing)
-        super(Symbol, self).paint(painter, _, ___)
+        super().paint(painter, _, ___)
 
     def update_position(self):
         ''' VIRTUAL - implemented in subclasses '''
@@ -514,7 +514,7 @@ class Symbol(QObject, QGraphicsPathItem):
         ''' resize item, e.g. when editing text - move children accordingly '''
         # Call stack:
         # scene_refresh() => Text_Interaction.try_resize() => resize_item()
-        LOG.debug("resize item")
+        #LOG.debug("resize item")
         #LOG.debug(traceback.print_stack())
         if not self.resizeable:
             return
@@ -550,7 +550,8 @@ class Symbol(QObject, QGraphicsPathItem):
             pass
         try:
             self.branch_entrypoint.parent.update_connections()
-        except AttributeError:
+        except AttributeError as err:
+            # All symbols that have no branch entrypoint
             pass
 
     def set_shape(self, width, height):
@@ -774,7 +775,7 @@ class Comment(Symbol):
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Comment()
         self.ast = ast
-        super(Comment, self).__init__(parent)
+        super().__init__(parent)
         self.connection = None
         self.set_shape(ast.width, ast.height)
         self.text = EditableText(parent=self,
@@ -799,7 +800,7 @@ class Comment(Symbol):
         if not parent:
             return
         parent.comment = self
-        super(Comment, self).insert_symbol(parent, x, y)
+        super().insert_symbol(parent, x, y)
         self.pos_x = x if x is not None else parent.boundingRect().width() + 20
         self.pos_y = y if y is not None else (parent.boundingRect().height() -
                                               self.boundingRect().height()) / 2
@@ -821,7 +822,7 @@ class Comment(Symbol):
             reset comment field in parent
         '''
         self.parentItem().comment = None
-        super(Comment, self).delete_symbol()
+        super().delete_symbol()
 
     def resize_item(self, rect):
         '''
@@ -839,7 +840,7 @@ class Comment(Symbol):
         path = QPainterPath()
         path.addRect(0, 0, width, height)
         self.setPath(path)
-        super(Comment, self).set_shape(width, height)
+        super().set_shape(width, height)
 
     def paint(self, painter, _, ___):
         ''' Draw the comment symbol '''
@@ -860,7 +861,7 @@ class Comment(Symbol):
 
     def mouse_move(self, event):
         ''' Handle item move '''
-        super(Comment, self).mouse_move(event)
+        super().mouse_move(event)
         if self.mode == 'Move':
             self.pos_y += event.pos().y() - event.lastPos().y()
             self.pos_x += event.pos().x() - event.lastPos().x()
@@ -878,7 +879,7 @@ class Comment(Symbol):
         if not move_accepted:
             self.position = self.coord
             self.update_connections()
-        return super(Comment, self).mouse_release(event)
+        return super().mouse_release(event)
 
     def updateConnectionPoints(self):
         '''
@@ -901,7 +902,7 @@ class Cornergrabber(QGraphicsPolygonItem):
 
     def __init__(self, parent):
         ''' Create the grabber '''
-        super(Cornergrabber, self).__init__(parent)
+        super().__init__(parent)
         self.setParentItem(parent)
         self.parent = parent
         self.setFlags(QGraphicsItem.ItemIsSelectable |
@@ -929,7 +930,7 @@ class Cornergrabber(QGraphicsPolygonItem):
     def mousePressEvent(self, event):
         ''' Handle Qt event '''
         self.parent.mouse_click(event)
-        super(Cornergrabber, self).mousePressEvent(event)
+        super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         ''' Handle Qt event '''
@@ -993,7 +994,7 @@ class HorizontalSymbol(Symbol):
     '''
     def __init__(self, parent=None, text='...',
             x=None, y=None, hyperlink=None):
-        super(HorizontalSymbol, self).__init__(parent)
+        super().__init__(parent)
         self.minDistanceToSymbolAbove = 20
         self.connection = None
         if self.has_text_area:
@@ -1015,7 +1016,7 @@ class HorizontalSymbol(Symbol):
     def set_valid_pos(self, pos):
         ''' Redefined function - make sure symbol is below its parent '''
         if not self.hasParent:
-            super(HorizontalSymbol, self).set_valid_pos(pos)
+            super().set_valid_pos(pos)
         else:
             new_y = max(pos.y(), self.parent.boundingRect().height() +
                         self.minDistanceToSymbolAbove)
@@ -1026,7 +1027,7 @@ class HorizontalSymbol(Symbol):
         if not parent:
             self.position = QPointF(pos_x or 0, pos_y or 0)
             return
-        super(HorizontalSymbol, self).insert_symbol(parent, pos_x, pos_y)
+        super().insert_symbol(parent, pos_x, pos_y)
         if pos_x is None or pos_y is None:
             # Usually for first insertion when item is created:
             # compute position and (if relevant) move siblings
@@ -1069,7 +1070,7 @@ class HorizontalSymbol(Symbol):
            Redefined from Symbol class
            Horizontal symbols may have siblings - check their shape.
         '''
-        super(HorizontalSymbol, self).update_connections()
+        super().update_connections()
         try:
             for sibling in self.siblings():
                 for cnx in sibling.last_branch_item.connections():
@@ -1104,7 +1105,7 @@ class HorizontalSymbol(Symbol):
             new_x = self.pos_x + (event_pos.x() - event.lastPos().x())
             self.position = QPointF(new_x, new_y)
             self.update_connections()
-        super(HorizontalSymbol, self).mouse_move(event)
+        super().mouse_move(event)
 
     def cam(self, old_pos, new_pos, ignore=None):
         '''
@@ -1160,7 +1161,7 @@ class HorizontalSymbol(Symbol):
                         # If there is no scene or no undo stack
                         pass
                     sibling.cam(sibling.position, sibling.position)
-        super(HorizontalSymbol, self).cam(old_pos, new_pos, ignore)
+        super().cam(old_pos, new_pos, ignore)
         # Recursively call the cam of the parent
         try:
             self.parentItem().cam(self.parentItem().position,
@@ -1177,7 +1178,7 @@ class VerticalSymbol(Symbol):
     '''
     def __init__(self, parent=None, text='...',
             x=None, y=None, hyperlink=None):
-        super(VerticalSymbol, self).__init__(parent)
+        super().__init__(parent)
         self.connection = None
         if self.has_text_area:
             self.text = EditableText(parent=self,
@@ -1204,7 +1205,7 @@ class VerticalSymbol(Symbol):
     def set_valid_pos(self, pos):
         ''' Redefined function - make sure symbol is well aligned '''
         if not self.hasParent:
-            super(VerticalSymbol, self).set_valid_pos(pos)
+            super().set_valid_pos(pos)
         else:
             # 'or self.parent' because of pyside/qt bug
             parent = self.parentItem() or self.parent
@@ -1228,7 +1229,7 @@ class VerticalSymbol(Symbol):
             if x is not None and y is not None:
                 self.position = QPointF(x, y)
             return
-        super(VerticalSymbol, self).insert_symbol(parent, x, y)
+        super().insert_symbol(parent, x, y)
         # in a branch (e.g. DECISION) all items must know the first element
         # (used for computing the branch size and the connection point)
         self.branch_entrypoint = parent.branch_entrypoint
@@ -1296,7 +1297,7 @@ class VerticalSymbol(Symbol):
 
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''
-        super(VerticalSymbol, self).mouse_move(event)
+        super().mouse_move(event)
         if self.mode == 'Move':
             new_y = self.pos_y + event.pos().y() - event.lastPos().y()
             new_x = self.pos_x + event.pos().x() - event.lastPos().x()
@@ -1315,4 +1316,4 @@ class VerticalSymbol(Symbol):
                 branch_entry = branch_entry.parentItem() or branch_entry.parent
             branch_entry.cam(branch_entry.position, branch_entry.position)
         else:
-            super(VerticalSymbol, self).cam(old_pos, new_pos, ignore)
+            super().cam(old_pos, new_pos, ignore)
