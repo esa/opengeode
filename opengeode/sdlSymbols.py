@@ -1074,7 +1074,7 @@ class Process(HorizontalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
     completion_list = set()
-    is_singleton = True
+    is_singleton = True #(False to allow multiple processes)
     arrow_head = 'angle'
     arrow_tail = 'angle'
     # Process can be connected to other processes by the user
@@ -1158,6 +1158,26 @@ class Process(HorizontalSymbol):
             path.lineTo(7, 0)
             self.setPath(path)
             super().set_shape(width, height)
+
+    def cam_group(self):
+        ''' Redefine the graphical boundaries of the item to apply the CAM
+            If process has child connections (connections to other processes)
+            the CAM group should only include the process block itself,
+            not all the lines around it '''
+        return self.sceneBoundingRect()
+
+    def mouse_move(self, event):
+        ''' In addition to default behaviour: update channel connections '''
+        #super().mouse_move(event)
+        if self.mode == 'Move':
+            event_pos = event.pos()
+            new_y = self.pos_y + (event_pos.y() - event.lastPos().y())
+            new_x = self.pos_x + (event_pos.x() - event.lastPos().x())
+            self.position = QPointF(new_x, new_y)
+            # Signal the move to the connections
+            self.moved.emit(event.lastPos().x() - event.pos().x(),
+                            event.lastPos().y() - event.pos().y())
+
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update completion list at block level '''

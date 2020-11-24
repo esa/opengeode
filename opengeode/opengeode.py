@@ -219,9 +219,6 @@ def log_errors(window, errors, warnings, clearfirst=True):
         item = QListWidgetItem('[ERROR] ' + error[0])
         if len(error) == 3:
             item.setData(Qt.UserRole, error[1])
-            #found = self.scene().symbol_near(QPoint(*error[1]), 1)
-            # Pyside bug: setData cannot store 'found' directly
-            #item.setData(Qt.UserRole + 2, id(found))
             item.setData(Qt.UserRole + 1, error[2])
         if window:
             window.addItem(item)
@@ -451,7 +448,6 @@ class SDL_Scene(QGraphicsScene):
             # only applies to 1st level hierarchy (process) allowing to have
             # unmodifiable list of DCL and STATES at the 1st level of hierarchy
             ACTIONS[self.context] = []
-            #self.allowed_symbols = [] if readonly else ACTIONS[self.context]
 
     def is_aggregation(self):
         ''' Determine if the current scene is a state aggregation, i.e. if
@@ -663,16 +659,14 @@ class SDL_Scene(QGraphicsScene):
             # Render nested scenes, recursively:
             for each in (item for item in dest_scene.visible_symb
                          if item.nested_scene):
-                LOG.debug(u'Recursive scene: ' + str(each))
+                LOG.debug('Recursive scene: ' + str(each))
                 if isinstance(each.nested_scene, ogAST.CompositeState) \
                         and (not each.nested_scene.statename
                              or each.nested_scene in already_created):
                     # Ignore nested state scenes that already exist
                     LOG.debug('Subscene "{}" ignored'.format(str(each)))
                     continue
-                subscene = \
-                        self.create_subscene(each.context_name,
-                                             dest_scene)
+                subscene = self.create_subscene(each.context_name, dest_scene)
 
                 already_created.append(each.nested_scene)
                 subscene.name = str(each)
@@ -1494,18 +1488,27 @@ class SDL_Scene(QGraphicsScene):
             valid = (symb and symb.__class__.__name__
                      in self.connection_start._conn_sources and
                      self.connection_start.__class__.__name__
-                     in symb._conn_targets and
-                     len(self.edge_points) > 2)
+                     in symb._conn_targets)# and
+                     #len(self.edge_points) > 2)
+                     # (The above was commented because it prevented
+                     # direct lines between two blocks)
+            # "valid" could also check if it's allowed to connect
+            # a symbol to itself.
             if symb and valid:
                 nb_segments = len(self.edge_points) - 1
                 for each in self.temp_lines[-nb_segments:]:
                     # check lines that collide with the source or dest TODO
                     pass
                 # Clicked on a symbol: create the actual connector
+                # Use a Channel type by default, but this could be something
+                # else in a different context
                 connector = Channel(parent=self.connection_start, child=symb)
+                # Set start and end points first, so that the distance can
+                # be computed when storing the middle points's relative
+                # positions
                 connector.start_point = self.edge_points[0]
-                connector.middle_points = self.edge_points[1:-1]
                 connector.end_point = self.border_point(symb, point)
+                connector.middle_points = self.edge_points[1:-1]
                 self.cancel()
 
         super().mouseReleaseEvent(event)

@@ -50,8 +50,10 @@ class Connection(QGraphicsPathItem):
         self.childRect = child.sceneBoundingRect()
         # Activate cache mode to boost rendering by calling paint less often
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
-        # When the child moves, the connection may need to adjust the end point
+        # When the parent or child move, the connection may need
+        # to adjust the end point: done upon signal reception
         self.child.moved.connect(self.child_moved)
+        self.parent.moved.connect(self.parent_moved)
         # Syntax error indicator
         self.syntax_error: Boolean = False
 
@@ -59,6 +61,11 @@ class Connection(QGraphicsPathItem):
     def child_moved(self, delta_x, delta_y):
         ''' When the connection child moves - redefine in subclasses '''
         pass
+
+    @Slot(float, float)
+    def parent_moved(self, delta_x, delta_y):
+        ''' When the connection parent moves - redefine in subclasses '''
+        self.parent.update_connections()
 
     @property
     def start_point(self):
@@ -427,8 +434,36 @@ class Channel(Signalroute):
     @Slot(float, float)
     def child_moved(self, delta_x, delta_y):
         ''' When the connection child moves - redefined function '''
+        # compute the distance between the start and end points
+        dist_x = abs(self.end_point.x() - self.start_point.x())
+        dist_y = abs(self.end_point.y() - self.start_point.y())
+        new_dist_x = dist_x - delta_x
+        new_dist_y = dist_y - delta_y
+
         self._end_point.setX(self._end_point.x() - delta_x)
         self._end_point.setY(self._end_point.y() - delta_y)
+        x_shift, y_shift = [], []
+        middle_points = list(self.middle_points)
+
+        self._middle_points = []
+        for ratio, point in zip(self._ratios, middle_points):
+            fact_x, fact_y = ratio
+            sp = self.start_point
+            new_x = (sp.x() + new_dist_x * fact_x) if 0 <= fact_x <= 1 \
+                    else point.x() - delta_x
+            new_y = (sp.y() + new_dist_y * fact_y) if 0 <= fact_y <= 1 \
+                    else point.y() - delta_y
+            self._middle_points.append(
+                    self.parent.mapToScene(QPointF(new_x, new_y)))
+
+        self.reshape()
+        self.update() # force a repaint
+
+    @Slot(float, float)
+    def parent_moved(self, delta_x, delta_y):
+        ''' When the connection parent moves - redefined function '''
+        self.reshape()
+        self.update() # force a repaint
 
     @property
     def start_point(self):
@@ -458,6 +493,25 @@ class Channel(Signalroute):
 
     @middle_points.setter
     def middle_points(self, points_scene_coord):
+        ''' Redefined function: also store the relative position (percentage)
+            to the line length, in order to ensure proper dimensionning of
+            the connection when blocks are moved '''
+        # compute the distance between the start and end points
+        dist_x = abs(self.end_point.x() - self.start_point.x())
+        dist_y = abs(self.end_point.y() - self.start_point.y())
+        # Compute the distance ratio
+        self._ratios = []
+        for point in points_scene_coord:
+            pCoord = self.parent.mapFromScene(point)
+            len_x = abs(pCoord.x() - self.start_point.x())
+            len_y = abs(pCoord.y() - self.start_point.y())
+            fact_x = 1 if dist_x == 0 else len_x / dist_x
+            fact_y = 1 if dist_y == 0 else len_y / dist_y
+            if pCoord.y() < self.start_point.y():
+                fact_y = -fact_y
+            if pCoord.x() < self.start_point.x():
+                fact_x = -fact_x
+            self._ratios.append((fact_x, fact_y))
         self._middle_points = points_scene_coord
 
     def add_point(self, scene_coord):
