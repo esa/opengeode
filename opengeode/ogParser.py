@@ -2941,8 +2941,13 @@ def procedure_pre(root, parent=None, context=None):
             proc.external = True
         elif child.type == lexer.FPAR:
             params, err, warn = fpar(child)
-            errors.extend(err)
-            warnings.extend(warn)
+            # convert error strings to the proper list
+            for each in err:
+                errors.append([f'In procedure signature: {each}',
+                    [0, 0], []])
+            for each in warn:
+                warnings.append([f'In procedure {proc.inputString}: {each}',
+                    [textarea.pos_x or 0, textarea.pos_y or 0], []])
             proc.fpar = params
         elif child.type == lexer.RETURNS:
             #  Declaration not in a text area...

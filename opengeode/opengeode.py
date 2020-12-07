@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.3.4'
+__version__ = '3.3.6'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -165,7 +165,15 @@ else:
 # they sometimes get destroyed and disappear from the scene.
 # As if a GC was deleting these object *even if they belong to the scene*
 # (but have no parentItem). Most likely a Qt/Pyside bug.
+# NOTE: This was not re-evaluated with PySide2
 G_SYMBOLS = set()
+
+# There is a bug in Pyside2 with the setData(..) function. It should
+# normally allow to store any type (as QVariant does in C++), however
+# it does not manage to store QGraphicsItems (i.e. symbols). Because
+# of that we must keep a table to find symbols that contain an error
+# The table is cleared each time the Check Model is called
+G_ERRORS = list()
 
 
 # Other Qt bug:
@@ -199,6 +207,7 @@ ACTIONS = {
 
 def log_errors(window, errors, warnings, clearfirst=True):
     ''' Report Error and Warnings on the console and in the log window '''
+    G_ERRORS.clear()
     if window and clearfirst:
         window.clear()
     for error in errors:
@@ -207,18 +216,15 @@ def log_errors(window, errors, warnings, clearfirst=True):
             # problem is in decision answers branches
             error[0] = 'Internal error - ' + str(error[0])
         LOG.error(error[0])
-        item = QListWidgetItem(u'[ERROR] ' + error[0])
+        item = QListWidgetItem('[ERROR] ' + error[0])
         if len(error) == 3:
             item.setData(Qt.UserRole, error[1])
-            #found = self.scene().symbol_near(QPoint(*error[1]), 1)
-            # Pyside bug: setData cannot store 'found' directly
-            #item.setData(Qt.UserRole + 1, id(found))
             item.setData(Qt.UserRole + 1, error[2])
         if window:
             window.addItem(item)
     for warning in warnings:
         LOG.warning(warning[0])
-        item = QListWidgetItem(u'[WARNING] ' + str(warning[0]))
+        item = QListWidgetItem('[WARNING] ' + str(warning[0]))
         if len(warning) == 3:
             item.setData(Qt.UserRole, warning[1])
             item.setData(Qt.UserRole + 1, warning[2])
@@ -226,7 +232,6 @@ def log_errors(window, errors, warnings, clearfirst=True):
             window.addItem(item)
     if not errors and not warnings and window:
         window.addItem('No errors, no warnings!')
-
 
 
 class Vi_bar(QLineEdit, object):
@@ -443,7 +448,6 @@ class SDL_Scene(QGraphicsScene):
             # only applies to 1st level hierarchy (process) allowing to have
             # unmodifiable list of DCL and STATES at the 1st level of hierarchy
             ACTIONS[self.context] = []
-            #self.allowed_symbols = [] if readonly else ACTIONS[self.context]
 
     def is_aggregation(self):
         ''' Determine if the current scene is a state aggregation, i.e. if
@@ -655,16 +659,14 @@ class SDL_Scene(QGraphicsScene):
             # Render nested scenes, recursively:
             for each in (item for item in dest_scene.visible_symb
                          if item.nested_scene):
-                LOG.debug(u'Recursive scene: ' + str(each))
+                LOG.debug('Recursive scene: ' + str(each))
                 if isinstance(each.nested_scene, ogAST.CompositeState) \
                         and (not each.nested_scene.statename
                              or each.nested_scene in already_created):
                     # Ignore nested state scenes that already exist
                     LOG.debug('Subscene "{}" ignored'.format(str(each)))
                     continue
-                subscene = \
-                        self.create_subscene(each.context_name,
-                                             dest_scene)
+                subscene = self.create_subscene(each.context_name, dest_scene)
 
                 already_created.append(each.nested_scene)
                 subscene.name = str(each)
@@ -848,11 +850,13 @@ class SDL_Scene(QGraphicsScene):
                         # line 1 is the CIF comment which is not visible
                         line_nb, col = line_col
                         line_nb = int(line_nb) - 1
-                        split[1] = '{}:{}'.format(line_nb, col)
+                        split[1] = f'{line_nb}:{col}'
                 pos = each.scenePos()
-                split.append (u'in "{}"'.format(str(each)))
+                split.append (f'in "{str(each)}"')
                 fmt = [[' '.join(split), [pos.x(), pos.y()], self.path]]
                 log_errors(self.messages_window, fmt, [], clearfirst=False)
+                for view in self.views():
+                    view.find_symbols_and_update_errors()
 
         for each in self.all_nested_scenes:
             if each not in ignore:
@@ -1484,18 +1488,27 @@ class SDL_Scene(QGraphicsScene):
             valid = (symb and symb.__class__.__name__
                      in self.connection_start._conn_sources and
                      self.connection_start.__class__.__name__
-                     in symb._conn_targets and
-                     len(self.edge_points) > 2)
+                     in symb._conn_targets)# and
+                     #len(self.edge_points) > 2)
+                     # (The above was commented because it prevented
+                     # direct lines between two blocks)
+            # "valid" could also check if it's allowed to connect
+            # a symbol to itself.
             if symb and valid:
                 nb_segments = len(self.edge_points) - 1
                 for each in self.temp_lines[-nb_segments:]:
                     # check lines that collide with the source or dest TODO
                     pass
                 # Clicked on a symbol: create the actual connector
+                # Use a Channel type by default, but this could be something
+                # else in a different context
                 connector = Channel(parent=self.connection_start, child=symb)
+                # Set start and end points first, so that the distance can
+                # be computed when storing the middle points's relative
+                # positions
                 connector.start_point = self.edge_points[0]
-                connector.middle_points = self.edge_points[1:-1]
                 connector.end_point = self.border_point(symb, point)
+                connector.middle_points = self.edge_points[1:-1]
                 self.cancel()
 
         super().mouseReleaseEvent(event)
@@ -2240,6 +2253,7 @@ clean:
             self.scene().render_everything(block)
         except AttributeError as err:
             LOG.debug("[Rendering] " + str(err))
+        self.find_symbols_and_update_errors()
         self.toolbar.update_menu(self.scene())
         self.scene().name = 'block {}[*]'.format(process.processName)
         self.wrapping_window.setWindowTitle(self.scene().name)
@@ -2252,7 +2266,6 @@ clean:
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
         self.update_datadict.emit()
-        #os.chdir(cwd)
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -2332,6 +2345,7 @@ clean:
                 scene.semantic_errors = True if errors else False
                 log_errors(self.messages_window, errors, warnings,
                            clearfirst=False)
+                self.find_symbols_and_update_errors()
                 self.update_asn1_dock.emit(ast)
                 return "Done"
         except Exception as err:
@@ -2340,18 +2354,39 @@ clean:
             LOG.debug(str(traceback.format_exc()))
         return "Syntax Errors"
 
-    def show_item(self, item):
+    def find_symbols_and_update_errors(self):
+        ''' Update the list of errors with the actual symbol location
+        error list entries contain Qt Data including path and graphical
+        coordinates. Based on this, retrieve the actual symbol. Once
+        found, it can be read by show_item (i.e. when user clicks on the
+        line in the list) to highlight the correct symbol even if it has
+        moved.
+        This function is called after each call of log_errors()
         '''
-           Select an item and make sure it is visible - change scene if needed
-           Used when user clicks on a warning or error to locate the symbol
-        '''
-        coord = item.data(Qt.UserRole)
-        path = item.data(Qt.UserRole + 1)
-        if not coord:
-            LOG.debug('Corresponding symbol not found (no coordinates)')
-            return
+        messages : QListWidget = self.messages_window
+        current_scene = self.scene().path
+        for idx in range(messages.count()):
+            line : QListWidgetItem = messages.item(idx)
+            coord = line.data(Qt.UserRole)
+            path = line.data(Qt.UserRole + 1)
+            if not coord:
+                # All lines do not contain errors - discard them
+                pass
+            else:
+                # Find the scene containing the symbol
+                scene = self.scene()
+                if not self.go_to_scene_path(path):
+                    continue
+                pos = QPoint(*coord)
+                symbol = self.scene().symbol_near(pos=pos, dist=1)
+                G_ERRORS.append(symbol)
+                line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
+        _ = self.go_to_scene_path(current_scene)
 
-        # Find the scene containing the symbol
+
+    def go_to_scene_path(self, path) -> bool:
+        ''' Reach a specific path (scene) by going up/down. This makes sure
+        that the Up button is properly set when the scene is reached '''
         while self.up_button.isEnabled():
             self.go_up()
 
@@ -2359,45 +2394,59 @@ clean:
             try:
                 kind, name = each.split()
             except ValueError as err:
-                LOG.error('Cannot locate item: ' + str(each))
-                continue
+                LOG.debug(f'In go_to_scene_path: {str(each)}')
+                return False
             name = str(name).lower()
             if kind.lower() == 'process':
                 for process in self.scene().processes:
                     if str(process).lower() == name:
                         self.go_down(process.nested_scene,
-                                     name=u'process {}'.format(name))
+                                     name='process {}'.format(name))
                         break
                 else:
-                    LOG.error('Process {} not found'.format(name))
+                    LOG.error(f'Process {name} not found')
+                    return False
             elif kind.lower() == 'state':
                 for state in self.scene().states:
                     if str(state).lower() == name:
                         self.go_down(state.nested_scene,
-                                     name=u'state {}'.format(name))
+                                     name=f'state {name}')
                         break
                 else:
-                    LOG.error('Composite state {} not found'.format(name))
+                    LOG.error(f'Composite state {name} not found')
+                    return False
             elif kind.lower() == 'procedure':
                 for proc in self.scene().procedures:
                     if str(proc).lower() == name:
                         self.go_down(proc.nested_scene,
-                                     name=u'procedure {}'.format(name))
+                                     name=f'procedure {name}')
                         break
                 else:
-                    LOG.error('Procedure {} not found'.format(name))
+                    LOG.error(f'Procedure {name} not found')
+                    return False
+        return True
 
-        pos = QPoint(*coord)
-        symbol = self.scene().symbol_near(pos=pos, dist=1)
-        if symbol:
+    def show_item(self, item):
+        '''
+           Select an item and make sure it is visible - change scene if needed
+           Used when user clicks on a warning or error to locate the symbol
+        '''
+        coord = item.data(Qt.UserRole)
+        path = item.data(Qt.UserRole + 1)
+        symb_idx = item.data(Qt.UserRole + 2)
+        if symb_idx is not None:
+            symbol = G_ERRORS[symb_idx]
             self.scene().clearSelection()
             self.scene().clear_highlight()
             self.scene().clear_focus()
+            if not self.go_to_scene_path(path):
+                return
             symbol.select()
             self.scene().highlight(symbol)
             self.ensureVisible(symbol)
         else:
-            LOG.info('No symbol at given coordinates in the current scene')
+            LOG.debug('No coordinates or symbol found')
+            return
 
     def generate_ada(self):
         ''' Generate Ada code '''
@@ -2415,6 +2464,7 @@ clean:
             except ValueError:
                 process = None
             log_errors(self.messages_window, errors, warnings)
+            self.find_symbols_and_update_errors()
             if len(errors) > 0:
                 self.messages_window.addItem(
                         'Aborting: too many errors to generate code')
@@ -2445,6 +2495,7 @@ clean:
             except ValueError:
                 process = None
             log_errors(self.messages_window, errors, warnings)
+            self.find_symbols_and_update_errors()
             if len(errors) > 0:
                 self.messages_window.addItem(
                         'Aborting: too many errors to generate code')
@@ -2479,6 +2530,7 @@ clean:
             except ValueError:
                 process = None
             log_errors(self.messages_window, errors, warnings)
+            self.find_symbols_and_update_errors()
             if len(errors) > 0:
                 self.messages_window.addItem(
                         'Aborting: too many errors to generate code')
@@ -2977,8 +3029,9 @@ class OG_MainWindow(QMainWindow):
             settings = QSettings(ini_filename, QSettings.IniFormat)
             self.restoreGeometry(settings.value('geometry'))
             self.restoreState(settings.value('windowState'))
-        else:
-            self.setWindowState(Qt.WindowMaximized)
+        #else:
+        #    Commented: maximizing the window is annoying
+        #    self.setWindowState(Qt.WindowMaximized)
 
 
 class FilterEvent(QObject):
