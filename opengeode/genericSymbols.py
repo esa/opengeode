@@ -634,8 +634,10 @@ class Symbol(QObject, QGraphicsPathItem):
                 self.cam(self.coord, self.position)
                 # Emit signal to indicate that the symbol moved
                 # typically caught by connectors
-                self.moved.emit(self.coord.x() - self.pos_x,
-                                self.coord.y() - self.pos_y)
+                # Moved to sdlSymbols.Process class, this event is actually
+                # sent while moving, so that connection is updated on the fly
+                #self.moved.emit(self.coord.x() - self.pos_x,
+                #                self.coord.y() - self.pos_y)
         self.mode = ''
 
     def updateConnectionPoints(self):
@@ -661,11 +663,18 @@ class Symbol(QObject, QGraphicsPathItem):
             top_level = top_level.parentItem() or top_level.parent
         return top_level
 
+    def cam_group(self):
+        ''' Set the graphical boundaries of the item to apply the CAM on
+            This can be redifined in subclasses, for example to exclude
+            connections '''
+        return (self.sceneBoundingRect() |
+                self.mapRectToScene(self.childrenBoundingRect()))
+
     # pylint: disable=R0914
     def cam(self, old_pos, new_pos, ignore=None):
         ''' Collision Avoidance Manoeuvre for top level symbols '''
         # Since the cam function is recursive it may be time consuming
-        # Call the Qt event prcessing to avoid blocking the application
+        # Call the Qt event processing to avoid blocking the application
         # Removed (had bad visual side effects)
         # QApplication.processEvents()
         #print 'CAM', str(self)[slice(0, 20)]
@@ -686,8 +695,7 @@ class Symbol(QObject, QGraphicsPathItem):
         delta = new_pos - old_pos
 
         # Rectangle of current group of item in scene coordinates
-        rect = (self.sceneBoundingRect() |
-                self.mapRectToScene(self.childrenBoundingRect()))
+        rect = self.cam_group()
 
         # Move the rectangle to the new position, and move the current item
         animation = False
@@ -860,7 +868,7 @@ class Comment(Symbol):
                                QPoint(w, h), QPoint(x, h)])
 
     def mouse_move(self, event):
-        ''' Handle item move '''
+        ''' Comment symbol: Handle item move '''
         super().mouse_move(event)
         if self.mode == 'Move':
             self.pos_y += event.pos().y() - event.lastPos().y()
@@ -1098,7 +1106,7 @@ class HorizontalSymbol(Symbol):
         return None
 
     def mouse_move(self, event):
-        ''' Will prevent move from being above the parent '''
+        ''' Horizontal symbols: prevent move from being above the parent '''
         if self.mode == 'Move':
             event_pos = event.pos()
             new_y = self.pos_y + (event_pos.y() - event.lastPos().y())
