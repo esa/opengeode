@@ -1363,15 +1363,15 @@ class SDL_Scene(QGraphicsScene):
                 # and end can be on the same symbol, etc.
                 # DISABLE CONNECTIONS FOR NOW
                 pass
-#               self.mode = 'wait_next_connection_point'
-#               click_point = event.scenePos()
-#               point = self.border_point(symb, click_point)
-#               self.edge_points = [point]
-#               self.temp_lines.append(self.addLine(point.x(),
-#                                                   point.y(),
-#                                                   click_point.x(),
-#                                                   click_point.y()))
-#               self.connection_start = symb
+                self.mode = 'wait_next_connection_point'
+                click_point = event.scenePos()
+                point = self.border_point(symb, click_point)
+                self.edge_points = [point]
+                self.temp_lines.append(self.addLine(point.x(),
+                                                    point.y(),
+                                                    click_point.x(),
+                                                    click_point.y()))
+                self.connection_start = symb
 
         elif self.mode == 'wait_placement':
             try:

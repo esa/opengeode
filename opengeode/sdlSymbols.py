@@ -1074,7 +1074,7 @@ class Process(HorizontalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
     completion_list = set()
-    is_singleton = True #(False to allow multiple processes)
+    is_singleton = False  #(False to allow multiple processes)
     arrow_head = 'angle'
     arrow_tail = 'angle'
     # Process can be connected to other processes by the user

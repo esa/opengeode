@@ -446,13 +446,17 @@ class Channel(Signalroute):
         middle_points = list(self.middle_points)
 
         self._middle_points = []
-        for ratio, point in zip(self._ratios, middle_points):
-            fact_x, fact_y = ratio
+#        for ratio, point in zip(self._ratios, middle_points):
+        for ratio, point in zip(self._ratiov2, middle_points):
             sp = self.start_point
-            new_x = (sp.x() + new_dist_x * fact_x) if 0 <= fact_x <= 1 \
-                    else point.x() - delta_x
-            new_y = (sp.y() + new_dist_y * fact_y) if 0 <= fact_y <= 1 \
-                    else point.y() - delta_y
+            new_x = point.x() - (delta_x * ratio)
+            new_y = point.y() - (delta_y * ratio)
+#           fact_x, fact_y = ratio
+#           sp = self.start_point
+#           new_x = (sp.x() + new_dist_x * fact_x) if 0 <= fact_x <= 1 \
+#                   else point.x() - delta_x
+#           new_y = (sp.y() + new_dist_y * fact_y) if 0 <= fact_y <= 1 \
+#                   else point.y() - delta_y
             self._middle_points.append(
                     self.parent.mapToScene(QPointF(new_x, new_y)))
 
@@ -496,6 +500,30 @@ class Channel(Signalroute):
         ''' Redefined function: also store the relative position (percentage)
             to the line length, in order to ensure proper dimensionning of
             the connection when blocks are moved '''
+
+        # Compute the length of the complete connection line
+        self._ratiov2 = []
+        segment_lengths = []
+        curr_point = self.end_point
+        points = [self.start_point]
+        points.extend([self.parent.mapFromScene(point)
+            for point in points_scene_coord])
+        length = 0
+        while points:
+            next_point = points.pop()
+            segment_length = QLineF(curr_point, next_point).length()
+            length = length + segment_length
+            segment_lengths.insert(0, segment_length)
+            curr = next_point
+        # Compute the points relative length relative to the total length
+        ratios = []
+        if length == 0:
+            return
+        for point_idx in range(len(points_scene_coord)):
+            ratios.append(segment_lengths[point_idx] / length)
+        self._ratiov2 = ratios
+        #print("full length: ", length, segment_lengths, ratios)
+
         # compute the distance between the start and end points
         dist_x = abs(self.end_point.x() - self.start_point.x())
         dist_y = abs(self.end_point.y() - self.start_point.y())
