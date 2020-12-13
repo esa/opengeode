@@ -434,18 +434,12 @@ class Channel(Signalroute):
     @Slot(float, float)
     def child_moved(self, delta_x, delta_y):
         ''' When the connection child moves - redefined function '''
-        # compute the distance between the start and end points
-        dist_x = abs(self.end_point.x() - self.start_point.x())
-        dist_y = abs(self.end_point.y() - self.start_point.y())
-        new_dist_x = dist_x - delta_x
-        new_dist_y = dist_y - delta_y
 
         # Move the end point according to the mouse movement
         self._end_point.setX(self._end_point.x() - delta_x)
         self._end_point.setY(self._end_point.y() - delta_y)
 
-        x_shift, y_shift = [], []
-        # Get the current (old) position of each middle point
+        # Get the current position of each middle point
         middle_points = list(self.middle_points)
 
         # Start from a new list of middle points to compute new coordinates
@@ -477,6 +471,32 @@ class Channel(Signalroute):
     @Slot(float, float)
     def parent_moved(self, delta_x, delta_y):
         ''' When the connection parent moves - redefined function '''
+        # Get the current position of each middle point
+        # (in scene coordinates, as stored before)
+        middle_points = list(self._middle_points)
+
+        # Start from a new list of middle points to compute new coordinates
+        self._middle_points = []
+
+        for ratio, point in zip(self._ratios, middle_points):
+            sp = self.parent.mapToScene(self.start_point)
+            ep = self.parent.mapToScene(self.end_point)
+            fact_x, fact_y = ratio
+            if point.x() == sp.x() and (1 - fact_x) < 0:
+                new_x = point.x()
+            elif 0 <= fact_x < 1:
+                new_x = point.x() - (delta_x * (1 - fact_x))
+            else:
+                new_x = point.x() - delta_x
+            if (point.y() == sp.y() and (1 - fact_y) < 0) \
+                       or (point.y() == ep.y()) :
+                new_y = point.y()
+            elif 0 <= fact_y < 1:
+                new_y = point.y() - (delta_y * (1 - fact_y))
+            else:
+                new_y = point.y() - delta_y
+
+            self._middle_points.append(QPointF(new_x, new_y))
         self.reshape()
         self.update() # force a repaint
 
