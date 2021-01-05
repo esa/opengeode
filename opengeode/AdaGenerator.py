@@ -513,18 +513,12 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             aggreg_start_proc.extend([f'end {name}{SEPARATOR}START;',
                                      '\n'])
 
-        # Add the declaration of the Execute_Transition  procedure
+        # Add the declaration of the Execute_Transition procedure
         process_level_decl.append(
                 'procedure Execute_Transition (Id : Integer);')
 
         # Generate the code of the start transition (if process not empty)
         Init_Done = f'{LPREFIX}.Init_Done := True;'
-#       if not simu:
-#           start_transition = ['begin']
-#           if process.transitions:
-#               start_transition.append('Execute_Transition (0);')
-#           start_transition.append(Init_Done)
-#       else:
         rand_reset_decl = []
         for rand_g in process.random_generator:
             rand_reset_decl.append(f'Rand_{rand_g}_Pkg.Reset (Gen_{rand_g});');
@@ -561,16 +555,16 @@ with Ada.Unchecked_Conversion;
 with Ada.Numerics.Generic_Elementary_Functions;
 
 package body {process_name} is'''
-    if not instance else u"package body {} is".format(process_name)]
+    if not instance else f"package body {process_name} is"]
 
     generic_spec, instance_decl = "", ""
     if generic:
-        generic_spec = u"generic\n"
+        generic_spec = "generic\n"
         ri_list = external_ri_list(process)
         if ri_list:
             generic_spec += u"    with " + u";\n    with ".join(ri_list) + ';'
     if instance:
-        instance_decl = u"with {};".format(process.instance_of_name)
+        instance_decl = f"with {process.instance_of_name};"
 
     # print process.fpar
     # FPAR could be set for Context Parameters. They are available here
@@ -649,6 +643,9 @@ package body {process_name}_RI is''']
                 f" with Export, Convention => C, "
                 f'Link_Name => "{process_name.lower()}_state";')
 
+    # Declare procedure Startup in .ads
+    ads_template.append(f'procedure Startup with Export, Convention => C, Link_Name => "{process_name}_startup";')
+
     if simu and not import_context:   # import_context = stop condition
         ads_template.append('--  API for simulation via DLL')
         dll_api.append('-- API to remotely change internal data')
@@ -669,9 +666,6 @@ package body {process_name}_RI is''']
             f"{LPREFIX} := {LPREFIX}_bk;",
              "end Restore_Context;",
              ""])
-
-        # Declare procedure Startup in .ads
-        ads_template.append(f'procedure Startup with Export, Convention => C, Link_Name => "{process_name}_startup";')
 
         # Functions to get global context
         ads_template.append(
