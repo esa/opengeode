@@ -262,6 +262,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     asn1_mods = ("\"{}\"".format(mod.lower().replace('-', '_'))
                 for mod in process.asn1Modules)
 
+    # determine if there are context parameters (defined at taste level)
+    # they are passed as generic parameters in function type/instances
+    has_context_params = any(mod.startswith("Context-")
+            for mod in process.asn1Modules)
+
     #  Create a .gpr to build the library for the simulator
     lib_gpr = '''project {pr}_Lib is
    for Languages use ("Ada");
@@ -562,8 +567,13 @@ package body {process_name} is''']
     if generic:
         generic_spec = "generic\n"
         ri_list = external_ri_list(process)
+        if has_context_params:
+            # Add context parameter to the process type generics, to make sure
+            # the value of the instance is used, not the ASN1 constant of the
+            # type.
+            generic_spec += f"   {process_name}_ctxt : {ASN1SCC}Context_{process_name};"
         if ri_list:
-            generic_spec += "    with " + ";\n    with ".join(ri_list) + ';'
+            generic_spec += "   with " + ";\n   with ".join(ri_list) + ';'
     if instance:
         instance_decl = f"with {process.instance_of_name};"
 
@@ -1017,15 +1027,23 @@ package body {process_name}_RI is''']
         pkg_decl = (f"package {process_name}_Instance is new {process.instance_of_name}")
         ri_list = [f"RI{SEPARATOR}{sig['name']}"
                    for sig in process.output_signals]
-        ri_list.extend ([u"RI{sep}{name}".format(sep=SEPARATOR,
-                                                 name=proc.inputString)
+        ri_list.extend ([f"RI{SEPARATOR}{proc.inputString}"
                         for proc in process.procedures if proc.external])
         ri_list.extend([f"set_{timer}"   for timer in process.timers])
         ri_list.extend([f"reset_{timer}" for timer in process.timers])
         ri_inst = [f"{ri} => {ri}" for ri in ri_list]
+        if ri_inst or has_context_params:
+            pkg_decl += " ("
         if ri_inst:
-            pkg_decl += " ({})".format(", ".join(ri_inst))
-        ads_template.append(pkg_decl + ";")
+            pkg_decl += "{}".format(", ".join(ri_inst))
+        if has_context_params:
+            if ri_inst:
+                pkg_decl += ", "
+            # Add instance-value of the context parameters
+            pkg_decl += f"{process.instance_of_name}_ctxt => {process_name}_ctxt"
+        if ri_inst or has_context_params:
+            pkg_decl += ")"
+        ads_template.append(f"{pkg_decl};")
         ads_template.append(
                 f"function Get_State return chars_ptr "
                 f"is (New_String ({process_name}_Instance.{LPREFIX}.State'Img))"
