@@ -15,7 +15,7 @@ system og;
         connect c and r;
         /* CIF PROCESS (253, 105), (150, 75) */
         process og;
-            /* CIF TEXT (0, 33), (356, 203) */
+            /* CIF TEXT (0, 33), (356, 264) */
             -- Text area for declarations and comments
             
             dcl a List := {'a', 'b', 'foo', 'bar', 'baz'};
@@ -28,6 +28,10 @@ system og;
             dcl strlit outStr := '68656c6c6f'H;
             
             dcl bitstrlit outStr := '01010110'B;
+            
+            dcl helloStr Short_String := {'h', 'e', 'l', 'l', 'o'};
+            
+            dcl ia5 TextString := 'hello';
             /* CIF ENDTEXT */
             /* CIF START (639, 63), (70, 35) */
             START;
@@ -52,7 +56,17 @@ endfor
 (sep is also a dcl-variable)';
                 /* CIF PROCEDURECALL (509, 441), (330, 35) */
                 call writeln('String literal (should be "hello"):', strlit);
-                /* CIF NEXTSTATE (639, 491), (70, 35) */
+                /* CIF task (608, 496), (130, 56) */
+                task for chr in helloStr:
+ call write(chr);
+endfor;
+                /* CIF PROCEDURECALL (631, 572), (84, 35) */
+                call write(' ');
+                /* CIF task (625, 627), (97, 35) */
+                task ia5 := 'world';
+                /* CIF PROCEDURECALL (624, 682), (99, 35) */
+                call writeln(ia5);
+                /* CIF NEXTSTATE (639, 732), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (366, 217), (70, 35) */
             state wait;
