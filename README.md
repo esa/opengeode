@@ -124,8 +124,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.3.7 (03/2021)**
+- Fix handling of context parameters in type/instances
+
 **3.3.6 (12/2020)**
-- Minor bugfix with predure parsing
+- Minor bugfix with procedure parsing
 
 **3.3.5 (11/2020)**
 - Improve link between error messages and graphical symbols
