@@ -465,6 +465,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                 varbty = find_basic_type(var_type)
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
+                elif varbty.kind == 'IA5StringType':
+                    dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal,\
                         'DCL: Expecting a ground expression'
                 initial_values.append(f'{var_name} => {dstr}')
@@ -1330,6 +1332,11 @@ def write_statement(param, newline):
         code.extend(st2)
         local.extend(lcl1)
         local.extend(lcl2)
+    elif type_kind == 'IA5StringType':
+        # IA5String are null-terminated to match the C representation
+        # ASN1SCC API offers the getStringSize function to read the actual size
+        code, string, local = expression(param, readonly=1)
+        code.append(f'Put ({string} (1 .. adaasn1rtl.GetStringSize ({string})));')
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimStringLiteral):
             # Raw string
@@ -2162,8 +2169,15 @@ def _assign_expression(expr, **kwargs):
     # If left side is a string/seqOf and right side is a substring, we must
     # assign the .Data and .Length parts properly
     basic_left = find_basic_type(expr.left.exprType)
-    if basic_left.kind in ('SequenceOfType', 'OctetStringType'):
-        rlen = u"{}'Length".format(right_str)
+    if (basic_left.kind == 'IA5StringType'
+            and isinstance(expr.right, ogAST.PrimStringLiteral)):
+        # Assignment of a raw IA5String: do not use the result of expression
+        # as it represents the string as a sequence of numbers to fit
+        # OCTET STRINGs.
+        def_value = ia5string_raw(expr.right)
+        strings.append(f'{left_str} := {def_value};')
+    elif basic_left.kind in ('SequenceOfType', 'OctetStringType'):
+        rlen = f"{right_str}'Length"
 
         if isinstance(expr.right, ogAST.PrimSubstring):
             if not isinstance(expr.left, ogAST.PrimSubstring):
@@ -2204,11 +2218,10 @@ def _assign_expression(expr, **kwargs):
             rlen = None
         else:
             # Right part is a variable
-            strings.append(u"{} := {};".format(left_str, right_str))
+            strings.append(f"{left_str} := {right_str};")
             rlen = None
         if rlen and basic_left.Min != basic_left.Max:
-            strings.append(u"{lvar}.Length := {rlen};"
-                           .format(lvar=left_str, rlen=rlen))
+            strings.append(f"{left_str}.Length := {rlen};")
     elif basic_left.kind.startswith('Integer'):
 #       print '\nASSIGN:', expr.inputString,
 #       print "Left type = ",type_name(find_basic_type (expr.left.exprType)),
@@ -2236,9 +2249,9 @@ def _assign_expression(expr, **kwargs):
             else:
                 res = right_str
 
-        strings.append(f"{left_str} := {res};".format(left_str, res))
+        strings.append(f"{left_str} := {res};")
     else:
-        strings.append(u"{} := {};".format(left_str, right_str))
+        strings.append(f"{left_str} := {right_str};")
     code.extend(left_stmts)
     code.extend(right_stmts)
     code.extend(strings)
@@ -2528,9 +2541,17 @@ def _string_literal(primary, **kwargs):
     # as expected by the Ada type corresponding to Octet String
     unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
 
-    ada_string = u', '.join(unsigned_8)
+    ada_string = ', '.join(unsigned_8)
     return [], str(ada_string), []
 
+def ia5string_raw(prim: ogAST.PrimStringLiteral):
+    ''' IA5 Strings are of type String in Ada but this is not directly
+    compatible with variable-length strings as defined in ASN.1
+    Since the Ada type maps to a null-terminated C type, we have to make
+    a corresponding assignment, filling then non-used part of the container
+    with NULL character. To know the size, we can use adaasn1rtl.getStringSize
+    '''
+    return "('" + "', '".join(prim.value[1:-1]) + "', others => Standard.ASCII.NUL)"
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary, **kwargs):
@@ -2542,7 +2563,7 @@ def _constant(primary, **kwargs):
 def _mantissa_base_exp(primary, **kwargs):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
     # TODO
-    return [], u'', []
+    return [], '', []
 
 
 @expression.register(ogAST.PrimConditional)
@@ -2556,7 +2577,7 @@ def _conditional(cond, **kwargs):
         then_str = cond.value['then'].value.replace("'", '"')
         else_str = cond.value['else'].value.replace("'", '"')
         lens = [len(then_str), len(else_str)]
-        tmp_type = 'String(1 .. {})'.format(max(lens) - 2)
+        tmp_type = 'String (1 .. {})'.format(max(lens) - 2)
         # Ada require fixed-length strings, adjust with spaces
         if lens[0] < lens[1]:
             then_str = then_str[0:-1] + ' ' * (lens[1] - lens[0]) + '"'
@@ -3124,7 +3145,7 @@ def _inner_procedure(proc, **kwargs):
             inner_code, inner_local = generate(inner_proc)
             local_decl.extend(inner_local)
             code.extend(inner_code)
-        code.append(pi_header + u' is')
+        code.append(f'{pi_header} is')
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
             if def_value:
@@ -3132,8 +3153,11 @@ def _inner_procedure(proc, **kwargs):
                 # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value, readonly=1)
                 varbty = find_basic_type(var_type)
+                print(f'{var_name}: {dstr} {varbty.kind}')
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
+                elif varbty.kind == 'IA5StringType':
+                    dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal, 'Ground expression error'
             code.append(u'{name} : {sort}{default};'
                         .format(name=var_name,
