@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 **3.3.7 (03/2021)**
+- Support IA5String type
+
+**3.3.7 (03/2021)**
 - Fix handling of context parameters in type/instances
 
 **3.3.6 (12/2020)**

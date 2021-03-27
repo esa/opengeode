@@ -271,7 +271,8 @@ def is_string(ty) -> bool:
     return find_basic_type(ty).kind in (
         'StandardStringType',
         'OctetStringType',
-        'StringType'
+        'StringType',
+        'IA5StringType'
     )
 
 
@@ -1170,8 +1171,10 @@ def check_type_compatibility(primary, type_ref, context):
         # Octet strings
         basic_type = find_basic_type(type_ref)
         if basic_type.kind == 'StandardStringType':
+            # raw string
             return warnings
         elif basic_type.kind.endswith('StringType'):
+            # all strings including IA5String
             try:
                 if int(minR) <= len(
                         primary.value[1:-1]) <= int(maxR):
