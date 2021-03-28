@@ -2963,16 +2963,17 @@ def procedure_pre(root, parent=None, context=None):
                 errors.append([f"In procdure {proc.inputString}: {str(err)}",
                     [0, 0], []])
             if proc.return_var:
-                warnings.append('Procedure return variable not supported')
+                warnings.append([f'Procedure {proc.inputString}:'
+                    ' return variable not supported', [0, 0], []])
         elif child.type in (lexer.PROCEDURE, lexer.START,
                             lexer.STATE, lexer.FLOATING_LABEL):
             content.append(child)
         else:
-            warnings.append(
+            warnings.append([
                     'Unsupported construct in procedure, type: ' +
                     sdl92Parser.tokenNamesMap[child.type] +
                     ' - line ' + str(child.getLine()) +
-                    ' - in procedure ' + str(proc.inputString))
+                    ' - in procedure ' + proc.inputString, [0, 0], []])
     for each in chain(errors, warnings):
         each[2].insert(0, f'PROCEDURE {proc.inputString}')
     return proc, content, errors, warnings
@@ -3424,9 +3425,24 @@ def text_area(root, parent=None, context=None):
             warnings.append('Unsupported construct in text area, type: ' +
                     str(child.type))
     # Report errors with symbol coordinates
-    errors = [[e, [ta.pos_x or 0, ta.pos_y or 0], []] for e in errors]
-    warnings = [[w, [ta.pos_x or 0, ta.pos_y or 0], []] for w in warnings]
-    return ta, errors, warnings
+    clean_errs, clean_warns = [], []
+    # some errors and warnings may already have the list structure because
+    # they were parsed by a rule that added them (e.g. procedures)
+    # in that case we must reuse this structure. otherwise, we add the
+    # missing parts
+    for err in errors:
+        if type(err) == list:
+            err[1] = [ta.pos_x or 0, ta.pos_y or 0]
+            clean_errs.append(err)
+        else: # string
+            clean_errs.append([err, [ta.pos_x or 0, ta.pos_y or 0], []])
+    for warn in warnings:
+        if type(warn) == list:
+            warn[1] = [ta.pos_x or 0, ta.pos_y or 0]
+            clean_warns.append(warn)
+        else: # string
+            clean_errs.append([warn, [ta.pos_x or 0, ta.pos_y or 0], []])
+    return ta, clean_errs, clean_warns
 
 
 def signal(root):
