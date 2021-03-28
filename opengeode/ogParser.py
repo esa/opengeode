@@ -3481,7 +3481,7 @@ def text_area(root, parent=None, context=None):
             warn[1] = [ta.pos_x or 0, ta.pos_y or 0]
             clean_warns.append(warn)
         else: # string
-            clean_errs.append([warn, [ta.pos_x or 0, ta.pos_y or 0], []])
+            clean_warns.append([warn, [ta.pos_x or 0, ta.pos_y or 0], []])
     return ta, clean_errs, clean_warns
 
 
