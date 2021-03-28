@@ -712,8 +712,13 @@ package body {process_name}_RI is''']
             pi_header = procedure_header(proc)
             ads_template.append(f'{pi_header};')
             if not proc.external and not generic:
-                ads_template.append(
-                   f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "_{proc.inputString}");')
+                if not proc.exported:
+                    ads_template.append(
+                       f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "_{proc.inputString}");')
+                else:
+                    # Export for TASTE as a synchronous PI
+                    ads_template.append(
+                       f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "{process_name.lower()}_PI_{proc.inputString}");')
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)

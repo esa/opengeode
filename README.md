@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.4.0 (03/2021)**
+- Support exported/reference procedures (allowing remote synchronous calls)
+
 **3.3.7 (03/2021)**
 - Support IA5String type
 

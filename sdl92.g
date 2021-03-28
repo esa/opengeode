@@ -284,16 +284,19 @@ parameters_of_sort
 
 
 // procedure
+// 2021-03 Added EXPORTED and REFEERENCED keywords
+// needed to declare a synchronous provided interface at system level
 procedure
         :       cif?
-                PROCEDURE procedure_id (e1=end | SEMI)
+                EXPORTED? PROCEDURE procedure_id (e1=end | SEMI)
                 fpar?
                 res=procedure_result?
                 (text_area | procedure)*
-                ((processBody? ENDPROCEDURE procedure_id?) | EXTERNAL)
+                ((processBody? ENDPROCEDURE procedure_id?)
+                 | EXTERNAL | REFERENCED)
                 e2=end
         ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar? $res?
-                text_area* procedure* processBody? EXTERNAL?)
+                text_area* procedure* processBody? EXTERNAL? EXPORTED? REFERENCED?)
         ;
 
 // Procedure result / optional return type
@@ -1530,6 +1533,7 @@ DECISION        :       D E C I S I O N;
 ENDDECISION     :       E N D D E C I S I O N;
 EXPORT          :       E X P O R T;
 EXTERNAL        :       E X T E R N A L;
+EXPORTED        :       E X P O R T E D;
 REFERENCED      :       R E F E R E N C E D;
 CONNECTION      :       C O N N E C T I O N;
 ENDCONNECTION   :       E N D C O N N E C T I O N;

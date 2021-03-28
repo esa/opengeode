@@ -2813,13 +2813,10 @@ def composite_state(root, parent=None, context=None):
             elif new_proc.inputString.strip().lower() == 'exit':
                 comp.exit_procedure = new_proc
             # check for duplicate declaration
-            if any(each.inputString.lower() == new_proc.inputString.lower()
-                   for each in chain(comp.content.inner_procedures,
-                                     context.procedures)
-                   if each.inputString.lower() not in ('entry', 'exit')):
-                errors.append(['Duplicate procedure Declaration: {}'
-                              .format(new_proc.inputString),
-                              [new_proc.pos_x, new_proc.pos_y], []])
+            dupl_errs = []
+            check_duplicate_procedures(comp, new_proc, dupl_errs)
+            for err_str in dupl_errs:
+                errors.append([err_str, [new_proc.pos_x, new_proc.pos_y], []])
             # Add procedure to the context, to make it visible at scope level
             comp.content.inner_procedures.append(new_proc)
             context.procedures.append(new_proc)
@@ -2968,6 +2965,10 @@ def procedure_pre(root, parent=None, context=None):
         elif child.type in (lexer.PROCEDURE, lexer.START,
                             lexer.STATE, lexer.FLOATING_LABEL):
             content.append(child)
+        elif child.type == lexer.EXPORTED:
+            proc.exported = True
+        elif child.type == lexer.REFERENCED:
+            proc.referenced = True
         else:
             warnings.append([
                     'Unsupported construct in procedure, type: ' +
@@ -2987,6 +2988,51 @@ def procedure_returns(root):
         return sdl_to_asn1(root.getChild(1).getChild(0).text),\
                root.getChild(0).text
 
+def check_duplicate_procedures(ctxt, proc, errors=[]):
+    ''' Check for duplicates procedure declarations in a given context
+        and recursively in contexts above
+        If the proceduure in the context is declared as referenced,
+        then report an error only if the signature is different
+        Procedure named "entry" and "exit" are ignored
+        '''
+    name = proc.inputString.lower()
+    if not isinstance(ctxt, ogAST.System) and ctxt.parent != None:
+        check_duplicate_procedures(ctxt.parent, proc, errors)
+    if isinstance(ctxt, ogAST.AST):
+        # If we are at AST top level there are no declarations -> ignore
+        return
+    if name in ('entry', 'exit'):
+        # ignore special entry/exit procedures
+        return
+    try:
+        content = ctxt.content.inner_procedures
+    except AttributeError:
+        content = []
+    for each in chain(content, ctxt.procedures):
+        if each.inputString.lower() == name:
+            if not each.referenced and not proc.referenced:
+                errors.append('Duplicate procedure declaration: {}'
+                          .format(name))
+            else:
+                mismatch = False
+                # at least one is referenced -> compare signatures
+                left, right = proc.fpar, each.fpar
+                if len(left) != len(right):
+                    mismatch = True
+                for idx, val in enumerate(left):
+                    if(right[idx]['name'] != val['name']
+                     or type_name(right[idx]['type']) != type_name(val['type'])
+                     or right[idx]['direction'] != val['direction']):
+                        mismatch = True
+                        break
+                if mismatch:
+                    errors.append(f'Procedure {proc.inputString}: '
+                            'declaration and definition interface mismatch')
+
+                if proc.exported != each.exported:
+                    # If declared exported, definition must be exported too
+                    # Setting the flag here, this will ease code generators
+                    proc.exported = each.exported = True
 
 def procedure_post(proc, content, parent=None, context=None):
     ''' Parse the content of a procedure '''
@@ -3016,16 +3062,13 @@ def procedure_post(proc, content, parent=None, context=None):
             errors.extend(err)
             warnings.extend(warn)
             # check for duplicate declaration
-            err = any(each.inputString.lower() == new_proc.inputString.lower()
-                      for each in chain(proc.content.inner_procedures,
-                                        context.procedures))
+            dupl_errs = []
+            check_duplicate_procedures(context, new_proc, dupl_errs)
             # Add procedure to the context, to make it visible at scope level
             context.procedures.append(new_proc)
             proc.content.inner_procedures.append(new_proc)
-            if err:
-                errors.append(['Duplicate declaration of procedure {}'
-                              .format(new_proc.inputString),
-                              [0, 0], []])
+            for err_str in dupl_errs:
+                errors.append([err_str, [0, 0], []])
         elif child.type == lexer.START:
             # START transition (fills the mapping structure)
             proc.content.start, err, warn = start(child, context=proc)
@@ -3369,6 +3412,8 @@ def text_area_content(root, ta_ast, context):
     for each in procedures:
         # Procedure textual declarations need ASN.1 types
         proc, err, warn = procedure(each, context=context)
+        # set the flag to avoid rendering a graphical procedure
+        proc.textual_procedure = True
         errors.extend(err)
         warnings.extend(warn)
         try:
@@ -3376,12 +3421,7 @@ def text_area_content(root, ta_ast, context):
         except AttributeError:
             # May not be any content in current context (eg System)
             content = []
-        # check for duplicates
-        if any(each.inputString.lower() == proc.inputString.lower()
-               for each in chain(content, context.procedures)):
-            errors.append('Duplicate Procedure Declaration: {}'
-                          .format(proc.inputString))
-
+        check_duplicate_procedures(context, proc, errors)
         # Add procedure to the container (process or procedure) if any
         content.append(proc)
         # Add to context to make it visible at scope level
@@ -3546,6 +3586,7 @@ def system_definition(root, parent):
     # Store the name of the file where the system is defined
     system.filename = node_filename(root)
     system.ast = parent
+    #system.parent = parent
     asn1_files = []
     signals, procedures, blocks = [], [], []
     for child in root.getChildren():
@@ -3571,7 +3612,7 @@ def system_definition(root, parent):
             # Update list of ASN.1 files - if any
             if not asn1_files:
                 asn1_files = textarea.asn1_files
-            else:
+            elif textarea.asn1_files:
                 errors.append('ASN.1 Files must be set in a single text area')
             errors.extend(err)
             warnings.extend(warn)
@@ -3598,6 +3639,8 @@ def system_definition(root, parent):
     for each in procedures:
         proc, err, warn = procedure(
                 each, parent=None, context=system)
+        # Procedure defined at system level are only textual
+        proc.textual_procedure = True
         errors.extend(err)
         warnings.extend(warn)
         system.procedures.append(proc)
@@ -3641,12 +3684,10 @@ def process_definition(root, parent=None, context=None):
         errors.extend(err)
         warnings.extend(warn)
         # check for duplicate declaration
-        if any(each.inputString.lower() == proc.inputString.lower()
-               for each in chain(process.content.inner_procedures,
-                                 process.procedures)):
-            errors.append(['Duplicate Procedure declaration: {}'
-                          .format(proc.inputString),
-                          [proc.pos_x, proc.pos_y], []])
+        dupl_errs = []
+        check_duplicate_procedures(process, proc, dupl_errs)
+        for err_str in dupl_errs:
+            errors.append([err_str, [proc.pos_x, proc.pos_y], []])
         # Add it at process level so that it is in the scope
         process.content.inner_procedures.append(proc)
         process.procedures.append(proc)

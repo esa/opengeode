@@ -125,8 +125,8 @@ def _automaton(ast, scene):
     # Render procedures symbols
     top_level_symbols.extend(
             [render(proc, scene)
-                            for proc in ast.inner_procedures
-                            if not proc.external])
+                for proc in ast.inner_procedures
+               if not proc.external and not proc.textual_procedure])
 
     # Render the start symbol
     if ast.start:

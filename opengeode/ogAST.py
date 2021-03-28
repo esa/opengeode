@@ -842,6 +842,8 @@ class Procedure:
         self.external = False
         # Determine if a procedure is a remote procedure
         self.exported = False
+        # Determine if a procedure only has a textual definition
+        self.textual_procedure = False
         # Optional comment
         self.comment = None
         # Set of symbols contained in the procedure (type Automaton)
@@ -851,6 +853,10 @@ class Procedure:
         self.output_signals = []
         # The "DECISION ANY" construct requires random number generators
         self.random_generator = set()
+        # Procedure declared as EXPORTED
+        self.exported : bool = False
+        # procedure declared as REFERENCED
+        self.referenced : bool = False
 
 
 class Process:
@@ -1032,6 +1038,7 @@ class System:
         self.filename = None
         # Reference to top-level AST
         self.ast = None
+        # self.parent = None
         # list of SIGNAL declarations: [{'name': str, 'type': asn1type}]
         # (Supporting only one parameter)
         self.signals = []
@@ -1051,6 +1058,8 @@ class AST:
             AST entries are systems, processes, and USE clauses
             (cf. ANTLR grammar, production "pr_file")
         '''
+        # Top-level node: parent remains None
+        self.parent = None
         # Set of input files the AST was created from
         self.pr_files = set()
         # USE clauses: list of strings (eg. "DataView")
