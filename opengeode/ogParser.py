@@ -5493,15 +5493,16 @@ def pr_file(root):
                 res = rec_find_process_parent(nested, proc_name)
                 if res:
                     return nested
-            for proc in block.processes:
-                if proc.processName.lower() == proc_name.lower():
-                    return block
-        proc_parent = ast
+            if isinstance(block, ogAST.Block):
+                for proc in block.processes:
+                    if proc.processName.lower() == proc_name.lower():
+                        return block
+            return None
         for system in ast.systems:
             proc_parent = rec_find_process_parent(system, processName)
             if proc_parent:
                 break
-        process, err, warn = process_definition(child, parent=proc_parent)
+        process, err, warn = process_definition(child, parent=proc_parent or ast)
         # check if the process was declared as referenced with FPAR
         for each in ref_p_with_fpar:
             if each.processName == process.processName:

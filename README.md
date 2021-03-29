@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.4.2 (03/2021)**
+- Minor bugfix
+
 **3.4.1 (03/2021)**
 - Fix support of remote synchronous calls
 
