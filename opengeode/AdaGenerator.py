@@ -712,13 +712,9 @@ package body {process_name}_RI is''']
             pi_header = procedure_header(proc)
             ads_template.append(f'{pi_header};')
             if not proc.external and not generic:
-                if not proc.exported:
-                    ads_template.append(
-                       f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "_{proc.inputString}");')
-                else:
-                    # Export for TASTE as a synchronous PI
-                    ads_template.append(
-                       f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "{process_name.lower()}_PI_{proc.inputString}");')
+                # Export for TASTE as a synchronous PI
+                ads_template.append(
+                   f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "{process_name.lower()}_PI_{proc.inputString}");')
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
@@ -1523,10 +1519,10 @@ def _call_external_function(output, **kwargs):
                             code.append(u'{tmp}.Length := {app_len};'
                                     .format(tmp=tmp_id, app_len=app_len))
                     else:
-                        code.append(u'{} := {};'.format(tmp_id, p_id))
+                        code.append(f'{tmp_id} := {p_id};')
                     list_of_params.append(u"{}{}"
                                           .format(tmp_id,
-                                                  u", {}'Size".format(tmp_id)
+                                                  f", {tmp_id}'Size"
                                                      if is_out_sig else ""))
                 else:
                     # Output parameters/local variables
@@ -3096,7 +3092,8 @@ def procedure_header(proc):
             typename = type_name(fpar['type'])
             params.append(u'{name}: in{out} {ptype}'.format(
                     name=fpar.get('name'),
-                    out=' out' if fpar.get('direction') == 'out' else '',
+                    # out: exported procedures always use in out for taste (C code) compatibility
+                    out=' out' if (fpar.get('direction') == 'out' or proc.exported) else '',
                     ptype=typename))
         pi_header += ';'.join(params)
         pi_header += ')'
@@ -3138,10 +3135,8 @@ def _inner_procedure(proc, **kwargs):
         # Inner procedures declared external by the user: pragma import
         # the C symbol with the same name. Overrules the pragma import from
         # taste for required interfaces.
-        local_decl.append(u'pragma import(C, p{sep}{proc_name}, '
-                          u'"{proc_name}");'
-                          .format(sep=SEPARATOR,
-                                  proc_name=proc.inputString))
+        local_decl.append(f'pragma Import (C, p{SEPARATOR}{proc.inputString}, '
+                          f'"{proc.inputString}");')
     else:
         # Generate the code for the procedure itself
         # local variables and code of the START transition

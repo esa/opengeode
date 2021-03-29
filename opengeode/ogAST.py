@@ -840,8 +840,6 @@ class Procedure:
         self.transitions = []
         # Determine if a procedure is externally defined
         self.external = False
-        # Determine if a procedure is a remote procedure
-        self.exported = False
         # Determine if a procedure only has a textual definition
         self.textual_procedure = False
         # Optional comment

@@ -2996,6 +2996,7 @@ def check_duplicate_procedures(ctxt, proc, errors=[]):
         Procedure named "entry" and "exit" are ignored
         '''
     name = proc.inputString.lower()
+    #breakpoint()
     if not isinstance(ctxt, ogAST.System) and ctxt.parent != None:
         check_duplicate_procedures(ctxt.parent, proc, errors)
     if isinstance(ctxt, ogAST.AST):
@@ -5480,7 +5481,27 @@ def pr_file(root):
         ast.process_types.extend(p_types)
     for child in processes:
         # process definition at root level (can be a process type)
-        process, err, warn = process_definition(child, parent=ast)
+        # parse the process name to find the scope in which it is declared
+        for node in child.getChildren():
+            if node.type == lexer.ID:
+                processName = node.text
+        def rec_find_process_parent(block, proc_name : str):
+            # to define the parent of the process, find the block where it is
+            # specified with a "referenced" flag.
+            res = None
+            for nested in block.blocks:
+                res = rec_find_process_parent(nested, proc_name)
+                if res:
+                    return nested
+            for proc in block.processes:
+                if proc.processName.lower() == proc_name.lower():
+                    return block
+        proc_parent = ast
+        for system in ast.systems:
+            proc_parent = rec_find_process_parent(system, processName)
+            if proc_parent:
+                break
+        process, err, warn = process_definition(child, parent=proc_parent)
         # check if the process was declared as referenced with FPAR
         for each in ref_p_with_fpar:
             if each.processName == process.processName:
