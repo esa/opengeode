@@ -79,10 +79,12 @@ def _block(ast, scene):
            param=('(' + sig['type'].ReferencedTypeName.replace('-', '_') + ')')
                  if 'type' in sig else '')
              for sig in ast.parent.signals]
-        procedures = ["procedure {proc.inputString};\n{optfpar}external;\n"
+        procedures = ["{exported}procedure {proc.inputString};\n{optfpar}{external};\n"
                       .format(proc=proc,
-                              optfpar="fpar\n    " + u",\n    ".join
-                              ([u"{direc} {fp[name]} {asn1}"
+                              exported="exported " if proc.exported else "",
+                              external="referenced" if proc.referenced else "external",
+                              optfpar="fpar\n    " + ",\n    ".join
+                              (["{direc} {fp[name]} {asn1}"
                                 .format(fp=fpar,
                                         direc="in"
                                            if fpar['direction']=='in'
@@ -125,8 +127,8 @@ def _automaton(ast, scene):
     # Render procedures symbols
     top_level_symbols.extend(
             [render(proc, scene)
-                            for proc in ast.inner_procedures
-                            if not proc.external])
+                for proc in ast.inner_procedures
+               if not proc.external and not proc.textual_procedure])
 
     # Render the start symbol
     if ast.start:
