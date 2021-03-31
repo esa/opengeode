@@ -3636,7 +3636,13 @@ def system_definition(root, parent):
         sig, err, warn = signal(each)
         errors.extend(err)
         warnings.extend(warn)
-        system.signals.append(sig)
+        # Ignore duplicate signal definitions when they are defined at
+        # system level (only taste can do that)
+        for each in system.signals:
+            if each['name'].lower() == sig['name'].lower():
+                break
+        else:
+            system.signals.append(sig)
     for each in procedures:
         proc, err, warn = procedure(
                 each, parent=None, context=system)
