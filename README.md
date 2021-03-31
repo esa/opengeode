@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.4.3 (03/2021)**
+- Ignore duplicate signal definition at system level (impacts only taste systems)
+
 **3.4.2 (03/2021)**
 - Minor bugfix
 
