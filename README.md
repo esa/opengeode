@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.4.5 (04/2021)**
+- Fix bug affecting RPC
+
 **3.4.4 (04/2021)**
 - After RPC call, execute corresponding transition in the state machine (if any)
 

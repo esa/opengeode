@@ -3674,7 +3674,7 @@ def system_definition(root, parent):
         system.signals.append({'name' : proc})
         for channel in system.channels:
             for route in channel['routes']:
-                if route['dest'].lower != "env":
+                if route['dest'].lower() != "env":
                     route['signals'].append(proc)
 
     for each in blocks:
