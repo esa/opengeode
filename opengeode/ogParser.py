@@ -3374,9 +3374,12 @@ def text_area_content(root, ta_ast, context):
             # otherwise the code generator cannot make the connection with
             # the corresponding functions in C to set/reset the timer.
             # timers = [timer.text.lower() for timer in child.children]
-            timers = [timer.text for timer in child.children]
-            context.timers.extend(timers)
-            ta_ast.timers = timers
+            try:
+                timers = [timer.text for timer in child.children]
+                context.timers.extend(timers)
+                ta_ast.timers = timers
+            except AttributeError:
+                errors.append('Timers can be defined only inside a process')
         elif child.type == lexer.SIGNAL:
             # Signals can be declared at system level, but that must be parsed
             # AFTER possible "USE Datamodel COMMENT 'asn1_filename';"
@@ -3548,6 +3551,12 @@ def block_definition(root, parent):
     block = ogAST.Block()
     block.parent = parent
     parent.blocks.append(block)
+    # blocks have signalroutes but since we have systems with a single
+    # block and a single process, it is better to set the routes with the
+    # same values as the channels from the system-level channels
+    # The reason is that some signals may have added to the channels to
+    # support RPCs'transitions
+    block.signalroutes = parent.channels
     for child in root.getChildren():
         if child.type == lexer.ID:
             block.name = child.text
@@ -3573,7 +3582,8 @@ def block_definition(root, parent):
             proc.dv = DV
         elif child.type == lexer.SIGNALROUTE:
             sigroute, _, _ = signalroute(child)
-            block.signalroutes.append(sigroute)
+            # ignored (see comment above)
+            #block.signalroutes.append(sigroute)
         else:
             warnings.append('Unsupported block child type: ' +
                 str(child.type))
@@ -3643,6 +3653,7 @@ def system_definition(root, parent):
                 break
         else:
             system.signals.append(sig)
+    exported_procedures = []
     for each in procedures:
         proc, err, warn = procedure(
                 each, parent=None, context=system)
@@ -3651,10 +3662,37 @@ def system_definition(root, parent):
         errors.extend(err)
         warnings.extend(warn)
         system.procedures.append(proc)
+    for proc in system.procedures:
+        # list contains also procedures defined in text ares
+        # form a list of exported procedures to update channels and routes
+        if proc.exported:
+            exported_procedures.append(proc.inputString)
+
+    # Add signals for transitions of RPC visible to blocks/processes
+    # Add them also to the channels of the system
+    for proc in exported_procedures:
+        system.signals.append({'name' : proc})
+        for channel in system.channels:
+            for route in channel['routes']:
+                if route['dest'].lower != "env":
+                    route['signals'].append(proc)
+
     for each in blocks:
         block, err, warn = block_definition(each, parent=system)
         errors.extend(err)
         warnings.extend(warn)
+
+    # If there are exported procedures update signalroutes of the blocks
+    if exported_procedures:
+        for block in system.blocks:
+            block.signalroutes = system.channels
+
+#   for proc in exported_procedures:
+#       # Add the signal to all channels/signalroutes of the system
+#       for channel in (route for route in block.signalroutes for block in system.blocks):
+#           for route in channel['routes']:
+#               if route['dest'].lower != "env":
+#                   route['signals'].append(proc)
     return system, errors, warnings
 
 
