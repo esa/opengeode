@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -487,7 +487,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     if simu and not stop_condition:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
-        context_decl.append(f'pragma export (C, {LPREFIX}, "{LPREFIX}");')
+        context_decl.append(f'pragma Export (C, {LPREFIX}, "{LPREFIX}");')
         # Exhaustive simulation needs a backup of the context to quickly undo
         context_decl.append(f'{LPREFIX}_bk: {ASN1SCC}{process_name.capitalize()}_Context;')
 
@@ -713,8 +713,10 @@ package body {process_name}_RI is''']
             ads_template.append(f'{pi_header};')
             if not proc.external and not generic:
                 # Export for TASTE as a synchronous PI
+                prefix = f'p{SEPARATOR}' if not proc.exported else ''
                 ads_template.append(
-                   f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "{process_name.lower()}_PI_{proc.inputString}");')
+                   f'pragma Export (C, {prefix}{proc.inputString},'
+                   f' "{process_name.lower()}_PI_{proc.inputString}");')
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
@@ -737,9 +739,23 @@ package body {process_name}_RI is''']
             break
 
         signame = signal.get('name', 'START')
+        fake_name = False
+
+        # Check if there is an exported procedure with the name of the signal
+        ignore_export = False
+        for proc in process.procedures:
+            if proc.inputString.lower() == signame.lower():
+                ignore_export = True
+
+        if ignore_export:
+            # this signal corresponds to the transitions triggered after
+            # exported procedures have been executed (synchronous PIs, or RPS)
+            # therefore it is renamed as it is not a regular PI
+            fake_name = f'{signame}_Transition'
+
         if signame == 'START':
             continue
-        pi_header = f'procedure {signame}'
+        pi_header = f'procedure {fake_name or signame}'
         param_name = signal.get('param_name') or f'{signame}_param'
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
@@ -749,11 +765,13 @@ package body {process_name}_RI is''']
         # Add declaration of the provided interface in the .ads file
         ads_template.append(f'--  Provided interface "{signame}"')
         ads_template.append(pi_header + ';')
-        if not generic:
-            ads_template.append(
-                    f'pragma Export(C, {signame}, "{process_name.lower()}_PI_{signame}");')
 
-        if simu:
+        if not generic and not ignore_export:
+            ads_template.append(
+                    f'pragma Export(C, {signame},'
+                    f' "{process_name.lower()}_PI_{signame}");')
+
+        if simu and not ignore_export:
             # Generate code for the mini-cv template
             params = [(param_name, type_name(signal['type'], use_prefix=False),
                       'IN')] if 'type' in signal else []
@@ -863,7 +881,7 @@ package body {process_name}_RI is''']
                 inst_call += f" ({param_name})"
             taste_template.append(f"{inst_call};")
 
-        taste_template.append(f'end {signame};')
+        taste_template.append(f'end {fake_name or signame};')
         taste_template.append('\n')
 
     #  add call to startup function for instances
@@ -1228,8 +1246,7 @@ package body {process_name}_RI is''']
                     each.priority = lowest_priority + 1
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
-                taste_template.append(u'--  Priority {}'
-                                      .format(provided_clause.priority))
+                taste_template.append('--  Priority {provided_clause.priority}')
                 trId = process.transitions.index(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
@@ -1258,12 +1275,12 @@ package body {process_name}_RI is''']
                 sep='elsif '
                 taste_template.extend(code)
             if cs_item:
-                taste_template.append(u'end if;') # inner if
-                taste_template.append(u'end if;') # current state
+                taste_template.append('end if;') # inner if
+                taste_template.append('end if;') # current state
             sep = 'if '
 
         if need_final_endif:
-            taste_template.append(u'end if;')
+            taste_template.append('end if;')
 
         taste_template.append('end loop;')
         taste_template.append('end Execute_Transition;')
@@ -1403,6 +1420,10 @@ def _call_external_function(output, **kwargs):
     code.extend(traceability(output))
     #code.extend(debug_trace())
 
+    # Calling a procedure or RI usually needs a prefix (RI_.. or p_...)
+    # Exception is the _Transition procedures called after exported PIs (RPC)
+    need_prefix = True
+
     for out in output.output:
         signal_name = out['outputName']
         list_of_params = []
@@ -1469,8 +1490,18 @@ def _call_external_function(output, **kwargs):
                         list_of_params = [
                                 f'New_String ("{out["outputName"]}")']
             except ValueError:
-                # Not there? Impossible, the parser would have barked
-                raise ValueError('Probably a bug - please report'
+                # Last chance to find it: if it is an exported procedure,
+                # in that case an additional signal with _Transition suffix
+                # exists but is not visible in the model at this point
+                for sig in PROCEDURES:
+                    if signal_name.lower() == f'{sig.inputString.lower()}_transition':
+                        out_sig = sig
+                        is_out_sig = False
+                        need_prefix = False
+                        break
+                else:
+                    # Not there? Impossible, the parser would have barked
+                    raise ValueError('Probably a bug - please report'
                         ' (related to ' + signal_name.lower() + ')')
         if out_sig:
             for idx, param in enumerate(out.get('params') or []):
@@ -1536,10 +1567,11 @@ def _call_external_function(output, **kwargs):
                 code.append(f'RI{SEPARATOR}{name}({params});')
 
             else:
+                prefix = f'RI{SEPARATOR}' if need_prefix else ''
                 if not SHARED_LIB:
-                    code.append(f'RI{SEPARATOR}{name};')
+                    code.append(f'{prefix}{name};')
                 else:
-                    code.append(f'RI{SEPARATOR}{name} (New_String ("{name}"));')
+                    code.append(f'{prefix}{name} (New_String ("{name}"));')
         else:
             # inner procedure call
             list_of_params = []
@@ -2463,12 +2495,11 @@ def _expr_in(expr, **kwargs):
         stmts.append(u"if {container}(elem) = {pattern} then".format
                 (container=left_str, pattern=right_str))
 
-        stmts.append(u"{} := True;".format(ada_string))
-        stmts.append(u"end if;")
+        stmts.append(f"{ada_string} := True;")
+        stmts.append("end if;")
 
-        stmts.append(u"exit in_loop_{tmp} when {tmp} = True;"
-                      .format(tmp=ada_string))
-        stmts.append(u"end loop in_loop_{};".format(ada_string))
+        stmts.append(f"exit in_loop_{ada_string} when {ada_string} = True;")
+        stmts.append(f"end loop in_loop_{ada_string};")
 
     return stmts, str(ada_string), local_decl
 
@@ -2963,21 +2994,18 @@ def _transition(tr, **kwargs):
             empty_transition = False
             code.extend(traceability(tr.terminator))
             if tr.terminator.label:
-                code.append('<<{label}>>'.format(
-                    label=tr.terminator.label.inputString))
+                code.append(f'<<{tr.terminator.label.inputString}>>')
             if tr.terminator.kind == 'next_state':
                 history = tr.terminator.inputString.strip() == '-'
                 if tr.terminator.next_is_aggregation and not history: # XXX add to C generator
-                    code.append(u'-- Entering state aggregation {}'
-                                .format(tr.terminator.inputString))
+                    code.append(f'-- Entering state aggregation {tr.terminator.inputString}')
                     # Call the START function of the state aggregation
                     code.append(f'{tr.terminator.next_id};')
                     code.append(
                       f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
                     code.append('trId := -1;')
                 elif not history: # tr.terminator.inputString.strip() != '-':
-                    code.append(u'trId := ' +
-                                str(tr.terminator.next_id) + u';')
+                    code.append(f'trId := {str(tr.terminator.next_id)};')
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate: # XXX add to C generator
                             code.append(f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
@@ -2994,9 +3022,9 @@ def _transition(tr, **kwargs):
                         for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 if tr.terminator.next_is_aggregation:
-                                    statement = u'{};'.format(nid)
+                                    statement = f'{nid};'
                                 else:
-                                    statement = u'trId := {};'.format(nid)
+                                    statement = f'trId := {nid};'
                                 states_prefix = (f"{ASN1SCC}{s}" for s in sta)
                                 joined_states = " | ".join(states_prefix)
                                 code.extend(
@@ -3010,8 +3038,7 @@ def _transition(tr, **kwargs):
                         code.append('trId := -1;')
                 code.append('goto Next_Transition;')
             elif tr.terminator.kind == 'join':
-                code.append(u'goto {label};'.format(
-                    label=tr.terminator.inputString))
+                code.append(f'goto {tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
                 pass
                 # TODO
@@ -3029,14 +3056,14 @@ def _transition(tr, **kwargs):
                     code.append(
                         f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State '
                         f':= {ASN1SCC}state{SEPARATOR}end;')
-                    cond = u'{ctxt}.{sib}{sep}State = {asn1scc}state{sep}end'
+                    cond = '{ctxt}.{sib}{sep}State = {asn1scc}state{sep}end'
                     conds = [cond.format(sib=sib,
                                          ctxt=LPREFIX,
                                          sep=SEPARATOR,
                                          asn1scc=ASN1SCC)
                             for sib in tr.terminator.siblings
                             if sib.lower() != tr.terminator.substate.lower()]
-                    code.append(u'if {} then'.format(' and '.join(conds)))
+                    code.append('if {} then'.format(' and '.join(conds)))
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
                         stmts, string, local = \
@@ -3044,16 +3071,16 @@ def _transition(tr, **kwargs):
                                            readonly=1)
                         code.extend(stmts)
                         local_decl.extend(local)
-                    code.append(u'return{};'
+                    code.append('return{};'
                                 .format(' ' + string if string else ''))
                 else:
-                    code.append(u'trId := ' + str(tr.terminator.next_id) + ';')
-                    code.append(u'goto Next_Transition;')
+                    code.append('trId := ' + str(tr.terminator.next_id) + ';')
+                    code.append('goto Next_Transition;')
                 if aggregate:
-                    code.append(u'else')
-                    code.append(u'trId := -1;')
-                    code.append(u'goto Next_Transition;')
-                    code.append(u'end if;')
+                    code.append('else')
+                    code.append('trId := -1;')
+                    code.append('goto Next_Transition;')
+                    code.append('end if;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
         code.append('null;')
@@ -3067,7 +3094,7 @@ def _floating_label(label, **kwargs):
     local_decl = []
     # Add the traceability information
     code.extend(traceability(label))
-    code.append(u'<<{label}>>'.format(label=label.inputString))
+    code.append(f'<<{label.inputString}>>')
     if label.transition:
         code_trans, local_trans = generate(label.transition)
         code.extend(code_trans)
@@ -3080,11 +3107,10 @@ def _floating_label(label, **kwargs):
 def procedure_header(proc):
     ''' Build the protoype of a procedure '''
     ret_type = type_name(proc.return_type) if proc.return_type else None
-    pi_header = u'{kind} {sep}{proc_name}'.format(kind='procedure'
-                                                  if not proc.return_type
-                                                  else 'function',
-                                                  sep=(u'p' + SEPARATOR),
-                                                  proc_name=proc.inputString)
+    kind = 'procedure' if not proc.return_type else 'function'
+    sep = f'p{SEPARATOR}' if not proc.exported else ''
+    proc_name = proc.inputString
+    pi_header = f'{kind} {sep}{proc_name}'
     if proc.fpar:
         pi_header += '('
         params = []
@@ -3159,13 +3185,40 @@ def _inner_procedure(proc, **kwargs):
                 elif varbty.kind == 'IA5StringType':
                     dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'{name} : {sort}{default};'
-                        .format(name=var_name,
-                                sort=typename,
-                                default=' := ' + dstr if def_value else ''))
+            default = f' := {dstr}' if def_value else ''
+            code.append(f'{var_name} : {typename}{default};')
 
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
+
+        if proc.exported:
+            # Exported procedure end calling the corresponding transition
+            # procedure that allows user to change state after RPC call
+            # We need to update all the transitions of the procedure
+            # (including floating labels) that contain a return statement
+            # andadd the call to the _Transition procedure before
+            trans_with_return = []
+            for each in chain ([proc.content.start.transition],
+                    (lab.transition for lab in proc.content.floating_labels)):
+                def rec_transition(trans : ogAST.Transition):
+                    if trans.terminator:
+                        if trans.terminator.kind == 'return':
+                            trans_with_return.append (trans)
+                    elif isinstance(trans.actions[-1], ogAST.Decision):
+                        # There is no terminator, so the transition may finish
+                        # with a DECISION, we must check it recursively
+                        for answer in trans.actions[-1].answers:
+                            rec_transition (answer.transition)
+                rec_transition (each)
+
+            for trans in trans_with_return:
+                call_trans = ogAST.ProcedureCall()
+                call_trans.inputString = f'{proc.inputString}_Transition'
+                trans_proc = f'{proc.inputString}_Transition'
+                call_trans.output = [{'outputName': trans_proc,
+                                     'params': [], 'tmpVars': []}]
+                trans.actions.append(call_trans)
+
         if proc.content.start:
             tr_code, tr_decl = generate(proc.content.start.transition)
         else:
@@ -3180,8 +3233,10 @@ def _inner_procedure(proc, **kwargs):
         code.append('begin')
         code.extend(tr_code)
         code.extend(code_labels)
-        code.append(u'end p{sep}{procName};'.format(sep=SEPARATOR,
-                                                    procName=proc.inputString))
+        if proc.exported:
+            code.append(f'end {proc.inputString};')
+        else:
+            code.append(f'end p{SEPARATOR}{proc.inputString};')
     code.append('\n')
 
     # Reset the scope to how it was prior to the procedure definition

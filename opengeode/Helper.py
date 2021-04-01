@@ -19,7 +19,7 @@
         statenames: return a list of properly-formatted state names
         rec_findstates: recursively find parallel/composite statenames
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -48,8 +48,8 @@ def statenames(context, sep=DEFAULT_SEPARATOR):
     ''' Return the list of states (just the names) of a given context
     Format the output by replacing unicode separator symbol with a dot '''
     # note: if model has been flattened, all contexts are already merged
-    return (s.replace(sep, u'.') for s in context.mapping.keys()
-            if not s.endswith(u'START'))
+    return (s.replace(sep, '.') for s in context.mapping.keys()
+            if not s.endswith('START'))
 
 
 def rec_findstates(context, prefix=''):
@@ -58,10 +58,9 @@ def rec_findstates(context, prefix=''):
         if not isinstance(each, ogAST.StateAggregation):
             # Aggregations are just containers, not states
             for name in statenames(each):
-                yield u'{}{}.{}'.format(prefix, each.statename, name)
+                yield f'{prefix}{each.statename}.{name}'
         for substate in rec_findstates(each,
-                                       prefix=u'{}{}.'.format(prefix,
-                                                              each.statename)):
+                                       prefix=f'{prefix}{each.statename}.'):
             yield substate
 
 
@@ -170,7 +169,7 @@ def flatten(process, sep=u'_'):
         if term.inputString.lower() in (st.statename.lower()
                                 for st in context.composite_states):
             if not term.via:
-                term.next_id = term.inputString.lower() + sep + u'START'
+                term.next_id = term.inputString.lower() + sep + 'START'
             else:
                 term.next_id = u'{term}{sep}{entry}_START'.format(
                         term=term.inputString, entry=term.entrypoint, sep=sep)
@@ -181,12 +180,12 @@ def flatten(process, sep=u'_'):
                     if each.lower() == comp.statename.lower():
                         if isinstance(comp, ogAST.StateAggregation):
                             term.next_is_aggregation = True
-                            term.candidate_id[each + sep + u'START'] = [each]
+                            term.candidate_id[each + sep + 'START'] = [each]
                         else:
-                            term.candidate_id[each + sep + u'START'] = \
+                            term.candidate_id[each + sep + 'START'] = \
                                        [st for st in process.mapping.keys()
                                         if st.startswith(each)
-                                        and not st.endswith(u'START')]
+                                        and not st.endswith('START')]
                         continue
 
     def update_composite_state(state, process):
@@ -250,13 +249,13 @@ def flatten(process, sep=u'_'):
                          if isinstance(trans, int)):
                 call_entry = ogAST.ProcedureCall()
                 call_entry.inputString = 'entry'
-                entryproc = u'{pre}entry'.format(pre=prefix)
+                entryproc = f'{prefix}entry'
                 call_entry.output = [{'outputName': entryproc,
                                      'params': [], 'tmpVars': []}]
                 process.transitions[each].actions.insert(0, call_entry)
 
         # If composite state has exit procedure, add an call to this
-        # procedure if the transition ends up existing the state with
+        # procedure if the transition ends up exiting the state with
         # a return statement. There are other calls to the exit procedure
         # that the code generation backend must add when the state is exited
         # from a transition trigger in the super state. See AdaGenerator.py
@@ -280,7 +279,7 @@ def flatten(process, sep=u'_'):
             for trans in trans_with_return:
                 call_exit = ogAST.ProcedureCall()
                 call_exit.inputString = 'exit'
-                exitproc = u'{pre}exit'.format(pre=prefix)
+                exitproc = f'{prefix}exit'
                 call_exit.output = [{'outputName': exitproc,
                                      'params': [], 'tmpVars': []}]
                 trans.actions.append(call_exit)
