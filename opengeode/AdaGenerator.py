@@ -1162,7 +1162,7 @@ package body {process_name}_RI is''']
             taste_template.append('end if;')
             ads_template.append('procedure Check_Queue (Res : out Asn1Boolean);')
             if not generic:
-                ads_template.append(f'pragma Import(C, Check_Queue, "{process_name}_check_queue");')
+                ads_template.append(f'pragma Import(C, Check_Queue, "{process_name.lower()}_check_queue");')
         elif has_cs and simu:
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
             taste_template.append("Check_Queue (msgPending);")
