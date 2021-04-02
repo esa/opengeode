@@ -440,7 +440,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                     f'function To_{sortAda} (Src : {fromMod}) return {toMod} '
                     f"is ({toMod}'Enum_Val (Src'Enum_Rep));")
 
-    asn1_template.append('END')
+    asn1_template.append('END\n')
 
     # Write the ASN.1 file (not in case of Stop Condition)
     if not stop_condition:
