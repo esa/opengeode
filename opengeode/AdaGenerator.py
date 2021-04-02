@@ -1501,8 +1501,10 @@ def _call_external_function(output, **kwargs):
                         break
                 else:
                     # Not there? Impossible, the parser would have barked
-                    raise ValueError('Probably a bug - please report'
-                        ' (related to ' + signal_name.lower() + ')')
+                    # Can happen with stop conditions because they are defined
+                    # as exported but the _Transition signal was not added
+                    LOG.warning(f'Could not find signal/procedure: {signal_name} - ignoring call')
+                    return code, local_decl
         if out_sig:
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
@@ -1542,13 +1544,11 @@ def _call_external_function(output, **kwargs):
                         # Check the template in def _conditional
                         app_len = append_size(param)
                         code.extend(debug_trace())
-                        code.append(u'{tmp}.Data (1 .. {app_len}) := {val};'
-                               .format(tmp=tmp_id, app_len=app_len, val=p_id))
+                        code.append(f'{tmp_id}.Data (1 .. {app_len}) := {p_id};')
                         if basic_param.Min != basic_param.Max:
                             # Append should only apply to this case, i.e.
                             # types of varying length...
-                            code.append(u'{tmp}.Length := {app_len};'
-                                    .format(tmp=tmp_id, app_len=app_len))
+                            code.append(f'{tmp_id}.Length := {app_len};')
                     else:
                         code.append(f'{tmp_id} := {p_id};')
                     list_of_params.append(u"{}{}"
