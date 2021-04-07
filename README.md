@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.4.6 (04/2021)**
+- Introduce monitors to support model checking observers
+
 **3.4.5 (04/2021)**
 - Fix bug affecting RPC
 

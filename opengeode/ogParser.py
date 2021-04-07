@@ -1315,6 +1315,8 @@ def find_variable_type(var, context):
     # all DCL-variables
     all_visible_variables = dict(context.global_variables)
     all_visible_variables.update(context.variables)
+    all_visible_variables.update(context.monitors)
+    all_visible_variables.update(context.global_monitors)
 
     # First check locally, i.e. in FPAR
     try:
@@ -2631,8 +2633,13 @@ def primary(root, context):
     return prim, errors, warnings
 
 
-def variables(root, ta_ast, context):
-    ''' Process declarations of variables (dcl a,b Type := 5) '''
+def variables(root, ta_ast, context, monitor=False):
+    ''' Process declarations of variables (dcl a,b Type := 5) 
+        if monitor is True, the result will be placed in the
+        "monitors" dictionary of the context, instead of the
+        variables. this is for use in the context of observers
+        for model checking.
+    '''
     var = []
     errors = []
     warnings = []
@@ -2681,35 +2688,45 @@ def variables(root, ta_ast, context):
 
             if not def_value.is_raw and \
                     not isinstance(def_value, ogAST.PrimConstant):
-                errors.append('In variable declaration {}: default'
-                              ' value is not a valid ground expression'.
-                              format(var[-1]))
+                errors.append(f'In variable declaration {var[-1]}: default'
+                              ' value is not a valid ground expression')
+            if monitor:
+                errors.append(f'In monitor declaration {var[-1]}: default'
+                              ' value is not allowed')
         else:
             warnings.append('Unsupported variables construct type: ' +
                     str(child.type))
     for variable in var:
         if not hasattr(context, 'variables'):
-            errors.append('Variables shall not be declared here')
+            errors.append('Variables/monitors shall not be declared here')
         # Add to the context and text area AST entries
-        elif(variable.lower() in context.variables
-                  or variable.lower() in ta_ast.variables):
+        elif(not monitor and (variable.lower() in context.variables
+                  or variable.lower() in ta_ast.variables)):
             errors.append('Variable "{}" is declared more than once'
                           .format(variable))
-        else:
+        elif (monitor and (variable.lower() in context.monitors
+                  or variable.lower() in ta_ast.monitors)):
+            errors.append('Monitor "{}" is declared more than once'
+                          .format(variable))
+
+        elif not monitor:
             context.variables[variable.lower()] = (asn1_sort, def_value)
-        ta_ast.variables[variable.lower()] = (asn1_sort, def_value)
+            ta_ast.variables[variable.lower()] = (asn1_sort, def_value)
+        else:
+            context.monitors[variable.lower()] = (asn1_sort, def_value)
+            ta_ast.monitors[variable.lower()] = (asn1_sort, def_value)
     if not DV:
         errors.append('Cannot do semantic checks on variable declarations')
     return errors, warnings
 
 
-def dcl(root, ta_ast, context):
+def dcl(root, ta_ast, context, monitor=False):
     ''' Process a set of variable declarations '''
     errors = []
     warnings = []
     for child in root.getChildren():
         if child.type == lexer.VARIABLES:
-            err, warn = variables(child, ta_ast, context)
+            err, warn = variables(child, ta_ast, context, monitor)
             errors.extend(err)
             warnings.extend(warn)
         else:
@@ -2765,6 +2782,8 @@ def composite_state(root, parent=None, context=None):
     try:
         comp.global_variables = dict(context.variables)
         comp.global_variables.update(context.global_variables)
+        comp.global_monitors = dict(context.monitors)
+        comp.global_monitors.update(context.global_monitors)
         comp.global_timers = list(context.timers)
         comp.global_timers.extend(list(context.global_timers))
         comp.input_signals = context.input_signals
@@ -3043,6 +3062,8 @@ def procedure_post(proc, content, parent=None, context=None):
     try:
         proc.global_variables = dict(context.variables)
         proc.global_variables.update(context.global_variables)
+        proc.global_monitors = dict(context.monitors)
+        proc.global_monitors.update(context.global_monitors)
         proc.global_timers = list(context.timers)
         proc.global_timers.extend(list(context.global_timers))
         proc.input_signals = context.input_signals
@@ -3331,6 +3352,10 @@ def text_area_content(root, ta_ast, context):
     for child in root.getChildren():
         if child.type == lexer.DCL:
             err, warn = dcl(child, ta_ast, context)
+            errors.extend(err)
+            warnings.extend(warn)
+        elif child.type == lexer.MONITOR:
+            err, warn = dcl(child, ta_ast, context, monitor=True)
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.SYNONYM_LIST:
@@ -5226,9 +5251,12 @@ def for_loop(root, context):
             forloop['var'] = child.text
             # Implicit variable declaration for the iterator
             context_scope = dict(context.variables)
+            context_scope.update(context.monitors)
             if child.text.lower() in (var.lower()
                       for var in chain (context.variables.keys(),
-                                        context.global_variables.keys())):
+                                        context.global_variables.keys(),
+                                        context.monitors.keys(),
+                                        context.global_monitors.keys())):
                 errors.append("FOR variable '{}' is already declared in the"
                               " scope (shadow variable). Please rename it."
                               .format(child.text))

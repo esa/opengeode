@@ -92,6 +92,7 @@ TYPES = None
 MAPPING_SORT_MODULE = dict()
 
 VARIABLES = {}
+MONITORS = {}
 LOCAL_VAR = {}
 # List of output signals and procedures
 OUT_SIGNALS = []
@@ -328,6 +329,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     mapping = Helper.map_input_state(process)
 
     VARIABLES.update(process.variables)
+    MONITORS.update(process.monitors)
 
     process_level_decl = []
 
@@ -475,6 +477,12 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             ctxt += ",\n       ".join(initial_values) + ",\n      "
         ctxt += "others => <>);"
         context_decl.append(ctxt)
+
+        # Add monitors, that are pointers that must be set by an external
+        # module. They are not part of the global state of the process, and
+        # are used by observer functions to read/write the system state
+        for mon_name, (mon_type, _) in process.monitors.items():
+            context_decl.append(f"{mon_name} : access {type_name(mon_type)};")
 
         # The choice selections will allow to use the present operator
         # together with a variable of the -selection type
@@ -1742,6 +1750,9 @@ def _primary_variable(prim, **kwargs):
         sep = LPREFIX + '.'
 
     ada_string = f'{sep}{prim.value[0]}'
+
+    if find_monitoring(prim.value[0]):
+        ada_string += ".all"
 
     return [], str(ada_string), []
 
@@ -3144,6 +3155,8 @@ def _inner_procedure(proc, **kwargs):
     outer_scope = dict(VARIABLES)
     local_scope = dict(LOCAL_VAR)
     VARIABLES.update(proc.variables)
+    # Note: here we ignore locally-declared monitorings.. they should be
+    # defined at process level (but this is not checked in the parser)
     # Store local variables in global context
     LOCAL_VAR.update(proc.variables)
     # Also add procedure parameters in scope
@@ -3386,6 +3399,13 @@ def find_var(var):
             return visible_var
     return None
 
+def find_monitoring(mon):
+    ''' Return a monitoring from the scope, with proper case '''
+    for visible_mon in MONITORS.keys():
+        if mon.lower() == visible_mon.lower():
+            return visible_mon
+    return None
+
 
 def is_local(var):
     ''' Check if a variable is in the global context or in a local scope
@@ -3405,7 +3425,9 @@ def path_type(path):
     if not path or not find_var(path[0]):
         return None, None
     kind = ''
-    vartype, _ = VARIABLES[find_var(path[0])]
+    declarations = dict(VARIABLES)
+    declarations.update(MONITORS)
+    vartype, _ = declarations[find_var(path[0])]
     asn1_name = vartype.ReferencedTypeName
     # Get ASN.1 type of the first element
     current = TYPES[asn1_name].type

@@ -40,6 +40,7 @@ tokens {
         CONSTANT;
         CONSTANTS;
         DCL;
+        MONITOR;
         DECISION;
         DIGITS;
         ELSE;
@@ -344,10 +345,12 @@ content
                  | syntype_definition
                  | newtype_definition
                  | variable_definition
+                 | monitor_definition
                  | synonym_definition)*
         ->       ^(TEXTAREA_CONTENT fpar* $res? procedure* variable_definition*
-                   syntype_definition* newtype_definition* timer_declaration*
-                   signal_declaration* use_clause* synonym_definition*)
+                   monitor_definition* syntype_definition* newtype_definition*
+                   timer_declaration* signal_declaration* use_clause*
+                   synonym_definition*)
         ;
 
 
@@ -418,6 +421,14 @@ variable_definition
                 (',' variables_of_sort)*
                 end
         ->      ^(DCL variables_of_sort+)
+        ;
+
+/* Monitors are an extension used when creating observers for model checking */
+monitor_definition
+        :       MONITOR variables_of_sort
+                (',' variables_of_sort)*
+                end
+        ->      ^(MONITOR variables_of_sort+)
         ;
 
 
@@ -1476,6 +1487,7 @@ DASH            :       '-';
 ANY             :       A N Y;
 ASTERISK        :       '*';
 DCL             :       D C L;
+MONITOR         :       M O N I T O R;
 END             :       E N D;
 KEEP            :       K E E P;
 PARAMNAMES      :       P A R A M N A M E S;
