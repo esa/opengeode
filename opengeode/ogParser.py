@@ -16,7 +16,7 @@
     During the build of the AST this library makes a number of semantic
     checks on the SDL input mode.
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -3700,7 +3700,8 @@ def system_definition(root, parent):
         for channel in system.channels:
             for route in channel['routes']:
                 if route['dest'].lower() != "env":
-                    route['signals'].append(proc)
+                    if proc not in route['signals']:
+                        route['signals'].append(proc)
 
     for each in blocks:
         block, err, warn = block_definition(each, parent=system)
