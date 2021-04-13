@@ -762,6 +762,8 @@ class TextArea:
         self.height = 140
         # DCL variables in the text area {name: (sort, default_value), ...}
         self.variables = {}
+        # MONITOR variables used in observers (same structure as DCL)
+        self.monitors = {}
         # fpar and timers are also listed, useful when using autocompletion
         self.fpar = []
         self.timers = []
@@ -810,10 +812,13 @@ class Procedure:
         self.hyperlink = None
         # Local variables dictionnary (see Process)
         self.variables = {}
+        # MONITOR variables used in observers (same structure as DCL)
+        self.monitors = {}
         self.timers = []
         # Inherited variables and timers from all levels above
         self.global_variables = {}
         self.global_timers = []
+        self.global_monitors = {}
         # Formal parameters - list of dict:
         # [{'name': str, 'direction': 'in'/'out', 'type': str}]
         self.fpar = []
@@ -875,8 +880,11 @@ class Process:
         self.referenced = False
         # variables: dictionnary: {variable1Name: (asn1SccType, default value)}
         self.variables = {}
+        # MONITOR variables used in observers (same structure as DCL)
+        self.monitors = {}
         # global variables and timers can be used to inherit from a level above
         self.global_variables = {}
+        self.global_monitors = {}
         self.global_timers = []
         # Set default coordinates and width/height
         self.pos_x = 250

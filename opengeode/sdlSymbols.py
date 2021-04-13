@@ -51,7 +51,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT', 'PRIORITY',
                 'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE', 'FOR',
                 'COMMENT', 'SIGNAL', 'SIGNALLIST', 'USE', 'RETURNS', 'ANY',
-                'EXPORTED', 'REFERENCED',
+                'EXPORTED', 'REFERENCED', 'MONITOR',
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
@@ -1407,8 +1407,16 @@ class ContinuousSignal(HorizontalSymbol):
     _terminal_followers = ['Join', 'State', 'ProcedureStop']
     common_name = 'continuous_signal'
     # Define reserved keywords for the syntax highlighter
-    blackbold = SDL_BLACKBOLD
-    redbold = SDL_REDBOLD
+    blackbold = SDL_BLACKBOLD.copy()
+    redbold = SDL_REDBOLD.copy()
+    redbold.remove("\\bINPUT\\b")
+    redbold.remove("\\bOUTPUT\\b")
+    redbold.remove("\\bSTATE\\b")
+    blackbold.append("\\bINPUT\\b")
+    blackbold.append("\\bOUTPUT\\b")
+    blackbold.append("\\bAND\\b")
+    blackbold.append("\\bFROM\\b")
+    blackbold.append("\\bTO\\b")
 
     def __init__(self, parent=None, ast=None):
         ''' Create the Provided symbol - use no background color '''
