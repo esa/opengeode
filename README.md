@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.0 (04/2021)**
+- Support Input/Ouput expressions for model checkers
+
 **3.4.6 (04/2021)**
 - Introduce monitors to support model checking observers
 

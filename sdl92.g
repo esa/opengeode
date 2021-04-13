@@ -138,6 +138,8 @@ tokens {
         VARIABLES;
         VIA;
         VIAPATH;
+        INPUT_EXPRESSION;
+        OUTPUT_EXPRESSION;
 }
 
 
@@ -1089,6 +1091,8 @@ unary_expression
         |       NOT^ unary_expression
         |       DASH unary_expression    -> ^(NEG unary_expression)
         |       CALL procedure_call_body -> ^(PROCEDURE_CALL procedure_call_body)
+        |       input_expression            // used in observers
+        |       output_expression           // used in observers
         ;
 
 
@@ -1101,6 +1105,23 @@ postfix_expression
                 )+
         ;
 
+//  input and output expression allow observers (for model checking) to
+//  monitor the sending and receiving of messages with a nice syntax
+//  (e.g. event = output msg from foo)
+input_expression
+        :       INPUT
+                -> ^(INPUT_EXPRESSION)
+                | INPUT (msg=ID)? (FROM src=ID)? TO dest=ID
+                -> ^(INPUT_EXPRESSION $msg? ^(FROM $src)? ^(TO $dest))
+        ;
+
+
+output_expression
+        :       OUTPUT
+                -> ^(OUTPUT_EXPRESSION)
+                | OUTPUT (msg=ID)? (FROM src=ID) (TO dest=ID)?
+                -> ^(OUTPUT_EXPRESSION  $msg? ^(FROM $src) ^(TO $dest)?)
+        ;
 
 primary_expression
         :       primary                       -> ^(PRIMARY primary)
