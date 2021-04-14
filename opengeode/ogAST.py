@@ -886,6 +886,14 @@ class Process:
         self.global_variables = {}
         self.global_monitors = {}
         self.global_timers = []
+        # aliases allow to access deep structures fields with a shorter syntax
+        # the _ast version is a temporary storage of the antlr parse tree. The actual
+        # processed entry is created from it after all actual variables from all
+        # text areas have been parsed, to be able to check the type of the alias
+        # format of the _ast: list of tuple (variable name, asn1 sort, ANTLR ast, ogAST.Text_Area)
+        self._aliases_ast = []
+        # format: {'alias_name': (asn1 sort, ogAST.Expression)
+        self.aliases = {}
         # Set default coordinates and width/height
         self.pos_x = 250
         self.pos_y = 150

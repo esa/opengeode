@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.1 (04/2021)**
+- Support aliases:
+  dcl var type renames foo.bar.baz;
+
 **3.5.0 (04/2021)**
 - Support Input/Ouput expressions for model checkers
 

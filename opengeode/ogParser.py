@@ -2707,13 +2707,16 @@ def variables(root, ta_ast, context, monitor=False):
         "monitors" dictionary of the context, instead of the
         variables. this is for use in the context of observers
         for model checking.
-    '''
+        variable can be defined as an alias to a field of a structure,
+        in that case the syntax is "dcl variable type renames path.to.field;"
+        '''
     var = []
     errors = []
     warnings = []
     asn1_sort, def_value = UNKNOWN_TYPE, None
     for child in root.getChildren():
         if child.type == lexer.ID:
+            renames = False
             var.append(child.text)
         elif child.type == lexer.SORT:
             sort = child.getChild(0).text
@@ -2722,6 +2725,11 @@ def variables(root, ta_ast, context, monitor=False):
                 asn1_sort = sdl_to_asn1(sort)
             except TypeError as err:
                 errors.append(error(root, str(err)))
+        elif child.type == lexer.RENAMES:
+            if monitor:
+                errors.append(f'{var[-1]}: aliasing on monitors is not allowed')
+            else:
+                context._aliases_ast.append((var[-1], asn1_sort, child.getChild(0), ta_ast))
         elif child.type == lexer.GROUND:
             # Default value for a variable - needs to be a ground expression
             def_value, err, warn = expression(child.getChild(0), context)
@@ -2765,6 +2773,8 @@ def variables(root, ta_ast, context, monitor=False):
             warnings.append('Unsupported variables construct type: ' +
                     str(child.type))
     for variable in var:
+        # note: aliases are added to the variables list. code generator have
+        # to be careful to make the link with the actual field
         if not hasattr(context, 'variables'):
             errors.append('Variables/monitors shall not be declared here')
         # Add to the context and text area AST entries
@@ -2784,7 +2794,7 @@ def variables(root, ta_ast, context, monitor=False):
             context.monitors[variable.lower()] = (asn1_sort, def_value)
             ta_ast.monitors[variable.lower()] = (asn1_sort, def_value)
     if not DV:
-        errors.append('Cannot do semantic checks on variable declarations')
+        errors.append('No visible dataview to make semantic checks on variable declarations')
     return errors, warnings
 
 
@@ -3922,6 +3932,25 @@ def process_definition(root, parent=None, context=None):
         err, warn = procedure_post(proc, content, context=process)
         errors.extend(err)
         warnings.extend(warn)
+    # once all text areas have been parsed, we must parse the aliases
+    # (e.g. dcl variable type renames field.foo.bar). this could not be done
+    # before all regular DCL/Monitor variables were parsed.
+    for (alias_name, alias_sort, alias_ast, ta_ast) in process._aliases_ast:
+        expr, err, warn = expression(alias_ast, context=process)
+        for each in err:
+            errors.append([f"In alias '{alias_name}': {each}",
+                          [ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+        for each in warn:
+            warnings.append([f"In alias '{alias_name}': {each}",
+                            [ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+        t1 = type_name(alias_sort)
+        t2 = type_name(expr.exprType)
+        if t1 != t2:
+            errors.append([f"In alias '{alias_name}': type mismatch ({t1} vs {t2})",
+                          [ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+        else:
+            process.aliases[alias_name] = (alias_sort, expr)
+
     if not process.referenced and not process.instance_of_name \
                               and (not process.content.start or
                                    not process.content.start.terminators):
