@@ -328,7 +328,15 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     # generate the lookup tables for the state machine runtime
     mapping = Helper.map_input_state(process)
 
-    VARIABLES.update(process.variables)
+    for (var_name, content) in process.variables.items():
+        # filter out the aliases and put them in the local variable pool
+        # to avoid unwanted prefixes when using them
+        if var_name in process.aliases.keys():
+            LOCAL_VAR[var_name] = content
+        else:
+            VARIABLES[var_name] = content
+
+    #VARIABLES.update(process.variables)
     MONITORS.update(process.monitors)
 
     process_level_decl = []
@@ -402,6 +410,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             context_elems.append(f'{each.statename.lower()}{SEPARATOR}state {process_asn1}-States')
 
     for var_name, (var_type, def_value) in process.variables.items():
+        if var_name in process.aliases.keys():
+            continue
         context_elems.append(f'{var_name.lower()} {type_name(var_type, False)}')
 
     asn1_context = (f'\n{process_asn1}-Context ::='' SEQUENCE {\n'
@@ -460,6 +470,9 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
         initial_values = []
         # some parts of the context may have initial values
         for var_name, (var_type, def_value) in process.variables.items():
+            if var_name in process.aliases.keys():
+                # aliases are not part of the context
+                continue
             if def_value:
                 # Expression must be a ground expression, i.e. must not
                 # require temporary variable to store computed result
@@ -478,11 +491,18 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
         ctxt += "others => <>);"
         context_decl.append(ctxt)
 
-        # Add monitors, that are pointers that must be set by an external
+        # Add monitors, that are variables that must be set by an external
         # module. They are not part of the global state of the process, and
         # are used by observer functions to read/write the system state
+        # We don't use pointers because that is incompatible with aliases
         for mon_name, (mon_type, _) in process.monitors.items():
-            context_decl.append(f"{mon_name} : access {type_name(mon_type)};")
+            context_decl.append(f"{mon_name} : {type_name(mon_type)};")
+
+        # Add aliases
+        for alias_name, (alias_sort, alias_expr) in process.aliases.items():
+            _, qualified, _ = expression(alias_expr)
+            context_decl.append(f"{alias_name} : {type_name(alias_sort)} "
+                                f"renames {qualified};")
 
         # The choice selections will allow to use the present operator
         # together with a variable of the -selection type
@@ -1751,8 +1771,9 @@ def _primary_variable(prim, **kwargs):
 
     ada_string = f'{sep}{prim.value[0]}'
 
-    if find_monitoring(prim.value[0]):
-        ada_string += ".all"
+    # Removed: we do not use access types for monitorings
+    #if find_monitoring(prim.value[0]):
+    #    ada_string += ".all"
 
     return [], str(ada_string), []
 

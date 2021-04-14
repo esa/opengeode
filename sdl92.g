@@ -96,6 +96,7 @@ tokens {
         PROVIDED;
         QUESTION;
         RANGE;
+        RENAMES;
         RESET;
         RETURN;
         RETURNS;
@@ -418,6 +419,9 @@ field_definition
         ;
 
 
+/* variable definition has one extension to SDL: it is possible to specify
+   an alias to a data structure element:
+   dcl variable type renames foo.bar.baz */
 variable_definition
         :       DCL variables_of_sort
                 (',' variables_of_sort)*
@@ -453,8 +457,10 @@ synonym_definition_item
 
 
 variables_of_sort
-        :       variable_id (',' variable_id)* sort (':=' ground_expression)?
-        ->      ^(VARIABLES variable_id+ sort ground_expression?)
+        :       variable_id (',' variable_id)* sort 
+                ((':=' ground_expression) | (RENAMES variable))?
+        ->      ^(VARIABLES variable_id+ sort
+                  ground_expression? ^(RENAMES variable)?)
         ;
 
 
@@ -1508,6 +1514,7 @@ DASH            :       '-';
 ANY             :       A N Y;
 ASTERISK        :       '*';
 DCL             :       D C L;
+RENAMES         :       R E N A M E S;
 MONITOR         :       M O N I T O R;
 END             :       E N D;
 KEEP            :       K E E P;
