@@ -40,6 +40,7 @@ tokens {
         CONSTANT;
         CONSTANTS;
         DCL;
+        MONITOR;
         DECISION;
         DIGITS;
         ELSE;
@@ -95,6 +96,7 @@ tokens {
         PROVIDED;
         QUESTION;
         RANGE;
+        RENAMES;
         RESET;
         RETURN;
         RETURNS;
@@ -137,6 +139,8 @@ tokens {
         VARIABLES;
         VIA;
         VIAPATH;
+        INPUT_EXPRESSION;
+        OUTPUT_EXPRESSION;
 }
 
 
@@ -284,16 +288,19 @@ parameters_of_sort
 
 
 // procedure
+// 2021-03 Added EXPORTED and REFEERENCED keywords
+// needed to declare a synchronous provided interface at system level
 procedure
         :       cif?
-                PROCEDURE procedure_id (e1=end | SEMI)
+                EXPORTED? PROCEDURE procedure_id (e1=end | SEMI)
                 fpar?
                 res=procedure_result?
                 (text_area | procedure)*
-                ((processBody? ENDPROCEDURE procedure_id?) | EXTERNAL)
+                ((processBody? ENDPROCEDURE procedure_id?)
+                 | EXTERNAL | REFERENCED)
                 e2=end
         ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar? $res?
-                text_area* procedure* processBody? EXTERNAL?)
+                text_area* procedure* processBody? EXTERNAL? EXPORTED? REFERENCED?)
         ;
 
 // Procedure result / optional return type
@@ -341,10 +348,12 @@ content
                  | syntype_definition
                  | newtype_definition
                  | variable_definition
+                 | monitor_definition
                  | synonym_definition)*
         ->       ^(TEXTAREA_CONTENT fpar* $res? procedure* variable_definition*
-                   syntype_definition* newtype_definition* timer_declaration*
-                   signal_declaration* use_clause* synonym_definition*)
+                   monitor_definition* syntype_definition* newtype_definition*
+                   timer_declaration* signal_declaration* use_clause*
+                   synonym_definition*)
         ;
 
 
@@ -410,11 +419,22 @@ field_definition
         ;
 
 
+/* variable definition has one extension to SDL: it is possible to specify
+   an alias to a data structure element:
+   dcl variable type renames foo.bar.baz */
 variable_definition
         :       DCL variables_of_sort
                 (',' variables_of_sort)*
                 end
         ->      ^(DCL variables_of_sort+)
+        ;
+
+/* Monitors are an extension used when creating observers for model checking */
+monitor_definition
+        :       MONITOR variables_of_sort
+                (',' variables_of_sort)*
+                end
+        ->      ^(MONITOR variables_of_sort+)
         ;
 
 
@@ -437,8 +457,10 @@ synonym_definition_item
 
 
 variables_of_sort
-        :       variable_id (',' variable_id)* sort (':=' ground_expression)?
-        ->      ^(VARIABLES variable_id+ sort ground_expression?)
+        :       variable_id (',' variable_id)* sort 
+                ((':=' ground_expression) | (RENAMES variable))?
+        ->      ^(VARIABLES variable_id+ sort
+                  ground_expression? ^(RENAMES variable)?)
         ;
 
 
@@ -1075,6 +1097,8 @@ unary_expression
         |       NOT^ unary_expression
         |       DASH unary_expression    -> ^(NEG unary_expression)
         |       CALL procedure_call_body -> ^(PROCEDURE_CALL procedure_call_body)
+        |       input_expression            // used in observers
+        |       output_expression           // used in observers
         ;
 
 
@@ -1087,6 +1111,23 @@ postfix_expression
                 )+
         ;
 
+//  input and output expression allow observers (for model checking) to
+//  monitor the sending and receiving of messages with a nice syntax
+//  (e.g. event = output msg from foo)
+input_expression
+        :       INPUT
+                -> ^(INPUT_EXPRESSION)
+                | INPUT (msg=ID)? (FROM src=ID)? TO dest=ID
+                -> ^(INPUT_EXPRESSION $msg? ^(FROM $src)? ^(TO $dest))
+        ;
+
+
+output_expression
+        :       OUTPUT
+                -> ^(OUTPUT_EXPRESSION)
+                | OUTPUT (msg=ID)? (FROM src=ID) (TO dest=ID)?
+                -> ^(OUTPUT_EXPRESSION  $msg? ^(FROM $src) ^(TO $dest)?)
+        ;
 
 primary_expression
         :       primary                       -> ^(PRIMARY primary)
@@ -1473,6 +1514,8 @@ DASH            :       '-';
 ANY             :       A N Y;
 ASTERISK        :       '*';
 DCL             :       D C L;
+RENAMES         :       R E N A M E S;
+MONITOR         :       M O N I T O R;
 END             :       E N D;
 KEEP            :       K E E P;
 PARAMNAMES      :       P A R A M N A M E S;
@@ -1530,6 +1573,7 @@ DECISION        :       D E C I S I O N;
 ENDDECISION     :       E N D D E C I S I O N;
 EXPORT          :       E X P O R T;
 EXTERNAL        :       E X T E R N A L;
+EXPORTED        :       E X P O R T E D;
 REFERENCED      :       R E F E R E N C E D;
 CONNECTION      :       C O N N E C T I O N;
 ENDCONNECTION   :       E N D C O N N E C T I O N;

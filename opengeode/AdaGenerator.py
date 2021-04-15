@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -92,6 +92,7 @@ TYPES = None
 MAPPING_SORT_MODULE = dict()
 
 VARIABLES = {}
+MONITORS = {}
 LOCAL_VAR = {}
 # List of output signals and procedures
 OUT_SIGNALS = []
@@ -204,7 +205,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     # taste-properties module-specific flag for the Ada backend:
     # import the state data from an external module
-    import_context = kwargs["ppty_check"] if "ppty_check" in kwargs else ""
+    stop_condition = kwargs["ppty_check"] if "ppty_check" in kwargs else ""
 
     # When building a shared library (with simu=True), generate a "mini-cv"
     # for aadl2glueC to create the code interfacing with asn1scc
@@ -261,6 +262,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     asn1_mods = ("\"{}\"".format(mod.lower().replace('-', '_'))
                 for mod in process.asn1Modules)
+
+    # determine if there are context parameters (defined at taste level)
+    # they are passed as generic parameters in function type/instances
+    has_context_params = any(mod.startswith("Context-")
+            for mod in process.asn1Modules)
 
     #  Create a .gpr to build the library for the simulator
     lib_gpr = '''project {pr}_Lib is
@@ -322,7 +328,16 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     # generate the lookup tables for the state machine runtime
     mapping = Helper.map_input_state(process)
 
-    VARIABLES.update(process.variables)
+    for (var_name, content) in process.variables.items():
+        # filter out the aliases and put them in the local variable pool
+        # to avoid unwanted prefixes when using them
+        if var_name in process.aliases.keys():
+            LOCAL_VAR[var_name] = content
+        else:
+            VARIABLES[var_name] = content
+
+    #VARIABLES.update(process.variables)
+    MONITORS.update(process.monitors)
 
     process_level_decl = []
 
@@ -395,6 +410,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             context_elems.append(f'{each.statename.lower()}{SEPARATOR}state {process_asn1}-States')
 
     for var_name, (var_type, def_value) in process.variables.items():
+        if var_name in process.aliases.keys():
+            continue
         context_elems.append(f'{var_name.lower()} {type_name(var_type, False)}')
 
     asn1_context = (f'\n{process_asn1}-Context ::='' SEQUENCE {\n'
@@ -435,16 +452,16 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                     f'function To_{sortAda} (Src : {fromMod}) return {toMod} '
                     f"is ({toMod}'Enum_Val (Src'Enum_Rep));")
 
-    asn1_template.append('END')
+    asn1_template.append('END\n')
 
     # Write the ASN.1 file (not in case of Stop Condition)
-    if not import_context:
+    if not stop_condition:
         with open(process_name.lower() + '_datamodel.asn', 'w') as asn1_file:
             asn1_file.write('\n'.join(asn1_template))
 
     # Generate the code to declare process-level context
     context_decl = []
-    if not import_context:
+    if not stop_condition:
         # but not in stop condition code, since we reuse the context type
         # of the state machine being observed
 
@@ -453,6 +470,9 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
         initial_values = []
         # some parts of the context may have initial values
         for var_name, (var_type, def_value) in process.variables.items():
+            if var_name in process.aliases.keys():
+                # aliases are not part of the context
+                continue
             if def_value:
                 # Expression must be a ground expression, i.e. must not
                 # require temporary variable to store computed result
@@ -460,6 +480,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                 varbty = find_basic_type(var_type)
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
+                elif varbty.kind == 'IA5StringType':
+                    dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal,\
                         'DCL: Expecting a ground expression'
                 initial_values.append(f'{var_name} => {dstr}')
@@ -469,18 +491,31 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
         ctxt += "others => <>);"
         context_decl.append(ctxt)
 
+        # Add monitors, that are variables that must be set by an external
+        # module. They are not part of the global state of the process, and
+        # are used by observer functions to read/write the system state
+        # We don't use pointers because that is incompatible with aliases
+        for mon_name, (mon_type, _) in process.monitors.items():
+            context_decl.append(f"{mon_name} : {type_name(mon_type)};")
+
+        # Add aliases
+        for alias_name, (alias_sort, alias_expr) in process.aliases.items():
+            _, qualified, _ = expression(alias_expr)
+            context_decl.append(f"{alias_name} : {type_name(alias_sort)} "
+                                f"renames {qualified};")
+
         # The choice selections will allow to use the present operator
         # together with a variable of the -selection type
         context_decl.extend(choice_selections)
-    if import_context:
+    if stop_condition:
         #  code of stop conditions must use the same type as the main process
         context_decl.append(
-                f'{LPREFIX} : {ASN1SCC}{import_context}_Context '
-                f'renames {import_context}.{import_context}_ctxt;')
-    if simu and not import_context:
+                f'{LPREFIX} : {ASN1SCC}{stop_condition}_Context '
+                f'renames {stop_condition}.{stop_condition}_ctxt;')
+    if simu and not stop_condition:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
-        context_decl.append(f'pragma export (C, {LPREFIX}, "{LPREFIX}");')
+        context_decl.append(f'pragma Export (C, {LPREFIX}, "{LPREFIX}");')
         # Exhaustive simulation needs a backup of the context to quickly undo
         context_decl.append(f'{LPREFIX}_bk: {ASN1SCC}{process_name.capitalize()}_Context;')
 
@@ -513,18 +548,12 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             aggreg_start_proc.extend([f'end {name}{SEPARATOR}START;',
                                      '\n'])
 
-        # Add the declaration of the Execute_Transition  procedure
+        # Add the declaration of the Execute_Transition procedure
         process_level_decl.append(
                 'procedure Execute_Transition (Id : Integer);')
 
         # Generate the code of the start transition (if process not empty)
         Init_Done = f'{LPREFIX}.Init_Done := True;'
-#       if not simu:
-#           start_transition = ['begin']
-#           if process.transitions:
-#               start_transition.append('Execute_Transition (0);')
-#           start_transition.append(Init_Done)
-#       else:
         rand_reset_decl = []
         for rand_g in process.random_generator:
             rand_reset_decl.append(f'Rand_{rand_g}_Pkg.Reset (Gen_{rand_g});');
@@ -561,16 +590,22 @@ with Ada.Unchecked_Conversion;
 with Ada.Numerics.Generic_Elementary_Functions;
 
 package body {process_name} is'''
-    if not instance else u"package body {} is".format(process_name)]
+    if not instance else f'''--  Package body for instance - Generated by OpenGEODE (DO NOT EDIT)
+package body {process_name} is''']
 
     generic_spec, instance_decl = "", ""
     if generic:
-        generic_spec = u"generic\n"
+        generic_spec = "generic\n"
         ri_list = external_ri_list(process)
+        if has_context_params:
+            # Add context parameter to the process type generics, to make sure
+            # the value of the instance is used, not the ASN1 constant of the
+            # type.
+            generic_spec += f"   {process_name}_ctxt : {ASN1SCC}Context_{process_name};"
         if ri_list:
-            generic_spec += u"    with " + u";\n    with ".join(ri_list) + ';'
+            generic_spec += "   with " + ";\n   with ".join(ri_list) + ';'
     if instance:
-        instance_decl = u"with {};".format(process.instance_of_name)
+        instance_decl = f"with {process.instance_of_name};"
 
     # print process.fpar
     # FPAR could be set for Context Parameters. They are available here
@@ -578,15 +613,15 @@ package body {process_name} is'''
     # Generate the source file (.ads) header
 
     # Stop conditions must import the SDL model they observe
-    imp_str = f"with {import_context}; use {import_context};" \
-            if import_context else ''
+    imp_str = f"with {stop_condition}; use {stop_condition};" \
+            if stop_condition else ''
 
     imp_datamodel = (f"with {process_name}_Datamodel; "
                      f"use {process_name}_Datamodel;") \
-                             if not import_context and not instance else (
-                                     f"with {import_context}_Datamodel; "
-                                     f"use {import_context}_Datamodel;"
-                                     if import_context else "")
+                             if not stop_condition and not instance else (
+                                     f"with {stop_condition}_Datamodel; "
+                                     f"use {stop_condition}_Datamodel;"
+                                     if stop_condition else "")
 
     imp_ri = f"with {process_name}_RI;" if not simu and not generic else ""
 
@@ -640,7 +675,7 @@ package body {process_name}_RI is''']
     ads_template.extend(rand_decl)
     if not instance:
         ads_template.extend(context_decl)
-    if not generic and not instance and not import_context:
+    if not generic and not instance and not stop_condition:
         # Add function allowing to trace current state as a string
         ads_template.append(
                 f"function Get_State return chars_ptr "
@@ -649,7 +684,15 @@ package body {process_name}_RI is''']
                 f" with Export, Convention => C, "
                 f'Link_Name => "{process_name.lower()}_state";')
 
-    if simu and not import_context:   # import_context = stop condition
+    # Declare procedure Startup in .ads
+    if not generic:
+        ads_template.append(f'procedure Startup'
+                            f' with Export, Convention => C,'
+                            f' Link_Name => "{process_name}_startup";')
+    else:  # function type
+        ads_template.append(f'procedure Startup;')
+
+    if simu and not stop_condition:
         ads_template.append('--  API for simulation via DLL')
         dll_api.append('-- API to remotely change internal data')
 
@@ -669,9 +712,6 @@ package body {process_name}_RI is''']
             f"{LPREFIX} := {LPREFIX}_bk;",
              "end Restore_Context;",
              ""])
-
-        # Declare procedure Startup in .ads
-        ads_template.append(f'procedure Startup with Export, Convention => C, Link_Name => "{process_name}_startup";')
 
         # Functions to get global context
         ads_template.append(
@@ -700,8 +740,11 @@ package body {process_name}_RI is''']
             pi_header = procedure_header(proc)
             ads_template.append(f'{pi_header};')
             if not proc.external and not generic:
+                # Export for TASTE as a synchronous PI
+                prefix = f'p{SEPARATOR}' if not proc.exported else ''
                 ads_template.append(
-                   f'pragma Export (C, p{SEPARATOR}{proc.inputString}, "_{proc.inputString}");')
+                   f'pragma Export (C, {prefix}{proc.inputString},'
+                   f' "{process_name.lower()}_PI_{proc.inputString}");')
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
@@ -719,14 +762,28 @@ package body {process_name}_RI is''']
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
                         {'name': timer} for timer in process.timers]:
-        if import_context:
+        if stop_condition:
             # dont generate anything in stop_condition functions
             break
 
         signame = signal.get('name', 'START')
+        fake_name = False
+
+        # Check if there is an exported procedure with the name of the signal
+        ignore_export = False
+        for proc in process.procedures:
+            if proc.inputString.lower() == signame.lower():
+                ignore_export = True
+
+        if ignore_export:
+            # this signal corresponds to the transitions triggered after
+            # exported procedures have been executed (synchronous PIs, or RPS)
+            # therefore it is renamed as it is not a regular PI
+            fake_name = f'{signame}_Transition'
+
         if signame == 'START':
             continue
-        pi_header = f'procedure {signame}'
+        pi_header = f'procedure {fake_name or signame}'
         param_name = signal.get('param_name') or f'{signame}_param'
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
@@ -736,11 +793,13 @@ package body {process_name}_RI is''']
         # Add declaration of the provided interface in the .ads file
         ads_template.append(f'--  Provided interface "{signame}"')
         ads_template.append(pi_header + ';')
-        if not generic:
-            ads_template.append(
-                    f'pragma Export(C, {signame}, "{process_name.lower()}_PI_{signame}");')
 
-        if simu:
+        if not generic and not ignore_export:
+            ads_template.append(
+                    f'pragma Export(C, {signame},'
+                    f' "{process_name.lower()}_PI_{signame}");')
+
+        if simu and not ignore_export:
             # Generate code for the mini-cv template
             params = [(param_name, type_name(signal['type'], use_prefix=False),
                       'IN')] if 'type' in signal else []
@@ -850,8 +909,16 @@ package body {process_name}_RI is''']
                 inst_call += f" ({param_name})"
             taste_template.append(f"{inst_call};")
 
-        taste_template.append(f'end {signame};')
+        taste_template.append(f'end {fake_name or signame};')
         taste_template.append('\n')
+
+    #  add call to startup function for instances
+    if instance:
+        taste_template.extend(['procedure Startup is',
+                               'begin',
+                               f'{process_name}_Instance.Startup;',
+                               'end Startup;',
+                               ''])
 
     # for the .ads file, generate the declaration of the required interfaces
     # output signals are the asynchronous RI - only one parameter
@@ -948,7 +1015,7 @@ package body {process_name}_RI is''']
 
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
-        if import_context:
+        if stop_condition:
             # don't generte timer code for stop conditions
             break
         ads_template.append(f'--  Timer {timer} SET and RESET functions')
@@ -1006,19 +1073,26 @@ package body {process_name}_RI is''']
     if instance:
         # Instance of a process type, all the RIs (including timers) must
         # be gathered to instantiate the package
-        pkg_decl = (u"package {}_Instance is new {}"
-                    .format(process_name, process.instance_of_name))
+        pkg_decl = (f"package {process_name}_Instance is new {process.instance_of_name}")
         ri_list = [f"RI{SEPARATOR}{sig['name']}"
                    for sig in process.output_signals]
-        ri_list.extend ([u"RI{sep}{name}".format(sep=SEPARATOR,
-                                                 name=proc.inputString)
+        ri_list.extend ([f"RI{SEPARATOR}{proc.inputString}"
                         for proc in process.procedures if proc.external])
-        ri_list.extend([u"set_{}".format(timer) for timer in process.timers])
-        ri_list.extend([u"reset_{}".format(timer) for timer in process.timers])
-        ri_inst = [u"{ri} => {ri}".format(ri=ri) for ri in ri_list]
+        ri_list.extend([f"set_{timer}"   for timer in process.timers])
+        ri_list.extend([f"reset_{timer}" for timer in process.timers])
+        ri_inst = [f"{ri} => {ri}" for ri in ri_list]
+        if ri_inst or has_context_params:
+            pkg_decl += " ("
         if ri_inst:
-            pkg_decl += u" ({})".format(u", ".join(ri_inst))
-        ads_template.append(pkg_decl + u";")
+            pkg_decl += "{}".format(", ".join(ri_inst))
+        if has_context_params:
+            if ri_inst:
+                pkg_decl += ", "
+            # Add instance-value of the context parameters
+            pkg_decl += f"{process.instance_of_name}_ctxt => {process_name}_ctxt"
+        if ri_inst or has_context_params:
+            pkg_decl += ")"
+        ads_template.append(f"{pkg_decl};")
         ads_template.append(
                 f"function Get_State return chars_ptr "
                 f"is (New_String ({process_name}_Instance.{LPREFIX}.State'Img))"
@@ -1029,12 +1103,12 @@ package body {process_name}_RI is''']
 
     if simu and has_cs:
         # Callback registration for Check_Queue
-        taste_template.append(u'procedure Register_Check_Queue'
-                              u'(Callback: Check_Queue_T) is')
-        taste_template.append(u'begin')
-        taste_template.append(u'Check_Queue := Callback;')
-        taste_template.append(u'end Register_Check_Queue;')
-        taste_template.append(u'')
+        taste_template.append('procedure Register_Check_Queue '
+                              '(Callback : Check_Queue_T) is')
+        taste_template.append('begin')
+        taste_template.append('Check_Queue := Callback;')
+        taste_template.append('end Register_Check_Queue;')
+        taste_template.append('')
 
     # If the process has no input, output, procedures, or timers, then Ada
     # will not compile the body - generate a pragma to fix this
@@ -1116,7 +1190,7 @@ package body {process_name}_RI is''']
             taste_template.append('end if;')
             ads_template.append('procedure Check_Queue (Res : out Asn1Boolean);')
             if not generic:
-                ads_template.append(f'pragma Import(C, Check_Queue, "{process_name}_check_queue");')
+                ads_template.append(f'pragma Import(C, Check_Queue, "{process_name.lower()}_check_queue");')
         elif has_cs and simu:
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
             taste_template.append("Check_Queue (msgPending);")
@@ -1200,8 +1274,7 @@ package body {process_name}_RI is''']
                     each.priority = lowest_priority + 1
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
-                taste_template.append(u'--  Priority {}'
-                                      .format(provided_clause.priority))
+                taste_template.append('--  Priority {provided_clause.priority}')
                 trId = process.transitions.index(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
@@ -1230,12 +1303,12 @@ package body {process_name}_RI is''']
                 sep='elsif '
                 taste_template.extend(code)
             if cs_item:
-                taste_template.append(u'end if;') # inner if
-                taste_template.append(u'end if;') # current state
+                taste_template.append('end if;') # inner if
+                taste_template.append('end if;') # current state
             sep = 'if '
 
         if need_final_endif:
-            taste_template.append(u'end if;')
+            taste_template.append('end if;')
 
         taste_template.append('end loop;')
         taste_template.append('end Execute_Transition;')
@@ -1305,6 +1378,11 @@ def write_statement(param, newline):
         code.extend(st2)
         local.extend(lcl1)
         local.extend(lcl2)
+    elif type_kind == 'IA5StringType':
+        # IA5String are null-terminated to match the C representation
+        # ASN1SCC API offers the getStringSize function to read the actual size
+        code, string, local = expression(param, readonly=1)
+        code.append(f'Put ({string} (1 .. adaasn1rtl.GetStringSize ({string})));')
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimStringLiteral):
             # Raw string
@@ -1369,6 +1447,10 @@ def _call_external_function(output, **kwargs):
     # Add the traceability information
     code.extend(traceability(output))
     #code.extend(debug_trace())
+
+    # Calling a procedure or RI usually needs a prefix (RI_.. or p_...)
+    # Exception is the _Transition procedures called after exported PIs (RPC)
+    need_prefix = True
 
     for out in output.output:
         signal_name = out['outputName']
@@ -1436,9 +1518,21 @@ def _call_external_function(output, **kwargs):
                         list_of_params = [
                                 f'New_String ("{out["outputName"]}")']
             except ValueError:
-                # Not there? Impossible, the parser would have barked
-                raise ValueError('Probably a bug - please report'
-                        ' (related to ' + signal_name.lower() + ')')
+                # Last chance to find it: if it is an exported procedure,
+                # in that case an additional signal with _Transition suffix
+                # exists but is not visible in the model at this point
+                for sig in PROCEDURES:
+                    if signal_name.lower() == f'{sig.inputString.lower()}_transition':
+                        out_sig = sig
+                        is_out_sig = False
+                        need_prefix = False
+                        break
+                else:
+                    # Not there? Impossible, the parser would have barked
+                    # Can happen with stop conditions because they are defined
+                    # as exported but the _Transition signal was not added
+                    LOG.warning(f'Could not find signal/procedure: {signal_name} - ignoring call')
+                    return code, local_decl
         if out_sig:
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
@@ -1478,18 +1572,16 @@ def _call_external_function(output, **kwargs):
                         # Check the template in def _conditional
                         app_len = append_size(param)
                         code.extend(debug_trace())
-                        code.append(u'{tmp}.Data (1 .. {app_len}) := {val};'
-                               .format(tmp=tmp_id, app_len=app_len, val=p_id))
+                        code.append(f'{tmp_id}.Data (1 .. {app_len}) := {p_id};')
                         if basic_param.Min != basic_param.Max:
                             # Append should only apply to this case, i.e.
                             # types of varying length...
-                            code.append(u'{tmp}.Length := {app_len};'
-                                    .format(tmp=tmp_id, app_len=app_len))
+                            code.append(f'{tmp_id}.Length := {app_len};')
                     else:
-                        code.append(u'{} := {};'.format(tmp_id, p_id))
+                        code.append(f'{tmp_id} := {p_id};')
                     list_of_params.append(u"{}{}"
                                           .format(tmp_id,
-                                                  u", {}'Size".format(tmp_id)
+                                                  f", {tmp_id}'Size"
                                                      if is_out_sig else ""))
                 else:
                     # Output parameters/local variables
@@ -1503,10 +1595,11 @@ def _call_external_function(output, **kwargs):
                 code.append(f'RI{SEPARATOR}{name}({params});')
 
             else:
+                prefix = f'RI{SEPARATOR}' if need_prefix else ''
                 if not SHARED_LIB:
-                    code.append(f'RI{SEPARATOR}{name};')
+                    code.append(f'{prefix}{name};')
                 else:
-                    code.append(f'RI{SEPARATOR}{name} (New_String ("{name}"));')
+                    code.append(f'{prefix}{name} (New_String ("{name}"));')
         else:
             # inner procedure call
             list_of_params = []
@@ -1677,6 +1770,10 @@ def _primary_variable(prim, **kwargs):
         sep = LPREFIX + '.'
 
     ada_string = f'{sep}{prim.value[0]}'
+
+    # Removed: we do not use access types for monitorings
+    #if find_monitoring(prim.value[0]):
+    #    ada_string += ".all"
 
     return [], str(ada_string), []
 
@@ -2137,8 +2234,15 @@ def _assign_expression(expr, **kwargs):
     # If left side is a string/seqOf and right side is a substring, we must
     # assign the .Data and .Length parts properly
     basic_left = find_basic_type(expr.left.exprType)
-    if basic_left.kind in ('SequenceOfType', 'OctetStringType'):
-        rlen = u"{}'Length".format(right_str)
+    if (basic_left.kind == 'IA5StringType'
+            and isinstance(expr.right, ogAST.PrimStringLiteral)):
+        # Assignment of a raw IA5String: do not use the result of expression
+        # as it represents the string as a sequence of numbers to fit
+        # OCTET STRINGs.
+        def_value = ia5string_raw(expr.right)
+        strings.append(f'{left_str} := {def_value};')
+    elif basic_left.kind in ('SequenceOfType', 'OctetStringType'):
+        rlen = f"{right_str}'Length"
 
         if isinstance(expr.right, ogAST.PrimSubstring):
             if not isinstance(expr.left, ogAST.PrimSubstring):
@@ -2179,11 +2283,10 @@ def _assign_expression(expr, **kwargs):
             rlen = None
         else:
             # Right part is a variable
-            strings.append(u"{} := {};".format(left_str, right_str))
+            strings.append(f"{left_str} := {right_str};")
             rlen = None
         if rlen and basic_left.Min != basic_left.Max:
-            strings.append(u"{lvar}.Length := {rlen};"
-                           .format(lvar=left_str, rlen=rlen))
+            strings.append(f"{left_str}.Length := {rlen};")
     elif basic_left.kind.startswith('Integer'):
 #       print '\nASSIGN:', expr.inputString,
 #       print "Left type = ",type_name(find_basic_type (expr.left.exprType)),
@@ -2211,9 +2314,9 @@ def _assign_expression(expr, **kwargs):
             else:
                 res = right_str
 
-        strings.append(f"{left_str} := {res};".format(left_str, res))
+        strings.append(f"{left_str} := {res};")
     else:
-        strings.append(u"{} := {};".format(left_str, right_str))
+        strings.append(f"{left_str} := {right_str};")
     code.extend(left_stmts)
     code.extend(right_stmts)
     code.extend(strings)
@@ -2424,12 +2527,11 @@ def _expr_in(expr, **kwargs):
         stmts.append(u"if {container}(elem) = {pattern} then".format
                 (container=left_str, pattern=right_str))
 
-        stmts.append(u"{} := True;".format(ada_string))
-        stmts.append(u"end if;")
+        stmts.append(f"{ada_string} := True;")
+        stmts.append("end if;")
 
-        stmts.append(u"exit in_loop_{tmp} when {tmp} = True;"
-                      .format(tmp=ada_string))
-        stmts.append(u"end loop in_loop_{};".format(ada_string))
+        stmts.append(f"exit in_loop_{ada_string} when {ada_string} = True;")
+        stmts.append(f"end loop in_loop_{ada_string};")
 
     return stmts, str(ada_string), local_decl
 
@@ -2503,9 +2605,17 @@ def _string_literal(primary, **kwargs):
     # as expected by the Ada type corresponding to Octet String
     unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
 
-    ada_string = u', '.join(unsigned_8)
+    ada_string = ', '.join(unsigned_8)
     return [], str(ada_string), []
 
+def ia5string_raw(prim: ogAST.PrimStringLiteral):
+    ''' IA5 Strings are of type String in Ada but this is not directly
+    compatible with variable-length strings as defined in ASN.1
+    Since the Ada type maps to a null-terminated C type, we have to make
+    a corresponding assignment, filling then non-used part of the container
+    with NULL character. To know the size, we can use adaasn1rtl.getStringSize
+    '''
+    return "('" + "', '".join(prim.value[1:-1]) + "', others => Standard.ASCII.NUL)"
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary, **kwargs):
@@ -2517,7 +2627,7 @@ def _constant(primary, **kwargs):
 def _mantissa_base_exp(primary, **kwargs):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
     # TODO
-    return [], u'', []
+    return [], '', []
 
 
 @expression.register(ogAST.PrimConditional)
@@ -2531,7 +2641,7 @@ def _conditional(cond, **kwargs):
         then_str = cond.value['then'].value.replace("'", '"')
         else_str = cond.value['else'].value.replace("'", '"')
         lens = [len(then_str), len(else_str)]
-        tmp_type = 'String(1 .. {})'.format(max(lens) - 2)
+        tmp_type = 'String (1 .. {})'.format(max(lens) - 2)
         # Ada require fixed-length strings, adjust with spaces
         if lens[0] < lens[1]:
             then_str = then_str[0:-1] + ' ' * (lens[1] - lens[0]) + '"'
@@ -2916,21 +3026,18 @@ def _transition(tr, **kwargs):
             empty_transition = False
             code.extend(traceability(tr.terminator))
             if tr.terminator.label:
-                code.append('<<{label}>>'.format(
-                    label=tr.terminator.label.inputString))
+                code.append(f'<<{tr.terminator.label.inputString}>>')
             if tr.terminator.kind == 'next_state':
                 history = tr.terminator.inputString.strip() == '-'
                 if tr.terminator.next_is_aggregation and not history: # XXX add to C generator
-                    code.append(u'-- Entering state aggregation {}'
-                                .format(tr.terminator.inputString))
+                    code.append(f'-- Entering state aggregation {tr.terminator.inputString}')
                     # Call the START function of the state aggregation
                     code.append(f'{tr.terminator.next_id};')
                     code.append(
                       f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
                     code.append('trId := -1;')
                 elif not history: # tr.terminator.inputString.strip() != '-':
-                    code.append(u'trId := ' +
-                                str(tr.terminator.next_id) + u';')
+                    code.append(f'trId := {str(tr.terminator.next_id)};')
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate: # XXX add to C generator
                             code.append(f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
@@ -2947,9 +3054,9 @@ def _transition(tr, **kwargs):
                         for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 if tr.terminator.next_is_aggregation:
-                                    statement = u'{};'.format(nid)
+                                    statement = f'{nid};'
                                 else:
-                                    statement = u'trId := {};'.format(nid)
+                                    statement = f'trId := {nid};'
                                 states_prefix = (f"{ASN1SCC}{s}" for s in sta)
                                 joined_states = " | ".join(states_prefix)
                                 code.extend(
@@ -2963,8 +3070,7 @@ def _transition(tr, **kwargs):
                         code.append('trId := -1;')
                 code.append('goto Next_Transition;')
             elif tr.terminator.kind == 'join':
-                code.append(u'goto {label};'.format(
-                    label=tr.terminator.inputString))
+                code.append(f'goto {tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
                 pass
                 # TODO
@@ -2982,14 +3088,14 @@ def _transition(tr, **kwargs):
                     code.append(
                         f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State '
                         f':= {ASN1SCC}state{SEPARATOR}end;')
-                    cond = u'{ctxt}.{sib}{sep}State = {asn1scc}state{sep}end'
+                    cond = '{ctxt}.{sib}{sep}State = {asn1scc}state{sep}end'
                     conds = [cond.format(sib=sib,
                                          ctxt=LPREFIX,
                                          sep=SEPARATOR,
                                          asn1scc=ASN1SCC)
                             for sib in tr.terminator.siblings
                             if sib.lower() != tr.terminator.substate.lower()]
-                    code.append(u'if {} then'.format(' and '.join(conds)))
+                    code.append('if {} then'.format(' and '.join(conds)))
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
                         stmts, string, local = \
@@ -2997,16 +3103,16 @@ def _transition(tr, **kwargs):
                                            readonly=1)
                         code.extend(stmts)
                         local_decl.extend(local)
-                    code.append(u'return{};'
+                    code.append('return{};'
                                 .format(' ' + string if string else ''))
                 else:
-                    code.append(u'trId := ' + str(tr.terminator.next_id) + ';')
-                    code.append(u'goto Next_Transition;')
+                    code.append('trId := ' + str(tr.terminator.next_id) + ';')
+                    code.append('goto Next_Transition;')
                 if aggregate:
-                    code.append(u'else')
-                    code.append(u'trId := -1;')
-                    code.append(u'goto Next_Transition;')
-                    code.append(u'end if;')
+                    code.append('else')
+                    code.append('trId := -1;')
+                    code.append('goto Next_Transition;')
+                    code.append('end if;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
         code.append('null;')
@@ -3020,7 +3126,7 @@ def _floating_label(label, **kwargs):
     local_decl = []
     # Add the traceability information
     code.extend(traceability(label))
-    code.append(u'<<{label}>>'.format(label=label.inputString))
+    code.append(f'<<{label.inputString}>>')
     if label.transition:
         code_trans, local_trans = generate(label.transition)
         code.extend(code_trans)
@@ -3033,11 +3139,10 @@ def _floating_label(label, **kwargs):
 def procedure_header(proc):
     ''' Build the protoype of a procedure '''
     ret_type = type_name(proc.return_type) if proc.return_type else None
-    pi_header = u'{kind} {sep}{proc_name}'.format(kind='procedure'
-                                                  if not proc.return_type
-                                                  else 'function',
-                                                  sep=(u'p' + SEPARATOR),
-                                                  proc_name=proc.inputString)
+    kind = 'procedure' if not proc.return_type else 'function'
+    sep = f'p{SEPARATOR}' if not proc.exported else ''
+    proc_name = proc.inputString
+    pi_header = f'{kind} {sep}{proc_name}'
     if proc.fpar:
         pi_header += '('
         params = []
@@ -3045,7 +3150,8 @@ def procedure_header(proc):
             typename = type_name(fpar['type'])
             params.append(u'{name}: in{out} {ptype}'.format(
                     name=fpar.get('name'),
-                    out=' out' if fpar.get('direction') == 'out' else '',
+                    # out: exported procedures always use in out for taste (C code) compatibility
+                    out=' out' if (fpar.get('direction') == 'out' or proc.exported) else '',
                     ptype=typename))
         pi_header += ';'.join(params)
         pi_header += ')'
@@ -3070,6 +3176,8 @@ def _inner_procedure(proc, **kwargs):
     outer_scope = dict(VARIABLES)
     local_scope = dict(LOCAL_VAR)
     VARIABLES.update(proc.variables)
+    # Note: here we ignore locally-declared monitorings.. they should be
+    # defined at process level (but this is not checked in the parser)
     # Store local variables in global context
     LOCAL_VAR.update(proc.variables)
     # Also add procedure parameters in scope
@@ -3087,10 +3195,8 @@ def _inner_procedure(proc, **kwargs):
         # Inner procedures declared external by the user: pragma import
         # the C symbol with the same name. Overrules the pragma import from
         # taste for required interfaces.
-        local_decl.append(u'pragma import(C, p{sep}{proc_name}, '
-                          u'"{proc_name}");'
-                          .format(sep=SEPARATOR,
-                                  proc_name=proc.inputString))
+        local_decl.append(f'pragma Import (C, p{SEPARATOR}{proc.inputString}, '
+                          f'"{proc.inputString}");')
     else:
         # Generate the code for the procedure itself
         # local variables and code of the START transition
@@ -3099,7 +3205,7 @@ def _inner_procedure(proc, **kwargs):
             inner_code, inner_local = generate(inner_proc)
             local_decl.extend(inner_local)
             code.extend(inner_code)
-        code.append(pi_header + u' is')
+        code.append(f'{pi_header} is')
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
             if def_value:
@@ -3107,16 +3213,46 @@ def _inner_procedure(proc, **kwargs):
                 # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value, readonly=1)
                 varbty = find_basic_type(var_type)
+                print(f'{var_name}: {dstr} {varbty.kind}')
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
+                elif varbty.kind == 'IA5StringType':
+                    dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'{name} : {sort}{default};'
-                        .format(name=var_name,
-                                sort=typename,
-                                default=' := ' + dstr if def_value else ''))
+            default = f' := {dstr}' if def_value else ''
+            code.append(f'{var_name} : {typename}{default};')
 
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
+
+        if proc.exported:
+            # Exported procedure end calling the corresponding transition
+            # procedure that allows user to change state after RPC call
+            # We need to update all the transitions of the procedure
+            # (including floating labels) that contain a return statement
+            # andadd the call to the _Transition procedure before
+            trans_with_return = []
+            for each in chain ([proc.content.start.transition],
+                    (lab.transition for lab in proc.content.floating_labels)):
+                def rec_transition(trans : ogAST.Transition):
+                    if trans.terminator:
+                        if trans.terminator.kind == 'return':
+                            trans_with_return.append (trans)
+                    elif isinstance(trans.actions[-1], ogAST.Decision):
+                        # There is no terminator, so the transition may finish
+                        # with a DECISION, we must check it recursively
+                        for answer in trans.actions[-1].answers:
+                            rec_transition (answer.transition)
+                rec_transition (each)
+
+            for trans in trans_with_return:
+                call_trans = ogAST.ProcedureCall()
+                call_trans.inputString = f'{proc.inputString}_Transition'
+                trans_proc = f'{proc.inputString}_Transition'
+                call_trans.output = [{'outputName': trans_proc,
+                                     'params': [], 'tmpVars': []}]
+                trans.actions.append(call_trans)
+
         if proc.content.start:
             tr_code, tr_decl = generate(proc.content.start.transition)
         else:
@@ -3131,8 +3267,10 @@ def _inner_procedure(proc, **kwargs):
         code.append('begin')
         code.extend(tr_code)
         code.extend(code_labels)
-        code.append(u'end p{sep}{procName};'.format(sep=SEPARATOR,
-                                                    procName=proc.inputString))
+        if proc.exported:
+            code.append(f'end {proc.inputString};')
+        else:
+            code.append(f'end p{SEPARATOR}{proc.inputString};')
     code.append('\n')
 
     # Reset the scope to how it was prior to the procedure definition
@@ -3282,6 +3420,13 @@ def find_var(var):
             return visible_var
     return None
 
+def find_monitoring(mon):
+    ''' Return a monitoring from the scope, with proper case '''
+    for visible_mon in MONITORS.keys():
+        if mon.lower() == visible_mon.lower():
+            return visible_mon
+    return None
+
 
 def is_local(var):
     ''' Check if a variable is in the global context or in a local scope
@@ -3301,7 +3446,9 @@ def path_type(path):
     if not path or not find_var(path[0]):
         return None, None
     kind = ''
-    vartype, _ = VARIABLES[find_var(path[0])]
+    declarations = dict(VARIABLES)
+    declarations.update(MONITORS)
+    vartype, _ = declarations[find_var(path[0])]
     asn1_name = vartype.ReferencedTypeName
     # Get ASN.1 type of the first element
     current = TYPES[asn1_name].type

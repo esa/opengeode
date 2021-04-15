@@ -124,8 +124,42 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.1 (04/2021)**
+- Support aliases:
+  dcl var type renames foo.bar.baz;
+
+**3.5.0 (04/2021)**
+- Support Input/Ouput expressions for model checkers
+
+**3.4.6 (04/2021)**
+- Introduce monitors to support model checking observers
+
+**3.4.5 (04/2021)**
+- Fix bug affecting RPC
+
+**3.4.4 (04/2021)**
+- After RPC call, execute corresponding transition in the state machine (if any)
+
+**3.4.3 (03/2021)**
+- Ignore duplicate signal definition at system level (impacts only taste systems)
+
+**3.4.2 (03/2021)**
+- Minor bugfix
+
+**3.4.1 (03/2021)**
+- Fix support of remote synchronous calls
+
+**3.4.0 (03/2021)**
+- Support exported/reference procedures (allowing remote synchronous calls)
+
+**3.3.7 (03/2021)**
+- Support IA5String type
+
+**3.3.7 (03/2021)**
+- Fix handling of context parameters in type/instances
+
 **3.3.6 (12/2020)**
-- Minor bugfix with predure parsing
+- Minor bugfix with procedure parsing
 
 **3.3.5 (11/2020)**
 - Improve link between error messages and graphical symbols

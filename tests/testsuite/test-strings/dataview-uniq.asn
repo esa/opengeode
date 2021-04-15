@@ -5,6 +5,11 @@ List ::= SEQUENCE(SIZE(5)) OF OCTET STRING(SIZE(1..6))
 
 OutStr ::= OCTET STRING (SIZE(0..255))
 
+Octet ::= OCTET STRING (SIZE (1))
+
+Short-String ::= SEQUENCE (SIZE (0..255)) OF Octet
+
+Textstring ::= IA5String (SIZE (0..255))
 
 END
 

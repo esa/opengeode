@@ -762,6 +762,8 @@ class TextArea:
         self.height = 140
         # DCL variables in the text area {name: (sort, default_value), ...}
         self.variables = {}
+        # MONITOR variables used in observers (same structure as DCL)
+        self.monitors = {}
         # fpar and timers are also listed, useful when using autocompletion
         self.fpar = []
         self.timers = []
@@ -810,10 +812,13 @@ class Procedure:
         self.hyperlink = None
         # Local variables dictionnary (see Process)
         self.variables = {}
+        # MONITOR variables used in observers (same structure as DCL)
+        self.monitors = {}
         self.timers = []
         # Inherited variables and timers from all levels above
         self.global_variables = {}
         self.global_timers = []
+        self.global_monitors = {}
         # Formal parameters - list of dict:
         # [{'name': str, 'direction': 'in'/'out', 'type': str}]
         self.fpar = []
@@ -840,8 +845,8 @@ class Procedure:
         self.transitions = []
         # Determine if a procedure is externally defined
         self.external = False
-        # Determine if a procedure is a remote procedure
-        self.exported = False
+        # Determine if a procedure only has a textual definition
+        self.textual_procedure = False
         # Optional comment
         self.comment = None
         # Set of symbols contained in the procedure (type Automaton)
@@ -851,6 +856,10 @@ class Procedure:
         self.output_signals = []
         # The "DECISION ANY" construct requires random number generators
         self.random_generator = set()
+        # Procedure declared as EXPORTED
+        self.exported : bool = False
+        # procedure declared as REFERENCED
+        self.referenced : bool = False
 
 
 class Process:
@@ -871,9 +880,20 @@ class Process:
         self.referenced = False
         # variables: dictionnary: {variable1Name: (asn1SccType, default value)}
         self.variables = {}
+        # MONITOR variables used in observers (same structure as DCL)
+        self.monitors = {}
         # global variables and timers can be used to inherit from a level above
         self.global_variables = {}
+        self.global_monitors = {}
         self.global_timers = []
+        # aliases allow to access deep structures fields with a shorter syntax
+        # the _ast version is a temporary storage of the antlr parse tree. The actual
+        # processed entry is created from it after all actual variables from all
+        # text areas have been parsed, to be able to check the type of the alias
+        # format of the _ast: list of tuple (variable name, asn1 sort, ANTLR ast, ogAST.Text_Area)
+        self._aliases_ast = []
+        # format: {'alias_name': (asn1 sort, ogAST.Expression)
+        self.aliases = {}
         # Set default coordinates and width/height
         self.pos_x = 250
         self.pos_y = 150
@@ -1032,6 +1052,7 @@ class System:
         self.filename = None
         # Reference to top-level AST
         self.ast = None
+        # self.parent = None
         # list of SIGNAL declarations: [{'name': str, 'type': asn1type}]
         # (Supporting only one parameter)
         self.signals = []
@@ -1051,6 +1072,8 @@ class AST:
             AST entries are systems, processes, and USE clauses
             (cf. ANTLR grammar, production "pr_file")
         '''
+        # Top-level node: parent remains None
+        self.parent = None
         # Set of input files the AST was created from
         self.pr_files = set()
         # USE clauses: list of strings (eg. "DataView")
