@@ -1101,7 +1101,7 @@ package body {process_name}_RI is''']
 
     has_cs = any(process.cs_mapping.values())
 
-    if simu and has_cs:
+    if simu and has_cs and not MONITORS:
         # Callback registration for Check_Queue
         taste_template.append('procedure Register_Check_Queue '
                               '(Callback : Check_Queue_T) is')
@@ -1163,7 +1163,10 @@ package body {process_name}_RI is''']
 
         taste_template.append('when CS_Only =>')
         taste_template.append('trId := -1;')
-        taste_template.append('goto Next_Transition;')
+        if not MONITORS:
+            taste_template.append('goto Next_Transition;')
+        else:
+            taste_template.append('goto Observer_Transition;')
 
         taste_template.append('when others =>')
         taste_template.append('null;')
@@ -1177,21 +1180,33 @@ package body {process_name}_RI is''']
         # Add the code for the floating labels
         taste_template.extend(code_labels)
 
-        taste_template.append('<<Next_Transition>>')
+        if MONITORS:
+            # If monitors are defined, it means this SDL process is in fact
+            # a model checking observer. In that case, the Next_Transition
+            # section shall not contain the code of the continuous signals,
+            # because only one transition is executed at each activation of
+            # the observer
+            taste_template.append('<<Observer_Transition>>')
+        else:
+            taste_template.append('<<Next_Transition>>')
 
         # After completing active transition(s), check continuous signals:
         #     - Check current state(s)
         #     - For each continuous signal generate code (test+transition)
         # XXX add to C backend
         if has_cs and not simu:
-            taste_template.append('--  Process continuous signals')
-            taste_template.append('if {}.Init_Done then'.format(LPREFIX))
-            taste_template.append("Check_Queue (msgPending);")
-            taste_template.append('end if;')
-            ads_template.append('procedure Check_Queue (Res : out Asn1Boolean);')
-            if not generic:
-                ads_template.append(f'pragma Import(C, Check_Queue, "{process_name.lower()}_check_queue");')
-        elif has_cs and simu:
+            if not MONITORS:
+                taste_template.append('--  Process continuous signals')
+                taste_template.append(f'if {LPREFIX}.Init_Done then')
+                taste_template.append("Check_Queue (msgPending);")
+                taste_template.append('end if;')
+                ads_template.append('procedure Check_Queue (Res : out Asn1Boolean);')
+                if not generic:
+                    ads_template.append(f'pragma Import(C, Check_Queue, "{process_name.lower()}_check_queue");')
+            else:
+                taste_template.append('--  Process observer transitions')
+                taste_template.append("msgPending := False;")
+        elif has_cs and simu and not MONITORS:
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
             taste_template.append("Check_Queue (msgPending);")
             taste_template.append('end if;')
@@ -1243,8 +1258,7 @@ package body {process_name}_RI is''']
                             each.priority = lowest_priority + 1
                     for provided_clause in sorted(cs_item,
                                                  key=lambda itm: itm.priority):
-                        taste_template.append(u'--  CS Priority {}'
-                                             .format(provided_clause.priority))
+                        taste_template.append(f'--  Priority {provided_clause.priority}')
                         trId = process.transitions.index\
                                             (provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
@@ -1274,7 +1288,7 @@ package body {process_name}_RI is''']
                     each.priority = lowest_priority + 1
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
-                taste_template.append('--  Priority {provided_clause.priority}')
+                taste_template.append(f'--  Priority {provided_clause.priority}')
                 trId = process.transitions.index(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
@@ -1310,15 +1324,15 @@ package body {process_name}_RI is''']
         if need_final_endif:
             taste_template.append('end if;')
 
+        if MONITORS:
+            taste_template.append('<<Next_Transition>>')
+
         taste_template.append('end loop;')
         taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
     elif not instance:
         # No transitions defined, but keep the interface for CS_Only calls
-        taste_template.append('procedure Execute_Transition (Id : Integer) is')
-        taste_template.append('begin')
-        taste_template.append('null;')
-        taste_template.append('end Execute_Transition;')
+        taste_template.append('procedure Execute_Transition (Id : Integer) is null;')
         taste_template.append('\n')
 
     # Add code of the package elaboration

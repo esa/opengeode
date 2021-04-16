@@ -3,11 +3,11 @@
 
 # pylint: disable=C0302
 """
-    OpenGEODE - A tiny, free SDL Editor for TASTE
+    OpenGEODE - TASTE SDL and Observers Editor
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 Maxime Perrotin & European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.5.1'
+__version__ = '3.5.2'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
