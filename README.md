@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.2 (04/2021)**
+- Model checking observers: run only one transition per call
+
 **3.5.1 (04/2021)**
 - Support aliases:
   dcl var type renames foo.bar.baz;
