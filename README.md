@@ -126,6 +126,7 @@ Changelog
 =========
 **3.5.2 (04/2021)**
 - Model checking observers: run only one transition per call
+- Support field names called "state"
 
 **3.5.1 (04/2021)**
 - Support aliases:
