@@ -1,4 +1,4 @@
-# $ANTLR 3.5.2 sdl92.g 2021-04-14 13:02:02
+# $ANTLR 3.5.2 sdl92.g 2021-04-16 11:43:08
 
 import sys
 from antlr3 import *
@@ -44849,7 +44849,7 @@ class sdl92Parser(Parser):
                     alt225 = 2
                     LA225_0 = self.input.LA(1)
 
-                    if (LA225_0 == ID) :
+                    if (LA225_0 in {ID, STATE}) :
                         alt225 = 1
 
 
@@ -46520,7 +46520,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "field_name"
-    # sdl92.g:1484:1: field_name : ID ;
+    # sdl92.g:1484:1: field_name : ( ID | STATE );
     def field_name(self, ):
         retval = self.field_name_return()
         retval.start = self.input.LT(1)
@@ -46528,22 +46528,35 @@ class sdl92Parser(Parser):
 
         root_0 = None
 
-        ID741 = None
+        set741 = None
 
-        ID741_tree = None
+        set741_tree = None
 
         try:
             try:
-                # sdl92.g:1484:17: ( ID )
-                # sdl92.g:1484:25: ID
+                # sdl92.g:1484:17: ( ID | STATE )
+                # sdl92.g:
                 pass 
                 root_0 = self._adaptor.nil()
 
 
-                ID741 = self.match(self.input, ID, self.FOLLOW_ID_in_field_name16266)
-                if self._state.backtracking == 0:
-                    ID741_tree = self._adaptor.createWithPayload(ID741)
-                    self._adaptor.addChild(root_0, ID741_tree)
+                set741 = self.input.LT(1)
+
+                if self.input.LA(1) in {ID, STATE}:
+                    self.input.consume()
+                    if self._state.backtracking == 0:
+                        self._adaptor.addChild(root_0, self._adaptor.createWithPayload(set741))
+
+                    self._state.errorRecovery = False
+
+
+                else:
+                    if self._state.backtracking > 0:
+                        raise BacktrackingFailed
+
+
+                    mse = MismatchedSetException(None, self.input)
+                    raise mse
 
 
 
@@ -46601,7 +46614,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID742 = self.match(self.input, ID, self.FOLLOW_ID_in_signal_route_id16279)
+                ID742 = self.match(self.input, ID, self.FOLLOW_ID_in_signal_route_id16283)
                 if self._state.backtracking == 0:
                     ID742_tree = self._adaptor.createWithPayload(ID742)
                     self._adaptor.addChild(root_0, ID742_tree)
@@ -46662,7 +46675,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID743 = self.match(self.input, ID, self.FOLLOW_ID_in_channel_id16297)
+                ID743 = self.match(self.input, ID, self.FOLLOW_ID_in_channel_id16301)
                 if self._state.backtracking == 0:
                     ID743_tree = self._adaptor.createWithPayload(ID743)
                     self._adaptor.addChild(root_0, ID743_tree)
@@ -46723,7 +46736,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID744 = self.match(self.input, ID, self.FOLLOW_ID_in_route_id16317)
+                ID744 = self.match(self.input, ID, self.FOLLOW_ID_in_route_id16321)
                 if self._state.backtracking == 0:
                     ID744_tree = self._adaptor.createWithPayload(ID744)
                     self._adaptor.addChild(root_0, ID744_tree)
@@ -46784,7 +46797,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID745 = self.match(self.input, ID, self.FOLLOW_ID_in_block_id16337)
+                ID745 = self.match(self.input, ID, self.FOLLOW_ID_in_block_id16341)
                 if self._state.backtracking == 0:
                     ID745_tree = self._adaptor.createWithPayload(ID745)
                     self._adaptor.addChild(root_0, ID745_tree)
@@ -46845,7 +46858,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID746 = self.match(self.input, ID, self.FOLLOW_ID_in_source_id16356)
+                ID746 = self.match(self.input, ID, self.FOLLOW_ID_in_source_id16360)
                 if self._state.backtracking == 0:
                     ID746_tree = self._adaptor.createWithPayload(ID746)
                     self._adaptor.addChild(root_0, ID746_tree)
@@ -46906,7 +46919,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID747 = self.match(self.input, ID, self.FOLLOW_ID_in_dest_id16377)
+                ID747 = self.match(self.input, ID, self.FOLLOW_ID_in_dest_id16381)
                 if self._state.backtracking == 0:
                     ID747_tree = self._adaptor.createWithPayload(ID747)
                     self._adaptor.addChild(root_0, ID747_tree)
@@ -46967,7 +46980,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID748 = self.match(self.input, ID, self.FOLLOW_ID_in_gate_id16398)
+                ID748 = self.match(self.input, ID, self.FOLLOW_ID_in_gate_id16402)
                 if self._state.backtracking == 0:
                     ID748_tree = self._adaptor.createWithPayload(ID748)
                     self._adaptor.addChild(root_0, ID748_tree)
@@ -47028,7 +47041,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID749 = self.match(self.input, ID, self.FOLLOW_ID_in_procedure_id16414)
+                ID749 = self.match(self.input, ID, self.FOLLOW_ID_in_procedure_id16418)
                 if self._state.backtracking == 0:
                     ID749_tree = self._adaptor.createWithPayload(ID749)
                     self._adaptor.addChild(root_0, ID749_tree)
@@ -47089,7 +47102,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID750 = self.match(self.input, ID, self.FOLLOW_ID_in_remote_procedure_id16443)
+                ID750 = self.match(self.input, ID, self.FOLLOW_ID_in_remote_procedure_id16447)
                 if self._state.backtracking == 0:
                     ID750_tree = self._adaptor.createWithPayload(ID750)
                     self._adaptor.addChild(root_0, ID750_tree)
@@ -47150,7 +47163,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID751 = self.match(self.input, ID, self.FOLLOW_ID_in_operator_id16460)
+                ID751 = self.match(self.input, ID, self.FOLLOW_ID_in_operator_id16464)
                 if self._state.backtracking == 0:
                     ID751_tree = self._adaptor.createWithPayload(ID751)
                     self._adaptor.addChild(root_0, ID751_tree)
@@ -47211,7 +47224,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID752 = self.match(self.input, ID, self.FOLLOW_ID_in_synonym_id16478)
+                ID752 = self.match(self.input, ID, self.FOLLOW_ID_in_synonym_id16482)
                 if self._state.backtracking == 0:
                     ID752_tree = self._adaptor.createWithPayload(ID752)
                     self._adaptor.addChild(root_0, ID752_tree)
@@ -47272,7 +47285,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID753 = self.match(self.input, ID, self.FOLLOW_ID_in_external_synonym_id16507)
+                ID753 = self.match(self.input, ID, self.FOLLOW_ID_in_external_synonym_id16511)
                 if self._state.backtracking == 0:
                     ID753_tree = self._adaptor.createWithPayload(ID753)
                     self._adaptor.addChild(root_0, ID753_tree)
@@ -47333,7 +47346,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID754 = self.match(self.input, ID, self.FOLLOW_ID_in_remote_variable_id16536)
+                ID754 = self.match(self.input, ID, self.FOLLOW_ID_in_remote_variable_id16540)
                 if self._state.backtracking == 0:
                     ID754_tree = self._adaptor.createWithPayload(ID754)
                     self._adaptor.addChild(root_0, ID754_tree)
@@ -47394,7 +47407,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID755 = self.match(self.input, ID, self.FOLLOW_ID_in_view_id16557)
+                ID755 = self.match(self.input, ID, self.FOLLOW_ID_in_view_id16561)
                 if self._state.backtracking == 0:
                     ID755_tree = self._adaptor.createWithPayload(ID755)
                     self._adaptor.addChild(root_0, ID755_tree)
@@ -47455,7 +47468,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID756 = self.match(self.input, ID, self.FOLLOW_ID_in_sort_id16578)
+                ID756 = self.match(self.input, ID, self.FOLLOW_ID_in_sort_id16582)
                 if self._state.backtracking == 0:
                     ID756_tree = self._adaptor.createWithPayload(ID756)
                     self._adaptor.addChild(root_0, ID756_tree)
@@ -47516,7 +47529,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID757 = self.match(self.input, ID, self.FOLLOW_ID_in_type_id16599)
+                ID757 = self.match(self.input, ID, self.FOLLOW_ID_in_type_id16603)
                 if self._state.backtracking == 0:
                     ID757_tree = self._adaptor.createWithPayload(ID757)
                     self._adaptor.addChild(root_0, ID757_tree)
@@ -47577,7 +47590,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID758 = self.match(self.input, ID, self.FOLLOW_ID_in_syntype_id16617)
+                ID758 = self.match(self.input, ID, self.FOLLOW_ID_in_syntype_id16621)
                 if self._state.backtracking == 0:
                     ID758_tree = self._adaptor.createWithPayload(ID758)
                     self._adaptor.addChild(root_0, ID758_tree)
@@ -47638,7 +47651,7 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                ID759 = self.match(self.input, ID, self.FOLLOW_ID_in_stimulus_id16634)
+                ID759 = self.match(self.input, ID, self.FOLLOW_ID_in_stimulus_id16638)
                 if self._state.backtracking == 0:
                     ID759_tree = self._adaptor.createWithPayload(ID759)
                     self._adaptor.addChild(root_0, ID759_tree)
@@ -47794,28 +47807,28 @@ class sdl92Parser(Parser):
                     root_0 = self._adaptor.nil()
 
 
-                    S760 = self.match(self.input, S, self.FOLLOW_S_in_pid_expression17831)
+                    S760 = self.match(self.input, S, self.FOLLOW_S_in_pid_expression17835)
                     if self._state.backtracking == 0:
                         S760_tree = self._adaptor.createWithPayload(S760)
                         self._adaptor.addChild(root_0, S760_tree)
 
 
 
-                    E761 = self.match(self.input, E, self.FOLLOW_E_in_pid_expression17833)
+                    E761 = self.match(self.input, E, self.FOLLOW_E_in_pid_expression17837)
                     if self._state.backtracking == 0:
                         E761_tree = self._adaptor.createWithPayload(E761)
                         self._adaptor.addChild(root_0, E761_tree)
 
 
 
-                    L762 = self.match(self.input, L, self.FOLLOW_L_in_pid_expression17835)
+                    L762 = self.match(self.input, L, self.FOLLOW_L_in_pid_expression17839)
                     if self._state.backtracking == 0:
                         L762_tree = self._adaptor.createWithPayload(L762)
                         self._adaptor.addChild(root_0, L762_tree)
 
 
 
-                    F763 = self.match(self.input, F, self.FOLLOW_F_in_pid_expression17837)
+                    F763 = self.match(self.input, F, self.FOLLOW_F_in_pid_expression17841)
                     if self._state.backtracking == 0:
                         F763_tree = self._adaptor.createWithPayload(F763)
                         self._adaptor.addChild(root_0, F763_tree)
@@ -47829,42 +47842,42 @@ class sdl92Parser(Parser):
                     root_0 = self._adaptor.nil()
 
 
-                    P764 = self.match(self.input, P, self.FOLLOW_P_in_pid_expression17863)
+                    P764 = self.match(self.input, P, self.FOLLOW_P_in_pid_expression17867)
                     if self._state.backtracking == 0:
                         P764_tree = self._adaptor.createWithPayload(P764)
                         self._adaptor.addChild(root_0, P764_tree)
 
 
 
-                    A765 = self.match(self.input, A, self.FOLLOW_A_in_pid_expression17865)
+                    A765 = self.match(self.input, A, self.FOLLOW_A_in_pid_expression17869)
                     if self._state.backtracking == 0:
                         A765_tree = self._adaptor.createWithPayload(A765)
                         self._adaptor.addChild(root_0, A765_tree)
 
 
 
-                    R766 = self.match(self.input, R, self.FOLLOW_R_in_pid_expression17867)
+                    R766 = self.match(self.input, R, self.FOLLOW_R_in_pid_expression17871)
                     if self._state.backtracking == 0:
                         R766_tree = self._adaptor.createWithPayload(R766)
                         self._adaptor.addChild(root_0, R766_tree)
 
 
 
-                    E767 = self.match(self.input, E, self.FOLLOW_E_in_pid_expression17869)
+                    E767 = self.match(self.input, E, self.FOLLOW_E_in_pid_expression17873)
                     if self._state.backtracking == 0:
                         E767_tree = self._adaptor.createWithPayload(E767)
                         self._adaptor.addChild(root_0, E767_tree)
 
 
 
-                    N768 = self.match(self.input, N, self.FOLLOW_N_in_pid_expression17871)
+                    N768 = self.match(self.input, N, self.FOLLOW_N_in_pid_expression17875)
                     if self._state.backtracking == 0:
                         N768_tree = self._adaptor.createWithPayload(N768)
                         self._adaptor.addChild(root_0, N768_tree)
 
 
 
-                    T769 = self.match(self.input, T, self.FOLLOW_T_in_pid_expression17873)
+                    T769 = self.match(self.input, T, self.FOLLOW_T_in_pid_expression17877)
                     if self._state.backtracking == 0:
                         T769_tree = self._adaptor.createWithPayload(T769)
                         self._adaptor.addChild(root_0, T769_tree)
@@ -47878,63 +47891,63 @@ class sdl92Parser(Parser):
                     root_0 = self._adaptor.nil()
 
 
-                    O770 = self.match(self.input, O, self.FOLLOW_O_in_pid_expression17899)
+                    O770 = self.match(self.input, O, self.FOLLOW_O_in_pid_expression17903)
                     if self._state.backtracking == 0:
                         O770_tree = self._adaptor.createWithPayload(O770)
                         self._adaptor.addChild(root_0, O770_tree)
 
 
 
-                    F771 = self.match(self.input, F, self.FOLLOW_F_in_pid_expression17901)
+                    F771 = self.match(self.input, F, self.FOLLOW_F_in_pid_expression17905)
                     if self._state.backtracking == 0:
                         F771_tree = self._adaptor.createWithPayload(F771)
                         self._adaptor.addChild(root_0, F771_tree)
 
 
 
-                    F772 = self.match(self.input, F, self.FOLLOW_F_in_pid_expression17903)
+                    F772 = self.match(self.input, F, self.FOLLOW_F_in_pid_expression17907)
                     if self._state.backtracking == 0:
                         F772_tree = self._adaptor.createWithPayload(F772)
                         self._adaptor.addChild(root_0, F772_tree)
 
 
 
-                    S773 = self.match(self.input, S, self.FOLLOW_S_in_pid_expression17905)
+                    S773 = self.match(self.input, S, self.FOLLOW_S_in_pid_expression17909)
                     if self._state.backtracking == 0:
                         S773_tree = self._adaptor.createWithPayload(S773)
                         self._adaptor.addChild(root_0, S773_tree)
 
 
 
-                    P774 = self.match(self.input, P, self.FOLLOW_P_in_pid_expression17907)
+                    P774 = self.match(self.input, P, self.FOLLOW_P_in_pid_expression17911)
                     if self._state.backtracking == 0:
                         P774_tree = self._adaptor.createWithPayload(P774)
                         self._adaptor.addChild(root_0, P774_tree)
 
 
 
-                    R775 = self.match(self.input, R, self.FOLLOW_R_in_pid_expression17909)
+                    R775 = self.match(self.input, R, self.FOLLOW_R_in_pid_expression17913)
                     if self._state.backtracking == 0:
                         R775_tree = self._adaptor.createWithPayload(R775)
                         self._adaptor.addChild(root_0, R775_tree)
 
 
 
-                    I776 = self.match(self.input, I, self.FOLLOW_I_in_pid_expression17911)
+                    I776 = self.match(self.input, I, self.FOLLOW_I_in_pid_expression17915)
                     if self._state.backtracking == 0:
                         I776_tree = self._adaptor.createWithPayload(I776)
                         self._adaptor.addChild(root_0, I776_tree)
 
 
 
-                    N777 = self.match(self.input, N, self.FOLLOW_N_in_pid_expression17913)
+                    N777 = self.match(self.input, N, self.FOLLOW_N_in_pid_expression17917)
                     if self._state.backtracking == 0:
                         N777_tree = self._adaptor.createWithPayload(N777)
                         self._adaptor.addChild(root_0, N777_tree)
 
 
 
-                    G778 = self.match(self.input, G, self.FOLLOW_G_in_pid_expression17915)
+                    G778 = self.match(self.input, G, self.FOLLOW_G_in_pid_expression17919)
                     if self._state.backtracking == 0:
                         G778_tree = self._adaptor.createWithPayload(G778)
                         self._adaptor.addChild(root_0, G778_tree)
@@ -47948,42 +47961,42 @@ class sdl92Parser(Parser):
                     root_0 = self._adaptor.nil()
 
 
-                    S779 = self.match(self.input, S, self.FOLLOW_S_in_pid_expression17941)
+                    S779 = self.match(self.input, S, self.FOLLOW_S_in_pid_expression17945)
                     if self._state.backtracking == 0:
                         S779_tree = self._adaptor.createWithPayload(S779)
                         self._adaptor.addChild(root_0, S779_tree)
 
 
 
-                    E780 = self.match(self.input, E, self.FOLLOW_E_in_pid_expression17943)
+                    E780 = self.match(self.input, E, self.FOLLOW_E_in_pid_expression17947)
                     if self._state.backtracking == 0:
                         E780_tree = self._adaptor.createWithPayload(E780)
                         self._adaptor.addChild(root_0, E780_tree)
 
 
 
-                    N781 = self.match(self.input, N, self.FOLLOW_N_in_pid_expression17945)
+                    N781 = self.match(self.input, N, self.FOLLOW_N_in_pid_expression17949)
                     if self._state.backtracking == 0:
                         N781_tree = self._adaptor.createWithPayload(N781)
                         self._adaptor.addChild(root_0, N781_tree)
 
 
 
-                    D782 = self.match(self.input, D, self.FOLLOW_D_in_pid_expression17947)
+                    D782 = self.match(self.input, D, self.FOLLOW_D_in_pid_expression17951)
                     if self._state.backtracking == 0:
                         D782_tree = self._adaptor.createWithPayload(D782)
                         self._adaptor.addChild(root_0, D782_tree)
 
 
 
-                    E783 = self.match(self.input, E, self.FOLLOW_E_in_pid_expression17949)
+                    E783 = self.match(self.input, E, self.FOLLOW_E_in_pid_expression17953)
                     if self._state.backtracking == 0:
                         E783_tree = self._adaptor.createWithPayload(E783)
                         self._adaptor.addChild(root_0, E783_tree)
 
 
 
-                    R784 = self.match(self.input, R, self.FOLLOW_R_in_pid_expression17951)
+                    R784 = self.match(self.input, R, self.FOLLOW_R_in_pid_expression17955)
                     if self._state.backtracking == 0:
                         R784_tree = self._adaptor.createWithPayload(R784)
                         self._adaptor.addChild(root_0, R784_tree)
@@ -48047,21 +48060,21 @@ class sdl92Parser(Parser):
                 root_0 = self._adaptor.nil()
 
 
-                N785 = self.match(self.input, N, self.FOLLOW_N_in_now_expression17965)
+                N785 = self.match(self.input, N, self.FOLLOW_N_in_now_expression17969)
                 if self._state.backtracking == 0:
                     N785_tree = self._adaptor.createWithPayload(N785)
                     self._adaptor.addChild(root_0, N785_tree)
 
 
 
-                O786 = self.match(self.input, O, self.FOLLOW_O_in_now_expression17967)
+                O786 = self.match(self.input, O, self.FOLLOW_O_in_now_expression17971)
                 if self._state.backtracking == 0:
                     O786_tree = self._adaptor.createWithPayload(O786)
                     self._adaptor.addChild(root_0, O786_tree)
 
 
 
-                W787 = self.match(self.input, W, self.FOLLOW_W_in_now_expression17969)
+                W787 = self.match(self.input, W, self.FOLLOW_W_in_now_expression17973)
                 if self._state.backtracking == 0:
                     W787_tree = self._adaptor.createWithPayload(W787)
                     self._adaptor.addChild(root_0, W787_tree)
@@ -48133,7 +48146,7 @@ class sdl92Parser(Parser):
                 if alt228 == 1:
                     # sdl92.g:1671:17: DASH
                     pass 
-                    DASH788 = self.match(self.input, DASH, self.FOLLOW_DASH_in_signed21040)
+                    DASH788 = self.match(self.input, DASH, self.FOLLOW_DASH_in_signed21044)
                     if self._state.backtracking == 0:
                         DASH788_tree = self._adaptor.createWithPayload(DASH788)
                         self._adaptor.addChild(root_0, DASH788_tree)
@@ -48143,7 +48156,7 @@ class sdl92Parser(Parser):
 
 
 
-                INT789 = self.match(self.input, INT, self.FOLLOW_INT_in_signed21043)
+                INT789 = self.match(self.input, INT, self.FOLLOW_INT_in_signed21047)
                 if self._state.backtracking == 0:
                     INT789_tree = self._adaptor.createWithPayload(INT789)
                     self._adaptor.addChild(root_0, INT789_tree)
@@ -49966,7 +49979,7 @@ class sdl92Parser(Parser):
         )
 
     DFA54_max = DFA.unpack(
-        "\1\u00ea\1\u00ca\1\u00bf\1\u00ad\1\166\1\u00b5\1\u00ad\2\uffff\1"
+        "\1\u00ea\1\u00ca\1\u00bf\1\u00b7\1\166\1\u00b5\1\u00ad\2\uffff\1"
         "\153\1\131\1\153\1\37\1\135\1\153\1\u00bf\1\153\1\u00a9\1\u00e7"
         "\1\37\1\40\1\166\1\153\1\37\1\153\1\u00a9\1\u00e7\1\u00ea\1\157"
         )
@@ -49987,7 +50000,7 @@ class sdl92Parser(Parser):
         "\15\uffff\2\4\1\uffff\2\4\10\uffff\1\4\20\uffff\2\4\4\uffff\1\4"
         "\12\uffff\1\4\2\uffff\1\4"),
         DFA.unpack("\1\6"),
-        DFA.unpack("\1\7\43\uffff\1\10\115\uffff\1\3"),
+        DFA.unpack("\1\7\43\uffff\1\10\115\uffff\1\3\11\uffff\1\10"),
         DFA.unpack("\1\11"),
         DFA.unpack("\1\12"),
         DFA.unpack("\1\3"),
@@ -50626,14 +50639,14 @@ class sdl92Parser(Parser):
     FOLLOW_COMMA_in_array_definition4388 = frozenset([95])
     FOLLOW_sort_in_array_definition4390 = frozenset([169])
     FOLLOW_R_PAREN_in_array_definition4392 = frozenset([1])
-    FOLLOW_STRUCT_in_structure_definition4447 = frozenset([95])
+    FOLLOW_STRUCT_in_structure_definition4447 = frozenset([95, 183])
     FOLLOW_field_list_in_structure_definition4449 = frozenset([32, 173, 234])
     FOLLOW_end_in_structure_definition4451 = frozenset([1])
     FOLLOW_field_definition_in_field_list4504 = frozenset([1, 32, 173, 234])
-    FOLLOW_end_in_field_list4507 = frozenset([95])
+    FOLLOW_end_in_field_list4507 = frozenset([95, 183])
     FOLLOW_field_definition_in_field_list4509 = frozenset([1, 32, 173, 234])
     FOLLOW_field_name_in_field_definition4565 = frozenset([31, 95])
-    FOLLOW_COMMA_in_field_definition4568 = frozenset([95])
+    FOLLOW_COMMA_in_field_definition4568 = frozenset([95, 183])
     FOLLOW_field_name_in_field_definition4570 = frozenset([31, 95])
     FOLLOW_sort_in_field_definition4574 = frozenset([1])
     FOLLOW_DCL_in_variable_definition4632 = frozenset([95])
@@ -51017,7 +51030,7 @@ class sdl92Parser(Parser):
     FOLLOW_expression_in_assignement_statement11883 = frozenset([1])
     FOLLOW_postfix_expression_in_variable11930 = frozenset([1])
     FOLLOW_ID_in_variable11948 = frozenset([1])
-    FOLLOW_set_in_field_selection12001 = frozenset([95])
+    FOLLOW_set_in_field_selection12001 = frozenset([95, 183])
     FOLLOW_field_name_in_field_selection12009 = frozenset([1])
     FOLLOW_binary_expression_in_expression12033 = frozenset([1])
     FOLLOW_binary_expression_0_in_binary_expression12056 = frozenset([1, 98])
@@ -51066,8 +51079,8 @@ class sdl92Parser(Parser):
     FOLLOW_L_PAREN_in_postfix_expression12543 = frozenset([26, 42, 76, 81, 95, 96, 103, 107, 117, 118, 121, 122, 131, 138, 148, 183, 191, 210])
     FOLLOW_expression_list_in_postfix_expression12547 = frozenset([169])
     FOLLOW_R_PAREN_in_postfix_expression12549 = frozenset([1, 48, 118, 229])
-    FOLLOW_229_in_postfix_expression12604 = frozenset([95])
-    FOLLOW_DOT_in_postfix_expression12608 = frozenset([95])
+    FOLLOW_229_in_postfix_expression12604 = frozenset([95, 183])
+    FOLLOW_DOT_in_postfix_expression12608 = frozenset([95, 183])
     FOLLOW_field_name_in_postfix_expression12611 = frozenset([1, 48, 118, 229])
     FOLLOW_INPUT_in_input_expression12691 = frozenset([1])
     FOLLOW_INPUT_in_input_expression12733 = frozenset([86, 95, 208])
@@ -51211,8 +51224,8 @@ class sdl92Parser(Parser):
     FOLLOW_KEEP_in_paramnames15246 = frozenset([181])
     FOLLOW_SPECIFIC_in_paramnames15248 = frozenset([89])
     FOLLOW_GEODE_in_paramnames15250 = frozenset([143])
-    FOLLOW_PARAMNAMES_in_paramnames15252 = frozenset([95])
-    FOLLOW_field_name_in_paramnames15254 = frozenset([95, 231])
+    FOLLOW_PARAMNAMES_in_paramnames15252 = frozenset([95, 183])
+    FOLLOW_field_name_in_paramnames15254 = frozenset([95, 183, 231])
     FOLLOW_cif_end_in_paramnames15257 = frozenset([1])
     FOLLOW_cif_decl_in_use_asn115313 = frozenset([111])
     FOLLOW_KEEP_in_use_asn115315 = frozenset([181])
@@ -51247,55 +51260,54 @@ class sdl92Parser(Parser):
     FOLLOW_ID_in_priority_signal_id16214 = frozenset([1])
     FOLLOW_ID_in_signal_list_id16228 = frozenset([1])
     FOLLOW_ID_in_timer_id16248 = frozenset([1])
-    FOLLOW_ID_in_field_name16266 = frozenset([1])
-    FOLLOW_ID_in_signal_route_id16279 = frozenset([1])
-    FOLLOW_ID_in_channel_id16297 = frozenset([1])
-    FOLLOW_ID_in_route_id16317 = frozenset([1])
-    FOLLOW_ID_in_block_id16337 = frozenset([1])
-    FOLLOW_ID_in_source_id16356 = frozenset([1])
-    FOLLOW_ID_in_dest_id16377 = frozenset([1])
-    FOLLOW_ID_in_gate_id16398 = frozenset([1])
-    FOLLOW_ID_in_procedure_id16414 = frozenset([1])
-    FOLLOW_ID_in_remote_procedure_id16443 = frozenset([1])
-    FOLLOW_ID_in_operator_id16460 = frozenset([1])
-    FOLLOW_ID_in_synonym_id16478 = frozenset([1])
-    FOLLOW_ID_in_external_synonym_id16507 = frozenset([1])
-    FOLLOW_ID_in_remote_variable_id16536 = frozenset([1])
-    FOLLOW_ID_in_view_id16557 = frozenset([1])
-    FOLLOW_ID_in_sort_id16578 = frozenset([1])
-    FOLLOW_ID_in_type_id16599 = frozenset([1])
-    FOLLOW_ID_in_syntype_id16617 = frozenset([1])
-    FOLLOW_ID_in_stimulus_id16634 = frozenset([1])
-    FOLLOW_S_in_pid_expression17831 = frozenset([49])
-    FOLLOW_E_in_pid_expression17833 = frozenset([112])
-    FOLLOW_L_in_pid_expression17835 = frozenset([75])
-    FOLLOW_F_in_pid_expression17837 = frozenset([1])
-    FOLLOW_P_in_pid_expression17863 = frozenset([4])
-    FOLLOW_A_in_pid_expression17865 = frozenset([159])
-    FOLLOW_R_in_pid_expression17867 = frozenset([49])
-    FOLLOW_E_in_pid_expression17869 = frozenset([125])
-    FOLLOW_N_in_pid_expression17871 = frozenset([198])
-    FOLLOW_T_in_pid_expression17873 = frozenset([1])
-    FOLLOW_O_in_pid_expression17899 = frozenset([75])
-    FOLLOW_F_in_pid_expression17901 = frozenset([75])
-    FOLLOW_F_in_pid_expression17903 = frozenset([170])
-    FOLLOW_S_in_pid_expression17905 = frozenset([141])
-    FOLLOW_P_in_pid_expression17907 = frozenset([159])
-    FOLLOW_R_in_pid_expression17909 = frozenset([94])
-    FOLLOW_I_in_pid_expression17911 = frozenset([125])
-    FOLLOW_N_in_pid_expression17913 = frozenset([87])
-    FOLLOW_G_in_pid_expression17915 = frozenset([1])
-    FOLLOW_S_in_pid_expression17941 = frozenset([49])
-    FOLLOW_E_in_pid_expression17943 = frozenset([125])
-    FOLLOW_N_in_pid_expression17945 = frozenset([41])
-    FOLLOW_D_in_pid_expression17947 = frozenset([49])
-    FOLLOW_E_in_pid_expression17949 = frozenset([159])
-    FOLLOW_R_in_pid_expression17951 = frozenset([1])
-    FOLLOW_N_in_now_expression17965 = frozenset([133])
-    FOLLOW_O_in_now_expression17967 = frozenset([222])
-    FOLLOW_W_in_now_expression17969 = frozenset([1])
-    FOLLOW_DASH_in_signed21040 = frozenset([107])
-    FOLLOW_INT_in_signed21043 = frozenset([1])
+    FOLLOW_ID_in_signal_route_id16283 = frozenset([1])
+    FOLLOW_ID_in_channel_id16301 = frozenset([1])
+    FOLLOW_ID_in_route_id16321 = frozenset([1])
+    FOLLOW_ID_in_block_id16341 = frozenset([1])
+    FOLLOW_ID_in_source_id16360 = frozenset([1])
+    FOLLOW_ID_in_dest_id16381 = frozenset([1])
+    FOLLOW_ID_in_gate_id16402 = frozenset([1])
+    FOLLOW_ID_in_procedure_id16418 = frozenset([1])
+    FOLLOW_ID_in_remote_procedure_id16447 = frozenset([1])
+    FOLLOW_ID_in_operator_id16464 = frozenset([1])
+    FOLLOW_ID_in_synonym_id16482 = frozenset([1])
+    FOLLOW_ID_in_external_synonym_id16511 = frozenset([1])
+    FOLLOW_ID_in_remote_variable_id16540 = frozenset([1])
+    FOLLOW_ID_in_view_id16561 = frozenset([1])
+    FOLLOW_ID_in_sort_id16582 = frozenset([1])
+    FOLLOW_ID_in_type_id16603 = frozenset([1])
+    FOLLOW_ID_in_syntype_id16621 = frozenset([1])
+    FOLLOW_ID_in_stimulus_id16638 = frozenset([1])
+    FOLLOW_S_in_pid_expression17835 = frozenset([49])
+    FOLLOW_E_in_pid_expression17837 = frozenset([112])
+    FOLLOW_L_in_pid_expression17839 = frozenset([75])
+    FOLLOW_F_in_pid_expression17841 = frozenset([1])
+    FOLLOW_P_in_pid_expression17867 = frozenset([4])
+    FOLLOW_A_in_pid_expression17869 = frozenset([159])
+    FOLLOW_R_in_pid_expression17871 = frozenset([49])
+    FOLLOW_E_in_pid_expression17873 = frozenset([125])
+    FOLLOW_N_in_pid_expression17875 = frozenset([198])
+    FOLLOW_T_in_pid_expression17877 = frozenset([1])
+    FOLLOW_O_in_pid_expression17903 = frozenset([75])
+    FOLLOW_F_in_pid_expression17905 = frozenset([75])
+    FOLLOW_F_in_pid_expression17907 = frozenset([170])
+    FOLLOW_S_in_pid_expression17909 = frozenset([141])
+    FOLLOW_P_in_pid_expression17911 = frozenset([159])
+    FOLLOW_R_in_pid_expression17913 = frozenset([94])
+    FOLLOW_I_in_pid_expression17915 = frozenset([125])
+    FOLLOW_N_in_pid_expression17917 = frozenset([87])
+    FOLLOW_G_in_pid_expression17919 = frozenset([1])
+    FOLLOW_S_in_pid_expression17945 = frozenset([49])
+    FOLLOW_E_in_pid_expression17947 = frozenset([125])
+    FOLLOW_N_in_pid_expression17949 = frozenset([41])
+    FOLLOW_D_in_pid_expression17951 = frozenset([49])
+    FOLLOW_E_in_pid_expression17953 = frozenset([159])
+    FOLLOW_R_in_pid_expression17955 = frozenset([1])
+    FOLLOW_N_in_now_expression17969 = frozenset([133])
+    FOLLOW_O_in_now_expression17971 = frozenset([222])
+    FOLLOW_W_in_now_expression17973 = frozenset([1])
+    FOLLOW_DASH_in_signed21044 = frozenset([107])
+    FOLLOW_INT_in_signed21047 = frozenset([1])
     FOLLOW_signal_declaration_in_synpred9_sdl921764 = frozenset([1])
     FOLLOW_text_area_in_synpred10_sdl921784 = frozenset([1])
     FOLLOW_procedure_in_synpred11_sdl921804 = frozenset([1])
@@ -51346,7 +51358,7 @@ class sdl92Parser(Parser):
     FOLLOW_L_PAREN_in_synpred261_sdl9212543 = frozenset([26, 42, 76, 81, 95, 96, 103, 107, 117, 118, 121, 122, 131, 138, 148, 183, 191, 210])
     FOLLOW_expression_list_in_synpred261_sdl9212547 = frozenset([169])
     FOLLOW_R_PAREN_in_synpred261_sdl9212549 = frozenset([1])
-    FOLLOW_set_in_synpred263_sdl9212603 = frozenset([95])
+    FOLLOW_set_in_synpred263_sdl9212603 = frozenset([95, 183])
     FOLLOW_field_name_in_synpred263_sdl9212611 = frozenset([1])
     FOLLOW_ID_in_synpred279_sdl9213223 = frozenset([235])
     FOLLOW_235_in_synpred279_sdl9213225 = frozenset([26, 42, 76, 81, 95, 96, 103, 107, 117, 118, 121, 122, 131, 138, 148, 183, 191, 210])

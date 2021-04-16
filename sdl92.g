@@ -1481,7 +1481,7 @@ priority_signal_id
                 :       ID;
 signal_list_id  :       ID;
 timer_id        :       ID;
-field_name      :       ID;
+field_name      :       ID | STATE;
 signal_route_id :       ID;
 channel_id      :       ID;
 route_id        :       ID;
