@@ -1658,23 +1658,22 @@ def io_expression(root, context):
 
     string += event_kind.format(kind=kind)
     param_name = ""
-    func = ""
 
     for child in root.getChildren():
         if child.type == lexer.ID:
             msg =  child.text
 
         elif child.type == lexer.FROM:
-            func = child.getChild(0).text
+            from_f = child.getChild(0).text
             string += target_option.format(kind=kind,
                                            target="source",
-                                           function=func)
+                                           function=from_f)
 
         elif child.type == lexer.TO:
-            func = child.getChild(0).text
+            to_f = child.getChild(0).text
             string += target_option.format(kind=kind,
                                            target="dest",
-                                           function=func)
+                                           function=to_f)
 
         elif child.type == lexer.IOPARAM:
             # optional parameter
@@ -1685,6 +1684,8 @@ def io_expression(root, context):
             param_name = child.getChild(0).text
         else:
             raise NotImplementedError("In io_expression")
+
+    func = from_f if direction == "out" else to_f
 
     if msg:
         string += msg_name.format(kind=kind,
@@ -1718,7 +1719,7 @@ def io_expression(root, context):
         if not errs:
             try:
                 pname, ptype = list(find_basic_type(param_expr.exprType).Children.items())[0]
-            except IndexError:
+            except (IndexError, AttributeError):
                 errors.append(f"No parameter expected for message {msg}")
             else:
                 path += f".{pname}"
