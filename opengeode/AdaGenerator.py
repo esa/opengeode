@@ -557,9 +557,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             # Test val, in principle there is a value but if the code targets
             # generation of properties, the model may have been cleant up and
             # in that case no value would be set..
-            if name.endswith(u'START') and name != u'START' and val:
-                process_level_decl.append(u'{name} : constant := {val};'
-                                          .format(name=name, val=str(val)))
+            if name.endswith('START') and name != 'START' and val:
+                process_level_decl.append(f'{name} : constant := {str(val)};')
 
         # Declare start procedure for aggregate states XXX add in C generator
         # should create one START per "via" clause, TODO later

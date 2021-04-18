@@ -1739,17 +1739,22 @@ def io_expression(root, context):
                         # variable already defined, does it have the same type?
                         if type_name(sort) != type_name(ptype):
                             errors.append(f"Duplicate/incompatible definition"
-                                          f" of variable {param_name}")
+                                          f" of variable '{param_name}'")
                         elif var.lower() in context.aliases.keys():
                             # Check if already defined variable is an alias,
                             # and if so, if it points to the same element
                             _, alias_expr = context.aliases[var.lower()]
                             if alias_expr.inputString != param_expr.inputString:
-                                errors.append(f"Parameter name {param_name} is"
-                                        " used in another context, but not "
+                                errors.append(f"Parameter name '{param_name}' "
+                                        "is used in another context, but not "
                                         f"pointing to the same content")
                         else:
-                            #print ("param/alias already defined")
+                            # A variable shall not be declared for this
+                            # implicit parameter, as it is actually pointing
+                            # to the event. 
+                            errors.append("A variable declaration with the "
+                                    f"same name as parameter '{param_name}' "
+                                    "exists and shall be removed or renamed")
                             break
                 else:
                     # not found a duplicate definition -> Add an alias
