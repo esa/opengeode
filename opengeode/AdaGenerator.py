@@ -314,6 +314,29 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=SEPARATOR)
 
+    # Pre-processing of aliases: we must rename all references to the aliases
+    # when they point to a structure that contain a CHOICE field (we cannot
+    # use a rename clause in that case, since the field depends on a
+    # discriminant.
+    no_renames = []
+    for (alias, (sort, alias_expr)) in process.aliases.items():
+        def rec_detect_choice(expr: ogAST.Expression) -> bool:
+            if not isinstance(expr, ogAST.PrimSelector):
+                return False
+            receiver = expr.value[0]
+            bty = find_basic_type(receiver.exprType)
+            if bty.kind == 'ChoiceType':
+                return True
+            return rec_detect_choice(receiver)
+        is_choice = rec_detect_choice(alias_expr)
+        if is_choice:
+            LOG.debug(f"alias: {alias_expr.inputString} will replace {alias}")
+            Helper.rename_everything(process.content,
+                                     alias,
+                                     alias_expr.inputString)
+            no_renames.append(alias)
+
+
     # Process State aggregations (Parallel states) XXX Add to C backend
 
     # Find recursively in the AST all state aggregations
@@ -331,6 +354,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     for (var_name, content) in process.variables.items():
         # filter out the aliases and put them in the local variable pool
         # to avoid unwanted prefixes when using them
+        if var_name in no_renames:
+            continue
         if var_name in process.aliases.keys():
             LOCAL_VAR[var_name] = content
         else:
@@ -500,6 +525,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
 
         # Add aliases
         for alias_name, (alias_sort, alias_expr) in process.aliases.items():
+            if alias_name in no_renames:
+                continue
             _, qualified, _ = expression(alias_expr)
             context_decl.append(f"{alias_name} : {type_name(alias_sort)} "
                                 f"renames {qualified};")
@@ -2104,7 +2131,7 @@ def _prim_selector(prim, **kwargs):
     stmts, ada_string, local_decl = [], '', []
     ro = kwargs.get("readonly", 0)
 
-    receiver = prim.value[0]
+    receiver = prim.value[0]  # can be a PrimSelector
     field_name = prim.value[1]
 
     receiver_stms, receiver_string, receiver_decl = expression(receiver,
