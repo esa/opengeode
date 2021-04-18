@@ -83,6 +83,7 @@ tokens {
         OUTPUT;
         OUTPUT_BODY;
         PARAM;
+        IOPARAM;
         PARAMNAMES;
         PARAMS;
         PAREN;
@@ -1113,20 +1114,22 @@ postfix_expression
 
 //  input and output expression allow observers (for model checking) to
 //  monitor the sending and receiving of messages with a nice syntax
-//  (e.g. event = output msg from foo)
+//  (e.g. event = output msg (p) from foo) 
+//  the parameter is optional. It dooes not need to be declared as a variable,
+//  as it it implicit.
 input_expression
         :       INPUT
                 -> ^(INPUT_EXPRESSION)
-                | INPUT (msg=ID)? (FROM src=ID)? TO dest=ID
-                -> ^(INPUT_EXPRESSION $msg? ^(FROM $src)? ^(TO $dest))
+                | INPUT (msg=ID ('(' param=ID ')')? )? (FROM src=ID)? TO dest=ID
+                -> ^(INPUT_EXPRESSION $msg? ^(IOPARAM $param)? ^(FROM $src)? ^(TO $dest))
         ;
 
 
 output_expression
         :       OUTPUT
                 -> ^(OUTPUT_EXPRESSION)
-                | OUTPUT (msg=ID)? (FROM src=ID) (TO dest=ID)?
-                -> ^(OUTPUT_EXPRESSION  $msg? ^(FROM $src) ^(TO $dest)?)
+                | OUTPUT (msg=ID ('(' param=ID ')')? )? (FROM src=ID) (TO dest=ID)?
+                -> ^(OUTPUT_EXPRESSION $msg? ^(IOPARAM $param)? ^(FROM $src) ^(TO $dest)?)
         ;
 
 primary_expression

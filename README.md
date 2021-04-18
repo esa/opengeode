@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.3 (04/2021)**
+- Model checking observers: add support for parameters in input/output expressions
+
 **3.5.2 (04/2021)**
 - Model checking observers: run only one transition per call
 - Support field names called "state"
