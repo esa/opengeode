@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.4 (04/2021)**
+- Fix code generation when no signals are defined (only exported procedures)
+- Add renames clause (aliases) for input/output expressions
+
 **3.5.3 (04/2021)**
 - Model checking observers: add support for parameters in input/output expressions
 

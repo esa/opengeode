@@ -1451,9 +1451,20 @@ class ContinuousSignal(HorizontalSymbol):
             path.moveTo(15, 0)
             path.lineTo(0, height / 2.0)
             path.lineTo(15, height)
-            path.moveTo(width - 15, 0)
+            is_observer = self.ast.observer
+            if isinstance(CONTEXT, ogAST.Process) and CONTEXT.monitors:
+                is_observer = True
+            if is_observer:
+                self.setBrush(QBrush(QColor(255, 248, 221)))
+                # If there are monitors, it is an observer
+                # -> change slightly the symbol shape
+                path.lineTo(width - 15, height)
+            else:
+                path.moveTo(width - 15, height)
             path.lineTo(width, height / 2.0)
-            path.lineTo(width - 15, height)
+            path.lineTo(width - 15, 0)
+            if is_observer:
+                path.lineTo(15, 0)
             self.setPath(path)
             super().set_shape(width, height)
 
