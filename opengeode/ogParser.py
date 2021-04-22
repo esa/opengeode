@@ -3829,19 +3829,26 @@ def system_definition(root, parent):
         warnings.extend(warn)
         # Ignore duplicate signal definitions when they are defined at
         # system level (only taste can do that)
-        for each in system.signals:
-            if each['name'].lower() == sig['name'].lower():
+        for sys_sig in system.signals:
+            if sys_sig['name'].lower() == sig['name'].lower():
                 break
         else:
             system.signals.append(sig)
 
 
-    # if there are no channels defined, create an empty one so that
-    # it can be used to add signals (e.g. for synchronous procedures)
+    # if there are no channels defined or no route from env to the system
+    # add an empty one as a placeholder to add signals
+    env_route = {'source' : 'env', 'dest': system.name, 'signals': []}
+    no_env : bool = True
+    for each in system.channels:
+        for route in each['routes']:
+            if route['source'] == 'env':
+                break
+        else:
+            each['routes'].append(env_route)
+
     if not system.channels:
-        system.channels.append({'name': 'c',
-            'routes':[{'source' : 'env', 'dest': system.name,
-                'signals': []}]})
+        system.channels.append({'name': 'c', 'routes':[env_route]})
 
     # in observers, we may have renamed signaels
     # add them to signal routes
@@ -4155,7 +4162,7 @@ def input_part(root, parent, context):
                     if inp_sig['name'].lower() == inputname.text.lower():
                         i.inputlist.append(inp_sig['name'])
                         sig_param_type = inp_sig.get('type')
-                        if inp_sig['renames'] is not None:
+                        if 'renames' in inp_sig and inp_sig['renames'] is not None:
                             # renames are used in observers only
                             # create a continuous signal
                             cs = ogAST.ContinuousSignal()
