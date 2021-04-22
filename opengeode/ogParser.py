@@ -3688,6 +3688,11 @@ def signal(root):
                   ' than one parameter. Check signal declaration.')
             except TypeError as err:
                 errors.append(str(err))
+        elif child.type == lexer.INTERCEPT:
+            # signal foo renames input bar to function1
+            # used for observer to intercept signals with the input symbol
+            # instead of the continuous signal symbol
+            new_signal['renames'] = child.getChild(0)
     if not new_signal:
         # Signal was not parsed properly, report it
         faulty_name = get_input_string(root)[slice(7,-1)]
@@ -3829,6 +3834,25 @@ def system_definition(root, parent):
                 break
         else:
             system.signals.append(sig)
+
+
+    # if there are no channels defined, create an empty one so that
+    # it can be used to add signals (e.g. for synchronous procedures)
+    if not system.channels:
+        system.channels.append({'name': 'c',
+            'routes':[{'source' : 'env', 'dest': system.name,
+                'signals': []}]})
+
+    # in observers, we may have renamed signaels
+    # add them to signal routes
+    for each in system.signals:
+        if each['renames'] is not None:
+            for channel in system.channels:
+                for route in channel['routes']:
+                    if route['dest'].lower() != "env":
+                        if each['name'] not in route['signals']:
+                            route['signals'].append(each['name'])
+
     exported_procedures = []
     for each in procedures:
         proc, err, warn = procedure(
@@ -3849,6 +3873,8 @@ def system_definition(root, parent):
     for proc in exported_procedures:
         system.signals.append({'name' : proc})
         for channel in system.channels:
+            if 'routes' not in channel:
+                channel['routes'] = [{'dest': system.name, 'signals': []}]
             for route in channel['routes']:
                 if route['dest'].lower() != "env":
                     if proc not in route['signals']:
@@ -3864,12 +3890,6 @@ def system_definition(root, parent):
         for block in system.blocks:
             block.signalroutes = system.channels
 
-#   for proc in exported_procedures:
-#       # Add the signal to all channels/signalroutes of the system
-#       for channel in (route for route in block.signalroutes for block in system.blocks):
-#           for route in channel['routes']:
-#               if route['dest'].lower != "env":
-#                   route['signals'].append(proc)
     return system, errors, warnings
 
 
@@ -4048,6 +4068,9 @@ def continuous_signal(root, parent, context):
     dec = ogAST.Decision()
     ans = ogAST.Answer()
     warnings, errors = [], []
+    # Flag the continous signal if we are in an observer (model checking)
+    # (useful to render the symbol a bit differently)
+    i.observer = True
     # Keep track of the number of terminator statements in the transition
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
@@ -4107,6 +4130,7 @@ def continuous_signal(root, parent, context):
 def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
     i = ogAST.Input()
+    cs = None
     warnings, errors = [], []
     # Keep track of the number of terminator statements follow the input
     # useful if we want to render graphs from the SDL model
@@ -4131,6 +4155,27 @@ def input_part(root, parent, context):
                     if inp_sig['name'].lower() == inputname.text.lower():
                         i.inputlist.append(inp_sig['name'])
                         sig_param_type = inp_sig.get('type')
+                        if inp_sig['renames'] is not None:
+                            # renames are used in observers only
+                            # create a continuous signal
+                            cs = ogAST.ContinuousSignal()
+                            dec = ogAST.Decision()
+                            ans = ogAST.Answer()
+                            dec.question, _, _ = expression(inp_sig['renames'], context)
+                            dec.inputString = dec.question.inputString
+                            dec.line = dec.question.line
+                            dec.charPositionInLine = dec.question.charPositionInLine
+                            dec.kind = 'question'
+                            ans.inputString = 'true'
+                            ans.openRangeOp = ogAST.ExprEq
+                            ans.kind = 'constant'
+                            ans.constant = ogAST.PrimBoolean()
+                            ans.constant.value = ['true']
+                            ans.constant.exprType = BOOLEAN
+                            dec.answers = [ans]
+                            cs.trigger = dec
+                            cs.inputString = dec.inputString
+                            parent.continuous_signals.append(cs)
                         break
                 else:
                     for timer in chain(context.timers, context.global_timers):
@@ -4143,6 +4188,7 @@ def input_part(root, parent, context):
                             ' (line ' + str(i.line) + ')')
             if len(inputnames) > 1 and sig_param_type is not None:
                 errors.append('Inputs in a list shall not expect parameters')
+
             # Parse all parameters (then check that there is only one)
             inputparams = [c.getChildren() for c in child.getChildren()
                                                      if c.type == lexer.PARAMS]
@@ -4195,6 +4241,9 @@ def input_part(root, parent, context):
             # The reference is an index to process.transitions table
             context.transitions.append(trans)
             i.transition_id = len(context.transitions) - 1
+            if cs:
+                cs.transition = trans
+                cs.transition_id = i.transition_id
         elif child.type == lexer.COMMENT:
             i.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
@@ -4209,6 +4258,11 @@ def input_part(root, parent, context):
     # follow the input transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the input)
     i.terminators = list(context.terminators[terminators:])
+    if cs:
+        cs.terminators = i.terminators
+        cs.artificial = True
+        i.replaced_with_continuous_signal = True
+
     return i, errors, warnings
 
 
@@ -4348,7 +4402,7 @@ def state(root, parent, context):
             for statename in state_def.statelist:
                 if provided_part in \
                         context.cs_mapping.get(statename.lower(), []):
-                    sterr.append('Continous signal is defined more than once '
+                    sterr.append('Continuous signal is defined more than once '
                                  'below state "{}"'.format(statename.lower()))
                 else:
                     context.cs_mapping[statename.lower()].append(provided_part)

@@ -98,6 +98,7 @@ tokens {
         QUESTION;
         RANGE;
         RENAMES;
+        INTERCEPT;
         RESET;
         RETURN;
         RETURNS;
@@ -196,8 +197,10 @@ entity_in_system
 */
 signal_declaration
         :       paramnames?
-                SIGNAL signal_id input_params? end
-        ->      ^(SIGNAL paramnames? signal_id input_params?)
+                SIGNAL signal_id input_params?
+                (RENAMES (input_expression | output_expression))? // for observers
+                end
+        ->      ^(SIGNAL paramnames? signal_id input_params? ^(INTERCEPT input_expression? output_expression?))
         ;
 
 

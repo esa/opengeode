@@ -389,6 +389,8 @@ def _input(ast, scene, parent, states):
 @render.register(ogAST.ContinuousSignal)
 def _continuous_signal(ast, scene, parent, states):
     ''' Add continuous signal to the scene '''
+    if ast.artificial:
+        return None
     cont = sdlSymbols.ContinuousSignal(parent, ast=ast)
     if cont not in scene.items():
         add_to_scene(cont, scene)

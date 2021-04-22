@@ -619,6 +619,9 @@ class Input:
         self.hyperlink = None
         # list of terminators following the input symbol
         self.terminators = []
+        # If this input is in fact a continuous signal, code generators will ignore it
+        self.replaced_with_continuous_signal : bool = False
+
 
     def trace(self):
         ''' Debug output for an INPUT symbol '''
@@ -649,6 +652,11 @@ class ContinuousSignal(Input):
         self.trigger = None
         # Priority (integer)
         self.priority = 0
+        # Set if we are in an observer to render the symbol differently
+        self.observer : bool = False
+        # Artificial set to true if it is meant to replace an input symbol
+        # in observers
+        self.artificial : bool = False
 
     def trace(self):
         ''' Debug output for a Continuous signal '''
