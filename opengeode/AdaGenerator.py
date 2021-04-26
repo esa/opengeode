@@ -899,15 +899,12 @@ package body {process_name}_RI is''']
                 # State aggregation:
                 # - find which substate manages this input
                 # - add a swich case on the corresponding substate
-                taste_template.append(u'-- this is a state aggregation')
+                taste_template.append('--  This is a state aggregation')
                 for sub in aggregates[state]:
                     if [a for a in sub.mapping.keys()
                             if a in mapping[signame].keys()]:
-                        taste_template.append(u'case '
-                                              u'{ctxt}.{sub}{sep}state is'
-                                              .format(ctxt=LPREFIX,
-                                                     sub=sub.statename,
-                                                     sep=SEPARATOR))
+                        taste_template.append('case '
+                               f'{LPREFIX}.{sub.statename}{SEPARATOR}state is')
                         for par in sub.mapping.keys():
                             case_state(par)
                         taste_template.append('when others =>')
@@ -919,7 +916,8 @@ package body {process_name}_RI is''']
                     if input_def:
                         # check if it is managed one level above
                         execute_transition(state)
-                    taste_template.append('null;')
+                    else:
+                        taste_template.append('Execute_Transition (CS_Only);')
             else:
                 execute_transition(state)
 
