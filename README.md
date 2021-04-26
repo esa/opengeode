@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.5 (04/2021)**
+- Fix support for single input/output expressions (with no message name)
+- Fix graphical location of errors for undefined states
+
 **3.5.4 (04/2021)**
 - Fix code generation when no signals are defined (only exported procedures)
 - Add renames clause (aliases) for input/output expressions
