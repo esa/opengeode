@@ -314,6 +314,29 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=SEPARATOR)
 
+    # Pre-processing of aliases: we must rename all references to the aliases
+    # when they point to a structure that contain a CHOICE field (we cannot
+    # use a rename clause in that case, since the field depends on a
+    # discriminant.
+    no_renames = []
+    for (alias, (sort, alias_expr)) in process.aliases.items():
+        def rec_detect_choice(expr: ogAST.Expression) -> bool:
+            if not isinstance(expr, ogAST.PrimSelector):
+                return False
+            receiver = expr.value[0]
+            bty = find_basic_type(receiver.exprType)
+            if bty.kind == 'ChoiceType':
+                return True
+            return rec_detect_choice(receiver)
+        is_choice = rec_detect_choice(alias_expr)
+        if is_choice:
+            LOG.debug(f"alias: {alias_expr.inputString} will replace {alias}")
+            Helper.rename_everything(process.content,
+                                     alias,
+                                     alias_expr.inputString)
+            no_renames.append(alias)
+
+
     # Process State aggregations (Parallel states) XXX Add to C backend
 
     # Find recursively in the AST all state aggregations
@@ -331,6 +354,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     for (var_name, content) in process.variables.items():
         # filter out the aliases and put them in the local variable pool
         # to avoid unwanted prefixes when using them
+        if var_name in no_renames:
+            continue
         if var_name in process.aliases.keys():
             LOCAL_VAR[var_name] = content
         else:
@@ -500,6 +525,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
 
         # Add aliases
         for alias_name, (alias_sort, alias_expr) in process.aliases.items():
+            if alias_name in no_renames:
+                continue
             _, qualified, _ = expression(alias_expr)
             context_decl.append(f"{alias_name} : {type_name(alias_sort)} "
                                 f"renames {qualified};")
@@ -530,9 +557,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             # Test val, in principle there is a value but if the code targets
             # generation of properties, the model may have been cleant up and
             # in that case no value would be set..
-            if name.endswith(u'START') and name != u'START' and val:
-                process_level_decl.append(u'{name} : constant := {val};'
-                                          .format(name=name, val=str(val)))
+            if name.endswith('START') and name != 'START' and val:
+                process_level_decl.append(f'{name} : constant := {str(val)};')
 
         # Declare start procedure for aggregate states XXX add in C generator
         # should create one START per "via" clause, TODO later
@@ -873,15 +899,12 @@ package body {process_name}_RI is''']
                 # State aggregation:
                 # - find which substate manages this input
                 # - add a swich case on the corresponding substate
-                taste_template.append(u'-- this is a state aggregation')
+                taste_template.append('--  This is a state aggregation')
                 for sub in aggregates[state]:
                     if [a for a in sub.mapping.keys()
                             if a in mapping[signame].keys()]:
-                        taste_template.append(u'case '
-                                              u'{ctxt}.{sub}{sep}state is'
-                                              .format(ctxt=LPREFIX,
-                                                     sub=sub.statename,
-                                                     sep=SEPARATOR))
+                        taste_template.append('case '
+                               f'{LPREFIX}.{sub.statename}{SEPARATOR}state is')
                         for par in sub.mapping.keys():
                             case_state(par)
                         taste_template.append('when others =>')
@@ -893,7 +916,8 @@ package body {process_name}_RI is''']
                     if input_def:
                         # check if it is managed one level above
                         execute_transition(state)
-                    taste_template.append('null;')
+                    else:
+                        taste_template.append('Execute_Transition (CS_Only);')
             else:
                 execute_transition(state)
 
@@ -1101,7 +1125,7 @@ package body {process_name}_RI is''']
 
     has_cs = any(process.cs_mapping.values())
 
-    if simu and has_cs:
+    if simu and has_cs and not MONITORS:
         # Callback registration for Check_Queue
         taste_template.append('procedure Register_Check_Queue '
                               '(Callback : Check_Queue_T) is')
@@ -1163,7 +1187,10 @@ package body {process_name}_RI is''']
 
         taste_template.append('when CS_Only =>')
         taste_template.append('trId := -1;')
-        taste_template.append('goto Next_Transition;')
+        if not MONITORS:
+            taste_template.append('goto Next_Transition;')
+        else:
+            taste_template.append('goto Observer_Transition;')
 
         taste_template.append('when others =>')
         taste_template.append('null;')
@@ -1177,21 +1204,33 @@ package body {process_name}_RI is''']
         # Add the code for the floating labels
         taste_template.extend(code_labels)
 
-        taste_template.append('<<Next_Transition>>')
+        if MONITORS:
+            # If monitors are defined, it means this SDL process is in fact
+            # a model checking observer. In that case, the Next_Transition
+            # section shall not contain the code of the continuous signals,
+            # because only one transition is executed at each activation of
+            # the observer
+            taste_template.append('<<Observer_Transition>>')
+        else:
+            taste_template.append('<<Next_Transition>>')
 
         # After completing active transition(s), check continuous signals:
         #     - Check current state(s)
         #     - For each continuous signal generate code (test+transition)
         # XXX add to C backend
         if has_cs and not simu:
-            taste_template.append('--  Process continuous signals')
-            taste_template.append('if {}.Init_Done then'.format(LPREFIX))
-            taste_template.append("Check_Queue (msgPending);")
-            taste_template.append('end if;')
-            ads_template.append('procedure Check_Queue (Res : out Asn1Boolean);')
-            if not generic:
-                ads_template.append(f'pragma Import(C, Check_Queue, "{process_name.lower()}_check_queue");')
-        elif has_cs and simu:
+            if not MONITORS:
+                taste_template.append('--  Process continuous signals')
+                taste_template.append(f'if {LPREFIX}.Init_Done then')
+                taste_template.append("Check_Queue (msgPending);")
+                taste_template.append('end if;')
+                ads_template.append('procedure Check_Queue (Res : out Asn1Boolean);')
+                if not generic:
+                    ads_template.append(f'pragma Import(C, Check_Queue, "{process_name.lower()}_check_queue");')
+            else:
+                taste_template.append('--  Process observer transitions')
+                taste_template.append("msgPending := False;")
+        elif has_cs and simu and not MONITORS:
             taste_template.append('if {}.Init_Done then'.format(LPREFIX))
             taste_template.append("Check_Queue (msgPending);")
             taste_template.append('end if;')
@@ -1243,8 +1282,7 @@ package body {process_name}_RI is''']
                             each.priority = lowest_priority + 1
                     for provided_clause in sorted(cs_item,
                                                  key=lambda itm: itm.priority):
-                        taste_template.append(u'--  CS Priority {}'
-                                             .format(provided_clause.priority))
+                        taste_template.append(f'--  Priority {provided_clause.priority}')
                         trId = process.transitions.index\
                                             (provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
@@ -1274,7 +1312,7 @@ package body {process_name}_RI is''']
                     each.priority = lowest_priority + 1
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
-                taste_template.append('--  Priority {provided_clause.priority}')
+                taste_template.append(f'--  Priority {provided_clause.priority}')
                 trId = process.transitions.index(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
@@ -1310,15 +1348,15 @@ package body {process_name}_RI is''']
         if need_final_endif:
             taste_template.append('end if;')
 
+        if MONITORS:
+            taste_template.append('<<Next_Transition>>')
+
         taste_template.append('end loop;')
         taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
     elif not instance:
         # No transitions defined, but keep the interface for CS_Only calls
-        taste_template.append('procedure Execute_Transition (Id : Integer) is')
-        taste_template.append('begin')
-        taste_template.append('null;')
-        taste_template.append('end Execute_Transition;')
+        taste_template.append('procedure Execute_Transition (Id : Integer) is null;')
         taste_template.append('\n')
 
     # Add code of the package elaboration
@@ -2090,7 +2128,7 @@ def _prim_selector(prim, **kwargs):
     stmts, ada_string, local_decl = [], '', []
     ro = kwargs.get("readonly", 0)
 
-    receiver = prim.value[0]
+    receiver = prim.value[0]  # can be a PrimSelector
     field_name = prim.value[1]
 
     receiver_stms, receiver_string, receiver_decl = expression(receiver,

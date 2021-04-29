@@ -124,6 +124,22 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.5 (04/2021)**
+- Fix support for single input/output expressions (with no message name)
+- Fix graphical location of errors for undefined states
+- Fix continuous signal evaluation in parallel states
+
+**3.5.4 (04/2021)**
+- Fix code generation when no signals are defined (only exported procedures)
+- Add renames clause (aliases) for input/output expressions
+
+**3.5.3 (04/2021)**
+- Model checking observers: add support for parameters in input/output expressions
+
+**3.5.2 (04/2021)**
+- Model checking observers: run only one transition per call
+- Support field names called "state"
+
 **3.5.1 (04/2021)**
 - Support aliases:
   dcl var type renames foo.bar.baz;

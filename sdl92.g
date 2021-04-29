@@ -83,6 +83,7 @@ tokens {
         OUTPUT;
         OUTPUT_BODY;
         PARAM;
+        IOPARAM;
         PARAMNAMES;
         PARAMS;
         PAREN;
@@ -97,6 +98,7 @@ tokens {
         QUESTION;
         RANGE;
         RENAMES;
+        INTERCEPT;
         RESET;
         RETURN;
         RETURNS;
@@ -195,8 +197,10 @@ entity_in_system
 */
 signal_declaration
         :       paramnames?
-                SIGNAL signal_id input_params? end
-        ->      ^(SIGNAL paramnames? signal_id input_params?)
+                SIGNAL signal_id input_params?
+                (RENAMES (input_expression | output_expression))? // for observers
+                end
+        ->      ^(SIGNAL paramnames? signal_id input_params? ^(INTERCEPT input_expression? output_expression?))
         ;
 
 
@@ -1113,20 +1117,22 @@ postfix_expression
 
 //  input and output expression allow observers (for model checking) to
 //  monitor the sending and receiving of messages with a nice syntax
-//  (e.g. event = output msg from foo)
+//  (e.g. event = output msg (p) from foo) 
+//  the parameter is optional. It dooes not need to be declared as a variable,
+//  as it it implicit.
 input_expression
         :       INPUT
                 -> ^(INPUT_EXPRESSION)
-                | INPUT (msg=ID)? (FROM src=ID)? TO dest=ID
-                -> ^(INPUT_EXPRESSION $msg? ^(FROM $src)? ^(TO $dest))
+                | INPUT (msg=ID ('(' param=ID ')')? )? (FROM src=ID)? TO dest=ID
+                -> ^(INPUT_EXPRESSION $msg? ^(IOPARAM $param)? ^(FROM $src)? ^(TO $dest))
         ;
 
 
 output_expression
         :       OUTPUT
                 -> ^(OUTPUT_EXPRESSION)
-                | OUTPUT (msg=ID)? (FROM src=ID) (TO dest=ID)?
-                -> ^(OUTPUT_EXPRESSION  $msg? ^(FROM $src) ^(TO $dest)?)
+                | OUTPUT (msg=ID ('(' param=ID ')')? )? (FROM src=ID) (TO dest=ID)?
+                -> ^(OUTPUT_EXPRESSION $msg? ^(IOPARAM $param)? ^(FROM $src) ^(TO $dest)?)
         ;
 
 primary_expression
@@ -1481,7 +1487,7 @@ priority_signal_id
                 :       ID;
 signal_list_id  :       ID;
 timer_id        :       ID;
-field_name      :       ID;
+field_name      :       ID | STATE;
 signal_route_id :       ID;
 channel_id      :       ID;
 route_id        :       ID;

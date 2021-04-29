@@ -3,11 +3,11 @@
 
 # pylint: disable=C0302
 """
-    OpenGEODE - A tiny, free SDL Editor for TASTE
+    OpenGEODE - TASTE SDL and Observers Editor
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 Maxime Perrotin & European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.5.1'
+__version__ = '3.5.5'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2379,8 +2379,11 @@ clean:
                     continue
                 pos = QPoint(*coord)
                 symbol = self.scene().symbol_near(pos=pos, dist=1)
-                G_ERRORS.append(symbol)
-                line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
+                if symbol is not None:
+                    G_ERRORS.append(symbol)
+                    line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
+                else:
+                    print("No symbol at coord", coord, "in scene", path)
         _ = self.go_to_scene_path(current_scene)
 
 
