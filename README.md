@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.6 (05/2021)**
+- observers: support renaming of continuous signals with parameters
+
 **3.5.5 (04/2021)**
 - Fix support for single input/output expressions (with no message name)
 - Fix graphical location of errors for undefined states
