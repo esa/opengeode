@@ -654,9 +654,10 @@ class ContinuousSignal(Input):
         self.priority = 0
         # Set if we are in an observer to render the symbol differently
         self.observer : bool = False
-        # Artificial set to true if it is meant to replace an input symbol
-        # in observers
-        self.artificial : bool = False
+        # instance of class Input when this CS is an alias of an input
+        self.observer_input = None
+        # artificial is set to True if this is an alias (for Renderer)
+        self.artificial = False
 
     def trace(self):
         ''' Debug output for a Continuous signal '''

@@ -792,6 +792,11 @@ package body {process_name}_RI is''']
             # dont generate anything in stop_condition functions
             break
 
+        if 'renames' in signal and signal['renames'] is not None:
+            # don't generate anything if this is an observer signal
+            # (a renames clause for a continuuous signal)
+            continue
+
         signame = signal.get('name', 'START')
         fake_name = False
 
