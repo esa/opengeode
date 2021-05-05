@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.7 (05/2021)**
+- Fix generation of statecharts
+
 **3.5.6 (05/2021)**
 - observers: support renaming of continuous signals with parameters
 
