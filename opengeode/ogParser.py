@@ -5872,6 +5872,7 @@ def pr_file(root):
                     if proc.processName.lower() == proc_name.lower():
                         return block
             return None
+        proc_parent = None
         for system in ast.systems:
             proc_parent = rec_find_process_parent(system, processName)
             if proc_parent:
