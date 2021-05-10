@@ -166,6 +166,7 @@ def parse_asn1(*files, **options):
         else:
             html = []
         args = [arg0, '-customStgAstVersion', str(ast_version.value),
+                '--field-prefix', 'AUTO',
                 '-customStg', stg + '::' + py_filepath,
                 '-renamePolicy', str(rename_policy.value)] + html + extraflags + file_list
         asn1scc = QProcess()

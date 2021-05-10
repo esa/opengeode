@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.8 (05/2021)**
+- Use --type-prefix AUTO when calling ASN1SCC to avoid naming conflicts
+
 **3.5.7 (05/2021)**
 - Fix generation of statecharts
 
