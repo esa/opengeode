@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.5.9 (05/2021)**
+- Fix autocompletion of variable when fields are separated with dot
+
 **3.5.8 (05/2021)**
 - Use --type-prefix AUTO when calling ASN1SCC to avoid naming conflicts
 

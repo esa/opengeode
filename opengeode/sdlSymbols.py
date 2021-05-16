@@ -67,7 +67,8 @@ def variables_autocompletion(symbol, type_filter=None):
     res = set()
     if not symbol.text:
         return res
-    parts = symbol.text.context.split('!')
+    sep = "!" if "!" in symbol.text.context else "."
+    parts = symbol.text.context.split(sep)
     if len(parts) == 0:
         return res
     elif len(parts) == 1:
