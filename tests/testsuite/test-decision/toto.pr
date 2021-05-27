@@ -1,0 +1,57 @@
+system toto;
+    /* CIF TEXT (810, 226), (304, 292) */
+    -- Text area for declarations and comments
+    use dataview comment 'dataview.asn';
+    
+    signal hello;
+    /* CIF ENDTEXT */
+    channel c
+        from env to toto with hello;
+    endchannel;
+    block toto;
+        signalroute r
+            from env to toto with hello;
+        connect c and r;
+        /* CIF PROCESS (360, 132), (231, 231) */
+        process toto;
+            /* CIF TEXT (691, 237), (273, 88) */
+            -- MyEnum ::= ENUMERATED { foo, bar, baz }
+            dcl   det MyEnum;
+            
+            -- MyInteger ::= INTEGER (-127..128)
+            dcl det2 MyInteger;
+            /* CIF ENDTEXT */
+            /* CIF START (449, 268), (70, 35) */
+            START;
+                /* CIF decision (455, 322), (58, 50) */
+                decision det
+                /* CIF comment (533, 329), (167, 40) */
+                comment 'Multiple answers trigger
+one branch';
+                    /* CIF ANSWER (427, 392), (46, 40) */
+                    (foo,
+bar):
+                    /* CIF ANSWER (505, 392), (43, 24) */
+                    (baz):
+                enddecision;
+                /* CIF decision (449, 448), (70, 50) */
+                decision det2
+                /* CIF comment (539, 455), (138, 35) */
+                comment 'Ranges can be used';
+                    /* CIF ANSWER (359, 518), (70, 24) */
+                    (-127:0):
+                    /* CIF ANSWER (446, 518), (73, 56) */
+                    (1:10,
+100:128,
+15):
+                    /* CIF ANSWER (540, 518), (70, 24) */
+                    else:
+                enddecision;
+                /* CIF NEXTSTATE (452, 601), (64, 35) */
+                NEXTSTATE Wait;
+            /* CIF state (893, 558), (70, 35) */
+            state wait;
+            endstate;
+        endprocess toto;
+    endblock;
+endsystem;
