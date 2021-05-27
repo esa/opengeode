@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.6.0 (05/2021)**
+- Support grouped answers in decisions (comma-separated answers)
+- Support hex literals assigned to integers (eg. dcl x SomeInt := '2A'H;)
+
 **3.5.9 (05/2021)**
 - Fix autocompletion of variable when fields are separated with dot
 
