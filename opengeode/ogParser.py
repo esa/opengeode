@@ -973,7 +973,7 @@ def check_type_compatibility(primary, type_ref, context):
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
-        Possibly returns a list of warnings; can raises TypeError
+        Possibly returns a list of warnings; can raise TypeError
     '''
     warnings = []    # function returns a list of warnings
     # assert type_ref is not None
@@ -1167,6 +1167,9 @@ def check_type_compatibility(primary, type_ref, context):
                             .format(choice=primary.inputString,
                             t1=type_name(type_ref)))
 
+    elif isinstance(primary, (ogAST.PrimBitStringLiteral, ogAST.PrimOctetStringLiteral)) \
+            and is_integer(type_ref) or type_ref == NUMERICAL:
+        return warnings
     elif isinstance(primary, ogAST.PrimStringLiteral):
         # Octet strings
         basic_type = find_basic_type(type_ref)
@@ -1191,7 +1194,7 @@ def check_type_compatibility(primary, type_ref, context):
                 LOG.debug('String literal size constraint discarded')
                 return warnings
         else:
-            raise TypeError('String literal not expected')
+            raise TypeError(f'String literal not expected')
     elif (isinstance(primary, ogAST.PrimMantissaBaseExp) and
                                             basic_type.kind == 'RealType'):
         LOG.debug('PROBABLY (it is a float but I did not check'
@@ -2686,25 +2689,40 @@ def primary(root, context):
             'Max':  prim.value[0]
         })
     elif root.type == lexer.STRING:
-        prim = ogAST.PrimStringLiteral()
         if root.text[-1] in ('B', 'b'):
+            prim = ogAST.PrimBitStringLiteral()
             try:
-                prim.value = "'{}'".format(
-                        binascii.unhexlify('%x' % int(root.text[1:-2], 2)))
+                # Transform to a hex string
+                as_number = int(root.text[1:-2], 2)
+                as_hex    = binascii.unhexlify('%x' % as_number)
+                prim.value = f"'{as_hex}'"
+                prim.numeric_value = as_number
+                prim.printable_string = root.text
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Bit string literal: {}'.format(err)))
                 prim.value = "''"
         elif root.text[-1] in ('H', 'h'):
+            prim = ogAST.PrimOctetStringLiteral()
             try:
                 hexstring = codecs.decode(root.text[1:-2], 'hex')  # -> bytes
-                hexstring = hexstring.decode('utf-8')   # -> string
-                prim.value = ("'{}'".format(hexstring))
+                as_hex = hexstring.hex()   # -> string
+                as_number = int(as_hex, 16)
+                try:
+                    # In case the HEX value only contains ascii characters
+                    prim.printable_string = hexstring.decode('utf-8')
+                    prim.value = (f"'{prim.printable_string}'")
+                except:
+                    prim.printable_string = root.text
+                    prim.value = as_hex
+                # store the integer number corresponding to the hex representation
+                prim.numeric_value = as_number
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Octet string literal: {}'.format(err)))
                 prim.value = "''"
         else:
+            prim = ogAST.PrimStringLiteral()
             prim.value = root.text
         prim.exprType = type('PrStr', (object,), {
             'kind': 'StringType',
@@ -4108,11 +4126,10 @@ def continuous_signal(root, parent, context):
     dec.charPositionInLine = dec.question.charPositionInLine
     dec.kind = 'question'
     ans.inputString = 'true'
-    ans.openRangeOp = ogAST.ExprEq
-    ans.kind = 'constant'
-    ans.constant = ogAST.PrimBoolean()
-    ans.constant.value = ['true']
-    ans.constant.exprType = BOOLEAN
+    constant_expr = ogAST.PrimBoolean()
+    constant_expr.value = ['true']
+    constant_expr.exprType = BOOLEAN
+    ans.answers = [{'kind': 'constant', 'content': (ogAST.ExprEq, constant_expr)}]
     dec.answers = [ans]
     i.trigger = dec
     i.inputString = dec.inputString
@@ -4123,7 +4140,7 @@ def continuous_signal(root, parent, context):
         elif child.type == lexer.INT:
             # Priority
             i.priority = int(child.text)
-            i.inputString += u';\npriority {}'.format(get_input_string(child))
+            i.inputString += f';\npriority {get_input_string(child)}'
         elif child.type == lexer.TRANSITION:
             trans, err, warn = transition(child, parent=i, context=context)
             errors.extend(err)
@@ -4220,11 +4237,11 @@ def input_part(root, parent, context):
                             dec.charPositionInLine = i.charPositionInLine
                             dec.kind = 'question'
                             ans.inputString = 'true'
-                            ans.openRangeOp = ogAST.ExprEq
-                            ans.kind = 'constant'
-                            ans.constant = ogAST.PrimBoolean()
-                            ans.constant.value = ['true']
-                            ans.constant.exprType = BOOLEAN
+                            constant_expr = ogAST.PrimBoolean()
+                            constant_expr.value = ['true']
+                            constant_expr.exprType = BOOLEAN
+                            ans.answers = [{'kind': 'constant',
+                                            'content': (ogAST.ExprEq, constant_expr)}]
                             dec.answers = [ans]
                             cs.trigger = dec
                             cs.inputString = dec.question.inputString
@@ -4470,9 +4487,6 @@ def state(root, parent, context):
             # useful for code generation. Also check for duplicates.
             for statename in state_def.statelist:
                 existing = context.cs_mapping.get(statename.lower(), [])
-                for each in existing:
-                    print (each.inputString.lower().split())
-                    print(provided_part.inputString.lower().split())
                 for each in existing:
                    if ''.join(each.inputString.lower().split()) == \
                            ''.join(provided_part.inputString.lower().split()):
@@ -4792,43 +4806,58 @@ def alternative_part(root, parent, context):
     errors = []
     warnings = []
     ans = ogAST.Answer()
+    startIndex, stopIndex = None, None
     if root.type == lexer.ELSE:
         # used when copy-pasting
         ans.inputString = root.text
     for child in root.getChildren():
+        # There can be multiple answers in one (comma-separated)
+        # so instead of storing a single kind and only one answer,
+        # we should store them in arrays
+
+        if child.type in (lexer.CLOSED_RANGE,
+                          lexer.CONSTANT,
+                          lexer.OPEN_RANGE,
+                          lexer.INFORMAL_TEXT):
+            # We must get the full string for the renderer
+            if not startIndex:
+                startIndex = child.getTokenStartIndex()
+            stopIndex = child.getTokenStopIndex()
+
         if child.type == lexer.CIF:
             # Get symbol coordinates
             ans.pos_x, ans.pos_y, ans.width, ans.height = cif(child)
         elif child.type == lexer.CLOSED_RANGE:
-            ans.kind = 'closed_range'
+            # ans.kinds.append('closed_range')
             cl0, err0, warn0 = expression(child.getChild(0), context)
             cl1, err1, warn1 = expression(child.getChild(1), context)
             errors.extend(err0)
             errors.extend(err1)
             warnings.extend(warn0)
             warnings.extend(warn1)
-            ans.closedRange = [cl0, cl1]
+            ans.answers.append({'kind': 'closed_range', 'content':  [cl0, cl1]})
         elif child.type == lexer.CONSTANT:
-            ans.kind = 'constant'
-            ans.constant, err, warn = expression(child.getChild(0), context)
+            constant_expr, err, warn = expression(child.getChild(0), context)
+            ans.answers.append({'kind': 'constant', 'content': (ogAST.ExprEq, constant_expr)})
             errors.extend(err)
             warnings.extend(warn)
-            ans.openRangeOp = ogAST.ExprEq
         elif child.type == lexer.OPEN_RANGE:
-            ans.kind = 'open_range'
+            #ans.kinds.append('open_range')
+            op = None
             for c in child.getChildren():
                 if c.type == lexer.CONSTANT:
-                    ans.constant, err, warn = expression(
-                            c.getChild(0), context)
+                    constant_expr, err, warn = expression(c.getChild(0), context)
+                    #ans.constants.append(constant_expr)
                     errors.extend(err)
                     warnings.extend(warn)
-                    if not ans.openRangeOp:
-                        ans.openRangeOp = ogAST.ExprEq
+                    if not op:
+                        op = ogAST.ExprEq
+                    ans.answers.append({'kind': 'open_range', 'content': (op, constant_expr)})
                 else:
-                    ans.openRangeOp = EXPR_NODE[c.type]
+                    op = EXPR_NODE[c.type]
         elif child.type == lexer.INFORMAL_TEXT:
-            ans.kind = 'informal_text'
-            ans.informalText = child.getChild(0).toString()[1:-1]
+            ans.answers.append({'kind': 'informal_text',
+                                'content':  child.getChild(0).toString()[1:-1]})
         elif child.type == lexer.TRANSITION:
             ans.transition, err, warn = transition(
                                         child, parent=ans, context=context)
@@ -4837,10 +4866,13 @@ def alternative_part(root, parent, context):
         elif child.type == lexer.HYPERLINK:
             ans.hyperlink = child.getChild(0).toString()[1:-1]
         else:
-            warnings.append('Unsupported answer type: ' + str(child.type))
+            warnings.append('Unsupported answer type: ' + 
+                            sdl92Parser.tokenNamesMap[child.type])
+
         if child.type in (lexer.CLOSED_RANGE, lexer.CONSTANT,
                           lexer.OPEN_RANGE, lexer.INFORMAL_TEXT):
-            ans.inputString = get_input_string(child)
+            #ans.inputString = get_input_string(child)
+            ans.inputString = token_stream(child).toString(startIndex, stopIndex)
             ans.line = child.getLine()
             ans.charPositionInLine = child.getCharPositionInLine()
             # Report errors with symbol coordinates
@@ -4895,20 +4927,20 @@ def decision(root, parent, context):
             warnings.extend(warn)
             dec.answers.append(ans)
         elif child.type == lexer.ELSE:
-            a = ogAST.Answer()
-            a.inputString = child.toString()
+            ans = ogAST.Answer()
+            ans.inputString = child.toString()
             for c in child.getChildren():
                 if c.type == lexer.CIF:
-                    a.pos_x, a.pos_y, a.width, a.height = cif(c)
+                    ans.pos_x, ans.pos_y, ans.width, ans.height = cif(c)
                 elif c.type == lexer.TRANSITION:
-                    a.transition, err, warn = transition(
-                                            c, parent=a, context=context)
+                    ans.transition, err, warn = transition(
+                                            c, parent=ans, context=context)
                     errors.extend(err)
                     warnings.extend(warn)
                 elif child.type == lexer.HYPERLINK:
-                    a.hyperlink = child.getChild(0).toString()[1:-1]
-            a.kind = 'else'
-            dec.answers.append(a)
+                    ans.hyperlink = child.getChild(0).toString()[1:-1]
+            ans.answers.append({'kind': 'else', 'content': None})
+            dec.answers.append(ans)
             has_else = True
         else:
             warnings.append(['Unsupported DECISION child type: ' +
@@ -4923,176 +4955,196 @@ def decision(root, parent, context):
     need_else = False
     is_enum, is_bool = False, False
     for ans in dec.answers:
-        if dec.kind in ('informal_text', 'any'):
-            break
-        ans_x, ans_y = ans.pos_x, ans.pos_y
-        if ans.kind in ('constant', 'open_range'):
-            expr = ans.openRangeOp()
-            expr.left = dec.question
-            expr.right = ans.constant
-            try:
-                answarn = fix_expression_types(expr, context)
-                answarn = [[w, [ans_x, ans_y], []] for w in answarn]
-                warnings.extend(answarn)
-                if dec.question.exprType == UNKNOWN_TYPE:
-                    dec.question = expr.left
-                ans.constant = expr.right
-                q_basic = find_basic_type(dec.question.exprType)
-                a_basic = find_basic_type(ans.constant.exprType)
+        for element in ans.answers:
+            # Each answer branch can have multiple answers (comma-separated)
+            ans_kind    = element['kind']
+            ans_content = element['content']
 
-                if q_basic.kind.endswith('EnumeratedType'):
-                    if not ans.constant.is_raw:
-                        # Ref to a variable -> can't guarantee coverage
-                        need_else = True
-                        continue
-                    covered_ranges[ans].append(ans.inputString)
-                    is_enum = True
-                elif q_basic.kind == 'BooleanType':
-                    covered_ranges[ans].append(ans.constant.value[0])
-                    is_bool = True
-                    if not ans.constant.is_raw:
-                        need_else = True
-                        continue
-                if not q_basic.kind.startswith(('Integer', 'Real')):
-                    # Check numeric questions - ignore others
-                    continue
-                # If the answer is an ASN.1 constant we must not use
-                # the range of its type when we check the decision branches
-                if isinstance(ans.constant, ogAST.PrimConstant):
-                    a_basic_Min = a_basic_Max = \
-                          get_asn1_constant_value (ans.constant.constant_value)
-                else:
-                    a_basic_Min, a_basic_Max = a_basic.Min, a_basic.Max
+            if dec.kind in ('informal_text', 'any'):
+                break # break from inner loop only, but that will do
+            ans_x, ans_y = ans.pos_x, ans.pos_y
 
-                delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
-                # numeric type -> find the range covered by this answer
-                if a_basic_Min != a_basic_Max:
-                    # Not a constant or a raw number, range is not fix
-                    need_else = True
-                    continue
-                val_a = float(a_basic_Min)
-                qmin, qmax = float(q_basic.Min), float(q_basic.Max)
-                # Check the operator to compute the range
-                reachable = True
-                if ans.openRangeOp == ogAST.ExprLe:
-                    # answer <= X means covered range is [min; X]
-                    if qmin <= val_a:
-                        covered_ranges[ans].append((qmin, val_a))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprLt:
-                    # answer < X means covered range is [min; X[
-                    if qmin < val_a:
-                        covered_ranges[ans].append((qmin, val_a - delta))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprGt:
-                    # answer > X means covered range is ]X; max]
-                    if qmax > val_a:
-                        covered_ranges[ans].append((val_a + delta, qmax))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprGe:
-                    # answer >= X means covered range is [X; max]
-                    if qmax >= val_a:
-                        covered_ranges[ans].append((val_a, qmax))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprEq:
-                    if qmin <= val_a <= qmax:
-                        covered_ranges[ans].append((val_a, val_a))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprNeq:
-                    # answer != X means covered range is [min; X[;]X; max]
-                    if qmin == val_a:
-                        covered_ranges[ans].append((qmin + delta, qmax))
-                    elif qmax == val_a:
-                        covered_ranges[ans].append((qmin, qmax - delta))
-                    elif qmin < val_a < qmax:
-                        covered_ranges[ans].append((qmin, val_a - delta))
-                        covered_ranges[ans].append((val_a + delta, qmax))
-                    else:
-                        warnings.append(['Condition is always true: {} /= {}'
-                                        .format(dec.inputString,
-                                                ans.inputString),
-                                        [ans_x, ans_y], []])
-                else:
-                    warnings.append(['Unsupported range expression',
-                                     [ans_x, ans_y], []])
-                if not reachable:
-                        warnings.append(['Decision "{}": '
-                                        'Unreachable branch "{}"'
-                                        .format(dec.inputString,
-                                                ans.inputString),
-                                        [ans_x, ans_y], []])
-            except (AttributeError, TypeError) as err:
-                LOG.debug('ogParser:\n' + str(traceback.format_exc()))
-                errors.append(['Type mismatch: '
-                    'question (' + expr.left.inputString + ', type= ' +
-                    type_name(expr.left.exprType) + '), answer (' +
-                    expr.right.inputString + ', type= ' +
-                    type_name(expr.right.exprType) + ') ' + str(err),
-                    [ans_x, ans_y], []])
-            except Warning as warn:
-                warnings.append(['Type mismatch: ' + str(warn), [ans_x, ans_y],
-                                []])
-        elif ans.kind == 'closed_range':
-            if not is_numeric(dec.question.exprType):
-                errors.append(['Closed range are only for numerical types',
-                              [ans_x, ans_y], []])
-                continue
-            for ast_type, idx in zip((ogAST.ExprGe, ogAST.ExprLe), (0, 1)):
-                expr = ast_type()
+            if ans_kind in ('constant', 'open_range'):
+                # asn_content is a tuple  (operator, constant)
+                op, constant = ans_content # get the constant
+
+                expr = op()  # instantiate the type, e.g. ExprEq
                 expr.left = dec.question
-                expr.right = ans.closedRange[idx]
+                expr.right = constant
+
                 try:
-                    warnings.extend(fix_expression_types(expr, context))
+                    answarn = fix_expression_types(expr, context)
+                    answarn = [[w, [ans_x, ans_y], []] for w in answarn]
+                    warnings.extend(answarn)
                     if dec.question.exprType == UNKNOWN_TYPE:
                         dec.question = expr.left
-                    ans.closedRange[idx] = expr.right
+
+                    #ans.constant = expr.right
+                    # Update the type of the constant
+                    constant = expr.right
+                    element['content'] = (op, constant)
+
+                    q_basic = find_basic_type(dec.question.exprType)
+                    #a_basic = find_basic_type(ans.constant.exprType)
+                    a_basic = find_basic_type(constant.exprType)
+
+                    if q_basic.kind.endswith('EnumeratedType'):
+                        if not constant.is_raw:
+                            # Ref to a variable -> can't guarantee coverage
+                            need_else = True
+                            continue
+                        covered_ranges[ans].append(constant.inputString.lower())
+                        is_enum = True
+                    elif q_basic.kind == 'BooleanType':
+                        covered_ranges[ans].append(constant.value[0])
+                        is_bool = True
+                        if not constant.is_raw:
+                            need_else = True
+                            continue
+                    if not q_basic.kind.startswith(('Integer', 'Real')):
+                        # Check numeric questions - ignore others
+                        continue
+                    # If the answer is an ASN.1 constant we must not use
+                    # the range of its type when we check the decision branches
+                    if isinstance(constant, ogAST.PrimConstant):
+                        a_basic_Min = a_basic_Max = \
+                              get_asn1_constant_value (constant.constant_value)
+                    else:
+                        a_basic_Min, a_basic_Max = a_basic.Min, a_basic.Max
+
+                    delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
+                    # numeric type -> find the range covered by this answer
+                    if a_basic_Min != a_basic_Max:
+                        # Not a constant or a raw number, range is not fix
+                        need_else = True
+                        continue
+                    val_a = float(a_basic_Min)
+                    qmin, qmax = float(q_basic.Min), float(q_basic.Max)
+                    # Check the operator to compute the range
+                    reachable = True
+                    if op == ogAST.ExprLe:
+                        # answer <= X means covered range is [min; X]
+                        if qmin <= val_a:
+                            covered_ranges[ans].append((qmin, val_a))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprLt:
+                        # answer < X means covered range is [min; X[
+                        if qmin < val_a:
+                            covered_ranges[ans].append((qmin, val_a - delta))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprGt:
+                        # answer > X means covered range is ]X; max]
+                        if qmax > val_a:
+                            covered_ranges[ans].append((val_a + delta, qmax))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprGe:
+                        # answer >= X means covered range is [X; max]
+                        if qmax >= val_a:
+                            covered_ranges[ans].append((val_a, qmax))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprEq:
+                        if qmin <= val_a <= qmax:
+                            covered_ranges[ans].append((val_a, val_a))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprNeq:
+                        # answer != X means covered range is [min; X[;]X; max]
+                        if qmin == val_a:
+                            covered_ranges[ans].append((qmin + delta, qmax))
+                        elif qmax == val_a:
+                            covered_ranges[ans].append((qmin, qmax - delta))
+                        elif qmin < val_a < qmax:
+                            covered_ranges[ans].append((qmin, val_a - delta))
+                            covered_ranges[ans].append((val_a + delta, qmax))
+                        else:
+                            warnings.append(['Condition is always true: {} /= {}'
+                                            .format(dec.inputString,
+                                                    ans.inputString),
+                                            [ans_x, ans_y], []])
+                    else:
+                        warnings.append(['Unsupported range expression',
+                                         [ans_x, ans_y], []])
+                    if not reachable:
+                            warnings.append(['Decision "{}": '
+                                            'Unreachable branch "{}"'
+                                            .format(dec.inputString,
+                                                    ans.inputString),
+                                            [ans_x, ans_y], []])
                 except (AttributeError, TypeError) as err:
-                    errors.append(['Type mismatch in decision: '
+                    LOG.debug('ogParser:\n' + str(traceback.format_exc()))
+                    errors.append(['Type mismatch: '
                         'question (' + expr.left.inputString + ', type= ' +
                         type_name(expr.left.exprType) + '), answer (' +
                         expr.right.inputString + ', type= ' +
                         type_name(expr.right.exprType) + ') ' + str(err),
                         [ans_x, ans_y], []])
-            q_basic = find_basic_type(dec.question.exprType)
-            if not q_basic.kind.startswith(('Integer', 'Real')):
-                continue
-            delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
-            # numeric type -> find the range covered by this answer
-            a0_basic = find_basic_type(ans.closedRange[0].exprType)
-            a1_basic = find_basic_type(ans.closedRange[1].exprType)
-            if not hasattr(a0_basic, "Min") or not hasattr(a1_basic, "Min") \
-                    or a0_basic.Min != a0_basic.Max \
-                    or a1_basic.Min != a1_basic.Max:
-                # Not a constant or a raw number, range is not fix
-                need_else = True
-                continue
-            qmin, qmax = float(q_basic.Min), float(q_basic.Max)
-            a0_val = float(a0_basic.Min)
-            a1_val = float(a1_basic.Max)
-            if a0_val < qmin:
-                qwarn.append('Decision "{dec}": '
-                                'Range {a0} .. {qmin} is unreachable'
-                                .format(a0=a0_val, qmin=round(qmin - delta, 9),
-                                        dec=dec.inputString))
-            if a1_val > qmax:
-                qwarn.append('Decision "{dec}": '
-                                'Range {qmax} .. {a1} is unreachable'
-                                .format(qmax=round(qmax + delta), a1=a1_val,
-                                        dec=dec.inputString))
-            if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
-                                                     a1_val > qmax):
-                warnings.append(['Decision "{dec}": Unreachable branch {l}:{h}'
-                                .format(dec=dec.inputString,
-                                        l=a0_val, h=a1_val),
-                                [ans_x, ans_y], []])
-            covered_ranges[ans].append((float(a0_basic.Min),
-                                        float(a1_basic.Max)))
-    # Check the following
+                except Warning as warn:
+                    warnings.append(['Type mismatch: ' + str(warn), [ans_x, ans_y],
+                                    []])
+            elif ans_kind == 'closed_range':
+                if not is_numeric(dec.question.exprType):
+                    errors.append(['Closed range are only for numerical types',
+                                  [ans_x, ans_y], []])
+                    continue
+                closedRange = ans_content
+                for ast_type, idx in zip((ogAST.ExprGe, ogAST.ExprLe), (0, 1)):
+                    expr = ast_type()
+                    expr.left = dec.question
+                    #expr.right = ans.closedRange[idx]
+                    expr.right = closedRange[idx]
+                    try:
+                        warnings.extend(fix_expression_types(expr, context))
+                        if dec.question.exprType == UNKNOWN_TYPE:
+                            dec.question = expr.left
+                        #ans.closedRange[idx] = expr.right
+                        element['content'][idx] = expr.right
+                        closedRange = element['content']
+                    except (AttributeError, TypeError) as err:
+                        errors.append(['Type mismatch in decision: '
+                            'question (' + expr.left.inputString + ', type= ' +
+                            type_name(expr.left.exprType) + '), answer (' +
+                            expr.right.inputString + ', type= ' +
+                            type_name(expr.right.exprType) + ') ' + str(err),
+                            [ans_x, ans_y], []])
+                q_basic = find_basic_type(dec.question.exprType)
+                if not q_basic.kind.startswith(('Integer', 'Real')):
+                    continue
+                delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
+                # numeric type -> find the range covered by this answer
+                a0_basic = find_basic_type(closedRange[0].exprType)
+                a1_basic = find_basic_type(closedRange[1].exprType)
+                if not hasattr(a0_basic, "Min") or not hasattr(a1_basic, "Min") \
+                        or a0_basic.Min != a0_basic.Max \
+                        or a1_basic.Min != a1_basic.Max:
+                    # Not a constant or a raw number, range is not fix
+                    need_else = True
+                    continue
+                qmin, qmax = float(q_basic.Min), float(q_basic.Max)
+                a0_val = float(a0_basic.Min)
+                a1_val = float(a1_basic.Max)
+                if a0_val < qmin:
+                    qwarn.append('Decision "{dec}": '
+                                    'Range {a0} .. {qmin} is unreachable'
+                                    .format(a0=a0_val, qmin=round(qmin - delta, 9),
+                                            dec=dec.inputString))
+                if a1_val > qmax:
+                    qwarn.append('Decision "{dec}": '
+                                    'Range {qmax} .. {a1} is unreachable'
+                                    .format(qmax=round(qmax + delta), a1=a1_val,
+                                            dec=dec.inputString))
+                if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
+                                                         a1_val > qmax):
+                    warnings.append(['Decision "{dec}": Unreachable branch {l}:{h}'
+                                    .format(dec=dec.inputString,
+                                            l=a0_val, h=a1_val),
+                                    [ans_x, ans_y], []])
+                covered_ranges[ans].append((float(a0_basic.Min),
+                                            float(a1_basic.Max)))
+        # Check the following
     # (1) no overlap between covered ranges in decision answers
     # (2) no gap in the coverage of the decision possible values
     # (3) ELSE branch, if present, can be reached
@@ -6155,3 +6207,4 @@ def parser_init(filename=None, string=None):
 
 if __name__ == '__main__':
     print ('This module is not callable')
+

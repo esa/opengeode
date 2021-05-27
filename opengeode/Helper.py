@@ -464,10 +464,12 @@ def _rename_decision(ast, from_name, to_name):
 @rename_everything.register(ogAST.Answer)
 def _rename_answer(ast, from_name, to_name):
     ''' Rename elements in an answer branch '''
-    if ast.kind in ('constant', 'open_range'):
-        rename_everything(ast.constant, from_name, to_name)
-    elif ast.kind == 'closed_range':
-        pass  # TODO when supported
+    for each in ast.answers:
+        if each['kind'] in ('constant', 'open_range'):
+            _, constant = each['content'] # get the constant
+            rename_everything(constant, from_name, to_name)
+        elif each['kind'] == 'closed_range':
+            pass  # TODO when supported
     rename_everything(ast.transition, from_name, to_name)
 
 

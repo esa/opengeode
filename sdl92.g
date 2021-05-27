@@ -926,8 +926,8 @@ question
 
 range_condition
         :       (closed_range | open_range)
+                (','! (closed_range|open_range))*
         ;
-                //(',' (closed_range|open_range))*;
 
 
 closed_range
