@@ -1427,7 +1427,10 @@ def write_statement(param, newline):
         code, string, local = expression(param, readonly=1)
         code.append(f'Put ({string} (1 .. adaasn1rtl.GetStringSize ({string})));')
     elif type_kind.endswith('StringType'):
-        if isinstance(param, ogAST.PrimStringLiteral):
+        if isinstance(param, ogAST.PrimOctetStringLiteral):
+            # Octet string or bit string
+            code.append(f'Put ("{param.printable_string}");')                
+        elif isinstance(param, ogAST.PrimStringLiteral):
             # Raw string
             # First remove the newline statements
             text = param.value[1:-1].replace('"', "'").split('\n')
@@ -2957,25 +2960,61 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                 for exit in exitcalls:
                     code.append(exit);
                 code.append(f'trId := {branch_to};')
+            continue
+        if dec.kind == 'informal_text':
+            break
 
-        elif a.kind in ('open_range', 'constant'):
-            ans_stmts, ans_str, ans_decl = expression(a.constant, readonly=1)
-            code.extend(ans_stmts)
-            local_decl.extend(ans_decl)
-            if not basic:
-                if a.openRangeOp in (ogAST.ExprEq, ogAST.ExprNeq):
-                    if isinstance(a.constant, (ogAST.PrimSequenceOf,
-                                               ogAST.PrimStringLiteral)):
-                        ans_str = array_content(a.constant, ans_str,
+        sub_sep = ''
+        exp = ''
+        for element in a.answers:
+            # each branch can trigger based on multiple coma-separated answers
+            ans_kind    = element['kind']
+            ans_content = element['content']
+
+            if ans_kind in ('open_range', 'constant'):
+                op, constant = ans_content # get the constant
+                ans_stmts, ans_str, ans_decl = expression(constant, readonly=1)
+                code.extend(ans_stmts)
+                local_decl.extend(ans_decl)
+                if not basic:
+                    if op in (ogAST.ExprEq, ogAST.ExprNeq):
+                        if isinstance(constant, (ogAST.PrimSequenceOf,
+                                                 ogAST.PrimStringLiteral)):
+                            ans_str = array_content(constant, ans_str,
                                                 find_basic_type(question_type))
-                    exp = f'{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
-                    if a.openRangeOp == ogAST.ExprNeq:
-                        exp = f'not {exp}'
+                        exp += f'{sub_sep}{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
+                        if op == ogAST.ExprNeq:
+                            exp += f'{sub_sep}not {exp}'
+                    else:
+                        exp += f'{sub_sep}tmp{dec.tmpVar} {op.operand} {ans_str}'
                 else:
-                    exp = f'tmp{dec.tmpVar} {a.openRangeOp.operand} {ans_str}'
-            else:
-                exp = f'({q_str}) {a.openRangeOp.operand} {ans_str}'
+                    exp += f'{sub_sep}({q_str}) {op.operand} {ans_str}'
 
+
+            elif ans_kind == 'closed_range':
+                cl0_stmts, cl0_str, cl0_decl = expression(ans_content[0],
+                                                          readonly=1)
+                cl1_stmts, cl1_str, cl1_decl = expression(ans_content[1],
+                                                          readonly=1)
+                code.extend(cl0_stmts)
+                local_decl.extend(cl0_decl)
+                code.extend(cl1_stmts)
+                local_decl.extend(cl1_decl)
+
+                exp += f'{sub_sep}({q_str} >= {cl0_str} and {q_str} <= {cl1_str})'
+
+            elif ans_kind == 'informal_text':
+                continue
+            elif ans_kind == 'else':
+                # Keep the ELSE statement for the end
+                if a.transition:
+                    else_code, else_decl = generate(a.transition)
+                else:
+                    else_code, else_decl = ['null;'], []
+                local_decl.extend(else_decl)
+
+            sub_sep = " or "
+        if exp:
             code.append(sep + exp + ' then')
             if not branch_to:
                 if a.transition:
@@ -2991,39 +3030,6 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                     code.append(exit);
                 code.append(f'trId := {branch_to};')
             sep = 'elsif '
-
-        elif a.kind == 'closed_range':
-            cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0],
-                                                      readonly=1)
-            cl1_stmts, cl1_str, cl1_decl = expression(a.closedRange[1],
-                                                      readonly=1)
-            code.extend(cl0_stmts)
-            local_decl.extend(cl0_decl)
-            code.extend(cl1_stmts)
-            local_decl.extend(cl1_decl)
-            code.append('{sep} {dec} >= {cl0} and {dec} <= {cl1} then'
-                        .format(sep=sep, dec=q_str, cl0=cl0_str, cl1=cl1_str))
-            if not branch_to:
-                if a.transition:
-                    stmt, tr_decl = generate(a.transition)
-                else:
-                    stmt, tr_decl = ['null;'], []
-                code.extend(stmt)
-                local_decl.extend(tr_decl)
-            else:
-                # Before branching we should optionally execute the exit
-                # procedures of the nested states we may be leaving
-                code.append('trId := {};'.format(branch_to))
-            sep = 'elsif '
-        elif a.kind == 'informal_text':
-            continue
-        elif a.kind == 'else':
-            # Keep the ELSE statement for the end
-            if a.transition:
-                else_code, else_decl = generate(a.transition)
-            else:
-                else_code, else_decl = ['null;'], []
-            local_decl.extend(else_decl)
     try:
         if sep != 'if ':
             # If there is at least one 'if' branch
@@ -3355,7 +3361,7 @@ def array_content(prim, values, asnty):
             # Quotes are kept in string literals
             length -= 2
         # Reference type can vary -> there is a Length field
-        rlen = u", Length => {}".format(length)
+        rlen = f", Length => {length}"
     else:
         rlen = u""
     if isinstance(prim, ogAST.PrimStringLiteral):

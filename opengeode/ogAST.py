@@ -254,16 +254,6 @@ class PrimStateReference(Primary):
     is_raw = False
 
 
-class PrimBitStringLiteral(Primary):
-    ''' Not supported yet '''
-    pass
-
-
-class PrimOctetStringLiteral(Primary):
-    ''' Not supported yet '''
-    pass
-
-
 class PrimConditional(Primary):
     ''' value is a dictionnary:
         { 'if': Expression, 'then': Expression,
@@ -288,6 +278,17 @@ class PrimStringLiteral(Primary):
 #       print 'SET type of', name, 'to', val
         self._exprType = val
 
+
+class PrimOctetStringLiteral(PrimStringLiteral):
+    ''' String of form 'ABCD'H '''
+    numeric_value : int = -1
+    # In case the string contains ASCII characters:
+    printable_string : str = '';
+
+
+class PrimBitStringLiteral(PrimOctetStringLiteral):
+    ''' String of form '0001101'B '''
+    pass
 
 class PrimMantissaBaseExp(Primary):
     ''' Value is a dict: {'mantissa': int, 'base': int, 'exponent': int} '''
@@ -357,17 +358,32 @@ class Answer:
         self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 23
-        # one of 'closed_range' 'constant' 'open_range' 'else' 'informal_text'
-        self.kind = None
-        # informalText is a string, when kind == 'informal_text'
-        self.informalText = None
+        # a single answer can contain several comma-separated statements
+        # to trigger a single transition from different options
+        # contents: list of dict :
+        # [{'kind': kind, 'content': content}] with kind =
+        #      'closed_range'|'constant'|'open_range'|'else'|'informal_text'
+        # and content is either strings (informal text)
+        #           or set of two numbers (closed range)
+        #           or tuple (EprEq, constant) for constant
+        #           or tuple (op, constant) for open_range
+        #           or None ('else' branch)
+        # with op being either ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, or ExprLe (types)
+        self.answers = []
+
+        # SOON ERASE THE FOLLOWING
+        # list of 'closed_range'|'constant'|'open_range'|'else'|'informal_text'
+        #self.kinds = []
+        # informalText is a list of strings, when kind == 'informal_text'
+        #self.informalText = []
         # closedRange is a set of two numbers
-        self.closedRange = []
-        # constant is an Expression
+        #self.closedRange = []
+        # constant is a list of Expression
         #    (contains 'open_range' and 'constant' kinds corresponding value)
-        self.constant = None
-        # one of ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, ExprLe (types)
-        self.openRangeOp = None
+        #self.constants = []
+        # list of either ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, or ExprLe (types)
+        #self.openRangeOps = []
+
         # transition is of type Transition
         self.transition : Transition = None
         # optional comment symbol
