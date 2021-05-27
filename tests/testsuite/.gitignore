@@ -44,3 +44,7 @@ test-strings/Makefile.og
 test-strings/dataview_c.gpr
 test-strings/og.gpr
 test-uart/check
+test-debug/Makefile.orchestrator
+test-debug/dataview_c.gpr
+test-debug/orchestrator.gpr
+
