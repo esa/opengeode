@@ -927,20 +927,20 @@ def check_range(typeref, type_to_check):
         both types assumed to be basic types
     '''
     try:
-        min1, max1 = float(type_to_check.Min), float(type_to_check.Max)
+        if type_to_check.kind == "StringType" and type_to_check.NumericValue != -1:
+            # OctetStringLiteral, BitStringLiteral assigned to integer
+            min1 = max1 = type_to_check.NumericValue
+        else:
+            min1, max1 = float(type_to_check.Min), float(type_to_check.Max)
         min2, max2 = float(typeref.Min), float(typeref.Max)
         error   = min1 > max2 or max1 < min2
         warning = min1 < min2 or max1 > max2
         if error:
-            raise TypeError(
-                    'Expression in range {} .. {} is outside range {} .. {}'
-                    .format(type_to_check.Min, type_to_check.Max,
-                            typeref.Min, typeref.Max))
+            raise TypeError(f'Expression in range {min1} .. {max1}'
+                            f' is outside range {min2} .. {max2}')
         elif warning:
-            raise Warning('Expression in range {} .. {}, '
-                          'could be outside expected range {} .. {}'
-                    .format(type_to_check.Min, type_to_check.Max,
-                            typeref.Min, typeref.Max))
+            raise Warning(f'Expression in range {min1} .. {max1}, '
+                          f'could be outside expected range {min2} .. {max2}')
     except (AttributeError, ValueError):
         raise TypeError('Missing range')
 
@@ -2694,8 +2694,13 @@ def primary(root, context):
             try:
                 # Transform to a hex string
                 as_number = int(root.text[1:-2], 2)
-                as_hex    = binascii.unhexlify('%x' % as_number)
-                prim.value = f"'{as_hex}'"
+                # transform to a string with padding zeros to have an even
+                # number of bytes in the hexadecimal representation
+                as_bytes  = binascii.b2a_hex(
+                        as_number.to_bytes(
+                            (as_number.bit_length() + 7) // 8, 'big'))
+                as_hex    = binascii.unhexlify(as_bytes)
+                prim.value = f"'{as_hex.hex()}'"
                 prim.numeric_value = as_number
                 prim.printable_string = root.text
             except (ValueError, TypeError) as err:
@@ -2727,7 +2732,12 @@ def primary(root, context):
         prim.exprType = type('PrStr', (object,), {
             'kind': 'StringType',
             'Min': str(len(prim.value) - 2),
-            'Max': str(len(prim.value) - 2)
+            'Max': str(len(prim.value) - 2),
+            'NumericValue':
+               prim.numeric_value
+                  if isinstance(prim, (ogAST.PrimOctetStringLiteral,
+                                       ogAST.PrimBitStringLiteral))
+                  else -1
         })
     elif root.type == lexer.FLOAT2:
         prim = ogAST.PrimMantissaBaseExp()
