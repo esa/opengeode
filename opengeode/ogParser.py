@@ -3885,29 +3885,40 @@ def system_definition(root, parent):
             system.signals.append(sig)
 
 
-    # if there are no channels defined or no route from env to the system
+    # if there are no channels defined or no route
     # add an empty one as a placeholder to add signals
-    env_route = {'source' : 'env', 'dest': system.name, 'signals': []}
-    no_env : bool = True
+    from_env_route = {'source' : 'env', 'dest': system.name, 'signals': []}
+    to_env_route = {'source' : system.name, 'dest': 'env', 'signals': []}
+    has_from_env, has_to_env = False, False
     for each in system.channels:
         for route in each['routes']:
             if route['source'] == 'env':
-                break
-        else:
-            each['routes'].append(env_route)
+                has_from_env = True
+            elif route['dest'] == 'env':
+                has_to_env = True
+        if not has_from_env:
+            each['routes'].append(from_env_route)
+        if not has_to_env:
+            each['routes'].append(to_env_route)
 
     if not system.channels:
-        system.channels.append({'name': 'c', 'routes':[env_route]})
+        system.channels.append({'name': 'c', 'routes':[from_env_route,
+            to_env_route]})
 
-    # in observers, we may have renamed signaels
+    # in observers, we may have renamed signals
     # add them to signal routes
     for each in system.signals:
         if each['renames'] is not None:
+            #  Parse the expresion, so that if the intercepted signal is
+            #  an output, it is also added to the route towards env
+            ioExpr = parse_io_expression(each['renames'], context=None)
+            isOut = ioExpr['kind'] == 'output'
             for channel in system.channels:
                 for route in channel['routes']:
-                    if route['dest'].lower() != "env":
+                    if route['dest'].lower() != "env" or isOut:
                         if each['name'] not in route['signals']:
                             route['signals'].append(each['name'])
+
 
     exported_procedures = []
     for each in procedures:
