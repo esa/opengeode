@@ -927,20 +927,20 @@ def check_range(typeref, type_to_check):
         both types assumed to be basic types
     '''
     try:
-        min1, max1 = float(type_to_check.Min), float(type_to_check.Max)
+        if type_to_check.kind == "StringType" and type_to_check.NumericValue != -1:
+            # OctetStringLiteral, BitStringLiteral assigned to integer
+            min1 = max1 = type_to_check.NumericValue
+        else:
+            min1, max1 = float(type_to_check.Min), float(type_to_check.Max)
         min2, max2 = float(typeref.Min), float(typeref.Max)
         error   = min1 > max2 or max1 < min2
         warning = min1 < min2 or max1 > max2
         if error:
-            raise TypeError(
-                    'Expression in range {} .. {} is outside range {} .. {}'
-                    .format(type_to_check.Min, type_to_check.Max,
-                            typeref.Min, typeref.Max))
+            raise TypeError(f'Expression in range {min1} .. {max1}'
+                            f' is outside range {min2} .. {max2}')
         elif warning:
-            raise Warning('Expression in range {} .. {}, '
-                          'could be outside expected range {} .. {}'
-                    .format(type_to_check.Min, type_to_check.Max,
-                            typeref.Min, typeref.Max))
+            raise Warning(f'Expression in range {min1} .. {max1}, '
+                          f'could be outside expected range {min2} .. {max2}')
     except (AttributeError, ValueError):
         raise TypeError('Missing range')
 
@@ -1637,10 +1637,10 @@ def parse_io_expression(root, context):
     result = {
        'inputString': get_input_string(root),
        'kind'    : root.type == lexer.INPUT_EXPRESSION and "input" or "output",
-       'msgName' : None,
-       'from'    : None,
-       'to'      : None,
-       'paramName': None
+       'msgName'   : None,
+       'from'      : None,
+       'to'        : None,
+       'paramName' : None
        }
 
     for child in root.getChildren():
@@ -1656,6 +1656,10 @@ def parse_io_expression(root, context):
         elif child.type == lexer.IOPARAM:
             # optional parameter
             result['paramName'] = child.getChild(0).text
+        elif child.type == lexer.UNHANDLED:
+            # unhandled input reffers to a lost message, in the sense of a
+            # message received in a SDL state where it is not expected
+            result['kind'] = "unhandled_input"
         else:
             raise NotImplementedError("Parsing error in io_expression")
 
@@ -1664,8 +1668,8 @@ def parse_io_expression(root, context):
 
 def io_expression(root, context, io_expr=None):
     ''' Expressions used in the context of observers (for model checking):
-        input
-        input x [from P] to F
+        [false] input
+        [false] input x [from P] to F
         output
         output X from P [to F]
 
@@ -1680,21 +1684,24 @@ def io_expression(root, context, io_expr=None):
 
     inputString = get_input_string(root)
     event_kind = "{kind}_event"
-    target_option = " and then event.{kind}_event.{target} = {function}"
-    msg_name = " and then present(event.{kind}_event.event.{function}.msg_{direction}) = {msg}"
+    target_option = " and then event.{kind}.{target} = {function}"
+    msg_name = " and then present(event.{kind}.event.{function}.msg_{direction}) = {msg}"
 
     string = "present(event) = "
 
     if io_expr == None:
         io_expr = parse_io_expression(root, context)  # extract name, source, dest, etc.
-    direction = (io_expr['kind'] == 'input') and 'in' or 'out'
-    string += event_kind.format(kind=io_expr['kind'])
+    direction = ('input' in io_expr['kind']) and 'in' or 'out'
+    kind = io_expr['kind']
+    if kind == 'input' or kind == 'output':
+        kind = kind + '_event'
+    string += kind
     if io_expr['from'] is not None:
-        string += target_option.format(kind=io_expr['kind'],
+        string += target_option.format(kind=kind,
                                        target="source",
                                        function=io_expr['from'])
     if io_expr['to'] is not None:
-        string += target_option.format(kind=io_expr['kind'],
+        string += target_option.format(kind=kind,
                                        target="dest",
                                        function=io_expr['to'])
 
@@ -1708,7 +1715,7 @@ def io_expression(root, context, io_expr=None):
             errors.append(f"TO clause is missing in input expression '{inputString}'")
 
     elif io_expr['msgName']:
-        string += msg_name.format(kind=io_expr['kind'],
+        string += msg_name.format(kind=kind,
                                   function=func,
                                   direction=direction,
                                   msg=io_expr['msgName'])
@@ -1727,7 +1734,7 @@ def io_expression(root, context, io_expr=None):
     # alias definition to the event structure where the parameter is actually
     # present. If an alias of the same type already exists, raise an error
     if io_expr['paramName']:
-        path=f"event.{io_expr['kind']}_event.event.{func}.msg_{direction}.{io_expr['msgName']}"
+        path=f"event.{kind}.event.{func}.msg_{direction}.{io_expr['msgName']}"
         parser = parser_init (string=path)
         new_root = parser.expression()
         tree = new_root.tree
@@ -2694,8 +2701,13 @@ def primary(root, context):
             try:
                 # Transform to a hex string
                 as_number = int(root.text[1:-2], 2)
-                as_hex    = binascii.unhexlify('%x' % as_number)
-                prim.value = f"'{as_hex}'"
+                # transform to a string with padding zeros to have an even
+                # number of bytes in the hexadecimal representation
+                as_bytes  = binascii.b2a_hex(
+                        as_number.to_bytes(
+                            (as_number.bit_length() + 7) // 8, 'big'))
+                as_hex    = binascii.unhexlify(as_bytes)
+                prim.value = f"'{as_hex.hex()}'"
                 prim.numeric_value = as_number
                 prim.printable_string = root.text
             except (ValueError, TypeError) as err:
@@ -2727,7 +2739,12 @@ def primary(root, context):
         prim.exprType = type('PrStr', (object,), {
             'kind': 'StringType',
             'Min': str(len(prim.value) - 2),
-            'Max': str(len(prim.value) - 2)
+            'Max': str(len(prim.value) - 2),
+            'NumericValue':
+               prim.numeric_value
+                  if isinstance(prim, (ogAST.PrimOctetStringLiteral,
+                                       ogAST.PrimBitStringLiteral))
+                  else -1
         })
     elif root.type == lexer.FLOAT2:
         prim = ogAST.PrimMantissaBaseExp()
@@ -3875,29 +3892,40 @@ def system_definition(root, parent):
             system.signals.append(sig)
 
 
-    # if there are no channels defined or no route from env to the system
+    # if there are no channels defined or no route
     # add an empty one as a placeholder to add signals
-    env_route = {'source' : 'env', 'dest': system.name, 'signals': []}
-    no_env : bool = True
+    from_env_route = {'source' : 'env', 'dest': system.name, 'signals': []}
+    to_env_route = {'source' : system.name, 'dest': 'env', 'signals': []}
+    has_from_env, has_to_env = False, False
     for each in system.channels:
         for route in each['routes']:
             if route['source'] == 'env':
-                break
-        else:
-            each['routes'].append(env_route)
+                has_from_env = True
+            elif route['dest'] == 'env':
+                has_to_env = True
+        if not has_from_env:
+            each['routes'].append(from_env_route)
+        if not has_to_env:
+            each['routes'].append(to_env_route)
 
     if not system.channels:
-        system.channels.append({'name': 'c', 'routes':[env_route]})
+        system.channels.append({'name': 'c', 'routes':[from_env_route,
+            to_env_route]})
 
-    # in observers, we may have renamed signaels
+    # in observers, we may have renamed signals
     # add them to signal routes
     for each in system.signals:
         if each['renames'] is not None:
+            #  Parse the expresion, so that if the intercepted signal is
+            #  an output, it is also added to the route towards env
+            ioExpr = parse_io_expression(each['renames'], context=None)
+            isOut = ioExpr['kind'] == 'output'
             for channel in system.channels:
                 for route in channel['routes']:
-                    if route['dest'].lower() != "env":
+                    if route['dest'].lower() != "env" or isOut:
                         if each['name'] not in route['signals']:
                             route['signals'].append(each['name'])
+
 
     exported_procedures = []
     for each in procedures:

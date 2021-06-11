@@ -135,6 +135,7 @@ tokens {
         TO;
         TRANSITION;
         TYPE_INSTANCE;
+        UNHANDLED;
         USE;
         VALUE;
         VARIABLE;
@@ -1121,10 +1122,10 @@ postfix_expression
 //  the parameter is optional. It dooes not need to be declared as a variable,
 //  as it it implicit.
 input_expression
-        :       INPUT
-                -> ^(INPUT_EXPRESSION)
-                | INPUT (msg=ID ('(' param=ID ')')? )? (FROM src=ID)? TO dest=ID
-                -> ^(INPUT_EXPRESSION $msg? ^(IOPARAM $param)? ^(FROM $src)? ^(TO $dest))
+        :       UNHANDLED? INPUT
+                -> ^(INPUT_EXPRESSION UNHANDLED?)
+                | UNHANDLED? INPUT (msg=ID ('(' param=ID ')')? )? (FROM src=ID)? TO dest=ID
+                -> ^(INPUT_EXPRESSION UNHANDLED? $msg? ^(IOPARAM $param)? ^(FROM $src)? ^(TO $dest))
         ;
 
 
@@ -1643,6 +1644,7 @@ SYNONYM         :       S Y N O N Y M;
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
+UNHANDLED       :       U N H A N D L E D;
 
 
 

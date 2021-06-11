@@ -124,6 +124,13 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.6.2 (06/2021)**
+- Observer early support detection of lost (unhandled) messages
+
+**3.6.1 (06/2021)**
+- Support bit string literals assigned to integers (eg. dcl x SomeInt := '11'B;)
+- Add range checking for bit string and hex string literals
+
 **3.6.0 (05/2021)**
 - Support grouped answers in decisions (comma-separated answers)
 - Support hex literals assigned to integers (eg. dcl x SomeInt := '2A'H;)
