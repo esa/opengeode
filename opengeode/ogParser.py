@@ -1637,10 +1637,10 @@ def parse_io_expression(root, context):
     result = {
        'inputString': get_input_string(root),
        'kind'    : root.type == lexer.INPUT_EXPRESSION and "input" or "output",
-       'msgName' : None,
-       'from'    : None,
-       'to'      : None,
-       'paramName': None
+       'msgName'   : None,
+       'from'      : None,
+       'to'        : None,
+       'paramName' : None
        }
 
     for child in root.getChildren():
@@ -1656,6 +1656,10 @@ def parse_io_expression(root, context):
         elif child.type == lexer.IOPARAM:
             # optional parameter
             result['paramName'] = child.getChild(0).text
+        elif child.type == lexer.UNHANDLED:
+            # unhandled input reffers to a lost message, in the sense of a
+            # message received in a SDL state where it is not expected
+            result['kind'] = "unhandled_input"
         else:
             raise NotImplementedError("Parsing error in io_expression")
 
@@ -1664,8 +1668,8 @@ def parse_io_expression(root, context):
 
 def io_expression(root, context, io_expr=None):
     ''' Expressions used in the context of observers (for model checking):
-        input
-        input x [from P] to F
+        [false] input
+        [false] input x [from P] to F
         output
         output X from P [to F]
 
@@ -1680,21 +1684,24 @@ def io_expression(root, context, io_expr=None):
 
     inputString = get_input_string(root)
     event_kind = "{kind}_event"
-    target_option = " and then event.{kind}_event.{target} = {function}"
-    msg_name = " and then present(event.{kind}_event.event.{function}.msg_{direction}) = {msg}"
+    target_option = " and then event.{kind}.{target} = {function}"
+    msg_name = " and then present(event.{kind}.event.{function}.msg_{direction}) = {msg}"
 
     string = "present(event) = "
 
     if io_expr == None:
         io_expr = parse_io_expression(root, context)  # extract name, source, dest, etc.
-    direction = (io_expr['kind'] == 'input') and 'in' or 'out'
-    string += event_kind.format(kind=io_expr['kind'])
+    direction = ('input' in io_expr['kind']) and 'in' or 'out'
+    kind = io_expr['kind']
+    if kind == 'input' or kind == 'output':
+        kind = kind + '_event'
+    string += kind
     if io_expr['from'] is not None:
-        string += target_option.format(kind=io_expr['kind'],
+        string += target_option.format(kind=kind,
                                        target="source",
                                        function=io_expr['from'])
     if io_expr['to'] is not None:
-        string += target_option.format(kind=io_expr['kind'],
+        string += target_option.format(kind=kind,
                                        target="dest",
                                        function=io_expr['to'])
 
@@ -1708,7 +1715,7 @@ def io_expression(root, context, io_expr=None):
             errors.append(f"TO clause is missing in input expression '{inputString}'")
 
     elif io_expr['msgName']:
-        string += msg_name.format(kind=io_expr['kind'],
+        string += msg_name.format(kind=kind,
                                   function=func,
                                   direction=direction,
                                   msg=io_expr['msgName'])
@@ -1727,7 +1734,7 @@ def io_expression(root, context, io_expr=None):
     # alias definition to the event structure where the parameter is actually
     # present. If an alias of the same type already exists, raise an error
     if io_expr['paramName']:
-        path=f"event.{io_expr['kind']}_event.event.{func}.msg_{direction}.{io_expr['msgName']}"
+        path=f"event.{kind}.event.{func}.msg_{direction}.{io_expr['msgName']}"
         parser = parser_init (string=path)
         new_root = parser.expression()
         tree = new_root.tree
