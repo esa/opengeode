@@ -1977,7 +1977,7 @@ def _prim_call(prim, **kwargs):
         stmts.extend(var_stmts)
         local_decl.extend(var_decl)
         sort_name = 'asn1Scc' + target_type.value[0].replace('-', '_')
-        ada_string += "{sort}'Val ({var_str})"\
+        ada_string += "{sort}'Enum_Val ({var_str})"\
                 .format(sort=sort_name,
                         var_str=var_str)
     elif ident == 'num':

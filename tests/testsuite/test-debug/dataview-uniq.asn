@@ -21,6 +21,8 @@ MyChoice ::= CHOICE {c1 BOOLEAN, cDe2 BOOLEAN}
 SeqOpt ::= SEQUENCE { a BOOLEAN OPTIONAL , b BOOLEAN, c SEQUENCE { a BOOLEAN } OPTIONAL, d OCTET STRING (SIZE (0..10)) OPTIONAL}
 SeqNonOpt ::= SEQUENCE { a BOOLEAN }
 
+Enum-With-Values ::= ENUMERATED {foo (4), bar(2)}
+
 END
  
 

@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.6.2'
+__version__ = '3.6.3'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2369,8 +2369,9 @@ clean:
             line : QListWidgetItem = messages.item(idx)
             coord = line.data(Qt.UserRole)
             path = line.data(Qt.UserRole + 1)
-            if not coord:
+            if not coord or coord == ['' , '']:
                 # All lines do not contain errors - discard them
+                # the second test could be true in case there is no CIF data
                 pass
             else:
                 # Find the scene containing the symbol
