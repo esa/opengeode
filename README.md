@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.6.3 (06/2021)**
+- Fix parsing bug when there is no CIF data on a symbol that contains an error
+
 **3.6.2 (06/2021)**
 - Observer early support detection of lost (unhandled) messages
 
