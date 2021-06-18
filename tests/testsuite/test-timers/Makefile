@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) test.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	cp toto_timer.adasource test_ri.ads
 	cp toto_timer.adabody test_ri.adb
 	gnat make test_ada.ada -Iboards/x86 -Isrc -Iasn1rtl
@@ -39,7 +39,7 @@ simu:
 
 test-c: 
 	$(OPENGEODE) test.pr --toC
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
 

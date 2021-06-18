@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.0 (06/2021)**
+- No more dependency on mono ; use ASN1SCC based on .NET Core 5
+
 **3.6.3 (06/2021)**
 - Fix parsing bug when there is no CIF data on a symbol that contains an error
 - Use 'Enum_Val to set an enumerated value from a number

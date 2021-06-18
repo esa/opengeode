@@ -296,8 +296,8 @@ cd {pr}_simu
 opengeode {pr_names} --shared
 cat {asn1_uniq} >> dataview-uniq.asn
 
-mono $(which asn1.exe) -Ada -typePrefix {ASN1SCC} -equal dataview-uniq.asn
-mono $(which asn1.exe) -c -typePrefix {ASN1SCC} -equal dataview-uniq.asn
+asn1scc -Ada -typePrefix {ASN1SCC} -equal dataview-uniq.asn
+asn1scc -c   -typePrefix {ASN1SCC} -equal dataview-uniq.asn
 
 gprbuild -p -P {process_name.lower()}_lib.gpr
 rm -f dataview-uniq.c dataview-uniq.h

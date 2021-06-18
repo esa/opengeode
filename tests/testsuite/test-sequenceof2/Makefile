@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) test.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n test.ali
 	gnat make test_ada.ada
@@ -38,7 +38,7 @@ simu:
 
 test-c: 
 	$(OPENGEODE) test.pr --toC
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
 
