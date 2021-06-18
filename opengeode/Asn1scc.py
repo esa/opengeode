@@ -126,20 +126,12 @@ def parse_asn1(*files, **options):
     assert isinstance(ast_version, ASN1)
     assert isinstance(rename_policy, ASN1)
     assert isinstance(flags, list)
-    path_to_asn1scc = spawn.find_executable('asn1.exe')
+    path_to_asn1scc = spawn.find_executable('asn1scc')
 
     if not path_to_asn1scc:
-        raise TypeError('ASN.1 Compiler not found in path')
-    if os.name == 'posix':
-        path_to_mono = spawn.find_executable('mono')
-        if not path_to_mono:
-            raise TypeError('"mono" not found in path. Please install it.')
-        binary = path_to_mono
-        arg0 = path_to_asn1scc
-    else:
-        binary = path_to_asn1scc
-        arg0 = ''
-    asn1scc_root = os.path.abspath(os.path.dirname(path_to_asn1scc))
+        raise TypeError('ASN.1 Compiler (asn1scc) not found in path')
+    binary = path_to_asn1scc
+    asn1scc_root = os.path.abspath(os.path.dirname(binary))
 
     if os.name == 'nt':
         # On windows, remove the drive letter, workaround to ASN1SCC bug
@@ -165,7 +157,7 @@ def parse_asn1(*files, **options):
             html = ['-customIcdUper', stgfile + '::' + html_filepath]
         else:
             html = []
-        args = [arg0, '-customStgAstVersion', str(ast_version.value),
+        args = ['-customStgAstVersion', str(ast_version.value),
                 '--field-prefix', 'AUTO',
                 '-customStg', stg + '::' + py_filepath,
                 '-renamePolicy', str(rename_policy.value)] + html + extraflags + file_list
