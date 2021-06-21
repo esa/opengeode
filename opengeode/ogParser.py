@@ -3565,6 +3565,24 @@ def text_area_content(root, ta_ast, context):
             err, warn = dcl(child, ta_ast, context, monitor=True)
             errors.extend(err)
             warnings.extend(warn)
+        elif child.type == lexer.ERRORSTATES:  # used in observers only
+            try:
+                for each in child.getChildren():
+                    context.errorstates.append(each.text.lower())
+            except AttributeError:
+                errors.append("Error states cannot be declared here")
+        elif child.type == lexer.IGNORESTATES:
+            try:
+                for each in child.getChildren():
+                    context.ignorestates.append(each.text.lower())
+            except AttributeError:
+                errors.append("Ignore states cannot be declared here")
+        elif child.type == lexer.SUCCESSSTATES:
+            try:
+                for each in child.getChildren():
+                    context.successstates.append(each.text.lower())
+            except AttributeError:
+                errors.append("Success states cannot be declared here")
         elif child.type == lexer.SYNONYM_LIST:
             err, warn = synonym(child, ta_ast, context)
             errors.extend(err)
@@ -3638,7 +3656,7 @@ def text_area_content(root, ta_ast, context):
         else:
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
-                    str(child.type))
+                    sdl92Parser.tokenNamesMap[child.type])
     if ta_ast.asn1_files:
         # Parse ASN.1 files that are referenced in USE clauses
         try:
@@ -4008,9 +4026,10 @@ def process_definition(root, parent=None, context=None):
         process.content.inner_procedures.append(proc)
         process.procedures.append(proc)
 
+    state_list = get_state_list(root)
     # Prepare the transition/state mapping
-    process.mapping = {name: [] for name in get_state_list(root)}
-    process.cs_mapping = {name: [] for name in get_state_list(root)}
+    process.mapping    = {name: [] for name in state_list}
+    process.cs_mapping = {name: [] for name in state_list}
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -4118,6 +4137,13 @@ def process_definition(root, parent=None, context=None):
         else:
             # alias_name is already in lowercase
             process.aliases[alias_name] = (alias_sort, expr)
+
+    # Verify that special states for observers are defined:
+    for each in chain(process.errorstates,
+                      process.ignorestates,
+                      process.successstates):
+        if each not in (st.lower() for st in state_list):
+            errors.append(f"Observer state {each} is not defined")
 
     if not process.referenced and not process.instance_of_name \
                               and (not process.content.start or

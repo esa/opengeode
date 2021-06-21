@@ -3,7 +3,7 @@
 
 """
 
-    OpenGEODE - A tiny SDL Editor for TASTE
+    OpenGEODE - SDL Editor for TASTE
 
     AST that can be used to write SDL backends (code generators, etc.)
     In all classes the 'inputString' field corresponds to the exact
@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -61,9 +61,7 @@ class Expression:
 
     def trace(self):
         ''' Debug output for an expression '''
-        return u'{exp} ({l},{c})'.format(exp=self.inputString,
-                                        l=self.line,
-                                        c=self.charPositionInLine)
+        return f'{self.inputString} ({self.line},{self.charPositionInLine})'
 
 
 class ExprPlus(Expression):
@@ -984,6 +982,12 @@ class Process:
 
         # The "DECISION ANY" construct requires random number generators
         self.random_generator = set()
+
+        # list of Error, Success, and Ignore states (observers/model checking)
+        # (strings in lowerase)
+        self.errorstates = []
+        self.ignorestates = []
+        self.successstates = []
 
 
 class CompositeState(Process):
