@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.1 (06/2021)**
+- Support the declaration of error, success and ignore states for observers
+
 **3.7.0 (06/2021)**
 - No more dependency on mono ; use ASN1SCC based on .NET Core 5
 
