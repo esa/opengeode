@@ -59,7 +59,7 @@ def expression(expr):
             - list of local declarations
     '''
     _ = expr
-    raise TypeError('Unsupported expression: ' + str(expr))
+    raise TypeError(f'Unsupported expression: {str(expr)}')
     # return [], '', []
 
 # Processing of the AST

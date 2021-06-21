@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from opengeode.ogParser import parser_init, antlr3, lexer
+from opengeode.ogParser import parser_init, antlr3, sdl92Parser, lexer
 
 # return a string corresponding to a token number:
 token = lambda num: lexer.tokenNamesMap[num]
