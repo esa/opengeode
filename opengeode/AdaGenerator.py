@@ -1394,7 +1394,7 @@ package body {process_name}_RI is''']
         script = f'{process_name.lower()}_simu.sh'
         with open(script, 'w') as bash_script:
             bash_script.write(simu_script)
-        with open("{process_name.lower()}_lib.gpr", 'w') as gprlib:
+        with open(f"{process_name.lower()}_lib.gpr", 'w') as gprlib:
             gprlib.write(lib_gpr)
         os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
 
@@ -3037,7 +3037,7 @@ def _label(lab, **kwargs):
     ''' Transition following labels are generated in a separate section
         for visibility reasons (see Ada scope)
     '''
-    return ['goto {lab.inputString};'], []
+    return [f'goto {lab.inputString};'], []
 
 
 @generate.register(ogAST.Transition)
