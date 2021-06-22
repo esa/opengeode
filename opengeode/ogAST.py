@@ -39,6 +39,7 @@ import operator
 from collections import defaultdict
 LOG = logging.getLogger(__name__)
 
+from typing import List
 
 class Expression:
     ''' AST Entry for expressions - Always use subtype '''
@@ -800,6 +801,10 @@ class TextArea:
         self.procedures = []
         # optional hyperlink
         self.hyperlink = None
+        # List of Observer states defined in this text area (error/success/ignore states)
+        # used for error reporting to get the right symbol coordinates
+        self.observer_states : List [str] = []
+
 
     def trace(self):
         ''' Debug output for a text area '''

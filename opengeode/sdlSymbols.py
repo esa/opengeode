@@ -10,7 +10,7 @@
     All symbols inherit the generic Vertical- and Horizontal-
     Symbol classes defined in the "genericSymbols.py" module.
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -52,6 +52,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE', 'FOR',
                 'COMMENT', 'SIGNAL', 'SIGNALLIST', 'USE', 'RETURNS', 'ANY',
                 'EXPORTED', 'REFERENCED', 'MONITOR', 'RENAMES',
+                'SUCCESSSTATES', 'ERRORSTATES', 'IGNORESTATES',
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (

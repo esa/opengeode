@@ -1124,8 +1124,8 @@ unary_expression
 
 postfix_expression
         :       (ID -> ^(PRIMARY ^(VARIABLE ID)))
-                (   '(' params=expression_list ')'
-                -> ^(CALL $postfix_expression ^(PARAMS $params))
+                (   '(' params=expression_list? ')'
+                -> ^(CALL $postfix_expression ^(PARAMS $params?))
                 |   ('!' | DOT) field_name
                 -> ^(SELECTOR $postfix_expression field_name)
                 )+
