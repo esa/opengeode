@@ -13,7 +13,6 @@
     Contact: maxime.perrotin@esa.int
 """
 
-import subprocess
 import tempfile
 import uuid
 import os
@@ -21,11 +20,8 @@ import distutils.spawn as spawn
 import sys
 import importlib
 import logging
-import traceback
 import hashlib
 from PySide2.QtCore import QProcess, QFile, QIODevice
-
-from . import icons
 
 LOG = logging.getLogger(__name__)
 terminal_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")
