@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.2 (06/2021)**
+- Add operator to return the observer state status
+- Support internal operators with no parameters
+
 **3.7.1 (06/2021)**
 - Support the declaration of error, success and ignore states for observers
 
