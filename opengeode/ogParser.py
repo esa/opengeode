@@ -153,7 +153,8 @@ SPECIAL_OPERATORS = {
                     {'type': CHOICE,     'direction': 'in'},  # choice variable
                     {'type': NUMERICAL,  'direction': 'in'}   # default value
                    ],
-
+    'observer_status' :  # observer-only procedure returning the kind of state
+                   [],
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -746,6 +747,12 @@ def check_call(name, params, context):
         if return_type_keys != variable_sort_keys:
             raise TypeError(name + ': Enumerated type are not equivalent')
         return return_type
+    elif name == 'observer_status':
+        if len(params) != 0:
+            raise TypeError(f'{name} does not take any parameter')
+        if 'Observer-State-Kind' not in types().keys():
+            raise TypeError(f'{name} can only be used in observers')
+        return types()['Observer-State-Kind'].type
 
     # (1) Find the signature of the function
     # signature will hold the list of parameters for the function
@@ -2375,6 +2382,7 @@ def call_expression(root, context, pos="right"):
     # if the root (which has not been analysed before) is a choice field
     # (this being not permitted - choice must be set via asn1 notation)
     errors, warnings = [], []
+    #print("call expression", get_input_string(root))
 
     if root.children[0].type == lexer.PRIMARY:
         # check if it is a call to a special operator or procedure
@@ -3565,6 +3573,27 @@ def text_area_content(root, ta_ast, context):
             err, warn = dcl(child, ta_ast, context, monitor=True)
             errors.extend(err)
             warnings.extend(warn)
+        elif child.type == lexer.ERRORSTATES:  # used in observers only
+            try:
+                for each in child.getChildren():
+                    context.errorstates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Error states cannot be declared here")
+        elif child.type == lexer.IGNORESTATES:
+            try:
+                for each in child.getChildren():
+                    context.ignorestates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Ignore states cannot be declared here")
+        elif child.type == lexer.SUCCESSSTATES:
+            try:
+                for each in child.getChildren():
+                    context.successstates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Success states cannot be declared here")
         elif child.type == lexer.SYNONYM_LIST:
             err, warn = synonym(child, ta_ast, context)
             errors.extend(err)
@@ -3638,7 +3667,7 @@ def text_area_content(root, ta_ast, context):
         else:
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
-                    str(child.type))
+                    sdl92Parser.tokenNamesMap[child.type])
     if ta_ast.asn1_files:
         # Parse ASN.1 files that are referenced in USE clauses
         try:
@@ -4008,9 +4037,10 @@ def process_definition(root, parent=None, context=None):
         process.content.inner_procedures.append(proc)
         process.procedures.append(proc)
 
+    state_list = get_state_list(root)
     # Prepare the transition/state mapping
-    process.mapping = {name: [] for name in get_state_list(root)}
-    process.cs_mapping = {name: [] for name in get_state_list(root)}
+    process.mapping    = {name: [] for name in state_list}
+    process.cs_mapping = {name: [] for name in state_list}
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -4118,6 +4148,19 @@ def process_definition(root, parent=None, context=None):
         else:
             # alias_name is already in lowercase
             process.aliases[alias_name] = (alias_sort, expr)
+
+    # Verify that special states for observers are defined:
+    for each in chain(process.errorstates,
+                      process.ignorestates,
+                      process.successstates):
+        if each not in (st.lower() for st in state_list):
+            # retrieve the text area that contained the decalaration
+            # to get the coordinates for error localization
+            for ta_ast in process.content.textAreas:
+                if each in ta_ast.observer_states:
+                    errors.append([f"Observer state {each} is not defined",
+                        [ta_ast.pos_x, ta_ast.pos_y], []])
+                    break
 
     if not process.referenced and not process.instance_of_name \
                               and (not process.content.start or
@@ -4747,6 +4790,30 @@ def procedure_call(root: antlr3.tree.CommonTree,
             # for case-sensitive backends like C code generators
             out_ast.output[0]['outputName'] = each.inputString
             break
+    else:
+        # Procedure not found, perhaps a special operator
+        # in principle internal operators are not invoked with the "call"
+        # keyword, they can be called directly. However if they have no
+        # parameter, they can be confused with a variable and would not be
+        # resolved properly without the explicit "call" unless it uses
+        # empty parenthesis : funcWithNoParam().
+        # here we only try to get the return type. if check_call returns
+        # an exception due to the parameters of the call, we ignore, as this
+        # will be resolved at a diffeent place
+        if call_name in SPECIAL_OPERATORS.keys():
+            try:
+                out_ast.exprType = check_call (call_name,
+                         out_ast.output[0]['params'], context)
+                if out_ast.exprType == UNKNOWN_TYPE:
+                    # if type of operator was not found, set to no type at all
+                    out_ast.exprType = None
+                else:
+                    # If there is a return, we are not in a procedure call
+                    # symbol, so the input string must keep the "call" keyword
+                    # (for example if the call is in a RETURN symbol)
+                    out_ast.inputString = get_input_string(root)
+            except TypeError:
+                pass
     return out_ast, err, warn
 
 

@@ -768,6 +768,23 @@ package body {process_name}_RI is''']
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
 
+    # Generate the code of internal operators, if needed
+    if process.errorstates or process.ignorestates or process.successstates:
+        obs_status = [f'function Observer_State_Status return {ASN1SCC}Observer_State_Kind is',
+                f'(case {LPREFIX}.State is']
+        if process.errorstates:
+            opts = ' | '.join(f'{ASN1SCC}{st}' for st in process.errorstates)
+            obs_status.append(f'  when {opts} => {ASN1SCC}Error_State,')
+        if process.ignorestates:
+            opts = ' | '.join(f'{ASN1SCC}{st}' for st in process.ignorestates)
+            obs_status.append(f'  when {opts} => {ASN1SCC}Ignore_State,')
+        if process.errorstates:
+            opts = ' | '.join(f'{ASN1SCC}{st}' for st in process.successstates)
+            obs_status.append(f'  when {opts} => {ASN1SCC}Success_State,')
+        obs_status.append(f'  when others => {ASN1SCC}Regular_State);')
+        obs_status.append('\n')
+        taste_template.extend(obs_status)
+
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
 
@@ -1106,7 +1123,7 @@ package body {process_name}_RI is''']
         if ri_inst or has_context_params:
             pkg_decl += " ("
         if ri_inst:
-            pkg_decl += "{", ".join(ri_inst)}"
+            pkg_decl += f'{", ".join(ri_inst)}'
         if has_context_params:
             if ri_inst:
                 pkg_decl += ", "
@@ -1649,10 +1666,7 @@ def _call_external_function(output, **kwargs):
                 # no need to use temporary variables, we are in pure Ada
                 list_of_params.append(p_id)
             if list_of_params:
-                code.append(u'p{sep}{proc}({params});'.format(
-                    sep=SEPARATOR,
-                    proc=proc.inputString,
-                    params=', '.join(list_of_params)))
+                code.append(f'p{SEPARATOR}{proc.inputString}({", ".join(list_of_params)});')
             else:
                 code.append(f'p{SEPARATOR}{proc.inputString};')
     return code, local_decl
@@ -1875,9 +1889,9 @@ def _prim_call(prim, **kwargs):
             ada_string += min_length
         else:
             if isinstance(exp, ogAST.PrimSubstring):
-                range_str = u"{}'Length".format(param_str)
+                range_str = f"{param_str}'Length"
             else:
-                range_str = u"{}.Length".format(param_str)
+                range_str = f"{param_str}.Length"
             ada_string += range_str
     elif ident == 'present':
         # User wants to know what CHOICE element is present
@@ -1905,7 +1919,7 @@ def _prim_call(prim, **kwargs):
         param_stmts, defaultstr, local_var = expression(p2, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += (u'(case {var}.Kind is '.format(var=varstr))
+        ada_string += (f'(case {varstr}.Kind is ')
         choices = []
         need_default = False
         # all choice elements must be either signed or unsigned
@@ -2033,6 +2047,10 @@ def _prim_call(prim, **kwargs):
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += f"{exp_typename}'Truncation({param_str})"
+    elif ident == 'observer_status':
+        #  For observers (model checking) only: return the state status
+        #  The procedure is generated at process level when it is needed
+        ada_string += f"Observer_State_Status"
     else:
         # inner procedure call (with a RETURN statement)
         ada_string += f'p{SEPARATOR}{ident}' + (' (' if params else '')
@@ -3243,7 +3261,6 @@ def _inner_procedure(proc, **kwargs):
                 # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value, readonly=1)
                 varbty = find_basic_type(var_type)
-                print(f'{var_name}: {dstr} {varbty.kind}')
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 elif varbty.kind == 'IA5StringType':
