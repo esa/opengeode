@@ -75,6 +75,7 @@ import os
 import stat
 from itertools import chain, product
 from functools import singledispatch
+from typing import List, Tuple
 
 from . import ogAST, Helper
 
@@ -108,7 +109,7 @@ LPREFIX = 'ctxt'
 ASN1SCC = 'asn1Scc'
 
 
-def is_numeric(string):
+def is_numeric(string) -> bool:
     ''' Return true if value is a number '''
     try:
         float(string)
@@ -117,7 +118,7 @@ def is_numeric(string):
     return True
 
 
-def external_ri_list(process):
+def external_ri_list(process) -> List:
     ''' Helper function: create a list of RI with proper signature
     Used for the formal parameters of generic packages when using process type
     '''
@@ -154,7 +155,7 @@ def external_ri_list(process):
 
 
 @singledispatch
-def generate(*args, **kwargs):
+def generate(*args, **kwargs) -> Tuple:
     ''' Generate the code for an item of the AST '''
     raise TypeError('Incorrect, unsupported or missing data in model AST')
     return [], []
@@ -162,7 +163,7 @@ def generate(*args, **kwargs):
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process, simu=False, instance=False, taste=False, **kwargs):
+def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     ''' Generate the code for a complete process (AST Top level)
         use instance=True to generate the code for a process type instance
         rather than the process type itself.
@@ -246,8 +247,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         parent = parent.parent
     if isinstance(parent, ogAST.System):
         parent = parent.ast
-    asn1_filenames = (f"{' '.join(parent.asn1_filenames)} "
-                      f"{process_name.lower()}_datamodel.asn")
+    asn1_filenames = (f"{' '.join(parent.asn1_filenames)} {process_name.lower()}_datamodel.asn")
     asn1_uniq = ' '.join(each for each in parent.asn1_filenames
                          if not each.endswith('dataview-uniq.asn'))
     asn1_uniq += f" {process_name.lower()}_datamodel.asn"
@@ -304,7 +304,7 @@ echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
 LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
 '''
 
-    LOG.info('Generating Ada code for process ' + str(process_name))
+    LOG.info(f'Generating Ada code for process {str(process_name)}')
 
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=SEPARATOR)
@@ -434,9 +434,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             continue
         context_elems.append(f'{var_name.lower()} {type_name(var_type, False)}')
 
-    asn1_context = (f'\n{process_asn1}-Context ::='' SEQUENCE {\n'
-            + ",\n   ".join(line.replace("_", "-").replace("'", '"') for line in context_elems)
-            + "\n}\n")
+    asn1_context = (f'''\n{process_asn1}-Context ::='' SEQUENCE {'\n,\n   '.join(line.replace("_", "-").replace("'", '"') for line in context_elems)}\n\n''')
 
     asn1_template.append(asn1_context)
 
@@ -469,8 +467,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             fromMod = f'{choiceTypeModule}.{ASN1SCC}{sortAda}'
             toMod = f'{process_name}_Datamodel.{ASN1SCC}{sortAda}'
             choice_selections.append(
-                    f'function To_{sortAda} (Src : {fromMod}) return {toMod} '
-                    f"is ({toMod}'Enum_Val (Src'Enum_Rep));")
+                    f"function To_{sortAda} (Src : {fromMod}) return {toMod} is \
+                        ({toMod}'Enum_Val (Src'Enum_Rep));")
 
     asn1_template.append('END\n')
 
@@ -485,8 +483,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
         # but not in stop condition code, since we reuse the context type
         # of the state machine being observed
 
-        ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process_name.capitalize()}_Context :=\n'
-                '      (Init_Done => False,\n       ')
+        ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process_name.capitalize()}_Context :=\n\
+            (Init_Done => False,\n       ')
         initial_values = []
         # some parts of the context may have initial values
         for var_name, (var_type, def_value) in process.variables.items():
@@ -532,8 +530,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     if stop_condition:
         #  code of stop conditions must use the same type as the main process
         context_decl.append(
-                f'{LPREFIX} : {ASN1SCC}{stop_condition}_Context '
-                f'renames {stop_condition}.{stop_condition}_ctxt;')
+                f'{LPREFIX} : {ASN1SCC}{stop_condition}_Context \
+                    renames {stop_condition}.{stop_condition}_ctxt;')
     if simu and not stop_condition:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
