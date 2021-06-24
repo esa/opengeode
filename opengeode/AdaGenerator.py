@@ -467,8 +467,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             fromMod = f'{choiceTypeModule}.{ASN1SCC}{sortAda}'
             toMod = f'{process_name}_Datamodel.{ASN1SCC}{sortAda}'
             choice_selections.append(
-                    f"function To_{sortAda} (Src : {fromMod}) return {toMod} is \
-                        ({toMod}'Enum_Val (Src'Enum_Rep));")
+                    f"function To_{sortAda} (Src : {fromMod}) return {toMod} is ({toMod}'Enum_Val (Src'Enum_Rep));")
 
     asn1_template.append('END\n')
 
