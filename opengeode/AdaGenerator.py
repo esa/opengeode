@@ -434,7 +434,9 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             continue
         context_elems.append(f'{var_name.lower()} {type_name(var_type, False)}')
 
-    asn1_context = ("\n{}-Context ::= SEQUENCE {}\n\n".format("hello", "\n,\n   ".join(line.replace("_", "-").replace("'", '"') for line in context_elems)))
+    asn1_context = (f'\n{process_asn1}-Context ::='' SEQUENCE {\n'
+                    + ",\n   ".join(line.replace("_", "-").replace("'", '"') for line in context_elems)
+                    + "\n}\n")
 
     asn1_template.append(asn1_context)
 
