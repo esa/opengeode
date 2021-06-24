@@ -83,7 +83,7 @@ def parse_asn1(*files, **options):
             print(f"[INFO] Creating cache folder {project_cache}")
             os.makedirs(project_cache)
         except OSError:
-            raise TypeError (f'''The configured cache folder "{ project_cache} " \
+            raise TypeError (f'''The configured cache folder "{project_cache} " \
                 is not there and could not be created\n''')
     # make sure the same files are not parsed more than once if not modified
     filehash = hashlib.md5()
