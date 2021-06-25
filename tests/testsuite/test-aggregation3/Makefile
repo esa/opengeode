@@ -4,7 +4,7 @@ ROOT_MODEL=system_structure.pr
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) challenge.pr system_structure.pr
@@ -30,7 +30,7 @@ test-qgen-gt-c:
 test-ada: challenge.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n challenge.ali
 	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm
-	./test_ada
+	./test_ada | diff expected -
 
 test-c: challenge.c test_c.o dataview-uniq.o
 	$(CC) -include missing.h challenge.c -c -o challenge.o
