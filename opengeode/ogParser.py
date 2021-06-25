@@ -4185,7 +4185,8 @@ def continuous_signal(root, parent, context):
     warnings, errors = [], []
     # Flag the continous signal if we are in an observer (model checking)
     # (useful to render the symbol a bit differently)
-    i.observer = True
+    if 'Observer-State-Kind' in types().keys():
+        i.observer = True
     # Keep track of the number of terminator statements in the transition
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
