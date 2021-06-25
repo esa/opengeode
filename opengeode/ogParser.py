@@ -3126,9 +3126,7 @@ def composite_state(root, parent=None, context=None):
         if t.kind != "next_state":
             continue
         ns = t.inputString.lower()
-    #for ns in [t.inputString.lower() for t in comp.terminators
-    #        if t.kind == 'next_state']:
-        if not ns in [s.lower() for s in comp.mapping.keys()] + ['-']:
+        if not ns in [s.lower() for s in comp.mapping.keys()] + ['-', '-*']:
             errors.append(['In composite state "{}": missing definition '
                            'of substate "{}"'
                            .format(comp.statename, ns.upper()),
@@ -5356,6 +5354,8 @@ def nextstate(root, context):
             next_state_id = child.text
         elif child.type == lexer.DASH:
             next_state_id = '-'
+        elif child.type == lexer.HISTORY_NEXTSTATE:
+            next_state_id = '-*'
         elif child.type == lexer.VIA:
             if next_state_id.strip() != '-':
                 via = get_input_string(root).replace(
@@ -5436,7 +5436,7 @@ def terminator_statement(root, parent, context):
             # post-processing: if nextatate is nested, add link to the content
             # (normally handled at state level, but if state is not defined
             # standalone, the nextstate must hold the composite content)
-            if t.inputString != '-':
+            if t.inputString not in ('-', '-*'):
                 for each in context.composite_states:
                     if each.statename.lower() == t.inputString.lower():
                         t.composite = each
@@ -6145,13 +6145,14 @@ def parse_pr(files=None, string=None):
                         if type(warning) is not list else warning)
     # Post-parsing: additional semantic checks
     # check that all NEXTSTATEs have a correspondingly defined STATE
-    # (except the '-' state, which means "stay in the same state')
+    # (except the '-' state, which means "stay in the same state' and
+    # the '-*' (history nextstate) that recovers parallel states 
     for process in og_ast.processes:
         for t in process.terminators:
             if t.kind != 'next_state':
                 continue
             ns = t.instance_of or t.inputString.lower()
-            if not ns in [s.lower() for s in process.mapping.keys()] + ['-']:
+            if not ns in [s.lower() for s in process.mapping.keys()] + ['-', '-*']:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
                 errors.append(['State definition missing: ' + ns.upper(),
                               [t_x, t_y],

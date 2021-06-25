@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.3 (06/2021)**
+- Fix support of continuous signals when using parallel states
+- Support history state for parallel state (nextstate -*)
+
 **3.7.2 (06/2021)**
 - Add operator to return the observer state status
 - Support internal operators with no parameters

@@ -62,6 +62,7 @@ tokens {
         FOR;
         FPAR;
         GROUND;
+        HISTORY_NEXTSTATE;
         HYPERLINK;
         IF;
         IFTHENELSE;
@@ -1381,6 +1382,7 @@ nextstate
 nextstatebody
         :       statename (':'! type_inst)? via?
                 | dash_nextstate
+                | history_nextstate
         ;
 
 
@@ -1485,6 +1487,12 @@ cif_end_label
         :       cif_decl END LABEL cif_end
         ;
 
+
+// history nextstate allows to re-enter parallel substates without going
+// through the startup transition.
+history_nextstate
+        :       '-*'  -> ^(HISTORY_NEXTSTATE)
+        ;
 
 dash_nextstate  :       DASH;
 connector_name  :       ID;
