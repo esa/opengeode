@@ -124,6 +124,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.4 (06/2021)**
+- Octet and bit strings can be indexed
+- Better support of octet and bit string literals
+- Bitwise operators support for unsigned integers
+
 **3.7.3 (06/2021)**
 - Fix support of continuous signals when using parallel states
 - Support history state for parallel state (nextstate -*)

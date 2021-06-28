@@ -497,8 +497,17 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                 # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value)
                 varbty = find_basic_type(var_type)
-                if varbty.kind in ('SequenceOfType', 'OctetStringType'):
+
+                if varbty.kind.startswith('Integer') and \
+                        isinstance(def_value, (ogAST.PrimOctetStringLiteral,
+                                               ogAST.PrimBitStringLiteral)):
+                    dstr = str(def_value.numeric_value)
+
+                elif varbty.kind in ('SequenceOfType',
+                                     'OctetStringType',
+                                     'BitStringType'):
                     dstr = array_content(def_value, dstr, varbty)
+
                 elif varbty.kind == 'IA5StringType':
                     dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal,\
@@ -1426,7 +1435,7 @@ def write_statement(param, newline):
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimOctetStringLiteral):
             # Octet string or bit string
-            code.append(f'Put ("{param.printable_string}");')                
+            code.append(f'Put ("{param.printable_string}");')
         elif isinstance(param, ogAST.PrimStringLiteral):
             # Raw string
             # First remove the newline statements
@@ -1458,7 +1467,7 @@ def write_statement(param, newline):
             else:
                 code.append(f"Put ({string});")
     elif type_kind in ('IntegerType', 'RealType',
-                       'BooleanType', 'Integer32Type'):
+                       'BooleanType', 'Integer32Type', 'IntegerU8Type'):
         code, string, local = expression(param, readonly=1)
         if hasattr(param, "expected_type"):
             cast = type_name(param.expected_type)
@@ -2187,6 +2196,16 @@ def _basic_operators(expr, **kwargs):
     lbty = find_basic_type(expr.left.exprType)
     rbty = find_basic_type(expr.right.exprType)
 
+    if lbty.kind.startswith('Integer') and \
+            isinstance(expr.right, (ogAST.PrimOctetStringLiteral,
+                                   ogAST.PrimBitStringLiteral)):
+        right_str = str(expr.right.numeric_value)
+
+    if rbty.kind.startswith('Integer') and \
+            isinstance(expr.left, (ogAST.PrimOctetStringLiteral,
+                                   ogAST.PrimBitStringLiteral)):
+        left_str = str(expr.left.numeric_value)
+
     if left_is_numeric != right_is_numeric or rbty.kind == lbty.kind:
         # No cast is needed if:
         # - one of the two sides only is a literal : no cast is needed
@@ -2235,6 +2254,7 @@ def _equality(expr, **kwargs):
 
     basic = lbty.kind in ('IntegerType',
                           'Integer32Type',
+                          'IntegerU8Type',
                           'BooleanType',
                           'EnumeratedType',
                           'ChoiceEnumeratedType')
@@ -2277,22 +2297,18 @@ def _assign_expression(expr, **kwargs):
         # OCTET STRINGs.
         def_value = ia5string_raw(expr.right)
         strings.append(f'{left_str} := {def_value};')
-    elif basic_left.kind in ('SequenceOfType', 'OctetStringType'):
+    elif basic_left.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         rlen = f"{right_str}'Length"
 
         if isinstance(expr.right, ogAST.PrimSubstring):
             if not isinstance(expr.left, ogAST.PrimSubstring):
                 # only if left is not a substring, otherwise syntax
                 # would be wrong due to result of _prim_substring
-                strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
-                               .format(lvar=left_str,
-                                       rvar=right_str))
+                strings.append(f"{left_str}.Data(1..{right_str}'Length) := {right_str};")
             else:
                # left is substring: no length, direct assignment
                rlen = ""
-               strings.append(u"{lvar} := {rvar};"
-                               .format(lvar=left_str,
-                                       rvar=right_str))
+               strings.append(f"{left_str} := {right_str};")
 
         elif isinstance(expr.right, ogAST.ExprAppend):
             basic_right = find_basic_type(expr.right.exprType)
@@ -2305,16 +2321,11 @@ def _assign_expression(expr, **kwargs):
         elif isinstance(expr.right, (ogAST.PrimSequenceOf,
                                     ogAST.PrimStringLiteral)):
             if not isinstance(expr.left, ogAST.PrimSubstring):
-                strings.append(u"{lvar} := {value};"
-                           .format(lvar=left_str,
-                                   value=array_content(expr.right,
-                                                       right_str,
-                                                       basic_left)))
+                strings.append(
+                    f"{left_str} := {array_content(expr.right, right_str, basic_left)};")
             else:
                # left is substring: no length, direct assignment
-               strings.append(u"{lvar} := ({rvar});"
-                               .format(lvar=left_str,
-                                       rvar=right_str))
+               strings.append(f"{left_str} := ({right_str});")
 
             rlen = None
         else:
@@ -2323,6 +2334,13 @@ def _assign_expression(expr, **kwargs):
             rlen = None
         if rlen and basic_left.Min != basic_left.Max:
             strings.append(f"{left_str}.Length := {rlen};")
+    elif basic_left.kind.startswith('Integer') and \
+            isinstance(expr.right, (ogAST.PrimOctetStringLiteral,
+                                    ogAST.PrimBitStringLiteral)):
+        # If right is an octet string or bit string literal, use the numerical
+        # value directly.
+        right_str = str(expr.right.numeric_value)
+        strings.append(f"{left_str} := {right_str};")
     elif basic_left.kind.startswith('Integer'):
 #       print '\nASSIGN:', expr.inputString,
 #       print "Left type = ",type_name(find_basic_type (expr.left.exprType)),
@@ -2335,7 +2353,7 @@ def _assign_expression(expr, **kwargs):
         # We can therefore safely cast to the left type
         basic_right = find_basic_type (expr.right.exprType)
         cast_left, cast_right = type_name(basic_left), type_name(basic_right)
-        #print cast_left, cast_right, right_str
+        #print (cast_left, cast_right, right_str)
         if cast_left != cast_right:
             res = f'{cast_left} ({right_str})'
         else:
@@ -2368,43 +2386,54 @@ def _assign_expression(expr, **kwargs):
 def _bitwise_operators(expr, **kwargs):
     ''' Logical operators '''
     code, local_decl = [], []
+    ada_string = ""
+
     left_stmts, left_str, left_local = expression(expr.left, readonly=1)
     right_stmts, right_str, right_local = expression(expr.right, readonly=1)
+
     basic_type = find_basic_type(expr.exprType)
+
     if basic_type.kind != 'BooleanType':
+        left_bty = find_basic_type (expr.left.exprType)
         # Sequence of boolean or bit string
-        if expr.right.is_raw:
+        if expr.right.is_raw and not left_bty.kind.startswith('Integer'):
+            # If the left is an integer (unsigned) the right is a number
+            # meaning there is no need for a tmp variable to store a bit string
+
             # Declare a temporary variable to store the raw value
-            tmp_string = u'tmp{}'.format(expr.right.tmpVar)
-            local_decl.append(u'{tmp} : {sort};'.format(
-                        tmp=tmp_string,
-                        sort=type_name(expr.right.exprType)))
-            code.append(u'{tmp} := {right};'.format(tmp=tmp_string,
-                                                  right=right_str))
+            tmp_string = f'tmp{expr.right.tmpVar}'
+            local_decl.append(f'{tmp_string} : {type_name(expr.right.exprType)};')
+
+            if isinstance(expr.right,
+                          (ogAST.PrimSequenceOf,
+                           ogAST.PrimStringLiteral)):
+                right_str = array_content(expr.right, right_str, basic_type)
+
+            code.append(f'{tmp_string} := {right_str};')
+
             right_str = tmp_string
             right_payload = right_str + '.Data'
+
+        elif expr.right.is_raw and left_bty.kind.startswith('Integer'):
+            right_payload = str(expr.right.numeric_value)
+            left_payload = left_str + string_payload(expr.left, left_str)
+            ada_string = f'({left_payload} {expr.operand} {right_payload})'
+
         else:
             right_payload = right_str + string_payload(expr.right, right_str)
+
         left_payload = left_str + string_payload(expr.left, left_str)
 
         if isinstance(expr, ogAST.ExprImplies):
-            ada_string = u'(Data => (({left} and {right}) or not {left}))'\
-                .format(left=left_payload, right=right_payload)
-        else:
-            ada_string = u'(Data => ({left} {op} {right}))'.format(
-                left=left_payload, op=expr.operand, right=right_payload)
+            ada_string = f'(Data => (({left_payload} and {right_payload}) or not {left_payload}))'
+        elif not ada_string:
+            ada_string = f'(Data => ({left_payload} {expr.operand} {right_payload}))'
 
     elif isinstance(expr, ogAST.ExprImplies):
-        ada_string = u'(({left} and {right}) or not {left})'.format(
-                                left=left_str,
-                                right=right_str)
-
+        ada_string = f'(({left_str} and {right_str}) or not {left_str})'
     else:
-        ada_string = u'({left} {op}{short} {right})'.format(
-                                left=left_str,
-                                op=expr.operand,
-                                short=expr.shortcircuit,
-                                right=right_str)
+        ada_string = f'({left_str} {expr.operand}{expr.shortcircuit} {right_str})'
+
     code.extend(left_stmts)
     code.extend(right_stmts)
     local_decl.extend(left_local)
@@ -2434,10 +2463,9 @@ def _not_expression(expr, **kwargs):
         if isinstance(expr.expr, ogAST.PrimSequenceOf):
             ada_string = array_content(expr.expr, expr_str, bty_outer)
         else:
-            ada_string = u'(Data => (not {}.Data){})'.format(expr_str,
-                                                             size_expr)
+            ada_string = f'(Data => (not {expr_str}.Data){size_expr})'
     else:
-        ada_string = u'(not {expr})'.format(expr=expr_str)
+        ada_string = f'(not {expr_str})'.format(expr=expr_str)
 
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
@@ -2778,16 +2806,26 @@ def _sequence(seq, **kwargs):
             if each.lower() == delem.lower():
                 elem_spec = type_children[each]
                 break
+
         elem_specty = elem_spec.type
+
+        # Find the basic type of the elem: if it is a number and the value
+        # is an octet/bit string literal, then use the raw number
+        elem_bty = find_basic_type(elem_specty)
+
         value_stmts, value_str, local_var = expression(value, readonly=1)
+
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            value_str = array_content(value, value_str,
-                                      find_basic_type(elem_specty))
+            if elem_bty.kind.startswith('Integer'):
+                value_str = str(value.numeric_value)
+            else:
+                value_str = array_content(value, value_str, elem_bty)
+
         ada_string += f"{sep} {elem} => {value_str}"
         if elem.lower() in optional_fields:
             # Set optional field presence
             optional_fields[elem.lower()]['present'] = True
-        sep = u', '
+        sep = ', '
         stmts.extend(value_stmts)
         local_decl.extend(local_var)
     # Process optional fields
@@ -2851,10 +2889,16 @@ def _choiceitem(choice, **kwargs):
     ''' Return the Ada code for a CHOICE expression '''
     stmts, choice_str, local_decl = expression(choice.value['value'],
                                                readonly=1)
+
+    bty = find_basic_type(choice.value['value'].exprType)
+
     if isinstance(choice.value['value'], (ogAST.PrimSequenceOf,
                                           ogAST.PrimStringLiteral)):
-        choice_str = array_content(choice.value['value'], choice_str,
-                               find_basic_type(choice.value['value'].exprType))
+        if bty.kind.startswith('Integer'):
+            choice_str = choice.value['value'].numeric_value
+        else:
+            choice_str = array_content(choice.value['value'], choice_str, bty)
+
     # look for the right spelling of the choice discriminant
     # (normally field_PRESENT, but can be prefixed by the type name if there
     # is a namespace conflict)
@@ -2911,6 +2955,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         actual_type = type_name(question_type)
         basic = find_basic_type(question_type).kind in ('IntegerType',
                                                         'Integer32Type',
+                                                        'IntegerU8Type',
                                                         'BooleanType',
                                                         'RealType',
                                                         'EnumeratedType',
@@ -3252,8 +3297,17 @@ def _inner_procedure(proc, **kwargs):
                 # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value, readonly=1)
                 varbty = find_basic_type(var_type)
-                if varbty.kind in ('SequenceOfType', 'OctetStringType'):
+
+                if varbty.kind.startswith('Integer') and \
+                        isinstance(def_value, (ogAST.PrimOctetStringLiteral,
+                                               ogAST.PrimBitStringLiteral)):
+                    dstr = str(def_value.numeric_value)
+
+                elif varbty.kind in ('SequenceOfType',
+                                     'OctetStringType',
+                                     'BitStringType'):
                     dstr = array_content(def_value, dstr, varbty)
+
                 elif varbty.kind == 'IA5StringType':
                     dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal, 'Ground expression error'
@@ -3327,11 +3381,11 @@ def string_payload(prim, ada_string):
         return ''
     prim_basic = find_basic_type(prim.exprType)
     payload = ''
-    if prim_basic.kind in ('SequenceOfType', 'OctetStringType'):
+    if prim_basic.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         if int(prim_basic.Min) != int(prim_basic.Max):
-            payload = u'.Data(1..{}.Length)'.format(ada_string)
+            payload = f'.Data(1..{ada_string}.Length)'
         else:
-            payload = u'.Data'
+            payload = '.Data'
     return payload
 
 
@@ -3352,7 +3406,7 @@ def array_content(prim, values, asnty):
         # Reference type can vary -> there is a Length field
         rlen = f", Length => {length}"
     else:
-        rlen = u""
+        rlen = ""
     if isinstance(prim, ogAST.PrimStringLiteral):
         df = '0'
     else:
@@ -3423,6 +3477,8 @@ def type_name(a_type, use_prefix=True):
         return 'Boolean'
     elif a_type.kind.startswith('Integer32'):
         return 'Integer'
+    elif a_type.kind.startswith('IntegerU8'):
+        return 'Interfaces.Unsigned_8'
     elif a_type.kind.startswith('Integer'):
         if float(a_type.Min) >= 0:
             return 'Asn1UInt'
