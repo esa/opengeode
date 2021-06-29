@@ -95,6 +95,9 @@ UNSIGNED     = type('IntegerType',    (object,), {'kind': 'IntegerType',
 INT32        = type('Integer32Type',  (object,), {'kind': 'Integer32Type',
                                                   'Min' : '-2147483648',
                                                   'Max' : '2147483647'})
+UINT8        = type('IntegerU8Type',  (object,), {'kind': 'IntegerU8Type',
+                                                  'Min' : '0',
+                                                  'Max' : '255'})
 NUMERICAL    = type('NumericalType',  (object,), {'kind': 'Numerical'})
 TIMER        = type('TimerType',      (object,), {'kind': 'TimerType'})
 REAL         = type('RealType',       (object,), {'kind': 'RealType',
@@ -238,7 +241,8 @@ def is_integer(ty) -> bool:
     ''' Return true if a type is an Integer Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
-        'Integer32Type'
+        'Integer32Type',
+        'IntegerU8Type'
     )
 
 
@@ -252,6 +256,7 @@ def is_numeric(ty) -> bool:
     return find_basic_type(ty).kind in (
         'IntegerType',
         'Integer32Type',
+        'IntegerU8Type',
         'Numerical',
         'RealType'
     )
@@ -1184,10 +1189,61 @@ def check_type_compatibility(primary, type_ref, context):
             # raw string
             return warnings
         elif basic_type.kind.endswith('StringType'):
-            # all strings including IA5String
+            # all strings including IA5String, BitString, OctetString
             try:
-                if int(minR) <= len(
-                        primary.value[1:-1]) <= int(maxR):
+                ok = True
+                # value is in hex form for both octet and bit string literals
+                if basic_type.kind == 'OctetStringType':
+                    # recipient is an OCTET STRING of some size [minR..maxR]
+                    # The length check will depend  on the user string kind:
+
+                    if primary.exprType.kind == 'OctetStringType':
+                        # user entered an hex string ('ABC'H)
+                        # => 2 input characters = 1 element of the string
+                        ok = int(minR) <= len(primary.value[1:-1]) <= int(maxR)
+
+                    elif primary.exprType.kind == 'BitStringType':
+                        # user entered a bit string ('011'B)
+                        # a padding has been added and it ws converted to hex
+                        # (the primary.value is an hex string already)
+                        # => length must be compatible with recipient length
+                        ok = int(minR) * 2 <= len(primary.value[1:-1]) <= int(maxR) * 2
+                    else:
+                        # user entered a text => each char is 1 octet
+                        ok = int(minR) <= len(primary.value[1:-1]) <= int(maxR)
+
+                    if ok:
+                        return warnings
+                    else:
+                        raise TypeError(f'Invalid string literal {primary.value}H:'
+                                    ' Length check failed (Octet String) ')
+
+                elif basic_type.kind == 'BitStringType':
+                    # recipient is a BIT STRING of some size [minR..maxR]
+                    # The length check will depend  on the user string kind:
+
+                    if primary.exprType.kind == 'OctetStringType':
+                        # user entered an hex string ('ABC'H)
+                        # => each character is 4 bits
+                        ok = int(minR) <= len(primary.value[1:-1]) * 4 <= int(maxR)
+
+                    elif primary.exprType.kind == 'BitStringType':
+                        # user entered a bit string ('011'B)
+                        # a padding has been added and it ws converted to hex
+                        # (the primary.value is an hex string already)
+                        # but the original number of bits is known
+                        ok = int(minR) <= primary.exprType.NumberOfBits <= int(maxR)
+                    else:
+                        # user entered a text => each character is 8 bits
+                        ok = int(minR) <= len(primary.value[1:-1]) * 8 <= int(maxR)
+
+                    if ok:
+                        return warnings
+                    else:
+                        raise TypeError(f'Invalid string literal {primary.value}H:'
+                                    ' Length check failed (Bit String) ')
+
+                elif int(minR) <= len(primary.value[1:-1]) <= int(maxR):
                     return warnings
                 else:
                     #print traceback.print_stack()
@@ -1881,14 +1937,17 @@ def logic_expression(root, context):
 
         if bty.kind == 'BooleanType':
             continue
-        elif bty.kind == 'BitStringType' and bty.Min == bty.Max:
+        elif bty.kind in ('BitStringType', 'OctetStringType') and bty.Min == bty.Max:
             continue
         elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max \
                 and find_basic_type(bty.type).kind == 'BooleanType':
             continue
+        elif 'IntegerType' in bty.kind and int(bty.Min) >= 0:
+            # Unsigned types can work for bitwise operations
+            continue
         else:
-            msg = 'Bitwise operators only work with Booleans, ' \
-                  'fixed size SequenceOf Booleans or fixed size BitStrings'
+            msg = 'Bitwise operators only work with Booleans, unsigned integers,' \
+                  'fixed size SequenceOf Booleans or fixed size BIT/OCTET STRINGs'
             errors.append(error(root, msg))
             break
 
@@ -2265,14 +2324,14 @@ def not_expression(root, context):
             expr = expr.expr
         else:
             expr.exprType = BOOLEAN
-    elif bty.kind == 'BitStringType':
+    elif bty.kind in ('BitStringType', 'OctetStringType'):
         expr.exprType = expr.expr.exprType
     elif bty.kind == 'SequenceOfType' and \
             find_basic_type(bty.type).kind == 'BooleanType':
         expr.exprType = expr.expr.exprType
     else:
-        msg = 'Bitwise operators only work with booleans '\
-              'and arrays of booleans'
+        msg = 'Bitwise operators only work with booleans, '\
+              'sequence of booleans, bit strings and octet strings'
         errors.append(error(root, msg))
 
     return expr, errors, warnings
@@ -2483,8 +2542,8 @@ def primary_index(root, context, pos):
 
     node.value = [receiver, {'index': params}]
 
-    if receiver_bty.kind == 'SequenceOfType':
-        # Range of the receiver (SEQUENCE(SIZE(XXX)) - check XXX
+    if receiver_bty.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
+        # Range of the receiver (SEQUENCE(SIZE(N)) - check N
         if isinstance(receiver, ogAST.PrimSubstring):
             r_min, r_max = substring_range(receiver)
         else:
@@ -2498,8 +2557,17 @@ def primary_index(root, context, pos):
                 "you must assign all values at once to set the size "
                 "(syntax: variable := {3, 14, 15})"))
 
-        # receiver_bty.type is the type of the array elements
-        node.exprType = receiver_bty.type
+        if receiver_bty.kind == 'SequenceOfType':
+            # receiver_bty.type is the type of the array elements
+            node.exprType = receiver_bty.type
+        elif receiver_bty.kind == 'OctetStringType':
+            # Octet string elements = unsigned integer
+            node.exprType = UINT8
+        elif receiver_bty.kind == 'BitStringType':
+            # Bit string elements = boolean
+            node.exprType = type('Bit',
+                                  BOOLEAN.__bases__,
+                                  dict(BOOLEAN.__dict__))
 
         idx_bty = find_basic_type(params[0].exprType)
         if not is_integer(idx_bty):
@@ -2718,6 +2786,13 @@ def primary(root, context):
                 prim.value = f"'{as_hex.hex()}'"
                 prim.numeric_value = as_number
                 prim.printable_string = root.text
+                prim.exprType = type('PrStr', (object,), {
+                    'kind': 'BitStringType',
+                    'Min': str(len(prim.value) - 2),
+                    'Max': str(len(prim.value) - 2),
+                    'NumericValue': prim.numeric_value,
+                    'NumberOfBits': len(root.text[1:-2])  # in user string
+                })
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Bit string literal: {}'.format(err)))
@@ -2734,9 +2809,15 @@ def primary(root, context):
                     prim.value = (f"'{prim.printable_string}'")
                 except:
                     prim.printable_string = root.text
-                    prim.value = as_hex
+                    prim.value = f"'{as_hex}'"
                 # store the integer number corresponding to the hex representation
                 prim.numeric_value = as_number
+                prim.exprType = type('PrStr', (object,), {
+                    'kind': 'OctetStringType',
+                    'Min': str(len(prim.value) - 2),
+                    'Max': str(len(prim.value) - 2),
+                    'NumericValue': prim.numeric_value
+                })
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Octet string literal: {}'.format(err)))
@@ -2744,16 +2825,12 @@ def primary(root, context):
         else:
             prim = ogAST.PrimStringLiteral()
             prim.value = root.text
-        prim.exprType = type('PrStr', (object,), {
-            'kind': 'StringType',
-            'Min': str(len(prim.value) - 2),
-            'Max': str(len(prim.value) - 2),
-            'NumericValue':
-               prim.numeric_value
-                  if isinstance(prim, (ogAST.PrimOctetStringLiteral,
-                                       ogAST.PrimBitStringLiteral))
-                  else -1
-        })
+            prim.exprType = type('PrStr', (object,), {
+                'kind': 'StringType',
+                'Min': str(len(prim.value) - 2),
+                'Max': str(len(prim.value) - 2),
+                'NumericValue': -1
+            })
     elif root.type == lexer.FLOAT2:
         prim = ogAST.PrimMantissaBaseExp()
         mant = float(root.getChild(0).toString())

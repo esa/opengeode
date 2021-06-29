@@ -504,8 +504,9 @@ def render_statechart(scene, graphtree=None, keep_pos=False, dump_gfx=''):
         graph = graphtree.get('graph', None) or dotgraph.AGraph('taste.dot')
         config = " ".join("{name}={val}".format(name=name, val=val)
                 for name, val in graphtree['config'].items())
-    except IOError:
+    except IOError as err:
         LOG.info('No statechart to display....')
+        LOG.debug(str(err))
         raise
     graph.graph_attr.update(dpi='72.0')
     EDGES[:] = graph.edges()
@@ -820,7 +821,7 @@ def create_dot_graph(root_ast,
                 label = ''
                 diamond += 1
             for term in next_states:
-                if term.inputString.strip() == '-':
+                if term.inputString.strip() in ('-', '-*'):
                     target = state
                 else:
                     target = term.inputString.lower() or ' '
