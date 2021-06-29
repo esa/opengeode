@@ -257,7 +257,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     asn1_modules_o = (name.lower().replace('-', '_') + '.o'
                     for name in process.asn1Modules)
 
-    asn1_mods = f"{(mod.lower().replace('-', '_') for mod in process.asn1Modules)}"
+    asn1_mods = (f'''"{mod.lower().replace('-', '_')}"''' for mod in process.asn1Modules)
 
     # determine if there are context parameters (defined at taste level)
     # they are passed as generic parameters in function type/instances
