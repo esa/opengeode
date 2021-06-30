@@ -3414,7 +3414,9 @@ def procedure_post(proc, content, parent=None, context=None):
             check_expr.left.exprType = proc.return_type
             check_expr.right = each.return_expr
             try:
-                warnings.extend(fix_expression_types(check_expr, context))
+                warns = fix_expression_types(check_expr, context)
+                for warn in warns:
+                    warnings.append([warn, [0,0], []])
             except (TypeError, AttributeError) as err:
                 errors.append([f"In procedure {proc.inputString}: {str(err)}",
                     [0, 0], []])
