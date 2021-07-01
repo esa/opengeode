@@ -3649,37 +3649,38 @@ def synonym(root, ta_ast, context):
         if child.type == lexer.SYNONYM:
             name, sort, value = parse_synonym(child)
 
-    if name and sort and value:
-        nameDash = name.replace('_', '-')
-        sortDash = sort.replace('_', '-')
+        if name and sort and value:
+            nameDash = name.replace('_', '-')
+            sortDash = sort.replace('_', '-')
 
-        # The value field will depend on the type..If the constant is a
-        # numerical value then we transform it to a number, because it
-        # can be used by the parser for range checks
-        # Same for booleans and enumerated. But complex types are kept as
-        # expressions
-        if isinstance(value, (ogAST.PrimOctetStringLiteral, ogAST.PrimBitStringLiteral)):
-            concrete_val = value.numeric_value
-        elif is_numeric(value.exprType) or is_enumerated(value.exprType) or is_boolean(value.exprType):
-            # value.value is an array of one element
-            concrete_val, = value.value
-        else:
-            concrete_val = value
+            # The value field will depend on the type..If the constant is a
+            # numerical value then we transform it to a number, because it
+            # can be used by the parser for range checks
+            # Same for booleans and enumerated. But complex types are kept as
+            # expressions
+            if isinstance(value, (ogAST.PrimOctetStringLiteral,
+                                  ogAST.PrimBitStringLiteral)):
+                concrete_val = value.numeric_value
+            elif is_numeric(value.exprType) or is_enumerated(value.exprType) or is_boolean(value.exprType):
+                # value.value is an array of one element
+                concrete_val, = value.value
+            else:
+                concrete_val = value
 
-        DV.SDL_Constants[nameDash] = type (nameDash, (), {
-               "varName" : name,
-               "type": type (f"{name}_type", (), {
-                   "AsnFile": None,
-                   "Line": 0,
-                   "CharPositionInLine": 0,
-                   "CName": sort,
-                   "AdaName": sort,
-                   "HasEncDec": False,
-                   "kind": "ReferenceType",
-                   "ReferencedTypeName": sortDash
-                }),
-               "value": concrete_val
-            })
+            DV.SDL_Constants[nameDash] = type (nameDash, (), {
+                   "varName" : name,
+                   "type": type (f"{name}_type", (), {
+                       "AsnFile": None,
+                       "Line": 0,
+                       "CharPositionInLine": 0,
+                       "CName": sort,
+                       "AdaName": sort,
+                       "HasEncDec": False,
+                       "kind": "ReferenceType",
+                       "ReferencedTypeName": sortDash
+                    }),
+                   "value": concrete_val
+                })
     return errors, warnings
 
 
