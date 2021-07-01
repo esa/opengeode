@@ -534,6 +534,25 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             context_decl.append(f"{alias_name} : {type_name(alias_sort)} "
                                 f"renames {qualified};")
 
+        # Add SDL constants (synonyms)
+        for const in process.DV.SDL_Constants.values():
+            bkind = find_basic_type (const.type).kind
+            if bkind in ('IntegerType', 'RealType', 'EnumeratedType',
+                         'BooleanType', 'Integer32Type', 'IntegerU8Type'):
+                val = const.value
+            else:
+                # complex value - must be a ground expression
+                _, val, _ = expression(const.value, readonly=1)
+                if bkind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
+                    val = array_content(const.value, val, bkind)
+                elif bkind == 'IA5StringType':
+                    val = ia5string_raw(const.value)
+                else:
+                    raise f'ERROR: constant {const.varName} value is not a ground expression'
+
+            const_sort = const.type.ReferencedTypeName.replace('-', '_')
+            context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
+
         # The choice selections will allow to use the present operator
         # together with a variable of the -selection type
         context_decl.extend(choice_selections)

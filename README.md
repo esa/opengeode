@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.5 (07/2021)**
+- Improve support SDL synonyms (synonym foo SomeIntType = 42;)
+
 **3.7.4 (06/2021)**
 - Octet and bit strings can be indexed
 - Better support of octet and bit string literals

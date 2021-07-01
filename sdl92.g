@@ -458,7 +458,7 @@ monitor_definition
         ->      ^(MONITOR variables_of_sort+)
         ;
 
-
+/* synonyms in SDL allow to declare constants */
 synonym_definition
         :       internal_synonym_definition
         ;
@@ -472,8 +472,8 @@ internal_synonym_definition
 
 
 synonym_definition_item
-        :       sort sort '=' ground_expression
-        ->      ^(SYNONYM sort sort ground_expression)
+        :       variable_id sort '=' (ground_expression | EXTERNAL)
+        ->      ^(SYNONYM variable_id sort ground_expression? EXTERNAL?)
         ;
 
 

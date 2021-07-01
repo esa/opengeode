@@ -214,7 +214,8 @@ def set_global_DV(asn1_filenames):
         #  as explicit ASN.1 types
         CHOICE_SELECTORS.update(choice_selectors)
         USER_DEFINED_TYPES=CHOICE_SELECTORS.copy()
-        #DV.types.update(choice_selectors)
+        # Add placeholder for SDL constants
+        DV.SDL_Constants = {}
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
@@ -1403,7 +1404,8 @@ def find_variable_type(var, context):
             return TIMER
 
     # check if it is an ASN.1 constant
-    for varname, vartype in DV.variables.items():
+    for varname, vartype in chain(DV.variables.items(),
+                                  DV.SDL_Constants.items()):
         if var.lower() == varname.lower().replace('-', '_'):
             return vartype.type
 
@@ -1599,8 +1601,7 @@ def primary_variable(root, context):
     # Detect reserved keywords
     if name.lower() in ('integer', 'real', 'procedure', 'begin', 'end',
                         'for', 'in', 'out', 'loop'):
-        errors.append(u"Use of forbidden keyword for a variable name : {}"
-                      .format(name))
+        errors.append(f"Use of forbidden keyword for a variable name : {name}")
 
     possible_constant = is_asn1constant(name)
     if possible_constant is not None:
@@ -1639,7 +1640,8 @@ def is_fpar(name, context):
 def is_asn1constant(name):
     name = name.lower().replace('-', '_')
     try:
-        for varname, vartype in DV.variables.items():
+        for varname, vartype in chain(DV.variables.items(),
+                                      DV.SDL_Constants.items()):
             if varname.lower().replace('-', '_') == name:
                 return vartype
     except AttributeError:
@@ -3620,18 +3622,64 @@ def newtype(root, ta_ast, context):
 
 
 def synonym(root, ta_ast, context):
-    ''' Parse a SYNONYM definition and inject it in ASN1 exported variables'''
+    ''' Parse a list of SYNONYMs definition (SDL constants) '''
     errors = []
     warnings = []
 
-    if not "SDL-Constants" in DV.asn1Modules:
-        DV.asn1Modules.append("SDL-Constants")
-        DV.exportedVariables["SDL-Constants"] = []
+    def parse_synonym(syn):
+        name, sort, ground = None, None, None
+        for child in syn.getChildren():
+            if child.type == lexer.ID:
+                name = child.text
+            elif child.type == lexer.SORT:
+                sort = child.getChild(0).text
+            elif child.type == lexer.GROUND:
+                ground, err, warn = expression(child.getChild(0), context)
+                errors.extend(err)
+                warnings.extend(warn)
+            elif child.type == lexer.EXTERNAL:
+                errors.append("External synonyms are not supported")
+            else:
+                warnings.append(
+                    'Unsupported synonym construct' +
+                    sdl92Parser.tokenNamesMap[child.type])
+        return name, sort, ground
 
     for child in root.getChildren():
-        if child.getChild(0).type == lexer.SORT:
-            DV.exportedVariables["SDL-Constants"].append(
-                                            child.getChild(0).getChild(0).text)
+        if child.type == lexer.SYNONYM:
+            name, sort, value = parse_synonym(child)
+
+    if name and sort and value:
+        nameDash = name.replace('_', '-')
+        sortDash = sort.replace('_', '-')
+
+        # The value field will depend on the type..If the constant is a
+        # numerical value then we transform it to a number, because it
+        # can be used by the parser for range checks
+        # Same for booleans and enumerated. But complex types are kept as
+        # expressions
+        if isinstance(value, (ogAST.PrimOctetStringLiteral, ogAST.PrimBitStringLiteral)):
+            concrete_val = value.numeric_value
+        elif is_numeric(value.exprType) or is_enumerated(value.exprType) or is_boolean(value.exprType):
+            # value.value is an array of one element
+            concrete_val, = value.value
+        else:
+            concrete_val = value
+
+        DV.SDL_Constants[nameDash] = type (nameDash, (), {
+               "varName" : name,
+               "type": type (f"{name}_type", (), {
+                   "AsnFile": None,
+                   "Line": 0,
+                   "CharPositionInLine": 0,
+                   "CName": sort,
+                   "AdaName": sort,
+                   "HasEncDec": False,
+                   "kind": "ReferenceType",
+                   "ReferencedTypeName": sortDash
+                }),
+               "value": concrete_val
+            })
     return errors, warnings
 
 
@@ -5981,10 +6029,10 @@ def pr_file(root):
     global DV
 
     # In case no ASN.1 files are parsed, the DV structure is pre-initialised
-    # This to allow SDL types injection in ASN1 ASTs
+    # This to allow SDL types and constant injection in ASN1 ASTs
     DV = type("ASNParseTree", (object, ),
               {"types": {}, "exportedVariables": {}, "asn1Modules": [],
-                  "exportedTypes": {}, "variables": {}})
+                  "exportedTypes": {}, "variables": {}, "SDL_Constants": {}})
 
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions
