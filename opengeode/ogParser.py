@@ -1944,7 +1944,7 @@ def logic_expression(root, context):
         elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max \
                 and find_basic_type(bty.type).kind == 'BooleanType':
             continue
-        elif 'IntegerType' in bty.kind and int(bty.Min) >= 0:
+        elif 'IntegerType' in bty.kind and float(bty.Min) >= 0.0:
             # Unsigned types can work for bitwise operations
             continue
         else:
