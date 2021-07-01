@@ -124,6 +124,26 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.5 (07/2021)**
+- Improve support SDL synonyms (synonym foo SomeIntType = 42;)
+
+**3.7.4 (06/2021)**
+- Octet and bit strings can be indexed
+- Better support of octet and bit string literals
+- Bitwise operators support for unsigned integers
+
+**3.7.3 (06/2021)**
+- Fix support of continuous signals when using parallel states
+- Support history state for parallel state (nextstate -*)
+- Fix shape of contiunuous signals
+
+**3.7.2 (06/2021)**
+- Add operator to return the observer state status
+- Support internal operators with no parameters
+
+**3.7.1 (06/2021)**
+- Support the declaration of error, success and ignore states for observers
+
 **3.7.0 (06/2021)**
 - No more dependency on mono ; use ASN1SCC based on .NET Core 5
 

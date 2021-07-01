@@ -171,9 +171,8 @@ def flatten(process, sep=u'_'):
             if not term.via:
                 term.next_id = term.inputString.lower() + sep + 'START'
             else:
-                term.next_id = u'{term}{sep}{entry}_START'.format(
-                        term=term.inputString, entry=term.entrypoint, sep=sep)
-        elif term.inputString.strip() == '-':
+                term.next_id = f'{term.inputString}{sep}{term.entrypoint}_START'
+        elif term.inputString.strip() in ('-', '-*'):
             for each in term.possible_states:
                 term.candidate_id[-1].append(each)
                 for comp in context.composite_states:
@@ -296,7 +295,7 @@ def flatten(process, sep=u'_'):
             if each.label:
                 each.label.inputString = prefix + each.label.inputString
             if each.kind == 'next_state':
-                if each.inputString.strip() != '-':
+                if each.inputString.strip() not in ('-', '-*'):
                     each.inputString = prefix + each.inputString
                 # Set next transition id
                 update_terminator(context=state, term=each, process=process)

@@ -95,6 +95,9 @@ UNSIGNED     = type('IntegerType',    (object,), {'kind': 'IntegerType',
 INT32        = type('Integer32Type',  (object,), {'kind': 'Integer32Type',
                                                   'Min' : '-2147483648',
                                                   'Max' : '2147483647'})
+UINT8        = type('IntegerU8Type',  (object,), {'kind': 'IntegerU8Type',
+                                                  'Min' : '0',
+                                                  'Max' : '255'})
 NUMERICAL    = type('NumericalType',  (object,), {'kind': 'Numerical'})
 TIMER        = type('TimerType',      (object,), {'kind': 'TimerType'})
 REAL         = type('RealType',       (object,), {'kind': 'RealType',
@@ -153,7 +156,8 @@ SPECIAL_OPERATORS = {
                     {'type': CHOICE,     'direction': 'in'},  # choice variable
                     {'type': NUMERICAL,  'direction': 'in'}   # default value
                    ],
-
+    'observer_status' :  # observer-only procedure returning the kind of state
+                   [],
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -210,7 +214,8 @@ def set_global_DV(asn1_filenames):
         #  as explicit ASN.1 types
         CHOICE_SELECTORS.update(choice_selectors)
         USER_DEFINED_TYPES=CHOICE_SELECTORS.copy()
-        #DV.types.update(choice_selectors)
+        # Add placeholder for SDL constants
+        DV.SDL_Constants = {}
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
@@ -237,7 +242,8 @@ def is_integer(ty) -> bool:
     ''' Return true if a type is an Integer Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
-        'Integer32Type'
+        'Integer32Type',
+        'IntegerU8Type'
     )
 
 
@@ -251,6 +257,7 @@ def is_numeric(ty) -> bool:
     return find_basic_type(ty).kind in (
         'IntegerType',
         'Integer32Type',
+        'IntegerU8Type',
         'Numerical',
         'RealType'
     )
@@ -746,6 +753,12 @@ def check_call(name, params, context):
         if return_type_keys != variable_sort_keys:
             raise TypeError(name + ': Enumerated type are not equivalent')
         return return_type
+    elif name == 'observer_status':
+        if len(params) != 0:
+            raise TypeError(f'{name} does not take any parameter')
+        if 'Observer-State-Kind' not in types().keys():
+            raise TypeError(f'{name} can only be used in observers')
+        return types()['Observer-State-Kind'].type
 
     # (1) Find the signature of the function
     # signature will hold the list of parameters for the function
@@ -1177,10 +1190,61 @@ def check_type_compatibility(primary, type_ref, context):
             # raw string
             return warnings
         elif basic_type.kind.endswith('StringType'):
-            # all strings including IA5String
+            # all strings including IA5String, BitString, OctetString
             try:
-                if int(minR) <= len(
-                        primary.value[1:-1]) <= int(maxR):
+                ok = True
+                # value is in hex form for both octet and bit string literals
+                if basic_type.kind == 'OctetStringType':
+                    # recipient is an OCTET STRING of some size [minR..maxR]
+                    # The length check will depend  on the user string kind:
+
+                    if primary.exprType.kind == 'OctetStringType':
+                        # user entered an hex string ('ABC'H)
+                        # => 2 input characters = 1 element of the string
+                        ok = int(minR) <= len(primary.value[1:-1]) <= int(maxR)
+
+                    elif primary.exprType.kind == 'BitStringType':
+                        # user entered a bit string ('011'B)
+                        # a padding has been added and it ws converted to hex
+                        # (the primary.value is an hex string already)
+                        # => length must be compatible with recipient length
+                        ok = int(minR) * 2 <= len(primary.value[1:-1]) <= int(maxR) * 2
+                    else:
+                        # user entered a text => each char is 1 octet
+                        ok = int(minR) <= len(primary.value[1:-1]) <= int(maxR)
+
+                    if ok:
+                        return warnings
+                    else:
+                        raise TypeError(f'Invalid string literal {primary.value}H:'
+                                    ' Length check failed (Octet String) ')
+
+                elif basic_type.kind == 'BitStringType':
+                    # recipient is a BIT STRING of some size [minR..maxR]
+                    # The length check will depend  on the user string kind:
+
+                    if primary.exprType.kind == 'OctetStringType':
+                        # user entered an hex string ('ABC'H)
+                        # => each character is 4 bits
+                        ok = int(minR) <= len(primary.value[1:-1]) * 4 <= int(maxR)
+
+                    elif primary.exprType.kind == 'BitStringType':
+                        # user entered a bit string ('011'B)
+                        # a padding has been added and it ws converted to hex
+                        # (the primary.value is an hex string already)
+                        # but the original number of bits is known
+                        ok = int(minR) <= primary.exprType.NumberOfBits <= int(maxR)
+                    else:
+                        # user entered a text => each character is 8 bits
+                        ok = int(minR) <= len(primary.value[1:-1]) * 8 <= int(maxR)
+
+                    if ok:
+                        return warnings
+                    else:
+                        raise TypeError(f'Invalid string literal {primary.value}H:'
+                                    ' Length check failed (Bit String) ')
+
+                elif int(minR) <= len(primary.value[1:-1]) <= int(maxR):
                     return warnings
                 else:
                     #print traceback.print_stack()
@@ -1340,7 +1404,8 @@ def find_variable_type(var, context):
             return TIMER
 
     # check if it is an ASN.1 constant
-    for varname, vartype in DV.variables.items():
+    for varname, vartype in chain(DV.variables.items(),
+                                  DV.SDL_Constants.items()):
         if var.lower() == varname.lower().replace('-', '_'):
             return vartype.type
 
@@ -1536,8 +1601,7 @@ def primary_variable(root, context):
     # Detect reserved keywords
     if name.lower() in ('integer', 'real', 'procedure', 'begin', 'end',
                         'for', 'in', 'out', 'loop'):
-        errors.append(u"Use of forbidden keyword for a variable name : {}"
-                      .format(name))
+        errors.append(f"Use of forbidden keyword for a variable name : {name}")
 
     possible_constant = is_asn1constant(name)
     if possible_constant is not None:
@@ -1576,7 +1640,8 @@ def is_fpar(name, context):
 def is_asn1constant(name):
     name = name.lower().replace('-', '_')
     try:
-        for varname, vartype in DV.variables.items():
+        for varname, vartype in chain(DV.variables.items(),
+                                      DV.SDL_Constants.items()):
             if varname.lower().replace('-', '_') == name:
                 return vartype
     except AttributeError:
@@ -1874,14 +1939,17 @@ def logic_expression(root, context):
 
         if bty.kind == 'BooleanType':
             continue
-        elif bty.kind == 'BitStringType' and bty.Min == bty.Max:
+        elif bty.kind in ('BitStringType', 'OctetStringType') and bty.Min == bty.Max:
             continue
         elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max \
                 and find_basic_type(bty.type).kind == 'BooleanType':
             continue
+        elif 'IntegerType' in bty.kind and int(bty.Min) >= 0:
+            # Unsigned types can work for bitwise operations
+            continue
         else:
-            msg = 'Bitwise operators only work with Booleans, ' \
-                  'fixed size SequenceOf Booleans or fixed size BitStrings'
+            msg = 'Bitwise operators only work with Booleans, unsigned integers,' \
+                  'fixed size SequenceOf Booleans or fixed size BIT/OCTET STRINGs'
             errors.append(error(root, msg))
             break
 
@@ -2258,14 +2326,14 @@ def not_expression(root, context):
             expr = expr.expr
         else:
             expr.exprType = BOOLEAN
-    elif bty.kind == 'BitStringType':
+    elif bty.kind in ('BitStringType', 'OctetStringType'):
         expr.exprType = expr.expr.exprType
     elif bty.kind == 'SequenceOfType' and \
             find_basic_type(bty.type).kind == 'BooleanType':
         expr.exprType = expr.expr.exprType
     else:
-        msg = 'Bitwise operators only work with booleans '\
-              'and arrays of booleans'
+        msg = 'Bitwise operators only work with booleans, '\
+              'sequence of booleans, bit strings and octet strings'
         errors.append(error(root, msg))
 
     return expr, errors, warnings
@@ -2375,6 +2443,7 @@ def call_expression(root, context, pos="right"):
     # if the root (which has not been analysed before) is a choice field
     # (this being not permitted - choice must be set via asn1 notation)
     errors, warnings = [], []
+    #print("call expression", get_input_string(root))
 
     if root.children[0].type == lexer.PRIMARY:
         # check if it is a call to a special operator or procedure
@@ -2475,8 +2544,8 @@ def primary_index(root, context, pos):
 
     node.value = [receiver, {'index': params}]
 
-    if receiver_bty.kind == 'SequenceOfType':
-        # Range of the receiver (SEQUENCE(SIZE(XXX)) - check XXX
+    if receiver_bty.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
+        # Range of the receiver (SEQUENCE(SIZE(N)) - check N
         if isinstance(receiver, ogAST.PrimSubstring):
             r_min, r_max = substring_range(receiver)
         else:
@@ -2490,8 +2559,17 @@ def primary_index(root, context, pos):
                 "you must assign all values at once to set the size "
                 "(syntax: variable := {3, 14, 15})"))
 
-        # receiver_bty.type is the type of the array elements
-        node.exprType = receiver_bty.type
+        if receiver_bty.kind == 'SequenceOfType':
+            # receiver_bty.type is the type of the array elements
+            node.exprType = receiver_bty.type
+        elif receiver_bty.kind == 'OctetStringType':
+            # Octet string elements = unsigned integer
+            node.exprType = UINT8
+        elif receiver_bty.kind == 'BitStringType':
+            # Bit string elements = boolean
+            node.exprType = type('Bit',
+                                  BOOLEAN.__bases__,
+                                  dict(BOOLEAN.__dict__))
 
         idx_bty = find_basic_type(params[0].exprType)
         if not is_integer(idx_bty):
@@ -2710,6 +2788,13 @@ def primary(root, context):
                 prim.value = f"'{as_hex.hex()}'"
                 prim.numeric_value = as_number
                 prim.printable_string = root.text
+                prim.exprType = type('PrStr', (object,), {
+                    'kind': 'BitStringType',
+                    'Min': str(len(prim.value) - 2),
+                    'Max': str(len(prim.value) - 2),
+                    'NumericValue': prim.numeric_value,
+                    'NumberOfBits': len(root.text[1:-2])  # in user string
+                })
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Bit string literal: {}'.format(err)))
@@ -2726,9 +2811,15 @@ def primary(root, context):
                     prim.value = (f"'{prim.printable_string}'")
                 except:
                     prim.printable_string = root.text
-                    prim.value = as_hex
+                    prim.value = f"'{as_hex}'"
                 # store the integer number corresponding to the hex representation
                 prim.numeric_value = as_number
+                prim.exprType = type('PrStr', (object,), {
+                    'kind': 'OctetStringType',
+                    'Min': str(len(prim.value) - 2),
+                    'Max': str(len(prim.value) - 2),
+                    'NumericValue': prim.numeric_value
+                })
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Octet string literal: {}'.format(err)))
@@ -2736,16 +2827,12 @@ def primary(root, context):
         else:
             prim = ogAST.PrimStringLiteral()
             prim.value = root.text
-        prim.exprType = type('PrStr', (object,), {
-            'kind': 'StringType',
-            'Min': str(len(prim.value) - 2),
-            'Max': str(len(prim.value) - 2),
-            'NumericValue':
-               prim.numeric_value
-                  if isinstance(prim, (ogAST.PrimOctetStringLiteral,
-                                       ogAST.PrimBitStringLiteral))
-                  else -1
-        })
+            prim.exprType = type('PrStr', (object,), {
+                'kind': 'StringType',
+                'Min': str(len(prim.value) - 2),
+                'Max': str(len(prim.value) - 2),
+                'NumericValue': -1
+            })
     elif root.type == lexer.FLOAT2:
         prim = ogAST.PrimMantissaBaseExp()
         mant = float(root.getChild(0).toString())
@@ -3118,9 +3205,7 @@ def composite_state(root, parent=None, context=None):
         if t.kind != "next_state":
             continue
         ns = t.inputString.lower()
-    #for ns in [t.inputString.lower() for t in comp.terminators
-    #        if t.kind == 'next_state']:
-        if not ns in [s.lower() for s in comp.mapping.keys()] + ['-']:
+        if not ns in [s.lower() for s in comp.mapping.keys()] + ['-', '-*']:
             errors.append(['In composite state "{}": missing definition '
                            'of substate "{}"'
                            .format(comp.statename, ns.upper()),
@@ -3331,7 +3416,9 @@ def procedure_post(proc, content, parent=None, context=None):
             check_expr.left.exprType = proc.return_type
             check_expr.right = each.return_expr
             try:
-                warnings.extend(fix_expression_types(check_expr, context))
+                warns = fix_expression_types(check_expr, context)
+                for warn in warns:
+                    warnings.append([warn, [0,0], []])
             except (TypeError, AttributeError) as err:
                 errors.append([f"In procedure {proc.inputString}: {str(err)}",
                     [0, 0], []])
@@ -3535,18 +3622,65 @@ def newtype(root, ta_ast, context):
 
 
 def synonym(root, ta_ast, context):
-    ''' Parse a SYNONYM definition and inject it in ASN1 exported variables'''
+    ''' Parse a list of SYNONYMs definition (SDL constants) '''
     errors = []
     warnings = []
 
-    if not "SDL-Constants" in DV.asn1Modules:
-        DV.asn1Modules.append("SDL-Constants")
-        DV.exportedVariables["SDL-Constants"] = []
+    def parse_synonym(syn):
+        name, sort, ground = None, None, None
+        for child in syn.getChildren():
+            if child.type == lexer.ID:
+                name = child.text
+            elif child.type == lexer.SORT:
+                sort = child.getChild(0).text
+            elif child.type == lexer.GROUND:
+                ground, err, warn = expression(child.getChild(0), context)
+                errors.extend(err)
+                warnings.extend(warn)
+            elif child.type == lexer.EXTERNAL:
+                errors.append("External synonyms are not supported")
+            else:
+                warnings.append(
+                    'Unsupported synonym construct' +
+                    sdl92Parser.tokenNamesMap[child.type])
+        return name, sort, ground
 
     for child in root.getChildren():
-        if child.getChild(0).type == lexer.SORT:
-            DV.exportedVariables["SDL-Constants"].append(
-                                            child.getChild(0).getChild(0).text)
+        if child.type == lexer.SYNONYM:
+            name, sort, value = parse_synonym(child)
+
+        if name and sort and value:
+            nameDash = name.replace('_', '-')
+            sortDash = sort.replace('_', '-')
+
+            # The value field will depend on the type..If the constant is a
+            # numerical value then we transform it to a number, because it
+            # can be used by the parser for range checks
+            # Same for booleans and enumerated. But complex types are kept as
+            # expressions
+            if isinstance(value, (ogAST.PrimOctetStringLiteral,
+                                  ogAST.PrimBitStringLiteral)):
+                concrete_val = value.numeric_value
+            elif is_numeric(value.exprType) or is_enumerated(value.exprType) or is_boolean(value.exprType):
+                # value.value is an array of one element
+                concrete_val, = value.value
+            else:
+                concrete_val = value
+
+            DV.SDL_Constants[nameDash] = type (nameDash, (), {
+                   "varName" : name,
+                   "type": type (f"{name}_type", (), {
+                       "AsnFile": None,
+                       "Line": 0,
+                       "CharPositionInLine": 0,
+                       "CName": sort,
+                       "AdaName": sort,
+                       "HasEncDec": False,
+                       "kind": "ReferenceType",
+                       "ReferencedTypeName": sortDash
+                    }),
+                   "value": concrete_val
+                })
     return errors, warnings
 
 
@@ -3565,6 +3699,27 @@ def text_area_content(root, ta_ast, context):
             err, warn = dcl(child, ta_ast, context, monitor=True)
             errors.extend(err)
             warnings.extend(warn)
+        elif child.type == lexer.ERRORSTATES:  # used in observers only
+            try:
+                for each in child.getChildren():
+                    context.errorstates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Error states cannot be declared here")
+        elif child.type == lexer.IGNORESTATES:
+            try:
+                for each in child.getChildren():
+                    context.ignorestates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Ignore states cannot be declared here")
+        elif child.type == lexer.SUCCESSSTATES:
+            try:
+                for each in child.getChildren():
+                    context.successstates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Success states cannot be declared here")
         elif child.type == lexer.SYNONYM_LIST:
             err, warn = synonym(child, ta_ast, context)
             errors.extend(err)
@@ -3638,7 +3793,7 @@ def text_area_content(root, ta_ast, context):
         else:
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
-                    str(child.type))
+                    sdl92Parser.tokenNamesMap[child.type])
     if ta_ast.asn1_files:
         # Parse ASN.1 files that are referenced in USE clauses
         try:
@@ -4008,9 +4163,10 @@ def process_definition(root, parent=None, context=None):
         process.content.inner_procedures.append(proc)
         process.procedures.append(proc)
 
+    state_list = get_state_list(root)
     # Prepare the transition/state mapping
-    process.mapping = {name: [] for name in get_state_list(root)}
-    process.cs_mapping = {name: [] for name in get_state_list(root)}
+    process.mapping    = {name: [] for name in state_list}
+    process.cs_mapping = {name: [] for name in state_list}
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -4119,6 +4275,19 @@ def process_definition(root, parent=None, context=None):
             # alias_name is already in lowercase
             process.aliases[alias_name] = (alias_sort, expr)
 
+    # Verify that special states for observers are defined:
+    for each in chain(process.errorstates,
+                      process.ignorestates,
+                      process.successstates):
+        if each not in (st.lower() for st in state_list):
+            # retrieve the text area that contained the decalaration
+            # to get the coordinates for error localization
+            for ta_ast in process.content.textAreas:
+                if each in ta_ast.observer_states:
+                    errors.append([f"Observer state {each} is not defined",
+                        [ta_ast.pos_x, ta_ast.pos_y], []])
+                    break
+
     if not process.referenced and not process.instance_of_name \
                               and (not process.content.start or
                                    not process.content.start.terminators):
@@ -4144,7 +4313,8 @@ def continuous_signal(root, parent, context):
     warnings, errors = [], []
     # Flag the continous signal if we are in an observer (model checking)
     # (useful to render the symbol a bit differently)
-    i.observer = True
+    if 'Observer-State-Kind' in types().keys():
+        i.observer = True
     # Keep track of the number of terminator statements in the transition
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
@@ -4747,6 +4917,30 @@ def procedure_call(root: antlr3.tree.CommonTree,
             # for case-sensitive backends like C code generators
             out_ast.output[0]['outputName'] = each.inputString
             break
+    else:
+        # Procedure not found, perhaps a special operator
+        # in principle internal operators are not invoked with the "call"
+        # keyword, they can be called directly. However if they have no
+        # parameter, they can be confused with a variable and would not be
+        # resolved properly without the explicit "call" unless it uses
+        # empty parenthesis : funcWithNoParam().
+        # here we only try to get the return type. if check_call returns
+        # an exception due to the parameters of the call, we ignore, as this
+        # will be resolved at a diffeent place
+        if call_name in SPECIAL_OPERATORS.keys():
+            try:
+                out_ast.exprType = check_call (call_name,
+                         out_ast.output[0]['params'], context)
+                if out_ast.exprType == UNKNOWN_TYPE:
+                    # if type of operator was not found, set to no type at all
+                    out_ast.exprType = None
+                else:
+                    # If there is a return, we are not in a procedure call
+                    # symbol, so the input string must keep the "call" keyword
+                    # (for example if the call is in a RETURN symbol)
+                    out_ast.inputString = get_input_string(root)
+            except TypeError:
+                pass
     return out_ast, err, warn
 
 
@@ -5289,6 +5483,8 @@ def nextstate(root, context):
             next_state_id = child.text
         elif child.type == lexer.DASH:
             next_state_id = '-'
+        elif child.type == lexer.HISTORY_NEXTSTATE:
+            next_state_id = '-*'
         elif child.type == lexer.VIA:
             if next_state_id.strip() != '-':
                 via = get_input_string(root).replace(
@@ -5369,7 +5565,7 @@ def terminator_statement(root, parent, context):
             # post-processing: if nextatate is nested, add link to the content
             # (normally handled at state level, but if state is not defined
             # standalone, the nextstate must hold the composite content)
-            if t.inputString != '-':
+            if t.inputString not in ('-', '-*'):
                 for each in context.composite_states:
                     if each.statename.lower() == t.inputString.lower():
                         t.composite = each
@@ -5834,10 +6030,10 @@ def pr_file(root):
     global DV
 
     # In case no ASN.1 files are parsed, the DV structure is pre-initialised
-    # This to allow SDL types injection in ASN1 ASTs
+    # This to allow SDL types and constant injection in ASN1 ASTs
     DV = type("ASNParseTree", (object, ),
               {"types": {}, "exportedVariables": {}, "asn1Modules": [],
-                  "exportedTypes": {}, "variables": {}})
+                  "exportedTypes": {}, "variables": {}, "SDL_Constants": {}})
 
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions
@@ -6078,13 +6274,14 @@ def parse_pr(files=None, string=None):
                         if type(warning) is not list else warning)
     # Post-parsing: additional semantic checks
     # check that all NEXTSTATEs have a correspondingly defined STATE
-    # (except the '-' state, which means "stay in the same state')
+    # (except the '-' state, which means "stay in the same state' and
+    # the '-*' (history nextstate) that recovers parallel states 
     for process in og_ast.processes:
         for t in process.terminators:
             if t.kind != 'next_state':
                 continue
             ns = t.instance_of or t.inputString.lower()
-            if not ns in [s.lower() for s in process.mapping.keys()] + ['-']:
+            if not ns in [s.lower() for s in process.mapping.keys()] + ['-', '-*']:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
                 errors.append(['State definition missing: ' + ns.upper(),
                               [t_x, t_y],
