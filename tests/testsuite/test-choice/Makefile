@@ -27,13 +27,13 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	mono $(ASN1SCC) -Ada  -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada  -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
-	mono $(ASN1SCC) -c  -typePrefix asn1Scc -equal dataview.asn
+	$(ASN1SCC) -c  -typePrefix asn1Scc -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
 

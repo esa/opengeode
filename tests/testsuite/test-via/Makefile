@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: dataview-uniq.o | test_ada.o
 	cp challenge_ri.ada challenge_ri.adb
 	$(OPENGEODE) challenge.pr system_structure.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make challenge
 	$(GNATBIND) -n challenge.ali
 	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm

@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.6.3'
+__version__ = '3.7.5'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2025,18 +2025,17 @@ end {pr};'''.format(pr=prj_name,
    end Naming;
 
    package Compiler is
-       for Driver ("ASN1") use "mono";
+       for Driver ("ASN1") use "asn1scc";
 
        for Leading_Required_Switches ("ASN1") use
-         (external("ASN1SCC"),
-         "-{lang}",
+         ("-{lang}",
           "-typePrefix",
           "Asn1Scc"{otherAsn});
    end Compiler;
 end DataView_{lang};'''
 
         #  Template for the Makefile
-        template_makefile = '''export ASN1SCC=$(shell which asn1.exe)
+        template_makefile = '''export ASN1SCC=$(shell which asn1scc)
 
 all:
 \tgprbuild -p -P {prFile}.gpr          # generate Ada code from the SDL model

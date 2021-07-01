@@ -49,8 +49,8 @@ dependencies:
 	sudo apt install python3-singledispatch
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.4.0f/asn1scc-bin-4.2.4.0f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
-	# make sure that ~/.local/bin is in your PATH
+	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.4.7f/asn1scc-bin-4.2.4.7f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
+	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
 	@pip3 install --user --upgrade .

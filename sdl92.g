@@ -62,6 +62,7 @@ tokens {
         FOR;
         FPAR;
         GROUND;
+        HISTORY_NEXTSTATE;
         HYPERLINK;
         IF;
         IFTHENELSE;
@@ -354,11 +355,26 @@ content
                  | newtype_definition
                  | variable_definition
                  | monitor_definition
+                 | observer_special_states_declaration
                  | synonym_definition)*
         ->       ^(TEXTAREA_CONTENT fpar* $res? procedure* variable_definition*
                    monitor_definition* syntype_definition* newtype_definition*
                    timer_declaration* signal_declaration* use_clause*
-                   synonym_definition*)
+                   observer_special_states_declaration* synonym_definition*)
+        ;
+
+// Observers for model checking can have states that are flagged as
+// error, ignore or success states. They are declared like this:
+// errorstates stateA, stateB;
+// ignorestates stateC;
+// successstates stateD, stateE;
+observer_special_states_declaration
+        :       ERRORSTATES      statename (',' statename)* end
+        ->      ^(ERRORSTATES statename+)
+                | IGNORESTATES   statename (',' statename)* end
+        ->      ^(IGNORESTATES statename+)
+                | SUCCESSSTATES  statename (',' statename)* end
+        ->      ^(SUCCESSSTATES statename+)
         ;
 
 
@@ -442,7 +458,7 @@ monitor_definition
         ->      ^(MONITOR variables_of_sort+)
         ;
 
-
+/* synonyms in SDL allow to declare constants */
 synonym_definition
         :       internal_synonym_definition
         ;
@@ -456,8 +472,8 @@ internal_synonym_definition
 
 
 synonym_definition_item
-        :       sort sort '=' ground_expression
-        ->      ^(SYNONYM sort sort ground_expression)
+        :       variable_id sort '=' (ground_expression | EXTERNAL)
+        ->      ^(SYNONYM variable_id sort ground_expression? EXTERNAL?)
         ;
 
 
@@ -1109,8 +1125,8 @@ unary_expression
 
 postfix_expression
         :       (ID -> ^(PRIMARY ^(VARIABLE ID)))
-                (   '(' params=expression_list ')'
-                -> ^(CALL $postfix_expression ^(PARAMS $params))
+                (   '(' params=expression_list? ')'
+                -> ^(CALL $postfix_expression ^(PARAMS $params?))
                 |   ('!' | DOT) field_name
                 -> ^(SELECTOR $postfix_expression field_name)
                 )+
@@ -1366,6 +1382,7 @@ nextstate
 nextstatebody
         :       statename (':'! type_inst)? via?
                 | dash_nextstate
+                | history_nextstate
         ;
 
 
@@ -1470,6 +1487,12 @@ cif_end_label
         :       cif_decl END LABEL cif_end
         ;
 
+
+// history nextstate allows to re-enter parallel substates without going
+// through the startup transition.
+history_nextstate
+        :       '-*'  -> ^(HISTORY_NEXTSTATE)
+        ;
 
 dash_nextstate  :       DASH;
 connector_name  :       ID;
@@ -1645,7 +1668,10 @@ IMPORT          :       I M P O R T;
 VIEW            :       V I E W;
 ACTIVE          :       A C T I V E;
 UNHANDLED       :       U N H A N D L E D;
-
+//  Observer special states (error, ignore, success)
+ERRORSTATES     :       E R R O R S T A T E S;
+IGNORESTATES    :       I G N O R E S T A T E S;
+SUCCESSSTATES   :       S U C C E S S S T A T E S;
 
 
 STRING
