@@ -609,7 +609,7 @@ def signature(name, context):
                 # output signals: one single parameter
                 signature.append({
                     'type': out_sig.get('type'),
-                    'name': out_sig.get('param_name' or ''),
+                    'name': out_sig.get('param_name') or '',
                     'direction': 'in',
                 })
             return signature
@@ -3608,8 +3608,9 @@ def newtype(root, ta_ast, context):
             errors.append(str(err))
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):
-        newType.kind = "SequenceType"
-        newType.Children = get_struct_children(root.getChild(1))
+        errors.append('Use newtype definitions for arrays only')
+        #newType.kind = "SequenceType"
+        #newType.Children = get_struct_children(root.getChild(1))
         #types()[str(newtypename)] = newType
         LOG.debug("Found new STRUCT type " + newtypename)
     else:
@@ -4832,14 +4833,15 @@ def connect_part(root, parent, context):
 def cif(root):
     ''' Return the CIF coordinates '''
     result = []
+    neg = False
     for child in root.getChildren():
-        neg = False
         if child.type == lexer.DASH:
             neg = True
         else:
             val = int(child.toString())
             val = -val if neg else val
             result.append(val)
+            neg = False
     return result
 
 

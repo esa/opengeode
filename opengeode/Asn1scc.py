@@ -276,7 +276,7 @@ def asn2dataModel(*files):
 if __name__ == '__main__':
     LOG.setLevel(logging.DEBUG)
     try:
-        ast = parse_asn1('dataview-uniq.asn',
+        ast = parse_asn1(['dataview-uniq.asn'],
                           ast_version=ASN1.NoParameterizedTypes,
                           flags=[ASN1.AstOnly])
         print(ast.types.keys())
