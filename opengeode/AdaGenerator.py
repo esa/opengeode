@@ -1633,8 +1633,11 @@ def _call_external_function(output, **kwargs):
                         p_id = f"{typename} ({p_id})"
                     if isinstance(param,
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-                        p_id = array_content(param, p_id,
-                                             find_basic_type(param_type))
+                        if basic_param.kind == 'IA5StringType':
+                            p_id = ia5string_raw(param)
+                        else:
+                           p_id = array_content(param, p_id,
+                                                find_basic_type(param_type))
 
                     if isinstance(param, ogAST.ExprAppend):
                         # Process Append constructs properly when they are
@@ -1965,6 +1968,16 @@ def _prim_call(prim, **kwargs):
         if need_default:
             choices.append(f'when others => {defaultstr}')
         ada_string += ', '.join(choices) + ')'
+    elif ident in ('shift_left', 'shift_right'):
+        p1, p2 = params
+        param_stmts, s1, local_var = expression(p1, readonly=1)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        param_stmts, s2, local_var = expression(p2, readonly=1)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        fcn = 'Shift_Left' if ident == "shift_left" else 'Shift_Right'
+        ada_string += f'{fcn} ({s1}, {s2})'
     elif ident == 'exist':
         # User wants to know if an optional field is present or not
         selector = params[0]  # type PrimSelector
@@ -2278,6 +2291,9 @@ def _equality(expr, **kwargs):
                           'EnumeratedType',
                           'ChoiceEnumeratedType')
     if basic:
+        if isinstance(expr.right, (ogAST.PrimBitStringLiteral,
+                                   ogAST.PrimOctetStringLiteral)):
+            right_str = str(expr.right.numeric_value)
         # Cast in case a side is using a 32bits ints (eg when using Length(..))
         if lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
             right_str = f'{type_name(lbty)} ({right_str})'
@@ -2286,9 +2302,13 @@ def _equality(expr, **kwargs):
         ada_string = f'({left_str} {expr.operand} {right_str})'
     else:
         if asn1_type in TYPES:
-            if isinstance(expr.right,
-                          (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-                right_str = array_content(expr.right, right_str, lbty)
+            if isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                if lbty.kind.startswith('Integer'):
+                    right_str = str(expr.right.numeric_value)
+                elif lbty.kind == 'IA5StringType':
+                    right_str = ia5string_raw(expr.right)
+                else:
+                    right_str = array_content(expr.right, right_str, lbty)
             ada_string = f'{actual_type}_Equal ({left_str}, {right_str})'
         else:
             # Raw types on both left and right.... use simple operator
@@ -2585,30 +2605,27 @@ def _expr_in(expr, **kwargs):
         sort = type_name(expr.right.exprType)
         size = expr.left.exprType.Max
 
-        local_decl.extend([u'tmp{} : constant array (1 .. {}) of {} := ({});'
-                .format(expr.tmpVar, size, sort, left_str)])
-        ada_string = u'(for some var of tmp{} => var = {})'.format(expr.tmpVar,
-                                                                 right_str)
+        local_decl.append(f'tmp{expr.tmpVar} : constant array (1 .. {size}) of {sort} := ({left_str});')
+        ada_string = f'(for some var of tmp{expr.tmpVar} => var = {right_str})'
     else:
-        local_decl.extend([u'tmp{} : Boolean := False;'.format(expr.tmpVar)])
-        ada_string = u'tmp{}'.format(expr.tmpVar)
+        local_decl.append(f'tmp{expr.tmpVar} : Boolean := False;')
+        ada_string = f'tmp{expr.tmpVar}'
 
-        stmts.append(u"in_loop_{}:".format(ada_string))
+        stmts.append(f"in_loop_{ada_string}:")
         left_type = find_basic_type(expr.left.exprType)
 
         if isinstance(expr.left, ogAST.PrimSubstring):
-            len_str = u"{}'Length".format(left_str)
+            len_str = f"{left_str}'Length"
         else:
-            len_str = u"{}.Length".format(left_str)
-            left_str += u".Data"
+            len_str = f"{left_str}.Length"
+            left_str += ".Data"
 
         if left_type.Min != left_type.Max:
-            stmts.append(u"for elem in 1..{} loop".format(len_str))
+            stmts.append(f"for elem in 1 .. {len_str} loop")
         else:
-            stmts.append(u"for elem in {}'Range loop".format(left_str))
+            stmts.append(f"for elem in {left_str}'Range loop")
 
-        stmts.append(u"if {container}(elem) = {pattern} then".format
-                (container=left_str, pattern=right_str))
+        stmts.append(f"if {left_str} (elem) = {right_str} then")
 
         stmts.append(f"{ada_string} := True;")
         stmts.append("end if;")
@@ -2652,7 +2669,7 @@ def _integer(primary, **kwargs):
     if float(primary.value[0]) < 0:
         # Put brackets around negative integers for maintaining
         # the precedence in the generated code
-        ada_string = u'({})'.format(primary.value[0])
+        ada_string = f'({primary.value[0]})'
     else:
         ada_string = primary.value[0]
     return [], str(ada_string), []
@@ -2837,6 +2854,8 @@ def _sequence(seq, **kwargs):
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             if elem_bty.kind.startswith('Integer'):
                 value_str = str(value.numeric_value)
+            elif elem_bty.kind == 'IA5StringType':
+                value_str = ia5string_raw(value)
             else:
                 value_str = array_content(value, value_str, elem_bty)
 
@@ -3021,6 +3040,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
             # each branch can trigger based on multiple coma-separated answers
             ans_kind    = element['kind']
             ans_content = element['content']
+            qbty = find_basic_type(question_type)
 
             if ans_kind in ('open_range', 'constant'):
                 op, constant = ans_content # get the constant
@@ -3031,14 +3051,24 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                     if op in (ogAST.ExprEq, ogAST.ExprNeq):
                         if isinstance(constant, (ogAST.PrimSequenceOf,
                                                  ogAST.PrimStringLiteral)):
-                            ans_str = array_content(constant, ans_str,
-                                                find_basic_type(question_type))
-                        exp += f'{sub_sep}{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
+                            if qbty.kind == 'IA5StringType':
+                               ans_str = ia5string_raw (constant)
+                            else:
+                               ans_str = array_content(constant, ans_str, qbty)
+                        exp += f'{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
                         if op == ogAST.ExprNeq:
-                            exp += f'{sub_sep}not {exp}'
+                            exp = f'{sub_sep}not {exp}'
+                        else:
+                            exp = f'{sub_sep}{exp}'
                     else:
                         exp += f'{sub_sep}tmp{dec.tmpVar} {op.operand} {ans_str}'
                 else:
+                    # Basic (number/enumerated/boolean)
+                    # but the answer may be an hex or bit string literal
+                    if isinstance(constant, (ogAST.PrimBitStringLiteral,
+                                             ogAST.PrimOctetStringLiteral)):
+                        ans_str = str(constant.numeric_value)
+
                     exp += f'{sub_sep}({q_str}) {op.operand} {ans_str}'
 
 
