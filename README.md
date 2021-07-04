@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.6 (07/2021)**
+- Add Right_Shift and Left_Shift operators applicable to unsigned integers
+
 **3.7.5 (07/2021)**
 - Improve support SDL synonyms (synonym foo SomeIntType = 42;)
 
