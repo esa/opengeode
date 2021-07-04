@@ -2,23 +2,63 @@
 process challenge;
     state aggregation Aggreg;
     substructure
+            state A;
+            substructure
+                    /* CIF START (146, 110), (70, 35) */
+                    START;
+                        /* CIF PROCEDURECALL (83, 165), (194, 35) */
+                        call writeln ('[-] State A starting');
+                        /* CIF NEXTSTATE (146, 215), (70, 35) */
+                        NEXTSTATE waiting;
+                    /* CIF state (355, 163), (78, 35) */
+                    state In_Action;
+                        /* CIF provided (354, 218), (80, 35) */
+                        provided action = 1;
+                            /* CIF PROCEDURECALL (299, 273), (191, 35) */
+                            call writeln ('[4] Action 1 DONE');
+                            /* CIF task (353, 323), (83, 35) */
+                            task action := 0;
+                            /* CIF NEXTSTATE (351, 378), (86, 35) */
+                            NEXTSTATE completed;
+                    endstate;
+                    /* CIF state (557, 179), (93, 35) */
+                    state completed;
+                        /* CIF provided (562, 234), (80, 35) */
+                        provided action = 3;
+                            /* CIF PROCEDURECALL (507, 289), (191, 35) */
+                            call writeln ('[7] Quitting');
+                            /* CIF return (585, 339), (35, 35) */
+                            return ;
+                    endstate;
+                    /* CIF state (146, 215), (70, 35) */
+                    state waiting;
+                        /* CIF provided (140, 270), (80, 35) */
+                        provided action = 1;
+                            /* CIF PROCEDURECALL (84, 325), (192, 35) */
+                            call writeln ('[3] Action 1 START');
+                            /* CIF task (139, 380), (83, 35) */
+                            task action := 0;
+                            /* CIF NEXTSTATE (142, 430), (76, 35) */
+                            NEXTSTATE in_action;
+                    endstate;
+            endsubstructure;
             state B;
             substructure
                     /* CIF START (247, 103), (70, 35) */
                     START;
-                        /* CIF PROCEDURECALL (180, 158), (202, 35) */
+                        /* CIF PROCEDURECALL (181, 158), (202, 35) */
                         call writeln ('[-] State B starting');
                         /* CIF NEXTSTATE (247, 208), (70, 35) */
                         NEXTSTATE waiting;
-                    /* CIF state (507, 142), (78, 35) */
+                    /* CIF state (506, 142), (78, 35) */
                     state In_Action;
-                        /* CIF provided (504, 197), (87, 35) */
+                        /* CIF provided (503, 197), (87, 35) */
                         provided action = 2;
-                            /* CIF PROCEDURECALL (451, 252), (191, 35) */
+                            /* CIF PROCEDURECALL (450, 252), (191, 35) */
                             call writeln ('[6] Action 2 DONE');
-                            /* CIF task (505, 302), (83, 35) */
+                            /* CIF task (504, 302), (83, 35) */
                             task action := 3;
-                            /* CIF return (530, 357), (35, 35) */
+                            /* CIF return (529, 357), (35, 35) */
                             return ;
                     endstate;
                     /* CIF state (247, 208), (70, 35) */
@@ -33,51 +73,11 @@ process challenge;
                             NEXTSTATE in_action;
                     endstate;
             endsubstructure;
-            state A;
-            substructure
-                    /* CIF START (146, 110), (70, 35) */
-                    START;
-                        /* CIF PROCEDURECALL (83, 165), (194, 35) */
-                        call writeln ('[-] State A starting');
-                        /* CIF NEXTSTATE (146, 215), (70, 35) */
-                        NEXTSTATE waiting;
-                    /* CIF state (146, 215), (70, 35) */
-                    state waiting;
-                        /* CIF provided (140, 270), (80, 35) */
-                        provided action = 1;
-                            /* CIF PROCEDURECALL (84, 325), (192, 35) */
-                            call writeln ('[3] Action 1 START');
-                            /* CIF task (139, 380), (83, 35) */
-                            task action := 0;
-                            /* CIF NEXTSTATE (142, 430), (76, 35) */
-                            NEXTSTATE in_action;
-                    endstate;
-                    /* CIF state (557, 179), (93, 35) */
-                    state completed;
-                        /* CIF provided (557, 234), (80, 35) */
-                        provided action = 3;
-                            /* CIF PROCEDURECALL (502, 289), (191, 35) */
-                            call writeln ('[7] Quitting');
-                            /* CIF return (580, 339), (35, 35) */
-                            return ;
-                    endstate;
-                    /* CIF state (356, 163), (78, 35) */
-                    state In_Action;
-                        /* CIF provided (355, 218), (80, 35) */
-                        provided action = 1;
-                            /* CIF PROCEDURECALL (300, 273), (191, 35) */
-                            call writeln ('[4] Action 1 DONE');
-                            /* CIF task (354, 323), (83, 35) */
-                            task action := 0;
-                            /* CIF NEXTSTATE (352, 378), (86, 35) */
-                            NEXTSTATE completed;
-                    endstate;
-            endsubstructure;
-            /* CIF state (178, 174), (70, 35) */
-            state A;
-            endstate;
-            /* CIF state (180, 246), (70, 35) */
+            /* CIF state (270, 326), (70, 35) */
             state B;
+            endstate;
+            /* CIF state (220, 192), (70, 35) */
+            state A;
             endstate;
     endsubstructure;
     /* CIF TEXT (150, 0), (298, 56) */
@@ -91,24 +91,15 @@ process challenge;
         call writeln('[1] Startup');
         /* CIF NEXTSTATE (88, 177), (70, 35) */
         NEXTSTATE Off;
-    /* CIF state (85, 242), (70, 35) */
-    state Off;
-        /* CIF input (85, 297), (70, 35) */
-        input run;
-            /* CIF PROCEDURECALL (0, 347), (240, 35) */
-            call writeln('[2] Entering  Parallel states');
-            /* CIF NEXTSTATE (78, 397), (84, 35) */
-            NEXTSTATE Aggreg;
-    endstate;
     /* CIF state (419, 123), (84, 35) */
     state Aggreg;
-        /* CIF input (527, 178), (72, 35) */
+        /* CIF input (526, 178), (72, 35) */
         input any_two;
-            /* CIF PROCEDURECALL (462, 233), (202, 35) */
+            /* CIF PROCEDURECALL (461, 233), (202, 35) */
             call writeln('[-] Received any_two');
-            /* CIF task (521, 283), (86, 35) */
+            /* CIF task (520, 283), (86, 35) */
             task action := 2;
-            /* CIF NEXTSTATE (529, 338), (70, 35) */
+            /* CIF NEXTSTATE (528, 338), (70, 35) */
             NEXTSTATE -*;
         /* CIF input (319, 178), (72, 35) */
         input any_one;
@@ -118,5 +109,14 @@ process challenge;
             task action := 1;
             /* CIF NEXTSTATE (320, 338), (70, 35) */
             NEXTSTATE -*;
+    endstate;
+    /* CIF state (85, 242), (70, 35) */
+    state Off;
+        /* CIF input (85, 297), (70, 35) */
+        input run;
+            /* CIF PROCEDURECALL (0, 347), (240, 35) */
+            call writeln('[2] Entering  Parallel states');
+            /* CIF NEXTSTATE (78, 397), (84, 35) */
+            NEXTSTATE Aggreg;
     endstate;
 endprocess challenge;
