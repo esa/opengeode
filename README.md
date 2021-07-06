@@ -69,7 +69,7 @@ The code is automatically generated when you exit the tool.
 Manual
 ------
 
-The following commands should automate the installation (with exception of ASN1SCC - see below):
+The following commands should automate the installation:
 
 ```
 $ git clone https://github.com/esa/opengeode
@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.7 (07/2021)**
+- Fix some bitwise operators when using unsigned numbers
+
 **3.7.6 (07/2021)**
 - Add Right_Shift and Left_Shift operators applicable to unsigned integers
 
