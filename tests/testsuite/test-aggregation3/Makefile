@@ -30,7 +30,7 @@ test-qgen-gt-c:
 test-ada: challenge.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n challenge.ali
 	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm
-	./test_ada | diff expected -
+	./regression.py
 
 test-c: challenge.c test_c.o dataview-uniq.o
 	$(CC) -include missing.h challenge.c -c -o challenge.o

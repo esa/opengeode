@@ -2433,32 +2433,44 @@ def _bitwise_operators(expr, **kwargs):
     basic_type = find_basic_type(expr.exprType)
 
     if basic_type.kind != 'BooleanType':
-        left_bty = find_basic_type (expr.left.exprType)
-        # Sequence of boolean or bit string
+        left_bty  = find_basic_type (expr.left.exprType)
+        right_bty = find_basic_type (expr.left.exprType)
+
+        # Left is Sequence of boolean or bit string: 
         if expr.right.is_raw and not left_bty.kind.startswith('Integer'):
-            # If the left is an integer (unsigned) the right is a number
-            # meaning there is no need for a tmp variable to store a bit string
+            # right is a raw value (hex/bit string)
+            # right cannot be an integer here (it would need to be converted
+            # to an hex string for bitwise operations to work against
+            # a sequence of / bit string
 
             # Declare a temporary variable to store the raw value
             tmp_string = f'tmp{expr.right.tmpVar}'
-            local_decl.append(f'{tmp_string} : {type_name(expr.right.exprType)};')
 
             if isinstance(expr.right,
                           (ogAST.PrimSequenceOf,
                            ogAST.PrimStringLiteral)):
                 right_str = array_content(expr.right, right_str, basic_type)
 
-            code.append(f'{tmp_string} := {right_str};')
+            local_decl.append(f'{tmp_string} : constant {type_name(expr.right.exprType)} := {right_str};')
+            #code.append(f'{tmp_string} := {right_str};')
 
             right_str = tmp_string
             right_payload = right_str + '.Data'
 
         elif expr.right.is_raw and left_bty.kind.startswith('Integer'):
-            right_payload = str(expr.right.numeric_value)
-            left_payload = left_str + string_payload(expr.left, left_str)
+            # right is raw (e.g. hex string literal) and left is a number
+            if isinstance (expr.right, (ogAST.PrimBitStringLiteral, ogAST.PrimOctetStringLiteral)):
+                right_payload = str(expr.right.numeric_value)
+            else:
+                right_payload = right_str
+                
+            left_payload = left_str # + string_payload(expr.left, left_str)
             ada_string = f'({left_payload} {expr.operand} {right_payload})'
-
+        elif left_bty.kind.startswith('Integer') and right_bty.kind.startswith('Integer'):
+            # left and right are numbers
+            ada_string = f'({left_str} {expr.operand} {right_str})'
         else:
+            # ?
             right_payload = right_str + string_payload(expr.right, right_str)
 
         left_payload = left_str + string_payload(expr.left, left_str)
