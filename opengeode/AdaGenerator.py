@@ -2463,7 +2463,7 @@ def _bitwise_operators(expr, **kwargs):
                 right_payload = str(expr.right.numeric_value)
             else:
                 right_payload = right_str
-                
+
             left_payload = left_str # + string_payload(expr.left, left_str)
             ada_string = f'({left_payload} {expr.operand} {right_payload})'
         elif left_bty.kind.startswith('Integer') and right_bty.kind.startswith('Integer'):
@@ -2504,7 +2504,7 @@ def _not_expression(expr, **kwargs):
 
     bty_inner = find_basic_type(expr.expr.exprType)
     bty_outer = find_basic_type(expr.exprType)
-    if bty_outer.kind != 'BooleanType':
+    if bty_outer.kind != 'BooleanType' and not "Integer" in bty_outer.kind:
         if bty_outer.Min == bty_outer.Max:
             size_expr = ''
         elif bty_inner.Min == bty_inner.Max:

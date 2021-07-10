@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 **3.7.7 (07/2021)**
+- Add support for the NOT operator on unsigned numbers
+
+**3.7.7 (07/2021)**
 - Fix some bitwise operators when using unsigned numbers
 
 **3.7.6 (07/2021)**

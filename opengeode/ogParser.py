@@ -2343,8 +2343,11 @@ def not_expression(root, context):
     elif bty.kind == 'SequenceOfType' and \
             find_basic_type(bty.type).kind == 'BooleanType':
         expr.exprType = expr.expr.exprType
+    elif 'IntegerType' in bty.kind and float(bty.Min) >= 0.0:
+        # unsigned integers also support the NOT operator
+        expr.exprType = expr.expr.exprType
     else:
-        msg = 'Bitwise operators only work with booleans, '\
+        msg = 'Bitwise operators only work with booleans, unsigned integers'\
               'sequence of booleans, bit strings and octet strings'
         errors.append(error(root, msg))
 
