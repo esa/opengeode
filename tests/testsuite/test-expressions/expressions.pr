@@ -1,6 +1,6 @@
 /* CIF PROCESS (144, 159), (150, 75) */
 process expressions;
-    /* CIF TEXT (832, 175), (303, 232) */
+    /* CIF TEXT (832, 175), (303, 248) */
     DCL i Integer;
     DCL f Real;
     DCL b Boolean;
@@ -14,6 +14,8 @@ process expressions;
     DCL bs1 BoolSeqOf;
     DCL bs2 BoolSeqOf;
     DCL bs3 BoolSeqOf;
+    
+    dcl ui16 UnsignedInt := '00FF'H;
     /* CIF ENDTEXT */
     /* CIF START (482, 0), (100, 50) */
     START;
@@ -145,57 +147,94 @@ process expressions;
             task bs3 := {true, false, true, true};
             /* CIF PROCEDURECALL (380, 3200), (306, 35) */
             call assert((bs1 => bs2) = bs3, ' bs1 => bs2 = bs3');
-            /* CIF task (301, 3250), (463, 35) */
+            /* CIF PROCEDURECALL (290, 3255), (484, 35) */
+            call assert(shift_left(ui16, 8) = 'FF00'H, ' shift_left(ui16, 8) = FF00 when ui16=00FF');
+            /* CIF decision (498, 3310), (70, 50) */
+            decision bs1;
+                /* CIF ANSWER (204, 3380), (186, 24) */
+                (not { true, true, true, true}):
+                    /* CIF PROCEDURECALL (152, 3424), (289, 35) */
+                    call assert(false, 'bs1 = not { true true true true }');
+                /* CIF ANSWER (506, 3380), (77, 24) */
+                (= not bs2):
+                    /* CIF PROCEDURECALL (450, 3424), (190, 35) */
+                    call assert(false, 'bs1 = not {bs2');
+                /* CIF ANSWER (652, 3380), (70, 24) */
+                else:
+            enddecision;
+            /* CIF task (301, 3475), (463, 35) */
             task '------------------------------- Unary expressions -------------------------------';
-            /* CIF task (485, 3300), (95, 35) */
+            /* CIF task (485, 3525), (95, 35) */
             task b := false;
-            /* CIF PROCEDURECALL (453, 3350), (160, 35) */
+            /* CIF PROCEDURECALL (453, 3575), (160, 35) */
             call assert(not b, 'not b');
-            /* CIF task (396, 3400), (273, 35) */
+            /* CIF task (396, 3625), (273, 35) */
             task bs1 := {false, true, false, true};
-            /* CIF task (422, 3450), (222, 35) */
+            /* CIF task (422, 3675), (222, 35) */
             task bs3 := {true, false, true, false};
-            /* CIF PROCEDURECALL (372, 3500), (322, 35) */
+            /* CIF PROCEDURECALL (372, 3725), (322, 35) */
             call assert(not bs1 = bs3, 'not bs1 = bs3');
-            /* CIF task (496, 3550), (73, 35) */
+            /* CIF task (496, 3775), (73, 35) */
             task i := 10;
-            /* CIF PROCEDURECALL (444, 3600), (177, 35) */
+            /* CIF PROCEDURECALL (444, 3825), (177, 35) */
             call assert(-i = -10, '-i = -10');
-            /* CIF task (298, 3650), (470, 35) */
+            /* CIF task (298, 3875), (470, 35) */
             task '------------------------------- Primary Expression -------------------------------';
-            /* CIF PROCEDURECALL (397, 3700), (271, 35) */
+            /* CIF PROCEDURECALL (397, 3925), (271, 35) */
             call assert(((1 + 1) * 4) = 8, '((1 + 1) * 4) = 8');
-            /* CIF PROCEDURECALL (324, 3750), (417, 35) */
+            /* CIF PROCEDURECALL (324, 3975), (417, 35) */
             call assert(1 = if true then 1 else 2 fi, 'if true then 1 else 2 fi = 1');
-            /* CIF PROCEDURECALL (298, 3800), (469, 35) */
+            /* CIF PROCEDURECALL (298, 4025), (469, 35) */
             call assert(2.0 = if false then 1.0 else 2.0 fi, 'if false then 1.0 else 2.0 fi = 2.0');
-            /* CIF PROCEDURECALL (0, 3850), (1066, 35) */
+            /* CIF PROCEDURECALL (0, 4075), (1066, 35) */
             call assert(if false then false else (if true then (if false then false else true fi) else false fi) fi, 'if false then false else (if true then (if false then false else true fi) else false fi) fi');
-            /* CIF task (267, 3900), (531, 35) */
+            /* CIF task (267, 4125), (531, 35) */
             task '------------------------------- Extended Primary Expressions -------------------------------';
-            /* CIF task (451, 3950), (163, 35) */
+            /* CIF task (451, 4175), (163, 35) */
             task fixSeqOf1 := {2, 3, 4};
-            /* CIF PROCEDURECALL (386, 4000), (293, 35) */
+            /* CIF PROCEDURECALL (386, 4225), (293, 35) */
             call assert(fixSeqOf1(1) = 3, 'fixSeqOf1(1) = 3');
-            /* CIF task (451, 4050), (164, 35) */
+            /* CIF task (451, 4275), (164, 35) */
             task varSeqOf1 := {2, 3, 4};
-            /* CIF PROCEDURECALL (383, 4100), (300, 35) */
+            /* CIF PROCEDURECALL (383, 4325), (300, 35) */
             call assert(varSeqOf1(1) = 3, 'varSeqOf1(1) = 3');
-            /* CIF task (413, 4150), (239, 35) */
-            task seq := {i 1, b true, f 1.0, s 'HELLO'};
-            /* CIF PROCEDURECALL (435, 4200), (196, 35) */
+            /* CIF task (412, 4375), (241, 35) */
+            task seq := {i '01'H, b true, f 1.0, s 'HELLO'};
+            /* CIF PROCEDURECALL (435, 4425), (196, 35) */
             call assert(seq!i = 1, 'seq!i = 1');
-            /* CIF PROCEDURECALL (412, 4250), (242, 35) */
+            /* CIF PROCEDURECALL (412, 4475), (242, 35) */
             call assert(seq!b = true, 'seq!b = true');
-            /* CIF PROCEDURECALL (422, 4300), (221, 35) */
+            /* CIF PROCEDURECALL (422, 4525), (221, 35) */
             call assert(seq!f = 1.0, 'seq!f = 1.0');
-            /* CIF PROCEDURECALL (388, 4350), (289, 35) */
+            /* CIF PROCEDURECALL (388, 4575), (289, 35) */
             call assert(seq!s = 'HELLO', 'seq!s = "HELLO"');
-            /* CIF task (431, 4400), (204, 35) */
+            /* CIF decision (498, 4630), (70, 50) */
+            decision seq.i;
+                /* CIF ANSWER (253, 4700), (66, 24) */
+                ('01'B):
+                /* CIF ANSWER (409, 4701), (70, 24) */
+                ('FF'H):
+                    /* CIF PROCEDURECALL (327, 4745), (234, 35) */
+                    call assert(false, 'seq.1 = "01"B');
+                /* CIF ANSWER (654, 4700), (70, 24) */
+                ELSE:
+                    /* CIF PROCEDURECALL (572, 4744), (234, 35) */
+                    call assert(false, 'seq.1 = "01"B');
+            enddecision;
+            /* CIF decision (498, 4796), (70, 50) */
+            decision seq.s;
+                /* CIF ANSWER (404, 4866), (76, 24) */
+                ('HELLO'):
+                /* CIF ANSWER (588, 4866), (70, 24) */
+                ELSE:
+                    /* CIF PROCEDURECALL (506, 4910), (234, 35) */
+                    call assert(false, 'seq.s = "HELLO"B');
+            enddecision;
+            /* CIF task (431, 4961), (204, 35) */
             task nestedSeq := {a {b {c {d 9}}}};
-            /* CIF PROCEDURECALL (353, 4450), (360, 35) */
+            /* CIF PROCEDURECALL (353, 5011), (360, 35) */
             call assert(nestedSeq!a!b!c!d = 9, 'nestedSeq!a!b!c!d = 9');
-            /* CIF NEXTSTATE (483, 4500), (100, 50) */
+            /* CIF NEXTSTATE (483, 5061), (100, 50) */
             NEXTSTATE Wait;
     endstate;
 endprocess expressions;

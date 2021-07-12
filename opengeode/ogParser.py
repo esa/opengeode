@@ -156,6 +156,14 @@ SPECIAL_OPERATORS = {
                     {'type': CHOICE,     'direction': 'in'},  # choice variable
                     {'type': NUMERICAL,  'direction': 'in'}   # default value
                    ],
+    'shift_left' : [ # logical shift -> return an unsigned
+                    {'type': UNSIGNED,   'direction': 'in'},
+                    {'type': UNSIGNED,   'direction': 'in'}
+                   ],
+    'shift_right' : [ # logical shift -> return an unsigned
+                     {'type': UNSIGNED,   'direction': 'in'},
+                     {'type': UNSIGNED,   'direction': 'in'}
+                    ],
     'observer_status' :  # observer-only procedure returning the kind of state
                    [],
 }
@@ -609,7 +617,7 @@ def signature(name, context):
                 # output signals: one single parameter
                 signature.append({
                     'type': out_sig.get('type'),
-                    'name': out_sig.get('param_name' or ''),
+                    'name': out_sig.get('param_name') or '',
                     'direction': 'in',
                 })
             return signature
@@ -899,6 +907,10 @@ def check_call(name, params, context):
         p1, _ = params
         #sort = type_name (p1.exprType)
         return type('choice_to_int', (INTEGER,), {})
+
+    elif name in ('shift_right', 'shift_left'):
+        p1, _ = params
+        return type('shift', (p1.exprType,), {})
 
     elif name == 'round':
         return type('Round', (REAL,), {
@@ -1944,7 +1956,7 @@ def logic_expression(root, context):
         elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max \
                 and find_basic_type(bty.type).kind == 'BooleanType':
             continue
-        elif 'IntegerType' in bty.kind and int(bty.Min) >= 0:
+        elif 'IntegerType' in bty.kind and float(bty.Min) >= 0.0:
             # Unsigned types can work for bitwise operations
             continue
         else:
@@ -2331,8 +2343,11 @@ def not_expression(root, context):
     elif bty.kind == 'SequenceOfType' and \
             find_basic_type(bty.type).kind == 'BooleanType':
         expr.exprType = expr.expr.exprType
+    elif 'IntegerType' in bty.kind and float(bty.Min) >= 0.0:
+        # unsigned integers also support the NOT operator
+        expr.exprType = expr.expr.exprType
     else:
-        msg = 'Bitwise operators only work with booleans, '\
+        msg = 'Bitwise operators only work with booleans, unsigned integers'\
               'sequence of booleans, bit strings and octet strings'
         errors.append(error(root, msg))
 
@@ -3608,8 +3623,9 @@ def newtype(root, ta_ast, context):
             errors.append(str(err))
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):
-        newType.kind = "SequenceType"
-        newType.Children = get_struct_children(root.getChild(1))
+        errors.append('Use newtype definitions for arrays only')
+        #newType.kind = "SequenceType"
+        #newType.Children = get_struct_children(root.getChild(1))
         #types()[str(newtypename)] = newType
         LOG.debug("Found new STRUCT type " + newtypename)
     else:
@@ -4832,14 +4848,15 @@ def connect_part(root, parent, context):
 def cif(root):
     ''' Return the CIF coordinates '''
     result = []
+    neg = False
     for child in root.getChildren():
-        neg = False
         if child.type == lexer.DASH:
             neg = True
         else:
             val = int(child.toString())
             val = -val if neg else val
             result.append(val)
+            neg = False
     return result
 
 
@@ -5201,13 +5218,11 @@ def decision(root, parent, context):
                     if dec.question.exprType == UNKNOWN_TYPE:
                         dec.question = expr.left
 
-                    #ans.constant = expr.right
                     # Update the type of the constant
                     constant = expr.right
                     element['content'] = (op, constant)
 
                     q_basic = find_basic_type(dec.question.exprType)
-                    #a_basic = find_basic_type(ans.constant.exprType)
                     a_basic = find_basic_type(constant.exprType)
 
                     if q_basic.kind.endswith('EnumeratedType'):
@@ -5231,6 +5246,9 @@ def decision(root, parent, context):
                     if isinstance(constant, ogAST.PrimConstant):
                         a_basic_Min = a_basic_Max = \
                               get_asn1_constant_value (constant.constant_value)
+                    elif isinstance(constant, (ogAST.PrimOctetStringLiteral,
+                                              ogAST.PrimBitStringLiteral)):
+                        a_basic_Min = a_basic_Max = constant.numeric_value
                     else:
                         a_basic_Min, a_basic_Max = a_basic.Min, a_basic.Max
 
@@ -5366,7 +5384,7 @@ def decision(root, parent, context):
                                     [ans_x, ans_y], []])
                 covered_ranges[ans].append((float(a0_basic.Min),
                                             float(a1_basic.Max)))
-        # Check the following
+    # Check the following
     # (1) no overlap between covered ranges in decision answers
     # (2) no gap in the coverage of the decision possible values
     # (3) ELSE branch, if present, can be reached
@@ -5415,27 +5433,24 @@ def decision(root, parent, context):
         for minq, maxq in q_ranges:
             low, high = round(minq, 9), round(maxq, 9)
             if low == high:
-                txt = "value {}".format(low)
+                txt = f"value {low}"
             else:
-                txt = "range {} .. {}".format(low, high)
-            qerr.append('Decision "{}": No answer to cover {}'
-                        .format(dec.inputString, txt))
+                txt = f"range {low} .. {high}"
+            qerr.append(f'Decision "{dec.inputString}": No answer to cover {txt}')
+
     elif has_else and is_numeric(dec.question.exprType) and not q_ranges:
         # (3) Check that ELSE branch is reachable
-        qwarn.append('Decision "{}": ELSE branch is unreachable'
-                        .format(dec.inputString))
+        qwarn.append(f'Decision "{dec.inputString}": ELSE branch is unreachable')
 
     if need_else and not has_else:
         # (4) Answers use non-ground expression -> there should be an ELSE
-        qwarn.append('Decision "{}": Missing ELSE branch'
-                        .format(dec.inputString))
+        qwarn.append(f'Decision "{dec.inputString}": Missing ELSE branch')
 
     if need_else and has_else and len(dec.answers) != 2:
         # At least one branch has a non-ground expression answer, therefore
         # there can be at most one additional answer: the ELSE branch,
         # otherwise there is a risk that branches overlap due to variables
-        qerr.append('Answers of decision "{}" could overlap'
-                    .format(dec.inputString))
+        qerr.append(f'Answers of decision "{dec.inputString}" could overlap')
 
     # (5) check coverage of boolean types
     # Rules:
