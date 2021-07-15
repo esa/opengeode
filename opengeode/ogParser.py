@@ -5138,7 +5138,8 @@ def decision(root, parent, context):
         elif child.type == lexer.QUESTION:
             dec.kind = 'question'
             dec.question, qerr, qwarn = expression(child.getChild(0), context)
-            dec.inputString = dec.question.inputString
+            dec.inputString = get_input_string(child.getChild(0))
+            #dec.inputString = dec.question.inputString
             dec.line = dec.question.line
             dec.charPositionInLine = dec.question.charPositionInLine
         elif child.type == lexer.INFORMAL_TEXT:
