@@ -57,7 +57,7 @@ dependencies:
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
-	@pip3 install --user --upgrade .
+	@python3 -m pip install --user --upgrade .
 
 full-install: update
 	sudo $(MAKE) dependencies
