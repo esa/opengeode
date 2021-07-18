@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.10 (07/2021)**
+- Fix use of string literals in several contexts (return, procedure params)
+
 **3.7.9 (07/2021)**
 - Store the proper text in the DECISION string content
 - Performance boost

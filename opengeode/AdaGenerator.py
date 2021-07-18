@@ -1638,8 +1638,7 @@ def _call_external_function(output, **kwargs):
                         elif basic_param.kind.startswith('Integer'):
                             p_id = str(param.numeric_value)
                         else:
-                            p_id = array_content(param, p_id,
-                                                find_basic_type(param_type))
+                            p_id = array_content(param, p_id, basic_param)
 
                     if isinstance(param, ogAST.ExprAppend):
                         # Process Append constructs properly when they are
@@ -1677,10 +1676,30 @@ def _call_external_function(output, **kwargs):
                 else:
                     code.append(f'{prefix}{name} (New_String ("{name}"));')
         else:
-            # inner procedure call
+            # inner procedure call without a RETURN statement
+            # retrieve the procedure signature
+            ident = proc.inputString
+            p, = [p for p in PROCEDURES if p.inputString.lower() == ident.lower()]
+
             list_of_params = []
-            for param in out.get('params', []):
+            for idx, param in enumerate(out.get('params', [])):
+                # Expected basic type of the parameter
+                param_type = p.fpar[idx]['type']
+                basic_param = find_basic_type (param_type)
+
                 p_code, p_id, p_local = expression(param, readonly=1)
+
+                # We need to format strings properly, this depends on the expected
+                # type of the procedure parameter
+                if isinstance(param,
+                        (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                    if basic_param.kind == 'IA5StringType':
+                        p_id = ia5string_raw(param)
+                    elif basic_param.kind.startswith('Integer'):
+                        p_id = str(param.numeric_value)
+                    else:
+                        p_id = array_content(param, p_id, basic_param)
+
                 code.extend(p_code)
                 local_decl.extend(p_local)
                 # no need to use temporary variables, we are in pure Ada
@@ -2083,11 +2102,33 @@ def _prim_call(prim, **kwargs):
         ada_string += f"Observer_State_Status"
     else:
         # inner procedure call (with a RETURN statement)
+        # retrieve the procedure signature
+        p, = [p for p in PROCEDURES if p.inputString.lower() == ident.lower()]
+
+        # for inner procedures we do not use a temporary variable because
+        # we remain in Ada and therefore in parameters do not need to
+        # be pointers (in out).
         ada_string += f'p{SEPARATOR}{ident}' + (' (' if params else '')
         # Take all params and join them with commas
         list_of_params = []
-        for param in params:
+        for idx, param in enumerate(params):
+            # Expected basic type of the parameter
+            param_type = p.fpar[idx]['type']
+            basic_param = find_basic_type (param_type)
+
             param_stmt, param_str, local_var = expression(param, readonly=1)
+
+            # We need to format strings properly, this depends on the expected
+            # type of the procedure parameter
+            if isinstance(param,
+                    (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                if basic_param.kind == 'IA5StringType':
+                    param_str = ia5string_raw(param)
+                elif basic_param.kind.startswith('Integer'):
+                    param_str = str(param.numeric_value)
+                else:
+                    param_str = array_content(param, param_str, basic_param)
+
             list_of_params.append(param_str)
             stmts.extend(param_stmt)
             local_decl.extend(local_var)
@@ -3245,10 +3286,23 @@ def _transition(tr, **kwargs):
                             if sib.lower() != tr.terminator.substate.lower()]
                     code.append(f'if {" and ".join(conds)} then')
                 if tr.terminator.next_id == -1:
-                    if tr.terminator.return_expr:
-                        stmts, string, local = \
-                                expression(tr.terminator.return_expr,
-                                           readonly=1)
+                    retexp = tr.terminator.return_expr
+                    if retexp:
+                        stmts, string, local = expression(retexp, readonly=1)
+
+                        # Check the return type in case of a procedure, in
+                        # case it is a string - to format it properly
+                        if isinstance(tr.terminator.context, ogAST.Procedure):
+                            basic = find_basic_type(tr.terminator.context.return_type)
+                            if isinstance(retexp,
+                                    (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                                if basic.kind == 'IA5StringType':
+                                    string = ia5string_raw(retexp)
+                                elif basic.kind.startswith('Integer'):
+                                    string = str(retexp.numeric_value)
+                                else:
+                                    string = array_content(retexp, string, basic)
+
                         code.extend(stmts)
                         local_decl.extend(local)
                     code.append(f'return{" " + string if string else ""};')

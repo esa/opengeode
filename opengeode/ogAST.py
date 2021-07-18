@@ -481,6 +481,9 @@ class Terminator:
         self.height = 35
         self.line = None
         self.charPositionInLine = None
+        # context is an ogAST entry pointing to the container of the terminator
+        # used for return statement to know the expected type
+        self.context = None
         # one of 'next_state' 'join' 'stop', 'return'
         self.kind = None
         # optional comment symbol

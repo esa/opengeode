@@ -9,11 +9,10 @@ project DataView_c is
    end Naming;
 
    package Compiler is
-       for Driver ("ASN1") use "mono";
+       for Driver ("ASN1") use "asn1scc";
 
        for Leading_Required_Switches ("ASN1") use
-         (external("ASN1SCC"),
-         "-c",
+         ("-c",
           "-typePrefix",
           "Asn1Scc");
    end Compiler;
