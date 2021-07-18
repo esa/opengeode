@@ -5557,6 +5557,7 @@ def terminator_statement(root, parent, context):
     errors = []
     warnings = []
     t = ogAST.Terminator()
+    t.context = context
     for term in root.getChildren():
         if term.type == lexer.CIF:
             t.pos_x, t.pos_y, t.width, t.height = cif(term)
