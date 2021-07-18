@@ -1635,8 +1635,10 @@ def _call_external_function(output, **kwargs):
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         if basic_param.kind == 'IA5StringType':
                             p_id = ia5string_raw(param)
+                        elif basic_param.kind.startswith('Integer'):
+                            p_id = str(param.numeric_value)
                         else:
-                           p_id = array_content(param, p_id,
+                            p_id = array_content(param, p_id,
                                                 find_basic_type(param_type))
 
                     if isinstance(param, ogAST.ExprAppend):
