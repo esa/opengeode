@@ -124,10 +124,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
-**3.7.8 (07/2021)**
+**3.7.9 (07/2021)**
+- Store the proper text in the DECISION string content
 - Performance boost
 
-**3.7.7 (07/2021)**
+**3.7.8 (07/2021)**
 - Add support for the NOT operator on unsigned numbers
 
 **3.7.7 (07/2021)**
