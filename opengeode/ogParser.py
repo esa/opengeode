@@ -5502,7 +5502,7 @@ def nextstate(root, context):
         elif child.type == lexer.HISTORY_NEXTSTATE:
             next_state_id = '-*'
         elif child.type == lexer.VIA:
-            if next_state_id.strip() != '-':
+            if next_state_id.strip() not in ('-', '-*'):
                 via = get_input_string(root).replace(
                                                 'NEXTSTATE', '', 1).strip()
                 entrypoint = child.getChild(0).text

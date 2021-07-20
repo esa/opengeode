@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.11 (07/2021)**
+- Fix call of exit procedure in nested states with continuous signals
+
 **3.7.10 (07/2021)**
 - Fix use of string literals in several contexts (return, procedure params)
 
