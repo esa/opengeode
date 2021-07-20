@@ -350,7 +350,9 @@ def flatten(process, sep=u'_'):
         ''' Associate state to terminators, needed to process properly
             a history nextstates (dash nextstate) in code generators '''
         for each in context.content.states:
-            for inp in each.inputs:
+            for inp in chain(each.inputs,
+                             each.continuous_signals,
+                             each.connects):
                 for term in inp.terminators:
                     term.possible_states.extend(prefix + name.lower()
                                                 for name in each.statelist)
@@ -359,7 +361,9 @@ def flatten(process, sep=u'_'):
         ''' Associate state to transitions, needed to process properly
             the call to the exit procedure of a nested state '''
         for each in context.content.states:
-            for inp in each.inputs:
+            for inp in chain(each.inputs,
+                             each.continuous_signals,
+                             each.connects):
                 inp.transition.possible_states.extend(prefix + name.lower()
                                                 for name in each.statelist)
 

@@ -931,7 +931,7 @@ package body {process_name}_RI is''']
                 to the current state
                 The input name is in signame
             '''
-            if state.endswith(u'START'):
+            if state.endswith('START'):
                 return
             taste_template.append(f'when {ASN1SCC}{state} =>')
             input_def = mapping[signame].get(state)
@@ -1344,7 +1344,7 @@ package body {process_name}_RI is''']
                     each.priority = lowest_priority + 1
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
-                taste_template.append(f'--  Priority {provided_clause.priority}')
+                taste_template.append(f'--  Priority: {provided_clause.priority}')
                 trId = process.transitions.index(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
