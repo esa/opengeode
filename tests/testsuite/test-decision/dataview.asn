@@ -1,0 +1,9 @@
+DV DEFINITIONS ::=
+BEGIN
+
+ MyEnum ::= ENUMERATED { foo, bar, baz }
+
+MyInteger ::= INTEGER (-127..128)
+
+
+END

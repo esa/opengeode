@@ -1,0 +1,60 @@
+system og;
+    /* CIF TEXT (167, 226), (290, 168) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    
+    exported procedure hehe;
+    fpar in/out a_param Type2;
+    referenced;
+    /* CIF ENDTEXT */
+    /* CIF TEXT (476, 187), (302, 161) */
+    -- Text area for declarations and comments
+    
+    signal doSomething;
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with doSomething;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with doSomething;
+        connect c and r;
+        /* CIF PROCESS (251, 47), (150, 75) */
+        process og;
+            /* CIF procedure (734, 0), (70, 35) */
+            procedure hehe;
+                /* CIF TEXT (186, 163), (267, 140) */
+                -- Text area for declarations and comments
+                
+                fpar in/out a_param Type2;
+                /* CIF ENDTEXT */
+                /* CIF START (744, 300), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (723, 355), (110, 35) */
+                    call writeln('hello');
+                    /* CIF return (761, 410), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF START (723, 124), (70, 34) */
+            START;
+                /* CIF PROCEDURECALL (703, 178), (109, 40) */
+                call writeln('hello
+world');
+                /* CIF NEXTSTATE (723, 236), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (373, 103), (70, 35) */
+            state wait;
+                /* CIF input (306, 158), (102, 35) */
+                input doSomething;
+                    /* CIF NEXTSTATE (323, 213), (70, 35) */
+                    NEXTSTATE -;
+                /* CIF input (429, 158), (70, 35) */
+                input hehe;
+                    /* CIF NEXTSTATE (429, 213), (70, 35) */
+                    NEXTSTATE -;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;

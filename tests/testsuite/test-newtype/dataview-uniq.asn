@@ -3,5 +3,15 @@ BEGIN
 
 MyInteger ::= INTEGER (0..255)
 SeqOf     ::= SEQUENCE (SIZE(0..100)) OF MyInteger
+Seq ::= SEQUENCE {
+   a MyInteger,
+   b ENUMERATED {foo, bar}
+}
+
+some-constant MyInteger ::= 42
+
+some-constant-arr SeqOf ::= {1,2,3}
+
+some-seq Seq ::= {a 10, b foo}
 
 END

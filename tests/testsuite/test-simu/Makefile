@@ -27,9 +27,9 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
 	$(CC) -c -g test_ada.c
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
 	$(CC) -c external_proc.c
 	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
 	$(GNATBIND) -n orchestrator.ali
@@ -45,7 +45,7 @@ simu:
 
 
 test-c:
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(CC) -c -g test_c.c
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared --toC
 	$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
@@ -55,8 +55,8 @@ test-llvm: orchestrator.o
 
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
-	mono $(ASN1SCC) -c  -typePrefix asn1Scc -equal dataview-uniq.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	$(ASN1SCC) -c  -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
 	$(GNATMAKE) -c -fPIC -gnat2012 b~orchestrator.adb

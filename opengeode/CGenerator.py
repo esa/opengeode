@@ -491,7 +491,7 @@ def _process(process, simu=False, **kwargs):
     # bash script to simulate the system (TEMPORARY)
     simu_script = '''#!/bin/bash -e
 opengeode {pr}.pr --shared --toC
-mono $(which asn1.exe) -c dataview-uniq.asn -typePrefix asn1Scc -equal
+asn1scc -c dataview-uniq.asn -typePrefix asn1Scc -equal
 gcc -c *.c -fPIC
 gcc -shared -fPIC -o lib{pr}.so {pr}.o dataview-uniq.o adaasn1rtl.o -lgnat
 rm -rf simu

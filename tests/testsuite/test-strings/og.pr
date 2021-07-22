@@ -25,7 +25,7 @@ system og;
             dcl sep OutStr := ', ';
             dcl nosep OutStr := '';
             
-            dcl strlit outStr := '68656c6c6f'H;
+            dcl strlit outStr := '68656c6c6f'H; -- hello
             
             dcl bitstrlit outStr := '01010110'B;
             
@@ -56,17 +56,21 @@ endfor
 (sep is also a dcl-variable)';
                 /* CIF PROCEDURECALL (509, 441), (330, 35) */
                 call writeln('String literal (should be "hello"):', strlit);
-                /* CIF task (608, 496), (130, 56) */
+                /* CIF PROCEDURECALL (571, 496), (205, 35) */
+                call writeln( '68656c6c6f'H)
+                /* CIF comment (796, 496), (70, 35) */
+                comment 'hello';
+                /* CIF task (608, 546), (130, 56) */
                 task for chr in helloStr:
  call write(chr);
 endfor;
-                /* CIF PROCEDURECALL (631, 572), (84, 35) */
+                /* CIF PROCEDURECALL (632, 622), (84, 35) */
                 call write(' ');
-                /* CIF task (625, 627), (97, 35) */
+                /* CIF task (625, 677), (97, 35) */
                 task ia5 := 'world';
-                /* CIF PROCEDURECALL (624, 682), (99, 35) */
+                /* CIF PROCEDURECALL (624, 732), (99, 35) */
                 call writeln(ia5);
-                /* CIF NEXTSTATE (639, 732), (70, 35) */
+                /* CIF NEXTSTATE (639, 782), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (366, 217), (70, 35) */
             state wait;

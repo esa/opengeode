@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.5.5'
+__version__ = '3.7.11'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -729,8 +729,9 @@ class SDL_Scene(QGraphicsScene):
             symbol.set_text_alignment()
             # connect the signal that is emitted when text edit changes word
             symbol.word_under_cursor.connect(self.word_under_cursor.emit)
-        for symbol in self.visible_symb:
-            symbol.update_connections()
+        #for symbol in self.visible_symb:
+        # Already called by try_resize for all editable texts
+        #    symbol.update_connections()
 
 
     def set_cursor(self, follower):
@@ -1948,17 +1949,18 @@ class SDL_View(QGraphicsView):
             return super().mouseMoveEvent(evt)
 
     # pylint: disable=C0103
-    def mouseReleaseEvent(self, evt):
-        self.mode = ''
-        # Adjust scrollbars if diagram got bigger due to a move
-        if self.scene().context != 'statechart':
-            # Make sure scene size remains OK when adding/moving symbols
-            # Avoid doing it when editing texts - it would prevent text
-            # selection or cursor move
-            if not isinstance(self.scene().focusItem(), EditableText):
-                LOG.debug('mouseRelease refresh')
-                self.refresh()
-        super().mouseReleaseEvent(evt)
+    # this is a performance killer, ignore (use F5 to refresh)
+#   def mouseReleaseEvent(self, evt):
+#       self.mode = ''
+#       # Adjust scrollbars if diagram got bigger due to a move
+#       if self.scene().context != 'statechart':
+#           # Make sure scene size remains OK when adding/moving symbols
+#           # Avoid doing it when editing texts - it would prevent text
+#           # selection or cursor move
+#           if not isinstance(self.scene().focusItem(), EditableText):
+#               LOG.debug('mouseRelease refresh')
+#               self.refresh()
+#       super().mouseReleaseEvent(evt)
 
     def save_as(self):
         ''' Save As function '''
@@ -2025,18 +2027,17 @@ end {pr};'''.format(pr=prj_name,
    end Naming;
 
    package Compiler is
-       for Driver ("ASN1") use "mono";
+       for Driver ("ASN1") use "asn1scc";
 
        for Leading_Required_Switches ("ASN1") use
-         (external("ASN1SCC"),
-         "-{lang}",
+         ("-{lang}",
           "-typePrefix",
           "Asn1Scc"{otherAsn});
    end Compiler;
 end DataView_{lang};'''
 
         #  Template for the Makefile
-        template_makefile = '''export ASN1SCC=$(shell which asn1.exe)
+        template_makefile = '''export ASN1SCC=$(shell which asn1scc)
 
 all:
 \tgprbuild -p -P {prFile}.gpr          # generate Ada code from the SDL model
@@ -2369,8 +2370,9 @@ clean:
             line : QListWidgetItem = messages.item(idx)
             coord = line.data(Qt.UserRole)
             path = line.data(Qt.UserRole + 1)
-            if not coord:
+            if not coord or coord == ['' , '']:
                 # All lines do not contain errors - discard them
+                # the second test could be true in case there is no CIF data
                 pass
             else:
                 # Find the scene containing the symbol

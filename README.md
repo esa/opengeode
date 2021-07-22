@@ -69,7 +69,7 @@ The code is automatically generated when you exit the tool.
 Manual
 ------
 
-The following commands should automate the installation (with exception of ASN1SCC - see below):
+The following commands should automate the installation:
 
 ```
 $ git clone https://github.com/esa/opengeode
@@ -124,6 +124,75 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.11 (07/2021)**
+- Fix call of exit procedure in nested states with continuous signals
+
+**3.7.10 (07/2021)**
+- Fix use of string literals in several contexts (return, procedure params)
+
+**3.7.9 (07/2021)**
+- Store the proper text in the DECISION string content
+- Performance boost
+
+**3.7.8 (07/2021)**
+- Add support for the NOT operator on unsigned numbers
+
+**3.7.7 (07/2021)**
+- Fix some bitwise operators when using unsigned numbers
+
+**3.7.6 (07/2021)**
+- Add Right_Shift and Left_Shift operators applicable to unsigned integers
+
+**3.7.5 (07/2021)**
+- Improve support SDL synonyms (synonym foo SomeIntType = 42;)
+
+**3.7.4 (06/2021)**
+- Octet and bit strings can be indexed
+- Better support of octet and bit string literals
+- Bitwise operators support for unsigned integers
+
+**3.7.3 (06/2021)**
+- Fix support of continuous signals when using parallel states
+- Support history state for parallel state (nextstate -*)
+- Fix shape of contiunuous signals
+
+**3.7.2 (06/2021)**
+- Add operator to return the observer state status
+- Support internal operators with no parameters
+
+**3.7.1 (06/2021)**
+- Support the declaration of error, success and ignore states for observers
+
+**3.7.0 (06/2021)**
+- No more dependency on mono ; use ASN1SCC based on .NET Core 5
+
+**3.6.3 (06/2021)**
+- Fix parsing bug when there is no CIF data on a symbol that contains an error
+- Use 'Enum_Val to set an enumerated value from a number
+
+**3.6.2 (06/2021)**
+- Observer early support detection of lost (unhandled) messages
+
+**3.6.1 (06/2021)**
+- Support bit string literals assigned to integers (eg. dcl x SomeInt := '11'B;)
+- Add range checking for bit string and hex string literals
+
+**3.6.0 (05/2021)**
+- Support grouped answers in decisions (comma-separated answers)
+- Support hex literals assigned to integers (eg. dcl x SomeInt := '2A'H;)
+
+**3.5.9 (05/2021)**
+- Fix autocompletion of variable when fields are separated with dot
+
+**3.5.8 (05/2021)**
+- Use --type-prefix AUTO when calling ASN1SCC to avoid naming conflicts
+
+**3.5.7 (05/2021)**
+- Fix generation of statecharts
+
+**3.5.6 (05/2021)**
+- observers: support renaming of continuous signals with parameters
+
 **3.5.5 (04/2021)**
 - Fix support for single input/output expressions (with no message name)
 - Fix graphical location of errors for undefined states

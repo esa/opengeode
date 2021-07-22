@@ -1,5 +1,5 @@
 OPENGEODE=opengeode
-ASN1SCC=`which asn1.exe`
+ASN1SCC=asn1scc
 CC=gcc
 LLC=llc
 GNATMAKE=gnatmake -gnat2012
@@ -27,15 +27,15 @@ clean:
 
 %.c: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toC
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
 
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda && \
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn && \
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn && \
 	$(GNATMAKE) -O$(O) -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal $<  
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal $<  
 	$(CC) -O$(O) -c -g $*.c
 
 %.o: %.c FORCE
