@@ -181,8 +181,11 @@ new_ref_type = lambda refname: \
                  'ReferencedTypeName': refname.replace('_', '-')})
 
 # Shortcut to return a type name (Reference name or basic type)
-type_name = lambda t: \
-                t.kind if t.kind != 'ReferenceType' else t.ReferencedTypeName
+def type_name(t):
+    if t:
+        return t.kind if t.kind != 'ReferenceType' else t.ReferencedTypeName
+    else:
+        return "UNDEFINED TYPE"
 
 # return the line number of this python module, useful for debugging
 lineno = lambda : currentframe().f_back.f_lineno
@@ -3322,7 +3325,6 @@ def check_duplicate_procedures(ctxt, proc, errors=[]):
         Procedure named "entry" and "exit" are ignored
         '''
     name = proc.inputString.lower()
-    #breakpoint()
     if not isinstance(ctxt, ogAST.System) and ctxt.parent != None:
         check_duplicate_procedures(ctxt.parent, proc, errors)
     if isinstance(ctxt, ogAST.AST):
