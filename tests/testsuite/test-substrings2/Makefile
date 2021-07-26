@@ -28,12 +28,12 @@ test-qgen-gt-c:
 test-ada: 
 	#make -f Makefile.function2
 	$(OPENGEODE) function2.pr system_structure.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make function2
 
 test-c: 
 	$(OPENGEODE) function2.pr system_structure.pr --toC
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
 	$(CC) -O$(O) -c *.c
 
 

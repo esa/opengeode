@@ -5,4 +5,5 @@ foo
 bar
 baz
 String literal (should be 'hello'):hello
+hello
 hello world

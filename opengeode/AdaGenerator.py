@@ -75,6 +75,7 @@ import os
 import stat
 from itertools import chain, product
 from functools import singledispatch
+from typing import List, Tuple
 
 from . import ogAST, Helper
 
@@ -108,7 +109,7 @@ LPREFIX = 'ctxt'
 ASN1SCC = 'asn1Scc'
 
 
-def is_numeric(string):
+def is_numeric(string) -> bool:
     ''' Return true if value is a number '''
     try:
         float(string)
@@ -117,7 +118,7 @@ def is_numeric(string):
     return True
 
 
-def external_ri_list(process):
+def external_ri_list(process) -> List:
     ''' Helper function: create a list of RI with proper signature
     Used for the formal parameters of generic packages when using process type
     '''
@@ -154,7 +155,7 @@ def external_ri_list(process):
 
 
 @singledispatch
-def generate(*args, **kwargs):
+def generate(*args, **kwargs) -> Tuple:
     ''' Generate the code for an item of the AST '''
     raise TypeError('Incorrect, unsupported or missing data in model AST')
     return [], []
@@ -162,7 +163,7 @@ def generate(*args, **kwargs):
 
 # Processing of the AST
 @generate.register(ogAST.Process)
-def _process(process, simu=False, instance=False, taste=False, **kwargs):
+def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     ''' Generate the code for a complete process (AST Top level)
         use instance=True to generate the code for a process type instance
         rather than the process type itself.
@@ -219,26 +220,23 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         '''
         res = []
         if not io_param:
-            LOG.info('Parameterless interface "{}" will not appear in the'
+            LOG.info(f'Parameterless interface "{sp_name}" will not appear in the'
                      ' AADL file but will be handled directly by the GUI'
-                     .format(sp_name))
+                     )
             return ''
         # In case of shared library, generate the AADL "mini-cv" code
-        res.append('SUBPROGRAM {}'.format(sp_name))
+        res.append(f'SUBPROGRAM {sp_name}')
         if io_param:
             res.append('FEATURES')
             for param_name, sort, direction in io_param:
-                res.append('    {pname}: {io} PARAMETER DataView::{sort} '
-                          '{{encoding=>Native;}};'.format(pname=param_name,
-                                                          sort=sort,
-                                                          io=direction))
-        res.append('END {};\n'.format(sp_name))
-        res.append('SUBPROGRAM IMPLEMENTATION {}.GUI_{}'
-                      .format(sp_name, pi_or_ri))
+                res.append(f'    {param_name}: {direction} PARAMETER DataView::{sort} '
+                          '{encoding=>Native;};')
+        res.append(f'END {sp_name};\n')
+        res.append(f'SUBPROGRAM IMPLEMENTATION {sp_name}.GUI_{pi_or_ri}')
         res.append('PROPERTIES')
-        res.append('    FV_Name => "{}";'.format(process_name))
-        res.append('    Source_Language => GUI_{};'.format(pi_or_ri))
-        res.append('END {}.GUI_{};\n'.format(sp_name, pi_or_ri))
+        res.append(f'    FV_Name => "{process_name}";')
+        res.append(f'    Source_Language => GUI_{pi_or_ri};')
+        res.append(f'END {sp_name}.GUI_{pi_or_ri};\n')
         return '\n'.join(res)
 
     # bash script to simulate the system (TEMPORARY)
@@ -249,8 +247,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         parent = parent.parent
     if isinstance(parent, ogAST.System):
         parent = parent.ast
-    asn1_filenames = (f"{' '.join(parent.asn1_filenames)} "
-                      f"{process_name.lower()}_datamodel.asn")
+    asn1_filenames = (f"{' '.join(parent.asn1_filenames)} {process_name.lower()}_datamodel.asn")
     asn1_uniq = ' '.join(each for each in parent.asn1_filenames
                          if not each.endswith('dataview-uniq.asn'))
     asn1_uniq += f" {process_name.lower()}_datamodel.asn"
@@ -260,8 +257,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     asn1_modules_o = (name.lower().replace('-', '_') + '.o'
                     for name in process.asn1Modules)
 
-    asn1_mods = ("\"{}\"".format(mod.lower().replace('-', '_'))
-                for mod in process.asn1Modules)
+    asn1_mods = (f'''"{mod.lower().replace('-', '_')}"''' for mod in process.asn1Modules)
 
     # determine if there are context parameters (defined at taste level)
     # they are passed as generic parameters in function type/instances
@@ -269,24 +265,23 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             for mod in process.asn1Modules)
 
     #  Create a .gpr to build the library for the simulator
-    lib_gpr = '''project {pr}_Lib is
+    lib_gpr = f'''project {process_name.lower()}_Lib is
    for Languages use ("Ada");
-   for Library_Name use "{pr}";
-   for Library_Interface use ("{pr}", "adaasn1rtl", {other_asn1_modules});
+   for Library_Name use "{process_name.lower()}";
+   for Library_Interface use ("{process_name.lower()}", "adaasn1rtl", {", ".join(asn1_mods)});
    for Object_Dir use "obj";
    for Library_Dir use "lib";
    for Library_Standalone use "encapsulated";
    for Library_Kind use "dynamic";
    for Source_Dirs use (".");
-end {pr}_Lib;'''.format(pr=process_name.lower(),
-                        other_asn1_modules=", ".join(asn1_mods))
+end {process_name.lower()}_Lib;'''
 
     #  Create a .gpr to build the Ada generated code
-    ada_gpr = '''project {pr}_Ada is
+    ada_gpr = f'''project {process_name.lower()}_Ada is
    for Languages use ("Ada");
       for Source_Dirs use (".") & External_As_List ("CODE_PATH", ":");
       for Object_Dir use "../obj";
-   end {pr}_Ada;'''.format(pr=process_name.lower())
+   end {process_name.lower()}_Ada;'''
 
     pr = process_name.lower()
     simu_script = f'''#!/bin/bash -e
@@ -296,8 +291,8 @@ cd {pr}_simu
 opengeode {pr_names} --shared
 cat {asn1_uniq} >> dataview-uniq.asn
 
-mono $(which asn1.exe) -Ada -typePrefix {ASN1SCC} -equal dataview-uniq.asn
-mono $(which asn1.exe) -c -typePrefix {ASN1SCC} -equal dataview-uniq.asn
+asn1scc -Ada -typePrefix {ASN1SCC} -equal dataview-uniq.asn
+asn1scc -c   -typePrefix {ASN1SCC} -equal dataview-uniq.asn
 
 gprbuild -p -P {process_name.lower()}_lib.gpr
 rm -f dataview-uniq.c dataview-uniq.h
@@ -309,7 +304,7 @@ echo "errCodes=$(taste-asn1-errCodes ./dataview-uniq.h)" >>datamodel.py
 LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
 '''
 
-    LOG.info('Generating Ada code for process ' + str(process_name))
+    LOG.info(f'Generating Ada code for process {str(process_name)}')
 
     # In case model has nested states, flatten everything
     Helper.flatten(process, sep=SEPARATOR)
@@ -440,8 +435,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
         context_elems.append(f'{var_name.lower()} {type_name(var_type, False)}')
 
     asn1_context = (f'\n{process_asn1}-Context ::='' SEQUENCE {\n'
-            + ",\n   ".join(line.replace("_", "-").replace("'", '"') for line in context_elems)
-            + "\n}\n")
+                    + ",\n   ".join(line.replace("_", "-").replace("'", '"') for line in context_elems)
+                    + "\n}\n")
 
     asn1_template.append(asn1_context)
 
@@ -474,8 +469,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             fromMod = f'{choiceTypeModule}.{ASN1SCC}{sortAda}'
             toMod = f'{process_name}_Datamodel.{ASN1SCC}{sortAda}'
             choice_selections.append(
-                    f'function To_{sortAda} (Src : {fromMod}) return {toMod} '
-                    f"is ({toMod}'Enum_Val (Src'Enum_Rep));")
+                    f"function To_{sortAda} (Src : {fromMod}) return {toMod} is ({toMod}'Enum_Val (Src'Enum_Rep));")
 
     asn1_template.append('END\n')
 
@@ -490,8 +484,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
         # but not in stop condition code, since we reuse the context type
         # of the state machine being observed
 
-        ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process_name.capitalize()}_Context :=\n'
-                '      (Init_Done => False,\n       ')
+        ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process_name.capitalize()}_Context :=\n\
+            (Init_Done => False,\n       ')
         initial_values = []
         # some parts of the context may have initial values
         for var_name, (var_type, def_value) in process.variables.items():
@@ -503,8 +497,17 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                 # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value)
                 varbty = find_basic_type(var_type)
-                if varbty.kind in ('SequenceOfType', 'OctetStringType'):
+
+                if varbty.kind.startswith('Integer') and \
+                        isinstance(def_value, (ogAST.PrimOctetStringLiteral,
+                                               ogAST.PrimBitStringLiteral)):
+                    dstr = str(def_value.numeric_value)
+
+                elif varbty.kind in ('SequenceOfType',
+                                     'OctetStringType',
+                                     'BitStringType'):
                     dstr = array_content(def_value, dstr, varbty)
+
                 elif varbty.kind == 'IA5StringType':
                     dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal,\
@@ -531,14 +534,33 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             context_decl.append(f"{alias_name} : {type_name(alias_sort)} "
                                 f"renames {qualified};")
 
+        # Add SDL constants (synonyms)
+        for const in process.DV.SDL_Constants.values():
+            bkind = find_basic_type (const.type).kind
+            if bkind in ('IntegerType', 'RealType', 'EnumeratedType',
+                         'BooleanType', 'Integer32Type', 'IntegerU8Type'):
+                val = const.value
+            else:
+                # complex value - must be a ground expression
+                _, val, _ = expression(const.value, readonly=1)
+                if bkind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
+                    val = array_content(const.value, val, bkind)
+                elif bkind == 'IA5StringType':
+                    val = ia5string_raw(const.value)
+                else:
+                    raise f'ERROR: constant {const.varName} value is not a ground expression'
+
+            const_sort = const.type.ReferencedTypeName.replace('-', '_')
+            context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
+
         # The choice selections will allow to use the present operator
         # together with a variable of the -selection type
         context_decl.extend(choice_selections)
     if stop_condition:
         #  code of stop conditions must use the same type as the main process
         context_decl.append(
-                f'{LPREFIX} : {ASN1SCC}{stop_condition}_Context '
-                f'renames {stop_condition}.{stop_condition}_ctxt;')
+                f'{LPREFIX} : {ASN1SCC}{stop_condition}_Context \
+                    renames {stop_condition}.{stop_condition}_ctxt;')
     if simu and not stop_condition:
         # Export the context, so that it can be manipulated from outside
         # (in practice used by the "properties" module.
@@ -550,8 +572,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     start_transition = []
     # Continuous State transition id
     if not instance:
-        process_level_decl.append('CS_Only : constant := {};'
-                                  .format(len(process.transitions)))
+        process_level_decl.append(f'CS_Only : constant := {len(process.transitions)};')
 
         for name, val in process.mapping.items():
             # Test val, in principle there is a value but if the code targets
@@ -567,9 +588,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
             process_level_decl.append(f'{proc_name};')
             aggreg_start_proc.extend([f'{proc_name} is',
                                       'begin'])
-            aggreg_start_proc.extend(u'Execute_Transition ({sub}{sep}START);'
-                                     .format(sub=subname.statename,
-                                             sep=SEPARATOR)
+            aggreg_start_proc.extend(f'Execute_Transition ({subname.statename}{SEPARATOR}START);'
                                      for subname in substates)
             aggreg_start_proc.extend([f'end {name}{SEPARATOR}START;',
                                      '\n'])
@@ -598,9 +617,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
 
     # Generate the TASTE template
     try:
-        asn1_modules = '\n'.join(['with {dv};\nuse {dv};'.format(
-            dv=dv.replace('-', '_'))
-            for dv in process.asn1Modules])
+        asn1_modules = '\n'.join([f"with {dv.replace('-', '_')};\nuse {dv.replace('-', '_')};"
+                                  for dv in process.asn1Modules])
         if process.asn1Modules:
             asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
     except TypeError:
@@ -775,6 +793,23 @@ package body {process_name}_RI is''']
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
 
+    # Generate the code of internal operators, if needed
+    if process.errorstates or process.ignorestates or process.successstates:
+        obs_status = [f'function Observer_State_Status return {ASN1SCC}Observer_State_Kind is',
+                f'(case {LPREFIX}.State is']
+        if process.errorstates:
+            opts = ' | '.join(f'{ASN1SCC}{st}' for st in process.errorstates)
+            obs_status.append(f'  when {opts} => {ASN1SCC}Error_State,')
+        if process.ignorestates:
+            opts = ' | '.join(f'{ASN1SCC}{st}' for st in process.ignorestates)
+            obs_status.append(f'  when {opts} => {ASN1SCC}Ignore_State,')
+        if process.errorstates:
+            opts = ' | '.join(f'{ASN1SCC}{st}' for st in process.successstates)
+            obs_status.append(f'  when {opts} => {ASN1SCC}Success_State,')
+        obs_status.append(f'  when others => {ASN1SCC}Regular_State);')
+        obs_status.append('\n')
+        taste_template.extend(obs_status)
+
     # Add the code of the procedures definitions
     taste_template.extend(inner_procedures_code)
 
@@ -791,6 +826,11 @@ package body {process_name}_RI is''']
         if stop_condition:
             # dont generate anything in stop_condition functions
             break
+
+        if 'renames' in signal and signal['renames'] is not None:
+            # don't generate anything if this is an observer signal
+            # (a renames clause for a continuuous signal)
+            continue
 
         signame = signal.get('name', 'START')
         fake_name = False
@@ -883,7 +923,7 @@ package body {process_name}_RI is''']
                 taste_template.append('Execute_Transition (CS_Only);')
 
         if not instance:
-            taste_template.append('case {}.state is'.format(LPREFIX))
+            taste_template.append(f'case {LPREFIX}.state is')
 
         def case_state(state):
             ''' Recursive function (in case of state aggregation) to generate
@@ -891,7 +931,7 @@ package body {process_name}_RI is''']
                 to the current state
                 The input name is in signame
             '''
-            if state.endswith(u'START'):
+            if state.endswith('START'):
                 return
             taste_template.append(f'when {ASN1SCC}{state} =>')
             input_def = mapping[signame].get(state)
@@ -1012,7 +1052,7 @@ package body {process_name}_RI is''']
 
             params.append(f'{name} : {direct} {typename}{shared}')
         if params:
-            params_spec = " ({})".format("; ".join(params))
+            params_spec = f' ({"; ".join(params)})'
             ri_header += params_spec
         ads_template.append(f'--  Sync required interface "{sig}"')
         if simu:
@@ -1108,7 +1148,7 @@ package body {process_name}_RI is''']
         if ri_inst or has_context_params:
             pkg_decl += " ("
         if ri_inst:
-            pkg_decl += "{}".format(", ".join(ri_inst))
+            pkg_decl += f'{", ".join(ri_inst)}'
         if has_context_params:
             if ri_inst:
                 pkg_decl += ", "
@@ -1187,10 +1227,7 @@ package body {process_name}_RI is''']
 
         taste_template.append('when CS_Only =>')
         taste_template.append('trId := -1;')
-        if not MONITORS:
-            taste_template.append('goto Next_Transition;')
-        else:
-            taste_template.append('goto Observer_Transition;')
+        taste_template.append('goto Continuous_Signals;')
 
         taste_template.append('when others =>')
         taste_template.append('null;')
@@ -1199,20 +1236,12 @@ package body {process_name}_RI is''']
         if code_labels:
             # Due to nested states (chained transitions) jump over label code
             # (NEXTSTATEs do not return from Execute_Transition)
-            taste_template.append('goto Next_Transition;')
+            taste_template.append('goto Continuous_Signals;')
 
         # Add the code for the floating labels
         taste_template.extend(code_labels)
 
-        if MONITORS:
-            # If monitors are defined, it means this SDL process is in fact
-            # a model checking observer. In that case, the Next_Transition
-            # section shall not contain the code of the continuous signals,
-            # because only one transition is executed at each activation of
-            # the observer
-            taste_template.append('<<Observer_Transition>>')
-        else:
-            taste_template.append('<<Next_Transition>>')
+        taste_template.append('<<Continuous_Signals>>')
 
         # After completing active transition(s), check continuous signals:
         #     - Check current state(s)
@@ -1231,7 +1260,7 @@ package body {process_name}_RI is''']
                 taste_template.append('--  Process observer transitions')
                 taste_template.append("msgPending := False;")
         elif has_cs and simu and not MONITORS:
-            taste_template.append('if {}.Init_Done then'.format(LPREFIX))
+            taste_template.append(f'if {LPREFIX}.Init_Done then')
             taste_template.append("Check_Queue (msgPending);")
             taste_template.append('end if;')
             # simulation: create a callback registration function
@@ -1244,8 +1273,12 @@ package body {process_name}_RI is''']
                                 '(Callback : Check_Queue_T);')
             ads_template.append('pragma Export (C, Register_Check_Queue,'
                                 ' "register_check_queue");')
-        else:
-            taste_template.append('null;')
+        if has_cs:
+            taste_template.extend(['if msgPending or trId /= -1 then',
+                                      'goto Next_Transition;',
+                                   'end if;'])
+        #else:
+        #    taste_template.append('null;')
 
         # Process the continuous signals in state aggregations first
         # (reminder: state aggregations = parallel states)
@@ -1254,6 +1287,7 @@ package body {process_name}_RI is''']
         last = ''
         # flag indicating there are CS in nested states but not at root
         need_final_endif = False
+        first_of_aggreg = True
         for cs, agg in product(process.cs_mapping.items(),
                                aggregates.items()):
             (statename, cs_item)  = cs
@@ -1262,18 +1296,15 @@ package body {process_name}_RI is''']
             if not cs_item:
                 continue
             for each in substates:
+                if first_of_aggreg:
+                    taste_template.append(
+                            f'if {LPREFIX}.State = {ASN1SCC}{agg_name} then')
+                    first_of_aggreg = False
                 if statename in each.cs_mapping and each.cs_mapping[statename]:
-                    #print("statename --->", statename)
-                    #print("cs_item   --->", cs_item)
-                    #print("agg_name  --->", agg_name)
-                    #print("substates --->", substates)
                     need_final_endif = True
                     first = "els" if done else ""
                     taste_template.append(
-                            f'{first}if not msgPending and '
-                            f'trId = -1 and '
-                            f'{LPREFIX}.State = {ASN1SCC}{agg_name} and '
-                            f'{LPREFIX}.{each.statename}{SEPARATOR}State = '
+                            f'if {LPREFIX}.{each.statename}{SEPARATOR}State = '
                             f'{ASN1SCC}{statename} then')
                     # Change priority 0 (no priority set) to lowest priority
                     lowest_priority = max(item.priority for item in cs_item)
@@ -1288,10 +1319,12 @@ package body {process_name}_RI is''']
                         code, loc = generate(provided_clause.trigger,
                                              branch_to=trId,
                                              sep=sep, last=last)
+                        code.append('goto Next_Transition;')
                         sep='elsif '
                         taste_template.extend(code)
                     done.append(statename)
-                    taste_template.append(u'end if;')  # inner if
+                    taste_template.append('end if;')  # inner if
+                    taste_template.append('end if;')  # substate if
                     sep = 'if '
                     break
 
@@ -1301,8 +1334,7 @@ package body {process_name}_RI is''']
                 need_final_endif = False
                 first = "els" if done else ""
                 taste_template.append(
-                        f'{first}if not msgPending and '
-                        f'trId = -1 and {LPREFIX}.State = {ASN1SCC}{statename}'
+                        f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
                         ' then')
             # Change priority 0 (no priority set) to lowest priority
             if cs_item:
@@ -1312,7 +1344,7 @@ package body {process_name}_RI is''']
                     each.priority = lowest_priority + 1
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
-                taste_template.append(f'--  Priority {provided_clause.priority}')
+                taste_template.append(f'--  Priority: {provided_clause.priority}')
                 trId = process.transitions.index(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
@@ -1348,9 +1380,7 @@ package body {process_name}_RI is''']
         if need_final_endif:
             taste_template.append('end if;')
 
-        if MONITORS:
-            taste_template.append('<<Next_Transition>>')
-
+        taste_template.append('<<Next_Transition>>')
         taste_template.append('end loop;')
         taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
@@ -1386,17 +1416,17 @@ package body {process_name}_RI is''']
             with open(stub_adb, "wb") as ri_stub:
                 ri_stub.write ("\n".join(format_ada_code(ri_stub_adb)).encode('latin1'))
 
-    with open("{}_ada.gpr".format(process_name.lower()), "wb") as gprada:
+    with open(f"{process_name.lower()}_ada.gpr", "wb") as gprada:
         gprada.write(ada_gpr.encode('utf-8'))
 
     if simu:
         with open(u'{}_interface.aadl'
                   .format(process_name.lower()), 'wb') as aadl:
             aadl.write(u'\n'.join(minicv).encode('latin1'))
-        script = '{}_simu.sh'.format(process_name.lower())
+        script = f'{process_name.lower()}_simu.sh'
         with open(script, 'w') as bash_script:
             bash_script.write(simu_script)
-        with open("{}_lib.gpr".format(process_name.lower()), 'w') as gprlib:
+        with open(f"{process_name.lower()}_lib.gpr", 'w') as gprlib:
             gprlib.write(lib_gpr)
         os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
 
@@ -1422,7 +1452,10 @@ def write_statement(param, newline):
         code, string, local = expression(param, readonly=1)
         code.append(f'Put ({string} (1 .. adaasn1rtl.GetStringSize ({string})));')
     elif type_kind.endswith('StringType'):
-        if isinstance(param, ogAST.PrimStringLiteral):
+        if isinstance(param, ogAST.PrimOctetStringLiteral):
+            # Octet string or bit string
+            code.append(f'Put ("{param.printable_string}");')
+        elif isinstance(param, ogAST.PrimStringLiteral):
             # Raw string
             # First remove the newline statements
             text = param.value[1:-1].replace('"', "'").split('\n')
@@ -1453,7 +1486,7 @@ def write_statement(param, newline):
             else:
                 code.append(f"Put ({string});")
     elif type_kind in ('IntegerType', 'RealType',
-                       'BooleanType', 'Integer32Type'):
+                       'BooleanType', 'Integer32Type', 'IntegerU8Type'):
         code, string, local = expression(param, readonly=1)
         if hasattr(param, "expected_type"):
             cast = type_name(param.expected_type)
@@ -1600,8 +1633,12 @@ def _call_external_function(output, **kwargs):
                         p_id = f"{typename} ({p_id})"
                     if isinstance(param,
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-                        p_id = array_content(param, p_id,
-                                             find_basic_type(param_type))
+                        if basic_param.kind == 'IA5StringType':
+                            p_id = ia5string_raw(param)
+                        elif basic_param.kind.startswith('Integer'):
+                            p_id = str(param.numeric_value)
+                        else:
+                            p_id = array_content(param, p_id, basic_param)
 
                     if isinstance(param, ogAST.ExprAppend):
                         # Process Append constructs properly when they are
@@ -1639,19 +1676,36 @@ def _call_external_function(output, **kwargs):
                 else:
                     code.append(f'{prefix}{name} (New_String ("{name}"));')
         else:
-            # inner procedure call
+            # inner procedure call without a RETURN statement
+            # retrieve the procedure signature
+            ident = proc.inputString
+            p, = [p for p in PROCEDURES if p.inputString.lower() == ident.lower()]
+
             list_of_params = []
-            for param in out.get('params', []):
+            for idx, param in enumerate(out.get('params', [])):
+                # Expected basic type of the parameter
+                param_type = p.fpar[idx]['type']
+                basic_param = find_basic_type (param_type)
+
                 p_code, p_id, p_local = expression(param, readonly=1)
+
+                # We need to format strings properly, this depends on the expected
+                # type of the procedure parameter
+                if isinstance(param,
+                        (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                    if basic_param.kind == 'IA5StringType':
+                        p_id = ia5string_raw(param)
+                    elif basic_param.kind.startswith('Integer'):
+                        p_id = str(param.numeric_value)
+                    else:
+                        p_id = array_content(param, p_id, basic_param)
+
                 code.extend(p_code)
                 local_decl.extend(p_local)
                 # no need to use temporary variables, we are in pure Ada
                 list_of_params.append(p_id)
             if list_of_params:
-                code.append(u'p{sep}{proc}({params});'.format(
-                    sep=SEPARATOR,
-                    proc=proc.inputString,
-                    params=', '.join(list_of_params)))
+                code.append(f'p{SEPARATOR}{proc.inputString}({", ".join(list_of_params)});')
             else:
                 code.append(f'p{SEPARATOR}{proc.inputString};')
     return code, local_decl
@@ -1669,8 +1723,7 @@ def _task_assign(task, **kwargs):
         try:
             code_assign, _, decl_assign = expression(expr)
         except TypeError as err:
-            raise TypeError("{} - TaskAssign: '{}' (please report this bug)"
-                            .format(str(err), task.inputString))
+            raise TypeError(f"{str(err)} - TaskAssign: '{task.inputString}' (please report this bug)")
         code.extend(code_assign)
         local_decl.extend(decl_assign)
     return code, local_decl
@@ -1754,7 +1807,7 @@ def _task_forloop(task, **kwargs):
                     basic_type.Min == basic_type.Max:
                 range_str = f"{list_payload}'Range"
             else:
-                range_str = f"1 .. {list_str}.Length".format(list_str)
+                range_str = f"1 .. {list_str}.Length"
             stmt.extend(list_stmt)
             local_decl.extend(list_local)
             stmt.extend(['declare',
@@ -1855,7 +1908,7 @@ def _prim_call(prim, **kwargs):
             stmt, operands[idx], local = expression(param, readonly=1)
             stmts.extend(stmt)
             local_decl.extend(local)
-        ada_string += '{op[0]} ** Natural({op[1]})'.format(op=operands)
+        ada_string += f'{operands[0]} ** Natural({operands[1]})'
     elif ident == 'length':
         # Length of sequence of: take only the first parameter
         # return an Integer32 type
@@ -1864,8 +1917,7 @@ def _prim_call(prim, **kwargs):
         min_length = getattr(exp_type, 'Min', None)
         max_length = getattr(exp_type, 'Max', None)
         if min_length is None or max_length is None:
-            error = '{} is not a SEQUENCE OF'.format(
-                    exp.inputString)
+            error = f'{exp.inputString} is not a SEQUENCE OF'
             LOG.error(error)
             raise TypeError(error)
         param_stmts, param_str, local_var = expression(exp, readonly=1)
@@ -1876,9 +1928,9 @@ def _prim_call(prim, **kwargs):
             ada_string += min_length
         else:
             if isinstance(exp, ogAST.PrimSubstring):
-                range_str = u"{}'Length".format(param_str)
+                range_str = f"{param_str}'Length"
             else:
-                range_str = u"{}.Length".format(param_str)
+                range_str = f"{param_str}.Length"
             ada_string += range_str
     elif ident == 'present':
         # User wants to know what CHOICE element is present
@@ -1889,7 +1941,7 @@ def _prim_call(prim, **kwargs):
         # needed to build the Ada expression
         exp_typename = type_name(exp.exprType, use_prefix=False)
         if exp_type.kind != 'ChoiceType':
-            error = '{} is not a CHOICE'.format(exp.inputString)
+            error = f'{exp.inputString} is not a CHOICE'
             LOG.error(error)
             raise TypeError(error)
         param_stmts, param_str, local_var = expression(exp, readonly=1)
@@ -1906,7 +1958,7 @@ def _prim_call(prim, **kwargs):
         param_stmts, defaultstr, local_var = expression(p2, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += (u'(case {var}.Kind is '.format(var=varstr))
+        ada_string += (f'(case {varstr}.Kind is ')
         choices = []
         need_default = False
         # all choice elements must be either signed or unsigned
@@ -1930,13 +1982,23 @@ def _prim_call(prim, **kwargs):
             if not child_sort.kind.startswith('Integer'):
                 need_default = True
                 continue
-            set_value = '{var}.{name}'.format(var=varstr, name=child_name_ada)
+            set_value = f'{varstr}.{child_name_ada}'
             if need_cast and float(child_sort.Min) >= 0.0:
-                set_value = 'Asn1Int({})'.format(set_value)
+                set_value = f'Asn1Int({set_value})'
             choices.append(f'when {child_id} => {set_value}')
         if need_default:
             choices.append(f'when others => {defaultstr}')
         ada_string += ', '.join(choices) + ')'
+    elif ident in ('shift_left', 'shift_right'):
+        p1, p2 = params
+        param_stmts, s1, local_var = expression(p1, readonly=1)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        param_stmts, s2, local_var = expression(p2, readonly=1)
+        stmts.extend(param_stmts)
+        local_decl.extend(local_var)
+        fcn = 'Shift_Left' if ident == "shift_left" else 'Shift_Right'
+        ada_string += f'{fcn} ({s1}, {s2})'
     elif ident == 'exist':
         # User wants to know if an optional field is present or not
         selector = params[0]  # type PrimSelector
@@ -1945,8 +2007,7 @@ def _prim_call(prim, **kwargs):
         rec_stmt, rec_str, rec_decl = expression (receiver, readonly=1)
         stmts.extend(rec_stmt)
         local_decl.extend(rec_decl)
-        ada_string += '({rec}.exist.{field} = 1)'.format(rec   = rec_str,
-                                                         field = field)
+        ada_string += f'({rec_str}.exist.{field} = 1)'
     elif ident in ('to_selector', 'to_enum'):
         variable, target_type = params
         var_typename = type_name (variable.exprType)
@@ -1969,9 +2030,7 @@ def _prim_call(prim, **kwargs):
         stmts.extend(var_stmts)
         local_decl.extend(var_decl)
         sort_name = 'asn1Scc' + target_type.value[0].replace('-', '_')
-        ada_string += "{sort}'Val ({var_str})"\
-                .format(sort=sort_name,
-                        var_str=var_str)
+        ada_string += f"{sort_name}'Enum_Val ({var_str})"
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
@@ -1988,16 +2047,14 @@ def _prim_call(prim, **kwargs):
         param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += "{sort}'Floor({p})".format(sort=exp_typename,
-                                                 p=param_str)
+        ada_string += f"{exp_typename}'Floor({param_str})"
     elif ident == 'ceil':
         exp = params[0]
         exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += "{sort}'Ceiling({p})".format(sort=exp_typename,
-                                                   p=param_str)
+        ada_string += f"{exp_typename}'Ceiling({param_str})"
     elif ident == 'cos':
         exp = params[0]
         param_stmts, param_str, local_var = expression(exp, readonly=1)
@@ -2006,15 +2063,14 @@ def _prim_call(prim, **kwargs):
         local_decl.append('package Math is new '
                           'Ada.Numerics.Generic_Elementary_Functions'
                           '(Asn1Real);')
-        ada_string += "Math.Cos({})".format(param_str)
+        ada_string += f"Math.Cos({param_str})"
     elif ident == 'round':
         exp = params[0]
         exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp, readonly=1)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
-        ada_string += "{sort}'Rounding({p})".format(sort=exp_typename,
-                                                    p=param_str)
+        ada_string += f"{exp_typename}'Rounding({param_str})"
     elif ident == 'sin':
         exp = params[0]
         param_stmts, param_str, local_var = expression(exp, readonly=1)
@@ -2023,7 +2079,7 @@ def _prim_call(prim, **kwargs):
         local_decl.append('package Math is new '
                           'Ada.Numerics.Generic_Elementary_Functions'
                           '(Asn1Real);')
-        ada_string += "Math.Sin({})".format(param_str)
+        ada_string += f"Math.Sin({param_str})"
     elif ident == 'sqrt':
         exp = params[0]
         param_stmts, param_str, local_var = expression(exp, readonly=1)
@@ -2040,13 +2096,39 @@ def _prim_call(prim, **kwargs):
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += f"{exp_typename}'Truncation({param_str})"
+    elif ident == 'observer_status':
+        #  For observers (model checking) only: return the state status
+        #  The procedure is generated at process level when it is needed
+        ada_string += f"Observer_State_Status"
     else:
         # inner procedure call (with a RETURN statement)
+        # retrieve the procedure signature
+        p, = [p for p in PROCEDURES if p.inputString.lower() == ident.lower()]
+
+        # for inner procedures we do not use a temporary variable because
+        # we remain in Ada and therefore in parameters do not need to
+        # be pointers (in out).
         ada_string += f'p{SEPARATOR}{ident}' + (' (' if params else '')
         # Take all params and join them with commas
         list_of_params = []
-        for param in params:
+        for idx, param in enumerate(params):
+            # Expected basic type of the parameter
+            param_type = p.fpar[idx]['type']
+            basic_param = find_basic_type (param_type)
+
             param_stmt, param_str, local_var = expression(param, readonly=1)
+
+            # We need to format strings properly, this depends on the expected
+            # type of the procedure parameter
+            if isinstance(param,
+                    (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                if basic_param.kind == 'IA5StringType':
+                    param_str = ia5string_raw(param)
+                elif basic_param.kind.startswith('Integer'):
+                    param_str = str(param.numeric_value)
+                else:
+                    param_str = array_content(param, param_str, basic_param)
+
             list_of_params.append(param_str)
             stmts.extend(param_stmt)
             local_decl.extend(local_var)
@@ -2109,7 +2191,7 @@ def _prim_substring(prim, **kwargs):
     if str.isnumeric(r2_string):
         r2_string = str(int(r2_string) + 1)
     else:
-        r2_string = f"Integer ({r2_string}) + 1".format(r2_string)
+        r2_string = f"Integer ({r2_string}) + 1"
 
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'
@@ -2189,6 +2271,16 @@ def _basic_operators(expr, **kwargs):
     lbty = find_basic_type(expr.left.exprType)
     rbty = find_basic_type(expr.right.exprType)
 
+    if lbty.kind.startswith('Integer') and \
+            isinstance(expr.right, (ogAST.PrimOctetStringLiteral,
+                                   ogAST.PrimBitStringLiteral)):
+        right_str = str(expr.right.numeric_value)
+
+    if rbty.kind.startswith('Integer') and \
+            isinstance(expr.left, (ogAST.PrimOctetStringLiteral,
+                                   ogAST.PrimBitStringLiteral)):
+        left_str = str(expr.left.numeric_value)
+
     if left_is_numeric != right_is_numeric or rbty.kind == lbty.kind:
         # No cast is needed if:
         # - one of the two sides only is a literal : no cast is needed
@@ -2237,10 +2329,14 @@ def _equality(expr, **kwargs):
 
     basic = lbty.kind in ('IntegerType',
                           'Integer32Type',
+                          'IntegerU8Type',
                           'BooleanType',
                           'EnumeratedType',
                           'ChoiceEnumeratedType')
     if basic:
+        if isinstance(expr.right, (ogAST.PrimBitStringLiteral,
+                                   ogAST.PrimOctetStringLiteral)):
+            right_str = str(expr.right.numeric_value)
         # Cast in case a side is using a 32bits ints (eg when using Length(..))
         if lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
             right_str = f'{type_name(lbty)} ({right_str})'
@@ -2249,9 +2345,13 @@ def _equality(expr, **kwargs):
         ada_string = f'({left_str} {expr.operand} {right_str})'
     else:
         if asn1_type in TYPES:
-            if isinstance(expr.right,
-                          (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-                right_str = array_content(expr.right, right_str, lbty)
+            if isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                if lbty.kind.startswith('Integer'):
+                    right_str = str(expr.right.numeric_value)
+                elif lbty.kind == 'IA5StringType':
+                    right_str = ia5string_raw(expr.right)
+                else:
+                    right_str = array_content(expr.right, right_str, lbty)
             ada_string = f'{actual_type}_Equal ({left_str}, {right_str})'
         else:
             # Raw types on both left and right.... use simple operator
@@ -2279,22 +2379,18 @@ def _assign_expression(expr, **kwargs):
         # OCTET STRINGs.
         def_value = ia5string_raw(expr.right)
         strings.append(f'{left_str} := {def_value};')
-    elif basic_left.kind in ('SequenceOfType', 'OctetStringType'):
+    elif basic_left.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         rlen = f"{right_str}'Length"
 
         if isinstance(expr.right, ogAST.PrimSubstring):
             if not isinstance(expr.left, ogAST.PrimSubstring):
                 # only if left is not a substring, otherwise syntax
                 # would be wrong due to result of _prim_substring
-                strings.append(u"{lvar}.Data(1..{rvar}'Length) := {rvar};"
-                               .format(lvar=left_str,
-                                       rvar=right_str))
+                strings.append(f"{left_str}.Data(1..{right_str}'Length) := {right_str};")
             else:
                # left is substring: no length, direct assignment
                rlen = ""
-               strings.append(u"{lvar} := {rvar};"
-                               .format(lvar=left_str,
-                                       rvar=right_str))
+               strings.append(f"{left_str} := {right_str};")
 
         elif isinstance(expr.right, ogAST.ExprAppend):
             basic_right = find_basic_type(expr.right.exprType)
@@ -2307,16 +2403,11 @@ def _assign_expression(expr, **kwargs):
         elif isinstance(expr.right, (ogAST.PrimSequenceOf,
                                     ogAST.PrimStringLiteral)):
             if not isinstance(expr.left, ogAST.PrimSubstring):
-                strings.append(u"{lvar} := {value};"
-                           .format(lvar=left_str,
-                                   value=array_content(expr.right,
-                                                       right_str,
-                                                       basic_left)))
+                strings.append(
+                    f"{left_str} := {array_content(expr.right, right_str, basic_left)};")
             else:
                # left is substring: no length, direct assignment
-               strings.append(u"{lvar} := ({rvar});"
-                               .format(lvar=left_str,
-                                       rvar=right_str))
+               strings.append(f"{left_str} := ({right_str});")
 
             rlen = None
         else:
@@ -2325,6 +2416,13 @@ def _assign_expression(expr, **kwargs):
             rlen = None
         if rlen and basic_left.Min != basic_left.Max:
             strings.append(f"{left_str}.Length := {rlen};")
+    elif basic_left.kind.startswith('Integer') and \
+            isinstance(expr.right, (ogAST.PrimOctetStringLiteral,
+                                    ogAST.PrimBitStringLiteral)):
+        # If right is an octet string or bit string literal, use the numerical
+        # value directly.
+        right_str = str(expr.right.numeric_value)
+        strings.append(f"{left_str} := {right_str};")
     elif basic_left.kind.startswith('Integer'):
 #       print '\nASSIGN:', expr.inputString,
 #       print "Left type = ",type_name(find_basic_type (expr.left.exprType)),
@@ -2337,7 +2435,7 @@ def _assign_expression(expr, **kwargs):
         # We can therefore safely cast to the left type
         basic_right = find_basic_type (expr.right.exprType)
         cast_left, cast_right = type_name(basic_left), type_name(basic_right)
-        #print cast_left, cast_right, right_str
+        #print (cast_left, cast_right, right_str)
         if cast_left != cast_right:
             res = f'{cast_left} ({right_str})'
         else:
@@ -2370,43 +2468,66 @@ def _assign_expression(expr, **kwargs):
 def _bitwise_operators(expr, **kwargs):
     ''' Logical operators '''
     code, local_decl = [], []
+    ada_string = ""
+
     left_stmts, left_str, left_local = expression(expr.left, readonly=1)
     right_stmts, right_str, right_local = expression(expr.right, readonly=1)
+
     basic_type = find_basic_type(expr.exprType)
+
     if basic_type.kind != 'BooleanType':
-        # Sequence of boolean or bit string
-        if expr.right.is_raw:
+        left_bty  = find_basic_type (expr.left.exprType)
+        right_bty = find_basic_type (expr.left.exprType)
+
+        # Left is Sequence of boolean or bit string: 
+        if expr.right.is_raw and not left_bty.kind.startswith('Integer'):
+            # right is a raw value (hex/bit string)
+            # right cannot be an integer here (it would need to be converted
+            # to an hex string for bitwise operations to work against
+            # a sequence of / bit string
+
             # Declare a temporary variable to store the raw value
-            tmp_string = u'tmp{}'.format(expr.right.tmpVar)
-            local_decl.append(u'{tmp} : {sort};'.format(
-                        tmp=tmp_string,
-                        sort=type_name(expr.right.exprType)))
-            code.append(u'{tmp} := {right};'.format(tmp=tmp_string,
-                                                  right=right_str))
+            tmp_string = f'tmp{expr.right.tmpVar}'
+
+            if isinstance(expr.right,
+                          (ogAST.PrimSequenceOf,
+                           ogAST.PrimStringLiteral)):
+                right_str = array_content(expr.right, right_str, basic_type)
+
+            local_decl.append(f'{tmp_string} : constant {type_name(expr.right.exprType)} := {right_str};')
+            #code.append(f'{tmp_string} := {right_str};')
+
             right_str = tmp_string
             right_payload = right_str + '.Data'
+
+        elif expr.right.is_raw and left_bty.kind.startswith('Integer'):
+            # right is raw (e.g. hex string literal) and left is a number
+            if isinstance (expr.right, (ogAST.PrimBitStringLiteral, ogAST.PrimOctetStringLiteral)):
+                right_payload = str(expr.right.numeric_value)
+            else:
+                right_payload = right_str
+
+            left_payload = left_str # + string_payload(expr.left, left_str)
+            ada_string = f'({left_payload} {expr.operand} {right_payload})'
+        elif left_bty.kind.startswith('Integer') and right_bty.kind.startswith('Integer'):
+            # left and right are numbers
+            ada_string = f'({left_str} {expr.operand} {right_str})'
         else:
+            # ?
             right_payload = right_str + string_payload(expr.right, right_str)
+
         left_payload = left_str + string_payload(expr.left, left_str)
 
         if isinstance(expr, ogAST.ExprImplies):
-            ada_string = u'(Data => (({left} and {right}) or not {left}))'\
-                .format(left=left_payload, right=right_payload)
-        else:
-            ada_string = u'(Data => ({left} {op} {right}))'.format(
-                left=left_payload, op=expr.operand, right=right_payload)
+            ada_string = f'(Data => (({left_payload} and {right_payload}) or not {left_payload}))'
+        elif not ada_string:
+            ada_string = f'(Data => ({left_payload} {expr.operand} {right_payload}))'
 
     elif isinstance(expr, ogAST.ExprImplies):
-        ada_string = u'(({left} and {right}) or not {left})'.format(
-                                left=left_str,
-                                right=right_str)
-
+        ada_string = f'(({left_str} and {right_str}) or not {left_str})'
     else:
-        ada_string = u'({left} {op}{short} {right})'.format(
-                                left=left_str,
-                                op=expr.operand,
-                                short=expr.shortcircuit,
-                                right=right_str)
+        ada_string = f'({left_str} {expr.operand}{expr.shortcircuit} {right_str})'
+
     code.extend(left_stmts)
     code.extend(right_stmts)
     local_decl.extend(left_local)
@@ -2426,20 +2547,19 @@ def _not_expression(expr, **kwargs):
 
     bty_inner = find_basic_type(expr.expr.exprType)
     bty_outer = find_basic_type(expr.exprType)
-    if bty_outer.kind != 'BooleanType':
+    if bty_outer.kind != 'BooleanType' and not "Integer" in bty_outer.kind:
         if bty_outer.Min == bty_outer.Max:
             size_expr = ''
         elif bty_inner.Min == bty_inner.Max:
-            size_expr = ', Length => {}'.format(bty_inner.Min)
+            size_expr = f', Length => {bty_inner.Min}'
         else:
-            size_expr = ', Length => {}.Length'.format(expr_str)
+            size_expr = f', Length => {expr_str}.Length'
         if isinstance(expr.expr, ogAST.PrimSequenceOf):
             ada_string = array_content(expr.expr, expr_str, bty_outer)
         else:
-            ada_string = u'(Data => (not {}.Data){})'.format(expr_str,
-                                                             size_expr)
+            ada_string = f'(Data => (not {expr_str}.Data){size_expr})'
     else:
-        ada_string = u'(not {expr})'.format(expr=expr_str)
+        ada_string = f'(not {expr_str})'.format(expr=expr_str)
 
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
@@ -2540,30 +2660,27 @@ def _expr_in(expr, **kwargs):
         sort = type_name(expr.right.exprType)
         size = expr.left.exprType.Max
 
-        local_decl.extend([u'tmp{} : constant array (1 .. {}) of {} := ({});'
-                .format(expr.tmpVar, size, sort, left_str)])
-        ada_string = u'(for some var of tmp{} => var = {})'.format(expr.tmpVar,
-                                                                 right_str)
+        local_decl.append(f'tmp{expr.tmpVar} : constant array (1 .. {size}) of {sort} := ({left_str});')
+        ada_string = f'(for some var of tmp{expr.tmpVar} => var = {right_str})'
     else:
-        local_decl.extend([u'tmp{} : Boolean := False;'.format(expr.tmpVar)])
-        ada_string = u'tmp{}'.format(expr.tmpVar)
+        local_decl.append(f'tmp{expr.tmpVar} : Boolean := False;')
+        ada_string = f'tmp{expr.tmpVar}'
 
-        stmts.append(u"in_loop_{}:".format(ada_string))
+        stmts.append(f"in_loop_{ada_string}:")
         left_type = find_basic_type(expr.left.exprType)
 
         if isinstance(expr.left, ogAST.PrimSubstring):
-            len_str = u"{}'Length".format(left_str)
+            len_str = f"{left_str}'Length"
         else:
-            len_str = u"{}.Length".format(left_str)
-            left_str += u".Data"
+            len_str = f"{left_str}.Length"
+            left_str += ".Data"
 
         if left_type.Min != left_type.Max:
-            stmts.append(u"for elem in 1..{} loop".format(len_str))
+            stmts.append(f"for elem in 1 .. {len_str} loop")
         else:
-            stmts.append(u"for elem in {}'Range loop".format(left_str))
+            stmts.append(f"for elem in {left_str}'Range loop")
 
-        stmts.append(u"if {container}(elem) = {pattern} then".format
-                (container=left_str, pattern=right_str))
+        stmts.append(f"if {left_str} (elem) = {right_str} then")
 
         stmts.append(f"{ada_string} := True;")
         stmts.append("end if;")
@@ -2607,7 +2724,7 @@ def _integer(primary, **kwargs):
     if float(primary.value[0]) < 0:
         # Put brackets around negative integers for maintaining
         # the precedence in the generated code
-        ada_string = u'({})'.format(primary.value[0])
+        ada_string = f'({primary.value[0]})'
     else:
         ada_string = primary.value[0]
     return [], str(ada_string), []
@@ -2679,15 +2796,14 @@ def _conditional(cond, **kwargs):
         then_str = cond.value['then'].value.replace("'", '"')
         else_str = cond.value['else'].value.replace("'", '"')
         lens = [len(then_str), len(else_str)]
-        tmp_type = 'String (1 .. {})'.format(max(lens) - 2)
+        tmp_type = f'String (1 .. {max(lens) - 2})'
         # Ada require fixed-length strings, adjust with spaces
         if lens[0] < lens[1]:
             then_str = then_str[0:-1] + ' ' * (lens[1] - lens[0]) + '"'
         elif lens[1] < lens[0]:
             else_str = else_str[0:-1] + ' ' * (lens[0] - lens[1]) + '"'
 
-    local_decl = ['tmp{idx} : {tmpType};'.format(idx=cond.value['tmpVar'],
-                                                 tmpType=tmp_type)]
+    local_decl = [f'tmp{cond.value["tmpVar"]} : {tmp_type};']
     if_stmts, if_str, if_local = expression(cond.value['if'], readonly=1)
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
@@ -2764,8 +2880,7 @@ def _sequence(seq, **kwargs):
     try:
         ada_string = u"{}'(".format(type_name(seq.exprType))
     except NotImplementedError as err:
-        raise TypeError("Bug - unknown type in Sequence: {}"
-                        .format(str(seq.value)))
+        raise TypeError(f"Bug - unknown type in Sequence: {str(seq.value)}")
 
     sep = ''
     type_children = find_basic_type(seq.exprType).Children
@@ -2782,16 +2897,28 @@ def _sequence(seq, **kwargs):
             if each.lower() == delem.lower():
                 elem_spec = type_children[each]
                 break
+
         elem_specty = elem_spec.type
+
+        # Find the basic type of the elem: if it is a number and the value
+        # is an octet/bit string literal, then use the raw number
+        elem_bty = find_basic_type(elem_specty)
+
         value_stmts, value_str, local_var = expression(value, readonly=1)
+
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            value_str = array_content(value, value_str,
-                                      find_basic_type(elem_specty))
+            if elem_bty.kind.startswith('Integer'):
+                value_str = str(value.numeric_value)
+            elif elem_bty.kind == 'IA5StringType':
+                value_str = ia5string_raw(value)
+            else:
+                value_str = array_content(value, value_str, elem_bty)
+
         ada_string += f"{sep} {elem} => {value_str}"
         if elem.lower() in optional_fields:
             # Set optional field presence
             optional_fields[elem.lower()]['present'] = True
-        sep = u', '
+        sep = ', '
         stmts.extend(value_stmts)
         local_decl.extend(local_var)
     # Process optional fields
@@ -2855,10 +2982,16 @@ def _choiceitem(choice, **kwargs):
     ''' Return the Ada code for a CHOICE expression '''
     stmts, choice_str, local_decl = expression(choice.value['value'],
                                                readonly=1)
+
+    bty = find_basic_type(choice.value['value'].exprType)
+
     if isinstance(choice.value['value'], (ogAST.PrimSequenceOf,
                                           ogAST.PrimStringLiteral)):
-        choice_str = array_content(choice.value['value'], choice_str,
-                               find_basic_type(choice.value['value'].exprType))
+        if bty.kind.startswith('Integer'):
+            choice_str = choice.value['value'].numeric_value
+        else:
+            choice_str = array_content(choice.value['value'], choice_str, bty)
+
     # look for the right spelling of the choice discriminant
     # (normally field_PRESENT, but can be prefixed by the type name if there
     # is a namespace conflict)
@@ -2890,7 +3023,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         functions when they are exited with a continuous signal at a level
         above, a chain a calls to exit procedures has to be added.
         This option is used for example when generating the code of
-        continuous signal: the code is generated in the <<Next_Transition>>
+        continuous signal: the code is generated in the <<Continuous_Signals>>
         part, while the code of the transition already exists in the
         part above. The need is only to set the id of the next transition.
         XXX has to be done also in the C backend
@@ -2907,8 +3040,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         code.append(f'case Rand_{nb}_Pkg.Random (Gen_{nb}) is')
     elif dec.kind == 'informal_text':
         LOG.warning('Informal decision ignored')
-        code.append('-- Informal decision was ignored: {}'
-                    .format(dec.inputString))
+        code.append(f'-- Informal decision was ignored: {dec.inputString}')
         code.append('null;')
         return code, local_decl
     else:
@@ -2916,6 +3048,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         actual_type = type_name(question_type)
         basic = find_basic_type(question_type).kind in ('IntegerType',
                                                         'Integer32Type',
+                                                        'IntegerU8Type',
                                                         'BooleanType',
                                                         'RealType',
                                                         'EnumeratedType',
@@ -2952,25 +3085,72 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                 for exit in exitcalls:
                     code.append(exit);
                 code.append(f'trId := {branch_to};')
+            continue
+        if dec.kind == 'informal_text':
+            break
 
-        elif a.kind in ('open_range', 'constant'):
-            ans_stmts, ans_str, ans_decl = expression(a.constant, readonly=1)
-            code.extend(ans_stmts)
-            local_decl.extend(ans_decl)
-            if not basic:
-                if a.openRangeOp in (ogAST.ExprEq, ogAST.ExprNeq):
-                    if isinstance(a.constant, (ogAST.PrimSequenceOf,
-                                               ogAST.PrimStringLiteral)):
-                        ans_str = array_content(a.constant, ans_str,
-                                                find_basic_type(question_type))
-                    exp = f'{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
-                    if a.openRangeOp == ogAST.ExprNeq:
-                        exp = f'not {exp}'
+        sub_sep = ''
+        exp = ''
+        for element in a.answers:
+            # each branch can trigger based on multiple coma-separated answers
+            ans_kind    = element['kind']
+            ans_content = element['content']
+            qbty = find_basic_type(question_type)
+
+            if ans_kind in ('open_range', 'constant'):
+                op, constant = ans_content # get the constant
+                ans_stmts, ans_str, ans_decl = expression(constant, readonly=1)
+                code.extend(ans_stmts)
+                local_decl.extend(ans_decl)
+                if not basic:
+                    if op in (ogAST.ExprEq, ogAST.ExprNeq):
+                        if isinstance(constant, (ogAST.PrimSequenceOf,
+                                                 ogAST.PrimStringLiteral)):
+                            if qbty.kind == 'IA5StringType':
+                               ans_str = ia5string_raw (constant)
+                            else:
+                               ans_str = array_content(constant, ans_str, qbty)
+                        exp += f'{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
+                        if op == ogAST.ExprNeq:
+                            exp = f'{sub_sep}not {exp}'
+                        else:
+                            exp = f'{sub_sep}{exp}'
+                    else:
+                        exp += f'{sub_sep}tmp{dec.tmpVar} {op.operand} {ans_str}'
                 else:
-                    exp = f'tmp{dec.tmpVar} {a.openRangeOp.operand} {ans_str}'
-            else:
-                exp = f'({q_str}) {a.openRangeOp.operand} {ans_str}'
+                    # Basic (number/enumerated/boolean)
+                    # but the answer may be an hex or bit string literal
+                    if isinstance(constant, (ogAST.PrimBitStringLiteral,
+                                             ogAST.PrimOctetStringLiteral)):
+                        ans_str = str(constant.numeric_value)
 
+                    exp += f'{sub_sep}({q_str}) {op.operand} {ans_str}'
+
+
+            elif ans_kind == 'closed_range':
+                cl0_stmts, cl0_str, cl0_decl = expression(ans_content[0],
+                                                          readonly=1)
+                cl1_stmts, cl1_str, cl1_decl = expression(ans_content[1],
+                                                          readonly=1)
+                code.extend(cl0_stmts)
+                local_decl.extend(cl0_decl)
+                code.extend(cl1_stmts)
+                local_decl.extend(cl1_decl)
+
+                exp += f'{sub_sep}({q_str} >= {cl0_str} and {q_str} <= {cl1_str})'
+
+            elif ans_kind == 'informal_text':
+                continue
+            elif ans_kind == 'else':
+                # Keep the ELSE statement for the end
+                if a.transition:
+                    else_code, else_decl = generate(a.transition)
+                else:
+                    else_code, else_decl = ['null;'], []
+                local_decl.extend(else_decl)
+
+            sub_sep = " or "
+        if exp:
             code.append(sep + exp + ' then')
             if not branch_to:
                 if a.transition:
@@ -2986,39 +3166,6 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                     code.append(exit);
                 code.append(f'trId := {branch_to};')
             sep = 'elsif '
-
-        elif a.kind == 'closed_range':
-            cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0],
-                                                      readonly=1)
-            cl1_stmts, cl1_str, cl1_decl = expression(a.closedRange[1],
-                                                      readonly=1)
-            code.extend(cl0_stmts)
-            local_decl.extend(cl0_decl)
-            code.extend(cl1_stmts)
-            local_decl.extend(cl1_decl)
-            code.append('{sep} {dec} >= {cl0} and {dec} <= {cl1} then'
-                        .format(sep=sep, dec=q_str, cl0=cl0_str, cl1=cl1_str))
-            if not branch_to:
-                if a.transition:
-                    stmt, tr_decl = generate(a.transition)
-                else:
-                    stmt, tr_decl = ['null;'], []
-                code.extend(stmt)
-                local_decl.extend(tr_decl)
-            else:
-                # Before branching we should optionally execute the exit
-                # procedures of the nested states we may be leaving
-                code.append('trId := {};'.format(branch_to))
-            sep = 'elsif '
-        elif a.kind == 'informal_text':
-            continue
-        elif a.kind == 'else':
-            # Keep the ELSE statement for the end
-            if a.transition:
-                else_code, else_decl = generate(a.transition)
-            else:
-                else_code, else_decl = ['null;'], []
-            local_decl.extend(else_decl)
     try:
         if sep != 'if ':
             # If there is at least one 'if' branch
@@ -3044,7 +3191,7 @@ def _label(lab, **kwargs):
     ''' Transition following labels are generated in a separate section
         for visibility reasons (see Ada scope)
     '''
-    return ['goto {label};'.format(label=lab.inputString)], []
+    return [f'goto {lab.inputString};'], []
 
 
 @generate.register(ogAST.Transition)
@@ -3061,12 +3208,13 @@ def _transition(tr, **kwargs):
             break
     else:
         if tr.terminator:
+            ns = tr.terminator.inputString.strip()
             empty_transition = False
             code.extend(traceability(tr.terminator))
             if tr.terminator.label:
-                code.append(f'<<{tr.terminator.label.inputString}>>')
+                code.append(f'<<{ns}>>')
             if tr.terminator.kind == 'next_state':
-                history = tr.terminator.inputString.strip() == '-'
+                history = ns in ('-', '-*')
                 if tr.terminator.next_is_aggregation and not history: # XXX add to C generator
                     code.append(f'-- Entering state aggregation {tr.terminator.inputString}')
                     # Call the START function of the state aggregation
@@ -3074,7 +3222,7 @@ def _transition(tr, **kwargs):
                     code.append(
                       f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
                     code.append('trId := -1;')
-                elif not history: # tr.terminator.inputString.strip() != '-':
+                elif not history:
                     code.append(f'trId := {str(tr.terminator.next_id)};')
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate: # XXX add to C generator
@@ -3085,14 +3233,17 @@ def _transition(tr, **kwargs):
                 else:
                     # "nextstate -": switch case to re-run the entry transition
                     # in case of a composite state or state aggregation
+                    # and "nextstate -*" to return to the previous state
+                    # (parallel states only, not composite states at the moment
+                    # as the previous state is not stored)
                     if any(next_id
                            for next_id in tr.terminator.candidate_id.keys()
                            if next_id != -1):
-                        code.append('case {}.State is'.format(LPREFIX))
+                        code.append(f'case {LPREFIX}.State is')
                         for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 if tr.terminator.next_is_aggregation:
-                                    statement = f'{nid};'
+                                    statement = ns != '-*' and f'{nid};' or 'trId := -1;'
                                 else:
                                     statement = f'trId := {nid};'
                                 states_prefix = (f"{ASN1SCC}{s}" for s in sta)
@@ -3106,7 +3257,7 @@ def _transition(tr, **kwargs):
                                      'end case;'])
                     else:
                         code.append('trId := -1;')
-                code.append('goto Next_Transition;')
+                code.append('goto Continuous_Signals;')
             elif tr.terminator.kind == 'join':
                 code.append(f'goto {tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
@@ -3133,23 +3284,35 @@ def _transition(tr, **kwargs):
                                          asn1scc=ASN1SCC)
                             for sib in tr.terminator.siblings
                             if sib.lower() != tr.terminator.substate.lower()]
-                    code.append('if {} then'.format(' and '.join(conds)))
+                    code.append(f'if {" and ".join(conds)} then')
                 if tr.terminator.next_id == -1:
-                    if tr.terminator.return_expr:
-                        stmts, string, local = \
-                                expression(tr.terminator.return_expr,
-                                           readonly=1)
+                    retexp = tr.terminator.return_expr
+                    if retexp:
+                        stmts, string, local = expression(retexp, readonly=1)
+
+                        # Check the return type in case of a procedure, in
+                        # case it is a string - to format it properly
+                        if isinstance(tr.terminator.context, ogAST.Procedure):
+                            basic = find_basic_type(tr.terminator.context.return_type)
+                            if isinstance(retexp,
+                                    (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                                if basic.kind == 'IA5StringType':
+                                    string = ia5string_raw(retexp)
+                                elif basic.kind.startswith('Integer'):
+                                    string = str(retexp.numeric_value)
+                                else:
+                                    string = array_content(retexp, string, basic)
+
                         code.extend(stmts)
                         local_decl.extend(local)
-                    code.append('return{};'
-                                .format(' ' + string if string else ''))
+                    code.append(f'return{" " + string if string else ""};')
                 else:
-                    code.append('trId := ' + str(tr.terminator.next_id) + ';')
-                    code.append('goto Next_Transition;')
+                    code.append(f'trId :=  {str(tr.terminator.next_id)};')
+                    code.append('goto Continuous_Signals;')
                 if aggregate:
                     code.append('else')
                     code.append('trId := -1;')
-                    code.append('goto Next_Transition;')
+                    code.append('goto Continuous_Signals;')
                     code.append('end if;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
@@ -3194,7 +3357,7 @@ def procedure_header(proc):
         pi_header += ';'.join(params)
         pi_header += ')'
     if ret_type:
-        pi_header += ' return {}'.format(ret_type)
+        pi_header += f' return {ret_type}'
     return pi_header
 
 
@@ -3251,9 +3414,17 @@ def _inner_procedure(proc, **kwargs):
                 # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value, readonly=1)
                 varbty = find_basic_type(var_type)
-                print(f'{var_name}: {dstr} {varbty.kind}')
-                if varbty.kind in ('SequenceOfType', 'OctetStringType'):
+
+                if varbty.kind.startswith('Integer') and \
+                        isinstance(def_value, (ogAST.PrimOctetStringLiteral,
+                                               ogAST.PrimBitStringLiteral)):
+                    dstr = str(def_value.numeric_value)
+
+                elif varbty.kind in ('SequenceOfType',
+                                     'OctetStringType',
+                                     'BitStringType'):
                     dstr = array_content(def_value, dstr, varbty)
+
                 elif varbty.kind == 'IA5StringType':
                     dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal, 'Ground expression error'
@@ -3327,11 +3498,11 @@ def string_payload(prim, ada_string):
         return ''
     prim_basic = find_basic_type(prim.exprType)
     payload = ''
-    if prim_basic.kind in ('SequenceOfType', 'OctetStringType'):
+    if prim_basic.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         if int(prim_basic.Min) != int(prim_basic.Max):
-            payload = u'.Data(1..{}.Length)'.format(ada_string)
+            payload = f'.Data(1..{ada_string}.Length)'
         else:
-            payload = u'.Data'
+            payload = '.Data'
     return payload
 
 
@@ -3350,9 +3521,9 @@ def array_content(prim, values, asnty):
             # Quotes are kept in string literals
             length -= 2
         # Reference type can vary -> there is a Length field
-        rlen = u", Length => {}".format(length)
+        rlen = f", Length => {length}"
     else:
-        rlen = u""
+        rlen = ""
     if isinstance(prim, ogAST.PrimStringLiteral):
         df = '0'
     else:
@@ -3418,12 +3589,13 @@ def asn1_type_name(a_type):
 def type_name(a_type, use_prefix=True):
     ''' Check the type kind and return an Ada usable type name '''
     if a_type.kind == 'ReferenceType':
-        return '{}{}'.format('asn1Scc' if use_prefix else '',
-                               a_type.ReferencedTypeName.replace('-', '_'))
+        return f'{"asn1Scc" if use_prefix else ""}{a_type.ReferencedTypeName.replace("-", "_")}'
     elif a_type.kind == 'BooleanType':
         return 'Boolean'
     elif a_type.kind.startswith('Integer32'):
         return 'Integer'
+    elif a_type.kind.startswith('IntegerU8'):
+        return 'Interfaces.Unsigned_8'
     elif a_type.kind.startswith('Integer'):
         if float(a_type.Min) >= 0:
             return 'Asn1UInt'
@@ -3440,7 +3612,7 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind == 'EnumeratedType':
         return 'asn1Scc' if use_prefix else ''
     else:
-        raise NotImplementedError('Type name for {}'.format(a_type.kind))
+        raise NotImplementedError(f'Type name for {a_type.kind}')
 
 
 def child_spelling(name, bty):
@@ -3448,7 +3620,7 @@ def child_spelling(name, bty):
     for each in bty.Children:
         if name.lower().replace('_', '-') == each.lower():
             return each
-    raise TypeError('Child not found: {}'.format(name))
+    raise TypeError(f'Child not found: {name}')
 
 
 def find_var(var):

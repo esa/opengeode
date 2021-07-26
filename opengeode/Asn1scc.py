@@ -13,7 +13,6 @@
     Contact: maxime.perrotin@esa.int
 """
 
-import subprocess
 import tempfile
 import uuid
 import os
@@ -21,11 +20,8 @@ import distutils.spawn as spawn
 import sys
 import importlib
 import logging
-import traceback
 import hashlib
 from PySide2.QtCore import QProcess, QFile, QIODevice
-
-from . import icons
 
 LOG = logging.getLogger(__name__)
 terminal_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")
@@ -70,8 +66,7 @@ def waitfor_qprocess(qprocess, name):
     err = qprocess.readAllStandardError()
     std = qprocess.readAllStandardOutput()
     if exitcode != 0:
-        raise TypeError(name + ' error (exit code = {}) - {}'
-                        .format(exitcode, str(err)))
+        raise TypeError(f'{name} error (exit code = {exitcode}) - {str(err)}')
     return std
 
 
@@ -85,11 +80,11 @@ def parse_asn1(*files, **options):
     project_cache = os.getenv ("PROJECT_CACHE")
     if project_cache is not None and not os.path.isdir(project_cache):
         try:
-            print("[INFO] Creating cache folder {}".format(project_cache))
+            print(f"[INFO] Creating cache folder {project_cache}")
             os.makedirs(project_cache)
         except OSError:
-            raise TypeError ("The configured cache folder \""
-            + project_cache + "\" is not there and could not be created\n")
+            raise TypeError (f'''The configured cache folder "{project_cache} " \
+                is not there and could not be created\n''')
     # make sure the same files are not parsed more than once if not modified
     filehash = hashlib.md5()
     file_list = sorted(list(*files))
@@ -126,20 +121,12 @@ def parse_asn1(*files, **options):
     assert isinstance(ast_version, ASN1)
     assert isinstance(rename_policy, ASN1)
     assert isinstance(flags, list)
-    path_to_asn1scc = spawn.find_executable('asn1.exe')
+    path_to_asn1scc = spawn.find_executable('asn1scc')
 
     if not path_to_asn1scc:
-        raise TypeError('ASN.1 Compiler not found in path')
-    if os.name == 'posix':
-        path_to_mono = spawn.find_executable('mono')
-        if not path_to_mono:
-            raise TypeError('"mono" not found in path. Please install it.')
-        binary = path_to_mono
-        arg0 = path_to_asn1scc
-    else:
-        binary = path_to_asn1scc
-        arg0 = ''
-    asn1scc_root = os.path.abspath(os.path.dirname(path_to_asn1scc))
+        raise TypeError('ASN.1 Compiler (asn1scc) not found in path')
+    binary = path_to_asn1scc
+    asn1scc_root = os.path.abspath(os.path.dirname(binary))
 
     if os.name == 'nt':
         # On windows, remove the drive letter, workaround to ASN1SCC bug
@@ -165,7 +152,8 @@ def parse_asn1(*files, **options):
             html = ['-customIcdUper', stgfile + '::' + html_filepath]
         else:
             html = []
-        args = [arg0, '-customStgAstVersion', str(ast_version.value),
+        args = ['-customStgAstVersion', str(ast_version.value),
+                '--field-prefix', 'AUTO',
                 '-customStg', stg + '::' + py_filepath,
                 '-renamePolicy', str(rename_policy.value)] + html + extraflags + file_list
         asn1scc = QProcess()
@@ -288,7 +276,7 @@ def asn2dataModel(*files):
 if __name__ == '__main__':
     LOG.setLevel(logging.DEBUG)
     try:
-        ast = parse_asn1('dataview-uniq.asn',
+        ast = parse_asn1(['dataview-uniq.asn'],
                           ast_version=ASN1.NoParameterizedTypes,
                           flags=[ASN1.AstOnly])
         print(ast.types.keys())

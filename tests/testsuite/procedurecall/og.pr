@@ -20,25 +20,35 @@ system titi;
             dcl diff Temperature_Difference;
             
             dcl u SomeInt;
+            
+            dcl foo SomeUInt := 'AB'H;
             /* CIF ENDTEXT */
-            /* CIF procedure (342, 620), (171, 35) */
-            procedure procNoParamsButReturn;
-                /* CIF TEXT (103, 121), (267, 137) */
-                returns Temperature;
+            /* CIF procedure (455, 794), (177, 35) */
+            procedure procWithUIntParamNoRet;
+                /* CIF TEXT (100, 210), (267, 140) */
+                fpar in p1 SomeUInt;
+                
+                
                 /* CIF ENDTEXT */
-                /* CIF START (639, 218), (70, 35) */
+                /* CIF START (514, 126), (70, 35) */
                 START;
-                    /* CIF return (656, 273), (35, 35) */
-                    return 5.0;
-            endprocedure;
-            /* CIF procedure (352, 505), (107, 35) */
-            procedure procNoReturn;
-                /* CIF START (117, 52), (70, 35) */
-                START;
-                    /* CIF return (134, 107), (35, 35) */
+                    /* CIF return (531, 181), (35, 35) */
                     return ;
             endprocedure;
-            /* CIF procedure (346, 552), (117, 35) */
+            /* CIF procedure (366, 714), (139, 35) */
+            procedure procWithUIntParam;
+                /* CIF TEXT (100, 210), (267, 140) */
+                
+                fpar in p1 SomeUInt;
+                
+                returns SomeUInt;
+                /* CIF ENDTEXT */
+                /* CIF START (514, 126), (70, 35) */
+                START;
+                    /* CIF return (531, 181), (35, 35) */
+                    return 'FF'H;
+            endprocedure;
+            /* CIF procedure (345, 552), (117, 35) */
             procedure procWithReturn;
                 /* CIF TEXT (142, 194), (267, 140) */
                 -- Text area for declarations and comments
@@ -49,6 +59,23 @@ system titi;
                 /* CIF START (854, 137), (70, 35) */
                 START;
                     /* CIF return (871, 192), (35, 35) */
+                    return 5.0;
+            endprocedure;
+            /* CIF procedure (351, 505), (107, 35) */
+            procedure procNoReturn;
+                /* CIF START (117, 52), (70, 35) */
+                START;
+                    /* CIF return (134, 107), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF procedure (341, 620), (171, 35) */
+            procedure procNoParamsButReturn;
+                /* CIF TEXT (103, 121), (267, 137) */
+                returns Temperature;
+                /* CIF ENDTEXT */
+                /* CIF START (639, 218), (70, 35) */
+                START;
+                    /* CIF return (656, 273), (35, 35) */
                     return 5.0;
             endprocedure;
             /* CIF START (669, 229), (70, 35) */
@@ -70,7 +97,13 @@ system titi;
                     /* CIF ANSWER (759, 579), (70, 24) */
                     else:
                 enddecision;
-                /* CIF NEXTSTATE (669, 619), (70, 35) */
+                /* CIF task (580, 619), (246, 35) */
+                task foo := call procWithUintParam ('AA'H);
+                /* CIF task (581, 674), (246, 35) */
+                task foo := procWithUintParam ('0010'B);
+                /* CIF PROCEDURECALL (599, 729), (208, 35) */
+                call procwithuintparamnoret('CC'H);
+                /* CIF NEXTSTATE (669, 779), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (947, 254), (70, 35) */
             state wait;

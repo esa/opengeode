@@ -95,6 +95,9 @@ UNSIGNED     = type('IntegerType',    (object,), {'kind': 'IntegerType',
 INT32        = type('Integer32Type',  (object,), {'kind': 'Integer32Type',
                                                   'Min' : '-2147483648',
                                                   'Max' : '2147483647'})
+UINT8        = type('IntegerU8Type',  (object,), {'kind': 'IntegerU8Type',
+                                                  'Min' : '0',
+                                                  'Max' : '255'})
 NUMERICAL    = type('NumericalType',  (object,), {'kind': 'Numerical'})
 TIMER        = type('TimerType',      (object,), {'kind': 'TimerType'})
 REAL         = type('RealType',       (object,), {'kind': 'RealType',
@@ -153,7 +156,16 @@ SPECIAL_OPERATORS = {
                     {'type': CHOICE,     'direction': 'in'},  # choice variable
                     {'type': NUMERICAL,  'direction': 'in'}   # default value
                    ],
-
+    'shift_left' : [ # logical shift -> return an unsigned
+                    {'type': UNSIGNED,   'direction': 'in'},
+                    {'type': UNSIGNED,   'direction': 'in'}
+                   ],
+    'shift_right' : [ # logical shift -> return an unsigned
+                     {'type': UNSIGNED,   'direction': 'in'},
+                     {'type': UNSIGNED,   'direction': 'in'}
+                    ],
+    'observer_status' :  # observer-only procedure returning the kind of state
+                   [],
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -169,8 +181,11 @@ new_ref_type = lambda refname: \
                  'ReferencedTypeName': refname.replace('_', '-')})
 
 # Shortcut to return a type name (Reference name or basic type)
-type_name = lambda t: \
-                t.kind if t.kind != 'ReferenceType' else t.ReferencedTypeName
+def type_name(t):
+    if t:
+        return t.kind if t.kind != 'ReferenceType' else t.ReferencedTypeName
+    else:
+        return "UNDEFINED TYPE"
 
 # return the line number of this python module, useful for debugging
 lineno = lambda : currentframe().f_back.f_lineno
@@ -210,7 +225,8 @@ def set_global_DV(asn1_filenames):
         #  as explicit ASN.1 types
         CHOICE_SELECTORS.update(choice_selectors)
         USER_DEFINED_TYPES=CHOICE_SELECTORS.copy()
-        #DV.types.update(choice_selectors)
+        # Add placeholder for SDL constants
+        DV.SDL_Constants = {}
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
@@ -237,7 +253,8 @@ def is_integer(ty) -> bool:
     ''' Return true if a type is an Integer Type '''
     return find_basic_type(ty).kind in (
         'IntegerType',
-        'Integer32Type'
+        'Integer32Type',
+        'IntegerU8Type'
     )
 
 
@@ -251,6 +268,7 @@ def is_numeric(ty) -> bool:
     return find_basic_type(ty).kind in (
         'IntegerType',
         'Integer32Type',
+        'IntegerU8Type',
         'Numerical',
         'RealType'
     )
@@ -602,7 +620,7 @@ def signature(name, context):
                 # output signals: one single parameter
                 signature.append({
                     'type': out_sig.get('type'),
-                    'name': out_sig.get('param_name' or ''),
+                    'name': out_sig.get('param_name') or '',
                     'direction': 'in',
                 })
             return signature
@@ -746,6 +764,12 @@ def check_call(name, params, context):
         if return_type_keys != variable_sort_keys:
             raise TypeError(name + ': Enumerated type are not equivalent')
         return return_type
+    elif name == 'observer_status':
+        if len(params) != 0:
+            raise TypeError(f'{name} does not take any parameter')
+        if 'Observer-State-Kind' not in types().keys():
+            raise TypeError(f'{name} can only be used in observers')
+        return types()['Observer-State-Kind'].type
 
     # (1) Find the signature of the function
     # signature will hold the list of parameters for the function
@@ -887,6 +911,10 @@ def check_call(name, params, context):
         #sort = type_name (p1.exprType)
         return type('choice_to_int', (INTEGER,), {})
 
+    elif name in ('shift_right', 'shift_left'):
+        p1, _ = params
+        return type('shift', (p1.exprType,), {})
+
     elif name == 'round':
         return type('Round', (REAL,), {
             'Min': str(round(float(param_btys[0].Min))),
@@ -927,20 +955,20 @@ def check_range(typeref, type_to_check):
         both types assumed to be basic types
     '''
     try:
-        min1, max1 = float(type_to_check.Min), float(type_to_check.Max)
+        if type_to_check.kind == "StringType" and type_to_check.NumericValue != -1:
+            # OctetStringLiteral, BitStringLiteral assigned to integer
+            min1 = max1 = type_to_check.NumericValue
+        else:
+            min1, max1 = float(type_to_check.Min), float(type_to_check.Max)
         min2, max2 = float(typeref.Min), float(typeref.Max)
         error   = min1 > max2 or max1 < min2
         warning = min1 < min2 or max1 > max2
         if error:
-            raise TypeError(
-                    'Expression in range {} .. {} is outside range {} .. {}'
-                    .format(type_to_check.Min, type_to_check.Max,
-                            typeref.Min, typeref.Max))
+            raise TypeError(f'Expression in range {min1} .. {max1}'
+                            f' is outside range {min2} .. {max2}')
         elif warning:
-            raise Warning('Expression in range {} .. {}, '
-                          'could be outside expected range {} .. {}'
-                    .format(type_to_check.Min, type_to_check.Max,
-                            typeref.Min, typeref.Max))
+            raise Warning(f'Expression in range {min1} .. {max1}, '
+                          f'could be outside expected range {min2} .. {max2}')
     except (AttributeError, ValueError):
         raise TypeError('Missing range')
 
@@ -973,7 +1001,7 @@ def check_type_compatibility(primary, type_ref, context):
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
-        Possibly returns a list of warnings; can raises TypeError
+        Possibly returns a list of warnings; can raise TypeError
     '''
     warnings = []    # function returns a list of warnings
     # assert type_ref is not None
@@ -1167,6 +1195,9 @@ def check_type_compatibility(primary, type_ref, context):
                             .format(choice=primary.inputString,
                             t1=type_name(type_ref)))
 
+    elif isinstance(primary, (ogAST.PrimBitStringLiteral, ogAST.PrimOctetStringLiteral)) \
+            and is_integer(type_ref) or type_ref == NUMERICAL:
+        return warnings
     elif isinstance(primary, ogAST.PrimStringLiteral):
         # Octet strings
         basic_type = find_basic_type(type_ref)
@@ -1174,10 +1205,61 @@ def check_type_compatibility(primary, type_ref, context):
             # raw string
             return warnings
         elif basic_type.kind.endswith('StringType'):
-            # all strings including IA5String
+            # all strings including IA5String, BitString, OctetString
             try:
-                if int(minR) <= len(
-                        primary.value[1:-1]) <= int(maxR):
+                ok = True
+                # value is in hex form for both octet and bit string literals
+                if basic_type.kind == 'OctetStringType':
+                    # recipient is an OCTET STRING of some size [minR..maxR]
+                    # The length check will depend  on the user string kind:
+
+                    if primary.exprType.kind == 'OctetStringType':
+                        # user entered an hex string ('ABC'H)
+                        # => 2 input characters = 1 element of the string
+                        ok = int(minR) <= len(primary.value[1:-1]) <= int(maxR)
+
+                    elif primary.exprType.kind == 'BitStringType':
+                        # user entered a bit string ('011'B)
+                        # a padding has been added and it ws converted to hex
+                        # (the primary.value is an hex string already)
+                        # => length must be compatible with recipient length
+                        ok = int(minR) * 2 <= len(primary.value[1:-1]) <= int(maxR) * 2
+                    else:
+                        # user entered a text => each char is 1 octet
+                        ok = int(minR) <= len(primary.value[1:-1]) <= int(maxR)
+
+                    if ok:
+                        return warnings
+                    else:
+                        raise TypeError(f'Invalid string literal {primary.value}H:'
+                                    ' Length check failed (Octet String) ')
+
+                elif basic_type.kind == 'BitStringType':
+                    # recipient is a BIT STRING of some size [minR..maxR]
+                    # The length check will depend  on the user string kind:
+
+                    if primary.exprType.kind == 'OctetStringType':
+                        # user entered an hex string ('ABC'H)
+                        # => each character is 4 bits
+                        ok = int(minR) <= len(primary.value[1:-1]) * 4 <= int(maxR)
+
+                    elif primary.exprType.kind == 'BitStringType':
+                        # user entered a bit string ('011'B)
+                        # a padding has been added and it ws converted to hex
+                        # (the primary.value is an hex string already)
+                        # but the original number of bits is known
+                        ok = int(minR) <= primary.exprType.NumberOfBits <= int(maxR)
+                    else:
+                        # user entered a text => each character is 8 bits
+                        ok = int(minR) <= len(primary.value[1:-1]) * 8 <= int(maxR)
+
+                    if ok:
+                        return warnings
+                    else:
+                        raise TypeError(f'Invalid string literal {primary.value}H:'
+                                    ' Length check failed (Bit String) ')
+
+                elif int(minR) <= len(primary.value[1:-1]) <= int(maxR):
                     return warnings
                 else:
                     #print traceback.print_stack()
@@ -1191,7 +1273,7 @@ def check_type_compatibility(primary, type_ref, context):
                 LOG.debug('String literal size constraint discarded')
                 return warnings
         else:
-            raise TypeError('String literal not expected')
+            raise TypeError(f'String literal not expected')
     elif (isinstance(primary, ogAST.PrimMantissaBaseExp) and
                                             basic_type.kind == 'RealType'):
         LOG.debug('PROBABLY (it is a float but I did not check'
@@ -1337,7 +1419,8 @@ def find_variable_type(var, context):
             return TIMER
 
     # check if it is an ASN.1 constant
-    for varname, vartype in DV.variables.items():
+    for varname, vartype in chain(DV.variables.items(),
+                                  DV.SDL_Constants.items()):
         if var.lower() == varname.lower().replace('-', '_'):
             return vartype.type
 
@@ -1533,8 +1616,7 @@ def primary_variable(root, context):
     # Detect reserved keywords
     if name.lower() in ('integer', 'real', 'procedure', 'begin', 'end',
                         'for', 'in', 'out', 'loop'):
-        errors.append(u"Use of forbidden keyword for a variable name : {}"
-                      .format(name))
+        errors.append(f"Use of forbidden keyword for a variable name : {name}")
 
     possible_constant = is_asn1constant(name)
     if possible_constant is not None:
@@ -1573,7 +1655,8 @@ def is_fpar(name, context):
 def is_asn1constant(name):
     name = name.lower().replace('-', '_')
     try:
-        for varname, vartype in DV.variables.items():
+        for varname, vartype in chain(DV.variables.items(),
+                                      DV.SDL_Constants.items()):
             if varname.lower().replace('-', '_') == name:
                 return vartype
     except AttributeError:
@@ -1629,79 +1712,93 @@ def unary_expression(root, context):
     return expr, errors, warnings
 
 
-def io_expression(root, context):
+def parse_io_expression(root, context):
+    ''' Extract all parts of an IO expression (see io_expression below) '''
+    result = {
+       'inputString': get_input_string(root),
+       'kind'    : root.type == lexer.INPUT_EXPRESSION and "input" or "output",
+       'msgName'   : None,
+       'from'      : None,
+       'to'        : None,
+       'paramName' : None
+       }
+
+    for child in root.getChildren():
+        if child.type == lexer.ID:
+            result['msgName'] = child.text
+
+        elif child.type == lexer.FROM:
+            result['from'] = child.getChild(0).text
+
+        elif child.type == lexer.TO:
+            result['to'] = child.getChild(0).text
+
+        elif child.type == lexer.IOPARAM:
+            # optional parameter
+            result['paramName'] = child.getChild(0).text
+        elif child.type == lexer.UNHANDLED:
+            # unhandled input reffers to a lost message, in the sense of a
+            # message received in a SDL state where it is not expected
+            result['kind'] = "unhandled_input"
+        else:
+            raise NotImplementedError("Parsing error in io_expression")
+
+    return result
+
+
+def io_expression(root, context, io_expr=None):
     ''' Expressions used in the context of observers (for model checking):
-        input
-        input x [from P] to F
+        [false] input
+        [false] input x [from P] to F
         output
-        output X from P
+        output X from P [to F]
 
         Since this is syntactic sugar, we transform these expression into the
         regular form based on the known structure of events: Observable_Event
         type that is generated by kazoo.
+
+        Optional parameter io_expr allows to pass a pre-parsed string
+        (format: result of function parse_io_expression defined just above)
     '''
     errors, warnings = [], []
 
     inputString = get_input_string(root)
     event_kind = "{kind}_event"
-    target_option = " and then event.{kind}_event.{target} = {function}"
-    msg_name = " and then present(event.{kind}_event.event.{function}.msg_{direction}) = {msg}"
+    target_option = " and then event.{kind}.{target} = {function}"
+    msg_name = " and then present(event.{kind}.event.{function}.msg_{direction}) = {msg}"
 
     string = "present(event) = "
 
-    msg, src, dest = "", "", ""
+    if io_expr == None:
+        io_expr = parse_io_expression(root, context)  # extract name, source, dest, etc.
+    direction = ('input' in io_expr['kind']) and 'in' or 'out'
+    kind = io_expr['kind']
+    if kind == 'input' or kind == 'output':
+        kind = kind + '_event'
+    string += kind
+    if io_expr['from'] is not None:
+        string += target_option.format(kind=kind,
+                                       target="source",
+                                       function=io_expr['from'])
+    if io_expr['to'] is not None:
+        string += target_option.format(kind=kind,
+                                       target="dest",
+                                       function=io_expr['to'])
 
-    if root.type == lexer.INPUT_EXPRESSION:
-        kind = "input"
-        direction = "in"
-    else:
-        kind = "output"
-        direction = "out"
+    func = io_expr['from'] if direction == "out" else io_expr['to']
 
-    string += event_kind.format(kind=kind)
-    param_name = ""
-    from_f, to_f = "", ""
-
-    for child in root.getChildren():
-        if child.type == lexer.ID:
-            msg =  child.text
-
-        elif child.type == lexer.FROM:
-            from_f = child.getChild(0).text
-            string += target_option.format(kind=kind,
-                                           target="source",
-                                           function=from_f)
-
-        elif child.type == lexer.TO:
-            to_f = child.getChild(0).text
-            string += target_option.format(kind=kind,
-                                           target="dest",
-                                           function=to_f)
-
-        elif child.type == lexer.IOPARAM:
-            # optional parameter
-            # to find the type of th parameter, the easiest is to parse the
-            # path to the field as an expression. That will also detect errors.
-            # this will be done after the parsing of other elements, when
-            # destination field is known.
-            param_name = child.getChild(0).text
-        else:
-            raise NotImplementedError("In io_expression")
-
-    func = from_f if direction == "out" else to_f
-
-    if msg and not func:
+    if io_expr['msgName'] and not func:
         # When input or output specify a message there must be a source or destination
         if direction == "out":
             errors.append(f"FROM clause is missing in output expression '{inputString}'")
         else:
             errors.append(f"TO clause is missing in input expression '{inputString}'")
 
-    elif msg:
+    elif io_expr['msgName']:
         string += msg_name.format(kind=kind,
                                   function=func,
                                   direction=direction,
-                                  msg=msg)
+                                  msg=io_expr['msgName'])
 
     parser = parser_init (string=string)
     new_root = parser.expression()
@@ -1716,8 +1813,8 @@ def io_expression(root, context):
     # Now address the optional parameter: if set, we will create an implicit
     # alias definition to the event structure where the parameter is actually
     # present. If an alias of the same type already exists, raise an error
-    if param_name:
-        path=f"event.{kind}_event.event.{func}.msg_{direction}.{msg}"
+    if io_expr['paramName']:
+        path=f"event.{kind}.event.{func}.msg_{direction}.{io_expr['msgName']}"
         parser = parser_init (string=path)
         new_root = parser.expression()
         tree = new_root.tree
@@ -1732,7 +1829,7 @@ def io_expression(root, context):
             try:
                 pname, ptype = list(find_basic_type(param_expr.exprType).Children.items())[0]
             except (IndexError, AttributeError):
-                errors.append(f"No parameter expected for message {msg}")
+                errors.append(f"No parameter expected for message {io_expr['msgName']}")
             else:
                 path += f".{pname}"
                 # We must re-parse the expression with the field name
@@ -1746,19 +1843,18 @@ def io_expression(root, context):
 
                 # The type of the parameter is:
                 ptype = ptype.type
-                #print(f"dcl {param_name} {type_name(ptype)} renames {path};")
                 for var, (sort, _) in context.variables.items():
-                    if var.lower() == param_name.lower():
+                    if var.lower() == io_expr['paramName'].lower():
                         # variable already defined, does it have the same type?
                         if type_name(sort) != type_name(ptype):
                             errors.append(f"Duplicate/incompatible definition"
-                                          f" of variable '{param_name}'")
+                                          f" of variable '{io_expr['paramName']}'")
                         elif var.lower() in context.aliases.keys():
                             # Check if already defined variable is an alias,
                             # and if so, if it points to the same element
                             _, alias_expr = context.aliases[var.lower()]
                             if alias_expr.inputString != param_expr.inputString:
-                                errors.append(f"Parameter name '{param_name}' "
+                                errors.append(f"Parameter name '{io_expr['paramName']}' "
                                         "is used in another context, but not "
                                         f"pointing to the same content")
                         else:
@@ -1766,13 +1862,13 @@ def io_expression(root, context):
                             # implicit parameter, as it is actually pointing
                             # to the event. 
                             errors.append("A variable declaration with the "
-                                    f"same name as parameter '{param_name}' "
+                                    f"same name as parameter '{io_expr['paramName']}' "
                                     "exists and shall be removed or renamed")
                             break
                 else:
                     # not found a duplicate definition -> Add an alias
-                    context.variables[param_name.lower()] = (ptype, None)
-                    context.aliases[param_name.lower()]   = (ptype, param_expr)
+                    context.variables[io_expr['paramName'].lower()] = (ptype, None)
+                    context.aliases[io_expr['paramName'].lower()]   = (ptype, param_expr)
     return expr, errors, warnings
 
 def expression(root, context, pos='right'):
@@ -1858,14 +1954,17 @@ def logic_expression(root, context):
 
         if bty.kind == 'BooleanType':
             continue
-        elif bty.kind == 'BitStringType' and bty.Min == bty.Max:
+        elif bty.kind in ('BitStringType', 'OctetStringType') and bty.Min == bty.Max:
             continue
         elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max \
                 and find_basic_type(bty.type).kind == 'BooleanType':
             continue
+        elif 'IntegerType' in bty.kind and float(bty.Min) >= 0.0:
+            # Unsigned types can work for bitwise operations
+            continue
         else:
-            msg = 'Bitwise operators only work with Booleans, ' \
-                  'fixed size SequenceOf Booleans or fixed size BitStrings'
+            msg = 'Bitwise operators only work with Booleans, unsigned integers,' \
+                  'fixed size SequenceOf Booleans or fixed size BIT/OCTET STRINGs'
             errors.append(error(root, msg))
             break
 
@@ -2242,14 +2341,17 @@ def not_expression(root, context):
             expr = expr.expr
         else:
             expr.exprType = BOOLEAN
-    elif bty.kind == 'BitStringType':
+    elif bty.kind in ('BitStringType', 'OctetStringType'):
         expr.exprType = expr.expr.exprType
     elif bty.kind == 'SequenceOfType' and \
             find_basic_type(bty.type).kind == 'BooleanType':
         expr.exprType = expr.expr.exprType
+    elif 'IntegerType' in bty.kind and float(bty.Min) >= 0.0:
+        # unsigned integers also support the NOT operator
+        expr.exprType = expr.expr.exprType
     else:
-        msg = 'Bitwise operators only work with booleans '\
-              'and arrays of booleans'
+        msg = 'Bitwise operators only work with booleans, unsigned integers'\
+              'sequence of booleans, bit strings and octet strings'
         errors.append(error(root, msg))
 
     return expr, errors, warnings
@@ -2359,6 +2461,7 @@ def call_expression(root, context, pos="right"):
     # if the root (which has not been analysed before) is a choice field
     # (this being not permitted - choice must be set via asn1 notation)
     errors, warnings = [], []
+    #print("call expression", get_input_string(root))
 
     if root.children[0].type == lexer.PRIMARY:
         # check if it is a call to a special operator or procedure
@@ -2459,8 +2562,8 @@ def primary_index(root, context, pos):
 
     node.value = [receiver, {'index': params}]
 
-    if receiver_bty.kind == 'SequenceOfType':
-        # Range of the receiver (SEQUENCE(SIZE(XXX)) - check XXX
+    if receiver_bty.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
+        # Range of the receiver (SEQUENCE(SIZE(N)) - check N
         if isinstance(receiver, ogAST.PrimSubstring):
             r_min, r_max = substring_range(receiver)
         else:
@@ -2474,8 +2577,17 @@ def primary_index(root, context, pos):
                 "you must assign all values at once to set the size "
                 "(syntax: variable := {3, 14, 15})"))
 
-        # receiver_bty.type is the type of the array elements
-        node.exprType = receiver_bty.type
+        if receiver_bty.kind == 'SequenceOfType':
+            # receiver_bty.type is the type of the array elements
+            node.exprType = receiver_bty.type
+        elif receiver_bty.kind == 'OctetStringType':
+            # Octet string elements = unsigned integer
+            node.exprType = UINT8
+        elif receiver_bty.kind == 'BitStringType':
+            # Bit string elements = boolean
+            node.exprType = type('Bit',
+                                  BOOLEAN.__bases__,
+                                  dict(BOOLEAN.__dict__))
 
         idx_bty = find_basic_type(params[0].exprType)
         if not is_integer(idx_bty):
@@ -2680,31 +2792,65 @@ def primary(root, context):
             'Max':  prim.value[0]
         })
     elif root.type == lexer.STRING:
-        prim = ogAST.PrimStringLiteral()
         if root.text[-1] in ('B', 'b'):
+            prim = ogAST.PrimBitStringLiteral()
             try:
-                prim.value = "'{}'".format(
-                        binascii.unhexlify('%x' % int(root.text[1:-2], 2)))
+                # Transform to a hex string
+                as_number = int(root.text[1:-2], 2)
+                # transform to a string with padding zeros to have an even
+                # number of bytes in the hexadecimal representation
+                as_bytes  = binascii.b2a_hex(
+                        as_number.to_bytes(
+                            (as_number.bit_length() + 7) // 8, 'big'))
+                as_hex    = binascii.unhexlify(as_bytes)
+                prim.value = f"'{as_hex.hex()}'"
+                prim.numeric_value = as_number
+                prim.printable_string = root.text
+                prim.exprType = type('PrStr', (object,), {
+                    'kind': 'BitStringType',
+                    'Min': str(len(prim.value) - 2),
+                    'Max': str(len(prim.value) - 2),
+                    'NumericValue': prim.numeric_value,
+                    'NumberOfBits': len(root.text[1:-2])  # in user string
+                })
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Bit string literal: {}'.format(err)))
                 prim.value = "''"
         elif root.text[-1] in ('H', 'h'):
+            prim = ogAST.PrimOctetStringLiteral()
             try:
                 hexstring = codecs.decode(root.text[1:-2], 'hex')  # -> bytes
-                hexstring = hexstring.decode('utf-8')   # -> string
-                prim.value = ("'{}'".format(hexstring))
+                as_hex = hexstring.hex()   # -> string
+                as_number = int(as_hex, 16)
+                try:
+                    # In case the HEX value only contains ascii characters
+                    prim.printable_string = hexstring.decode('utf-8')
+                    prim.value = (f"'{prim.printable_string}'")
+                except:
+                    prim.printable_string = root.text
+                    prim.value = f"'{as_hex}'"
+                # store the integer number corresponding to the hex representation
+                prim.numeric_value = as_number
+                prim.exprType = type('PrStr', (object,), {
+                    'kind': 'OctetStringType',
+                    'Min': str(len(prim.value) - 2),
+                    'Max': str(len(prim.value) - 2),
+                    'NumericValue': prim.numeric_value
+                })
             except (ValueError, TypeError) as err:
                 errors.append(error
                         (root, 'Octet string literal: {}'.format(err)))
                 prim.value = "''"
         else:
+            prim = ogAST.PrimStringLiteral()
             prim.value = root.text
-        prim.exprType = type('PrStr', (object,), {
-            'kind': 'StringType',
-            'Min': str(len(prim.value) - 2),
-            'Max': str(len(prim.value) - 2)
-        })
+            prim.exprType = type('PrStr', (object,), {
+                'kind': 'StringType',
+                'Min': str(len(prim.value) - 2),
+                'Max': str(len(prim.value) - 2),
+                'NumericValue': -1
+            })
     elif root.type == lexer.FLOAT2:
         prim = ogAST.PrimMantissaBaseExp()
         mant = float(root.getChild(0).toString())
@@ -3077,9 +3223,7 @@ def composite_state(root, parent=None, context=None):
         if t.kind != "next_state":
             continue
         ns = t.inputString.lower()
-    #for ns in [t.inputString.lower() for t in comp.terminators
-    #        if t.kind == 'next_state']:
-        if not ns in [s.lower() for s in comp.mapping.keys()] + ['-']:
+        if not ns in [s.lower() for s in comp.mapping.keys()] + ['-', '-*']:
             errors.append(['In composite state "{}": missing definition '
                            'of substate "{}"'
                            .format(comp.statename, ns.upper()),
@@ -3181,7 +3325,6 @@ def check_duplicate_procedures(ctxt, proc, errors=[]):
         Procedure named "entry" and "exit" are ignored
         '''
     name = proc.inputString.lower()
-    #breakpoint()
     if not isinstance(ctxt, ogAST.System) and ctxt.parent != None:
         check_duplicate_procedures(ctxt.parent, proc, errors)
     if isinstance(ctxt, ogAST.AST):
@@ -3290,7 +3433,9 @@ def procedure_post(proc, content, parent=None, context=None):
             check_expr.left.exprType = proc.return_type
             check_expr.right = each.return_expr
             try:
-                warnings.extend(fix_expression_types(check_expr, context))
+                warns = fix_expression_types(check_expr, context)
+                for warn in warns:
+                    warnings.append([warn, [0,0], []])
             except (TypeError, AttributeError) as err:
                 errors.append([f"In procedure {proc.inputString}: {str(err)}",
                     [0, 0], []])
@@ -3480,8 +3625,9 @@ def newtype(root, ta_ast, context):
             errors.append(str(err))
         LOG.debug("Found new ARRAY type " + newtypename)
     elif (root.getChild(1).type == lexer.STRUCT):
-        newType.kind = "SequenceType"
-        newType.Children = get_struct_children(root.getChild(1))
+        errors.append('Use newtype definitions for arrays only')
+        #newType.kind = "SequenceType"
+        #newType.Children = get_struct_children(root.getChild(1))
         #types()[str(newtypename)] = newType
         LOG.debug("Found new STRUCT type " + newtypename)
     else:
@@ -3494,18 +3640,65 @@ def newtype(root, ta_ast, context):
 
 
 def synonym(root, ta_ast, context):
-    ''' Parse a SYNONYM definition and inject it in ASN1 exported variables'''
+    ''' Parse a list of SYNONYMs definition (SDL constants) '''
     errors = []
     warnings = []
 
-    if not "SDL-Constants" in DV.asn1Modules:
-        DV.asn1Modules.append("SDL-Constants")
-        DV.exportedVariables["SDL-Constants"] = []
+    def parse_synonym(syn):
+        name, sort, ground = None, None, None
+        for child in syn.getChildren():
+            if child.type == lexer.ID:
+                name = child.text
+            elif child.type == lexer.SORT:
+                sort = child.getChild(0).text
+            elif child.type == lexer.GROUND:
+                ground, err, warn = expression(child.getChild(0), context)
+                errors.extend(err)
+                warnings.extend(warn)
+            elif child.type == lexer.EXTERNAL:
+                errors.append("External synonyms are not supported")
+            else:
+                warnings.append(
+                    'Unsupported synonym construct' +
+                    sdl92Parser.tokenNamesMap[child.type])
+        return name, sort, ground
 
     for child in root.getChildren():
-        if child.getChild(0).type == lexer.SORT:
-            DV.exportedVariables["SDL-Constants"].append(
-                                            child.getChild(0).getChild(0).text)
+        if child.type == lexer.SYNONYM:
+            name, sort, value = parse_synonym(child)
+
+        if name and sort and value:
+            nameDash = name.replace('_', '-')
+            sortDash = sort.replace('_', '-')
+
+            # The value field will depend on the type..If the constant is a
+            # numerical value then we transform it to a number, because it
+            # can be used by the parser for range checks
+            # Same for booleans and enumerated. But complex types are kept as
+            # expressions
+            if isinstance(value, (ogAST.PrimOctetStringLiteral,
+                                  ogAST.PrimBitStringLiteral)):
+                concrete_val = value.numeric_value
+            elif is_numeric(value.exprType) or is_enumerated(value.exprType) or is_boolean(value.exprType):
+                # value.value is an array of one element
+                concrete_val, = value.value
+            else:
+                concrete_val = value
+
+            DV.SDL_Constants[nameDash] = type (nameDash, (), {
+                   "varName" : name,
+                   "type": type (f"{name}_type", (), {
+                       "AsnFile": None,
+                       "Line": 0,
+                       "CharPositionInLine": 0,
+                       "CName": sort,
+                       "AdaName": sort,
+                       "HasEncDec": False,
+                       "kind": "ReferenceType",
+                       "ReferencedTypeName": sortDash
+                    }),
+                   "value": concrete_val
+                })
     return errors, warnings
 
 
@@ -3524,6 +3717,27 @@ def text_area_content(root, ta_ast, context):
             err, warn = dcl(child, ta_ast, context, monitor=True)
             errors.extend(err)
             warnings.extend(warn)
+        elif child.type == lexer.ERRORSTATES:  # used in observers only
+            try:
+                for each in child.getChildren():
+                    context.errorstates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Error states cannot be declared here")
+        elif child.type == lexer.IGNORESTATES:
+            try:
+                for each in child.getChildren():
+                    context.ignorestates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Ignore states cannot be declared here")
+        elif child.type == lexer.SUCCESSSTATES:
+            try:
+                for each in child.getChildren():
+                    context.successstates.append(each.text.lower())
+                    ta_ast.observer_states.append(each.text.lower())
+            except AttributeError:
+                errors.append("Success states cannot be declared here")
         elif child.type == lexer.SYNONYM_LIST:
             err, warn = synonym(child, ta_ast, context)
             errors.extend(err)
@@ -3597,7 +3811,7 @@ def text_area_content(root, ta_ast, context):
         else:
             warnings.append(
                     'Unsupported construct in text area content, type: ' +
-                    str(child.type))
+                    sdl92Parser.tokenNamesMap[child.type])
     if ta_ast.asn1_files:
         # Parse ASN.1 files that are referenced in USE clauses
         try:
@@ -3851,29 +4065,40 @@ def system_definition(root, parent):
             system.signals.append(sig)
 
 
-    # if there are no channels defined or no route from env to the system
+    # if there are no channels defined or no route
     # add an empty one as a placeholder to add signals
-    env_route = {'source' : 'env', 'dest': system.name, 'signals': []}
-    no_env : bool = True
+    from_env_route = {'source' : 'env', 'dest': system.name, 'signals': []}
+    to_env_route = {'source' : system.name, 'dest': 'env', 'signals': []}
+    has_from_env, has_to_env = False, False
     for each in system.channels:
         for route in each['routes']:
             if route['source'] == 'env':
-                break
-        else:
-            each['routes'].append(env_route)
+                has_from_env = True
+            elif route['dest'] == 'env':
+                has_to_env = True
+        if not has_from_env:
+            each['routes'].append(from_env_route)
+        if not has_to_env:
+            each['routes'].append(to_env_route)
 
     if not system.channels:
-        system.channels.append({'name': 'c', 'routes':[env_route]})
+        system.channels.append({'name': 'c', 'routes':[from_env_route,
+            to_env_route]})
 
-    # in observers, we may have renamed signaels
+    # in observers, we may have renamed signals
     # add them to signal routes
     for each in system.signals:
         if each['renames'] is not None:
+            #  Parse the expresion, so that if the intercepted signal is
+            #  an output, it is also added to the route towards env
+            ioExpr = parse_io_expression(each['renames'], context=None)
+            isOut = ioExpr['kind'] == 'output'
             for channel in system.channels:
                 for route in channel['routes']:
-                    if route['dest'].lower() != "env":
+                    if route['dest'].lower() != "env" or isOut:
                         if each['name'] not in route['signals']:
                             route['signals'].append(each['name'])
+
 
     exported_procedures = []
     for each in procedures:
@@ -3956,9 +4181,10 @@ def process_definition(root, parent=None, context=None):
         process.content.inner_procedures.append(proc)
         process.procedures.append(proc)
 
+    state_list = get_state_list(root)
     # Prepare the transition/state mapping
-    process.mapping = {name: [] for name in get_state_list(root)}
-    process.cs_mapping = {name: [] for name in get_state_list(root)}
+    process.mapping    = {name: [] for name in state_list}
+    process.cs_mapping = {name: [] for name in state_list}
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -4067,6 +4293,19 @@ def process_definition(root, parent=None, context=None):
             # alias_name is already in lowercase
             process.aliases[alias_name] = (alias_sort, expr)
 
+    # Verify that special states for observers are defined:
+    for each in chain(process.errorstates,
+                      process.ignorestates,
+                      process.successstates):
+        if each not in (st.lower() for st in state_list):
+            # retrieve the text area that contained the decalaration
+            # to get the coordinates for error localization
+            for ta_ast in process.content.textAreas:
+                if each in ta_ast.observer_states:
+                    errors.append([f"Observer state {each} is not defined",
+                        [ta_ast.pos_x, ta_ast.pos_y], []])
+                    break
+
     if not process.referenced and not process.instance_of_name \
                               and (not process.content.start or
                                    not process.content.start.terminators):
@@ -4092,7 +4331,8 @@ def continuous_signal(root, parent, context):
     warnings, errors = [], []
     # Flag the continous signal if we are in an observer (model checking)
     # (useful to render the symbol a bit differently)
-    i.observer = True
+    if 'Observer-State-Kind' in types().keys():
+        i.observer = True
     # Keep track of the number of terminator statements in the transition
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
@@ -4102,11 +4342,10 @@ def continuous_signal(root, parent, context):
     dec.charPositionInLine = dec.question.charPositionInLine
     dec.kind = 'question'
     ans.inputString = 'true'
-    ans.openRangeOp = ogAST.ExprEq
-    ans.kind = 'constant'
-    ans.constant = ogAST.PrimBoolean()
-    ans.constant.value = ['true']
-    ans.constant.exprType = BOOLEAN
+    constant_expr = ogAST.PrimBoolean()
+    constant_expr.value = ['true']
+    constant_expr.exprType = BOOLEAN
+    ans.answers = [{'kind': 'constant', 'content': (ogAST.ExprEq, constant_expr)}]
     dec.answers = [ans]
     i.trigger = dec
     i.inputString = dec.inputString
@@ -4117,7 +4356,7 @@ def continuous_signal(root, parent, context):
         elif child.type == lexer.INT:
             # Priority
             i.priority = int(child.text)
-            i.inputString += u';\npriority {}'.format(get_input_string(child))
+            i.inputString += f';\npriority {get_input_string(child)}'
         elif child.type == lexer.TRANSITION:
             trans, err, warn = transition(child, parent=i, context=context)
             errors.extend(err)
@@ -4151,6 +4390,7 @@ def continuous_signal(root, parent, context):
 
 def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
+    # parent is a State
     i = ogAST.Input()
     cs = None
     warnings, errors = [], []
@@ -4174,6 +4414,7 @@ def input_part(root, parent, context):
                     # syntax error (CommonErrorNode) - already caught
                     continue
                 for inp_sig in context.input_signals:
+                    # process RENAMES clause at signal level
                     if inp_sig['name'].lower() == inputname.text.lower():
                         i.inputlist.append(inp_sig['name'])
                         sig_param_type = inp_sig.get('type')
@@ -4183,21 +4424,56 @@ def input_part(root, parent, context):
                             cs = ogAST.ContinuousSignal()
                             dec = ogAST.Decision()
                             ans = ogAST.Answer()
-                            dec.question, _, _ = expression(inp_sig['renames'], context)
-                            dec.inputString = dec.question.inputString
-                            dec.line = dec.question.line
-                            dec.charPositionInLine = dec.question.charPositionInLine
+                            # inp_sig['renames'] is the AST entry
+                            # (e.g. "input foo to bar")
+                            # extact all parts:
+                            io_expr = parse_io_expression(inp_sig['renames'], context)
+                            if io_expr['paramName'] is not None:
+                                # io expressions cannot have a parameter when they rename a signal
+                                # the parameter can be specified in the INPUT part only
+                                errors.append('Renamed expression for signals cannot have a named parameter in declaration')
+                            # Check here is there is a parameter to the input
+                            # If so, add it to the io expression so that when
+                            # it is processed, an implicit variable will be
+                            # declared for it
+                            inputparams = [c.getChildren() for c in child.getChildren()
+                                                     if c.type == lexer.PARAMS]
+                            if len(inputparams) == 1 and len(inputparams[0]) == 1:
+                                user_param, = inputparams[0]
+                                io_expr['paramName'] = user_param.text
+                            dec.question, errs, warns = io_expression(inp_sig['renames'], context, io_expr)
+                            # possible errors: if user declared a variable for the parameter
+                            # in observers, variables are always implicit, as they are
+                            # in fact a field in the event structure
+                            errors.extend(errs)
+                            warnings.extend(warns)
+                            #dec.inputString = dec.question.inputString
+                            dec.inputString = i.inputString
+                            dec.line = i.line
+                            dec.charPositionInLine = i.charPositionInLine
                             dec.kind = 'question'
                             ans.inputString = 'true'
-                            ans.openRangeOp = ogAST.ExprEq
-                            ans.kind = 'constant'
-                            ans.constant = ogAST.PrimBoolean()
-                            ans.constant.value = ['true']
-                            ans.constant.exprType = BOOLEAN
+                            constant_expr = ogAST.PrimBoolean()
+                            constant_expr.value = ['true']
+                            constant_expr.exprType = BOOLEAN
+                            ans.answers = [{'kind': 'constant',
+                                            'content': (ogAST.ExprEq, constant_expr)}]
                             dec.answers = [ans]
                             cs.trigger = dec
-                            cs.inputString = dec.inputString
+                            cs.inputString = dec.question.inputString
                             parent.continuous_signals.append(cs)
+                            # must also be added to mapping at context level
+                            # (see PROVIDED clause for details)
+                            for statename in parent.statelist:
+                                existing = context.cs_mapping.get(statename.lower(), [])
+                                for each in existing:
+                                    if ''.join(each.inputString.lower().split()) == \
+                                            ''.join(cs.inputString.lower().split()):
+                                        errors.append('Trigger for observer already defined '
+                                            'below state "{}"'.format(statename.lower()))
+                                        break
+                                else:
+                                    context.cs_mapping[statename.lower()].append(cs)
                         break
                 else:
                     for timer in chain(context.timers, context.global_timers):
@@ -4282,8 +4558,12 @@ def input_part(root, parent, context):
     i.terminators = list(context.terminators[terminators:])
     if cs:
         cs.terminators = i.terminators
-        cs.artificial = True
+        cs.comment = i.comment
+        dec.comment = i.comment
+        cs.artificial = True # needed for graphical rendering
         i.replaced_with_continuous_signal = True
+        # Store the parsed input too, for backends that don't support CS
+        cs.observer_input = i
 
     return i, errors, warnings
 
@@ -4422,10 +4702,14 @@ def state(root, parent, context):
             # Add the continuous signal to a mapping at context level,
             # useful for code generation. Also check for duplicates.
             for statename in state_def.statelist:
-                if provided_part in \
-                        context.cs_mapping.get(statename.lower(), []):
-                    sterr.append('Continuous signal is defined more than once '
-                                 'below state "{}"'.format(statename.lower()))
+                existing = context.cs_mapping.get(statename.lower(), [])
+                for each in existing:
+                   if ''.join(each.inputString.lower().split()) == \
+                           ''.join(provided_part.inputString.lower().split()):
+                #if provided_part in \
+                #        context.cs_mapping.get(statename.lower(), []):
+                      sterr.append('Continuous signal is defined more than once '
+                                  'below state "{}"'.format(statename.lower()))
                 else:
                     context.cs_mapping[statename.lower()].append(provided_part)
             warnings.extend(warn)
@@ -4566,14 +4850,15 @@ def connect_part(root, parent, context):
 def cif(root):
     ''' Return the CIF coordinates '''
     result = []
+    neg = False
     for child in root.getChildren():
-        neg = False
         if child.type == lexer.DASH:
             neg = True
         else:
             val = int(child.toString())
             val = -val if neg else val
             result.append(val)
+            neg = False
     return result
 
 
@@ -4651,6 +4936,30 @@ def procedure_call(root: antlr3.tree.CommonTree,
             # for case-sensitive backends like C code generators
             out_ast.output[0]['outputName'] = each.inputString
             break
+    else:
+        # Procedure not found, perhaps a special operator
+        # in principle internal operators are not invoked with the "call"
+        # keyword, they can be called directly. However if they have no
+        # parameter, they can be confused with a variable and would not be
+        # resolved properly without the explicit "call" unless it uses
+        # empty parenthesis : funcWithNoParam().
+        # here we only try to get the return type. if check_call returns
+        # an exception due to the parameters of the call, we ignore, as this
+        # will be resolved at a diffeent place
+        if call_name in SPECIAL_OPERATORS.keys():
+            try:
+                out_ast.exprType = check_call (call_name,
+                         out_ast.output[0]['params'], context)
+                if out_ast.exprType == UNKNOWN_TYPE:
+                    # if type of operator was not found, set to no type at all
+                    out_ast.exprType = None
+                else:
+                    # If there is a return, we are not in a procedure call
+                    # symbol, so the input string must keep the "call" keyword
+                    # (for example if the call is in a RETURN symbol)
+                    out_ast.inputString = get_input_string(root)
+            except TypeError:
+                pass
     return out_ast, err, warn
 
 
@@ -4738,43 +5047,58 @@ def alternative_part(root, parent, context):
     errors = []
     warnings = []
     ans = ogAST.Answer()
+    startIndex, stopIndex = None, None
     if root.type == lexer.ELSE:
         # used when copy-pasting
         ans.inputString = root.text
     for child in root.getChildren():
+        # There can be multiple answers in one (comma-separated)
+        # so instead of storing a single kind and only one answer,
+        # we should store them in arrays
+
+        if child.type in (lexer.CLOSED_RANGE,
+                          lexer.CONSTANT,
+                          lexer.OPEN_RANGE,
+                          lexer.INFORMAL_TEXT):
+            # We must get the full string for the renderer
+            if not startIndex:
+                startIndex = child.getTokenStartIndex()
+            stopIndex = child.getTokenStopIndex()
+
         if child.type == lexer.CIF:
             # Get symbol coordinates
             ans.pos_x, ans.pos_y, ans.width, ans.height = cif(child)
         elif child.type == lexer.CLOSED_RANGE:
-            ans.kind = 'closed_range'
+            # ans.kinds.append('closed_range')
             cl0, err0, warn0 = expression(child.getChild(0), context)
             cl1, err1, warn1 = expression(child.getChild(1), context)
             errors.extend(err0)
             errors.extend(err1)
             warnings.extend(warn0)
             warnings.extend(warn1)
-            ans.closedRange = [cl0, cl1]
+            ans.answers.append({'kind': 'closed_range', 'content':  [cl0, cl1]})
         elif child.type == lexer.CONSTANT:
-            ans.kind = 'constant'
-            ans.constant, err, warn = expression(child.getChild(0), context)
+            constant_expr, err, warn = expression(child.getChild(0), context)
+            ans.answers.append({'kind': 'constant', 'content': (ogAST.ExprEq, constant_expr)})
             errors.extend(err)
             warnings.extend(warn)
-            ans.openRangeOp = ogAST.ExprEq
         elif child.type == lexer.OPEN_RANGE:
-            ans.kind = 'open_range'
+            #ans.kinds.append('open_range')
+            op = None
             for c in child.getChildren():
                 if c.type == lexer.CONSTANT:
-                    ans.constant, err, warn = expression(
-                            c.getChild(0), context)
+                    constant_expr, err, warn = expression(c.getChild(0), context)
+                    #ans.constants.append(constant_expr)
                     errors.extend(err)
                     warnings.extend(warn)
-                    if not ans.openRangeOp:
-                        ans.openRangeOp = ogAST.ExprEq
+                    if not op:
+                        op = ogAST.ExprEq
+                    ans.answers.append({'kind': 'open_range', 'content': (op, constant_expr)})
                 else:
-                    ans.openRangeOp = EXPR_NODE[c.type]
+                    op = EXPR_NODE[c.type]
         elif child.type == lexer.INFORMAL_TEXT:
-            ans.kind = 'informal_text'
-            ans.informalText = child.getChild(0).toString()[1:-1]
+            ans.answers.append({'kind': 'informal_text',
+                                'content':  child.getChild(0).toString()[1:-1]})
         elif child.type == lexer.TRANSITION:
             ans.transition, err, warn = transition(
                                         child, parent=ans, context=context)
@@ -4783,10 +5107,13 @@ def alternative_part(root, parent, context):
         elif child.type == lexer.HYPERLINK:
             ans.hyperlink = child.getChild(0).toString()[1:-1]
         else:
-            warnings.append('Unsupported answer type: ' + str(child.type))
+            warnings.append('Unsupported answer type: ' + 
+                            sdl92Parser.tokenNamesMap[child.type])
+
         if child.type in (lexer.CLOSED_RANGE, lexer.CONSTANT,
                           lexer.OPEN_RANGE, lexer.INFORMAL_TEXT):
-            ans.inputString = get_input_string(child)
+            #ans.inputString = get_input_string(child)
+            ans.inputString = token_stream(child).toString(startIndex, stopIndex)
             ans.line = child.getLine()
             ans.charPositionInLine = child.getCharPositionInLine()
             # Report errors with symbol coordinates
@@ -4813,7 +5140,8 @@ def decision(root, parent, context):
         elif child.type == lexer.QUESTION:
             dec.kind = 'question'
             dec.question, qerr, qwarn = expression(child.getChild(0), context)
-            dec.inputString = dec.question.inputString
+            dec.inputString = get_input_string(child.getChild(0))
+            #dec.inputString = dec.question.inputString
             dec.line = dec.question.line
             dec.charPositionInLine = dec.question.charPositionInLine
         elif child.type == lexer.INFORMAL_TEXT:
@@ -4841,20 +5169,20 @@ def decision(root, parent, context):
             warnings.extend(warn)
             dec.answers.append(ans)
         elif child.type == lexer.ELSE:
-            a = ogAST.Answer()
-            a.inputString = child.toString()
+            ans = ogAST.Answer()
+            ans.inputString = child.toString()
             for c in child.getChildren():
                 if c.type == lexer.CIF:
-                    a.pos_x, a.pos_y, a.width, a.height = cif(c)
+                    ans.pos_x, ans.pos_y, ans.width, ans.height = cif(c)
                 elif c.type == lexer.TRANSITION:
-                    a.transition, err, warn = transition(
-                                            c, parent=a, context=context)
+                    ans.transition, err, warn = transition(
+                                            c, parent=ans, context=context)
                     errors.extend(err)
                     warnings.extend(warn)
                 elif child.type == lexer.HYPERLINK:
-                    a.hyperlink = child.getChild(0).toString()[1:-1]
-            a.kind = 'else'
-            dec.answers.append(a)
+                    ans.hyperlink = child.getChild(0).toString()[1:-1]
+            ans.answers.append({'kind': 'else', 'content': None})
+            dec.answers.append(ans)
             has_else = True
         else:
             warnings.append(['Unsupported DECISION child type: ' +
@@ -4869,175 +5197,196 @@ def decision(root, parent, context):
     need_else = False
     is_enum, is_bool = False, False
     for ans in dec.answers:
-        if dec.kind in ('informal_text', 'any'):
-            break
-        ans_x, ans_y = ans.pos_x, ans.pos_y
-        if ans.kind in ('constant', 'open_range'):
-            expr = ans.openRangeOp()
-            expr.left = dec.question
-            expr.right = ans.constant
-            try:
-                answarn = fix_expression_types(expr, context)
-                answarn = [[w, [ans_x, ans_y], []] for w in answarn]
-                warnings.extend(answarn)
-                if dec.question.exprType == UNKNOWN_TYPE:
-                    dec.question = expr.left
-                ans.constant = expr.right
-                q_basic = find_basic_type(dec.question.exprType)
-                a_basic = find_basic_type(ans.constant.exprType)
+        for element in ans.answers:
+            # Each answer branch can have multiple answers (comma-separated)
+            ans_kind    = element['kind']
+            ans_content = element['content']
 
-                if q_basic.kind.endswith('EnumeratedType'):
-                    if not ans.constant.is_raw:
-                        # Ref to a variable -> can't guarantee coverage
-                        need_else = True
-                        continue
-                    covered_ranges[ans].append(ans.inputString)
-                    is_enum = True
-                elif q_basic.kind == 'BooleanType':
-                    covered_ranges[ans].append(ans.constant.value[0])
-                    is_bool = True
-                    if not ans.constant.is_raw:
-                        need_else = True
-                        continue
-                if not q_basic.kind.startswith(('Integer', 'Real')):
-                    # Check numeric questions - ignore others
-                    continue
-                # If the answer is an ASN.1 constant we must not use
-                # the range of its type when we check the decision branches
-                if isinstance(ans.constant, ogAST.PrimConstant):
-                    a_basic_Min = a_basic_Max = \
-                          get_asn1_constant_value (ans.constant.constant_value)
-                else:
-                    a_basic_Min, a_basic_Max = a_basic.Min, a_basic.Max
+            if dec.kind in ('informal_text', 'any'):
+                break # break from inner loop only, but that will do
+            ans_x, ans_y = ans.pos_x, ans.pos_y
 
-                delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
-                # numeric type -> find the range covered by this answer
-                if a_basic_Min != a_basic_Max:
-                    # Not a constant or a raw number, range is not fix
-                    need_else = True
-                    continue
-                val_a = float(a_basic_Min)
-                qmin, qmax = float(q_basic.Min), float(q_basic.Max)
-                # Check the operator to compute the range
-                reachable = True
-                if ans.openRangeOp == ogAST.ExprLe:
-                    # answer <= X means covered range is [min; X]
-                    if qmin <= val_a:
-                        covered_ranges[ans].append((qmin, val_a))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprLt:
-                    # answer < X means covered range is [min; X[
-                    if qmin < val_a:
-                        covered_ranges[ans].append((qmin, val_a - delta))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprGt:
-                    # answer > X means covered range is ]X; max]
-                    if qmax > val_a:
-                        covered_ranges[ans].append((val_a + delta, qmax))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprGe:
-                    # answer >= X means covered range is [X; max]
-                    if qmax >= val_a:
-                        covered_ranges[ans].append((val_a, qmax))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprEq:
-                    if qmin <= val_a <= qmax:
-                        covered_ranges[ans].append((val_a, val_a))
-                    else:
-                        reachable = False
-                elif ans.openRangeOp == ogAST.ExprNeq:
-                    # answer != X means covered range is [min; X[;]X; max]
-                    if qmin == val_a:
-                        covered_ranges[ans].append((qmin + delta, qmax))
-                    elif qmax == val_a:
-                        covered_ranges[ans].append((qmin, qmax - delta))
-                    elif qmin < val_a < qmax:
-                        covered_ranges[ans].append((qmin, val_a - delta))
-                        covered_ranges[ans].append((val_a + delta, qmax))
-                    else:
-                        warnings.append(['Condition is always true: {} /= {}'
-                                        .format(dec.inputString,
-                                                ans.inputString),
-                                        [ans_x, ans_y], []])
-                else:
-                    warnings.append(['Unsupported range expression',
-                                     [ans_x, ans_y], []])
-                if not reachable:
-                        warnings.append(['Decision "{}": '
-                                        'Unreachable branch "{}"'
-                                        .format(dec.inputString,
-                                                ans.inputString),
-                                        [ans_x, ans_y], []])
-            except (AttributeError, TypeError) as err:
-                LOG.debug('ogParser:\n' + str(traceback.format_exc()))
-                errors.append(['Type mismatch: '
-                    'question (' + expr.left.inputString + ', type= ' +
-                    type_name(expr.left.exprType) + '), answer (' +
-                    expr.right.inputString + ', type= ' +
-                    type_name(expr.right.exprType) + ') ' + str(err),
-                    [ans_x, ans_y], []])
-            except Warning as warn:
-                warnings.append(['Type mismatch: ' + str(warn), [ans_x, ans_y],
-                                []])
-        elif ans.kind == 'closed_range':
-            if not is_numeric(dec.question.exprType):
-                errors.append(['Closed range are only for numerical types',
-                              [ans_x, ans_y], []])
-                continue
-            for ast_type, idx in zip((ogAST.ExprGe, ogAST.ExprLe), (0, 1)):
-                expr = ast_type()
+            if ans_kind in ('constant', 'open_range'):
+                # asn_content is a tuple  (operator, constant)
+                op, constant = ans_content # get the constant
+
+                expr = op()  # instantiate the type, e.g. ExprEq
                 expr.left = dec.question
-                expr.right = ans.closedRange[idx]
+                expr.right = constant
+
                 try:
-                    warnings.extend(fix_expression_types(expr, context))
+                    answarn = fix_expression_types(expr, context)
+                    answarn = [[w, [ans_x, ans_y], []] for w in answarn]
+                    warnings.extend(answarn)
                     if dec.question.exprType == UNKNOWN_TYPE:
                         dec.question = expr.left
-                    ans.closedRange[idx] = expr.right
+
+                    # Update the type of the constant
+                    constant = expr.right
+                    element['content'] = (op, constant)
+
+                    q_basic = find_basic_type(dec.question.exprType)
+                    a_basic = find_basic_type(constant.exprType)
+
+                    if q_basic.kind.endswith('EnumeratedType'):
+                        if not constant.is_raw:
+                            # Ref to a variable -> can't guarantee coverage
+                            need_else = True
+                            continue
+                        covered_ranges[ans].append(constant.inputString.lower())
+                        is_enum = True
+                    elif q_basic.kind == 'BooleanType':
+                        covered_ranges[ans].append(constant.value[0])
+                        is_bool = True
+                        if not constant.is_raw:
+                            need_else = True
+                            continue
+                    if not q_basic.kind.startswith(('Integer', 'Real')):
+                        # Check numeric questions - ignore others
+                        continue
+                    # If the answer is an ASN.1 constant we must not use
+                    # the range of its type when we check the decision branches
+                    if isinstance(constant, ogAST.PrimConstant):
+                        a_basic_Min = a_basic_Max = \
+                              get_asn1_constant_value (constant.constant_value)
+                    elif isinstance(constant, (ogAST.PrimOctetStringLiteral,
+                                              ogAST.PrimBitStringLiteral)):
+                        a_basic_Min = a_basic_Max = constant.numeric_value
+                    else:
+                        a_basic_Min, a_basic_Max = a_basic.Min, a_basic.Max
+
+                    delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
+                    # numeric type -> find the range covered by this answer
+                    if a_basic_Min != a_basic_Max:
+                        # Not a constant or a raw number, range is not fix
+                        need_else = True
+                        continue
+                    val_a = float(a_basic_Min)
+                    qmin, qmax = float(q_basic.Min), float(q_basic.Max)
+                    # Check the operator to compute the range
+                    reachable = True
+                    if op == ogAST.ExprLe:
+                        # answer <= X means covered range is [min; X]
+                        if qmin <= val_a:
+                            covered_ranges[ans].append((qmin, val_a))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprLt:
+                        # answer < X means covered range is [min; X[
+                        if qmin < val_a:
+                            covered_ranges[ans].append((qmin, val_a - delta))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprGt:
+                        # answer > X means covered range is ]X; max]
+                        if qmax > val_a:
+                            covered_ranges[ans].append((val_a + delta, qmax))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprGe:
+                        # answer >= X means covered range is [X; max]
+                        if qmax >= val_a:
+                            covered_ranges[ans].append((val_a, qmax))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprEq:
+                        if qmin <= val_a <= qmax:
+                            covered_ranges[ans].append((val_a, val_a))
+                        else:
+                            reachable = False
+                    elif op == ogAST.ExprNeq:
+                        # answer != X means covered range is [min; X[;]X; max]
+                        if qmin == val_a:
+                            covered_ranges[ans].append((qmin + delta, qmax))
+                        elif qmax == val_a:
+                            covered_ranges[ans].append((qmin, qmax - delta))
+                        elif qmin < val_a < qmax:
+                            covered_ranges[ans].append((qmin, val_a - delta))
+                            covered_ranges[ans].append((val_a + delta, qmax))
+                        else:
+                            warnings.append(['Condition is always true: {} /= {}'
+                                            .format(dec.inputString,
+                                                    ans.inputString),
+                                            [ans_x, ans_y], []])
+                    else:
+                        warnings.append(['Unsupported range expression',
+                                         [ans_x, ans_y], []])
+                    if not reachable:
+                            warnings.append(['Decision "{}": '
+                                            'Unreachable branch "{}"'
+                                            .format(dec.inputString,
+                                                    ans.inputString),
+                                            [ans_x, ans_y], []])
                 except (AttributeError, TypeError) as err:
-                    errors.append(['Type mismatch in decision: '
+                    LOG.debug('ogParser:\n' + str(traceback.format_exc()))
+                    errors.append(['Type mismatch: '
                         'question (' + expr.left.inputString + ', type= ' +
                         type_name(expr.left.exprType) + '), answer (' +
                         expr.right.inputString + ', type= ' +
                         type_name(expr.right.exprType) + ') ' + str(err),
                         [ans_x, ans_y], []])
-            q_basic = find_basic_type(dec.question.exprType)
-            if not q_basic.kind.startswith(('Integer', 'Real')):
-                continue
-            delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
-            # numeric type -> find the range covered by this answer
-            a0_basic = find_basic_type(ans.closedRange[0].exprType)
-            a1_basic = find_basic_type(ans.closedRange[1].exprType)
-            if not hasattr(a0_basic, "Min") or not hasattr(a1_basic, "Min") \
-                    or a0_basic.Min != a0_basic.Max \
-                    or a1_basic.Min != a1_basic.Max:
-                # Not a constant or a raw number, range is not fix
-                need_else = True
-                continue
-            qmin, qmax = float(q_basic.Min), float(q_basic.Max)
-            a0_val = float(a0_basic.Min)
-            a1_val = float(a1_basic.Max)
-            if a0_val < qmin:
-                qwarn.append('Decision "{dec}": '
-                                'Range {a0} .. {qmin} is unreachable'
-                                .format(a0=a0_val, qmin=round(qmin - delta, 9),
-                                        dec=dec.inputString))
-            if a1_val > qmax:
-                qwarn.append('Decision "{dec}": '
-                                'Range {qmax} .. {a1} is unreachable'
-                                .format(qmax=round(qmax + delta), a1=a1_val,
-                                        dec=dec.inputString))
-            if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
-                                                     a1_val > qmax):
-                warnings.append(['Decision "{dec}": Unreachable branch {l}:{h}'
-                                .format(dec=dec.inputString,
-                                        l=a0_val, h=a1_val),
-                                [ans_x, ans_y], []])
-            covered_ranges[ans].append((float(a0_basic.Min),
-                                        float(a1_basic.Max)))
+                except Warning as warn:
+                    warnings.append(['Type mismatch: ' + str(warn), [ans_x, ans_y],
+                                    []])
+            elif ans_kind == 'closed_range':
+                if not is_numeric(dec.question.exprType):
+                    errors.append(['Closed range are only for numerical types',
+                                  [ans_x, ans_y], []])
+                    continue
+                closedRange = ans_content
+                for ast_type, idx in zip((ogAST.ExprGe, ogAST.ExprLe), (0, 1)):
+                    expr = ast_type()
+                    expr.left = dec.question
+                    #expr.right = ans.closedRange[idx]
+                    expr.right = closedRange[idx]
+                    try:
+                        warnings.extend(fix_expression_types(expr, context))
+                        if dec.question.exprType == UNKNOWN_TYPE:
+                            dec.question = expr.left
+                        #ans.closedRange[idx] = expr.right
+                        element['content'][idx] = expr.right
+                        closedRange = element['content']
+                    except (AttributeError, TypeError) as err:
+                        errors.append(['Type mismatch in decision: '
+                            'question (' + expr.left.inputString + ', type= ' +
+                            type_name(expr.left.exprType) + '), answer (' +
+                            expr.right.inputString + ', type= ' +
+                            type_name(expr.right.exprType) + ') ' + str(err),
+                            [ans_x, ans_y], []])
+                q_basic = find_basic_type(dec.question.exprType)
+                if not q_basic.kind.startswith(('Integer', 'Real')):
+                    continue
+                delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
+                # numeric type -> find the range covered by this answer
+                a0_basic = find_basic_type(closedRange[0].exprType)
+                a1_basic = find_basic_type(closedRange[1].exprType)
+                if not hasattr(a0_basic, "Min") or not hasattr(a1_basic, "Min") \
+                        or a0_basic.Min != a0_basic.Max \
+                        or a1_basic.Min != a1_basic.Max:
+                    # Not a constant or a raw number, range is not fix
+                    need_else = True
+                    continue
+                qmin, qmax = float(q_basic.Min), float(q_basic.Max)
+                a0_val = float(a0_basic.Min)
+                a1_val = float(a1_basic.Max)
+                if a0_val < qmin:
+                    qwarn.append('Decision "{dec}": '
+                                    'Range {a0} .. {qmin} is unreachable'
+                                    .format(a0=a0_val, qmin=round(qmin - delta, 9),
+                                            dec=dec.inputString))
+                if a1_val > qmax:
+                    qwarn.append('Decision "{dec}": '
+                                    'Range {qmax} .. {a1} is unreachable'
+                                    .format(qmax=round(qmax + delta), a1=a1_val,
+                                            dec=dec.inputString))
+                if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
+                                                         a1_val > qmax):
+                    warnings.append(['Decision "{dec}": Unreachable branch {l}:{h}'
+                                    .format(dec=dec.inputString,
+                                            l=a0_val, h=a1_val),
+                                    [ans_x, ans_y], []])
+                covered_ranges[ans].append((float(a0_basic.Min),
+                                            float(a1_basic.Max)))
     # Check the following
     # (1) no overlap between covered ranges in decision answers
     # (2) no gap in the coverage of the decision possible values
@@ -5087,27 +5436,24 @@ def decision(root, parent, context):
         for minq, maxq in q_ranges:
             low, high = round(minq, 9), round(maxq, 9)
             if low == high:
-                txt = "value {}".format(low)
+                txt = f"value {low}"
             else:
-                txt = "range {} .. {}".format(low, high)
-            qerr.append('Decision "{}": No answer to cover {}'
-                        .format(dec.inputString, txt))
+                txt = f"range {low} .. {high}"
+            qerr.append(f'Decision "{dec.inputString}": No answer to cover {txt}')
+
     elif has_else and is_numeric(dec.question.exprType) and not q_ranges:
         # (3) Check that ELSE branch is reachable
-        qwarn.append('Decision "{}": ELSE branch is unreachable'
-                        .format(dec.inputString))
+        qwarn.append(f'Decision "{dec.inputString}": ELSE branch is unreachable')
 
     if need_else and not has_else:
         # (4) Answers use non-ground expression -> there should be an ELSE
-        qwarn.append('Decision "{}": Missing ELSE branch'
-                        .format(dec.inputString))
+        qwarn.append(f'Decision "{dec.inputString}": Missing ELSE branch')
 
     if need_else and has_else and len(dec.answers) != 2:
         # At least one branch has a non-ground expression answer, therefore
         # there can be at most one additional answer: the ELSE branch,
         # otherwise there is a risk that branches overlap due to variables
-        qerr.append('Answers of decision "{}" could overlap'
-                    .format(dec.inputString))
+        qerr.append(f'Answers of decision "{dec.inputString}" could overlap')
 
     # (5) check coverage of boolean types
     # Rules:
@@ -5155,8 +5501,10 @@ def nextstate(root, context):
             next_state_id = child.text
         elif child.type == lexer.DASH:
             next_state_id = '-'
+        elif child.type == lexer.HISTORY_NEXTSTATE:
+            next_state_id = '-*'
         elif child.type == lexer.VIA:
-            if next_state_id.strip() != '-':
+            if next_state_id.strip() not in ('-', '-*'):
                 via = get_input_string(root).replace(
                                                 'NEXTSTATE', '', 1).strip()
                 entrypoint = child.getChild(0).text
@@ -5211,6 +5559,7 @@ def terminator_statement(root, parent, context):
     errors = []
     warnings = []
     t = ogAST.Terminator()
+    t.context = context
     for term in root.getChildren():
         if term.type == lexer.CIF:
             t.pos_x, t.pos_y, t.width, t.height = cif(term)
@@ -5235,7 +5584,7 @@ def terminator_statement(root, parent, context):
             # post-processing: if nextatate is nested, add link to the content
             # (normally handled at state level, but if state is not defined
             # standalone, the nextstate must hold the composite content)
-            if t.inputString != '-':
+            if t.inputString not in ('-', '-*'):
                 for each in context.composite_states:
                     if each.statename.lower() == t.inputString.lower():
                         t.composite = each
@@ -5700,10 +6049,10 @@ def pr_file(root):
     global DV
 
     # In case no ASN.1 files are parsed, the DV structure is pre-initialised
-    # This to allow SDL types injection in ASN1 ASTs
+    # This to allow SDL types and constant injection in ASN1 ASTs
     DV = type("ASNParseTree", (object, ),
               {"types": {}, "exportedVariables": {}, "asn1Modules": [],
-                  "exportedTypes": {}, "variables": {}})
+                  "exportedTypes": {}, "variables": {}, "SDL_Constants": {}})
 
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions
@@ -5818,6 +6167,7 @@ def pr_file(root):
                     if proc.processName.lower() == proc_name.lower():
                         return block
             return None
+        proc_parent = None
         for system in ast.systems:
             proc_parent = rec_find_process_parent(system, processName)
             if proc_parent:
@@ -5943,13 +6293,14 @@ def parse_pr(files=None, string=None):
                         if type(warning) is not list else warning)
     # Post-parsing: additional semantic checks
     # check that all NEXTSTATEs have a correspondingly defined STATE
-    # (except the '-' state, which means "stay in the same state')
+    # (except the '-' state, which means "stay in the same state' and
+    # the '-*' (history nextstate) that recovers parallel states 
     for process in og_ast.processes:
         for t in process.terminators:
             if t.kind != 'next_state':
                 continue
             ns = t.instance_of or t.inputString.lower()
-            if not ns in [s.lower() for s in process.mapping.keys()] + ['-']:
+            if not ns in [s.lower() for s in process.mapping.keys()] + ['-', '-*']:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
                 errors.append(['State definition missing: ' + ns.upper(),
                               [t_x, t_y],
@@ -6100,3 +6451,4 @@ def parser_init(filename=None, string=None):
 
 if __name__ == '__main__':
     print ('This module is not callable')
+

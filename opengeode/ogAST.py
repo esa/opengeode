@@ -3,7 +3,7 @@
 
 """
 
-    OpenGEODE - A tiny SDL Editor for TASTE
+    OpenGEODE - SDL Editor for TASTE
 
     AST that can be used to write SDL backends (code generators, etc.)
     In all classes the 'inputString' field corresponds to the exact
@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2021 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -39,6 +39,7 @@ import operator
 from collections import defaultdict
 LOG = logging.getLogger(__name__)
 
+from typing import List
 
 class Expression:
     ''' AST Entry for expressions - Always use subtype '''
@@ -61,9 +62,7 @@ class Expression:
 
     def trace(self):
         ''' Debug output for an expression '''
-        return u'{exp} ({l},{c})'.format(exp=self.inputString,
-                                        l=self.line,
-                                        c=self.charPositionInLine)
+        return f'{self.inputString} ({self.line},{self.charPositionInLine})'
 
 
 class ExprPlus(Expression):
@@ -254,16 +253,6 @@ class PrimStateReference(Primary):
     is_raw = False
 
 
-class PrimBitStringLiteral(Primary):
-    ''' Not supported yet '''
-    pass
-
-
-class PrimOctetStringLiteral(Primary):
-    ''' Not supported yet '''
-    pass
-
-
 class PrimConditional(Primary):
     ''' value is a dictionnary:
         { 'if': Expression, 'then': Expression,
@@ -288,6 +277,17 @@ class PrimStringLiteral(Primary):
 #       print 'SET type of', name, 'to', val
         self._exprType = val
 
+
+class PrimOctetStringLiteral(PrimStringLiteral):
+    ''' String of form 'ABCD'H '''
+    numeric_value : int = -1
+    # In case the string contains ASCII characters:
+    printable_string : str = '';
+
+
+class PrimBitStringLiteral(PrimOctetStringLiteral):
+    ''' String of form '0001101'B '''
+    pass
 
 class PrimMantissaBaseExp(Primary):
     ''' Value is a dict: {'mantissa': int, 'base': int, 'exponent': int} '''
@@ -357,17 +357,32 @@ class Answer:
         self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 23
-        # one of 'closed_range' 'constant' 'open_range' 'else' 'informal_text'
-        self.kind = None
-        # informalText is a string, when kind == 'informal_text'
-        self.informalText = None
+        # a single answer can contain several comma-separated statements
+        # to trigger a single transition from different options
+        # contents: list of dict :
+        # [{'kind': kind, 'content': content}] with kind =
+        #      'closed_range'|'constant'|'open_range'|'else'|'informal_text'
+        # and content is either strings (informal text)
+        #           or set of two numbers (closed range)
+        #           or tuple (EprEq, constant) for constant
+        #           or tuple (op, constant) for open_range
+        #           or None ('else' branch)
+        # with op being either ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, or ExprLe (types)
+        self.answers = []
+
+        # SOON ERASE THE FOLLOWING
+        # list of 'closed_range'|'constant'|'open_range'|'else'|'informal_text'
+        #self.kinds = []
+        # informalText is a list of strings, when kind == 'informal_text'
+        #self.informalText = []
         # closedRange is a set of two numbers
-        self.closedRange = []
-        # constant is an Expression
+        #self.closedRange = []
+        # constant is a list of Expression
         #    (contains 'open_range' and 'constant' kinds corresponding value)
-        self.constant = None
-        # one of ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, ExprLe (types)
-        self.openRangeOp = None
+        #self.constants = []
+        # list of either ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, or ExprLe (types)
+        #self.openRangeOps = []
+
         # transition is of type Transition
         self.transition : Transition = None
         # optional comment symbol
@@ -466,6 +481,9 @@ class Terminator:
         self.height = 35
         self.line = None
         self.charPositionInLine = None
+        # context is an ogAST entry pointing to the container of the terminator
+        # used for return statement to know the expected type
+        self.context = None
         # one of 'next_state' 'join' 'stop', 'return'
         self.kind = None
         # optional comment symbol
@@ -654,9 +672,10 @@ class ContinuousSignal(Input):
         self.priority = 0
         # Set if we are in an observer to render the symbol differently
         self.observer : bool = False
-        # Artificial set to true if it is meant to replace an input symbol
-        # in observers
-        self.artificial : bool = False
+        # instance of class Input when this CS is an alias of an input
+        self.observer_input = None
+        # artificial is set to True if this is an alias (for Renderer)
+        self.artificial = False
 
     def trace(self):
         ''' Debug output for a Continuous signal '''
@@ -785,6 +804,10 @@ class TextArea:
         self.procedures = []
         # optional hyperlink
         self.hyperlink = None
+        # List of Observer states defined in this text area (error/success/ignore states)
+        # used for error reporting to get the right symbol coordinates
+        self.observer_states : List [str] = []
+
 
     def trace(self):
         ''' Debug output for a text area '''
@@ -967,6 +990,12 @@ class Process:
 
         # The "DECISION ANY" construct requires random number generators
         self.random_generator = set()
+
+        # list of Error, Success, and Ignore states (observers/model checking)
+        # (strings in lowerase)
+        self.errorstates = []
+        self.ignorestates = []
+        self.successstates = []
 
 
 class CompositeState(Process):

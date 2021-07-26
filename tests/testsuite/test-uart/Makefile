@@ -28,14 +28,14 @@ test-qgen-gt-c:
 test-ada: 
 	cp og_ri.ada og_ri.adb
 	$(OPENGEODE) og.pr --toAda
-	mono $(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	cp ris.ada ris.ads && cp check.ada check.adb && cp ris_adb.ada ris.adb
 	gnat make -g -O0 check
 	./check | diff expected -
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
-	mono $(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
 	$(CC) -O$(O) -c *.c
 
 

@@ -1,4 +1,8 @@
-all: compile-all
+all:
+	@echo [-] Run \"make dependencies\" to install all dependencies
+	@echo [-] then \"make install\" to install to ~/.local/bin
+	@echo [-] or \"make full-install\" that combines both
+	@echo [!] IMPORTANT: make sure ~/.local/bin is in your PATH
 
 test-parse:
 	@$(MAKE) -s -C tests/testsuite $@
@@ -49,11 +53,11 @@ dependencies:
 	sudo apt install python3-singledispatch
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.4.0f/asn1scc-bin-4.2.4.0f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
-	# make sure that ~/.local/bin is in your PATH
+	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.4.7f/asn1scc-bin-4.2.4.7f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
+	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
-	@pip3 install --user --upgrade .
+	@python3 -m pip install --user --upgrade .
 
 full-install: update
 	sudo $(MAKE) dependencies
@@ -69,12 +73,6 @@ pytest:
 	# pip3 install --user --upgrade pytest-qt
 	cd tests/pytests && py.test
 
-freeze-linux:
-	@bash -c "test -f pyinstaller-opengeode.tar.gz || wget http://download.tuxfamily.org/taste/misc/pyinstaller-opengeode.tar.gz"
-	@tar zxvf pyinstaller-opengeode.tar.gz
-	@cd pyinstaller-pyinstaller-953f6e3 && python pyinstaller.py ../opengeode/opengeode.py --onefile && mkdir -p ../dist-linux && mv opengeode/dist/opengeode ../dist-linux && cd ..
-	@echo binary installed in ./dist-linux/
-
 clean:
 	@$(MAKE) -s -C tests/testsuite $@
 	@find . -name '*~' | xargs rm -f
@@ -85,4 +83,4 @@ clean:
 	@rm -rf opengode/*.pyc dist build *.egg-info
 
 .PHONY: all test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
-	    benchmark-O3 flake8 coverage compile-all install publish clean freeze-linux
+	    benchmark-O3 flake8 coverage compile-all install publish clean
