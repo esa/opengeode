@@ -795,6 +795,13 @@ LD_LIBRARY_PATH=. taste-gui -l
         decl_transitions.extend(label_decl)
         code_labels.extend(code_label)
 
+    # Generate code returning the current state as a string (used by tracer)
+    get_state_source_code = [f'char *{process_name.lower()}_state(void)',
+                             '{',
+                             '  return "Not_supported_in_C__Use_the_Ada_backend";',
+                             '}']
+                                
+
     transition_source_code = []
 
     # Generate the code of the runTransition procedure, if needed
@@ -865,6 +872,7 @@ LD_LIBRARY_PATH=. taste-gui -l
     c_source_code.extend(inner_procedures_code)
     c_source_code.extend(dll_code)
     c_source_code.extend(transition_source_code)
+    c_source_code.extend(get_state_source_code)
 
     with open(process_name + '.c', 'wb') as c_file:
         c_file.write(u'\n'.join(indent_c_code(c_source_code)).encode('latin1'))
