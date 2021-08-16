@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.13 (08/2021)**
+- Minor alignment of the C backend (still incomplete: use Ada)
+
 **3.7.12 (07/2021)**
 - Fix type checking in decisions with call procedures
   (also prevented copy-pasting)
