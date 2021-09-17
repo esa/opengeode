@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.14 (09/2021)**
+- Support indexes and field access in OUT parameters of procedure calls
+
 **3.7.13 (08/2021)**
 - Minor alignment of the C backend (still incomplete: use Ada)
 

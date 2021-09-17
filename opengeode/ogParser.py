@@ -807,8 +807,11 @@ def check_call(name, params, context):
                 format(expected, name, received))
 
         if sign[idx].get('direction') != 'in' \
-                and not isinstance(expr.right, ogAST.PrimVariable):
-            raise TypeError('OUT parameter "{}" is not a variable'
+                and not isinstance(expr.right, (ogAST.PrimVariable,
+                                                ogAST.PrimIndex,
+                                                ogAST.PrimSelector)):
+            # out parameters base must be a variable
+            raise TypeError('Parameter "{}" does not qualify as an OUT parameter'
                 .format(expr.right.inputString))
 
     # (4) Compute the type of the result
