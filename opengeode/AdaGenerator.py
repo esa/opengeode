@@ -452,7 +452,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                         refType.lower().replace('-', '_'):
                     break
             asn1_template.append(
-                    f'{sortname.replace("_", "-")} ::= SEQUENCE '
+                    f'{sortname.replace("_", "-").capitalize()} ::= SEQUENCE '
                     f'(SIZE ({rangeMin} .. {rangeMax})) OF '
                     f'{refTypeCase.replace("_", "-")}')
         elif sortdef.type.kind == "EnumeratedType":
@@ -462,7 +462,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                 # types used in choice index
                 keys.append(f'{key}-present({idx+1})')
             asn1_template.append(
-                    f'{sortname} ::= ENUMERATED {{' + ", ".join(keys) + '}')
+                    f'{sortname.replace("_", "-").capitalize()} ::= ENUMERATED {{' + ", ".join(keys) + '}')
             # We need to convert from the ASN.1 enumerated to the one we created
             choiceTypeModule = MAPPING_SORT_MODULE[sortdef.ChoiceTypeName].replace('-', '_')
             sortAda = sortname.replace('-', '_')

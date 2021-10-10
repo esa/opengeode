@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.15 (10/2021)**
+- When using NEWTYPEs, capitalize the type name for ASN.1 compliance
+
 **3.7.14 (09/2021)**
 - Support indexes and field access in OUT parameters of procedure calls
 
