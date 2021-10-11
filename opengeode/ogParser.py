@@ -754,7 +754,7 @@ def check_call(name, params, context):
             # if the sort is a subtype, it may not have a -selection suffix
             # and an exception may be raised. FIXME : check "present" operator
             # as the issue is already fixed there
-            return_type = types()[sort + '-selection'].type
+            return_type = types()[sort.capitalize() + '-selection'].type
         else:
             return_type = types()[sort].type
         if return_type.kind != 'EnumeratedType':
@@ -902,7 +902,7 @@ def check_call(name, params, context):
         except AttributeError:
             # Native choice types don't have the kind field here
             pass
-        return types()[sort_name + "-selection"].type
+        return types()[sort_name.capitalize() + "-selection"].type
 
     # choice_to_int: returns an integer corresponding to either the currently
     # selected choice value (e.g. foo in CHOICE { foo INTEGER (..), ... } when
@@ -3514,7 +3514,7 @@ def newtype_gettype(root, ta_ast, context):
                         + str(root.type))
         return newtypename, errors, warnings
 
-    newtypename = root.getChild(0).getChild(0).text
+    newtypename = root.getChild(0).getChild(0).text.capitalize()
     return newtypename, errors, warnings
 
 
@@ -3569,8 +3569,10 @@ def get_struct_children(root):
 
     for field in fieldlist.getChildren():
         if (field.type == lexer.FIELD):
-            fieldname = field.getChild(0).text
+            fieldname = field.getChild(0).text.lower()
             typename = field.getChild(1).getChild(0).text
+            typename = typename.capitalize().replace('_', '-')
+
             line = field.getChild(0).getLine()
             charpos = field.getChild(0).getCharPositionInLine()
 
@@ -3592,7 +3594,7 @@ def syntype(root, ta_ast, context):
     newtype = ""
     reftype = ""
 
-    newtypename = root.getChild(0).getChild(0).text
+    newtypename = root.getChild(0).getChild(0).text.capitalize()
     # reftypename = root.getChild(1).getChild(0).text
     newtype = type(str(newtypename), (object,), {
         "Line": root.getChild(0).getLine(),
@@ -3614,6 +3616,7 @@ def newtype(root, ta_ast, context):
     errors = []
     warnings = []
 
+    # type name gets capitalized with this call:
     newtypename, errors, warnings = newtype_gettype(root, ta_ast, context)
     if (newtypename == ""):
         return errors, warnings
