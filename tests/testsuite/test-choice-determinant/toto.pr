@@ -20,7 +20,7 @@ system toto;
             
             dcl val MyChoice,  det MyEnum;
             
-            dcl choice_selectors MyChoice_selection := foo;
+            dcl choice_selectors mychoice_selection := foo;
             
             dcl pos MyInt;
             /* CIF ENDTEXT */
@@ -35,21 +35,21 @@ system toto;
                     /* CIF ANSWER (285, 269), (70, 24) */
                     (bar):
                 enddecision;
-                /* CIF decision (222, 308), (106, 50) */
+                /* CIF decision (222, 309), (106, 50) */
                 decision present (val);
-                    /* CIF ANSWER (166, 378), (129, 24) */
+                    /* CIF ANSWER (166, 379), (129, 24) */
                     (choice_selectors):
-                    /* CIF ANSWER (315, 378), (70, 24) */
+                    /* CIF ANSWER (315, 379), (70, 24) */
                     else:
                 enddecision;
-                /* CIF decision (210, 417), (129, 50) */
+                /* CIF decision (210, 419), (129, 50) */
                 decision choice_selectors;
-                    /* CIF ANSWER (223, 487), (103, 24) */
+                    /* CIF ANSWER (223, 489), (103, 24) */
                     (present(val)):
-                    /* CIF ANSWER (346, 487), (70, 24) */
+                    /* CIF ANSWER (346, 489), (70, 24) */
                     else:
                 enddecision;
-                /* CIF task (233, 526), (83, 35) */
+                /* CIF task (233, 529), (83, 35) */
                 task det := foo;
                 /* CIF task (215, 581), (119, 35) */
                 task pos := num (det);

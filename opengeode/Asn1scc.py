@@ -182,7 +182,8 @@ def create_choice_determinant_types(ast):
     new_sorts = {}
     for each in (sort for sort in ast.types.values()
                  if sort.type.kind == 'ChoiceType'):
-        new_sort = each.__name__ + '-selection'
+        # we must capitalize the type here to remove any ambiguity
+        new_sort = each.__name__.capitalize() + '-selection'
         if new_sort in ast.types:
             continue
         choices = {key : type (key, (object,), {
