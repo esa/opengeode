@@ -19,10 +19,16 @@ system og;
         connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
         process og;
-            /* CIF TEXT (121, 80), (342, 184) */
-            newtype MyArray
+            /* CIF TEXT (122, 80), (267, 354) */
+            newtype myArray
             array (myinteger, myinteger)
             endnewtype;
+            
+            -- Not supported:
+            --newtype mystruct
+            --struct
+            -- a myarray;
+            --endnewtype;
             
             dcl x MyArray := { 1,2,3 };
             
@@ -32,34 +38,34 @@ system og;
             
             dcl myseq Seq;
             /* CIF ENDTEXT */
-            /* CIF START (474, 216), (70, 35) */
+            /* CIF START (918, 216), (70, 35) */
             START;
-                /* CIF task (430, 271), (156, 35) */
+                /* CIF task (875, 271), (156, 35) */
                 task myseq.a := some_seq.a;
-                /* CIF task (452, 326), (113, 35) */
+                /* CIF task (896, 326), (113, 35) */
                 task someint := zero;
-                /* CIF task (420, 376), (177, 35) */
+                /* CIF task (864, 376), (177, 35) */
                 task someint := some_constant;
-                /* CIF decision (473, 431), (70, 50) */
+                /* CIF decision (917, 431), (70, 50) */
                 decision someint;
-                    /* CIF ANSWER (319, 501), (112, 24) */
+                    /* CIF ANSWER (763, 501), (112, 24) */
                     (some_constant):
-                    /* CIF ANSWER (433, 501), (89, 24) */
+                    /* CIF ANSWER (877, 501), (89, 24) */
                     (fourty_two):
-                    /* CIF ANSWER (526, 501), (70, 24) */
+                    /* CIF ANSWER (970, 501), (70, 24) */
                     (zero):
-                    /* CIF ANSWER (616, 501), (70, 56) */
+                    /* CIF ANSWER (1060, 501), (70, 56) */
                     (1:41,
 43:65,
 67:255):
                 enddecision;
-                /* CIF NEXTSTATE (474, 573), (70, 35) */
+                /* CIF NEXTSTATE (918, 573), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF state (694, 231), (70, 35) */
+            /* CIF state (770, 231), (70, 35) */
             state wait;
-                /* CIF input (687, 286), (84, 35) */
+                /* CIF input (763, 286), (84, 35) */
                 input dd;
-                    /* CIF NEXTSTATE (694, 341), (70, 35) */
+                    /* CIF NEXTSTATE (770, 341), (70, 35) */
                     NEXTSTATE wait;
             endstate;
         endprocess og;
