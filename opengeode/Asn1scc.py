@@ -60,7 +60,7 @@ def waitfor_qprocess(qprocess, name):
     Raise an exception if anything went wrong, otherwise return stdout '''
     if not qprocess.waitForStarted():
         raise TypeError('Could not start ' + name)
-    if not qprocess.waitForFinished():
+    if not qprocess.waitForFinished(300000):
         raise TypeError('Execution time out : ' + name)
     exitcode = qprocess.exitCode()
     err = qprocess.readAllStandardError()
