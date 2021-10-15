@@ -1143,7 +1143,7 @@ package body {process_name}_RI is''']
         ri_list.extend ([(f"RI{SEPARATOR}{proc.inputString}", proc.inputString)
                         for proc in process.procedures if proc.external])
         ri_list.extend([(f"set_{timer}", f"set_{timer}")   for timer in process.timers])
-        ri_list.extend([(f"reset_{timer}" f"reset_{timer}") for timer in process.timers])
+        ri_list.extend([(f"reset_{timer}", f"reset_{timer}") for timer in process.timers])
         ri_inst = [f"{ri[0]} => {process_name.title()}_RI.{ri[1]}" for ri in ri_list]
         if ri_inst or has_context_params:
             pkg_decl += " ("
@@ -1253,7 +1253,7 @@ package body {process_name}_RI is''']
                 if not generic:  # not a function type
                     ads_template.append('procedure Check_Queue (Res : out Asn1Boolean)')
                     ads_template.append(f'with Import, Convention => C, '
-                                        f'Link_Name => "{process_name.lower()}_check_queue");')
+                                        f'Link_Name => "{process_name.lower()}_check_queue";')
             else:
                 taste_template.append('--  Process observer transitions')
                 taste_template.append("Message_Pending := False;")
