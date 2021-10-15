@@ -1031,8 +1031,9 @@ package body {process_name}_RI is''']
                     f'end Register_{sig};',
                     '']
             taste_template.extend(code)
-        elif not generic and not instance:
-            ads_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} '
+        elif not generic:
+            if not instance:
+                ads_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} '
                     f'renames {process_name}_RI.{sig};')
             ri_stub_ads.append(f'procedure {sig}{param_spec};')
             ri_stub_adb.append(f'procedure {sig}{param_spec} is null;')
@@ -1079,11 +1080,12 @@ package body {process_name}_RI is''']
                      '']
             taste_template.extend(code)
 
-        elif not generic and not instance:
-            # Type and instance do not need this declarations, only standalone
-            # proceses.
-            ads_template.append(f'--  Synchronous Required Interface "{sig}"')
-            ads_template.append(f'{ri_header} renames {process_name}_RI.{sig};')
+        elif not generic:
+            if not instance:
+                # Type and instance do not need this declarations, only standalone
+                # proceses.
+                ads_template.append(f'--  Synchronous Required Interface "{sig}"')
+                ads_template.append(f'{ri_header} renames {process_name}_RI.{sig};')
             ri_stub_ads.append(f'procedure {sig}{params_spec};')
             ri_stub_adb.append(f'procedure {sig}{params_spec} is null;')
 
