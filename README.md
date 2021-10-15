@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.16 (10/2021)**
+- Support continuous signals in instance of process types
+
 **3.7.15 (10/2021)**
 - When using NEWTYPEs, capitalize the type name for ASN.1 compliance
 
