@@ -8,7 +8,7 @@ test-parse:
 	@$(MAKE) -s -C tests/testsuite $@
 
 test-ada:
-	@$(MAKE) -s -C tests/testsuite $@
+	@PATH=~/.local/bin:${PATH} $(MAKE) -s -C tests/testsuite $@
 
 test-llvm:
 	@$(MAKE) -s -C tests/testsuite $@
@@ -44,13 +44,16 @@ update:
 	git pull
 
 dependencies:
-	sudo apt install python3-pyside2.* || echo 'PySide2 is not available in your system. Try to run "sudo pip3 install --user --upgrade pyside2'
-	sudo apt install python3-antlr3
-	sudo apt install pyside2-tools || :
-	#apt install python3-matplotlib
-	sudo apt install python3-pygraphviz
-	sudo apt install python3-stringtemplate3
-	sudo apt install python3-singledispatch
+	sudo apt install -y python3 python3-pip
+	# installing pyside2 through pip because of bugs with QML in the Debian bullseye release
+	python3 -m pip install --user --upgrade pyside2
+	# python3-antlr3 was removed in debian 11 (bullseye)
+	sudo apt install -y python3-antlr3 || echo "python3-antlr3 not available, this will cause issues"
+	# pyside2-tools was also removed in debian 11 but it' s present in the pip version...
+	#sudo apt install -y pyside2-tools || :
+	sudo apt install -y python3-pygraphviz
+	sudo apt install -y python3-stringtemplate3
+	sudo apt install -y python3-singledispatch
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
 	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.4.7f/asn1scc-bin-4.2.4.7f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
@@ -60,7 +63,7 @@ install:
 	@python3 -m pip install --user --upgrade .
 
 full-install: update
-	sudo $(MAKE) dependencies
+	$(MAKE) dependencies
 	$(MAKE) install
 
 publish: 
@@ -69,9 +72,8 @@ publish:
 	@twine upload dist/*
 
 pytest:
-	# make sure you have installed pytest-qt:
 	pip3 install --user --upgrade pytest-qt
-	cd tests/pytests && py.test
+	PATH=~/.local/bin:${PATH} cd tests/pytests && py.test
 
 clean:
 	@$(MAKE) -s -C tests/testsuite $@
