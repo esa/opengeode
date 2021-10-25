@@ -58,7 +58,7 @@ dependencies:
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
-	PATH=~/.local/bin:${PATH} @python3 -m pip install --user --upgrade .
+	PATH=~/.local/bin:${PATH} python3 -m pip install --user --upgrade .
 
 full-install: update
 	$(MAKE) dependencies
