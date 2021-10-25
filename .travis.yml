@@ -5,7 +5,5 @@ services:
   - docker
 before_install:
   - docker pull debian:bullseye
-  - ls -la
-  - docker run -v $PWD:/work --rm -it debian:bullseye /bin/bash -c "echo current ; ls -la ; echo /work ; ls -l /work"
 script:
-  - echo "Is this running..."
+  - docker run -v $PWD:/work --rm -it debian:bullseye /bin/bash -c "cd /work ; ./run_tests.sh"
