@@ -1,4 +1,5 @@
 #!/bin/bash
+apt update || exit 1
 apt install -y make || exit 1
 make dependencies || exit 1
 make install || exit 1
