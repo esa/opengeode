@@ -47,10 +47,8 @@ dependencies:
 	sudo apt install -y python3 python3-pip
 	# installing pyside2 through pip because of bugs with QML in the Debian bullseye release
 	python3 -m pip install --user --upgrade pyside2
-	# python3-antlr3 was removed in debian 11 (bullseye)
-	sudo apt install -y python3-antlr3 || echo "python3-antlr3 not available, this will cause issues"
-	# pyside2-tools was also removed in debian 11 but it' s present in the pip version...
-	#sudo apt install -y pyside2-tools || :
+	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
+	cd /tmp ; wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf - ; cd antlr3_python3_runtime_3.4 ; python3 -m pip install --user --upgrade .
 	sudo apt install -y python3-pygraphviz
 	sudo apt install -y python3-stringtemplate3
 	sudo apt install -y python3-singledispatch
