@@ -1,0 +1,4 @@
+os: linux
+language: bash
+script:
+  - ./run_tests.sh
