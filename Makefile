@@ -70,7 +70,7 @@ publish:
 
 pytest:
 	# make sure you have installed pytest-qt:
-	# pip3 install --user --upgrade pytest-qt
+	pip3 install --user --upgrade pytest-qt
 	cd tests/pytests && py.test
 
 clean:
