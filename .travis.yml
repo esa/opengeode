@@ -6,4 +6,4 @@ services:
 before_install:
   - docker pull debian:bullseye
 script:
-  - docker run -v $TRAVIS_BUILD_DIR:/work --rm -it debian:bullseye /bin/bash -c "cd /work/esa/opengeode ; ./run_tests.sh"
+  - docker run --rm -it debian:bullseye /bin/bash -c "cd /root/esa/opengeode ; ./run_tests.sh"
