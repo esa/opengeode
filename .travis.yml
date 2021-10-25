@@ -1,4 +1,4 @@
 os: linux
 language: bash
 script:
-  - cd esa/opegeode ; ./run_tests.sh
+  - lsb_release -a ; cd esa/opegeode ; ./run_tests.sh
