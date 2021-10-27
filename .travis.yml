@@ -1,0 +1,9 @@
+os: linux
+dist: focal
+language: bash
+services:
+  - docker
+before_install:
+  - docker pull debian:bullseye
+script:
+  - docker run -v $PWD:/work --rm -it debian:bullseye /bin/bash -c "cd /work ; ./run_tests.sh"

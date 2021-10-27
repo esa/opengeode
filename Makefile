@@ -8,7 +8,7 @@ test-parse:
 	@$(MAKE) -s -C tests/testsuite $@
 
 test-ada:
-	@$(MAKE) -s -C tests/testsuite $@
+	@PATH=~/.local/bin:${PATH} $(MAKE) -s -C tests/testsuite $@
 
 test-llvm:
 	@$(MAKE) -s -C tests/testsuite $@
@@ -44,23 +44,24 @@ update:
 	git pull
 
 dependencies:
-	sudo apt install python3-pyside2.* || echo 'PySide2 is not available in your system. Try to run "sudo pip3 install --user --upgrade pyside2'
-	sudo apt install python3-antlr3
-	sudo apt install pyside2-tools || :
-	#apt install python3-matplotlib
-	sudo apt install python3-pygraphviz
-	sudo apt install python3-stringtemplate3
-	sudo apt install python3-singledispatch
+	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect
+	# installing pyside2 through pip because of bugs with QML in the Debian bullseye release
+	python3 -m pip install --user --upgrade pyside2
+	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
+	cd /tmp ; wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf - ; cd antlr3_python3_runtime_3.4 ; python3 -m pip install --user --upgrade .
+	sudo apt install -y python3-pygraphviz
+	sudo apt install -y python3-stringtemplate3
+	sudo apt install -y python3-singledispatch
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
 	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.4.7f/asn1scc-bin-4.2.4.7f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
-	@python3 -m pip install --user --upgrade .
+	PATH=~/.local/bin:${PATH} python3 -m pip install --user --upgrade .
 
 full-install: update
-	sudo $(MAKE) dependencies
+	$(MAKE) dependencies
 	$(MAKE) install
 
 publish: 
@@ -69,9 +70,8 @@ publish:
 	@twine upload dist/*
 
 pytest:
-	# make sure you have installed pytest-qt:
-	# pip3 install --user --upgrade pytest-qt
-	cd tests/pytests && py.test
+	pip3 install --user --upgrade pytest-qt
+	PATH=~/.local/bin:${PATH} ; cd tests/pytests ; py.test
 
 clean:
 	@$(MAKE) -s -C tests/testsuite $@
