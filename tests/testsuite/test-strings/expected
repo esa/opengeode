@@ -4,6 +4,10 @@ b
 foo
 bar
 baz
-String literal (should be 'hello'):hello
+String literal (should be "hello"):hello
 hello
 hello world
+Hello I'm good
+Hello "World"
+Hello 'World'
+Hello "World"

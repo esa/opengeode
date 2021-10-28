@@ -1679,9 +1679,29 @@ STRING
         ;
 
 
+// Strings can be either single or double quoted
 fragment
 STR
-        :       '\'' ( options {greedy=false;} : .)* '\''
+       // :       '\'' ( options {greedy=false;} : .)* '\''
+        :       '\'' (ESC1 | ~('\\' | '\'' ))* '\''
+        |       '"' (ESC2 | ~('\\' | '"' ))* '"'
+        //|       '"' ( options {greedy=false;} : .)* '"'
+        ;
+
+// escaping for single-quote strings
+fragment
+ESC1    : '\\'
+        (
+        | '\''
+        | '\\')
+        ;
+
+// escaping for double-quote strings
+fragment
+ESC2    : '\\'
+        (
+        | '"'
+        | '\\')
         ;
 
 

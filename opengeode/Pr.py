@@ -186,7 +186,7 @@ def _comment(symbol, **kwargs):
     result.append(cif_coord('comment', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append(u'comment \'{}\';'.format(str(symbol.text)))
+    result.append("comment '" + str(symbol.text).replace("'", "\\'") + "';")
     return result
 
 

@@ -58,8 +58,9 @@ endfor
                 call writeln('String literal (should be "hello"):', strlit);
                 /* CIF PROCEDURECALL (571, 496), (205, 35) */
                 call writeln( '68656c6c6f'H)
-                /* CIF comment (796, 496), (70, 35) */
-                comment 'hello';
+                /* CIF comment (796, 496), (215, 40) */
+                comment 'hello with quote in comment :
+a\'b';
                 /* CIF task (608, 546), (130, 56) */
                 task for chr in helloStr:
  call write(chr);
@@ -70,7 +71,27 @@ endfor;
                 task ia5 := 'world';
                 /* CIF PROCEDURECALL (624, 732), (99, 35) */
                 call writeln(ia5);
-                /* CIF NEXTSTATE (639, 782), (70, 35) */
+                /* CIF PROCEDURECALL (580, 787), (187, 35) */
+                call writeln("Hello I'm good")
+                /* CIF comment (787, 787), (177, 40) */
+                comment 'string with double quotes,
+embedding single quote';
+                /* CIF PROCEDURECALL (577, 842), (194, 35) */
+                call writeln('Hello "World"')
+                /* CIF comment (791, 842), (178, 40) */
+                comment 'string with single quotes,
+embedding double quotes';
+                /* CIF PROCEDURECALL (577, 897), (194, 35) */
+                call writeln('Hello \'World\'')
+                /* CIF comment (791, 894), (178, 40) */
+                comment 'string with single quotes,
+and escaping';
+                /* CIF PROCEDURECALL (577, 951), (194, 35) */
+                call writeln("Hello \"World\"")
+                /* CIF comment (791, 948), (178, 40) */
+                comment 'string with double quotes,
+and escaping';
+                /* CIF NEXTSTATE (639, 1006), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (366, 217), (70, 35) */
             state wait;
