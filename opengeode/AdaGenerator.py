@@ -182,16 +182,6 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     global PROCESS_NAME
     PROCESS_NAME = process_name
 
-    if process_instance is not process:
-        # Generate an instance of the process type, too.
-        # First copy the list of timers to the instance (otherwise the
-        # instance would miss some PIs and RIs to set the actual timers)
-        process_instance.timers = process.timers
-        # And for the same reason copy the continuous states, needed to
-        # determine if Check_Queue is needed
-        process_instance.cs_mapping = process.cs_mapping
-        generate(process_instance, simu, instance=True, taste=taste)
-
     global TYPES
     TYPES = process.dataview
     del OUT_SIGNALS[:]
@@ -1430,6 +1420,15 @@ package body {process_name}_RI is''']
             gprlib.write(lib_gpr)
         os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
 
+    if process_instance is not process:
+        # Generate an instance of the process type, too.
+        # First copy the list of timers to the instance (otherwise the
+        # instance would miss some PIs and RIs to set the actual timers)
+        process_instance.timers = process.timers
+        # And for the same reason copy the continuous states, needed to
+        # determine if Check_Queue is needed
+        process_instance.cs_mapping = process.cs_mapping
+        generate(process_instance, simu, instance=True, taste=taste)
 
 def write_statement(param, newline):
     ''' Generate the code for the special "write" operator '''

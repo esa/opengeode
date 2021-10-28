@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.17 (10/2021)**
+- Fix continuous signals in instance of process types
+
 **3.7.16 (10/2021)**
 - Support continuous signals in instance of process types
 

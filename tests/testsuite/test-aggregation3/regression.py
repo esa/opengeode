@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys, os, time, pexpect, subprocess
 sys.path.append(os.path.abspath(".."))
 import commonRegression
