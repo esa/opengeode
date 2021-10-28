@@ -1456,8 +1456,10 @@ def write_statement(param, newline):
             code.append(f'Put ("{param.printable_string}");')
         elif isinstance(param, ogAST.PrimStringLiteral):
             # Raw string
-            # First remove the newline statements
-            text = param.value[1:-1].replace('"', "'").split('\n')
+            # First remove the newline statements and handle escaping
+            text = param.value[1:-1]
+            text = text.replace("\\'", "'").replace('\\"', '"')
+            text = text.replace('"', '""').split('\n')
             for idx, val in enumerate(text):
                 code.append(f'Put ("{val}");')
                 if len(text) > 1 and idx < len(text) - 1:

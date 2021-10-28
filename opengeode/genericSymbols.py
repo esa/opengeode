@@ -787,7 +787,7 @@ class Comment(Symbol):
         self.connection = None
         self.set_shape(ast.width, ast.height)
         self.text = EditableText(parent=self,
-                                 text=ast.inputString,
+                                 text=ast.inputString.replace("\\'", "'"),  # remove escaping
                                  hyperlink=ast.hyperlink)
         if parent:
             local_pos = parent.mapFromScene(ast.pos_x or 0, ast.pos_y or 0)

@@ -1,4 +1,4 @@
-# $ANTLR 3.5.2 sdl92.g 2021-07-01 08:54:04
+# $ANTLR 3.5.2 sdl92.g 2021-10-27 14:41:56
 
 import sys
 from antlr3 import *
@@ -10,14 +10,14 @@ HIDDEN = BaseRecognizer.HIDDEN
 
 # token types
 EOF=-1
-T__236=236
-T__237=237
 T__238=238
 T__239=239
 T__240=240
 T__241=241
 T__242=242
 T__243=243
+T__244=244
+T__245=245
 A=4
 ACTION=5
 ACTIVE=6
@@ -84,178 +84,180 @@ ENDTEXT=66
 ENTRY_POINT=67
 EQ=68
 ERRORSTATES=69
-EXPONENT=70
-EXPORT=71
-EXPORTED=72
-EXPRESSION=73
-EXTERNAL=74
-Exponent=75
-F=76
-FALSE=77
-FI=78
-FIELD=79
-FIELDS=80
-FIELD_NAME=81
-FLOAT=82
-FLOAT2=83
-FLOATING_LABEL=84
-FOR=85
-FPAR=86
-FROM=87
-G=88
-GE=89
-GEODE=90
-GROUND=91
-GT=92
-H=93
-HISTORY_NEXTSTATE=94
-HYPERLINK=95
-I=96
-ID=97
-IF=98
-IFTHENELSE=99
-IGNORESTATES=100
-IMPLIES=101
-IMPORT=102
-IN=103
-INFORMAL_TEXT=104
-INOUT=105
-INPUT=106
-INPUTLIST=107
-INPUT_EXPRESSION=108
-INPUT_NONE=109
-INT=110
-INTERCEPT=111
-IOPARAM=112
-J=113
-JOIN=114
-K=115
-KEEP=116
-L=117
-LABEL=118
-LE=119
-LITERAL=120
-LT=121
-L_BRACKET=122
-L_PAREN=123
-M=124
-MANTISSA=125
-MINUS_INFINITY=126
-MKSTRING=127
-MOD=128
-MONITOR=129
-N=130
-NEG=131
-NEQ=132
-NEWTYPE=133
-NEXTSTATE=134
-NONE=135
-NOT=136
-NUMBER_OF_INSTANCES=137
-O=138
-OCTSTR=139
-OPEN_RANGE=140
-OR=141
-OUT=142
-OUTPUT=143
-OUTPUT_BODY=144
-OUTPUT_EXPRESSION=145
-P=146
-PARAM=147
-PARAMNAMES=148
-PARAMS=149
-PAREN=150
-PFPAR=151
-PLUS=152
-PLUS_INFINITY=153
-POINT=154
-PRIMARY=155
-PRIORITY=156
-PROCEDURE=157
-PROCEDURE_CALL=158
-PROCEDURE_NAME=159
-PROCESS=160
-PROVIDED=161
-Q=162
-QUESTION=163
-R=164
-RANGE=165
-REFERENCED=166
-REM=167
-RENAMES=168
-RESET=169
-RETURN=170
-RETURNS=171
-ROUTE=172
-R_BRACKET=173
-R_PAREN=174
-S=175
-SAVE=176
-SELECTOR=177
-SEMI=178
-SEQOF=179
-SEQUENCE=180
-SET=181
-SIGNAL=182
-SIGNALROUTE=183
-SIGNAL_LIST=184
-SORT=185
-SPECIFIC=186
-START=187
-STATE=188
-STATELIST=189
-STATE_AGGREGATION=190
-STATE_PARTITION_CONNECTION=191
-STIMULUS=192
-STOP=193
-STOPIF=194
-STR=195
-STRING=196
-STRUCT=197
-SUBSTRUCTURE=198
-SUCCESSSTATES=199
-SYNONYM=200
-SYNONYM_LIST=201
-SYNTYPE=202
-SYSTEM=203
-T=204
-TASK=205
-TASK_BODY=206
-TERMINATOR=207
-TEXT=208
-TEXTAREA=209
-TEXTAREA_CONTENT=210
-THEN=211
-THIS=212
-TIMER=213
-TO=214
-TRANSITION=215
-TRUE=216
-TYPE=217
-TYPE_INSTANCE=218
-U=219
-UNHANDLED=220
-USE=221
-V=222
-VALUE=223
-VARIABLE=224
-VARIABLES=225
-VIA=226
-VIAPATH=227
-VIEW=228
-W=229
-WITH=230
-WS=231
-X=232
-XOR=233
-Y=234
-Z=235
+ESC1=70
+ESC2=71
+EXPONENT=72
+EXPORT=73
+EXPORTED=74
+EXPRESSION=75
+EXTERNAL=76
+Exponent=77
+F=78
+FALSE=79
+FI=80
+FIELD=81
+FIELDS=82
+FIELD_NAME=83
+FLOAT=84
+FLOAT2=85
+FLOATING_LABEL=86
+FOR=87
+FPAR=88
+FROM=89
+G=90
+GE=91
+GEODE=92
+GROUND=93
+GT=94
+H=95
+HISTORY_NEXTSTATE=96
+HYPERLINK=97
+I=98
+ID=99
+IF=100
+IFTHENELSE=101
+IGNORESTATES=102
+IMPLIES=103
+IMPORT=104
+IN=105
+INFORMAL_TEXT=106
+INOUT=107
+INPUT=108
+INPUTLIST=109
+INPUT_EXPRESSION=110
+INPUT_NONE=111
+INT=112
+INTERCEPT=113
+IOPARAM=114
+J=115
+JOIN=116
+K=117
+KEEP=118
+L=119
+LABEL=120
+LE=121
+LITERAL=122
+LT=123
+L_BRACKET=124
+L_PAREN=125
+M=126
+MANTISSA=127
+MINUS_INFINITY=128
+MKSTRING=129
+MOD=130
+MONITOR=131
+N=132
+NEG=133
+NEQ=134
+NEWTYPE=135
+NEXTSTATE=136
+NONE=137
+NOT=138
+NUMBER_OF_INSTANCES=139
+O=140
+OCTSTR=141
+OPEN_RANGE=142
+OR=143
+OUT=144
+OUTPUT=145
+OUTPUT_BODY=146
+OUTPUT_EXPRESSION=147
+P=148
+PARAM=149
+PARAMNAMES=150
+PARAMS=151
+PAREN=152
+PFPAR=153
+PLUS=154
+PLUS_INFINITY=155
+POINT=156
+PRIMARY=157
+PRIORITY=158
+PROCEDURE=159
+PROCEDURE_CALL=160
+PROCEDURE_NAME=161
+PROCESS=162
+PROVIDED=163
+Q=164
+QUESTION=165
+R=166
+RANGE=167
+REFERENCED=168
+REM=169
+RENAMES=170
+RESET=171
+RETURN=172
+RETURNS=173
+ROUTE=174
+R_BRACKET=175
+R_PAREN=176
+S=177
+SAVE=178
+SELECTOR=179
+SEMI=180
+SEQOF=181
+SEQUENCE=182
+SET=183
+SIGNAL=184
+SIGNALROUTE=185
+SIGNAL_LIST=186
+SORT=187
+SPECIFIC=188
+START=189
+STATE=190
+STATELIST=191
+STATE_AGGREGATION=192
+STATE_PARTITION_CONNECTION=193
+STIMULUS=194
+STOP=195
+STOPIF=196
+STR=197
+STRING=198
+STRUCT=199
+SUBSTRUCTURE=200
+SUCCESSSTATES=201
+SYNONYM=202
+SYNONYM_LIST=203
+SYNTYPE=204
+SYSTEM=205
+T=206
+TASK=207
+TASK_BODY=208
+TERMINATOR=209
+TEXT=210
+TEXTAREA=211
+TEXTAREA_CONTENT=212
+THEN=213
+THIS=214
+TIMER=215
+TO=216
+TRANSITION=217
+TRUE=218
+TYPE=219
+TYPE_INSTANCE=220
+U=221
+UNHANDLED=222
+USE=223
+V=224
+VALUE=225
+VARIABLE=226
+VARIABLES=227
+VIA=228
+VIAPATH=229
+VIEW=230
+W=231
+WITH=232
+WS=233
+X=234
+XOR=235
+Y=236
+Z=237
 
 # token names
 tokenNamesMap = {
     0: "<invalid>", 1: "<EOR>", 2: "<DOWN>", 3: "<UP>",
-    -1: "EOF", 236: "T__236", 237: "T__237", 238: "T__238", 239: "T__239", 
-    240: "T__240", 241: "T__241", 242: "T__242", 243: "T__243", 4: "A", 
+    -1: "EOF", 238: "T__238", 239: "T__239", 240: "T__240", 241: "T__241", 
+    242: "T__242", 243: "T__243", 244: "T__244", 245: "T__245", 4: "A", 
     5: "ACTION", 6: "ACTIVE", 7: "AGGREGATION", 8: "ALL", 9: "ALPHA", 10: "ALTERNATIVE", 
     11: "AND", 12: "ANSWER", 13: "ANY", 14: "APPEND", 15: "ARRAY", 16: "ASN1", 
     17: "ASNFILENAME", 18: "ASSIGN", 19: "ASSIG_OP", 20: "ASTERISK", 21: "B", 
@@ -269,40 +271,40 @@ tokenNamesMap = {
     57: "ENDDECISION", 58: "ENDFOR", 59: "ENDNEWTYPE", 60: "ENDPROCEDURE", 
     61: "ENDPROCESS", 62: "ENDSTATE", 63: "ENDSUBSTRUCTURE", 64: "ENDSYNTYPE", 
     65: "ENDSYSTEM", 66: "ENDTEXT", 67: "ENTRY_POINT", 68: "EQ", 69: "ERRORSTATES", 
-    70: "EXPONENT", 71: "EXPORT", 72: "EXPORTED", 73: "EXPRESSION", 74: "EXTERNAL", 
-    75: "Exponent", 76: "F", 77: "FALSE", 78: "FI", 79: "FIELD", 80: "FIELDS", 
-    81: "FIELD_NAME", 82: "FLOAT", 83: "FLOAT2", 84: "FLOATING_LABEL", 85: "FOR", 
-    86: "FPAR", 87: "FROM", 88: "G", 89: "GE", 90: "GEODE", 91: "GROUND", 
-    92: "GT", 93: "H", 94: "HISTORY_NEXTSTATE", 95: "HYPERLINK", 96: "I", 
-    97: "ID", 98: "IF", 99: "IFTHENELSE", 100: "IGNORESTATES", 101: "IMPLIES", 
-    102: "IMPORT", 103: "IN", 104: "INFORMAL_TEXT", 105: "INOUT", 106: "INPUT", 
-    107: "INPUTLIST", 108: "INPUT_EXPRESSION", 109: "INPUT_NONE", 110: "INT", 
-    111: "INTERCEPT", 112: "IOPARAM", 113: "J", 114: "JOIN", 115: "K", 116: "KEEP", 
-    117: "L", 118: "LABEL", 119: "LE", 120: "LITERAL", 121: "LT", 122: "L_BRACKET", 
-    123: "L_PAREN", 124: "M", 125: "MANTISSA", 126: "MINUS_INFINITY", 127: "MKSTRING", 
-    128: "MOD", 129: "MONITOR", 130: "N", 131: "NEG", 132: "NEQ", 133: "NEWTYPE", 
-    134: "NEXTSTATE", 135: "NONE", 136: "NOT", 137: "NUMBER_OF_INSTANCES", 
-    138: "O", 139: "OCTSTR", 140: "OPEN_RANGE", 141: "OR", 142: "OUT", 143: "OUTPUT", 
-    144: "OUTPUT_BODY", 145: "OUTPUT_EXPRESSION", 146: "P", 147: "PARAM", 
-    148: "PARAMNAMES", 149: "PARAMS", 150: "PAREN", 151: "PFPAR", 152: "PLUS", 
-    153: "PLUS_INFINITY", 154: "POINT", 155: "PRIMARY", 156: "PRIORITY", 
-    157: "PROCEDURE", 158: "PROCEDURE_CALL", 159: "PROCEDURE_NAME", 160: "PROCESS", 
-    161: "PROVIDED", 162: "Q", 163: "QUESTION", 164: "R", 165: "RANGE", 
-    166: "REFERENCED", 167: "REM", 168: "RENAMES", 169: "RESET", 170: "RETURN", 
-    171: "RETURNS", 172: "ROUTE", 173: "R_BRACKET", 174: "R_PAREN", 175: "S", 
-    176: "SAVE", 177: "SELECTOR", 178: "SEMI", 179: "SEQOF", 180: "SEQUENCE", 
-    181: "SET", 182: "SIGNAL", 183: "SIGNALROUTE", 184: "SIGNAL_LIST", 185: "SORT", 
-    186: "SPECIFIC", 187: "START", 188: "STATE", 189: "STATELIST", 190: "STATE_AGGREGATION", 
-    191: "STATE_PARTITION_CONNECTION", 192: "STIMULUS", 193: "STOP", 194: "STOPIF", 
-    195: "STR", 196: "STRING", 197: "STRUCT", 198: "SUBSTRUCTURE", 199: "SUCCESSSTATES", 
-    200: "SYNONYM", 201: "SYNONYM_LIST", 202: "SYNTYPE", 203: "SYSTEM", 
-    204: "T", 205: "TASK", 206: "TASK_BODY", 207: "TERMINATOR", 208: "TEXT", 
-    209: "TEXTAREA", 210: "TEXTAREA_CONTENT", 211: "THEN", 212: "THIS", 
-    213: "TIMER", 214: "TO", 215: "TRANSITION", 216: "TRUE", 217: "TYPE", 
-    218: "TYPE_INSTANCE", 219: "U", 220: "UNHANDLED", 221: "USE", 222: "V", 
-    223: "VALUE", 224: "VARIABLE", 225: "VARIABLES", 226: "VIA", 227: "VIAPATH", 
-    228: "VIEW", 229: "W", 230: "WITH", 231: "WS", 232: "X", 233: "XOR", 
-    234: "Y", 235: "Z"
+    70: "ESC1", 71: "ESC2", 72: "EXPONENT", 73: "EXPORT", 74: "EXPORTED", 
+    75: "EXPRESSION", 76: "EXTERNAL", 77: "Exponent", 78: "F", 79: "FALSE", 
+    80: "FI", 81: "FIELD", 82: "FIELDS", 83: "FIELD_NAME", 84: "FLOAT", 
+    85: "FLOAT2", 86: "FLOATING_LABEL", 87: "FOR", 88: "FPAR", 89: "FROM", 
+    90: "G", 91: "GE", 92: "GEODE", 93: "GROUND", 94: "GT", 95: "H", 96: "HISTORY_NEXTSTATE", 
+    97: "HYPERLINK", 98: "I", 99: "ID", 100: "IF", 101: "IFTHENELSE", 102: "IGNORESTATES", 
+    103: "IMPLIES", 104: "IMPORT", 105: "IN", 106: "INFORMAL_TEXT", 107: "INOUT", 
+    108: "INPUT", 109: "INPUTLIST", 110: "INPUT_EXPRESSION", 111: "INPUT_NONE", 
+    112: "INT", 113: "INTERCEPT", 114: "IOPARAM", 115: "J", 116: "JOIN", 
+    117: "K", 118: "KEEP", 119: "L", 120: "LABEL", 121: "LE", 122: "LITERAL", 
+    123: "LT", 124: "L_BRACKET", 125: "L_PAREN", 126: "M", 127: "MANTISSA", 
+    128: "MINUS_INFINITY", 129: "MKSTRING", 130: "MOD", 131: "MONITOR", 
+    132: "N", 133: "NEG", 134: "NEQ", 135: "NEWTYPE", 136: "NEXTSTATE", 
+    137: "NONE", 138: "NOT", 139: "NUMBER_OF_INSTANCES", 140: "O", 141: "OCTSTR", 
+    142: "OPEN_RANGE", 143: "OR", 144: "OUT", 145: "OUTPUT", 146: "OUTPUT_BODY", 
+    147: "OUTPUT_EXPRESSION", 148: "P", 149: "PARAM", 150: "PARAMNAMES", 
+    151: "PARAMS", 152: "PAREN", 153: "PFPAR", 154: "PLUS", 155: "PLUS_INFINITY", 
+    156: "POINT", 157: "PRIMARY", 158: "PRIORITY", 159: "PROCEDURE", 160: "PROCEDURE_CALL", 
+    161: "PROCEDURE_NAME", 162: "PROCESS", 163: "PROVIDED", 164: "Q", 165: "QUESTION", 
+    166: "R", 167: "RANGE", 168: "REFERENCED", 169: "REM", 170: "RENAMES", 
+    171: "RESET", 172: "RETURN", 173: "RETURNS", 174: "ROUTE", 175: "R_BRACKET", 
+    176: "R_PAREN", 177: "S", 178: "SAVE", 179: "SELECTOR", 180: "SEMI", 
+    181: "SEQOF", 182: "SEQUENCE", 183: "SET", 184: "SIGNAL", 185: "SIGNALROUTE", 
+    186: "SIGNAL_LIST", 187: "SORT", 188: "SPECIFIC", 189: "START", 190: "STATE", 
+    191: "STATELIST", 192: "STATE_AGGREGATION", 193: "STATE_PARTITION_CONNECTION", 
+    194: "STIMULUS", 195: "STOP", 196: "STOPIF", 197: "STR", 198: "STRING", 
+    199: "STRUCT", 200: "SUBSTRUCTURE", 201: "SUCCESSSTATES", 202: "SYNONYM", 
+    203: "SYNONYM_LIST", 204: "SYNTYPE", 205: "SYSTEM", 206: "T", 207: "TASK", 
+    208: "TASK_BODY", 209: "TERMINATOR", 210: "TEXT", 211: "TEXTAREA", 212: "TEXTAREA_CONTENT", 
+    213: "THEN", 214: "THIS", 215: "TIMER", 216: "TO", 217: "TRANSITION", 
+    218: "TRUE", 219: "TYPE", 220: "TYPE_INSTANCE", 221: "U", 222: "UNHANDLED", 
+    223: "USE", 224: "V", 225: "VALUE", 226: "VARIABLE", 227: "VARIABLES", 
+    228: "VIA", 229: "VIAPATH", 230: "VIEW", 231: "W", 232: "WITH", 233: "WS", 
+    234: "X", 235: "XOR", 236: "Y", 237: "Z"
 }
 Token.registerTokenNamesMap(tokenNamesMap)
 
@@ -318,75 +320,30 @@ class sdl92Lexer(Lexer):
 
         self.delegates = []
 
-        self.dfa10 = self.DFA10(
-            self, 10,
-            eot = self.DFA10_eot,
-            eof = self.DFA10_eof,
-            min = self.DFA10_min,
-            max = self.DFA10_max,
-            accept = self.DFA10_accept,
-            special = self.DFA10_special,
-            transition = self.DFA10_transition
+        self.dfa14 = self.DFA14(
+            self, 14,
+            eot = self.DFA14_eot,
+            eof = self.DFA14_eof,
+            min = self.DFA14_min,
+            max = self.DFA14_max,
+            accept = self.DFA14_accept,
+            special = self.DFA14_special,
+            transition = self.DFA14_transition
             )
 
-        self.dfa17 = self.DFA17(
-            self, 17,
-            eot = self.DFA17_eot,
-            eof = self.DFA17_eof,
-            min = self.DFA17_min,
-            max = self.DFA17_max,
-            accept = self.DFA17_accept,
-            special = self.DFA17_special,
-            transition = self.DFA17_transition
+        self.dfa21 = self.DFA21(
+            self, 21,
+            eot = self.DFA21_eot,
+            eof = self.DFA21_eof,
+            min = self.DFA21_min,
+            max = self.DFA21_max,
+            accept = self.DFA21_accept,
+            special = self.DFA21_special,
+            transition = self.DFA21_transition
             )
 
 
 
-
-
-
-    # $ANTLR start "T__236"
-    def mT__236(self, ):
-        try:
-            _type = T__236
-            _channel = DEFAULT_CHANNEL
-
-            # sdl92.g:7:8: ( '!' )
-            # sdl92.g:7:10: '!'
-            pass 
-            self.match(33)
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-        finally:
-            pass
-
-    # $ANTLR end "T__236"
-
-
-
-    # $ANTLR start "T__237"
-    def mT__237(self, ):
-        try:
-            _type = T__237
-            _channel = DEFAULT_CHANNEL
-
-            # sdl92.g:8:8: ( '(.' )
-            # sdl92.g:8:10: '(.'
-            pass 
-            self.match("(.")
-
-
-
-
-            self._state.type = _type
-            self._state.channel = _channel
-        finally:
-            pass
-
-    # $ANTLR end "T__237"
 
 
 
@@ -396,11 +353,10 @@ class sdl92Lexer(Lexer):
             _type = T__238
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:9:8: ( '*/' )
-            # sdl92.g:9:10: '*/'
+            # sdl92.g:7:8: ( '!' )
+            # sdl92.g:7:10: '!'
             pass 
-            self.match("*/")
-
+            self.match(33)
 
 
 
@@ -419,10 +375,10 @@ class sdl92Lexer(Lexer):
             _type = T__239
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:10:8: ( '-*' )
-            # sdl92.g:10:10: '-*'
+            # sdl92.g:8:8: ( '(.' )
+            # sdl92.g:8:10: '(.'
             pass 
-            self.match("-*")
+            self.match("(.")
 
 
 
@@ -442,10 +398,10 @@ class sdl92Lexer(Lexer):
             _type = T__240
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:11:8: ( '->' )
-            # sdl92.g:11:10: '->'
+            # sdl92.g:9:8: ( '*/' )
+            # sdl92.g:9:10: '*/'
             pass 
-            self.match("->")
+            self.match("*/")
 
 
 
@@ -465,10 +421,10 @@ class sdl92Lexer(Lexer):
             _type = T__241
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:12:8: ( '.)' )
-            # sdl92.g:12:10: '.)'
+            # sdl92.g:10:8: ( '-*' )
+            # sdl92.g:10:10: '-*'
             pass 
-            self.match(".)")
+            self.match("-*")
 
 
 
@@ -488,10 +444,10 @@ class sdl92Lexer(Lexer):
             _type = T__242
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:13:8: ( '/* CIF' )
-            # sdl92.g:13:10: '/* CIF'
+            # sdl92.g:11:8: ( '->' )
+            # sdl92.g:11:10: '->'
             pass 
-            self.match("/* CIF")
+            self.match("->")
 
 
 
@@ -511,6 +467,52 @@ class sdl92Lexer(Lexer):
             _type = T__243
             _channel = DEFAULT_CHANNEL
 
+            # sdl92.g:12:8: ( '.)' )
+            # sdl92.g:12:10: '.)'
+            pass 
+            self.match(".)")
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+        finally:
+            pass
+
+    # $ANTLR end "T__243"
+
+
+
+    # $ANTLR start "T__244"
+    def mT__244(self, ):
+        try:
+            _type = T__244
+            _channel = DEFAULT_CHANNEL
+
+            # sdl92.g:13:8: ( '/* CIF' )
+            # sdl92.g:13:10: '/* CIF'
+            pass 
+            self.match("/* CIF")
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+        finally:
+            pass
+
+    # $ANTLR end "T__244"
+
+
+
+    # $ANTLR start "T__245"
+    def mT__245(self, ):
+        try:
+            _type = T__245
+            _channel = DEFAULT_CHANNEL
+
             # sdl92.g:14:8: ( ':' )
             # sdl92.g:14:10: ':'
             pass 
@@ -523,7 +525,7 @@ class sdl92Lexer(Lexer):
         finally:
             pass
 
-    # $ANTLR end "T__243"
+    # $ANTLR end "T__245"
 
 
 
@@ -5457,7 +5459,7 @@ class sdl92Lexer(Lexer):
                 alt1 = 2
                 LA1_0 = self.input.LA(1)
 
-                if (LA1_0 == 39) :
+                if (LA1_0 in {34, 39}) :
                     alt1 = 1
 
 
@@ -5513,34 +5515,104 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "STR"
     def mSTR(self, ):
         try:
-            # sdl92.g:1685:9: ( '\\'' ( options {greedy=false; } : . )* '\\'' )
-            # sdl92.g:1685:17: '\\'' ( options {greedy=false; } : . )* '\\''
-            pass 
-            self.match(39)
+            # sdl92.g:1687:9: ( '\\'' ( ESC1 |~ ( '\\\\' | '\\'' ) )* '\\'' | '\"' ( ESC2 |~ ( '\\\\' | '\"' ) )* '\"' )
+            alt5 = 2
+            LA5_0 = self.input.LA(1)
 
-            # sdl92.g:1685:22: ( options {greedy=false; } : . )*
-            while True: #loop3
-                alt3 = 2
-                LA3_0 = self.input.LA(1)
+            if (LA5_0 == 39) :
+                alt5 = 1
+            elif (LA5_0 == 34) :
+                alt5 = 2
+            else:
+                nvae = NoViableAltException("", 5, 0, self.input)
 
-                if (LA3_0 == 39) :
-                    alt3 = 2
-                elif ((0 <= LA3_0 <= 38) or (40 <= LA3_0 <= 65535) or LA3_0 in {}) :
-                    alt3 = 1
+                raise nvae
 
 
-                if alt3 == 1:
-                    # sdl92.g:1685:50: .
-                    pass 
-                    self.matchAny()
+            if alt5 == 1:
+                # sdl92.g:1687:17: '\\'' ( ESC1 |~ ( '\\\\' | '\\'' ) )* '\\''
+                pass 
+                self.match(39)
+
+                # sdl92.g:1687:22: ( ESC1 |~ ( '\\\\' | '\\'' ) )*
+                while True: #loop3
+                    alt3 = 3
+                    LA3_0 = self.input.LA(1)
+
+                    if (LA3_0 == 92) :
+                        alt3 = 1
+                    elif ((0 <= LA3_0 <= 38) or (40 <= LA3_0 <= 91) or (93 <= LA3_0 <= 65535) or LA3_0 in {}) :
+                        alt3 = 2
 
 
-                else:
-                    break #loop3
+                    if alt3 == 1:
+                        # sdl92.g:1687:23: ESC1
+                        pass 
+                        self.mESC1()
 
 
-            self.match(39)
 
+                    elif alt3 == 2:
+                        # sdl92.g:1687:30: ~ ( '\\\\' | '\\'' )
+                        pass 
+                        if (0 <= self.input.LA(1) <= 38) or (40 <= self.input.LA(1) <= 91) or (93 <= self.input.LA(1) <= 65535) or self.input.LA(1) in {}:
+                            self.input.consume()
+                        else:
+                            mse = MismatchedSetException(None, self.input)
+                            self.recover(mse)
+                            raise mse
+
+
+
+
+                    else:
+                        break #loop3
+
+
+                self.match(39)
+
+
+            elif alt5 == 2:
+                # sdl92.g:1688:17: '\"' ( ESC2 |~ ( '\\\\' | '\"' ) )* '\"'
+                pass 
+                self.match(34)
+
+                # sdl92.g:1688:21: ( ESC2 |~ ( '\\\\' | '\"' ) )*
+                while True: #loop4
+                    alt4 = 3
+                    LA4_0 = self.input.LA(1)
+
+                    if (LA4_0 == 92) :
+                        alt4 = 1
+                    elif ((0 <= LA4_0 <= 33) or (35 <= LA4_0 <= 91) or (93 <= LA4_0 <= 65535) or LA4_0 in {}) :
+                        alt4 = 2
+
+
+                    if alt4 == 1:
+                        # sdl92.g:1688:22: ESC2
+                        pass 
+                        self.mESC2()
+
+
+
+                    elif alt4 == 2:
+                        # sdl92.g:1688:29: ~ ( '\\\\' | '\"' )
+                        pass 
+                        if (0 <= self.input.LA(1) <= 33) or (35 <= self.input.LA(1) <= 91) or (93 <= self.input.LA(1) <= 65535) or self.input.LA(1) in {}:
+                            self.input.consume()
+                        else:
+                            mse = MismatchedSetException(None, self.input)
+                            self.recover(mse)
+                            raise mse
+
+
+
+
+                    else:
+                        break #loop4
+
+
+                self.match(34)
 
 
 
@@ -5551,51 +5623,143 @@ class sdl92Lexer(Lexer):
 
 
 
+    # $ANTLR start "ESC1"
+    def mESC1(self, ):
+        try:
+            # sdl92.g:1694:9: ( '\\\\' (| '\\'' | '\\\\' ) )
+            # sdl92.g:1694:11: '\\\\' (| '\\'' | '\\\\' )
+            pass 
+            self.match(92)
+
+            # sdl92.g:1695:9: (| '\\'' | '\\\\' )
+            alt6 = 3
+            LA6 = self.input.LA(1)
+            if LA6 in {39}:
+                alt6 = 2
+            elif LA6 in {92}:
+                alt6 = 3
+            else:
+                alt6 = 1
+
+            if alt6 == 1:
+                # sdl92.g:1696:9: 
+                pass 
+
+            elif alt6 == 2:
+                # sdl92.g:1696:11: '\\''
+                pass 
+                self.match(39)
+
+
+            elif alt6 == 3:
+                # sdl92.g:1697:11: '\\\\'
+                pass 
+                self.match(92)
+
+
+
+
+
+
+
+        finally:
+            pass
+
+    # $ANTLR end "ESC1"
+
+
+
+    # $ANTLR start "ESC2"
+    def mESC2(self, ):
+        try:
+            # sdl92.g:1702:9: ( '\\\\' (| '\"' | '\\\\' ) )
+            # sdl92.g:1702:11: '\\\\' (| '\"' | '\\\\' )
+            pass 
+            self.match(92)
+
+            # sdl92.g:1703:9: (| '\"' | '\\\\' )
+            alt7 = 3
+            LA7 = self.input.LA(1)
+            if LA7 in {34}:
+                alt7 = 2
+            elif LA7 in {92}:
+                alt7 = 3
+            else:
+                alt7 = 1
+
+            if alt7 == 1:
+                # sdl92.g:1704:9: 
+                pass 
+
+            elif alt7 == 2:
+                # sdl92.g:1704:11: '\"'
+                pass 
+                self.match(34)
+
+
+            elif alt7 == 3:
+                # sdl92.g:1705:11: '\\\\'
+                pass 
+                self.match(92)
+
+
+
+
+
+
+
+        finally:
+            pass
+
+    # $ANTLR end "ESC2"
+
+
+
     # $ANTLR start "ID"
     def mID(self, ):
         try:
             _type = ID
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1689:9: ( ALPHA ( ALPHA | DIGITS | '_' )* )
-            # sdl92.g:1689:17: ALPHA ( ALPHA | DIGITS | '_' )*
+            # sdl92.g:1709:9: ( ALPHA ( ALPHA | DIGITS | '_' )* )
+            # sdl92.g:1709:17: ALPHA ( ALPHA | DIGITS | '_' )*
             pass 
             self.mALPHA()
 
 
-            # sdl92.g:1689:23: ( ALPHA | DIGITS | '_' )*
-            while True: #loop4
-                alt4 = 4
-                LA4 = self.input.LA(1)
-                if LA4 in {65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122}:
-                    alt4 = 1
-                elif LA4 in {48, 49, 50, 51, 52, 53, 54, 55, 56, 57}:
-                    alt4 = 2
-                elif LA4 in {95}:
-                    alt4 = 3
+            # sdl92.g:1709:23: ( ALPHA | DIGITS | '_' )*
+            while True: #loop8
+                alt8 = 4
+                LA8 = self.input.LA(1)
+                if LA8 in {65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122}:
+                    alt8 = 1
+                elif LA8 in {48, 49, 50, 51, 52, 53, 54, 55, 56, 57}:
+                    alt8 = 2
+                elif LA8 in {95}:
+                    alt8 = 3
 
-                if alt4 == 1:
-                    # sdl92.g:1689:24: ALPHA
+                if alt8 == 1:
+                    # sdl92.g:1709:24: ALPHA
                     pass 
                     self.mALPHA()
 
 
 
-                elif alt4 == 2:
-                    # sdl92.g:1689:32: DIGITS
+                elif alt8 == 2:
+                    # sdl92.g:1709:32: DIGITS
                     pass 
                     self.mDIGITS()
 
 
 
-                elif alt4 == 3:
-                    # sdl92.g:1689:41: '_'
+                elif alt8 == 3:
+                    # sdl92.g:1709:41: '_'
                     pass 
                     self.match(95)
 
 
                 else:
-                    break #loop4
+                    break #loop8
 
 
 
@@ -5612,7 +5776,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "ALPHA"
     def mALPHA(self, ):
         try:
-            # sdl92.g:1696:9: ( ( 'a' .. 'z' ) | ( 'A' .. 'Z' ) )
+            # sdl92.g:1716:9: ( ( 'a' .. 'z' ) | ( 'A' .. 'Z' ) )
             # sdl92.g:
             pass 
             if (65 <= self.input.LA(1) <= 90) or (97 <= self.input.LA(1) <= 122) or self.input.LA(1) in {}:
@@ -5640,28 +5804,28 @@ class sdl92Lexer(Lexer):
             _type = INT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1701:9: ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
-            alt6 = 2
-            LA6_0 = self.input.LA(1)
+            # sdl92.g:1721:9: ( '0' | ( '1' .. '9' ) ( '0' .. '9' )* )
+            alt10 = 2
+            LA10_0 = self.input.LA(1)
 
-            if (LA6_0 == 48) :
-                alt6 = 1
-            elif ((49 <= LA6_0 <= 57) or LA6_0 in {}) :
-                alt6 = 2
+            if (LA10_0 == 48) :
+                alt10 = 1
+            elif ((49 <= LA10_0 <= 57) or LA10_0 in {}) :
+                alt10 = 2
             else:
-                nvae = NoViableAltException("", 6, 0, self.input)
+                nvae = NoViableAltException("", 10, 0, self.input)
 
                 raise nvae
 
 
-            if alt6 == 1:
-                # sdl92.g:1701:18: '0'
+            if alt10 == 1:
+                # sdl92.g:1721:18: '0'
                 pass 
                 self.match(48)
 
 
-            elif alt6 == 2:
-                # sdl92.g:1701:24: ( '1' .. '9' ) ( '0' .. '9' )*
+            elif alt10 == 2:
+                # sdl92.g:1721:24: ( '1' .. '9' ) ( '0' .. '9' )*
                 pass 
                 if (49 <= self.input.LA(1) <= 57) or self.input.LA(1) in {}:
                     self.input.consume()
@@ -5672,16 +5836,16 @@ class sdl92Lexer(Lexer):
 
 
 
-                # sdl92.g:1701:35: ( '0' .. '9' )*
-                while True: #loop5
-                    alt5 = 2
-                    LA5_0 = self.input.LA(1)
+                # sdl92.g:1721:35: ( '0' .. '9' )*
+                while True: #loop9
+                    alt9 = 2
+                    LA9_0 = self.input.LA(1)
 
-                    if ((48 <= LA5_0 <= 57) or LA5_0 in {}) :
-                        alt5 = 1
+                    if ((48 <= LA9_0 <= 57) or LA9_0 in {}) :
+                        alt9 = 1
 
 
-                    if alt5 == 1:
+                    if alt9 == 1:
                         # sdl92.g:
                         pass 
                         if (48 <= self.input.LA(1) <= 57) or self.input.LA(1) in {}:
@@ -5695,7 +5859,7 @@ class sdl92Lexer(Lexer):
 
 
                     else:
-                        break #loop5
+                        break #loop9
 
 
 
@@ -5711,20 +5875,20 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "DIGITS"
     def mDIGITS(self, ):
         try:
-            # sdl92.g:1711:9: ( ( '0' .. '9' )+ )
-            # sdl92.g:1711:17: ( '0' .. '9' )+
+            # sdl92.g:1731:9: ( ( '0' .. '9' )+ )
+            # sdl92.g:1731:17: ( '0' .. '9' )+
             pass 
-            # sdl92.g:1711:17: ( '0' .. '9' )+
-            cnt7 = 0
-            while True: #loop7
-                alt7 = 2
-                LA7_0 = self.input.LA(1)
+            # sdl92.g:1731:17: ( '0' .. '9' )+
+            cnt11 = 0
+            while True: #loop11
+                alt11 = 2
+                LA11_0 = self.input.LA(1)
 
-                if ((48 <= LA7_0 <= 57) or LA7_0 in {}) :
-                    alt7 = 1
+                if ((48 <= LA11_0 <= 57) or LA11_0 in {}) :
+                    alt11 = 1
 
 
-                if alt7 == 1:
+                if alt11 == 1:
                     # sdl92.g:
                     pass 
                     if (48 <= self.input.LA(1) <= 57) or self.input.LA(1) in {}:
@@ -5738,13 +5902,13 @@ class sdl92Lexer(Lexer):
 
 
                 else:
-                    if cnt7 >= 1:
-                        break #loop7
+                    if cnt11 >= 1:
+                        break #loop11
 
-                    eee = EarlyExitException(7, self.input)
+                    eee = EarlyExitException(11, self.input)
                     raise eee
 
-                cnt7 += 1
+                cnt11 += 1
 
 
 
@@ -5763,11 +5927,11 @@ class sdl92Lexer(Lexer):
             _type = FLOAT
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1715:9: ( INT DOT ( DIGITS )? ( Exponent )? | INT )
-            alt10 = 2
-            alt10 = self.dfa10.predict(self.input)
-            if alt10 == 1:
-                # sdl92.g:1715:17: INT DOT ( DIGITS )? ( Exponent )?
+            # sdl92.g:1735:9: ( INT DOT ( DIGITS )? ( Exponent )? | INT )
+            alt14 = 2
+            alt14 = self.dfa14.predict(self.input)
+            if alt14 == 1:
+                # sdl92.g:1735:17: INT DOT ( DIGITS )? ( Exponent )?
                 pass 
                 self.mINT()
 
@@ -5775,14 +5939,14 @@ class sdl92Lexer(Lexer):
                 self.mDOT()
 
 
-                # sdl92.g:1715:25: ( DIGITS )?
-                alt8 = 2
-                LA8_0 = self.input.LA(1)
+                # sdl92.g:1735:25: ( DIGITS )?
+                alt12 = 2
+                LA12_0 = self.input.LA(1)
 
-                if ((48 <= LA8_0 <= 57) or LA8_0 in {}) :
-                    alt8 = 1
-                if alt8 == 1:
-                    # sdl92.g:1715:26: DIGITS
+                if ((48 <= LA12_0 <= 57) or LA12_0 in {}) :
+                    alt12 = 1
+                if alt12 == 1:
+                    # sdl92.g:1735:26: DIGITS
                     pass 
                     self.mDIGITS()
 
@@ -5790,14 +5954,14 @@ class sdl92Lexer(Lexer):
 
 
 
-                # sdl92.g:1715:35: ( Exponent )?
-                alt9 = 2
-                LA9_0 = self.input.LA(1)
+                # sdl92.g:1735:35: ( Exponent )?
+                alt13 = 2
+                LA13_0 = self.input.LA(1)
 
-                if (LA9_0 in {69, 101}) :
-                    alt9 = 1
-                if alt9 == 1:
-                    # sdl92.g:1715:36: Exponent
+                if (LA13_0 in {69, 101}) :
+                    alt13 = 1
+                if alt13 == 1:
+                    # sdl92.g:1735:36: Exponent
                     pass 
                     self.mExponent()
 
@@ -5806,8 +5970,8 @@ class sdl92Lexer(Lexer):
 
 
 
-            elif alt10 == 2:
-                # sdl92.g:1716:17: INT
+            elif alt14 == 2:
+                # sdl92.g:1736:17: INT
                 pass 
                 self.mINT()
 
@@ -5828,20 +5992,20 @@ class sdl92Lexer(Lexer):
             _type = WS
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1721:9: ( ( ' ' | '\\t' | '\\r' | '\\n' )+ )
-            # sdl92.g:1721:17: ( ' ' | '\\t' | '\\r' | '\\n' )+
+            # sdl92.g:1741:9: ( ( ' ' | '\\t' | '\\r' | '\\n' )+ )
+            # sdl92.g:1741:17: ( ' ' | '\\t' | '\\r' | '\\n' )+
             pass 
-            # sdl92.g:1721:17: ( ' ' | '\\t' | '\\r' | '\\n' )+
-            cnt11 = 0
-            while True: #loop11
-                alt11 = 2
-                LA11_0 = self.input.LA(1)
+            # sdl92.g:1741:17: ( ' ' | '\\t' | '\\r' | '\\n' )+
+            cnt15 = 0
+            while True: #loop15
+                alt15 = 2
+                LA15_0 = self.input.LA(1)
 
-                if (LA11_0 in {9, 10, 13, 32}) :
-                    alt11 = 1
+                if (LA15_0 in {9, 10, 13, 32}) :
+                    alt15 = 1
 
 
-                if alt11 == 1:
+                if alt15 == 1:
                     # sdl92.g:
                     pass 
                     if self.input.LA(1) in {9, 10, 13, 32}:
@@ -5855,13 +6019,13 @@ class sdl92Lexer(Lexer):
 
 
                 else:
-                    if cnt11 >= 1:
-                        break #loop11
+                    if cnt15 >= 1:
+                        break #loop15
 
-                    eee = EarlyExitException(11, self.input)
+                    eee = EarlyExitException(15, self.input)
                     raise eee
 
-                cnt11 += 1
+                cnt15 += 1
 
 
             #action start
@@ -5883,8 +6047,8 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "Exponent"
     def mExponent(self, ):
         try:
-            # sdl92.g:1734:9: ( ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+ )
-            # sdl92.g:1734:11: ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+
+            # sdl92.g:1754:9: ( ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+ )
+            # sdl92.g:1754:11: ( 'e' | 'E' ) ( '+' | '-' )? ( '0' .. '9' )+
             pass 
             if self.input.LA(1) in {69, 101}:
                 self.input.consume()
@@ -5895,13 +6059,13 @@ class sdl92Lexer(Lexer):
 
 
 
-            # sdl92.g:1734:21: ( '+' | '-' )?
-            alt12 = 2
-            LA12_0 = self.input.LA(1)
+            # sdl92.g:1754:21: ( '+' | '-' )?
+            alt16 = 2
+            LA16_0 = self.input.LA(1)
 
-            if (LA12_0 in {43, 45}) :
-                alt12 = 1
-            if alt12 == 1:
+            if (LA16_0 in {43, 45}) :
+                alt16 = 1
+            if alt16 == 1:
                 # sdl92.g:
                 pass 
                 if self.input.LA(1) in {43, 45}:
@@ -5916,17 +6080,17 @@ class sdl92Lexer(Lexer):
 
 
 
-            # sdl92.g:1734:32: ( '0' .. '9' )+
-            cnt13 = 0
-            while True: #loop13
-                alt13 = 2
-                LA13_0 = self.input.LA(1)
+            # sdl92.g:1754:32: ( '0' .. '9' )+
+            cnt17 = 0
+            while True: #loop17
+                alt17 = 2
+                LA17_0 = self.input.LA(1)
 
-                if ((48 <= LA13_0 <= 57) or LA13_0 in {}) :
-                    alt13 = 1
+                if ((48 <= LA17_0 <= 57) or LA17_0 in {}) :
+                    alt17 = 1
 
 
-                if alt13 == 1:
+                if alt17 == 1:
                     # sdl92.g:
                     pass 
                     if (48 <= self.input.LA(1) <= 57) or self.input.LA(1) in {}:
@@ -5940,13 +6104,13 @@ class sdl92Lexer(Lexer):
 
 
                 else:
-                    if cnt13 >= 1:
-                        break #loop13
+                    if cnt17 >= 1:
+                        break #loop17
 
-                    eee = EarlyExitException(13, self.input)
+                    eee = EarlyExitException(17, self.input)
                     raise eee
 
-                cnt13 += 1
+                cnt17 += 1
 
 
 
@@ -5965,76 +6129,76 @@ class sdl92Lexer(Lexer):
             _type = COMMENT2
             _channel = DEFAULT_CHANNEL
 
-            # sdl92.g:1738:9: ( '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' ) )
-            # sdl92.g:1738:18: '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' )
+            # sdl92.g:1758:9: ( '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' ) )
+            # sdl92.g:1758:18: '--' ( options {greedy=false; } : . )* ( '--' | ( '\\r' )? '\\n' )
             pass 
             self.match("--")
 
 
-            # sdl92.g:1738:23: ( options {greedy=false; } : . )*
-            while True: #loop14
-                alt14 = 2
-                LA14_0 = self.input.LA(1)
+            # sdl92.g:1758:23: ( options {greedy=false; } : . )*
+            while True: #loop18
+                alt18 = 2
+                LA18_0 = self.input.LA(1)
 
-                if (LA14_0 == 45) :
-                    LA14_1 = self.input.LA(2)
+                if (LA18_0 == 45) :
+                    LA18_1 = self.input.LA(2)
 
-                    if (LA14_1 == 45) :
-                        alt14 = 2
-                    elif ((0 <= LA14_1 <= 44) or (46 <= LA14_1 <= 65535) or LA14_1 in {}) :
-                        alt14 = 1
-
-
-                elif (LA14_0 == 13) :
-                    alt14 = 2
-                elif (LA14_0 == 10) :
-                    alt14 = 2
-                elif ((0 <= LA14_0 <= 9) or (14 <= LA14_0 <= 44) or (46 <= LA14_0 <= 65535) or LA14_0 in {11, 12}) :
-                    alt14 = 1
+                    if (LA18_1 == 45) :
+                        alt18 = 2
+                    elif ((0 <= LA18_1 <= 44) or (46 <= LA18_1 <= 65535) or LA18_1 in {}) :
+                        alt18 = 1
 
 
-                if alt14 == 1:
-                    # sdl92.g:1738:51: .
+                elif (LA18_0 == 13) :
+                    alt18 = 2
+                elif (LA18_0 == 10) :
+                    alt18 = 2
+                elif ((0 <= LA18_0 <= 9) or (14 <= LA18_0 <= 44) or (46 <= LA18_0 <= 65535) or LA18_0 in {11, 12}) :
+                    alt18 = 1
+
+
+                if alt18 == 1:
+                    # sdl92.g:1758:51: .
                     pass 
                     self.matchAny()
 
 
                 else:
-                    break #loop14
+                    break #loop18
 
 
-            # sdl92.g:1738:56: ( '--' | ( '\\r' )? '\\n' )
-            alt16 = 2
-            LA16_0 = self.input.LA(1)
+            # sdl92.g:1758:56: ( '--' | ( '\\r' )? '\\n' )
+            alt20 = 2
+            LA20_0 = self.input.LA(1)
 
-            if (LA16_0 == 45) :
-                alt16 = 1
-            elif (LA16_0 in {10, 13}) :
-                alt16 = 2
+            if (LA20_0 == 45) :
+                alt20 = 1
+            elif (LA20_0 in {10, 13}) :
+                alt20 = 2
             else:
-                nvae = NoViableAltException("", 16, 0, self.input)
+                nvae = NoViableAltException("", 20, 0, self.input)
 
                 raise nvae
 
 
-            if alt16 == 1:
-                # sdl92.g:1738:57: '--'
+            if alt20 == 1:
+                # sdl92.g:1758:57: '--'
                 pass 
                 self.match("--")
 
 
 
-            elif alt16 == 2:
-                # sdl92.g:1738:62: ( '\\r' )? '\\n'
+            elif alt20 == 2:
+                # sdl92.g:1758:62: ( '\\r' )? '\\n'
                 pass 
-                # sdl92.g:1738:62: ( '\\r' )?
-                alt15 = 2
-                LA15_0 = self.input.LA(1)
+                # sdl92.g:1758:62: ( '\\r' )?
+                alt19 = 2
+                LA19_0 = self.input.LA(1)
 
-                if (LA15_0 == 13) :
-                    alt15 = 1
-                if alt15 == 1:
-                    # sdl92.g:1738:62: '\\r'
+                if (LA19_0 == 13) :
+                    alt19 = 1
+                if alt19 == 1:
+                    # sdl92.g:1758:62: '\\r'
                     pass 
                     self.match(13)
 
@@ -6065,7 +6229,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "A"
     def mA(self, ):
         try:
-            # sdl92.g:1744:11: ( ( 'a' | 'A' ) )
+            # sdl92.g:1764:11: ( ( 'a' | 'A' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {65, 97}:
@@ -6090,7 +6254,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "B"
     def mB(self, ):
         try:
-            # sdl92.g:1745:11: ( ( 'b' | 'B' ) )
+            # sdl92.g:1765:11: ( ( 'b' | 'B' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {66, 98}:
@@ -6115,7 +6279,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "C"
     def mC(self, ):
         try:
-            # sdl92.g:1746:11: ( ( 'c' | 'C' ) )
+            # sdl92.g:1766:11: ( ( 'c' | 'C' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {67, 99}:
@@ -6140,7 +6304,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "D"
     def mD(self, ):
         try:
-            # sdl92.g:1747:11: ( ( 'd' | 'D' ) )
+            # sdl92.g:1767:11: ( ( 'd' | 'D' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {68, 100}:
@@ -6165,7 +6329,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "E"
     def mE(self, ):
         try:
-            # sdl92.g:1748:11: ( ( 'e' | 'E' ) )
+            # sdl92.g:1768:11: ( ( 'e' | 'E' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {69, 101}:
@@ -6190,7 +6354,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "F"
     def mF(self, ):
         try:
-            # sdl92.g:1749:11: ( ( 'f' | 'F' ) )
+            # sdl92.g:1769:11: ( ( 'f' | 'F' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {70, 102}:
@@ -6215,7 +6379,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "G"
     def mG(self, ):
         try:
-            # sdl92.g:1750:11: ( ( 'g' | 'G' ) )
+            # sdl92.g:1770:11: ( ( 'g' | 'G' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {71, 103}:
@@ -6240,7 +6404,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "H"
     def mH(self, ):
         try:
-            # sdl92.g:1751:11: ( ( 'h' | 'H' ) )
+            # sdl92.g:1771:11: ( ( 'h' | 'H' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {72, 104}:
@@ -6265,7 +6429,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "I"
     def mI(self, ):
         try:
-            # sdl92.g:1752:11: ( ( 'i' | 'I' ) )
+            # sdl92.g:1772:11: ( ( 'i' | 'I' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {73, 105}:
@@ -6290,7 +6454,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "J"
     def mJ(self, ):
         try:
-            # sdl92.g:1753:11: ( ( 'j' | 'J' ) )
+            # sdl92.g:1773:11: ( ( 'j' | 'J' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {74, 106}:
@@ -6315,7 +6479,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "K"
     def mK(self, ):
         try:
-            # sdl92.g:1754:11: ( ( 'k' | 'K' ) )
+            # sdl92.g:1774:11: ( ( 'k' | 'K' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {75, 107}:
@@ -6340,7 +6504,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "L"
     def mL(self, ):
         try:
-            # sdl92.g:1755:11: ( ( 'l' | 'L' ) )
+            # sdl92.g:1775:11: ( ( 'l' | 'L' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {76, 108}:
@@ -6365,7 +6529,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "M"
     def mM(self, ):
         try:
-            # sdl92.g:1756:11: ( ( 'm' | 'M' ) )
+            # sdl92.g:1776:11: ( ( 'm' | 'M' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {77, 109}:
@@ -6390,7 +6554,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "N"
     def mN(self, ):
         try:
-            # sdl92.g:1757:11: ( ( 'n' | 'N' ) )
+            # sdl92.g:1777:11: ( ( 'n' | 'N' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {78, 110}:
@@ -6415,7 +6579,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "O"
     def mO(self, ):
         try:
-            # sdl92.g:1758:11: ( ( 'o' | 'O' ) )
+            # sdl92.g:1778:11: ( ( 'o' | 'O' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {79, 111}:
@@ -6440,7 +6604,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "P"
     def mP(self, ):
         try:
-            # sdl92.g:1759:11: ( ( 'p' | 'P' ) )
+            # sdl92.g:1779:11: ( ( 'p' | 'P' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {80, 112}:
@@ -6465,7 +6629,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "Q"
     def mQ(self, ):
         try:
-            # sdl92.g:1760:11: ( ( 'q' | 'Q' ) )
+            # sdl92.g:1780:11: ( ( 'q' | 'Q' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {81, 113}:
@@ -6490,7 +6654,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "R"
     def mR(self, ):
         try:
-            # sdl92.g:1761:11: ( ( 'r' | 'R' ) )
+            # sdl92.g:1781:11: ( ( 'r' | 'R' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {82, 114}:
@@ -6515,7 +6679,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "S"
     def mS(self, ):
         try:
-            # sdl92.g:1762:11: ( ( 's' | 'S' ) )
+            # sdl92.g:1782:11: ( ( 's' | 'S' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {83, 115}:
@@ -6540,7 +6704,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "T"
     def mT(self, ):
         try:
-            # sdl92.g:1763:11: ( ( 't' | 'T' ) )
+            # sdl92.g:1783:11: ( ( 't' | 'T' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {84, 116}:
@@ -6565,7 +6729,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "U"
     def mU(self, ):
         try:
-            # sdl92.g:1764:11: ( ( 'u' | 'U' ) )
+            # sdl92.g:1784:11: ( ( 'u' | 'U' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {85, 117}:
@@ -6590,7 +6754,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "V"
     def mV(self, ):
         try:
-            # sdl92.g:1765:11: ( ( 'v' | 'V' ) )
+            # sdl92.g:1785:11: ( ( 'v' | 'V' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {86, 118}:
@@ -6615,7 +6779,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "W"
     def mW(self, ):
         try:
-            # sdl92.g:1766:11: ( ( 'w' | 'W' ) )
+            # sdl92.g:1786:11: ( ( 'w' | 'W' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {87, 119}:
@@ -6640,7 +6804,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "X"
     def mX(self, ):
         try:
-            # sdl92.g:1767:11: ( ( 'x' | 'X' ) )
+            # sdl92.g:1787:11: ( ( 'x' | 'X' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {88, 120}:
@@ -6665,7 +6829,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "Y"
     def mY(self, ):
         try:
-            # sdl92.g:1768:11: ( ( 'y' | 'Y' ) )
+            # sdl92.g:1788:11: ( ( 'y' | 'Y' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {89, 121}:
@@ -6690,7 +6854,7 @@ class sdl92Lexer(Lexer):
     # $ANTLR start "Z"
     def mZ(self, ):
         try:
-            # sdl92.g:1769:11: ( ( 'z' | 'Z' ) )
+            # sdl92.g:1789:11: ( ( 'z' | 'Z' ) )
             # sdl92.g:
             pass 
             if self.input.LA(1) in {90, 122}:
@@ -6713,1025 +6877,1025 @@ class sdl92Lexer(Lexer):
 
 
     def mTokens(self):
-        # sdl92.g:1:8: ( T__236 | T__237 | T__238 | T__239 | T__240 | T__241 | T__242 | T__243 | ASSIG_OP | L_BRACKET | R_BRACKET | L_PAREN | R_PAREN | COMMA | SEMI | DASH | ANY | ASTERISK | DCL | RENAMES | MONITOR | END | KEEP | PARAMNAMES | SPECIFIC | GEODE | HYPERLINK | MKSTRING | ENDTEXT | RETURN | RETURNS | TIMER | PROCESS | TYPE | ENDPROCESS | START | STATE | TEXT | PROCEDURE | ENDPROCEDURE | PROCEDURE_CALL | ENDSTATE | INPUT | PROVIDED | PRIORITY | SAVE | NONE | FOR | ENDFOR | RANGE | NEXTSTATE | ANSWER | COMMENT | LABEL | STOP | IF | THEN | ELSE | FI | CREATE | OUTPUT | CALL | THIS | SET | RESET | ENDALTERNATIVE | ALTERNATIVE | DEFAULT | DECISION | ENDDECISION | EXPORT | EXTERNAL | EXPORTED | REFERENCED | CONNECTION | ENDCONNECTION | FROM | TO | WITH | VIA | ALL | TASK | JOIN | PLUS | DOT | APPEND | IN | OUT | INOUT | AGGREGATION | SUBSTRUCTURE | ENDSUBSTRUCTURE | FPAR | EQ | NEQ | GT | GE | LT | LE | NOT | OR | XOR | AND | IMPLIES | DIV | MOD | REM | TRUE | FALSE | ASNFILENAME | PLUS_INFINITY | MINUS_INFINITY | MANTISSA | EXPONENT | BASE | SYSTEM | ENDSYSTEM | CHANNEL | ENDCHANNEL | USE | SIGNAL | BLOCK | ENDBLOCK | SIGNALROUTE | CONNECT | SYNTYPE | ENDSYNTYPE | NEWTYPE | ENDNEWTYPE | ARRAY | CONSTANTS | STRUCT | SYNONYM | IMPORT | VIEW | ACTIVE | UNHANDLED | ERRORSTATES | IGNORESTATES | SUCCESSSTATES | STRING | ID | INT | FLOAT | WS | COMMENT2 )
-        alt17 = 146
-        alt17 = self.dfa17.predict(self.input)
-        if alt17 == 1:
-            # sdl92.g:1:10: T__236
-            pass 
-            self.mT__236()
-
-
-
-        elif alt17 == 2:
-            # sdl92.g:1:17: T__237
-            pass 
-            self.mT__237()
-
-
-
-        elif alt17 == 3:
-            # sdl92.g:1:24: T__238
+        # sdl92.g:1:8: ( T__238 | T__239 | T__240 | T__241 | T__242 | T__243 | T__244 | T__245 | ASSIG_OP | L_BRACKET | R_BRACKET | L_PAREN | R_PAREN | COMMA | SEMI | DASH | ANY | ASTERISK | DCL | RENAMES | MONITOR | END | KEEP | PARAMNAMES | SPECIFIC | GEODE | HYPERLINK | MKSTRING | ENDTEXT | RETURN | RETURNS | TIMER | PROCESS | TYPE | ENDPROCESS | START | STATE | TEXT | PROCEDURE | ENDPROCEDURE | PROCEDURE_CALL | ENDSTATE | INPUT | PROVIDED | PRIORITY | SAVE | NONE | FOR | ENDFOR | RANGE | NEXTSTATE | ANSWER | COMMENT | LABEL | STOP | IF | THEN | ELSE | FI | CREATE | OUTPUT | CALL | THIS | SET | RESET | ENDALTERNATIVE | ALTERNATIVE | DEFAULT | DECISION | ENDDECISION | EXPORT | EXTERNAL | EXPORTED | REFERENCED | CONNECTION | ENDCONNECTION | FROM | TO | WITH | VIA | ALL | TASK | JOIN | PLUS | DOT | APPEND | IN | OUT | INOUT | AGGREGATION | SUBSTRUCTURE | ENDSUBSTRUCTURE | FPAR | EQ | NEQ | GT | GE | LT | LE | NOT | OR | XOR | AND | IMPLIES | DIV | MOD | REM | TRUE | FALSE | ASNFILENAME | PLUS_INFINITY | MINUS_INFINITY | MANTISSA | EXPONENT | BASE | SYSTEM | ENDSYSTEM | CHANNEL | ENDCHANNEL | USE | SIGNAL | BLOCK | ENDBLOCK | SIGNALROUTE | CONNECT | SYNTYPE | ENDSYNTYPE | NEWTYPE | ENDNEWTYPE | ARRAY | CONSTANTS | STRUCT | SYNONYM | IMPORT | VIEW | ACTIVE | UNHANDLED | ERRORSTATES | IGNORESTATES | SUCCESSSTATES | STRING | ID | INT | FLOAT | WS | COMMENT2 )
+        alt21 = 146
+        alt21 = self.dfa21.predict(self.input)
+        if alt21 == 1:
+            # sdl92.g:1:10: T__238
             pass 
             self.mT__238()
 
 
 
-        elif alt17 == 4:
-            # sdl92.g:1:31: T__239
+        elif alt21 == 2:
+            # sdl92.g:1:17: T__239
             pass 
             self.mT__239()
 
 
 
-        elif alt17 == 5:
-            # sdl92.g:1:38: T__240
+        elif alt21 == 3:
+            # sdl92.g:1:24: T__240
             pass 
             self.mT__240()
 
 
 
-        elif alt17 == 6:
-            # sdl92.g:1:45: T__241
+        elif alt21 == 4:
+            # sdl92.g:1:31: T__241
             pass 
             self.mT__241()
 
 
 
-        elif alt17 == 7:
-            # sdl92.g:1:52: T__242
+        elif alt21 == 5:
+            # sdl92.g:1:38: T__242
             pass 
             self.mT__242()
 
 
 
-        elif alt17 == 8:
-            # sdl92.g:1:59: T__243
+        elif alt21 == 6:
+            # sdl92.g:1:45: T__243
             pass 
             self.mT__243()
 
 
 
-        elif alt17 == 9:
+        elif alt21 == 7:
+            # sdl92.g:1:52: T__244
+            pass 
+            self.mT__244()
+
+
+
+        elif alt21 == 8:
+            # sdl92.g:1:59: T__245
+            pass 
+            self.mT__245()
+
+
+
+        elif alt21 == 9:
             # sdl92.g:1:66: ASSIG_OP
             pass 
             self.mASSIG_OP()
 
 
 
-        elif alt17 == 10:
+        elif alt21 == 10:
             # sdl92.g:1:75: L_BRACKET
             pass 
             self.mL_BRACKET()
 
 
 
-        elif alt17 == 11:
+        elif alt21 == 11:
             # sdl92.g:1:85: R_BRACKET
             pass 
             self.mR_BRACKET()
 
 
 
-        elif alt17 == 12:
+        elif alt21 == 12:
             # sdl92.g:1:95: L_PAREN
             pass 
             self.mL_PAREN()
 
 
 
-        elif alt17 == 13:
+        elif alt21 == 13:
             # sdl92.g:1:103: R_PAREN
             pass 
             self.mR_PAREN()
 
 
 
-        elif alt17 == 14:
+        elif alt21 == 14:
             # sdl92.g:1:111: COMMA
             pass 
             self.mCOMMA()
 
 
 
-        elif alt17 == 15:
+        elif alt21 == 15:
             # sdl92.g:1:117: SEMI
             pass 
             self.mSEMI()
 
 
 
-        elif alt17 == 16:
+        elif alt21 == 16:
             # sdl92.g:1:122: DASH
             pass 
             self.mDASH()
 
 
 
-        elif alt17 == 17:
+        elif alt21 == 17:
             # sdl92.g:1:127: ANY
             pass 
             self.mANY()
 
 
 
-        elif alt17 == 18:
+        elif alt21 == 18:
             # sdl92.g:1:131: ASTERISK
             pass 
             self.mASTERISK()
 
 
 
-        elif alt17 == 19:
+        elif alt21 == 19:
             # sdl92.g:1:140: DCL
             pass 
             self.mDCL()
 
 
 
-        elif alt17 == 20:
+        elif alt21 == 20:
             # sdl92.g:1:144: RENAMES
             pass 
             self.mRENAMES()
 
 
 
-        elif alt17 == 21:
+        elif alt21 == 21:
             # sdl92.g:1:152: MONITOR
             pass 
             self.mMONITOR()
 
 
 
-        elif alt17 == 22:
+        elif alt21 == 22:
             # sdl92.g:1:160: END
             pass 
             self.mEND()
 
 
 
-        elif alt17 == 23:
+        elif alt21 == 23:
             # sdl92.g:1:164: KEEP
             pass 
             self.mKEEP()
 
 
 
-        elif alt17 == 24:
+        elif alt21 == 24:
             # sdl92.g:1:169: PARAMNAMES
             pass 
             self.mPARAMNAMES()
 
 
 
-        elif alt17 == 25:
+        elif alt21 == 25:
             # sdl92.g:1:180: SPECIFIC
             pass 
             self.mSPECIFIC()
 
 
 
-        elif alt17 == 26:
+        elif alt21 == 26:
             # sdl92.g:1:189: GEODE
             pass 
             self.mGEODE()
 
 
 
-        elif alt17 == 27:
+        elif alt21 == 27:
             # sdl92.g:1:195: HYPERLINK
             pass 
             self.mHYPERLINK()
 
 
 
-        elif alt17 == 28:
+        elif alt21 == 28:
             # sdl92.g:1:205: MKSTRING
             pass 
             self.mMKSTRING()
 
 
 
-        elif alt17 == 29:
+        elif alt21 == 29:
             # sdl92.g:1:214: ENDTEXT
             pass 
             self.mENDTEXT()
 
 
 
-        elif alt17 == 30:
+        elif alt21 == 30:
             # sdl92.g:1:222: RETURN
             pass 
             self.mRETURN()
 
 
 
-        elif alt17 == 31:
+        elif alt21 == 31:
             # sdl92.g:1:229: RETURNS
             pass 
             self.mRETURNS()
 
 
 
-        elif alt17 == 32:
+        elif alt21 == 32:
             # sdl92.g:1:237: TIMER
             pass 
             self.mTIMER()
 
 
 
-        elif alt17 == 33:
+        elif alt21 == 33:
             # sdl92.g:1:243: PROCESS
             pass 
             self.mPROCESS()
 
 
 
-        elif alt17 == 34:
+        elif alt21 == 34:
             # sdl92.g:1:251: TYPE
             pass 
             self.mTYPE()
 
 
 
-        elif alt17 == 35:
+        elif alt21 == 35:
             # sdl92.g:1:256: ENDPROCESS
             pass 
             self.mENDPROCESS()
 
 
 
-        elif alt17 == 36:
+        elif alt21 == 36:
             # sdl92.g:1:267: START
             pass 
             self.mSTART()
 
 
 
-        elif alt17 == 37:
+        elif alt21 == 37:
             # sdl92.g:1:273: STATE
             pass 
             self.mSTATE()
 
 
 
-        elif alt17 == 38:
+        elif alt21 == 38:
             # sdl92.g:1:279: TEXT
             pass 
             self.mTEXT()
 
 
 
-        elif alt17 == 39:
+        elif alt21 == 39:
             # sdl92.g:1:284: PROCEDURE
             pass 
             self.mPROCEDURE()
 
 
 
-        elif alt17 == 40:
+        elif alt21 == 40:
             # sdl92.g:1:294: ENDPROCEDURE
             pass 
             self.mENDPROCEDURE()
 
 
 
-        elif alt17 == 41:
+        elif alt21 == 41:
             # sdl92.g:1:307: PROCEDURE_CALL
             pass 
             self.mPROCEDURE_CALL()
 
 
 
-        elif alt17 == 42:
+        elif alt21 == 42:
             # sdl92.g:1:322: ENDSTATE
             pass 
             self.mENDSTATE()
 
 
 
-        elif alt17 == 43:
+        elif alt21 == 43:
             # sdl92.g:1:331: INPUT
             pass 
             self.mINPUT()
 
 
 
-        elif alt17 == 44:
+        elif alt21 == 44:
             # sdl92.g:1:337: PROVIDED
             pass 
             self.mPROVIDED()
 
 
 
-        elif alt17 == 45:
+        elif alt21 == 45:
             # sdl92.g:1:346: PRIORITY
             pass 
             self.mPRIORITY()
 
 
 
-        elif alt17 == 46:
+        elif alt21 == 46:
             # sdl92.g:1:355: SAVE
             pass 
             self.mSAVE()
 
 
 
-        elif alt17 == 47:
+        elif alt21 == 47:
             # sdl92.g:1:360: NONE
             pass 
             self.mNONE()
 
 
 
-        elif alt17 == 48:
+        elif alt21 == 48:
             # sdl92.g:1:365: FOR
             pass 
             self.mFOR()
 
 
 
-        elif alt17 == 49:
+        elif alt21 == 49:
             # sdl92.g:1:369: ENDFOR
             pass 
             self.mENDFOR()
 
 
 
-        elif alt17 == 50:
+        elif alt21 == 50:
             # sdl92.g:1:376: RANGE
             pass 
             self.mRANGE()
 
 
 
-        elif alt17 == 51:
+        elif alt21 == 51:
             # sdl92.g:1:382: NEXTSTATE
             pass 
             self.mNEXTSTATE()
 
 
 
-        elif alt17 == 52:
+        elif alt21 == 52:
             # sdl92.g:1:392: ANSWER
             pass 
             self.mANSWER()
 
 
 
-        elif alt17 == 53:
+        elif alt21 == 53:
             # sdl92.g:1:399: COMMENT
             pass 
             self.mCOMMENT()
 
 
 
-        elif alt17 == 54:
+        elif alt21 == 54:
             # sdl92.g:1:407: LABEL
             pass 
             self.mLABEL()
 
 
 
-        elif alt17 == 55:
+        elif alt21 == 55:
             # sdl92.g:1:413: STOP
             pass 
             self.mSTOP()
 
 
 
-        elif alt17 == 56:
+        elif alt21 == 56:
             # sdl92.g:1:418: IF
             pass 
             self.mIF()
 
 
 
-        elif alt17 == 57:
+        elif alt21 == 57:
             # sdl92.g:1:421: THEN
             pass 
             self.mTHEN()
 
 
 
-        elif alt17 == 58:
+        elif alt21 == 58:
             # sdl92.g:1:426: ELSE
             pass 
             self.mELSE()
 
 
 
-        elif alt17 == 59:
+        elif alt21 == 59:
             # sdl92.g:1:431: FI
             pass 
             self.mFI()
 
 
 
-        elif alt17 == 60:
+        elif alt21 == 60:
             # sdl92.g:1:434: CREATE
             pass 
             self.mCREATE()
 
 
 
-        elif alt17 == 61:
+        elif alt21 == 61:
             # sdl92.g:1:441: OUTPUT
             pass 
             self.mOUTPUT()
 
 
 
-        elif alt17 == 62:
+        elif alt21 == 62:
             # sdl92.g:1:448: CALL
             pass 
             self.mCALL()
 
 
 
-        elif alt17 == 63:
+        elif alt21 == 63:
             # sdl92.g:1:453: THIS
             pass 
             self.mTHIS()
 
 
 
-        elif alt17 == 64:
+        elif alt21 == 64:
             # sdl92.g:1:458: SET
             pass 
             self.mSET()
 
 
 
-        elif alt17 == 65:
+        elif alt21 == 65:
             # sdl92.g:1:462: RESET
             pass 
             self.mRESET()
 
 
 
-        elif alt17 == 66:
+        elif alt21 == 66:
             # sdl92.g:1:468: ENDALTERNATIVE
             pass 
             self.mENDALTERNATIVE()
 
 
 
-        elif alt17 == 67:
+        elif alt21 == 67:
             # sdl92.g:1:483: ALTERNATIVE
             pass 
             self.mALTERNATIVE()
 
 
 
-        elif alt17 == 68:
+        elif alt21 == 68:
             # sdl92.g:1:495: DEFAULT
             pass 
             self.mDEFAULT()
 
 
 
-        elif alt17 == 69:
+        elif alt21 == 69:
             # sdl92.g:1:503: DECISION
             pass 
             self.mDECISION()
 
 
 
-        elif alt17 == 70:
+        elif alt21 == 70:
             # sdl92.g:1:512: ENDDECISION
             pass 
             self.mENDDECISION()
 
 
 
-        elif alt17 == 71:
+        elif alt21 == 71:
             # sdl92.g:1:524: EXPORT
             pass 
             self.mEXPORT()
 
 
 
-        elif alt17 == 72:
+        elif alt21 == 72:
             # sdl92.g:1:531: EXTERNAL
             pass 
             self.mEXTERNAL()
 
 
 
-        elif alt17 == 73:
+        elif alt21 == 73:
             # sdl92.g:1:540: EXPORTED
             pass 
             self.mEXPORTED()
 
 
 
-        elif alt17 == 74:
+        elif alt21 == 74:
             # sdl92.g:1:549: REFERENCED
             pass 
             self.mREFERENCED()
 
 
 
-        elif alt17 == 75:
+        elif alt21 == 75:
             # sdl92.g:1:560: CONNECTION
             pass 
             self.mCONNECTION()
 
 
 
-        elif alt17 == 76:
+        elif alt21 == 76:
             # sdl92.g:1:571: ENDCONNECTION
             pass 
             self.mENDCONNECTION()
 
 
 
-        elif alt17 == 77:
+        elif alt21 == 77:
             # sdl92.g:1:585: FROM
             pass 
             self.mFROM()
 
 
 
-        elif alt17 == 78:
+        elif alt21 == 78:
             # sdl92.g:1:590: TO
             pass 
             self.mTO()
 
 
 
-        elif alt17 == 79:
+        elif alt21 == 79:
             # sdl92.g:1:593: WITH
             pass 
             self.mWITH()
 
 
 
-        elif alt17 == 80:
+        elif alt21 == 80:
             # sdl92.g:1:598: VIA
             pass 
             self.mVIA()
 
 
 
-        elif alt17 == 81:
+        elif alt21 == 81:
             # sdl92.g:1:602: ALL
             pass 
             self.mALL()
 
 
 
-        elif alt17 == 82:
+        elif alt21 == 82:
             # sdl92.g:1:606: TASK
             pass 
             self.mTASK()
 
 
 
-        elif alt17 == 83:
+        elif alt21 == 83:
             # sdl92.g:1:611: JOIN
             pass 
             self.mJOIN()
 
 
 
-        elif alt17 == 84:
+        elif alt21 == 84:
             # sdl92.g:1:616: PLUS
             pass 
             self.mPLUS()
 
 
 
-        elif alt17 == 85:
+        elif alt21 == 85:
             # sdl92.g:1:621: DOT
             pass 
             self.mDOT()
 
 
 
-        elif alt17 == 86:
+        elif alt21 == 86:
             # sdl92.g:1:625: APPEND
             pass 
             self.mAPPEND()
 
 
 
-        elif alt17 == 87:
+        elif alt21 == 87:
             # sdl92.g:1:632: IN
             pass 
             self.mIN()
 
 
 
-        elif alt17 == 88:
+        elif alt21 == 88:
             # sdl92.g:1:635: OUT
             pass 
             self.mOUT()
 
 
 
-        elif alt17 == 89:
+        elif alt21 == 89:
             # sdl92.g:1:639: INOUT
             pass 
             self.mINOUT()
 
 
 
-        elif alt17 == 90:
+        elif alt21 == 90:
             # sdl92.g:1:645: AGGREGATION
             pass 
             self.mAGGREGATION()
 
 
 
-        elif alt17 == 91:
+        elif alt21 == 91:
             # sdl92.g:1:657: SUBSTRUCTURE
             pass 
             self.mSUBSTRUCTURE()
 
 
 
-        elif alt17 == 92:
+        elif alt21 == 92:
             # sdl92.g:1:670: ENDSUBSTRUCTURE
             pass 
             self.mENDSUBSTRUCTURE()
 
 
 
-        elif alt17 == 93:
+        elif alt21 == 93:
             # sdl92.g:1:686: FPAR
             pass 
             self.mFPAR()
 
 
 
-        elif alt17 == 94:
+        elif alt21 == 94:
             # sdl92.g:1:691: EQ
             pass 
             self.mEQ()
 
 
 
-        elif alt17 == 95:
+        elif alt21 == 95:
             # sdl92.g:1:694: NEQ
             pass 
             self.mNEQ()
 
 
 
-        elif alt17 == 96:
+        elif alt21 == 96:
             # sdl92.g:1:698: GT
             pass 
             self.mGT()
 
 
 
-        elif alt17 == 97:
+        elif alt21 == 97:
             # sdl92.g:1:701: GE
             pass 
             self.mGE()
 
 
 
-        elif alt17 == 98:
+        elif alt21 == 98:
             # sdl92.g:1:704: LT
             pass 
             self.mLT()
 
 
 
-        elif alt17 == 99:
+        elif alt21 == 99:
             # sdl92.g:1:707: LE
             pass 
             self.mLE()
 
 
 
-        elif alt17 == 100:
+        elif alt21 == 100:
             # sdl92.g:1:710: NOT
             pass 
             self.mNOT()
 
 
 
-        elif alt17 == 101:
+        elif alt21 == 101:
             # sdl92.g:1:714: OR
             pass 
             self.mOR()
 
 
 
-        elif alt17 == 102:
+        elif alt21 == 102:
             # sdl92.g:1:717: XOR
             pass 
             self.mXOR()
 
 
 
-        elif alt17 == 103:
+        elif alt21 == 103:
             # sdl92.g:1:721: AND
             pass 
             self.mAND()
 
 
 
-        elif alt17 == 104:
+        elif alt21 == 104:
             # sdl92.g:1:725: IMPLIES
             pass 
             self.mIMPLIES()
 
 
 
-        elif alt17 == 105:
+        elif alt21 == 105:
             # sdl92.g:1:733: DIV
             pass 
             self.mDIV()
 
 
 
-        elif alt17 == 106:
+        elif alt21 == 106:
             # sdl92.g:1:737: MOD
             pass 
             self.mMOD()
 
 
 
-        elif alt17 == 107:
+        elif alt21 == 107:
             # sdl92.g:1:741: REM
             pass 
             self.mREM()
 
 
 
-        elif alt17 == 108:
+        elif alt21 == 108:
             # sdl92.g:1:745: TRUE
             pass 
             self.mTRUE()
 
 
 
-        elif alt17 == 109:
+        elif alt21 == 109:
             # sdl92.g:1:750: FALSE
             pass 
             self.mFALSE()
 
 
 
-        elif alt17 == 110:
+        elif alt21 == 110:
             # sdl92.g:1:756: ASNFILENAME
             pass 
             self.mASNFILENAME()
 
 
 
-        elif alt17 == 111:
+        elif alt21 == 111:
             # sdl92.g:1:768: PLUS_INFINITY
             pass 
             self.mPLUS_INFINITY()
 
 
 
-        elif alt17 == 112:
+        elif alt21 == 112:
             # sdl92.g:1:782: MINUS_INFINITY
             pass 
             self.mMINUS_INFINITY()
 
 
 
-        elif alt17 == 113:
+        elif alt21 == 113:
             # sdl92.g:1:797: MANTISSA
             pass 
             self.mMANTISSA()
 
 
 
-        elif alt17 == 114:
+        elif alt21 == 114:
             # sdl92.g:1:806: EXPONENT
             pass 
             self.mEXPONENT()
 
 
 
-        elif alt17 == 115:
+        elif alt21 == 115:
             # sdl92.g:1:815: BASE
             pass 
             self.mBASE()
 
 
 
-        elif alt17 == 116:
+        elif alt21 == 116:
             # sdl92.g:1:820: SYSTEM
             pass 
             self.mSYSTEM()
 
 
 
-        elif alt17 == 117:
+        elif alt21 == 117:
             # sdl92.g:1:827: ENDSYSTEM
             pass 
             self.mENDSYSTEM()
 
 
 
-        elif alt17 == 118:
+        elif alt21 == 118:
             # sdl92.g:1:837: CHANNEL
             pass 
             self.mCHANNEL()
 
 
 
-        elif alt17 == 119:
+        elif alt21 == 119:
             # sdl92.g:1:845: ENDCHANNEL
             pass 
             self.mENDCHANNEL()
 
 
 
-        elif alt17 == 120:
+        elif alt21 == 120:
             # sdl92.g:1:856: USE
             pass 
             self.mUSE()
 
 
 
-        elif alt17 == 121:
+        elif alt21 == 121:
             # sdl92.g:1:860: SIGNAL
             pass 
             self.mSIGNAL()
 
 
 
-        elif alt17 == 122:
+        elif alt21 == 122:
             # sdl92.g:1:867: BLOCK
             pass 
             self.mBLOCK()
 
 
 
-        elif alt17 == 123:
+        elif alt21 == 123:
             # sdl92.g:1:873: ENDBLOCK
             pass 
             self.mENDBLOCK()
 
 
 
-        elif alt17 == 124:
+        elif alt21 == 124:
             # sdl92.g:1:882: SIGNALROUTE
             pass 
             self.mSIGNALROUTE()
 
 
 
-        elif alt17 == 125:
+        elif alt21 == 125:
             # sdl92.g:1:894: CONNECT
             pass 
             self.mCONNECT()
 
 
 
-        elif alt17 == 126:
+        elif alt21 == 126:
             # sdl92.g:1:902: SYNTYPE
             pass 
             self.mSYNTYPE()
 
 
 
-        elif alt17 == 127:
+        elif alt21 == 127:
             # sdl92.g:1:910: ENDSYNTYPE
             pass 
             self.mENDSYNTYPE()
 
 
 
-        elif alt17 == 128:
+        elif alt21 == 128:
             # sdl92.g:1:921: NEWTYPE
             pass 
             self.mNEWTYPE()
 
 
 
-        elif alt17 == 129:
+        elif alt21 == 129:
             # sdl92.g:1:929: ENDNEWTYPE
             pass 
             self.mENDNEWTYPE()
 
 
 
-        elif alt17 == 130:
+        elif alt21 == 130:
             # sdl92.g:1:940: ARRAY
             pass 
             self.mARRAY()
 
 
 
-        elif alt17 == 131:
+        elif alt21 == 131:
             # sdl92.g:1:946: CONSTANTS
             pass 
             self.mCONSTANTS()
 
 
 
-        elif alt17 == 132:
+        elif alt21 == 132:
             # sdl92.g:1:956: STRUCT
             pass 
             self.mSTRUCT()
 
 
 
-        elif alt17 == 133:
+        elif alt21 == 133:
             # sdl92.g:1:963: SYNONYM
             pass 
             self.mSYNONYM()
 
 
 
-        elif alt17 == 134:
+        elif alt21 == 134:
             # sdl92.g:1:971: IMPORT
             pass 
             self.mIMPORT()
 
 
 
-        elif alt17 == 135:
+        elif alt21 == 135:
             # sdl92.g:1:978: VIEW
             pass 
             self.mVIEW()
 
 
 
-        elif alt17 == 136:
+        elif alt21 == 136:
             # sdl92.g:1:983: ACTIVE
             pass 
             self.mACTIVE()
 
 
 
-        elif alt17 == 137:
+        elif alt21 == 137:
             # sdl92.g:1:990: UNHANDLED
             pass 
             self.mUNHANDLED()
 
 
 
-        elif alt17 == 138:
+        elif alt21 == 138:
             # sdl92.g:1:1000: ERRORSTATES
             pass 
             self.mERRORSTATES()
 
 
 
-        elif alt17 == 139:
+        elif alt21 == 139:
             # sdl92.g:1:1012: IGNORESTATES
             pass 
             self.mIGNORESTATES()
 
 
 
-        elif alt17 == 140:
+        elif alt21 == 140:
             # sdl92.g:1:1025: SUCCESSSTATES
             pass 
             self.mSUCCESSSTATES()
 
 
 
-        elif alt17 == 141:
+        elif alt21 == 141:
             # sdl92.g:1:1039: STRING
             pass 
             self.mSTRING()
 
 
 
-        elif alt17 == 142:
+        elif alt21 == 142:
             # sdl92.g:1:1046: ID
             pass 
             self.mID()
 
 
 
-        elif alt17 == 143:
+        elif alt21 == 143:
             # sdl92.g:1:1049: INT
             pass 
             self.mINT()
 
 
 
-        elif alt17 == 144:
+        elif alt21 == 144:
             # sdl92.g:1:1053: FLOAT
             pass 
             self.mFLOAT()
 
 
 
-        elif alt17 == 145:
+        elif alt21 == 145:
             # sdl92.g:1:1059: WS
             pass 
             self.mWS()
 
 
 
-        elif alt17 == 146:
+        elif alt21 == 146:
             # sdl92.g:1:1062: COMMENT2
             pass 
             self.mCOMMENT2()
@@ -7743,34 +7907,34 @@ class sdl92Lexer(Lexer):
 
 
 
-    # lookup tables for DFA #10
+    # lookup tables for DFA #14
 
-    DFA10_eot = DFA.unpack(
+    DFA14_eot = DFA.unpack(
         "\1\uffff\2\3\2\uffff\1\3"
         )
 
-    DFA10_eof = DFA.unpack(
+    DFA14_eof = DFA.unpack(
         "\6\uffff"
         )
 
-    DFA10_min = DFA.unpack(
+    DFA14_min = DFA.unpack(
         "\1\60\2\56\2\uffff\1\56"
         )
 
-    DFA10_max = DFA.unpack(
+    DFA14_max = DFA.unpack(
         "\1\71\1\56\1\71\2\uffff\1\71"
         )
 
-    DFA10_accept = DFA.unpack(
+    DFA14_accept = DFA.unpack(
         "\3\uffff\1\2\1\1\1\uffff"
         )
 
-    DFA10_special = DFA.unpack(
+    DFA14_special = DFA.unpack(
         "\6\uffff"
         )
 
 
-    DFA10_transition = [
+    DFA14_transition = [
         DFA.unpack("\1\1\11\2"),
         DFA.unpack("\1\4"),
         DFA.unpack("\1\4\1\uffff\12\5"),
@@ -7779,15 +7943,15 @@ class sdl92Lexer(Lexer):
         DFA.unpack("\1\4\1\uffff\12\5")
     ]
 
-    # class definition for DFA #10
+    # class definition for DFA #14
 
-    class DFA10(DFA):
+    class DFA14(DFA):
         pass
 
 
-    # lookup tables for DFA #17
+    # lookup tables for DFA #21
 
-    DFA17_eot = DFA.unpack(
+    DFA21_eot = DFA.unpack(
         "\2\uffff\1\56\1\60\1\64\1\66\1\72\1\74\5\uffff\24\51\1\uffff\1\171"
         "\1\173\1\175\3\51\2\uffff\2\u0083\21\uffff\43\51\1\u00b9\2\51\1"
         "\u00bc\1\u00bf\5\51\1\u00c7\11\51\1\u00d2\3\51\6\uffff\5\51\2\uffff"
@@ -7825,11 +7989,11 @@ class sdl92Lexer(Lexer):
         "\1\u02aa\1\uffff\1\51\1\u02ac\3\uffff\1\u02ad\2\uffff"
         )
 
-    DFA17_eof = DFA.unpack(
+    DFA21_eof = DFA.unpack(
         "\u02ae\uffff"
         )
 
-    DFA17_min = DFA.unpack(
+    DFA21_min = DFA.unpack(
         "\1\11\1\uffff\1\56\1\57\1\52\1\51\1\52\1\75\5\uffff\2\103\2\101"
         "\1\114\1\105\2\101\1\105\1\131\1\101\1\106\1\105\3\101\1\122\2\111"
         "\1\117\1\uffff\1\76\2\75\1\117\1\101\1\116\2\uffff\2\56\21\uffff"
@@ -7887,7 +8051,7 @@ class sdl92Lexer(Lexer):
         "\1\60\1\uffff\1\105\1\60\3\uffff\1\60\2\uffff"
         )
 
-    DFA17_max = DFA.unpack(
+    DFA21_max = DFA.unpack(
         "\1\175\1\uffff\1\56\1\57\1\76\1\51\2\75\5\uffff\1\163\2\145\1\157"
         "\1\170\1\145\1\162\1\171\1\145\2\171\1\156\1\157\2\162\1\141\1\165"
         "\2\151\1\157\1\uffff\1\76\2\75\1\157\1\154\1\163\2\uffff\1\56\1"
@@ -7946,7 +8110,7 @@ class sdl92Lexer(Lexer):
         "\145\1\172\3\uffff\1\172\2\uffff"
         )
 
-    DFA17_accept = DFA.unpack(
+    DFA21_accept = DFA.unpack(
         "\1\uffff\1\1\6\uffff\1\12\1\13\1\15\1\16\1\17\24\uffff\1\124\6\uffff"
         "\1\u008d\1\u008e\2\uffff\1\u0091\1\2\1\14\1\3\1\22\1\4\1\5\1\u0092"
         "\1\20\1\6\1\125\1\7\1\126\1\137\1\151\1\11\1\10\73\uffff\1\150\1"
@@ -7974,16 +8138,16 @@ class sdl92Lexer(Lexer):
         "\uffff\1\102\1\134"
         )
 
-    DFA17_special = DFA.unpack(
+    DFA21_special = DFA.unpack(
         "\u02ae\uffff"
         )
 
 
-    DFA17_transition = [
-        DFA.unpack("\2\54\2\uffff\1\54\22\uffff\1\54\1\1\5\uffff\1\50\1\2"
-        "\1\12\1\3\1\41\1\13\1\4\1\5\1\6\1\52\11\53\1\7\1\14\1\44\1\42\1"
-        "\43\2\uffff\1\15\1\46\1\33\1\16\1\21\1\32\1\25\1\26\1\30\1\40\1"
-        "\22\1\34\1\20\1\31\1\35\1\23\1\51\1\17\1\24\1\27\1\47\1\37\1\36"
+    DFA21_transition = [
+        DFA.unpack("\2\54\2\uffff\1\54\22\uffff\1\54\1\1\1\50\4\uffff\1\50"
+        "\1\2\1\12\1\3\1\41\1\13\1\4\1\5\1\6\1\52\11\53\1\7\1\14\1\44\1\42"
+        "\1\43\2\uffff\1\15\1\46\1\33\1\16\1\21\1\32\1\25\1\26\1\30\1\40"
+        "\1\22\1\34\1\20\1\31\1\35\1\23\1\51\1\17\1\24\1\27\1\47\1\37\1\36"
         "\1\45\2\51\6\uffff\1\15\1\46\1\33\1\16\1\21\1\32\1\25\1\26\1\30"
         "\1\40\1\22\1\34\1\20\1\31\1\35\1\23\1\51\1\17\1\24\1\27\1\47\1\37"
         "\1\36\1\45\2\51\1\10\1\uffff\1\11"),
@@ -8719,9 +8883,9 @@ class sdl92Lexer(Lexer):
         DFA.unpack("")
     ]
 
-    # class definition for DFA #17
+    # class definition for DFA #21
 
-    class DFA17(DFA):
+    class DFA21(DFA):
         pass
 
 
