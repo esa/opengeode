@@ -754,7 +754,7 @@ def check_call(name, params, context):
             # if the sort is a subtype, it may not have a -selection suffix
             # and an exception may be raised. FIXME : check "present" operator
             # as the issue is already fixed there
-            return_type = types()[sort.capitalize() + '-selection'].type
+            return_type = types()[sort.title() + '-selection'].type
         else:
             return_type = types()[sort].type
         if return_type.kind != 'EnumeratedType':
@@ -902,7 +902,7 @@ def check_call(name, params, context):
         except AttributeError:
             # Native choice types don't have the kind field here
             pass
-        return types()[sort_name.capitalize() + "-selection"].type
+        return types()[sort_name.title() + "-selection"].type
 
     # choice_to_int: returns an integer corresponding to either the currently
     # selected choice value (e.g. foo in CHOICE { foo INTEGER (..), ... } when

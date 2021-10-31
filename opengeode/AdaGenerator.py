@@ -357,7 +357,7 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     # Establish the list of states (excluding START states) XXX update C backend
     full_statelist = set(chain(aggregates.keys(),
                                (name for name in process.mapping.keys()
-                                    if not name.endswith(u'START'))))
+                                    if not name.endswith('START'))))
     reduced_statelist = {s for s in full_statelist if s not in parallel_states}
 
     if aggregates:
