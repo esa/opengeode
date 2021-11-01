@@ -60,7 +60,7 @@ install: opengeode/icons.py
 	PATH=~/.local/bin:"${PATH}" python3 -m pip install --user --upgrade .
 
 opengeode/icons.py: opengeode.qrc
-	pyside2-rcc $^ -o $@
+	PATH=~/.local/bin:"${PATH}" pyside2-rcc $^ -o $@
 
 full-install: update
 	$(MAKE) dependencies
