@@ -8,7 +8,7 @@ test-parse:
 	@$(MAKE) -s -C tests/testsuite $@
 
 test-ada:
-	@PATH=~/.local/bin:${PATH} $(MAKE) -s -C tests/testsuite $@
+	@PATH=~/.local/bin:"${PATH}" $(MAKE) -s -C tests/testsuite $@
 
 test-llvm:
 	@$(MAKE) -s -C tests/testsuite $@
@@ -58,7 +58,7 @@ dependencies:
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
-	PATH=~/.local/bin:${PATH} python3 -m pip install --user --upgrade .
+	PATH=~/.local/bin:"${PATH}" python3 -m pip install --user --upgrade .
 
 full-install: update
 	$(MAKE) dependencies
@@ -71,7 +71,7 @@ publish:
 
 pytest:
 	pip3 install --user --upgrade pytest-qt
-	PATH=~/.local/bin:${PATH} ; cd tests/pytests ; py.test
+	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; py.test
 
 clean:
 	@$(MAKE) -s -C tests/testsuite $@
