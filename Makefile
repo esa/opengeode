@@ -36,7 +36,6 @@ flake8:
 	        Statechart.py TextInteraction.py > flake8_report
 
 compile-all:
-	@pyside2-rcc opengeode.qrc -o opengeode/icons.py
 	# use antlr3 from Debian's python3-antlr3 package
 	antlr3 -o opengeode sdl92.g
 
@@ -57,8 +56,11 @@ dependencies:
 	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.4.7f/asn1scc-bin-4.2.4.7f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
-install:
+install: opengeode/icons.py
 	PATH=~/.local/bin:"${PATH}" python3 -m pip install --user --upgrade .
+
+opengeode/icons.py: opengeode.qrc
+	pyside2-rcc $^ -o $@
 
 full-install: update
 	$(MAKE) dependencies

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# THIS SCRIPT IS DEPRECATED, IT WAS NOT UPDATED FOR THE CURRENT 
+# VERSION OF OPENGEODE THAT IS BASED ON PYTHON3 AND PYSIDE2
+# IGNORE THIS SCRIPT OR UPDATE IT 
+
 # this script is used to make a windows binary of opengeode
 # on windows, make sure you have python2.7, pyside, and pip installed
 # install antlr runtime this way:  pip install antlr_python_runtime
