@@ -14,7 +14,7 @@
 """
 
 import tempfile
-import uuid
+#import uuid
 import os
 import distutils.spawn as spawn
 import sys
@@ -242,14 +242,23 @@ def asn2dataModel(*files):
     the imported module "name_of_dataview_asn.py"
     From this module it is possible to create native Asn1scc instances of
     ASN.1 data types, and to access to DV.py, which contains constants
-    such as the _PRESENT fields for choice selectors '''
+    such as the _PRESENT fields for choice selectors.
+    In addition the SqlAlchemy interface is also imported '''
     assert len(files) > 0
 
     # 1) Create a temporary directory for the output
-    tempdir = tempfile.mkdtemp()
+    if '-g' in sys.argv:
+        # In debug mode, don't hide the files in /tmp
+        os.makedirs('./debug', exist_ok=True)
+        tempdir='./debug/'
+    else:
+        tempdir = tempfile.mkdtemp()
     sys.path.insert(0, tempdir)
     # Use a unique name for the asn1 concatenated module
-    concat_prefix = str(uuid.uuid4()).replace('-', '_')
+    # concat_prefix = str(uuid.uuid4()).replace('-', '_')
+    # Update MP 19/01/2022 - why use a unique name while
+    # we are already in a random temp folder? 
+    concat_prefix = 'og_dataview'
     concat_path = os.path.join(tempdir, concat_prefix)
 
     # 2) Concat all input files to the output directory
@@ -263,7 +272,7 @@ def asn2dataModel(*files):
     with open(concat_path + '.asn', 'wt') as merged_file:
         merged_file.write(merged.data().decode('utf-8'))
 
-    # 3) Run asn2dataModel
+    # 3) Run asn2dataModel for Python 
     asn2dm_bin = spawn.find_executable('asn2dataModel')
     args = ['-toPython', '-o', tempdir, concat_path + '.asn']
     asn2dm = QProcess()
@@ -282,11 +291,22 @@ def asn2dataModel(*files):
     make.start(make_bin, args)
     waitfor_qprocess(make, 'make -f Makefile.python')
 
+    # 5) Run asn2dataModel for the SQL Alchemy module
+    args = ['-toSqlalchemy', '-o', tempdir, concat_path + '.asn']
+    asn2dm = QProcess()
+    LOG.debug(os.getcwd())
+    LOG.debug(asn2dm_bin + ' ' + ' '.join(args))
+    asn2dm.start(asn2dm_bin, args)
+    waitfor_qprocess(asn2dm, 'DMT tool "asn2dataModel"')
+
     if concat_prefix in ASN2DM.keys():
         # Re-import module if it was already loaded
         asn1mod = ASN2DM[concat_prefix]
+        db = asn1mod.db_model
         importlib.reload(asn1mod)
         importlib.reload(asn1mod.DV)
+        importlib.reload(db)
+        asn1mod.db_model = db
         import Stubs
         importlib.reload(Stubs)
     else:
@@ -295,6 +315,9 @@ def asn2dataModel(*files):
         importlib.reload(asn1mod.DV)
         import Stubs
         importlib.reload(Stubs)
+        # Add the SQL Alchemy module interface
+        import db_model
+        asn1mod.db_model = db_model
         ASN2DM[concat_prefix] = asn1mod
     sys.path.pop(0)
     return asn1mod

@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.19 (01/2022)**
+- Import SQL Alchemy interface when interfacing with DMT
+
 **3.7.18 (10/2021)**
 - Support double quotes and escaped strings
 
