@@ -1863,7 +1863,7 @@ def io_expression(root, context, io_expr=None):
                         else:
                             # A variable shall not be declared for this
                             # implicit parameter, as it is actually pointing
-                            # to the event. 
+                            # to the event.
                             errors.append("A variable declaration with the "
                                     f"same name as parameter '{io_expr['paramName']}' "
                                     "exists and shall be removed or renamed")
@@ -2933,7 +2933,7 @@ def primary(root, context):
 
 
 def variables(root, ta_ast, context, monitor=False):
-    ''' Process declarations of variables (dcl a,b Type := 5) 
+    ''' Process declarations of variables (dcl a,b Type := 5)
         if monitor is True, the result will be placed in the
         "monitors" dictionary of the context, instead of the
         variables. this is for use in the context of observers
@@ -5113,7 +5113,7 @@ def alternative_part(root, parent, context):
         elif child.type == lexer.HYPERLINK:
             ans.hyperlink = child.getChild(0).toString()[1:-1]
         else:
-            warnings.append('Unsupported answer type: ' + 
+            warnings.append('Unsupported answer type: ' +
                             sdl92Parser.tokenNamesMap[child.type])
 
         if child.type in (lexer.CLOSED_RANGE, lexer.CONSTANT,
@@ -6300,7 +6300,7 @@ def parse_pr(files=None, string=None):
     # Post-parsing: additional semantic checks
     # check that all NEXTSTATEs have a correspondingly defined STATE
     # (except the '-' state, which means "stay in the same state' and
-    # the '-*' (history nextstate) that recovers parallel states 
+    # the '-*' (history nextstate) that recovers parallel states
     for process in og_ast.processes:
         for t in process.terminators:
             if t.kind != 'next_state':
@@ -6325,6 +6325,54 @@ def parse_pr(files=None, string=None):
                 ['PROCESS {}'.format(process.processName)]])
 
     return og_ast, warnings, errors
+
+
+def n7s_scl_always(root, parent, context=None):
+    errors, warnings = [], []
+    return root, errors, warnings
+
+
+def n7s_scl_never(root, parent, context=None):
+    errors, warnings = [], []
+    return root, errors, warnings
+
+
+def n7s_scl_eventually(root, parent, context=None):
+    errors, warnings = [], []
+    return root, errors, warnings
+
+
+def n7s_scl_filter_out(root, parent, context=None):
+    errors, warnings = [], []
+    return root, errors, warnings
+
+
+def n7s_scl(root, parent, context=None):
+    expressions, errors, warnings = [], [], []
+    for each in root.getChildren():
+        if each.type == lexer.ALWAYS:
+            expr, err, warn = n7s_scl_always(each, parent, context)
+            expressions.append(expr)
+            errors.append(err)
+            warnings.append(warn)
+        elif each.type == lexer.NEVER:
+            expr, err, warn = n7s_scl_never(each, parent, context)
+            expressions.append(expr)
+            errors.append(err)
+            warnings.append(warn)
+        elif each.type == lexer.EVENTUALLY:
+            expr, err, warn = n7s_scl_eventually(each, parent, context)
+            expressions.append(expr)
+            errors.append(err)
+            warnings.append(warn)
+        elif each.type == lexer.FILTER_OUT:
+            expr, err, warn = n7s_scl_eventually(each, parent, context)
+            expressions.append(expr)
+            errors.append(err)
+            warnings.append(warn)
+    errors = [[e, [0, 0], []] for e in errors]
+    warnings = [[w, [0, 0], []] for w in warnings]
+    return expressions, errors, warnings
 
 
 def parseSingleElement(elem:str='', string:str='', context=None):
@@ -6355,7 +6403,8 @@ def parseSingleElement(elem:str='', string:str='', context=None):
              'signalroute',
              'stop_if',
              'continuous_signal',
-             'composite_state'))
+             'composite_state',
+             'n7s_scl'))
     # Create a dummy context, needed to place context data
     if elem == 'proc_start':
         elem = 'start'
@@ -6457,4 +6506,3 @@ def parser_init(filename=None, string=None):
 
 if __name__ == '__main__':
     print ('This module is not callable')
-
