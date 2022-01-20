@@ -145,6 +145,11 @@ tokens {
         VIAPATH;
         INPUT_EXPRESSION;
         OUTPUT_EXPRESSION;
+        ALWAYS;
+        NEVER;
+        EVENTUALLY;
+        FILTER_OUT;
+        N7S_SCL;
 }
 
 
@@ -478,7 +483,7 @@ synonym_definition_item
 
 
 variables_of_sort
-        :       variable_id (',' variable_id)* sort 
+        :       variable_id (',' variable_id)* sort
                 ((':=' ground_expression) | (RENAMES variable))?
         ->      ^(VARIABLES variable_id+ sort
                   ground_expression? ^(RENAMES variable)?)
@@ -1134,7 +1139,7 @@ postfix_expression
 
 //  input and output expression allow observers (for model checking) to
 //  monitor the sending and receiving of messages with a nice syntax
-//  (e.g. event = output msg (p) from foo) 
+//  (e.g. event = output msg (p) from foo)
 //  the parameter is optional. It dooes not need to be declared as a variable,
 //  as it it implicit.
 input_expression
@@ -1487,6 +1492,42 @@ cif_end_label
         :       cif_decl END LABEL cif_end
         ;
 
+/* OpenGEODE specific: Stop Condition Language rules for TASTE Model Checker.
+*/
+n7s_scl
+        :       (n7s_scl_statement)*
+        ->      ^(N7S_SCL n7s_scl_statement*)
+        ;
+
+n7s_scl_statement
+        :       (n7s_scl_never | n7s_scl_always | n7s_scl_eventually | n7s_scl_filter_out)
+        ;
+
+n7s_scl_never
+        :       (NEVER expression end)
+        ->      ^(NEVER expression)
+        ;
+
+n7s_scl_always
+        :       (ALWAYS expression end)
+        ->      ^(ALWAYS expression)
+        ;
+
+n7s_scl_eventually
+        :       (EVENTUALLY expression end)
+        ->      ^(EVENTUALLY expression)
+        ;
+
+n7s_scl_filter_out
+        :       (FILTER_OUT expression end)
+        ->      ^(FILTER_OUT expression)
+        ;
+
+// Token used by Stop Condition Language for TASTE Model Checker.
+ALWAYS          :       A L W A Y S;
+NEVER           :       N E V E R;
+EVENTUALLY      :       E V E N T U A L L Y;
+FILTER_OUT      :       F I L T E R '_' O U T;
 
 // history nextstate allows to re-enter parallel substates without going
 // through the startup transition.
