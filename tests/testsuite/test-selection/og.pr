@@ -1,0 +1,45 @@
+system og;
+    /* CIF TEXT (159, 221), (290, 200) */
+    use dv comment 'dataview-uniq.asn';
+    
+    signal we;
+    signal dd;
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with dd;
+        from og to env with we;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with dd;
+            from og to env with we;
+        connect c and r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        process og;
+            /* CIF TEXT (57, 58), (290, 140) */
+            -- Test the implicit _selection type for CHOICE 
+            
+            dcl foo MyChoice := a : TRUE;
+            
+            dcl bar Mychoice_selection := a; 
+            
+            
+            
+            /* CIF ENDTEXT */
+            /* CIF START (155, 216), (70, 35) */
+            START;
+                /* CIF decision (140, 271), (99, 50) */
+                decision present(foo);
+                    /* CIF ANSWER (110, 341), (70, 24) */
+                    (a):
+                    /* CIF ANSWER (200, 341), (70, 24) */
+                    (b):
+                enddecision;
+                /* CIF NEXTSTATE (155, 381), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (388, 217), (70, 40) */
+            state wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;

@@ -1,0 +1,9 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+    MyChoice ::= CHOICE {
+        a BOOLEAN,
+        b INTEGER(0..255)
+    }
+
+END
