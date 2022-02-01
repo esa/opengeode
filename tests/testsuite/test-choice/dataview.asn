@@ -34,6 +34,8 @@ Parameters ::= CHOICE {
   four-ty-to MyInt
 }
 
+-- to test To_Enum and To_Selector
+Param-Determinants ::= ENUMERATED { one, two, three, four-ty-to }
 
 
 -- Type below is accepted by ASN.1 compiler but that's wrong

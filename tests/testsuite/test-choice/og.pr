@@ -18,7 +18,7 @@ system og;
         connect c and r;
         /* CIF PROCESS (225, 50), (150, 75) */
         process og;
-            /* CIF TEXT (70, 60), (337, 184) */
+            /* CIF TEXT (70, 60), (337, 232) */
             --  Test choice assignments and access
             
             dcl ch ChoiceWithEmptySeq;
@@ -30,6 +30,9 @@ system og;
             dcl param Parameters := one : 5;
             
             dcl param2 Parameters;
+            
+            dcl det Param_Determinants;
+            dcl sel Parameters_selection;
             /* CIF ENDTEXT */
             /* CIF START (445, 228), (70, 35) */
             START;
@@ -38,7 +41,7 @@ system og;
                 /* CIF task (437, 328), (85, 35) */
                 task eso := {};
                 /* CIF task (427, 378), (106, 35) */
-                task em := ch!b
+                task em := ch.b
                 /* CIF comment (549, 376), (177, 40) */
                 comment 'This is ok, there should
 be no warning raised';
@@ -49,7 +52,24 @@ be no warning raised';
 ch!d!a := TRUE would fail';
                 /* CIF task (309, 488), (341, 35) */
                 task param2 := three : (choice_to_int (param, 10) < 10);
-                /* CIF NEXTSTATE (445, 538), (70, 35) */
+                /* CIF task (405, 543), (149, 35) */
+                task sel := present(param);
+                /* CIF task (333, 598), (293, 35) */
+                task det := To_Enum (sel, Param_Determinants);
+                /* CIF task (364, 653), (231, 35) */
+                task sel := To_Selector (det, Parameters);
+                /* CIF decision (421, 708), (116, 50) */
+                decision present(param);
+                    /* CIF ANSWER (299, 778), (70, 24) */
+                    (one):
+                    /* CIF ANSWER (380, 778), (70, 24) */
+                    (two):
+                    /* CIF ANSWER (461, 778), (70, 24) */
+                    (three):
+                    /* CIF ANSWER (542, 778), (85, 24) */
+                    (four_ty_to):
+                enddecision;
+                /* CIF NEXTSTATE (445, 818), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (758, 233), (70, 35) */
             state wait;
