@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.20 (01/2022)**
+- Fix support of auto-generated -selection type for CHOICE interface
+
 **3.7.19 (01/2022)**
 - Import SQL Alchemy interface when interfacing with DMT
 

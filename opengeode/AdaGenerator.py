@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2021 European Space Agency
+    Copyright (c) 2012-2022 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -425,7 +425,12 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     for var_name, (var_type, def_value) in process.variables.items():
         if var_name in process.aliases.keys():
             continue
-        context_elems.append(f'{var_name.lower()} {type_name(var_type, False)}')
+        sortname = type_name(var_type, False)
+        # If the type is a ends with _selection, i.e. it is an OG-created
+        # CHOICE selector, then prefix the type with the process name
+        if sortname.endswith('_selection'):
+            sortname = f'{process_name}-{sortname}'.title()
+        context_elems.append(f'{var_name.lower()} {sortname}')
 
     asn1_context = (f'\n{process_asn1}-Context ::='' SEQUENCE {\n'
                     + ",\n   ".join(line.replace("_", "-").replace("'", '"') for line in context_elems)
@@ -449,18 +454,25 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                     f'(SIZE ({rangeMin} .. {rangeMax})) OF '
                     f'{refTypeCase.replace("_", "-")}')
         elif sortdef.type.kind == "EnumeratedType":
+            # At the moment, the only user-defined ENUMERATED types that are
+            # supported are the ones generated for the CHOICE selectors
+            # We can therefore safely rename them systematically here,
+            # by using the process name as prefix, to avoid any risk of
+            # duplicate type definition in case it exists in another SDL
+            # process of the system.
+            prefixed_name = f'{process_name}_{sortdef.ChoiceTypeName}_selection '
             keys = []
             for idx, key in enumerate(sortdef.type.EnumValues.keys()):
                 # give an index to the enumerations to align with -selection
                 # types used in choice index
                 keys.append(f'{key}-present({idx+1})')
             asn1_template.append(
-                    f'{sortname.replace("_", "-").capitalize()} ::= ENUMERATED {{' + ", ".join(keys) + '}')
+                    f'{prefixed_name.replace("_", "-").title()} ::= ENUMERATED {{' + ", ".join(keys) + '}')
             # We need to convert from the ASN.1 enumerated to the one we created
             choiceTypeModule = MAPPING_SORT_MODULE[sortdef.ChoiceTypeName].replace('-', '_')
             sortAda = sortname.replace('-', '_')
             fromMod = f'{choiceTypeModule}.{ASN1SCC}{sortAda}'
-            toMod = f'{process_name}_Datamodel.{ASN1SCC}{sortAda}'
+            toMod = f'{process_name}_Datamodel.{ASN1SCC}{process_name}_{sortAda}'
             choice_selections.append(
                     f"function To_{sortAda} (Src : {fromMod}) return {toMod} is ({toMod}'Enum_Val (Src'Enum_Rep));")
 
@@ -2011,19 +2023,20 @@ def _prim_call(prim, **kwargs):
         ada_string += f'({rec_str}.exist.{field} = 1)'
     elif ident in ('to_selector', 'to_enum'):
         variable, target_type = params
-        var_typename = type_name (variable.exprType)
+        var_typename = type_name (variable.exprType, False)
         var_stmts, var_str, var_decl = expression (variable, readonly=1)
         stmts.extend(var_stmts)
         local_decl.extend(var_decl)
         destSort = target_type.value[0]
         sortAda = destSort.replace('-', '_')
         #moduleAda = MAPPING_SORT_MODULE[destSort].replace('-', '_')
-        sort_name = f'asn1Scc{sortAda}'
+        sort_name = f'{PROCESS_NAME}_Datamodel.asn1Scc{PROCESS_NAME}_{sortAda}_selection'
         if ident == 'to_selector':
-            sort_name = f'{PROCESS_NAME}_Datamodel.{sort_name}_selection'
-            ada_string += f"{sort_name}'Val ({var_typename}'Pos ({var_str}))"
+            ada_string += f"{sort_name}'Val (asn1Scc{var_typename}'Pos ({var_str}))"
         elif ident == 'to_enum':
-            ada_string += f"{sort_name}'Val ({PROCESS_NAME}_Datamodel.{var_typename}'Pos ({var_str}))"
+            sort_name_val = f'asn1Scc{sortAda}'
+            sort_name = f'{PROCESS_NAME}_Datamodel.asn1Scc{PROCESS_NAME}_{var_typename}'
+            ada_string += f"{sort_name_val}'Val ({sort_name}'Pos ({var_str}))"
     elif ident == 'val':
         variable, target_type = params
         var_typename = type_name (variable.exprType)
@@ -3004,10 +3017,7 @@ def _choiceitem(choice, **kwargs):
         if curr_choice == search:
             prefix = basic.Children[each].EnumID
             break
-    ada_string = u'(Kind => {kind}, {opt} => {expr})'.format(
-                        kind=prefix,
-                        opt=choice.value['choice'],
-                        expr=choice_str)
+    ada_string = f'(Kind => {prefix}, {choice.value["choice"]} => {choice_str})'
     return stmts, str(ada_string), local_decl
 
 

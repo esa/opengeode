@@ -7,7 +7,7 @@
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2021 Maxime Perrotin & European Space Agency
+    Copyright (c) 2012-2022 Maxime Perrotin & European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.7.19'
+__version__ = '3.7.20'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
