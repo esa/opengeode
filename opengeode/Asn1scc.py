@@ -76,6 +76,9 @@ def parse_asn1(*files, **options):
         This function uses QProcess to launch the ASN.1 compiler because
         the subprocess module from Python has issues on the Windows platform
     '''
+    if '-g' in sys.argv:
+        os.environ["PROJECT_CACHE"] = './debug'
+
     # use basic caching to avoid re-parsing when loading the model
     project_cache = os.getenv ("PROJECT_CACHE")
     if project_cache is not None and not os.path.isdir(project_cache):
