@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.7.20'
+__version__ = '3.7.21'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2018,7 +2018,7 @@ end {pr};'''.format(pr=prj_name,
         # ASN1 template to be filled with "Ada" or "c"
         template_gpr_asn1 = '''project DataView_{lang} is
    for Languages use ("ASN1");
-   for Source_Dirs use ("{source_dir}");
+   for Source_Dirs use ("{source_dir}", "code");
    for Source_Files use ("{firstAsn}");
    for Object_Dir use "code";
 
@@ -2031,6 +2031,7 @@ end {pr};'''.format(pr=prj_name,
 
        for Leading_Required_Switches ("ASN1") use
          ("-{lang}",
+          "-equal",
           "-typePrefix",
           "Asn1Scc"{otherAsn});
    end Compiler;
@@ -2138,18 +2139,8 @@ clean:
             source_dir = "."
             firstAsn1File, otherAsn1Files = "", []
 
-        if ogParser.USER_DEFINED_TYPES:
-            newtypesAsn = '{}_newtypes.asn'.format(prj_name)
-        else:
-            newtypesAsn = ''
-
-        if newtypesAsn:
-            if not firstAsn1File:
-                firstAsn1File = newtypesAsn
-            else:
-                otherAsn1Files.append(newtypesAsn)
-
-        asn1Quotes = ['"{}"'.format(name) for name in otherAsn1Files]
+        asn1Quotes = [f'"{name}"' for name in otherAsn1Files]
+        asn1Quotes.append(f'"{prj_name}_datamodel.asn"')
         otherAsn = ", ".join(asn1Quotes)
 
         pr_data = str('\n'.join(pr_raw))

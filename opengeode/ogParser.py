@@ -16,7 +16,7 @@
     During the build of the AST this library makes a number of semantic
     checks on the SDL input mode.
 
-    Copyright (c) 2012-2021 European Space Agency
+    Copyright (c) 2012-2022 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -1215,21 +1215,22 @@ def check_type_compatibility(primary, type_ref, context):
                 if basic_type.kind == 'OctetStringType':
                     # recipient is an OCTET STRING of some size [minR..maxR]
                     # The length check will depend  on the user string kind:
+                    lenOfInput = len(primary.value[1:-1])
 
                     if primary.exprType.kind == 'OctetStringType':
                         # user entered an hex string ('ABC'H)
                         # => 2 input characters = 1 element of the string
-                        ok = int(minR) <= len(primary.value[1:-1]) <= int(maxR)
+                        ok = int(minR) * 2 <= lenOfInput <= int(maxR) * 2
 
                     elif primary.exprType.kind == 'BitStringType':
                         # user entered a bit string ('011'B)
                         # a padding has been added and it ws converted to hex
                         # (the primary.value is an hex string already)
                         # => length must be compatible with recipient length
-                        ok = int(minR) * 2 <= len(primary.value[1:-1]) <= int(maxR) * 2
+                        ok = int(minR) * 8 <= lenOfInput <= int(maxR) * 8
                     else:
                         # user entered a text => each char is 1 octet
-                        ok = int(minR) <= len(primary.value[1:-1]) <= int(maxR)
+                        ok = int(minR) <= lenOfInput <= int(maxR)
 
                     if ok:
                         return warnings
@@ -2823,7 +2824,9 @@ def primary(root, context):
         elif root.text[-1] in ('H', 'h'):
             prim = ogAST.PrimOctetStringLiteral()
             try:
+                # hexstring is the converted from hex to numbers
                 hexstring = codecs.decode(root.text[1:-2], 'hex')  # -> bytes
+                prim.hexstring = hexstring
                 as_hex = hexstring.hex()   # -> string
                 as_number = int(as_hex, 16)
                 try:

@@ -283,6 +283,8 @@ class PrimOctetStringLiteral(PrimStringLiteral):
     numeric_value : int = -1
     # In case the string contains ASCII characters:
     printable_string : str = '';
+    # set of hex numbers (e.g. 'FF'H means hexstring = b'\xff')
+    hexstring : bytes = b'';
 
 
 class PrimBitStringLiteral(PrimOctetStringLiteral):

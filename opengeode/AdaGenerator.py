@@ -1178,9 +1178,10 @@ package body {process_name}_RI is''']
 
     # If the process has no input, output, procedures, or timers, then Ada
     # will not compile the body - generate a pragma to fix this
-    if not process.timers and not process.procedures \
-            and not process.input_signals and not process.output_signals:
-        ads_template.append('pragma elaborate_body;')
+    # EDIT: removed, there is a with Elaborate_Body at the beginning
+    #if not process.timers and not process.procedures \
+    #        and not process.input_signals and not process.output_signals:
+    #    ads_template.append('pragma elaborate_body;')
 
     # Transform inner labels to floating labels
     Helper.inner_labels_to_floating(process)
@@ -2772,7 +2773,11 @@ def _string_literal(primary, **kwargs):
     # If user put a literal string to fill an Octet string,
     # then convert the string to an array of unsigned_8 integers
     # as expected by the Ada type corresponding to Octet String
-    unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
+    if isinstance(primary, ogAST.PrimOctetStringLiteral):
+        # Hex string used as input
+        unsigned_8 = [str(x) for x in primary.hexstring]
+    else:
+        unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
 
     ada_string = ', '.join(unsigned_8)
     return [], str(ada_string), []
@@ -3531,6 +3536,8 @@ def array_content(prim, values, asnty):
         if isinstance(prim, ogAST.PrimStringLiteral):
             # Quotes are kept in string literals
             length -= 2
+        if isinstance(prim. ogAST.PrimOctetStringLiteral):
+            length=len(prim.hexstring)
         # Reference type can vary -> there is a Length field
         rlen = f", Length => {length}"
     else:
