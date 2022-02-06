@@ -3536,7 +3536,7 @@ def array_content(prim, values, asnty):
         if isinstance(prim, ogAST.PrimStringLiteral):
             # Quotes are kept in string literals
             length -= 2
-        if isinstance(prim. ogAST.PrimOctetStringLiteral):
+        if isinstance(prim, ogAST.PrimOctetStringLiteral):
             length=len(prim.hexstring)
         # Reference type can vary -> there is a Length field
         rlen = f", Length => {length}"
