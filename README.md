@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.22 (02/2022)**
+- Ada backend: optimize code for decision answers and state switch case
+
 **3.7.21 (02/2022)**
 - Fix assignments of octet string literals in Ada backend
 

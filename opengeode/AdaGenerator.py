@@ -885,7 +885,7 @@ package body {process_name}_RI is''']
         taste_template.append(pi_header)
         taste_template.append('begin')
 
-        def execute_transition(state):
+        def execute_transition(state, dest=[]):
             ''' Generate the code that triggers the transition for the current
                 state/input combination '''
             input_def = mapping[signame].get(state)
@@ -916,21 +916,25 @@ package body {process_name}_RI is''']
                 # INPUT. The continuous signals are not processed here
                 if trans and all(each.startswith(trans_st)
                                  for trans_st in trans.possible_states):
-                    taste_template.append(f'p{SEPARATOR}{each}{SEPARATOR}exit;')
+                    dest.append(f'p{SEPARATOR}{each}{SEPARATOR}exit;')
 
             if input_def:
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    taste_template.append(f'{LPREFIX}.{inp} := {param_name};')
+                    dest.append(f'{LPREFIX}.{inp} := {param_name};')
                 # Execute the correponding transition
                 if input_def.transition:
-                    taste_template.append(u'Execute_Transition ({idx});'
-                            .format(idx=input_def.transition_id))
+                    dest.append(f'Execute_Transition ({input_def.transition_id});')
                 else:
-                    taste_template.append('Execute_Transition (CS_Only);')
+                    #taste_template.append('Execute_Transition (CS_Only);')
+                    # removed: CS_Only in "when others" branch
+                    return False
             else:
-                taste_template.append('Execute_Transition (CS_Only);')
+                return False
+                # removed: CS_Only in "when others" branch
+                #taste_template.append('Execute_Transition (CS_Only);')
+            return True
 
         if not instance:
             taste_template.append(f'case {LPREFIX}.state is')
@@ -943,9 +947,11 @@ package body {process_name}_RI is''']
             '''
             if state.endswith('START'):
                 return
-            taste_template.append(f'when {ASN1SCC}{state} =>')
+            #taste_template.append(f'when {ASN1SCC}{state} =>')
+            statecase = [f'when {ASN1SCC}{state} =>']
             input_def = mapping[signame].get(state)
             if state in aggregates.keys():
+                taste_template.extend(statecase)
                 # State aggregation:
                 # - find which substate manages this input
                 # - add a swich case on the corresponding substate
@@ -958,18 +964,19 @@ package body {process_name}_RI is''']
                         for par in sub.mapping.keys():
                             case_state(par)
                         taste_template.append('when others =>')
-                        taste_template.append('null;')
+                        taste_template.append('Execute_Transition (CS_Only);')
                         taste_template.append('end case;')
                         break
                 else:
                     # Input is not managed in the state aggregation
                     if input_def:
                         # check if it is managed one level above
-                        execute_transition(state)
+                        execute_transition(state, taste_template)
                     else:
                         taste_template.append('Execute_Transition (CS_Only);')
             else:
-                execute_transition(state)
+                if execute_transition(state, statecase):
+                    taste_template.extend(statecase)
 
         if not instance:
             for each_state in reduced_statelist:
@@ -3062,13 +3069,15 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
     else:
         question_type = dec.question.exprType
         actual_type = type_name(question_type)
-        basic = find_basic_type(question_type).kind in ('IntegerType',
-                                                        'Integer32Type',
-                                                        'IntegerU8Type',
-                                                        'BooleanType',
-                                                        'RealType',
-                                                        'EnumeratedType',
-                                                        'ChoiceEnumeratedType')
+        question_basic = find_basic_type(question_type).kind
+        basic = question_basic in (
+                'IntegerType',
+                'Integer32Type',
+                'IntegerU8Type',
+                'BooleanType',
+                'RealType',
+                'EnumeratedType',
+                'ChoiceEnumeratedType')
         # for ASN.1 types, declare a local variable
         # to hold the evaluation of the question
         if not basic:
@@ -3084,6 +3093,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         if not basic:
             code.append(f'tmp{dec.tmpVar} := {q_str};')
 
+    previous_ans = ''
     for idx, a in enumerate(dec.answers):
         code.extend(traceability(a))
         if dec.kind == 'any':
@@ -3140,7 +3150,20 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                                              ogAST.PrimOctetStringLiteral)):
                         ans_str = str(constant.numeric_value)
 
-                    exp += f'{sub_sep}({q_str}) {op.operand} {ans_str}'
+                    if actual_type != 'Boolean':
+                        if question_basic.startswith('Integer'):
+                            # cast integers, useful e.g. for octet string elements
+                            exp += f'{sub_sep}({q_str}) {op.operand} {actual_type}({ans_str})'
+                        else:
+                            exp += f'{sub_sep}({q_str}) {op.operand} {ans_str}'
+                    elif ans_str == 'true' and previous_ans != 'false':
+                        exp += f'{sub_sep}({q_str})'
+                    elif ans_str == 'false' and previous_ans != 'true':
+                        exp += f'{sub_sep}not ({q_str})'
+                    else:
+                        exp = 'ELSEONLY'
+                # In case of true/false, avoid repeating the expression
+                previous_ans = ans_str
 
 
             elif ans_kind == 'closed_range':
@@ -3167,7 +3190,11 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
 
             sub_sep = " or "
         if exp:
-            code.append(sep + exp + ' then')
+            if exp == 'ELSEONLY':
+                # Optimization for true/false answers
+                code.append('else')
+            else:
+                code.append(sep + exp + ' then')
             if not branch_to:
                 if a.transition:
                     stmt, tr_decl = generate(a.transition)
