@@ -7,7 +7,7 @@
     This module generates textual SDL code (PR format)
     by parsing the graphical symbols.
 
-    Copyright (c) 2012-2016 European Space Agency
+    Copyright (c) 2012-2022 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -26,6 +26,7 @@ LOG = logging.getLogger(__name__)
 
 __all__ = ['parse_scene', 'generate']
 
+g_useSymbolId = False
 
 class Indent(deque):
     ''' Extension of the deque class to support automatic indenting '''
@@ -36,9 +37,12 @@ class Indent(deque):
         super().append('    ' * Indent.indent + string)
 
 
-def parse_scene(scene, full_model=False):
+def parse_scene(scene, full_model=False, use_symbol_id=False):
     ''' Return the PR string for a complete scene
         Optionally, also generate the SYSTEM structure, with channels, etc. '''
+    global g_useSymbolId
+    # Decide to use the symbol ID rather than the CIF coordinates
+    g_useSymbolId = use_symbol_id
     pr_data = Indent()
     if full_model:
         # Generate a complete SDL system - to have everything in a single file
@@ -131,16 +135,25 @@ def parse_scene(scene, full_model=False):
 
 def cif_coord(name, symbol):
     ''' PR string for the CIF coordinates/size of a symbol '''
-    return u'/* CIF {symb} ({x}, {y}), ({w}, {h}) */'.format(
+    cif1 = '/* CIF {symb} ({x}, {y}), ({w}, {h}) */'.format(
             symb=name,
             x=int(symbol.scenePos().x()), y=int(symbol.scenePos().y()),
             w=int(symbol.boundingRect().width()),
             h=int(symbol.boundingRect().height()))
+    cif2 = '' if not g_useSymbolId else f'\n{cif_symbolid(symbol)}'
+    return cif1+cif2
+
+def cif_symbolid(symbol):
+    ''' CIF string returning the Python's identifier of a symbol, used only
+    when parsing an already rendered diagram. This allows to keep the link
+    between the re-parsed AST and the existing symbols, that is useful when
+    reporting errors '''
+    return f'/* CIF id {id(symbol)} */'
 
 
 def hyperlink(symbol):
     ''' PR string for the optional hyperlink associated to a symbol '''
-    return u"/* CIF Keep Specific Geode HyperLink '{}' */".format(
+    return "/* CIF Keep Specific Geode HyperLink '{}' */".format(
                                                          symbol.text.hyperlink)
 
 
@@ -300,7 +313,7 @@ def _textsymbol(symbol, **kwargs):
     # Align nicely the text (parser will dedent it)
     for line in str(symbol.text).split('\n'):
         result.append(line)
-    result.append(u'/* CIF ENDTEXT */')
+    result.append('/* CIF ENDTEXT */')
     return result
 
 
@@ -312,13 +325,13 @@ def _label(symbol, recursive=True, **kwargs):
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
     if symbol.common_name == 'floating_label':
-        result.append(u'connection {}:'.format(str(symbol)))
+        result.append(f'connection {str(symbol)}:')
         if recursive:
             result.extend(recursive_aligned(symbol))
-        result.append(u'/* CIF End Label */')
-        result.append(u'endconnection;')
+        result.append('/* CIF End Label */')
+        result.append('endconnection;')
     else:
-        result.append(u'{}:'.format(str(symbol)))
+        result.append(f'{str(symbol)}:')
     return result
 
 
@@ -363,7 +376,7 @@ def _state(symbol, recursive=True, nextstate=True, composite=False, cpy=False,
         if exit_points:
             result.append(u'out ({});'.format(','.join(exit_points)))
         Indent.indent += 1
-        result.extend(parse_scene(symbol.nested_scene))
+        result.extend(parse_scene(symbol.nested_scene, use_symbol_id=g_useSymbolId))
         Indent.indent -= 1
         Indent.indent -= 1
         result.append(u'endsubstructure;')
@@ -386,7 +399,7 @@ def _process(symbol, recursive=True, **kwargs):
 
     if recursive and symbol.nested_scene:
         Indent.indent += 1
-        result.extend(parse_scene(symbol.nested_scene))
+        result.extend(parse_scene(symbol.nested_scene, use_symbol_id=g_useSymbolId))
         Indent.indent -= 1
     if ":" not in str(symbol):
         result.append(u'endprocess {}{};'
@@ -402,7 +415,7 @@ def _procedure(symbol, recursive=True, **kwargs):
     result = common('procedure', symbol)
     if recursive and symbol.nested_scene:
         Indent.indent += 1
-        result.extend(parse_scene(symbol.nested_scene))
+        result.extend(parse_scene(symbol.nested_scene, use_symbol_id=g_useSymbolId))
         Indent.indent -= 1
     result.append('endprocedure;')
     return result

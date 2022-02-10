@@ -1701,7 +1701,7 @@ def binary_expression(root, context):
 
 def unary_expression(root, context):
     ''' Unary expression analysis
-    (NOT and NEG, i.e. "not bah" and "-4" or "-foo" '''
+    (NOT and NEG, i.e. "not bar" and "-4" or "-foo" '''
     ExprNode = EXPR_NODE[root.type]
     expr = ExprNode(
         get_input_string(root),
@@ -2427,22 +2427,6 @@ def conditional_expression(root, context):
         msg = 'Conditions in conditional expressions must be of type Boolean'
         errors.append(error(root, msg))
 
-    # this part is wrong, there is no check to be done between "then"
-    # and "else" sides. They are independent and must only be checked against
-    # the left side of the expression in which the ternary appears
-#   try:
-#       expr.left  = then_expr
-#       expr.right = else_expr
-#       # The type of the expression was set to the type of the "then" part,
-#       # but this is not always right, in the case of raw numbers ("then" part
-#       # may be unsigned, while the real expected type is signed)
-#       warnings.extend(fix_expression_types(expr, context))
-#       #expr.exprType = then_expr.exprType
-#   except (AttributeError, TypeError) as err:
-#       #print str(err), expr.inputString
-#       if UNKNOWN_TYPE not in (then_expr.exprType, else_expr.exprType):
-#           errors.append(error(root, str(err)))
-
     expr.value = {
         'if'    : if_expr,
         'then'  : then_expr,
@@ -2453,7 +2437,6 @@ def conditional_expression(root, context):
     # it can only be resolved by from the context
     # But do we care about expr.exprType? What counts is expr.value['then']
     # and expr.value['else']  .exprType...
-    # print traceback.print_stack()
     #print traceback.format_stack (limit=2)
     return expr, errors, warnings
 
@@ -3119,6 +3102,9 @@ def composite_state(root, parent=None, context=None):
             comp.line = child.getLine()
             comp.charPositionInLine = child.getCharPositionInLine()
             comp.statename = child.toString().lower()
+            # Set the path of so that elements inside the state will be
+            # easy to locate for error reporting
+            comp.path = context.path + [f'STATE {comp.statename}']
         elif child.type == lexer.COMMENT:
             comp.comment, _, _ = end(child)
         elif child.type == lexer.IN:
@@ -3132,8 +3118,9 @@ def composite_state(root, parent=None, context=None):
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=comp)
             if textarea.signals:
-                errors.append(['Signals shall not be declared in a state',
-                               [textarea.pos_y, textarea.pos_y], []])
+                msg = "Signals shall not be declared in a state"
+                errors.append([msg, [textarea.pos_y, textarea.pos_y], []])
+                textarea.errors.append(msg)
             errors.extend(err)
             warnings.extend(warn)
             comp.content.textAreas.append(textarea)
@@ -3151,6 +3138,7 @@ def composite_state(root, parent=None, context=None):
             check_duplicate_procedures(comp, new_proc, dupl_errs)
             for err_str in dupl_errs:
                 errors.append([err_str, [new_proc.pos_x, new_proc.pos_y], []])
+                new_proc.errors.append(err_str)
             # Add procedure to the context, to make it visible at scope level
             comp.content.inner_procedures.append(new_proc)
             context.procedures.append(new_proc)
@@ -3175,13 +3163,13 @@ def composite_state(root, parent=None, context=None):
                              [0 , 0],   # No graphical position
                              []])
     if (floatings or starts) and isinstance(comp, ogAST.StateAggregation):
-        errors.append(['State aggregation can only contain composite state(s)',
-                      [0, 0], []])
+        msg = 'State aggregation can only contain composite state(s)'
+        errors.append([msg, [0, 0], []])
+        comp.errors.append(msg)
     for each in inner_composite:
         # Parse inner composite states after the text areas to make sure
         # that all variables are propagated to the the inner scope
-        inner, err, warn = composite_state(each, parent=None,
-                                           context=comp)
+        inner, err, warn = composite_state(each, parent=None, context=comp)
         if isinstance(comp, ogAST.StateAggregation):
             # State aggregation contain only composite states, so we must
             # add empty mapping information since there are no transitions
@@ -3201,11 +3189,13 @@ def composite_state(root, parent=None, context=None):
         elif not comp.content.start:
             comp.content.start = st
         else:
-            errors.append(['Only one unnamed START transition is allowed',
-                           [st.pos_x, st.pos_y], []])
+            msg = 'Only one unnamed START transition is allowed'
+            errors.append([msg, [st.pos_x, st.pos_y], []])
+            st.errors.append(msg)
         if not comp.terminators:
-            errors.append(['Transition is incomplete',
-                           [st.pos_x, st.pos_y], []])
+            msg = 'Transition is incomplete'
+            errors.append([msg, [st.pos_x, st.pos_y], []])
+            st.errors.append(msg)
     for each in floatings:
         lab, err, warn = floating_label(each, parent=None, context=comp)
         errors.extend(err)
@@ -3230,10 +3220,10 @@ def composite_state(root, parent=None, context=None):
             continue
         ns = t.inputString.lower()
         if not ns in [s.lower() for s in comp.mapping.keys()] + ['-', '-*']:
-            errors.append(['In composite state "{}": missing definition '
-                           'of substate "{}"'
-                           .format(comp.statename, ns.upper()),
-                           [t.pos_x or 0, t.pos_y or 0], []])
+            msg = f'In composite state {comp.statename}: missing definition'\
+                    'of substate "{ns.upper()}"'
+            errors.append([msg, [t.pos_x or 0, t.pos_y or 0], []])
+            t.errors.append(msg)
     for each in chain(errors, warnings):
         each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
@@ -3251,10 +3241,14 @@ def procedure_pre(root, parent=None, context=None):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             proc.pos_x, proc.pos_y, proc.width, proc.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            proc.pos_x = symbolid(child)
         elif child.type == lexer.ID:
             proc.line = child.getLine()
             proc.charPositionInLine = child.getCharPositionInLine()
             proc.inputString = child.toString()
+            # Update the path for locating symbol associated to errors
+            proc.path = context.path + [f'PROCEDURE {proc.inputString}']
         elif child.type == lexer.COMMENT:
             # there can be two comments in a procedure declaration
             # keep only one and concatenate strings
@@ -3266,9 +3260,10 @@ def procedure_pre(root, parent=None, context=None):
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=proc)
             if textarea.signals:
-                errors.append([f'In procedure {proc.inputString}:'
-                    ' signals shall not be declared in a procedure',
-                    [textarea.pos_x or 0, textarea.pos_y or 0], []])
+                msg = f'In procedure {proc.inputString}:' \
+                    ' signals shall not be declared in a procedure'
+                errors.append([msg, [textarea.pos_x or 0, textarea.pos_y or 0], []])
+                textarea.errors.append(msg)
             errors.extend(err)
             warnings.extend(warn)
             proc.content.textAreas.append(textarea)
@@ -3278,11 +3273,11 @@ def procedure_pre(root, parent=None, context=None):
             params, err, warn = fpar(child)
             # convert error strings to the proper list
             for each in err:
-                errors.append([f'In procedure signature: {each}',
-                    [0, 0], []])
+                msg = f'In procedure {proc.inputString}: {each}'
+                errors.append([msg, [0, 0], []])
             for each in warn:
-                warnings.append([f'In procedure {proc.inputString}: {each}',
-                    [textarea.pos_x or 0, textarea.pos_y or 0], []])
+                msg = f'In procedure {proc.inputString}: {each}'
+                warnings.append([msg, [0, 0], []])
             proc.fpar = params
         elif child.type == lexer.RETURNS:
             #  Declaration not in a text area...
@@ -3406,6 +3401,7 @@ def procedure_post(proc, content, parent=None, context=None):
             proc.content.inner_procedures.append(new_proc)
             for err_str in dupl_errs:
                 errors.append([err_str, [0, 0], []])
+                new_proc.errors.append(err_str)
         elif child.type == lexer.START:
             # START transition (fills the mapping structure)
             proc.content.start, err, warn = start(child, context=proc)
@@ -3430,9 +3426,9 @@ def procedure_post(proc, content, parent=None, context=None):
     for each in proc.terminators:
         # check that RETURN statements type is correct
         if not proc.return_type and each.return_expr:
-            errors.append(['No return value expected in procedure {}'
-                           .format(proc.inputString),
-                           [0, 0], []])
+            msg = f'No return value expected in procedure {proc.inputString}'
+            errors.append([msg, [0, 0], []])
+            each.errors.append(msg)
         elif proc.return_type and each.return_expr:
             check_expr = ogAST.ExprAssign()
             check_expr.left = ogAST.PrimVariable(debugLine=lineno())
@@ -3441,15 +3437,18 @@ def procedure_post(proc, content, parent=None, context=None):
             try:
                 warns = fix_expression_types(check_expr, context)
                 for warn in warns:
+                    each.warnings.append(warn)
                     warnings.append([warn, [0,0], []])
             except (TypeError, AttributeError) as err:
-                errors.append([f"In procedure {proc.inputString}: {str(err)}",
-                    [0, 0], []])
+                msg = f"In procedure {proc.inputString}: {str(err)}"
+                errors.append([msg,[0, 0], []])
+                each.errors.append(msg)
             # Id of fd_expr may have changed (enumerated, choice)
             each.return_expr = check_expr.right
         elif proc.return_type and each.kind == 'return' and not each.return_expr:
-            errors.append([f'Missing return value in procedure {proc.inputString}',
-                           [0, 0], []])
+            msg = f'Missing return value in procedure {proc.inputString}'
+            errors.append([msg, [0, 0], []])
+            each.errors.append(msg)
         else:
             continue
     for each in chain(errors, warnings):
@@ -3472,6 +3471,8 @@ def floating_label(root, parent, context):
     errors = []
     warnings = []
     lab = ogAST.Floating_label()
+    # Set the location in the model where the label appears
+    lab.path = context.path
     lab_x, lab_y = 0, 0
     # Keep track of the number of terminator statements following the label
     # useful if we want to render graphs from the SDL model
@@ -3485,21 +3486,23 @@ def floating_label(root, parent, context):
             # Get symbol coordinates
             lab.pos_x, lab.pos_y, lab.width, lab.height = cif(child)
             lab_x, lab_y = lab.pos_x, lab.pos_y
+        elif child.type == lexer.SYMBOLID:
+            lab.pos_x = symbolid(child)
         elif child.type == lexer.HYPERLINK:
             lab.hyperlink = child.getChild(0).text[1:-1]
         elif child.type == lexer.TRANSITION:
-            trans, err, warn = transition(
-                                    child, parent=lab, context=context)
+            trans, err, warn = transition(child, parent=lab, context=context)
             errors.extend(err)
             warnings.extend(warn)
             lab.transition = trans
         else:
-            warnings.append(
-                    ['Unsupported construct in floating label: ' +
-                    str(child.type), [lab_x, lab_y], []])
+            msg = f'Unsupported construct in floating label: {str(child.type)}'
+            warnings.append([msg, [lab_x, lab_y], []])
+            lab.warnings.append(msg)
     if not lab.transition:
-        warnings.append(['Floating labels not followed by a transition: ' +
-                        str(lab.inputString), [lab_x, lab_y], []])
+        msg = f'Floating labels not followed by a transition: {str(lab.inputString)}'
+        warnings.append([msg, [lab_x, lab_y], []])
+        lab.warnings.append(msg)
     # At the end of the label parsing, get the the list of terminators that
     # the transition contains by making a diff with the list at context
     # level (we counted the number of terminators before parsing the item)
@@ -3860,10 +3863,13 @@ def text_area(root, parent=None, context=None):
     errors = []
     warnings = []
     ta = ogAST.TextArea()
+    ta.path=context.path
     for child in root.getChildren():
         if child.type == lexer.CIF:
             userTextStartIndex = child.getTokenStopIndex() + 1
             ta.pos_x, ta.pos_y, ta.width, ta.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            ta.pos_x = symbolid(child)
         elif child.type == lexer.TEXTAREA_CONTENT:
             ta.line = child.getLine()
             ta.charPositionInLine = child.getCharPositionInLine()
@@ -3892,14 +3898,18 @@ def text_area(root, parent=None, context=None):
         if type(err) == list:
             err[1] = [ta.pos_x or 0, ta.pos_y or 0]
             clean_errs.append(err)
+            ta.errors.append(err[0])
         else: # string
             clean_errs.append([err, [ta.pos_x or 0, ta.pos_y or 0], []])
+            ta.errors.append(err)
     for warn in warnings:
         if type(warn) == list:
             warn[1] = [ta.pos_x or 0, ta.pos_y or 0]
             clean_warns.append(warn)
+            ta.warnings.append(warn[0])
         else: # string
             clean_warns.append([warn, [ta.pos_x or 0, ta.pos_y or 0], []])
+            ta.warnings.append(warn)
     return ta, clean_errs, clean_warns
 
 
@@ -4013,6 +4023,7 @@ def system_definition(root, parent):
     ''' SYSTEM part - contains blocks, procedures and channels '''
     errors, warnings = [], []
     system = ogAST.System()
+    system.path = []
     # Store the name of the file where the system is defined
     system.filename = node_filename(root)
     system.ast = parent
@@ -4186,6 +4197,7 @@ def process_definition(root, parent=None, context=None):
         check_duplicate_procedures(process, proc, dupl_errs)
         for err_str in dupl_errs:
             errors.append([err_str, [proc.pos_x, proc.pos_y], []])
+            proc.errors.append(err_str)
         # Add it at process level so that it is in the scope
         process.content.inner_procedures.append(proc)
         process.procedures.append(proc)
@@ -4200,9 +4212,12 @@ def process_definition(root, parent=None, context=None):
             process.pos_x, process.pos_y, process.width, process.height =\
                     cif(child)
             proc_x, proc_y = process.pos_x, process.pos_y
+        elif child.type == lexer.SYMBOLID:
+            process.pos_x = symbolid(child)
         elif child.type == lexer.ID:
             # Get process name
             process.processName = child.text
+            process.path = [f'PROCESS {process.processName}']
             try:
                 # Retrieve process interface (PI/RI)
                 asyncI, procedures, err = get_interfaces(parent, child.text)
@@ -4217,26 +4232,28 @@ def process_definition(root, parent=None, context=None):
                 LOG.debug('Discarding process ' + child.text + ' ' + str(exc))
             except TypeError as exc:
                 perr.append(str(exc))
-            perr = [[e, [proc_x, proc_y], []] for e in perr]
+            clean_err = []
+            for e in perr:
+                clean_err.append([e, [proc_x, proc_y], []])
+                process.errors.append(e)
         elif child.type == lexer.TEXTAREA:
             # Text zone where variables and operators are declared
             textarea, err, warn = text_area(child, context=process)
             if textarea.signals:
-                errors.append(['Signals shall not be declared in a process',
-                              [textarea.pos_x, textarea.pos_y], []])
+                msg = 'Signals shall not be declared in a process'
+                errors.append([msg, [textarea.pos_x, textarea.pos_y], []])
+                textarea.errors.append(msg)
             errors.extend(err)
             warnings.extend(warn)
             process.content.textAreas.append(textarea)
         elif child.type == lexer.START:
             # START transition (fills the mapping structure)
-            process.content.start, err, warn = start(
-                    child, context=process)
+            process.content.start, err, warn = start(child, context=process)
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.STATE:
             # STATE - fills up the 'mapping' structure.
-            statedef, err, warn = state(
-                    child, parent=None, context=process)
+            statedef, err, warn = state(child, parent=None, context=process)
             errors.extend(err)
             warnings.extend(warn)
             process.content.states.append(statedef)
@@ -4252,8 +4269,7 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.PROCEDURE:
             continue
         elif child.type == lexer.FLOATING_LABEL:
-            lab, err, warn = floating_label(
-                    child, parent=None, context=process)
+            lab, err, warn = floating_label(child, parent=None, context=process)
             errors.extend(err)
             warnings.extend(warn)
             process.content.floating_labels.append(lab)
@@ -4288,16 +4304,19 @@ def process_definition(root, parent=None, context=None):
     for (alias_name, alias_sort, alias_ast, ta_ast) in process._aliases_ast:
         expr, err, warn = expression(alias_ast, context=process)
         for each in err:
-            errors.append([f"In alias '{alias_name}': {each}",
-                          [ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+            msg =f"In alias '{alias_name}': {each}"
+            errors.append([msg, [ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+            ta_ast.errors.append(msg)
         for each in warn:
-            warnings.append([f"In alias '{alias_name}': {each}",
-                            [ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+            msg =f"In alias '{alias_name}': {each}"
+            warnings.append([msg, [ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+            ta_ast.warnings.append(msg)
         t1 = type_name(alias_sort)
         t2 = type_name(expr.exprType)
         if t1 != t2:
-            errors.append([f"In alias '{alias_name}': type mismatch ({t1} vs {t2})",
-                          [ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+            msg = f"In alias '{alias_name}': type mismatch ({t1} vs {t2})"
+            errors.append([msg,[ta_ast.pos_x or 0, ta_ast.pos_y or 0], []])
+            ta_ast.errors.append(msg)
         else:
             # alias_name is already in lowercase
             process.aliases[alias_name] = (alias_sort, expr)
@@ -4311,16 +4330,18 @@ def process_definition(root, parent=None, context=None):
             # to get the coordinates for error localization
             for ta_ast in process.content.textAreas:
                 if each in ta_ast.observer_states:
-                    errors.append([f"Observer state {each} is not defined",
-                        [ta_ast.pos_x, ta_ast.pos_y], []])
+                    msg = f"Observer state {each} is not defined"
+                    errors.append([msg, [ta_ast.pos_x, ta_ast.pos_y], []])
+                    ta_ast.errors.append(msg)
                     break
 
     if not process.referenced and not process.instance_of_name \
                               and (not process.content.start or
                                    not process.content.start.terminators):
         # detect missing START transition
-        errors.append(['Mandatory START transition is missing in process',
-                      [process.pos_x, process.pos_y], []])
+        msg = f'Mandatory START transition is missing in process {process.processName}'
+        errors.append([msg, [process.pos_x, process.pos_y], []])
+        process.errors.append(msg)
     for each in chain(errors, warnings):
         try:
             each[2].insert(0, 'PROCESS {}'.format(process.processName))
@@ -4335,6 +4356,7 @@ def process_definition(root, parent=None, context=None):
 def continuous_signal(root, parent, context):
     ''' Parse a PROVIDED clause in a continuous signal '''
     i = ogAST.ContinuousSignal()
+    i.path = context.path
     dec = ogAST.Decision()
     ans = ogAST.Answer()
     warnings, errors = [], []
@@ -4362,6 +4384,8 @@ def continuous_signal(root, parent, context):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             i.pos_x, i.pos_y, i.width, i.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            i.pos_x = symbolid(child)
         elif child.type == lexer.INT:
             # Priority
             i.priority = int(child.text)
@@ -4390,6 +4414,10 @@ def continuous_signal(root, parent, context):
     # Report errors in the expression with symbol coordinates
     errors.extend([[e, [i.pos_x or 0, i.pos_y or 0], []] for e in exp_err])
     warnings.extend([[w, [i.pos_x or 0, i.pos_y or 0], []] for w in exp_warn])
+    for e in errors:
+        i.errors.append(e[0])
+    for w in warnings:
+        i.warnings.append(w[0])
     # At the end of the input parsing, get the the list of terminators that
     # follow the input transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the input)
@@ -4401,6 +4429,7 @@ def input_part(root, parent, context):
     ''' Parse an INPUT - set of TASTE provided interfaces '''
     # parent is a State
     i = ogAST.Input()
+    i.path = context.path
     cs = None
     warnings, errors = [], []
     # Keep track of the number of terminator statements follow the input
@@ -4410,6 +4439,8 @@ def input_part(root, parent, context):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             i.pos_x, i.pos_y, i.width, i.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            i.pos_x = symbolid(child)
         elif child.type == lexer.INPUTLIST:
             i.inputString = get_input_string(child)
             i.line = child.getLine()
@@ -4431,6 +4462,7 @@ def input_part(root, parent, context):
                             # renames are used in observers only
                             # create a continuous signal
                             cs = ogAST.ContinuousSignal()
+                            cs.path = context.path
                             dec = ogAST.Decision()
                             ans = ogAST.Answer()
                             # inp_sig['renames'] is the AST entry
@@ -4529,6 +4561,10 @@ def input_part(root, parent, context):
             errors = [[e, [i.pos_x or 0, i.pos_y or 0], []] for e in errors]
             warnings = [[w, [i.pos_x or 0, i.pos_y or 0], []]
                          for w in warnings]
+            for e in errors:
+                i.errors.append(e[0])
+            for w in warnings:
+                i.warnings.append(w[0])
         elif child.type == lexer.ASTERISK:
             # Asterisk means: all inputs not processed explicitely
             # Here we do not set the input list - it is set after
@@ -4585,6 +4621,7 @@ def state(root, parent, context):
     '''
     errors, warnings, sterr, stwarn = [], [], [], []
     state_def = ogAST.State()
+    state_def.path = context.path
     asterisk_state = False
     asterisk_input = None
     st_x, st_y = 0, 0
@@ -4595,6 +4632,8 @@ def state(root, parent, context):
             (state_def.pos_x, state_def.pos_y,
             state_def.width, state_def.height) = cif(child)
             st_x, st_y = state_def.pos_x, state_def.pos_y
+        elif child.type == lexer.SYMBOLID:
+            state_def.pos_x = symbolid(child)
         elif child.type == lexer.ID:
             # a single ID is only for state instances
             state_def.inputString = get_input_string(child)
@@ -4752,8 +4791,10 @@ def state(root, parent, context):
                 state_def.composite = each
     for each in sterr:
         errors.append([each, [st_x, st_y], []])
+        state_def.errors.append(each)
     for each in stwarn:
         warnings.append([each, [st_x, st_y], []])
+        state_def.warnings.append(each)
     return state_def, errors, warnings
 
 
@@ -4762,6 +4803,7 @@ def connect_part(root, parent, context):
         Very similar to INPUT '''
     errors, warnings = [], []
     conn = ogAST.Connect()
+    conn.path = context.path
     try:
         statename = parent.statelist[0].lower()
     except AttributeError:
@@ -4783,6 +4825,8 @@ def connect_part(root, parent, context):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             conn.pos_x, conn.pos_y, conn.width, conn.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            conn.pos_x = symbolid(child)
         elif child.type == lexer.ID:
             id_token.append(child)
             conn.connect_list.append(child.toString().lower())
@@ -4818,18 +4862,17 @@ def connect_part(root, parent, context):
                                         id_token[-1].getTokenStopIndex())
     for exitp in conn.connect_list:
         if exitp != '' and not exitp in nested.state_exitpoints:
-            errors.append([u'Exit point {ep} not defined in state {st}'
-                          .format(ep=exitp, st=statename),
-                          [conn.pos_x or 0, conn.pos_y or 0], []])
+            msg = f'Exit point {exitp} not defined in state {statename}'
+            errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
+            conn.errors.append(msg)
         def check_terminators(comp):
             terminators = [term for term in comp.terminators
                            if term.kind == 'return'
                            and term.inputString.lower() == exitp]
             if not terminators:
-                errors.append([u'No {rs} return statement in nested state {st}'
-                              .format(rs=exitp or u'default (unnamed)',
-                                      st=comp.statename.lower()),
-                              [conn.pos_x or 0, conn.pos_y or 0], []])
+                msg = f'No {exitp} return statement in nested state {comp.statename.lower()}'
+                errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
+                conn.errors.append(msg)
             return terminators
 
         if not isinstance(nested, ogAST.StateAggregation):
@@ -4870,6 +4913,10 @@ def cif(root):
             neg = False
     return result
 
+def symbolid(root):
+    ''' Return the symbol ID, allowing to retrieve a symbol already present
+    on the scene after re-parsing the model for semantic checks '''
+    return root.getChild(0).toString()
 
 def start(root, parent=None, context=None):
     ''' Parse the START transition '''
@@ -4881,6 +4928,7 @@ def start(root, parent=None, context=None):
         s = ogAST.CompositeState_start()
     else:
         s = ogAST.Start()
+    s.path = context.path
     # Keep track of the number of terminator statements following the start
     # useful if we want to render graphs from the SDL model
     terminators = len(context.terminators)
@@ -4888,6 +4936,8 @@ def start(root, parent=None, context=None):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             s.pos_x, s.pos_y, s.width, s.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            s.pos_x = symbolid(child)
         elif child.type == lexer.ID:
             # in nested states, START can be followed by the entry point name
             s.inputString = child.toString().lower() + '_START'
@@ -4922,6 +4972,8 @@ def end(root, parent=None, context=None):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             c.pos_x, c.pos_y, c.width, c.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            c.pos_x = symbolid(child)
         elif child.type == lexer.STRING:
             c.inputString = child.toString()[1:-1]
         elif child.type == lexer.HYPERLINK:
@@ -4934,6 +4986,7 @@ def procedure_call(root: antlr3.tree.CommonTree,
                   context: ogAST.Process):
     ''' Parse a PROCEDURE CALL '''
     out_ast = ogAST.ProcedureCall()
+    out_ast.path = context.path
     _, err, warn = output(root, parent, out_ast, context)
     # Check if the procedure exists, and assign an exprType to
     # the procedure call in case it has a Return statement
@@ -5022,11 +5075,14 @@ def output(root, parent, out_ast=None, context=None):
     errors = []
     warnings = []
     out_ast = out_ast or ogAST.Output()  # syntax checker passes no ast
+    out_ast.path = context.path
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
             out_ast.pos_x, out_ast.pos_y, out_ast.width, out_ast.height = \
                     cif(child)
+        elif child.type == lexer.SYMBOLID:
+            out_ast.pos_x = symbolid(child)
         elif child.type == lexer.OUTPUT_BODY:
             out_ast.inputString = get_input_string(child)
             out_ast.line = child.getLine()
@@ -5048,6 +5104,10 @@ def output(root, parent, out_ast=None, context=None):
                 for e in errors]
     warnings = [[w, [out_ast.pos_x or 0, out_ast.pos_y or 0], []]
                 for w in warnings]
+    for e in errors:
+        out_ast.errors.append(e[0])
+    for w in warnings:
+        out_ast.warnings.append(w[0])
     return out_ast, errors, warnings
 
 
@@ -5056,6 +5116,7 @@ def alternative_part(root, parent, context):
     errors = []
     warnings = []
     ans = ogAST.Answer()
+    ans.path = context.path
     startIndex, stopIndex = None, None
     if root.type == lexer.ELSE:
         # used when copy-pasting
@@ -5077,6 +5138,8 @@ def alternative_part(root, parent, context):
         if child.type == lexer.CIF:
             # Get symbol coordinates
             ans.pos_x, ans.pos_y, ans.width, ans.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            ans.pos_x = symbolid(child)
         elif child.type == lexer.CLOSED_RANGE:
             # ans.kinds.append('closed_range')
             cl0, err0, warn0 = expression(child.getChild(0), context)
@@ -5129,6 +5192,10 @@ def alternative_part(root, parent, context):
             x, y = (ans.pos_x or 0, ans.pos_y or 0)
             errors = [[e, [x, y], []] for e in errors]
             warnings = [[w, [x, y], []] for w in warnings]
+            for e in errors:
+                ans.errors.append(e[0])
+            for w in warnings:
+                ans.warnings.append(w[0])
     return ans, errors, warnings
 
 
@@ -5136,6 +5203,7 @@ def decision(root, parent, context):
     ''' Parse a DECISION '''
     errors, warnings, qerr, qwarn = [], [], [], []
     dec = ogAST.Decision()
+    dec.path = context.path
     dec.tmpVar = tmp()
     has_else = False
     dec_x, dec_y = 0, 0
@@ -5146,6 +5214,8 @@ def decision(root, parent, context):
             # Get symbol coordinates
             dec.pos_x, dec.pos_y, dec.width, dec.height = cif(child)
             dec_x, dec_y = dec.pos_x, dec.pos_y
+        elif child.type == lexer.SYMBOLID:
+            dec.pos_x = symbolid(child)
         elif child.type == lexer.QUESTION:
             dec.kind = 'question'
             dec.question, qerr, qwarn = expression(child.getChild(0), context)
@@ -5160,8 +5230,9 @@ def decision(root, parent, context):
             dec.line = child.getLine()
             dec.charPositionInLine = child.getCharPositionInLine()
         elif child.type == lexer.ANY:
-            warnings.append(['Use of "ANY" introduces non-determinism ',
-                            [dec.pos_x, dec.pos_y], []])
+            msg = 'Use of "ANY" introduces non-determinism'
+            warnings.append([msg, [dec.pos_x, dec.pos_y], []])
+            dec.warnings.append(msg)
             dec.kind = 'any'
             need_random_generator = True
             dec.inputString = get_input_string(child)
@@ -5179,10 +5250,13 @@ def decision(root, parent, context):
             dec.answers.append(ans)
         elif child.type == lexer.ELSE:
             ans = ogAST.Answer()
+            ans.path = context.path
             ans.inputString = child.toString()
             for c in child.getChildren():
                 if c.type == lexer.CIF:
                     ans.pos_x, ans.pos_y, ans.width, ans.height = cif(c)
+                elif c.type == lexer.SYMBOLID:
+                    ans.pos_x = symbolid(c)
                 elif c.type == lexer.TRANSITION:
                     ans.transition, err, warn = transition(
                                             c, parent=ans, context=context)
@@ -5194,8 +5268,9 @@ def decision(root, parent, context):
             dec.answers.append(ans)
             has_else = True
         else:
-            warnings.append(['Unsupported DECISION child type: ' +
-                str(child.type), [dec.pos_x, dec.pos_y], []])
+            msg = f'Unsupported DECISION child type: {str(child.type)}'
+            warnings.append([msg, [dec.pos_x, dec.pos_y], []])
+            dec.warnings.append(msg)
     if need_random_generator:
         # If there are N answers, code generators will need a random
         # number from 0 to N.
@@ -5226,6 +5301,8 @@ def decision(root, parent, context):
                 try:
                     answarn = fix_expression_types(expr, context)
                     answarn = [[w, [ans_x, ans_y], []] for w in answarn]
+                    for w in answarn:
+                        ans.warnings.append(w[0])
                     warnings.extend(answarn)
                     if dec.question.exprType == UNKNOWN_TYPE:
                         dec.question = expr.left
@@ -5313,34 +5390,32 @@ def decision(root, parent, context):
                             covered_ranges[ans].append((qmin, val_a - delta))
                             covered_ranges[ans].append((val_a + delta, qmax))
                         else:
-                            warnings.append(['Condition is always true: {} /= {}'
-                                            .format(dec.inputString,
-                                                    ans.inputString),
-                                            [ans_x, ans_y], []])
+                            msg = f'Condition is always true: {dec.inputString} /= {ans.inputString}'
+                            warnings.append([msg, [ans_x, ans_y], []])
+                            ans.warnings.append(msg)
                     else:
-                        warnings.append(['Unsupported range expression',
-                                         [ans_x, ans_y], []])
+                        msg = 'Unsupported range expression'
+                        warnings.append([msg, [ans_x, ans_y], []])
+                        ans.warnings.append(msg)
                     if not reachable:
-                            warnings.append(['Decision "{}": '
-                                            'Unreachable branch "{}"'
-                                            .format(dec.inputString,
-                                                    ans.inputString),
-                                            [ans_x, ans_y], []])
+                        msg = f'Decision "{dec.inputString}": Unreachable branch "{ans.inputString}"'
+                        warnings.append([msg, [ans_x, ans_y], []])
+                        ans.warnings.append(msg)
                 except (AttributeError, TypeError) as err:
                     LOG.debug('ogParser:\n' + str(traceback.format_exc()))
-                    errors.append(['Type mismatch: '
-                        'question (' + expr.left.inputString + ', type= ' +
-                        type_name(expr.left.exprType) + '), answer (' +
-                        expr.right.inputString + ', type= ' +
-                        type_name(expr.right.exprType) + ') ' + str(err),
-                        [ans_x, ans_y], []])
+                    msg = f'Type mismatch: question ({expr.left.inputString}, type={type_name(expr.left.exprType)}'\
+                          f'), answer ({expr.right.inputString}, type={type_name(expr.right.exprType)}) {str(err)}'
+                    errors.append([msg, [ans_x, ans_y], []])
+                    ans.errors.append(msg)
                 except Warning as warn:
-                    warnings.append(['Type mismatch: ' + str(warn), [ans_x, ans_y],
-                                    []])
+                    msg = 'Type mismatch: ' + str(warn)
+                    warnings.append([msg, [ans_x, ans_y], []])
+                    ans.warnings.append(msg)
             elif ans_kind == 'closed_range':
                 if not is_numeric(dec.question.exprType):
-                    errors.append(['Closed range are only for numerical types',
-                                  [ans_x, ans_y], []])
+                    msg = 'Closed range are only for numerical types'
+                    errors.append([msg, [ans_x, ans_y], []])
+                    ans.errors.append(msg)
                     continue
                 closedRange = ans_content
                 for ast_type, idx in zip((ogAST.ExprGe, ogAST.ExprLe), (0, 1)):
@@ -5356,12 +5431,14 @@ def decision(root, parent, context):
                         element['content'][idx] = expr.right
                         closedRange = element['content']
                     except (AttributeError, TypeError) as err:
-                        errors.append(['Type mismatch in decision: '
+                        msg = ('Type mismatch in decision: '
                             'question (' + expr.left.inputString + ', type= ' +
                             type_name(expr.left.exprType) + '), answer (' +
                             expr.right.inputString + ', type= ' +
-                            type_name(expr.right.exprType) + ') ' + str(err),
-                            [ans_x, ans_y], []])
+                            type_name(expr.right.exprType) + ') ' + str(err))
+                        errors.append([msg, [ans_x, ans_y], []])
+                        ans.errors.append(msg)
+
                 q_basic = find_basic_type(dec.question.exprType)
                 if not q_basic.kind.startswith(('Integer', 'Real')):
                     continue
@@ -5390,10 +5467,9 @@ def decision(root, parent, context):
                                             dec=dec.inputString))
                 if (a0_val < qmin and a1_val < qmin) or (a0_val > qmax and
                                                          a1_val > qmax):
-                    warnings.append(['Decision "{dec}": Unreachable branch {l}:{h}'
-                                    .format(dec=dec.inputString,
-                                            l=a0_val, h=a1_val),
-                                    [ans_x, ans_y], []])
+                    msg = f'Decision "{dec.inputString}": Unreachable branch {a0_val}:{a1_val}'
+                    warnings.append([msg, [ans_x, ans_y], []])
+                    ans.warnings.append(msg)
                 covered_ranges[ans].append((float(a0_basic.Min),
                                             float(a1_basic.Max)))
     # Check the following
@@ -5495,6 +5571,10 @@ def decision(root, parent, context):
                                   '", "'.join(set(enumerants) - set(answers))))
     qerr = [[e, [dec_x, dec_y], []] for e in qerr]
     qwarn = [[w, [dec_x, dec_y], []] for w in qwarn]
+    for e in qerr:
+        dec.errors.append(e[0])
+    for w in qwarn:
+        dec.warnings.append(w[0])
     errors.extend(qerr)
     warnings.extend(qwarn)
     return dec, errors, warnings
@@ -5568,12 +5648,15 @@ def terminator_statement(root, parent, context):
     errors = []
     warnings = []
     t = ogAST.Terminator()
+    t.path = context.path
     t.context = context
     for term in root.getChildren():
         if term.type == lexer.CIF:
             t.pos_x, t.pos_y, t.width, t.height = cif(term)
+        elif term.type == lexer.SYMBOLID:
+            t.pos_x = symbolid(term)
         elif term.type == lexer.LABEL:
-            lab, err, warn = label(term, parent=parent)
+            lab, err, warn = label(term, parent=parent, context=context)
             errors.extend(err)
             warnings.extend(warn)
             t.label = lab
@@ -5625,6 +5708,10 @@ def terminator_statement(root, parent, context):
     # Report errors with symbol coordinates
     errors = [[e, [t.pos_x or 0, t.pos_y or 0], []] for e in errors]
     warnings = [[w, [t.pos_x or 0, t.pos_y or 0], []] for w in warnings]
+    for e in errors:
+        t.errors.append(e[0])
+    for w in warnings:
+        t.warnings.append(w[0])
     return t, errors, warnings
 
 
@@ -5633,6 +5720,7 @@ def transition(root, parent, context):
     errors = []
     warnings = []
     trans = ogAST.Transition()
+    trans.path = context.path
     # Used to list terminators in this transition
     terminators = {'trans': len(context.terminators)}
     #terminators = len(context.terminators)
@@ -5645,17 +5733,18 @@ def transition(root, parent, context):
             # a TASK to assign the result to a variable
             if proc_call.exprType is not None:
                 call_name = proc_call.output[0]['outputName']
-                err.append([f"A procedure with a return type must be called"
+                msg = (f"A procedure with a return type must be called"
                     f" from a TASK symbol (syntax: ret := call {call_name}"
-                    " (params))",
-                            [proc_call.pos_x or 0, proc_call.pos_y or 0], []])
+                    " (params))")
+                err.append([msg, [proc_call.pos_x or 0, proc_call.pos_y or 0], []])
+                proc_call.errors.append(msg)
             errors.extend(err)
             warnings.extend(warn)
             trans.actions.append(proc_call)
             parent = proc_call
         elif child.type == lexer.LABEL:
             term_count       = len(context.terminators)
-            lab, err, warn   = label(child, parent=parent)
+            lab, err, warn   = label(child, parent=parent, context=context)
             terminators[lab] = term_count
             errors.extend(err)
             warnings.extend(warn)
@@ -5663,8 +5752,7 @@ def transition(root, parent, context):
             parent = lab
             context.labels.append(lab)
         elif child.type == lexer.TASK:
-            tas, err, warn = task(
-                            child, parent=parent, context=context)
+            tas, err, warn = task(child, parent=parent, context=context)
             errors.extend(err)
             warnings.extend(warn)
             trans.actions.append(tas)
@@ -5680,6 +5768,7 @@ def transition(root, parent, context):
             parent = t
         elif child.type == lexer.OUTPUT:
             out_ast = ogAST.Output()
+            out_ast.path = context.path
             _, err, warn = output(child,
                                parent=parent,
                                out_ast=out_ast,
@@ -5942,6 +6031,7 @@ def task_body(root, context):
         if child.type == lexer.ASSIGN:
             if not body:
                 body = ogAST.TaskAssign()
+                body.path = context.path
             assig, err, warn = assign(child, context)
             errors.extend(err)
             warnings.extend(warn)
@@ -5949,10 +6039,12 @@ def task_body(root, context):
         elif child.type == lexer.INFORMAL_TEXT:
             if not body:
                 body = ogAST.TaskInformalText()
+                body.path = context.path
             body.elems.append(child.getChild(0).toString()[1:-1])
         elif child.type == lexer.FOR:
             if not body:
                 body = ogAST.TaskForLoop()
+                body.path = context.path
             forloop, err, warn = for_loop(child, context)
             errors.extend(err)
             warnings.extend(warn)
@@ -5963,6 +6055,7 @@ def task_body(root, context):
             warnings.append('Unsupported task child: {}'.format(child.type))
     if not body:
         body = ogAST.TaskAssign()
+        body.path = context.path
     return body, errors, warnings
 
 
@@ -5977,6 +6070,10 @@ def task(root, parent=None, context=None):
             # Get symbol coordinates
             pos_x, pos_y, width, height = cif(child)
             coord = True
+        elif child.type == lexer.SYMBOLID:
+            coord = True
+            pos_x = symbolid(child)
+            pos_y, width, height = 0, 0, 0
         elif child.type == lexer.TASK_BODY:
             body, task_err, task_warn = task_body(child, context)
             body.inputString = get_input_string(child)
@@ -6005,6 +6102,11 @@ def task(root, parent=None, context=None):
     else:
         warnings.append(['TASK missing content', [pos_x or 0, pos_y or 0], []])
         body = ogAST.TaskAssign()
+        body.path = context.path
+    for e in errors:
+        body.errors.append(e[0])
+    for w in warnings:
+        body.warnings.append(w[0])
     return body, errors, warnings
 
 
@@ -6013,10 +6115,13 @@ def label(root, parent, context=None):
     errors = []
     warnings = []
     lab = ogAST.Label()
+    lab.path = context.path
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
             lab.pos_x, lab.pos_y, lab.width, lab.height = cif(child)
+        elif child.type == lexer.SYMBOLID:
+            lab.pos_x = symbolid(child)
         elif child.type == lexer.ID:
             lab.inputString = get_input_string(child)
             lab.line = child.getLine()
@@ -6030,6 +6135,10 @@ def label(root, parent, context=None):
     # Report errors with symbol coordinates
     errors = [[e, [lab.pos_x or 0, lab.pos_y or 0], []] for e in errors]
     warnings = [[w, [lab.pos_x or 0, lab.pos_y or 0], []] for w in warnings]
+    for e in errors:
+        lab.errors.append(e[0])
+    for w in warnings:
+        lab.warnings.append(w[0])
     return lab, errors, warnings
 
 
@@ -6311,9 +6420,9 @@ def parse_pr(files=None, string=None):
             ns = t.instance_of or t.inputString.lower()
             if not ns in [s.lower() for s in process.mapping.keys()] + ['-', '-*']:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
-                errors.append(['State definition missing: ' + ns.upper(),
-                              [t_x, t_y],
-                              ['PROCESS {}'.format(process.processName)]])
+                msg = 'State definition missing: ' + ns.upper()
+                errors.append([msg,[t_x, t_y], ['PROCESS {}'.format(process.processName)]])
+                process.errors.append(msg)
         # TODO: do the same with JOIN/LABEL
 
         # Check that all floating state instances (foo:bar) have a correspoding
@@ -6326,7 +6435,6 @@ def parse_pr(files=None, string=None):
             errors.append([f'Nested state definition missing : {missing}',
                 [0, 0],
                 ['PROCESS {}'.format(process.processName)]])
-
     return og_ast, warnings, errors
 
 
@@ -6417,6 +6525,7 @@ def parseSingleElement(elem:str='', string:str='', context=None):
         context = ogAST.CompositeState()
     else:
         context = context or ogAST.Process()
+    context.path = ['PROCESS og']  # Set a dummy context for syntax check
     LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
 
     # some syntax errors are only displayed on screen by ANTLR and never

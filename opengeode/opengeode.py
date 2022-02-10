@@ -20,6 +20,7 @@ import os
 import argparse
 import logging
 import traceback
+import ctypes
 import re
 import code
 import pprint
@@ -141,7 +142,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.7.22'
+__version__ = '3.7.23'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -232,6 +233,8 @@ def log_errors(window, errors, warnings, clearfirst=True):
             window.addItem(item)
     if not errors and not warnings and window:
         window.addItem('No errors, no warnings!')
+    if window:
+        window.addItem("Error checking complete")
 
 
 class Vi_bar(QLineEdit, object):
@@ -603,6 +606,16 @@ class SDL_Scene(QGraphicsScene):
                 # Render top-level items and their children:
                 for each in Renderer.render(content, dest_scene):
                     G_SYMBOLS.add(each)
+
+                # find errors in the scene
+                for s in dest_scene.visible_symb:
+                    try:
+                        if s.ast.errors or s.ast.warnings:
+                            # Keep track of all symbols containing errors,
+                            # they are processesd in "find_symbols_and_update_errors"
+                            G_ERRORS.append(s)
+                    except Exception as e:
+                        print("Ooops", str(e))
                 # Refreshing the scene may result in resizing some symbols
                 dest_scene.refresh()
                 # Once everything is rendered, adjust position of each
@@ -677,10 +690,8 @@ class SDL_Scene(QGraphicsScene):
             # Make sure all composite states are initially up to date
             # (Needed for the symbol shape to have dashed lines)
             for each in dest_scene.states:
-                if str(each).lower() in \
-                        dest_scene.composite_states.keys():
-                    each.nested_scene = dest_scene.composite_states[
-                                                         str(each).lower()]
+                if str(each).lower() in dest_scene.composite_states.keys():
+                    each.nested_scene = dest_scene.composite_states[str(each).lower()]
 
             # Readonly user flag
             if dest_scene.context == 'process' and dest_scene.readonly:
@@ -2326,27 +2337,38 @@ clean:
         if scene.context not in ('process', 'state', 'procedure', 'block'):
             # check can only be done on SDL diagrams
             return "Non-SDL"
+        # Set use_symbol_id to True so that  we save the id (pointer) of the
+        # already-rendered symbols. In errors they will be stored as x-coord
         pr_raw = Pr.parse_scene(scene, full_model=True
-                                       if not self.readonly_pr else False)
+                                       if not self.readonly_pr else False,
+                                       use_symbol_id=True)
         pr_data = str('\n'.join(pr_raw))
         try:
             if pr_data:
+                LOG.info("Calling the PR Parser")
                 ast, warnings, errors = ogParser.parse_pr(
                         files=self.readonly_pr,
                         string=pr_data)
+                LOG.info("Calling the PR Parser: DONE")
                 scene.semantic_errors = True if errors else False
                 log_errors(self.messages_window, errors, warnings,
                            clearfirst=False)
-                self.find_symbols_and_update_errors()
+                LOG.info("Updating errors")
+                self.find_symbols_and_update_errors(use_id=True)
+                LOG.info("Updating errors: DONE")
                 self.update_asn1_dock.emit(ast)
+                LOG.info("Semantic Check: COMPLETE")
                 return "Done"
+            else:
+                return "Incomplete check"
         except Exception as err:
+            LOG.error("something went wrong with the semantic checks")
             self.messages_window.addItem("Opengeode bug, PLEASE REPORT: "
                     + str(err))
             LOG.debug(str(traceback.format_exc()))
         return "Syntax Errors"
 
-    def find_symbols_and_update_errors(self):
+    def find_symbols_and_update_errors(self, use_id=False):
         ''' Update the list of errors with the actual symbol location
         error list entries contain Qt Data including path and graphical
         coordinates. Based on this, retrieve the actual symbol. Once
@@ -2354,9 +2376,19 @@ clean:
         line in the list) to highlight the correct symbol even if it has
         moved.
         This function is called after each call of log_errors()
+        if use_id=True it means that the model check was done while the
+        symbols have already been rendered. In the case the x coordinate
+        is set with the id of the existing symbol. This allows to associate
+        it properly with the error without having to rely on x/y coordinates
+        to locate the symbol (which takes a big amount of time on large models)
         '''
         messages : QListWidget = self.messages_window
         current_scene = self.scene().path
+        # We will remove from the list of errors all those that point
+        # to a symbol coordinates, and we will replace them with the
+        # errors stored directly in the symbols. This is much faster
+        # than looking everywhere to find the symbols by following the path.
+        toBeRemoved = []
         for idx in range(messages.count()):
             line : QListWidgetItem = messages.item(idx)
             coord = line.data(Qt.UserRole)
@@ -2366,23 +2398,67 @@ clean:
                 # the second test could be true in case there is no CIF data
                 pass
             else:
-                # Find the scene containing the symbol
-                scene = self.scene()
-                if not self.go_to_scene_path(path):
-                    continue
-                pos = QPoint(*coord)
-                symbol = self.scene().symbol_near(pos=pos, dist=1)
-                if symbol is not None:
+                # error contains coordinates -> remove it unless it is an id
+                if not use_id:
+                    toBeRemoved.append(line)
+                else:
+                    symbol_id = int(coord[0])
+                    err = line.text()
+                    kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
+                    #LOG.info(f"id : {symbol_id} {line.text()}")
+                    # Retrieve the symbol from its id, put it in G_ERRORS
+                    # and update its ast.path value and errors/warnings fields
+                    # Cast the symbol id to retrieve the (existing) symbol
+                    symbol = ctypes.cast(symbol_id, ctypes.py_object).value
+                    symbol.ast.path = path
+                    if kind == "ERROR":
+                        symbol.ast.errors.append(err[6:])
+                    else:
+                        symbol.ast.warnings.append(err[8:])
                     G_ERRORS.append(symbol)
                     line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
-                else:
-                    print("No symbol at coord", coord, "in scene", path)
-        _ = self.go_to_scene_path(current_scene)
+                # Find the scene containing the symbol
+#               scene = self.scene()
+#               if not self.go_to_scene_path(path):
+#                   continue
+#               pos = QPoint(*coord)
+#               symbol = self.scene().symbol_near(pos=pos, dist=1)
+#               if symbol is not None:
+#                   G_ERRORS.append(symbol)
+#                   line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
+#               else:
+#                   print("No symbol at coord", coord, "in scene", path)
+#       _ = self.go_to_scene_path(current_scene)
+        for each in toBeRemoved:
+            row = messages.row(each)
+            messages.takeItem(row)
+        # Iterate over the items that contain errors and warnings
+        if not use_id:
+            for idx, item in enumerate(G_ERRORS):
+                if not hasattr(item.ast, "errors"):
+                    continue
+                for err in item.ast.errors:
+                    line = QListWidgetItem (f'[ERROR] {err}')
+                    line.setData(Qt.UserRole + 1, item.ast.path)
+                    line.setData(Qt.UserRole + 2, idx)
+                    # Put errors at the begining of the list
+                    messages.insertItem(0, line)
+                # Clean up the list of errors
+                item.ast.errors = []
+                for warn in item.ast.warnings:
+                    line = QListWidgetItem (f'[WARNING] {warn}')
+                    line.setData(Qt.UserRole + 2, idx)
+                    line.setData(Qt.UserRole + 1, item.ast.path)
+                    # Put warnings after the errors
+                    messages.addItem(line)
+                # Clean up the list of warnings
+                item.ast.warnings = []
 
 
     def go_to_scene_path(self, path) -> bool:
         ''' Reach a specific path (scene) by going up/down. This makes sure
         that the Up button is properly set when the scene is reached '''
+        #breakpoint()
         while self.up_button.isEnabled():
             self.go_up()
 

@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.23 (02/2022)**
+- Major performance boost when loading/checking the model
+
 **3.7.22 (02/2022)**
 - Ada backend: optimize code for decision answers and state switch case
 

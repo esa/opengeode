@@ -124,6 +124,7 @@ tokens {
         SYNONYM;
         SYNONYM_LIST;
         SYNTYPE;
+        SYMBOLID;
         SYSTEM;
         TASK;
         TASK_BODY;
@@ -271,13 +272,14 @@ connection
 */
 process_definition
         :       cif?
+                symbolid?
                 PROCESS t=TYPE? process_id
                 number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
                 (text_area | procedure | (composite_state_preamble) =>composite_state)*
                 processBody? ENDPROCESS? TYPE? process_id?
                 end?
-        ->      ^(PROCESS cif? process_id number_of_instances? type_inst?
+        ->      ^(PROCESS cif? symbolid? process_id number_of_instances? type_inst?
                 $t? REFERENCED? $a? pfpar? text_area* procedure*
                 composite_state* processBody?)
         ;
@@ -303,6 +305,7 @@ parameters_of_sort
 // needed to declare a synchronous provided interface at system level
 procedure
         :       cif?
+                symbolid?
                 EXPORTED? PROCEDURE procedure_id (e1=end | SEMI)
                 fpar?
                 res=procedure_result?
@@ -310,7 +313,7 @@ procedure
                 ((processBody? ENDPROCEDURE procedure_id?)
                  | EXTERNAL | REFERENCED)
                 e2=end
-        ->      ^(PROCEDURE cif? procedure_id $e1? $e2? fpar? $res?
+        ->      ^(PROCEDURE cif? symbolid? procedure_id $e1? $e2? fpar? $res?
                 text_area* procedure* processBody? EXTERNAL? EXPORTED? REFERENCED?)
         ;
 
@@ -341,9 +344,10 @@ formal_variable_param
 // text_area: TODO add operator description in content
 text_area
         :       cif
+                symbolid?
                 content?
                 cif_end_text
-        ->      ^(TEXTAREA cif content? cif_end_text)
+        ->      ^(TEXTAREA cif symbolid? content? cif_end_text)
         ;
 
 
@@ -510,20 +514,22 @@ processBody
 start
         :       cif?
                 hyperlink?
+                symbolid?
                 START name=state_entry_point_name? end
                 transition?
-        ->      ^(START cif? hyperlink? $name? end? transition?)
+        ->      ^(START cif? hyperlink? symbolid? $name? end? transition?)
         ;
 
 
 floating_label
         :       cif?
                 hyperlink?
+                symbolid?
                 CONNECTION connector_name ':'
                 transition?
                 cif_end_label?
                 ENDCONNECTION SEMI
-        ->      ^(FLOATING_LABEL cif? hyperlink? connector_name transition?)
+        ->      ^(FLOATING_LABEL cif? hyperlink? symbolid? connector_name transition?)
         ;
 
 // state is either a full state definition, or a state instance
@@ -536,20 +542,22 @@ state
 state_definition
         :       cif?
                 hyperlink?
+                symbolid?
                 STATE statelist via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? hyperlink? $e? statelist via? state_part*)
+        ->      ^(STATE cif? hyperlink? symbolid? $e? statelist via? state_part*)
         ;
 
 
 state_instance
         :       cif?
                 hyperlink?
+                symbolid?
                 STATE statename ':' type_inst via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? hyperlink? $e? statename via? type_inst state_part*)
+        ->      ^(STATE cif? hyperlink? symbolid? $e? statename via? type_inst state_part*)
         ;
 
 
@@ -684,9 +692,10 @@ state_part
 connect_part
         :       cif?
                 hyperlink?
+                symbolid?
                 CONNECT connect_list? end
                 transition?
-        ->      ^(CONNECT cif? hyperlink? connect_list? end? transition?)
+        ->      ^(CONNECT cif? hyperlink? symbolid? connect_list? end? transition?)
         ;
 
 
@@ -700,10 +709,11 @@ connect_list
 spontaneous_transition
         :       cif?
                 hyperlink?
+                symbolid?
                 INPUT NONE end
                 enabling_condition?
                 transition
-        ->      ^(INPUT_NONE cif? hyperlink? transition)
+        ->      ^(INPUT_NONE cif? hyperlink? symbolid? transition)
         ;
 
 
@@ -716,10 +726,11 @@ enabling_condition
 continuous_signal
         :       cif?
                 hyperlink?
+                symbolid?
                 PROVIDED expression e=end
                 (PRIORITY p=INT end)?
                 transition?
-        ->      ^(PROVIDED expression cif? hyperlink? $p? $e? transition?)
+        ->      ^(PROVIDED expression cif? hyperlink? symbolid? $p? $e? transition?)
         ;
 
 
@@ -773,10 +784,11 @@ priority_stimulus
 input_part
         :       cif?
                 hyperlink?
+                symbolid?
                 INPUT inputlist end
                 enabling_condition?
                 transition?
-        ->      ^(INPUT cif? hyperlink? end?
+        ->      ^(INPUT cif? hyperlink? symbolid? end?
                 inputlist enabling_condition? transition?)
         ;
 
@@ -842,8 +854,9 @@ remote_procedure_call_body
 procedure_call
         :       cif?
                 hyperlink?
+                symbolid?
                 CALL procedure_call_body end
-        ->      ^(PROCEDURE_CALL cif? hyperlink? end? procedure_call_body)
+        ->      ^(PROCEDURE_CALL cif? hyperlink? symbolid? end? procedure_call_body)
         ;
 
 
@@ -906,11 +919,12 @@ alternative_question
 decision
         :       cif?
                 hyperlink?
+                symbolid?
                 DECISION question e=end
                 answer_part?
                 alternative_part?
                 ENDDECISION f=end
-        ->      ^(DECISION cif? hyperlink? $e? question
+        ->      ^(DECISION cif? hyperlink? symbolid? $e? question
                 answer_part? alternative_part?)
         ;
 
@@ -918,8 +932,9 @@ decision
 answer_part
         :       cif?
                 hyperlink?
+                symbolid?
                 L_PAREN answer R_PAREN ':' transition?
-        ->      ^(ANSWER cif? hyperlink? answer transition?)
+        ->      ^(ANSWER cif? hyperlink? symbolid? answer transition?)
         ;
 
 
@@ -932,8 +947,9 @@ answer
 else_part
         :       cif?
                 hyperlink?
+                symbolid?
                 ELSE ':' transition?
-        ->      ^(ELSE cif? hyperlink? transition?)
+        ->      ^(ELSE cif? hyperlink? symbolid? transition?)
         ;
 
 
@@ -990,8 +1006,9 @@ createbody
 output
         :       cif?
                 hyperlink?
+                symbolid?
                 OUTPUT outputbody end
-        ->      ^(OUTPUT cif? hyperlink? end? outputbody)
+        ->      ^(OUTPUT cif? hyperlink? symbolid? end? outputbody)
         ;
 
 
@@ -1055,8 +1072,9 @@ actual_parameters
 task
         :       cif?
                 hyperlink?
+                symbolid?
                 TASK task_body? end
-        ->      ^(TASK cif? hyperlink? end? task_body?)
+        ->      ^(TASK cif? hyperlink? symbolid? end? task_body?)
         ;
 
 
@@ -1346,14 +1364,15 @@ terminator_statement
         :       label?
                 cif?
                 hyperlink?
+                symbolid?
                 terminator
                 end
-        ->      ^(TERMINATOR label? cif? hyperlink? end? terminator)
+        ->      ^(TERMINATOR label? cif? hyperlink? symbolid? end? terminator)
         ;
 
 label
-        :       cif? connector_name ':'
-        ->      ^(LABEL cif? connector_name)
+        :       cif? symbolid? connector_name ':'
+        ->      ^(LABEL cif? symbolid? connector_name)
         ;
 
 
@@ -1397,18 +1416,18 @@ via     :       VIA state_entry_point_name
 
 
 end
-        :   (cif? hyperlink? COMMENT STRING)? SEMI+
-        -> ^(COMMENT cif? hyperlink? STRING)?
+        :   (cif? hyperlink? symbolid? COMMENT STRING)? SEMI+
+        -> ^(COMMENT cif? hyperlink? symbolid? STRING)?
         ;
 
 
 cif
-        :       cif_decl symbolname
+        :       (cif_decl symbolname
                 L_PAREN x=signed COMMA y=signed R_PAREN
                 COMMA
                 L_PAREN width=INT COMMA height=INT R_PAREN
                 cif_end
-        ->      ^(CIF $x $y $width $height)
+        ->      ^(CIF $x $y $width $height))
         ;
 
 
@@ -1416,6 +1435,11 @@ hyperlink
         :       cif_decl KEEP SPECIFIC GEODE HYPERLINK STRING
                 cif_end
         ->      ^(HYPERLINK STRING)
+        ;
+
+symbolid
+        :       cif_decl 'id' ptr=INT cif_end
+        ->      ^(SYMBOLID $ptr)
         ;
 
 /* OpenGEODE specific: SDL does not allow specifying the name

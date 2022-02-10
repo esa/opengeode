@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2021 European Space Agency
+    Copyright (c) 2012-2022 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -342,11 +342,15 @@ class Decision:
         self.hyperlink = None
         # hint for backends needing a temporary variable to hold the question
         self.tmpVar = -1
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for a decision '''
-        return u'DECISION {exp} ({l},{c})'.format(exp=self.inputString,
-                l=self.line, c=self.charPositionInLine)
+        return f'DECISION {self.inputString} ({self.line},{self.charPositionInLine})'
 
 
 class Answer:
@@ -371,26 +375,17 @@ class Answer:
         #           or None ('else' branch)
         # with op being either ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, or ExprLe (types)
         self.answers = []
-
-        # SOON ERASE THE FOLLOWING
-        # list of 'closed_range'|'constant'|'open_range'|'else'|'informal_text'
-        #self.kinds = []
-        # informalText is a list of strings, when kind == 'informal_text'
-        #self.informalText = []
-        # closedRange is a set of two numbers
-        #self.closedRange = []
-        # constant is a list of Expression
-        #    (contains 'open_range' and 'constant' kinds corresponding value)
-        #self.constants = []
-        # list of either ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, or ExprLe (types)
-        #self.openRangeOps = []
-
         # transition is of type Transition
         self.transition : Transition = None
         # optional comment symbol
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for an answer '''
@@ -413,6 +408,11 @@ class Task:
         # optional hyperlink
         self.hyperlink = None
         self.elems = []
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for a task '''
@@ -455,6 +455,11 @@ class Output:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for an Output symbol '''
@@ -528,6 +533,11 @@ class Terminator:
         # states ; and there are the composite states, that set a different
         # id corresponding to the start transition of the state.
         self.candidate_id = defaultdict(list)
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for terminators '''
@@ -557,6 +567,11 @@ class Label:
         self.terminators = []
         # Transition is used for floating labels (see AST entry)
         self.transition = None
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for a label '''
@@ -641,6 +656,11 @@ class Input:
         self.terminators = []
         # If this input is in fact a continuous signal, code generators will ignore it
         self.replaced_with_continuous_signal : bool = False
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
 
     def trace(self):
@@ -678,6 +698,11 @@ class ContinuousSignal(Input):
         self.observer_input = None
         # artificial is set to True if this is an alias (for Renderer)
         self.artificial = False
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for a Continuous signal '''
@@ -701,6 +726,11 @@ class Start:
         self.hyperlink = None
         # list of terminators following the start symbol
         self.terminators = []
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for a START symbol '''
@@ -731,6 +761,11 @@ class Comment:
         self.charPositionInLine = None
         # optional hyperlink
         self.hyperlink = None
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for a COMMENT symbol '''
@@ -770,6 +805,11 @@ class State:
         self.via = None
         # a state can be an instance of a state stype
         self.instance_of = None
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
     def trace(self):
         ''' Debug output for a STATE symbol '''
@@ -809,6 +849,11 @@ class TextArea:
         # List of Observer states defined in this text area (error/success/ignore states)
         # used for error reporting to get the right symbol coordinates
         self.observer_states : List [str] = []
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
 
     def trace(self):
@@ -893,6 +938,11 @@ class Procedure:
         self.exported : bool = False
         # procedure declared as REFERENCED
         self.referenced : bool = False
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
 
 class Process:
@@ -998,6 +1048,11 @@ class Process:
         self.errorstates = []
         self.ignorestates = []
         self.successstates = []
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
 
 
 class CompositeState(Process):
@@ -1028,6 +1083,7 @@ class CompositeState(Process):
 class StateAggregation(CompositeState):
     '''
         State Aggregation (Parallel states) are supported since SDL2000
+
         These states can only contain (in the self.content field):
             text areas
             procedure definitions
@@ -1102,6 +1158,7 @@ class System:
         self.channels = []
         self.blocks = []
         self.text_areas = []
+        self.path = []
 
 
 class AST:
