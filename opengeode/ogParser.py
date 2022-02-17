@@ -1832,6 +1832,7 @@ def io_expression(root, context, io_expr=None):
         if not errs:
             try:
                 pname, ptype = list(find_basic_type(param_expr.exprType).Children.items())[0]
+                pname = pname.replace('-', '_')
             except (IndexError, AttributeError):
                 errors.append(f"No parameter expected for message {io_expr['msgName']}")
             else:
