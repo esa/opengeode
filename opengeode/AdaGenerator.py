@@ -743,10 +743,6 @@ package body {process_name}_RI is''']
     else:  # function type
         ads_template.append(f'procedure Startup;')
 
-    # Expose Execute_Transition, needed by the simulator to execute continuous signals
-    ads_template.append(f'procedure Execute_Transition (Id : Integer);')
-    ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
-
     if simu and not stop_condition:
         ads_template.append('--  API for simulation via DLL')
         dll_api.append('-- API to remotely change internal data')
@@ -1174,6 +1170,15 @@ package body {process_name}_RI is''']
                 f"is (New_String ({process_name}_Instance.{LPREFIX}.State'Img))"
                 f" with Export, Convention => C, "
                 f'Link_Name => "{process_name.lower()}_state";')
+
+        # Expose Execute_Transition, needed by the simulator to execute continuous signals
+        ads_template.append(f'procedure Execute_Transition (Id : Integer) renames {process_name}_Instance.Execute_Transition;')
+        ads_template.append(f'CS_Only : constant := {process_name}_Instance.CS_Only;')
+
+    else:
+        ads_template.append(f'procedure Execute_Transition (Id : Integer);')
+        ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
+
 
     if simu and has_cs and not MONITORS:
         # Callback registration for Check_Queue
