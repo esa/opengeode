@@ -142,7 +142,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.7.23'
+__version__ = '3.7.24'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -595,6 +595,7 @@ class SDL_Scene(QGraphicsScene):
     def render_everything(self, ast):
         ''' Render a process and its children scenes, recursively '''
         already_created = []
+        import timeit
 
         def recursive_render(content, dest_scene):
             ''' Process the rendering in scenes and nested scenes '''
@@ -672,19 +673,21 @@ class SDL_Scene(QGraphicsScene):
             # Render nested scenes, recursively:
             for each in (item for item in dest_scene.visible_symb
                          if item.nested_scene):
-                LOG.debug('Recursive scene: ' + str(each))
+                #LOG.debug('Recursive scene: ' + str(each))
                 if isinstance(each.nested_scene, ogAST.CompositeState) \
                         and (not each.nested_scene.statename
                              or each.nested_scene in already_created):
                     # Ignore nested state scenes that already exist
-                    LOG.debug('Subscene "{}" ignored'.format(str(each)))
+                    #LOG.debug('Subscene "{}" ignored'.format(str(each)))
                     continue
                 subscene = self.create_subscene(each.context_name, dest_scene)
 
                 already_created.append(each.nested_scene)
                 subscene.name = str(each)
-                LOG.debug('Created scene: {}'.format(subscene.name))
+                #LOG.debug('Created scene: {}'.format(subscene.name))
                 recursive_render(each.nested_scene.content, subscene)
+                # uncomment for profiling:
+                #LOG.debug(f'{subscene.name} : ' + str(timeit.timeit(partial(recursive_render, each.nested_scene.content, subscene), number=1)))
                 each.nested_scene = subscene
 
             # Make sure all composite states are initially up to date
@@ -1462,7 +1465,9 @@ class SDL_Scene(QGraphicsScene):
         if self.mode == 'select_items':
             found = False
             rect = self.select_rect.rect()
-            self.clear_highlight()
+            if self.context != 'statechart':
+                # Don't let user unhighlight the current state in statecharts
+                self.clear_highlight()
             for item in self.items(rect, mode=Qt.ContainsItemBoundingRect):
                 try:
                     item.select()

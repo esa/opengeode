@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.24 (02/2022)**
+- Update statechart rendering when simulating parallel states
+
 **3.7.23 (02/2022)**
 - Major performance boost when loading/checking the model
 
