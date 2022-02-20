@@ -5,7 +5,8 @@
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2019 European Space Agency
+    Copyright (c) 2012-2022 Maxime Perrotin
+    Copyright (c) 2012-2022 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -65,6 +66,9 @@ class Record(genericSymbols.HorizontalSymbol):
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
         self.name = node['name']
+        # Keep the full path to the state (with parent state names)
+        # This is needed for symbol highlightning of parallel states
+        self.path = node['path']
         super().__init__(x=node['pos'][0],
                 y=node['pos'][1], text=self.name)
         self.set_shape(node['width'], node['height'])
@@ -98,8 +102,6 @@ class Record(genericSymbols.HorizontalSymbol):
         # must return the state name only, as it is used in the renderer
         # in V2, there was a separate __unicode__ function
         return self.name
-        #return('Record ' + self.name + ' at pos ' + str(self.pos()) +
-        #       ' bounding rect = ' + str(self.boundingRect()))
 
     def mouse_release(self, _):
         ''' After moving item, ask dot to recompute the edges '''
@@ -354,6 +356,8 @@ def preprocess_nodes(my_graph, bounding_rect, dpi):
         new_node['shape'] = node.get('shape') or 'record'
         # node main name
         new_node['name'] = node['name']
+        # node full path (for nested/parallel states)
+        new_node['path'] = node['comment']
         try:
             # node complete label (can contain several compartments)
             properties = (
@@ -719,8 +723,20 @@ def create_dot_graph(root_ast,
                            fixedsize='true',
                            width=10.0 / 72.0)
         else:
+            # Find the path to the state, this is needed to be able to
+            # highlight properly the parallel states in simulation
+            for s in root_ast.content.states:
+                if s.inputString.lower() == state.lower():
+                    path = s.path
+                    break
+            else:
+                # Should never happen
+                path = []
+            path_str = ".".join(elem.split()[1] for elem in path + [f"S {state}"]
+                                if not elem.startswith("PROCESS"))
             graph.add_node(state,
                            label=state,
+                           comment=path_str,
                            shape='record',
                            style='rounded')
 
