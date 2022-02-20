@@ -577,7 +577,8 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
     start_transition = []
     # Continuous State transition id
     if not instance:
-        process_level_decl.append(f'CS_Only : constant := {len(process.transitions)};')
+        # CS only is declared in the .ads, so that it can be seen by the simulator
+        #process_level_decl.append(f'CS_Only : constant := {len(process.transitions)};')
 
         for name, val in process.mapping.items():
             # Test val, in principle there is a value but if the code targets
@@ -597,10 +598,6 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
                                      for subname in substates)
             aggreg_start_proc.extend([f'end {name}{SEPARATOR}START;',
                                      '\n'])
-
-        # Add the declaration of the Execute_Transition procedure
-        process_level_decl.append(
-                'procedure Execute_Transition (Id : Integer);')
 
         # Generate the code of the start transition (if process not empty)
         Init_Done = f'{LPREFIX}.Init_Done := True;'
@@ -745,6 +742,10 @@ package body {process_name}_RI is''']
                             f' Link_Name => "{process_name}_startup";')
     else:  # function type
         ads_template.append(f'procedure Startup;')
+
+    # Expose Execute_Transition, needed by the simulator to execute continuous signals
+    ads_template.append(f'procedure Execute_Transition (Id : Integer);')
+    ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
     if simu and not stop_condition:
         ads_template.append('--  API for simulation via DLL')
