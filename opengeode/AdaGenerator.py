@@ -1312,11 +1312,11 @@ package body {process_name}_RI is''']
             if not cs_item:
                 continue
             for each in substates:
-                if first_of_aggreg:
-                    taste_template.append(
-                            f'if {LPREFIX}.State = {ASN1SCC}{agg_name} then')
-                    first_of_aggreg = False
                 if statename in each.cs_mapping and each.cs_mapping[statename]:
+                    if first_of_aggreg:
+                        taste_template.append(
+                                f'if {LPREFIX}.State = {ASN1SCC}{agg_name} then')
+                        first_of_aggreg = False
                     need_final_endif = True
                     first = "els" if done else ""
                     taste_template.append(
