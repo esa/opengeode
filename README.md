@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.25 (02/2022)**
+- Fix continuous signals in generated code
+
 **3.7.24 (02/2022)**
 - Update statechart rendering when simulating parallel states
 
