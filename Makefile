@@ -43,7 +43,7 @@ update:
 	git pull
 
 dependencies:
-	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect
+	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect python3-pytestqt
 	# installing pyside2 through pip because of bugs with QML in the Debian bullseye release
 	python3 -m pip install --user --upgrade pyside2
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
@@ -72,8 +72,8 @@ publish:
 	@twine upload dist/*
 
 pytest:
-	pip3 install --user --upgrade pytest-qt
-	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; py.test
+	#pip3 install --user --upgrade pytest-qt  (NO: use the debian package)
+	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; py.test-3
 
 clean:
 	@$(MAKE) -s -C tests/testsuite $@

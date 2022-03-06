@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.26 (03/2022)**
+- change API of asn1dataModel (used by the TASTE simualtor)
+
 **3.7.25 (02/2022)**
 - Fix continuous signals in generated code
 

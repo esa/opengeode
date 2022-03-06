@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import pytest
 
 from opengeode.opengeode import SDL_Scene, SDL_View, G_SYMBOLS
@@ -6,6 +6,7 @@ from opengeode.sdlSymbols import Label, Decision
 from opengeode.ogParser import parseSingleElement
 from opengeode.ogAST import Process, Automaton
 
+# important: you must have python3-pytestqt installed (apt)
 
 TEST_DATA = '''
         /* CIF label (275, 194), (70, 35) */
@@ -40,7 +41,7 @@ def test_1(qtbot):
 
 
 if __name__ == '__main__':
-    for name, value in dict(globals()).viewitems():
+    for name, value in dict(globals()).items():
         if name.startswith('test_'):
             print('---- Executing {} ----'.format(name))
             value()
