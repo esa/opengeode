@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from opengeode import Asn1scc as asn1scc
 asn1scc.LOG.setLevel(asn1scc.logging.DEBUG)
@@ -15,7 +15,7 @@ def test_2():
     assert result is not None
 
 if __name__ == '__main__':
-    for name, value in dict(globals()).viewitems():
+    for name, value in dict(globals()).items():
         if name.startswith('test_'):
             print('---- Executing {} ----'.format(name))
             value()

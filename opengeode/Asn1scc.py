@@ -311,11 +311,11 @@ def asn2dataModel(files, outdir=None, db=None):
     if concat_prefix in ASN2DM.keys():
         # Re-import module if it was already loaded
         asn1mod = ASN2DM[concat_prefix]
-        db = asn1mod.db_model
+        dbmod = asn1mod.db_model
         importlib.reload(asn1mod)
         importlib.reload(asn1mod.DV)
-        importlib.reload(db)
-        asn1mod.db_model = db
+        importlib.reload(dbmod)
+        asn1mod.db_model = dbmod
         import Stubs
         importlib.reload(Stubs)
     else:
@@ -334,7 +334,7 @@ def asn2dataModel(files, outdir=None, db=None):
         # db should be e.g. "sqlite:///file.sqlite"
         from sqlalchemy import create_engine
         from db_model import Base
-        engine=create_engine(f"{db}", echo=False)
+        engine=create_engine(db, echo=False)
         Base.metadata.create_all(engine)
     sys.path.pop(0)
     return asn1mod
