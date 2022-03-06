@@ -240,13 +240,16 @@ def create_choice_determinant_types(ast):
         #ast.exportedTypes.pop(each)
     return new_sorts
 
-def asn2dataModel(*files):
+def asn2dataModel(files, outdir=None, db=None):
     ''' Call asn2dataModel, including the Makefile.python and return
     the imported module "name_of_dataview_asn.py"
     From this module it is possible to create native Asn1scc instances of
     ASN.1 data types, and to access to DV.py, which contains constants
     such as the _PRESENT fields for choice selectors.
-    In addition the SqlAlchemy interface is also imported '''
+    In addition the SqlAlchemy interface is also imported
+    give db a name to create the database
+    if outdir is none, a temporary folder will be used
+    '''
     assert len(files) > 0
 
     # 1) Create a temporary directory for the output
@@ -254,8 +257,11 @@ def asn2dataModel(*files):
         # In debug mode, don't hide the files in /tmp
         os.makedirs('./debug', exist_ok=True)
         tempdir='./debug/'
-    else:
+    elif outdir is None:
         tempdir = tempfile.mkdtemp()
+    else:
+        os.makedirs(outdir, exist_ok=True)
+        tempdir=outdir
     sys.path.insert(0, tempdir)
     # Use a unique name for the asn1 concatenated module
     # concat_prefix = str(uuid.uuid4()).replace('-', '_')
@@ -266,7 +272,7 @@ def asn2dataModel(*files):
 
     # 2) Concat all input files to the output directory
     cat_bin = spawn.find_executable('cat')
-    args = list(files)
+    args = files  # list
     cat = QProcess()
     LOG.debug(os.getcwd())
     LOG.debug(cat_bin + ' ' + ' '.join(args))
@@ -322,6 +328,14 @@ def asn2dataModel(*files):
         import db_model
         asn1mod.db_model = db_model
         ASN2DM[concat_prefix] = asn1mod
+
+    # 6) Create the database is "db" is set
+    if db is not None:
+        # db should be e.g. "sqlite:///file.sqlite"
+        from sqlalchemy import create_engine
+        from db_model import Base
+        engine=create_engine(f"{db}", echo=False)
+        Base.metadata.create_all(engine)
     sys.path.pop(0)
     return asn1mod
 
