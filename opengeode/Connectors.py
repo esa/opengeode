@@ -58,6 +58,8 @@ class Connection(QGraphicsPathItem):
         self.parent.moved.connect(self.parent_moved)
         # Syntax error indicator
         self.syntax_error: Boolean = False
+        # Flag to choose the bold pen when painting the edge if selected
+        self.selected = False
 
     @Slot(float, float)
     def child_moved(self, delta_x, delta_y):
@@ -101,8 +103,10 @@ class Connection(QGraphicsPathItem):
     def select(self, selected=True):
         ''' Select a connection - make it bold '''
         if selected:
+            self.selected = True
             self.setPen(self.bold_pen)
         else:
+            self.selected = False
             self.setPen(self.default_pen)
 
     def angle_arrow(self, path, origin='head'):
@@ -729,11 +733,6 @@ class Edge(Connection):
     def paint(self, painter, option, widget):
         ''' Apply anti-aliasing to Edge Connections '''
         painter.setRenderHint(QPainter.Antialiasing, True)
-        if self.bezier_visible:
-            # Selected: make it thicker
-            self.setPen(self.bold_pen)
-        else:
-            self.setPen(self.default_pen)
         super().paint(painter, option, widget)
         # Draw lines between connection points, if visible
         if self.bezier_visible:
