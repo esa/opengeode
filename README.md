@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.27 (03/2022)**
+- Add edge selection feature in statecharts
+
 **3.7.26 (03/2022)**
 - change API of asn1dataModel (used by the TASTE simualtor)
 
