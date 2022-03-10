@@ -42,10 +42,12 @@ class Connection(QGraphicsPathItem):
         self._start_point = None
         self._end_point = None
         self._middle_points = []
-        pen = QPen()
-        pen.setColor(Qt.blue)
-        pen.setCosmetic(False)
-        self.setPen(pen)
+        self.default_pen = QPen()
+        self.default_pen.setColor(Qt.blue)
+        self.default_pen.setCosmetic(False)
+        self.setPen(self.default_pen)
+        self.bold_pen = QPen()
+        self.bold_pen.setWidth(3)
         self.parent_rect = parent.sceneBoundingRect()
         self.childRect = child.sceneBoundingRect()
         # Activate cache mode to boost rendering by calling paint less often
@@ -97,8 +99,11 @@ class Connection(QGraphicsPathItem):
                 QPointF(endp.x() + 5, endp.y() - 5))
 
     def select(self, selected=True):
-        ''' Select a connection - for future use? '''
-        return
+        ''' Select a connection - make it bold '''
+        if selected:
+            self.setPen(self.bold_pen)
+        else:
+            self.setPen(self.default_pen)
 
     def angle_arrow(self, path, origin='head'):
         ''' Compute the two points of the arrow head with the right angle '''
@@ -724,6 +729,11 @@ class Edge(Connection):
     def paint(self, painter, option, widget):
         ''' Apply anti-aliasing to Edge Connections '''
         painter.setRenderHint(QPainter.Antialiasing, True)
+        if self.bezier_visible:
+            # Selected: make it thicker
+            self.setPen(self.bold_pen)
+        else:
+            self.setPen(self.default_pen)
         super().paint(painter, option, widget)
         # Draw lines between connection points, if visible
         if self.bezier_visible:
