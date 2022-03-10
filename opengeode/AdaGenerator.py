@@ -3266,10 +3266,13 @@ def _transition(tr, **kwargs):
                 history = ns in ('-', '-*')
                 if tr.terminator.next_is_aggregation and not history: # XXX add to C generator
                     code.append(f'-- Entering state aggregation {tr.terminator.inputString}')
-                    # Call the START function of the state aggregation
-                    code.append(f'{tr.terminator.next_id};')
+                    # First change the state (to avoid looping in continuous signals since
+                    # they will be evaluated after the start transition ; if the state is
+                    # still the old state, there is a risk of infinite recursion)
                     code.append(
                       f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
+                    # Call the START function of the state aggregation
+                    code.append(f'{tr.terminator.next_id};')
                     code.append('trId := -1;')
                 elif not history:
                     code.append(f'trId := {str(tr.terminator.next_id)};')

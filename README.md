@@ -125,6 +125,7 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 **3.7.27 (03/2022)**
+- Fix function call order in case of parallel states (major bugfix)
 - Add edge selection feature in statecharts
 
 **3.7.26 (03/2022)**
