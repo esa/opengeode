@@ -3269,8 +3269,13 @@ def _transition(tr, **kwargs):
                     # First change the state (to avoid looping in continuous signals since
                     # they will be evaluated after the start transition ; if the state is
                     # still the old state, there is a risk of infinite recursion)
-                    code.append(
-                      f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
+                    if not tr.terminator.substate:
+                        code.append(
+                          f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
+                    else:
+                        # We may be already in a substate
+                        code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State :='
+                                        f' {ASN1SCC}{tr.terminator.inputString};')
                     # Call the START function of the state aggregation
                     code.append(f'{tr.terminator.next_id};')
                     code.append('trId := -1;')
