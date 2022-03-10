@@ -108,6 +108,7 @@ class Connection(QGraphicsPathItem):
         else:
             self.selected = False
             self.setPen(self.default_pen)
+        self.update()   # force a repaint
 
     def angle_arrow(self, path, origin='head'):
         ''' Compute the two points of the arrow head with the right angle '''
