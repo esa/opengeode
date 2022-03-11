@@ -32,7 +32,7 @@ LOG.addHandler(handler_console)
 # global needed to store the imported module and list of modules ever loaded
 AST = {}
 
-# Same for the modules imported by the call to asn2DataModel
+# Same for the modules imported by the call to asn2dataModel
 ASN2DM = {}
 
 try:
@@ -270,43 +270,58 @@ def asn2dataModel(files, outdir=None, db=None):
     concat_prefix = 'og_dataview'
     concat_path = os.path.join(tempdir, concat_prefix)
 
+    concat_file = concat_path + '.asn'
+    if os.path.exists(concat_file):
+        concat_timestamp = os.path.getctime(concat_file)
+    else:
+        concat_timestamp = 0
+
     # 2) Concat all input files to the output directory
+    #    if any of the files is more recent that the
+    #    existing concatenated file
     cat_bin = spawn.find_executable('cat')
     args = files  # list
-    cat = QProcess()
-    LOG.debug(os.getcwd())
-    LOG.debug(cat_bin + ' ' + ' '.join(args))
-    cat.start(cat_bin, args)
-    merged = waitfor_qprocess(cat, 'Merge dataviews')
-    with open(concat_path + '.asn', 'wt') as merged_file:
-        merged_file.write(merged.data().decode('utf-8'))
+    timestamps = []
 
-    # 3) Run asn2dataModel for Python 
-    asn2dm_bin = spawn.find_executable('asn2dataModel')
-    args = ['-toPython', '-o', tempdir, concat_path + '.asn']
-    asn2dm = QProcess()
-    LOG.debug(os.getcwd())
-    LOG.debug(asn2dm_bin + ' ' + ' '.join(args))
-    asn2dm.start(asn2dm_bin, args)
-    waitfor_qprocess(asn2dm, 'DMT tool "asn2dataModel"')
+    for each in args:
+        timestamps.append(os.path.getmtime(each))
+    if any(ts > concat_timestamp for ts in timestamps):
+        cat = QProcess()
+        LOG.debug(os.getcwd())
+        LOG.debug(cat_bin + ' ' + ' '.join(args))
+        cat.start(cat_bin, args)
+        merged = waitfor_qprocess(cat, 'Merge dataviews')
+        with open(concat_path + '.asn', 'wt') as merged_file:
+            merged_file.write(merged.data().decode('utf-8'))
 
-    # 4) call make -f Makefile.python to build the .so
-    make_bin = spawn.find_executable('make')
-    args = ['-f', 'Makefile.python']
-    make = QProcess()
-    make.setWorkingDirectory(tempdir)
-    LOG.debug(os.getcwd())
-    LOG.debug(make_bin + ' ' + ' '.join(args))
-    make.start(make_bin, args)
-    waitfor_qprocess(make, 'make -f Makefile.python')
+        # 3) Run asn2dataModel for Python 
+        asn2dm_bin = spawn.find_executable('asn2dataModel')
+        args = ['-toPython', '-o', tempdir, concat_path + '.asn']
+        asn2dm = QProcess()
+        LOG.debug(os.getcwd())
+        LOG.debug(asn2dm_bin + ' ' + ' '.join(args))
+        asn2dm.start(asn2dm_bin, args)
+        waitfor_qprocess(asn2dm, 'DMT tool "asn2dataModel"')
 
-    # 5) Run asn2dataModel for the SQL Alchemy module
-    args = ['-toSqlalchemy', '-o', tempdir, concat_path + '.asn']
-    asn2dm = QProcess()
-    LOG.debug(os.getcwd())
-    LOG.debug(asn2dm_bin + ' ' + ' '.join(args))
-    asn2dm.start(asn2dm_bin, args)
-    waitfor_qprocess(asn2dm, 'DMT tool "asn2dataModel"')
+        # 4) call make -f Makefile.python to build the .so
+        make_bin = spawn.find_executable('make')
+        args = ['-f', 'Makefile.python']
+        make = QProcess()
+        make.setWorkingDirectory(tempdir)
+        LOG.debug(os.getcwd())
+        LOG.debug(make_bin + ' ' + ' '.join(args))
+        make.start(make_bin, args)
+        waitfor_qprocess(make, 'make -f Makefile.python')
+
+        # 5) Run asn2dataModel for the SQL Alchemy module
+        args = ['-toSqlalchemy', '-o', tempdir, concat_path + '.asn']
+        asn2dm = QProcess()
+        LOG.debug(os.getcwd())
+        LOG.debug(asn2dm_bin + ' ' + ' '.join(args))
+        asn2dm.start(asn2dm_bin, args)
+        waitfor_qprocess(asn2dm, 'DMT tool "asn2dataModel"')
+    else:
+        LOG.info("Reusing DMT outputs from previous run")
 
     if concat_prefix in ASN2DM.keys():
         # Re-import module if it was already loaded
