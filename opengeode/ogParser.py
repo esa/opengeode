@@ -2816,7 +2816,9 @@ def primary(root, context):
                 try:
                     # In case the HEX value only contains ascii characters
                     prim.printable_string = hexstring.decode('utf-8')
-                    prim.value = (f"'{prim.printable_string}'")
+                    #prim.value = (f"'{prim.printable_string}'")
+                    # We must keep the HEX value for the length to be correct
+                    prim.value = f"'{as_hex}'"
                 except:
                     prim.printable_string = root.text
                     prim.value = f"'{as_hex}'"
