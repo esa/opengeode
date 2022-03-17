@@ -1227,7 +1227,7 @@ def check_type_compatibility(primary, type_ref, context):
                         # a padding has been added and it ws converted to hex
                         # (the primary.value is an hex string already)
                         # => length must be compatible with recipient length
-                        ok = int(minR) * 8 <= lenOfInput <= int(maxR) * 8
+                        ok = int(minR) * 2 <= lenOfInput <= int(maxR) * 2
                     else:
                         # user entered a text => each char is 1 octet
                         ok = int(minR) <= lenOfInput <= int(maxR)
