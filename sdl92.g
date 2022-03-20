@@ -1438,7 +1438,7 @@ hyperlink
         ;
 
 symbolid
-        :       cif_decl 'id' ptr=INT cif_end
+        :       cif_decl '_id' ptr=INT cif_end
         ->      ^(SYMBOLID $ptr)
         ;
 

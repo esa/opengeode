@@ -1,4 +1,4 @@
-# $ANTLR 3.5.2 sdl92.g 2022-02-10 08:47:03
+# $ANTLR 3.5.2 sdl92.g 2022-03-17 17:11:05
 
 import sys
 from antlr3 import *
@@ -356,7 +356,7 @@ tokenNames = [
     "THEN", "THIS", "TIMER", "TO", "TRANSITION", "TRUE", "TYPE", "TYPE_INSTANCE", 
     "U", "UNHANDLED", "USE", "V", "VALUE", "VARIABLE", "VARIABLES", "VIA", 
     "VIAPATH", "VIEW", "W", "WITH", "WS", "X", "XOR", "Y", "Z", "'!'", "'(.'", 
-    "'*/'", "'-*'", "'->'", "'.)'", "'/* CIF'", "':'", "'id'"
+    "'*/'", "'-*'", "'->'", "'.)'", "'/* CIF'", "':'", "'_id'"
 ]
 
 
@@ -59987,7 +59987,7 @@ class sdl92Parser(Parser):
 
 
     # $ANTLR start "symbolid"
-    # sdl92.g:1440:1: symbolid : cif_decl 'id' ptr= INT cif_end -> ^( SYMBOLID $ptr) ;
+    # sdl92.g:1440:1: symbolid : cif_decl '_id' ptr= INT cif_end -> ^( SYMBOLID $ptr) ;
     def symbolid(self, ):
         retval = self.symbolid_return()
         retval.start = self.input.LT(1)
@@ -60008,8 +60008,8 @@ class sdl92Parser(Parser):
         stream_cif_end = RewriteRuleSubtreeStream(self._adaptor, "rule cif_end")
         try:
             try:
-                # sdl92.g:1441:9: ( cif_decl 'id' ptr= INT cif_end -> ^( SYMBOLID $ptr) )
-                # sdl92.g:1441:17: cif_decl 'id' ptr= INT cif_end
+                # sdl92.g:1441:9: ( cif_decl '_id' ptr= INT cif_end -> ^( SYMBOLID $ptr) )
+                # sdl92.g:1441:17: cif_decl '_id' ptr= INT cif_end
                 pass 
                 self._state.following.append(self.FOLLOW_cif_decl_in_symbolid16121)
                 cif_decl749 = self.cif_decl()

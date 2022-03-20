@@ -148,7 +148,7 @@ def cif_symbolid(symbol):
     when parsing an already rendered diagram. This allows to keep the link
     between the re-parsed AST and the existing symbols, that is useful when
     reporting errors '''
-    return f'/* CIF id {id(symbol)} */'
+    return f'/* CIF _id {id(symbol)} */'
 
 
 def hyperlink(symbol):
