@@ -5219,6 +5219,7 @@ def decision(root, parent, context):
             dec_x, dec_y = dec.pos_x, dec.pos_y
         elif child.type == lexer.SYMBOLID:
             dec.pos_x = symbolid(child)
+            dec_x = dec.pos_x
         elif child.type == lexer.QUESTION:
             dec.kind = 'question'
             dec.question, qerr, qwarn = expression(child.getChild(0), context)

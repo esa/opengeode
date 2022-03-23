@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.28 (03/2022)**
+- Fix bug with error reporting in decision answers (caused segfault)
+
 **3.7.27 (03/2022)**
 - Fix function call order in case of parallel states (major bugfix)
 - Fix initialisation of deep nested/parallel states
