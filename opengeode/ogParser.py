@@ -3224,7 +3224,7 @@ def composite_state(root, parent=None, context=None):
         ns = t.inputString.lower()
         if not ns in [s.lower() for s in comp.mapping.keys()] + ['-', '-*']:
             msg = f'In composite state {comp.statename}: missing definition'\
-                    'of substate "{ns.upper()}"'
+                  f'of substate "{ns.upper()}"'
             errors.append([msg, [t.pos_x or 0, t.pos_y or 0], []])
             t.errors.append(msg)
     for each in chain(errors, warnings):

@@ -3519,7 +3519,7 @@ def _inner_procedure(proc, **kwargs):
                                      'params': [], 'tmpVars': []}]
                 trans.actions.append(call_trans)
 
-        if proc.content.start:
+        if proc.content.start and proc.content.start.transition:
             tr_code, tr_decl = generate(proc.content.start.transition)
         else:
             tr_code, tr_decl = ['null;  --  Empty procedure'], []

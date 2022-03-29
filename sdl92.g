@@ -100,7 +100,7 @@ tokens {
         RANGE;
         RENAMES;
         INTERCEPT;
-        RESET;
+        //RESET;
         RETURN;
         RETURNS;
         ROUTE;
@@ -108,7 +108,7 @@ tokens {
         SELECTOR;
         SEQOF;
         SEQUENCE;
-        SET;
+        //SET;
         SIGNAL;
         SIGNAL_LIST;
         SORT;
@@ -829,8 +829,8 @@ action
                 | create_request
                 | decision
                 | transition_option
-                | set_timer
-                | reset_timer
+                //| set_timer
+                //| reset_timer
                 | export     // Not supported in OpenGEODE
                 | procedure_call)
         ;
@@ -866,6 +866,10 @@ procedure_call_body
         ;
 
 
+/* Commented out because OG does not support the SET/RESET symbols
+   but dedicated procedures (set_timer/reset_timer)
+   This allows to "free" the reserved keywords "set" and "reset"
+   for other purposes such as message or variable names
 set_timer
         :       SET set_statement (COMMA set_statement)*
                 end
@@ -879,7 +883,6 @@ set_statement
         ;
         // ('('expression_list')')? ')'; (removed because of non-LL(*) problem)
 
-
 reset_timer
         :       RESET reset_statement (',' reset_statement)*
                 end
@@ -891,7 +894,7 @@ reset_statement
         :       timer_id ('(' expression_list ')')?
         ->      ^(RESET timer_id expression_list?)
         ;
-
+*/
 
 transition_option
         :       ALTERNATIVE alternative_question e=end
@@ -1659,8 +1662,8 @@ CREATE          :       C R E A T E;
 OUTPUT          :       O U T P U T;
 CALL            :       C A L L;
 THIS            :       T H I S;
-SET             :       S E T;
-RESET           :       R E S E T;
+//SET             :       S E T;
+//RESET           :       R E S E T;
 ENDALTERNATIVE  :       E N D A L T E R N A T I V E;
 ALTERNATIVE     :       A L T E R N A T I V E;
 DEFAULT         :       D E F A U L T;

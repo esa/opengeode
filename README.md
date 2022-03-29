@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.7.29 (03/2022)**
+- Support the "set" and "reset" names as identifiers
+
 **3.7.28 (03/2022)**
 - Fix bug with error reporting in decision answers (caused segfault)
 
