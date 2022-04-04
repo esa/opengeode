@@ -566,12 +566,6 @@ LD_LIBRARY_PATH=./lib:.:$LD_LIBRARY_PATH opengeode-simulator
         context_decl.append(
                 f'{LPREFIX} : {ASN1SCC}{stop_condition}_Context \
                     renames {stop_condition}.{stop_condition}_ctxt;')
-    if simu and not stop_condition:
-        # Export the context, so that it can be manipulated from outside
-        # (in practice used by the "properties" module.
-        context_decl.append(f'pragma Export (C, {LPREFIX}, "{LPREFIX}");')
-        # Exhaustive simulation needs a backup of the context to quickly undo
-        context_decl.append(f'{LPREFIX}_bk: {ASN1SCC}{process_name.capitalize()}_Context;')
 
     aggreg_start_proc = []
     start_transition = []
@@ -726,15 +720,6 @@ package body {process_name}_RI is''']
     ads_template.extend(rand_decl)
     if not instance:
         ads_template.extend(context_decl)
-    if not generic and not instance and not stop_condition:
-        # Add function allowing to trace current state as a string
-        ads_template.append(
-                f"function Get_State return chars_ptr "
-                f"is (New_String "
-                f"({ASN1SCC}{process_name}_States'Image ({LPREFIX}.State)))"
-                f" with Export, Convention => C, "
-                f'Link_Name => "{process_name.lower()}_state";')
-
     # Declare procedure Startup in .ads
     if not generic:
         ads_template.append(f'procedure Startup'
@@ -743,42 +728,6 @@ package body {process_name}_RI is''']
     else:  # function type
         ads_template.append(f'procedure Startup;')
 
-    if simu and not stop_condition:
-        ads_template.append('--  API for simulation via DLL')
-        dll_api.append('-- API to remotely change internal data')
-
-        # Save/restore state allow one step undo, as needed for model checking
-        save_state_decl = 'procedure Save_Context with Export, Convention => C, Link_Name => "_save_context";'
-        ads_template.append(save_state_decl)
-        restore_state_decl = 'procedure Restore_Context with Export, Convention => C, Link_Name => "_restore_context";'
-        ads_template.append(restore_state_decl)
-        dll_api.extend([
-             "procedure Save_Context is",
-             "begin",
-            f"{LPREFIX}_bk := {LPREFIX};",
-             "end Save_Context;",
-             "",
-             "procedure Restore_Context is",
-             "begin",
-            f"{LPREFIX} := {LPREFIX}_bk;",
-             "end Restore_Context;",
-             ""])
-
-        # Functions to get global context
-        ads_template.append(
-                f"function Get_Context return access {ASN1SCC}{process_name}_Context is ({LPREFIX}'access)\n"
-                f'   with Export, Convention => C, Link_Name => "{process_name.lower()}_context";')
-        ads_template.append(
-                f"procedure Set_Context (Context : access {ASN1SCC}{process_name}_Context)\n"
-                f'   with Export, Convention => C, Link_Name => "set_{process_name.lower()}_context";')
-
-        dll_api.extend([
-                f"procedure Set_Context (Context : access {ASN1SCC}{process_name}_Context) is",
-                 "begin",
-                f"{LPREFIX} := Context.all;",
-                 '--  System.IO.Put_Line ("Changed context. State = " & Context.state\'Img);',
-                 "end Set_Context;",
-                 ""])
 
     # Generate the the code of the procedures
     inner_procedures_code = []
@@ -871,12 +820,6 @@ package body {process_name}_RI is''']
             ads_template.append(
                     f'pragma Export(C, {signame},'
                     f' "{process_name.lower()}_PI_{signame}");')
-
-        if simu and not ignore_export:
-            # Generate code for the mini-cv template
-            params = [(param_name, type_name(signal['type'], use_prefix=False),
-                      'IN')] if 'type' in signal else []
-            minicv.append(aadl_template(signame, params, 'RI'))
 
         pi_header += ' is'
         taste_template.append(pi_header)
@@ -1015,29 +958,7 @@ package body {process_name}_RI is''']
             ads_template.append(u'--  {}equired interface "{}"'
                                 .format("Paramless r" if not 'type' in signal
                                     else "R", sig))
-        if simu:
-            # When generating a shared library, we need a callback mechanism
-            code = [f'type {sig}_T is access procedure{param_spec};',
-                    f'pragma Convention (Convention => C, Entity => {sig}_T);',
-                    f'RI{SEPARATOR}{sig} : {sig}_T;',
-                    f'procedure Register_{sig} (Callback : {sig}_T);',
-                    f'pragma Export(C, Register_{sig}, "register_{sig}");']
-            ads_template.extend(code)
 
-            # Generate code for the mini-cv template
-            params = [(param_name,
-                       type_name(signal['type'], use_prefix=False),
-                      'IN')] if 'type' in signal else []
-
-            minicv.append(aadl_template(sig, params, 'PI'))
-
-            code = [f'procedure Register_{sig} (Callback : {sig}_T) is',
-                     'begin',
-                    f'RI{SEPARATOR}{sig} := Callback;',
-                    f'end Register_{sig};',
-                    '']
-            taste_template.extend(code)
-        elif not generic:
             if not instance:
                 ads_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} '
                     f'renames {process_name}_RI.{sig};')
@@ -1053,9 +974,6 @@ package body {process_name}_RI is''']
         ri_header = f'procedure RI{SEPARATOR}{sig}'
         params = []
         params_spec = ""
-        if simu:
-            # For simulators: add the TM name as first parameter
-            params.append("TM : chars_ptr")
         for param in proc.fpar:
             typename = type_name(param['type'])
             name     = param['name']
@@ -1069,24 +987,8 @@ package body {process_name}_RI is''']
         if params:
             params_spec = f' ({"; ".join(params)})'
             ri_header += params_spec
-        if simu:
-            # As for async TM, generate a callback mechanism
-            code = [f"type {sig}_T is access procedure{params_spec};",
-                    f'pragma Convention(Convention => C, Entity => {sig}_T);',
-                    f'RI{SEPARATOR}{sig} : {sig}_T;',
-                    f'procedure Register_{sig}(Callback: {sig}_T);',
-                    f'pragma Export(C, Register_{sig}, "register_{sig}");']
 
-            ads_template.extend(code)
-
-            code = [f'procedure Register_{sig} (Callback : {sig}_T) is',
-                     'begin',
-                    f'RI{SEPARATOR}{sig} := Callback;',
-                    f'end Register_{sig};',
-                     '']
-            taste_template.extend(code)
-
-        elif not generic:
+        if not generic:
             if not instance:
                 # Type and instance do not need this declarations, only standalone
                 # proceses.
@@ -1101,30 +1003,8 @@ package body {process_name}_RI is''']
             # don't generte timer code for stop conditions
             break
         ads_template.append(f'--  Timer {timer} SET and RESET functions')
-        if simu:
-            # Declare callback registration for the SET and RESET functions
-            ads_template.append(f'type SET_{timer}_T is access procedure'
-                                 '(name: chars_ptr; duration: Asn1Int);')
-            ads_template.append(f'type RESET_{timer}_T is access procedure'
-                                '(name: chars_ptr);')
-            for each in ('', 'RE'):
-                ads_template.append('pragma Convention (Convention => C,'
-                                    f' Entity => {each}SET_{timer}_T);')
-                ads_template.append(f'{each}SET_{timer} : {each}SET_{timer}_T;')
-                ads_template.append(f'procedure Register_{each}SET_{timer}'
-                                    f'(Callback: {each}SET_{timer}_T);')
-                ads_template.append(f'pragma Export(C, Register_{each}SET_{timer},'
-                                    f' "register_{each}SET_{timer}");')
-            # Code for the SET/RESET timer callback registration
-            for each in ('', 'RE'):
-                taste_template.append(f'procedure Register_{each}SET_{timer}'
-                                      f'(Callback:{each}SET_{timer}_T) is')
-                taste_template.append('begin')
-                taste_template.append(f'{each}SET_{timer} := Callback;')
-                taste_template.append(f'end Register_{each}SET_{timer};')
-                taste_template.append('')
 
-        elif not generic:
+        if not generic:
             procname = process_name.lower()
             ads_template.append(
                f'procedure SET_{timer} (Val : in out asn1SccT_UInt32) '
@@ -1165,11 +1045,6 @@ package body {process_name}_RI is''']
         if ri_inst or has_context_params:
             pkg_decl += ")"
         ads_template.append(f"{pkg_decl};")
-        ads_template.append(
-                f"function Get_State return chars_ptr "
-                f"is (New_String ({process_name}_Instance.{LPREFIX}.State'Img))"
-                f" with Export, Convention => C, "
-                f'Link_Name => "{process_name.lower()}_state";')
 
         # Expose Execute_Transition, needed by the simulator to execute continuous signals
         ads_template.append(f'procedure Execute_Transition (Id : Integer) renames {process_name}_Instance.Execute_Transition;')
@@ -1180,21 +1055,6 @@ package body {process_name}_RI is''']
         ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
 
-    if simu and has_cs and not MONITORS:
-        # Callback registration for Check_Queue
-        taste_template.append('procedure Register_Check_Queue '
-                              '(Callback : Check_Queue_T) is')
-        taste_template.append('begin')
-        taste_template.append('Check_Queue := Callback;')
-        taste_template.append('end Register_Check_Queue;')
-        taste_template.append('')
-
-    # If the process has no input, output, procedures, or timers, then Ada
-    # will not compile the body - generate a pragma to fix this
-    # EDIT: removed, there is a with Elaborate_Body at the beginning
-    #if not process.timers and not process.procedures \
-    #        and not process.input_signals and not process.output_signals:
-    #    ads_template.append('pragma elaborate_body;')
 
     # Transform inner labels to floating labels
     Helper.inner_labels_to_floating(process)
@@ -1435,17 +1295,6 @@ package body {process_name}_RI is''']
     with open(f"{process_name.lower()}_ada.gpr", "wb") as gprada:
         gprada.write(ada_gpr.encode('utf-8'))
 
-    if simu:
-        with open(u'{}_interface.aadl'
-                  .format(process_name.lower()), 'wb') as aadl:
-            aadl.write(u'\n'.join(minicv).encode('latin1'))
-        script = f'{process_name.lower()}_simu.sh'
-        with open(script, 'w') as bash_script:
-            bash_script.write(simu_script)
-        with open(f"{process_name.lower()}_lib.gpr", 'w') as gprlib:
-            gprlib.write(lib_gpr)
-        os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR)
-
     if process_instance is not process:
         # Generate an instance of the process type, too.
         # First copy the list of timers to the instance (otherwise the
@@ -1577,8 +1426,6 @@ def _call_external_function(output, **kwargs):
             local_decl.extend(p_local)
             if not SHARED_LIB:
                 code.append(f'RESET_{p_id};')
-            else:
-                code.append(f'RESET_{p_id} (New_String ("{p_id}"));')
             continue
         elif signal_name.lower() == 'set_timer':
             # built-in operator for setting a timer: SET(1000, timer_name)
@@ -1595,8 +1442,6 @@ def _call_external_function(output, **kwargs):
                 local_decl.append(f'{tmp_id} : asn1SccT_UInt32;')
                 code.append(f'{tmp_id} := {t_val};')
                 code.append(f"SET_{p_id} ({tmp_id});")
-            else:
-                code.append(f'SET_{p_id} (New_String ("{p_id}"), {t_val});')
             continue
         proc, out_sig = None, None
         is_out_sig = False

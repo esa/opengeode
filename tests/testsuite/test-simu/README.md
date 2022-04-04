@@ -12,4 +12,7 @@ and then go in that folder and run:
 
 opengeode-simulator -p properties
 
+EDIT: the SDL-only simulator code is not generated anymore in favour of the
+TASTE simulator engine which allows to run more than one SDL model at a time.
+This save a lot of code in the Ada backend making it easier to maintain.
 

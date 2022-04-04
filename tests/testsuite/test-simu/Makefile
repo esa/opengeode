@@ -27,14 +27,14 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
-	$(CC) -c -g test_ada.c
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
-	$(CC) -c external_proc.c
-	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
-	$(GNATBIND) -n orchestrator.ali
-	$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali
-	./test_ada
+	#$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
+	#$(CC) -c -g test_ada.c
+	#$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
+	#$(CC) -c external_proc.c
+	#$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
+	#$(GNATBIND) -n orchestrator.ali
+	#$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali
+	#./test_ada
 
 simu:
 	rm -rf orchestrator_simu
