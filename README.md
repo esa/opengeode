@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.8.0 (04/2022)**
+- Remove old simulator code (and feature) in favor of the TASTE simulator
+
 **3.7.29 (03/2022)**
 - Support the "set" and "reset" names as identifiers
 
