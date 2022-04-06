@@ -1,38 +1,42 @@
-SYSTEM testsc;
+system testsc;
     /* CIF TEXT (205, 237), (290, 186) */
     signal hello(ExtendedModeUnionTypeT);
-
-use dataview comment 'dataview.asn';
+    
+    use dataview comment 'dataview.asn';
     /* CIF ENDTEXT */
-    CHANNEL c
-        FROM ENV TO testsc WITH hello;
-    ENDCHANNEL;
-    BLOCK testsc;
-        SIGNALROUTE r
-            FROM ENV TO testsc WITH hello;
-        CONNECT c AND r;
+    channel c
+        from env to testsc with hello;
+    endchannel;
+    block testsc;
+        signalroute r
+            from env to testsc with hello;
+        connect c and r;
         /* CIF PROCESS (140, 56), (275, 137) */
-        PROCESS testsc;
-            /* CIF TEXT (259, 125), (367, 218) */
+        process testsc;
+            /* CIF TEXT (213, 125), (367, 218) */
             -- Text area for declarations and comments
-
-dcl foo ExtendedModeUnionTypeT := {
-     queryCount 10,
-    typeKeyword mode,
-    mode  255
-};
+            
+            dcl foo ExtendedModeUnionTypeT := {
+                 queryCount 10,
+                typeKeyword mode,
+                mode  255
+            };
             /* CIF ENDTEXT */
             /* CIF START (644, 84), (70, 35) */
             START;
                 /* CIF NEXTSTATE (644, 139), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (644, 139), (70, 35) */
-            STATE wait;
-                /* CIF INPUT (636, 194), (86, 35) */
-                INPUT hello(foo);
-                    /* CIF NEXTSTATE (644, 249), (70, 35) */
+            /* CIF state (644, 139), (70, 35) */
+            state wait;
+                /* CIF input (591, 194), (86, 35) */
+                input hello(foo);
+                    /* CIF NEXTSTATE (599, 249), (70, 35) */
                     NEXTSTATE -;
-            ENDSTATE;
-        ENDPROCESS testsc;
-    ENDBLOCK;
-ENDSYSTEM;
+                /* CIF provided (697, 194), (70, 35) */
+                provided true;
+                    /* CIF NEXTSTATE (697, 249), (70, 35) */
+                    NEXTSTATE -;
+            endstate;
+        endprocess testsc;
+    endblock;
+endsystem;
