@@ -7,8 +7,14 @@ with TASTE_Dataview;
 use TASTE_Dataview;
 with adaasn1rtl;
 use adaasn1rtl;
+with Interfaces.C.Strings;
+use Interfaces.C.Strings;
+
 
 package test_RI is
    procedure SET_toto (Val : in out asn1SccT_UInt32);
    procedure RESET_toto;
+   function To_C_Pointer (State_As_String : String) return Chars_Ptr is
+      (Null_Ptr);
+
 end test_RI;
