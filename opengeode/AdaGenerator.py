@@ -720,6 +720,18 @@ package body {process_name}_RI is''']
     ads_template.extend(rand_decl)
     if not instance:
         ads_template.extend(context_decl)
+
+    if not generic and not instance and not stop_condition:
+        # Add function allowing to trace current state as a string
+        # This uses malloc and should be generated only for Linux
+        # when Debug is ON
+        ads_template.append(
+                f"function Get_State return Chars_Ptr "
+                f"is ({process_name.title()}_RI.To_C_Pointer "
+                f"({ASN1SCC}{process_name}_States'Image ({LPREFIX}.State)))"
+                f" with Export, Convention => C, "
+                f'Link_Name => "{process_name.lower()}_state";')
+
     # Declare procedure Startup in .ads
     if not generic:
         ads_template.append(f'procedure Startup'
@@ -1749,11 +1761,11 @@ def _prim_call(prim, **kwargs):
     ident = prim.value[0].lower()
     params = prim.value[1]['procParams']
 
-    if ident in ('abs', 'fix', 'float'):
+    if ident in ('abs', 'fix', 'float', 'chr'):
 
         # Fix operator: make a cast depending on the lower range
         unsigned = False
-        if ident == "fix":
+        if ident == 'fix':
             unsigned = float(find_basic_type(params[0].exprType).Min) >= 0
 
         # Debug output:
@@ -1771,6 +1783,7 @@ def _prim_call(prim, **kwargs):
                 op='abs'           if ident == 'abs'
                 else 'Asn1Int'     if (ident == 'fix'  and not unsigned)
                 else 'Asn1UInt'    if (ident == 'fix'  and unsigned)
+                else 'Asn1Byte'    if ident == 'chr'
                 else 'Asn1Real'    if ident  == 'float' else 'ERROR')
 #        if ident == 'abs':
 #            ada_string += ')'

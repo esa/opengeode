@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.8.1 (04/2022)**
+- Add chr operator to cast elements of OCTET STRING into unsigned integers
+
 **3.8.0 (04/2022)**
 - Remove old simulator code (and feature) in favor of the TASTE simulator
 

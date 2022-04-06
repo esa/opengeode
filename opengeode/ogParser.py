@@ -166,6 +166,8 @@ SPECIAL_OPERATORS = {
                     ],
     'observer_status' :  # observer-only procedure returning the kind of state
                    [],
+    'chr'        :       # return an octet (element of octet string)
+                 [{'type': NUMERICAL,  'direction': 'in'}],
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -851,6 +853,9 @@ def check_call(name, params, context):
             'Min': param_btys[0].Min,
             'Max': param_btys[0].Max
         })
+
+    elif name == 'chr':
+        return type('Chr', (UINT8,), {})
 
     elif name == 'float':
         return type('Float', (REAL,), {
