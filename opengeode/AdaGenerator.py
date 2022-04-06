@@ -1002,6 +1002,11 @@ package body {process_name}_RI is''']
         if ri_inst or has_context_params:
             pkg_decl += ")"
         ads_template.append(f"{pkg_decl};")
+        ads_template.append(
+               f"function Get_State return chars_ptr "
+               f"is ({process_name}_RI.To_C_Pointer ({process_name}_Instance.{LPREFIX}.State'Img))"
+               f" with Export, Convention => C, "
+               f'Link_Name => "{process_name.lower()}_state";')
 
         # Expose Execute_Transition, needed by the simulator to execute continuous signals
         ads_template.append(f'procedure Execute_Transition (Id : Integer) renames {process_name}_Instance.Execute_Transition;')
