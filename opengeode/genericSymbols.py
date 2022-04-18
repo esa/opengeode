@@ -53,10 +53,10 @@ import os
 import logging
 import traceback
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
-from PySide2.QtUiTools import QUiLoader
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
+from PySide6.QtUiTools import QUiLoader
 
 from . import undoCommands, ogAST, ogParser
 from .Connectors import Connection, VerticalConnection, CommentConnection, \
@@ -486,7 +486,7 @@ class Symbol(QObject, QGraphicsPathItem):
         if not hasattr(self, '_no_hyperlink'):
             my_menu.addAction(hl_action)
         my_menu.addAction(png_action)
-        action = my_menu.exec_(event.screenPos())
+        action = my_menu.exec(event.screenPos())
         if action:
             if action.text() == png_action:
                 # Save a picture of the selected symbol and all its children

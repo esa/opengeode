@@ -21,7 +21,7 @@
         opengeode.Statechart.render_statechart(scene, graph)
         view.refresh()
         view.show()
-        app.exec_()
+        app.exec()
 """
 
 from . import opengeode

@@ -17,9 +17,9 @@
 import string
 import logging
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
 from . import undoCommands
 
 __all__ = ['EditableText']
@@ -99,22 +99,24 @@ class Highlighter(QSyntaxHighlighter):
         # Black bold items (allowed keywords)
         black_bold_format = QTextCharFormat()
         black_bold_format.setFontWeight(QFont.Bold)
-        self.highlighting_rules = [(QRegExp(pattern, cs=Qt.CaseInsensitive),
-            black_bold_format) for pattern in blackbold_patterns]
+        # TODO Qt6 does not have QRegExp anymore ; QRegularExpression is incompatible
+        self.highlighting_rules = [] #[(QRegularExpression(pattern, cs=Qt.CaseInsensitive),
+#            black_bold_format) for pattern in blackbold_patterns]
 
         # Red bold items (reserved keywords)
         red_bold_format = QTextCharFormat()
         red_bold_format.setFontWeight(QFont.Bold)
         red_bold_format.setForeground(Qt.red)
         for pattern in redbold_patterns:
-            self.highlighting_rules.append(
-                    (QRegExp(pattern, cs=Qt.CaseInsensitive), red_bold_format))
+            pass
+            #self.highlighting_rules.append(
+            #        (QRegularExpression(pattern, cs=Qt.CaseInsensitive), red_bold_format))
 
         # Comments
         comment_format = QTextCharFormat()
         comment_format.setForeground(Qt.darkBlue)
         comment_format.setFontItalic(True)
-        self.highlighting_rules.append((QRegExp('--[^\n]*'), comment_format))
+        #self.highlighting_rules.append((QRegularExpression('--[^\n]*'), comment_format))
 
     # pylint: disable=C0103
     def highlightBlock(self, text):

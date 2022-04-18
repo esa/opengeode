@@ -21,7 +21,7 @@ import sys
 import importlib
 import logging
 import hashlib
-from PySide2.QtCore import QProcess, QFile, QIODevice
+from PySide6.QtCore import QProcess, QFile, QIODevice
 
 LOG = logging.getLogger(__name__)
 terminal_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")

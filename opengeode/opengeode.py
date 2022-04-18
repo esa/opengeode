@@ -70,11 +70,11 @@ import pygraphviz  # NOQA
 from typing import List, Union, Dict, Set, Any, Tuple
 
 
-from PySide2.QtGui import *
-from PySide2.QtCore import *
-from PySide2.QtWidgets import *
-from PySide2.QtUiTools import *
-from PySide2 import QtSvg
+from PySide6.QtGui import *
+from PySide6.QtCore import *
+from PySide6.QtWidgets import *
+from PySide6.QtUiTools import *
+from PySide6 import QtSvg
 
 from .genericSymbols import Symbol, Comment, Cornergrabber, Connection, Channel
 from .sdlSymbols import(Input,
@@ -166,7 +166,7 @@ else:
 # they sometimes get destroyed and disappear from the scene.
 # As if a GC was deleting these object *even if they belong to the scene*
 # (but have no parentItem). Most likely a Qt/Pyside bug.
-# NOTE: This was not re-evaluated with PySide2
+# NOTE: This was not re-evaluated with PySide6
 G_SYMBOLS = set()
 
 # There is a bug in Pyside2 with the setData(..) function. It should
@@ -834,7 +834,7 @@ class SDL_Scene(QGraphicsScene):
             msg_box.setText("Syntax error!")
             msg_box.setStandardButtons(QMessageBox.Discard)
             msg_box.setDefaultButton(QMessageBox.Discard)
-            msg_box.exec_()
+            msg_box.exec()
         # There were syntax errors: force user to fix them
         # by returning True to the caller (TextInteraction), which
         # will keep focus
@@ -1447,7 +1447,7 @@ class SDL_Scene(QGraphicsScene):
                                              sort,
                                              rect=rect))
         if list(map(setup_action, candidates)):
-            menu.exec_(pos)
+            menu.exec(pos)
 
     def cancel(self):
         ''' Return to idle mode, reset current actions '''
@@ -1816,7 +1816,7 @@ class SDL_View(QGraphicsView):
             # If scene has no menu connected (eg. ASN.1 dock..)
             pass
         self.mouse_pos = evt.pos()
-        if evt.button() == Qt.MidButton:
+        if evt.button() == Qt.MiddleButton:
             self.mode = 'moveScreen'
 
     def go_up(self):
@@ -1932,7 +1932,7 @@ class SDL_View(QGraphicsView):
                         msg_box.setStandardButtons(QMessageBox.Yes |
                                                    QMessageBox.Cancel)
                         msg_box.setDefaultButton(QMessageBox.Yes)
-                        ret = msg_box.exec_()
+                        ret = msg_box.exec()
                         if ret == QMessageBox.Yes:
                             item.nested_scene = \
                                 self.scene().create_subscene(ctx, self.scene())
@@ -2087,7 +2087,7 @@ clean:
             msg_box.setStandardButtons(QMessageBox.Apply
                                        | QMessageBox.Cancel)
             msg_box.setDefaultButton(QMessageBox.Apply)
-            res = msg_box.exec_()
+            res = msg_box.exec()
             if res == QMessageBox.Apply:
                 syntex_error = True if self.check_model() == "Syntax Errors" \
                                else False
@@ -2105,7 +2105,7 @@ clean:
                             "save the model now, as you may not be able to "
                             "open it again. Are you sure you want to save?")
             msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Cancel)
-            res = msg_box.exec_()
+            res = msg_box.exec()
             if res == QMessageBox.Cancel:
                 return False
 
@@ -2297,7 +2297,7 @@ clean:
                 QMessageBox.Discard |
                 QMessageBox.Cancel)
         msg_box.setDefaultButton(QMessageBox.Save)
-        ret = msg_box.exec_()
+        ret = msg_box.exec()
         if ret == QMessageBox.Save:
             if not self.save_diagram():
                 return False
@@ -3393,7 +3393,7 @@ def gui(options):
     ui_file.close()
     my_widget.start(options)
 
-    return app.exec_()
+    return app.exec()
 
 
 def opengeode():

@@ -28,10 +28,10 @@ from functools import partial
 from itertools import chain
 import re
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
-from PySide2.QtUiTools import QUiLoader
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
+from PySide6.QtUiTools import QUiLoader
 
 # import resource file to get the configuration widget
 from . import icons
@@ -703,7 +703,7 @@ def create_dot_graph(root_ast,
         ui_file.close()
         rightList.addItems(list(valid_inputs))
         leftList.addItems(list(input_signals - valid_inputs))
-        go = dialog.exec_()
+        go = dialog.exec()
         valid_inputs.clear()
         for idx in range(rightList.count()):
             valid_inputs.add(rightList.item(idx).text())
