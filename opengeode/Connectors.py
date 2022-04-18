@@ -700,7 +700,8 @@ class Edge(Connection):
             metrics = QFontMetrics(font)
             label = self.edge.get('label', '') or ''
             lines = label.split('\n')
-            width = metrics.width(max(lines)) # longest line
+            longest_line = max(lines, key=len)
+            width = metrics.horizontalAdvance(longest_line)
             height = metrics.height() * len(lines)
             # lp is the position of the center of the text
             pos = self.mapFromScene(*self.edge['lp'])

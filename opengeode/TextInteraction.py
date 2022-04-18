@@ -99,35 +99,39 @@ class Highlighter(QSyntaxHighlighter):
         # Black bold items (allowed keywords)
         black_bold_format = QTextCharFormat()
         black_bold_format.setFontWeight(QFont.Bold)
-        # TODO Qt6 does not have QRegExp anymore ; QRegularExpression is incompatible
-        self.highlighting_rules = [] #[(QRegularExpression(pattern, cs=Qt.CaseInsensitive),
-#            black_bold_format) for pattern in blackbold_patterns]
+        for pattern in blackbold_patterns:
+            self.highlighting_rules.append(
+                    (QRegularExpression(pattern,
+                                        QRegularExpression.CaseInsensitiveOption),
+                                        black_bold_format))
 
         # Red bold items (reserved keywords)
         red_bold_format = QTextCharFormat()
         red_bold_format.setFontWeight(QFont.Bold)
         red_bold_format.setForeground(Qt.red)
+
         for pattern in redbold_patterns:
-            pass
-            #self.highlighting_rules.append(
-            #        (QRegularExpression(pattern, cs=Qt.CaseInsensitive), red_bold_format))
+            self.highlighting_rules.append(
+                    (QRegularExpression(pattern,
+                                        QRegularExpression.CaseInsensitiveOption),
+                                        red_bold_format))
 
         # Comments
         comment_format = QTextCharFormat()
         comment_format.setForeground(Qt.darkBlue)
         comment_format.setFontItalic(True)
-        #self.highlighting_rules.append((QRegularExpression('--[^\n]*'), comment_format))
+        self.highlighting_rules.append(
+                (QRegularExpression('--[^\n]*'), comment_format))
 
     # pylint: disable=C0103
     def highlightBlock(self, text):
         ''' Redefined function to apply the highlighting rules '''
         for expression, formatter in self.highlighting_rules:
-            index = expression.indexIn(text)
-            while (index >= 0):
-                length = expression.matchedLength()
-                self.setFormat(index, length, formatter)
-                index = expression.indexIn(text, index + length)
-
+            index = expression.globalMatch(text)
+            while (index.hasNext()):
+                match = index.next()
+                length = match.capturedLength()
+                self.setFormat(match.capturedStart(), length, formatter)
 
 # pylint: disable=R0902
 class EditableText(QGraphicsTextItem):
