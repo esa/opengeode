@@ -15,7 +15,7 @@ system og;
         connect c and r;
         /* CIF PROCESS (253, 105), (150, 75) */
         process og;
-            /* CIF TEXT (0, 33), (356, 264) */
+            /* CIF TEXT (0, 33), (356, 278) */
             -- Text area for declarations and comments
             
             dcl a List := {'a', 'b', 'foo', 'bar', 'baz'};
@@ -32,6 +32,8 @@ system og;
             dcl helloStr Short_String := {'h', 'e', 'l', 'l', 'o'};
             
             dcl ia5 TextString := 'hello';
+            
+            dcl b Octet;
             /* CIF ENDTEXT */
             /* CIF START (639, 63), (70, 35) */
             START;
@@ -61,9 +63,9 @@ endfor
                 /* CIF comment (796, 496), (215, 40) */
                 comment 'hello with quote in comment :
 a\'b';
-                /* CIF task (608, 546), (130, 56) */
-                task for chr in helloStr:
- call write(chr);
+                /* CIF task (609, 546), (130, 56) */
+                task for c in helloStr:
+ call write(c);
 endfor;
                 /* CIF PROCEDURECALL (632, 622), (84, 35) */
                 call write(' ');
@@ -91,7 +93,13 @@ and escaping';
                 /* CIF comment (791, 948), (178, 40) */
                 comment 'string with double quotes,
 and escaping';
-                /* CIF NEXTSTATE (639, 1006), (70, 35) */
+                /* CIF task (603, 1006), (142, 35) */
+                task b(0) := chr('68'H)
+                /* CIF comment (765, 1006), (96, 35) */
+                comment 'set value "h"';
+                /* CIF PROCEDURECALL (632, 1061), (84, 35) */
+                call writeln(b);
+                /* CIF NEXTSTATE (639, 1111), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (366, 217), (70, 35) */
             state wait;

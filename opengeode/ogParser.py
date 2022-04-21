@@ -98,7 +98,9 @@ INT32        = type('Integer32Type',  (object,), {'kind': 'Integer32Type',
 UINT8        = type('IntegerU8Type',  (object,), {'kind': 'IntegerU8Type',
                                                   'Min' : '0',
                                                   'Max' : '255'})
-NUMERICAL    = type('NumericalType',  (object,), {'kind': 'Numerical'})
+NUMERICAL    = type('NumericalType',  (object,), {'kind': 'Numerical',
+                                                  'Min' : '0',
+                                                  'Max' : '0'})
 TIMER        = type('TimerType',      (object,), {'kind': 'TimerType'})
 REAL         = type('RealType',       (object,), {'kind': 'RealType',
                                                   'Min' : str(1e-308),
@@ -167,7 +169,7 @@ SPECIAL_OPERATORS = {
     'observer_status' :  # observer-only procedure returning the kind of state
                    [],
     'chr'        :       # return an octet (element of octet string)
-                 [{'type': NUMERICAL,  'direction': 'in'}],
+                 [{'type': UINT8,  'direction': 'in'}],
 }
 
 # Container to keep a list of types mapped from ANTLR Tokens
@@ -794,7 +796,11 @@ def check_call(name, params, context):
             basic_left  = find_basic_type(expr.left.exprType)
             basic_right = find_basic_type(expr.right.exprType)
             #print getattr(basic_left, "Min", 0), getattr(basic_right, "Min", 0)
-            warnings.extend(fix_expression_types(expr, context))
+            try:
+                warnings.extend(fix_expression_types(expr, context))
+            except AttributeError:
+                # If the parameter has no proper type we may have an exception
+                raise TypeError ("Could not parse this expression")
             params[idx] = expr.right
         except TypeError as err:
             expected = type_name(sign[idx]['type'])
@@ -855,6 +861,16 @@ def check_call(name, params, context):
         })
 
     elif name == 'chr':
+        # First check that parameter is in range [0..255]
+        # The parameter may be an octet string literal. In that case we
+        # have to check the actual number rather than the Min/Max attribute.
+        param = params[0]
+        if isinstance(param, ogAST.PrimOctetStringLiteral):
+            Min = Max = param.numeric_value
+        else:
+            Min, Max = float(param_btys[0].Min), float(param_btys[0].Max)
+        if Min < 0 or Min > 255 or Max < 0 or Max > 255:
+            raise TypeError('Parameter is not within range [0 .. 255]')
         return type('Chr', (UINT8,), {})
 
     elif name == 'float':
@@ -2814,7 +2830,11 @@ def primary(root, context):
             prim = ogAST.PrimOctetStringLiteral()
             try:
                 # hexstring is the converted from hex to numbers
-                hexstring = codecs.decode(root.text[1:-2], 'hex')  # -> bytes
+                octets = root.text[1:-2]  # just keep the hex numbers
+                if len(octets) % 2 != 0:
+                    # make sure there is an even number of bytes
+                    octets = f'0{octets}'
+                hexstring = codecs.decode(octets, 'hex')  # -> bytes
                 prim.hexstring = hexstring
                 as_hex = hexstring.hex()   # -> string
                 as_number = int(as_hex, 16)
