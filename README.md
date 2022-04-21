@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.1 (04/2022)**
+- Improve chr operator: add input range check
+- Bugfix with octet string literals if they had an odd number of characters (add a 0 on the left)
+
 **3.9.0 (04/2022)**
 - Upgrade to Qt6 (PySide6)
 
