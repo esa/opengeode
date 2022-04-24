@@ -1972,6 +1972,11 @@ def logic_expression(root, context):
     left_bty = find_basic_type(expr.left.exprType)
     right_bty = find_basic_type(expr.right.exprType)
 
+    # If one side of the expression is numeric (not an array of bits), flag it
+    # as this will be used to determine the range of the bitwise operation
+    # (e.g. "someUnsigned and 'FF'H" has a range of 0..255)
+    numeric_bitwise = False
+
     for bty in left_bty, right_bty:
         if shortcircuit and bty.kind != 'BooleanType':
             msg = 'Shortcircuit operators only work with type Boolean'
@@ -1985,8 +1990,9 @@ def logic_expression(root, context):
         elif bty.kind == 'SequenceOfType' and bty.Min == bty.Max \
                 and find_basic_type(bty.type).kind == 'BooleanType':
             continue
-        elif 'IntegerType' in bty.kind and float(bty.Min) >= 0.0:
+        elif bty.kind.startswith('Integer') and float(bty.Min) >= 0.0:
             # Unsigned types can work for bitwise operations
+            numeric_bitwise = True
             continue
         else:
             msg = 'Bitwise operators only work with Booleans, unsigned integers,' \
@@ -1994,10 +2000,42 @@ def logic_expression(root, context):
             errors.append(error(root, msg))
             break
 
+    if numeric_bitwise:
+        # Collect the range of both sides of the expression
+        if isinstance(expr.left, (ogAST.PrimBitStringLiteral,
+                                  ogAST.PrimOctetStringLiteral)):
+            leftMin = leftMax = float(expr.left.numeric_value)
+        elif left_bty.kind.startswith('Integer'):
+            leftMin, leftMax = float(left_bty.Min), float(left_bty.Max)
+        else:
+            # Not a number: can be an octet/bit string type
+            leftMin = leftMax = None
+        if isinstance(expr.right, (ogAST.PrimBitStringLiteral,
+                                   ogAST.PrimOctetStringLiteral)):
+            rightMin = rightMax = float(expr.right.numeric_value)
+        elif right_bty.kind.startswith('Integer'):
+            rightMin, rightMax = float(right_bty.Min), float(right_bty.Max)
+        else:
+            rightMin = rightMax = None
+
     if left_bty.kind == right_bty.kind == 'BooleanType':
         expr.exprType = BOOLEAN
-    else:
+    # Else: we must define the range of the result if one side is numeric
+    if not numeric_bitwise or rightMin is None:
         expr.exprType = expr.left.exprType
+    elif leftMin is None:
+        expr.exprType = expr.right.exprType
+    elif root.type == lexer.AND:
+        resMin = min(leftMin, rightMin)
+        resMax = min(leftMax, rightMax)
+    elif root.type in (lexer.OR, lexer.XOR):
+        resMin = min(leftMin, rightMin)
+        resMax = max(leftMax, rightMax)
+
+    if numeric_bitwise and leftMin is not None and rightMin is not None:
+        expr.exprType = INTEGER
+        expr.exprType.Min = str(resMax)
+        expr.exprType.Max = str(resMax)
 
     return expr, errors, warnings
 
@@ -2993,7 +3031,12 @@ def variables(root, ta_ast, context, monitor=False):
                 def_value = expr.right
                 basic = find_basic_type(asn1_sort)
                 if basic.kind.startswith(('Integer', 'Real')):
-                    check_range(basic, find_basic_type(def_value.exprType))
+                    if isinstance(def_value, ogAST.PrimOctetStringLiteral):
+                        rType = INTEGER
+                        rType.Min = rType.Max = str(def_value.numeric_value)
+                        check_range(basic, rType)
+                    else:
+                        check_range(basic, find_basic_type(def_value.exprType))
             except(AttributeError, TypeError, Warning) as err:
                 #print (traceback.format_exc())
                 errors.append('Types are incompatible in DCL assignment: '
@@ -5473,6 +5516,7 @@ def decision(root, parent, context):
                     continue
                 delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
                 # numeric type -> find the range covered by this answer
+                # TODO Check if answers are OctetStringLiteral
                 a0_basic = find_basic_type(closedRange[0].exprType)
                 a1_basic = find_basic_type(closedRange[1].exprType)
                 if not hasattr(a0_basic, "Min") or not hasattr(a1_basic, "Min") \
@@ -5872,7 +5916,12 @@ def assign(root, context):
         # Assignment with numerical value: check range
         basic = find_basic_type(expr.left.exprType)
         if basic.kind.startswith(('Integer', 'Real')):
-            check_range(basic, find_basic_type(expr.right.exprType))
+            if isinstance(expr.right, ogAST.PrimOctetStringLiteral):
+                rType = INTEGER
+                rType.Min = rType.Max = str(expr.right.numeric_value)
+                check_range(basic, rType)
+            else:
+                check_range(basic, find_basic_type(expr.right.exprType))
     except(AttributeError, TypeError) as err:
         LOG.debug(str(traceback.format_exc()))
         errors.append(u'In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'
