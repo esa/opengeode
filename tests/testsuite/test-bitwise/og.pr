@@ -1,0 +1,55 @@
+system og;
+    /* CIF TEXT (159, 221), (290, 200) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    signal dd;
+    signal we;
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with dd;
+        from og to env with we;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with dd;
+            from og to env with we;
+        connect c and r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        process og;
+            /* CIF TEXT (57, 58), (415, 233) */
+            dcl smallsigned ByteSigned := '70'H; -- Type check is done here
+            dcl smallunsigned ByteUnsigned := leftBit;  -- Ref to ASN.1 constant
+            
+            dcl longsigned LargeSigned := 800;
+            dcl longunsigned LargeUnsigned := 'FFFF'H;
+            
+            dcl boundedstring fixedOctStr := '00ABCDEF00'H; -- 5 bytesigned
+            dcl unboundedstring VarOctStr := 'ABCD'H;
+            
+            dcl boundedbools FixedSeqBool := { true, true, false, false };
+            dcl unboundedbools VarSeqBool := { true, false };
+            /* CIF ENDTEXT */
+            /* CIF START (674, 137), (70, 35) */
+            START;
+                /* CIF task (636, 192), (146, 35) */
+                task smallsigned := '70'H
+                /* CIF comment (801, 192), (163, 35) */
+                comment 'range checked ok';
+                /* CIF PROCEDURECALL (568, 249), (280, 38) */
+                call writeln('Test of various bitwise operations');
+                /* CIF task (572, 307), (273, 35) */
+                task longunsigned := longunsigned and fullbyte;
+                /* CIF PROCEDURECALL (582, 362), (253, 35) */
+                call writeln('should be 255:', longunsigned);
+                /* CIF task (559, 412), (298, 35) */
+                task longunsigned := longunsigned or  'FFFF'H;
+                /* CIF NEXTSTATE (674, 462), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (511, 123), (70, 35) */
+            state wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;

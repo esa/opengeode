@@ -1,0 +1,19 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+ByteUnsigned   ::= INTEGER (0..255)
+ByteSigned     ::= INTEGER (-128..127)
+
+LargeUnsigned  ::= INTEGER (0..65535)
+LargeSigned    ::= INTEGER (-1 .. 65535)
+
+VarOctStr      ::= OCTET STRING (SIZE (0..20))
+FixedOctStr    ::= OCTET STRING (SIZE (5))
+
+VarSeqBool ::= SEQUENCE(SIZE(1..5)) OF BOOLEAN
+FixedSeqBool ::= SEQUENCE(SIZE(4)) OF BOOLEAN
+
+leftBit ByteUnsigned  ::= 128
+fullbyte ByteUnsigned ::= 255
+
+END
