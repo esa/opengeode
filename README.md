@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.3 (04/2022)**
+- More type checks
+
 **3.9.2 (04/2022)**
 - Add type checks when using octet string literals
 
