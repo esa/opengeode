@@ -31,21 +31,30 @@ system og;
             dcl boundedbools FixedSeqBool := { true, true, false, false };
             dcl unboundedbools VarSeqBool := { true, false };
             /* CIF ENDTEXT */
-            /* CIF START (674, 137), (70, 35) */
+            /* CIF START (567, 199), (70, 35) */
             START;
-                /* CIF task (636, 192), (146, 35) */
+                /* CIF task (529, 254), (146, 35) */
                 task smallsigned := '70'H
-                /* CIF comment (801, 192), (163, 35) */
+                /* CIF comment (694, 254), (163, 35) */
                 comment 'range checked ok';
-                /* CIF PROCEDURECALL (568, 249), (280, 38) */
+                /* CIF PROCEDURECALL (461, 311), (280, 38) */
                 call writeln('Test of various bitwise operations');
-                /* CIF task (572, 307), (273, 35) */
+                /* CIF task (465, 369), (273, 35) */
                 task longunsigned := longunsigned and fullbyte;
-                /* CIF PROCEDURECALL (582, 362), (253, 35) */
+                /* CIF PROCEDURECALL (475, 424), (253, 35) */
                 call writeln('should be 255:', longunsigned);
-                /* CIF task (559, 412), (298, 35) */
+                /* CIF task (453, 474), (298, 35) */
                 task longunsigned := longunsigned or  'FFFF'H;
-                /* CIF NEXTSTATE (674, 462), (70, 35) */
+                /* CIF task (460, 529), (283, 35) */
+                task longunsigned := longunsigned + '03'H - 3;
+                /* CIF decision (550, 579), (103, 50) */
+                decision longunsigned;
+                    /* CIF ANSWER (524, 649), (82, 23) */
+                    (0:'FF'H):
+                    /* CIF ANSWER (616, 649), (83, 23) */
+                    (> 'FF'H + 1):
+                enddecision;
+                /* CIF NEXTSTATE (567, 688), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (511, 123), (70, 35) */
             state wait;

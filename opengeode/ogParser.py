@@ -116,6 +116,9 @@ OCTETSTRING  = type('OctetString',    (object,), {'kind': 'OctetStringType'})
 ENUMERATED   = type('EnumeratedType', (object,), {'kind': 'EnumeratedType'})
 UNKNOWN_TYPE = type('UnknownType',    (object,), {'kind': 'UnknownType'})
 
+NewInteger = lambda tMin, tMax: type('IntegerType', (INTEGER,), {
+    'kind': 'IntegerType', 'Min': str(tMin), 'Max': str(tMax)})
+
 SPECIAL_OPERATORS = {
     'abs'        : [{'type': NUMERICAL,  'direction': 'in'}],
     'ceil'       : [{'type': REAL,       'direction': 'in'}],
@@ -1410,6 +1413,12 @@ def compare_types(type_a, type_b):   # type -> [warnings]
         if mismatch:
             warnings.append(mismatch)
         return warnings
+    elif is_integer(type_a) and type_b.kind == 'OctetStringType' \
+            or is_integer(type_b) and type_a.kind == 'OctetStringType':
+        if mismatch:
+            warnings.append(mismatch)
+        return warnings
+
     else:
         raise TypeError('Incompatible types {} and {}'.format(
             type_name(type_a),
@@ -1605,19 +1614,8 @@ def fix_expression_types(expr, context):
             # removing SequenceOf and String from here should be OK.
             raw_expr.exprType = ref_type
     else:
-        try:
-            warnings.extend(compare_types(expr.left.exprType,
-                                          expr.right.exprType))
-        except TypeError as err:
-           #print "here", expr.left.inputString, " and right = ", expr.right.inputString
-           #print expr.left.exprType, expr.right.exprType
-           #print "--> ", str(err)
-           ##print traceback.format_stack (limit=2)
-           #left_type = find_basic_type(expr.left.exprType)
-           #right_type = find_basic_type(expr.right.exprType)
-           #print "    left min/max:", left_type.Min, left_type.Max
-           #print "    right min/max:", right_type.Min, right_type.Max
-            raise
+        warnings.extend(compare_types(expr.left.exprType,
+                                      expr.right.exprType))
     return list(set(warnings))
 
 
@@ -2033,9 +2031,7 @@ def logic_expression(root, context):
         resMax = max(leftMax, rightMax)
 
     if numeric_bitwise and leftMin is not None and rightMin is not None:
-        expr.exprType = INTEGER
-        expr.exprType.Min = str(resMax)
-        expr.exprType.Max = str(resMax)
+        expr.exprType = NewInteger (resMax, resMax)
 
     return expr, errors, warnings
 
@@ -2076,12 +2072,25 @@ def arithmetic_expression(root, context):
         return { 'Min': min(candidates),
                  'Max': max(candidates)}
 
-    #print "[DEBUG] Arithmetic expression:", get_input_string(root)
+    #print ("[DEBUG] Arithmetic expression:", get_input_string(root))
     expr, errors, warnings = binary_expression(root, context)
 
     # Get the basic types to have the ranges
-    basic_left  = find_basic_type(expr.left.exprType)
-    basic_right = find_basic_type(expr.right.exprType)
+    # If a value is in hex form, use its integer value
+    # (this allows to write "x := someVar + 'FF'H")
+    if isinstance(expr.left, (ogAST.PrimOctetStringLiteral,
+                              ogAST.PrimBitStringLiteral)):
+        tMin = tMax = expr.left.numeric_value
+        basic_left = NewInteger (tMin, tMax)
+    else:
+        basic_left  = find_basic_type(expr.left.exprType)
+
+    if isinstance(expr.right, (ogAST.PrimOctetStringLiteral,
+                               ogAST.PrimBitStringLiteral)):
+        tMin = tMax = expr.right.numeric_value
+        basic_right = NewInteger (tMin, tMax)
+    else:
+        basic_right = find_basic_type(expr.right.exprType)
 
     try:
         minL = float(basic_left.Min)
@@ -2094,7 +2103,7 @@ def arithmetic_expression(root, context):
         if isinstance(expr.right, ogAST.PrimConstant):
             minL = maxL = get_asn1_constant_value(expr.right.constant_value)
 
-        #print "...left/right [{} .. {}]   [{} .. {}]".format(minL, maxL, minR, maxR)
+        #print( "...left/right [{} .. {}]   [{} .. {}]".format(minL, maxL, minR, maxR))
 
         # compute the bounds, independently from anything else
         bounds = {"Min" : "0", "Max": "0"}
@@ -2237,7 +2246,7 @@ def arithmetic_expression(root, context):
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types '\
               'have a range constraint'
-        #print msg
+        #print (msg)
         #print (traceback.format_exc())
         errors.append(error(root, msg))
     except TypeError as err:
@@ -3032,8 +3041,8 @@ def variables(root, ta_ast, context, monitor=False):
                 basic = find_basic_type(asn1_sort)
                 if basic.kind.startswith(('Integer', 'Real')):
                     if isinstance(def_value, ogAST.PrimOctetStringLiteral):
-                        rType = INTEGER
-                        rType.Min = rType.Max = str(def_value.numeric_value)
+                        rType = NewInteger (def_value.numeric_value,
+                                            def_value.numeric_value)
                         check_range(basic, rType)
                     else:
                         check_range(basic, find_basic_type(def_value.exprType))
@@ -5516,18 +5525,30 @@ def decision(root, parent, context):
                     continue
                 delta = 1 if q_basic.kind.startswith('Integer') else 1e-10
                 # numeric type -> find the range covered by this answer
-                # TODO Check if answers are OctetStringLiteral
-                a0_basic = find_basic_type(closedRange[0].exprType)
-                a1_basic = find_basic_type(closedRange[1].exprType)
-                if not hasattr(a0_basic, "Min") or not hasattr(a1_basic, "Min") \
-                        or a0_basic.Min != a0_basic.Max \
-                        or a1_basic.Min != a1_basic.Max:
-                    # Not a constant or a raw number, range is not fix
-                    need_else = True
-                    continue
+                # If answers are OctetStringLiteral, user their integer value
+                if isinstance(closedRange[0], (ogAST.PrimOctetStringLiteral,
+                                               ogAST.PrimBitStringLiteral)):
+                    a0_val = float(closedRange[0].numeric_value)
+                else:
+                    a0_basic = find_basic_type(closedRange[0].exprType)
+                    if not hasattr(a0_basic, "Min") or a0_basic.Min != a0_basic.Max:
+                        # Not a constant or a raw number, range is not fix
+                        need_else = True
+                        continue
+                    a0_val = float(a0_basic.Min)
+
+                if isinstance(closedRange[1], (ogAST.PrimOctetStringLiteral,
+                                               ogAST.PrimBitStringLiteral)):
+                    a1_val = float(closedRange[1].numeric_value)
+                else:
+                    a1_basic = find_basic_type(closedRange[1].exprType)
+                    if not hasattr(a1_basic, "Min") or a1_basic.Min != a1_basic.Max:
+                        # Not a constant or a raw number, range is not fix
+                        need_else = True
+                        continue
+                    a1_val = float(a1_basic.Max)
+
                 qmin, qmax = float(q_basic.Min), float(q_basic.Max)
-                a0_val = float(a0_basic.Min)
-                a1_val = float(a1_basic.Max)
                 if a0_val < qmin:
                     qwarn.append('Decision "{dec}": '
                                     'Range {a0} .. {qmin} is unreachable'
@@ -5543,8 +5564,7 @@ def decision(root, parent, context):
                     msg = f'Decision "{dec.inputString}": Unreachable branch {a0_val}:{a1_val}'
                     warnings.append([msg, [ans_x, ans_y], []])
                     ans.warnings.append(msg)
-                covered_ranges[ans].append((float(a0_basic.Min),
-                                            float(a1_basic.Max)))
+                covered_ranges[ans].append((a0_val, a1_val))
     # Check the following
     # (1) no overlap between covered ranges in decision answers
     # (2) no gap in the coverage of the decision possible values
@@ -5917,8 +5937,8 @@ def assign(root, context):
         basic = find_basic_type(expr.left.exprType)
         if basic.kind.startswith(('Integer', 'Real')):
             if isinstance(expr.right, ogAST.PrimOctetStringLiteral):
-                rType = INTEGER
-                rType.Min = rType.Max = str(expr.right.numeric_value)
+                rType = NewInteger(expr.right.numeric_value,
+                                   expr.right.numeric_value)
                 check_range(basic, rType)
             else:
                 check_range(basic, find_basic_type(expr.right.exprType))
