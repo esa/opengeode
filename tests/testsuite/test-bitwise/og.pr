@@ -51,10 +51,11 @@ system og;
                 decision longunsigned;
                     /* CIF ANSWER (524, 649), (82, 23) */
                     (0:'FF'H):
-                    /* CIF ANSWER (616, 649), (83, 23) */
-                    (> 'FF'H + 1):
+                    /* CIF ANSWER (614, 649), (86, 38) */
+                    (> 'FF'H + 1,
+256):
                 enddecision;
-                /* CIF NEXTSTATE (567, 688), (70, 35) */
+                /* CIF NEXTSTATE (567, 703), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (511, 123), (70, 35) */
             state wait;
