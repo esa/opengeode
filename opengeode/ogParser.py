@@ -14,7 +14,7 @@
     to be compiled and used).
 
     During the build of the AST this library makes a number of semantic
-    checks on the SDL input mode.
+    checks on the SDL input model.
 
     Copyright (c) 2012-2022 European Space Agency
 
@@ -798,9 +798,9 @@ def check_call(name, params, context):
         try:
             basic_left  = find_basic_type(expr.left.exprType)
             basic_right = find_basic_type(expr.right.exprType)
-            #print getattr(basic_left, "Min", 0), getattr(basic_right, "Min", 0)
             try:
                 warnings.extend(fix_expression_types(expr, context))
+                Assign_Check_Range(expr)
             except AttributeError:
                 # If the parameter has no proper type we may have an exception
                 raise TypeError ("Could not parse this expression")
@@ -1000,6 +1000,18 @@ def check_range(typeref, type_to_check):
         raise TypeError('Missing range')
 
 
+def Assign_Check_Range(expr : ogAST.ExprAssign):
+    ''' If the assignment is numerical, check the range. '''
+    basic = find_basic_type (expr.left.exprType)
+    if basic.kind.startswith(('Integer', 'Real')):
+        if isinstance(expr.right, ogAST.PrimOctetStringLiteral):
+            rType = NewInteger(expr.right.numeric_value,
+                               expr.right.numeric_value)
+            check_range(basic, rType)
+        else:
+            check_range(basic, find_basic_type(expr.right.exprType))
+
+
 def fix_append_expression_type(expr, expected_type):
     ''' In an Append expression, all components must be of the same type,
         which is the type expected by the user of the append, for example
@@ -1089,6 +1101,8 @@ def check_type_compatibility(primary, type_ref, context):
 
     elif isinstance(primary, (ogAST.PrimInteger, ogAST.ExprMod)) \
             and (is_integer(type_ref) or type_ref == NUMERICAL):
+        # We do not check range here because we do not know if it
+        # is relevant - range should be checked when value is assigned
         return warnings
 
     elif isinstance(primary, ogAST.PrimReal) \
@@ -1515,6 +1529,7 @@ def fix_expression_types(expr, context):
                     check_expr.left.exprType = asn_type
                     check_expr.right = elem
                     warnings.extend(fix_expression_types(check_expr, context))
+                    Assign_Check_Range(check_expr)
                     value.value[idx] = check_expr.right
             # the type of the raw PrimSequenceOf can be set now
             value.exprType.type = asn_type
@@ -1556,6 +1571,7 @@ def fix_expression_types(expr, context):
             check_expr.left.exprType = expected_type
             check_expr.right = fd_expr
             warnings.extend(fix_expression_types(check_expr, context))
+            Assign_Check_Range(check_expr)
             # Id of fd_expr may have changed (enumerated, choice)
             expr.right.value[field] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimChoiceItem):
@@ -1577,6 +1593,7 @@ def fix_expression_types(expr, context):
             check_expr.left.exprType = expected_type
             check_expr.right = expr.right.value['value']
             warnings.extend(fix_expression_types(check_expr, context))
+            Assign_Check_Range(check_expr)
             expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimConditional):
         # in principle it could also be the left side that is a ternary
@@ -1591,6 +1608,7 @@ def fix_expression_types(expr, context):
             check_expr.left.exprType = expr.left.exprType
             check_expr.right = expr.right.value[det]
             warnings.extend(fix_expression_types(check_expr, context))
+            Assign_Check_Range(check_expr)
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
             expr.right.value[det].exprType = expr.left.exprType
@@ -2325,6 +2343,7 @@ def in_expression(root, context):
             check_expr.right = value
             try:
                 warnings.extend(fix_expression_types(check_expr, context))
+                Assign_Check_Range(check_expr)
             except TypeError as err:
                 errors.append(error(root, str(err)))
             expr.left.value[idx] = check_expr.right
@@ -3037,15 +3056,8 @@ def variables(root, ta_ast, context, monitor=False):
             expr.right = def_value
             try:
                 warnings.extend(fix_expression_types(expr, context))
+                Assign_Check_Range(expr)
                 def_value = expr.right
-                basic = find_basic_type(asn1_sort)
-                if basic.kind.startswith(('Integer', 'Real')):
-                    if isinstance(def_value, ogAST.PrimOctetStringLiteral):
-                        rType = NewInteger (def_value.numeric_value,
-                                            def_value.numeric_value)
-                        check_range(basic, rType)
-                    else:
-                        check_range(basic, find_basic_type(def_value.exprType))
             except(AttributeError, TypeError, Warning) as err:
                 #print (traceback.format_exc())
                 errors.append('Types are incompatible in DCL assignment: '
@@ -3516,6 +3528,7 @@ def procedure_post(proc, content, parent=None, context=None):
             check_expr.right = each.return_expr
             try:
                 warns = fix_expression_types(check_expr, context)
+                Assign_Check_Range(check_expr)
                 for warn in warns:
                     each.warnings.append(warn)
                     warnings.append([warn, [0,0], []])
@@ -5931,17 +5944,9 @@ def assign(root, context):
         warnings.extend(warn)
 
     try:
-        #import pdb; pdb.set_trace()
         warnings.extend(fix_expression_types(expr, context))
-        # Assignment with numerical value: check range
-        basic = find_basic_type(expr.left.exprType)
-        if basic.kind.startswith(('Integer', 'Real')):
-            if isinstance(expr.right, ogAST.PrimOctetStringLiteral):
-                rType = NewInteger(expr.right.numeric_value,
-                                   expr.right.numeric_value)
-                check_range(basic, rType)
-            else:
-                check_range(basic, find_basic_type(expr.right.exprType))
+        # If assignment with numerical value: check range
+        Assign_Check_Range (expr)
     except(AttributeError, TypeError) as err:
         LOG.debug(str(traceback.format_exc()))
         errors.append(u'In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'

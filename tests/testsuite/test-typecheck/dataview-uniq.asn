@@ -13,4 +13,15 @@ TotoT2 ::= CHOICE {
   choice-b CHOICE { one SEQUENCE  { xx TotoT1 } }
 }
 
+-- Check if the parser verifies ranges in fields of sequences and choices,
+-- both in base 10 and base 16 representations
+SeqWithRange ::= SEQUENCE {
+   a INTEGER (0..255)
+}
+
+ChoiceWithRange ::= CHOICE {
+  a INTEGER (0..255)
+}
+
+SeqOf ::= SEQUENCE (SIZE(1..5)) OF INTEGER (0..255)
 END
