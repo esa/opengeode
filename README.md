@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.4 (04/2022)**
+- More type checks in sequence fields
+
 **3.9.3 (04/2022)**
 - More type checks
 

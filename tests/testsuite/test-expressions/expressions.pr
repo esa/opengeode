@@ -1,6 +1,6 @@
 /* CIF PROCESS (144, 159), (150, 75) */
 process expressions;
-    /* CIF TEXT (832, 175), (303, 248) */
+    /* CIF TEXT (832, 176), (303, 248) */
     DCL i Integer;
     DCL f Real;
     DCL b Boolean;
@@ -16,6 +16,7 @@ process expressions;
     DCL bs3 BoolSeqOf;
     
     dcl ui16 UnsignedInt := '00FF'H;
+    dcl bigwhoop BiggerUnsigned := '10001'H;
     /* CIF ENDTEXT */
     /* CIF START (482, 0), (100, 50) */
     START;
@@ -155,9 +156,9 @@ process expressions;
                 (not { true, true, true, true}):
                     /* CIF PROCEDURECALL (152, 3424), (289, 35) */
                     call assert(false, 'bs1 = not { true true true true }');
-                /* CIF ANSWER (506, 3380), (77, 24) */
+                /* CIF ANSWER (503, 3380), (77, 24) */
                 (= not bs2):
-                    /* CIF PROCEDURECALL (450, 3424), (190, 35) */
+                    /* CIF PROCEDURECALL (447, 3424), (190, 35) */
                     call assert(false, 'bs1 = not {bs2');
                 /* CIF ANSWER (652, 3380), (70, 24) */
                 else:
@@ -234,7 +235,14 @@ process expressions;
             task nestedSeq := {a {b {c {d 9}}}};
             /* CIF PROCEDURECALL (353, 5011), (360, 35) */
             call assert(nestedSeq!a!b!c!d = 9, 'nestedSeq!a!b!c!d = 9');
-            /* CIF NEXTSTATE (483, 5061), (100, 50) */
+            /* CIF decision (455, 5066), (156, 50) */
+            decision ui16 = bigwhoop;
+                /* CIF ANSWER (453, 5136), (70, 23) */
+                (true):
+                /* CIF ANSWER (543, 5136), (70, 23) */
+                (false):
+            enddecision;
+            /* CIF NEXTSTATE (483, 5175), (100, 50) */
             NEXTSTATE Wait;
     endstate;
 endprocess expressions;

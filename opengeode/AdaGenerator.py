@@ -2686,9 +2686,10 @@ def _sequence(seq, **kwargs):
     ''' Return Ada string for an ASN.1 SEQUENCE '''
     stmts, local_decl = [], []
     try:
-        ada_string = u"{}'(".format(type_name(seq.exprType))
+        ada_string = f"{type_name(seq.exprType)}'("
     except NotImplementedError as err:
-        raise TypeError(f"Bug - unknown type in Sequence: {str(seq.value)}")
+        err = f"!!YOU FOUND A BUG!! - The type of this record is undefined: {seq.inputString}"
+        raise TypeError(str(err).replace('\n', ''))
 
     sep = ''
     type_children = find_basic_type(seq.exprType).Children

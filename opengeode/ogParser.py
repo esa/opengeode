@@ -643,7 +643,10 @@ def signature(name, context):
 def check_call(name, params, context):
     ''' Check the parameter types of a procedure/output/operator call,
         returning the type of its result (value-returning functions only,
-        i.e not signal sending '''
+        i.e not signal sending
+        Returns tuple: (expression type, warnings)
+        '''
+    warnings = []
 
     # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
@@ -651,7 +654,7 @@ def check_call(name, params, context):
             p_ty = p.exprType
             if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty) or \
                     is_enumerated(p_ty):
-                return
+                return (UNKNOWN_TYPE, warnings)
             raise TypeError('Type {} not supported in call to {}'.
                 format(type_name(p.exprType), name))
         for p in params:
@@ -673,9 +676,9 @@ def check_call(name, params, context):
                    is_enumerated(p.value['else'].exprType) == True):
                       p.exprType = p.value['then'].exprType
                 else:
-                    raise TypeError('{}: both options must have the type type.'
+                    raise TypeError('{}: both options must have the same type.'
                                     .format(name))
-        return UNKNOWN_TYPE
+        return (UNKNOWN_TYPE, warnings)
 
     # Special case for "exist" function
     elif name == 'exist':
@@ -714,9 +717,9 @@ def check_call(name, params, context):
         # At this point we should have found the last type
         if optional != "True":
             raise TypeError('Field is not optional in call to "exist"')
-        return type('Exist', (object,), {
+        return (type('Exist', (object,), {
             'kind': 'BooleanType'
-        })
+        }), warnings)
     elif name == 'val':
         # val converts a positive number to a enumeration literal
         # the first parameter is the number and the second is the type name
@@ -737,7 +740,7 @@ def check_call(name, params, context):
         # we could check if the range of the number is compatible with the
         # number of values...
         return_type = types()[sort].type
-        return return_type
+        return (return_type, warnings)
 
     elif name in ('to_selector', 'to_enum'):
         if len(params) != 2:
@@ -770,13 +773,13 @@ def check_call(name, params, context):
         variable_sort_keys = variable_sort.EnumValues.keys()
         if return_type_keys != variable_sort_keys:
             raise TypeError(name + ': Enumerated type are not equivalent')
-        return return_type
+        return (return_type, warnings)
     elif name == 'observer_status':
         if len(params) != 0:
             raise TypeError(f'{name} does not take any parameter')
         if 'Observer-State-Kind' not in types().keys():
             raise TypeError(f'{name} can only be used in observers')
-        return types()['Observer-State-Kind'].type
+        return (types()['Observer-State-Kind'].type, warnings)
 
     # (1) Find the signature of the function
     # signature will hold the list of parameters for the function
@@ -789,7 +792,6 @@ def check_call(name, params, context):
 
     # (3) Check each individual parameter type
     for idx, param in enumerate(params):
-        warnings = []
         expr               = ogAST.ExprAssign()
         expr.left          = ogAST.PrimVariable(debugLine=lineno())
         expr.left.exprType = sign[idx]['type']
@@ -799,23 +801,26 @@ def check_call(name, params, context):
             basic_left  = find_basic_type(expr.left.exprType)
             basic_right = find_basic_type(expr.right.exprType)
             try:
-                warnings.extend(fix_expression_types(expr, context))
+                param_warnings = fix_expression_types(expr, context)
                 Assign_Check_Range(expr)
+                for warn in param_warnings:
+                    warnings.append(f'Parameter {idx+1} of call to "{name}": {warn}')
             except AttributeError:
                 # If the parameter has no proper type we may have an exception
                 raise TypeError ("Could not parse this expression")
+            except Warning as warn:
+                warnings.append(f'Parameter {idx+1} of call to "{name}": {warn}')
             params[idx] = expr.right
         except TypeError as err:
             expected = type_name(sign[idx]['type'])
             received = type_name(expr.right.exprType)
-            raise TypeError('In call to {}: Type of parameter {} is incorrect'
-                            ' ({}) - {}'
-                            .format(name, idx+1, received, str(err)))
-        if (warnings):
-            expected = type_name(sign[idx]['type'])
-            received = type_name(expr.right.exprType)
-            raise Warning('Expected type {} in call to {} ({} received)'.
-                format(expected, name, received))
+            raise TypeError(f'In call to {name}: Type of parameter {idx+1} is incorrect'
+                            ' ({received}) - {str(err)}')
+#       if warnings:
+#           expected = type_name(sign[idx]['type'])
+#           received = type_name(expr.right.exprType)
+#           raise Warning('Expected type {} in call to {} ({} received)'.
+#               format(expected, name, received))
 
         if sign[idx].get('direction') != 'in' \
                 and not isinstance(expr.right, (ogAST.PrimVariable,
@@ -838,30 +843,30 @@ def check_call(name, params, context):
         if params[0].exprType.kind != 'ReferenceType' and Min == Max:
             # if param is a raw number, return a positive range
             # otherwise return the same type as the variable
-            return type('Universal_Integer', (param_btys[0],), {
+            return (type('Universal_Integer', (param_btys[0],), {
                'Min': str(max(Min, 0)),
                'Max': str(max(Max, 0))
-           })
+           }), warnings)
         else:
-            return type('Abs', (param_btys[0],), {})
+            return (type('Abs', (param_btys[0],), {}), warnings)
 
     elif name == 'ceil':
-        return type('Ceil', (REAL,), {
+        return (type('Ceil', (REAL,), {
             'Min': str(math.ceil(float(param_btys[0].Min))),
             'Max': str(math.ceil(float(param_btys[0].Max)))
-        })
+        }), warnings)
 
     elif name == 'cos':
-        return type('Cos', (REAL,), {
+        return (type('Cos', (REAL,), {
             'Min': str(-1.0),
             'Max': str(1.0)
-        })
+        }), warnings)
 
     elif name == 'fix':
-        return type('Fix', (INTEGER,), {
+        return (type('Fix', (INTEGER,), {
             'Min': param_btys[0].Min,
             'Max': param_btys[0].Max
-        })
+        }), warnings)
 
     elif name == 'chr':
         # First check that parameter is in range [0..255]
@@ -874,41 +879,41 @@ def check_call(name, params, context):
             Min, Max = float(param_btys[0].Min), float(param_btys[0].Max)
         if Min < 0 or Min > 255 or Max < 0 or Max > 255:
             raise TypeError('Parameter is not within range [0 .. 255]')
-        return type('Chr', (UINT8,), {})
+        return (type('Chr', (UINT8,), {}), warnings)
 
     elif name == 'float':
-        return type('Float', (REAL,), {
+        return (type('Float', (REAL,), {
             'Min': param_btys[0].Min,
             'Max': param_btys[0].Max
-        })
+        }), warnings)
 
     elif name == 'floor':
-        return type('Floor', (REAL,), {
+        return (type('Floor', (REAL,), {
             'Min': str(math.floor(float(param_btys[0].Min))),
             'Max': str(math.floor(float(param_btys[0].Max)))
-        })
+        }), warnings)
 
     elif name == 'length':
-        return type('Length', (INT32,), {
+        return (type('Length', (INT32,), {
             'Min': param_btys[0].Min,
             'Max': param_btys[0].Max
-        })
+        }), warnings)
 
     elif name == 'num':
         enum_values = [int(each.IntValue)
                        for each in param_btys[0].EnumValues.values()]
-        return type('Num', (INTEGER,), {
+        return (type('Num', (INTEGER,), {
             'Min': str(min(enum_values)),
             'Max': str(max(enum_values))
-        })
+        }), warnings)
 
     elif name == 'power':
-        return type('Power', (param_btys[0],), {
+        return (type('Power', (param_btys[0],), {
             'Min': str(pow(float(param_btys[0].Min),
                            float(param_btys[1].Min))),
             'Max': str(pow(float(param_btys[0].Max),
                            float(param_btys[1].Max)))
-        })
+        }), warnings)
 
     elif name == 'present':
         p, = params
@@ -926,7 +931,7 @@ def check_call(name, params, context):
         except AttributeError:
             # Native choice types don't have the kind field here
             pass
-        return types()[sort_name.title() + "-selection"].type
+        return (types()[sort_name.title() + "-selection"].type, warnings)
 
     # choice_to_int: returns an integer corresponding to either the currently
     # selected choice value (e.g. foo in CHOICE { foo INTEGER (..), ... } when
@@ -936,44 +941,44 @@ def check_call(name, params, context):
     elif name == 'choice_to_int':
         p1, _ = params
         #sort = type_name (p1.exprType)
-        return type('choice_to_int', (INTEGER,), {})
+        return (type('choice_to_int', (INTEGER,), {}), warnings)
 
     elif name in ('shift_right', 'shift_left'):
         p1, _ = params
-        return type('shift', (p1.exprType,), {})
+        return (type('shift', (p1.exprType,), {}), warnings)
 
     elif name == 'round':
-        return type('Round', (REAL,), {
+        return (type('Round', (REAL,), {
             'Min': str(round(float(param_btys[0].Min))),
             'Max': str(round(float(param_btys[0].Max)))
-        })
+        }), warnings)
 
     elif name == 'sin':
-        return type('Sin', (REAL,), {
+        return (type('Sin', (REAL,), {
             'Min': str(-1.0),
             'Max': str(1.0)
-        })
+        }), warnings)
 
     elif name == 'sqrt':
-        return type('Sqrt', (REAL,), {
+        return (type('Sqrt', (REAL,), {
             'Min': str(0.0),
             'Max': str(math.sqrt(float(param_btys[0].Max)))
-        })
+        }), warnings)
 
     elif name == 'trunc':
-        return type('Trunc', (REAL,), {
+        return (type('Trunc', (REAL,), {
             'Min': str(math.trunc(float(param_btys[0].Min))),
             'Max': str(math.trunc(float(param_btys[0].Max)))
-        })
+        }), warnings)
 
     else:
         # check if procedure is declared to return a type
         for inner_proc in context.procedures:
             proc_name = inner_proc.inputString
             if proc_name.lower() == name.lower() and inner_proc.return_type:
-                return inner_proc.return_type
+                return (inner_proc.return_type, warnings)
 
-    return UNKNOWN_TYPE
+    return (UNKNOWN_TYPE, warnings)
 
 
 def check_range(typeref, type_to_check):
@@ -990,12 +995,16 @@ def check_range(typeref, type_to_check):
         min2, max2 = float(typeref.Min), float(typeref.Max)
         error   = min1 > max2 or max1 < min2
         warning = min1 < min2 or max1 > max2
+        if min1 == max1:
+            first_part = f'Expression value {min1}'
+        else:
+            first_part = f'Expression in range ({min1}..{max1})'
         if error:
-            raise TypeError(f'Expression in range {min1} .. {max1}'
-                            f' is outside range {min2} .. {max2}')
-        elif warning:
-            raise Warning(f'Expression in range {min1} .. {max1}, '
-                          f'could be outside expected range {min2} .. {max2}')
+            raise TypeError(f'{first_part} is outside range ({min2}..{max2})')
+        #elif warning:
+        # Disabled because raising an exception for a warning is wrong, it
+        # can prevent code to execute if not caught at the right place
+        #    raise Warning(f'{first_part} could be outside range ({min2}..{max2})')
     except (AttributeError, ValueError):
         raise TypeError('Missing range')
 
@@ -1045,7 +1054,7 @@ def check_type_compatibility(primary, type_ref, context):
     warnings = []    # function returns a list of warnings
     # assert type_ref is not None
     if type_ref is UNKNOWN_TYPE or type_ref is None:
-        #print traceback.print_stack()
+        #print(traceback.print_stack())
         raise TypeError('Type reference is unknown')
 
     #if primary.exprType == type_ref:
@@ -1541,8 +1550,8 @@ def fix_expression_types(expr, context):
         unknown = [uk_expr for uk_expr in (expr.right, expr.left)
                    if uk_expr.exprType == UNKNOWN_TYPE]
         if unknown:
-            LOG.debug("right: " + expr.right.inputString)
-            LOG.debug("left: " + expr.left.inputString)
+            #LOG.debug("right: " + expr.right.inputString)
+            #LOG.debug("left: " + expr.left.inputString)
             #LOG.debug(traceback.print_stack())
             raise TypeError('Cannot resolve type of "{}"'
                             .format(unknown[0].inputString))
@@ -1599,7 +1608,7 @@ def fix_expression_types(expr, context):
         # in principle it could also be the left side that is a ternary
         # in which case, its type would be unknown and would need to be
         # set according to the right type.
-       # print "[DEBUG] Conditional left = ", expr.left.inputString, ' and right =', expr.right.inputString
+        # print "[DEBUG] Conditional left = ", expr.left.inputString, ' and right =', expr.right.inputString
         for det in ('then', 'else'):
             # Recursively fix possibly missing types in the expression
             check_expr = ogAST.ExprAssign()
@@ -1608,7 +1617,15 @@ def fix_expression_types(expr, context):
             check_expr.left.exprType = expr.left.exprType
             check_expr.right = expr.right.value[det]
             warnings.extend(fix_expression_types(check_expr, context))
-            Assign_Check_Range(check_expr)
+            try:
+                Assign_Check_Range(check_expr)
+            except TypeError as err:
+                # If we are just comparing numbers (no assignment), only
+                # raise a warning.
+                if isinstance(expr, (ogAST.ExprEq, ogAST.ExprNeq)):
+                    warnings.append(err)
+                else:
+                    raise
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
             expr.right.value[det].exprType = expr.left.exprType
@@ -2593,13 +2610,13 @@ def primary_call(root, context):
     node.value = [name, {'procParams': params}]
 
     try:
-        node.exprType = check_call(nameLower, params, context)
+        node.exprType, warns = check_call(nameLower, params, context)
+        for w in warns:
+            warnings.append(warning(root, w))
     except (TypeError, ValueError) as err:
         errors.append(error(root, str(err)))
     except OverflowError:
         errors.append(error(root, 'Result can exceeds 64-bits'))
-    except Warning as warn:
-        warnings.append(warning(root, str(warn)))
 
     return node, errors, warnings
 
@@ -5103,8 +5120,9 @@ def procedure_call(root: antlr3.tree.CommonTree,
         # will be resolved at a diffeent place
         if call_name in SPECIAL_OPERATORS.keys():
             try:
-                out_ast.exprType = check_call (call_name,
+                out_ast.exprType, warns = check_call (call_name,
                          out_ast.output[0]['params'], context)
+                warn.extend(warns)
                 if out_ast.exprType == UNKNOWN_TYPE:
                     # if type of operator was not found, set to no type at all
                     out_ast.exprType = None
@@ -5146,7 +5164,7 @@ def outputbody(root, context):
             warnings.append('Unsupported child type: {}'.format(child.type))
     # Check/set the type of each param
     try:
-        check_call(body.get('outputName', '').lower(),
+        _, _ = check_call(body.get('outputName', '').lower(),
                    body.get('params', []),
                    context)
     except (AttributeError, TypeError) as op_err:

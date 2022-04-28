@@ -9,6 +9,7 @@ CharString ::= IA5String (SIZE (0..100)) -- OCTET STRING (SIZE(0..100))
 FixSeqof ::= SEQUENCE (SIZE(3)) OF Integer
 VarSeqof ::= SEQUENCE (SIZE(0..100)) OF Integer
 UnsignedInt ::= INTEGER(0..65535)
+BiggerUnsigned ::= INTEGER (65537..99999)
 
 Seq ::= SEQUENCE {
     i Integer,
