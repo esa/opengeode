@@ -1528,7 +1528,8 @@ def fix_expression_types(expr, context):
             continue
         other = getattr(expr, side_b)  # other side
         basic = find_basic_type(value.exprType)
-        if basic.kind == 'SequenceOfType' and basic.type == UNKNOWN_TYPE:
+        if basic.kind == 'SequenceOfType':
+            # Make a type check of each element of the sequence of
             asn_type = find_basic_type(other.exprType)
             if asn_type.kind == 'SequenceOfType':
                 asn_type = asn_type.type
@@ -1592,18 +1593,20 @@ def fix_expression_types(expr, context):
             raise TypeError('Field is not valid in CHOICE:' + field)
         key, = [key for key in asn_type.Children.keys()
                 if key.lower() == field.lower()]
-        if expr.right.value['value'].exprType == UNKNOWN_TYPE:
-            try:
-                expected_type = asn_type.Children.get(key).type
-            except AttributeError:
-                raise TypeError('Field not found in CHOICE: ' + field)
-            check_expr = ogAST.ExprAssign()
-            check_expr.left = ogAST.PrimVariable(debugLine=lineno())
-            check_expr.left.exprType = expected_type
-            check_expr.right = expr.right.value['value']
-            warnings.extend(fix_expression_types(check_expr, context))
-            Assign_Check_Range(check_expr)
-            expr.right.value['value'] = check_expr.right
+        # The type of the value may be known already but if it's
+        # a number we need to do a range check.
+        #if expr.right.value['value'].exprType == UNKNOWN_TYPE:
+        try:
+            expected_type = asn_type.Children.get(key).type
+        except AttributeError:
+            raise TypeError('Field not found in CHOICE: ' + field)
+        check_expr = ogAST.ExprAssign()
+        check_expr.left = ogAST.PrimVariable(debugLine=lineno())
+        check_expr.left.exprType = expected_type
+        check_expr.right = expr.right.value['value']
+        warnings.extend(fix_expression_types(check_expr, context))
+        Assign_Check_Range(check_expr)
+        expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimConditional):
         # in principle it could also be the left side that is a ternary
         # in which case, its type would be unknown and would need to be

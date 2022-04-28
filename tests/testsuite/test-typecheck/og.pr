@@ -17,53 +17,53 @@ system NpalDsap;
         connect c and r;
         /* CIF PROCESS (202, 149), (150, 75) */
         process NpalDsap;
-            /* CIF TEXT (45, 11), (401, 218) */
+            /* CIF TEXT (45, 11), (443, 218) */
             dcl test1 TotoT1;
             
             dcl test2 TotoT2;
             
             dcl toto TotoT1;
-            dcl seq SeqWithRange := { a 4096 }; --- Range error ! 
-            dcl seq2 SeqWithRange := { a 'FFFF'H };  -- range error !
+            dcl seq SeqWithRange := { a 4096 }; --- Range error !  (detected)
+            dcl seq2 SeqWithRange := { a 'FFFF'H };  -- range error ! (detected)
             
-            dcl ch ChoiceWithRange := a : 4096; -- range error ! 
-            dcl ch2 ChoiceWithRange := a : 'FFFF'H;  -- range error!
+            dcl ch ChoiceWithRange := a : 8192; -- range error ! (detected)
+            dcl ch2 ChoiceWithRange := a : 'EEEEEE'H;  -- range error! (detected)
             
             dcl so SeqOf := { 20 }; -- should be ok
             dcl so2 SeqOf := { 10, 5115  };  -- should not be ok (detectd)
-            dcl so3 SeqOf := { 10, 'FFFF'H  };  -- should not be ok (not detected)
+            dcl so3 SeqOf := { 10, 'FFFF'H  };  -- should not be ok (detected)
             /* CIF ENDTEXT */
-            /* CIF START (463, 213), (70, 35) */
+            /* CIF START (505, 213), (70, 35) */
             START;
-                /* CIF task (447, 268), (103, 35) */
+                /* CIF task (488, 268), (103, 35) */
                 task so := { 9999 }
-                /* CIF comment (570, 268), (79, 35) */
+                /* CIF comment (612, 268), (108, 35) */
                 comment 'detected ';
-                /* CIF task (443, 323), (111, 35) */
+                /* CIF task (484, 323), (111, 35) */
                 task so := { 'FFFE'H }
-                /* CIF comment (574, 323), (102, 35) */
-                comment ' not detected';
-                /* CIF task (445, 373), (106, 35) */
+                /* CIF comment (616, 323), (108, 35) */
+                comment ' detected';
+                /* CIF task (486, 373), (106, 35) */
                 task seq := { a 256 }
-                /* CIF comment (572, 373), (152, 35) */
+                /* CIF comment (615, 373), (152, 35) */
                 comment 'detected';
-                /* CIF task (453, 428), (90, 35) */
+                /* CIF task (494, 428), (90, 35) */
                 task ch := a : 256
-                /* CIF comment (564, 428), (152, 35) */
+                /* CIF comment (607, 428), (152, 35) */
                 comment 'detected';
-                /* CIF task (435, 483), (127, 35) */
+                /* CIF task (476, 483), (127, 35) */
                 task seq := { a 'FFFF'H }
-                /* CIF comment (582, 483), (152, 35) */
+                /* CIF comment (625, 483), (152, 35) */
                 comment 'detected';
-                /* CIF NEXTSTATE (459, 533), (78, 35) */
+                /* CIF NEXTSTATE (500, 533), (78, 35) */
                 NEXTSTATE Teststate;
             /* CIF state (759, 17), (83, 35) */
             state TestState;
                 /* CIF provided (772, 72), (58, 23) */
                 provided TRUE;
-                    /* CIF task (738, 115), (127, 35) */
+                    /* CIF task (737, 115), (127, 35) */
                     task test1 := { a toto };
-                    /* CIF task (736, 170), (131, 35) */
+                    /* CIF task (735, 170), (131, 35) */
                     task test1 := { a test2 };
                     /* CIF NEXTSTATE (766, 225), (70, 35) */
                     NEXTSTATE -;
