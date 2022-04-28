@@ -1,18 +1,36 @@
-[ERROR] Decision "var1": answers -500:500 and /=1 are overlapping in range [-500 .. 0]
-[ERROR] Decision "var1": answers -500:500 and /=1 are overlapping in range [2 .. 500]
-[ERROR] Decision "var1": answers -500:500 and =0 are overlapping in range [0 .. 0]
-[ERROR] Decision "var1": answers -500:500 and >0 are overlapping in range [1 .. 500]
-[ERROR] Decision "var1": answers =0 and /=1 are overlapping in range [0 .. 0]
-[ERROR] Decision "var1": answers >0 and /=1 are overlapping in range [2 .. 2147483647]
-[ERROR] Decision "var2": No answer to cover range [0 .. 255]
-[ERROR] Decision "var3": No answer to cover range [50 .. 50]
-[ERROR] Decision "var3": answers /=50 and 10:20 are overlapping in range [10 .. 20]
+[ERROR] Choice assignment: use "var := a: value" instead of "var!a := value" - "var4!a"
+[ERROR] Choice assignment: use "var := uia: value" instead of "var!uia := value" - "var4!uia"
+[ERROR] Decision "present(var4)": Missing branches for answer(s) "b"
+[ERROR] Decision "var1": answers =0 and /=1 are overlapping in range 0.0 .. 0.0
+[ERROR] Decision "var1": answers /=1 and >0 are overlapping in range 2.0 .. 2147483647.0
+[ERROR] Decision "var1": answers -500:500 and =0 are overlapping in range 0.0 .. 0.0
+[ERROR] Decision "var1": answers -500:500 and >0 are overlapping in range 1.0 .. 500.0
+[ERROR] Decision "var1": answers -500:500 and /=1 are overlapping in range 2.0 .. 500.0
+[ERROR] Decision "var1": answers -500:500 and /=1 are overlapping in range -500.0 .. 0.0
+[ERROR] Decision "var2": No answer to cover range 0.0 .. 255.0
+[ERROR] Decision "var3": answers 10:20 and /=50 are overlapping in range 10.0 .. 20.0
+[ERROR] Decision "var3": No answer to cover value 50.0
+[ERROR] Decision "var5": duplicate answers "hello", "world"
+[ERROR] Decision "var5": Missing branches for answer(s) "howareyou"
+[ERROR] Field "uia" not found in expression  - "var4!uia"
+[ERROR] Input "start_something" is defined more than once for state "toto"
+[ERROR] Input "start_something" is defined more than once for state "toto"
+[ERROR] Input "start_something" is defined more than once for state "wait"
+[ERROR] Input "start_something" is defined more than once for state "wait"
+[ERROR] In "tutu!i!y := 5": Type mismatch (UnknownType vs IntegerType - Type reference is unknown)
+[ERROR] In "var4!uia:= true": Type mismatch (UnknownType vs BooleanType - Type reference is unknown)
+[ERROR] In "var5 := howareyou:true": Type mismatch (MyEnum vs UnknownType - Field is not valid in CHOICE:howareyou)
+[ERROR] Parameter type does not match with signal declaration (expecting a variable of type T-Int32) -Signed vs Unsigned type mismatch "T-Int32" is not "T-UInt8"
+[ERROR] Parameter type does not match with signal declaration (expecting a variable of type T-Int32) -Signed vs Unsigned type mismatch "T-Int32" is not "T-UInt8"
+[ERROR] Parameter type does not match with signal declaration (expecting a variable of type T-Int32) -Signed vs Unsigned type mismatch "T-Int32" is not "T-UInt8"
+[ERROR] Parameter type does not match with signal declaration (expecting a variable of type T-Int32) -Signed vs Unsigned type mismatch "T-Int32" is not "T-UInt8"
 [ERROR] Too many errors, cannot generate code
+[ERROR] Variable "VAR5" is declared more than once
 [INFO] Checking ['myfunction.pr', 'system_structure.pr']
-[INFO] Parsing complete. Summary, found 6 warnings and 9 errors
-[WARNING] Decision "var2": Range [-10 .. -1] is unreachable
-[WARNING] Decision "var2": Range [256 .. 300] is unreachable
+[INFO] Parsing complete. Summary, found 6 warnings and 27 errors
+[WARNING] Decision "var2": Range -10.0 .. -1.0 is unreachable
+[WARNING] Decision "var2": Range 256 .. 300.0 is unreachable
 [WARNING] Decision "var2": Unreachable branch "<0"
+[WARNING] Decision "var2": Unreachable branch -10.0:-5.0
+[WARNING] Decision "var2": Unreachable branch 256.0:300.0
 [WARNING] Decision "var2": Unreachable branch ">300"
-[WARNING] Decision "var2": Unreachable branch -10:-5
-[WARNING] Decision "var2": Unreachable branch 256:300
