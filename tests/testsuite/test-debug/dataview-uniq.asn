@@ -23,6 +23,9 @@ SeqNonOpt ::= SEQUENCE { a BOOLEAN }
 
 Enum-With-Values ::= ENUMERATED {foo (4), bar(2)}
 
+-- To test type checks with the Append operator
+SeqOf2ElemsOrMore ::= SEQUENCE (SIZE (2..3)) OF INTEGER (5..10)
+
 END
  
 

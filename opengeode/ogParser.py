@@ -1031,16 +1031,31 @@ def fix_append_expression_type(expr, expected_type):
            expr: the append expression (possibly recursive)
            expected_type : the type to assign to the expression
     '''
-    #print "[DEBUG] Fix append expression: ", expr.inputString
-    def rec_append(inner_expr, set_type):
+    #print ("[DEBUG] Fix append expression: ", expr.inputString, expected_type)
+    def rec_append(inner_expr):
         for each in (inner_expr.left, inner_expr.right):
             if isinstance(each, ogAST.ExprAppend):
-                rec_append(each, set_type)
+                rec_append(each)
             if each.exprType == UNKNOWN_TYPE:
                 # eg. if the side is a PrimConditional (ternary)
-                each.exprType = set_type
-            each.expected_type = set_type
-    rec_append(expr, expected_type)
+                each.exprType = expected_type
+            each.expected_type = expected_type
+            if isinstance(each, ogAST.PrimSequenceOf):
+                # If a part of the APPEND is a raw sequence of ( { 1, 3 } )
+                # then a range check of the individual elements has to be done
+                # against expected type
+                check_expr = ogAST.ExprAssign()
+                check_expr.left = ogAST.PrimVariable(debugLine=lineno())
+                # At least one element must be appended and at most the
+                # max size of the recipient minus its min size
+                # (this limits the risks of overflows)
+                basic = find_basic_type(expected_type)
+                newMax = int(basic.Max) - int(basic.Min)
+                check_expr.left.exprType = type("JustChecking",
+                        (basic,), {"Min":"1", "Max":str(newMax)})
+                check_expr.right = each
+                fix_expression_types(check_expr, context=None)
+    rec_append(expr)
     expr.exprType      = expected_type
     expr.expected_type = expected_type
 
@@ -1521,6 +1536,9 @@ def fix_expression_types(expr, context):
             typed_expr = side
             ref_type = typed_expr.exprType
 
+    if isinstance(expr, (ogAST.ExprIn, ogAST.ExprAppend)):
+        return warnings
+
     # If a side is a raw Sequence Of with unknown type, try to resolve it
     for side_a, side_b in permutations(('left', 'right')):
         value = getattr(expr, side_a)  # get expr.left then expr.right
@@ -1543,9 +1561,6 @@ def fix_expression_types(expr, context):
                     value.value[idx] = check_expr.right
             # the type of the raw PrimSequenceOf can be set now
             value.exprType.type = asn_type
-
-    if isinstance(expr, (ogAST.ExprIn, ogAST.ExprAppend)):
-        return warnings
 
     if not expr.right.is_raw and not expr.left.is_raw:
         unknown = [uk_expr for uk_expr in (expr.right, expr.left)
@@ -1634,6 +1649,7 @@ def fix_expression_types(expr, context):
             expr.right.value[det].exprType = expr.left.exprType
         # We must also set the type of the overal expression to the same
         expr.right.exprType = expr.left.exprType
+
     elif isinstance(expr.right, ogAST.ExprAppend):
         fix_append_expression_type(expr.right, expr.left.exprType)
 
@@ -2411,7 +2427,7 @@ def append_expression(root, context):
     # check that both sides are actual strings
     for bty in list_of_checks:
         if bty.kind != 'SequenceOfType' and not is_string(bty):
-            msg = 'Append can only be applied to types SequenceOf or String'
+            msg = 'The "Append" operator can only be applied to non-empty arrays or strings'
             errors.append(error(root, msg))
             break
     else:

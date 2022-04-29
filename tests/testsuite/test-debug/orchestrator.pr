@@ -2,7 +2,7 @@
 process orchestrator
 /* CIF comment (405, 192), (71, 35) */
 comment 'Hello';
-    /* CIF TEXT (0, 94), (450, 376) */
+    /* CIF TEXT (0, 94), (458, 376) */
     dcl seq tastE_Peek_id_list := { 1,2,3,4,5};
     
     dcl fixed FixedString := 'Hello';
@@ -25,7 +25,8 @@ comment 'Hello';
     dcl opt SeqOpt := { A TRUE, b FALSE }; -- test optional fields
     dcl somebool boolean := true;
     
-    -- dcl opt2 SeqOpt := { a somebool, b false }; SHOULD REPORT AND ERROR
+    --dcl opt2 SeqOpt := { a somebool, b false }; SHOULD REPORT AND ERROR
+    dcl apnd SeqOf2ElemsOrMore := { 5, 6 };
     /* CIF ENDTEXT */
     /* CIF TEXT (629, 124), (267, 78) */
     -- Text area for declarations and comments
@@ -33,6 +34,9 @@ comment 'Hello';
     dcl fourty Enum_With_Values := foo,
            two      Enum_With_Values := bar;
     /* CIF ENDTEXT */
+    /* CIF procedure (1273, 175), (106, 35) */
+    procedure emptyproc;
+    endprocedure;
     /* CIF procedure (1306, 371), (91, 35) */
     procedure numProc;
         /* CIF START (161, 82), (70, 35) */
@@ -58,9 +62,6 @@ comment 'Hello';
             enddecision;
             /* CIF return (178, 467), (35, 35) */
             return ;
-    endprocedure;
-    /* CIF procedure (1273, 175), (106, 35) */
-    procedure emptyproc;
     endprocedure;
     /* CIF START (596, 224), (80, 36) */
     START;
@@ -156,42 +157,47 @@ endfor;
         task seq := {1} // {2} // {3};
         /* CIF task (550, 1734), (172, 35) */
         task seq := seq // {2} // {1};
-        /* CIF decision (601, 1784), (70, 50) */
+        /* CIF task (529, 1789), (214, 35) */
+        task seq := {1} // {2,4};
+        /* CIF decision (601, 1839), (70, 50) */
         decision any;
-            /* CIF ANSWER (508, 1854), (70, 24) */
+            /* CIF ANSWER (508, 1909), (70, 24) */
             ('a'):
-                /* CIF PROCEDURECALL (455, 1898), (174, 35) */
+                /* CIF PROCEDURECALL (455, 1953), (174, 35) */
                 call writeln('Random value a');
-            /* CIF ANSWER (693, 1854), (70, 24) */
+            /* CIF ANSWER (693, 1909), (70, 24) */
             ('b'):
-                /* CIF PROCEDURECALL (640, 1898), (175, 35) */
+                /* CIF PROCEDURECALL (640, 1953), (175, 35) */
                 call writeln('Random value b');
         enddecision;
-        /* CIF decision (591, 1949), (89, 50) */
+        /* CIF decision (591, 2004), (89, 50) */
         decision myenum
-        /* CIF comment (718, 1953), (183, 35) */
+        /* CIF comment (718, 2008), (183, 35) */
         comment 'Check case insensitivity';
-            /* CIF ANSWER (528, 2019), (70, 24) */
+            /* CIF ANSWER (528, 2074), (70, 24) */
             (a):
-            /* CIF ANSWER (608, 2019), (70, 24) */
+            /* CIF ANSWER (608, 2074), (70, 24) */
             (B):
-            /* CIF ANSWER (688, 2019), (70, 24) */
+            /* CIF ANSWER (688, 2074), (70, 24) */
             (c):
-            /* CIF ANSWER (768, 2019), (70, 24) */
+            /* CIF ANSWER (768, 2074), (70, 24) */
             (d):
-            /* CIF ANSWER (848, 2019), (70, 24) */
+            /* CIF ANSWER (848, 2074), (70, 24) */
             (Ee):
         enddecision;
-        /* CIF decision (567, 2059), (138, 50) */
+        /* CIF decision (567, 2114), (138, 50) */
         decision present(choice)
-        /* CIF comment (743, 2062), (183, 35) */
+        /* CIF comment (743, 2117), (183, 35) */
         comment 'Check case insensitivity';
-            /* CIF ANSWER (555, 2129), (70, 24) */
+            /* CIF ANSWER (555, 2184), (70, 24) */
             (cde2):
-            /* CIF ANSWER (635, 2129), (70, 24) */
+            /* CIF ANSWER (635, 2184), (70, 24) */
             ELSE:
         enddecision;
-        /* CIF NEXTSTATE (578, 2169), (116, 33) */
+        /* CIF task (565, 2224), (141, 38) */
+        task apnd := {5, 6},
+apnd := apnd // {7};
+        /* CIF NEXTSTATE (578, 2280), (116, 33) */
         NEXTSTATE Wait_for_GUI;
     /* CIF state (1083, 427), (70, 35) */
     state Third;
