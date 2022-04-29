@@ -1536,7 +1536,7 @@ def fix_expression_types(expr, context):
             typed_expr = side
             ref_type = typed_expr.exprType
 
-    if isinstance(expr, (ogAST.ExprIn, ogAST.ExprAppend)):
+    if isinstance(expr, ogAST.ExprAppend):
         return warnings
 
     # If a side is a raw Sequence Of with unknown type, try to resolve it
@@ -1561,6 +1561,9 @@ def fix_expression_types(expr, context):
                     value.value[idx] = check_expr.right
             # the type of the raw PrimSequenceOf can be set now
             value.exprType.type = asn_type
+
+    if isinstance(expr, ogAST.ExprIn):
+        return warnings
 
     if not expr.right.is_raw and not expr.left.is_raw:
         unknown = [uk_expr for uk_expr in (expr.right, expr.left)
