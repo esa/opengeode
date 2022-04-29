@@ -103,8 +103,8 @@ NUMERICAL    = type('NumericalType',  (object,), {'kind': 'Numerical',
                                                   'Max' : '0'})
 TIMER        = type('TimerType',      (object,), {'kind': 'TimerType'})
 REAL         = type('RealType',       (object,), {'kind': 'RealType',
-                                                  'Min' : str(1e-308),
-                                                  'Max' : str(1e308)})
+                                                  'Min' : str(-1.0e-308),
+                                                  'Max' : str(1.0e308)})
 LIST         = type('ListType',       (object,), {'kind': 'ListType'})
 ANY_TYPE     = type('AnyType',        (object,), {'kind': 'AnyType'})
 CHOICE       = type('ChoiceType',     (object,), {'kind': 'ChoiceType'})
