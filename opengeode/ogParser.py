@@ -31,6 +31,7 @@ import math
 import operator
 import logging
 import traceback
+
 from functools import partial
 import codecs
 from typing import Dict, Tuple
@@ -2088,7 +2089,7 @@ def logic_expression(root, context):
         resMax = max(leftMax, rightMax)
 
     if numeric_bitwise and leftMin is not None and rightMin is not None:
-        expr.exprType = NewInteger (resMax, resMax)
+        expr.exprType = NewInteger (resMin, resMax)
 
     return expr, errors, warnings
 
