@@ -1,0 +1,68 @@
+ACNENCODINGWITHBLACKBOX-DATAVIEW DEFINITIONS ::=
+BEGIN
+
+    --  Recipent for a binary-encoded telecommand
+    max-TC-size INTEGER ::= 150
+    MyStr ::= OCTET STRING (SIZE (0 .. max-TC-size))
+
+    --  Generic type for parameterless telecommands
+    No-Params ::= SEQUENCE {}
+
+    -- APID : type is taylored per mission
+    APPLICATION-PROCESS-ID ::= ENUMERATED { ground(0), obsw(1) }
+
+    TC-SEQUENCE-COUNT-OR-NAME ::= INTEGER (0..16383)
+
+    --  List all telecommands of type 17
+    PUS-17 ::= CHOICE {
+      tc-17-1-performAnAreYouAliveConnectionTest No-Params
+    }
+
+    -- List all supported telecommand types
+    Telecommands ::= CHOICE {
+      tc-17  PUS-17
+    }
+
+    -- Acknowledgement flags are part the the TC secondary header
+    Acknowledgement-flags ::= SEQUENCE {
+       ack-completion BOOLEAN,
+       ack-progress   BOOLEAN,
+       ack-start      BOOLEAN,
+       ack-acceptance BOOLEAN
+    }
+
+    Tc-Secondary-Header ::= SEQUENCE {
+      ack-flags Acknowledgement-flags,
+      source    APPLICATION-PROCESS-ID
+    }
+
+    -- Complete telecommand with the fields user HAS to fill
+    Telecommand ::= SEQUENCE {
+      dest-apid               APPLICATION-PROCESS-ID,
+      packet-seq-count        TC-SEQUENCE-COUNT-OR-NAME,
+      secondary-header        Tc-Secondary-Header,
+      packet-data             OCTET STRING (CONTAINING Telecommands)
+    }
+END
+
+
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+T-Null-Record ::= SEQUENCE {}
+
+END
+
+

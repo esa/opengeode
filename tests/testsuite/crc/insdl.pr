@@ -1,0 +1,115 @@
+/* CIF PROCESS (250, 150), (150, 75) */
+process Insdl;
+    /* CIF TEXT (899, 104), (472, 109) */
+    -- Get a TC in ASN.1 form, encode it and return it to the GUI
+    
+    dcl tc Telecommand;
+    
+    dcl encoded_tc MyStr;
+    /* CIF ENDTEXT */
+    /* CIF procedure (824, 421), (89, 35) */
+    procedure crc_encode;
+        /* CIF TEXT (59, 52), (292, 104) */
+        -- Add the CRC to the end of the OCTET STRING
+        
+        fpar
+          in/out tc MyStr;
+        
+        dcl  chk T_UInt32 := 'FFFF'H;
+        /* CIF ENDTEXT */
+        /* CIF START (506, 72), (70, 35) */
+        START;
+            /* CIF task (441, 127), (199, 72) */
+            task for idx in range (length(tc)):
+   call crc (fix(tc(idx)), chk);
+endfor;
+            /* CIF task (279, 230), (523, 38) */
+            task tc := tc //  mkstring(chr(shift_right(chk, 8) and 'FF'H)) //  mkstring(chr(chk and 'FF'H))
+            /* CIF comment (822, 231), (175, 35) */
+            comment 'Append the CRC to the TC';
+            /* CIF return (523, 288), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (894, 362), (70, 35) */
+    procedure crc;
+        /* CIF TEXT (88, 31), (267, 159) */
+        fpar
+          in byte_in T_UInt8,
+          in/out syndrome T_Uint32;
+        
+        dcl b_in, icrc T_UInt32 := 0;
+        /* CIF ENDTEXT */
+        /* CIF START (549, 24), (70, 35) */
+        START;
+            /* CIF task (518, 79), (130, 35) */
+            task b_in := fix(byte_in);
+            /* CIF label (547, 129), (72, 35) */
+            next_bit:
+            /* CIF decision (450, 179), (268, 56) */
+            decision b_in and '80'H 
+or
+Shift_Right (syndrome and '8000'H, 8);
+                /* CIF ANSWER (360, 261), (70, 24) */
+                (> 0):
+                    /* CIF task (239, 305), (310, 40) */
+                    task syndrome :=
+(Shift_left (syndrome, 1) xor '1021'H) and 'FFFF'H;
+                /* CIF ANSWER (675, 261), (70, 24) */
+                else:
+                    /* CIF task (558, 305), (304, 40) */
+                    task syndrome :=
+Shift_left (syndrome, 1) and 'FFFF'H;
+            enddecision;
+            /* CIF task (496, 361), (175, 35) */
+            task b_in := Shift_Left (b_in, 1);
+            /* CIF task (533, 416), (100, 35) */
+            task icrc := icrc + 1;
+            /* CIF decision (547, 466), (74, 50) */
+            decision icrc < 8;
+                /* CIF ANSWER (504, 536), (70, 24) */
+                (true):
+                    /* CIF join (521, 580), (35, 35) */
+                    join next_bit;
+                /* CIF ANSWER (594, 536), (70, 24) */
+                (false):
+                    /* CIF return (611, 580), (35, 35) */
+                    return ;
+            enddecision;
+    endprocedure;
+    /* CIF START (627, 70), (70, 35) */
+    START;
+        /* CIF task (440, 125), (442, 248) */
+        task tc := {
+   dest_apid obsw,
+   packet_seq_count 0,
+   secondary_header {
+      ack_flags {
+       ack_completion false,
+       ack_progress false,
+       ack_start false,
+       ack_acceptance true
+     },
+    source ground
+  },
+  packet_data tc_17: tc_17_1_performAnAreYouAliveConnectionTest : {}
+}
+        /* CIF comment (897, 222), (132, 56) */
+        comment 'Default TC 
+(Not used, just for 
+the syntax)';
+        /* CIF NEXTSTATE (627, 404), (70, 35) */
+        NEXTSTATE Wait;
+    /* CIF state (627, 404), (70, 35) */
+    state Wait;
+        /* CIF input (590, 459), (134, 35) */
+        input Encode_My_TC (tc);
+            /* CIF PROCEDURECALL (531, 514), (252, 35) */
+            call Encode_Telecommand (tc, encoded_tc);
+            /* CIF PROCEDURECALL (573, 569), (169, 35) */
+            call crc_encode (encoded_tc);
+            /* CIF output (536, 624), (242, 35) */
+            output Encoded_TC_with_CRC (Encoded_TC);
+            /* CIF NEXTSTATE (623, 674), (70, 35) */
+            NEXTSTATE Wait;
+    endstate;
+endprocess Insdl;
