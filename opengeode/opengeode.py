@@ -25,6 +25,7 @@ import re
 import code
 import pprint
 import random
+import faulthandler
 from functools import partial
 from itertools import chain
 from importlib import reload
@@ -3174,7 +3175,11 @@ def init_logging(options):
     handler_console.setFormatter(terminal_formatter)
     LOG.addHandler(handler_console)
 
-    level = logging.DEBUG if options.debug else logging.INFO
+    if options.debug:
+        level = logging.DEBUG
+        faulthandler.enable()
+    else:
+        level = logging.INFO
 
     # Set log level for all libraries
     LOG.setLevel(level)

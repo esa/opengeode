@@ -880,7 +880,7 @@ def check_call(name, params, context):
             Min, Max = float(param_btys[0].Min), float(param_btys[0].Max)
         if Min < 0 or Min > 255 or Max < 0 or Max > 255:
             raise TypeError('Parameter is not within range [0 .. 255]')
-        return (type('Chr', (UINT8,), {}), warnings)
+        return (UINT8, warnings)
 
     elif name == 'float':
         return (type('Float', (REAL,), {
@@ -1073,9 +1073,6 @@ def check_type_compatibility(primary, type_ref, context):
         #print(traceback.print_stack())
         raise TypeError('Type reference is unknown')
 
-    #if primary.exprType == type_ref:
-    #    return warnings
-
     basic_type = find_basic_type(type_ref)
     # watch out: type_ref may be a subtype of basic_type with different
     # min/max constraint, in particular in case of substrings
@@ -1176,6 +1173,16 @@ def check_type_compatibility(primary, type_ref, context):
                and type_ref.__name__ not in ('Apnd', 'SubStr'):
             primary.expected_type = type_ref
         return warnings
+    elif isinstance(primary, ogAST.PrimSequenceOf) \
+            and basic_type.kind == 'OctetStringType':
+        # mkstring expressions are of of type SequenceOf, but they may be
+        # assigned to an octet string in an append expression. We must check
+        # the type of the element of the sequence of to make sure.
+        for elem in primary.value:
+            if elem.exprType != UINT8:
+                raise TypeError("Use only integers in range 0..255 to assign octet strings")
+        return warnings
+
     elif isinstance(primary, ogAST.PrimSequence) \
             and basic_type.kind == 'SequenceType':
         user_nb_elem = len(primary.value.keys())
