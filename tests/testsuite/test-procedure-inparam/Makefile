@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	#make -f Makefile.og
-	$(OPENGEODE) og.pr --check |& diff expected -
+	$(OPENGEODE) og.pr --check |& sort | diff expected -
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
