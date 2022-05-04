@@ -816,7 +816,7 @@ def check_call(name, params, context):
             expected = type_name(sign[idx]['type'])
             received = type_name(expr.right.exprType)
             raise TypeError(f'In call to {name}: Type of parameter {idx+1} is incorrect'
-                            ' ({received}) - {str(err)}')
+                            f' ({received}) - {str(err)}')
 #       if warnings:
 #           expected = type_name(sign[idx]['type'])
 #           received = type_name(expr.right.exprType)
