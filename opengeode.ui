@@ -124,12 +124,6 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QDockWidget" name="msgDock">
-   <property name="maximumSize">
-    <size>
-     <width>524287</width>
-     <height>140</height>
-    </size>
-   </property>
    <property name="baseSize">
     <size>
      <width>0</width>
