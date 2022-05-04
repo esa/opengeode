@@ -17,7 +17,7 @@ system NpalDsap;
         connect c and r;
         /* CIF PROCESS (202, 149), (150, 75) */
         process NpalDsap;
-            /* CIF TEXT (45, 11), (443, 218) */
+            /* CIF TEXT (20, 11), (443, 263) */
             dcl test1 TotoT1;
             
             dcl test2 TotoT2;
@@ -32,40 +32,51 @@ system NpalDsap;
             dcl so SeqOf := { 20 }; -- should be ok
             dcl so2 SeqOf := { 10, 5115  };  -- should not be ok (detectd)
             dcl so3 SeqOf := { 10, 'FFFF'H  };  -- should not be ok (detected)
+            
+            dcl sob SeqOfBool;
+            dcl sob2 SeqOfBool2;
             /* CIF ENDTEXT */
-            /* CIF START (505, 213), (70, 35) */
+            /* CIF START (518, 88), (70, 35) */
             START;
-                /* CIF task (488, 268), (103, 35) */
+                /* CIF task (501, 143), (103, 35) */
                 task so := { 9999 }
-                /* CIF comment (612, 268), (108, 35) */
+                /* CIF comment (625, 143), (108, 35) */
                 comment 'detected ';
-                /* CIF task (484, 323), (111, 35) */
+                /* CIF task (497, 198), (111, 35) */
                 task so := { 'FFFE'H }
-                /* CIF comment (616, 323), (108, 35) */
+                /* CIF comment (629, 198), (108, 35) */
                 comment ' detected';
-                /* CIF task (486, 373), (106, 35) */
+                /* CIF task (499, 248), (106, 35) */
                 task seq := { a 256 }
-                /* CIF comment (615, 373), (152, 35) */
+                /* CIF comment (628, 248), (152, 35) */
                 comment 'detected';
-                /* CIF task (494, 428), (90, 35) */
+                /* CIF task (507, 303), (90, 35) */
                 task ch := a : 256
-                /* CIF comment (607, 428), (152, 35) */
+                /* CIF comment (620, 303), (152, 35) */
                 comment 'detected';
-                /* CIF task (476, 483), (127, 35) */
+                /* CIF task (489, 358), (127, 35) */
                 task seq := { a 'FFFF'H }
-                /* CIF comment (625, 483), (152, 35) */
+                /* CIF comment (638, 358), (152, 35) */
                 comment 'detected';
-                /* CIF NEXTSTATE (500, 533), (78, 35) */
+                /* CIF task (433, 413), (239, 35) */
+                task sob := { true, true, false, true, true} 
+                /* CIF comment (692, 413), (76, 35) */
+                comment 'detected';
+                /* CIF task (381, 468), (342, 35) */
+                task sob2 := { true, true, false, true, true, false, true, true}
+                /* CIF comment (744, 468), (76, 35) */
+                comment 'detected';
+                /* CIF NEXTSTATE (513, 518), (78, 35) */
                 NEXTSTATE Teststate;
-            /* CIF state (759, 17), (83, 35) */
+            /* CIF state (824, 17), (83, 35) */
             state TestState;
-                /* CIF provided (772, 72), (58, 23) */
+                /* CIF provided (837, 72), (58, 23) */
                 provided TRUE;
-                    /* CIF task (737, 115), (127, 35) */
+                    /* CIF task (803, 115), (127, 35) */
                     task test1 := { a toto };
-                    /* CIF task (735, 170), (131, 35) */
+                    /* CIF task (801, 170), (131, 35) */
                     task test1 := { a test2 };
-                    /* CIF NEXTSTATE (766, 225), (70, 35) */
+                    /* CIF NEXTSTATE (831, 225), (70, 35) */
                     NEXTSTATE -;
             endstate;
         endprocess NpalDsap;
