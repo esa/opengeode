@@ -1,0 +1,8 @@
+[INFO] Checking ['og.pr']
+[INFO] Parsing complete. Summary, found 0 warnings and 6 errors
+[ERROR] "a" is an IN parameter (read-only)
+[ERROR] "so" is an IN parameter (read-only)
+[ERROR] "ch" is an IN parameter (read-only)
+[ERROR] "seq" is an IN parameter (read-only)
+[ERROR] "seq" is an IN parameter (read-only)
+[ERROR] "seq" is an IN parameter (read-only)
