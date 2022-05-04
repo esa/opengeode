@@ -1713,13 +1713,14 @@ def primary_variable(root, context):
         prim.constant_value = possible_constant.value
     elif is_fpar(name, context):
         prim = ogAST.PrimFPAR()
+        prim.exprType = find_variable_type(name, context)
     else:
         # We create a variable reference , but it may be a enumerated value,
         # it will be replaced later during type resolution
         prim = ogAST.PrimVariable(debugLine=lineno())
+        prim.exprType = UNKNOWN_TYPE
 
     prim.value = [name]
-    prim.exprType = UNKNOWN_TYPE
     prim.inputString = get_input_string(root)
     prim.tmpVar = tmp()
 
@@ -2720,9 +2721,8 @@ def primary_index(root, context, pos):
                     or float(idx_bty.Min) < 0:
                 errors.append(error(root,
                                     'Index range [{id1} .. {id2}] '
-                                    'outside of range [{r1} .. {r2}]'
+                                    'outside of range [0 .. {r2}]'
                                     .format(id1=idx_bty.Min, id2=idx_bty.Max,
-                                        r1=max(0, int(r_min) - 1),
                                         r2=int(r_max) - 1)))
             elif float(idx_bty.Min) > float(r_min):
                 warnings.append(warning(root,
@@ -2861,15 +2861,14 @@ def selector_expression(root, context, pos="right"):
             # Error if this is the left part of an assignment
             errors.append(warning(root, 'Choice assignment: '
                                       'use "var := {field}: value" instead of '
-                                      '"var!{field} := value"'
+                                      '"var.{field} := value"'
                                       .format(field=field_name)))
         for n, f in receiver_bty.Children.items():
             if n.lower() == field_name:
                 node.exprType = f.type
                 break
         else:
-            msg = 'Field "{}" not found in expression {}'.format(field_name,
-                    receiver.inputString)
+            msg = f'Field "{field_name}" not found in expression {receiver.inputString}'
             errors.append(error(root, msg))
     except AttributeError:
         # When parsing for syntax or copy-paste, receiver_bty may
@@ -3566,7 +3565,7 @@ def procedure_post(proc, content, parent=None, context=None):
         # check that RETURN statements type is correct
         if not proc.return_type and each.return_expr:
             msg = f'No return value expected in procedure {proc.inputString}'
-            errors.append([msg, [0, 0], []])
+            errors.append([msg, [each.pos_y, each.pos_y], []])
             each.errors.append(msg)
         elif proc.return_type and each.return_expr:
             check_expr = ogAST.ExprAssign()
@@ -3578,16 +3577,16 @@ def procedure_post(proc, content, parent=None, context=None):
                 Assign_Check_Range(check_expr)
                 for warn in warns:
                     each.warnings.append(warn)
-                    warnings.append([warn, [0,0], []])
+                    warnings.append([warn, [each.pos_x, each.pos_y], []])
             except (TypeError, AttributeError) as err:
                 msg = f"In procedure {proc.inputString}: {str(err)}"
-                errors.append([msg,[0, 0], []])
+                errors.append([msg,[each.pos_x, each.pos_y], []])
                 each.errors.append(msg)
             # Id of fd_expr may have changed (enumerated, choice)
             each.return_expr = check_expr.right
         elif proc.return_type and each.kind == 'return' and not each.return_expr:
             msg = f'Missing return value in procedure {proc.inputString}'
-            errors.append([msg, [0, 0], []])
+            errors.append([msg, [each.pos_x, each.pos_y], []])
             each.errors.append(msg)
         else:
             continue
@@ -5990,6 +5989,18 @@ def assign(root, context):
     else:
         errors.extend(err)
         warnings.extend(warn)
+
+    # Check if left side is a FPAR IN parameter. They are read-only.
+    left = expr.left
+    while isinstance(left, (ogAST.PrimIndex, ogAST.PrimSubstring, ogAST.PrimSelector)):
+        left = left.value[0]
+    if isinstance(left, ogAST.PrimFPAR):
+        fpar = left.value[0]
+        for each in context.fpar:
+            if each['name'].lower() == fpar.lower():
+                if each['direction'] == 'in':
+                    errors.append(f'"{fpar}" is an IN parameter (read-only)')
+                break;
 
     try:
         warnings.extend(fix_expression_types(expr, context))

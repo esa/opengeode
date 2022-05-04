@@ -2407,7 +2407,7 @@ clean:
                 # error contains coordinates -> remove it unless it is an id
                 if not use_id:
                     toBeRemoved.append(line)
-                else:
+                elif int(coord[0]) != 0:
                     symbol_id = int(coord[0])
                     err = line.text()
                     kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
