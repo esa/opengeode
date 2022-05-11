@@ -1,0 +1,75 @@
+system og;
+    /* CIF TEXT (159, 221), (290, 200) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    --use dv2 comment 'dataview2.asn';
+    
+    signal dd(Type2);
+    signal we(Some_Thing);
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with dd;
+        from og to env with we;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with dd;
+            from og to env with we;
+        connect c and r;
+        /* CIF PROCESS (225, 49), (150, 75) */
+        process og;
+            /* CIF procedure (416, 148), (82, 35) */
+            procedure SomeProc;
+                /* CIF TEXT (47, 106), (267, 146) */
+                -- Text area for declarations and comments
+                
+                fpar
+                   in a MyInteger,
+                   in so SeqOf,
+                   in ch MyChoice,
+                   in seq Toto,
+                   in/out b MyInteger;
+                returns MyInteger;
+                /* CIF ENDTEXT */
+                /* CIF START (528, 77), (70, 35) */
+                START;
+                    /* CIF decision (528, 132), (70, 50) */
+                    decision a;
+                        /* CIF ANSWER (325, 202), (70, 23) */
+                        (<4):
+                            /* CIF task (325, 245), (70, 35) */
+                            task a := 99
+                            /* CIF comment (415, 245), (242, 35) */
+                            comment 'This is forbidden it is an IN parameter';
+                            /* CIF task (319, 300), (80, 35) */
+                            task so(0) :=10;
+                            /* CIF task (299, 355), (121, 35) */
+                            task ch := a:b:c:true;
+                            /* CIF task (237, 410), (244, 35) */
+                            task seq := { elem_1 0, elem_2 { foo true } };
+                            /* CIF task (303, 465), (113, 35) */
+                            task seq.elem_1 := 1;
+                            /* CIF task (279, 520), (160, 35) */
+                            task seq.elem_2.foo := false;
+                            /* CIF task (325, 570), (70, 35) */
+                            task b := 5;
+                            /* CIF return (342, 625), (35, 35) */
+                            return b;
+                        /* CIF ANSWER (668, 202), (70, 23) */
+                        else:
+                            /* CIF return (685, 245), (35, 35) */
+                            return 'FF'H;
+                    enddecision;
+            endprocedure;
+            /* CIF START (186, 116), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (186, 171), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (344, 153), (70, 35) */
+            state wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;

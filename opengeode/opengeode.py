@@ -25,6 +25,7 @@ import re
 import code
 import pprint
 import random
+import faulthandler
 from functools import partial
 from itertools import chain
 from importlib import reload
@@ -142,7 +143,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.9.4'
+__version__ = '3.9.6'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2406,7 +2407,7 @@ clean:
                 # error contains coordinates -> remove it unless it is an id
                 if not use_id:
                     toBeRemoved.append(line)
-                else:
+                elif int(coord[0]) != 0:
                     symbol_id = int(coord[0])
                     err = line.text()
                     kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
@@ -3174,7 +3175,11 @@ def init_logging(options):
     handler_console.setFormatter(terminal_formatter)
     LOG.addHandler(handler_console)
 
-    level = logging.DEBUG if options.debug else logging.INFO
+    if options.debug:
+        level = logging.DEBUG
+        faulthandler.enable()
+    else:
+        level = logging.INFO
 
     # Set log level for all libraries
     LOG.setLevel(level)

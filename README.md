@@ -124,6 +124,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.6 (05/2022)**
+- Detect attempts to write to FPAR IN parameters in procedure (read-only variables)
+
+**3.9.5 (05/2022)**
+- More type checks when using mkstring to form octet strings
+
 **3.9.4 (04/2022)**
 - More type checks in sequence fields
 

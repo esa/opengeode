@@ -61,12 +61,14 @@ def copy(selection):
     for item in branch_top_level + floating_items:
         branch_ast, terminators = copy_branch(item)
         COPY_PASTE.append((branch_ast, terminators))
-    LOG.debug('COPY-PASTE LIST:' + str(COPY_PASTE))
+    LOG.debug('COPY-PASTE LIST: %s', str(COPY_PASTE))
 
 
 def copy_branch(top_level_item):
     ''' Copy branches (recursively) '''
     res_terminators = []
+    # Parse without symbol ids, so that pos_x is kept with the right value
+    Pr.g_useSymbolId = False
     pr_text = '\n'.join(Pr.generate(top_level_item, cpy=True,
                                     nextstate=False, recursive=True))
     item_ast, terminators = top_level_item.get_ast(pr_text)

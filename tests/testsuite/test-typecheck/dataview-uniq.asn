@@ -24,4 +24,9 @@ ChoiceWithRange ::= CHOICE {
 }
 
 SeqOf ::= SEQUENCE (SIZE(1..5)) OF INTEGER (0..255)
+
+SeqOfBool ::= SEQUENCE (SIZE (2)) OF BOOLEAN
+SeqOfBool2 ::= SEQUENCE (SIZE (1..5)) OF BOOLEAN
+
+
 END
