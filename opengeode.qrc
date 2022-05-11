@@ -1,7 +1,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
  <qresource>
-     <file>icons/comment.png</file>
      <file>icons/continuoussignal.png</file>
+     <file>icons/comment.png</file>
      <file>icons/decision.png</file>
      <file>icons/decisionanswer.png</file>
      <file>icons/input.png</file>
