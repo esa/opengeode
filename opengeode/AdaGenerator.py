@@ -3070,7 +3070,7 @@ def _transition(tr, **kwargs):
                     # and "nextstate -*" to return to the previous state
                     # (parallel states only, not composite states at the moment
                     # as the previous state is not stored)
-                    if any(next_id
+                    if ns != "-*" and any(next_id
                            for next_id in tr.terminator.candidate_id.keys()
                            if next_id != -1):
                         code.append(f'case {LPREFIX}.State is')
