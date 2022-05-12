@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.7 (05/2022)**
+- Simplify generated code when using dash history (nextstate -*)
+
 **3.9.6 (05/2022)**
 - Detect attempts to write to FPAR IN parameters in procedure (read-only variables)
 
