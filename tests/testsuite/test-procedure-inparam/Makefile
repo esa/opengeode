@@ -26,8 +26,8 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	#make -f Makefile.og
-	$(OPENGEODE) og.pr --check |& sort | diff expected -
+	#$(OPENGEODE) og.pr --check |& sort | diff expected -
+	./regression.py
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
