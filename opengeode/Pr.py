@@ -50,7 +50,7 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
         # (2) get signal directions from the connection of the process to env
         # (3) generate all the text
         processes = list(scene.processes)
-        system_name = str(processes[0]) if processes else u'OpenGEODE'
+        system_name = str(processes[0]) if processes else 'OpenGEODE'
         pr_data.append('system {};'.format(system_name))
         Indent.indent += 1
         channels, routes = Indent(), Indent()

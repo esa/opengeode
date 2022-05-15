@@ -513,8 +513,8 @@ processBody
 
 start
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 START name=state_entry_point_name? end
                 transition?
         ->      ^(START cif? hyperlink? symbolid? $name? end? transition?)
@@ -523,8 +523,8 @@ start
 
 floating_label
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 CONNECTION connector_name ':'
                 transition?
                 cif_end_label?
@@ -541,8 +541,8 @@ state
 // the "via" part is needed to allow the graphical merge with a nextstate
 state_definition
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 STATE statelist via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
@@ -552,8 +552,8 @@ state_definition
 
 state_instance
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 STATE statename ':' type_inst via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
@@ -691,8 +691,8 @@ state_part
 // connect part is used to connect nested state exit points to a transition
 connect_part
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 CONNECT connect_list? end
                 transition?
         ->      ^(CONNECT cif? hyperlink? symbolid? connect_list? end? transition?)
@@ -708,8 +708,8 @@ connect_list
 
 spontaneous_transition
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 INPUT NONE end
                 enabling_condition?
                 transition
@@ -725,8 +725,8 @@ enabling_condition
 
 continuous_signal
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 PROVIDED expression e=end
                 (PRIORITY p=INT end)?
                 transition?
@@ -783,8 +783,8 @@ priority_stimulus
 // this is only the "basic input part" from SDL92
 input_part
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 INPUT inputlist end
                 enabling_condition?
                 transition?
@@ -853,8 +853,8 @@ remote_procedure_call_body
 */
 procedure_call
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 CALL procedure_call_body end
         ->      ^(PROCEDURE_CALL cif? hyperlink? symbolid? end? procedure_call_body)
         ;
@@ -921,8 +921,8 @@ alternative_question
 
 decision
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 DECISION question e=end
                 answer_part?
                 alternative_part?
@@ -934,8 +934,8 @@ decision
 
 answer_part
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 L_PAREN answer R_PAREN ':' transition?
         ->      ^(ANSWER cif? hyperlink? symbolid? answer transition?)
         ;
@@ -949,8 +949,8 @@ answer
 
 else_part
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 ELSE ':' transition?
         ->      ^(ELSE cif? hyperlink? symbolid? transition?)
         ;
@@ -1008,8 +1008,8 @@ createbody
 
 output
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 OUTPUT outputbody end
         ->      ^(OUTPUT cif? hyperlink? symbolid? end? outputbody)
         ;
@@ -1074,8 +1074,8 @@ actual_parameters
 
 task
         :       cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 TASK task_body? end
         ->      ^(TASK cif? hyperlink? symbolid? end? task_body?)
         ;
@@ -1366,8 +1366,8 @@ expression_list
 terminator_statement
         :       label?
                 cif?
-                hyperlink?
                 symbolid?
+                hyperlink?
                 terminator
                 end
         ->      ^(TERMINATOR label? cif? hyperlink? symbolid? end? terminator)
@@ -1419,7 +1419,7 @@ via     :       VIA state_entry_point_name
 
 
 end
-        :   (cif? hyperlink? symbolid? COMMENT STRING)? SEMI+
+        :   (cif? symbolid? hyperlink? COMMENT STRING)? SEMI+
         -> ^(COMMENT cif? hyperlink? symbolid? STRING)?
         ;
 
