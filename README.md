@@ -124,6 +124,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.8 (05/2022)**
+- Remove option to generate code with QGen
+- Refactor backends
+- Generate the ASN.1 datamodel together with the model
+- Simplify generated Makefile
+
 **3.9.7 (05/2022)**
 - Simplify generated code when using dash history (nextstate -*)
 

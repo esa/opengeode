@@ -18,8 +18,10 @@
         parallel_states: return a list of strings naming all parallel states
         statenames: return a list of properly-formatted state names
         rec_findstates: recursively find parallel/composite statenames
+        update_full_statelist(process): set field full_statelist in process AST
+        code_generation_preprocessing: to be called before generating code
 
-    Copyright (c) 2012-2021 European Space Agency
+    Copyright (c) 2012-2022 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -36,12 +38,13 @@ from functools import singledispatch
 from . import ogAST
 
 LOG = logging.getLogger(__name__)
-#DEFAULT_SEPARATOR=u'\00dc'
 DEFAULT_SEPARATOR='_0_'
+ASN1SCC = 'asn1Scc'
 
 __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
            'map_input_state', 'sorted_fields', 'state_aggregations',
-           'parallel_states', 'statenames', 'rec_findstates']
+           'parallel_states', 'statenames', 'rec_findstates',
+           'get_full_statelist', 'code_generation_preprocessing']
 
 
 def statenames(context, sep=DEFAULT_SEPARATOR):
@@ -137,6 +140,19 @@ def map_input_state(process):
                         mapping[input_signal][state_name] = i
     return mapping
 
+
+def update_full_statelist(process, SEPARATOR=DEFAULT_SEPARATOR) -> None:
+    ''' Compute the value of the AST field "process.full_statelist"
+        Inputs:
+          * process is of type ogAST.Process
+    '''
+
+    process.full_statelist = set(chain(process.aggregates.keys(),
+                               (name for name in process.mapping.keys()
+                                    if not name.endswith('START'))))
+    if process.aggregates:
+        # Parallel states in a state aggregation may terminate
+        process.full_statelist.add(f'state{SEPARATOR}end')
 
 def inner_labels_to_floating(process):
     '''
@@ -651,3 +667,182 @@ def sorted_fields(atype):
     tmp = ([k, val.Line, val.CharPositionInLine]
              for k, val in atype.Children.items())
     return (x[0] for x in sorted(tmp, key=operator.itemgetter(1,2)))
+
+
+def find_basic_type(TYPES, a_type):
+    ''' Return the ASN.1 basic type of a_type.
+    TYPES is process.dataview
+    '''
+    basic_type = a_type
+    while basic_type.kind == 'ReferenceType':
+        # Find type with proper case in the data view
+        for typename in TYPES.keys():
+            if typename.lower() == basic_type.ReferencedTypeName.lower():
+                basic_type = TYPES[typename].type
+                break
+    return basic_type
+
+
+def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPARATOR) -> None:
+    ''' Generate an ASN.1 model containing:
+          - the state definition
+          - a type describing the SDL context
+          - all user-defined SDL type (NEWTYPEs...)
+        This function is independent from specific backends.
+    '''
+
+    if not process.name:
+        process.name = process.processName
+
+    process_asn1 = process.name.capitalize().replace('_', '-')
+    asn1_template = [
+            f'{process_asn1}-Datamodel DEFINITIONS ::=',
+            'BEGIN',
+            '--  This file was generated automatically by OpenGEODE']
+
+    # The ASN.1 module must import the types from other asn1 modules
+    types_with_proper_case, imports = [], []
+    imports = []
+    for moduleName, sorts in process.DV.exportedTypes.items():
+        actual_sorts = []
+        for each in sorts:
+            process.mapping_sort_module[each] = moduleName
+            if process.DV.types[each].AddedType == "False":
+                actual_sorts.append(each)
+                types_with_proper_case.append(each)
+        sortsAsList = ", ".join(actual_sorts)
+        if sortsAsList:
+            imports.append(f'{sortsAsList} FROM {moduleName}')
+    if types_with_proper_case:
+        asn1_template.append(
+                "IMPORTS\n   " + "\n   ".join(imports) + ";")
+
+    # Format the state list with ASN.1-compatible syntax
+    statelist_asn1 = (state.lower().replace('_', '-')
+                      for state in process.full_statelist)
+    states_asn1 = ", ".join(statelist_asn1) \
+            or f'{process_asn1.lower()}-has-no-state'
+    # Create an ASN.1 definition of the list of states, instead of
+    # a native Ada type - this allows external tools to access
+    # information about the model without having to parse SDL
+    asn1_states_def = f"\n{process_asn1}-States ::= ENUMERATED" \
+                      f" {{{states_asn1}}}"
+
+    asn1_template.append(asn1_states_def)
+
+    # Template to generate the full SDL context as a single ASN.1 type
+    # This is very useful then to manipulate it from C, Ada or Python as
+    # it is then directly accessible and uPER-encodable
+    context_elems = []
+    if process.full_statelist:
+        # Some systems may have no states - only a start transition
+        context_elems.append(f'   state {process_asn1}-States')
+
+    context_elems.append ('init-done BOOLEAN')
+    # State aggregation: add list of substates
+    for substates in process.aggregates.values():
+        for each in substates:
+            context_elems.append(
+              f'{each.statename.lower()}{SEPARATOR}state {process_asn1}-States')
+
+    for var_name, (var_type, def_value) in process.variables.items():
+        if var_name in process.aliases.keys():
+            continue
+        sortname = var_type.ReferencedTypeName
+        # If the type is a ends with _selection, i.e. it is an OG-created
+        # CHOICE selector, then prefix the type with the process name
+        if sortname.endswith('-selection'):
+            sortname = f'{process.name}-{sortname}'.title()
+        context_elems.append(f'{var_name.lower()} {sortname}')
+
+    asn1_context = (f'\n{process_asn1}-Context ::='' SEQUENCE {\n'
+                    + ",\n   ".join(line.replace("_", "-").replace("'", '"') for line in context_elems)
+                    + "\n}\n")
+
+    asn1_template.append(asn1_context)
+
+    # Add user-defined NEWTYPEs and CHOICE selector types
+    choice_selections = []
+    for sortname, sortdef in process.user_defined_types.items():
+        if sortdef.type.kind == "SequenceOfType":
+            rangeMin = sortdef.type.Min
+            rangeMax = sortdef.type.Max
+            refType  = sortdef.type.type.ReferencedTypeName
+            for refTypeCase in types_with_proper_case:
+                if refTypeCase.lower().replace('-', '_') == \
+                        refType.lower().replace('-', '_'):
+                    break
+            asn1_template.append(
+                    f'{sortname.replace("_", "-").capitalize()} ::= SEQUENCE '
+                    f'(SIZE ({rangeMin} .. {rangeMax})) OF '
+                    f'{refTypeCase.replace("_", "-")}')
+        elif sortdef.type.kind == "EnumeratedType":
+            # At the moment, the only user-defined ENUMERATED types that are
+            # supported are the ones generated for the CHOICE selectors
+            # We can therefore safely rename them systematically here,
+            # by using the process name as prefix, to avoid any risk of
+            # duplicate type definition in case it exists in another SDL
+            # process of the system.
+            prefixed_name = f'{process.name}_{sortdef.ChoiceTypeName}_selection '
+            keys = []
+            for idx, key in enumerate(sortdef.type.EnumValues.keys()):
+                # give an index to the enumerations to align with -selection
+                # types used in choice index
+                keys.append(f'{key}-present({idx+1})')
+            asn1_template.append(
+                    f'{prefixed_name.replace("_", "-").title()} ::= ENUMERATED {{' + ", ".join(keys) + '}')
+    asn1_template.append('END\n')
+
+    # Write the ASN.1 file
+    with open(process.name.lower() + '_datamodel.asn', 'w') as asn1_file:
+        asn1_file.write('\n'.join(asn1_template))
+
+
+
+def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):
+    ''' Do all sorts of preprocessing before invoking a code generator
+        and update the AST of the process
+    '''
+    # In case model has nested states, flatten everything
+    flatten(process, sep=separator)
+
+    # Pre-processing of aliases: we must rename all references to the aliases
+    # when they point to a structure that contain a CHOICE field (we cannot
+    # use a rename clause in that case, since the field depends on a
+    # discriminant.
+    no_renames = []
+    for (alias, (sort, alias_expr)) in process.aliases.items():
+        def rec_detect_choice(expr: ogAST.Expression) -> bool:
+            if not isinstance(expr, ogAST.PrimSelector):
+                return False
+            receiver = expr.value[0]
+            bty = find_basic_type(receiver.exprType)
+            if bty.kind == 'ChoiceType':
+                return True
+            return rec_detect_choice(receiver)
+        is_choice = rec_detect_choice(alias_expr)
+        if is_choice:
+            LOG.debug(f"alias: {alias_expr.inputString} will replace {alias}")
+            rename_everything(process.content,
+                              alias,
+                              alias_expr.inputString)
+            no_renames.append(alias)
+
+    # Process State aggregations (Parallel states)
+
+    # Find recursively in the AST all state aggregations
+    # Format: {'aggregation_name' : [list of ogAST.CompositeState]
+    process.aggregates = state_aggregations(process)
+
+    # Make an maping {input: {state: transition...}} in order to easily
+    # generate the lookup tables for the state machine runtime
+    process.input_mapping = map_input_state(process)
+
+    # Extract the list of parallel states names inside the composite states
+    # of state aggregations
+    process.parallel_states = parallel_states(process.aggregates)
+
+    # Establish the list of states (excluding START states)
+    update_full_statelist(process, separator)
+
+    return no_renames

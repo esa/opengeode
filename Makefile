@@ -56,11 +56,8 @@ dependencies:
 	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.5.1f/asn1scc-bin-4.2.5.1f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
-install: opengeode/icons.py
-	PATH=~/.local/bin:"${PATH}" python3 -m pip install --user --upgrade .
-
-opengeode/icons.py: opengeode.qrc
-	PATH=~/.local/bin:"${PATH}" pyside6-rcc $^ -o $@
+install:
+	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --user --upgrade .
 
 full-install: update
 	$(MAKE) dependencies

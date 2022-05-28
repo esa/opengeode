@@ -1054,6 +1054,33 @@ class Process:
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
 
+        # look-up table to find the module name containing a type
+        # (filled by the "generate_asn1_datamodel" function)
+        self.mapping_sort_module = dict()
+
+        # Full list of state excluding START states
+        # (filled by Helper.update_full_statelist)
+        self.full_statelist = set()
+
+        # name: usable process name, it can be different from processName
+        # if this is a process type and the code generation is both for the
+        # type and its instance.
+        self.name : str = ''
+
+        # Format: {'aggregation_name' : [list of ogAST.CompositeState]
+        # (filled by Helper)
+        self.aggregates = dict()
+
+        # Input mapping
+        # {input: {state: transition...}} in order to easily
+        # generate the lookup tables for the state machine runtime
+        # (Filled by Helper)
+        self.input_mapping = dict()
+
+        # List of parallel states names inside the composite states
+        # of state aggregations (Filled by helper)
+        self.parallel_states = []
+
 
 class CompositeState(Process):
     '''
