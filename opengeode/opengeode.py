@@ -64,7 +64,6 @@ from . import(undoCommands,  # NOQA
               Helper,
               Pr,
               CGenerator,
-              QGenSDL,
               Connectors,  # NOQA
               TextInteraction)  # NOQA
 import pygraphviz  # NOQA
@@ -123,7 +122,6 @@ MODULES = [
     TextInteraction,
     Connectors,
     CGenerator,
-    QGenSDL,
 ] # type: List[module]
 
 # Define custom UserRoles
@@ -441,6 +439,8 @@ class SDL_Scene(QGraphicsScene):
         self.refresh_requested = False
         # Flag indicating the presence of unsolved semantic errors in the model
         self.semantic_errors = False
+        # AST of the parsed scene (updated when the model is checked)
+        self.ast = None
 
     def close(self):
         ''' close function is needed by py.test-qt '''
@@ -1700,14 +1700,6 @@ class SDL_View(QGraphicsView):
                 event.modifiers() == Qt.ControlModifier):
             # F3 or Ctrl-G to generate Ada code
             self.generate_ada()
-        elif event.key() == Qt.Key_F6 or (event.key() == Qt.Key_K and
-                event.modifiers() == Qt.ControlModifier):
-            # F6 or Ctrl-Shift-A to generate Ada code with QGen
-            self.generate_qgen_ada()
-        elif event.key() == Qt.Key_F9 or (event.key() == Qt.Key_L and
-                event.modifiers() == Qt.ControlModifier):
-            # F7 or Ctrl-Shift-C to generate C code with QGen
-            self.generate_qgen_c()
         elif event.key() == Qt.Key_F7:
             self.check_model()
         elif event.key() == Qt.Key_F5:
@@ -2003,66 +1995,16 @@ class SDL_View(QGraphicsView):
         if len(sdlSymbols.AST.pr_files) > 0:
             first = sdlSymbols.AST.pr_files.pop()
             source_dir = os.path.dirname(first) or '.'
-            first_pr = '"' + os.path.basename(first) + '"'
+            first_pr = first
         else:
             source_dir = os.path.dirname(filename) or "."
-            first_pr = '"{}"'.format(os.path.basename(filename))
+            first_pr = filename
 
         # other pr files: use relative path to "code" because gprbuild
         # moves to this folder when calling opengeode
         other_pr = ", ".join('"' + os.path.relpath(pr_file, 'code') + '"'
                              for pr_file in sdlSymbols.AST.pr_files)
 
-        template_gpr_sdl = '''project {pr} is
-   for Languages use ("SDL");
-   for Source_Dirs use (".");
-   for Object_Dir use "code";
-   for Source_Files use ({first_pr});
-
-   package Naming is
-      for Body_Suffix ("SDL") use ".pr";
-   end Naming;
-
-   package Compiler is
-      for Driver ("SDL") use "opengeode";
-      for Object_File_Suffix ("SDL") use ".adb";
-      for Leading_Required_Switches ("SDL") use ("--toAda"{other_pr});
-    end Compiler;
-end {pr};'''.format(pr=prj_name,
-                    first_pr=first_pr,
-                    other_pr=", " + other_pr if other_pr else "")
-
-        # ASN1 template to be filled with "Ada" or "c"
-        template_gpr_asn1 = '''project DataView_{lang} is
-   for Languages use ("ASN1");
-   for Source_Dirs use ("{source_dir}", "code");
-   for Source_Files use ("{firstAsn}");
-   for Object_Dir use "code";
-
-   package Naming is
-       for Body_Suffix ("ASN1") use ".asn";
-   end Naming;
-
-   package Compiler is
-       for Driver ("ASN1") use "asn1scc";
-
-       for Leading_Required_Switches ("ASN1") use
-         ("-{lang}",
-          "-equal",
-          "-typePrefix",
-          "Asn1Scc"{otherAsn});
-   end Compiler;
-end DataView_{lang};'''
-
-        #  Template for the Makefile
-        template_makefile = '''export ASN1SCC=$(shell which asn1scc)
-
-all:
-\tgprbuild -p -P {prFile}.gpr          # generate Ada code from the SDL model
-\tgprbuild -p -P dataview_ada.gpr  # generate Ada code from the ASN.1 model
-\tgprbuild -p -P code/{processName}_ada.gpr      # build the Ada code
-clean:
-\trm -rf obj code'''
 
         # If the current scene is a nested one, save the top parent
         scene = self.top_scene()
@@ -2073,56 +2015,43 @@ clean:
 
         if not autosave:
             self.messages_window.clear()
-        # Propose to check semantics if the last check had errors
-        syntax_errors = None
-        if (not autosave) and self.something_changed:
-            #(scene.semantic_errors
-            #                 or not self.is_model_clean()):
-            msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Question)
-            msg_box.setWindowTitle('OpenGEODE - Check Semantics')
-            msg_box.setText("We recommend to make a semantic check of the "
-                            "model now.\n\n"
-                            "Choose Apply to perform this check "
-                            "and Cancel otherwise.")
-            msg_box.setStandardButtons(QMessageBox.Apply
-                                       | QMessageBox.Cancel)
-            msg_box.setDefaultButton(QMessageBox.Apply)
-            res = msg_box.exec()
-            if res == QMessageBox.Apply:
-                syntex_error = True if self.check_model() == "Syntax Errors" \
-                               else False
-
-        # check syntax (if not done) and raise a big warning before saving
-        if syntax_errors is True or (syntax_errors is None
-                                     and not autosave
-                                     and not scene.global_syntax_check()):
-            LOG.error('Syntax errors must be fixed NOW '
-                      'or you may not be able to reload the model')
-            msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('OpenGEODE - Syntax Error')
-            msg_box.setText("Syntax errors were found. It is not advised to "
-                            "save the model now, as you may not be able to "
-                            "open it again. Are you sure you want to save?")
-            msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Cancel)
-            res = msg_box.exec()
-            if res == QMessageBox.Cancel:
-                return False
+            # Check the model if anything changed (mostly to spot syntax errors
+            # as they could jeopardize subsequent model parsing)
+            # if not autosave: # and self.something_changed:
+            if self.check_model() == "Syntax Errors":
+                LOG.error('Syntax errors must be fixed NOW '
+                          'or you may not be able to reload the model')
+                msg_box = QMessageBox(self)
+                msg_box.setIcon(QMessageBox.Critical)
+                msg_box.setWindowTitle('OpenGEODE - Syntax Error')
+                msg_box.setText("Syntax errors were found. It is not advised to "
+                                "save the model now, as you may not be able to "
+                                "open it again. Are you sure you want to save?")
+                msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Cancel)
+                res = msg_box.exec()
+                if res == QMessageBox.Cancel:
+                    return False
 
         if not filename and not autosave:
             return False
 
-        else:
-            pr_file = QFile(filename)
-            pr_path = QFileInfo(pr_file).path()
-            pr_file.open(QIODevice.WriteOnly | QIODevice.Text)
-            if not autosave and save_as:
-                scene.name = 'block {}[*]'.format(''.join(filename
-                        .split(os.path.extsep)[0:-1]).split(os.path.sep)[-1])
-                if self.scene() == scene:
-                    self.wrapping_window.setWindowTitle('{}'
-                                                        .format(scene.name))
+        # Generate the process context in ASN.1
+        if scene.ast is not None and len(scene.ast.processes) == 1:
+            process, = scene.ast.processes
+            process.name = process.processName
+            Helper.code_generation_preprocessing(process)
+            Helper.generate_asn1_datamodel(process)
+
+        pr_file = QFile(filename)
+        pr_path = QFileInfo(pr_file).path()
+        pr_file.open(QIODevice.WriteOnly | QIODevice.Text)
+
+        if not autosave and save_as:
+            scene.name = 'block {}[*]'.format(''.join(filename
+                    .split(os.path.extsep)[0:-1]).split(os.path.sep)[-1])
+            if self.scene() == scene:
+                self.wrapping_window.setWindowTitle('{}'
+                                                    .format(scene.name))
 
         # Translate all scenes to avoid negative coordinates
         delta_x, delta_y = scene.translate_to_origin()
@@ -2156,44 +2085,25 @@ clean:
             source_dir = "."
             firstAsn1File, otherAsn1Files = "", []
 
-        asn1Quotes = [f'"{name}"' for name in otherAsn1Files]
-        asn1Quotes.append(f'"{prj_name}_datamodel.asn"')
-        otherAsn = ", ".join(asn1Quotes)
+        otherAsn1Files.append(f'code/{prj_name}_datamodel.asn')
+        otherAsn = " ".join(otherAsn1Files)
 
+        #  Template for the Makefile
+        template_makefile = f'''all:
+\tmkdir -p code
+\tcd code && opengeode --toAda {first_pr} {other_pr}
+\tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada {firstAsn1File} {otherAsn}
+\tcd code && gnat make {prj_name}
+clean:
+\trm -rf code'''
         pr_data = str('\n'.join(pr_raw))
         try:
             pr_file.write(pr_data.encode('utf-8'))
             pr_file.close()
             if not autosave:
-                # also create gpr files to compile the model
-                with open(pr_path + os.sep + prj_name + '.gpr', 'w') as gpr:
-                    gpr.write(template_gpr_sdl)
-
-                if firstAsn1File:
-                    # generate gpr files to compile the ASN.1 models
-                    with open(pr_path + '/dataview_ada.gpr', 'w') as gpr:
-                        gpr.write(template_gpr_asn1
-                                .format(source_dir=source_dir,
-                                        firstAsn=firstAsn1File,
-                                        otherAsn=", " + otherAsn
-                                        if otherAsn else "",
-                                        lang='Ada'))
-
-                    #  dataview_c.gpr is needed for the simulator
-                    with open(pr_path + '/dataview_c.gpr', 'w') as gpr:
-                        gpr.write(template_gpr_asn1
-                                  .format(source_dir=source_dir,
-                                          firstAsn=firstAsn1File,
-                                          otherAsn=", " + otherAsn
-                                          if otherAsn else "",
-                                          lang='c'))
-
                 # and generate a Makefile.project to build everything
                 with open(pr_path + '/Makefile.{}'.format(prj_name), 'w') as f:
-                    f.write(template_makefile
-                            .format(prFile=prj_name,
-                                    processName=process_name.lower()))
-
+                    f.write(template_makefile)
                 self.scene().clear_focus()
                 for each in chain([scene], scene.all_nested_scenes):
                     each.undo_stack.setClean()
@@ -2364,11 +2274,13 @@ clean:
                 LOG.info("Updating errors: DONE")
                 self.update_asn1_dock.emit(ast)
                 LOG.info("Semantic Check: COMPLETE")
+                # for convenience, attach the ast to the top-level scene
+                scene.ast = ast
                 return "Done"
             else:
                 return "Incomplete check"
         except Exception as err:
-            LOG.error("something went wrong with the semantic checks")
+            LOG.error("Oops, something went wrong with the semantic checks")
             self.messages_window.addItem("Opengeode bug, PLEASE REPORT: "
                     + str(err))
             LOG.debug(str(traceback.format_exc()))
@@ -2557,75 +2469,6 @@ clean:
                             'Code generation failed:' + str(err))
                     LOG.debug(str(traceback.format_exc()))
 
-    def generate_qgen_ada(self):
-        ''' Generate Ada code using QGen '''
-        # If the current scene is a nested one, move to the top parent
-        scene = self.top_scene()
-        pr_raw = Pr.parse_scene(scene, full_model=True
-                                       if not self.readonly_pr else False)
-        pr_data = str('\n'.join(pr_raw))
-        if pr_data:
-            ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
-                                                      string=pr_data)
-            scene.semantic_errors = True if errors else False
-            try:
-                process, = ast.processes
-            except ValueError:
-                process = None
-            log_errors(self.messages_window, errors, warnings)
-            self.find_symbols_and_update_errors()
-            if len(errors) > 0:
-                self.messages_window.addItem(
-                        'Aborting: too many errors to generate code')
-            else:
-                self.messages_window.addItem('Generating Ada code with QGen')
-                options = parse_args()
-                options.toAda = True
-                options.QGen = True
-                try:
-                    errors = QGenSDL.call_qgensdl(options)
-                except AttributeError:
-                    errors = True
-                if errors:
-                    self.messages_window.addItem(
-                        'Code generation with QGen failed!')
-                else:
-                    self.messages_window.addItem('Done')
-
-    def generate_qgen_c(self):
-        ''' Generate C code using QGen '''
-        # If the current scene is a nested one, move to the top parent
-        scene = self.top_scene()
-        pr_raw = Pr.parse_scene(scene, full_model=True
-                                       if not self.readonly_pr else False)
-        pr_data = str('\n'.join(pr_raw))
-        if pr_data:
-            ast, warnings, errors = ogParser.parse_pr(files=self.readonly_pr,
-                                                      string=pr_data)
-            scene.semantic_errors = True if errors else False
-            try:
-                process, = ast.processes
-            except ValueError:
-                process = None
-            log_errors(self.messages_window, errors, warnings)
-            self.find_symbols_and_update_errors()
-            if len(errors) > 0:
-                self.messages_window.addItem(
-                        'Aborting: too many errors to generate code')
-            else:
-                self.messages_window.addItem('Generating C code with QGen')
-                options = parse_args()
-                options.toC = True
-                options.QGen = True
-                try:
-                    errors = QGenSDL.call_qgensdl(options)
-                except AttributeError:
-                    errors = True
-                if errors:
-                    self.messages_window.addItem(
-                        'Code generation with QGen failed!')
-                else:
-                    self.messages_window.addItem('Done')
 
 class OG_MainWindow(QMainWindow):
     ''' Main GUI window '''
@@ -2688,10 +2531,6 @@ class OG_MainWindow(QMainWindow):
         check_action = self.findChild(QAction, 'actionCheck_model')
         about_action = self.findChild(QAction, 'actionAbout')
         ada_action = self.findChild(QAction, 'actionGenerate_Ada_code')
-        qgen_ada_action = self.findChild(QAction,
-                'actionGenerate_Ada_code_with_QGen')
-        qgen_c_action = self.findChild(QAction,
-                'actionGenerate_C_code_with_QGen')
         png_action = self.findChild(QAction, 'actionExport_to_PNG')
 
         # Connect menu actions
@@ -2703,8 +2542,6 @@ class OG_MainWindow(QMainWindow):
         check_action.triggered.connect(self.view.check_model)
         about_action.triggered.connect(self.view.about_og)
         ada_action.triggered.connect(self.view.generate_ada)
-        qgen_ada_action.triggered.connect(self.view.generate_qgen_ada)
-        qgen_c_action.triggered.connect(self.view.generate_qgen_c)
         png_action.triggered.connect(self.view.save_png)
 
         # Connect signal to let the view request a new scene
@@ -2735,9 +2572,7 @@ class OG_MainWindow(QMainWindow):
         # it is a QListWidget
         msg_dock = self.findChild(QDockWidget, 'msgDock')
         msg_dock.setWindowTitle('Use F7 to check the model or update the '
-                                'Data view, and F3 to generate Ada code, '
-                                'F6 to generate Ada code with QGen or '
-                                'F9 to generate C code with QGen')
+                                'Data view, and F3 to generate Ada code')
         msg_dock.setStyleSheet('QDockWidget::title {background: lightgrey;}')
         messages = self.findChild(QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
@@ -3139,15 +2974,10 @@ def parse_args():
             help='Check a .pr file for syntax and semantics')
     parser.add_argument('--toAda', dest='toAda', action='store_true',
             help='Generate Ada code for the .pr file')
-    parser.add_argument('--QGen', dest='QGen', action='store_true',
-            help='Use QGen for code generation. NOTE: the first .pr file '
-            'passed to OpenGEODE must be the root model when using QGen '
-            '(e.g. system_structure.pr)')
     parser.add_argument('--llvm', dest='llvm', action='store_true',
             help='Generate LLVM IR code for the .pr file (experimental)')
     parser.add_argument('--toC', dest='toC', action='store_true',
-            help='Generate C code for the .pr file '
-            '(experimental, if not using QGen)')
+            help='Generate C code for the .pr file ')
     parser.add_argument("-O", dest="optimization", metavar="level", type=int,
             action="store", choices=[0, 1, 2, 3], default=0,
             help="Set optimization level for the generated LLVM IR code")
@@ -3324,29 +3154,19 @@ def cli(options):
         LOG.error(str(err))
         return 1
 
-    if options.QGen:
-        if  options.toC or options.toAda:
-            if not errors:
-                LOG.info('Generating Ada code using QGen')
-                errors = QGenSDL.call_qgensdl(options)
-                if errors:
-                    LOG.error('Code generation with QGen failed')
-            else:
-                LOG.error('Too many errors, cannot generate code')
-    else:
-        if len(ast.processes) != 1:
-            LOG.error(f'Found {len(ast.processes)} process(es) instead of one')
-            return 1
+    if len(ast.processes) != 1:
+        LOG.error(f'Found {len(ast.processes)} process(es) instead of one')
+        return 1
 
-        if options.png or options.pdf or options.svg:
-            export(ast, options)
+    if options.png or options.pdf or options.svg:
+        export(ast, options)
 
-        if any((options.toAda, options.llvm, options.shared,
-            options.stg, options.dll, options.toC)):
-            if not errors:
-                errors = generate(ast.processes[0], options)
-            else:
-                LOG.error('Too many errors, cannot generate code')
+    if any((options.toAda, options.llvm, options.shared,
+        options.stg, options.dll, options.toC)):
+        if not errors:
+            errors = generate(ast.processes[0], options)
+        else:
+            LOG.error('Too many errors, cannot generate code')
 
     return 0 if not errors else 1
 

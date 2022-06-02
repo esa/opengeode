@@ -43,7 +43,7 @@ update:
 	git pull
 
 dependencies:
-	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect python3-pytestqt
+	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
 	python3 -m pip install --user --upgrade pyside6
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
@@ -56,11 +56,8 @@ dependencies:
 	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.2.5.1f/asn1scc-bin-4.2.5.1f.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
-install: opengeode/icons.py
-	PATH=~/.local/bin:"${PATH}" python3 -m pip install --user --upgrade .
-
-opengeode/icons.py: opengeode.qrc
-	PATH=~/.local/bin:"${PATH}" pyside6-rcc $^ -o $@
+install:
+	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --user --upgrade .
 
 full-install: update
 	$(MAKE) dependencies
@@ -72,8 +69,8 @@ publish:
 	@twine upload dist/*
 
 pytest:
-	#pip3 install --user --upgrade pytest-qt  (NO: use the debian package)
-	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; py.test-3
+	python3 -m pip  install --user --upgrade pytest pytest-qt
+	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; py.test
 
 clean:
 	@$(MAKE) -s -C tests/testsuite $@
