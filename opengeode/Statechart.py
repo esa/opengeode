@@ -726,11 +726,14 @@ def create_dot_graph(root_ast,
             # Find the path to the state, this is needed to be able to
             # highlight properly the parallel states in simulation
             for s in root_ast.content.states:
-                if s.inputString.lower() == state.lower():
+                # State may have commas or *
+                statelist = [a.lower() for a in s.statelist]
+                if state.lower() in statelist:
                     path = s.path
                     break
             else:
                 # Should never happen
+                LOG.error('Bug in statechart rendering - please report')
                 path = []
             path_str = ".".join(elem.split()[1] for elem in path + [f"S {state}"]
                                 if not elem.startswith("PROCESS"))
