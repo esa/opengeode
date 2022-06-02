@@ -1785,7 +1785,7 @@ class SDL_View(QGraphicsView):
         if wheelEvent.modifiers() == Qt.ControlModifier:
             # Google-Earth zoom mode (Zoom with center on the mouse position)
             self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-            if wheelEvent.delta() < 0:
+            if wheelEvent.angleDelta().y() < 0:
                 self.scale(0.9, 0.9)
             else:
                 self.scale(1.1, 1.1)
