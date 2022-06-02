@@ -65,85 +65,97 @@ def _decision(dec, **kwargs):
         return stmts, decls
     question_type = dec.question.exprType
     actual_type = type_name(question_type)
-    basic = find_basic_type(question_type).kind in ('IntegerType', 'Integer32Type', 'BooleanType', 'RealType', 'EnumeratedType', 'ChoiceEnumeratedType')
+    basic = find_basic_type(question_type).kind in (
+            'IntegerType',
+            'Integer32Type',
+            'IntegerU8Type',
+            'BooleanType',
+            'RealType',
+            'EnumeratedType',
+            'ChoiceEnumeratedType')
     # for ASN.1 types, declare a local variable
     # to hold the evaluation of the question
     if not basic:
         decls.append('{actType} tmp{idx};'.format(idx=dec.tmpVar, actType=actual_type))
+
     question_stmts, question_string, question_decls = expression(dec.question)
+
     # Add code-to-model traceability
     stmts.extend(traceability(dec))
     decls.extend(question_decls)
     stmts.extend(question_stmts)
+
     if not basic:
         stmts.append('tmp{idx} = {q};'.format(idx=dec.tmpVar, q=question_string))
+
     sep = 'if('
-    for a in dec.answers:
+    for idx, a in enumerate(dec.answers):
         stmts.extend(traceability(a))
-        if a.kind in ('open_range', 'constant'):
-            # Note: removed and a.transition here because empty transitions
-            # have a different meaning, and a "null;" statement has to be
-            # generated, to go into the branch
-            ans_stmts, ans_str, ans_decl = expression(a.constant)
-            stmts.extend(ans_stmts)
-            decls.extend(ans_decl)
-            if not basic:
-                if a.openRangeOp in (ogAST.ExprEq, ogAST.ExprNeq):
-                    if isinstance(a.constant, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-                        ans_str = array_content(a.constant, ans_str, find_basic_type(question_type))
-                        VAR_COUNTER = VAR_COUNTER + 1
-                        decls.append(u'{ty} temp_equal_{var_counter} = {init};'.format(ty=actual_type, var_counter=VAR_COUNTER, init=ans_str))
-                        ans_str = u'temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
-                    elif isinstance(a.constant, ogAST.PrimChoiceItem):
-                        VAR_COUNTER = VAR_COUNTER + 1
-                        decls.append(u'{ty} temp_equal_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
-                        stmts.append(u'temp_equal_{var_counter} = {init};'.format(var_counter=VAR_COUNTER, init=ans_str))
-                        ans_str = u'temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
-                    exp = u'{actType}_Equal(&tmp{idx}, &{ans})'.format(actType=actual_type, idx=dec.tmpVar, ans=ans_str)
-                    if a.openRangeOp == ogAST.ExprNeq:
-                        exp = u'! {}'.format(exp)
+        for element in a.answers:
+            ans_kind    = element['kind']
+            ans_content = element['content']
+            if ans_kind in ('open_range', 'constant'):
+                op, constant = ans_content # get the constant
+                ans_stmts, ans_str, ans_decl = expression(constant)
+                stmts.extend(ans_stmts)
+                decls.extend(ans_decl)
+                if not basic:
+                    if op in (ogAST.ExprEq, ogAST.ExprNeq):
+                        if isinstance(constant, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                            ans_str = array_content(constant, ans_str, find_basic_type(question_type))
+                            VAR_COUNTER = VAR_COUNTER + 1
+                            decls.append(u'{ty} temp_equal_{var_counter} = {init};'.format(ty=actual_type, var_counter=VAR_COUNTER, init=ans_str))
+                            ans_str = u'temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
+                        elif isinstance(constant, ogAST.PrimChoiceItem):
+                            VAR_COUNTER = VAR_COUNTER + 1
+                            decls.append(u'{ty} temp_equal_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
+                            stmts.append(u'temp_equal_{var_counter} = {init};'.format(var_counter=VAR_COUNTER, init=ans_str))
+                            ans_str = u'temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
+                        exp = u'{actType}_Equal(&tmp{idx}, &{ans})'.format(actType=actual_type, idx=dec.tmpVar, ans=ans_str)
+                        if op == ogAST.ExprNeq:
+                            exp = u'! {}'.format(exp)
+                    else:
+                        exp = u'tmp{idx} {op} {ans}'.format(idx=dec.tmpVar, op='==' if op.operand == '=' else op.operand, ans=ans_str)
                 else:
-                    exp = u'tmp{idx} {op} {ans}'.format(idx=dec.tmpVar, op='==' if a.openRangeOp.operand == '=' else a.openRangeOp.operand, ans=ans_str)
-            else:
-                exp = u'({q}) {op} {ans}'.format(q=question_string, op='==' if a.openRangeOp.operand == '=' else a.openRangeOp.operand, ans=ans_str)
-            stmts.append(sep + exp + ')')
-            stmts.append('{')
-            if a.transition:
-                transition_stmts, transition_decls = generate(a.transition)
-            else:
-                transition_stmts, transition_decls = [';'], []
-            stmts.extend(transition_stmts)
-            decls.extend(transition_decls)
-            stmts.append('}')
-            sep = 'else if('
-        elif a.kind == 'closed_range':
-            cl0_stmts, cl0_str, cl0_decl = expression(a.closedRange[0])
-            cl1_stmts, cl1_str, cl1_decl = expression(a.closedRange[1])
-            stmts.extend(cl0_stmts)
-            decls.extend(cl0_decl)
-            stmts.extend(cl1_stmts)
-            decls.extend(cl1_decl)
-            stmts.append('{sep} {dec} >= {cl0} && {dec} <= {cl1})'.format(sep=sep, dec=question_string, cl0=cl0_str, cl1=cl1_str))
-            stmts.append('{')
-            if a.transition:
-                transition_stmts, transition_decls = generate(a.transition)
-            else:
-                transition_stmts, transition_decls = [';'], []
-            stmts.extend(transition_stmts)
-            decls.extend(transition_decls)
-            stmts.append('}')
-            sep = 'else if('
-        elif a.kind == 'informal_text':
-            continue
-        elif a.kind == 'else':
-            # Keep the ELSE statement for the end
-            if a.transition:
-                else_stmts, else_decl = generate(a.transition)
-                else_stmts.insert(0, '{')
-                else_stmts.append('}')
-            else:
-                else_stmts, else_decl = ['{',';','}'], []
-            decls.extend(else_decl)
+                    exp = u'({q}) {op} {ans}'.format(q=question_string, op='==' if op.operand == '=' else op.operand, ans=ans_str)
+                stmts.append(sep + exp + ')')
+                stmts.append('{')
+                if a.transition:
+                    transition_stmts, transition_decls = generate(a.transition)
+                else:
+                    transition_stmts, transition_decls = [';'], []
+                stmts.extend(transition_stmts)
+                decls.extend(transition_decls)
+                stmts.append('}')
+                sep = 'else if('
+            elif ans_kind == 'closed_range':
+                cl0_stmts, cl0_str, cl0_decl = expression(ans_content[0])
+                cl1_stmts, cl1_str, cl1_decl = expression(ans_content[1])
+                stmts.extend(cl0_stmts)
+                decls.extend(cl0_decl)
+                stmts.extend(cl1_stmts)
+                decls.extend(cl1_decl)
+                stmts.append('{sep} {dec} >= {cl0} && {dec} <= {cl1})'.format(sep=sep, dec=question_string, cl0=cl0_str, cl1=cl1_str))
+                stmts.append('{')
+                if a.transition:
+                    transition_stmts, transition_decls = generate(a.transition)
+                else:
+                    transition_stmts, transition_decls = [';'], []
+                stmts.extend(transition_stmts)
+                decls.extend(transition_decls)
+                stmts.append('}')
+                sep = 'else if('
+            elif ans_kind == 'informal_text':
+                continue
+            elif ans_kind == 'else':
+                # Keep the ELSE statement for the end
+                if a.transition:
+                    else_stmts, else_decl = generate(a.transition)
+                    else_stmts.insert(0, '{')
+                    else_stmts.append('}')
+                else:
+                    else_stmts, else_decl = ['{',';','}'], []
+                decls.extend(else_decl)
     try:
         if sep != 'if(':
             # If there is at least one 'if' branch
@@ -510,12 +522,14 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     LOG.info('Generating C code for process ' + str(process_name))
 
-    # In case model has nested states, flatten everything
-    Helper.flatten(process, sep=UNICODE_SEP)
+    #  Prapare the AST for code generation (flatten states, etc.)
+    no_renames = Helper.code_generation_preprocessing(process)
+
+    Helper.generate_asn1_datamodel(process)
 
     # Make an maping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
-    mapping = Helper.map_input_state(process)
+    mapping = process.input_mapping
 
     VARIABLES.update(process.variables)
 
