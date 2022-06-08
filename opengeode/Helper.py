@@ -816,7 +816,8 @@ def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):
             if not isinstance(expr, ogAST.PrimSelector):
                 return False
             receiver = expr.value[0]
-            bty = find_basic_type(receiver.exprType)
+            bty = find_basic_type(TYPES=process.dataview,
+                                  a_type=receiver.exprType)
             if bty.kind == 'ChoiceType':
                 return True
             return rec_detect_choice(receiver)
