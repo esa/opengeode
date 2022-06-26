@@ -401,7 +401,7 @@ def _process(process, ctx=None, options=None):
     # In case model has nested states, flatten everything
     Helper.flatten(process, '.')
 
-    # Make an maping {input: {state: transition...}} in order to easily
+    # Make an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     mapping = Helper.map_input_state(process)
 

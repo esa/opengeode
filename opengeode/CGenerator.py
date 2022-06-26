@@ -527,7 +527,7 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     Helper.generate_asn1_datamodel(process)
 
-    # Make an maping {input: {state: transition...}} in order to easily
+    # Make an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     mapping = process.input_mapping
 

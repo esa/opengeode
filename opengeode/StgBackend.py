@@ -91,7 +91,7 @@ def prepare_model(process):
     # In case model has nested states, flatten everything (in-place)
     Helper.flatten(process, sep=UNICODE_SEP)
 
-    # Add an maping {input: {state: transition...}} in order to easily
+    # Add an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     process.map_inp_states = Helper.map_input_state(process)
 

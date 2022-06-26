@@ -835,7 +835,7 @@ def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):
     # Format: {'aggregation_name' : [list of ogAST.CompositeState]
     process.aggregates = state_aggregations(process)
 
-    # Make an maping {input: {state: transition...}} in order to easily
+    # Make an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     process.input_mapping = map_input_state(process)
 
