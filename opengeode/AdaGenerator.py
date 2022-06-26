@@ -662,7 +662,7 @@ package body {process.name}_RI is''']
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
                     dest.append(f'{LPREFIX}.{inp} := {param_name};')
-                # Execute the correponding transition
+                # Execute the corresponding transition
                 if input_def.transition:
                     dest.append(f'Execute_Transition ({input_def.transition_id});')
                 else:

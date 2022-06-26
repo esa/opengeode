@@ -6587,7 +6587,7 @@ def parse_pr(files=None, string=None):
                 process.errors.append(msg)
         # TODO: do the same with JOIN/LABEL
 
-        # Check that all floating state instances (foo:bar) have a correspoding
+        # Check that all floating state instances (foo:bar) have a corresponding
         # nested state defined.
         state_types = set(st.instance_of.lower()
                 for st in process.content.states if st.instance_of)

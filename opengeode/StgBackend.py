@@ -211,7 +211,7 @@ def _process(process, **kwargs):
                     assig_template['param_name'] = param_name
                     params_lst.append(str(assig_template))
                 case_template['arrs_param_assig'] = params_lst
-                # Execute the correponding transition
+                # Execute the corresponding transition
                 if input_def.transition:
                     case_template['transition'] = input_def.transition_id
             cases.append(str(case_template))

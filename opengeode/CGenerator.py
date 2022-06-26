@@ -699,7 +699,7 @@ LD_LIBRARY_PATH=. taste-gui -l
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
                     input_signals_code.append(u'{ctxt}.{inp} = *{tInp};'.format(ctxt=LPREFIX,inp=inp,tInp=param_name));
-                # Execute the correponding transition
+                # Execute the corresponding transition
                 if input_def.transition:
                     input_signals_code.append('runTransition{pn}({idx});'.format(pn=process_name, idx=input_def.transition_id))
             input_signals_code.append('break;')
