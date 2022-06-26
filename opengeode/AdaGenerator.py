@@ -693,7 +693,7 @@ package body {process.name}_RI is''']
                 taste_template.extend(statecase)
                 # State aggregation:
                 # - find which substate manages this input
-                # - add a swich case on the corresponding substate
+                # - add a switch case on the corresponding substate
                 taste_template.append('--  This is a state aggregation')
                 for sub in process.aggregates[state]:
                     if [a for a in sub.mapping.keys()
