@@ -112,7 +112,7 @@ and mix of true and varbool is not ok';
         /* CIF DECISION (523, 1413), (73, 50) */
         DECISION var6
         /* CIF COMMENT (615, 1421), (432, 48) */
-        COMMENT 'check missing range 0:0.1 and unrechable 100:150';
+        COMMENT 'check missing range 0:0.1 and unreachable 100:150';
                 /* CIF ANSWER (576, 1483), (110, 28) */
                 (0.1:150.0):
                 /* CIF ANSWER (427, 1483), (118, 28) */
