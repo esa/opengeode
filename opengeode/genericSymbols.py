@@ -160,7 +160,7 @@ class Symbol(QObject, QGraphicsPathItem):
         # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         # Apply symbol default mouse cursor
         self.setCursor(self.default_cursor)
-        # De-ativate cache mode otherwise paint is not properly updated
+        # De-activate cache mode otherwise paint is not properly updated
         # for the comment symbol (need to refresh on_the_right property)
         self.setCacheMode(QGraphicsItem.NoCache)
         # Initialize variables used when moving/resizing
