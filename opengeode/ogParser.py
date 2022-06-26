@@ -81,7 +81,7 @@ sys.path.insert(0, '.')
 
 DV = None  # type: module
 
-# Code generator backends may need some intemediate variables to process
+# Code generator backends may need some intermediate variables to process
 # expressions. For convenience and to avoid multiple pass parsing, the parser
 # tries to guess where they may be useful, and adds a hint in the AST.
 TMPVAR = 0  # type: int
