@@ -10,7 +10,7 @@ The standard has been established by ITU-T under reference Z100. Among others, i
 
 Thanks to its formalism, its well-defined concepts and ease of use, the SDL language is sized for the production of safe, robust software. 
 
-TASTE now includes an open-source SDL graphical editor that generates Ada code. It is free software, implemented in Python with the Qt graphical framework. The name "OpenGEODE" was chosen as a tribute to the former ObjectGEODE tool, which has unfortunately been discontinued several years ago. OpenGEODE is freely inspired from the ergonomy of its ancestor, and is trying to show how modern languages and tools can help providing a great user experience to programmers, even those who are not enclined to use a visual approach for development.
+TASTE now includes an open-source SDL graphical editor that generates Ada code. It is free software, implemented in Python with the Qt graphical framework. The name "OpenGEODE" was chosen as a tribute to the former ObjectGEODE tool, which has unfortunately been discontinued several years ago. OpenGEODE is freely inspired from the ergonomy of its ancestor, and is trying to show how modern languages and tools can help providing a great user experience to programmers, even those who are not inclined to use a visual approach for development.
 
 ''Important notice:''
 
