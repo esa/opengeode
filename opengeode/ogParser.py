@@ -921,7 +921,7 @@ def check_call(name, params, context):
         # When we get there, the parameter has been checked already and we
         # know it is a CHOICE type.
         # However it may be a subtype, and in the AST the choices are defined
-        # in the supertype, so we must find it and and the -selection suffix
+        # in the supertype, so we must find it and add the -selection suffix
         # This suffix is added by the Asn1scc module.
         sort = p.exprType
         sort_name = type_name (sort)
