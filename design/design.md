@@ -235,7 +235,7 @@ The symbol-specific class must contain the following information:
 * the shape of the symbol
 * the behaviour of the autocompletion feature
 * the list of symbols that can be connected to this symbol
-* and possibly tuning of some paramters
+* and possibly tuning of some parameters
 
 At the top-part of the module, the new class needs to be added to the \_\_all\_\_
 global:

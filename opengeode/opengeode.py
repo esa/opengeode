@@ -296,7 +296,7 @@ class File_toolbar(QToolBar, object):
 class Sdl_toolbar(QToolBar, object):
     '''
         Toolbar with SDL symbols
-        The list of symbols is passed as paramters at creation time ; the class
+        The list of symbols is passed as parameters at creation time ; the class
         looks for icons for the name of the symbols and .png extension.
         The buttons activation is context dependent. Configuration is done
         directly at symbol level (using the "allowed_followers" property)
