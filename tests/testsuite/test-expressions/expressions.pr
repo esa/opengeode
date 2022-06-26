@@ -113,7 +113,7 @@ process expressions;
             /* CIF task (401, 2300), (263, 35) */
             task varSeqOf1 := varSeqOf1 // varSeqOf2;
             /* CIF PROCEDURECALL (351, 2350), (363, 35) */
-            call assert(length(varSeqOf1) = 6, 'lenght(varSeqOf1) = 6');
+            call assert(length(varSeqOf1) = 6, 'length(varSeqOf1) = 6');
             /* CIF PROCEDURECALL (383, 2400), (300, 35) */
             call assert(varSeqOf1(3) = 4, 'varSeqOf1(3) = 4');
             /* CIF PROCEDURECALL (383, 2450), (300, 35) */
