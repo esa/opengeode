@@ -976,7 +976,7 @@ class SDL_Scene(QGraphicsScene):
             Remove selected symbols from the scene, with proper re-connections
         '''
         if self.context == 'process' and self.readonly:
-            # with readonly flag, forbid item delettion
+            # with readonly flag, forbid item deletion
             return
         self.undo_stack.beginMacro('Delete items')
         for item in self.selected_symbols:
