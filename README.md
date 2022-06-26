@@ -314,7 +314,7 @@ Changelog
   dcl var type renames foo.bar.baz;
 
 **3.5.0 (04/2021)**
-- Support Input/Ouput expressions for model checkers
+- Support Input/Output expressions for model checkers
 
 **3.4.6 (04/2021)**
 - Introduce monitors to support model checking observers
