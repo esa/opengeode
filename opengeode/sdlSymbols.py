@@ -541,7 +541,7 @@ class Join(VerticalSymbol):
         super().resize_item(rect)
 
     def set_shape(self, width, height):
-        ''' Define the bouding rectangle of the JOIN symbol '''
+        ''' Define the bounding rectangle of the JOIN symbol '''
         if width != self.width or height != self.height:
             circ = min(width, height)
             path = QPainterPath()
