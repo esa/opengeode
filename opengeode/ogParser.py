@@ -4248,7 +4248,7 @@ def system_definition(root, parent):
     # add them to signal routes
     for each in system.signals:
         if each['renames'] is not None:
-            #  Parse the expresion, so that if the intercepted signal is
+            #  Parse the expression, so that if the intercepted signal is
             #  an output, it is also added to the route towards env
             ioExpr = parse_io_expression(each['renames'], context=None)
             isOut = ioExpr['kind'] == 'output'
