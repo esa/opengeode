@@ -458,7 +458,7 @@ class DecisionAnswer(HorizontalSymbol):
         self.width, self.height = 0, 0 #ast.width, ast.height
         self.terminal_symbol = False
         # last_branch_item is used to compute branch length
-        # for the connection point positionning
+        # for the connection point positioning
         self.last_branch_item = self
         super().__init__(parent,
                          text=ast.inputString,

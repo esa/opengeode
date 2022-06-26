@@ -278,7 +278,7 @@ def _transition(ast, scene, parent, states):
 
 @render.register(ogAST.Comment)
 def _comment(ast, scene, parent, states=None):
-    ''' Create a COMMENT symbol - note: relative positionning is lost '''
+    ''' Create a COMMENT symbol - note: relative positioning is lost '''
     _, _ = scene, states
     return genericSymbols.Comment(parent, ast=ast)
 
