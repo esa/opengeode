@@ -931,7 +931,7 @@ class SDL_Scene(QGraphicsScene):
     def search(self, pattern, replace_with=None, cmd=None):
         ''' Search and replace function ; get next search result with key n
         cmd is a user string from the vi bar that by default for a replace
-        is "s" (substittute string) but that can be a different command,
+        is "s" (substitute string) but that can be a different command,
         e.g. "state" to limit the substitution to State components'''
         self.clearSelection()
         self.clear_highlight()
