@@ -1,6 +1,6 @@
 /*
     OpenGEODE
-    ANTLR 3.1.3 grammar for the SDL92 langage
+    ANTLR 3.1.3 grammar for the SDL92 language
     Includes the following features from SDL2000+:
     - FOR loops in TASKs
     - Composite states (nested and aggregation/parallel states)
