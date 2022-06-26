@@ -333,7 +333,7 @@ class Symbol(QObject, QGraphicsPathItem):
         # if check_last_semi=True, will raise an error if the text ends
         # with a semicolon (inserted by the user). This is the case for 
         # all symbols except the text boxes. A semi colon there would
-        # prevent a COMMENT, and would only be deteted when parsing the
+        # prevent a COMMENT, and would only be detected when parsing the
         # full model - without precise identication of the location.
         # By doing it here we can spot the issue immediately
         try:
