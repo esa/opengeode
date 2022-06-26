@@ -1658,7 +1658,7 @@ def fix_expression_types(expr, context):
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
             expr.right.value[det].exprType = expr.left.exprType
-        # We must also set the type of the overal expression to the same
+        # We must also set the type of the overall expression to the same
         expr.right.exprType = expr.left.exprType
 
     elif isinstance(expr.right, ogAST.ExprAppend):
