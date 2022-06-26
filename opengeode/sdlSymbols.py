@@ -1132,7 +1132,7 @@ class Process(HorizontalSymbol):
         yield QRect(15, 5, rect.width() - 30, 10)
         yield QRect(5, 5, 10, rect.height() - 10)
         yield QRect(rect.width() - 15, 5, 10, rect.height() - 10)
-        yield QRect(15, rect.heigth() - 15, rect.width() - 30, 10)
+        yield QRect(15, rect.height() - 15, rect.width() - 30, 10)
 
     def insert_symbol(self, parent, x, y):
         ''' Redefinition - adds connection line to env '''
