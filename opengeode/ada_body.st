@@ -180,7 +180,7 @@ end Register_RESET_<name>;
 <endif>
 >>
 
-/* Code for a provided interface or timer timout signal */
+/* Code for a provided interface or timer timeout signal */
 input_signal(header, name, process, cases) ::= <<
 --  Provided interface <name>
 <header> is
