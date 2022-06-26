@@ -6336,7 +6336,7 @@ def pr_file(root):
 
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions
-    # and data typess references.
+    # and data types references.
     processes, uses, systems = [], [], []
 
     for child in root.getChildren():
