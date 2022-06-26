@@ -470,7 +470,7 @@ class DecisionAnswer(HorizontalSymbol):
         self.parser = ogParser
 
     def insert_symbol(self, parent, x, y):
-        ''' ANSWER-specific insersion behaviour: link to connection point '''
+        ''' ANSWER-specific insertion behaviour: link to connection point '''
         if not parent:
             return
         # Make sure that parent is not a sibling answer

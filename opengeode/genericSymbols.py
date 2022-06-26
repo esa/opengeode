@@ -23,7 +23,7 @@
 
 
     Major functionalities offered by the generic Symbol classes are
-    the insersion and deletion of items (possibly recursively if there
+    the insertion and deletion of items (possibly recursively if there
     are child symbols), the moving and resizing, the collision
     avoidance manoeuvres (when moving a group of symbols on top
     of another group, it has the effect of "pushing" the colliders
