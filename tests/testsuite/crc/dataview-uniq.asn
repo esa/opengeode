@@ -1,7 +1,7 @@
 ACNENCODINGWITHBLACKBOX-DATAVIEW DEFINITIONS ::=
 BEGIN
 
-    --  Recipent for a binary-encoded telecommand
+    --  Recipient for a binary-encoded telecommand
     max-TC-size INTEGER ::= 150
     MyStr ::= OCTET STRING (SIZE (0 .. max-TC-size))
 

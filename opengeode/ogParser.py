@@ -2808,7 +2808,7 @@ def primary_substring(root, context, pos):
         # The substring has to be subtyping the original type to get its name
         # This is needed to support expressions such as "a(1,2) := {1,1}"
         # -> assigning a raw expression to a substring requires the type
-        # of the recipiant to be known
+        # of the recipient to be known
         node.exprType = type('SubStr', (receiver.exprType,),
                              {'Min': str(int(min1) - int(max0) + 1),
                               'Max': str(int(max1) - int(min0) + 1)})
