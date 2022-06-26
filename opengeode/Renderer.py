@@ -18,7 +18,7 @@
     be done on any scene (e.g. clipboard).
 
     There is a single rendering function for all SDL construct, and a dispatch
-    machanism (using the Python3-backported feature called singledispatch).
+    mechanism (using the Python3-backported feature called singledispatch).
 
     Rendering can be done for single elements (returns the symbol) or for
     complete diagrams.
