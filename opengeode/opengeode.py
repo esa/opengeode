@@ -884,7 +884,7 @@ class SDL_Scene(QGraphicsScene):
 
 
     def update_completion_list(self, symbol):
-        ''' When text has changed on a symbol, update the data dictionnary '''
+        ''' When text has changed on a symbol, update the data dictionary '''
         pr_text = '\n'.join(Pr.generate(symbol,
                                         recursive=False,
                                         nextstate=False, cpy=True))
@@ -2181,7 +2181,7 @@ clean:
         self.scene().undo_stack.clear()
         # Emit a signal for the application to update the ASN.1 scene
         self.update_asn1_dock.emit(ast)
-        # Set AST to be used as data dictionnary and updated on the fly
+        # Set AST to be used as data dictionary and updated on the fly
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
         self.update_datadict.emit()

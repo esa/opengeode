@@ -1011,7 +1011,7 @@ class State(VerticalSymbol):
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update state completion list '''
-        # Get AST for the symbol and update the context dictionnary
+        # Get AST for the symbol and update the context dictionary
         ast, _, _, _, _ = self.parser.parseSingleElement('state', pr_text)
         if ast:
             # None if there were syntax errors in the symbol

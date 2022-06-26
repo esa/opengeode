@@ -254,7 +254,7 @@ class PrimStateReference(Primary):
 
 
 class PrimConditional(Primary):
-    ''' value is a dictionnary:
+    ''' value is a dictionary:
         { 'if': Expression, 'then': Expression,
         'else': Expression, 'tmpVar': integer}
         tmpVar can be used if the backend needs a temporary variable
@@ -888,7 +888,7 @@ class Procedure:
         self.height = 35
         # Optional hyperlink
         self.hyperlink = None
-        # Local variables dictionnary (see Process)
+        # Local variables dictionary (see Process)
         self.variables = {}
         # MONITOR variables used in observers (same structure as DCL)
         self.monitors = {}
@@ -961,7 +961,7 @@ class Process:
         self.parent = None
         # A process can be referenced (externally defined)
         self.referenced = False
-        # variables: dictionnary: {variable1Name: (asn1SccType, default value)}
+        # variables: dictionary: {variable1Name: (asn1SccType, default value)}
         self.variables = {}
         # MONITOR variables used in observers (same structure as DCL)
         self.monitors = {}
@@ -1013,7 +1013,7 @@ class Process:
         self.procedures = []
 
         # The Mapping structure should be used for code generation backends
-        # dictionnary: {'stateName': [class Input1, Input2,...], ...}
+        # dictionary: {'stateName': [class Input1, Input2,...], ...}
         # then Input contains the inputs list and corresponding transition
         self.mapping = {}
 
@@ -1209,7 +1209,7 @@ class AST:
         # DV is the Asn1scc imported module
         self.DV = None
         # ASN.1-defined constants (constants in Ada but variables in C)
-        # dictionnary: {ConstantName: type } - copied from dataview.py
+        # dictionary: {ConstantName: type } - copied from dataview.py
         self.asn1_constants = {}
 
         # List of System
