@@ -354,7 +354,7 @@ end {process.name.lower()}_Lib;'''
 
         for name, val in process.mapping.items():
             # Test val, in principle there is a value but if the code targets
-            # generation of properties, the model may have been cleant up and
+            # generation of properties, the model may have been cleaned up and
             # in that case no value would be set..
             if name.endswith('START') and name != 'START' and val:
                 process_level_decl.append(f'{name} : constant := {str(val)};')
