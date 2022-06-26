@@ -665,7 +665,7 @@ class Symbol(QObject, QGraphicsPathItem):
 
     def cam_group(self):
         ''' Set the graphical boundaries of the item to apply the CAM on
-            This can be redifined in subclasses, for example to exclude
+            This can be redefined in subclasses, for example to exclude
             connections '''
         return (self.sceneBoundingRect() |
                 self.mapRectToScene(self.childrenBoundingRect()))
