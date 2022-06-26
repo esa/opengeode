@@ -614,7 +614,7 @@ class SDL_Scene(QGraphicsScene):
                     try:
                         if s.ast.errors or s.ast.warnings:
                             # Keep track of all symbols containing errors,
-                            # they are processesd in "find_symbols_and_update_errors"
+                            # they are processed in "find_symbols_and_update_errors"
                             G_ERRORS.append(s)
                     except Exception as e:
                         print("Oops", str(e))
