@@ -33,7 +33,7 @@ system og;
             dcl x MyArray := { 1,2,3 };
             
             dcl someInt MyInteger := 0;
-            synonym fourty_two MyInteger = '42'H;
+            synonym forty_two MyInteger = '42'H;
             synonym zero MyInteger = 0;
             
             dcl myseq Seq;
@@ -51,7 +51,7 @@ system og;
                     /* CIF ANSWER (763, 501), (112, 24) */
                     (some_constant):
                     /* CIF ANSWER (877, 501), (89, 24) */
-                    (fourty_two):
+                    (forty_two):
                     /* CIF ANSWER (970, 501), (70, 24) */
                     (zero):
                     /* CIF ANSWER (1060, 501), (70, 56) */

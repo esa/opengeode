@@ -31,7 +31,7 @@ comment 'Hello';
     /* CIF TEXT (629, 124), (267, 78) */
     -- Text area for declarations and comments
     
-    dcl fourty Enum_With_Values := foo,
+    dcl forty Enum_With_Values := foo,
            two      Enum_With_Values := bar;
     /* CIF ENDTEXT */
     /* CIF procedure (1273, 175), (106, 35) */
@@ -68,13 +68,13 @@ comment 'Hello';
         /* CIF task (584, 280), (103, 35) */
         task check := '2A'H;
         /* CIF PROCEDURECALL (530, 335), (210, 35) */
-        call writeln(num(fourty), num(two))
+        call writeln(num(forty), num(two))
         /* CIF comment (761, 324), (194, 56) */
         comment 'check that num() uses
 the actual enumerated value,
 not the position';
         /* CIF task (514, 390), (243, 35) */
-        task fourty := val(4, Enum_With_Values);
+        task forty := val(4, Enum_With_Values);
         /* CIF decision (601, 440), (70, 50) */
         decision check;
             /* CIF ANSWER (475, 510), (70, 24) */
