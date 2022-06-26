@@ -71,7 +71,7 @@ def _block(ast, scene):
         if each.instance_of_ref:
             top_level.append(render(each.instance_of_ref, scene))
     for each in ast.parent.text_areas:
-        # Sytem level may contain text areas with signal definitions, etc.
+        # System level may contain text areas with signal definitions, etc.
         top_level.append(render(each, scene))
     if not ast.parent.text_areas:
         # If signals are declared outside from a textbox, create one
