@@ -3306,7 +3306,7 @@ def composite_state(root, parent=None, context=None):
         comp.errors.append(msg)
     for each in inner_composite:
         # Parse inner composite states after the text areas to make sure
-        # that all variables are propagated to the the inner scope
+        # that all variables are propagated to the inner scope
         inner, err, warn = composite_state(each, parent=None, context=comp)
         if isinstance(comp, ogAST.StateAggregation):
             # State aggregation contain only composite states, so we must
@@ -3642,7 +3642,7 @@ def floating_label(root, parent, context):
         msg = f'Floating labels not followed by a transition: {str(lab.inputString)}'
         warnings.append([msg, [lab_x, lab_y], []])
         lab.warnings.append(msg)
-    # At the end of the label parsing, get the the list of terminators that
+    # At the end of the label parsing, get the list of terminators that
     # the transition contains by making a diff with the list at context
     # level (we counted the number of terminators before parsing the item)
     lab.terminators = list(context.terminators[terminators:])
@@ -4557,7 +4557,7 @@ def continuous_signal(root, parent, context):
         i.errors.append(e[0])
     for w in warnings:
         i.warnings.append(w[0])
-    # At the end of the input parsing, get the the list of terminators that
+    # At the end of the input parsing, get the list of terminators that
     # follow the input transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the input)
     i.terminators = list(context.terminators[terminators:])
@@ -4736,7 +4736,7 @@ def input_part(root, parent, context):
         else:
             warnings.append('Unsupported INPUT child type: {}'
                             .format(child.type))
-    # At the end of the input parsing, get the the list of terminators that
+    # At the end of the input parsing, get the list of terminators that
     # follow the input transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the input)
     i.terminators = list(context.terminators[terminators:])
@@ -5095,7 +5095,7 @@ def start(root, parent=None, context=None):
         else:
             warnings.append(['START unsupported child type: ' +
                     str(child.type), [s.pos_x, s.pos_y], []])
-    # At the end of the START parsing, get the the list of terminators that
+    # At the end of the START parsing, get the list of terminators that
     # follow the START transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the START)
     s.terminators = list(context.terminators[terminators:])
@@ -5945,7 +5945,7 @@ def transition(root, parent, context):
         else:
             warnings.append('Unsupported symbol in transition, type: ' +
                     str(child.type))
-    # At the end of the transition parsing, get the the list of terminators
+    # At the end of the transition parsing, get the list of terminators
     # the transition contains by making a diff with the list at context
     # level (we counted the number of terminators before parsing the item)
     trans.terminators = list(context.terminators[terminators.pop('trans'):])

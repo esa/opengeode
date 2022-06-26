@@ -23,7 +23,7 @@ BEGIN
       tc-17  PUS-17
     }
 
-    -- Acknowledgement flags are part the the TC secondary header
+    -- Acknowledgement flags are part the TC secondary header
     Acknowledgement-flags ::= SEQUENCE {
        ack-completion BOOLEAN,
        ack-progress   BOOLEAN,

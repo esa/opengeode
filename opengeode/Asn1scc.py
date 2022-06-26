@@ -56,7 +56,7 @@ class ASN1(Enum):
     RenameAllEnumerants = 2
 
 def waitfor_qprocess(qprocess, name):
-    ''' Wait the the execution of a QProcess instance
+    ''' Wait the execution of a QProcess instance
     Raise an exception if anything went wrong, otherwise return stdout '''
     if not qprocess.waitForStarted():
         raise TypeError('Could not start ' + name)

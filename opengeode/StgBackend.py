@@ -138,7 +138,7 @@ def _process(process, **kwargs):
     except TypeError:
         pass # No ASN.1 module
 
-    # Generate the the code of the procedures
+    # Generate the code of the procedures
     inner_procedures_decl = []
     inner_procedures_code = []
     for proc in process.content.inner_procedures:

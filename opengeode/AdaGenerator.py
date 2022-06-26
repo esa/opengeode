@@ -528,7 +528,7 @@ package body {process.name}_RI is''']
         ads_template.append(f'procedure Startup;')
 
 
-    # Generate the the code of the procedures
+    # Generate the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
         proc_code, proc_local = generate(proc)
@@ -1926,7 +1926,7 @@ def _basic_operators(expr, **kwargs):
     if left_is_numeric != right_is_numeric or rbty.kind == lbty.kind:
         # No cast is needed if:
         # - one of the two sides only is a literal
-        # - or if the the basic types are identical
+        # - or if the basic types are identical
         ada_string = '({left} {op} {right})'.format(left=left_str,
                                                      op=expr.operand,
                                                      right=right_str)
