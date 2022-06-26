@@ -2063,7 +2063,7 @@ class SDL_View(QGraphicsView):
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
 
-        # Read the processs name for the Makefile
+        # Read the processes name for the Makefile
         for each in scene.processes:
             if not isinstance(each, ProcessType):
                 process_name = str(each.text)

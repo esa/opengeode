@@ -786,7 +786,7 @@ package body {process.name}_RI is''']
         if not generic:
             if not instance:
                 # Type and instance do not need this declarations, only standalone
-                # proceses.
+                # processes.
                 ads_template.append(f'--  Synchronous Required Interface "{sig}"')
                 ads_template.append(f'{ri_header} renames {process.name}_RI.{sig};')
             ri_stub_ads.append(f'procedure {sig}{params_spec};')
