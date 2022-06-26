@@ -4,7 +4,7 @@
 """
     Graphical text editing functionalities:
         - Autocompletion
-        - Syntax highlighing
+        - Syntax highlighting
         - Automatic placement
 
     Copyright (c) 2012-2020 European Space Agency
