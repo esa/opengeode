@@ -301,7 +301,7 @@ parameters_of_sort
 
 
 // procedure
-// 2021-03 Added EXPORTED and REFEERENCED keywords
+// 2021-03 Added EXPORTED and REFERENCED keywords
 // needed to declare a synchronous provided interface at system level
 procedure
         :       cif?
