@@ -404,7 +404,7 @@ Changelog
 
 **3.0.7 (06/2020)**
 - Fix update of data dictionary window
-- Fix unconstained constants support
+- Fix unconstrained constants support
 
 **3.0.6 (06/2020)**
 - Fix CONNECT symbol
