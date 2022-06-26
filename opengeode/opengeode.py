@@ -3189,7 +3189,7 @@ def gui(options):
     app.setWindowIcon(QIcon(':icons/input.png'))
 
     # Set all encodings to utf-8 in Qt
-    # Ths was removed in Qt5, the consequences are unclear
+    # This was removed in Qt5, the consequences are unclear
     #QTextCodec.setCodecForCStrings(QTextCodec.codecForName('UTF-8'))
 
     # Bypass system-default font, to harmonize size on all platforms
