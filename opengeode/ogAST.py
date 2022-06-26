@@ -1044,7 +1044,7 @@ class Process:
         self.random_generator = set()
 
         # list of Error, Success, and Ignore states (observers/model checking)
-        # (strings in lowerase)
+        # (strings in lowercase)
         self.errorstates = []
         self.ignorestates = []
         self.successstates = []
