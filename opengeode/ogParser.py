@@ -229,7 +229,7 @@ def set_global_DV(asn1_filenames):
                         pretty_print=True)
         # Create new types corresponding to CHOICE determinants as enum
         choice_selectors = create_choice_determinant_types (DV)
-        #  Add to user defined types, so that they wil be generated
+        #  Add to user defined types, so that they will be generated
         #  as explicit ASN.1 types
         CHOICE_SELECTORS.update(choice_selectors)
         USER_DEFINED_TYPES=CHOICE_SELECTORS.copy()
