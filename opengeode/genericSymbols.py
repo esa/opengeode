@@ -1063,7 +1063,7 @@ class HorizontalSymbol(Symbol):
             if has_siblings:
                 pos_x = most_left + group_width + 20
             else:
-                # Verical alignment (x-axis):
+                # Vertical alignment (x-axis):
                 pos_x = (parent.boundingRect().width() -
                         self.boundingRect().width()) / 2
             pos_y = (parent.boundingRect().height() +
