@@ -893,7 +893,7 @@ def _prim_var_reference(prim, ctx):
 
 @reference.register(ogAST.PrimSelector)
 def _prim_selector_reference(prim, ctx):
-    ''' Generate the IR for a field selector referece '''
+    ''' Generate the IR for a field selector reference '''
     receiver_ptr = reference(prim.value[0], ctx)
     field_name = prim.value[1]
 
