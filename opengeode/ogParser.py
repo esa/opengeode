@@ -4123,7 +4123,7 @@ def block_definition(root, parent):
     # block and a single process, it is better to set the routes with the
     # same values as the channels from the system-level channels
     # The reason is that some signals may have added to the channels to
-    # support RPCs'transitions
+    # support RPCs' transitions
     block.signalroutes = parent.channels
     for child in root.getChildren():
         if child.type == lexer.ID:
