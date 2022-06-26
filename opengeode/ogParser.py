@@ -2335,7 +2335,7 @@ def arithmetic_expression(root, context):
 
 
 def relational_expression(root, context):
-    ''' Relational expression analysys '''
+    ''' Relational expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
     if root.type not in (lexer.EQ, lexer.NEQ):
