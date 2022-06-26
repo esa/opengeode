@@ -77,7 +77,7 @@ class Context():
         self.zero = lc.Constant.int(self.i32, 0)
         self.one = lc.Constant.int(self.i32, 1)
 
-        # Intialize built-in functions
+        # Initialize built-in functions
         ty = lc.Type.function(self.void, [self.i8_ptr], True)
         self.funcs['printf'] = self.module.add_function(ty, 'printf')
 
