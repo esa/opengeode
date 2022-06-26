@@ -617,7 +617,7 @@ class SDL_Scene(QGraphicsScene):
                             # they are processesd in "find_symbols_and_update_errors"
                             G_ERRORS.append(s)
                     except Exception as e:
-                        print("Ooops", str(e))
+                        print("Oops", str(e))
                 # Refreshing the scene may result in resizing some symbols
                 dest_scene.refresh()
                 # Once everything is rendered, adjust position of each
