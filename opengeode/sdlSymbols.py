@@ -78,7 +78,7 @@ def variables_autocompletion(symbol, type_filter=None):
         except AttributeError:
             # not in the context of a procedure
             fpar = {}
-        # Return the list of variables, possibly filterd by type
+        # Return the list of variables, possibly filtered by type
         if not type_filter:
             res = set( list(CONTEXT.variables.keys())
                       + list(CONTEXT.global_variables.keys())
