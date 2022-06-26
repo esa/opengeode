@@ -348,7 +348,7 @@ parse the new child.
 To be able to use the new symbol in the graphical editor you need to create
 an icon that will be displayed in the palette of the GUI.
 The icons are specified in SVG format (in the `icons/` directory) using
-the *inkscape* tool and must be exporte to PNG.
+the *inkscape* tool and must be exported to PNG.
 
 The filename must be the same as the class name of your symbol, but with
 lowercases.
