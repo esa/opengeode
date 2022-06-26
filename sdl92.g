@@ -3,7 +3,7 @@
     ANTLR 3.1.3 grammar for the SDL92 langage
     Includes the following features from SDL2000+:
     - FOR loops in TASKs
-    - Composite states (nested and agreggation/parallel states)
+    - Composite states (nested and aggregation/parallel states)
 
     author: Maxime Perrotin
     with contributions from Diego Barbera, Laurent Meyer
