@@ -6352,7 +6352,7 @@ def pr_file(root):
             LOG.error('Unsupported construct in PR:' + str(child.type))
             LOG.error(str(child))
     LOG.debug(f"Parsed {len(processes)} process(es), "
-             f" {len(uses)} use statatement(s), "
+             f" {len(uses)} use statement(s), "
              f" and {len(systems)} systems")
     for child in uses:
         # USE clauses can contain a CIF comment with the ASN.1 filename
