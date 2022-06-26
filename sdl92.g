@@ -1161,7 +1161,7 @@ postfix_expression
 //  input and output expression allow observers (for model checking) to
 //  monitor the sending and receiving of messages with a nice syntax
 //  (e.g. event = output msg (p) from foo)
-//  the parameter is optional. It dooes not need to be declared as a variable,
+//  the parameter is optional. It does not need to be declared as a variable,
 //  as it it implicit.
 input_expression
         :       UNHANDLED? INPUT
