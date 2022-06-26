@@ -6,7 +6,7 @@
     that can be used to create diagrams.
 
     The Symbol class contains common behaviour shared by inherited
-    symobols - in particular the VerticalSymbol is a class of symbols
+    symbols - in particular the VerticalSymbol is a class of symbols
     that can only be vertically aligned ; Horizontal symbols, on the
     other hand, can be move in both directions.
 
