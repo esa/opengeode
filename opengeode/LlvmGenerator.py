@@ -426,7 +426,7 @@ def _process(process, ctx=None, options=None):
         global_var = ctx.module.add_global_variable(var_llty, name)
         ctx.scope.define(name, global_var)
 
-    # Generare process-level vars
+    # Generate process-level vars
     for name, (asn1ty, expr) in process.variables.items():
         var_llty = ctx.lltype_of(asn1ty)
         global_var = ctx.module.add_global_variable(var_llty, str(name))

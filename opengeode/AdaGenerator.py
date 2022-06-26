@@ -795,7 +795,7 @@ package body {process.name}_RI is''']
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
         if stop_condition:
-            # don't generte timer code for stop conditions
+            # don't generate timer code for stop conditions
             break
         ads_template.append(f'--  Timer {timer} SET and RESET functions')
 
