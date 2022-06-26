@@ -729,13 +729,13 @@ class SDL_Scene(QGraphicsScene):
             # contains highlighted data (bold), which has the effect
             # of making the width of the text in fact wider than
             # the bounding rect. The set_text_alignment function,
-            # that is applying the aligment of the text within its
+            # that is applying the alignment of the text within its
             # bounding rect, can work only if the text width is fixed.
             # It has to set it according to the bounding rect, which,
             # therefore can be too small, and this has the effect of
             # pushing the exceeding character to the next line.
             # The only way to avoid this is to call setTextWidth
-            # with the value -1 before the aligment is computed.
+            # with the value -1 before the alignment is computed.
             # This has the effect of re-computing the bounding rect
             # and fixing the width issue.
             symbol.setTextWidth(-1)
