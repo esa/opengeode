@@ -901,7 +901,7 @@ Changelog
 
 **0.99 (04/2014)**
 - Refactoring of the backend engine, now using singledispatch
-- Support of hierachical states
+- Support of hierarchical states
 - Minor bugfixes
 
 **0.98**
