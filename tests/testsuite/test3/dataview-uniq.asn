@@ -110,7 +110,7 @@ FCE-RECOVERY-STATUS-REGISTER ::= SEQUENCE {
     l3rec BOOLEAN
 }
 
--- FCE Control Status Reigster (RD13, section 11.13)
+-- FCE Control Status Register (RD13, section 11.13)
 FCE-CONTROL-FLAGS-STATUS-REGISTER ::= SEQUENCE {
     arr-dep-flag ENUMERATED {majority, minority},   -- Abstracted (majority = two out of three set to 1)
     reference-pattern Valid-ty
