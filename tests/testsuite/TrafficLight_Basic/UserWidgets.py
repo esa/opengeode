@@ -26,7 +26,7 @@ __all__ = ['PedestrianButton', 'TrafficLight', 'Pedestrian']
 
 
 class PedestrianButton(UserWidgetsCommon.TC):
-    ''' Fill / mimick this class to create a custom TC widget '''
+    ''' Fill / mimic this class to create a custom TC widget '''
     name = 'Nice Button' # name on the GUI combo button
     instantiated = False
 
