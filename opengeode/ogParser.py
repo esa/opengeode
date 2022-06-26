@@ -5146,7 +5146,7 @@ def procedure_call(root: antlr3.tree.CommonTree,
         # empty parenthesis : funcWithNoParam().
         # here we only try to get the return type. if check_call returns
         # an exception due to the parameters of the call, we ignore, as this
-        # will be resolved at a diffeent place
+        # will be resolved at a different place
         if call_name in SPECIAL_OPERATORS.keys():
             try:
                 out_ast.exprType, warns = check_call (call_name,
