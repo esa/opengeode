@@ -60,7 +60,7 @@ To start a new project run:
 $ taste
 ```
 
-Select a project name and the graphical editor will pop-up shortly after. You can add functions to the system and specify the imnplementation language to __SDL__. When you edit the function, the OpenGEODE editor will start.
+Select a project name and the graphical editor will pop-up shortly after. You can add functions to the system and specify the implementation language to __SDL__. When you edit the function, the OpenGEODE editor will start.
 
 You can check an example of a system using Opengeode if you go in `~/tool-src/kazoo/tests/Demo_ABB_Opengeode` and run `make` to build it. Then `taste` to edit.
 
