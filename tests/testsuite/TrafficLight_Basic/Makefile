@@ -44,7 +44,7 @@ test-c:
 
 
 test-llvm:
-	$(OPENGEODE) controller.pr system_strucure.pr --llvm -O$(O)
+	$(OPENGEODE) controller.pr system_structure.pr --llvm -O$(O)
 	$(LLC) *.ll
 	$(CC) -O$(O) -c *.s
 
