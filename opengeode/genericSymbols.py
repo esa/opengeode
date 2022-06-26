@@ -657,7 +657,7 @@ class Symbol(QObject, QGraphicsPathItem):
         while top_level.hasParent:
             # The "or top_level.parent" below is due to a Pyside/Qt bug
             # of the parentItem() function. It can happen that even when
-            # the parent has explicitely been set with "setParentItem",
+            # the parent has explicitly been set with "setParentItem",
             # a subsequent call to parentItem returns None. Seems to happen
             # if the parent has not been added yet to the scene.
             top_level = top_level.parentItem() or top_level.parent

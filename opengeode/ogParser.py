@@ -4705,7 +4705,7 @@ def input_part(root, parent, context):
             for w in warnings:
                 i.warnings.append(w[0])
         elif child.type == lexer.ASTERISK:
-            # Asterisk means: all inputs not processed explicitely
+            # Asterisk means: all inputs not processed explicitly
             # Here we do not set the input list - it is set after
             # all other inputs are processed (see state function)
             i.inputString = get_input_string(child)
@@ -4919,7 +4919,7 @@ def state(root, parent, context):
         explicit_inputs = set()
         for inp in state_def.inputs:
             explicit_inputs |= set(inp.inputlist)
-        # Keep only inputs that are not explicitely defined
+        # Keep only inputs that are not explicitly defined
         input_signals = (sig['name'] for sig in context.input_signals)
         remaining_inputs = set(input_signals) - explicit_inputs
         asterisk_input.inputlist = list(remaining_inputs)

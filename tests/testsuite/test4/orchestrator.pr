@@ -220,7 +220,7 @@ in the generated code';
         /* CIF input (603, 765), (100, 50) */
         input *
         /* CIF comment (743, 768), (218, 50) */
-        comment 'All signals not explicitely
+        comment 'All signals not explicitly
 processed. Must be "pulse"';
             /* CIF output (572, 830), (161, 50) */
             output housekeeping (1);

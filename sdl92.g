@@ -793,7 +793,7 @@ input_part
         ;
 
 
-// asterisk means: all signals not excplicitely specified
+// asterisk means: all signals not explicitly specified
 // (semantic is different from asterisk state)
 inputlist
         :       ASTERISK
