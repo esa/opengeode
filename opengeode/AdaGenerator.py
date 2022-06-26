@@ -2650,7 +2650,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         transition is by default generated, but it is possible to generate only
         the code of the question and reference a transition Id (trId) if
         the reference number is passed to the branch_to parameter. In addition
-        it is possible to passs a list of exit calls: this is for nested
+        it is possible to pass a list of exit calls: this is for nested
         functions when they are exited with a continuous signal at a level
         above, a chain a calls to exit procedures has to be added.
         This option is used for example when generating the code of
