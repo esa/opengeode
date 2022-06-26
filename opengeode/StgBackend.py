@@ -1190,7 +1190,7 @@ def _choice_determinant(primary):
 def _integer(primary):
     ''' Generate code for a raw numerical value  '''
     if float(primary.value[0]) < 0:
-        # Parentesize negative integers for maintaining
+        # Parenthesize negative integers for maintaining
         # the precedence in the generated code
         ada_string = u'({})'.format(primary.value[0])
     else:
