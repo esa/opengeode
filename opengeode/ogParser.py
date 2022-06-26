@@ -6,7 +6,7 @@
 
     This library builds the SDL AST (described in ogAST.py)
     The AST can then be used to build SDL backends such as the
-    diagram editor (placing symbols in a graphical canvas for editition)
+    diagram editor (placing symbols in a graphical canvas for edition)
     or code generators, etc.
 
     The AST build is based on the ANTLR-grammar and generated lexer and parser
