@@ -579,7 +579,7 @@ SEQUENCE
 {
   fldEventCode NpalEventCode,
   fldTcAcceptance NpalTcReceived,
-  fldModeTransitition NpalModeTransition,
+  fldModeTransition NpalModeTransition,
   fldDownloadStatus NpalProgressStatus,
   fldCalibration NpalProgressStatus,
   fldErrorCode NpalErrorCode,
