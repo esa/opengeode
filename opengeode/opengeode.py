@@ -299,7 +299,7 @@ class Sdl_toolbar(QToolBar, object):
         The list of symbols is passed as paramters at creation time ; the class
         looks for icons for the name of the symbols and .png extension.
         The buttons activation is context dependent. Configuration is done
-        directly at symbol leval (using the "allowed_followers" property)
+        directly at symbol level (using the "allowed_followers" property)
     '''
     def __init__(self, parent):
         ''' Create the toolbar, get icons and link actions '''
