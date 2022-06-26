@@ -608,7 +608,7 @@ def _rename_primcall(ast, from_name, to_name):
 
 
 @rename_everything.register(ogAST.PrimConditional)
-def _rename_ifhthenelse(ast, from_name, to_name):
+def _rename_ifthenelse(ast, from_name, to_name):
     ''' Rename expressions in Conditional expression construct '''
     for expr in ('if', 'then', 'else'):
         rename_everything(ast.value[expr], from_name, to_name)
