@@ -534,7 +534,7 @@ Changelog
 
 **2.0.20 (02/2019)**
 - Added "val" operator to convert a number to an enumerant
-      useage: someVal := val (0, MyEnumeratedType)
+      usage: someVal := val (0, MyEnumeratedType)
       with someVal of type MyEnumeratedType. Will return the first enumerant
 
 **2.0.19 (01/2019)**
