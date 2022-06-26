@@ -881,7 +881,7 @@ def create_dot_graph(root_ast,
     for each in root_ast.composite_states:
         LOG.debug ("Recursive generation of statechart: " + each.statename)
         # Recursively generate the graphs for nested states
-        # Inherit from the list of signals from the higer level state
+        # Inherit from the list of signals from the higher level state
         #each.input_signals = root_ast.input_signals
         each.all_signals = valid_inputs
         ret['children'][each.statename] = create_dot_graph(each,
