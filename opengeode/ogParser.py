@@ -1826,7 +1826,7 @@ def parse_io_expression(root, context):
             # optional parameter
             result['paramName'] = child.getChild(0).text
         elif child.type == lexer.UNHANDLED:
-            # unhandled input reffers to a lost message, in the sense of a
+            # unhandled input refers to a lost message, in the sense of a
             # message received in a SDL state where it is not expected
             result['kind'] = "unhandled_input"
         else:
