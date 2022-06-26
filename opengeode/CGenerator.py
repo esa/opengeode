@@ -522,7 +522,7 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     LOG.info('Generating C code for process ' + str(process_name))
 
-    #  Prapare the AST for code generation (flatten states, etc.)
+    #  Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
 
     Helper.generate_asn1_datamodel(process)

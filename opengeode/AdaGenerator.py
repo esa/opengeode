@@ -220,7 +220,7 @@ end {process.name.lower()}_Lib;'''
 
     LOG.info(f'Generating Ada code for process {process.name}')
 
-    #  Prapare the AST for code generation (flatten states, etc.)
+    #  Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
 
     if not stop_condition:
