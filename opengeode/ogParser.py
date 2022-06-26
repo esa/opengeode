@@ -501,7 +501,7 @@ def check_syntax(node: antlr3.tree.CommonTree,
                  recursive:bool = False,
                  filename:str = "",
                  input_string:str = "") -> None:
-    ''' Check if the ANTLR node is valid, otherwise raise an excption,
+    ''' Check if the ANTLR node is valid, otherwise raise an exception,
     meaning there is a syntax error, and report the string that could not be
     parsed '''
     def check(root: antlr3.tree.CommonTree,
