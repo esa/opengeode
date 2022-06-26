@@ -702,7 +702,7 @@ Changelog
 
 **1.5.13 (10/2016)**
 - Better support of warnings
-- Fixed detection of CHOICE assignment erros
+- Fixed detection of CHOICE assignment errors
 - Raise error if process miss the start transition
 - Raise error in case of SEQUENCE OF type mismatch
 
