@@ -417,7 +417,7 @@ def rename_everything(ast, from_name, to_name):
 
 @rename_everything.register(ogAST.Automaton)
 def _rename_automaton(ast, from_name, to_name):
-    ''' Renaming at Automaton top level (content of digragrams) '''
+    ''' Renaming at Automaton top level (content of diagrams) '''
     if ast.start:
         rename_everything(ast.start.transition, from_name, to_name)
     for each in ast.named_start:
