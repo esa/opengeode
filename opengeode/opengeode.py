@@ -32,7 +32,7 @@ from importlib import reload
 
 # To freeze the application on Windows, all modules must be imported even
 # when they are not directly used from this module (py2exe bug)
-# NOQA makes flake8 ignore locally-ununsed modules
+# NOQA makes flake8 ignore locally-unused modules
 # pylint: disable=W0611
 import enum  # NOQA
 import string  # NOQA
