@@ -1082,8 +1082,8 @@ task
 
 
 task_body
-        :       (assignement_statement (',' assignement_statement)*)
-        ->      ^(TASK_BODY assignement_statement+)
+        :       (assignment_statement (',' assignment_statement)*)
+        ->      ^(TASK_BODY assignment_statement+)
                 | (informal_text (',' informal_text)*)
         ->      ^(TASK_BODY informal_text+)
                 | (forloop (',' forloop)*)
@@ -1105,7 +1105,7 @@ range
                 R_PAREN
         ->      ^(RANGE $a $b? $step?);
 
-assignement_statement
+assignment_statement
         :       variable ':=' expression
         ->      ^(ASSIGN variable expression);
 
