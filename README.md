@@ -686,7 +686,7 @@ Changelog
 - Fix integer cast in Ada
 
 **1.5.18 (11/2016)**
-- Fix parsing of ASN.1 constants that use an annonymous inner type
+- Fix parsing of ASN.1 constants that use an anonymous inner type
 
 **1.5.17 (11/2016)**
 - Fixed issue with initialization of generated code in state aggregations
