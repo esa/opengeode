@@ -224,7 +224,7 @@ def create_choice_determinant_types(ast):
             if key.lower() == new_sort_name.lower():
                 found = key
                 # here we could add a check that all enum values are identical
-                # to the ones of the new type (with or witout -present suffix)
+                # to the ones of the new type (with or without -present suffix)
                 break
         if found is not None:
             # replace the content
