@@ -1186,7 +1186,7 @@ primary_expression
 
 //  primary covers most expressions with ASN.1 value notation
 //  note that mkstring is the SDL operator transforming an element
-//  into an array. The regular sytanx { hello(1) } is ambiguous because
+//  into an array. The regular syntax { hello(1) } is ambiguous because
 //  it could be a record element with value 1 as well as an array with index 1
 primary
         :       TRUE^
