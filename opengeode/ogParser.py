@@ -616,7 +616,7 @@ def find_type_name(a_type, pool=None) -> str:
                 return find_type_name(parent)
 
 def signature(name, context):
-    ''' Return the signature of a procecure/output/operator '''
+    ''' Return the signature of a procedure/output/operator '''
     name = name.lower()
     if name in SPECIAL_OPERATORS:
         return SPECIAL_OPERATORS[name]
@@ -3425,7 +3425,7 @@ def procedure_pre(root, parent=None, context=None):
             try:
                 proc.return_type, proc.return_var = procedure_returns(child)
             except TypeError as err:
-                errors.append([f"In procdure {proc.inputString}: {str(err)}",
+                errors.append([f"In procedure {proc.inputString}: {str(err)}",
                     [0, 0], []])
             if proc.return_var:
                 warnings.append([f'Procedure {proc.inputString}:'
@@ -3459,7 +3459,7 @@ def procedure_returns(root):
 def check_duplicate_procedures(ctxt, proc, errors=[]):
     ''' Check for duplicates procedure declarations in a given context
         and recursively in contexts above
-        If the proceduure in the context is declared as referenced,
+        If the procedure in the context is declared as referenced,
         then report an error only if the signature is different
         Procedure named "entry" and "exit" are ignored
         '''
@@ -5133,7 +5133,7 @@ def procedure_call(root: antlr3.tree.CommonTree,
     for each in context.procedures:
         if each.inputString.lower() == call_name:
             out_ast.exprType = each.return_type
-            # Take the right casing from prcedure declaration - always useful
+            # Take the right casing from procedure declaration - always useful
             # for case-sensitive backends like C code generators
             out_ast.output[0]['outputName'] = each.inputString
             break
