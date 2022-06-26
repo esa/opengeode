@@ -4465,7 +4465,7 @@ def process_definition(root, parent=None, context=None):
                       process.ignorestates,
                       process.successstates):
         if each not in (st.lower() for st in state_list):
-            # retrieve the text area that contained the decalaration
+            # retrieve the text area that contained the declaration
             # to get the coordinates for error localization
             for ta_ast in process.content.textAreas:
                 if each in ta_ast.observer_states:
