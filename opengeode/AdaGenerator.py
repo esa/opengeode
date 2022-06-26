@@ -2997,7 +2997,7 @@ def _floating_label(label, **kwargs):
 
 
 def procedure_header(proc):
-    ''' Build the protoype of a procedure '''
+    ''' Build the prototype of a procedure '''
     ret_type = type_name(proc.return_type) if proc.return_type else None
     kind = 'procedure' if not proc.return_type else 'function'
     sep = f'p{SEPARATOR}' if not proc.exported else ''
