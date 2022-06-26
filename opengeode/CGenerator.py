@@ -616,7 +616,7 @@ LD_LIBRARY_PATH=. taste-gui -l
         dll_code.append(u'}')
         dll_code.append(u'')
 
-        # Functions to get gobal variables (length and value)
+        # Functions to get global variables (length and value)
         for var_name, (var_type, _) in process.variables.items():
             # Getters for local variables
             global_decls.append(u'int {name}_size()'.format(name=var_name))

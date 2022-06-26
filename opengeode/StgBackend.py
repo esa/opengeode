@@ -62,7 +62,7 @@ STG = None
 new = lambda inst: STG.getInstanceOf(inst)
 
 def initialize_stg(simu=False, stgfile='ada_body.st'):
-    ''' Load the STG backend and set gobal STG pointer '''
+    ''' Load the STG backend and set global STG pointer '''
     global STG
     global SHARED_LIB
 
