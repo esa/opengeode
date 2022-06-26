@@ -258,7 +258,7 @@ class EditableText(QGraphicsTextItem):
 
     def context_completion_list(self, force=False):
         ''' Advanced context-dependent autocompletion '''
-        # Select text from the begining of a line to the cursor position
+        # Select text from the beginning of a line to the cursor position
         # Then keep the last word including separators ('!' and '.')
         # This word (e.g. variable!field!subfield) is then used to update
         # the autocompletion list.

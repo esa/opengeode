@@ -2359,7 +2359,7 @@ clean:
                     line = QListWidgetItem (f'[ERROR] {err}')
                     line.setData(Qt.UserRole + 1, item.ast.path)
                     line.setData(Qt.UserRole + 2, idx)
-                    # Put errors at the begining of the list
+                    # Put errors at the beginning of the list
                     messages.insertItem(0, line)
                 # Clean up the list of errors
                 item.ast.errors = []

@@ -208,7 +208,7 @@ new feature:
 When a graphical symbol is edited, a call to `ogParser.parseSingleElement`
 is made to check that there are no syntax errors.
 
-There is an assertion at the begining of this function to prevent trying to
+There is an assertion at the beginning of this function to prevent trying to
 parse unsupported construct and raise a exception which would be more
 difficult to debug.
 
