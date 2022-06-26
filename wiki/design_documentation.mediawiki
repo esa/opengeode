@@ -290,7 +290,7 @@ In order to save the model or make syntax checks, we need to make sure that the
 graphical model parser recognises the new symbol. The principle is the same as
 for the renderer - a singledispatch visitor pattern, but on the graphical
 symbols instead of the AST. It is therefore straightforward to parse - just add
-a new function that mimicks an existing one and register it to singledispatch.
+a new function that mimics an existing one and register it to singledispatch.
 
 <pre>@generate.register(sdlSymbols.ContinuousSignal)
 def _continuous_signal(symbol, recursive=True, **kwargs):

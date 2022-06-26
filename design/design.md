@@ -327,7 +327,7 @@ the graphical model parser recognises the new symbol.
 The principle is the same as for the renderer - a singledispatch visitor
 pattern, but on the graphical symbols instead of the AST.
 It is therefore straightforward to parse - just add a new function that
-mimicks an existing one and register it to singledispatch.
+mimics an existing one and register it to singledispatch.
 
 
     @generate.register(sdlSymbols.ContinuousSignal)
