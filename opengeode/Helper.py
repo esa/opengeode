@@ -400,7 +400,7 @@ def flatten(process, sep=u'_'):
 @singledispatch
 def rename_everything(ast, from_name, to_name):
     '''
-        Rename in all symbols all occurences of name_ref into new_name.
+        Rename in all symbols all occurrences of name_ref into new_name.
         This is used to avoid name clashes in nested diagrams when they get
         flattened. For example rename all accesses to a variable declared
         in the scope of a composite state, so that they do not overwrite
