@@ -4499,7 +4499,7 @@ def continuous_signal(root, parent, context):
     dec = ogAST.Decision()
     ans = ogAST.Answer()
     warnings, errors = [], []
-    # Flag the continous signal if we are in an observer (model checking)
+    # Flag the continuous signal if we are in an observer (model checking)
     # (useful to render the symbol a bit differently)
     if 'Observer-State-Kind' in types().keys():
         i.observer = True

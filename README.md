@@ -254,7 +254,7 @@ Changelog
 **3.7.3 (06/2021)**
 - Fix support of continuous signals when using parallel states
 - Support history state for parallel state (nextstate -*)
-- Fix shape of contiunuous signals
+- Fix shape of continuous signals
 
 **3.7.2 (06/2021)**
 - Add operator to return the observer state status
@@ -739,7 +739,7 @@ Changelog
 - Various GUI improvements
 
 **1.5.3 (07/2016):**
-- Ada backend fix: Continous signals now handled in states
+- Ada backend fix: Continuous signals now handled in states
       where input is not consumed
 
 **1.5.2 (07/2016):**
@@ -769,7 +769,7 @@ Changelog
 - Excluded states (with *(statelist) ) were case sensitive
 
 **1.3.27 (05/2016)**
-- Fix bug in Ada backend when using continous signals
+- Fix bug in Ada backend when using continuous signals
 - Better handling of simulation script
 
 **1.3.26 (05/2016)**
@@ -840,10 +840,10 @@ Changelog
        to provide manual code. see test-math
 
 **1.3.5 (11/2015)**
-- Better support for continous signals
+- Better support for continuous signals
 
 **1.3.4 (11/2015)**
-- Early support for continous signals
+- Early support for continuous signals
 - Regression issue fixed (test-nocif2)
 
 **1.3.3 (11/2015)**
