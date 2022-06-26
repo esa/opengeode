@@ -504,7 +504,7 @@ class Channel(Signalroute):
     @middle_points.setter
     def middle_points(self, points_scene_coord):
         ''' Redefined function: also store the relative position (percentage)
-            to the line length, in order to ensure proper dimensionning of
+            to the line length, in order to ensure proper dimensioning of
             the connection when blocks are moved '''
         # compute the distance between the start and end points
         dist_x = abs(self.end_point.x() - self.start_point.x())
