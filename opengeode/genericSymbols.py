@@ -13,7 +13,7 @@
     The "Comment" class of symbols is a floating symbol that is
     connected to a parent symbol on the right.
 
-    This library also contains the defintition of connections
+    This library also contains the definition of connections
     (the Connection class).
 
     Symbols can have an editable text area, which behaviour is
