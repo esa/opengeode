@@ -18,7 +18,7 @@
 
     Expressions have to be generated from the "expression" function.
 
-    Optionnaly use the Helper module functions to flatten the model,
+    Optionally use the Helper module functions to flatten the model,
     rename symbols, etc. (see AdaGenerator.py).
 
     Copyright (c) 2012-2014 European Space Agency
