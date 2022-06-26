@@ -687,7 +687,7 @@ class Symbol(QObject, QGraphicsPathItem):
 
         top_level = self.top_level()
         if top_level != self:
-            # Exectute CAM on top level of this item
+            # Execute CAM on top level of this item
             top_level.cam(top_level.position, top_level.position)
             return
 
