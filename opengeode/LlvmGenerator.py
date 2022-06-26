@@ -814,7 +814,7 @@ def generate_for_iterable(loop, ctx):
 
     func = ctx.builder.basic_block.function
 
-    # block for loading the value from the secuence
+    # block for loading the value from the sequence
     # at the current index, incrementing the index afterwards
     load_block = func.append_basic_block('forin:load')
     # block for the body of the loop
