@@ -166,7 +166,7 @@ MyL3DstAddr ::= My4BitArray
 -- L3 FRAME: Control - frame type
 MyL3Cntrl ::= My8BitArray -- Fixed value 0x03
 
--- L3 FRAME: Code - data frame identificator
+-- L3 FRAME: Code - data frame identifier
 MyL3Code ::= My8BitArray
 
 -- L3 FRAME: Time to end
