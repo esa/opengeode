@@ -334,7 +334,7 @@ class Symbol(QObject, QGraphicsPathItem):
         # with a semicolon (inserted by the user). This is the case for 
         # all symbols except the text boxes. A semi colon there would
         # prevent a COMMENT, and would only be detected when parsing the
-        # full model - without precise identication of the location.
+        # full model - without precise identification of the location.
         # By doing it here we can spot the issue immediately
         try:
             _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
