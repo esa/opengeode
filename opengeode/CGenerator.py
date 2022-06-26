@@ -1220,8 +1220,8 @@ def _prim_index(prim):
 
     receiver = prim.value[0]
 
-    receiver_stms, reciver_string, receiver_decl = expression(receiver)
-    string = reciver_string
+    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
