@@ -6375,7 +6375,7 @@ def pr_file(root):
                 ast.use_clauses.extend('{}/{}'
                            .format(entities[0], each) for each in entities[1:])
 #       if not asn1_filename:
-#           # Look for case insentitive pr file and add it to AST
+#           # Look for case insensitive pr file and add it to AST
 #           search = fnmatch.translate(clause.text + '.pr')
 #           searchobj = re.compile(search, re.IGNORECASE)
 #           for each in os.listdir('.'):
