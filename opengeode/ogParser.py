@@ -4606,7 +4606,7 @@ def input_part(root, parent, context):
                             ans = ogAST.Answer()
                             # inp_sig['renames'] is the AST entry
                             # (e.g. "input foo to bar")
-                            # extact all parts:
+                            # extract all parts:
                             io_expr = parse_io_expression(inp_sig['renames'], context)
                             if io_expr['paramName'] is not None:
                                 # io expressions cannot have a parameter when they rename a signal
