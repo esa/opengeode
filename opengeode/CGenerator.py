@@ -569,7 +569,7 @@ LD_LIBRARY_PATH=. taste-gui -l
             LOG.debug(var_name)
             context_init_code.append(u'{ct}.{field} = {init};'.format(ct=LPREFIX, field=var_name, init=init_string))
             assert not init_stmt, 'Initialization of ' + init_name + ' requires to add statement'
-            assert not init_decl, 'Initialization of ' + init_name + ' requires to add declartions'
+            assert not init_decl, 'Initialization of ' + init_name + ' requires to add declarations'
         context_type.append(u'{tn} {vn};'.format(tn = type_name(var_type), vn = var_name))
 
 
