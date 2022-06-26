@@ -638,7 +638,7 @@ class SDL_Scene(QGraphicsScene):
                             # Update_position is called here because it
                             # is not possible to be sure that the
                             # positionning stored in the file will be
-                            # rendered correctly on the host plaform.
+                            # rendered correctly on the host platform.
                             # Font rendering may cause slight differences
                             # between Linux and Windows for example.
                             symbol.update_position()
