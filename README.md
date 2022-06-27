@@ -393,7 +393,7 @@ Changelog
   mkstring (a, b, c) is in principle equivalent to ASN.1 Value Notation {a, b, c}
   however ASN.1 value notation can't be used for a single indexed element : { foo(1) }
   as this is an ambiguous syntax (it can be mixed with a record field, with value 1).
-  mkstring is the actuall Z100 (SDL standard) syntax to be used
+  mkstring is the actual Z100 (SDL standard) syntax to be used
 
 **3.0.9 (06/2020)**
 - Minor fixes in C backend related to case sensitivity
