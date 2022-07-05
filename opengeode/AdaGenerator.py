@@ -3090,7 +3090,7 @@ def _inner_procedure(proc, **kwargs):
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
 
-        if proc.exported:
+        if proc.exported and proc.content.start is not None:
             # Exported procedure end calling the corresponding transition
             # procedure that allows user to change state after RPC call
             # We need to update all the transitions of the procedure

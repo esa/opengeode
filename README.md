@@ -126,6 +126,7 @@ Changelog
 =========
 **3.9.11 (07/2022)**
 - Fix a bug in code used by the model checker
+- In Ada backend: ignore exported procedures with no start transition
 
 **3.9.10 (06/2022)**
 - Fix a bug in the Helper preprocessing function when handling aliases

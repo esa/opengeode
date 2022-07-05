@@ -292,7 +292,7 @@ def is_null(ty) -> bool:
     return find_basic_type(ty).kind == 'NullType'
 
 
-def is_string(ty, pool) -> bool:
+def is_string(ty, pool=None) -> bool:
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty, pool).kind in (
         'StandardStringType',
@@ -302,7 +302,7 @@ def is_string(ty, pool) -> bool:
     )
 
 
-def is_sequenceof(ty, pool) -> bool:
+def is_sequenceof(ty, pool=None) -> bool:
     ''' Return true if a type is a SequenceOf Type '''
     return find_basic_type(ty, pool).kind == 'SequenceOfType'
 
