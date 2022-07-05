@@ -271,9 +271,9 @@ def is_real(ty) -> bool:
     return find_basic_type(ty).kind == 'RealType'
 
 
-def is_numeric(ty) -> bool:
+def is_numeric(ty, pool=None) -> bool:
     ''' Return true if a type is a Numeric Type '''
-    return find_basic_type(ty).kind in (
+    return find_basic_type(ty, pool).kind in (
         'IntegerType',
         'Integer32Type',
         'IntegerU8Type',
@@ -292,9 +292,9 @@ def is_null(ty) -> bool:
     return find_basic_type(ty).kind == 'NullType'
 
 
-def is_string(ty) -> bool:
+def is_string(ty, pool) -> bool:
     ''' Return true if a type is a String Type '''
-    return find_basic_type(ty).kind in (
+    return find_basic_type(ty, pool).kind in (
         'StandardStringType',
         'OctetStringType',
         'StringType',
@@ -302,9 +302,9 @@ def is_string(ty) -> bool:
     )
 
 
-def is_sequenceof(ty) -> bool:
+def is_sequenceof(ty, pool) -> bool:
     ''' Return true if a type is a SequenceOf Type '''
-    return find_basic_type(ty).kind == 'SequenceOfType'
+    return find_basic_type(ty, pool).kind == 'SequenceOfType'
 
 
 def is_list(ty) -> bool:
@@ -577,8 +577,9 @@ def find_basic_type(a_type, pool=None):
             if typename.lower() == basic_type.ReferencedTypeName.lower():
                 basic_type = pool[typename].type
                 if Min is not None and Max is not None \
-                        and (is_numeric(basic_type) or is_string(basic_type)
-                                or is_sequenceof(basic_type)):
+                        and (is_numeric(basic_type, pool)
+                                or is_string(basic_type, pool)
+                                or is_sequenceof(basic_type, pool)):
                     # Subtypes may have defined subranges
                     new_type = type('Subtype',  basic_type.__bases__,
                             dict (basic_type.__dict__))

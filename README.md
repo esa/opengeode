@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.11 (07/2022)**
+- Fix a bug in code used by the model checker
+
 **3.9.10 (06/2022)**
 - Fix a bug in the Helper preprocessing function when handling aliases
 
