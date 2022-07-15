@@ -20,6 +20,7 @@
         rec_findstates: recursively find parallel/composite statenames
         update_full_statelist(process): set field full_statelist in process AST
         code_generation_preprocessing: to be called before generating code
+        generate_asn1_datamodel: generate the _datamodel.asn file for a process
 
     Copyright (c) 2012-2022 European Space Agency
 
@@ -44,6 +45,7 @@ ASN1SCC = 'asn1Scc'
 __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
            'map_input_state', 'sorted_fields', 'state_aggregations',
            'parallel_states', 'statenames', 'rec_findstates',
+           'generate_asn1_datamodel',
            'get_full_statelist', 'code_generation_preprocessing']
 
 

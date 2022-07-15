@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.12 (07/2022)**
+- Fix the datamodel generation in function types
+
 **3.9.11 (07/2022)**
 - Fix a bug in code used by the model checker
 - In Ada backend: ignore exported procedures with no start transition

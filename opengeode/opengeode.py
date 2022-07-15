@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.9.11'
+__version__ = '3.9.12'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2039,6 +2039,8 @@ class SDL_View(QGraphicsView):
         if scene.ast is not None and len(scene.ast.processes) == 1:
             process, = scene.ast.processes
             process.name = process.processName
+            # If this is a process type, use the type for the datamodel
+            process = process.instance_of_ref or process
             Helper.code_generation_preprocessing(process)
             Helper.generate_asn1_datamodel(process)
 
@@ -2376,7 +2378,6 @@ clean:
     def go_to_scene_path(self, path) -> bool:
         ''' Reach a specific path (scene) by going up/down. This makes sure
         that the Up button is properly set when the scene is reached '''
-        #breakpoint()
         while self.up_button.isEnabled():
             self.go_up()
 
