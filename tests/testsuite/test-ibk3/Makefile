@@ -30,6 +30,9 @@ test-ada: node.ali
 test-c: node.c
 	$(CC) -c node.c
 
+test-if:
+	sdl2if node.pr system_structure.pr
+
 test-llvm: node.o
 
 coverage:

@@ -34,6 +34,9 @@ test-c:
 	$(CC) -O$(O) -c *.c
 
 
+test-if:
+	sdl2if testsc.pr
+
 test-llvm:
 	$(OPENGEODE) testsc.pr --llvm -O$(O)
 	$(LLC) *.ll

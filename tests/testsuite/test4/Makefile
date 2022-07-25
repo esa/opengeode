@@ -32,6 +32,10 @@ test-c: orchestrator.c
 
 test-llvm: orchestrator.o
 
+test-if:
+	sdl2if orchestrator.pr sytem_structure.pr
+
+
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 

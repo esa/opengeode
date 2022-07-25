@@ -30,6 +30,9 @@ test-ada: packetmanager.ali
 test-c: packetmanager.c
 	$(CC) -c packetmanager.c
 
+test-if:
+	sdl2if packetmanager.pr system_structure.pr
+
 test-llvm: packetmanager.o
 
 coverage:

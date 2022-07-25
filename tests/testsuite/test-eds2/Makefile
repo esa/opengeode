@@ -36,6 +36,9 @@ test-c:
 	$(ASN1SCC) -c  -typePrefix asn1Scc -equal *.asn
 	$(CC) -O$(O) -c *.c
 
+test-if:
+	sdl2if demodevicedsap.pr system_structure.pr
+
 
 test-llvm:
 	$(OPENGEODE) demodevicedsap.pr --llvm -O$(O)

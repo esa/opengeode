@@ -30,6 +30,9 @@ test-ada: orchestrator.ali
 test-c: orchestrator.c
 	$(CC) -c orchestrator.c
 
+test-if:
+	sdl2if orchestrator.pr sytem_structure.pr
+
 test-llvm: orchestrator.o
 
 coverage:

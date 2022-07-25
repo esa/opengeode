@@ -35,6 +35,12 @@ test-c: orchestrator.c test_c.o dataview-uniq.o
 	$(CC) test_c.o dataview-uniq.o orchestrator.o -lm -o test_c
 	./test_c | diff expected -
 
+test-if:
+	sdl2if orchestrator.pr system_structure.pr
+
+testif:
+	sdl2if orchestrator.pr system_structure.pr
+
 test-llvm: orchestrator.o
 
 test-python:

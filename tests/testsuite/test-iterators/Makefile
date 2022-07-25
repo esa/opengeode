@@ -49,6 +49,9 @@ simu: test-ada
 test-c:
 	echo 'No test for C'
 
+test-if:
+	sdl2if orchestrator.pr
+
 test-llvm: orchestrator.o
 
 coverage:

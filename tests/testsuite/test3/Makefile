@@ -30,6 +30,9 @@ test-ada: fce.ali
 test-c: fce.c
 	$(CC) -c fce.c
 
+test-if:
+	sdl2if fce.pr sytem_structure.pr
+
 test-llvm: fce.o
 
 coverage:

@@ -30,6 +30,9 @@ test-ada: challenge.ali
 test-c: challenge.c
 	$(CC) -c challenge.c
 
+test-if:
+	sdl2if challenge.pr sytem_structure.pr
+
 test-llvm: challenge.o
 
 coverage:

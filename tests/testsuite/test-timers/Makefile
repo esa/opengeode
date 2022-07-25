@@ -42,6 +42,9 @@ test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
+test-if:
+	sdl2if test.pr
+
 
 test-llvm:
 	$(OPENGEODE) test.pr --llvm -O$(O)

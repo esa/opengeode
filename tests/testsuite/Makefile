@@ -34,6 +34,14 @@ test-ada:
 	rm -f ${TEST_BASE_DIR}/logs/*
 	@python3 test.py test-ada $(TEST_CASES)
 
+test-if:
+	rm -f ${TEST_BASE_DIR}/logs/*
+	@python3 test.py test-if $(TEST_CASES)
+
+test-promela:
+	rm -f ${TEST_BASE_DIR}/logs/*
+	@python3 test.py test-promela $(TEST_CASES)
+
 test-c:
 	@python3 test.py test-c $(TEST_CASES)
 

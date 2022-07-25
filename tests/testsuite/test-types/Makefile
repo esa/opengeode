@@ -29,6 +29,9 @@ test-ada: function1.ali
 
 test-c: function1.c
 
+test-if:
+	sdl2if function1.pr sytem_structure.pr
+
 test-llvm: function1.o
 
 coverage:

@@ -1,4 +1,5 @@
 OPENGEODE=opengeode
+SDL2IF=sdl2if
 ASN1SCC=asn1scc
 CC=gcc
 LLC=llc
@@ -14,11 +15,14 @@ TESTQGEN_GT_C=../testqgen.py test-qgen-gt-c
 
 clean:
 	gnat clean *.adb
-	rm -rf *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
+	rm -rf *.if *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
-	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr
+	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml
+
+test-promela: FORCE
+	 sdl2promela --sdl *.pr -o og.pml
 
 %.o: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --llvm -O$(O)
@@ -28,6 +32,9 @@ clean:
 %.c: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toC
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+
+%.if: %.pr FORCE
+	$(SDL2IF) $< ${STRUCT}
 
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda && \

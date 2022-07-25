@@ -33,6 +33,9 @@ test-ada:
 test-c:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check && 
 
+test-if:
+	sdl2if orchestrator.pr system_structure.pr
+
 
 test-llvm: orchestrator.o
 

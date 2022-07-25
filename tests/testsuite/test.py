@@ -22,6 +22,8 @@ testsWork = {
     'test-qgen-gt-ada' : work1,
     'test-qgen-gt-c' :   work1,
     'test-ada' :         work1,
+    'test-if' :          work1,
+    'test-promela' :     work1,
     'test-c' :           work1,
     'test-llvm' :        work1,
     'test-vhdl':         work1

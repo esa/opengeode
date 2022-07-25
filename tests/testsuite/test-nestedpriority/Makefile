@@ -29,6 +29,9 @@ test-ada: test-parse
 
 test-c: test-parse
 
+test-if:
+	sdl2if challenge.pr system_structure.pr
+
 test-llvm: test-parse
 
 test-vhdl : test-parse

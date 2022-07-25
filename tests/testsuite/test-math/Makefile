@@ -35,6 +35,9 @@ test-c: expressions.c test_c.o dataview-uniq.o
 	$(CC) test_c.o dataview-uniq.o expressions.o -lm -o test_c
 	./test_c
 
+test-if:
+	sdl2if expressions.pr system_structure.pr
+
 test-llvm: expressions.o dataview-uniq.o | test_llvm.o
 	$(CC) expressions.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm

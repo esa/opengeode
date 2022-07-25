@@ -42,6 +42,9 @@ test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
 	$(CC) -O$(O) -c *.c
 
+test-if:
+	sdl2if controller.pr system_structure.pr
+
 
 test-llvm:
 	$(OPENGEODE) controller.pr system_structure.pr --llvm -O$(O)

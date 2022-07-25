@@ -36,6 +36,9 @@ test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
+test-if:
+	sdl2if og.pr
+
 test-python:
 	$(OPENGEODE) og.pr --shared
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview.asn

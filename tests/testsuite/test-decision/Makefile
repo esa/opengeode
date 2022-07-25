@@ -37,6 +37,9 @@ test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn 
 	$(CC) -O$(O) -c *.c
 
+test-if:
+	sdl2if toto.pr
+
 
 test-llvm:
 	$(OPENGEODE) toto.pr --llvm -O$(O)

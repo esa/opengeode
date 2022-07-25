@@ -30,6 +30,9 @@ test-ada: framemanager.ali
 test-c: framemanager.c
 	$(CC) -c framemanager.c
 
+test-if:
+	sdl2if framemanager.pr system_structure.pr
+
 test-llvm: framemanager.o
 
 coverage:

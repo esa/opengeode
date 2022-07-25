@@ -35,6 +35,9 @@ test-c: operators.c test_c.o dataview-uniq.o
 	$(CC) test_c.o operators.o -lm -o test_c
 	./test_c | diff expected_c -
 
+test-if:
+	sdl2if operators.pr system_structure.pr
+
 test-llvm: operators.o dataview-uniq.o | test_llvm.o
 	$(CC) operators.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm | diff expected -

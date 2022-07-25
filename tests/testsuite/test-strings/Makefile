@@ -40,6 +40,9 @@ test-c: dataview-uniq.o | test_ada.o
 	$(CC) -O$(O) test_c.c og.c dataview-uniq.c -o test_c
 	./test_c | diff - expected
 
+test-if:
+	sdl2if og.pr
+
 
 test-llvm: test.o dataview-uniq.o | test_llvm.o
 	$(OPENGEODE) og.pr --llvm -O$(O)

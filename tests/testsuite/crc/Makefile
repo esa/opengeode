@@ -36,6 +36,8 @@ test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
 	$(CC) -O$(O) -c *.c
 
+test-if:
+	sdl2if ${ROOT_MODEL}
 
 test-llvm:
 	$(OPENGEODE) insdl.pr --llvm -O$(O)

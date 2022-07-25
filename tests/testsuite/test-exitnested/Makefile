@@ -40,6 +40,9 @@ test-llvm: challenge.o dataview-uniq.o | test_llvm.o
 	$(CC) challenge.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm | diff expected -
 
+test-if:
+	sdl2if challenge.pr system_structure.pr
+
 test-vhdl : test-c
 	bambu challenge.c test_c.c --experimental-setup=BAMBU
 

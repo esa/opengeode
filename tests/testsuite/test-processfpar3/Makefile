@@ -30,6 +30,9 @@ test-c: function_in_sdl.c test_c.o dataview-uniq.o
 	$(CC) test_c.o function_in_sdl.c dataview-uniq.o -lm -o test_c
 	./test_c 
 
+test-if:
+	sdl2if function_in_sdl.pr system_structure.pr
+
 
 test-llvm: function_in_sdl.o
 

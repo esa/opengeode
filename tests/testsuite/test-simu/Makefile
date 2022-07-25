@@ -51,6 +51,9 @@ test-c:
 	$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
 	./test_c | diff - expected
 
+test-if:
+	sdl2if orchestrator.pr system_structure.pr
+
 test-llvm: orchestrator.o
 
 test-python:

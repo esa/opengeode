@@ -31,6 +31,9 @@ test-ada:
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 
+test-if:
+	sdl2if og.pr
+
 test-c: 
 	$(OPENGEODE) og.pr --toC
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn

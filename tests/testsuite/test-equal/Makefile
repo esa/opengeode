@@ -35,6 +35,9 @@ test-c: og.c test_c.o dataview-uniq.o
 	$(CC) test_c.o og.o dataview-uniq.o -lm -o test_c
 	./test_c | diff expected -
 
+test-if:
+	sdl2if og.pr system_structure.pr
+
 
 test-llvm: og.o dataview-uniq.o | test_llvm.o
 	$(CC) og.o dataview-uniq.o test_llvm.o -o test_llvm -lm

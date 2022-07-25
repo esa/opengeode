@@ -36,6 +36,7 @@ test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
+test-if: og.if
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)

@@ -35,6 +35,9 @@ test-c: controlflow.c test_c.o dataview-uniq.o
 	$(CC) test_c.o controlflow.c -lm -o test_c
 	./test_c | diff expected -
 
+test-if:
+	sdl2if controlflow.pr system_structure.pr
+
 test-llvm: controlflow.o dataview-uniq.o | test_llvm.o
 	$(CC) controlflow.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm | diff expected -

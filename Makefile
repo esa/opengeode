@@ -10,6 +10,12 @@ test-parse:
 test-ada:
 	@PATH=~/.local/bin:"${PATH}" $(MAKE) -s -C tests/testsuite $@
 
+test-if:
+	@PATH=~/.local/bin:"${PATH}" $(MAKE) -s -C tests/testsuite $@
+
+test-promela:
+	@PATH=~/.local/bin:"${PATH}" $(MAKE) -s -C tests/testsuite $@
+
 test-llvm:
 	@$(MAKE) -s -C tests/testsuite $@
 

@@ -31,6 +31,9 @@ test-ada:
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n test.ali
 
+test-if:
+	sdl2if test.pr
+
 simu:
 	$(OPENGEODE) test.pr --shared
 	./test_simu.sh

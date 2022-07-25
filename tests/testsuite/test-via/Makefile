@@ -39,6 +39,9 @@ test-c: challenge.c test_c.o dataview-uniq.o
 	$(CC) test_c.o challenge.c dataview-uniq.o -lm -o test_c
 	./test_c | diff expected -
 
+test-if:
+	sdl2if challenge.pr sytem_structure.pr
+
 test-llvm: challenge.o dataview-uniq.o | test_llvm.o
 	$(CC) challenge.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm| diff expected -

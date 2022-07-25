@@ -32,6 +32,9 @@ test-ada:
 test-c: 
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toC
 
+test-if:
+	sdl2if DemoDeviceDSAP_fixed.pr
+
 test-llvm:
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --llvm -O$(O)
 

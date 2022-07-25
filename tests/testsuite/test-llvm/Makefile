@@ -35,6 +35,9 @@ test-c: orchestrator.c test_c.o dataview-uniq.o
 	$(CC) test_c.o orchestrator.c dataview-uniq.o -lm -o test_c
 	./test_c | diff expected -
 
+test-if:
+	sdl2if orchestrator.pr system_structure.pr
+
 test-llvm: orchestrator.o dataview-uniq.o | test_llvm.o
 	$(CC) orchestrator.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm

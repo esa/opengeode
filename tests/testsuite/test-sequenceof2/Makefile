@@ -32,6 +32,9 @@ test-ada:
 	$(GNATBIND) -n test.ali
 	gnat make test_ada.ada
 
+test-if:
+	sdl2if test.pr
+
 simu:
 	$(OPENGEODE) test.pr --shared
 	./test_simu.sh

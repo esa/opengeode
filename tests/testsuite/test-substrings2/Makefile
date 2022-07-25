@@ -36,6 +36,9 @@ test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
 	$(CC) -O$(O) -c *.c
 
+test-if:
+	sdl2if function2.pr
+
 
 test-llvm:
 	$(OPENGEODE) function2.pr system_structure.pr --llvm -O$(O)

@@ -31,6 +31,9 @@ test-ada:
 test-c:
 	$(OPENGEODE) og.pr --toC
 
+test-if:
+	sdl2if og.pr
+
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)

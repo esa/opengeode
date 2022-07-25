@@ -34,6 +34,9 @@ test-c: myfunction.c | test_ada.o
 	$(CC) -o test_c myfunction.c test_c.c
 	./test_c | diff expected -
 
+test-if:
+	sdl2if myfunction.pr system_structure.pr
+
 test-llvm: myfunction.o dataview-uniq.o | test_llvm.o
 	$(CC) myfunction.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm | diff expected -

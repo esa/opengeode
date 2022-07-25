@@ -32,6 +32,9 @@ test-c: trafficlight.c
 
 test-llvm: trafficlight.o
 
+test-if:
+	sdl2if trafficlight.pr system_structure.pr
+
 test-export:
 	$(OPENGEODE) --png --pdf --svg trafficlight.pr system_structure.pr
 	$(OPENGEODE) --png --pdf --svg --split trafficlight.pr system_structure.pr
