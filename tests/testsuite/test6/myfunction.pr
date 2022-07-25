@@ -104,7 +104,7 @@ should display FALSE';
         /* CIF PROCEDURECALL (421, 688), (440, 35) */
         call writeln(if someint>0 then variable_str else other fi)
         /* CIF comment (837, 658), (346, 35) */
-        comment 'Write a non-fixed lenght OCTET STRING';
+        comment 'Write a non-fixed length OCTET STRING';
         /* CIF PROCEDURECALL (532, 738), (218, 35) */
         call writeln(1 + (-otherint))
         /* CIF comment (749, 708), (333, 35) */

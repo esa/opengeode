@@ -18,7 +18,7 @@
 
     Expressions have to be generated from the "expression" function.
 
-    Optionnaly use the Helper module functions to flatten the model,
+    Optionally use the Helper module functions to flatten the model,
     rename symbols, etc. (see AdaGenerator.py).
 
     Copyright (c) 2012-2014 European Space Agency
@@ -70,7 +70,7 @@ def _process(process):
     # In case model has nested states, flatten everything
     Helper.flatten(process)
 
-    # Make an maping {input: {state: transition...}} in order to easily
+    # Make an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     mapping = Helper.map_input_state(process)
 

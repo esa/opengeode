@@ -56,7 +56,7 @@ class ASN1(Enum):
     RenameAllEnumerants = 2
 
 def waitfor_qprocess(qprocess, name):
-    ''' Wait the the execution of a QProcess instance
+    ''' Wait the execution of a QProcess instance
     Raise an exception if anything went wrong, otherwise return stdout '''
     if not qprocess.waitForStarted():
         raise TypeError('Could not start ' + name)
@@ -224,7 +224,7 @@ def create_choice_determinant_types(ast):
             if key.lower() == new_sort_name.lower():
                 found = key
                 # here we could add a check that all enum values are identical
-                # to the ones of the new type (with or witout -present suffix)
+                # to the ones of the new type (with or without -present suffix)
                 break
         if found is not None:
             # replace the content

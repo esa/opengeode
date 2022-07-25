@@ -30,7 +30,7 @@ system NpalDsap;
             dcl ch2 ChoiceWithRange := a : 'EEEEEE'H;  -- range error! (detected)
             
             dcl so SeqOf := { 20 }; -- should be ok
-            dcl so2 SeqOf := { 10, 5115  };  -- should not be ok (detectd)
+            dcl so2 SeqOf := { 10, 5115  };  -- should not be ok (detected)
             dcl so3 SeqOf := { 10, 'FFFF'H  };  -- should not be ok (detected)
             
             dcl sob SeqOfBool;

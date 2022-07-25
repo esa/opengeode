@@ -77,7 +77,7 @@ class Context():
         self.zero = lc.Constant.int(self.i32, 0)
         self.one = lc.Constant.int(self.i32, 1)
 
-        # Intialize built-in functions
+        # Initialize built-in functions
         ty = lc.Type.function(self.void, [self.i8_ptr], True)
         self.funcs['printf'] = self.module.add_function(ty, 'printf')
 
@@ -401,7 +401,7 @@ def _process(process, ctx=None, options=None):
     # In case model has nested states, flatten everything
     Helper.flatten(process, '.')
 
-    # Make an maping {input: {state: transition...}} in order to easily
+    # Make an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     mapping = Helper.map_input_state(process)
 
@@ -426,7 +426,7 @@ def _process(process, ctx=None, options=None):
         global_var = ctx.module.add_global_variable(var_llty, name)
         ctx.scope.define(name, global_var)
 
-    # Generare process-level vars
+    # Generate process-level vars
     for name, (asn1ty, expr) in process.variables.items():
         var_llty = ctx.lltype_of(asn1ty)
         global_var = ctx.module.add_global_variable(var_llty, str(name))
@@ -814,7 +814,7 @@ def generate_for_iterable(loop, ctx):
 
     func = ctx.builder.basic_block.function
 
-    # block for loading the value from the secuence
+    # block for loading the value from the sequence
     # at the current index, incrementing the index afterwards
     load_block = func.append_basic_block('forin:load')
     # block for the body of the loop
@@ -893,7 +893,7 @@ def _prim_var_reference(prim, ctx):
 
 @reference.register(ogAST.PrimSelector)
 def _prim_selector_reference(prim, ctx):
-    ''' Generate the IR for a field selector referece '''
+    ''' Generate the IR for a field selector reference '''
     receiver_ptr = reference(prim.value[0], ctx)
     field_name = prim.value[1]
 

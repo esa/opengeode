@@ -26,7 +26,7 @@ T-GNC-LV-SIM-CONTEXT ::= SEQUENCE {
     filtered-angles-sample-2    T-VECT3-FLOAT32
 }
 
--- SIMULATOR INPUTS / FPS-A OUTPUTS (cyril'scode)
+-- SIMULATOR INPUTS / FPS-A OUTPUTS (cyril's code)
 T-GNC-LV-SIM-INPUTS ::= SEQUENCE {
     sequ-exec-request-vect   T-HAS-SEQUENCE-EXEC-BEEN-REQUESTED-VECT,
     tvc-set-point-eng-vect  T-TVC-SET-POINT-ENG-VECT,

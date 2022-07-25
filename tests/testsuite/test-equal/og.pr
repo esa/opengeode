@@ -16,7 +16,7 @@ process og;
     dcl V6 Toto := { elem_1 'Hello', elem_2 {'Ola', 'TheWorld'} };
     
     dcl V7 AChoice := a: TRUE;
-    dcl V8 ACHoice := b: {'Hello', 'World!'};
+    dcl V8 AChoice := b: {'Hello', 'World!'};
     
     -- test REAL equality
     dcl number1 MyReal := 1.0;

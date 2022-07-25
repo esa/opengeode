@@ -15,7 +15,7 @@ group adb;
  * ext_proc : external procedure declarations (array)
  * timer_decls : declaration of timers (array)
  * timer_defs : definition of timers (array)
- * tr_locals : local variables used in transitions/floating labels (arrary)
+ * tr_locals : local variables used in transitions/floating labels (array)
  * tr_code : code of the transitions (array)
  * flab_code : code of the floating labels
 */
@@ -180,7 +180,7 @@ end Register_RESET_<name>;
 <endif>
 >>
 
-/* Code for a provided interface or timer timout signal */
+/* Code for a provided interface or timer timeout signal */
 input_signal(header, name, process, cases) ::= <<
 --  Provided interface <name>
 <header> is

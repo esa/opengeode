@@ -82,7 +82,7 @@ def copy_branch(top_level_item):
     # If top_level_item is an horizontal symbol, all its children (branch)
     # are automatically copied. In the case that several following symbols
     # are selected however, the followers of the top_level must be
-    # explicitely added to the copy list:
+    # explicitly added to the copy list:
     if not isinstance(top_level_item, genericSymbols.HorizontalSymbol):
         next_aligned = top_level_item.next_aligned_symbol()
         while next_aligned and next_aligned.grabber.isSelected():

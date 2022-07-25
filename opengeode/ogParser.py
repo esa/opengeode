@@ -6,7 +6,7 @@
 
     This library builds the SDL AST (described in ogAST.py)
     The AST can then be used to build SDL backends such as the
-    diagram editor (placing symbols in a graphical canvas for editition)
+    diagram editor (placing symbols in a graphical canvas for edition)
     or code generators, etc.
 
     The AST build is based on the ANTLR-grammar and generated lexer and parser
@@ -81,7 +81,7 @@ sys.path.insert(0, '.')
 
 DV = None  # type: module
 
-# Code generator backends may need some intemediate variables to process
+# Code generator backends may need some intermediate variables to process
 # expressions. For convenience and to avoid multiple pass parsing, the parser
 # tries to guess where they may be useful, and adds a hint in the AST.
 TMPVAR = 0  # type: int
@@ -229,7 +229,7 @@ def set_global_DV(asn1_filenames):
                         pretty_print=True)
         # Create new types corresponding to CHOICE determinants as enum
         choice_selectors = create_choice_determinant_types (DV)
-        #  Add to user defined types, so that they wil be generated
+        #  Add to user defined types, so that they will be generated
         #  as explicit ASN.1 types
         CHOICE_SELECTORS.update(choice_selectors)
         USER_DEFINED_TYPES=CHOICE_SELECTORS.copy()
@@ -501,7 +501,7 @@ def check_syntax(node: antlr3.tree.CommonTree,
                  recursive:bool = False,
                  filename:str = "",
                  input_string:str = "") -> None:
-    ''' Check if the ANTLR node is valid, otherwise raise an excption,
+    ''' Check if the ANTLR node is valid, otherwise raise an exception,
     meaning there is a syntax error, and report the string that could not be
     parsed '''
     def check(root: antlr3.tree.CommonTree,
@@ -617,7 +617,7 @@ def find_type_name(a_type, pool=None) -> str:
                 return find_type_name(parent)
 
 def signature(name, context):
-    ''' Return the signature of a procecure/output/operator '''
+    ''' Return the signature of a procedure/output/operator '''
     name = name.lower()
     if name in SPECIAL_OPERATORS:
         return SPECIAL_OPERATORS[name]
@@ -922,7 +922,7 @@ def check_call(name, params, context):
         # When we get there, the parameter has been checked already and we
         # know it is a CHOICE type.
         # However it may be a subtype, and in the AST the choices are defined
-        # in the supertype, so we must find it and and the -selection suffix
+        # in the supertype, so we must find it and add the -selection suffix
         # This suffix is added by the Asn1scc module.
         sort = p.exprType
         sort_name = type_name (sort)
@@ -1659,7 +1659,7 @@ def fix_expression_types(expr, context):
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
             expr.right.value[det].exprType = expr.left.exprType
-        # We must also set the type of the overal expression to the same
+        # We must also set the type of the overall expression to the same
         expr.right.exprType = expr.left.exprType
 
     elif isinstance(expr.right, ogAST.ExprAppend):
@@ -1827,7 +1827,7 @@ def parse_io_expression(root, context):
             # optional parameter
             result['paramName'] = child.getChild(0).text
         elif child.type == lexer.UNHANDLED:
-            # unhandled input reffers to a lost message, in the sense of a
+            # unhandled input refers to a lost message, in the sense of a
             # message received in a SDL state where it is not expected
             result['kind'] = "unhandled_input"
         else:
@@ -2336,7 +2336,7 @@ def arithmetic_expression(root, context):
 
 
 def relational_expression(root, context):
-    ''' Relational expression analysys '''
+    ''' Relational expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
     if root.type not in (lexer.EQ, lexer.NEQ):
@@ -2809,7 +2809,7 @@ def primary_substring(root, context, pos):
         # The substring has to be subtyping the original type to get its name
         # This is needed to support expressions such as "a(1,2) := {1,1}"
         # -> assigning a raw expression to a substring requires the type
-        # of the recipiant to be known
+        # of the recipient to be known
         node.exprType = type('SubStr', (receiver.exprType,),
                              {'Min': str(int(min1) - int(max0) + 1),
                               'Max': str(int(max1) - int(min0) + 1)})
@@ -3307,7 +3307,7 @@ def composite_state(root, parent=None, context=None):
         comp.errors.append(msg)
     for each in inner_composite:
         # Parse inner composite states after the text areas to make sure
-        # that all variables are propagated to the the inner scope
+        # that all variables are propagated to the inner scope
         inner, err, warn = composite_state(each, parent=None, context=comp)
         if isinstance(comp, ogAST.StateAggregation):
             # State aggregation contain only composite states, so we must
@@ -3426,7 +3426,7 @@ def procedure_pre(root, parent=None, context=None):
             try:
                 proc.return_type, proc.return_var = procedure_returns(child)
             except TypeError as err:
-                errors.append([f"In procdure {proc.inputString}: {str(err)}",
+                errors.append([f"In procedure {proc.inputString}: {str(err)}",
                     [0, 0], []])
             if proc.return_var:
                 warnings.append([f'Procedure {proc.inputString}:'
@@ -3460,7 +3460,7 @@ def procedure_returns(root):
 def check_duplicate_procedures(ctxt, proc, errors=[]):
     ''' Check for duplicates procedure declarations in a given context
         and recursively in contexts above
-        If the proceduure in the context is declared as referenced,
+        If the procedure in the context is declared as referenced,
         then report an error only if the signature is different
         Procedure named "entry" and "exit" are ignored
         '''
@@ -3643,7 +3643,7 @@ def floating_label(root, parent, context):
         msg = f'Floating labels not followed by a transition: {str(lab.inputString)}'
         warnings.append([msg, [lab_x, lab_y], []])
         lab.warnings.append(msg)
-    # At the end of the label parsing, get the the list of terminators that
+    # At the end of the label parsing, get the list of terminators that
     # the transition contains by making a diff with the list at context
     # level (we counted the number of terminators before parsing the item)
     lab.terminators = list(context.terminators[terminators:])
@@ -4124,7 +4124,7 @@ def block_definition(root, parent):
     # block and a single process, it is better to set the routes with the
     # same values as the channels from the system-level channels
     # The reason is that some signals may have added to the channels to
-    # support RPCs'transitions
+    # support RPCs' transitions
     block.signalroutes = parent.channels
     for child in root.getChildren():
         if child.type == lexer.ID:
@@ -4249,7 +4249,7 @@ def system_definition(root, parent):
     # add them to signal routes
     for each in system.signals:
         if each['renames'] is not None:
-            #  Parse the expresion, so that if the intercepted signal is
+            #  Parse the expression, so that if the intercepted signal is
             #  an output, it is also added to the route towards env
             ioExpr = parse_io_expression(each['renames'], context=None)
             isOut = ioExpr['kind'] == 'output'
@@ -4466,7 +4466,7 @@ def process_definition(root, parent=None, context=None):
                       process.ignorestates,
                       process.successstates):
         if each not in (st.lower() for st in state_list):
-            # retrieve the text area that contained the decalaration
+            # retrieve the text area that contained the declaration
             # to get the coordinates for error localization
             for ta_ast in process.content.textAreas:
                 if each in ta_ast.observer_states:
@@ -4500,7 +4500,7 @@ def continuous_signal(root, parent, context):
     dec = ogAST.Decision()
     ans = ogAST.Answer()
     warnings, errors = [], []
-    # Flag the continous signal if we are in an observer (model checking)
+    # Flag the continuous signal if we are in an observer (model checking)
     # (useful to render the symbol a bit differently)
     if 'Observer-State-Kind' in types().keys():
         i.observer = True
@@ -4558,7 +4558,7 @@ def continuous_signal(root, parent, context):
         i.errors.append(e[0])
     for w in warnings:
         i.warnings.append(w[0])
-    # At the end of the input parsing, get the the list of terminators that
+    # At the end of the input parsing, get the list of terminators that
     # follow the input transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the input)
     i.terminators = list(context.terminators[terminators:])
@@ -4607,7 +4607,7 @@ def input_part(root, parent, context):
                             ans = ogAST.Answer()
                             # inp_sig['renames'] is the AST entry
                             # (e.g. "input foo to bar")
-                            # extact all parts:
+                            # extract all parts:
                             io_expr = parse_io_expression(inp_sig['renames'], context)
                             if io_expr['paramName'] is not None:
                                 # io expressions cannot have a parameter when they rename a signal
@@ -4706,7 +4706,7 @@ def input_part(root, parent, context):
             for w in warnings:
                 i.warnings.append(w[0])
         elif child.type == lexer.ASTERISK:
-            # Asterisk means: all inputs not processed explicitely
+            # Asterisk means: all inputs not processed explicitly
             # Here we do not set the input list - it is set after
             # all other inputs are processed (see state function)
             i.inputString = get_input_string(child)
@@ -4737,7 +4737,7 @@ def input_part(root, parent, context):
         else:
             warnings.append('Unsupported INPUT child type: {}'
                             .format(child.type))
-    # At the end of the input parsing, get the the list of terminators that
+    # At the end of the input parsing, get the list of terminators that
     # follow the input transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the input)
     i.terminators = list(context.terminators[terminators:])
@@ -4920,7 +4920,7 @@ def state(root, parent, context):
         explicit_inputs = set()
         for inp in state_def.inputs:
             explicit_inputs |= set(inp.inputlist)
-        # Keep only inputs that are not explicitely defined
+        # Keep only inputs that are not explicitly defined
         input_signals = (sig['name'] for sig in context.input_signals)
         remaining_inputs = set(input_signals) - explicit_inputs
         asterisk_input.inputlist = list(remaining_inputs)
@@ -5096,7 +5096,7 @@ def start(root, parent=None, context=None):
         else:
             warnings.append(['START unsupported child type: ' +
                     str(child.type), [s.pos_x, s.pos_y], []])
-    # At the end of the START parsing, get the the list of terminators that
+    # At the end of the START parsing, get the list of terminators that
     # follow the START transition by making a diff with the list at process
     # level (we counted the number of terminators before parsing the START)
     s.terminators = list(context.terminators[terminators:])
@@ -5134,7 +5134,7 @@ def procedure_call(root: antlr3.tree.CommonTree,
     for each in context.procedures:
         if each.inputString.lower() == call_name:
             out_ast.exprType = each.return_type
-            # Take the right casing from prcedure declaration - always useful
+            # Take the right casing from procedure declaration - always useful
             # for case-sensitive backends like C code generators
             out_ast.output[0]['outputName'] = each.inputString
             break
@@ -5147,7 +5147,7 @@ def procedure_call(root: antlr3.tree.CommonTree,
         # empty parenthesis : funcWithNoParam().
         # here we only try to get the return type. if check_call returns
         # an exception due to the parameters of the call, we ignore, as this
-        # will be resolved at a diffeent place
+        # will be resolved at a different place
         if call_name in SPECIAL_OPERATORS.keys():
             try:
                 out_ast.exprType, warns = check_call (call_name,
@@ -5946,7 +5946,7 @@ def transition(root, parent, context):
         else:
             warnings.append('Unsupported symbol in transition, type: ' +
                     str(child.type))
-    # At the end of the transition parsing, get the the list of terminators
+    # At the end of the transition parsing, get the list of terminators
     # the transition contains by making a diff with the list at context
     # level (we counted the number of terminators before parsing the item)
     trans.terminators = list(context.terminators[terminators.pop('trans'):])
@@ -6337,7 +6337,7 @@ def pr_file(root):
 
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions
-    # and data typess references.
+    # and data types references.
     processes, uses, systems = [], [], []
 
     for child in root.getChildren():
@@ -6353,7 +6353,7 @@ def pr_file(root):
             LOG.error('Unsupported construct in PR:' + str(child.type))
             LOG.error(str(child))
     LOG.debug(f"Parsed {len(processes)} process(es), "
-             f" {len(uses)} use statatement(s), "
+             f" {len(uses)} use statement(s), "
              f" and {len(systems)} systems")
     for child in uses:
         # USE clauses can contain a CIF comment with the ASN.1 filename
@@ -6376,7 +6376,7 @@ def pr_file(root):
                 ast.use_clauses.extend('{}/{}'
                            .format(entities[0], each) for each in entities[1:])
 #       if not asn1_filename:
-#           # Look for case insentitive pr file and add it to AST
+#           # Look for case insensitive pr file and add it to AST
 #           search = fnmatch.translate(clause.text + '.pr')
 #           searchobj = re.compile(search, re.IGNORECASE)
 #           for each in os.listdir('.'):
@@ -6588,7 +6588,7 @@ def parse_pr(files=None, string=None):
                 process.errors.append(msg)
         # TODO: do the same with JOIN/LABEL
 
-        # Check that all floating state instances (foo:bar) have a correspoding
+        # Check that all floating state instances (foo:bar) have a corresponding
         # nested state defined.
         state_types = set(st.instance_of.lower()
                 for st in process.content.states if st.instance_of)

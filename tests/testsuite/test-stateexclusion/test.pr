@@ -20,7 +20,7 @@ go2;
         PROCESS test;
             /* CIF TEXT (342, 419), (450, 140) */
             -- Check that using star in a state with exclusion
--- works well, indepently from the casing. Same
+-- works well, independently from the casing. Same
 -- for input.
 
 

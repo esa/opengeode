@@ -111,7 +111,7 @@ MASInterfaceTypeClientType ::= SEQUENCE
 }
 
 
--- message types for DemoDeviceDSAPSubnetworkps
+-- message types for DemoDeviceDSAPSubnetworkPS
 PSInterfaceTypeDownType ::= CHOICE
 {
   sendCommand CHOICE {

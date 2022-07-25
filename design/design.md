@@ -208,7 +208,7 @@ new feature:
 When a graphical symbol is edited, a call to `ogParser.parseSingleElement`
 is made to check that there are no syntax errors.
 
-There is an assertion at the begining of this function to prevent trying to
+There is an assertion at the beginning of this function to prevent trying to
 parse unsupported construct and raise a exception which would be more
 difficult to debug.
 
@@ -235,7 +235,7 @@ The symbol-specific class must contain the following information:
 * the shape of the symbol
 * the behaviour of the autocompletion feature
 * the list of symbols that can be connected to this symbol
-* and possibly tuning of some paramters
+* and possibly tuning of some parameters
 
 At the top-part of the module, the new class needs to be added to the \_\_all\_\_
 global:
@@ -327,7 +327,7 @@ the graphical model parser recognises the new symbol.
 The principle is the same as for the renderer - a singledispatch visitor
 pattern, but on the graphical symbols instead of the AST.
 It is therefore straightforward to parse - just add a new function that
-mimicks an existing one and register it to singledispatch.
+mimics an existing one and register it to singledispatch.
 
 
     @generate.register(sdlSymbols.ContinuousSignal)
@@ -348,7 +348,7 @@ parse the new child.
 To be able to use the new symbol in the graphical editor you need to create
 an icon that will be displayed in the palette of the GUI.
 The icons are specified in SVG format (in the `icons/` directory) using
-the *inkscape* tool and must be exporte to PNG.
+the *inkscape* tool and must be exported to PNG.
 
 The filename must be the same as the class name of your symbol, but with
 lowercases.

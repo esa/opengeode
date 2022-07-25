@@ -18,7 +18,7 @@
     be done on any scene (e.g. clipboard).
 
     There is a single rendering function for all SDL construct, and a dispatch
-    machanism (using the Python3-backported feature called singledispatch).
+    mechanism (using the Python3-backported feature called singledispatch).
 
     Rendering can be done for single elements (returns the symbol) or for
     complete diagrams.
@@ -71,7 +71,7 @@ def _block(ast, scene):
         if each.instance_of_ref:
             top_level.append(render(each.instance_of_ref, scene))
     for each in ast.parent.text_areas:
-        # Sytem level may contain text areas with signal definitions, etc.
+        # System level may contain text areas with signal definitions, etc.
         top_level.append(render(each, scene))
     if not ast.parent.text_areas:
         # If signals are declared outside from a textbox, create one
@@ -278,7 +278,7 @@ def _transition(ast, scene, parent, states):
 
 @render.register(ogAST.Comment)
 def _comment(ast, scene, parent, states=None):
-    ''' Create a COMMENT symbol - note: relative positionning is lost '''
+    ''' Create a COMMENT symbol - note: relative positioning is lost '''
     _, _ = scene, states
     return genericSymbols.Comment(parent, ast=ast)
 

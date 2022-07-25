@@ -402,7 +402,7 @@ def flatten(process, sep=u'_'):
 @singledispatch
 def rename_everything(ast, from_name, to_name):
     '''
-        Rename in all symbols all occurences of name_ref into new_name.
+        Rename in all symbols all occurrences of name_ref into new_name.
         This is used to avoid name clashes in nested diagrams when they get
         flattened. For example rename all accesses to a variable declared
         in the scope of a composite state, so that they do not overwrite
@@ -419,7 +419,7 @@ def rename_everything(ast, from_name, to_name):
 
 @rename_everything.register(ogAST.Automaton)
 def _rename_automaton(ast, from_name, to_name):
-    ''' Renaming at Automaton top level (content of digragrams) '''
+    ''' Renaming at Automaton top level (content of diagrams) '''
     if ast.start:
         rename_everything(ast.start.transition, from_name, to_name)
     for each in ast.named_start:
@@ -610,7 +610,7 @@ def _rename_primcall(ast, from_name, to_name):
 
 
 @rename_everything.register(ogAST.PrimConditional)
-def _rename_ifhthenelse(ast, from_name, to_name):
+def _rename_ifthenelse(ast, from_name, to_name):
     ''' Rename expressions in Conditional expression construct '''
     for expr in ('if', 'then', 'else'):
         rename_everything(ast.value[expr], from_name, to_name)
@@ -837,7 +837,7 @@ def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):
     # Format: {'aggregation_name' : [list of ogAST.CompositeState]
     process.aggregates = state_aggregations(process)
 
-    # Make an maping {input: {state: transition...}} in order to easily
+    # Make an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     process.input_mapping = map_input_state(process)
 

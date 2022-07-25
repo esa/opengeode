@@ -1,3 +1,3 @@
-Check that the generators generate properly the _selection type with a type prefix. This is needed so that if the same type exeists in other functions of a taste system there is no conflict, 
+Check that the generators generate properly the _selection type with a type prefix. This is needed so that if the same type exists in other functions of a taste system there is no conflict, 
 in particular in the python backend of ASN1SCC which does not support type duplicates (in principle they are in different namespaces so Ada would not have any issue, but the python stg file was not designed properly.
 .

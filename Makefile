@@ -79,7 +79,7 @@ clean:
 	@rm -f pyinstaller-opengeode.tar.gz
 	@rm -rf dist-linux
 	@rm -rf pyinstaller-pyinstaller-953f6e3
-	@rm -rf opengode/*.pyc dist build *.egg-info
+	@rm -rf opengeode/*.pyc dist build *.egg-info
 
 .PHONY: all test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
 	    benchmark-O3 flake8 coverage compile-all install publish clean

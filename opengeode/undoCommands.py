@@ -188,7 +188,7 @@ class InsertSymbol(QUndoCommand):
         self.item.show()
         self.item.grabber.display()
         try:
-            # Immediate refresh for a better rendering, howerver slows down
+            # Immediate refresh for a better rendering, however slows down
             # performance when inserting decisions in a complex model
             #self.scene.refresh()
             # Update only the connections - this is much faster

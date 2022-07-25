@@ -579,7 +579,7 @@ SEQUENCE
 {
   fldEventCode NpalEventCode,
   fldTcAcceptance NpalTcReceived,
-  fldModeTransitition NpalModeTransition,
+  fldModeTransition NpalModeTransition,
   fldDownloadStatus NpalProgressStatus,
   fldCalibration NpalProgressStatus,
   fldErrorCode NpalErrorCode,
@@ -837,7 +837,7 @@ SedsSecondsSinceTAI ::= INTEGER (0..4294967295)
 
 SedsDaysSinceTAI ::= INTEGER (0..4294967295)
 
-SedsQuaternianCoordinate ::= REAL (-1..1)
+SedsQuaternionCoordinate ::= REAL (-1..1)
 
 SedsAngle ::= REAL (-3.141592653589793..3.141592653589793)
 
@@ -849,14 +849,14 @@ SedsNumberOfAmperes ::= REAL (0..1.7976931348623157E308)
 
 SedsNumberOfBits ::= REAL (0..1.7976931348623157E308)
 
-SedsQuaternian ::= 
+SedsQuaternion ::= 
 SEQUENCE
 {
 
-  fldQ1 SedsQuaternianCoordinate,
-  fldQ2 SedsQuaternianCoordinate,
-  fldQ3 SedsQuaternianCoordinate,
-  fldScalar SedsQuaternianCoordinate
+  fldQ1 SedsQuaternionCoordinate,
+  fldQ2 SedsQuaternionCoordinate,
+  fldQ3 SedsQuaternionCoordinate,
+  fldScalar SedsQuaternionCoordinate
 }
 
 

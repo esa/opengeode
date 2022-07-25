@@ -220,7 +220,7 @@ end {process.name.lower()}_Lib;'''
 
     LOG.info(f'Generating Ada code for process {process.name}')
 
-    #  Prapare the AST for code generation (flatten states, etc.)
+    #  Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
 
     if not stop_condition:
@@ -354,7 +354,7 @@ end {process.name.lower()}_Lib;'''
 
         for name, val in process.mapping.items():
             # Test val, in principle there is a value but if the code targets
-            # generation of properties, the model may have been cleant up and
+            # generation of properties, the model may have been cleaned up and
             # in that case no value would be set..
             if name.endswith('START') and name != 'START' and val:
                 process_level_decl.append(f'{name} : constant := {str(val)};')
@@ -528,7 +528,7 @@ package body {process.name}_RI is''']
         ads_template.append(f'procedure Startup;')
 
 
-    # Generate the the code of the procedures
+    # Generate the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
         proc_code, proc_local = generate(proc)
@@ -584,7 +584,7 @@ package body {process.name}_RI is''']
 
         if 'renames' in signal and signal['renames'] is not None:
             # don't generate anything if this is an observer signal
-            # (a renames clause for a continuuous signal)
+            # (a renames clause for a continuous signal)
             continue
 
         signame = signal.get('name', 'START')
@@ -662,7 +662,7 @@ package body {process.name}_RI is''']
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
                     dest.append(f'{LPREFIX}.{inp} := {param_name};')
-                # Execute the correponding transition
+                # Execute the corresponding transition
                 if input_def.transition:
                     dest.append(f'Execute_Transition ({input_def.transition_id});')
                 else:
@@ -693,7 +693,7 @@ package body {process.name}_RI is''']
                 taste_template.extend(statecase)
                 # State aggregation:
                 # - find which substate manages this input
-                # - add a swich case on the corresponding substate
+                # - add a switch case on the corresponding substate
                 taste_template.append('--  This is a state aggregation')
                 for sub in process.aggregates[state]:
                     if [a for a in sub.mapping.keys()
@@ -786,7 +786,7 @@ package body {process.name}_RI is''']
         if not generic:
             if not instance:
                 # Type and instance do not need this declarations, only standalone
-                # proceses.
+                # processes.
                 ads_template.append(f'--  Synchronous Required Interface "{sig}"')
                 ads_template.append(f'{ri_header} renames {process.name}_RI.{sig};')
             ri_stub_ads.append(f'procedure {sig}{params_spec};')
@@ -795,7 +795,7 @@ package body {process.name}_RI is''']
     # for the .ads file, generate the declaration of timers set/reset functions
     for timer in process.timers:
         if stop_condition:
-            # don't generte timer code for stop conditions
+            # don't generate timer code for stop conditions
             break
         ads_template.append(f'--  Timer {timer} SET and RESET functions')
 
@@ -1926,7 +1926,7 @@ def _basic_operators(expr, **kwargs):
     if left_is_numeric != right_is_numeric or rbty.kind == lbty.kind:
         # No cast is needed if:
         # - one of the two sides only is a literal
-        # - or if the the basic types are identical
+        # - or if the basic types are identical
         ada_string = '({left} {op} {right})'.format(left=left_str,
                                                      op=expr.operand,
                                                      right=right_str)
@@ -2650,7 +2650,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         transition is by default generated, but it is possible to generate only
         the code of the question and reference a transition Id (trId) if
         the reference number is passed to the branch_to parameter. In addition
-        it is possible to passs a list of exit calls: this is for nested
+        it is possible to pass a list of exit calls: this is for nested
         functions when they are exited with a continuous signal at a level
         above, a chain a calls to exit procedures has to be added.
         This option is used for example when generating the code of
@@ -2997,7 +2997,7 @@ def _floating_label(label, **kwargs):
 
 
 def procedure_header(proc):
-    ''' Build the protoype of a procedure '''
+    ''' Build the prototype of a procedure '''
     ret_type = type_name(proc.return_type) if proc.return_type else None
     kind = 'procedure' if not proc.return_type else 'function'
     sep = f'p{SEPARATOR}' if not proc.exported else ''

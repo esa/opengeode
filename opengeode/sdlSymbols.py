@@ -78,7 +78,7 @@ def variables_autocompletion(symbol, type_filter=None):
         except AttributeError:
             # not in the context of a procedure
             fpar = {}
-        # Return the list of variables, possibly filterd by type
+        # Return the list of variables, possibly filtered by type
         if not type_filter:
             res = set( list(CONTEXT.variables.keys())
                       + list(CONTEXT.global_variables.keys())
@@ -458,7 +458,7 @@ class DecisionAnswer(HorizontalSymbol):
         self.width, self.height = 0, 0 #ast.width, ast.height
         self.terminal_symbol = False
         # last_branch_item is used to compute branch length
-        # for the connection point positionning
+        # for the connection point positioning
         self.last_branch_item = self
         super().__init__(parent,
                          text=ast.inputString,
@@ -470,7 +470,7 @@ class DecisionAnswer(HorizontalSymbol):
         self.parser = ogParser
 
     def insert_symbol(self, parent, x, y):
-        ''' ANSWER-specific insersion behaviour: link to connection point '''
+        ''' ANSWER-specific insertion behaviour: link to connection point '''
         if not parent:
             return
         # Make sure that parent is not a sibling answer
@@ -541,7 +541,7 @@ class Join(VerticalSymbol):
         super().resize_item(rect)
 
     def set_shape(self, width, height):
-        ''' Define the bouding rectangle of the JOIN symbol '''
+        ''' Define the bounding rectangle of the JOIN symbol '''
         if width != self.width or height != self.height:
             circ = min(width, height)
             path = QPainterPath()
@@ -1011,7 +1011,7 @@ class State(VerticalSymbol):
 
     def update_completion_list(self, pr_text):
         ''' When text was entered, update state completion list '''
-        # Get AST for the symbol and update the context dictionnary
+        # Get AST for the symbol and update the context dictionary
         ast, _, _, _, _ = self.parser.parseSingleElement('state', pr_text)
         if ast:
             # None if there were syntax errors in the symbol
@@ -1132,7 +1132,7 @@ class Process(HorizontalSymbol):
         yield QRect(15, 5, rect.width() - 30, 10)
         yield QRect(5, 5, 10, rect.height() - 10)
         yield QRect(rect.width() - 15, 5, 10, rect.height() - 10)
-        yield QRect(15, rect.heigth() - 15, rect.width() - 30, 10)
+        yield QRect(15, rect.height() - 15, rect.width() - 30, 10)
 
     def insert_symbol(self, parent, x, y):
         ''' Redefinition - adds connection line to env '''

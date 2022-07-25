@@ -8,7 +8,7 @@
 # on windows, make sure you have python2.7, pyside, and pip installed
 # install antlr runtime this way:  pip install antlr_python_runtime
 # then for this script to work you need to have a local copy of msvcp90.dll
-# look for it in your windows harddisk - you will find plenty of copiess.
+# look for it in your windows harddisk - you will find plenty of copies.
 # then download and install py2exe
 # then run python.exe setup.py py2exe -b1 -c
 

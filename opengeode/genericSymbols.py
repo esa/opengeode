@@ -6,14 +6,14 @@
     that can be used to create diagrams.
 
     The Symbol class contains common behaviour shared by inherited
-    symobols - in particular the VerticalSymbol is a class of symbols
+    symbols - in particular the VerticalSymbol is a class of symbols
     that can only be vertically aligned ; Horizontal symbols, on the
     other hand, can be move in both directions.
 
     The "Comment" class of symbols is a floating symbol that is
     connected to a parent symbol on the right.
 
-    This library also contains the defintition of connections
+    This library also contains the definition of connections
     (the Connection class).
 
     Symbols can have an editable text area, which behaviour is
@@ -23,7 +23,7 @@
 
 
     Major functionalities offered by the generic Symbol classes are
-    the insersion and deletion of items (possibly recursively if there
+    the insertion and deletion of items (possibly recursively if there
     are child symbols), the moving and resizing, the collision
     avoidance manoeuvres (when moving a group of symbols on top
     of another group, it has the effect of "pushing" the colliders
@@ -160,7 +160,7 @@ class Symbol(QObject, QGraphicsPathItem):
         # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         # Apply symbol default mouse cursor
         self.setCursor(self.default_cursor)
-        # De-ativate cache mode otherwise paint is not properly updated
+        # De-activate cache mode otherwise paint is not properly updated
         # for the comment symbol (need to refresh on_the_right property)
         self.setCacheMode(QGraphicsItem.NoCache)
         # Initialize variables used when moving/resizing
@@ -333,8 +333,8 @@ class Symbol(QObject, QGraphicsPathItem):
         # if check_last_semi=True, will raise an error if the text ends
         # with a semicolon (inserted by the user). This is the case for 
         # all symbols except the text boxes. A semi colon there would
-        # prevent a COMMENT, and would only be deteted when parsing the
-        # full model - without precise identication of the location.
+        # prevent a COMMENT, and would only be detected when parsing the
+        # full model - without precise identification of the location.
         # By doing it here we can spot the issue immediately
         try:
             _, syntax_errors, _, _, _ = self.parser.parseSingleElement(
@@ -657,7 +657,7 @@ class Symbol(QObject, QGraphicsPathItem):
         while top_level.hasParent:
             # The "or top_level.parent" below is due to a Pyside/Qt bug
             # of the parentItem() function. It can happen that even when
-            # the parent has explicitely been set with "setParentItem",
+            # the parent has explicitly been set with "setParentItem",
             # a subsequent call to parentItem returns None. Seems to happen
             # if the parent has not been added yet to the scene.
             top_level = top_level.parentItem() or top_level.parent
@@ -665,7 +665,7 @@ class Symbol(QObject, QGraphicsPathItem):
 
     def cam_group(self):
         ''' Set the graphical boundaries of the item to apply the CAM on
-            This can be redifined in subclasses, for example to exclude
+            This can be redefined in subclasses, for example to exclude
             connections '''
         return (self.sceneBoundingRect() |
                 self.mapRectToScene(self.childrenBoundingRect()))
@@ -687,7 +687,7 @@ class Symbol(QObject, QGraphicsPathItem):
 
         top_level = self.top_level()
         if top_level != self:
-            # Exectute CAM on top level of this item
+            # Execute CAM on top level of this item
             top_level.cam(top_level.position, top_level.position)
             return
 
@@ -1063,7 +1063,7 @@ class HorizontalSymbol(Symbol):
             if has_siblings:
                 pos_x = most_left + group_width + 20
             else:
-                # Verical alignment (x-axis):
+                # Vertical alignment (x-axis):
                 pos_x = (parent.boundingRect().width() -
                         self.boundingRect().width()) / 2
             pos_y = (parent.boundingRect().height() +

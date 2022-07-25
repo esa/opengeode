@@ -60,7 +60,7 @@ To start a new project run:
 $ taste
 ```
 
-Select a project name and the graphical editor will pop-up shortly after. You can add functions to the system and specify the imnplementation language to __SDL__. When you edit the function, the OpenGEODE editor will start.
+Select a project name and the graphical editor will pop-up shortly after. You can add functions to the system and specify the implementation language to __SDL__. When you edit the function, the OpenGEODE editor will start.
 
 You can check an example of a system using Opengeode if you go in `~/tool-src/kazoo/tests/Demo_ABB_Opengeode` and run `make` to build it. Then `taste` to edit.
 
@@ -186,7 +186,7 @@ Changelog
 - Add edge selection feature in statecharts
 
 **3.7.26 (03/2022)**
-- change API of asn1dataModel (used by the TASTE simualtor)
+- change API of asn1dataModel (used by the TASTE simulator)
 
 **3.7.25 (02/2022)**
 - Fix continuous signals in generated code
@@ -261,7 +261,7 @@ Changelog
 **3.7.3 (06/2021)**
 - Fix support of continuous signals when using parallel states
 - Support history state for parallel state (nextstate -*)
-- Fix shape of contiunuous signals
+- Fix shape of continuous signals
 
 **3.7.2 (06/2021)**
 - Add operator to return the observer state status
@@ -321,7 +321,7 @@ Changelog
   dcl var type renames foo.bar.baz;
 
 **3.5.0 (04/2021)**
-- Support Input/Ouput expressions for model checkers
+- Support Input/Output expressions for model checkers
 
 **3.4.6 (04/2021)**
 - Introduce monitors to support model checking observers
@@ -400,7 +400,7 @@ Changelog
   mkstring (a, b, c) is in principle equivalent to ASN.1 Value Notation {a, b, c}
   however ASN.1 value notation can't be used for a single indexed element : { foo(1) }
   as this is an ambiguous syntax (it can be mixed with a record field, with value 1).
-  mkstring is the actuall Z100 (SDL standard) syntax to be used
+  mkstring is the actual Z100 (SDL standard) syntax to be used
 
 **3.0.9 (06/2020)**
 - Minor fixes in C backend related to case sensitivity
@@ -411,7 +411,7 @@ Changelog
 
 **3.0.7 (06/2020)**
 - Fix update of data dictionary window
-- Fix unconstained constants support
+- Fix unconstrained constants support
 
 **3.0.6 (06/2020)**
 - Fix CONNECT symbol
@@ -541,12 +541,12 @@ Changelog
 
 **2.0.20 (02/2019)**
 - Added "val" operator to convert a number to an enumerant
-      useage: someVal := val (0, MyEnumeratedType)
+      usage: someVal := val (0, MyEnumeratedType)
       with someVal of type MyEnumeratedType. Will return the first enumerant
 
 **2.0.19 (01/2019)**
 - for CHOICE types variables can be declared with enumerated type
-      corresponding to the choice distriminant. CHOICE type is suffixed by
+      corresponding to the choice discriminant. CHOICE type is suffixed by
       "-selection", and the "present" operator now returns type type
 - If there is an enumerated type with the exact same content as the list
       of CHOICE determinants, cast is possible using to_selector and to_enum
@@ -570,7 +570,7 @@ Changelog
 - Add taste-compatible cache mechanism when calling asn1scc
   
 **2.0.12 (06/2018)**
-- Fix resolution of ASN.1 constants - values were not use propertly when
+- Fix resolution of ASN.1 constants - values were not use properly when
       a constant was referencing another constant (numerical operations only)
 
 **2.0.11 (06/2018)**
@@ -693,7 +693,7 @@ Changelog
 - Fix integer cast in Ada
 
 **1.5.18 (11/2016)**
-- Fix parsing of ASN.1 constants that use an annonymous inner type
+- Fix parsing of ASN.1 constants that use an anonymous inner type
 
 **1.5.17 (11/2016)**
 - Fixed issue with initialization of generated code in state aggregations
@@ -709,7 +709,7 @@ Changelog
 
 **1.5.13 (10/2016)**
 - Better support of warnings
-- Fixed detection of CHOICE assignment erros
+- Fixed detection of CHOICE assignment errors
 - Raise error if process miss the start transition
 - Raise error in case of SEQUENCE OF type mismatch
 
@@ -746,7 +746,7 @@ Changelog
 - Various GUI improvements
 
 **1.5.3 (07/2016):**
-- Ada backend fix: Continous signals now handled in states
+- Ada backend fix: Continuous signals now handled in states
       where input is not consumed
 
 **1.5.2 (07/2016):**
@@ -776,7 +776,7 @@ Changelog
 - Excluded states (with *(statelist) ) were case sensitive
 
 **1.3.27 (05/2016)**
-- Fix bug in Ada backend when using continous signals
+- Fix bug in Ada backend when using continuous signals
 - Better handling of simulation script
 
 **1.3.26 (05/2016)**
@@ -847,10 +847,10 @@ Changelog
        to provide manual code. see test-math
 
 **1.3.5 (11/2015)**
-- Better support for continous signals
+- Better support for continuous signals
 
 **1.3.4 (11/2015)**
-- Early support for continous signals
+- Early support for continuous signals
 - Regression issue fixed (test-nocif2)
 
 **1.3.3 (11/2015)**
@@ -908,7 +908,7 @@ Changelog
 
 **0.99 (04/2014)**
 - Refactoring of the backend engine, now using singledispatch
-- Support of hierachical states
+- Support of hierarchical states
 - Minor bugfixes
 
 **0.98**

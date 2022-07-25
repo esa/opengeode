@@ -62,7 +62,7 @@ STG = None
 new = lambda inst: STG.getInstanceOf(inst)
 
 def initialize_stg(simu=False, stgfile='ada_body.st'):
-    ''' Load the STG backend and set gobal STG pointer '''
+    ''' Load the STG backend and set global STG pointer '''
     global STG
     global SHARED_LIB
 
@@ -91,7 +91,7 @@ def prepare_model(process):
     # In case model has nested states, flatten everything (in-place)
     Helper.flatten(process, sep=UNICODE_SEP)
 
-    # Add an maping {input: {state: transition...}} in order to easily
+    # Add an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     process.map_inp_states = Helper.map_input_state(process)
 
@@ -138,7 +138,7 @@ def _process(process, **kwargs):
     except TypeError:
         pass # No ASN.1 module
 
-    # Generate the the code of the procedures
+    # Generate the code of the procedures
     inner_procedures_decl = []
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
@@ -211,7 +211,7 @@ def _process(process, **kwargs):
                     assig_template['param_name'] = param_name
                     params_lst.append(str(assig_template))
                 case_template['arrs_param_assig'] = params_lst
-                # Execute the correponding transition
+                # Execute the corresponding transition
                 if input_def.transition:
                     case_template['transition'] = input_def.transition_id
             cases.append(str(case_template))
@@ -826,8 +826,8 @@ def _prim_index(prim):
 
     receiver = prim.value[0]
 
-    receiver_stms, reciver_string, receiver_decl = expression(receiver)
-    ada_string = reciver_string
+    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    ada_string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
@@ -1190,7 +1190,7 @@ def _choice_determinant(primary):
 def _integer(primary):
     ''' Generate code for a raw numerical value  '''
     if float(primary.value[0]) < 0:
-        # Parentesize negative integers for maintaining
+        # Parenthesize negative integers for maintaining
         # the precedence in the generated code
         ada_string = u'({})'.format(primary.value[0])
     else:

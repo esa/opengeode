@@ -190,7 +190,7 @@ its syntax.';
             PROCEDURE update_completion_list
             /* CIF COMMENT (1365, 837), (261, 50) */
             COMMENT 'When text as changed on a symbol,
-update the data dictionnary';
+update the data dictionary';
             ENDPROCEDURE;
             /* CIF PROCEDURE (1219, 896), (118, 35) */
             PROCEDURE highlight

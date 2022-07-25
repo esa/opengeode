@@ -522,12 +522,12 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     LOG.info('Generating C code for process ' + str(process_name))
 
-    #  Prapare the AST for code generation (flatten states, etc.)
+    #  Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
 
     Helper.generate_asn1_datamodel(process)
 
-    # Make an maping {input: {state: transition...}} in order to easily
+    # Make an mapping {input: {state: transition...}} in order to easily
     # generate the lookup tables for the state machine runtime
     mapping = process.input_mapping
 
@@ -569,7 +569,7 @@ LD_LIBRARY_PATH=. taste-gui -l
             LOG.debug(var_name)
             context_init_code.append(u'{ct}.{field} = {init};'.format(ct=LPREFIX, field=var_name, init=init_string))
             assert not init_stmt, 'Initialization of ' + init_name + ' requires to add statement'
-            assert not init_decl, 'Initialization of ' + init_name + ' requires to add declartions'
+            assert not init_decl, 'Initialization of ' + init_name + ' requires to add declarations'
         context_type.append(u'{tn} {vn};'.format(tn = type_name(var_type), vn = var_name))
 
 
@@ -616,7 +616,7 @@ LD_LIBRARY_PATH=. taste-gui -l
         dll_code.append(u'}')
         dll_code.append(u'')
 
-        # Functions to get gobal variables (length and value)
+        # Functions to get global variables (length and value)
         for var_name, (var_type, _) in process.variables.items():
             # Getters for local variables
             global_decls.append(u'int {name}_size()'.format(name=var_name))
@@ -699,7 +699,7 @@ LD_LIBRARY_PATH=. taste-gui -l
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
                     input_signals_code.append(u'{ctxt}.{inp} = *{tInp};'.format(ctxt=LPREFIX,inp=inp,tInp=param_name));
-                # Execute the correponding transition
+                # Execute the corresponding transition
                 if input_def.transition:
                     input_signals_code.append('runTransition{pn}({idx});'.format(pn=process_name, idx=input_def.transition_id))
             input_signals_code.append('break;')
@@ -1220,8 +1220,8 @@ def _prim_index(prim):
 
     receiver = prim.value[0]
 
-    receiver_stms, reciver_string, receiver_decl = expression(receiver)
-    string = reciver_string
+    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 

@@ -32,7 +32,7 @@ from importlib import reload
 
 # To freeze the application on Windows, all modules must be imported even
 # when they are not directly used from this module (py2exe bug)
-# NOQA makes flake8 ignore locally-ununsed modules
+# NOQA makes flake8 ignore locally-unused modules
 # pylint: disable=W0611
 import enum  # NOQA
 import string  # NOQA
@@ -296,10 +296,10 @@ class File_toolbar(QToolBar, object):
 class Sdl_toolbar(QToolBar, object):
     '''
         Toolbar with SDL symbols
-        The list of symbols is passed as paramters at creation time ; the class
+        The list of symbols is passed as parameters at creation time ; the class
         looks for icons for the name of the symbols and .png extension.
         The buttons activation is context dependent. Configuration is done
-        directly at symbol leval (using the "allowed_followers" property)
+        directly at symbol level (using the "allowed_followers" property)
     '''
     def __init__(self, parent):
         ''' Create the toolbar, get icons and link actions '''
@@ -614,10 +614,10 @@ class SDL_Scene(QGraphicsScene):
                     try:
                         if s.ast.errors or s.ast.warnings:
                             # Keep track of all symbols containing errors,
-                            # they are processesd in "find_symbols_and_update_errors"
+                            # they are processed in "find_symbols_and_update_errors"
                             G_ERRORS.append(s)
                     except Exception as e:
-                        print("Ooops", str(e))
+                        print("Oops", str(e))
                 # Refreshing the scene may result in resizing some symbols
                 dest_scene.refresh()
                 # Once everything is rendered, adjust position of each
@@ -637,8 +637,8 @@ class SDL_Scene(QGraphicsScene):
                             symbol.update_connections()
                             # Update_position is called here because it
                             # is not possible to be sure that the
-                            # positionning stored in the file will be
-                            # rendered correctly on the host plaform.
+                            # positioning stored in the file will be
+                            # rendered correctly on the host platform.
                             # Font rendering may cause slight differences
                             # between Linux and Windows for example.
                             symbol.update_position()
@@ -729,13 +729,13 @@ class SDL_Scene(QGraphicsScene):
             # contains highlighted data (bold), which has the effect
             # of making the width of the text in fact wider than
             # the bounding rect. The set_text_alignment function,
-            # that is applying the aligment of the text within its
+            # that is applying the alignment of the text within its
             # bounding rect, can work only if the text width is fixed.
             # It has to set it according to the bounding rect, which,
             # therefore can be too small, and this has the effect of
             # pushing the exceeding character to the next line.
             # The only way to avoid this is to call setTextWidth
-            # with the value -1 before the aligment is computed.
+            # with the value -1 before the alignment is computed.
             # This has the effect of re-computing the bounding rect
             # and fixing the width issue.
             symbol.setTextWidth(-1)
@@ -884,7 +884,7 @@ class SDL_Scene(QGraphicsScene):
 
 
     def update_completion_list(self, symbol):
-        ''' When text has changed on a symbol, update the data dictionnary '''
+        ''' When text has changed on a symbol, update the data dictionary '''
         pr_text = '\n'.join(Pr.generate(symbol,
                                         recursive=False,
                                         nextstate=False, cpy=True))
@@ -931,7 +931,7 @@ class SDL_Scene(QGraphicsScene):
     def search(self, pattern, replace_with=None, cmd=None):
         ''' Search and replace function ; get next search result with key n
         cmd is a user string from the vi bar that by default for a replace
-        is "s" (substittute string) but that can be a different command,
+        is "s" (substitute string) but that can be a different command,
         e.g. "state" to limit the substitution to State components'''
         self.clearSelection()
         self.clear_highlight()
@@ -976,7 +976,7 @@ class SDL_Scene(QGraphicsScene):
             Remove selected symbols from the scene, with proper re-connections
         '''
         if self.context == 'process' and self.readonly:
-            # with readonly flag, forbid item delettion
+            # with readonly flag, forbid item deletion
             return
         self.undo_stack.beginMacro('Delete items')
         for item in self.selected_symbols:
@@ -2065,7 +2065,7 @@ class SDL_View(QGraphicsView):
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
 
-        # Read the processs name for the Makefile
+        # Read the processes name for the Makefile
         for each in scene.processes:
             if not isinstance(each, ProcessType):
                 process_name = str(each.text)
@@ -2183,7 +2183,7 @@ clean:
         self.scene().undo_stack.clear()
         # Emit a signal for the application to update the ASN.1 scene
         self.update_asn1_dock.emit(ast)
-        # Set AST to be used as data dictionnary and updated on the fly
+        # Set AST to be used as data dictionary and updated on the fly
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
         self.update_datadict.emit()
@@ -2361,7 +2361,7 @@ clean:
                     line = QListWidgetItem (f'[ERROR] {err}')
                     line.setData(Qt.UserRole + 1, item.ast.path)
                     line.setData(Qt.UserRole + 2, idx)
-                    # Put errors at the begining of the list
+                    # Put errors at the beginning of the list
                     messages.insertItem(0, line)
                 # Clean up the list of errors
                 item.ast.errors = []
@@ -3190,7 +3190,7 @@ def gui(options):
     app.setWindowIcon(QIcon(':icons/input.png'))
 
     # Set all encodings to utf-8 in Qt
-    # Ths was removed in Qt5, the consequences are unclear
+    # This was removed in Qt5, the consequences are unclear
     #QTextCodec.setCodecForCStrings(QTextCodec.codecForName('UTF-8'))
 
     # Bypass system-default font, to harmonize size on all platforms

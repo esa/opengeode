@@ -1,7 +1,7 @@
 ACNENCODINGWITHBLACKBOX-DATAVIEW DEFINITIONS ::=
 BEGIN
 
-    --  Recipent for a binary-encoded telecommand
+    --  Recipient for a binary-encoded telecommand
     max-TC-size INTEGER ::= 150
     MyStr ::= OCTET STRING (SIZE (0 .. max-TC-size))
 
@@ -23,7 +23,7 @@ BEGIN
       tc-17  PUS-17
     }
 
-    -- Acknowledgement flags are part the the TC secondary header
+    -- Acknowledgement flags are part the TC secondary header
     Acknowledgement-flags ::= SEQUENCE {
        ack-completion BOOLEAN,
        ack-progress   BOOLEAN,

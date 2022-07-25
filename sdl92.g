@@ -1,9 +1,9 @@
 /*
     OpenGEODE
-    ANTLR 3.1.3 grammar for the SDL92 langage
+    ANTLR 3.1.3 grammar for the SDL92 language
     Includes the following features from SDL2000+:
     - FOR loops in TASKs
-    - Composite states (nested and agreggation/parallel states)
+    - Composite states (nested and aggregation/parallel states)
 
     author: Maxime Perrotin
     with contributions from Diego Barbera, Laurent Meyer
@@ -301,7 +301,7 @@ parameters_of_sort
 
 
 // procedure
-// 2021-03 Added EXPORTED and REFEERENCED keywords
+// 2021-03 Added EXPORTED and REFERENCED keywords
 // needed to declare a synchronous provided interface at system level
 procedure
         :       cif?
@@ -793,7 +793,7 @@ input_part
         ;
 
 
-// asterisk means: all signals not excplicitely specified
+// asterisk means: all signals not explicitly specified
 // (semantic is different from asterisk state)
 inputlist
         :       ASTERISK
@@ -1082,8 +1082,8 @@ task
 
 
 task_body
-        :       (assignement_statement (',' assignement_statement)*)
-        ->      ^(TASK_BODY assignement_statement+)
+        :       (assignment_statement (',' assignment_statement)*)
+        ->      ^(TASK_BODY assignment_statement+)
                 | (informal_text (',' informal_text)*)
         ->      ^(TASK_BODY informal_text+)
                 | (forloop (',' forloop)*)
@@ -1105,7 +1105,7 @@ range
                 R_PAREN
         ->      ^(RANGE $a $b? $step?);
 
-assignement_statement
+assignment_statement
         :       variable ':=' expression
         ->      ^(ASSIGN variable expression);
 
@@ -1161,7 +1161,7 @@ postfix_expression
 //  input and output expression allow observers (for model checking) to
 //  monitor the sending and receiving of messages with a nice syntax
 //  (e.g. event = output msg (p) from foo)
-//  the parameter is optional. It dooes not need to be declared as a variable,
+//  the parameter is optional. It does not need to be declared as a variable,
 //  as it it implicit.
 input_expression
         :       UNHANDLED? INPUT
@@ -1186,7 +1186,7 @@ primary_expression
 
 //  primary covers most expressions with ASN.1 value notation
 //  note that mkstring is the SDL operator transforming an element
-//  into an array. The regular sytanx { hello(1) } is ambiguous because
+//  into an array. The regular syntax { hello(1) } is ambiguous because
 //  it could be a record element with value 1 as well as an array with index 1
 primary
         :       TRUE^
