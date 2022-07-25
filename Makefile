@@ -70,7 +70,7 @@ publish:
 
 pytest:
 	python3 -m pip  install --user --upgrade pytest pytest-qt
-	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; py.test
+	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; PYTEST_QT_API=PySide6 py.test
 
 clean:
 	@$(MAKE) -s -C tests/testsuite $@
