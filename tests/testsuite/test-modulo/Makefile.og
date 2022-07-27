@@ -1,0 +1,7 @@
+all:
+	mkdir -p code
+	cd code && opengeode --toAda /home/taste/opengeode/tests/testsuite/test-modulo/og.pr 
+	asn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada dataview.asn code/og_datamodel.asn
+	cd code && gnat make og
+clean:
+	rm -rf code

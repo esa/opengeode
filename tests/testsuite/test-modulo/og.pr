@@ -1,0 +1,47 @@
+system og;
+    /* CIF TEXT (157, 221), (289, 188) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview.asn';
+    
+    signal run;
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with run;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with run;
+        connect c and r;
+        /* CIF PROCESS (225, 50), (150, 75) */
+        process og;
+            /* CIF TEXT (606, 138), (345, 221) */
+            -- Text area for declarations and comments
+            dcl i myInt := 4;
+            /* CIF ENDTEXT */
+            /* CIF START (231, 181), (70, 35) */
+            START;
+                /* CIF task (231, 236), (70, 35) */
+                task i := i + 1;
+                /* CIF decision (231, 286), (70, 50) */
+                decision i mod 2;
+                    /* CIF ANSWER (186, 356), (70, 23) */
+                    (0):
+                    /* CIF ANSWER (276, 356), (70, 23) */
+                    (1):
+                enddecision;
+                /* CIF decision (231, 395), (70, 50) */
+                decision i rem 2;
+                    /* CIF ANSWER (194, 465), (70, 23) */
+                    (0):
+                    /* CIF ANSWER (276, 465), (70, 23) */
+                    (1):
+                enddecision;
+                /* CIF NEXTSTATE (231, 516), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (357, 227), (70, 35) */
+            state wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;
