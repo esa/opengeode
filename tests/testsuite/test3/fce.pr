@@ -1,460 +1,460 @@
 /* CIF PROCESS (214, 144), (150, 75) */
-PROCESS fce;
-    /* CIF TEXT (3821, 508), (320, 142) */
-    -- The task of the FCE is to serve as a backup
--- for S/C attitude control
-
--- The FCE SW is designed to be independent
--- from the OBC CSW to prevent any failure
--- propagation from OBC to FCE
-    /* CIF ENDTEXT */
+process fce;
     /* CIF TEXT (3766, 688), (442, 584) */
     -- Declaration of variables stored in RAM
-
-DCL eeprom FCE_SGM_EEPROM;
-
-DCL sgm_ram FCE_SGM_RAM;
-
-DCL fdir_enable Bool_ty;
-
-DCL new_rc Counter_ty;
-
---DCL ground_cmd_reset Bool_ty;
-
-DCL areArraysDeployed Bool_ty;
-
---DCL ctxt MySeq;
-
-dcl fce_stat_reg FCE_RECOVERY_STATUS_REGISTER;
-
-dcl fce_ctrl_reg FCE_CONTROL_FLAGS_STATUS_REGISTER;
-
-dcl op_param Bool_ty;
-
--- FCE Selected should be returned by the FCE Selected Determination
--- procedure (FCESW-3332) but I have no visibility on this procedure
--- (see Figure 6-5)
-dcl fce_selected Bool_ty;
-
--- In figure 6.5 there is a test "Fce selected and
--- arr_dep = true two consecutive times".
-DCL fce_selected_counter Counter_ty;
-
--- Fig 6-7, FCE Stop control asserted
-
-DCL FCE_Stop_Control Bool_ty := false;
-
--- As defined in Figure 6-6
-TIMER mmo_sep_check_delay;
+    
+    DCL eeprom FCE_SGM_EEPROM;
+    
+    DCL sgm_ram FCE_SGM_RAM;
+    
+    DCL fdir_enable Bool_ty;
+    
+    DCL new_rc Counter_ty;
+    
+    --DCL ground_cmd_reset Bool_ty;
+    
+    DCL areArraysDeployed Bool_ty;
+    
+    --DCL ctxt MySeq;
+    
+    dcl fce_stat_reg FCE_RECOVERY_STATUS_REGISTER;
+    
+    dcl fce_ctrl_reg FCE_CONTROL_FLAGS_STATUS_REGISTER;
+    
+    dcl op_param Bool_ty;
+    
+    -- FCE Selected should be returned by the FCE Selected Determination
+    -- procedure (FCESW-3332) but I have no visibility on this procedure
+    -- (see Figure 6-5)
+    dcl fce_selected Bool_ty;
+    
+    -- In figure 6.5 there is a test "Fce selected and
+    -- arr_dep = true two consecutive times".
+    DCL fce_selected_counter Counter_ty;
+    
+    -- Fig 6-7, FCE Stop control asserted
+    
+    DCL FCE_Stop_Control Bool_ty := false;
+    
+    -- As defined in Figure 6-6
+    TIMER mmo_sep_check_delay;
     /* CIF ENDTEXT */
-    /* CIF PROCEDURE (5705, 4), (135, 64) */
-    PROCEDURE Bootup_actions;
+    /* CIF TEXT (3821, 508), (320, 142) */
+    -- The task of the FCE is to serve as a backup
+    -- for S/C attitude control
+    
+    -- The FCE SW is designed to be independent
+    -- from the OBC CSW to prevent any failure
+    -- propagation from OBC to FCE
+    /* CIF ENDTEXT */
+    /* CIF procedure (5705, 4), (135, 64) */
+    procedure Bootup_actions;
         /* CIF TEXT (5305, 144), (387, 130) */
         fpar in/out
-    eeprom FCE_SGM_EEPROM;
+        eeprom FCE_SGM_EEPROM;
         /* CIF ENDTEXT */
         /* CIF START (4406, 147), (100, 50) */
         START;
-            /* CIF TASK (4314, 212), (283, 50) */
-            TASK eeprom!sit_4!ground_cmd_reset := false;
+            /* CIF task (4314, 212), (283, 50) */
+            task eeprom!sit_4!ground_cmd_reset := false;
             /* CIF PROCEDURECALL (4334, 277), (243, 50) */
-            CALL set_fce_sgm_eeprom(eeprom);
+            call set_fce_sgm_eeprom(eeprom);
             /* CIF PROCEDURECALL (4320, 342), (271, 50) */
-            CALL get_fce_status_register(fce_stat_reg);
-            /* CIF DECISION (4380, 407), (151, 70) */
-            DECISION fce_stat_reg!l3rec
-            /* CIF COMMENT (4549, 408), (244, 68) */
-            COMMENT 'determine:
+            call get_fce_status_register(fce_stat_reg);
+            /* CIF decision (4380, 407), (151, 70) */
+            decision fce_stat_reg!l3rec
+            /* CIF comment (4549, 408), (244, 68) */
+            comment 'determine:
 - the FDIR trigger level
 - the new value of the RC New_RC
 - the cause of the boot-up';
-                    /* CIF ANSWER (4717, 497), (100, 35) */
-                    (false):
-                        /* CIF DECISION (4688, 547), (158, 70) */
-                        DECISION fce_stat_reg!l2rec;
-                                /* CIF ANSWER (4980, 637), (100, 35) */
-                                (false):
-                                    /* CIF TASK (4924, 687), (212, 50) */
-                                    TASK new_rc := eeprom!sit_4!rc
-                                    /* CIF COMMENT (5152, 695), (124, 33) */
-                                    COMMENT 'FCE Switch-on';
-                                    /* CIF TASK (4951, 752), (158, 50) */
-                                    TASK 'Write in data pool'
-                                    /* CIF COMMENT (5129, 752), (176, 50) */
-                                    COMMENT 'TODO - these
+                /* CIF ANSWER (4727, 497), (100, 35) */
+                (false):
+                    /* CIF decision (4698, 547), (158, 70) */
+                    decision fce_stat_reg!l2rec;
+                        /* CIF ANSWER (4990, 637), (100, 35) */
+                        (false):
+                            /* CIF task (4934, 687), (212, 50) */
+                            task new_rc := eeprom!sit_4!rc
+                            /* CIF comment (5162, 695), (124, 33) */
+                            comment 'FCE Switch-on';
+                            /* CIF task (4961, 752), (158, 50) */
+                            task 'Write in data pool'
+                            /* CIF comment (5139, 752), (176, 50) */
+                            comment 'TODO - these
 actions are in table 6-1';
-                                /* CIF ANSWER (4562, 637), (100, 35) */
-                                (true):
-                                    /* CIF TASK (4506, 687), (212, 50) */
-                                    TASK new_rc := eeprom!sit_4!rc
-                                    /* CIF COMMENT (4734, 695), (180, 33) */
-                                    COMMENT 'First Level2 Emergency';
-                                    /* CIF TASK (4497, 752), (229, 98) */
-                                    TASK 'Write in data pool',
+                        /* CIF ANSWER (4572, 637), (100, 35) */
+                        (true):
+                            /* CIF task (4516, 687), (212, 50) */
+                            task new_rc := eeprom!sit_4!rc
+                            /* CIF comment (4744, 695), (180, 33) */
+                            comment 'First Level2 Emergency';
+                            /* CIF task (4508, 752), (229, 98) */
+                            task 'Write in data pool',
 'clear registers l2rec and
 r3rec by use of the recovery
 control register',
 'generate event to store these
 data in SKEL'
-                                    /* CIF COMMENT (4742, 776), (176, 50) */
-                                    COMMENT 'TODO - these
+                            /* CIF comment (4752, 776), (176, 50) */
+                            comment 'TODO - these
 actions are in table 6-1';
-                        ENDDECISION;
-                    /* CIF ANSWER (4136, 497), (100, 35) */
-                    (true):
-                        /* CIF TASK (4080, 547), (212, 50) */
-                        TASK new_rc := eeprom!sit_4!rc + 1
-                        /* CIF COMMENT (4307, 538), (158, 68) */
-                        COMMENT 'Level 3 emergency
+                    enddecision;
+                /* CIF ANSWER (4136, 497), (100, 35) */
+                (true):
+                    /* CIF task (4080, 547), (212, 50) */
+                    task new_rc := eeprom!sit_4!rc + 1
+                    /* CIF comment (4307, 538), (158, 68) */
+                    comment 'Level 3 emergency
 May have also been
 a second Level 2
 triggering';
-                        /* CIF TASK (4071, 612), (229, 113) */
-                        TASK 'Add to data pool:
+                    /* CIF task (4071, 612), (229, 113) */
+                    task 'Add to data pool:
 status register, new_rc',
 'clear registers l2rec and
 r3rec by use of the recovery
 control register',
 'generate event to store these
 data in SKEL'
-                        /* CIF COMMENT (4321, 643), (176, 50) */
-                        COMMENT 'TODO - these
+                    /* CIF comment (4321, 643), (176, 50) */
+                    comment 'TODO - these
 actions are in table 6-1';
-                        /* CIF TASK (4069, 740), (233, 50) */
-                        TASK eeprom!sit_4!rc := new_rc mod 5;
-                        /* CIF JOIN (4168, 805), (35, 35) */
-                        JOIN bootup_label;
-            ENDDECISION;
-            /* CIF LABEL (4395, 880), (121, 35) */
+                    /* CIF task (4067, 740), (237, 50) */
+                    task eeprom!sit_4!rc := (new_rc mod 5)+1;
+                    /* CIF join (4168, 805), (35, 35) */
+                    join bootup_label;
+            enddecision;
+            /* CIF label (4395, 881), (121, 35) */
             bootup_label:
-            /* CIF PROCEDURECALL (4314, 930), (283, 50) */
-            CALL get_fce_ctrl_stat_register(fce_ctrl_reg);
-            /* CIF DECISION (4337, 995), (238, 70) */
-            DECISION fce_ctrl_reg!reference_pattern;
-                    /* CIF ANSWER (4290, 1085), (100, 35) */
-                    (ok):
-                        /* CIF DECISION (4243, 1135), (194, 70) */
-                        DECISION fce_ctrl_reg!arr_dep_flag;
-                                /* CIF ANSWER (4177, 1225), (100, 35) */
-                                (majority):
-                                    /* CIF TASK (4124, 1275), (205, 50) */
-                                    TASK areArraysDeployed :=TRUE;
-                                /* CIF ANSWER (4392, 1225), (100, 35) */
-                                ELSE:
-                                    /* CIF TASK (4338, 1275), (208, 50) */
-                                    TASK areArraysDeployed :=FALSE;
-                        ENDDECISION;
-                    /* CIF ANSWER (4611, 1085), (100, 35) */
-                    (nok):
-                        /* CIF TASK (4556, 1135), (210, 50) */
-                        TASK 'Evaluate arr_dep_flag
+            /* CIF PROCEDURECALL (4314, 931), (283, 50) */
+            call get_fce_ctrl_stat_register(fce_ctrl_reg);
+            /* CIF decision (4337, 996), (238, 70) */
+            decision fce_ctrl_reg!reference_pattern;
+                /* CIF ANSWER (4290, 1086), (100, 35) */
+                (ok):
+                    /* CIF decision (4243, 1136), (194, 70) */
+                    decision fce_ctrl_reg!arr_dep_flag;
+                        /* CIF ANSWER (4177, 1226), (100, 35) */
+                        (majority):
+                            /* CIF task (4124, 1276), (205, 50) */
+                            task areArraysDeployed :=TRUE;
+                        /* CIF ANSWER (4392, 1226), (100, 35) */
+                        ELSE:
+                            /* CIF task (4338, 1276), (208, 50) */
+                            task areArraysDeployed :=FALSE;
+                    enddecision;
+                /* CIF ANSWER (4611, 1086), (100, 35) */
+                (nok):
+                    /* CIF task (4556, 1136), (210, 50) */
+                    task 'Evaluate arr_dep_flag
 from the other RM register'
-                        /* CIF COMMENT (4786, 1133), (180, 53) */
-                        COMMENT 'XXX
+                    /* CIF comment (4786, 1133), (180, 53) */
+                    comment 'XXX
 Not clear what register
 we have to read';
-                        /* CIF JOIN (4643, 1200), (35, 35) */
-                        JOIN another_label;
-            ENDDECISION;
-            /* CIF TASK (4339, 1355), (233, 50) */
-            TASK 'Provide all results to data pool'
-            /* CIF COMMENT (4592, 1355), (251, 50) */
-            COMMENT 'XXX Check Data pool specification';
-            /* CIF RETURN (4431, 1420), (50, 50) */
-            RETURN ;
-        /* CIF LABEL (5094, 991), (125, 35) */
-        CONNECTION another_label:
-            /* CIF RETURN (5139, 1041), (35, 35) */
-            RETURN ;
+                    /* CIF join (4643, 1201), (35, 35) */
+                    join another_label;
+            enddecision;
+            /* CIF task (4339, 1357), (233, 50) */
+            task 'Provide all results to data pool'
+            /* CIF comment (4592, 1355), (251, 50) */
+            comment 'XXX Check Data pool specification';
+            /* CIF return (4431, 1422), (50, 50) */
+            return ;
+        /* CIF label (5094, 991), (125, 35) */
+        connection another_label:
+            /* CIF return (5139, 1041), (35, 35) */
+            return ;
         /* CIF End Label */
-        ENDCONNECTION;
-    ENDPROCEDURE;
+        endconnection;
+    endprocedure;
     /* CIF START (276, 108), (100, 50) */
     START;
-        /* CIF LABEL (276, 184), (100, 50) */
+        /* CIF label (276, 184), (100, 50) */
         FCE_INIT:
-        /* CIF TASK (216, 249), (221, 53) */
-        TASK 'FCE internal reconfiguration
+        /* CIF task (216, 249), (221, 53) */
+        task 'FCE internal reconfiguration
 according to pointer position',
 'Boot-up selected PM';
-        /* CIF TASK (228, 317), (197, 50) */
-        TASK 'Disable TM/TC reception';
-        /* CIF TASK (186, 382), (281, 83) */
-        TASK 'Start WD refreshing',
+        /* CIF task (228, 317), (197, 50) */
+        task 'Disable TM/TC reception';
+        /* CIF task (186, 382), (281, 83) */
+        task 'Start WD refreshing',
 'Validity check of SGM RAM',
 'Save last boot report to SGM-RAM',
 'OBT validity check/restore with LLOBT',
 'Enable_HW_Sync_to_PPS_for_2_sec'
-        /* CIF COMMENT (542, 393), (238, 48) */
-        COMMENT 'What to do if validity check fails?';
+        /* CIF comment (542, 393), (238, 48) */
+        comment 'What to do if validity check fails?';
         /* CIF PROCEDURECALL (241, 480), (171, 50) */
-        CALL get_fce_sgm_eeprom
+        call get_fce_sgm_eeprom
 (eeprom)
-        /* CIF COMMENT (514, 467), (187, 50) */
-        COMMENT 'If read fails for all 4 SGM,
+        /* CIF comment (514, 467), (187, 50) */
+        comment 'If read fails for all 4 SGM,
 use default SIT';
         /* CIF PROCEDURECALL (256, 545), (140, 50) */
-        CALL Bootup_actions
+        call Bootup_actions
 (eeprom)
-        /* CIF COMMENT (486, 536), (304, 63) */
-        COMMENT 'Retrieve RSR, determine FDIR trigger level,
+        /* CIF comment (486, 536), (304, 63) */
+        comment 'Retrieve RSR, determine FDIR trigger level,
 NEW_RC, cause of the boot-up, and perform
 the corresponding actions (table 6-1)';
-        /* CIF DECISION (273, 610), (107, 70) */
-        DECISION new_rc >= 5;
-                /* CIF ANSWER (491, 746), (100, 35) */
-                (TRUE):
-                    /* CIF TASK (464, 796), (154, 50) */
-                    TASK fdir_enable := false
-                    /* CIF COMMENT (644, 790), (112, 61) */
-                    COMMENT 'FDIR Level 4';
-                    /* CIF PROCEDURECALL (437, 861), (208, 50) */
-                    CALL get_fce_sgm_ram(sgm_ram)
-                    /* CIF COMMENT (667, 859), (163, 53) */
-                    COMMENT 'According to FI-0011
+        /* CIF decision (273, 610), (107, 70) */
+        decision new_rc >= 5;
+            /* CIF ANSWER (491, 746), (100, 35) */
+            (TRUE):
+                /* CIF task (464, 796), (154, 50) */
+                task fdir_enable := false
+                /* CIF comment (644, 790), (112, 61) */
+                comment 'FDIR Level 4';
+                /* CIF PROCEDURECALL (437, 861), (208, 50) */
+                call get_fce_sgm_ram(sgm_ram)
+                /* CIF comment (667, 859), (163, 53) */
+                comment 'According to FI-0011
 Use default values if
 SGM reads fail';
-                /* CIF ANSWER (57, 700), (93, 35) */
-                (FALSE):
-                    /* CIF TASK (28, 755), (151, 50) */
-                    TASK fdir_enable := true
-                    /* CIF COMMENT (198, 755), (132, 50) */
-                    COMMENT 'No FDIR Level 4';
-                    /* CIF PROCEDURECALL (0, 820), (208, 50) */
-                    CALL get_fce_sgm_ram(sgm_ram)
-                    /* CIF COMMENT (227, 820), (136, 50) */
-                    COMMENT 'Get LLAT, LLARE';
-        ENDDECISION;
-        /* CIF TASK (151, 927), (350, 50) */
-        TASK 'Start nominal SpW link acc. SIT1',
+            /* CIF ANSWER (57, 700), (93, 35) */
+            (FALSE):
+                /* CIF task (28, 755), (151, 50) */
+                task fdir_enable := true
+                /* CIF comment (198, 755), (132, 50) */
+                comment 'No FDIR Level 4';
+                /* CIF PROCEDURECALL (0, 820), (208, 50) */
+                call get_fce_sgm_ram(sgm_ram)
+                /* CIF comment (227, 820), (136, 50) */
+                comment 'Get LLAT, LLARE';
+        enddecision;
+        /* CIF task (151, 928), (350, 50) */
+        task 'Start nominal SpW link acc. SIT1',
 'Start normal HK TM generation and routing to OBC';
-        /* CIF TASK (207, 992), (239, 50) */
-        TASK 'further FCESW startup activities'
-        /* CIF COMMENT (501, 999), (149, 50) */
-        COMMENT 'details tbd by asf
+        /* CIF task (207, 993), (239, 50) */
+        task 'further FCESW startup activities'
+        /* CIF comment (501, 999), (149, 50) */
+        comment 'details tbd by asf
 see 1.2';
-        /* CIF TASK (226, 1057), (200, 50) */
-        TASK 'Enable_TC_TM_Reception';
-        /* CIF JOIN (301, 1122), (50, 50) */
-        JOIN to_sbm;
-    /* CIF LABEL (2056, 122), (124, 50) */
-    CONNECTION sbm_to_ready:
-        /* CIF TASK (1986, 187), (265, 50) */
-        TASK 'fce dms initialisation to READY mode'
-        /* CIF COMMENT (2285, 186), (206, 53) */
-        COMMENT 'stop both RIU functions ;
-stop SpW links to RIUs
-XXX check what to do here';
-        /* CIF TASK (2043, 252), (151, 50) */
-        TASK fdir_enable := true
-        /* CIF COMMENT (2217, 250), (242, 50) */
-        COMMENT 'Even if it was set to false before?!';
-        /* CIF DECISION (1980, 317), (277, 70) */
-        DECISION eeprom!sit_4!ground_cmd_reset = true
-and
-fce_stat_reg!l3rec = false;
-                /* CIF ANSWER (1877, 407), (62, 28) */
-                (FALSE):
-                    /* CIF NEXTSTATE (1831, 455), (155, 50) */
-                    NEXTSTATE Wait_Attitude_Msg;
-                /* CIF ANSWER (2287, 407), (100, 35) */
-                (TRUE):
-                    /* CIF LABEL (2245, 457), (185, 82) */
-                    cmd_fce_aocs_to_ready:
-                    /* CIF TASK (2242, 554), (191, 53) */
-                    TASK 'FCE_AOCS_READY_CMD',
-'Start FCE_SELECTED
-Determination'
-                    /* CIF COMMENT (2446, 554), (344, 53) */
-                    COMMENT 'Not sure what to do here (Figure 6-4)
-Do we need to execute the FCE AOCS branch too?';
-                    /* CIF TASK (2239, 622), (196, 50) */
-                    TASK fce_selected_counter := 0
-                    /* CIF COMMENT (2455, 622), (260, 53) */
-                    COMMENT 'Used to count 2 consecutive checks
-of FCE Selected and Arr_Dep=true
-(cf. Fig 6-5)';
-                    /* CIF NEXTSTATE (2274, 687), (127, 50) */
-                    NEXTSTATE Ready;
-        ENDDECISION;
+        /* CIF task (226, 1058), (200, 50) */
+        task 'Enable_TC_TM_Reception';
+        /* CIF join (301, 1123), (50, 50) */
+        join to_sbm;
+    /* CIF label (5363, 104), (144, 50) */
+    connection control_to_ready:
+        /* CIF task (5367, 169), (136, 50) */
+        task 'huge transition'
+        /* CIF comment (5523, 169), (147, 50) */
+        comment 'TODO (Figure 6-7)';
+        /* CIF NEXTSTATE (5385, 234), (100, 50) */
+        NEXTSTATE Ready;
     /* CIF End Label */
-    ENDCONNECTION;
-    /* CIF LABEL (4842, 0), (100, 50) */
-    CONNECTION to_sbm:
-        /* CIF TASK (4799, 65), (186, 50) */
-        TASK 'FCE_AOCS_SBM_CMD'
-        /* CIF COMMENT (5070, 66), (197, 53) */
-        COMMENT 'In 1.2, but what exactly
-has to be done here is not
-clearly stated XXX';
-        /* CIF DECISION (4760, 130), (263, 70) */
-        DECISION eeprom!sit_4!test_mode_counter = 0;
-                /* CIF ANSWER (4928, 220), (100, 35) */
-                (TRUE):
-                    /* CIF NEXTSTATE (4911, 275), (134, 50) */
-                    NEXTSTATE FCE_Test_Mode;
-                /* CIF ANSWER (4697, 220), (110, 35) */
-                (FALSE):
-                    /* CIF JOIN (4727, 270), (50, 50) */
-                    JOIN sbm_to_ready;
-        ENDDECISION;
-    /* CIF End Label */
-    ENDCONNECTION;
-    /* CIF LABEL (5889, 181), (152, 50) */
-    CONNECTION ready_to_control:
-        /* CIF TASK (5823, 246), (284, 53) */
-        TASK 'stop sending packets to OBC, but
+    endconnection;
+    /* CIF label (5889, 181), (152, 50) */
+    connection ready_to_control:
+        /* CIF task (5823, 246), (284, 53) */
+        task 'stop sending packets to OBC, but
 continue generation of normal HK+AOCS
 packets'
-        /* CIF COMMENT (6121, 215), (223, 93) */
-        COMMENT '(in Figure 6-5)
+        /* CIF comment (6121, 215), (223, 93) */
+        comment '(in Figure 6-5)
 This seems inconsistent
 normal HK are sent to OBC
 so where should we "continue"
 sending them? XXX';
-        /* CIF TASK (5875, 314), (180, 50) */
-        TASK 'Stop TM-TC Reception'
-        /* CIF COMMENT (6073, 314), (177, 50) */
-        COMMENT 'what command is that?
+        /* CIF task (5875, 314), (180, 50) */
+        task 'Stop TM-TC Reception'
+        /* CIF comment (6073, 314), (177, 50) */
+        comment 'what command is that?
 (To whom?) XXX';
-        /* CIF TASK (5888, 379), (154, 50) */
-        TASK fdir_enable := false;
-        /* CIF TASK (5865, 444), (201, 50) */
-        TASK areArraysDeployed := true;
-        /* CIF TASK (5884, 509), (163, 50) */
-        TASK fce_selected := true;
+        /* CIF task (5888, 379), (154, 50) */
+        task fdir_enable := false;
+        /* CIF task (5865, 444), (201, 50) */
+        task areArraysDeployed := true;
+        /* CIF task (5884, 509), (163, 50) */
+        task fce_selected := true;
         /* CIF NEXTSTATE (5915, 574), (100, 50) */
         NEXTSTATE Control;
     /* CIF End Label */
-    ENDCONNECTION;
-    /* CIF LABEL (5363, 104), (144, 50) */
-    CONNECTION control_to_ready:
-        /* CIF TASK (5367, 169), (136, 50) */
-        TASK 'huge transition'
-        /* CIF COMMENT (5523, 169), (147, 50) */
-        COMMENT 'TODO (Figure 6-7)';
-        /* CIF NEXTSTATE (5385, 234), (100, 50) */
-        NEXTSTATE Ready;
+    endconnection;
+    /* CIF label (4842, 0), (100, 50) */
+    connection to_sbm:
+        /* CIF task (4799, 65), (186, 50) */
+        task 'FCE_AOCS_SBM_CMD'
+        /* CIF comment (5070, 66), (197, 53) */
+        comment 'In 1.2, but what exactly
+has to be done here is not
+clearly stated XXX';
+        /* CIF decision (4761, 130), (263, 70) */
+        decision eeprom!sit_4!test_mode_counter = 0;
+            /* CIF ANSWER (4928, 220), (100, 35) */
+            (TRUE):
+                /* CIF NEXTSTATE (4911, 275), (134, 50) */
+                NEXTSTATE FCE_Test_Mode;
+            /* CIF ANSWER (4697, 220), (110, 35) */
+            (FALSE):
+                /* CIF join (4727, 270), (50, 50) */
+                join sbm_to_ready;
+        enddecision;
     /* CIF End Label */
-    ENDCONNECTION;
-    /* CIF STATE (5402, 414), (134, 50) */
-    STATE FCE_Test_Mode;
-        /* CIF INPUT (5410, 484), (117, 50) */
-        INPUT Upload_Data
-(op_param)
-        /* CIF COMMENT (5544, 470), (165, 78) */
-        COMMENT 'From operator
-in SGM EEPROM/RAM
-or PM EEPROM/RAM
-TBD';
-            /* CIF NEXTSTATE (5401, 549), (134, 50) */
-            NEXTSTATE FCE_Test_Mode;
-    ENDSTATE;
-    /* CIF STATE (3762, 123), (100, 50) */
-    STATE Ready;
-        /* CIF INPUT (4233, 193), (100, 50) */
-        INPUT Cyclic_HK
-        /* CIF COMMENT (4353, 193), (100, 50) */
-        COMMENT 'Fig 6-4';
-            /* CIF OUTPUT (4218, 258), (129, 50) */
-            OUTPUT Normal_HK_TM
-            /* CIF COMMENT (4380, 258), (100, 50) */
-            COMMENT 'To OBC';
+    endconnection;
+    /* CIF label (2056, 122), (124, 50) */
+    connection sbm_to_ready:
+        /* CIF task (1986, 187), (265, 50) */
+        task 'fce dms initialisation to READY mode'
+        /* CIF comment (2285, 186), (206, 53) */
+        comment 'stop both RIU functions ;
+stop SpW links to RIUs
+XXX check what to do here';
+        /* CIF task (2043, 252), (151, 50) */
+        task fdir_enable := true
+        /* CIF comment (2217, 250), (242, 50) */
+        comment 'Even if it was set to false before?!';
+        /* CIF decision (1980, 317), (277, 70) */
+        decision eeprom!sit_4!ground_cmd_reset = true
+and
+fce_stat_reg!l3rec = false;
+            /* CIF ANSWER (1877, 407), (62, 28) */
+            (FALSE):
+                /* CIF NEXTSTATE (1831, 455), (155, 50) */
+                NEXTSTATE Wait_Attitude_Msg;
+            /* CIF ANSWER (2287, 407), (100, 35) */
+            (TRUE):
+                /* CIF label (2245, 457), (185, 82) */
+                cmd_fce_aocs_to_ready:
+                /* CIF task (2242, 554), (191, 53) */
+                task 'FCE_AOCS_READY_CMD',
+'Start FCE_SELECTED
+Determination'
+                /* CIF comment (2446, 554), (344, 53) */
+                comment 'Not sure what to do here (Figure 6-4)
+Do we need to execute the FCE AOCS branch too?';
+                /* CIF task (2239, 622), (196, 50) */
+                task fce_selected_counter := 0
+                /* CIF comment (2455, 622), (260, 53) */
+                comment 'Used to count 2 consecutive checks
+of FCE Selected and Arr_Dep=true
+(cf. Fig 6-5)';
+                /* CIF NEXTSTATE (2274, 687), (127, 50) */
+                NEXTSTATE Ready;
+        enddecision;
+    /* CIF End Label */
+    endconnection;
+    /* CIF state (1470, 133), (100, 50) */
+    state Control
+    /* CIF comment (1613, 129), (120, 50) */
+    comment 'As per Fig 6-6';
+        /* CIF input (1679, 203), (136, 50) */
+        input Cyclic_Essential;
+            /* CIF output (1674, 268), (147, 50) */
+            output Essential_Packets;
+            /* CIF NEXTSTATE (1697, 333), (100, 50) */
+            NEXTSTATE Control;
+        /* CIF input (1412, 203), (100, 50) */
+        input Cyclic_HK;
+            /* CIF output (1398, 268), (129, 50) */
+            output Normal_HK_TM
+            /* CIF comment (1561, 267), (100, 50) */
+            comment 'To OBC';
+            /* CIF NEXTSTATE (1412, 333), (100, 50) */
+            NEXTSTATE Control;
+        /* CIF input (1069, 203), (104, 50) */
+        input Cyclic_FCE;
+            /* CIF task (1016, 268), (211, 50) */
+            task 'Stop control determination';
+            /* CIF decision (1030, 333), (183, 70) */
+            decision FCE_Stop_Control;
+                /* CIF ANSWER (878, 423), (100, 35) */
+                (true):
+                    /* CIF task (840, 473), (176, 50) */
+                    task 'FCE_AOCS_STOP_CTR';
+                    /* CIF join (903, 538), (50, 50) */
+                    join control_to_ready;
+                /* CIF ANSWER (1246, 423), (100, 35) */
+                (false):
+                    /* CIF NEXTSTATE (1246, 473), (100, 50) */
+                    NEXTSTATE Control;
+            enddecision;
+    endstate;
+    /* CIF state (3762, 123), (100, 50) */
+    state Ready;
+        /* CIF input (4233, 193), (100, 50) */
+        input Cyclic_HK
+        /* CIF comment (4353, 193), (100, 50) */
+        comment 'Fig 6-4';
+            /* CIF output (4219, 258), (129, 50) */
+            output Normal_HK_TM
+            /* CIF comment (4380, 258), (100, 50) */
+            comment 'To OBC';
             /* CIF NEXTSTATE (4233, 323), (100, 50) */
             NEXTSTATE Ready;
-        /* CIF INPUT (3177, 193), (104, 50) */
-        INPUT Cyclic_FCE;
-            /* CIF TASK (3162, 258), (133, 50) */
-            TASK 'FCE_SELECTED'
-            /* CIF COMMENT (3308, 256), (164, 53) */
-            COMMENT 'As required in Fig 6-4
+        /* CIF input (3177, 193), (104, 50) */
+        input Cyclic_FCE;
+            /* CIF task (3163, 258), (133, 50) */
+            task 'FCE_SELECTED'
+            /* CIF comment (3308, 256), (164, 53) */
+            comment 'As required in Fig 6-4
 but no details given';
-            /* CIF DECISION (3114, 323), (230, 70) */
-            DECISION fce_selected and
+            /* CIF decision (3114, 323), (230, 70) */
+            decision fce_selected and
 areArraysDeployed
-            /* CIF COMMENT (3352, 316), (247, 83) */
-            COMMENT 'ambiguity in fig 6-5: ARR_DEP
+            /* CIF comment (3352, 316), (247, 83) */
+            comment 'ambiguity in fig 6-5: ARR_DEP
 or areArraysDeployed flag?
 (ARR_DEP is a set of flags used 
 to determine areArraysDeployed,
 cf fig 6-1)';
-                    /* CIF ANSWER (3344, 413), (100, 35) */
-                    (false):
-                        /* CIF TASK (3296, 463), (196, 50) */
-                        TASK fce_selected_counter := 0;
-                        /* CIF NEXTSTATE (3344, 528), (100, 50) */
-                        NEXTSTATE Ready;
-                    /* CIF ANSWER (2975, 413), (100, 35) */
-                    (true):
-                        /* CIF TASK (2889, 463), (273, 50) */
-                        TASK fce_selected_counter :=
+                /* CIF ANSWER (3344, 413), (100, 35) */
+                (false):
+                    /* CIF task (3296, 463), (196, 50) */
+                    task fce_selected_counter := 0;
+                    /* CIF NEXTSTATE (3344, 528), (100, 50) */
+                    NEXTSTATE Ready;
+                /* CIF ANSWER (2975, 413), (100, 35) */
+                (true):
+                    /* CIF task (2889, 463), (273, 50) */
+                    task fce_selected_counter :=
 (fce_selected_counter + 1) mod 65535;
-                        /* CIF DECISION (2937, 528), (176, 70) */
-                        DECISION fce_selected_counter
+                    /* CIF decision (2937, 528), (176, 70) */
+                    decision fce_selected_counter
 = 2;
-                                /* CIF ANSWER (2805, 618), (100, 35) */
-                                (true):
-                                    /* CIF JOIN (2830, 668), (50, 50) */
-                                    JOIN ready_to_control;
-                                /* CIF ANSWER (3188, 618), (100, 35) */
-                                (false):
-                                    /* CIF NEXTSTATE (3188, 668), (100, 50) */
-                                    NEXTSTATE Ready;
-                        ENDDECISION;
-            ENDDECISION;
-        /* CIF INPUT (3802, 193), (100, 50) */
-        INPUT FDIR
-        /* CIF COMMENT (3948, 188), (173, 76) */
-        COMMENT 'FDIR Processing
+                        /* CIF ANSWER (2805, 618), (100, 35) */
+                        (true):
+                            /* CIF join (2830, 668), (50, 50) */
+                            join ready_to_control;
+                        /* CIF ANSWER (3188, 618), (100, 35) */
+                        (false):
+                            /* CIF NEXTSTATE (3188, 668), (100, 50) */
+                            NEXTSTATE Ready;
+                    enddecision;
+            enddecision;
+        /* CIF input (3802, 193), (100, 50) */
+        input FDIR
+        /* CIF comment (3948, 188), (173, 76) */
+        comment 'FDIR Processing
 (Figure 6-4)
 No details given, not
 clear what to do? XXX';
             /* CIF NEXTSTATE (3802, 258), (100, 50) */
             NEXTSTATE -;
-    ENDSTATE;
-    /* CIF STATE (1470, 133), (100, 50) */
-    STATE Control
-    /* CIF COMMENT (1613, 129), (120, 50) */
-    COMMENT 'As per Fig 6-6';
-        /* CIF INPUT (1679, 203), (136, 50) */
-        INPUT Cyclic_Essential;
-            /* CIF OUTPUT (1674, 268), (147, 50) */
-            OUTPUT Essential_Packets;
-            /* CIF NEXTSTATE (1697, 333), (100, 50) */
-            NEXTSTATE Control;
-        /* CIF INPUT (1412, 203), (100, 50) */
-        INPUT Cyclic_HK;
-            /* CIF OUTPUT (1398, 268), (129, 50) */
-            OUTPUT Normal_HK_TM
-            /* CIF COMMENT (1561, 267), (100, 50) */
-            COMMENT 'To OBC';
-            /* CIF NEXTSTATE (1412, 333), (100, 50) */
-            NEXTSTATE Control;
-        /* CIF INPUT (1069, 203), (104, 50) */
-        INPUT Cyclic_FCE;
-            /* CIF TASK (1016, 268), (211, 50) */
-            TASK 'Stop control determination';
-            /* CIF DECISION (1030, 333), (183, 70) */
-            DECISION FCE_Stop_Control;
-                    /* CIF ANSWER (878, 423), (100, 35) */
-                    (true):
-                        /* CIF TASK (840, 473), (176, 50) */
-                        TASK 'FCE_AOCS_STOP_CTR';
-                        /* CIF JOIN (903, 538), (50, 50) */
-                        JOIN control_to_ready;
-                    /* CIF ANSWER (1246, 423), (100, 35) */
-                    (false):
-                        /* CIF NEXTSTATE (1246, 473), (100, 50) */
-                        NEXTSTATE Control;
-            ENDDECISION;
-    ENDSTATE;
-    /* CIF STATE (1831, 455), (155, 50) */
-    STATE Wait_Attitude_Msg;
-        /* CIF INPUT (1846, 525), (122, 50) */
-        INPUT Attitude_msg
-        /* CIF COMMENT (1999, 524), (100, 50) */
-        COMMENT 'From OBC';
-            /* CIF JOIN (1882, 590), (50, 50) */
-            JOIN cmd_fce_aocs_to_ready;
-    ENDSTATE;
-ENDPROCESS fce;
+    endstate;
+    /* CIF state (5402, 414), (134, 50) */
+    state FCE_Test_Mode;
+        /* CIF input (5410, 484), (117, 50) */
+        input Upload_Data
+(op_param)
+        /* CIF comment (5544, 470), (165, 78) */
+        comment 'From operator
+in SGM EEPROM/RAM
+or PM EEPROM/RAM
+TBD';
+            /* CIF NEXTSTATE (5402, 549), (134, 50) */
+            NEXTSTATE FCE_Test_Mode;
+    endstate;
+    /* CIF state (1831, 455), (155, 50) */
+    state Wait_Attitude_Msg;
+        /* CIF input (1846, 525), (122, 50) */
+        input Attitude_msg
+        /* CIF comment (1999, 524), (100, 50) */
+        comment 'From OBC';
+            /* CIF join (1882, 590), (50, 50) */
+            join cmd_fce_aocs_to_ready;
+    endstate;
+endprocess fce;
