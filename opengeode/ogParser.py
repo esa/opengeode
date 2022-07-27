@@ -2193,12 +2193,9 @@ def arithmetic_expression(root, context):
                 msg = "Negative ranges and modulo don't fit well. " \
                         "Use with caution (check Wikipedia for details)"
                 warnings.append(warning(root, msg))
-            if minR < maxL:
-                b = sorted ([minL % maxR, minR])
-            else:
-                b = sorted([minL % maxR, maxL % maxR])
-            bounds["Min"] = b[0]
-            bounds["Max"] = b[1]
+            possible_values = [minL % minR, minL % maxR, maxL % minR, maxL % maxR]
+            bounds["Min"] = min(possible_values)
+            bounds["Max"] = max(possible_values)
         else:
             bounds = find_bounds(expr.op, minL, maxL, minR, maxR)
 

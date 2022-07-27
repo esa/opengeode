@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.13 (07/2022)**
+- Fix the computation of range of the mod and rem operators
+- Add makefile rules to test the sdl2if and sdl2promela tools
+
 **3.9.12 (07/2022)**
 - Fix the datamodel generation in function types
 
