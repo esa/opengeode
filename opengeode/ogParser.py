@@ -804,7 +804,9 @@ def check_call(name, params, context):
             basic_right = find_basic_type(expr.right.exprType)
             try:
                 param_warnings = fix_expression_types(expr, context)
-                Assign_Check_Range(expr)
+                w = Assign_Check_Range (expr)
+                if w is not None:
+                    warnings.append(w)
                 for warn in param_warnings:
                     warnings.append(f'Parameter {idx+1} of call to "{name}": {warn}')
             except AttributeError:
@@ -1003,6 +1005,13 @@ def check_range(typeref, type_to_check):
             first_part = f'Expression in range ({min1}..{max1})'
         if error:
             raise TypeError(f'{first_part} is outside range ({min2}..{max2})')
+        # Warning is the case of a variable that is incremented. The resulting
+        # range may be outside the ranger of the recipient, but it is not
+        # always an error (if the user code contains a check)
+        if warning:
+            return f'{first_part} could be outside range ({min2}..{max2})'
+        else:
+            return None
         #elif warning:
         # Disabled because raising an exception for a warning is wrong, it
         # can prevent code to execute if not caught at the right place
@@ -1018,9 +1027,9 @@ def Assign_Check_Range(expr : ogAST.ExprAssign):
         if isinstance(expr.right, ogAST.PrimOctetStringLiteral):
             rType = NewInteger(expr.right.numeric_value,
                                expr.right.numeric_value)
-            check_range(basic, rType)
+            return check_range(basic, rType)
         else:
-            check_range(basic, find_basic_type(expr.right.exprType))
+            return check_range(basic, find_basic_type(expr.right.exprType))
 
 
 def fix_append_expression_type(expr, expected_type):
@@ -1566,7 +1575,9 @@ def fix_expression_types(expr, context):
                     check_expr.left.exprType = asn_type
                     check_expr.right = elem
                     warnings.extend(fix_expression_types(check_expr, context))
-                    Assign_Check_Range(check_expr)
+                    w = Assign_Check_Range(check_expr)
+                    if w is not None:
+                        warnings.append(w)
                     value.value[idx] = check_expr.right
             # the type of the raw PrimSequenceOf can be set now
             value.exprType.type = asn_type
@@ -1608,7 +1619,9 @@ def fix_expression_types(expr, context):
             check_expr.left.exprType = expected_type
             check_expr.right = fd_expr
             warnings.extend(fix_expression_types(check_expr, context))
-            Assign_Check_Range(check_expr)
+            w = Assign_Check_Range(check_expr)
+            if w is not None:
+                warnings.append(w)
             # Id of fd_expr may have changed (enumerated, choice)
             expr.right.value[field] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimChoiceItem):
@@ -1632,7 +1645,9 @@ def fix_expression_types(expr, context):
         check_expr.left.exprType = expected_type
         check_expr.right = expr.right.value['value']
         warnings.extend(fix_expression_types(check_expr, context))
-        Assign_Check_Range(check_expr)
+        w = Assign_Check_Range(check_expr)
+        if w is not None:
+            warnings.append(w)
         expr.right.value['value'] = check_expr.right
     elif isinstance(expr.right, ogAST.PrimConditional):
         # in principle it could also be the left side that is a ternary
@@ -1648,7 +1663,9 @@ def fix_expression_types(expr, context):
             check_expr.right = expr.right.value[det]
             warnings.extend(fix_expression_types(check_expr, context))
             try:
-                Assign_Check_Range(check_expr)
+                w = Assign_Check_Range(check_expr)
+                if w is not None:
+                    warnings.append(w)
             except TypeError as err:
                 # If we are just comparing numbers (no assignment), only
                 # raise a warning.
@@ -2389,7 +2406,9 @@ def in_expression(root, context):
             check_expr.right = value
             try:
                 warnings.extend(fix_expression_types(check_expr, context))
-                Assign_Check_Range(check_expr)
+                w = Assign_Check_Range(check_expr)
+                if w is not None:
+                    warnings.append(w)
             except TypeError as err:
                 errors.append(error(root, str(err)))
             expr.left.value[idx] = check_expr.right
@@ -3100,7 +3119,9 @@ def variables(root, ta_ast, context, monitor=False):
             expr.right = def_value
             try:
                 warnings.extend(fix_expression_types(expr, context))
-                Assign_Check_Range(expr)
+                w = Assign_Check_Range(expr)
+                if w is not None:
+                    warnings.append(w)
                 def_value = expr.right
             except(AttributeError, TypeError, Warning) as err:
                 #print (traceback.format_exc())
@@ -3572,7 +3593,9 @@ def procedure_post(proc, content, parent=None, context=None):
             check_expr.right = each.return_expr
             try:
                 warns = fix_expression_types(check_expr, context)
-                Assign_Check_Range(check_expr)
+                w = Assign_Check_Range(check_expr)
+                if w is not None:
+                    warnings.append([w, [each.pos_x, each.pos_y], []])
                 for warn in warns:
                     each.warnings.append(warn)
                     warnings.append([warn, [each.pos_x, each.pos_y], []])
@@ -5999,11 +6022,16 @@ def assign(root, context):
                 if each['direction'] == 'in':
                     errors.append(f'"{fpar}" is an IN parameter (read-only)')
                 break;
+    elif left.exprType.__name__ == 'for_range':
+        # Check that user does does try to write the forloop iterator (range)
+        errors.append(f'Assignment to loop parameter "{left.value[0]}" is not allowed')
 
     try:
         warnings.extend(fix_expression_types(expr, context))
         # If assignment with numerical value: check range
-        Assign_Check_Range (expr)
+        w = Assign_Check_Range (expr)
+        if w is not None:
+            warnings.append(w)
     except(AttributeError, TypeError) as err:
         LOG.debug(str(traceback.format_exc()))
         errors.append(u'In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'
