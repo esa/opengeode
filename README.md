@@ -124,6 +124,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.14 (08/2022)**
+- Fix various range checks
+- Detect/forbid assignments to loop range iterators
+- Fix selection of connectors
+
 **3.9.13 (07/2022)**
 - Fix the computation of range of the mod and rem operators
 - Add makefile rules to test the sdl2if and sdl2promela tools
