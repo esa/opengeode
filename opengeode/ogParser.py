@@ -2732,18 +2732,19 @@ def primary_index(root, context, pos):
         idx_bty = find_basic_type(params[0].exprType)
         if not is_integer(idx_bty):
             errors.append(error(root, 'Index is not an integer'))
-        elif is_number(idx_bty):
-            # Check range only is index is given as a raw number
-            if float(idx_bty.Max) >= float(r_max) \
-                    or float(idx_bty.Min) < 0:
-                errors.append(error(root,
-                                    'Index range [{id1} .. {id2}] '
-                                    'outside of range [0 .. {r2}]'
-                                    .format(id1=idx_bty.Min, id2=idx_bty.Max,
-                                        r2=int(r_max) - 1)))
-            elif float(idx_bty.Min) > float(r_min):
-                warnings.append(warning(root,
-                                        'Index higher than range min value'))
+        #elif is_number(idx_bty):
+            # Check range only if index is given as a raw number
+            # EDIT: why? the variable used for indexing must be checked
+        if float(idx_bty.Max) >= float(r_max) \
+                or float(idx_bty.Min) < 0:
+            errors.append(error(root,
+                                'Index range [{id1} .. {id2}] '
+                                'outside of range [0 .. {r2}]'
+                                .format(id1=idx_bty.Min, id2=idx_bty.Max,
+                                    r2=int(r_max) - 1)))
+        elif float(idx_bty.Min) > float(r_min):
+            warnings.append(warning(root,
+                                    'Index higher than range min value'))
     else:
         msg = 'Index can only be applied to type SequenceOf'
         errors.append(error(root, msg))
@@ -5993,6 +5994,7 @@ def assign(root, context):
     if root.children[0].type == lexer.CALL:
         # usually index or substring, should not be a procedure call
         # on the left side of the expression
+        #print("Call expression:", expr.inputString)
         expr.left, err, warn = call_expression(root.children[0], context,
                                                pos="left")
     elif root.children[0].type == lexer.SELECTOR:
