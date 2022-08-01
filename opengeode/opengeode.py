@@ -1471,7 +1471,8 @@ class SDL_Scene(QGraphicsScene):
                 self.clear_highlight()
             for item in self.items(rect, mode=Qt.ContainsItemBoundingRect):
                 try:
-                    item.select()
+                    if not isinstance(item, Connection):
+                        item.select()
                     self.highlight(item)
                 except AttributeError:
                     pass
