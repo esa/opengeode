@@ -1042,7 +1042,7 @@ def fix_append_expression_type(expr, expected_type):
            expr: the append expression (possibly recursive)
            expected_type : the type to assign to the expression
     '''
-    #print ("[DEBUG] Fix append expression: ", expr.inputString, expected_type)
+    LOG.debug("fix_append_expression: ", expr.inputString, expected_type)
     def rec_append(inner_expr):
         for each in (inner_expr.left, inner_expr.right):
             if isinstance(each, ogAST.ExprAppend):
@@ -1367,6 +1367,11 @@ def check_type_compatibility(primary, type_ref, context):
         if primary.exprType != type_ref:
             raise TypeError(f'Type of array element {primary.inputString} '
                     f'does not match expected type "{type_name(type_ref)}"')
+    elif isinstance(primary, ogAST.PrimSubstring):
+        primSort = type_name(primary.exprType)
+        refSort  = type_name(type_ref)
+        if type_name(primary.exprType) != type_name(type_ref):
+            raise TypeError(f'{prim} resolves to sort "{primSort}" while "{refSort} was expected')
     else:
         raise TypeError('{prim} does not match type {t1}'
                         .format(prim=primary.inputString,
@@ -2452,13 +2457,22 @@ def append_expression(root, context):
         else:
             list_of_checks.append(find_basic_type(each.exprType))
 
-    #print 'Debugging', expr.left.inputString, 'APPEND', expr.right.inputString
-    # check that both sides are actual strings
+    LOG.debug('append_expression:', expr.left.inputString, 'APPEND', expr.right.inputString)
+    # check that all elements are compatible, i.e. they must be either all
+    # SEQUENCE OF, or all strings. But not a combination of them
+    check = False
     for bty in list_of_checks:
-        if bty.kind != 'SequenceOfType' and not is_string(bty):
-            msg = 'The "Append" operator can only be applied to non-empty arrays or strings'
-            errors.append(error(root, msg))
-            break
+        if check is False:
+            check = bty.kind
+        else:
+            if bty.kind != check:
+                msg = f"All sides of the APPEND operator must be of the same type ({check} vs {bty.kind})"
+                errors.append(error(root, msg))
+                break
+            if bty.kind != 'SequenceOfType' and not is_string(bty):
+                msg = 'The "Append" operator can only be applied to non-empty arrays or strings'
+                errors.append(error(root, msg))
+                break
     else:
         # no errors
         if not any(isinstance(each, ogAST.PrimConditional)
@@ -2471,6 +2485,7 @@ def append_expression(root, context):
                 errors.append(error(root, str(err)))
             except AttributeError:
                 # The above only applies to Sequence of, not strings
+                # (strings do not have a .type attribute)
                 pass
 
             attrs = {'Min': str(int(right.Min) + int(left.Min)),

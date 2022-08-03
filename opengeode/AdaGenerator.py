@@ -2604,9 +2604,28 @@ def _sequence_of(seqof, **kwargs):
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             item_str = array_content(seqof.value[i], item_str, asn_type or
                     find_basic_type(seqof.value[i].exprType))
+        elif isinstance(seqof.value[i], ogAST.PrimSubstring):
+            # Put substring elements in a local variable, otherwise they may
+            # not work well with some operators (e.g. Append)
+            tmpVarName = f'tmp{seqof.value[i].tmpVar}'
+            tmpVarSort = seqof.value[i].exprType
+            local_decl.append(f'{tmpVarName} : {type_name(tmpVarSort)};')
+            # To get a proper assignment we need to create an ExprAssign
+            expr = ogAST.ExprAssign()
+            expr.left = ogAST.PrimVariable()
+            expr.left.value = [tmpVarName]
+            expr.left.exprType = tmpVarSort
+            expr.right = seqof.value[i]
+            expr.right.exprType = tmpVarSort
+            expr.exprType = tmpVarSort
+            assign_stmt, _, assign_loc = expression(expr, readonly=1)
+            item_stmts.extend(assign_stmt)
+            local_decl.extend(assign_loc)
+            item_str = tmpVarName
+
         stmts.extend(item_stmts)
         local_decl.extend(local_var)
-        tab.append('{i} => {value}'.format(i=i + 1, value=item_str))
+        tab.append(f'{i+1} => {item_str}')
     ada_string = ', '.join(tab)
     return stmts, str(ada_string), local_decl
 
