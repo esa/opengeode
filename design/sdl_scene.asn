@@ -13,7 +13,7 @@ Context ::= ENUMERATED {
     lander
 }
 
-String ::= IA5String
+String ::= IA5String (SIZE (0..255))
 
 Position ::= SEQUENCE {
     x REAL,

@@ -44,7 +44,7 @@ dcl procedures Undefined;
 
 -- Visible stuff
 dcl texts, procs, start_, floating_labels,
-      returns Undefined; 
+      returns_ Undefined; 
 
 -- All nested states (recursive)
 dcl all_nested_scenes Undefined;
