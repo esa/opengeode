@@ -2,6 +2,14 @@
 process orchestrator
 /* CIF comment (405, 192), (71, 35) */
 comment 'Hello';
+    /* CIF TEXT (964, 1760), (267, 206) */
+    -- Text area for declarations and comments
+    
+    dcl checkForRange IntForRangeCheck;
+    dcl fs FixedString;
+    dcl sef SeqEnumFix;
+    dcl lv taSTE_Peek_id := 255;
+    /* CIF ENDTEXT */
     /* CIF TEXT (0, 94), (458, 376) */
     dcl seq tastE_Peek_id_list := { 1,2,3,4,5};
     
@@ -67,7 +75,7 @@ comment 'Hello';
     START;
         /* CIF task (584, 280), (103, 35) */
         task check := '2A'H;
-        /* CIF PROCEDURECALL (530, 335), (210, 35) */
+        /* CIF PROCEDURECALL (531, 335), (210, 35) */
         call writeln(num(forty), num(two))
         /* CIF comment (761, 324), (194, 56) */
         comment 'check that num() uses
@@ -197,7 +205,15 @@ endfor;
         /* CIF task (565, 2224), (141, 38) */
         task apnd := {5, 6},
 apnd := apnd // {7};
-        /* CIF NEXTSTATE (578, 2280), (116, 33) */
+        /* CIF task (504, 2282), (263, 68) */
+        task for x in range(20):
+      fs(1) := 255
+endfor;
+        /* CIF task (553, 2370), (165, 35) */
+        task fs(lv mod 4) := 255;
+        /* CIF task (497, 2420), (276, 35) */
+        task checkforrange := (checkforrange +1) mod 4;
+        /* CIF NEXTSTATE (578, 2470), (116, 33) */
         NEXTSTATE Wait_for_GUI;
     /* CIF state (1083, 427), (70, 35) */
     state Third;
