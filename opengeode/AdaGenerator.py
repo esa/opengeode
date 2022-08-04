@@ -2234,33 +2234,35 @@ def _append(expr, **kwargs):
     local_decl.extend(left_local)
     local_decl.extend(right_local)
 
-    self_standing = False
-    left = '{}{}'.format(left_str, string_payload(expr.left, left_str) if
-                    isinstance(expr.left, (ogAST.PrimVariable,
-                                           ogAST.PrimConstant)) else '')
+    right_self_standing = False
+    left_self_standing = isinstance(expr.left,
+            (ogAST.PrimVariable, ogAST.PrimConstant, ogAST.PrimSubstring))
+
+    left = '{}{}'.format(left_str,
+                         string_payload(expr.left, left_str)
+                         if left_self_standing else '')
+
     if isinstance(expr.right, (ogAST.PrimVariable,
                                ogAST.PrimConditional,
                                ogAST.PrimConstant)):
         payload = string_payload(expr.right, right_str)
-        self_standing = True
+        right_self_standing = True
     else:
         payload = ''
     if isinstance (expr.right, ogAST.PrimSubstring):
-        self_standing = True
+        right_self_standing = True
     right = '{}{}'.format(right_str, payload)
-#   print "Append:", expr.inputString
-#   print "        LEFT      = ", left
-#   print "        RIGHT     = ", right, isinstance(expr.right, ogAST.PrimSubstring)
-#   print "        Payload   = ", payload
     try:
         name_of_type = type_name (expr.expected_type)
     except (NotImplementedError, AttributeError):
         name_of_type = type_name (expr.left.exprType)
-#   print "        Left type = ", name_of_type
-#   print "        Right range = ", expr.right.exprType.Max
 
-    if not self_standing:
+    if not right_self_standing:
         right = f"{name_of_type}_Array'({right}, others => <>)(1 .. {expr.right.exprType.Max})"
+
+    if not left_self_standing and not isinstance(expr.left, ogAST.ExprAppend):
+        # e.g. is the left part of the append is mkstring(var(someIndex))
+        left = f"{name_of_type}_Array'({left}, others => <>)(1 .. {expr.left.exprType.Max})"
 
     ada_string = f"(({left}) & {right})"
 

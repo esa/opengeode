@@ -128,6 +128,7 @@ Changelog
 - Fix various range checks
 - Detect/forbid assignments to loop range iterators
 - Fix selection of connectors
+- Many fixes to the Append operator (parser and Ada backend)
 
 **3.9.13 (07/2022)**
 - Fix the computation of range of the mod and rem operators

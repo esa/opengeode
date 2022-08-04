@@ -1042,30 +1042,64 @@ def fix_append_expression_type(expr, expected_type):
            expr: the append expression (possibly recursive)
            expected_type : the type to assign to the expression
     '''
-    LOG.debug("fix_append_expression: ", expr.inputString, expected_type)
+    LOG.debug(f"fix_append_expression: {expr.inputString}, {str(expected_type)}")
+    basic = find_basic_type(expected_type)
     def rec_append(inner_expr):
+        elements = []
         for each in (inner_expr.left, inner_expr.right):
-            if isinstance(each, ogAST.ExprAppend):
-                rec_append(each)
-            if each.exprType == UNKNOWN_TYPE:
-                # eg. if the side is a PrimConditional (ternary)
+
+            # One side of the expression is a ternary: we must check both the
+            # "then" and the "else" expressions against the expected type.
+            if isinstance(each, ogAST.PrimConditional):
+                # We must check both 'then' and 'else' branches
+                elements.append(each.value['then'])
+                elements.append(each.value['else'])
+                # Set the type of the ternary to the expected type
+                # Individual elements will be checked below
                 each.exprType = expected_type
-            each.expected_type = expected_type
-            if isinstance(each, ogAST.PrimSequenceOf):
-                # If a part of the APPEND is a raw sequence of ( { 1, 3 } )
-                # then a range check of the individual elements has to be done
-                # against expected type
-                check_expr = ogAST.ExprAssign()
-                check_expr.left = ogAST.PrimVariable(debugLine=lineno())
-                # At least one element must be appended and at most the
-                # max size of the recipient minus its min size
-                # (this limits the risks of overflows)
-                basic = find_basic_type(expected_type)
-                newMax = int(basic.Max) - int(basic.Min)
-                check_expr.left.exprType = type("JustChecking",
-                        (basic,), {"Min":"1", "Max":str(newMax)})
-                check_expr.right = each
-                fix_expression_types(check_expr, context=None)
+            else:
+                elements.append(each)
+
+            # now we have a list of individual elements for one side of the //
+            for elem in elements:
+                if isinstance(elem, ogAST.ExprAppend):
+                    # Go recursive if this is an inner append expression
+                    rec_append(elem)
+                elem.expected_type = expected_type
+                # Find the basic type of the element for compatibility check
+                # The various cases are:
+                # string = string // string
+                # seqOf = seqOf // seqOf
+                # string = string // mkstring(chr(...))
+                # the last case requires a special treatment because mkstring
+                # returns a PrimSequenceOf and not a string. so this makes the
+                # expression appear inconsistent. it is checked and fixed here
+                elem_bty = find_basic_type(elem.exprType)
+                if basic.kind == 'OctetStringType' and elem_bty.kind == 'SequenceOfType':
+                    # Check if the element is a single chr() or octet string instance
+                    soElemType = find_basic_type(elem.exprType.type)
+                    if soElemType.kind in ('IntegerU8Type', 'OctetStringType') \
+                            and elem.exprType.Max =='1':
+                       pass #  print("OK")
+                    else:
+                        raise TypeError ("Element of the array is incompatible with the expected type")
+                elif basic.kind == 'SequenceOfType' and elem_bty.kind != basic.kind:
+                    # Expecting a sequence of but got an octet string
+                    raise TypeError ("Use the mkstring operator to append to an array")
+                if isinstance(elem, ogAST.PrimSequenceOf):
+                    # If a part of the APPEND is a raw sequence of ( { 1, 3 } )
+                    # then a range check of the individual elements has to be done
+                    # against expected type
+                    check_expr = ogAST.ExprAssign()
+                    check_expr.left = ogAST.PrimVariable(debugLine=lineno())
+                    # At least one element must be appended and at most the
+                    # max size of the recipient minus its min size
+                    # (this limits the risks of overflows)
+                    newMax = int(basic.Max) - int(basic.Min)
+                    check_expr.left.exprType = type("JustChecking",
+                            (basic,), {"Min":"1", "Max":str(newMax)})
+                    check_expr.right = elem
+                    fix_expression_types(check_expr, context=None)
     rec_append(expr)
     expr.exprType      = expected_type
     expr.expected_type = expected_type
@@ -2447,55 +2481,61 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
-    list_of_checks = []
+ #  list_of_checks = []
 
-    for each in (expr.left, expr.right):
-        if isinstance(each, ogAST.PrimConditional):
-            # We must check both 'then' and 'else' branches
-            list_of_checks.append(find_basic_type(each.value['then'].exprType))
-            list_of_checks.append(find_basic_type(each.value['else'].exprType))
-        else:
-            list_of_checks.append(find_basic_type(each.exprType))
+ #  for each in (expr.left, expr.right):
+ #      if isinstance(each, ogAST.PrimConditional):
+ #          # We must check both 'then' and 'else' branches
+ #          list_of_checks.append(find_basic_type(each.value['then'].exprType))
+ #          list_of_checks.append(find_basic_type(each.value['else'].exprType))
+ #      else:
+ #          list_of_checks.append(find_basic_type(each.exprType))
 
-    LOG.debug('append_expression:', expr.left.inputString, 'APPEND', expr.right.inputString)
-    # check that all elements are compatible, i.e. they must be either all
-    # SEQUENCE OF, or all strings. But not a combination of them
-    check = False
-    for bty in list_of_checks:
-        if check is False:
-            check = bty.kind
-        else:
-            if bty.kind != check:
-                msg = f"All sides of the APPEND operator must be of the same type ({check} vs {bty.kind})"
-                errors.append(error(root, msg))
-                break
-            if bty.kind != 'SequenceOfType' and not is_string(bty):
-                msg = 'The "Append" operator can only be applied to non-empty arrays or strings'
-                errors.append(error(root, msg))
-                break
-    else:
-        # no errors
-        if not any(isinstance(each, ogAST.PrimConditional)
-                for each in (expr.left, expr.right)):
-            left  = find_basic_type(expr.left.exprType)
-            right = find_basic_type(expr.right.exprType)
-            try:
-                warnings.extend(compare_types(left.type, right.type))
-            except TypeError as err:
-                errors.append(error(root, str(err)))
-            except AttributeError:
-                # The above only applies to Sequence of, not strings
-                # (strings do not have a .type attribute)
-                pass
+ #  LOG.debug('append_expression:', expr.left.inputString, 'APPEND', expr.right.inputString)
+ #  # check that all elements are compatible, i.e. they must be either all
+ #  # SEQUENCE OF, or all strings. But not a combination of them
+ #  check = False
+ #  for bty in list_of_checks:
+ #      if check is False:
+ #          check = bty.kind
+ #      else:
+ #          if bty.kind != check:
+ #              msg = f"All sides of the APPEND operator must be of the same type ({check} vs {bty.kind})"
+ #              errors.append(error(root, msg))
+ #              break
+ #          if bty.kind != 'SequenceOfType' and not is_string(bty):
+ #              msg = 'The "Append" operator can only be applied to non-empty arrays or strings'
+ #              errors.append(error(root, msg))
+ #              break
+ #  else:
+ #      # no errors
+    if not any(isinstance(each, ogAST.PrimConditional)
+            for each in (expr.left, expr.right)):
+        left  = find_basic_type(expr.left.exprType)
+        right = find_basic_type(expr.right.exprType)
+        try:
+            warnings.extend(compare_types(left.type, right.type))
+        except TypeError as err:
+            errors.append(error(root, str(err)))
+        except AttributeError:
+            # The above only applies to Sequence of, not strings
+            # (strings do not have a .type attribute)
+            pass
 
+        try:
             attrs = {'Min': str(int(right.Min) + int(left.Min)),
                      'Max': str(int(right.Max) + int(left.Max))}
-            # It is wrong to set the type as inheriting from the left side FIXME
-            # (only the computed range counts)
-            expr.exprType = type('Apnd', (left,), attrs)
-        else:
-            # If one of the sides is a ternary, how should we know the range?
-            expr.exprType = expr.left.exprType
+        except AttributeError:
+            # when parsing in standalone mode (eg for copy-paste)
+            # the types may not be resolved properly due to lack of context
+            # and therefore no Min/Max attributes may be found
+            attrs = {'Min': '0', 'Max': '0'}
+        # It is wrong to set the type as inheriting from the left side FIXME
+        # (only the computed range counts)
+        expr.exprType = type('Apnd', (left,), attrs)
+    else:
+        # If one of the sides is a ternary, how should we know the range?
+        expr.exprType = expr.left.exprType
     return expr, errors, warnings
 
 
@@ -6775,7 +6815,7 @@ def parseSingleElement(elem:str='', string:str='', context=None):
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
         except AttributeError as err:
-            #print str(err)
+            print (str(err))
             #print (traceback.format_exc())
             # Syntax checker has no visibility on variables and types
             # so we have to discard exceptions sent by e.g. find_variable
