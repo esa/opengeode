@@ -1,6 +1,6 @@
 /* CIF PROCESS (149, 150), (150, 75) */
 process og;
-    /* CIF TEXT (223, 0), (539, 448) */
+    /* CIF TEXT (272, 0), (539, 448) */
     -- A Demo to test the generation of _Equal functions from ASN1SCC
     
     dcl V1 My_OctStr :=  'Hello';
@@ -23,23 +23,23 @@ process og;
     dcl number2 MyReal := 1.000001;
     dcl number3 MyReal := 3.0;
     /* CIF ENDTEXT */
-    /* CIF START (1191, 26), (60, 30) */
+    /* CIF START (1240, 26), (60, 30) */
     START;
-        /* CIF task (1114, 72), (214, 35) */
+        /* CIF task (1163, 72), (214, 35) */
         task v8 := b: {'hello', 'world'};
-        /* CIF label (1186, 122), (70, 35) */
+        /* CIF label (1235, 122), (70, 35) */
         one:
-        /* CIF decision (1172, 172), (98, 50) */
+        /* CIF decision (1221, 172), (98, 50) */
         decision V1 = V2;
-            /* CIF ANSWER (795, 242), (73, 28) */
+            /* CIF ANSWER (844, 242), (73, 28) */
             (true):
-                /* CIF task (770, 285), (123, 35) */
+                /* CIF task (819, 285), (123, 35) */
                 task fail := false;
-                /* CIF PROCEDURECALL (769, 335), (126, 38) */
+                /* CIF PROCEDURECALL (818, 335), (126, 38) */
                 call writeln('2');
-                /* CIF label (797, 388), (70, 35) */
+                /* CIF label (846, 388), (70, 35) */
                 two:
-                /* CIF decision (783, 438), (98, 50) */
+                /* CIF decision (832, 438), (98, 50) */
                 decision V3 = V4;
                     /* CIF ANSWER (507, 508), (73, 28) */
                     (true):
@@ -93,68 +93,91 @@ V7 := b: {'Hello', 'World'};
                                         /* CIF PROCEDURECALL (797, 1131), (466, 35) */
                                         call writeln(number3, ' >= 0.00001 !?', number3 < 0.00001);
                                 enddecision;
-                                /* CIF NEXTSTATE (640, 1282), (70, 35) */
+                                /* CIF NEXTSTATE (640, 1283), (70, 35) */
                                 NEXTSTATE wait;
                         enddecision;
-                    /* CIF ANSWER (1684, 508), (78, 28) */
+                    /* CIF ANSWER (1733, 508), (78, 28) */
                     (false):
-                        /* CIF decision (1684, 551), (78, 50) */
+                        /* CIF decision (1733, 551), (78, 50) */
                         decision fail;
-                            /* CIF ANSWER (1506, 621), (73, 28) */
+                            /* CIF ANSWER (1507, 621), (73, 28) */
                             (true):
-                                /* CIF PROCEDURECALL (1354, 664), (378, 38) */
+                                /* CIF PROCEDURECALL (1355, 664), (378, 38) */
                                 call writeln('FAIL: V3 = V4 reports FALSE, but...');
-                                /* CIF PROCEDURECALL (1273, 717), (539, 35) */
+                                /* CIF PROCEDURECALL (1274, 717), (539, 35) */
                                 call writeln('Length of V3(1) =', Length(V3(1)), ' and Value = ', V3(1));
-                                /* CIF PROCEDURECALL (1273, 767), (539, 35) */
+                                /* CIF PROCEDURECALL (1274, 767), (539, 35) */
                                 call writeln('Length of V4(1) =', Length(V4(1)), ' and Value = ', V4(1));
-                                /* CIF NEXTSTATE (1508, 817), (70, 35) */
+                                /* CIF NEXTSTATE (1509, 817), (70, 35) */
                                 NEXTSTATE wait;
-                            /* CIF ANSWER (1874, 621), (78, 28) */
+                            /* CIF ANSWER (1923, 621), (78, 28) */
                             (false):
-                                /* CIF PROCEDURECALL (1850, 664), (126, 38) */
+                                /* CIF PROCEDURECALL (1899, 664), (126, 38) */
                                 call writeln('3');
-                                /* CIF task (1820, 717), (187, 40) */
-                                task 'v3 := v3(0) // v4(1)(0,4)'
-                                /* CIF comment (2027, 719), (193, 40) */
-                                comment 'raise Ada compilation error,
-CHECKME';
-                                /* CIF task (1820, 777), (187, 40) */
-                                task 'v3 := v3(0) // {v4(1)(0,4)}'
-                                /* CIF comment (2027, 779), (193, 40) */
-                                comment 'raise Ada compilation error,
-CHECKME';
-                                /* CIF task (1878, 837), (70, 35) */
+                                /* CIF task (1906, 722), (111, 35) */
+                                task v2 := V4(1)(0,4);
+                                /* CIF task (1863, 777), (199, 40) */
+                                task v3 := v3 // mkstring(v4(1))
+                                /* CIF comment (2094, 757), (228, 39) */
+                                comment 'OK, works thanks to mkstring';
+                                /* CIF task (1863, 837), (199, 40) */
+                                task 'v3 := v3 // v4(1)'
+                                /* CIF comment (2095, 817), (231, 39) */
+                                comment 'OK, parser detects that v4(1) is not 
+the same type as v3';
+                                /* CIF task (1863, 892), (199, 40) */
+                                task v3 := v3 // mkstring(v2)
+                                /* CIF comment (2088, 868), (250, 50) */
+                                comment 'OK works  thanks to mkstring.
+An error is raised without the mkstring';
+                                /* CIF task (1863, 952), (199, 40) */
+                                task 'v3 := v3 // v2'
+                                /* CIF comment (2089, 928), (269, 50) */
+                                comment 'OK, parser detects and raises an error
+because v2 is not a SequenceOf as v3';
+                                /* CIF task (1862, 1007), (199, 40) */
+                                task v3 := v3 // mkstring(v4(1)(0,4))
+                                /* CIF comment (2083, 1009), (352, 40) */
+                                comment 'OK in Ada - create a temp variable to store the substring';
+                                /* CIF task (1824, 1067), (276, 40) */
+                                task v3 := v3 // mkstring(v3(0))
+                                /* CIF comment (2123, 1069), (305, 53) */
+                                comment ' works';
+                                /* CIF task (1824, 1122), (276, 40) */
+                                task v3 := mkstring(v3(0)) // mkstring(v4(1)(0,4))
+                                /* CIF comment (2121, 1124), (305, 53) */
+                                comment 'works ';
+                                /* CIF task (1927, 1182), (70, 35) */
                                 task v3 := v4;
-                                /* CIF task (1854, 887), (118, 35) */
+                                /* CIF task (1903, 1232), (118, 35) */
                                 task fail := true;
-                                /* CIF join (1896, 937), (35, 35) */
+                                /* CIF join (1945, 1282), (35, 35) */
                                 join two;
                         enddecision;
                 enddecision;
-            /* CIF ANSWER (2309, 242), (78, 28) */
+            /* CIF ANSWER (2520, 242), (78, 28) */
             (false):
-                /* CIF decision (2309, 285), (78, 50) */
+                /* CIF decision (2520, 285), (78, 50) */
                 decision fail;
-                    /* CIF ANSWER (2267, 355), (73, 28) */
+                    /* CIF ANSWER (2478, 355), (73, 28) */
                     (true):
-                        /* CIF PROCEDURECALL (2230, 398), (147, 38) */
+                        /* CIF PROCEDURECALL (2441, 398), (147, 38) */
                         call writeln('FAIL');
-                        /* CIF NEXTSTATE (2269, 451), (70, 35) */
+                        /* CIF NEXTSTATE (2480, 451), (70, 35) */
                         NEXTSTATE wait;
-                    /* CIF ANSWER (2427, 355), (78, 28) */
+                    /* CIF ANSWER (2638, 355), (78, 28) */
                     (false):
-                        /* CIF PROCEDURECALL (2403, 398), (126, 38) */
+                        /* CIF PROCEDURECALL (2614, 398), (126, 38) */
                         call writeln('1');
-                        /* CIF task (2415, 451), (102, 35) */
+                        /* CIF task (2626, 451), (102, 35) */
                         task V2 := V1;
-                        /* CIF task (2407, 501), (118, 35) */
+                        /* CIF task (2618, 501), (118, 35) */
                         task fail := true;
-                        /* CIF join (2449, 551), (35, 35) */
+                        /* CIF join (2660, 551), (35, 35) */
                         join one;
                 enddecision;
         enddecision;
-    /* CIF state (772, 53), (70, 35) */
+    /* CIF state (821, 53), (70, 35) */
     state wait;
     endstate;
 endprocess og;
