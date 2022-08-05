@@ -2792,11 +2792,14 @@ def primary_index(root, context, pos):
             # EDIT: why? the variable used for indexing must be checked
         if float(idx_bty.Max) >= float(r_max) \
                 or float(idx_bty.Min) < 0:
-            errors.append(error(root,
-                                'Index range [{id1} .. {id2}] '
-                                'outside of range [0 .. {r2}]'
-                                .format(id1=idx_bty.Min, id2=idx_bty.Max,
-                                    r2=int(r_max) - 1)))
+            msg = f'Range of index is [{idx_bty.Min} .. {idx_bty.Max}] '\
+                   ': risk of overflow (expected range: [0 .. {int(r_max)-1}])'
+            if is_number(idx_bty):
+                # index is a raw numer => raise an error
+                errors.append(error(root, msg))
+            else:
+                # index is a variable => raise a warning
+                warnings.append(warning(root, msg))
         elif float(idx_bty.Min) > float(r_min):
             warnings.append(warning(root,
                                     'Index higher than range min value'))

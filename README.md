@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.15 (08/2022)**
+- Relax the range checks in index access (raise an error only when absolutely certain there is an overflow)
+
 **3.9.14 (08/2022)**
 - Fix various range checks
 - Detect/forbid assignments to loop range iterators
