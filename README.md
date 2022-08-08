@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.16 (08/2022)**
+- Better check that dcl variable default values are ground expressions (no reference to variables)
+
 **3.9.15 (08/2022)**
 - Relax the range checks in index access (raise an error only when absolutely certain there is an overflow)
 

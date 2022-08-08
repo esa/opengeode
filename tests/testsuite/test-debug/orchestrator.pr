@@ -2,6 +2,12 @@
 process orchestrator
 /* CIF comment (405, 192), (71, 35) */
 comment 'Hello';
+    /* CIF TEXT (629, 124), (267, 78) */
+    -- Text area for declarations and comments
+    
+    dcl forty Enum_With_Values := foo,
+           two      Enum_With_Values := bar;
+    /* CIF ENDTEXT */
     /* CIF TEXT (964, 1760), (267, 206) */
     -- Text area for declarations and comments
     
@@ -10,7 +16,7 @@ comment 'Hello';
     dcl sef SeqEnumFix;
     dcl lv taSTE_Peek_id := 255;
     /* CIF ENDTEXT */
-    /* CIF TEXT (0, 94), (458, 376) */
+    /* CIF TEXT (0, 94), (458, 473) */
     dcl seq tastE_Peek_id_list := { 1,2,3,4,5};
     
     dcl fixed FixedString := 'Hello';
@@ -35,16 +41,14 @@ comment 'Hello';
     
     --dcl opt2 SeqOpt := { a somebool, b false }; SHOULD REPORT AND ERROR
     dcl apnd SeqOf2ElemsOrMore := { 5, 6 };
-    /* CIF ENDTEXT */
-    /* CIF TEXT (629, 124), (267, 78) */
-    -- Text area for declarations and comments
     
-    dcl forty Enum_With_Values := foo,
-           two      Enum_With_Values := bar;
+    dcl blah Boo;
+    --dcl dclRef Seq := {
+    --   a blah,  incorrect, it is correctly detected
+    --   b { foo a },
+    --   c  { 42 }
+    --};
     /* CIF ENDTEXT */
-    /* CIF procedure (1273, 175), (106, 35) */
-    procedure emptyproc;
-    endprocedure;
     /* CIF procedure (1306, 371), (91, 35) */
     procedure numProc;
         /* CIF START (161, 82), (70, 35) */
@@ -70,6 +74,9 @@ comment 'Hello';
             enddecision;
             /* CIF return (178, 467), (35, 35) */
             return ;
+    endprocedure;
+    /* CIF procedure (1273, 175), (106, 35) */
+    procedure emptyproc;
     endprocedure;
     /* CIF START (596, 224), (80, 36) */
     START;

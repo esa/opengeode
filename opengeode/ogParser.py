@@ -3182,6 +3182,42 @@ def variables(root, ta_ast, context, monitor=False):
                 if w is not None:
                     warnings.append(w)
                 def_value = expr.right
+                # Once we have resolved the expression we must check that
+                # it does not contain any reference to a variable, as
+                # it would mean it is not a ground expression. We must
+                # search the "default value" expression recursively
+                def rec_find_ref_to_variable(some_expr):
+                    if isinstance(some_expr,
+                            (ogAST.PrimVariable,
+                             ogAST.PrimIndex,
+                             ogAST.PrimSelector)):
+                        return some_expr.inputString
+                    elif isinstance(some_expr, ogAST.PrimSequence):
+                        for _, field_expr in some_expr.value.items():
+                            f = rec_find_ref_to_variable(field_expr)
+                            if f is not None:
+                                return f
+                    elif isinstance(some_expr, ogAST.PrimChoiceItem):
+                        f = rec_find_ref_to_variable(some_expr.value['value'])
+                        if f is not None:
+                            return f
+                    elif isinstance(some_expr, ogAST.PrimSequenceOf):
+                        for field_expr in some_expr.value:
+                            f = rec_find_ref_to_variable(field_expr)
+                            if f is not None:
+                                return f
+                    elif isinstance(some_expr, ogAST.ExprNeg):
+                        f = rec_find_ref_to_variable(some_expr.expr)
+                        if f is not None:
+                            return f
+                    else:
+                        # Perhaps PrimNeg has to be checked?
+                        return None
+                faulty_field = rec_find_ref_to_variable(expr.right)
+                if faulty_field is not None:
+                    errors.append(f"Variable {var[-1]}:"
+                            " default value is not a ground expression -"
+                            f" remove reference to variable {faulty_field}")
             except(AttributeError, TypeError, Warning) as err:
                 #print (traceback.format_exc())
                 errors.append('Types are incompatible in DCL assignment: '

@@ -28,6 +28,15 @@ Enum-With-Values ::= ENUMERATED {foo (4), bar(2)}
 -- To test type checks with the Append operator
 SeqOf2ElemsOrMore ::= SEQUENCE (SIZE (2..3)) OF INTEGER (5..10)
 
+Boo ::= INTEGER (-10..10)
+-- Type to test that a dcl declarations do not refer to any variable
+Seq ::= SEQUENCE {
+  a Boo,
+  b SEQUENCE { foo MyEnum },
+  c TASTE-Peek-id-list
+}
+
+
 END
  
 
