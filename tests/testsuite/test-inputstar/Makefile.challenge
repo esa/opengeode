@@ -1,0 +1,7 @@
+all:
+	mkdir -p code
+	cd code && opengeode --toAda /home/maxime/git/opengeode/tests/testsuite/test-inputstar/challenge.pr 
+	asn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada dataview-uniq.asn code/challenge_datamodel.asn
+	cd code && gnat make challenge
+clean:
+	rm -rf code

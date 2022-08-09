@@ -1,0 +1,48 @@
+/* CIF PROCESS (150, 151), (150, 75) */
+process challenge;
+    /* CIF START (19, 28), (68, 37) */
+    START;
+        /* CIF PROCEDURECALL (0, 80), (106, 35) */
+        call writeln('1');
+        /* CIF NEXTSTATE (18, 130), (70, 35) */
+        NEXTSTATE OFF;
+    /* CIF state (134, 275), (72, 35) */
+    state *(off)
+    /* CIF comment (234, 275), (113, 35) */
+    comment 'means Working';
+        /* CIF input (136, 334), (70, 35) */
+        input *
+        /* CIF comment (226, 334), (120, 35) */
+        comment 'anything but run';
+            /* CIF PROCEDURECALL (126, 389), (90, 35) */
+            call writeln('5');
+            /* CIF NEXTSTATE (136, 444), (70, 35) */
+            NEXTSTATE OFF;
+    endstate;
+    /* CIF state (521, 283), (72, 35) */
+    state Working;
+        /* CIF input (525, 338), (46, 38) */
+        input run;
+            /* CIF PROCEDURECALL (502, 396), (91, 35) */
+            call writeln('4');
+            /* CIF NEXTSTATE (513, 446), (70, 35) */
+            NEXTSTATE -;
+    endstate;
+    /* CIF state (386, 27), (70, 35) */
+    state OFF;
+        /* CIF input (603, 82), (89, 35) */
+        input run, go_off;
+            /* CIF PROCEDURECALL (544, 137), (209, 35) */
+            call writeln('3');
+            /* CIF NEXTSTATE (612, 192), (72, 35) */
+            NEXTSTATE Working;
+        /* CIF input (186, 82), (70, 35) */
+        input *
+        /* CIF comment (276, 82), (263, 34) */
+        comment 'Should account for any_one and any_two';
+            /* CIF PROCEDURECALL (116, 137), (209, 35) */
+            call writeln('2');
+            /* CIF NEXTSTATE (186, 192), (70, 35) */
+            NEXTSTATE -;
+    endstate;
+endprocess challenge;
