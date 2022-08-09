@@ -4889,6 +4889,7 @@ def state(root, parent, context):
             st_x, st_y = state_def.pos_x, state_def.pos_y
         elif child.type == lexer.SYMBOLID:
             state_def.pos_x = symbolid(child)
+            st_x = state_def.pos_x
         elif child.type == lexer.ID:
             # a single ID is only for state instances
             state_def.inputString = get_input_string(child)
@@ -4956,19 +4957,6 @@ def state(root, parent, context):
                 else:
                     statelist = [state_def.instance_of]
                 for statename in statelist:
-                    # check that input is not already defined
-                    existing = context.mapping.get(statename.lower(), [])
-                    dupl = set()
-                    for each in inp.inputlist:
-                        for ex_input in (name for i in existing
-                                         for name in i.inputlist):
-                            if str(each) == str(ex_input):
-                                dupl.add(each)
-                    for each in dupl:
-                        sterr.append('Input "{}" is defined more '
-                                     'than once for state "{}"'
-                                     .format(each, statename.lower()))
-                    # then update the mapping state-input
                     context.mapping[statename.lower()].append(inp)
             except KeyError as err:
                 # missing state definition is caught at other places, no
@@ -4977,11 +4965,7 @@ def state(root, parent, context):
                 #stwarn.append(f'State definition missing - {str(err)}')
             state_def.inputs.append(inp)
             if inp.inputString.strip() == '*':
-                if asterisk_input:
-                    sterr.append('Multiple asterisk inputs under state ' +
-                                  str(state_def.inputString))
-                else:
-                    asterisk_input = inp
+                asterisk_input = inp
         elif child.type == lexer.CONNECT:
             comp_states = (comp.statename for comp in context.composite_states)
             if asterisk_state or len(state_def.statelist) != 1 \
@@ -5039,6 +5023,37 @@ def state(root, parent, context):
         input_signals = (sig['name'] for sig in context.input_signals)
         remaining_inputs = set(input_signals) - explicit_inputs
         asterisk_input.inputlist = list(remaining_inputs)
+    # post-processing: check for duplicate inputs
+    if not state_def.instance_of:
+        statelist = state_def.statelist
+    else:
+        statelist = [state_def.instance_of]
+    for statename in statelist:
+        inputs = context.mapping.get(statename.lower(), [])
+        dupl = set()
+        for a, b in combinations(inputs, 2):
+            duplicates = set(a.inputlist).intersection(set(b.inputlist))
+            #print(a.inputlist, " vs ", b.inputlist, " -> ", duplicates)
+
+            if a.inputString.strip() != "*" and b.inputString.strip() != "*":
+                # Duplicates in non ASTERISK inputs
+                dupl.update(duplicates)
+                continue
+
+            if a.inputString.strip() == "*" and b.inputString.strip() == "*":
+                dupl.add("*")
+                continue
+
+            for each in (a, b):
+                if each.inputString.strip() == "*":
+                    # update the input list of the asterisk input
+                    for d in duplicates:
+                        each.inputlist.remove(d)
+        for each in dupl:
+            sterr.append('Input "{}" is defined more '
+                         'than once for state "{}"'
+                         .format(each, statename.lower()))
+
     # post-processing: if state is composite, add link to the content
     if len(state_def.statelist) == 1 and not asterisk_state:
         for each in context.composite_states:

@@ -29,7 +29,7 @@ __all__ = ['parse_scene', 'generate']
 g_useSymbolId = False
 
 class Indent(deque):
-    ''' Extension of the deque class to support automatic indenting '''
+    ''' Extension of the deque class to support automatic indentation '''
     indent = 0
 
     def append(self, string):
@@ -163,8 +163,8 @@ def common(name, symbol):
     result.append(cif_coord(name, symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append(u'{} {}{}'.format(name, str(symbol.text), ';'
-                                if not symbol.comment else ''))
+    result.append('{} {}{}'.format(name, str(symbol.text), ';'
+                               if not symbol.comment else ''))
     if symbol.comment:
         result.extend(generate(symbol.comment))
     return result
@@ -296,7 +296,7 @@ def _procedurecall(symbol, **kwargs):
     result.append(cif_coord('PROCEDURECALL', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append(u'call {}{}'.format(str(symbol.text), ';'
+    result.append('call {}{}'.format(str(symbol.text), ';'
                                       if not symbol.comment else ''))
     if symbol.comment:
         result.extend(generate(symbol.comment))
@@ -356,7 +356,7 @@ def _state(symbol, recursive=True, nextstate=True, composite=False, cpy=False,
                                               sdlSymbols.ContinuousSignal))):
                 result.extend(generate(each))
             Indent.indent -= 1
-        result.append(u'endstate;')
+        result.append('endstate;')
     else:
         # Generate code for a nested state
         result = Indent()
@@ -369,17 +369,17 @@ def _state(symbol, recursive=True, nextstate=True, composite=False, cpy=False,
             if str(each):
                 entry_points.append(str(each))
         for each in symbol.nested_scene.returns:
-            if str(each) != u'no_name':
+            if str(each) != 'no_name':
                 exit_points.append(str(each))
         if entry_points:
-            result.append(u'in ({});'.format(','.join(entry_points)))
+            result.append('in ({});'.format(','.join(entry_points)))
         if exit_points:
-            result.append(u'out ({});'.format(','.join(exit_points)))
+            result.append('out ({});'.format(','.join(exit_points)))
         Indent.indent += 1
         result.extend(parse_scene(symbol.nested_scene, use_symbol_id=g_useSymbolId))
         Indent.indent -= 1
         Indent.indent -= 1
-        result.append(u'endsubstructure;')
+        result.append('endsubstructure;')
     return result
 
 

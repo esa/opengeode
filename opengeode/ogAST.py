@@ -665,7 +665,7 @@ class Input:
 
     def trace(self):
         ''' Debug output for an INPUT symbol '''
-        return u'INPUT {exp} ({l},{c})'.format(exp=self.inputString,
+        return 'INPUT {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 

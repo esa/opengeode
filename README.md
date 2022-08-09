@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.17 (08/2022)**
+- Fix support of Asterisk input (INPUT *) - parser bugfix
+
 **3.9.16 (08/2022)**
 - Better check that dcl variable default values are ground expressions (no reference to variables)
 

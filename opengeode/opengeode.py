@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.9.16'
+__version__ = '3.9.17'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2256,7 +2256,7 @@ clean:
         if scene.context not in ('process', 'state', 'procedure', 'block'):
             # check can only be done on SDL diagrams
             return "Non-SDL"
-        # Set use_symbol_id to True so that  we save the id (pointer) of the
+        # Set use_symbol_id to True so that we save the id (pointer) of the
         # already-rendered symbols. In errors they will be stored as x-coord
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False,
