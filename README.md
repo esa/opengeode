@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.18 (08/2022)**
+- Improve auto-resizing of symbols (and remove manual resizing)
+
 **3.9.17 (08/2022)**
 - Fix support of Asterisk input (INPUT *) - parser bugfix
 

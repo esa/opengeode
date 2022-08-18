@@ -149,6 +149,9 @@ class Input(HorizontalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
 
+    # Minimum size for symbol
+    min_size = (70, 35)
+
     def __init__(self, parent=None, ast=None):
         ''' Create the INPUT symbol '''
         ast = ast or ogAST.Input()
@@ -216,7 +219,6 @@ class Input(HorizontalSymbol):
 class Connect(Input):
     ''' Connect point below a nested state '''
     common_name = 'connect_part'
-    auto_expand = True
     resizeable = False
     # Symbol must not use antialiasing, otherwise the middle line is too thick
     _antialiasing = False
@@ -260,6 +262,9 @@ class Output(VerticalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
+
+    # Minimum size for symbol
+    min_size = (70, 35)
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Output()
@@ -314,6 +319,9 @@ class Decision(VerticalSymbol):
     blackbold = SDL_BLACKBOLD + ['\\b{}\\b'.format(word)
                                    for word in ('AND', 'OR')]
     redbold = SDL_REDBOLD
+
+    # Minimum size for symbol
+    min_size = (70, 50)
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Decision()
@@ -452,6 +460,9 @@ class DecisionAnswer(HorizontalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
 
+    # Minimum size for symbol
+    min_size = (70, 23)
+
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Answer()
         self.ast = ast
@@ -508,12 +519,14 @@ class DecisionAnswer(HorizontalSymbol):
 # pylint: disable=R0904
 class Join(VerticalSymbol):
     ''' JOIN symbol (GOTO) '''
-    auto_expand = True
     arrow_head = 'simple'
     common_name = 'terminator_statement'
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
+
+    # Minimum size for symbol
+    min_size = (70, 35)
 
     def __init__(self, parent=None, ast=None):
         self.ast = ast
@@ -639,6 +652,9 @@ class Label(VerticalSymbol):
     # Symbol must not use antialiasing, otherwise the middle line is too thick
     _antialiasing = False
 
+    # Minimum size for symbol
+    min_size = (70, 35)
+
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Label()
         self.ast = ast
@@ -710,6 +726,9 @@ class Task(VerticalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
 
+    # Minimum size for symbol
+    min_size = (70, 35)
+
     def __init__(self, parent=None, ast=None):
         ''' Initializes the TASK symbol '''
         ast = ast or ogAST.Task()
@@ -775,6 +794,9 @@ class ProcedureCall(VerticalSymbol):
     blackbold = ['\\bWRITELN\\b', '\\bWRITE\\b',
                  '\\bSET_TIMER\\b', '\\bRESET_TIMER\\b']
     redbold = SDL_REDBOLD
+
+    # Minimum size for symbol
+    min_size = (70, 35)
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Output(defName='')
@@ -846,6 +868,9 @@ class TextSymbol(HorizontalSymbol):
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
+
+    # Minimum size for symbol
+    min_size = (170, 140)
 
     def __init__(self, ast=None):
         ''' Create a Text Symbol '''
@@ -954,6 +979,9 @@ class State(VerticalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
     context_name = "state"
+
+    # Minimum size for symbol
+    min_size = (70, 35)
 
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.State()
@@ -1086,6 +1114,9 @@ class Process(HorizontalSymbol):
     _conn_targets = ['Process']
     context_name = "process"
 
+    # Minimum size for symbol
+    min_size = (150, 75)
+
     def __init__(self,
                  ast=None,
                  subscene=None):
@@ -1207,6 +1238,9 @@ class Procedure(Process):
     user_can_connect = False
     context_name = "procedure"
 
+    # Minimum size for symbol
+    min_size = (70, 35)
+
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Procedure()
         self.ast = ast
@@ -1266,6 +1300,9 @@ class ProcessType(Procedure):
     completion_list = set()
     is_singleton = False
     user_can_connect = False
+    
+    # Minimum size for symbol
+    min_size = (150, 75)
 
     def __init__(self, ast=None, subscene=None):
         ast = ast or ogAST.Process()
@@ -1332,6 +1369,9 @@ class Start(HorizontalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
     has_text_area = False
+
+    # Minimum size for symbol
+    min_size = (70, 35)
 
     def __init__(self, ast=None):
         ''' Create the START symbol '''
@@ -1420,6 +1460,9 @@ class ContinuousSignal(HorizontalSymbol):
     blackbold.append("\\bFROM\\b")
     blackbold.append("\\bTO\\b")
 
+    # Minimum size for symbol
+    min_size = (70, 35)
+
     def __init__(self, parent=None, ast=None):
         ''' Create the Provided symbol - use no background color '''
         ast = ast or ogAST.ContinuousSignal()
@@ -1474,5 +1517,3 @@ class ContinuousSignal(HorizontalSymbol):
     def completion_list(self):
         ''' Set auto-completion list '''
         return variables_autocompletion(self, None)
-
-

@@ -88,8 +88,6 @@ class Symbol(QObject, QGraphicsPathItem):
     _conn_targets = []   # target types that can connect to this symbol
     # By default a symbol is resizeable
     resizeable = True
-    # By default symbol size may expand when inner text exceeds border
-    auto_expand = True
     # default size: "any" or "symbol_default" - optionally used at creation
     default_size = "symbol_default"
     # By default connections between symbols are lines, not arrows
@@ -127,6 +125,9 @@ class Symbol(QObject, QGraphicsPathItem):
     # this is essential because anti-aliasing or the QPen may sometimes alter
     # the size in an unwanted manner.
     width, height = 0, 0
+
+    # Minimum size for symbol
+    min_size = (10, 10)
 
     def __init__(self, parent=None):
         '''
@@ -577,11 +578,13 @@ class Symbol(QObject, QGraphicsPathItem):
         self.coord = self.position
         rect = self.boundingRect()
         self.height = rect.height()
-        if self.grabber.resize_mode != '':
-            self.mode = 'Resize'
-            self.old_rect = self.boundingRect()
-        else:
-            self.mode = 'Move'
+#       if self.grabber.resize_mode != '':
+#           self.mode = 'Resize'
+#           self.old_rect = self.boundingRect()
+#       else:
+        # Manual resizing is a disabled function, as the correct
+        # size for items is computed automatically on the fly
+        self.mode = 'Move'
 
     def double_click(self):
         ''' Handle double click on symbol - redefined at symbol level '''
@@ -780,6 +783,9 @@ class Comment(Symbol):
     redbold = ()
     textbox_alignment = Qt.AlignLeft | Qt.AlignVCenter
 
+    # Minimum size for symbol
+    min_size = (70, 35)
+
     def __init__(self, parent=None, ast=None):
         ast = ast or ogAST.Comment()
         self.ast = ast
@@ -957,37 +963,39 @@ class Cornergrabber(QGraphicsPolygonItem):
             cursor = self.parent.cursor()
         elif self.parent.in_start_zone(event.pos().toPoint()):
             cursor = Qt.CrossCursor
-        elif not self.parent.resizeable:
-            cursor = self.parent.default_cursor
-            self.resize_mode = ''
-        # Left side
-        elif 0.0 <= pos.x() <= 10.0:
-            # Top-left corner: disabled
-            #if pos.y() <= 10.0:
-            #    cursor = Qt.SizeFDiagCursor
-            if pos.y() > self.boundingRect().height() - 10.0:
-                cursor = Qt.SizeBDiagCursor
-                self.resize_mode = 'bottom_left'
-            else:
-                cursor = Qt.SizeHorCursor
-                self.resize_mode = 'left'
-        # Middle of item
-        elif 5.0 < pos.x() < self.boundingRect().width() - 10.0 and (
-                     pos.y() > self.boundingRect().height() - 10.0):
-            cursor = Qt.SizeVerCursor
-            self.resize_mode = 'bottom'
-        # Right side
-        elif(self.boundingRect().width() - 5.0 <= pos.x()
-                                <= self.boundingRect().width()):
-            # Top-right corner: disabled
-            #if pos.y() <= 10.0:
-            #    cursor = Qt.SizeBDiagCursor
-            if pos.y() > self.boundingRect().height() - 10.0:
-                cursor = Qt.SizeFDiagCursor
-                self.resize_mode = 'bottom_right'
-            else:
-                cursor = Qt.SizeHorCursor
-                self.resize_mode = 'right'
+
+        # Manual resizing is disables so corresponding cursors are not needed
+#       elif not self.parent.resizeable:
+#           cursor = self.parent.default_cursor
+#           self.resize_mode = ''
+#       # Left side
+#       elif 0.0 <= pos.x() <= 10.0:
+#           # Top-left corner: disabled
+#           #if pos.y() <= 10.0:
+#           #    cursor = Qt.SizeFDiagCursor
+#           if pos.y() > self.boundingRect().height() - 10.0:
+#               cursor = Qt.SizeBDiagCursor
+#               self.resize_mode = 'bottom_left'
+#           else:
+#               cursor = Qt.SizeHorCursor
+#               self.resize_mode = 'left'
+#       # Middle of item
+#       elif 5.0 < pos.x() < self.boundingRect().width() - 10.0 and (
+#                    pos.y() > self.boundingRect().height() - 10.0):
+#           cursor = Qt.SizeVerCursor
+#           self.resize_mode = 'bottom'
+#       # Right side
+#       elif(self.boundingRect().width() - 5.0 <= pos.x()
+#                               <= self.boundingRect().width()):
+#           # Top-right corner: disabled
+#           #if pos.y() <= 10.0:
+#           #    cursor = Qt.SizeBDiagCursor
+#           if pos.y() > self.boundingRect().height() - 10.0:
+#               cursor = Qt.SizeFDiagCursor
+#               self.resize_mode = 'bottom_right'
+#           else:
+#               cursor = Qt.SizeHorCursor
+#               self.resize_mode = 'right'
         else:
             cursor = self.parent.default_cursor
             self.resize_mode = ''

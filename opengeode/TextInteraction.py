@@ -218,18 +218,17 @@ class EditableText(QGraphicsTextItem):
 
     def try_resize(self):
         '''
-            If needed, request a resizing of the parent item
-            (when text size expands)
+            Request a resizing of the parent item (symbol) when text changes
         '''
-        if self.parent.auto_expand:
-            self.setTextWidth(-1)
-            parent_rect = self.parent.boundingRect()
-            rect = self.boundingRect()
-            if rect.width() + 15 > parent_rect.width():
-                parent_rect.setWidth(rect.width() + 15)
-            parent_rect.setHeight(max(rect.height(), parent_rect.height()))
-            self.parent.resize_item(parent_rect)
-            self.set_textbox_position()
+        minW, minH = self.parent.min_size
+        self.setTextWidth(-1)
+        parent_rect = self.parent.boundingRect()
+        rect = self.boundingRect()
+        #if rect.width() + 15 > parent_rect.width():
+        parent_rect.setWidth(max(rect.width() + 15, minW))
+        parent_rect.setHeight(max(rect.height(), minH))
+        self.parent.resize_item(parent_rect)
+        self.set_textbox_position()
 
     @Slot(QListWidgetItem)
     def completion_selected(self, item):

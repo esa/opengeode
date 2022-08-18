@@ -63,6 +63,9 @@ class Record(genericSymbols.HorizontalSymbol):
     _terminal_followers = []
     textbox_alignment = (Qt.AlignTop | Qt.AlignHCenter)
 
+    # Minimum size for symbol
+    min_size = (70, 35)
+
     def __init__(self, node, graph):
         ''' Initialization: compute the polygon shape '''
         self.name = node['name']
