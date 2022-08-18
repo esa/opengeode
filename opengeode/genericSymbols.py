@@ -680,7 +680,7 @@ class Symbol(QObject, QGraphicsPathItem):
         # Call the Qt event processing to avoid blocking the application
         # Removed (had bad visual side effects)
         # QApplication.processEvents()
-        #print 'CAM', str(self)[slice(0, 20)]
+        #print ('CAM', str(self)[slice(0, 20)])
         ignore = ignore or []
         if not self.scene():
             # Make sure the item is in a scene. For instance, when loading
@@ -824,7 +824,13 @@ class Comment(Symbol):
         except AttributeError:
             # if called before text is initialized
             pass
-        #parent.cam(parent.position, parent.position)
+        parent.cam(parent.position, parent.position)
+
+    def cam(self, old_pos, new_pos, ignore=None):
+        ''' Comment is a top-level symbol - CAM would not apply properly
+        to siblings in a decision branch. We must apply the CAM to the
+        parent symbol to which the comment is attached. '''
+        self.parent.cam(self.parent.position, self.parent.position)
 
     def connect_to_parent(self):
         ''' Redefinition of the function to use a comment connector '''
