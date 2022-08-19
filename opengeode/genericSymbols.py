@@ -869,6 +869,8 @@ class Comment(Symbol):
         pen.setStyle(Qt.DashLine)
         pen.setColor(Qt.darkGray)
         painter.setPen(pen)
+        if self.text.hasFocus():
+            painter.fillRect(rect, Qt.white)
         x, y, w, h = rect.x(), rect.y(), rect.width(), rect.height()
         if self.on_the_right:
             painter.drawLines([QPoint(w, y), QPoint(x, y),

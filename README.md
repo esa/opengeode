@@ -124,6 +124,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.19 (08/2022)**
+- Improve visibility of text and autocompleter when editing comments
+  (ensure that text is always in front of other symbols and that autocompleter
+   is in the screen area)
+
 **3.9.18 (08/2022)**
 - Improve auto-resizing of symbols (and remove manual resizing)
 

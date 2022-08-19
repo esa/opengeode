@@ -133,6 +133,14 @@ class Highlighter(QSyntaxHighlighter):
                 length = match.capturedLength()
                 self.setFormat(match.capturedStart(), length, formatter)
 
+
+def zValueItems(item):
+    ''' Find all items that require a zValue increase to ensure that both
+    the text and completer are visible. '''
+    if item.parent is not None:
+        yield from zValueItems(item.parent)
+    yield item
+
 # pylint: disable=R0902
 class EditableText(QGraphicsTextItem):
     '''
@@ -326,6 +334,7 @@ class EditableText(QGraphicsTextItem):
 
             self.completer.setPos(pos_x, pos_y)
             self.completer.show()
+            self.completer.ensureVisible()
             self.force_focus = True   # avoid unwanted syntax checks
             # Make sure parent item has higher visibility than its siblings
             # (useful in decision branches)
@@ -399,7 +408,7 @@ class EditableText(QGraphicsTextItem):
                     self.scene().undo_stack.push(undo_cmd)
                     try:
                         self.parent.cam(self.parent.pos(),
-                                              self.parent.pos())
+                                        self.parent.pos())
                     except AttributeError:
                         # Some parents may not have CAM function (e.g. Channel)
                         pass
@@ -409,9 +418,8 @@ class EditableText(QGraphicsTextItem):
                     self.scene().undo_stack.push(undo_cmd)
         self.set_text_alignment()
         # Reset Z-Values that were increased when getting focus
-        top_level = self.parent.top_level()
-        top_level.setZValue(top_level.zValue() - 1)
-        self.parent.setZValue(self.parent.zValue() - 1)
+        for each in zValueItems(self.parent):
+            each.setZValue(each.zValue() - 1)
         super().focusOutEvent(event)
 
     # pylint: disable=C0103
@@ -420,9 +428,8 @@ class EditableText(QGraphicsTextItem):
         super().focusInEvent(event)
         # Change the Z-value of items to make sure the
         # completer is always be on top of other symbols
-        top_level = self.parent.top_level()
-        top_level.setZValue(top_level.zValue() + 1)
-        self.parent.setZValue(self.parent.zValue() + 1)
+        for each in zValueItems(self.parent):
+            each.setZValue(each.zValue() + 1)
 
         # Trigger a select - side effect makes the toolbar update
         try:

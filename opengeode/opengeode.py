@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.9.18'
+__version__ = '3.9.19'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -894,7 +894,7 @@ class SDL_Scene(QGraphicsScene):
 
     def highlight(self, item):
         ''' Highlight a symbol '''
-        if item in self.highlighted:
+        if item in self.highlighted or not isinstance(item, Symbol):
             return
         bound = item.boundingRect()
         center = bound.center().x()
