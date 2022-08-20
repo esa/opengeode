@@ -677,14 +677,15 @@ class Label(VerticalSymbol):
     def set_shape(self, width, height):
         ''' Define the shape of the LABEL symbol '''
         if width != self.width or height != self.height:
+            circ = 35 / 2
             path = QPainterPath()
-            path.addEllipse(0, height / 2, width / 4, height / 2)
-            path.moveTo(width / 4, height * 3 / 4)
-            path.lineTo(width / 2, height * 3 / 4)
+            path.addEllipse(width / 2 - 35, circ, circ, circ)
+            path.moveTo(width / 2 - circ, 35 * 3 / 4)
+            path.lineTo(width / 2, 35 * 3 / 4)
             # Add arrow head
-            path.moveTo(width / 2 - 5, height * 3 / 4 - 5)
-            path.lineTo(width / 2, height * 3 / 4)
-            path.lineTo(width / 2 - 5, height * 3 / 4 + 5)
+            path.moveTo(width / 2 - 5, 35 * 3 / 4 - 5)
+            path.lineTo(width / 2, 35 * 3 / 4)
+            path.lineTo(width / 2 - 5, 35 * 3 / 4 + 5)
             # Add vertical line in the middle of the symbol
             path.moveTo(width / 2, 0)
             path.lineTo(width / 2, height)

@@ -127,6 +127,7 @@ Changelog
 **3.9.20 (08/2022)**
 - Better check of errors related to the CONNECT construct
   (nested state named return: detect duplicates and missing connect transition)
+- Improvement of the Label symbol shape
 
 **3.9.19 (08/2022)**
 - Improve visibility of text and autocompleter when editing comments
