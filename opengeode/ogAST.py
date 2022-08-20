@@ -1019,6 +1019,9 @@ class Process:
 
         # Similar mapping for continuous signals
         self.cs_mapping = defaultdict(list)
+        
+        # Similar mapping for CONNECT triggers
+        self.connect_mapping = defaultdict(list)
 
         # list of type Transition - use 'mapping' to map index to inputs/states
         self.transitions = []
@@ -1103,7 +1106,7 @@ class CompositeState(Process):
 
     def trace(self):
         ''' Debug output for composite state '''
-        return u'COMPOSITE STATE {exp} ({l},{c})'.format(exp=self.statename,
+        return 'COMPOSITE STATE {exp} ({l},{c})'.format(exp=self.statename,
                 l=self.line, c=self.charPositionInLine)
 
 

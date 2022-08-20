@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.20 (08/2022)**
+- Better check of errors related to the CONNECT construct
+  (nested state named return: detect duplicates and missing connect transition)
+
 **3.9.19 (08/2022)**
 - Improve visibility of text and autocompleter when editing comments
   (ensure that text is always in front of other symbols and that autocompleter

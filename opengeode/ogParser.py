@@ -3343,11 +3343,15 @@ def composite_state(root, parent=None, context=None):
     except AttributeError:
         LOG.debug('Procedure context is undefined')
     inner_proc = []
+
     # Gather the list of states defined in the composite state
     # and map a list of transitions to each state
     comp.mapping = {name: [] for name in get_state_list(root)}
     # Same for continuous signal mapping
     comp.cs_mapping = {name: [] for name in get_state_list(root)}
+    # Same for CONNECT transitions
+    comp.connect_mapping = {name: [] for name in get_state_list(root)}
+
     inner_composite, states, floatings, starts = [], [], [], []
     for child in root.getChildren():
         if child.type == lexer.ID:
@@ -3427,6 +3431,7 @@ def composite_state(root, parent=None, context=None):
             # add empty mapping information since there are no transitions
             comp.mapping[inner.statename.lower()] = []
             comp.cs_mapping[inner.statename.lower()] = []
+            comp.connect_mapping[inner.statename.lower()] = []
         errors.extend(err)
         warnings.extend(warn)
         comp.composite_states.append(inner)
@@ -3466,6 +3471,17 @@ def composite_state(root, parent=None, context=None):
         errors.extend(err)
         warnings.extend(warn)
         comp.content.states.append(newstate)
+    # Post-processing: check that all RETURNS of the composite state have a
+    # corresponding CONNECT in the outer state
+    context=comp
+    for each in context.content.states:
+        if each.composite:
+            for exitpt in each.composite.state_exitpoints:
+                if exitpt not in context.connect_mapping[each.composite.statename]:
+                    msg = (f'State "{each.composite.statename}":'
+                           f' missing CONNECT for exitpoint "{exitpt}"')
+                    errors.append([msg, [each.pos_x, each.pos_y], []])
+
     # Post-processing: check that all NEXTSTATEs have a corresponding STATE
     for t in comp.terminators:
         if t.kind != "next_state":
@@ -4461,6 +4477,7 @@ def process_definition(root, parent=None, context=None):
     # Prepare the transition/state mapping
     process.mapping    = {name: [] for name in state_list}
     process.cs_mapping = {name: [] for name in state_list}
+    process.connect_mapping = {name: [] for name in state_list}
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -4507,7 +4524,7 @@ def process_definition(root, parent=None, context=None):
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.STATE:
-            # STATE - fills up the 'mapping' structure.
+            # STATE - fills up the 'mapping' structures.
             statedef, err, warn = state(child, parent=None, context=process)
             errors.extend(err)
             warnings.extend(warn)
@@ -4597,6 +4614,18 @@ def process_definition(root, parent=None, context=None):
         msg = f'Mandatory START transition is missing in process {process.processName}'
         errors.append([msg, [process.pos_x, process.pos_y], []])
         process.errors.append(msg)
+
+    # Post-processing: check that all RETURNS of composite states have a
+    # corresponding CONNECT in the outer state
+    context=process
+    for each in context.content.states:
+        if each.composite:
+            for exitpt in each.composite.state_exitpoints:
+                if exitpt not in context.connect_mapping[each.composite.statename]:
+                    msg = (f'State "{each.composite.statename}":'
+                           f' missing CONNECT for exitpoint "{exitpt}"')
+                    errors.append([msg, [each.pos_x, each.pos_y], []])
+
     for each in chain(errors, warnings):
         try:
             each[2].insert(0, 'PROCESS {}'.format(process.processName))
@@ -5164,6 +5193,18 @@ def connect_part(root, parent, context):
         for each in terminators:
             # Set next transition, exact id to be found in postprocessing
             each.next_trans = trans
+    # Find duplicate CONNECT statements
+    if statename:
+        existing = context.connect_mapping.get(statename, [])
+        for each in existing:
+            if each.lower() in (a.lower() for a in conn.connect_list):
+                msg = (f'CONNECT: trigger {each} already specified '
+                        f'for state {statename}')
+                errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
+                break
+        else:
+            context.connect_mapping[statename].extend(conn.connect_list)
+
     # Set list of terminators
     conn.terminators = list(context.terminators[terms:])
     return conn, errors, warnings
