@@ -6,71 +6,35 @@ process challenge;
         out (ret0);
             state hello;
             substructure
-                    /* CIF procedure (892, 436), (73, 35) */
+                    /* CIF procedure (893, 436), (70, 35) */
                     procedure entry;
                         /* CIF START (178, 136), (70, 35) */
                         START;
-                            /* CIF PROCEDURECALL (160, 186), (106, 35) */
+                            /* CIF PROCEDURECALL (168, 186), (89, 35) */
                             call writeln('8');
-                            /* CIF PROCEDURECALL (145, 236), (136, 35) */
+                            /* CIF PROCEDURECALL (154, 236), (116, 35) */
                             call writeln('Hello!');
                             /* CIF return (195, 286), (35, 35) */
                             return ;
                     endprocedure;
                     /* CIF START (349, 133), (70, 35) */
                     START;
-                        /* CIF NEXTSTATE (312, 183), (144, 35) */
+                        /* CIF NEXTSTATE (319, 183), (128, 35) */
                         NEXTSTATE wait_in_sub_hello;
-                    /* CIF state (582, 147), (144, 35) */
+                    /* CIF state (589, 147), (128, 35) */
                     state wait_in_sub_hello;
                     endstate;
             endsubstructure;
-            /* CIF TEXT (294, 251), (334, 95) */
+            /* CIF TEXT (294, 251), (312, 140) */
             dcl myresult T_UInt8 := 4;
             -- Use a variable with the same name as a variable
             -- in the outer scope, to check that code generators
             -- use the proper one
             dcl result T_UInt32 := 9;
             /* CIF ENDTEXT */
-            /* CIF procedure (606, 54), (73, 35) */
-            procedure entry
-            /* CIF comment (695, 31), (190, 88) */
-            comment 'Special Entry
-procedure - called
-automatically upon
-entrance to the nested
-state';
-                /* CIF START (191, 78), (70, 35) */
-                START;
-                    /* CIF PROCEDURECALL (100, 128), (251, 35) */
-                    call writeln('ENTERING NESTED STATE');
-                    /* CIF return (208, 178), (35, 35) */
-                    return ;
-            endprocedure;
-            /* CIF procedure (291, 522), (102, 35) */
-            procedure inner_proc;
-                /* CIF TEXT (31, 41), (364, 93) */
-                fpar in toto T_UInt8;
-                
-                -- Redefine a variable declared in outer scope
-                dcl result t_Boolean := true;
-                /* CIF ENDTEXT */
-                /* CIF START (479, 97), (70, 35) */
-                START;
-                    /* CIF label (471, 147), (86, 35) */
-                    hey_joe:
-                    /* CIF PROCEDURECALL (457, 197), (113, 35) */
-                    call writeln('10');
-                    /* CIF task (453, 247), (121, 35) */
-                    task result := false;
-                    /* CIF label (473, 297), (82, 35) */
-                    leaving:
-                    /* CIF return (496, 347), (35, 35) */
-                    return ;
-            endprocedure;
-            /* CIF procedure (610, 143), (70, 33) */
+            /* CIF procedure (610, 143), (70, 35) */
             procedure exit
-            /* CIF comment (700, 118), (157, 93) */
+            /* CIF comment (700, 119), (137, 83) */
             comment 'Special exit
 procedure - called
 automatically when
@@ -78,79 +42,122 @@ leaving the nested
 state';
                 /* CIF START (163, 119), (70, 35) */
                 START;
-                    /* CIF PROCEDURECALL (68, 169), (259, 35) */
+                    /* CIF PROCEDURECALL (80, 169), (235, 35) */
                     call writeln('LEAVING the nested state');
                     /* CIF return (180, 219), (35, 35) */
                     return ;
             endprocedure;
-            /* CIF START (1240, 7), (89, 35) */
+            /* CIF procedure (298, 522), (86, 35) */
+            procedure inner_proc;
+                /* CIF TEXT (31, 41), (277, 140) */
+                fpar in toto T_UInt8;
+                
+                -- Redefine a variable declared in outer scope
+                dcl result t_Boolean := true;
+                /* CIF ENDTEXT */
+                /* CIF START (479, 97), (70, 35) */
+                START;
+                    /* CIF label (479, 147), (70, 35) */
+                    hey_joe:
+                    /* CIF PROCEDURECALL (465, 197), (96, 35) */
+                    call writeln('10');
+                    /* CIF task (461, 247), (104, 35) */
+                    task result := false;
+                    /* CIF label (479, 297), (70, 35) */
+                    leaving:
+                    /* CIF return (496, 347), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF procedure (607, 54), (70, 35) */
+            procedure entry
+            /* CIF comment (693, 31), (157, 83) */
+            comment 'Special Entry
+procedure - called
+automatically upon
+entrance to the nested
+state';
+                /* CIF START (191, 78), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (108, 128), (235, 35) */
+                    call writeln('ENTERING NESTED STATE');
+                    /* CIF return (208, 178), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF START (1248, 7), (71, 35) */
             START via_toto ;
-                /* CIF PROCEDURECALL (1232, 57), (106, 35) */
+                /* CIF PROCEDURECALL (1239, 57), (89, 35) */
                 call writeln('3');
                 /* CIF return (1267, 107), (35, 35) */
                 return ret0;
             /* CIF START (990, 8), (70, 35) */
             START;
-                /* CIF PROCEDURECALL (972, 58), (106, 35) */
+                /* CIF PROCEDURECALL (980, 58), (89, 35) */
                 call writeln('7');
-                /* CIF label (970, 108), (111, 35) */
+                /* CIF label (978, 108), (92, 35) */
                 inside_label:
-                /* CIF PROCEDURECALL (957, 158), (137, 35) */
+                /* CIF PROCEDURECALL (967, 158), (114, 35) */
                 call pow(3,3, result);
-                /* CIF decision (988, 208), (74, 50) */
+                /* CIF decision (990, 208), (70, 50) */
                 decision result;
-                    /* CIF ANSWER (913, 278), (92, 24) */
+                    /* CIF ANSWER (921, 278), (74, 23) */
                     (myresult):
-                    /* CIF ANSWER (1037, 278), (70, 24) */
+                    /* CIF ANSWER (1037, 278), (70, 23) */
                     ELSE:
-                        /* CIF task (1015, 318), (115, 35) */
+                        /* CIF task (1022, 317), (98, 35) */
                         task myresult := 5;
                 enddecision;
-                /* CIF label (981, 369), (88, 35) */
+                /* CIF label (990, 368), (70, 35) */
                 nslabel:
-                /* CIF NEXTSTATE (990, 419), (70, 35) */
+                /* CIF NEXTSTATE (990, 418), (70, 35) */
                 NEXTSTATE hello;
-            /* CIF label (564, 472), (141, 35) */
+            /* CIF label (193, 324), (70, 35) */
+            connection to_label:
+                /* CIF join (211, 374), (35, 35) */
+                join another_floating;
+            /* CIF End Label */
+            endconnection;
+            /* CIF label (573, 472), (122, 35) */
             connection another_floating:
-                /* CIF PROCEDURECALL (578, 522), (113, 35) */
+                /* CIF PROCEDURECALL (589, 522), (89, 35) */
                 call writeln('9');
-                /* CIF task (577, 572), (115, 35) */
+                /* CIF task (585, 572), (98, 35) */
                 task myresult := 1;
-                /* CIF PROCEDURECALL (553, 622), (164, 35) */
+                /* CIF PROCEDURECALL (561, 622), (146, 35) */
                 call inner_proc(myresult);
                 /* CIF return (617, 672), (35, 35) */
                 return ;
-            /* CIF End Label */
-            endconnection;
-            /* CIF label (184, 324), (90, 35) */
-            connection to_label:
-                /* CIF join (212, 374), (35, 35) */
-                join another_floating;
             /* CIF End Label */
             endconnection;
             /* CIF state (52, 0), (70, 35) */
             state hello;
                 /* CIF input (52, 61), (70, 35) */
                 input run;
-                    /* CIF PROCEDURECALL (0, 111), (175, 35) */
+                    /* CIF PROCEDURECALL (8, 111), (157, 35) */
                     call writeln('27 == ', result);
                     /* CIF PROCEDURECALL (52, 161), (70, 35) */
                     call toto;
-                    /* CIF task (25, 211), (125, 53) */
+                    /* CIF task (32, 211), (109, 38) */
                     task myresult := 88,
 result := 33;
-                    /* CIF join (70, 279), (35, 35) */
+                    /* CIF join (69, 264), (35, 35) */
                     join to_label;
             endstate;
     endsubstructure;
-    /* CIF TEXT (506, 0), (298, 56) */
+    /* CIF TEXT (285, 0), (209, 140) */
     -- This system tests nested states
     
     dcl result T_uint32 :=0;
     /* CIF ENDTEXT */
-    /* CIF procedure (24, 247), (66, 35) */
+    /* CIF procedure (19, 183), (70, 35) */
+    procedure foo;
+        /* CIF START (190, 53), (70, 35) */
+        START;
+            /* CIF return (207, 103), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (22, 247), (70, 35) */
     procedure toto;
-        /* CIF TEXT (371, 134), (298, 140) */
+        /* CIF TEXT (371, 134), (281, 140) */
         -- Declare your variables
         
         -- Syntax: DCL <variable name> <type name>;
@@ -161,95 +168,79 @@ result := 33;
         START;
             /* CIF decision (178, 136), (70, 50) */
             decision i;
-                /* CIF ANSWER (131, 206), (73, 24) */
+                /* CIF ANSWER (132, 206), (70, 23) */
                 (1):
-                    /* CIF task (96, 246), (143, 35) */
+                    /* CIF task (102, 245), (130, 35) */
                     task i := (i + 1) mod 127;
-                    /* CIF return (150, 296), (35, 35) */
+                    /* CIF return (150, 295), (35, 35) */
                     return ;
-                /* CIF ANSWER (249, 206), (70, 24) */
+                /* CIF ANSWER (249, 206), (70, 23) */
                 ELSE:
-                    /* CIF PROCEDURECALL (249, 246), (70, 35) */
+                    /* CIF PROCEDURECALL (249, 245), (70, 35) */
                     call foo;
-                    /* CIF return (266, 296), (35, 35) */
+                    /* CIF return (266, 295), (35, 35) */
                     return ;
             enddecision;
     endprocedure;
-    /* CIF procedure (19, 183), (70, 35) */
-    procedure foo;
-        /* CIF START (190, 53), (70, 35) */
-        START;
-            /* CIF return (207, 103), (35, 35) */
-            return ;
-    endprocedure;
     /* CIF START (526, 99), (68, 37) */
     START;
-        /* CIF PROCEDURECALL (507, 151), (106, 35) */
+        /* CIF PROCEDURECALL (515, 151), (89, 35) */
         call writeln('1');
         /* CIF NEXTSTATE (525, 201), (70, 35) */
         NEXTSTATE OFF;
-    /* CIF state (496, 356), (132, 35) */
-    state on via via_toto
-    /* CIF comment (694, 369), (219, 33) */
-    comment 'Enter substate via entry point';
-        /* CIF connect (527, 411), (70, 35) */
-        connect ;
-            /* CIF NEXTSTATE (527, 466), (70, 35) */
-            NEXTSTATE OFF;
-    endstate;
-    /* CIF state (525, 201), (70, 35) */
-    state OFF;
-        /* CIF input (527, 256), (70, 35) */
-        input run;
-            /* CIF PROCEDURECALL (509, 306), (106, 35) */
-            call writeln('2');
-            /* CIF NEXTSTATE (496, 356), (132, 35) */
-            NEXTSTATE on via via_toto
-            /* CIF comment (694, 369), (219, 33) */
-            comment 'Enter substate via entry point';
-    endstate;
-    /* CIF state (1000, 72), (65, 35) */
-    state on;
-        /* CIF input (1192, 127), (88, 35) */
-        input any_one;
-            /* CIF NEXTSTATE (1180, 177), (113, 35) */
+    /* CIF state (157, 285), (70, 35) */
+    state Safe;
+        /* CIF input (101, 340), (70, 35) */
+        input *;
+            /* CIF PROCEDURECALL (91, 390), (89, 35) */
+            call writeln('5');
+            /* CIF PROCEDURECALL (78, 440), (114, 35) */
+            call pow(2,2, result);
+            /* CIF PROCEDURECALL (60, 490), (150, 35) */
+            call writeln('4 == ', result);
+            /* CIF NEXTSTATE (101, 540), (70, 35) */
             NEXTSTATE -;
-        /* CIF input (1302, 127), (78, 35) */
+        /* CIF input (303, 340), (72, 35) */
+        input any_one;
+            /* CIF PROCEDURECALL (295, 390), (89, 35) */
+            call writeln('6');
+            /* CIF NEXTSTATE (305, 440), (70, 35) */
+            NEXTSTATE on;
+    endstate;
+    /* CIF state (997, 72), (70, 35) */
+    state on;
+        /* CIF input (1199, 127), (72, 35) */
+        input any_one;
+            /* CIF NEXTSTATE (1201, 177), (70, 35) */
+            NEXTSTATE -;
+        /* CIF input (1306, 127), (70, 35) */
         input go_off;
-            /* CIF NEXTSTATE (1310, 177), (62, 35) */
+            /* CIF NEXTSTATE (1306, 177), (70, 35) */
             NEXTSTATE OFF;
         /* CIF connect (1033, 127), (0, 35) */
         connect ret0;
-            /* CIF PROCEDURECALL (980, 177), (106, 35) */
+            /* CIF PROCEDURECALL (988, 177), (89, 35) */
             call writeln('4');
-            /* CIF NEXTSTATE (1000, 227), (67, 35) */
+            /* CIF NEXTSTATE (998, 227), (70, 35) */
             NEXTSTATE Safe;
         /* CIF connect (717, 127), (0, 35) */
         connect ;
-            /* CIF PROCEDURECALL (644, 177), (147, 35) */
+            /* CIF PROCEDURECALL (651, 177), (130, 35) */
             call writeln('11 (end)');
             /* CIF PROCEDURECALL (682, 227), (70, 35) */
             call toto;
             /* CIF NEXTSTATE (682, 277), (70, 35) */
             NEXTSTATE off;
     endstate;
-    /* CIF state (156, 285), (73, 35) */
-    state Safe;
-        /* CIF input (101, 340), (70, 35) */
-        input *;
-            /* CIF PROCEDURECALL (83, 390), (106, 35) */
-            call writeln('5');
-            /* CIF PROCEDURECALL (71, 440), (130, 35) */
-            call pow(2,2, result);
-            /* CIF PROCEDURECALL (52, 490), (168, 35) */
-            call writeln('4 == ', result);
-            /* CIF NEXTSTATE (101, 540), (70, 35) */
-            NEXTSTATE -;
-        /* CIF input (296, 340), (88, 35) */
-        input any_one;
-            /* CIF PROCEDURECALL (283, 390), (113, 35) */
-            call writeln('6');
-            /* CIF NEXTSTATE (305, 440), (70, 35) */
-            NEXTSTATE on;
+    /* CIF state (525, 201), (70, 35) */
+    state OFF;
+        /* CIF input (527, 256), (70, 35) */
+        input run;
+            /* CIF PROCEDURECALL (517, 306), (89, 35) */
+            call writeln('2');
+            /* CIF NEXTSTATE (506, 356), (110, 35) */
+            NEXTSTATE on via via_toto
+            /* CIF comment (683, 369), (197, 35) */
+            comment 'Enter substate via entry point';
     endstate;
 endprocess challenge;
