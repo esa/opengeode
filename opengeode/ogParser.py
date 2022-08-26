@@ -3211,7 +3211,6 @@ def variables(root, ta_ast, context, monitor=False):
                         if f is not None:
                             return f
                     else:
-                        # Perhaps PrimNeg has to be checked?
                         return None
                 faulty_field = rec_find_ref_to_variable(expr.right)
                 if faulty_field is not None:
