@@ -359,7 +359,7 @@ def _inner_procedure(proc, **kwargs):
         for fpar in proc.fpar:
             typename = type_name(fpar['type'])
 
-            params.append(u'{ptype} {pt} {name}'.format(ptype=typename, pt='*' if fpar.get('direction') == 'out' or proc.external else '', name=fpar.get('name')))
+            params.append(u'{ptype} {pt} {name}'.format(ptype=typename, pt='*' if fpar.get('direction') == 'out' or proc.external else '', name=fpar.get('name').lower()))
             first = False
         pi_header += ','.join(params)
 
