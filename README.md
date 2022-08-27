@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.21 (08/2022)**
+- Minor fixes in the C code generator backend
+
 **3.9.20 (08/2022)**
 - Better check of errors related to the CONNECT construct
   (nested state named return: detect duplicates and missing connect transition)

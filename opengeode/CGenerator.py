@@ -1864,10 +1864,12 @@ def _enumerated_value(primary):
     for each in basic.EnumValues:
         if each.lower() == enumerant:
             break
-    # do not add "asn1Scc" prefix if the enumerated is standard enum
-    # (e.g. it is a choice selector)
-    use_prefix = getattr(basic.EnumValues[each], "IsStandardEnum", True)
-    prefix = type_name(basic, use_prefix=use_prefix)
+    # do not add "asn1Scc" prefix if the enumerated is a choice selector
+    enumID = basic.EnumValues[each].EnumID
+    if enumID.endswith("_PRESENT") and not enumerant.endswith("_PRESENT"):
+        prefix = ""
+    else:
+        prefix = type_name(basic, use_prefix=True)
     string = (prefix + basic.EnumValues[each].EnumID)
     return [], str(string), []
 
