@@ -126,6 +126,7 @@ Changelog
 =========
 **3.9.21 (08/2022)**
 - Minor fixes in the C code generator backend
+- Fix bug when saving a model with non-existing types assigned to a variable
 
 **3.9.20 (08/2022)**
 - Better check of errors related to the CONNECT construct

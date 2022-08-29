@@ -750,7 +750,12 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
     for var_name, (var_type, def_value) in process.variables.items():
         if var_name in process.aliases.keys():
             continue
-        sortname = var_type.ReferencedTypeName
+        try:
+            sortname = var_type.ReferencedTypeName
+        except AttributeError:
+            # if the DCL variable references a non-existing type, it shall
+            # not prevent the model saving.
+            continue
         # If the type is a ends with _selection, i.e. it is an OG-created
         # CHOICE selector, then prefix the type with the process name
         if sortname.endswith('-selection'):
