@@ -558,7 +558,7 @@ package body {process.name}_RI is''']
         if process.ignorestates:
             opts = ' | '.join(f'{ASN1SCC}{st}' for st in process.ignorestates)
             obs_status.append(f'  when {opts} => {ASN1SCC}Ignore_State,')
-        if process.errorstates:
+        if process.successstates:
             opts = ' | '.join(f'{ASN1SCC}{st}' for st in process.successstates)
             obs_status.append(f'  when {opts} => {ASN1SCC}Success_State,')
         obs_status.append(f'  when others => {ASN1SCC}Regular_State);')
