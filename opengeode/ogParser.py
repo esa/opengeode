@@ -1080,7 +1080,7 @@ def fix_append_expression_type(expr, expected_type):
                     soElemType = find_basic_type(elem.exprType.type)
                     if soElemType.kind in ('IntegerU8Type', 'OctetStringType') \
                             and elem.exprType.Max =='1':
-                       pass #  print("OK")
+                       pass
                     else:
                         raise TypeError ("Element of the array is incompatible with the expected type")
                 elif basic.kind == 'SequenceOfType' and elem_bty.kind != basic.kind:
@@ -2339,7 +2339,6 @@ def arithmetic_expression(root, context):
                       if minL >= 0 else "") + 'signed while "' \
                               + expr.right.inputString + '" is not'
                 errors.append(error(root, msg))
-                #print "[DEBUG] SIGNED/UNSIGNED MISMATCH", minL < 0, minR < 0
             else:  #  sign is consistent on both sides
                 bound_min = str(float(bounds['Min']))
                 # Must check that sign of resulting bound is still compatible
@@ -2366,8 +2365,6 @@ def arithmetic_expression(root, context):
     except (ValueError, AttributeError):
         msg = 'Check that all your numerical data types '\
               'have a range constraint'
-        #print (msg)
-        #print (traceback.format_exc())
         errors.append(error(root, msg))
     except TypeError as err:
         errors.append(str(err))
@@ -2379,12 +2376,6 @@ def arithmetic_expression(root, context):
                 msg = 'Mod/Rem expressions can only applied to Integer types'
                 errors.append(error(root, msg))
                 break
-    #print "[DEBUG] Done: ", get_input_string(root)
-#   if expr.exprType is not UNKNOWN_TYPE:
-#       print "[DEBUG] -->", find_basic_type(expr.exprType).Min, \
-#               find_basic_type(expr.exprType).Max
-#   else:
-#       print "[DEBUG] Type of expression could not be resolved"
     return expr, errors, warnings
 
 
@@ -3590,15 +3581,22 @@ def check_duplicate_procedures(ctxt, proc, errors=[]):
                 left, right = proc.fpar, each.fpar
                 if len(left) != len(right):
                     mismatch = True
+                    issue = "not the same number of parameters"
+                rt1 = proc.return_type and type_name(proc.return_type)
+                rt2 = each.return_type and type_name(each.return_type)
+                if rt1 != rt2:
+                    issue = "inconsistent return types"
+                    mismatch = True
                 for idx, val in enumerate(left):
                     if(right[idx]['name'] != val['name']
                      or type_name(right[idx]['type']) != type_name(val['type'])
                      or right[idx]['direction'] != val['direction']):
                         mismatch = True
+                        issue = f"parameter {idx} inconsistency (name or type)"
                         break
                 if mismatch:
                     errors.append(f'Procedure {proc.inputString}: '
-                            'declaration and definition interface mismatch')
+                      f'declaration and definition interface mismatch ({issue})')
 
                 if proc.exported != each.exported:
                     # If declared exported, definition must be exported too
@@ -4015,14 +4013,17 @@ def text_area_content(root, ta_ast, context):
             except AttributeError:
                 errors.append('Entity cannot have an FPAR section')
         elif child.type == lexer.RETURNS:
-            if context.return_type is not None:
+            # When parser called standalone (syntax check) the context is a Process
+            # which normally has no "return_type". To avoid an exception we check
+            # it before accessing it
+            if hasattr(context, "return_type") and context.return_type is not None:
                 errors.append('Duplicate "returns" statement')
             try:
                 context.return_type, context.return_var =\
                         procedure_returns(child)
             except TypeError as err:
                 errors.append(str(err))
-            if context.return_var:
+            if hasattr(context, "return_var") and context.return_var:
                 warnings.append('Procedure return variable not supported')
         elif child.type == lexer.TIMER:
             # Don't lowercase the timer name, keep it as declared
@@ -6882,8 +6883,9 @@ def parseSingleElement(elem:str='', string:str='', context=None):
             t, semantic_errors, warnings = backend_ptr(
                                 root=root, parent=None, context=context)
         except AttributeError as err:
-            print (str(err))
-            #print (traceback.format_exc())
+            # When this happens, it's a good idea to debug...
+            print (">>", str(err))
+            # print (traceback.format_exc())
             # Syntax checker has no visibility on variables and types
             # so we have to discard exceptions sent by e.g. find_variable
             pass
