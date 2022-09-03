@@ -1576,6 +1576,9 @@ class SDL_Scene(QGraphicsScene):
         elif event.matches(QKeySequence.Paste):
             if not isinstance(self.focusItem(), EditableText):
                 self.paste_symbols()
+                for view in self.views():
+                    # refresh scrollbars
+                    view.refresh()
                 self.refresh()
                 self.clear_focus()
         elif event.key() == Qt.Key_N:

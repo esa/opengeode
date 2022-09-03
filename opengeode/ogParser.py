@@ -2481,34 +2481,8 @@ def append_expression(root, context):
     ''' Append expression analysis '''
     expr, errors, warnings = binary_expression(root, context)
 
- #  list_of_checks = []
 
- #  for each in (expr.left, expr.right):
- #      if isinstance(each, ogAST.PrimConditional):
- #          # We must check both 'then' and 'else' branches
- #          list_of_checks.append(find_basic_type(each.value['then'].exprType))
- #          list_of_checks.append(find_basic_type(each.value['else'].exprType))
- #      else:
- #          list_of_checks.append(find_basic_type(each.exprType))
-
- #  LOG.debug('append_expression:', expr.left.inputString, 'APPEND', expr.right.inputString)
- #  # check that all elements are compatible, i.e. they must be either all
- #  # SEQUENCE OF, or all strings. But not a combination of them
- #  check = False
- #  for bty in list_of_checks:
- #      if check is False:
- #          check = bty.kind
- #      else:
- #          if bty.kind != check:
- #              msg = f"All sides of the APPEND operator must be of the same type ({check} vs {bty.kind})"
- #              errors.append(error(root, msg))
- #              break
- #          if bty.kind != 'SequenceOfType' and not is_string(bty):
- #              msg = 'The "Append" operator can only be applied to non-empty arrays or strings'
- #              errors.append(error(root, msg))
- #              break
- #  else:
- #      # no errors
+    #  LOG.debug('append_expression:', expr.left.inputString, 'APPEND', expr.right.inputString)
     if not any(isinstance(each, ogAST.PrimConditional)
             for each in (expr.left, expr.right)):
         left  = find_basic_type(expr.left.exprType)
@@ -5325,7 +5299,12 @@ def procedure_call(root: antlr3.tree.CommonTree,
                     # symbol, so the input string must keep the "call" keyword
                     # (for example if the call is in a RETURN symbol)
                     out_ast.inputString = get_input_string(root)
-            except TypeError:
+            except TypeError as errn:
+                if parent is None:
+                    # If parent is none we are in an expression, not in 
+                    # a procedure call symbol, so we must keep the full
+                    # string that may contain the "call" keyword
+                    out_ast.inputString = get_input_string(root)
                 pass
     return out_ast, err, warn
 

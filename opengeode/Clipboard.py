@@ -134,6 +134,7 @@ def paste(parent, scene):
             common_name = shared[2]
             pr_text     = shared[3]
             #  Copy to the local clipboard
+            # LOG.debug("PASTE: " + pr_text)
             ast, _, _, _, terminators = \
                 ogParser.parseSingleElement(common_name, pr_text)
             COPY_PASTE.append(([ast], terminators))
