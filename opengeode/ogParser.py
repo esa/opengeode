@@ -3674,12 +3674,6 @@ def procedure_post(proc, content, parent=None, context=None):
             proc.content.start, err, warn = start(child, context=proc)
             errors.extend(err)
             warnings.extend(warn)
-#       elif child.type == lexer.STATE:
-#           # STATE - fills up the 'mapping' structure.
-#           newstate, err, warn = state(child, parent=None, context=proc)
-#           errors.extend(err)
-#           warnings.extend(warn)
-#           proc.content.states.append(newstate)
         elif child.type == lexer.FLOATING_LABEL:
             lab, err, warn = floating_label(child, parent=None, context=proc)
             errors.extend(err)
@@ -3694,7 +3688,7 @@ def procedure_post(proc, content, parent=None, context=None):
         # check that RETURN statements type is correct
         if not proc.return_type and each.return_expr:
             msg = f'No return value expected in procedure {proc.inputString}'
-            errors.append([msg, [each.pos_y, each.pos_y], []])
+            errors.append([msg, [each.pos_x, each.pos_y], []])
             each.errors.append(msg)
         elif proc.return_type and each.return_expr:
             check_expr = ogAST.ExprAssign()
