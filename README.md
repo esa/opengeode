@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.22 (08/2022)**
+- Look for mismatch in exported procedure signature declaration/definition
+- Fix copy-paste issues
+
 **3.9.21 (08/2022)**
 - Minor fixes in the C code generator backend
 - Fix bug when saving a model with non-existing types assigned to a variable
