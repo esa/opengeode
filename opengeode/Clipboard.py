@@ -234,12 +234,30 @@ def paste_below_item(parent, scene):
             # Create the new item from the AST description
             new_item = Renderer.render(i, scene=CLIPBOARD,
                                        parent=None, states=states)
+            if isinstance(new_item, sdlSymbols.Label) \
+                    and parent.next_aligned_symbol() is not None:
+                # When a transition starting from a Label is pasted, we must
+                # check that the last symbol is not a terminator unless the
+                # parent had no following symbol. This would clash otherwise.
+                follower = new_item.next_aligned_symbol()
+                while follower is not None:
+                    if isinstance(follower, (sdlSymbols.Join, sdlSymbols.State)):
+                        raise TypeError("Cannot paste here because of the terminator symbol")
+                    follower = follower.next_aligned_symbol()
+
             # Check that item is compatible with parent
             if (type(new_item).__name__ in parent.allowed_followers):
                 # Move the item from the clipboard to the scene
                 Renderer.add_to_scene(new_item, scene)
                 new_item.pos_x = new_item.pos_y = 0.0
                 symbols.append(new_item)
+                if isinstance(new_item, sdlSymbols.Label):
+                    # Labels are rendered as a transition, but we must add
+                    # all the individual signals to the list
+                    follower = new_item.next_aligned_symbol()
+                    while follower is not None:
+                        symbols.append(follower)
+                        follower = follower.next_aligned_symbol()
             else:
                 raise TypeError('Cannot paste here ({t1} cannot follow {t2})'
                                 .format(t1=type(new_item), t2=type(parent)))
