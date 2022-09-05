@@ -52,8 +52,9 @@ class ASN1(Enum):
     UniqueEnumeratedNames = 4
     AstOnly = 5
     NoRename = 0
-    RenameOnlyConflicting = 1
-    RenameAllEnumerants = 2
+    RenameOnlyConflicting = 1 # C default
+    RenameAllEnumerants = 2   # All if at least one conflict
+    SystematicRenameAllEnumerants = 3 # All no matter what
 
 def waitfor_qprocess(qprocess, name):
     ''' Wait the execution of a QProcess instance
@@ -88,6 +89,8 @@ def parse_asn1(*files, **options):
         except OSError:
             raise TypeError (f'''The configured cache folder "{project_cache} " \
                 is not there and could not be created\n''')
+
+    LOG.info(f"ASN.1 Parser: using cache folder {project_cache}")
     # make sure the same files are not parsed more than once if not modified
     filehash = hashlib.md5()
     file_list = sorted(list(*files))
