@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.22 (09/2022)**
+- API for asn1scc now allows calling asn1scc with renamePolicy=3
+- Minor fix in copy-paste of Label branches
+
 **3.9.22 (08/2022)**
 - Look for mismatch in exported procedure signature declaration/definition
 - Fix copy-paste issues
