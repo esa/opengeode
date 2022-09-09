@@ -17,6 +17,7 @@
 import logging
 import os
 from functools import singledispatch
+from itertools import chain, product
 
 from . import Helper, ogAST
 
@@ -31,8 +32,8 @@ LOCAL_VARIABLE_TYPES = {}
 OUT_SIGNALS = []
 PROCEDURES = []
 
-UNICODE_SEP = u'___'
-LPREFIX = u'context'
+UNICODE_SEP = '___'
+LPREFIX = 'context'
 
 LEFT_TYPE = ''
 VAR_COUNTER = 0
@@ -252,7 +253,8 @@ def _call_external_function(output, **kwargs):
         proc, out_sig = None, None
         is_out_sig = False
         try:
-            out_sig, = [sig for sig in OUT_SIGNALS if sig['name'].lower() == signal_name.lower()]
+            out_sig, = [sig for sig in OUT_SIGNALS
+                    if sig['name'].lower() == signal_name.lower()]
             is_out_sig = True if SHARED_LIB else False
         except ValueError:
             # Not an output, try if it is an external or inner procedure
@@ -261,8 +263,20 @@ def _call_external_function(output, **kwargs):
                 if proc.external:
                     out_sig = proc
             except ValueError:
-                # Not there? Impossible, the parser would have barked
-                raise ValueError(u'Probably a bug - please report')
+                # Last chance to find it: if it is an exported procedure,
+                # in that case an additional signal with _Transition suffix
+                # exists but is not visible in the model at this point
+                for sig in PROCEDURES:
+                    if signal_name.lower() == f'{sig.inputString.lower()}__transition':
+                        out_sig = sig
+                        need_prefix = False
+                        break
+                else:
+                    # Not there? Impossible, the parser would have barked
+                    # Can happen with stop conditions because they are defined
+                    # as exported but the _Transition signal was not added
+                    LOG.warning(f'Could not find signal/procedure: {signal_name} - ignoring call')
+                    return stmts, decls
         if out_sig:
             list_of_params = []
             for idx, param in enumerate(out.get('params') or []):
@@ -293,14 +307,14 @@ def _call_external_function(output, **kwargs):
                     list_of_params.append("&{}{}".format(tmp_id,", sizeof({})".format(tmp_id) if is_out_sig else ""))
                 else:
                     # Output parameters/local variables
-                    list_of_params.append(u"&{var}{shared}".format(var=p_id, shared=", sizeof({})".format(p_id) if is_out_sig else ""))
+                    list_of_params.append("&{var}{shared}".format(var=p_id, shared=", sizeof({})".format(p_id) if is_out_sig else ""))
             if list_of_params:
-                stmts.append(u'{RI}({params});'.format(RI=out['outputName'], params=', '.join(list_of_params)))
+                stmts.append('{RI}({params});'.format(RI=out['outputName'], params=', '.join(list_of_params)))
             else:
                 if not SHARED_LIB:
-                    stmts.append(u'{RI};'.format(RI=out['outputName']))
+                    stmts.append('{RI}();'.format(RI=out['outputName']))
                 else:
-                    stmts.append(u'{RI}(("{RI}"));'.format(RI=out['outputName']))
+                    stmts.append('{RI}(("{RI}"));'.format(RI=out['outputName']))
         else:
             # inner procedure call
             list_of_params = []
@@ -309,15 +323,16 @@ def _call_external_function(output, **kwargs):
                 param_stmts, p_id, p_local = expression(param)
                 stmts.extend(param_stmts)
                 decls.extend(p_local)
-                # no need to use temporary variables, we are in pure Ada
+                # no need to use temporary variables
                 if proc.fpar[param_counter].get('direction') == 'out':
-                    p_id = u'&' + p_id
+                    p_id = '&' + p_id
                 list_of_params.append( p_id)
                 param_counter = param_counter + 1
             if list_of_params:
-                stmts.append(u'{sep}{proc}({params});'.format(sep=UNICODE_SEP, proc=proc.inputString, params=', '.join(list_of_params)))
+                params=', '.join(list_of_params)
+                stmts.append(f'{UNICODE_SEP}{proc.inputString}({params});')
             else:
-                stmts.append(u'{}{}();'.format(UNICODE_SEP, proc.inputString))
+                stmts.append(f'{UNICODE_SEP}{proc.inputString}();')
     return stmts, decls
 
 
@@ -327,6 +342,8 @@ def _inner_procedure(proc, **kwargs):
     LOG.debug('Expanding procedure ' + proc.inputString)
     code = []
     local_decl = []
+
+    process_name = kwargs.get("process_name", "")
     # TODO: Update the global list of procedures
     # with procedure defined inside the current procedure
     # Not critical: the editor forbids procedures inside procedures
@@ -349,7 +366,16 @@ def _inner_procedure(proc, **kwargs):
 
     # Build the procedure signature (function if it can return a value)
     ret_type = type_name(proc.return_type) if proc.return_type else None
-    pi_header = u'{ext}{ret_type} {sep}{proc_name}'.format(ext='extern ' if proc.external else '', ret_type='void' if not ret_type else ret_type, proc_name=proc.inputString, sep=UNICODE_SEP if not proc.external else '')
+
+    ext       = 'extern ' if proc.external else ''
+    ret_type  = 'void'    if not ret_type  else ret_type
+    proc_name = proc.inputString if not proc.exported and not proc.external \
+            else proc.inputString.lower()
+    if proc.exported:
+        proc_name = f'{process_name.lower()}_PI_{proc_name}'
+    sep       = UNICODE_SEP if not proc.exported else ''
+
+    pi_header = f'{ext}{ret_type} {sep}{proc_name}'
 
     pi_header += '('
 
@@ -358,8 +384,12 @@ def _inner_procedure(proc, **kwargs):
         first = True
         for fpar in proc.fpar:
             typename = type_name(fpar['type'])
-
-            params.append(u'{ptype} {pt} {name}'.format(ptype=typename, pt='*' if fpar.get('direction') == 'out' or proc.external else '', name=fpar.get('name').lower()))
+            direction = fpar.get('direction')
+            pt   = '*' if direction == 'out' or proc.exported else ''
+            name = fpar.get('name').lower()
+            if proc.exported and direction == 'in':
+                name = f'in__{name}'
+            params.append(f'{typename} {pt}{name}')
             first = False
         pi_header += ','.join(params)
 
@@ -377,7 +407,19 @@ def _inner_procedure(proc, **kwargs):
             local_decl.extend(inner_local)
             code.extend(inner_code)
         code.append(pi_header)
-        code.append(u'{')
+        code.append('{')
+        if proc.exported:
+            # The input parameters of exported procedures are pointers,
+            # so they must be copied in local variables (the procedure
+            # statements do not expect pointers at this level
+            for fpar in proc.fpar:
+                typename = type_name(fpar['type'])
+                name = fpar.get('name').lower()
+                direction = fpar.get('direction')
+                if direction != 'in':
+                    continue
+                code.append(f'{typename} {name} = *in__{name};')
+
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
             if def_value:
@@ -388,14 +430,43 @@ def _inner_procedure(proc, **kwargs):
                 if varbty.kind in ('SequenceOfType', 'OctetStringType'):
                     dstr = array_content(def_value, dstr, varbty)
                 assert not dst and not dlocal, 'Ground expression error'
-            code.append(u'{ty} {name} {default};'.format(ty=typename, name=var_name, default=' = ' + dstr if def_value else ''))
+            code.append('{ty} {name} {default};'.format(ty=typename, name=var_name, default=' = ' + dstr if def_value else ''))
 
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
-        if proc.content.start:
+
+        if proc.exported and proc.content.start is not None:
+            # Exported procedure end calling the corresponding transition
+            # procedure that allows user to change state after RPC call
+            # We need to update all the transitions of the procedure
+            # (including floating labels) that contain a return statement
+            # andadd the call to the __transition procedure before
+            trans_with_return = []
+            for each in chain ([proc.content.start.transition],
+                    (lab.transition for lab in proc.content.floating_labels)):
+                def rec_transition(trans : ogAST.Transition):
+                    if trans.terminator:
+                        if trans.terminator.kind == 'return':
+                            trans_with_return.append (trans)
+                    elif isinstance(trans.actions[-1], ogAST.Decision):
+                        # There is no terminator, so the transition may finish
+                        # with a DECISION, we must check it recursively
+                        for answer in trans.actions[-1].answers:
+                            rec_transition (answer.transition)
+                rec_transition (each)
+
+            for trans in trans_with_return:
+                call_trans = ogAST.ProcedureCall()
+                call_trans.inputString = f'{proc.inputString}__transition'
+                trans_proc = f'{proc.inputString.lower()}__transition'
+                call_trans.output = [{'outputName': trans_proc,
+                                     'params': [], 'tmpVars': []}]
+                trans.actions.append(call_trans)
+
+        if proc.content.start and proc.content.start.transition:
             tr_code, tr_decl = generate(proc.content.start.transition)
         else:
-            tr_code, tr_decl = [';  //  Empty procedure'], []
+            tr_code, tr_decl = ['//  Empty procedure'], []
         # Generate code for the floating labels
         code_labels = []
         for label in proc.content.floating_labels:
@@ -405,7 +476,7 @@ def _inner_procedure(proc, **kwargs):
         code.extend(set(tr_decl))
         code.extend(tr_code)
         code.extend(code_labels)
-        code.append(u'}')
+        code.append('}')
     code.append('\n')
 
     # Reset the scope to how it was prior to the procedure definition
@@ -640,17 +711,39 @@ LD_LIBRARY_PATH=. taste-gui -l
     # Generate the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
-        proc_code, proc_declaration = generate(proc)
+        proc_code, proc_declaration = generate(proc, process_name=process_name)
         global_decls.extend(proc_declaration)
         inner_procedures_code.extend(proc_code)
 
     input_signals_code = []
 
-    for signal in process.input_signals + [{'name': timer.lower()} for timer in process.timers]:
-        if signal.get('name', u'START') == u'START':
+    for signal in process.input_signals + [
+            {'name': timer.lower()} for timer in process.timers]:
+        signame = signal.get('name', 'START')
+
+        if signame == 'START':
             continue
-        pi_header = u'void {pn}_PI_{sig_name}'.format(sig_name=signal['name'], pn=process_name.lower())
-        param_name = signal.get('param_name') or u'{}_param'.format(signal['name'])
+
+        fake_name = False
+
+        # Check if there is an exported procedure with the name of the signal
+        ignore_export = False
+        for proc in process.procedures:
+            if proc.inputString.lower() == signame.lower():
+                ignore_export = True
+
+        if ignore_export:
+            # this signal corresponds to the transitions triggered after
+            # exported procedures have been executed (synchronous PIs, or RPS)
+            # therefore it is renamed as it is not a regular PI
+            fake_name = f'{signame.lower()}__transition'
+
+        pn       = process_name.lower()
+        sig_name = signal['name'].lower()
+        name = fake_name or f'{pn}_PI_{sig_name}'
+        pi_header = f'void {name}'
+
+        param_name = signal.get('param_name') or '{}_param'.format(signal['name'])
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
@@ -698,7 +791,7 @@ LD_LIBRARY_PATH=. taste-gui -l
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    input_signals_code.append(u'{ctxt}.{inp} = *{tInp};'.format(ctxt=LPREFIX,inp=inp,tInp=param_name));
+                    input_signals_code.append(f'{LPREFIX}.{inp} = *{param_name};');
                 # Execute the corresponding transition
                 if input_def.transition:
                     input_signals_code.append('runTransition{pn}({idx});'.format(pn=process_name, idx=input_def.transition_id))

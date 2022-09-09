@@ -734,7 +734,7 @@ class Start:
 
     def trace(self):
         ''' Debug output for a START symbol '''
-        return u'START {}'.format(self.inputString)
+        return f'START {self.inputString}'
 
 
 class Procedure_start(Start):
