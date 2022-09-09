@@ -124,7 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
-**3.9.22 (09/2022)**
+**3.9.24 (09/2022)**
+- Fix C code generation backend (use renamePolicy=3)
+
+**3.9.23 (09/2022)**
 - API for asn1scc now allows calling asn1scc with renamePolicy=3
 - Minor fix in copy-paste of Label branches
 

@@ -218,7 +218,7 @@ def set_global_DV(asn1_filenames):
     global DV
     global USER_DEFINED_TYPES
     if '--toC' in sys.argv:
-        rename_policy = ASN1.RenameOnlyConflicting
+        rename_policy = ASN1.SystematicRenameAllEnumerants
     else:
         rename_policy = ASN1.NoRename
     try:

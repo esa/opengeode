@@ -2063,10 +2063,30 @@ def _sequence_of(seqof):
 def _choiceitem(choice):
     ''' Return the c code for a CHOICE expression '''
     stmts, choice_str, local_decl = expression(choice.value['value'])
-    if isinstance(choice.value['value'], (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-        choice_str = array_content(choice.value['value'], choice_str, find_basic_type(choice.value['value'].exprType))
-        choice_str = u'{cs}'.format(cs=choice_str)
-    string = u'({cType}){{ .kind = {opt}_PRESENT, .u.{opt} = {expr} }}'.format(cType=type_name(choice.exprType), opt=choice.value['choice'], expr=choice_str)
+
+    bty = find_basic_type(choice.value['value'].exprType)
+
+    if isinstance(choice.value['value'], (ogAST.PrimSequenceOf,
+                                          ogAST.PrimStringLiteral)):
+        if bty.kind.startswith('Integer'):
+            choice_str = choice.value['value'].numeric_value
+        else:
+            choice_str = array_content(choice.value['value'], choice_str, bty)
+    opt = choice.value['choice']
+
+    # look for the right spelling of the choice discriminant
+    # (normally field_PRESENT, but can be prefixed by the type name if there
+    # is a namespace conflict)
+    basic = find_basic_type(choice.exprType)
+    prefix = 'CHOICE_NOT_FOUND'
+    search = choice.value['choice'].lower().replace('-', '_')
+    for each in basic.Children:
+        curr_choice = each.lower().replace('-', '_')
+        if curr_choice == search:
+            prefix = basic.Children[each].EnumID
+            break
+
+    string = f'({type_name(choice.exprType)}){{ .kind = {prefix}, .u.{opt} = {choice_str} }}'
     return stmts, str(string), local_decl
 
 def append_size(append):
