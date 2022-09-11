@@ -739,7 +739,7 @@ LD_LIBRARY_PATH=. taste-gui -l
             fake_name = f'{signame.lower()}__transition'
 
         pn       = process_name.lower()
-        sig_name = signal['name'].lower()
+        sig_name = signal['name']
         name = fake_name or f'{pn}_PI_{sig_name}'
         pi_header = f'void {name}'
 
