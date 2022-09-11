@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.25 (09/2022)**
+- Detect risk of division by zero with the modulo operator
+- Fix range of ASN.1 constants
+
 **3.9.24 (09/2022)**
 - Fix C code generation backend (use renamePolicy=3)
 
