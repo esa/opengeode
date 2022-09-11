@@ -2224,12 +2224,12 @@ def arithmetic_expression(root, context):
         if isinstance(expr.left, ogAST.PrimConstant):
             minL = maxL = get_asn1_constant_value(expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
-            minL = maxL = get_asn1_constant_value(expr.right.constant_value)
+            minR = maxR = get_asn1_constant_value(expr.right.constant_value)
 
         #print( "...left/right [{} .. {}]   [{} .. {}]".format(minL, maxL, minR, maxR))
 
         # compute the bounds, independently from anything else
-        bounds = {"Min" : "0", "Max": "0"}
+        bounds = {"Min" : 0, "Max": 0}
         if isinstance(expr, ogAST.ExprDiv) and (minR == 0 or maxR == 0):
             if minR == maxR == 0:
                 msg = 'Division by zero is not allowed'
@@ -2249,9 +2249,13 @@ def arithmetic_expression(root, context):
                 msg = "Negative ranges and modulo don't fit well. " \
                         "Use with caution (check Wikipedia for details)"
                 warnings.append(warning(root, msg))
-            possible_values = [minL % minR, minL % maxR, maxL % minR, maxL % maxR]
-            bounds["Min"] = min(possible_values)
-            bounds["Max"] = max(possible_values)
+            if minR == 0 or maxR == 0:
+                msg = f'Modulo: range [{minR} .. {maxR}] allows division by zero'
+                errors.append(error(root, msg))
+            else:
+                possible_values = [minL % minR, minL % maxR, maxL % minR, maxL % maxR]
+                bounds["Min"] = min(possible_values)
+                bounds["Max"] = max(possible_values)
         else:
             bounds = find_bounds(expr.op, minL, maxL, minR, maxR)
 
