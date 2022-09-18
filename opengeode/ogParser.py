@@ -3592,11 +3592,11 @@ def check_duplicate_procedures(ctxt, proc, errors=[]):
                     issue = "inconsistent return types"
                     mismatch = True
                 for idx, val in enumerate(left):
-                    if(right[idx]['name'] != val['name']
+                    if(right[idx]['name'].lower() != val['name'].lower()
                      or type_name(right[idx]['type']) != type_name(val['type'])
                      or right[idx]['direction'] != val['direction']):
                         mismatch = True
-                        issue = f"parameter {idx} inconsistency (name or type)"
+                        issue = f"parameter {idx+1} inconsistency (name or type)"
                         break
                 if mismatch:
                     errors.append(f'Procedure {proc.inputString}: '
