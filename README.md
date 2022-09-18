@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.27 (09/2022)**
+- Fix issue with the spelling of the C symbol for exported procedurs (Ada backend)
+- Fix check of procedure parameters (definition vs referenced declaration)
+
 **3.9.26 (09/2022)**
 - Fix copy paste issues (paste state in procedure, and label transitions)
 
