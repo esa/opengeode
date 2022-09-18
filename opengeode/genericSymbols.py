@@ -1257,6 +1257,17 @@ class VerticalSymbol(Symbol):
         # in a branch (e.g. DECISION) all items must know the first element
         # (used for computing the branch size and the connection point)
         self.branch_entrypoint = parent.branch_entrypoint
+
+        # The inserted symbol may have followers for example if it is
+        # a label that is pasted, and that contains a transision. In that
+        # case we must set the chilren's new parent to the last element
+        # of the inserted symbol.
+        new_parent = self
+        follower = self.next_aligned_symbol()
+        while follower is not None:
+            new_parent = follower
+            follower = follower.next_aligned_symbol()
+
         # Check if parent has a connection point (e.g. DECISION)
         # i.e. Check if we are inserting below a decision group
         if hasattr(parent, 'connectionPoint'):
@@ -1270,10 +1281,11 @@ class VerticalSymbol(Symbol):
                             isinstance(child.child, Comment) or
                             isinstance(child, Comment)):
                         continue
+
                     if not isinstance(child, Connection) or not isinstance(
                             child.child, HorizontalSymbol):
-                        child.setParentItem(self)
-                        child.parent = self
+                        child.setParentItem(new_parent)
+                        child.parent = new_parent
                         if isinstance(child, Symbol):
                             child_y_diff = (
                                     child.y() -
@@ -1293,8 +1305,8 @@ class VerticalSymbol(Symbol):
                             isinstance(child.child, Comment)):
                         # Don't change the parent of a comment
                         continue
-                    child.parent = self
-                    child.setParentItem(self)
+                    child.parent = new_parent
+                    child.setParentItem(new_parent)
                     # move child position down when inserting
                     if isinstance(child, Symbol):
                         child.pos_y = 0.0

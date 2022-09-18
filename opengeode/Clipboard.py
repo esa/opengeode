@@ -169,6 +169,12 @@ def paste_floating_objects(scene):
     LOG.debug('PASTING FLOATING OBJECTS')
 
     for item_list, terminators in COPY_PASTE:
+        # Check if there are NEXTSTATE terminators while we try to paste
+        # inside a prodcedure (this is forbidden, procedures have no states)
+        for term in terminators:
+            if term.kind == 'next_state' and scene.context == 'procedure':
+                raise TypeError("Cannot copy states inside a procedure")
+
         # states is a list passed as parameter - not a generator:
         start = [i for i in item_list if isinstance(i, ogAST.Start)]
         states = [i for i in item_list if isinstance(i, ogAST.State)]
@@ -226,7 +232,14 @@ def paste_below_item(parent, scene):
     ''' Paste items under a selected symbol '''
     LOG.debug('Pasting below item ' + repr(parent)[slice(0, 20)])
     symbols = []
-    for item_list, _ in COPY_PASTE:
+    for item_list, terminators in COPY_PASTE:
+
+        # Check if there are NEXTSTATE terminators while we try to paste
+        # inside a prodcedure (this is forbidden, procedures have no states)
+        for term in terminators:
+            if term.kind == 'next_state' and scene.context == 'procedure':
+                raise TypeError("Cannot copy states inside a procedure")
+
         states = [i for i in item_list if isinstance(i, ogAST.State)]
         for i in [c for c in item_list if not isinstance
                 (c, (ogAST.State, ogAST.TextArea, ogAST.Start))]:
@@ -251,13 +264,6 @@ def paste_below_item(parent, scene):
                 Renderer.add_to_scene(new_item, scene)
                 new_item.pos_x = new_item.pos_y = 0.0
                 symbols.append(new_item)
-                if isinstance(new_item, sdlSymbols.Label):
-                    # Labels are rendered as a transition, but we must add
-                    # all the individual signals to the list
-                    follower = new_item.next_aligned_symbol()
-                    while follower is not None:
-                        symbols.append(follower)
-                        follower = follower.next_aligned_symbol()
             else:
                 raise TypeError('Cannot paste here ({t1} cannot follow {t2})'
                                 .format(t1=type(new_item), t2=type(parent)))

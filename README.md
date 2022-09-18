@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.26 (09/2022)**
+- Fix copy paste issues (paste state in procedure, and label transitions)
+
 **3.9.25 (09/2022)**
 - Detect risk of division by zero with the modulo operator
 - Fix range of ASN.1 constants
