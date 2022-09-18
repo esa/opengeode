@@ -535,6 +535,14 @@ package body {process.name}_RI is''']
         process_level_decl.extend(proc_local)
         inner_procedures_code.extend(proc_code)
         if proc.exported:
+            spelling = proc.inputString
+            # Exported procedures are declared in the process
+            # We must take the proper spelling (case) from there, since
+            # the definition may have a different one.
+            for p_decl in process.procedures:
+                if p_decl.inputString.lower() == proc.inputString.lower() \
+                        and p_decl.referenced:
+                    spelling = p_decl.inputString
             # Exported procedures must be declared in the .ads
             pi_header = procedure_header(proc)
             ads_template.append(f'{pi_header};')
@@ -543,7 +551,7 @@ package body {process.name}_RI is''']
                 prefix = f'p{SEPARATOR}' if not proc.exported else ''
                 ads_template.append(
                    f'pragma Export (C, {prefix}{proc.inputString},'
-                   f' "{process.name.lower()}_PI_{proc.inputString}");')
+                   f' "{process.name.lower()}_PI_{spelling}");')
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
