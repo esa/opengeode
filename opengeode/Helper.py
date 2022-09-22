@@ -382,7 +382,8 @@ def flatten(process, sep=u'_'):
             for inp in chain(each.inputs,
                              each.continuous_signals,
                              each.connects):
-                inp.transition.possible_states.extend(prefix + name.lower()
+                if inp.transition is not None:
+                    inp.transition.possible_states.extend(prefix + name.lower()
                                                 for name in each.statelist)
 
     set_terminator_states(process)
