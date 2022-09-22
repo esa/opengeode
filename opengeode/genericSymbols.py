@@ -300,7 +300,7 @@ class Symbol(QObject, QGraphicsPathItem):
 
     def __str__(self):
         ''' Return the text inside the symbol '''
-        return str(self.text) or u'no_name'
+        return str(self.text) or 'no_name'
 
     def get_ast(self, pr_text):
         ''' Return the symbol in the AST form, as returned by the parser '''

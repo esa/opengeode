@@ -164,7 +164,9 @@ class EditableText(QGraphicsTextItem):
                     (hlink=hyperlink, text=text.replace('\n', '<br>')))
         else:
             self.setPlainText(text)
-        self.setTextInteractionFlags(Qt.TextEditorInteraction
+        self.setTextInteractionFlags( Qt.TextSelectableByMouse
+                                     | Qt.TextEditable
+                                     | Qt.TextSelectableByKeyboard
                                      | Qt.LinksAccessibleByMouse
                                      | Qt.LinksAccessibleByKeyboard)
         self.completer_has_focus = False
@@ -357,6 +359,7 @@ class EditableText(QGraphicsTextItem):
             self.completer.hide()
             self.completer.resize(0, 0)
         super().mousePressEvent(event)
+
 
     # pylint: disable=C0103
     def focusOutEvent(self, event):
