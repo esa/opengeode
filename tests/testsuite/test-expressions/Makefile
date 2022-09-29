@@ -26,7 +26,7 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: test_ada.adb expressions.adb
-	gnat make test_ada
+	gnat make test_ada -O$(O) -g -ffunction-sections -fdata-sections -Wl,-gc-sections
 	./test_ada | diff expected -
 
 expressions.adb: expressions.pr expressions_ri.adb
