@@ -25,10 +25,19 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: expressions.ali dataview-uniq.o | test_ada.o
-	$(GNATBIND) -n expressions.ali
-	$(GNATLINK) test_ada.o expressions.ali -lm -o test_ada
-	./test_ada
+test-ada: test_ada.adb expressions.adb
+	gnat make test_ada
+	./test_ada | diff expected -
+
+expressions.adb: expressions.pr expressions_ri.adb
+	$(OPENGEODE) expressions.pr system_structure.pr --toAda
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+
+test_ada.adb: test_ada.ada
+	cp test_ada.ada test_ada.adb
+
+expressions_ri.adb: expressions_ri.ada
+	cp expressions_ri.ada expressions_ri.adb
 
 test-c: expressions.c test_c.o dataview-uniq.o
 	$(CC) expressions.c -c -o expressions.o
