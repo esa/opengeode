@@ -21,6 +21,7 @@
      <file>icons/task.png</file>
      <file>icons/textsymbol.png</file>
      <file>icons/texture.png</file>
+     <file>icons/splashscreen.png</file>
      <file>opengeode.ui</file>
      <file>hyperlink.ui</file>
      <file>statechart_cfg.ui</file>

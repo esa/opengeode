@@ -141,7 +141,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.9.27'
+__version__ = '3.9.28'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2511,7 +2511,7 @@ class OG_MainWindow(QMainWindow):
             scene.context_change.connect(self.update_datadict_window)
             scene.word_under_cursor.connect(self.select_in_datadict_window)
 
-    def start(self, options):
+    def start(self, options, splash, app):
         ''' Initializes all objects to start the application '''
 
         file_name = options.files
@@ -2637,14 +2637,19 @@ class OG_MainWindow(QMainWindow):
         self.show()
 
         if file_name:
+            splash.showMessage("Loading model...",
+                       alignment=Qt.AlignCenter | Qt.AlignBottom)
+            app.processEvents()
             types = []
             self.view.load_file(file_name)
         else:
             # Create a default context - at Block level - for the autocompleter
             sdlSymbols.CONTEXT = ogAST.Block()
             self.update_datadict_window()
+
         # After file was loaded, try to restore window geometry
         self.restoreApplicationState()
+
 
 
     @Slot(QMdiSubWindow)
@@ -3221,7 +3226,17 @@ def gui(options):
     ui_file.open(QFile.ReadOnly)
     my_widget = loader.load(ui_file)
     ui_file.close()
-    my_widget.start(options)
+    # Create a splash screen while model is loading
+    pixmap = QPixmap(":/icons/splashscreen.png")
+    splash = QSplashScreen(pixmap)
+    splash.show()
+    splash.showMessage("Welcome to Opengeode!",
+                       alignment=Qt.AlignCenter | Qt.AlignBottom)
+    app.processEvents()
+
+    my_widget.start(options, splash, app)
+
+    splash.finish(my_widget)
 
     return app.exec()
 
