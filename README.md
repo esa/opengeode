@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.29 (10/2022)**
+- Introduce inline help
+
 **3.9.28 (09/2022)**
 - Added splashscreen while loading the model
 
