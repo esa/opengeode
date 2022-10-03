@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QtHelpProject version="1.0">
+    <namespace>esa.int.taste.opengeode</namespace>
+    <virtualFolder>doc</virtualFolder>
+    <customFilter name="OpenGEODE 3.9">
+        <filterAttribute>opengeode</filterAttribute>
+        <filterAttribute>3.9</filterAttribute>
+    </customFilter>
+    <filterSection>
+        <filterAttribute>opengeode</filterAttribute>
+        <filterAttribute>3.9</filterAttribute>
+        <toc>
+            <section title="SDL Tutorial" ref="Detailed_SDL_tutorial.html">
+                <section title="Introduction" ref="Detailed_SDL_tutorial.html#Introduction"/>
+                <section title="SDL Concepts Overview" ref="Detailed_SDL_tutorial.html#SDL_concepts_overview"/>
+                <section title="Start_Symbol" ref="Detailed_SDL_tutorial.html#Start_symbol"/>
+            </section>
+        </toc>
+        <keywords>
+            <keyword name="index" id="index" ref="Detailed_SDL_tutorial.html"/>
+            <keyword name="output" id="output" ref="Detailed_SDL_tutorial.html#Output"/>
+        </keywords>
+        <files>
+            <file>classic.css</file>
+            <file>*.html</file>
+            <file>img/*.PNG</file>
+        </files>
+    </filterSection>
+</QtHelpProject>

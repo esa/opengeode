@@ -99,6 +99,8 @@ from .sdlSymbols import(Input,
 
 from .TextInteraction import EditableText
 
+from .sdlHelp import OG_HelpBrowser
+
 # Icons and png files generated from the resource file:
 from . import icons  # NOQA
 
@@ -2485,7 +2487,8 @@ class OG_MainWindow(QMainWindow):
         self.statechart_scene = None
         self.vi_bar = Vi_bar()
         # Docking areas
-        self.datatypes_browser = None  # type: QTextBrowser
+        self.asn1_browser = None  # type: QTextBrowser
+        self.help_browser = None  # type: QTextBrowser
         #self.datatypes_scene = None
         self.asn1_area = None
         # MDI area (need to keep them to avoid segfault due to pyside bugs)
@@ -2601,9 +2604,12 @@ class OG_MainWindow(QMainWindow):
         # Set up the dock area to display the ASN.1 Data model
         asn1_dock = self.findChild(QDockWidget, 'datatypes_dock')
         dict_dock = self.findChild(QDockWidget, 'datadict_dock')
+        help_dock = self.findChild(QDockWidget, 'help_dock')
         self.tabifyDockWidget(asn1_dock, dict_dock)
+        self.tabifyDockWidget(asn1_dock, help_dock)
         self.asn1_browser = self.findChild(QTextBrowser, 'asn1_browser')
         self.view.update_asn1_dock.connect(self.set_asn1_view)
+        self.help_browser = self.findChild(OG_HelpBrowser, 'help_browser')
 
         # Set up the data dictionary window
         self.datadict = self.findChild(QTreeWidget, 'datadict')
@@ -3222,6 +3228,7 @@ def gui(options):
     loader = QUiLoader()
     loader.registerCustomWidget(OG_MainWindow)
     loader.registerCustomWidget(SDL_View)
+    loader.registerCustomWidget(OG_HelpBrowser)
     ui_file = QFile(':/opengeode.ui')
     ui_file.open(QFile.ReadOnly)
     my_widget = loader.load(ui_file)

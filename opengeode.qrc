@@ -33,7 +33,8 @@
      <file>fonts/UbuntuMono-BI.ttf</file>
      <file>fonts/UbuntuMono-R.ttf</file>
      <file>fonts/UbuntuMono-RI.ttf</file>
-     <file>misc/lander.mp3</file>
      <file>misc/pretty_print_asn1.stg</file>
+     <file>help/opengeode.qhc</file>
+     <file>help/opengeode.qch</file>
  </qresource>
  </RCC>
