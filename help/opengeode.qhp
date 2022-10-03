@@ -13,17 +13,61 @@
             <section title="SDL Tutorial" ref="Detailed_SDL_tutorial.html">
                 <section title="Introduction" ref="Detailed_SDL_tutorial.html#Introduction"/>
                 <section title="SDL Concepts Overview" ref="Detailed_SDL_tutorial.html#SDL_concepts_overview"/>
-                <section title="Start_Symbol" ref="Detailed_SDL_tutorial.html#Start_symbol"/>
+                <section title="Start" ref="Detailed_SDL_tutorial.html#Start_symbol"/>
+                <section title="State" ref="Detailed_SDL_tutorial.html#State_.2F_Nextstate"/>
+                <section title="Input" ref="Detailed_SDL_tutorial.html#Input"/>
+                <section title="Output" ref="Detailed_SDL_tutorial.html#Output"/>
+                <section title="Continuous Signal" ref="Detailed_SDL_tutorial.html#Continuous_signals"/>
+                <section title="Connect" ref="Detailed_SDL_tutorial.html#Connection"/>
+                <section title="Task" ref="Detailed_SDL_tutorial.html#TASK"/>
+                <section title="Procedure Call" ref="Detailed_SDL_tutorial.html#Procedure_calls"/>
+                <section title="Decision" ref="Detailed_SDL_tutorial.html#Decisions"/>
+		<section title="Join/Label" ref="Detailed_SDL_tutorial.html#Labels_and_branches"/>
+                <section title="Procedure" ref="Detailed_SDL_tutorial.html#Procedures"/>
+                <section title="Composite State" ref="Detailed_SDL_tutorial.html#Composite_states"/>
+            </section>
+            <section title="How to work with data" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html">
+                <section title="Introduction" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#Introduction"/>
+                <section title="Integer" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#INTEGER_types"/>
+                <section title="Real" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#REAL_types"/>
+                <section title="Enumerated" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#ENUMERATED_types"/>
+                <section title="Choice" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#CHOICE_types"/>
+                <section title="Arrays" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SEQUENCE_OF_types_.28arrays.29"/>
+                <section title="Sequence" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SEQUENCE_types_.28records.29"/>
+                <section title="Strings" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#STRING_types"/>
+                <section title="Timer" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#TIMER_types"/>
             </section>
         </toc>
         <keywords>
             <keyword name="index" id="index" ref="Detailed_SDL_tutorial.html"/>
-            <keyword name="output" id="output" ref="Detailed_SDL_tutorial.html#Output"/>
+            <keyword name="Introduction" id="sdl_intro" ref="Detailed_SDL_tutorial.html#Introduction"/>
+            <keyword name="SDL Concepts Overview" id="sdl_concepts" ref="Detailed_SDL_tutorial.html#SDL_concepts_overview"/>
+            <keyword name="Start" id="start" ref="Detailed_SDL_tutorial.html#Start_symbol"/>
+            <keyword name="State" id="state" ref="Detailed_SDL_tutorial.html#State_.2F_Nextstate"/>
+            <keyword name="Input" id="input" ref="Detailed_SDL_tutorial.html#Input"/>
+            <keyword name="Output" id="output" ref="Detailed_SDL_tutorial.html#Output"/>
+            <keyword name="Continuous Signal" id="continuous_signal" ref="Detailed_SDL_tutorial.html#Continuous_signals"/>
+            <keyword name="Connect" id="connect" ref="Detailed_SDL_tutorial.html#Connection"/>
+            <keyword name="Task" id="task" ref="Detailed_SDL_tutorial.html#TASK"/>
+            <keyword name="Procedure Call" id="procedure_call" ref="Detailed_SDL_tutorial.html#Procedure_calls"/>
+            <keyword name="Decision" id="decision" ref="Detailed_SDL_tutorial.html#Decisions"/>
+            <keyword name="Join/Label" id="join" ref="Detailed_SDL_tutorial.html#Labels_and_branches"/>
+            <keyword name="Procedure" id="procedure" ref="Detailed_SDL_tutorial.html#Procedures"/>
+            <keyword name="Composite State" id="composite_state" ref="Detailed_SDL_tutorial.html#Composite_states"/>
+            <keyword name="Integer"    id="integer"     ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#INTEGER_types"/>
+            <keyword name="Real"       id="real"        ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#REAL_types"/>
+            <keyword name="Enumerated" id="enumerated"  ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#ENUMERATED_types"/>
+            <keyword name="Choice"     id="choice"      ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#CHOICE_types"/>
+            <keyword name="Arrays"     id="sequence_of" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SEQUENCE_OF_types_.28arrays.29"/>
+            <keyword name="Sequence"   id="sequence"    ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SEQUENCE_types_.28records.29"/>
+            <keyword name="Strings"    id="strings"     ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#STRING_types"/>
+            <keyword name="Timer"      id="timer"       ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#TIMER_types"/>
         </keywords>
         <files>
-            <file>classic.css</file>
-            <file>*.html</file>
+            <file>Detailed_SDL_tutorial.html</file>
+            <file>Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html</file>
             <file>img/*.PNG</file>
+            <file>img/*.png</file>
         </files>
     </filterSection>
 </QtHelpProject>
