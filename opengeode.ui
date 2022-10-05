@@ -182,13 +182,6 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_3">
-    <layout class="QGridLayout" name="gridLayout_3">
-     <item row="0" column="0">
-      <widget class="OG_HelpBrowser" name="help_browser"/>
-     </item>
-    </layout>
-   </widget>
   </widget>
 
   <action name="actionOpen">

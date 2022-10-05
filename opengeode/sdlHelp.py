@@ -25,7 +25,7 @@ from . import icons
 import time
 
 
-class OG_HelpEngine(QHelpEngineCore):
+class OG_HelpEngine(QHelpEngine):
     def __init__(self):
         ''' Load the help file '''
         # QHelp does not work with Qt resources so we must first
@@ -39,7 +39,7 @@ class OG_HelpEngine(QHelpEngineCore):
                 tmpfile.write(content.data())
         super().__init__('/tmp/opengeode.qhc')
         if not self.setupData():
-            print(self.error())
+            print("QHelp error:", self.error())
 
 class OG_HelpBrowser(QTextBrowser):
     def __init__(self, parent=None):
@@ -51,7 +51,6 @@ class OG_HelpBrowser(QTextBrowser):
     def showHelpforKeyword(self, idx):
         if self.engine:
             docs = self.engine.documentsForIdentifier(idx)
-            print(docs)
             if docs:
                 self.setSource(docs[0].url)
 

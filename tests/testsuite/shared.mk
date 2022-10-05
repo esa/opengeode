@@ -6,7 +6,7 @@ LLC=llc
 GNATMAKE=gnatmake -gnat2012
 GNATBIND=gnatbind
 GNATLINK=gnatlink -lgcov -coverage 
-O?=0
+O=0
 TESTQGEN_PARSE=../testqgen.py test-qgen-parse
 TESTQGEN_ADA=../testqgen.py test-qgen-ada
 TESTQGEN_C=../testqgen.py test-qgen-c
@@ -42,7 +42,7 @@ test-promela: FORCE
 	$(GNATMAKE) -O$(O) -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal $<  
+	$(ASN1SCC) -c -renamePolicy 3 -typePrefix asn1Scc -equal $<  
 	$(CC) -O$(O) -c -g $*.c
 
 %.o: %.c FORCE

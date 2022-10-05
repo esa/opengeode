@@ -126,6 +126,7 @@ Changelog
 =========
 **3.9.29 (10/2022)**
 - Introduce inline help
+- Fix code generation (decision answer with multiple values)
 
 **3.9.28 (09/2022)**
 - Added splashscreen while loading the model

@@ -2609,7 +2609,41 @@ class OG_MainWindow(QMainWindow):
         self.tabifyDockWidget(asn1_dock, help_dock)
         self.asn1_browser = self.findChild(QTextBrowser, 'asn1_browser')
         self.view.update_asn1_dock.connect(self.set_asn1_view)
-        self.help_browser = self.findChild(OG_HelpBrowser, 'help_browser')
+        #self.help_browser = self.findChild(OG_HelpBrowser, 'help_browser')
+        # Set up the content of the Help tab: use a splitter to have an
+        # area with Index/Contents/Search and an area with the actual html
+        # content.
+        self.help_browser = OG_HelpBrowser()
+        splitter = QSplitter (Qt.Horizontal)
+        tWidget = QTabWidget()
+        tWidget.setMaximumWidth(200)
+        helpContent = self.help_browser.engine.contentWidget()
+        helpIndex   = self.help_browser.engine.indexWidget()
+        tWidget.addTab(helpContent, "Contents")
+        tWidget.addTab(helpIndex,   "Index")
+        # Search tab:
+        helpSearch     = self.help_browser.engine.searchEngine()
+        queryWidget    = helpSearch.queryWidget()
+        resultWidget   = helpSearch.resultWidget()
+        searchSplitter = QSplitter(Qt.Vertical)
+        searchSplitter.insertWidget(0, queryWidget)
+        searchSplitter.insertWidget(1, resultWidget)
+        tWidget.addTab(searchSplitter, "Search")
+        def search_help():
+            # for some reason the search widget does not search automatically
+            helpSearch.search(queryWidget.searchInput())
+        queryWidget.search.connect(search_help)
+
+        splitter.insertWidget(0, tWidget)
+        splitter.insertWidget(1, self.help_browser)
+        help_dock.setWidget(splitter)
+        helpContent.linkActivated.connect(self.help_browser.setSource)
+        helpIndex.linkActivated.connect(self.help_browser.setSource)
+        resultWidget.requestShowLink.connect(self.help_browser.setSource)
+
+
+
+
 
         # Set up the data dictionary window
         self.datadict = self.findChild(QTreeWidget, 'datadict')
