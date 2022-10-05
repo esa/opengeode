@@ -2,21 +2,7 @@
 process orchestrator
 /* CIF comment (405, 192), (70, 35) */
 comment 'Hello';
-    /* CIF TEXT (796, 132), (267, 140) */
-    -- Text area for declarations and comments
-    
-    dcl forty Enum_With_Values := foo,
-           two      Enum_With_Values := bar;
-    /* CIF ENDTEXT */
-    /* CIF TEXT (1054, 1760), (267, 140) */
-    -- Text area for declarations and comments
-    
-    dcl checkForRange IntForRangeCheck;
-    dcl fs FixedString;
-    dcl sef SeqEnumFix;
-    dcl lv taSTE_Peek_id := 255;
-    /* CIF ENDTEXT */
-    /* CIF TEXT (0, 94), (441, 473) */
+    /* CIF TEXT (0, 94), (441, 488) */
     dcl seq tastE_Peek_id_list := { 1,2,3,4,5};
     
     dcl fixed FixedString := 'Hello';
@@ -48,8 +34,36 @@ comment 'Hello';
     --   b { foo a },
     --   c  { 42 }
     --};
+    dcl stringEq IaSrtring := "foo" ;
     /* CIF ENDTEXT */
-    /* CIF procedure (888, 459), (75, 35) */
+    /* CIF TEXT (1054, 1760), (267, 140) */
+    -- Text area for declarations and comments
+    
+    dcl checkForRange IntForRangeCheck;
+    dcl fs FixedString;
+    dcl sef SeqEnumFix;
+    dcl lv taSTE_Peek_id := 255;
+    /* CIF ENDTEXT */
+    /* CIF TEXT (796, 132), (267, 140) */
+    -- Text area for declarations and comments
+    
+    dcl forty Enum_With_Values := foo,
+           two      Enum_With_Values := bar;
+    /* CIF ENDTEXT */
+    /* CIF procedure (1582, 221), (70, 35) */
+    procedure p3;
+        /* CIF TEXT (51, 35), (170, 140) */
+        returns MyEnum;
+        /* CIF ENDTEXT */
+        /* CIF START (317, 82), (70, 35) */
+        START;
+            /* CIF return (334, 137), (35, 35) */
+            return a;
+    endprocedure;
+    /* CIF procedure (1581, 175), (87, 35) */
+    procedure emptyproc;
+    endprocedure;
+    /* CIF procedure (887, 459), (75, 35) */
     procedure numProc;
         /* CIF START (161, 82), (70, 35) */
         START;
@@ -74,19 +88,6 @@ comment 'Hello';
             enddecision;
             /* CIF return (178, 464), (35, 35) */
             return ;
-    endprocedure;
-    /* CIF procedure (1582, 175), (87, 35) */
-    procedure emptyproc;
-    endprocedure;
-    /* CIF procedure (1582, 221), (70, 35) */
-    procedure p3;
-        /* CIF TEXT (51, 35), (170, 140) */
-        returns MyEnum;
-        /* CIF ENDTEXT */
-        /* CIF START (317, 82), (70, 35) */
-        START;
-            /* CIF return (334, 137), (35, 35) */
-            return a;
     endprocedure;
     /* CIF START (596, 224), (80, 36) */
     START;
@@ -199,15 +200,15 @@ endfor;
         decision myenum
         /* CIF comment (710, 1975), (161, 35) */
         comment 'Check case insensitivity';
-            /* CIF ANSWER (528, 2041), (70, 23) */
+            /* CIF ANSWER (441, 2041), (70, 23) */
             (a):
-            /* CIF ANSWER (608, 2041), (70, 23) */
+            /* CIF ANSWER (522, 2041), (70, 23) */
             (B):
-            /* CIF ANSWER (688, 2041), (70, 23) */
+            /* CIF ANSWER (603, 2041), (70, 23) */
             (c):
-            /* CIF ANSWER (768, 2041), (70, 23) */
+            /* CIF ANSWER (684, 2041), (70, 23) */
             (d):
-            /* CIF ANSWER (848, 2041), (70, 23) */
+            /* CIF ANSWER (765, 2041), (70, 23) */
             (Ee):
         enddecision;
         /* CIF decision (577, 2080), (117, 50) */
@@ -230,13 +231,28 @@ endfor;
         task fs(lv mod 4) := 255;
         /* CIF task (497, 2370), (276, 35) */
         task checkforrange := (checkforrange +1) mod 4;
-        /* CIF NEXTSTATE (585, 2420), (101, 35) */
+        /* CIF decision (599, 2425), (72, 50) */
+        decision stringEq
+        /* CIF comment (692, 2432), (197, 53) */
+        comment 'check that comma-separated
+answers are properly handled
+in backends';
+            /* CIF ANSWER (690, 2495), (70, 23) */
+            ("baz"):
+                /* CIF PROCEDURECALL (641, 2538), (169, 35) */
+                call writeln ("StringEq: FAIL");
+            /* CIF ANSWER (492, 2495), (93, 23) */
+            ("foo" , "bar"):
+                /* CIF PROCEDURECALL (451, 2541), (175, 35) */
+                call writeln ("StringEq: PASS");
+        enddecision;
+        /* CIF NEXTSTATE (585, 2592), (101, 35) */
         NEXTSTATE Wait_for_GUI;
-    /* CIF state (1182, 479), (70, 35) */
+    /* CIF state (1181, 479), (70, 35) */
     state Third;
-        /* CIF input (1161, 534), (113, 35) */
+        /* CIF input (1160, 534), (113, 35) */
         input pulse(myenum);
-            /* CIF decision (1183, 589), (70, 50) */
+            /* CIF decision (1182, 589), (70, 50) */
             decision call p3
             /* CIF comment (1273, 596), (159, 38) */
             comment 'Should display "call p3"
@@ -251,16 +267,16 @@ If not, there is a bug';
     endstate;
     /* CIF state (1168, 374), (102, 35) */
     state AnotherState;
-        /* CIF input (1160, 429), (113, 35) */
+        /* CIF input (1159, 429), (113, 35) */
         input pulse(myenum);
-            /* CIF NEXTSTATE (1182, 479), (70, 35) */
+            /* CIF NEXTSTATE (1181, 479), (70, 35) */
             NEXTSTATE Third;
     endstate;
-    /* CIF state (1169, 167), (101, 35) */
+    /* CIF state (1168, 167), (101, 35) */
     state Wait_for_GUI;
-        /* CIF input (1163, 224), (113, 35) */
+        /* CIF input (1162, 224), (113, 35) */
         input pulse(myenum);
-            /* CIF PROCEDURECALL (1102, 274), (235, 35) */
+            /* CIF PROCEDURECALL (1101, 274), (235, 35) */
             call writeln('Got PULSE', num(myenum));
             /* CIF output (1149, 324), (140, 35) */
             output telemetry(myenum);
