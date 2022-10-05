@@ -2773,11 +2773,11 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                                ans_str = ia5string_raw (constant)
                             else:
                                ans_str = array_content(constant, ans_str, qbty)
-                        exp += f'{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
+                        expPart = f'{actual_type}_Equal(tmp{dec.tmpVar}, {ans_str})'
                         if op == ogAST.ExprNeq:
-                            exp = f'{sub_sep}not {exp}'
+                            exp += f'{sub_sep}not {expPart}'
                         else:
-                            exp = f'{sub_sep}{exp}'
+                            exp += f'{sub_sep}{expPart}'
                     else:
                         exp += f'{sub_sep}tmp{dec.tmpVar} {op.operand} {ans_str}'
                 else:
