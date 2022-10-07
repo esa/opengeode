@@ -449,7 +449,7 @@ class Output:
         self.height = 35
         self.line = None
         self.charPositionInLine = None
-        # list of {'outputName':ID, 'params':list of Expression, 'tmpVars':[]}
+        # list of {'outputName':ID, 'params':list of Expression, 'tmpVars':[], 'toDest': PID}
         self.output = []
         # optional comment symbol
         self.comment = None

@@ -51,7 +51,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'SET_TIMER', 'RESET_TIMER', 'VIA', 'ENTRY', 'EXIT', 'PRIORITY',
                 'SYNTYPE', 'ENDSYNTYPE', 'CONSTANTS', 'ENDPROCEDURE', 'FOR',
                 'COMMENT', 'SIGNAL', 'SIGNALLIST', 'USE', 'RETURNS', 'ANY',
-                'EXPORTED', 'REFERENCED', 'MONITOR', 'RENAMES',
+                'EXPORTED', 'REFERENCED', 'MONITOR', 'RENAMES', "TO",
                 'SUCCESSSTATES', 'ERRORSTATES', 'IGNORESTATES',
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
 
@@ -792,7 +792,7 @@ class ProcedureCall(VerticalSymbol):
     _terminal_followers = ['Join', 'State', 'ProcedureStop']
     common_name = 'procedure_call'
     # Define reserved keywords for the syntax highlighter
-    blackbold = ['\\bWRITELN\\b', '\\bWRITE\\b',
+    blackbold = ['\\bWRITELN\\b', '\\bWRITE\\b', '\\bTO\\b',
                  '\\bSET_TIMER\\b', '\\bRESET_TIMER\\b']
     redbold = SDL_REDBOLD
 

@@ -844,13 +844,7 @@ export
         ;
 
 
-/*
-remote_procedure_call
-        :       CALL remote_procedure_call_body;
-
-remote_procedure_call_body
-        :       remote_procedure_id actual_parameters? (TO destination)?;
-*/
+/* Procedure call can be a local or remote call (including TO dest) */
 procedure_call
         :       cif?
                 symbolid?
@@ -861,8 +855,8 @@ procedure_call
 
 
 procedure_call_body
-        :       procedure_id actual_parameters?
-        ->      ^(OUTPUT_BODY procedure_id actual_parameters?)
+        :       procedure_id actual_parameters? to_part?
+        ->      ^(OUTPUT_BODY procedure_id actual_parameters? to_part?)
         ;
 
 
@@ -896,6 +890,8 @@ reset_statement
         ;
 */
 
+
+/* Alternative (equivalent to #ifdef in C) are not currently supported */
 transition_option
         :       ALTERNATIVE alternative_question e=end
                 answer_part

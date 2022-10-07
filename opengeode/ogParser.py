@@ -5318,7 +5318,7 @@ def outputbody(root, context):
     ''' Parse an output body (the content excluding the CIF statement) '''
     errors = []
     warnings = []
-    body = {'outputName': '', 'params': []}
+    body = {'outputName': '', 'params': [], 'toDest': ''}
     for child in root.getChildren():
         if child.type == lexer.ID:
             for each in valid_output(context):
@@ -5333,8 +5333,20 @@ def outputbody(root, context):
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.TO:
-            pass
-        # TODO: better support of TO primitive
+            dest = child.getChild(0).toString()
+            # Check that (1) there is a PID type defined
+            # and (2) the given name in the TO clause is part of it
+            if 'PID' not in types().keys():
+                errors.append("No PID type is defined or visible")
+            else:
+                PID_Values = types()['PID'].type.EnumValues.keys()
+                for pid in PID_Values:
+                    if pid.lower() == dest.lower().replace('_', '-'):
+                        # Get proper casing,etc.
+                        body['toDest'] = pid
+                        break
+                else:
+                    errors.append(f"PID not found: {dest}")
         elif child.type == 0:
             # syntax error already caught by the parser
             pass

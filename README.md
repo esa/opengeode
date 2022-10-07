@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.30 (10/2022)**
+- Introduce parsing of OUTPUT TO and CALL TO to support multicast
+
 **3.9.29 (10/2022)**
 - Introduce inline help
 - Fix code generation (decision answer with multiple values)
