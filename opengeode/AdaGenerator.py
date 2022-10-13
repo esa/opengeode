@@ -122,7 +122,10 @@ def external_ri_list(process) -> List:
         param_spec = ''
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = f'({param_name}: in out {typename})'
+            if 'PID' in TYPES:
+                param_spec = f'({param_name}: in out {typename}; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)'
+            else:
+                param_spec = f'({param_name}: in out {typename})'
         result.append(f"procedure RI{SEPARATOR}{signal['name']}{param_spec}")
     for proc in (proc for proc in process.procedures if proc.external):
         ri_header = f'procedure RI{SEPARATOR}{proc.inputString}'
@@ -136,14 +139,22 @@ def external_ri_list(process) -> List:
                 direct = 'out'
             params.append(f'{param["name"]} : {direct} {typename}')
         if params:
-            params_spec = "({})".format("; ".join(params))
+            if 'PID' in TYPES:
+                params_spec = f"({'; '.join(params)}; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)"
+            else:
+                params_spec = "({})".format("; ".join(params))
             ri_header += params_spec
         result.append(ri_header)
 
     for timer in process.timers:
-        result.append(
+        if 'PID' in TYPES:
+            result.append(
+                f"procedure Set_{timer} (Val : in out {ASN1SCC}T_Uint32; Dest_PID : {ASN1SCC}PID : {ASN1SCC}Env)")
+            result.append(f"procedure Reset_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env")
+        else:
+            result.append(
                 f"procedure Set_{timer} (Val : in out {ASN1SCC}T_Uint32)")
-        result.append(f"procedure Reset_{timer}")
+            result.append(f"procedure Reset_{timer}")
     return result
 
 
