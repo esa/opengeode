@@ -149,8 +149,8 @@ def external_ri_list(process) -> List:
     for timer in process.timers:
         if 'PID' in TYPES:
             result.append(
-                f"procedure Set_{timer} (Val : in out {ASN1SCC}T_Uint32; Dest_PID : {ASN1SCC}PID : {ASN1SCC}Env)")
-            result.append(f"procedure Reset_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env")
+                f"procedure Set_{timer} (Val : in out {ASN1SCC}T_Uint32; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)")
+            result.append(f"procedure Reset_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)")
         else:
             result.append(
                 f"procedure Set_{timer} (Val : in out {ASN1SCC}T_Uint32)")
