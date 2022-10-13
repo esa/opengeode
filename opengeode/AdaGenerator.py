@@ -830,13 +830,21 @@ package body {process.name}_RI is''']
 
         if not generic:
             procname = process.name.lower()
-            ads_template.append(
-               f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) '
-               f'renames {process.name}_RI.Set_{timer};')
+            if 'PID' in TYPES:
+                ads_template.append(
+                   f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) '
+                   f'renames {process.name}_RI.Set_{timer};')
+                ads_template.append(
+                   f'procedure RESET_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) '
+                   f'renames {process.name}_RI.Reset_{timer};')
+            else:
+                ads_template.append(
+                   f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) '
+                   f'renames {process.name}_RI.Set_{timer};')
+                ads_template.append(
+                   f'procedure RESET_{timer} renames {process.name}_RI.Reset_{timer};')
             ri_stub_ads.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32);')
             ri_stub_adb.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) is null;')
-            ads_template.append(f'procedure RESET_{timer} '
-                    f'renames {process.name}_RI.Reset_{timer};')
             ri_stub_ads.append(f'procedure RESET_{timer};')
             ri_stub_adb.append(f'procedure RESET_{timer} is null;')
         else:
