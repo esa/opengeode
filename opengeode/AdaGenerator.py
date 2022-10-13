@@ -757,7 +757,17 @@ package body {process.name}_RI is''']
         param_spec = ''
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = f' ({param_name} : in out {typename})'
+            if 'PID' in TYPES:
+                # the PID type is provided by TASTE, does not exist otherwise
+                param_spec = f'({param_name} : in out {typename}; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)'
+            else:
+                param_spec = f'({param_name} : in out {typename})'
+        else:
+            if 'PID' in TYPES:
+                # the PID type is provided by TASTE, does not exist otherwise
+                param_spec = f'(Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)'
+            else:
+                param_spec = ''
         if not generic:
             ads_template.append('--  {}equired interface "{}"'
                                 .format("Paramless r" if not 'type' in signal
@@ -788,7 +798,18 @@ package body {process.name}_RI is''']
 
             params.append(f'{name} : {direct} {typename}')
         if params:
-            params_spec = f' ({"; ".join(params)})'
+            if 'PID' in TYPES:
+                # the PID type is provided by TASTE, does not exist otherwise
+                params_spec = f' ({"; ".join(params)}; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)'
+            else:
+                params_spec = f' ({"; ".join(params)})'
+            ri_header += params_spec
+        else:
+            if 'PID' in TYPES:
+                # the PID type is provided by TASTE, does not exist otherwise
+                params_spec = f' (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)'
+            else:
+                params_spec = ''
             ri_header += params_spec
 
         if not generic:
@@ -1262,6 +1283,7 @@ def _call_external_function(output, **kwargs):
                     LOG.warning(f'Could not find signal/procedure: {signal_name} - ignoring call')
                     return code, local_decl
         if out_sig:
+            dest_pid = out.get('toDest') or 'env'
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
@@ -1318,11 +1340,17 @@ def _call_external_function(output, **kwargs):
             name = out["outputName"]
             if list_of_params:
                 params=', '.join(list_of_params)
-                code.append(f'RI{SEPARATOR}{name}({params});')
+                if dest_pid != 'env' and 'PID' in TYPES:
+                    code.append(f'RI{SEPARATOR}{name}({params}, Dest_PID => {ASN1SCC}{dest_pid});')
+                else:
+                    code.append(f'RI{SEPARATOR}{name}({params});')
 
             else:
                 prefix = f'RI{SEPARATOR}' if need_prefix else ''
-                code.append(f'{prefix}{name};')
+                if dest_pid != 'env' and 'PID' in TYPES:
+                    code.append(f'{prefix}{name}(Dest_PID => {ASN1SCC}{dest_pid});')
+                else:
+                    code.append(f'{prefix}{name};')
         else:
             # inner procedure call without a RETURN statement
             # retrieve the procedure signature
