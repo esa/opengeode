@@ -5954,6 +5954,8 @@ def nextstate(root, context):
                               'START symbol'.format(composite.statename))
         except ValueError:
             pass
+        except AttributeError:
+            errors.append("Parsing error: NEXTSTATE is not expected here")
     return next_state_id, via, entrypoint, instance_of, errors
 
 
