@@ -2291,7 +2291,7 @@ def _append(expr, **kwargs):
 
     right_self_standing = False
     left_self_standing = isinstance(expr.left,
-            (ogAST.PrimVariable, ogAST.PrimConstant, ogAST.PrimSubstring))
+            (ogAST.PrimVariable, ogAST.PrimConstant, ogAST.PrimSubstring, ogAST.PrimIndex))
 
     left = '{}{}'.format(left_str,
                          string_payload(expr.left, left_str)
@@ -2304,9 +2304,9 @@ def _append(expr, **kwargs):
         right_self_standing = True
     else:
         payload = ''
-    if isinstance (expr.right, ogAST.PrimSubstring):
+    if isinstance (expr.right, (ogAST.PrimSubstring, ogAST.PrimIndex)):
         right_self_standing = True
-    right = '{}{}'.format(right_str, payload)
+    right = f'{right_str}{payload}'
     try:
         name_of_type = type_name (expr.expected_type)
     except (NotImplementedError, AttributeError):
@@ -2316,8 +2316,9 @@ def _append(expr, **kwargs):
         right = f"{name_of_type}_Array'({right}, others => <>)(1 .. {expr.right.exprType.Max})"
 
     if not left_self_standing and not isinstance(expr.left, ogAST.ExprAppend):
-        # e.g. is the left part of the append is mkstring(var(someIndex))
-        left = f"{name_of_type}_Array'({left}, others => <>)(1 .. {expr.left.exprType.Max})"
+        # e.g. if the left part of the append is mkstring(var(someIndex))
+        basic = find_basic_type(expr.left.exprType)
+        left = f"{name_of_type}_Array'({left}, others => <>)(1 .. {basic.Max})"
 
     ada_string = f"(({left}) & {right})"
 

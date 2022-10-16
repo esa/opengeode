@@ -771,6 +771,8 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
 
     # Add user-defined NEWTYPEs and CHOICE selector types
     choice_selections = []
+    # a newtype may reuse another newtype, so we must update the list:
+    types_with_proper_case.extend(process.user_defined_types.keys())
     for sortname, sortdef in process.user_defined_types.items():
         if sortdef.type.kind == "SequenceOfType":
             rangeMin = sortdef.type.Min
@@ -780,6 +782,8 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
                 if refTypeCase.lower().replace('-', '_') == \
                         refType.lower().replace('-', '_'):
                     break
+            else:
+                LOG.error(f"Type not found: {refType}")
             asn1_template.append(
                     f'{sortname.replace("_", "-").capitalize()} ::= SEQUENCE '
                     f'(SIZE ({rangeMin} .. {rangeMax})) OF '

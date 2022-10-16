@@ -124,6 +124,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.31 (10/2022)**
+- Fix Append operator (when appending using an index)
+- Allow custom-types (newtype array) to reference other custom types
+- Partially support array indexed by an enumerated type (fixed-sized array)
+- Support OUTPUT TO <variable of type PID>
+
 **3.9.30 (10/2022)**
 - Introduce parsing of OUTPUT TO and CALL TO to support multicast
 

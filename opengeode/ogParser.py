@@ -1406,10 +1406,8 @@ def check_type_compatibility(primary, type_ref, context):
         refSort  = type_name(type_ref)
         if type_name(primary.exprType) != type_name(type_ref):
             raise TypeError(f'{prim} resolves to sort "{primSort}" while "{refSort} was expected')
-    else:
-        raise TypeError('{prim} does not match type {t1}'
-                        .format(prim=primary.inputString,
-                                t1=type_name(type_ref)))
+    elif primary.exprType != basic_type:
+        raise TypeError(f'{primary.inputString} does not match type {type_name(type_ref)}')
     return warnings
 
 
@@ -2762,7 +2760,7 @@ def primary_index(root, context, pos):
         if float(idx_bty.Max) >= float(r_max) \
                 or float(idx_bty.Min) < 0:
             msg = f'Range of index is [{idx_bty.Min} .. {idx_bty.Max}] '\
-                   ': risk of overflow (expected range: [0 .. {int(r_max)-1}])'
+                  f': risk of overflow (expected range: [0 .. {int(r_max)-1}])'
             if is_number(idx_bty):
                 # index is a raw numer => raise an error
                 errors.append(error(root, msg))
@@ -3777,13 +3775,22 @@ def get_array_type(newtypename, root):
     indexSort = sdl_to_asn1(indexSortName)
     refSort   = sdl_to_asn1(elementSort)
 
-    # Check if indexSort is a numerical type
+    # Check if indexSort is a numerical type to get the size range
     # it is not possible to index with enumerated or string in asn1
     # (the type must be equivalent to a SEQUENCE (SIZE ...) OF)
-    if not is_numeric(indexSort):
+    # When the index is an enumerated type however, we can size
+    # with a fixed size corresponding to the number of enumerated
+    # values. In the model, the indexing still needs to be numerical
+    # (use of num(enumeratedValue) works to make the mapping)
+    if is_numeric(indexSort):
+        basicIndex = find_basic_type(indexSort)
+    elif is_enumerated(indexSort):
+        basic = find_basic_type(indexSort)
+        enm = len(basic.EnumValues.keys())        
+        basicIndex = NewInteger (enm, enm)
+    else:
         raise TypeError("Array indexing type must be numerical")
 
-    basicIndex = find_basic_type(indexSort)
     # Constructing ASN.1 AST subtype
     minValue = basicIndex.Min
     maxValue = basicIndex.Max
@@ -5346,7 +5353,10 @@ def outputbody(root, context):
                         body['toDest'] = pid
                         break
                 else:
-                    errors.append(f"PID not found: {dest}")
+                    # perhaps the TO clause uses a variable of type PID?
+                    dest_type = find_variable_type(dest, context)
+                    if type_name(dest_type) != 'PID':
+                        errors.append(f"PID not found: {dest}")
         elif child.type == 0:
             # syntax error already caught by the parser
             pass
