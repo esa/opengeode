@@ -1303,6 +1303,10 @@ def _call_external_function(output, **kwargs):
                     return code, local_decl
         if out_sig:
             dest_pid = out.get('toDest') or 'env'
+            if isinstance(dest_pid, ogAST.PrimVariable):
+                _, dest_pid, _ = expression(dest_pid) 
+            else:
+                dest_pid = f'{ASN1SCC}{dest_pid}'  # enumerated value
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
@@ -1359,15 +1363,15 @@ def _call_external_function(output, **kwargs):
             name = out["outputName"]
             if list_of_params:
                 params=', '.join(list_of_params)
-                if dest_pid != 'env' and 'PID' in TYPES:
-                    code.append(f'RI{SEPARATOR}{name}({params}, Dest_PID => {ASN1SCC}{dest_pid});')
+                if dest_pid != f'{ASN1SCC}env' and 'PID' in TYPES:
+                    code.append(f'RI{SEPARATOR}{name}({params}, Dest_PID => {dest_pid});')
                 else:
                     code.append(f'RI{SEPARATOR}{name}({params});')
 
             else:
                 prefix = f'RI{SEPARATOR}' if need_prefix else ''
-                if dest_pid != 'env' and 'PID' in TYPES:
-                    code.append(f'{prefix}{name}(Dest_PID => {ASN1SCC}{dest_pid});')
+                if dest_pid != f'{ASN1SCC}env' and 'PID' in TYPES:
+                    code.append(f'{prefix}{name}(Dest_PID => {dest_pid});')
                 else:
                     code.append(f'{prefix}{name};')
         else:
