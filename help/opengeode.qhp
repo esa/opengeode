@@ -36,6 +36,7 @@
                 <section title="Sequence" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SEQUENCE_types_.28records.29"/>
                 <section title="Strings" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#STRING_types"/>
                 <section title="Timer" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#TIMER_types"/>
+                <section title="Custom types and synonyms" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SDL_User-defined_types"/>
             </section>
         </toc>
         <keywords>
@@ -62,6 +63,7 @@
             <keyword name="Sequence"   id="sequence"    ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SEQUENCE_types_.28records.29"/>
             <keyword name="Strings"    id="strings"     ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#STRING_types"/>
             <keyword name="Timer"      id="timer"       ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#TIMER_types"/>
+            <keyword name="Synonyms"   id="synonyms"    ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#Synonyms"/>
         </keywords>
         <files>
             <file>Detailed_SDL_tutorial.html</file>
