@@ -7,19 +7,15 @@ To generate this file:
 1) get the html input from the taste wiki
 
 ```
-$ exportMediaWiki2Html.py -l http://taste.tuxfamily.org/wiki/ -g 357 
+./exportMediaWiki2Html.py --url https://taste.tuxfamily.org/wiki/ --page 357
+./exportMediaWiki2Html.py --url https://taste.tuxfamily.org/wiki/ --page 254
 ```
 
 2) create `opengeode.qch` from this input using the qhelpgenerator tool
 
 ```
-$ qhelpgenerator opengeode.qhp  -o opengeode.qch  # possibly edit the .qhp file first to match the content
+# possibly edit the .qhp file first to match the content
+cd export && ~/opt/spacecreatorenv6/Qt/6.3.1/gcc_64/libexec/qhelpgenerator -o opengeode.qch opengeode.qhp
+cd export && ~/opt/spacecreatorenv6/Qt/6.3.1/gcc_64/libexec/qhelpgenerator -o opengeode.qhc opengeode.qhcp
 ```
-
-3) create `opengeode.qhc`:
-
-```
-$ qhelpgenerator opengeode.qhcp -o opengeode.qhc  # the .qhcp file is a fixed input
-```
-
 
