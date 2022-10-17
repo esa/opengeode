@@ -2757,7 +2757,9 @@ def primary_index(root, context, pos):
         #elif is_number(idx_bty):
             # Check range only if index is given as a raw number
             # EDIT: why? the variable used for indexing must be checked
-        if float(idx_bty.Max) >= float(r_max) \
+        if not hasattr(idx_bty, "Max"):
+            errors.append(error(root, "Index has no valid range"))
+        elif float(idx_bty.Max) >= float(r_max) \
                 or float(idx_bty.Min) < 0:
             msg = f'Range of index is [{idx_bty.Min} .. {idx_bty.Max}] '\
                   f': risk of overflow (expected range: [0 .. {int(r_max)-1}])'
@@ -5357,6 +5359,12 @@ def outputbody(root, context):
                     dest_type = find_variable_type(dest, context)
                     if type_name(dest_type) != 'PID':
                         errors.append(f"PID not found: {dest}")
+                    else:
+                        prim = ogAST.PrimVariable()
+                        prim.exprType = dest_type
+                        prim.value = [dest]
+                        prim.inputString = dest
+                        body['toDest'] = prim
         elif child.type == 0:
             # syntax error already caught by the parser
             pass
