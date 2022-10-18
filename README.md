@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.9.33 (10/2022)**
+- Fix copy-paste bug with internal procedure calls
+
 **3.9.32 (10/2022)**
 - Fix support to OUTPUT TO `variable of type PID`
 
