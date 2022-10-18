@@ -804,10 +804,10 @@ class ProcedureCall(VerticalSymbol):
         self.ast = ast
         self.width, self.height = 0, 0
         super().__init__(parent,
-                                            text=ast.inputString,
-                                            x=ast.pos_x or 0,
-                                            y=ast.pos_y or 0,
-                                            hyperlink=ast.hyperlink)
+                         text=ast.inputString,
+                         x=ast.pos_x or 0,
+                         y=ast.pos_y or 0,
+                         hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
         self.setBrush(QBrush(QColor(255, 255, 202)))
         self.terminal_symbol = False

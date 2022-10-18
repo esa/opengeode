@@ -5318,7 +5318,15 @@ def procedure_call(root: antlr3.tree.CommonTree,
                     # If parent is none we are in an expression, not in 
                     # a procedure call symbol, so we must keep the full
                     # string that may contain the "call" keyword
-                    out_ast.inputString = get_input_string(root)
+                    # ... unless we are doing a copy-paste, in which case
+                    # we get there even with no error and we should not touch
+                    # the inputString!. How to detect that ?
+                    # Just a hack: if the stringstarts with a /* comment, dont
+                    # touch it. (i.e. CIF comment). TODO=fix this properly,
+                    # it would not work if there were no CIF comment...
+                    raw_str = get_input_string(root)
+                    if not raw_str.startswith("/*"):
+                        out_ast.inputString = get_input_string(root)
                 pass
     return out_ast, err, warn
 
