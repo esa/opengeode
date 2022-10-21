@@ -5364,9 +5364,13 @@ def outputbody(root, context):
                         break
                 else:
                     # perhaps the TO clause uses a variable of type PID?
-                    dest_type = find_variable_type(dest, context)
+                    try:
+                        dest_type = find_variable_type(dest, context)
+                    except AttributeError:
+                        # Variable not found
+                        dest_type = UNKNOWN_TYPE
                     if type_name(dest_type) != 'PID':
-                        errors.append(f"PID not found: {dest}")
+                        errors.append(f"PID or variable not found: {dest}")
                     else:
                         prim = ogAST.PrimVariable()
                         prim.exprType = dest_type
