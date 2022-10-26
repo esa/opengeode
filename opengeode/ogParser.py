@@ -2016,6 +2016,82 @@ def io_expression(root, context, io_expr=None):
                     context.aliases[io_expr['paramName'].lower()]   = (ptype, param_expr)
     return expr, errors, warnings
 
+
+def ground_expression(root, var, asn1_sort, context):
+    # Parse ground expressions and make all sorts of checks
+    # These are used for variable and synonym values
+    errors, warnings = [], []
+    def_value, errors, warnings = expression(root, context)
+
+    expr = ogAST.ExprAssign()
+    expr.left = ogAST.PrimVariable(debugLine=lineno())
+    expr.left.inputString = var
+    expr.left.exprType = asn1_sort
+    expr.right = def_value
+    try:
+        warnings.extend(fix_expression_types(expr, context))
+        w = Assign_Check_Range(expr)
+        if w is not None:
+            warnings.append(w)
+        def_value = expr.right
+        # Once we have resolved the expression we must check that
+        # it does not contain any reference to a variable, as
+        # it would mean it is not a ground expression. We must
+        # search the "default value" expression recursively
+        def rec_find_ref_to_variable(some_expr):
+            if isinstance(some_expr,
+                    (ogAST.PrimVariable,
+                     ogAST.PrimIndex,
+                     ogAST.PrimSelector)):
+                return some_expr.inputString
+            elif isinstance(some_expr, ogAST.PrimSequence):
+                for _, field_expr in some_expr.value.items():
+                    f = rec_find_ref_to_variable(field_expr)
+                    if f is not None:
+                        return f
+            elif isinstance(some_expr, ogAST.PrimChoiceItem):
+                f = rec_find_ref_to_variable(some_expr.value['value'])
+                if f is not None:
+                    return f
+            elif isinstance(some_expr, ogAST.PrimSequenceOf):
+                for field_expr in some_expr.value:
+                    f = rec_find_ref_to_variable(field_expr)
+                    if f is not None:
+                        return f
+            elif isinstance(some_expr, ogAST.ExprNeg):
+                f = rec_find_ref_to_variable(some_expr.expr)
+                if f is not None:
+                    return f
+            else:
+                return None
+        faulty_field = rec_find_ref_to_variable(expr.right)
+        if faulty_field is not None:
+            errors.append(f"Variable {var[-1]}:"
+                    " default value is not a ground expression -"
+                    f" remove reference to variable {faulty_field}")
+    except(AttributeError, TypeError, Warning) as err:
+        #print (traceback.format_exc())
+        errors.append('Types are incompatible in DCL assignment: '
+            'left (' +
+            expr.left.inputString + ', type= ' +
+            type_name(expr.left.exprType) + '), right (' +
+            expr.right.inputString + ', type= ' +
+            type_name(expr.right.exprType) + ') ' + str(err))
+    else:
+        if def_value.exprType == UNKNOWN_TYPE or not \
+                 isinstance(def_value, (ogAST.ExprAppend,
+                                        ogAST.PrimSequenceOf,
+                                        ogAST.PrimStringLiteral)):
+            def_value.exprType = asn1_sort
+        def_value.expected_type = asn1_sort
+
+    if not def_value.is_raw and \
+            not isinstance(def_value, ogAST.PrimConstant):
+        errors.append(f'In variable declaration {var[-1]}: default'
+                      ' value is not a valid ground expression')
+    return def_value, errors, warnings
+
+
 def expression(root, context, pos='right'):
     ''' Expression analysis (e.g. 5+5*hello(world)!foo) '''
     logic = (lexer.OR, lexer.AND, lexer.XOR, lexer.IMPLIES)
@@ -3137,75 +3213,12 @@ def variables(root, ta_ast, context, monitor=False):
                                              ta_ast))
         elif child.type == lexer.GROUND:
             # Default value for a variable - needs to be a ground expression
-            def_value, err, warn = expression(child.getChild(0), context)
+            def_value, err, warn = ground_expression(child.getChild(0),
+                                                     var[-1],
+                                                     asn1_sort,
+                                                     context)
             errors.extend(err)
             warnings.extend(warn)
-            expr = ogAST.ExprAssign()
-            expr.left = ogAST.PrimVariable(debugLine=lineno())
-            expr.left.inputString = var[-1]
-            expr.left.exprType = asn1_sort
-            expr.right = def_value
-            try:
-                warnings.extend(fix_expression_types(expr, context))
-                w = Assign_Check_Range(expr)
-                if w is not None:
-                    warnings.append(w)
-                def_value = expr.right
-                # Once we have resolved the expression we must check that
-                # it does not contain any reference to a variable, as
-                # it would mean it is not a ground expression. We must
-                # search the "default value" expression recursively
-                def rec_find_ref_to_variable(some_expr):
-                    if isinstance(some_expr,
-                            (ogAST.PrimVariable,
-                             ogAST.PrimIndex,
-                             ogAST.PrimSelector)):
-                        return some_expr.inputString
-                    elif isinstance(some_expr, ogAST.PrimSequence):
-                        for _, field_expr in some_expr.value.items():
-                            f = rec_find_ref_to_variable(field_expr)
-                            if f is not None:
-                                return f
-                    elif isinstance(some_expr, ogAST.PrimChoiceItem):
-                        f = rec_find_ref_to_variable(some_expr.value['value'])
-                        if f is not None:
-                            return f
-                    elif isinstance(some_expr, ogAST.PrimSequenceOf):
-                        for field_expr in some_expr.value:
-                            f = rec_find_ref_to_variable(field_expr)
-                            if f is not None:
-                                return f
-                    elif isinstance(some_expr, ogAST.ExprNeg):
-                        f = rec_find_ref_to_variable(some_expr.expr)
-                        if f is not None:
-                            return f
-                    else:
-                        return None
-                faulty_field = rec_find_ref_to_variable(expr.right)
-                if faulty_field is not None:
-                    errors.append(f"Variable {var[-1]}:"
-                            " default value is not a ground expression -"
-                            f" remove reference to variable {faulty_field}")
-            except(AttributeError, TypeError, Warning) as err:
-                #print (traceback.format_exc())
-                errors.append('Types are incompatible in DCL assignment: '
-                    'left (' +
-                    expr.left.inputString + ', type= ' +
-                    type_name(expr.left.exprType) + '), right (' +
-                    expr.right.inputString + ', type= ' +
-                    type_name(expr.right.exprType) + ') ' + str(err))
-            else:
-                if def_value.exprType == UNKNOWN_TYPE or not \
-                         isinstance(def_value, (ogAST.ExprAppend,
-                                                ogAST.PrimSequenceOf,
-                                                ogAST.PrimStringLiteral)):
-                    def_value.exprType = asn1_sort
-                def_value.expected_type = asn1_sort
-
-            if not def_value.is_raw and \
-                    not isinstance(def_value, ogAST.PrimConstant):
-                errors.append(f'In variable declaration {var[-1]}: default'
-                              ' value is not a valid ground expression')
             if monitor:
                 errors.append(f'In monitor declaration {var[-1]}: default'
                               ' value is not allowed')
@@ -3900,7 +3913,7 @@ def newtype(root, ta_ast, context):
     return errors, warnings
 
 
-def synonym(root, ta_ast, context):
+def synonym_definition(root, parent, context):
     ''' Parse a list of SYNONYMs definition (SDL constants) '''
     errors = []
     warnings = []
@@ -3912,8 +3925,19 @@ def synonym(root, ta_ast, context):
                 name = child.text
             elif child.type == lexer.SORT:
                 sort = child.getChild(0).text
+                # Find corresponding type in ASN.1 model
+                try:
+                    asn1_sort = sdl_to_asn1(sort)
+                except TypeError as err:
+                    errors.append(error(root, str(err)))
+                    asn1_sort = None
             elif child.type == lexer.GROUND:
-                ground, err, warn = expression(child.getChild(0), context)
+                if asn1_sort is None:
+                    continue
+                ground, err, warn = ground_expression(child.getChild(0),
+                                                      name,
+                                                      asn1_sort,
+                                                      context)
                 errors.extend(err)
                 warnings.extend(warn)
             elif child.type == lexer.EXTERNAL:
@@ -3940,10 +3964,12 @@ def synonym(root, ta_ast, context):
             if isinstance(value, (ogAST.PrimOctetStringLiteral,
                                   ogAST.PrimBitStringLiteral)):
                 concrete_val = value.numeric_value
-            elif is_numeric(value.exprType) or is_enumerated(value.exprType) or is_boolean(value.exprType):
+            elif is_numeric(value.exprType) or is_boolean(value.exprType):
                 # value.value is an array of one element
                 concrete_val, = value.value
             else:
+                # Enumerated / complex types are kept as expressions
+                # that will be resolved by code generators
                 concrete_val = value
 
             DV.SDL_Constants[nameDash] = type (nameDash, (), {
@@ -3960,8 +3986,20 @@ def synonym(root, ta_ast, context):
                     }),
                    "value": concrete_val
                 })
-    return errors, warnings
+    # Does not return any AST entry but has to respect the template
+    # when called directly with parseSingleElement
+    return None, errors, warnings
 
+def content(root, parent=None, context=None):
+    ''' Allow to parse a single element of a text area
+    For example it is used to create dcl variables using parseSingleElement
+    and have them join the list of context-visible variables, without having
+    to create manual entries in the AST. Particularly useful for setting
+    a default value from a string.
+    Side effect = context elements will be updated!
+    '''
+    ta = ogAST.TextArea()
+    return None, *text_area_content(root, ta, context)
 
 def text_area_content(root, ta_ast, context):
     ''' Content of a text area: DCL, NEWTYPES, SYNTYPES, SYNONYMS, operators,
@@ -4000,7 +4038,7 @@ def text_area_content(root, ta_ast, context):
             except AttributeError:
                 errors.append("Success states cannot be declared here")
         elif child.type == lexer.SYNONYM_LIST:
-            err, warn = synonym(child, ta_ast, context)
+            _, err, warn = synonym_definition(child, ta_ast, context)
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.NEWTYPE:
@@ -4421,6 +4459,13 @@ def process_definition(root, parent=None, context=None):
     proc_x, proc_y = 0, 0
     inner_proc = []
 
+    # Create implicit "sender" identifier of type PID.
+    if 'PID' in types().keys():
+        #asn1_sort = sdl_to_asn1('PID')
+        #def_value, _, _ = ground_expression('env', 'sender', asn1_sort, process)
+        #process.variables['sender'] = (asn1_sort, def_value)
+        parseSingleElement('content', 'dcl sender PID := env;', context=process)
+
     # first look for all text areas to find NEWTYPE declarations
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
     process.user_defined_types = USER_DEFINED_TYPES
@@ -4489,6 +4534,10 @@ def process_definition(root, parent=None, context=None):
             for e in perr:
                 clean_err.append([e, [proc_x, proc_y], []])
                 process.errors.append(e)
+            # Once we have the process name, add the "self" PID as constant
+            parseSingleElement('synonym_definition',
+                               f'synonym self PID = {process.processName};',
+                               context=process)
         elif child.type == lexer.TEXTAREA:
             # Text zone where variables and operators are declared
             textarea, err, warn = text_area(child, context=process)
@@ -6864,12 +6913,14 @@ def parseSingleElement(elem:str='', string:str='', context=None):
              'procedure_call',
              'end',
              'text_area',
+             'content',
              'state',
              'start',
              'procedure',
              'floating_label',
              'connect_part',
              'process_definition',
+             'synonym_definition',
              'proc_start',
              'state_start',
              'signalroute',

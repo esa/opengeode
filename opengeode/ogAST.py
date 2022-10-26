@@ -1211,7 +1211,7 @@ class AST:
         self.asn1Modules = None
         # DV is the Asn1scc imported module
         self.DV = None
-        # ASN.1-defined constants (constants in Ada but variables in C)
+        # ASN.1-defined constants
         # dictionary: {ConstantName: type } - copied from dataview.py
         self.asn1_constants = {}
 

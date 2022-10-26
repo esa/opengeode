@@ -331,7 +331,7 @@ end {process.name.lower()}_Lib;'''
         # Add SDL constants (synonyms)
         for const in process.DV.SDL_Constants.values():
             bkind = find_basic_type (const.type).kind
-            if bkind in ('IntegerType', 'RealType', 'EnumeratedType',
+            if bkind in ('IntegerType', 'RealType',
                          'BooleanType', 'Integer32Type', 'IntegerU8Type'):
                 val = const.value
             else:
@@ -341,8 +341,9 @@ end {process.name.lower()}_Lib;'''
                     val = array_content(const.value, val, bkind)
                 elif bkind == 'IA5StringType':
                     val = ia5string_raw(const.value)
-                else:
-                    raise f'ERROR: constant {const.varName} value is not a ground expression'
+                elif bkind != "EnumeratedType":
+                    # should have been detected by ogParser
+                    raise TypeError(f'Constant {const.varName} value is not a ground expression')
 
             const_sort = const.type.ReferencedTypeName.replace('-', '_')
             context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
