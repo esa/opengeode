@@ -270,7 +270,9 @@ def _transition(ast, scene, parent, states):
     ''' Add a transition to a scene '''
     for each in ast.actions:
         # pylint: disable=E1111
-        parent = render(each, scene=scene, parent=parent, states=states)
+        if not each.no_render:
+            # Some actions may be added by the parser, but should not appear
+            parent = render(each, scene=scene, parent=parent, states=states)
 
     if ast.terminator:
         render(ast.terminator, scene=scene, parent=parent, states=states)

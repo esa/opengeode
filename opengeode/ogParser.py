@@ -3661,6 +3661,14 @@ def procedure_post(proc, content, parent=None, context=None):
         elif child.type == lexer.START:
             # START transition (fills the mapping structure)
             proc.content.start, err, warn = start(child, context=proc)
+            if proc.exported:
+                # Exported procedures are called from remotely: update SENDER
+                get_sender, _, e1, w1, t1 = parseSingleElement('procedure_call',
+                    'call get_sender(sender);', proc)
+                get_sender.no_render = True
+                if not e1:
+                    # No error means the function is defined => insert the call
+                    proc.content.start.transition.actions.insert(0, get_sender)
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.FLOATING_LABEL:
@@ -4893,6 +4901,20 @@ def input_part(root, parent, context):
             trans, err, warn = transition(child, parent=i, context=context)
             errors.extend(err)
             warnings.extend(warn)
+            # If a "get_sender" external RI is defined, call it at the
+            # beginning of the transition to set the SENDER PID
+            get_sender, _, e1, w1, t1 = parseSingleElement('procedure_call',
+                    'call get_sender(sender);', context)
+            get_sender.no_render = True
+            if not e1:
+                # Check if this input is not related to an exported procedure
+                for proc in context.procedures:
+                    if proc.inputString.lower() in (i.text.lower() for i in inputnames):
+                        break
+                else:
+                    # No error means the function is defined => insert the call
+                    trans.actions.insert(0, get_sender)
+
             i.transition = trans
             # Associate a reference to the transition to the list of inputs
             # The reference is an index to process.transitions table

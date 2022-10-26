@@ -347,6 +347,9 @@ class Decision:
         # the path allows to retrieve the location of the symbol
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
+        # Directive for the renderer to ignore the action in a transition
+        # (used if the symbol was added by the parser)
+        self.no_render = False
 
     def trace(self):
         ''' Debug output for a decision '''
@@ -413,6 +416,9 @@ class Task:
         # the path allows to retrieve the location of the symbol
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
+        # Directive for the renderer to ignore the action in a transition
+        # (used if the symbol was added by the parser)
+        self.no_render = False
 
     def trace(self):
         ''' Debug output for a task '''
@@ -460,6 +466,9 @@ class Output:
         # the path allows to retrieve the location of the symbol
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
+        # Directive for the renderer to ignore the action in a transition
+        # (used if the symbol was added by the parser)
+        self.no_render = False
 
     def trace(self):
         ''' Debug output for an Output symbol '''
@@ -572,6 +581,9 @@ class Label:
         # the path allows to retrieve the location of the symbol
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
+        # Directive for the renderer to ignore the action in a transition
+        # (used if the symbol was added by the parser)
+        self.no_render = False
 
     def trace(self):
         ''' Debug output for a label '''
