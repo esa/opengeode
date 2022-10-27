@@ -1208,7 +1208,8 @@ def write_statement(param, newline):
         code, string, local = expression(param, readonly=1)
         #code.append(f"Put ({type_name(param.exprType)}'Image ({string}));")
         # enumerated must be variable, so we can use 'Img
-        code.append(f"Put ({string}'Img);")
+        lenOfPrefix = len(ASN1SCC) + 1
+        code.append(f"Put ({string}'Img({lenOfPrefix} .. {string}'Img'Length));")
     else:
         error = ('Unsupported parameter in write call ' +
                 param.inputString + '(type kind: ' + type_kind + ')')

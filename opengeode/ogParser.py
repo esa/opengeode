@@ -4543,9 +4543,24 @@ def process_definition(root, parent=None, context=None):
                 clean_err.append([e, [proc_x, proc_y], []])
                 process.errors.append(e)
             # Once we have the process name, add the "self" PID as constant
-            parseSingleElement('synonym_definition',
-                               f'synonym self PID = {process.processName};',
-                               context=process)
+            # if the process name exists in the enumerated list of PIDs
+            try:
+                PID_Values = [v.lower().replace('-', '_') for v in types()['PID'].type.EnumValues.keys()]
+                if process.processName.lower() in PID_Values:
+                    self_pid = process.processName
+                elif 'env' in PID_Values:
+                    self_pid = 'env'
+                else:
+                    self_pid = None
+                if self_pid is not None:
+                    parseSingleElement('synonym_definition',
+                                       f'synonym self PID = {self_pid};',
+                                       context=process)
+            except:
+                # either no PID type, or current process not in PID list
+                # (can be the timer manager in taste)
+                pass
+
         elif child.type == lexer.TEXTAREA:
             # Text zone where variables and operators are declared
             textarea, err, warn = text_area(child, context=process)
