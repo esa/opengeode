@@ -4007,7 +4007,8 @@ def content(root, parent=None, context=None):
     Side effect = context elements will be updated!
     '''
     ta = ogAST.TextArea()
-    return None, *text_area_content(root, ta, context)
+    e, w = text_area_content(root, ta, context)
+    return None, e, w
 
 def text_area_content(root, ta_ast, context):
     ''' Content of a text area: DCL, NEWTYPES, SYNTYPES, SYNONYMS, operators,
