@@ -143,7 +143,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.10.0'
+__version__ = '3.10.1'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2641,15 +2641,17 @@ class OG_MainWindow(QMainWindow):
         helpIndex.linkActivated.connect(self.help_browser.setSource)
         resultWidget.requestShowLink.connect(self.help_browser.setSource)
 
-
-
-
-
         # Set up the data dictionary window
         self.datadict = self.findChild(QTreeWidget, 'datadict')
         self.datadict.setAlternatingRowColors(True)
         self.datadict.setColumnCount(2)
         self.datadict.itemClicked.connect(self.datadict_item_selected)
+
+        # Set up the filter for data dictionary
+        datadict_filter = self.findChild(QLineEdit, 'datadictFilter')
+        datadict_filter.textChanged.connect(self.datadict_filtered)
+        datadict_filter.setClearButtonEnabled(True)
+        datadict_filter.setPlaceholderText("Filter")
 
         QTreeWidgetItem(self.datadict, ["ASN.1 Data types"])
         QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
@@ -2659,6 +2661,7 @@ class OG_MainWindow(QMainWindow):
         QTreeWidgetItem(self.datadict, ["Labels"])
         QTreeWidgetItem(self.datadict, ["Variables"])
         QTreeWidgetItem(self.datadict, ["Timers"])
+        self.view.update_datadict.connect(datadict_filter.clear)
         self.view.update_datadict.connect(self.update_datadict_window)
 
         # Create a timer for periodically saving a backup of the model
@@ -2808,6 +2811,25 @@ class OG_MainWindow(QMainWindow):
                 child.treeWidget().setCurrentItem(child)
                 child.treeWidget().scrollToItem(child)
 
+    def datadict_filtered(self, filt):
+        ''' Called when the filter text is edited (signal) 
+        This function keeps only in the data dict window the items
+        that match the filter '''
+        # Get all items from the tree view
+        items = self.datadict.findItems("*", Qt.MatchWrap
+                                             | Qt.MatchWildcard
+                                             | Qt.MatchRecursive)
+        regexp = QRegularExpression(filt,
+                QRegularExpression.CaseInsensitiveOption)
+        for each in items:
+            line = each.text(0)
+            if regexp.match(line).hasMatch():
+                each.setHidden(False)
+                parent = each.parent()
+                if parent is not None:
+                    parent.setHidden(False)
+            else:
+                each.setHidden(True)
 
     def update_datadict_window(self):
         ''' Update the tree in the data dictionary based on the AST '''

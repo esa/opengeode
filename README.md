@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.10.1 (10/2022)**
+- Add Quick filter for the data dictionary
+
 **3.10.0 (10/2022)**
 - Add implicit declaration of "self" and "sender" of type PID
 

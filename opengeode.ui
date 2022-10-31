@@ -15,7 +15,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <property name="margin">
+    <property name="margin" stdset="0">
      <number>0</number>
     </property>
     <item row="0" column="0">
@@ -97,8 +97,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>900</width>
-     <height>25</height>
+     <width>1300</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuOpenGEODE">
@@ -136,7 +136,7 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <property name="margin">
+     <property name="margin" stdset="0">
       <number>0</number>
      </property>
      <item>
@@ -169,8 +169,21 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_3">
     <layout class="QGridLayout" name="gridLayout_3">
+     <item row="1" column="0">
+      <widget class="QTreeWidget" name="datadict">
+       <column>
+        <property name="text">
+         <string notr="true">1</string>
+        </property>
+       </column>
+      </widget>
+     </item>
      <item row="0" column="0">
-      <widget class="QTreeWidget" name="datadict"/>
+      <widget class="QLineEdit" name="datadictFilter">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -183,7 +196,6 @@
     <number>2</number>
    </attribute>
   </widget>
-
   <action name="actionOpen">
    <property name="text">
     <string>Open</string>
@@ -274,10 +286,6 @@
    <class>SDL_View</class>
    <extends>QGraphicsView</extends>
    <header>sdlview.h</header>
-  </customwidget>
-  <customwidget>
-   <class>OG_HelpBrowser</class>
-   <extends>QTextBrowser</extends>
   </customwidget>
  </customwidgets>
  <resources/>
