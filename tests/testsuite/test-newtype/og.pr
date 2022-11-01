@@ -1,5 +1,5 @@
 system og;
-    /* CIF TEXT (228, 136), (409, 216) */
+    /* CIF TEXT (228, 136), (380, 140) */
     -- demonstrating how to create custom types with the newtype
     -- sdl construct
     
@@ -19,9 +19,13 @@ system og;
         connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
         process og;
-            /* CIF TEXT (122, 80), (267, 354) */
+            /* CIF TEXT (122, 80), (249, 338) */
             newtype myArray
-            array (myinteger, myinteger)
+               array (myinteger, myinteger)
+            endnewtype;
+            
+            newtype My_Underscore
+               array (Seq_b, MyInteger)
             endnewtype;
             
             -- Not supported:
@@ -31,6 +35,7 @@ system og;
             --endnewtype;
             
             dcl x MyArray := { 1,2,3 };
+            dcl y My_Underscore;
             
             dcl someInt MyInteger := 0;
             synonym forty_two MyInteger = '42'H;
@@ -40,7 +45,7 @@ system og;
             /* CIF ENDTEXT */
             /* CIF START (918, 216), (70, 35) */
             START;
-                /* CIF task (875, 271), (156, 35) */
+                /* CIF task (874, 271), (156, 35) */
                 task myseq.a := some_seq.a;
                 /* CIF task (896, 326), (113, 35) */
                 task someint := zero;
@@ -48,22 +53,22 @@ system og;
                 task someint := some_constant;
                 /* CIF decision (917, 431), (70, 50) */
                 decision someint;
-                    /* CIF ANSWER (763, 501), (112, 24) */
+                    /* CIF ANSWER (761, 501), (112, 23) */
                     (some_constant):
-                    /* CIF ANSWER (877, 501), (89, 24) */
+                    /* CIF ANSWER (879, 501), (81, 23) */
                     (forty_two):
-                    /* CIF ANSWER (970, 501), (70, 24) */
+                    /* CIF ANSWER (970, 501), (70, 23) */
                     (zero):
-                    /* CIF ANSWER (1060, 501), (70, 56) */
+                    /* CIF ANSWER (1060, 501), (70, 53) */
                     (1:41,
 43:65,
 67:255):
                 enddecision;
-                /* CIF NEXTSTATE (918, 573), (70, 35) */
+                /* CIF NEXTSTATE (918, 570), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (770, 231), (70, 35) */
             state wait;
-                /* CIF input (763, 286), (84, 35) */
+                /* CIF input (770, 286), (70, 35) */
                 input dd;
                     /* CIF NEXTSTATE (770, 341), (70, 35) */
                     NEXTSTATE wait;
