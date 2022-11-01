@@ -2872,7 +2872,9 @@ class OG_MainWindow(QMainWindow):
             for each in sorted(context.timers):
                 add_elem(timers, each)
 
-            for var, (sort, _) in context.variables.items():
+            #for var, (sort, _) in context.variables.items():
+            for var in sorted(context.variables.keys()):
+                sort, _ = context.variables[var]
                 try:
                     sort_name = sort.ReferencedTypeName
                 except AttributeError:
