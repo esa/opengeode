@@ -128,6 +128,7 @@ MODULES = [
 
 # Define custom UserRoles
 ANCHOR = Qt.UserRole + 1
+LINE_NUMBER = Qt.UserRole + 2
 
 try:
     import LlvmGenerator
@@ -2644,7 +2645,7 @@ class OG_MainWindow(QMainWindow):
         # Set up the data dictionary window
         self.datadict = self.findChild(QTreeWidget, 'datadict')
         self.datadict.setAlternatingRowColors(True)
-        self.datadict.setColumnCount(2)
+        self.datadict.setColumnCount(3)
         self.datadict.itemClicked.connect(self.datadict_item_selected)
 
         # Set up the filter for data dictionary
@@ -2736,11 +2737,17 @@ class OG_MainWindow(QMainWindow):
                 3: 'output signals', 4: 'states', 5: 'labels', 6: 'variables',
                 7: 'timers'}[index]
 
-        anchor = item.data(0, ANCHOR)
-        if root == 'asn1 types' and anchor and column == 1:
-            self.asn1_browser.scrollToAnchor(anchor)
+        anchor = item.data(0, ANCHOR) # deprecated, use line number instead
+        line_number = item.data(0, LINE_NUMBER)
+        if root == 'asn1 types' and column == 1:
+            document = self.asn1_browser.document()
+            block = document.findBlockByLineNumber(int(line_number) - 1)
+            cursor = QTextCursor(block)
+            #self.asn1_browser.scrollToAnchor(anchor) # does not work that well
             # Activate the tab to display the ASN.1 type in html
             self.asn1_browser.parent().parent().raise_()
+            self.asn1_browser.moveCursor(QTextCursor.End) # move scrollbar
+            self.asn1_browser.setTextCursor(cursor)
         elif root in ('states', 'labels') and column == 0:
             name = item.text(column)
             if self.view.scene().search_pattern != name:
@@ -2758,7 +2765,15 @@ class OG_MainWindow(QMainWindow):
             self.vi_bar.cursorWordBackward(True)
             self.vi_bar.show()
             self.vi_bar.setFocus()
-
+        elif root == 'asn1 constants' and column == 2:
+            # Jump to line number
+            document = self.asn1_browser.document()
+            block = document.findBlockByLineNumber(int(line_number) - 1)
+            cursor = QTextCursor(block)
+            # Activate the tab to display the ASN.1 type in html
+            self.asn1_browser.parent().parent().raise_()
+            self.asn1_browser.moveCursor(QTextCursor.End)
+            self.asn1_browser.setTextCursor(cursor)
 
     @Slot(ogAST.AST)
     def set_asn1_view(self, ast):
@@ -2783,15 +2798,27 @@ class OG_MainWindow(QMainWindow):
             new_item.setForeground(1, Qt.blue)
             # Save type anchor for html
             new_item.setData(0, ANCHOR, "ASN1_" + name.replace('-', '_'))
+            new_item.setData(0, LINE_NUMBER, sort.Line)
         item_constants = self.datadict.topLevelItem(1)
         item_constants.takeChildren()
-        for name, sort in ast.asn1_constants.items():
+        for name in sorted(ast.asn1_constants.keys()):
+            sort = ast.asn1_constants[name]
+            sort_basic = ogParser.find_basic_type(sort.type)
             sortname = sort.type.ReferencedTypeName \
                     if sort.type.kind.startswith('Reference') \
                     else sort.type.kind[:-4]
-            QTreeWidgetItem(item_constants,
+            if sort_basic.kind in ('IntegerType', 'EnumeratedType',
+                    'BooleanType', 'RealType', 'BitStringType',
+                    'OctetStringType', 'IA5StringType'):
+                value = str(sort.value)
+            else:
+                value = "(...)"
+            new_item = QTreeWidgetItem(item_constants,
                                  [name.replace('-', '_'),
-                                 sortname])
+                                 sortname, value])
+            new_item.setForeground(2, Qt.blue)
+            # Save type anchor for html
+            new_item.setData(0, LINE_NUMBER, sort.Line)
         # Expand the types tree to make sure the size of the colum is ok
         item_types.setExpanded(True)
         item_constants.setExpanded(True)
@@ -2858,21 +2885,26 @@ class OG_MainWindow(QMainWindow):
         elif self.view.scene().context == 'process':
             for each in (in_sig, out_sig, states, labels, dcl, timers):
                 change_state(each, False)
+
+            # unsorted list of signals (in and out)
             refresh_signals(in_sig, context.input_signals)
             refresh_signals(out_sig, context.output_signals)
 
+            # sorted list of states
             for each in sorted(context.mapping.keys()):
                 if each != 'START':
                     state = QTreeWidgetItem(states, [each, 'refactor'])
                     state.setForeground(1, Qt.blue)
 
+            # sorted list of labels
             for each in sorted(l.inputString for l in context.labels):
                 add_elem(labels, each)
 
+            # sorted list of timers
             for each in sorted(context.timers):
                 add_elem(timers, each)
 
-            #for var, (sort, _) in context.variables.items():
+            # sorted list of variables
             for var in sorted(context.variables.keys()):
                 sort, _ = context.variables[var]
                 try:
@@ -2890,7 +2922,9 @@ class OG_MainWindow(QMainWindow):
             for each in (dcl, timers, labels, out_sig):
                 change_state(each, False)
 
-            for var, (sort, _) in context.variables.items():
+            # sorted list of local variables (could add parent variables)
+            for var in sorted(context.variables.keys()):
+                sort, _ = context.variables[var]
                 QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
 
             for each in sorted(l.inputString for l in context.labels):

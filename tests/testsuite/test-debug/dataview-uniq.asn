@@ -37,6 +37,19 @@ Seq ::= SEQUENCE {
   c TASTE-Peek-id-list
 }
 
+IaStr ::= IA5String (SIZE(0..50))
+OctStr ::= OCTET STRING (SIZE (0..8))
+BitStr ::= BIT STRING (SIZE (0..8))
+
+--  Define constants to check the data dictionary
+zconst Boo  ::= 5
+a-const MyEnum ::= eE
+t-const INTEGER ::= 10
+uConst MyChoice ::= cDe2: TRUE
+iaconst IaStr ::= "Hello"
+osconst OctStr ::= 'DEADBEEF'H
+bsconst BitStr ::= '01010101'B
+seqStr Seq ::= { a 1, b { foo eE }, c {3,14}}
 
 END
  
