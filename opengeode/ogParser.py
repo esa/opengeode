@@ -3232,11 +3232,13 @@ def variables(root, ta_ast, context, monitor=False):
             errors.append('Variables/monitors shall not be declared here')
         # Add to the context and text area AST entries
         elif(not monitor and (variable.lower() in context.variables
-                  or variable.lower() in ta_ast.variables)):
+                  or variable.lower() in ta_ast.variables
+                  or is_asn1constant(variable))):
             errors.append('Variable "{}" is declared more than once'
                           .format(variable))
         elif (monitor and (variable.lower() in context.monitors
-                  or variable.lower() in ta_ast.monitors)):
+                  or variable.lower() in ta_ast.monitors
+                  or is_asn1constant(variable))):
             errors.append('Monitor "{}" is declared more than once'
                           .format(variable))
 
