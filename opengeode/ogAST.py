@@ -322,7 +322,7 @@ class Decision:
     ''' AST Entry for a decision '''
     def __init__(self):
         ''' A DECISION statement '''
-        self.inputString = ''
+        self.inputString = 'true'
         self.line = None
         self.charPositionInLine = None
         self.pos_x, self.pos_y = None, None
