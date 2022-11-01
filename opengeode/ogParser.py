@@ -3894,11 +3894,14 @@ def newtype(root, ta_ast, context):
 
     # type name gets capitalized with this call:
     newtypename, errors, warnings = newtype_gettype(root, ta_ast, context)
-    if (newtypename == ""):
+
+    if not newtypename:
         return errors, warnings
 
+    newtypename = newtypename.replace('_', '-')
+
     if len(root.children) < 2:
-        errors.append('Use newtype definitions for arrays and records only')
+        errors.append('Use newtype definitions for arrays only')
     elif (root.getChild(1).type == lexer.ARRAY):
         try:
             newType = get_array_type(newtypename, root.getChild(1))
