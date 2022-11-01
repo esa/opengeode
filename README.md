@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.10.2 (11/2022)**
+- Detect name conflicts between variables and constants
+- Support newtype names with underscore (bugfix)
+
 **3.10.1 (10/2022)**
 - Add Quick filter for the data dictionary
 
