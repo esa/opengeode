@@ -128,6 +128,7 @@ Changelog
 - Detect name conflicts between variables and constants
 - Support newtype names with underscore (bugfix)
 - Improve data dictionary (constant values, better jump to the ASN.1 model)
+- Text search: spot the exact pattern location in results, and iterate properly on multiple occurences
 
 **3.10.1 (10/2022)**
 - Add Quick filter for the data dictionary
