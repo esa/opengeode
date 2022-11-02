@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: challenge.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n challenge.ali
 	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm
-	./test_ada
+	./test_ada | diff expected -
 
 test-if:
 	sdl2if challenge.pr system_structure.pr

@@ -42,26 +42,26 @@ state';
                 call writeln('4');
                 /* CIF NEXTSTATE (1155, 113), (70, 35) */
                 NEXTSTATE One;
-            /* CIF state (1155, 273), (70, 35) */
+            /* CIF state (1153, 273), (70, 35) */
             state Two;
-                /* CIF input (1153, 328), (72, 35) */
+                /* CIF input (1151, 328), (72, 35) */
                 input any_one;
-                    /* CIF PROCEDURECALL (1145, 383), (89, 35) */
+                    /* CIF PROCEDURECALL (1143, 383), (89, 35) */
                     call writeln('8');
-                    /* CIF NEXTSTATE (1155, 433), (70, 35) */
+                    /* CIF NEXTSTATE (1153, 433), (70, 35) */
                     NEXTSTATE One;
             endstate;
             /* CIF state (1155, 113), (70, 35) */
             state One;
-                /* CIF input (1153, 168), (72, 35) */
+                /* CIF input (1151, 168), (72, 35) */
                 input any_one;
-                    /* CIF PROCEDURECALL (1145, 223), (89, 35) */
+                    /* CIF PROCEDURECALL (1143, 223), (89, 35) */
                     call writeln('5');
-                    /* CIF NEXTSTATE (1155, 273), (70, 35) */
+                    /* CIF NEXTSTATE (1153, 273), (70, 35) */
                     NEXTSTATE Two;
             endstate;
     endsubstructure;
-    /* CIF TEXT (23, 84), (251, 143) */
+    /* CIF TEXT (23, 84), (251, 140) */
     -- This test checks the dash history
     -- with nested (not parallel) states
     -- It should go back to the same nested
@@ -69,29 +69,44 @@ state';
     -- exit procedure, without going through
     -- entry procedure and startup transition
     -- again.
-    
-    
     /* CIF ENDTEXT */
     /* CIF START (310, 74), (68, 37) */
     START;
-        /* CIF PROCEDURECALL (300, 126), (89, 35) */
+        /* CIF PROCEDURECALL (299, 126), (89, 35) */
         call writeln('1');
         /* CIF NEXTSTATE (309, 176), (70, 35) */
         NEXTSTATE OFF;
     /* CIF state (309, 332), (70, 35) */
     state on;
-        /* CIF input (308, 387), (72, 35) */
-        input any_two;
-            /* CIF PROCEDURECALL (300, 442), (89, 35) */
+        /* CIF input (261, 387), (72, 35) */
+        input any_two
+        /* CIF comment (354, 387), (183, 83) */
+        comment 'With the dash history,
+it is expected to go only
+through the exit procedure
+but then to go back to the 
+same state as before';
+            /* CIF PROCEDURECALL (253, 442), (89, 35) */
             call writeln('7');
-            /* CIF NEXTSTATE (309, 492), (70, 35) */
+            /* CIF NEXTSTATE (263, 492), (70, 35) */
             NEXTSTATE -*;
+        /* CIF input (557, 387), (70, 35) */
+        input run
+        /* CIF comment (650, 370), (233, 68) */
+        comment 'This branch ends with a standard
+history next state, so it is expected
+to go through the startup transition
+and entry procedure.';
+            /* CIF PROCEDURECALL (548, 442), (89, 35) */
+            call writeln('9');
+            /* CIF NEXTSTATE (557, 497), (70, 35) */
+            NEXTSTATE -;
     endstate;
     /* CIF state (309, 176), (70, 35) */
     state OFF;
         /* CIF input (309, 231), (70, 35) */
         input run;
-            /* CIF PROCEDURECALL (300, 281), (89, 35) */
+            /* CIF PROCEDURECALL (299, 281), (89, 35) */
             call writeln('2');
             /* CIF NEXTSTATE (309, 332), (70, 35) */
             NEXTSTATE on;
