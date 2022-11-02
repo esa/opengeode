@@ -431,8 +431,10 @@ class SDL_Scene(QGraphicsScene):
         # Scene name is used to update the tab window name when scene changes
         self.name = ''
         # search_item/search_pattern are used for search/replace function
-        self.search_item = None
-        self.search_pattern = None
+        self.search_item = None   # generator yielding found items
+        self.search_item_found = list()  # list of cursors with location of found text
+        self.search_pattern = None  
+        self.current_found_item = None  # actual item found when searching text
         # Selection rectangle when user clicks on the scene and moves mouse
         self.select_rect = None
         # Keep a list of composite states: {'stateName': SDL_Scene}
@@ -965,11 +967,31 @@ class SDL_Scene(QGraphicsScene):
             self.refresh()
         else:
             try:
-                item = next(self.search_item)
-                item = item.parentItem()
-                item.select()
-                self.highlight(item)
-                item.ensureVisible()
+                if self.current_found_item is not None:
+                    # Remove all selected text from previous search
+                    cursor = QTextCursor(self.current_found_item.document())
+                    cursor.clearSelection()
+                    self.current_found_item.setTextCursor(cursor)
+                self.current_found_item = next(self.search_item)
+                # Locate the word at the right place in the text
+                # in order to hightlight it
+                self.search_item_found = []
+                doc = self.current_found_item.document()
+                cursor = doc.find(pattern)
+                while not cursor.isNull():
+                    # find all occurences of the pattern in the item
+                    self.search_item_found.append(cursor)
+                    cursor = doc.find(pattern, cursor)
+
+                cursor = self.search_item_found.pop(0)
+                cursor.movePosition(QTextCursor.EndOfWord,
+                                        QTextCursor.KeepAnchor)
+                self.current_found_item.setTextCursor(cursor)
+
+                parent = self.current_found_item.parentItem()
+                parent.select()
+                self.highlight(parent)
+                parent.ensureVisible()
             except StopIteration:
                 LOG.info('Pattern not found')
 
@@ -1592,15 +1614,35 @@ class SDL_Scene(QGraphicsScene):
             try:
                 self.clearSelection()
                 self.clear_highlight()
-                item = next(self.search_item)
-                item = item.parentItem()
-                item.select()
-                self.highlight(item)
-                item.ensureVisible()
+                if self.current_found_item is not None:
+                    # Remove all selected text from previous iteration
+                    cursor = QTextCursor(self.current_found_item.document())
+                    cursor.clearSelection()
+                    self.current_found_item.setTextCursor(cursor)
+                if not self.search_item_found:
+                    # Exhausted occurence in current item
+                    self.current_found_item = next(self.search_item)
+                    self.search_item_found = []
+                    # highlight the word in the text
+                    doc = self.current_found_item.document()
+                    cursor = doc.find(self.search_pattern)
+                    while not cursor.isNull():
+                        self.search_item_found.append(cursor)
+                        cursor = doc.find(self.search_pattern, cursor)
+                cursor = self.search_item_found.pop(0)
+                cursor.movePosition(QTextCursor.EndOfWord,
+                                    QTextCursor.KeepAnchor)
+                self.current_found_item.setTextCursor(cursor)
+
+                parent = self.current_found_item.parentItem()
+                parent.select()
+                self.highlight(parent)
+                parent.ensureVisible()
             except StopIteration:
                 LOG.info('No more matches')
                 self.search(self.search_pattern)
             except AttributeError as err:
+                #print(str(err))
                 LOG.info('No search pattern. Use "/pattern"')
         elif (event.key() == Qt.Key_J and
                 event.modifiers() == Qt.ControlModifier):
@@ -2942,7 +2984,7 @@ class OG_MainWindow(QMainWindow):
             Supported commands:
             :<w><q><!> (save, quit)
             /<search pattern>
-            :%s/<search_patten>/<replace_with>/g
+            :%s/<search_pattern>/<replace_with>/g
         '''
         command = self.vi_bar.text()
         # Match vi-like search and replace pattern (e.g. :%s,a,b,g)
