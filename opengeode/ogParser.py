@@ -3751,6 +3751,7 @@ def floating_label(root, parent, context):
             lab_x, lab_y = lab.pos_x, lab.pos_y
         elif child.type == lexer.SYMBOLID:
             lab.pos_x = symbolid(child)
+            lab_x = lab.pos_x
         elif child.type == lexer.HYPERLINK:
             lab.hyperlink = child.getChild(0).text[1:-1]
         elif child.type == lexer.TRANSITION:

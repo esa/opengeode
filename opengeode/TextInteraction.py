@@ -197,9 +197,19 @@ class EditableText(QGraphicsTextItem):
         fmt = QTextBlockFormat()
         fmt.setAlignment(alignment)
         cursor = self.textCursor()
+        # Store previous selection to set it back
+        if cursor.hasSelection():
+            selStart, selEnd = cursor.selectionStart(), cursor.selectionEnd()
+        else:
+            selStart = None
+        # format the document
         cursor.select(QTextCursor.Document)
         cursor.mergeBlockFormat(fmt)
         cursor.clearSelection()
+        if selStart is not None:
+            # reset selection as it was
+            cursor.setPosition(selStart)
+            cursor.setPosition(selEnd, QTextCursor.KeepAnchor)
         self.setTextCursor(cursor)
 
     def set_textbox_position(self):

@@ -643,7 +643,7 @@ class Input:
     def __init__(self):
         ''' Initialize the Input attributes '''
         # inputString is the user text, it can contain several inputs
-        self.inputString = ''
+        self.inputString = 'foo'
         self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 35
@@ -834,7 +834,7 @@ class TextArea:
     ''' AST Entry for text areas (containing declarations/comments) '''
     def __init__(self):
         ''' Text area (raw content for rendering only) '''
-        self.inputString = '-- Text area for declarations and comments\n\n'
+        self.inputString = '-- Text area for declarations and comments'
         self.line = None
         self.charPositionInLine = None
         # Set default coordinates and width/height
