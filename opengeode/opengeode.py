@@ -2066,7 +2066,6 @@ class SDL_View(QGraphicsView):
             self.messages_window.clear()
             # Check the model if anything changed (mostly to spot syntax errors
             # as they could jeopardize subsequent model parsing)
-            # if not autosave: # and self.something_changed:
             if self.check_model() == "Syntax Errors":
                 LOG.error('Syntax errors must be fixed NOW '
                           'or you may not be able to reload the model')
@@ -2085,7 +2084,9 @@ class SDL_View(QGraphicsView):
             return False
 
         # Generate the process context in ASN.1
-        if scene.ast is not None and len(scene.ast.processes) == 1:
+        # (not in autosave mode, as scene.ast has not been updated properly, this
+        #  is done by the call to check_model which has not been done)
+        if not autosave and scene.ast is not None and len(scene.ast.processes) == 1:
             process, = scene.ast.processes
             process.name = process.processName
             # If this is a process type, use the type for the datamodel

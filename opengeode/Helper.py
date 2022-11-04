@@ -262,6 +262,7 @@ def flatten(process, sep=u'_'):
 
         # If composite state has entry procedures, add the call
         if state.entry_procedure:
+            print(state.mapping)
             for each in (trans for trans in state.mapping.values()
                          if isinstance(trans, int)):
                 call_entry = ogAST.ProcedureCall()
@@ -269,7 +270,14 @@ def flatten(process, sep=u'_'):
                 entryproc = f'{prefix}entry'
                 call_entry.output = [{'outputName': entryproc,
                                      'params': [], 'tmpVars': []}]
-                process.transitions[each].actions.insert(0, call_entry)
+                
+                try:
+                    process.transitions[each].actions.insert(0, call_entry)
+                except IndexError:
+                    # This could happen if scene.ast was not up to date when
+                    # calling this function. But then this case would need
+                    # to be traced back, as it should not be possible.
+                    LOG.error ("Bug - Index error", each, len(process.transitions))
 
         # If composite state has exit procedure, add an call to this
         # procedure if the transition ends up exiting the state with
@@ -359,10 +367,13 @@ def flatten(process, sep=u'_'):
         for each in nested_state.composite_states:
             # do the same recursively
             propagate_inputs(each, nested_state)
-            #del nested_state.mapping[each.statename]
         if not isinstance(nested_state, ogAST.StateAggregation):
-            del context.mapping[nested_state.statename]
-            del context.cs_mapping[nested_state.statename]
+            try:
+                del context.mapping[nested_state.statename]
+                del context.cs_mapping[nested_state.statename]
+            except KeyError:
+                # If the nested state hasn't been defined yet
+                pass
 
     def set_terminator_states(context, prefix=''):
         ''' Associate state to terminators, needed to process properly
