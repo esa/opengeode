@@ -262,7 +262,7 @@ def flatten(process, sep=u'_'):
 
         # If composite state has entry procedures, add the call
         if state.entry_procedure:
-            print(state.mapping)
+            #print(state.mapping)
             for each in (trans for trans in state.mapping.values()
                          if isinstance(trans, int)):
                 call_entry = ogAST.ProcedureCall()
