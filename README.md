@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.10.3 (11/2022)**
+- Fix parsing bug with input *
+
 **3.10.2 (11/2022)**
 - Detect name conflicts between variables and constants
 - Support newtype names with underscore (bugfix)

@@ -4915,6 +4915,7 @@ def input_part(root, parent, context):
             i.inputString = get_input_string(child)
             i.line = child.getLine()
             i.charPositionInLine = child.getCharPositionInLine()
+            inputnames = []
         elif child.type == lexer.PROVIDED:
             warnings.append('"PROVIDED" expressions not supported')
             i.provided = 'Provided'
@@ -4930,6 +4931,9 @@ def input_part(root, parent, context):
             if not e1:
                 # Check if this input is not related to an exported procedure
                 for proc in context.procedures:
+                    # Note, if the input is a star (*) the inputnames will not
+                    # be set when reaching this point, so it should not break
+                    # which is ok, we will call get_sender
                     if proc.inputString.lower() in (i.text.lower() for i in inputnames):
                         break
                 else:
