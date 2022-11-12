@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.11.0 (11/2022)**
+- Introduce support for SDL's alternative symbol
+
 **3.10.3 (11/2022)**
 - Fix parsing bug with input *
 

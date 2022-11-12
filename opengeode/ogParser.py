@@ -5625,6 +5625,8 @@ def alternative_part(root, parent, context):
                 ans.warnings.append(w[0])
     return ans, errors, warnings
 
+def alternative(root, parent, context):
+    return decision(root, parent, context)
 
 def decision(root, parent, context):
     ''' Parse a DECISION '''
@@ -5649,6 +5651,19 @@ def decision(root, parent, context):
             dec.question, qerr, qwarn = expression(child.getChild(0), context)
             dec.inputString = get_input_string(child.getChild(0))
             #dec.inputString = dec.question.inputString
+            dec.line = dec.question.line
+            dec.charPositionInLine = dec.question.charPositionInLine
+        elif child.type == lexer.GROUND:
+            # Alternative symbol: the question has to be a ground
+            # expression with a boolean type (it has to be evaluated
+            # by the parser, so more complex types are not considered
+            # yet. Only the answer "true" will be kept.
+            dec.kind = 'alternative'
+            dec.inputString = get_input_string(child.getChild(0))
+            dec.question, qerr, qwarn = ground_expression(child.getChild(0),
+                    'alternative',
+                    BOOLEAN,
+                    context)
             dec.line = dec.question.line
             dec.charPositionInLine = dec.question.charPositionInLine
         elif child.type == lexer.INFORMAL_TEXT:
@@ -6225,6 +6240,15 @@ def transition(root, parent, context):
             warnings.extend(warn)
             trans.actions.append(dec)
             parent = dec
+        elif child.type == lexer.ALTERNATIVE:
+            # Alternatives are like compilation options (#ifdef in C)
+            # We keep only one answer branch (the answer "true")
+            # (TODO)
+            alt, err, warn = decision(child, parent=parent, context=context)
+            errors.extend(err)
+            warnings.extend(warn)
+            trans.actions.append(alt)
+            parent = alt
         elif child.type == lexer.TERMINATOR:
             term, err, warn = terminator_statement(child,
                     parent=parent, context=context)
@@ -6953,6 +6977,7 @@ def parseSingleElement(elem:str='', string:str='', context=None):
             ('input_part',
              'output',
              'decision',
+             'alternative',
              'alternative_part',
              'terminator_statement',
              'label',

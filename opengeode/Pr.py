@@ -237,9 +237,14 @@ def _output(symbol, **kwargs):
 
 
 @generate.register(sdlSymbols.Decision)
+@generate.register(sdlSymbols.Alternative)
 def _decision(symbol, recursive=True, **kwargs):
     ''' Decision symbol or branch if recursive is set '''
-    result = common('decision', symbol)
+    startname = 'alternative' if isinstance(symbol, sdlSymbols.Alternative) \
+            else 'decision'
+    endname = 'endalternative' if isinstance(symbol, sdlSymbols.Alternative) \
+            else 'enddecision'
+    result = common(startname, symbol)
     if recursive:
         else_branch = None
         Indent.indent += 1
@@ -251,7 +256,7 @@ def _decision(symbol, recursive=True, **kwargs):
         if else_branch:
             result.extend(else_branch)
         Indent.indent -= 1
-    result.append(u'enddecision;')
+    result.append(f'{endname};')
     return result
 
 

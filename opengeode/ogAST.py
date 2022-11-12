@@ -321,14 +321,16 @@ class PrimSequence(Primary):
 class Decision:
     ''' AST Entry for a decision '''
     def __init__(self):
-        ''' A DECISION statement '''
+        ''' A DECISION or ALTERNATIVE statement '''
         self.inputString = 'true'
         self.line = None
         self.charPositionInLine = None
         self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 50
-        # kind can be 'any', 'informal_text', or 'question'
+        # kind can be 'any', 'informal_text', 'question' or 'alternative'
+        # (alternative for the corresponding symbol, in which
+        # case the question has to be a ground expression)
         self.kind = None
         # question is an Expression
         self.question = None
