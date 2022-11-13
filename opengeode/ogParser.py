@@ -3751,6 +3751,7 @@ def floating_label(root, parent, context):
             lab_x, lab_y = lab.pos_x, lab.pos_y
         elif child.type == lexer.SYMBOLID:
             lab.pos_x = symbolid(child)
+            lab_x = lab.pos_x
         elif child.type == lexer.HYPERLINK:
             lab.hyperlink = child.getChild(0).text[1:-1]
         elif child.type == lexer.TRANSITION:
@@ -6242,12 +6243,52 @@ def transition(root, parent, context):
             parent = dec
         elif child.type == lexer.ALTERNATIVE:
             # Alternatives are like compilation options (#ifdef in C)
-            # We keep only one answer branch (the answer "true")
-            # (TODO)
+            # We keep only one answer branch (the answer corresponding
+            # to the evaluation of the question by the parser)
+            # Alternative use ground expressions of boolean type, so
+            # we know here that there are at most 2 answers, true and false
+            # (one of them could be "else")
             alt, err, warn = decision(child, parent=parent, context=context)
             errors.extend(err)
             warnings.extend(warn)
-            trans.actions.append(alt)
+            if not isinstance(alt.question, ogAST.PrimConstant):
+                errors.append(
+                        ["Alternative must be an ASN.1 constant, nothing else",
+                        [alt.pos_x, alt.pos_y], []])
+            elif not err:
+                # No errors => there are 2 answers, pick the right one
+                value = alt.question.constant_value # has to be true or false
+                found = None
+                for answer in alt.answers:
+                    if found is not None:
+                        continue
+                    # Each answer can contain multiple options
+                    for each in answer.answers:
+                        if found is not None:
+                            continue
+                        kind = each['kind']
+                        content = each['content']
+                        if kind not in ('constant', 'else'):
+                            errors.append(
+                                    ['Answer has to be "true", "false" or "else"',
+                                    [answer.pos_x, answer.pos_y], []])
+                        elif kind == 'constant':
+                            constval = content[1].value[0].lower() == 'true'
+                            if constval == value:
+                                found = answer
+                        else:
+                            # "else" branch
+                            found = answer
+                trans.actions.append(alt)
+                if found is not None:
+                    # Set the transition, then when generating code
+                    # the Helper will replace the alternative branches
+                    # with this single transition
+                    alt.alternative = found.transition
+                else:
+                    warnings.append(
+                        ["Found no valid transition for this alternative",
+                        [alt.pos_x, alt.pos_y], []])
             parent = alt
         elif child.type == lexer.TERMINATOR:
             term, err, warn = terminator_statement(child,

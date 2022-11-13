@@ -335,6 +335,10 @@ class Sdl_toolbar(QToolBar, object):
         ''' See description in enable_action '''
         self.actions[action].setEnabled(False)
 
+    def disable_all_actions(self):
+        for action in self.actions:
+            self.disable_action(action)
+
     def update_menu(self, scene=None):
         ''' Context-dependent enabling/disabling of menu buttons '''
         try:
@@ -841,7 +845,9 @@ class SDL_Scene(QGraphicsScene):
             msg_box.setText("Syntax error!")
             msg_box.setStandardButtons(QMessageBox.Discard)
             msg_box.setDefaultButton(QMessageBox.Discard)
+            view.toolbar.disable_all_actions()
             msg_box.exec()
+            view.toolbar.update_menu()
         # There were syntax errors: force user to fix them
         # by returning True to the caller (TextInteraction), which
         # will keep focus
@@ -1303,12 +1309,19 @@ class SDL_Scene(QGraphicsScene):
         self.clear_focus()
         item.select()
         item.cam(item.pos(), item.pos())
-        # When item is placed, immediately set focus to input text
-        item.edit_text()
 
         for view in self.views():
             view.view_refresh()
             view.ensureVisible(item)
+        
+        # When item is placed, immediately set focus to input text
+        item.edit_text()
+        if item.has_text_area:
+            # highlight (select) the default text, if any so that
+            # user input will overwrite it immediately
+            cursor = item.text.textCursor()
+            cursor.select(QTextCursor.Document)
+            item.text.setTextCursor(cursor)
         return item
 
 
