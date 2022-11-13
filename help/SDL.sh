@@ -7,6 +7,6 @@ exportMediaWiki2Html/exportMediaWiki2Html.py --url https://taste.tuxfamily.org/w
 cp opengeode.qhp export
 cp opengeode.qhcp export
 cd export
-spacecreator.AppImage --qhelpgenerator -o opengeode.qch opengeode.qhp
-spacecreator.AppImage --qhelpgenerator -o opengeode.qhc opengeode.qhcp
+spacecreator.AppImage --qhelpgenerator -o ../opengeode.qch opengeode.qhp
+spacecreator.AppImage --qhelpgenerator -o ../opengeode.qhc opengeode.qhcp
 
