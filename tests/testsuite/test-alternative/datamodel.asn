@@ -1,0 +1,8 @@
+DV DEFINITIONS ::=
+BEGIN
+
+  SomeBool ::= BOOLEAN
+
+  c-true BOOLEAN ::= TRUE
+  c-false SomeBool ::= FALSE
+END

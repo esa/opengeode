@@ -1,0 +1,92 @@
+system foo;
+/* CIF TEXT (94, 94), (267, 140) */
+-- Text area for declarations and comments
+
+use dv comment 'datamodel.asn';
+/* CIF ENDTEXT */
+block foo;
+/* CIF PROCESS (420, 255), (150, 75) */
+process foo;
+/* CIF TEXT (631, 578), (267, 140) */
+-- Text area for declarations and comments
+
+synonym
+   otherTrue SomeBool = TruE;
+/* CIF ENDTEXT */
+/* CIF TEXT (778, 220), (258, 140) */
+-- The code generator shall only generate
+-- the code of one branch of each decision
+/* CIF ENDTEXT */
+/* CIF START (321, 200), (70, 35) */
+START;
+/* CIF alternative (321, 255), (70, 50) */
+alternative c_false;
+/* CIF ANSWER (260, 325), (70, 23) */
+(true):
+    /* CIF PROCEDURECALL (223, 368), (142, 35) */
+    call writeln('ERROR (1)');
+/* CIF ANSWER (402, 325), (70, 23) */
+else:
+    /* CIF PROCEDURECALL (377, 368), (118, 35) */
+    call writeln('OK (1)');
+endalternative;
+/* CIF alternative (321, 419), (70, 50) */
+alternative c_true;
+/* CIF ANSWER (239, 489), (70, 23) */
+(true):
+    /* CIF PROCEDURECALL (214, 532), (118, 35) */
+    call writeln('OK (2)');
+/* CIF ANSWER (381, 489), (70, 23) */
+(false):
+    /* CIF PROCEDURECALL (344, 532), (142, 35) */
+    call writeln('ERROR (2)');
+endalternative;
+/* CIF alternative (321, 583), (70, 50) */
+alternative c_true;
+/* CIF ANSWER (311, 653), (86, 23) */
+(true, false):
+    /* CIF PROCEDURECALL (295, 696), (118, 35) */
+    call writeln('OK (3)');
+endalternative;
+/* CIF alternative (321, 747), (70, 50) */
+alternative c_true;
+endalternative;
+/* CIF alternative (321, 817), (70, 50) */
+alternative c_true;
+/* CIF ANSWER (280, 887), (70, 23) */
+else:
+    /* CIF PROCEDURECALL (255, 930), (118, 35) */
+    call writeln('OK (4)');
+endalternative;
+/* CIF PROCEDURECALL (296, 981), (118, 35) */
+call writeln('OK (5)');
+/* CIF alternative (321, 1036), (70, 50) */
+alternative c_false;
+/* CIF ANSWER (392, 1106), (70, 23) */
+(false):
+    /* CIF PROCEDURECALL (367, 1149), (118, 35) */
+    call writeln('OK (6)');
+/* CIF ANSWER (231, 1106), (70, 23) */
+else:
+    /* CIF PROCEDURECALL (194, 1149), (142, 35) */
+    call writeln('ERROR (6)');
+endalternative;
+/* CIF alternative (314, 1200), (82, 50) */
+alternative otherTrue;
+/* CIF ANSWER (239, 1270), (70, 23) */
+(true):
+    /* CIF PROCEDURECALL (215, 1313), (118, 35) */
+    call writeln('OK (7)');
+/* CIF ANSWER (381, 1270), (70, 23) */
+(false):
+    /* CIF PROCEDURECALL (344, 1313), (142, 35) */
+    call writeln('ERROR (7)');
+endalternative;
+/* CIF NEXTSTATE (321, 1364), (70, 35) */
+NEXTSTATE wait;
+/* CIF state (623, 341), (70, 35) */
+state wait;
+endstate;
+endprocess foo;
+endblock;
+endsystem;

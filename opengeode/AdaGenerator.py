@@ -2757,7 +2757,15 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         code.append(f'-- Informal decision was ignored: {dec.inputString}')
         code.append('null;')
         return code, local_decl
-    else:
+    elif dec.kind == 'alternative':
+        # Only generate the code of one asnwer branch (like an #ifdef in C)
+        # The parser has already selected the transition to generate
+        if dec.alternative is not None:
+            return generate(dec.alternative)
+        else:
+            return code, local_decl
+    elif dec.kind != 'alternative':
+        # normal decision
         question_type = dec.question.exprType
         actual_type = type_name(question_type)
         question_basic = find_basic_type(question_type).kind

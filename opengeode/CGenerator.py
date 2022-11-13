@@ -64,6 +64,13 @@ def _decision(dec, **kwargs):
         stmts.append('// Informal decision was ignored: {}'
                     .format(dec.inputString))
         return stmts, decls
+    elif dec.kind == 'alternative':
+        # Only generate the code of one asnwer branch (like an #ifdef in C)
+        # The parser has already selected the transition to generate
+        if dec.alternative is not None:
+            return generate(dec.alternative)
+        else:
+            return stmts, decls
     question_type = dec.question.exprType
     actual_type = type_name(question_type)
     basic = find_basic_type(question_type).kind in (

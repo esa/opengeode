@@ -828,7 +828,7 @@ action
                 | output
                 | create_request
                 | decision
-                | transition_option
+                | alternative
                 //| set_timer
                 //| reset_timer
                 | export     // Not supported in OpenGEODE
@@ -891,13 +891,17 @@ reset_statement
 */
 
 
-/* Alternative (equivalent to #ifdef in C) are not currently supported */
-transition_option
-        :       ALTERNATIVE alternative_question e=end
-                answer_part
-                alternative_part
+/* Alternative (equivalent to #ifdef in C) */
+alternative
+        :       cif?
+                symbolid?
+                hyperlink?
+                ALTERNATIVE alternative_question e=end
+                answer_part?
+                alternative_part?
                 ENDALTERNATIVE f=end
-        ->      ^(ALTERNATIVE answer_part alternative_part)
+        ->      ^(ALTERNATIVE cif? hyperlink? symbolid? $e?
+                alternative_question answer_part? alternative_part?)
         ;
 
 
@@ -910,8 +914,7 @@ alternative_part
 
 
 alternative_question
-        :       expression
-                | informal_text
+        :       ground_expression
         ;
 
 
@@ -1483,6 +1486,7 @@ symbolname
                 | STOP
                 | RETURN
                 | DECISION
+                | ALTERNATIVE
                 | TEXT
                 | TASK
                 | NEXTSTATE

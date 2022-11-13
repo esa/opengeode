@@ -309,7 +309,10 @@ def _procedure_call(ast, scene, parent, states):
 @render.register(ogAST.Decision)
 def _decision(ast, scene, parent, states):
     ''' Create a DECISION symbol and all its answers '''
-    symbol = sdlSymbols.Decision(parent, ast=ast)
+    if ast.kind == 'alternative':
+        symbol = sdlSymbols.Alternative(parent, ast=ast)
+    else:
+        symbol = sdlSymbols.Decision(parent, ast=ast)
     # Place the symbol at absolute coordinates
     if not parent:
         symbol.pos_x, symbol.pos_y = ast.pos_x, ast.pos_y
