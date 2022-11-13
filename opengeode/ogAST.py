@@ -191,7 +191,7 @@ class Primary(Expression):
 
     def trace(self):
         ''' Debug output for a primary '''
-        return u'PRIMARY : {exp} ({l},{c})'.format(exp=self.inputString,
+        return 'PRIMARY : {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -321,14 +321,16 @@ class PrimSequence(Primary):
 class Decision:
     ''' AST Entry for a decision '''
     def __init__(self):
-        ''' A DECISION statement '''
+        ''' A DECISION or ALTERNATIVE statement '''
         self.inputString = 'true'
         self.line = None
         self.charPositionInLine = None
         self.pos_x, self.pos_y = None, None
         self.width = 70
         self.height = 50
-        # kind can be 'any', 'informal_text', or 'question'
+        # kind can be 'any', 'informal_text', 'question' or 'alternative'
+        # (alternative for the corresponding symbol, in which
+        # case the question has to be a ground expression)
         self.kind = None
         # question is an Expression
         self.question = None
@@ -336,6 +338,8 @@ class Decision:
         self.informalText = None
         # list of type Answer
         self.answers = []
+        # When kind is 'alternative', set the only Transition to keep
+        self.alternative = None
         # optional comment symbol
         self.comment = None
         # optional hyperlink
@@ -373,7 +377,7 @@ class Answer:
         #      'closed_range'|'constant'|'open_range'|'else'|'informal_text'
         # and content is either strings (informal text)
         #           or set of two numbers (closed range)
-        #           or tuple (EprEq, constant) for constant
+        #           or tuple (ExprEq, constant) for constant
         #           or tuple (op, constant) for open_range
         #           or None ('else' branch)
         # with op being either ExprEq, ExprNeq, ExprGt, ExprGe, ExprLt, or ExprLe (types)

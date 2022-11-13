@@ -5626,6 +5626,8 @@ def alternative_part(root, parent, context):
                 ans.warnings.append(w[0])
     return ans, errors, warnings
 
+def alternative(root, parent, context):
+    return decision(root, parent, context)
 
 def decision(root, parent, context):
     ''' Parse a DECISION '''
@@ -5650,6 +5652,19 @@ def decision(root, parent, context):
             dec.question, qerr, qwarn = expression(child.getChild(0), context)
             dec.inputString = get_input_string(child.getChild(0))
             #dec.inputString = dec.question.inputString
+            dec.line = dec.question.line
+            dec.charPositionInLine = dec.question.charPositionInLine
+        elif child.type == lexer.GROUND:
+            # Alternative symbol: the question has to be a ground
+            # expression with a boolean type (it has to be evaluated
+            # by the parser, so more complex types are not considered
+            # yet. Only the answer "true" will be kept.
+            dec.kind = 'alternative'
+            dec.inputString = get_input_string(child.getChild(0))
+            dec.question, qerr, qwarn = ground_expression(child.getChild(0),
+                    'alternative',
+                    BOOLEAN,
+                    context)
             dec.line = dec.question.line
             dec.charPositionInLine = dec.question.charPositionInLine
         elif child.type == lexer.INFORMAL_TEXT:
@@ -6226,6 +6241,55 @@ def transition(root, parent, context):
             warnings.extend(warn)
             trans.actions.append(dec)
             parent = dec
+        elif child.type == lexer.ALTERNATIVE:
+            # Alternatives are like compilation options (#ifdef in C)
+            # We keep only one answer branch (the answer corresponding
+            # to the evaluation of the question by the parser)
+            # Alternative use ground expressions of boolean type, so
+            # we know here that there are at most 2 answers, true and false
+            # (one of them could be "else")
+            alt, err, warn = decision(child, parent=parent, context=context)
+            errors.extend(err)
+            warnings.extend(warn)
+            if not isinstance(alt.question, ogAST.PrimConstant):
+                errors.append(
+                        ["Alternative must be an ASN.1 constant, nothing else",
+                        [alt.pos_x, alt.pos_y], []])
+            elif not err:
+                # No errors => there are 2 answers, pick the right one
+                value = alt.question.constant_value # has to be true or false
+                found = None
+                for answer in alt.answers:
+                    if found is not None:
+                        continue
+                    # Each answer can contain multiple options
+                    for each in answer.answers:
+                        if found is not None:
+                            continue
+                        kind = each['kind']
+                        content = each['content']
+                        if kind not in ('constant', 'else'):
+                            errors.append(
+                                    ['Answer has to be "true", "false" or "else"',
+                                    [answer.pos_x, answer.pos_y], []])
+                        elif kind == 'constant':
+                            constval = content[1].value[0].lower() == 'true'
+                            if constval == value:
+                                found = answer
+                        else:
+                            # "else" branch
+                            found = answer
+                trans.actions.append(alt)
+                if found is not None:
+                    # Set the transition, then when generating code
+                    # the Helper will replace the alternative branches
+                    # with this single transition
+                    alt.alternative = found.transition
+                else:
+                    warnings.append(
+                        ["Found no valid transition for this alternative",
+                        [alt.pos_x, alt.pos_y], []])
+            parent = alt
         elif child.type == lexer.TERMINATOR:
             term, err, warn = terminator_statement(child,
                     parent=parent, context=context)
@@ -6954,6 +7018,7 @@ def parseSingleElement(elem:str='', string:str='', context=None):
             ('input_part',
              'output',
              'decision',
+             'alternative',
              'alternative_part',
              'terminator_statement',
              'label',
