@@ -2758,7 +2758,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
         code.append('null;')
         return code, local_decl
     elif dec.kind == 'alternative':
-        # Only generate the code of one asnwer branch (like an #ifdef in C)
+        # Only generate the code of one answer branch (like an #ifdef in C)
         # The parser has already selected the transition to generate
         if dec.alternative is not None:
             return generate(dec.alternative)
