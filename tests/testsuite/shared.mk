@@ -19,7 +19,7 @@ clean:
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
-	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml
+	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86
 
 test-promela: FORCE
 	 sdl2promela --sdl *.pr -o og.pml
