@@ -6273,7 +6273,10 @@ def transition(root, parent, context):
                                     ['Answer has to be "true", "false" or "else"',
                                     [answer.pos_x, answer.pos_y], []])
                         elif kind == 'constant':
-                            constval = content[1].value[0].lower() == 'true'
+                            constval = content[1].value[0].lower().strip() == 'true'
+                            if isinstance(value, str):
+                                # synonyms may only have the string value
+                                value = value.lower().strip() == 'true'
                             if constval == value:
                                 found = answer
                         else:
@@ -6282,8 +6285,7 @@ def transition(root, parent, context):
                 trans.actions.append(alt)
                 if found is not None:
                     # Set the transition, then when generating code
-                    # the Helper will replace the alternative branches
-                    # with this single transition
+                    # the backends can generate only the relevant code
                     alt.alternative = found.transition
                 else:
                     warnings.append(
