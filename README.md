@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.11.1 (11/2022)**
+-  Fix scope issue when using for loops in observers
+
 **3.11.0 (11/2022)**
 - Introduce support for SDL's alternative symbol
 

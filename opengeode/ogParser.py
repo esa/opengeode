@@ -6470,7 +6470,6 @@ def for_loop(root, context):
             forloop['var'] = child.text
             # Implicit variable declaration for the iterator
             context_scope = dict(context.variables)
-            context_scope.update(context.monitors)
             if child.text.lower() in (var.lower()
                       for var in chain (context.variables.keys(),
                                         context.global_variables.keys(),
