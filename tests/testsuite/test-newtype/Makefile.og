@@ -1,6 +1,6 @@
 all:
 	mkdir -p code
-	cd code && opengeode --toAda /home/taste/tool-src/opengeode/tests/testsuite/test-newtype/og.pr 
+	cd code && opengeode --toAda /home/taste/opengeode/tests/testsuite/test-newtype/og.pr 
 	asn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada dataview-uniq.asn code/og_datamodel.asn
 	cd code && gnat make og
 clean:

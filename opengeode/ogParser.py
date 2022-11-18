@@ -3867,26 +3867,100 @@ def get_struct_children(root):
 
 
 def syntype(root, ta_ast, context):
-    ''' Parse a SYNTYPE definition and inject it in ASN1 AST'''
+    ''' Parse a SYNTYPE definition and inject it in ASN1 AST
+    A syntype is a subtype of an integer type '''
     errors = []
     warnings = []
-    newtype = ""
-    reftype = ""
+    newtype, reftype = None, None
+    newtypename, reftypename = None, None
+    # root.children has in sequence:
+    # (1) the name of the new type
+    # (2) the name of the type it inherits from
+    # (3) a list of either OPEN_RANGE or CLOSED_RANGE
+    # an open range is an optional operator followed by a constant
+    # a closed range is "a:b"
+    # All elements must be ground expressions
+    open_ranges, closed_ranges = [], []
+    for child in root.getChildren():
+        if child.type == lexer.SORT:
+            typename = child.getChild(0).text.capitalize()
+            if newtypename is None:
+                newtypename = typename
+            else:
+                reftypename = typename
+                try:
+                    reftype = sdl_to_asn1(reftypename)
+                    if not is_numeric(reftype):
+                        errors.append(error(root, "Syntypes must be numeric"))
+                except TypeError as err:
+                    errors.append(error(root, str(err)))
+        elif child.type == lexer.CLOSED_RANGE:
+            left, right = child.getChild(0), child.getChild(1)
+            cl0, err0, warn0 = ground_expression(left, '    left',
+                                                 reftype, context)
+            cl1, err1, warn1 = ground_expression(right, '    right',
+                                                 reftype, context)
+            errors.extend(err0)
+            errors.extend(err1)
+            warnings.extend(warn0)
+            warnings.extend(warn1)
+            closed_ranges.append((cl0, cl1))
+        elif child.type == lexer.OPEN_RANGE:
+            op = None
+            print("Open!")
+            for c in child.getChildren():
+                print(c)
+                if c.type == lexer.CONSTANT:
+                    # The type checking here may be wrong because
+                    # the operator is not taken into account... So if
+                    # for instance the range of the reftype is 0..10
+                    # and the expression is "<11" it should pass with no
+                    # error, while now it will report that 11 is out of range
+                    constant_expr, err, warn = ground_expression(c.getChild(0),
+                                                                 '    value',
+                                                                  reftype,
+                                                                  context)
+                    errors.extend(err)
+                    warnings.extend(warn)
+                    if not op:
+                        op = ogAST.ExprEq
+                    open_ranges.append((op, constant_expr))
+                else:
+                    op = EXPR_NODE[c.type]
+        elif child.type == lexer.CONSTANT:
+            # Here there is no operator so the type check is correct
+            constant_expr, err, warn = ground_expression(child.getChild(0),
+                                                         '    value',
+                                                         reftype,
+                                                         context)
+            errors.extend(err)
+            warnings.extend(warn)
+            open_ranges.append((ogAST.ExprEq, constant_expr))
+    # Everything has been parsed, now we must check that
+    # (1) the new type name does not already exist
+    # (2) the range is a subrange of the parent type
+    try:
+        _ = sdl_to_asn1(newtypename)
+    except TypeError:
+        # This is expected: the type should not already exist!
+        pass
+    else:
+        errors.append(error(root, f"Syntype: A type with name"
+            f"'{newtypename}' is already defined"))
 
-    newtypename = root.getChild(0).getChild(0).text.capitalize()
-    # reftypename = root.getChild(1).getChild(0).text
-    newtype = type(str(newtypename), (object,), {
-        "Line": root.getChild(0).getLine(),
-        "CharPositionInLine": root.getChild(0).getCharPositionInLine(),
-    })
-    newtype.type = type(str(newtypename) + "_type", (object,), {
-        "Line": root.getChild(1).getLine(),
-        "CharPositionInLine": root.getChild(1).getCharPositionInLine(),
-        "kind": reftype + "Type"
-    })
+#   newtype = type(str(newtypename), (object,), {
+#       "Line": root.getChild(0).getLine(),
+#       "CharPositionInLine": root.getChild(0).getCharPositionInLine(),
+#   })
+#   newtype.type = type(str(newtypename) + "_type", (object,), {
+#       "Line": root.getChild(1).getLine(),
+#       "CharPositionInLine": root.getChild(1).getCharPositionInLine(),
+#       "kind": reftype + "Type"
+#   })
 
     #types()[str(newtypename)] = newtype
     LOG.debug("Found new SYNTYPE " + newtypename)
+
     return errors, warnings
 
 

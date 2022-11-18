@@ -43,6 +43,15 @@ system og;
             
             dcl myseq Seq;
             /* CIF ENDTEXT */
+            /* CIF TEXT (402, 101), (249, 140) */
+            syntype toto = myInteger
+              constants 0:some_constant,  60,=100
+            endsyntype;
+            
+            syntype MyInteger = MyInteger
+             constants <0,  /=256
+            endsyntype;
+            /* CIF ENDTEXT */
             /* CIF START (918, 216), (70, 35) */
             START;
                 /* CIF task (874, 271), (156, 35) */
@@ -53,9 +62,9 @@ system og;
                 task someint := some_constant;
                 /* CIF decision (917, 431), (70, 50) */
                 decision someint;
-                    /* CIF ANSWER (761, 501), (112, 23) */
+                    /* CIF ANSWER (755, 501), (112, 23) */
                     (some_constant):
-                    /* CIF ANSWER (879, 501), (81, 23) */
+                    /* CIF ANSWER (873, 501), (81, 23) */
                     (forty_two):
                     /* CIF ANSWER (970, 501), (70, 23) */
                     (zero):
