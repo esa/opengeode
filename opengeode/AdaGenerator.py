@@ -171,6 +171,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     ''' Generate the code for a complete process (AST Top level)
         use instance=True to generate the code for a process type instance
         rather than the process type itself.
+        the "simu" option comes from the command line. When set, the backend
+        will generate simulation-specific code that raise an exception when
+        an input is recevied in a state where it is not expected (lost signal)
+        In that case, the tast simulator and model cehcker will catch it and
+        replace the input event with an "unhandled input" event.
     '''
     # support generation of code of a process type
     if not instance:
@@ -361,9 +366,6 @@ end {process.name.lower()}_Lib;'''
     start_transition = []
     # Continuous State transition id
     if not instance:
-        # CS only is declared in the .ads, so that it can be seen by the simulator
-        #process_level_decl.append(f'CS_Only : constant := {len(process.transitions)};')
-
         for name, val in process.mapping.items():
             # Test val, in principle there is a value but if the code targets
             # generation of properties, the model may have been cleaned up and
@@ -489,7 +491,8 @@ use Interfaces,
 {instance_decl}
 {rand}
 {generic_spec}'''.strip() + f'''
-package {process.name} with Elaborate_Body is''']
+package {process.name} with Elaborate_Body is
+   {"Lost_Input : exception;" if simu else ""}''']
 
     ri_stub_ads = [f'''\
 --  This file is a stub for the implementation of the required interfaces
@@ -515,7 +518,6 @@ package {process.name}_RI is
 
 package body {process.name}_RI is''']
 
-    dll_api = []
     ads_template.extend(rand_decl)
     if not instance:
         ads_template.extend(context_decl)
@@ -591,9 +593,6 @@ package body {process.name}_RI is''']
     # Generate the code of the START procedures of state aggregations
     # XXX to be added to C generator
     taste_template.extend(aggreg_start_proc)
-
-    # Add the code of the DLL interface
-    taste_template.extend(dll_api)
 
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
@@ -686,13 +685,9 @@ package body {process.name}_RI is''']
                 if input_def.transition:
                     dest.append(f'Execute_Transition ({input_def.transition_id});')
                 else:
-                    #taste_template.append('Execute_Transition (CS_Only);')
-                    # removed: CS_Only in "when others" branch
                     return False
             else:
                 return False
-                # removed: CS_Only in "when others" branch
-                #taste_template.append('Execute_Transition (CS_Only);')
             return True
 
         if not instance:
@@ -724,6 +719,9 @@ package body {process.name}_RI is''']
                             case_state(par)
                         taste_template.append('when others =>')
                         taste_template.append('Execute_Transition (CS_Only);')
+                        if simu:
+                            # In simulation mode, the unhandled input is signaled
+                            taste_template.append('raise Lost_Input;')
                         taste_template.append('end case;')
                         break
                 else:
@@ -733,6 +731,9 @@ package body {process.name}_RI is''']
                         execute_transition(state, taste_template)
                     else:
                         taste_template.append('Execute_Transition (CS_Only);')
+                        if simu:
+                            # In simulation mode, the unhandled input is signaled
+                            taste_template.append('raise Lost_Input;')
             else:
                 if execute_transition(state, statecase):
                     taste_template.extend(statecase)
@@ -742,6 +743,9 @@ package body {process.name}_RI is''']
                 case_state(each_state)
             taste_template.append('when others =>')
             taste_template.append('Execute_Transition (CS_Only);')
+            if simu:
+                # In simulation mode, the unhandled input is signaled
+                taste_template.append('raise Lost_Input;')
             taste_template.append('end case;')
         else:
             inst_call = f"{process.name}_Instance.{signame}"

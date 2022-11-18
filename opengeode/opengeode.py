@@ -3129,10 +3129,8 @@ def parse_args():
                         version=__version__)
     parser.add_argument('-g', '--debug', action='store_true', default=False,
             help='Display debug information')
-    parser.add_argument('--shared', action='store_true', default=False,
-            help='Generate getters/setters to access internal state')
-    parser.add_argument('--dll', action='store_true', default=False,
-            help='Generate callback hooks when compiling as shared object')
+    parser.add_argument('--simu', action='store_true', default=False,
+            help='Generate additional code for the taste simulation mode')
     parser.add_argument('--stg', type=str, metavar='file',
             help='Generate code using a custom String Template file')
     parser.add_argument('--check', action='store_true', dest='check',
@@ -3209,11 +3207,11 @@ def parse(files):
 def generate(process, options):
     ''' Generate code '''
     ret = 0
-    if options.toAda or options.shared or options.dll:
+    if options.toAda or options.simu:
         LOG.info('Generating Ada code')
         try:
             AdaGenerator.generate(process,
-                                  simu=options.shared,
+                                  simu=options.simu,
                                   taste=options.taste_target)
         except (TypeError, ValueError, NameError) as err:
             ret = 1
@@ -3225,7 +3223,7 @@ def generate(process, options):
     if options.toC:
         LOG.info('Generating C code')
         try:
-            CGenerator.generate(process, simu=options.shared, options=options)
+            CGenerator.generate(process, simu=options.simu, options=options)
         except (TypeError, ValueError, NameError) as err:
             ret = 1
             LOG.error(str(err))
@@ -3243,7 +3241,7 @@ def generate(process, options):
 
     if options.stg:
         LOG.info('Using backend file {}'.format(options.stg))
-        StgBackend.generate(process, simu=options.shared, stgfile=options.stg)
+        StgBackend.generate(process, simu=options.simu, stgfile=options.stg)
     return ret
 
 
@@ -3326,8 +3324,8 @@ def cli(options):
     if options.png or options.pdf or options.svg:
         export(ast, options)
 
-    if any((options.toAda, options.llvm, options.shared,
-        options.stg, options.dll, options.toC)):
+    if any((options.toAda, options.llvm, options.simu,
+        options.stg, options.toC)):
         if not errors:
             errors = generate(ast.processes[0], options)
         else:
@@ -3408,8 +3406,8 @@ def opengeode():
 
     LOG.debug('Starting OpenGEODE version ' + __version__)
     if any((options.check, options.toAda, options.png, options.pdf,
-            options.svg, options.llvm, options.shared, options.stg,
-            options.dll, options.toC)):
+            options.svg, options.llvm, options.simu, options.stg,
+            options.toC)):
         return cli(options)
     else:
         return gui(options)
