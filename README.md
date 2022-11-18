@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.11.2 (11/2022)**
+-  In simulation mode, signal unhandled interfaces (lost signal)
+
 **3.11.1 (11/2022)**
 -  Fix scope issue when using for loops in observers
 
