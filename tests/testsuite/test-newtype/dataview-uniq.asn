@@ -8,6 +8,7 @@ Seq ::= SEQUENCE {
    b ENUMERATED {foo, bar}
 }
 
+SubInt ::= MyInteger (50..100)
 some-constant MyInteger ::= 42
 
 some-constant-arr SeqOf ::= {1,2,3}

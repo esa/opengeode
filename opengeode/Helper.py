@@ -701,7 +701,7 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
     ''' Generate an ASN.1 model containing:
           - the state definition
           - a type describing the SDL context
-          - all user-defined SDL type (NEWTYPEs...)
+          - all user-defined SDL type (NEWTYPEs, SYNTYPEs...)
         This function is independent from specific backends.
     '''
 
@@ -780,7 +780,7 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
 
     asn1_template.append(asn1_context)
 
-    # Add user-defined NEWTYPEs and CHOICE selector types
+    # Add user-defined NEWTYPEs, SYNTYPEs and CHOICE selector types
     choice_selections = []
     # a newtype may reuse another newtype, so we must update the list:
     types_with_proper_case.extend(process.user_defined_types.keys())
@@ -814,6 +814,10 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
                 keys.append(f'{key}-present({idx+1})')
             asn1_template.append(
                     f'{prefixed_name.replace("_", "-").title()} ::= ENUMERATED {{' + ", ".join(keys) + '}')
+        elif sortdef.type.kind == 'ReferenceType':
+            # this is a SYNTYPE
+            asn1_template.append(
+                    f"{sortname} ::= {sortdef.type.ReferencedTypeName} ({sortdef.type.Min} .. {sortdef.type.Max})")
     asn1_template.append('END\n')
 
     # Write the ASN.1 file

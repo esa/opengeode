@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.12.0 (11/2022)**
+-  Add support for standard SDL SYNTYPE construct (useful to create a range type for a local array)
+
 **3.11.2 (11/2022)**
 -  In simulation mode, signal unhandled interfaces (lost signal)
 

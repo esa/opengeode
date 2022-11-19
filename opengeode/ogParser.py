@@ -3812,7 +3812,7 @@ def get_array_type(newtypename, root):
         basicIndex = find_basic_type(indexSort)
     elif is_enumerated(indexSort):
         basic = find_basic_type(indexSort)
-        enm = len(basic.EnumValues.keys())        
+        enm = len(basic.EnumValues.keys())
         basicIndex = NewInteger (enm, enm)
     else:
         raise TypeError("Array indexing type must be numerical")
@@ -3873,6 +3873,8 @@ def syntype(root, ta_ast, context):
     warnings = []
     newtype, reftype = None, None
     newtypename, reftypename = None, None
+    line = root.getLine()
+    char = root.getCharPositionInLine()
     # root.children has in sequence:
     # (1) the name of the new type
     # (2) the name of the type it inherits from
@@ -3891,7 +3893,12 @@ def syntype(root, ta_ast, context):
                 try:
                     reftype = sdl_to_asn1(reftypename)
                     if not is_numeric(reftype):
-                        errors.append(error(root, "Syntypes must be numeric"))
+                        errors.append(error(root, f"{line}:{char} Syntypes must be numeric"))
+                    # Retrieve the proper ref type spelling
+                    for each in types().keys():
+                        if reftypename.replace('_', '-').lower() == each.lower():
+                            break
+                    reftypename = each
                 except TypeError as err:
                     errors.append(error(root, str(err)))
         elif child.type == lexer.CLOSED_RANGE:
@@ -3907,18 +3914,18 @@ def syntype(root, ta_ast, context):
             closed_ranges.append((cl0, cl1))
         elif child.type == lexer.OPEN_RANGE:
             op = None
-            print("Open!")
             for c in child.getChildren():
-                print(c)
                 if c.type == lexer.CONSTANT:
-                    # The type checking here may be wrong because
+                    # The type checking here is done using INTEGER
+                    # and not reftep, otherwise it may be wrong because
                     # the operator is not taken into account... So if
                     # for instance the range of the reftype is 0..10
                     # and the expression is "<11" it should pass with no
                     # error, while now it will report that 11 is out of range
+                    # The ranges are verified properly below
                     constant_expr, err, warn = ground_expression(c.getChild(0),
                                                                  '    value',
-                                                                  reftype,
+                                                                  INTEGER,
                                                                   context)
                     errors.extend(err)
                     warnings.extend(warn)
@@ -3938,28 +3945,117 @@ def syntype(root, ta_ast, context):
             open_ranges.append((ogAST.ExprEq, constant_expr))
     # Everything has been parsed, now we must check that
     # (1) the new type name does not already exist
+    # EDIT: we can't do it like that because the syntype has already been
+    # pre-parsed to make sure it is visible for variable declarations
+    # so it will always be found here as already defined
+    #try:
+    #    _ = sdl_to_asn1(newtypename)
+    #except TypeError:
+    #    # This is expected: the type should not already exist!
+    #    pass
+    #else:
+    #    errors.append(error(root, f"{line}:{char} Syntype: A type with name"
+    #        f"'{newtypename}' is already defined"))
     # (2) the range is a subrange of the parent type
-    try:
-        _ = sdl_to_asn1(newtypename)
-    except TypeError:
-        # This is expected: the type should not already exist!
-        pass
-    else:
-        errors.append(error(root, f"Syntype: A type with name"
-            f"'{newtypename}' is already defined"))
+    # Iterate over all open and closed range to determine the min and the max
+    def get_val(value):
+        # Quick helper: return the numerical value of the expression
+        if isinstance(value, ogAST.PrimConstant):
+            return int(value.constant_value)
+        else: # PrimInteger
+            try:
+                return int(value.value[0])
+            except:
+                # User entered a binary expression or not a PrimInteger
+                # and there is no value.value field
+                errors.append(error(root, f"{line}:{char} Invalid expression: {value.inputString}"))
+                return 0
+    def find_range(foundMin=None, foundMax=None):
+        # This function sets the min and max range of the integer subtype,
+        # based on the sets of open and closed ranges provided by the user
+        for each in closed_ranges:
+            left, right = get_val(each[0]), get_val(each[1])
+            if foundMin is None or (foundMin is not None and left < foundMin):
+                foundMin = left
+            if foundMax is None or (foundMax is not None and right > foundMax):
+                foundMax = right
+        for each in open_ranges:
+            op, val = each[0], get_val(each[1])
+            if op == ogAST.ExprEq:
+                if foundMin is None:
+                    foundMin = val
+                if foundMax is None:
+                    foundMax = val
+                if val < foundMin:
+                    foundMin = val
+                if val > foundMax:
+                    foundMax = val
+            elif op == ogAST.ExprNeq:
+                if foundMin is not None and val == foundMin:
+                    foundMin = foundMin + 1
+                elif foundMax is not None and val == foundMax:
+                    foundMax = foundMax - 1
+            elif op == ogAST.ExprGt:
+                if foundMin is None or val <= foundMin:
+                    foundMin = val + 1
+                if foundMax is not None and val >= foundMax:
+                    # > current max? We must look for a new upper bound
+                    foundMax = None
+            elif op == ogAST.ExprLt:
+                if foundMax is None or val >= foundMax:
+                    foundMax = val - 1
+                if foundMin is not None and val <= foundMin:
+                    # < current min? We must look for a new lower bound
+                    foundMin = None
+            elif op == ogAST.ExprLe:
+                if foundMax is None or val > foundMax:
+                    foundMax = val
+                if foundMin is not None and val <= foundMin:
+                    # < current min? We must look for a new lower bound
+                    foundMin = None
+            elif op == ogAST.ExpGe:
+                if foundMin is None or val < foundMin:
+                    foundMin = val
+                if foundMax is not None and val >= foundMax:
+                    # > current max? We must look for an upper bound
+                    foundMax = None
+        return foundMin, foundMax
+    foundMin, foundMax = find_range(None, None)
+    if foundMin is None or foundMax is None or (foundMin is not None
+            and foundMax is not None and foundMax < foundMin):
+        foundMin = foundMax = 0
+        errors.append(error(root, "Couuld not determine the range of the syntype!"))
 
-#   newtype = type(str(newtypename), (object,), {
-#       "Line": root.getChild(0).getLine(),
-#       "CharPositionInLine": root.getChild(0).getCharPositionInLine(),
-#   })
-#   newtype.type = type(str(newtypename) + "_type", (object,), {
-#       "Line": root.getChild(1).getLine(),
-#       "CharPositionInLine": root.getChild(1).getCharPositionInLine(),
-#       "kind": reftype + "Type"
-#   })
+    refbasic = find_basic_type(reftype)
+    if int(refbasic.Min) > foundMin or int(refbasic.Max) < foundMax:
+        errors.append(error(root, f"{line}:{char} Range [{foundMin}, {foundMax}] exceeds the capacity of the parent type"))
 
-    #types()[str(newtypename)] = newtype
-    LOG.debug("Found new SYNTYPE " + newtypename)
+    LOG.debug(f"{line}:{char} Found range: for {newtypename}: [{foundMin}, {foundMax}]")
+
+
+    asnName = newtypename.replace('_', '-')
+    newtype = type(asnName, (object,), {
+        "Line": int(line),
+        "CharPositionInLine": int(char),
+        "CName": newtypename,
+        "AddedType": "False",
+        "type": type(f"{asnName}_type", (object,), {
+            "AsnFile": "sdl_model",
+            "Line": int(line),
+            "CharPositionInLine": int(char),
+            "CName": newtypename,
+            "AdaName": newtypename.title(),
+            "HasAcnEncDec": False,
+            "kind": "ReferenceType",
+            "ReferencedTypeName": reftypename,
+            "Min": str(foundMin),
+            "Max": str(foundMax)
+            })
+        })
+
+    USER_DEFINED_TYPES.update({asnName: newtype})
+    if isinstance(context, ogAST.Process):
+        context.user_defined_types = USER_DEFINED_TYPES
 
     return errors, warnings
 
@@ -4565,10 +4661,16 @@ def process_definition(root, parent=None, context=None):
         for each in content:
             newtypes = (x for x in each.getChildren()
                         if x.type == lexer.NEWTYPE)
+            syntypes = (x for x in each.getChildren()
+                        if x.type == lexer.SYNTYPE)
             for sort in newtypes:
                 # ignore errors, warnings here
                 # we just need the types to be visible
                 _, _ = newtype(sort, None, context)
+            for sort in syntypes:
+                # ignore errors, warnings here
+                # we just need the types to be visible
+                _, _ = syntype(sort, None, context)
 
     # then parse procedures, so that their signature is set in the ast
     procedures = (x for x in root.getChildren() if x.type == lexer.PROCEDURE)
