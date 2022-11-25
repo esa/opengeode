@@ -2692,6 +2692,12 @@ def _sequence_of(seqof, **kwargs):
             local_decl.extend(assign_loc)
             item_str = tmpVarName
 
+        # We have to cast element for example if it is a loop iterator
+        cast_expected = type_name(seqof_ty.type)
+        sort_element  = type_name(seqof.value[i].exprType)
+        if cast_expected != sort_element:
+            item_str = f'{cast_expected} ({item_str})'
+
         stmts.extend(item_stmts)
         local_decl.extend(local_var)
         tab.append(f'{i+1} => {item_str}')
