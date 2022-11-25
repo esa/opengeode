@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.12.1 (11/2022)**
+- Fix support for loop iterator in combination with arrays (Ada backend fix)
+- Align generation of code with asn1scc bugfix when using subtypes with sign incompatibilities
+
 **3.12.0 (11/2022)**
 -  Add support for standard SDL SYNTYPE construct (useful to create a range type for a local array)
 
