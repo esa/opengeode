@@ -1,0 +1,7 @@
+DV DEFINITIONS ::=
+BEGIN
+
+  T1 ::= INTEGER (-10..65535)
+  T2 ::= T1 (0..10)
+
+END

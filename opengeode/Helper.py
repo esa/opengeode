@@ -122,7 +122,7 @@ def parallel_states(aggregates):
     for name, comp in aggregates.items():
         for each in comp:
             parallel_states.extend(name for name in each.mapping.keys()
-                    if not name.endswith(u'START'))
+                    if not name.endswith('START'))
     return parallel_states
 
 
@@ -178,7 +178,7 @@ def inner_labels_to_floating(process):
             process.content.floating_labels.append(new_floating)
 
 
-def flatten(process, sep=u'_'):
+def flatten(process, sep='_'):
     ''' In-place update of the AST: flatten a model with nested states
         Rename inner states, procedures, etc. and move them to process level
     '''

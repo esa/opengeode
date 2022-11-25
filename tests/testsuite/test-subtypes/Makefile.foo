@@ -1,0 +1,7 @@
+all:
+	mkdir -p code
+	cd code && opengeode --toAda /home/taste/opengeode/tests/testsuite/test-subtypes/foo.pr 
+	asn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada datamodel.asn code/foo_datamodel.asn
+	cd code && gnat make foo
+clean:
+	rm -rf code

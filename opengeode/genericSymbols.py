@@ -939,7 +939,7 @@ class Cornergrabber(QGraphicsPolygonItem):
 
     def __repr__(self):
         ''' Pretty string for the print function '''
-        return u'Cornergrabber of ' + str(self.parentItem())
+        return 'Cornergrabber of ' + str(self.parentItem())
 
     def display(self):
         ''' Polygon is a rectangle of the size of the parent item '''
@@ -972,7 +972,7 @@ class Cornergrabber(QGraphicsPolygonItem):
         elif self.parent.in_start_zone(event.pos().toPoint()):
             cursor = Qt.CrossCursor
 
-        # Manual resizing is disables so corresponding cursors are not needed
+        # Manual resizing is disabled so corresponding cursors are not needed
 #       elif not self.parent.resizeable:
 #           cursor = self.parent.default_cursor
 #           self.resize_mode = ''

@@ -1409,7 +1409,7 @@ class Start(HorizontalSymbol):
 
     def __str__(self):
         ''' User cannot enter text in the START symbol - Return dummy text '''
-        return u'START'
+        return 'START'
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''

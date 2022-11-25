@@ -3215,7 +3215,7 @@ def generate(process, options):
                                   taste=options.taste_target)
         except (TypeError, ValueError, NameError) as err:
             ret = 1
-            err = str(err).replace(u'\u00fc', '.')
+            err = str(err).replace(AdaGenerator.SEPARATOR, '.')
             err = err.encode('utf-8')
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))

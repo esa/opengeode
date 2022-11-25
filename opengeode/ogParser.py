@@ -1420,6 +1420,8 @@ def compare_types(type_a, type_b):   # type -> [warnings]
     mismatch = ''
     if not type_a or not type_b:
         raise TypeError("Missing type definition")
+
+    is_same_type = False
     if type_a.kind == 'ReferenceType' and type_b.kind == 'ReferenceType':
         # The type names may be different but the types may still be
         # the same, eg : TypeB ::= TypeA
@@ -1435,6 +1437,10 @@ def compare_types(type_a, type_b):   # type -> [warnings]
         if lowest_a != lowest_b:
             mismatch = '"{}" is not "{}"'.format(type_a.ReferencedTypeName,
                                                  type_b.ReferencedTypeName)
+        else:
+            # We flag the fact that one type is a subtype of the other type
+            # to avoid the signed/unsigned check to raise an error
+            is_same_type = True
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
 
@@ -1486,7 +1492,9 @@ def compare_types(type_a, type_b):   # type -> [warnings]
                 min_b = float(type_b.Min)
             except ValueError:
                 min_b = -1
-            if (min_a >= 0) != (min_b >= 0) \
+            # A subtype may appear as unsigned but at code level it inherits
+            # from another type that may be signed, so there is no mismatch.
+            if (min_a >= 0) != (min_b >= 0) and not is_same_type \
                     and not (is_number(type_a) or is_number(type_b)):
                 raise TypeError("Signed vs Unsigned type mismatch " +
                         mismatch)
@@ -2630,7 +2638,7 @@ def neg_expression(root, context):
         else:
             kind = 'IntegerType'
             sort = 'Universal_Integer'
-        expr.expr.value[0] = u'-{}'.format(expr.expr.value[0])
+        expr.expr.value[0] = '-{}'.format(expr.expr.value[0])
         attrs = {'Min' : str(-float(basic.Max)),
                  'Max' : str(-float(basic.Min)),
                  'kind': kind}
@@ -6546,7 +6554,7 @@ def assign(root, context):
             warnings.append(w)
     except(AttributeError, TypeError) as err:
         LOG.debug(str(traceback.format_exc()))
-        errors.append(u'In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'
+        errors.append('In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'
                       .format(exp=expr.inputString,
                               lty=type_name(expr.left.exprType) if
                                 expr.left and expr.left.exprType
