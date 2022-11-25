@@ -526,7 +526,8 @@ package body {process.name}_RI is''']
         # Add function allowing to trace current state as a string
         # This uses malloc and should be generated only for Linux
         # when Debug is ON
-        ads_template.append(
+        if reduced_statelist:
+            ads_template.append(
                 f"function Get_State return Chars_Ptr "
                 f"is ({process.name.title()}_RI.To_C_Pointer "
                 f"({ASN1SCC}{process.name}_States'Image ({LPREFIX}.State)))"

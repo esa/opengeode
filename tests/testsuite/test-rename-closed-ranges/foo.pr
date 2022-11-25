@@ -1,0 +1,62 @@
+system foo;
+/* CIF TEXT (94, 94), (267, 140) */
+-- Text area for declarations and comments
+
+use dv comment 'datamodel.asn';
+/* CIF ENDTEXT */
+block foo;
+/* CIF PROCESS (420, 255), (150, 75) */
+process foo;
+state nested;
+substructure
+out (nok,ok);
+/* CIF TEXT (64, 51), (170, 140) */
+dcl bar T1 := 2,
+        baz T1 := 5; 
+/* CIF ENDTEXT */
+/* CIF START (347, 54), (70, 35) */
+START;
+/* CIF decision (347, 109), (70, 50) */
+decision bar
+/* CIF comment (437, 116), (131, 38) */
+comment 'use a closed range
+to test renaming';
+/* CIF ANSWER (302, 179), (70, 23) */
+(1:baz):
+    /* CIF return (319, 222), (35, 35) */
+    return ok;
+/* CIF ANSWER (396, 179), (70, 23) */
+else:
+    /* CIF return (413, 222), (35, 35) */
+    return nok;
+enddecision;
+endsubstructure;
+/* CIF TEXT (773, 295), (170, 140) */
+dcl  bar T2, baz T1;
+
+/* CIF ENDTEXT */
+/* CIF START (487, 330), (70, 35) */
+START;
+/* CIF NEXTSTATE (487, 385), (70, 35) */
+NEXTSTATE nested;
+/* CIF state (631, 343), (70, 35) */
+state nested;
+/* CIF connect (676, 398), (70, 35) */
+connect nok;
+/* CIF PROCEDURECALL (658, 453), (105, 35) */
+call writeln('FAIL');
+/* CIF NEXTSTATE (676, 503), (70, 35) */
+NEXTSTATE wait;
+/* CIF connect (565, 398), (70, 35) */
+connect ok;
+/* CIF PROCEDURECALL (550, 453), (99, 35) */
+call writeln('OK');
+/* CIF NEXTSTATE (565, 503), (70, 35) */
+NEXTSTATE wait;
+endstate;
+/* CIF state (649, 617), (70, 35) */
+state wait;
+endstate;
+endprocess foo;
+endblock;
+endsystem;
