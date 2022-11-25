@@ -502,7 +502,9 @@ def _rename_answer(ast, from_name, to_name):
             _, constant = each['content'] # get the constant
             rename_everything(constant, from_name, to_name)
         elif each['kind'] == 'closed_range':
-            pass  # TODO when supported
+            left, right = each['content']
+            rename_everything(left, from_name, to_name)
+            rename_everything(right, from_name, to_name)
     rename_everything(ast.transition, from_name, to_name)
 
 
