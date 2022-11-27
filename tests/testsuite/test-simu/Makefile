@@ -26,7 +26,7 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	$(OPENGEODE) orchestrator.pr system_structure.pr
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 	#$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
 	#$(CC) -c -g test_ada.c
 	#$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
@@ -38,7 +38,7 @@ test-ada:
 
 simu:
 	rm -rf orchestrator_simu
-	$(OPENGEODE) orchestrator.pr system_structure.pr
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 	taste-properties -s properties orchestrator.pr system_structure.pr
 	make -f Makefile.properties
 	./orchestrator_simu.sh
