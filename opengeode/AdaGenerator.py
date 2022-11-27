@@ -2695,7 +2695,9 @@ def _sequence_of(seqof, **kwargs):
         # We have to cast element for example if it is a loop iterator
         cast_expected = type_name(seqof_ty.type)
         sort_element  = type_name(seqof.value[i].exprType)
-        if cast_expected != sort_element:
+        if cast_expected != sort_element and cast_expected != "String":
+            # Don't cast if it's an octet string, elements are not of type
+            # String but of type uint8.
             item_str = f'{cast_expected} ({item_str})'
 
         stmts.extend(item_stmts)

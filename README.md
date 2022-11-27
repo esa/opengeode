@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.12.2 (11/2022)**
+- Fix cast error when appending an octet to an octet string
+
 **3.12.1 (11/2022)**
 - Fix support for loop iterator in combination with arrays (Ada backend fix)
 - Align generation of code with asn1scc bugfix when using subtypes with sign incompatibilities
