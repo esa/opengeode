@@ -35,7 +35,7 @@ test-qgen-gt-c:
 test-ada:
 	#[ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ;
 	mkdir -p build && cp *.pr *.asn model_checker.gpr properties build && cd build && \
-	$(OPENGEODE) orchestrator.pr  && \
+	$(OPENGEODE) orchestrator.pr --toAda && \
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	#taste-properties -d -s properties orchestrator.pr && \
 	#taste-asn1-iterators *.asn && \

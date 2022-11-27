@@ -2693,12 +2693,22 @@ def _sequence_of(seqof, **kwargs):
             item_str = tmpVarName
 
         # We have to cast element for example if it is a loop iterator
-        cast_expected = type_name(seqof_ty.type)
-        sort_element  = type_name(seqof.value[i].exprType)
-        if cast_expected != sort_element and cast_expected != "String":
-            # Don't cast if it's an octet string, elements are not of type
-            # String but of type uint8.
-            item_str = f'{cast_expected} ({item_str})'
+        basic_elem_kind = find_basic_type(seqof.value[i].exprType).kind
+        try:
+            cast_expected = type_name(seqof_ty.type)
+            sort_element  = type_name(seqof.value[i].exprType)
+            if cast_expected != sort_element\
+                    and cast_expected != "String"\
+                    and basic_elem_kind.startswith("Integer"):
+                # Don't cast if it's an octet string, elements are not of type
+                # String but of type uint8. Only cast numerical types.
+                item_str = f'{cast_expected} ({item_str})'
+        except Exception:
+            # There are many cases where type_name cannot be used,
+            # depending on that element of appeneded. The cast is only
+            # needed to cope with some numerical types, and these
+            # are type_name-compatible. We can safely ignore exceptions.
+            pass
 
         stmts.extend(item_stmts)
         local_decl.extend(local_var)
