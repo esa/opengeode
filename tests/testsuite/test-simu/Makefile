@@ -26,7 +26,7 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
+	$(OPENGEODE) orchestrator.pr system_structure.pr
 	#$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
 	#$(CC) -c -g test_ada.c
 	#$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
@@ -38,7 +38,7 @@ test-ada:
 
 simu:
 	rm -rf orchestrator_simu
-	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
+	$(OPENGEODE) orchestrator.pr system_structure.pr
 	taste-properties -s properties orchestrator.pr system_structure.pr
 	make -f Makefile.properties
 	./orchestrator_simu.sh
@@ -47,7 +47,7 @@ simu:
 test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(CC) -c -g test_c.c
-	$(OPENGEODE) orchestrator.pr system_structure.pr --shared --toC
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
 	$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
 	./test_c | diff - expected
 
@@ -57,7 +57,7 @@ test-if:
 test-llvm: orchestrator.o
 
 test-python:
-	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
+	$(OPENGEODE) orchestrator.pr system_structure.pr
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(ASN1SCC) -c  -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
