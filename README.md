@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.12.3 (11/2022)**
+- Fix support of newtypes depending on syntypes (parsing order bug)
+
 **3.12.2 (11/2022)**
 - Fix cast error when appending an octet to an octet string
 

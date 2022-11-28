@@ -4671,14 +4671,18 @@ def process_definition(root, parent=None, context=None):
                         if x.type == lexer.NEWTYPE)
             syntypes = (x for x in each.getChildren()
                         if x.type == lexer.SYNTYPE)
-            for sort in newtypes:
-                # ignore errors, warnings here
-                # we just need the types to be visible
-                _, _ = newtype(sort, None, context)
+            # parse syntypes BEFORE newtypes, as newtypes may
+            # depend on syntypes for the range of the array
+            # (the opposite is not possible, as syntype can only
+            # depend on numerical types)
             for sort in syntypes:
                 # ignore errors, warnings here
                 # we just need the types to be visible
                 _, _ = syntype(sort, None, context)
+            for sort in newtypes:
+                # ignore errors, warnings here
+                # we just need the types to be visible
+                _, _ = newtype(sort, None, context)
 
     # then parse procedures, so that their signature is set in the ast
     procedures = (x for x in root.getChildren() if x.type == lexer.PROCEDURE)
