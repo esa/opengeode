@@ -1,0 +1,14 @@
+DV DEFINITIONS ::=
+BEGIN
+
+  SomeBool ::= BOOLEAN
+  MyNull ::= NULL
+  MyChoice ::= CHOICE {
+     nothing NULL,
+     also-nothing MyNull
+  }
+  SomeInt ::= INTEGER(0..255)
+
+  c-null MyChoice ::= nothing: NULL
+  c-int SomeInt ::= 30
+END

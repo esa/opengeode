@@ -283,8 +283,30 @@ end {process.name.lower()}_Lib;'''
         # but not in stop condition code, since we reuse the context type
         # of the state machine being observed
 
+        # First add SDL constants (synonyms) - they can be used in the context
+        for const in process.DV.SDL_Constants.values():
+            bkind = find_basic_type (const.type).kind
+            if bkind in ('IntegerType', 'RealType', 'NullType',
+                         'BooleanType', 'Integer32Type', 'IntegerU8Type'):
+                val = const.value
+            else:
+                # complex value - must be a ground expression
+                _, val, _ = expression(const.value, readonly=1)
+                if bkind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
+                    val = array_content(const.value, val, bkind)
+                elif bkind == 'IA5StringType':
+                    val = ia5string_raw(const.value)
+                elif bkind == 'NullType':
+                    val = '0'
+                elif bkind != "EnumeratedType":
+                    # should have been detected by ogParser
+                    raise TypeError(f'Constant {const.varName} value is not a ground expression')
+
+            const_sort = const.type.ReferencedTypeName.replace('-', '_')
+            context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
+
         ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process.name.capitalize()}_Context :=\n'
-            '      (Init_Done => False,\n       ')
+            '      (Init_Done => False,\n        ')
         initial_values = []
         # some parts of the context may have initial values
         for var_name, (var_type, def_value) in process.variables.items():
@@ -333,25 +355,6 @@ end {process.name.lower()}_Lib;'''
             context_decl.append(f"{alias_name} : {type_name(alias_sort)} "
                                 f"renames {qualified};")
 
-        # Add SDL constants (synonyms)
-        for const in process.DV.SDL_Constants.values():
-            bkind = find_basic_type (const.type).kind
-            if bkind in ('IntegerType', 'RealType',
-                         'BooleanType', 'Integer32Type', 'IntegerU8Type'):
-                val = const.value
-            else:
-                # complex value - must be a ground expression
-                _, val, _ = expression(const.value, readonly=1)
-                if bkind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
-                    val = array_content(const.value, val, bkind)
-                elif bkind == 'IA5StringType':
-                    val = ia5string_raw(const.value)
-                elif bkind != "EnumeratedType":
-                    # should have been detected by ogParser
-                    raise TypeError(f'Constant {const.varName} value is not a ground expression')
-
-            const_sort = const.type.ReferencedTypeName.replace('-', '_')
-            context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
 
         # The choice selections will allow to use the present operator
         # together with a variable of the -selection type

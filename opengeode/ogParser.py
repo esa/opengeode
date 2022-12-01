@@ -3016,7 +3016,17 @@ def primary(root, context):
     prim, errors, warnings = None, [], []
 
     if root.type == lexer.VARIABLE:
-        return primary_variable(root, context)
+        name = root.getChild(0).text
+        if name.lower().strip() == 'null':
+            # NULL is an ASN.1 keyword. It has value 0 in asn1scc generated code
+            prim = ogAST.PrimNull()
+            prim.value = [name]
+            prim.inputString = name
+            prim.exprType = type('PrNull', (object,), {'kind': 'NullType'})
+            err, warn = [], []
+        else:
+            prim, err, warn = primary_variable(root, context)
+        return prim, err, warn
     elif root.type == lexer.INT:
         prim = ogAST.PrimInteger()
         prim.value = [root.text.lower()]
@@ -3029,10 +3039,6 @@ def primary(root, context):
         prim          = ogAST.PrimBoolean()
         prim.value    = [root.text.lower()]
         prim.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
-#   elif root.type == lexer.NULL:
-#       prim = ogAST.PrimNull()
-#       prim.value = [root.text.lower()]
-#       prim.exprType = type('PrNull', (object,), {'kind': 'NullType'})
     elif root.type == lexer.FLOAT:
         prim = ogAST.PrimReal()
         prim.value = [root.text]
@@ -3953,17 +3959,6 @@ def syntype(root, ta_ast, context):
             open_ranges.append((ogAST.ExprEq, constant_expr))
     # Everything has been parsed, now we must check that
     # (1) the new type name does not already exist
-    # EDIT: we can't do it like that because the syntype has already been
-    # pre-parsed to make sure it is visible for variable declarations
-    # so it will always be found here as already defined
-    #try:
-    #    _ = sdl_to_asn1(newtypename)
-    #except TypeError:
-    #    # This is expected: the type should not already exist!
-    #    pass
-    #else:
-    #    errors.append(error(root, f"{line}:{char} Syntype: A type with name"
-    #        f"'{newtypename}' is already defined"))
     # (2) the range is a subrange of the parent type
     # Iterate over all open and closed range to determine the min and the max
     def get_val(value):
@@ -4032,7 +4027,7 @@ def syntype(root, ta_ast, context):
     if foundMin is None or foundMax is None or (foundMin is not None
             and foundMax is not None and foundMax < foundMin):
         foundMin = foundMax = 0
-        errors.append(error(root, "Couuld not determine the range of the syntype!"))
+        errors.append(error(root, "Could not determine a valid range of the syntype!"))
 
     refbasic = find_basic_type(reftype)
     if int(refbasic.Min) > foundMin or int(refbasic.Max) < foundMax:
@@ -4138,6 +4133,9 @@ def synonym_definition(root, parent, context):
                 warnings.append(
                     'Unsupported synonym construct' +
                     sdl92Parser.tokenNamesMap[child.type])
+        if asn1_sort is not None:
+            # Use the right type spelling
+            sort = asn1_sort.ReferencedTypeName
         return name, sort, ground
 
     for child in root.getChildren():
@@ -4159,6 +4157,8 @@ def synonym_definition(root, parent, context):
             elif is_numeric(value.exprType) or is_boolean(value.exprType):
                 # value.value is an array of one element
                 concrete_val, = value.value
+            elif is_null(value.exprType):
+                concrete_val = '0'
             else:
                 # Enumerated / complex types are kept as expressions
                 # that will be resolved by code generators
@@ -4659,7 +4659,7 @@ def process_definition(root, parent=None, context=None):
         #process.variables['sender'] = (asn1_sort, def_value)
         parseSingleElement('content', 'dcl sender PID := env;', context=process)
 
-    # first look for all text areas to find NEWTYPE declarations
+    # first look for all text areas to find NEWTYPE, SYNTYPE and SYNONYM declarations
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
     process.user_defined_types = USER_DEFINED_TYPES
     tas = (x for x in root.getChildren() if x.type == lexer.TEXTAREA)
@@ -4671,6 +4671,8 @@ def process_definition(root, parent=None, context=None):
                         if x.type == lexer.NEWTYPE)
             syntypes = (x for x in each.getChildren()
                         if x.type == lexer.SYNTYPE)
+            synonyms = (x for x in each.getChildren()
+                        if x.type == lexer.SYNONYM_LIST)
             # parse syntypes BEFORE newtypes, as newtypes may
             # depend on syntypes for the range of the array
             # (the opposite is not possible, as syntype can only
@@ -4683,6 +4685,10 @@ def process_definition(root, parent=None, context=None):
                 # ignore errors, warnings here
                 # we just need the types to be visible
                 _, _ = newtype(sort, None, context)
+            for sort in synonyms:
+                # ignore errors, warnings here
+                # we just need the synonyms to be visible
+                _ = synonym_definition(sort, None, context)
 
     # then parse procedures, so that their signature is set in the ast
     procedures = (x for x in root.getChildren() if x.type == lexer.PROCEDURE)
