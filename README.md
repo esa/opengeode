@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.12.4 (12/2022)**
+- Fix rendering issue with alternative symbol in presence of errors
+
 **3.12.3 (11/2022)**
 - Fix support of newtypes depending on syntypes (parsing order bug)
 
