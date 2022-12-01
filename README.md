@@ -126,6 +126,8 @@ Changelog
 =========
 **3.12.4 (12/2022)**
 - Fix rendering issue with alternative symbol in presence of errors
+- Support of the NULL ASN.1 type and corresponding constant
+- Fix parsing of synonyms
 
 **3.12.3 (11/2022)**
 - Fix support of newtypes depending on syntypes (parsing order bug)
