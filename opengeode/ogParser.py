@@ -6470,7 +6470,6 @@ def transition(root, parent, context):
                         else:
                             # "else" branch
                             found = answer
-                trans.actions.append(alt)
                 if found is not None:
                     # Set the transition, then when generating code
                     # the backends can generate only the relevant code
@@ -6479,6 +6478,7 @@ def transition(root, parent, context):
                     warnings.append(
                         ["Found no valid transition for this alternative",
                         [alt.pos_x, alt.pos_y], []])
+            trans.actions.append(alt)
             parent = alt
         elif child.type == lexer.TERMINATOR:
             term, err, warn = terminator_statement(child,
