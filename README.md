@@ -126,6 +126,8 @@ Changelog
 =========
 **3.12.5 (12/2022)**
 - Add synonyms, newtypes and syntypes in the data dictionary tab
+- Highlight selected type/constant in the ASN.1 file when selected from data dictionary
+- Make sure splashscreen remains on top while loading the model
 
 **3.12.4 (12/2022)**
 - Fix rendering issue with alternative symbol in presence of errors

@@ -2799,8 +2799,14 @@ class OG_MainWindow(QMainWindow):
         if root == 'asn1 types' and column == 1 and line_number >= 0:
             # line_number == -1 for user-defined types (not in ASN.1 file)
             document = self.asn1_browser.document()
-            block = document.findBlockByLineNumber(int(line_number) - 1)
+            block = document.findBlockByLineNumber(int(line_number))
+            # not -1 because there is an added line (dateview file name)
+            #block = document.findBlockByLineNumber(int(line_number) - 1)
             cursor = QTextCursor(block)
+            # Highlight (select) the line
+            cursor.setPosition(block.position(), QTextCursor.MoveAnchor)
+            cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+
             #self.asn1_browser.scrollToAnchor(anchor) # does not work that well
             # Activate the tab to display the ASN.1 type in html
             self.asn1_browser.parent().parent().raise_()
@@ -2827,8 +2833,11 @@ class OG_MainWindow(QMainWindow):
             # line_number == -1 for synonyms defined in the SDL model
             # Jump to line number
             document = self.asn1_browser.document()
-            block = document.findBlockByLineNumber(int(line_number) - 1)
+            block = document.findBlockByLineNumber(int(line_number))
             cursor = QTextCursor(block)
+            # Highlight (select) the line
+            cursor.setPosition(block.position(), QTextCursor.MoveAnchor)
+            cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
             # Activate the tab to display the ASN.1 type in html
             self.asn1_browser.parent().parent().raise_()
             self.asn1_browser.moveCursor(QTextCursor.End)
@@ -3389,7 +3398,7 @@ def gui(options):
     ui_file.close()
     # Create a splash screen while model is loading
     pixmap = QPixmap(":/icons/splashscreen.png")
-    splash = QSplashScreen(pixmap)
+    splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
     splash.show()
     splash.showMessage("Welcome to Opengeode!",
                        alignment=Qt.AlignCenter | Qt.AlignBottom)
