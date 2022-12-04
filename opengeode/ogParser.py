@@ -3835,11 +3835,11 @@ def get_array_type(newtypename, root):
     minValue = basicIndex.Min
     maxValue = basicIndex.Max
     newtype = type(str(newtypename), (object,), {
-        "Line": typeSortLine,
+        "Line": -1,
         "CharPositionInLine": typeSortChar,
         "AddedType": "False",
         "type": type ("SeqOf_type", (object,), {
-            "Line": typeSortLine,
+            "Line": -1,
             "CharPositionInLine": typeSortChar,
             "kind": "SequenceOfType",
             "Min": minValue,
@@ -4038,13 +4038,13 @@ def syntype(root, ta_ast, context):
 
     asnName = newtypename.replace('_', '-')
     newtype = type(asnName, (object,), {
-        "Line": int(line),
+        "Line": -1,
         "CharPositionInLine": int(char),
         "CName": newtypename,
         "AddedType": "False",
         "type": type(f"{asnName}_type", (object,), {
             "AsnFile": "sdl_model",
-            "Line": int(line),
+            "Line": -1,
             "CharPositionInLine": int(char),
             "CName": newtypename,
             "AdaName": newtypename.title(),
@@ -4166,9 +4166,10 @@ def synonym_definition(root, parent, context):
 
             DV.SDL_Constants[nameDash] = type (nameDash, (), {
                    "varName" : name,
+                   "Line" : -1,
                    "type": type (f"{name}_type", (), {
                        "AsnFile": None,
-                       "Line": 0,
+                       "Line": -1,
                        "CharPositionInLine": 0,
                        "CName": sort,
                        "AdaName": sort,

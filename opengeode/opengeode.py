@@ -2711,8 +2711,8 @@ class OG_MainWindow(QMainWindow):
         datadict_filter.setClearButtonEnabled(True)
         datadict_filter.setPlaceholderText("Filter")
 
-        QTreeWidgetItem(self.datadict, ["ASN.1 Data types"])
-        QTreeWidgetItem(self.datadict, ["ASN.1 Constants"])
+        QTreeWidgetItem(self.datadict, ["Data types"])
+        QTreeWidgetItem(self.datadict, ["Constants"])
         QTreeWidgetItem(self.datadict, ["Input signals"])
         QTreeWidgetItem(self.datadict, ["Output signals"])
         QTreeWidgetItem(self.datadict, ["States"])
@@ -2796,7 +2796,8 @@ class OG_MainWindow(QMainWindow):
 
         anchor = item.data(0, ANCHOR) # deprecated, use line number instead
         line_number = item.data(0, LINE_NUMBER)
-        if root == 'asn1 types' and column == 1:
+        if root == 'asn1 types' and column == 1 and line_number >= 0:
+            # line_number == -1 for user-defined types (not in ASN.1 file)
             document = self.asn1_browser.document()
             block = document.findBlockByLineNumber(int(line_number) - 1)
             cursor = QTextCursor(block)
@@ -2822,7 +2823,8 @@ class OG_MainWindow(QMainWindow):
             self.vi_bar.cursorWordBackward(True)
             self.vi_bar.show()
             self.vi_bar.setFocus()
-        elif root == 'asn1 constants' and column == 2:
+        elif root == 'asn1 constants' and column == 2 and line_number >= 0:
+            # line_number == -1 for synonyms defined in the SDL model
             # Jump to line number
             document = self.asn1_browser.document()
             block = document.findBlockByLineNumber(int(line_number) - 1)
@@ -2858,8 +2860,13 @@ class OG_MainWindow(QMainWindow):
             new_item.setData(0, LINE_NUMBER, sort.Line)
         item_constants = self.datadict.topLevelItem(1)
         item_constants.takeChildren()
-        for name in sorted(ast.asn1_constants.keys()):
-            sort = ast.asn1_constants[name]
+        for name in sorted(chain(ast.asn1_constants.keys(),
+                                 ast.DV.SDL_Constants.keys())):
+            try:
+                sort = ast.asn1_constants[name]
+            except KeyError:
+                # May be a user-defined synonym
+                sort = ast.DV.SDL_Constants[name]
             sort_basic = ogParser.find_basic_type(sort.type)
             sortname = sort.type.ReferencedTypeName \
                     if sort.type.kind.startswith('Reference') \
