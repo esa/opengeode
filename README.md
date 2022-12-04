@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.12.5 (12/2022)**
+- Add synonyms, newtypes and syntypes in the data dictionary tab
+
 **3.12.4 (12/2022)**
 - Fix rendering issue with alternative symbol in presence of errors
 - Support of the NULL ASN.1 type and corresponding constant
