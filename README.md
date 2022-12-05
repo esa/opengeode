@@ -126,6 +126,7 @@ Changelog
 =========
 **3.12.7 (12/2022)**
 - Fix rendering issue with --png, reduced risk of text overlap
+- Add procedures (with edit button) to the data dictionary
 
 **3.12.6 (12/2022)**
 - Fix rendering of enumerated values in data dictionary

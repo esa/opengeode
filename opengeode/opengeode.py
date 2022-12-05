@@ -130,6 +130,7 @@ MODULES = [
 # Define custom UserRoles
 ANCHOR = Qt.UserRole + 1
 LINE_NUMBER = Qt.UserRole + 2
+PATH = Qt.UserRole + 3
 
 try:
     import LlvmGenerator
@@ -2719,6 +2720,7 @@ class OG_MainWindow(QMainWindow):
         QTreeWidgetItem(self.datadict, ["Labels"])
         QTreeWidgetItem(self.datadict, ["Variables"])
         QTreeWidgetItem(self.datadict, ["Timers"])
+        QTreeWidgetItem(self.datadict, ["Procedures"])
         self.view.update_datadict.connect(datadict_filter.clear)
         self.view.update_datadict.connect(self.update_datadict_window)
 
@@ -2792,10 +2794,11 @@ class OG_MainWindow(QMainWindow):
         index = self.datadict.indexOfTopLevelItem(parent)
         root = {0: 'asn1 types', 1: 'asn1 constants', 2: 'input signals',
                 3: 'output signals', 4: 'states', 5: 'labels', 6: 'variables',
-                7: 'timers'}[index]
+                7: 'timers', 8: 'procedures'}[index]
 
         anchor = item.data(0, ANCHOR) # deprecated, use line number instead
         line_number = item.data(0, LINE_NUMBER)
+        path = item.data(0, PATH)  # to retrive procedures
         if root == 'asn1 types' and column == 1 and line_number >= 0:
             # line_number == -1 for user-defined types (not in ASN.1 file)
             document = self.asn1_browser.document()
@@ -2842,6 +2845,9 @@ class OG_MainWindow(QMainWindow):
             self.asn1_browser.parent().parent().raise_()
             self.asn1_browser.moveCursor(QTextCursor.End)
             self.asn1_browser.setTextCursor(cursor)
+        elif root == 'procedures' and column == 1 and path:
+            _ = self.view.go_to_scene_path(path)
+
 
     @Slot(ogAST.AST)
     def set_asn1_view(self, ast):
@@ -2942,8 +2948,8 @@ class OG_MainWindow(QMainWindow):
         ''' Update the tree in the data dictionary based on the AST '''
         # currently the ast is a global in sdlSymbols.CONTEXT
         # it should be attached to the current scene instead TODO
-        (in_sig, out_sig, states, labels,
-         dcl, timers) = [self.datadict.topLevelItem(i) for i in range(2, 8)]
+        (in_sig, out_sig, states, labels, dcl, timers, procedures) =\
+                [self.datadict.topLevelItem(i) for i in range(2, 9)]
         context = sdlSymbols.CONTEXT
         def change_state(item, state):
             ''' Disable (with state=True) or enable (state=False) one of the
@@ -2960,10 +2966,12 @@ class OG_MainWindow(QMainWindow):
         add_elem = lambda root, elem: QTreeWidgetItem(root, [elem])
 
         if self.view.scene().context == 'block':
-            for each in (in_sig, out_sig, states, labels, dcl, timers):
+            for each in (in_sig, out_sig, states,
+                         labels, dcl, timers, procedures):
                 change_state(each, True)
         elif self.view.scene().context == 'process':
-            for each in (in_sig, out_sig, states, labels, dcl, timers):
+            for each in (in_sig, out_sig, states,
+                         labels, dcl, timers, procedures):
                 change_state(each, False)
 
             # unsorted list of signals (in and out)
@@ -2995,6 +3003,23 @@ class OG_MainWindow(QMainWindow):
                             'Warning: Type of variable "{}" is undefined'
                             .format(var))
                 QTreeWidgetItem(dcl, [var, sort_name])
+
+            # sorted list of procedures
+            for proc in sorted(p.inputString for p in context.procedures):
+                for proc_ast in context.procedures:
+                    # Once they are sorted, get the AST entry
+                    if proc_ast.inputString == proc:
+                        break
+                if proc_ast.external or proc_ast.textual_procedure:
+                    # can't jump to the content of an external/textual procedure
+                    content = [proc]
+                else:
+                    content = [proc, 'edit']
+                if proc_ast.comment is not None:
+                    content.append(proc_ast.comment.inputString)
+                item = QTreeWidgetItem(procedures, content)
+                item.setData(0, PATH, proc_ast.path)
+                item.setForeground(1, Qt.blue)
 
         elif self.view.scene().context == 'procedure':
             for each in (in_sig, states):
