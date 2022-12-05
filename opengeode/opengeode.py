@@ -2883,7 +2883,14 @@ class OG_MainWindow(QMainWindow):
             if sort_basic.kind in ('IntegerType', 'EnumeratedType',
                     'BooleanType', 'RealType', 'BitStringType',
                     'OctetStringType', 'IA5StringType'):
-                value = str(sort.value)
+                if isinstance(sort.value, ogAST.PrimEnumeratedValue):
+                    # Parser does not store the raw value for
+                    # enumerated, as the actual value has to be
+                    # computed by backends. For the data dictionary
+                    # it is fine to use the input string.
+                    value = sort.value.inputString
+                else:
+                    value = str(sort.value)
             else:
                 value = "(...)"
             new_item = QTreeWidgetItem(item_constants,
