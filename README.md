@@ -124,6 +124,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.12.6 (12/2022)**
+- Fix rendering of enumerated values in data dictionary
+- Fix localization of errors upon model loading
+
 **3.12.5 (12/2022)**
 - Add synonyms, newtypes and syntypes in the data dictionary tab
 - Highlight selected type/constant in the ASN.1 file when selected from data dictionary

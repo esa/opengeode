@@ -4653,6 +4653,16 @@ def process_definition(root, parent=None, context=None):
     proc_x, proc_y = 0, 0
     inner_proc = []
 
+    # Before anything else we must find the process name
+    # and set the process.path attribute, needed to recover symbols
+    # when initially checking for errors. After the first load,
+    # errors are associated to symbols directly, via the "symbolid"
+    # that is a pointer to the already-created qt classes.
+    for child in root.getChildren():
+        if child.type == lexer.ID:
+            process.processName = child.text
+            process.path = [f'PROCESS {process.processName}']
+ 
     # Create implicit "sender" identifier of type PID.
     if 'PID' in types().keys():
         #asn1_sort = sdl_to_asn1('PID')
@@ -4723,9 +4733,9 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.SYMBOLID:
             process.pos_x = symbolid(child)
         elif child.type == lexer.ID:
-            # Get process name
-            process.processName = child.text
-            process.path = [f'PROCESS {process.processName}']
+            # process name (already set above)
+            #process.processName = child.text
+            #process.path = [f'PROCESS {process.processName}']
             try:
                 # Retrieve process interface (PI/RI)
                 asyncI, procedures, err = get_interfaces(parent, child.text)
@@ -7246,7 +7256,7 @@ def parseSingleElement(elem:str='', string:str='', context=None):
         context = ogAST.CompositeState()
     else:
         context = context or ogAST.Process()
-    context.path = ['PROCESS og']  # Set a dummy context for syntax check
+    context.path = getattr(context, 'path', ['PROCESS og'])  # Set a dummy context for syntax check
     LOG.debug('Parsing string: ' + string + ' with elem ' + elem)
 
     # some syntax errors are only displayed on screen by ANTLR and never
