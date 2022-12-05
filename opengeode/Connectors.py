@@ -314,12 +314,10 @@ class Signalroute(Connection):
             # to allow a copy of both process and channel
             # Needed for the image exporter, that copies the scene to a
             # temporary one
-            Signalroute.in_sig = '{}'.format(',\n'.join(sig['name']
-                                   for sig in parent.input_signals))
-            Signalroute.out_sig = '{}'.format(',\n'.join(sig['name']
-                                    for sig in parent.output_signals))
-        self.label_in.setPlainText('[{}]'.format(self.in_sig))
-        self.label_out.setPlainText('[{}]'.format(self.out_sig))
+            Signalroute.in_sig = ',\n'.join(sig['name'] for sig in parent.input_signals)
+            Signalroute.out_sig = ',\n'.join(sig['name'] for sig in parent.output_signals)
+        self.label_in.setPlainText(f'[{self.in_sig}]')
+        self.label_out.setPlainText(f'[{self.out_sig}]')
         self.label_in.document().contentsChanged.connect(self.change_siglist)
         self.label_out.document().contentsChanged.connect(self.change_siglist)
         for each in (self.label_in, self.label_out):
@@ -332,9 +330,9 @@ class Signalroute(Connection):
         for each in self.label_in, self.label_out:
             if not each.hasFocus():
                 if not str(each).startswith('['):
-                    each.setPlainText('[{}'.format(str(each)))
+                    each.setPlainText(f'[{str(each)}')
                 if not str(each).endswith(']'):
-                    each.setPlainText('{}]'.format(str(each)))
+                    each.setPlainText(f'{str(each)}]')
         Signalroute.in_sig = str(self.label_in)[1:-1]
         Signalroute.out_sig = str(self.label_out)[1:-1]
 
@@ -356,20 +354,20 @@ class Signalroute(Connection):
             view_pos = view.mapToScene(
                            view.viewport().geometry()).boundingRect().topLeft()
             scene_pos_x = self.mapFromScene(view_pos).x()
-            #print view_pos.x(), scene_pos_x, view.sceneRect().x()
             return QPointF(scene_pos_x, self.start_point.y())
         except (IndexError, AttributeError):
             # In case there is no view (e.g. Export PNG from cmd line)
-            return QPointF(self.start_point.x() - 250, self.start_point.y())
+            return QPointF(self.start_point.x() - 300, self.start_point.y())
 
     def reshape(self):
         ''' Redefine shape function to add the text areas '''
         super().reshape()
 
         width_in = self.label_in.boundingRect().width()
+        height_in = self.label_in.boundingRect().height()
 
         self.label_in.setX(self.start_point.x() - width_in)
-        self.label_in.setY(self.start_point.y() + 5)
+        self.label_in.setY(self.start_point.y() - height_in - 5)
         self.label_out.setX(self.end_point.x() + 10)
         self.label_out.setY(self.end_point.y() + 5)
 

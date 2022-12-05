@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.12.7 (12/2022)**
+- Fix rendering issue with --png, reduced risk of text overlap
+
 **3.12.6 (12/2022)**
 - Fix rendering of enumerated values in data dictionary
 - Fix localization of errors upon model loading
