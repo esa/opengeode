@@ -1,0 +1,106 @@
+CPU-6502-DATAVIEW DEFINITIONS ::=
+BEGIN
+
+  Byte ::= INTEGER (0..255)  -- OCTET STRING (SIZE (1))
+  Word ::= INTEGER (0..65535)
+
+  Plus-Minus ::= ENUMERATED { plus, minus }
+
+  Count ::= INTEGER (0..255)
+
+  -- 6502 CPU
+  CPU ::= SEQUENCE {
+      program-counter Word,
+      stack-pointer   Byte,
+
+      --  registers
+      accumulator Byte,
+      x           Byte,
+      y           Byte,
+
+      --  processor status
+      carry-flag        BOOLEAN,
+      zero-flag         BOOLEAN,
+      interrupt-disable BOOLEAN,
+      decimal-mode      BOOLEAN,
+      break-command     BOOLEAN,
+      overflow-flag     BOOLEAN,
+      negative-flag     BOOLEAN
+  }
+
+  --  Memory
+  max-mem INTEGER ::= 65536
+  --  "Memory" is an AADL keyword...
+  Mem ::= OCTET STRING (SIZE (max-mem))
+
+  Page ::= SEQUENCE {
+      page-number Byte,
+      content     OCTET STRING (SIZE (0..256))
+  }
+
+  --  Display area contains 40x25 characters
+  Screen-Content ::= SEQUENCE (SIZE (25)) OF OCTET STRING (SIZE (40))
+
+  --  List the possible addressing modes to get an address
+  Addressing-Modes ::= ENUMERATED {
+      implicit,
+      accumulator,
+      immediate,
+      zero-page,
+      zero-page-x,
+      zero-page-y,
+      relative,
+      absolute,
+      absolute-x,
+      absolute-y,
+      indirect,
+      indexed-indirect,
+      indirect-indexed
+  }
+
+
+END
+
+
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+T-Null-Record ::= SEQUENCE {}
+
+END
+
+
+-- Dataview generated on-the-fly providing information on the system
+-- and made available to the user code.
+System-Dataview DEFINITIONS ::=
+BEGIN
+
+   -- Range of PID - type can be used to size arrays of PID type
+   PID-Range ::= INTEGER(0..6)
+
+   -- List of functions (instances) present in the system
+   PID ::= ENUMERATED {
+       cpu-6502,
+       clock,
+       ram,
+       screen,
+       test-program,
+       user-interface,
+       
+       env
+   }
+
+END
+
