@@ -1,0 +1,4 @@
+DV DEFINITIONS ::=
+BEGIN
+  MyEnum ::= ENUMERATED { hello, world }
+END

@@ -1,0 +1,44 @@
+system foo;
+/* CIF TEXT (94, 94), (267, 140) */
+-- Text area for declarations and comments
+
+use dv comment 'datamodel.asn';
+/* CIF ENDTEXT */
+block foo;
+/* CIF PROCESS (420, 255), (150, 75) */
+process foo;
+/* CIF TEXT (725, 282), (375, 203) */
+-- test showing how to use an array indexed by an enumerated
+
+-- since ASN.1 does not support this construct, we have to
+-- use native SDL types, and make a transparent processing
+-- when generating code in Ada to inject a call to the "num"
+-- operator and translate it to an integer index.
+
+newtype MyArray
+  array (MyEnum, MyEnum)
+endnewtype;
+
+dcl foo MyArray;
+dcl bar MyEnum := hello;
+/* CIF ENDTEXT */
+/* CIF START (478, 284), (70, 35) */
+START;
+    /* CIF task (446, 339), (132, 35) */
+    task foo(Hello) := world;
+    /* CIF task (454, 394), (117, 35) */
+    task foo(bar) := hello;
+    /* CIF task (441, 449), (143, 35) */
+    task foo := { hello, world };
+    /* CIF task (452, 499), (121, 35) */
+    task bar := foo(world);
+    /* CIF PROCEDURECALL (465, 554), (95, 35) */
+    call writeln(bar);
+    /* CIF NEXTSTATE (478, 604), (70, 35) */
+    NEXTSTATE wait;
+/* CIF state (623, 341), (70, 35) */
+state wait;
+endstate;
+endprocess foo;
+endblock;
+endsystem;

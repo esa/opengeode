@@ -2836,15 +2836,52 @@ def primary_index(root, context, pos):
                                   dict(BOOLEAN.__dict__))
 
         idx_bty = find_basic_type(params[0].exprType)
-        if not is_integer(idx_bty):
+        # Check if the array can be indexed by an enumerated type
+        # (only possible if defined as a newtype)
+        check_index = False
+        node.requires_num = False
+        try:
+            index_given_sort = type_name(params[0].exprType)
+            index_expected_sort = receiver_bty.indexed_by
+            if index_given_sort == index_expected_sort:
+                check_index = True
+                # Add a flag in the AST for code generators to
+                # know they have to use an implicit "num" operator
+                node.requires_num = True
+            elif idx_bty == UNKNOWN_TYPE:
+                # the type of the index is unknown, and the index is
+                # an enumerated type: verify that the value is of this
+                # type, and replace it with the numerical value
+                check_expr = ogAST.ExprAssign()
+                check_expr.left = ogAST.PrimVariable(debugLine=lineno())
+                check_expr.left.exprType = sdl_to_asn1(index_expected_sort)
+                check_expr.right = params[0]
+                warns = fix_expression_types(check_expr, context)
+                params[0] = check_expr.right
+                index_given_sort = type_name(check_expr.right.exprType)
+                if index_given_sort == index_expected_sort:
+                    check_index = True
+                    basic_enum = find_basic_type(check_expr.right.exprType)
+                    given_value = params[0].value[0] # index raw value
+                    # retrive the numerical value
+                    for enumitem in basic_enum.EnumValues.keys():
+                        if enumitem.lower() == given_value.lower():
+                            # The code generator will use the raw value:
+                            node.use_num_value = int(basic_enum.EnumValues[enumitem].IntValue)
+        except Exception as err:
+            print(str(err))
+            # no "indexed_by" attribute: ignore, it is not a "newtype"
+            pass
+
+        if not check_index and not is_integer(idx_bty):
             errors.append(error(root, 'Index is not an integer'))
         #elif is_number(idx_bty):
             # Check range only if index is given as a raw number
             # EDIT: why? the variable used for indexing must be checked
-        if not hasattr(idx_bty, "Max"):
+        if not check_index and not hasattr(idx_bty, "Max"):
             errors.append(error(root, "Index has no valid range"))
-        elif float(idx_bty.Max) >= float(r_max) \
-                or float(idx_bty.Min) < 0:
+        elif not check_index and (float(idx_bty.Max) >= float(r_max)
+                or float(idx_bty.Min) < 0):
             msg = f'Range of index is [{idx_bty.Min} .. {idx_bty.Max}] '\
                   f': risk of overflow (expected range: [0 .. {int(r_max)-1}])'
             if is_number(idx_bty):
@@ -2853,7 +2890,7 @@ def primary_index(root, context, pos):
             else:
                 # index is a variable => raise a warning
                 warnings.append(warning(root, msg))
-        elif float(idx_bty.Min) > float(r_min):
+        elif not check_index and float(idx_bty.Min) > float(r_min):
             warnings.append(warning(root,
                                     'Index higher than range min value'))
     else:
@@ -3844,7 +3881,8 @@ def get_array_type(newtypename, root):
             "kind": "SequenceOfType",
             "Min": minValue,
             "Max": maxValue,
-            "type": refSort
+            "type": refSort,
+            "indexed_by": indexSortName   # To allow enumerated-based index
         })
     })
 

@@ -1865,12 +1865,21 @@ def _prim_index(prim, **kwargs):
                                                           readonly=ro)
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
+    
+    if prim.use_num_value != -1:
+        idx = 1 + prim.use_num_value
+        if not isinstance(receiver, ogAST.PrimSubstring):
+            ada_string += '.Data'
+        ada_string = f"{ada_string} ({idx})"
+        return stmts, ada_string, local_decl
 
     index = prim.value[1]['index'][0]
     idx_stmts, idx_string, idx_var = expression(index, readonly=ro)
     if str.isnumeric(idx_string):
         idx_string = int(idx_string) + 1
     else:
+        if prim.requires_num:
+            idx_string += "'Enum_Rep"
         idx_string = f'1 + Integer ({idx_string})'
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'

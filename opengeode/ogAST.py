@@ -201,6 +201,12 @@ class PrimCall(Primary):
 
 class PrimIndex(Primary):
     is_raw = False
+    # for arrays indexed by an enumerated, the parser sets a flag indicating
+    # that an implicit call to "num" is needed when the index is a variable
+    requires_num = False
+    # and if index is directly a enumerated value, backends can use the raw
+    # value found in the ASN.1 datamodel by the parser
+    use_num_value : int = -1
 
 
 class PrimSubstring(Primary):

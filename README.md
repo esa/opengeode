@@ -124,6 +124,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.13.0 (12/2022)**
+- Support arrays indexed by an enumerated type (when using the newtype construct)
+
 **3.12.7 (12/2022)**
 - Fix rendering issue with --png, reduced risk of text overlap
 - Add procedures (with edit button) to the data dictionary
