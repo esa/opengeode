@@ -1,4 +1,4 @@
-with foo;
+with cpu_6502;
 
 procedure test_ada is
 begin
