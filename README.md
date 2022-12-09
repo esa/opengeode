@@ -127,6 +127,7 @@ Changelog
 =========
 **3.13.1 (12/2022)**
 - Fix missing cast in Ada backend when using index loops
+- Fix support for IS5String in CHOICE elements (Ada backend bugfix)
 
 **3.13.0 (12/2022)**
 - Support arrays indexed by an enumerated type (when using the newtype construct)

@@ -2542,6 +2542,7 @@ def _conditional(cond, **kwargs):
     basic_else = find_basic_type(cond.value['else'].exprType)
 
     then_len = None
+    # CHECKME : I think the IA5String case is not handled properly here
     if not tmp_type.startswith('String') and isinstance(cond.value['then'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         then_str = array_content(cond.value['then'], then_str, basic_then)
@@ -2683,6 +2684,7 @@ def _sequence_of(seqof, **kwargs):
     for i in range(len(seqof.value)):
         item_stmts, item_str, local_var = expression(seqof.value[i],
                                                      readonly=1)
+        # FIXME Test SEQUENCE OF IA5String, I think it is not handled here
         if isinstance(seqof.value[i],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             item_str = array_content(seqof.value[i], item_str, asn_type or
@@ -2743,6 +2745,8 @@ def _choiceitem(choice, **kwargs):
                                           ogAST.PrimStringLiteral)):
         if bty.kind.startswith('Integer'):
             choice_str = choice.value['value'].numeric_value
+        elif bty.kind == "IA5StringType":
+            choice_str = ia5string_raw(choice.value['value'])
         else:
             choice_str = array_content(choice.value['value'], choice_str, bty)
 
