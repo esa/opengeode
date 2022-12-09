@@ -1720,7 +1720,11 @@ def fix_expression_types(expr, context):
                     raise
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
-            expr.right.value[det].exprType = expr.left.exprType
+            # unless they are a loop index type (int32) because in that
+            # case a cast will be needed
+            kind = find_basic_type(expr.right.value[det].exprType).kind
+            if kind != "Integer32Type":
+                expr.right.value[det].exprType = expr.left.exprType
         # We must also set the type of the overall expression to the same
         expr.right.exprType = expr.left.exprType
 

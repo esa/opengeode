@@ -2022,7 +2022,7 @@ def _basic_operators(expr, **kwargs):
         if lbty.kind == 'Integer32Type':
             left_str = f'{type_name(expr.right.exprType)} ({left_str})'
         else:
-            right_str = f'{type_name(expr.left.exprType)}({right_str})'
+            right_str = f'{type_name(expr.left.exprType)} ({right_str})'
         ada_string = f'({left_str} {expr.operand} {right_str})'
 
     code.extend(left_stmts)
@@ -2535,6 +2535,9 @@ def _conditional(cond, **kwargs):
         local_decl.extend(else_local)
     stmts.append('if {if_str} then'.format(if_str=if_str))
 
+    # the "then" or "else" part may be an iterator (Integer32),
+    # so a cast to the expected type (tmp_type) may be needed
+    basic_cond = find_basic_type(cond.exprType)
     basic_then = find_basic_type(cond.value['then'].exprType)
     basic_else = find_basic_type(cond.value['else'].exprType)
 
@@ -2553,8 +2556,8 @@ def _conditional(cond, **kwargs):
         if basic_then.Min != basic_then.Max:
             then_len = f"{then_str}'Length"
     else:
-        stmts.append('tmp{idx} := {then_str};'
-                     .format(idx=cond.value['tmpVar'], then_str=then_str))
+        cast = basic_cond.kind != basic_then.kind and f" {tmp_type}" or ""
+        stmts.append(f'tmp{cond.value["tmpVar"]} :={cast} ({then_str});')
     if then_len:
         stmts.append("tmp{idx}.Length := {then_len};"
                      .format(idx=cond.value['tmpVar'], then_len=then_len))
@@ -2576,9 +2579,8 @@ def _conditional(cond, **kwargs):
         if basic_else.Min != basic_else.Max:
             else_len = "{}'Length".format(else_str)
     else:
-        stmts.append('tmp{idx} := {else_str};'.format(
-                                                    idx=cond.value['tmpVar'],
-                                                    else_str=else_str))
+        cast = basic_cond.kind != basic_else.kind and f" {tmp_type}" or ""
+        stmts.append(f'tmp{cond.value["tmpVar"]} :={cast} ({else_str});')
     if else_len:
         stmts.append("tmp{idx}.Length := {else_len};"
                      .format(idx=cond.value['tmpVar'], else_len=else_len))

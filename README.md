@@ -104,12 +104,13 @@ merged into the wiki by the wiki maintainers.
 Information and contact
 =======================
 
-For additional information please contact:
+For information please contact:
 maxime (dot) perrotin (at) esa (dot) int
 
-The LLVM backend was designed and implemented by Diego Barbera during the ESA
-Summer of Code 2014. This component is not maintained.
-Some parts implemented by Laurent Meyer (native SDL type support in the parser)
+Additional contributors:
+* Diego Barbera (ESA Summer of Code 2014 - LLVM backend)
+* Laurent Meyer
+* Marco Lattuada (C backend)
 
 The ASN.1 compiler (ASN1SCC) that OpenGEODE is based on was developed by George Mamais and Thanassis Tsiodras for the European Space Agency.
 
@@ -124,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.13.1 (12/2022)**
+- Fix missing cast in Ada backend when using index loops
+
 **3.13.0 (12/2022)**
 - Support arrays indexed by an enumerated type (when using the newtype construct)
 
