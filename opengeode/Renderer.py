@@ -183,10 +183,11 @@ def _state(ast, scene, states, terminators, parent=None):
     # INPUT children in the render_terminator function.
     for term in terminators:
         state_label = ast.via or ast.inputString
+        term_label = term.via or term.inputString
         if(term.kind == 'next_state' and
                 term.pos_x == ast.pos_x and
                 term.pos_y == ast.pos_y and
-                term.inputString == state_label):
+                term_label == state_label):
             raise TypeError('This state is a terminator')
     new_state = sdlSymbols.State(parent=None, ast=ast)
     if new_state not in scene.items():
