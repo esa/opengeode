@@ -306,7 +306,7 @@ end {process.name.lower()}_Lib;'''
             context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
 
         ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process.name.capitalize()}_Context :=\n'
-            '      (Init_Done => False,\n        ')
+            '      (Init_Done => False,\n       ')
         initial_values = []
         # some parts of the context may have initial values
         for var_name, (var_type, def_value) in process.variables.items():
@@ -326,17 +326,18 @@ end {process.name.lower()}_Lib;'''
 
                 elif varbty.kind in ('SequenceOfType',
                                      'OctetStringType',
-                                     'BitStringType'):
+                                     'BitStringType') and def_value.is_raw:
                     dstr = array_content(def_value, dstr, varbty)
 
-                elif varbty.kind == 'IA5StringType':
+                elif varbty.kind == 'IA5StringType' and isinstance(def_value,
+                        ogAST.PrimStringLiteral):
                     dstr = ia5string_raw(def_value)
                 assert not dst and not dlocal,\
                         'DCL: Expecting a ground expression'
                 initial_values.append(f'{var_name} => {dstr}')
 
         if initial_values:
-            ctxt += ",\n      ".join(initial_values) + ",\n      "
+            ctxt += ",\n       ".join(initial_values) + ",\n       "
         ctxt += "others => <>);"
         context_decl.append(ctxt)
 
@@ -1550,13 +1551,14 @@ def _task_forloop(task, **kwargs):
 
 
 @singledispatch
-def expression(expr):
+def expression(expr, **kwargs):
     ''' Generate the code for Expression-classes, returning 3 things:
         - list of statements
         - useable string corresponding to the evaluation of the expression,
         - list of local declarations
     '''
-    raise TypeError('Unsupported expression: ' + str(expr))
+    LOG.error("Ada backend failed with an expression - this looks like a bug!")
+    raise TypeError(f'Unsupported expression: {str(expr)}')
     return [], '', []
 
 
@@ -1865,7 +1867,7 @@ def _prim_index(prim, **kwargs):
                                                           readonly=ro)
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
-    
+
     if prim.use_num_value != -1:
         idx = 1 + prim.use_num_value
         if not isinstance(receiver, ogAST.PrimSubstring):

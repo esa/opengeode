@@ -2873,7 +2873,6 @@ def primary_index(root, context, pos):
                             # The code generator will use the raw value:
                             node.use_num_value = int(basic_enum.EnumValues[enumitem].IntValue)
         except Exception as err:
-            print(str(err))
             # no "indexed_by" attribute: ignore, it is not a "newtype"
             pass
 

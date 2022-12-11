@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.13.3 (12/2022)**
+- Fix default values of type OCTET STRINGs when referencing an ASN.1 constant
+
 **3.13.2 (12/2022)**
 - Fix rendering issue with nextstate when using a VIA clause
 
