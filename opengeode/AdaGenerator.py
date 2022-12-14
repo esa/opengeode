@@ -419,8 +419,8 @@ end {process.name.lower()}_Lib;'''
     taste_template = [f'''\
 -- This file was generated automatically by OpenGEODE: DO NOT MODIFY IT !
 
-with System.IO;
-use System.IO;
+with Text_IO;
+use Text_IO;
 
 with Ada.Unchecked_Conversion;
 with Ada.Numerics.Generic_Elementary_Functions;

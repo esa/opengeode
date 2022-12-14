@@ -3030,7 +3030,8 @@ class OG_MainWindow(QMainWindow):
             # sorted list of local variables (could add parent variables)
             for var in sorted(context.variables.keys()):
                 sort, _ = context.variables[var]
-                QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
+                if sort.kind == "ReferenceType":
+                    QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
 
             for each in sorted(l.inputString for l in context.labels):
                 add_elem(labels, each)
