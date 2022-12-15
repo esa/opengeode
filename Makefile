@@ -48,19 +48,29 @@ compile-all:
 update:
 	git pull
 
-dependencies:
-	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect
-	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
-	python3 -m pip install --user --upgrade pyside6
+
+~/.local/bin/asn1scc:
+	# install ASN1SCC in ~/.local/bin
+	mkdir -p ~/.local/bin
+	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.5.0.0/asn1scc-bin-4.5.0.0.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
+	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
+
+/tmp/antlr3_python3_runtime_3.4:
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
 	cd /tmp ; wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf - ; cd antlr3_python3_runtime_3.4 ; python3 -m pip install --user --upgrade .
 	sudo apt install -y python3-pygraphviz
 	sudo apt install -y python3-stringtemplate3
 	sudo apt install -y python3-singledispatch
-	# install ASN1SCC in ~/.local/bin
-	mkdir -p ~/.local/bin
-	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.5.0.0/asn1scc-bin-4.5.0.0.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
-	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
+
+pyside6-pip:
+	sudo apt install -y python3 python3-pip
+	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
+	python3 -m pip install --user --upgrade pyside6
+
+dependencies: pyside6-pip /tmp/antlr3_python3_runtime_3.4 ~/.local/bin/asn1scc
+    # TODO: These should move into the dependency where they are actually needed
+	sudo apt install -y libgl1 gnat python3-pexpect
+
 
 install:
 	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --user --upgrade .
