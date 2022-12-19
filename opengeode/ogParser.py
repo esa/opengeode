@@ -4699,10 +4699,14 @@ def process_definition(root, parent=None, context=None):
     # when initially checking for errors. After the first load,
     # errors are associated to symbols directly, via the "symbolid"
     # that is a pointer to the already-created qt classes.
+    # We also check if this is a process type (needed to decide if
+    # we set or not the "self" variable)
     for child in root.getChildren():
         if child.type == lexer.ID:
             process.processName = child.text
             process.path = [f'PROCESS {process.processName}']
+        elif child.type == lexer.TYPE:
+            process.process_type = True
  
     # Create implicit "sender" identifier of type PID.
     if 'PID' in types().keys():
@@ -4799,7 +4803,10 @@ def process_definition(root, parent=None, context=None):
             # if the process name exists in the enumerated list of PIDs
             try:
                 PID_Values = [v.lower().replace('-', '_') for v in types()['PID'].type.EnumValues.keys()]
-                if process.processName.lower() in PID_Values:
+                if process.process_type:
+                    # Will be replaced by instance name in generated code
+                    self_pid = 'env'
+                elif process.processName.lower() in PID_Values:
                     self_pid = process.processName
                 elif 'env' in PID_Values:
                     self_pid = 'env'
@@ -4861,7 +4868,9 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.REFERENCED:
             process.referenced = True
         elif child.type == lexer.TYPE:
-            process.process_type = True
+            # Already set above
+            pass
+            #process.process_type = True
         elif child.type == lexer.TYPE_INSTANCE:
             # PROCESS Toto:ParentType;
             process.instance_of_name = child.children[0].text

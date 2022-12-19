@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.14.0 (12/2022)**
+- the "self" constant was not set properly in instances of process type. Fixed (Ada backend)
+
 **3.13.3 (12/2022)**
 - Fix default values of type OCTET STRINGs when referencing an ASN.1 constant
 

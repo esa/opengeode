@@ -303,7 +303,12 @@ end {process.name.lower()}_Lib;'''
                     raise TypeError(f'Constant {const.varName} value is not a ground expression')
 
             const_sort = const.type.ReferencedTypeName.replace('-', '_')
-            context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
+            # Don't generate the "self" constant if the process is a process type
+            # as it is provided as a generic parameter during instantiation
+            if process.process_type and const.varName == 'self' and 'PID' in TYPES:
+                pass
+            else:
+                context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
 
         ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process.name.capitalize()}_Context :=\n'
             '      (Init_Done => False,\n       ')
@@ -434,6 +439,9 @@ package body {process.name} is''']
     generic_spec, instance_decl = "", ""
     if generic:
         generic_spec = "generic\n"
+        # Add the actual value of "self" which is the instance name
+        if 'PID' in TYPES:
+            generic_spec += f"   self : {ASN1SCC}PID;\n"
         ri_list = external_ri_list(process)
         if has_context_params:
             # Add context parameter to the process type generics, to make sure
@@ -877,6 +885,8 @@ package body {process.name}_RI is''']
         # Instance of a process type, all the RIs (including timers) must
         # be gathered to instantiate the package
         pkg_decl = (f"package {process.name}_Instance is new {process.instance_of_name}")
+        if 'PID' in TYPES:
+            selfdef = f"self => {ASN1SCC}{process.name}"
         ri_list = [(f"RI{SEPARATOR}{sig['name']}", sig['name'])
                    for sig in process.output_signals]
         if has_cs:
@@ -886,16 +896,20 @@ package body {process.name}_RI is''']
         ri_list.extend([(f"set_{timer}", f"set_{timer}")   for timer in process.timers])
         ri_list.extend([(f"reset_{timer}", f"reset_{timer}") for timer in process.timers])
         ri_inst = [f"{ri[0]} => {process.name.title()}_RI.{ri[1]}" for ri in ri_list]
-        if ri_inst or has_context_params:
+        if ri_inst or has_context_params or 'PID' in TYPES:
             pkg_decl += " ("
+        if 'PID' in TYPES:
+            pkg_decl += selfdef
         if ri_inst:
+            if 'PID' in TYPES:
+                pkg_decl += ", "
             pkg_decl += f'{", ".join(ri_inst)}'
         if has_context_params:
-            if ri_inst:
+            if ri_inst or 'PID' in TYPES:
                 pkg_decl += ", "
             # Add instance-value of the context parameters
             pkg_decl += f"{process.instance_of_name}_ctxt => {process.name}_ctxt"
-        if ri_inst or has_context_params:
+        if ri_inst or has_context_params or 'PID' in TYPES:
             pkg_decl += ")"
         ads_template.append(f"{pkg_decl};")
         ads_template.append(
