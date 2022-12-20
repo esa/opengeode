@@ -298,9 +298,9 @@ end {process.name.lower()}_Lib;'''
                     val = ia5string_raw(const.value)
                 elif bkind == 'NullType':
                     val = '0'
-                elif bkind != "EnumeratedType":
+                elif bkind not in ("EnumeratedType", "SequenceType"):
                     # should have been detected by ogParser
-                    raise TypeError(f'Constant {const.varName} value is not a ground expression')
+                    raise TypeError(f'Constant "{const.varName}" value is not a ground expression')
 
             const_sort = const.type.ReferencedTypeName.replace('-', '_')
             # Don't generate the "self" constant if the process is a process type
