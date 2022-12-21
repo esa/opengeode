@@ -55,12 +55,12 @@ update:
 	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.5.0.0/asn1scc-bin-4.5.0.0.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
-antlr3_python3_runtime_3.4: dependencies
+antlr3_python3_runtime_3.4/setup.py:  | dependencies
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
 	wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf -
 	cd antlr3_python3_runtime_3.4 ; python3 -m pip install --user --upgrade .
 
-pip-packages: dependencies antlr3_python3_runtime_3.4
+pip-packages: antlr3_python3_runtime_3.4/setup.py | dependencies
 	# Note : these could be installed via setup.py or requirements.txt
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
 	python3 -m pip install --user --upgrade pyside6 pygraphviz stringtemplate3 singledispatch
