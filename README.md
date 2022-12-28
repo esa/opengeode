@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**3.14.2 (12/2022)**
+- Ada backend: fix instantiation of parameterless output messages
+
 **3.14.1 (12/2022)**
 - Support synonym of SEQUENCE literal
 

@@ -126,6 +126,9 @@ def external_ri_list(process) -> List:
                 param_spec = f'({param_name}: in out {typename}; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)'
             else:
                 param_spec = f'({param_name}: in out {typename})'
+        elif 'PID' in TYPES:  # no parameter: just Dest_PID
+            param_spec = f'(Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)'
+
         result.append(f"procedure RI{SEPARATOR}{signal['name']}{param_spec}")
     for proc in (proc for proc in process.procedures if proc.external):
         ri_header = f'procedure RI{SEPARATOR}{proc.inputString}'
