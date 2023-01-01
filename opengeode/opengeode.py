@@ -84,6 +84,7 @@ from .sdlSymbols import(Input,
                         Alternative,
                         Task,
                         ProcedureCall,
+                        Create,
                         TextSymbol,
                         State,
                         Start,
@@ -146,7 +147,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.14.2'
+__version__ = '4.0.0'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -192,17 +193,17 @@ G_ERRORS = list()
 ACTIONS = {
     'block': [Process, ProcessType, Comment, TextSymbol],
     'process': [Start, State, Input, Connect, ContinuousSignal, Task, Decision,
-                DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
+                DecisionAnswer, Output, ProcedureCall, Create, TextSymbol, Comment,
                 Label, Join, Procedure, Alternative],
-    'procedure': [ProcedureStart, Task, Decision, Alternative,
-                  DecisionAnswer, Output, ProcedureCall, TextSymbol,
-                  Comment, Label, Join, ProcedureStop],
+    'procedure': [ProcedureStart, Task, Decision,
+                  DecisionAnswer, Alternative, Output, Create, ProcedureCall,
+                  TextSymbol, Comment, Label, Join, ProcedureStop],
     'statechart': [],
     'state': [StateStart, State, Input, Connect, ContinuousSignal, Task,
-              Decision, DecisionAnswer, Output, ProcedureCall, TextSymbol,
+              Decision, DecisionAnswer, Output, Create, ProcedureCall, TextSymbol,
               Comment, Label, Join, ProcedureStop, Procedure, Alternative],
     'clipboard': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
-                  Output, ProcedureCall, TextSymbol, Comment, Label,
+                  Output, ProcedureCall, Create, TextSymbol, Comment, Label,
                   Join, Procedure, Process, StateStart, ProcedureStop,
                   ContinuousSignal, Alternative],
     'lander': [],

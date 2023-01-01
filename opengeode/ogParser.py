@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -652,6 +652,8 @@ def check_call(name, params, context):
 
     # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
+        # Update the context dependency as helper for code generators
+        context.dependencies['writeln'] = True
         def check_one_param(p, name):
             p_ty = p.exprType
             if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty) or \
@@ -833,6 +835,10 @@ def check_call(name, params, context):
             # out parameters base must be a variable
             raise TypeError('Parameter "{}" does not qualify as an OUT parameter'
                 .format(expr.right.inputString))
+
+    # Update the context dependency as helper for code generators
+    if name in ('cos', 'sin', 'sqrt'):
+        context.dependencies['math'] = True
 
     # (4) Compute the type of the result
     param_btys = [find_basic_type(p.exprType) for p in params]
@@ -4710,10 +4716,7 @@ def process_definition(root, parent=None, context=None):
  
     # Create implicit "sender" identifier of type PID.
     if 'PID' in types().keys():
-        #asn1_sort = sdl_to_asn1('PID')
-        #def_value, _, _ = ground_expression('env', 'sender', asn1_sort, process)
-        #process.variables['sender'] = (asn1_sort, def_value)
-        parseSingleElement('content', 'dcl sender PID := env;', context=process)
+        parseSingleElement('content', 'dcl sender, offspring PID := env;', context=process)
 
     # first look for all text areas to find NEWTYPE, SYNTYPE and SYNONYM declarations
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
@@ -4881,10 +4884,33 @@ def process_definition(root, parent=None, context=None):
                              sdl92Parser.tokenNamesMap[child.type] +
                             ' - line ' + str(child.getLine()),
                             [proc_x, proc_y], []])
+
+
     for proc, content in inner_proc:
         err, warn = procedure_post(proc, content, context=process)
         errors.extend(err)
         warnings.extend(warn)
+
+    def set_dependencies(dep_from):
+        ''' Update the dependencies structure '''
+        if dep_from['math']:
+            process.dependencies['math'] = True
+        if dep_from['writeln']:
+            process.dependencies['writeln'] = True
+        process.dependencies['create'].update(dep_from['create'])
+
+    def rec_set_dependencies(ast : ogAST.Process):
+        ''' Update the process dependencies by recursively parsing the AST
+        (nested states, procedures) '''
+        if ast is not process:
+            set_dependencies(ast.dependencies)
+        if not isinstance(ast, ogAST.Procedure):
+            # Procedures have no inner states or inner procedures
+            for inner in chain(ast.composite_states, ast.procedures):
+                rec_set_dependencies(inner)
+
+    rec_set_dependencies(process)
+
     # once all text areas have been parsed, we must parse the aliases
     # (e.g. dcl variable type renames field.foo.bar). this could not be done
     # before all regular DCL/Monitor variables were parsed.
@@ -6479,6 +6505,13 @@ def transition(root, parent, context):
             warnings.extend(warn)
             trans.actions.append(t)
             parent = t
+        elif child.type == lexer.CREATE:
+            c, err, warn = create_request(child, parent, context)
+            errors.extend(err)
+            warnings.extend(warn)
+            trans.actions.append(c)
+            parent = c
+            context.dependencies['create'].add(c.instance_to_create)
         elif child.type == lexer.OUTPUT:
             out_ast = ogAST.Output()
             out_ast.path = context.path
@@ -6554,8 +6587,9 @@ def transition(root, parent, context):
             warnings.extend(warn)
             trans.terminator = term
         else:
-            warnings.append('Unsupported symbol in transition, type: ' +
-                    str(child.type))
+            msg = "Unsupported symbol in transition"\
+                  f" (type {child.type}): {child.text}"
+            errors.append([msg, [0,  0], []])
     # At the end of the transition parsing, get the list of terminators
     # the transition contains by making a diff with the list at context
     # level (we counted the number of terminators before parsing the item)
@@ -6886,6 +6920,65 @@ def task(root, parent=None, context=None):
     for w in warnings:
         body.warnings.append(w[0])
     return body, errors, warnings
+
+
+def create_request(root, parent=None, context=None):
+    ''' Parse a CREATE symbol (just the name of the process to create) '''
+    errors = []
+    warnings = []
+    coord = False
+    comment, body = None, None
+    result = ogAST.Create()
+    result.path = context.path
+    if 'PID' not in types().keys():
+        errors.append("Cannot create instances without a defined PID type")
+        PID_Values = []
+    else:
+        PID_Values = types()['PID'].type.EnumValues.keys()
+    for child in root.getChildren():
+        if child.type == lexer.CIF:
+            # Get symbol coordinates
+            result.pos_x, result.pos_y, \
+            result.width, result.height = cif(child)
+            coord = True
+        elif child.type == lexer.SYMBOLID:
+            coord = True
+            result.pos_x = symbolid(child)
+        elif child.type == lexer.ID:
+            result.inputString = get_input_string(child)
+            result.line = child.getLine()
+            result.charPositionInLine = child.getCharPositionInLine()
+            result.instance_to_create = result.inputString
+        elif child.type == lexer.THIS:
+            ...
+        elif child.type == lexer.COMMENT:
+            result.comment, _, _ = end(child)
+        elif child.type == lexer.HYPERLINK:
+            result.hyperlink = child.getChild(0).toString()[1:-1]
+        else:
+            warnings.append('Unsupported child type in CREATE definition: ' +
+                    str(child.type))
+
+    for pid in PID_Values:
+        # check that there is a PID prefixed with the name given
+        # (prefixed only because instances named are followed by a number)
+        prefix = result.instance_to_create.lower().replace('_', '-') + "-"
+        if pid.lower().startswith(prefix):
+            break
+    else:
+        errors.append(f'Found no instance named "{result.instance_to_create}"')
+    # Report errors with symbol coordinates
+    if coord:
+        errors = [[e, [result.pos_x, result.pos_y], []] for e in errors]
+        warnings = [[w, [result.pos_x, result.pos_y], []] for w in warnings]
+    else:
+        errors = [[e, [0, 0], []] for e in errors]
+        warnings = [[w, [0, 0], []] for w in warnings]
+    for e in errors:
+        result.errors.append(e[0])
+    for w in warnings:
+        result.warnings.append(w[0])
+    return result, errors, warnings
 
 
 def label(root, parent, context=None):
@@ -7280,6 +7373,7 @@ def parseSingleElement(elem:str='', string:str='', context=None):
              'label',
              'task',
              'procedure_call',
+             'create_request',
              'end',
              'text_area',
              'content',

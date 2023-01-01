@@ -308,6 +308,19 @@ def _procedurecall(symbol, **kwargs):
     return result
 
 
+@generate.register(sdlSymbols.Create)
+def _procedurecall(symbol, **kwargs):
+    ''' CREATE symbol '''
+    result = Indent()
+    result.append(cif_coord('CREATE', symbol))
+    if symbol.text.hyperlink:
+        result.append(hyperlink(symbol))
+    result.append(f'create {str(symbol.text)}{";" if not symbol.comment else ""}')
+    if symbol.comment:
+        result.extend(generate(symbol.comment))
+    return result
+
+
 @generate.register(sdlSymbols.TextSymbol)
 def _textsymbol(symbol, **kwargs):
     ''' Text Area symbol '''

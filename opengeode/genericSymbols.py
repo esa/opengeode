@@ -343,7 +343,8 @@ class Symbol(QObject, QGraphicsPathItem):
         except (AssertionError, AttributeError) as err:
             LOG.debug(self.common_name + " - error parsing - " + str(err))
             LOG.debug(str(traceback.format_exc()))
-            LOG.error('Checker failed - no parser for this construct?')
+            LOG.error('Checker failed - no parser for this construct: ' +
+                    self.common_name)
         else:
             if check_last_semi and str(self).strip():
                 if str(self).strip()[-1] == ';':

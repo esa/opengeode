@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.0 (01/2023)**
+- Add support for the CREATE symbol
+
 **3.14.2 (12/2022)**
 - Ada backend: fix instantiation of parameterless output messages
 

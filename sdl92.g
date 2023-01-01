@@ -39,6 +39,7 @@ tokens {
         CONNECTION;
         CONSTANT;
         CONSTANTS;
+        CREATE;
         DCL;
         MONITOR;
         DECISION;
@@ -133,6 +134,7 @@ tokens {
         TEXTAREA;
         TEXTAREA_CONTENT;
         THEN;
+        THIS;
         TIMER;
         TO;
         TRANSITION;
@@ -990,12 +992,15 @@ constant
         ;
 
 
+// Instance creation: opengeode does not support FPAR/actual_parameters yet
 create_request
-        :       CREATE
-                createbody
+        :       cif?
+                symbolid?
+                hyperlink?
+                CREATE createbody
                 actual_parameters?
                 end
-        ->      ^(CREATE createbody actual_parameters?)
+        ->      ^(CREATE cif? hyperlink? symbolid? end? createbody actual_parameters?)
         ;
 
 
@@ -1496,6 +1501,7 @@ symbolname
                 | LABEL
                 | JOIN
                 | CONNECT
+                | CREATE
         ;
 
 

@@ -307,6 +307,13 @@ def _procedure_call(ast, scene, parent, states):
     return sdlSymbols.ProcedureCall(parent, ast=ast)
 
 
+@render.register(ogAST.Create)
+def _create(ast, scene, parent, states):
+    ''' Create a CREATE symbol '''
+    _, _ = scene, states
+    return sdlSymbols.Create(parent, ast=ast)
+
+
 @render.register(ogAST.Decision)
 def _decision(ast, scene, parent, states):
     ''' Create a DECISION symbol and all its answers '''

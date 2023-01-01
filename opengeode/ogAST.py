@@ -432,8 +432,39 @@ class Task:
 
     def trace(self):
         ''' Debug output for a task '''
-        return u'TASK {exp} ({l},{c})'.format(exp=self.inputString,
+        return 'TASK {exp} ({l},{c})'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
+
+
+class Create:
+    ''' AST Entry for CREATE requests '''
+    def __init__(self):
+        ''' Initialize CREATE attributes '''
+        self.inputString = ''
+        self.line = None
+        self.charPositionInLine = None
+        self.pos_x, self.pos_y = None, None
+        self.width = 70
+        self.height = 35
+        # optional comment symbol
+        self.comment = None
+        # optional hyperlink
+        self.hyperlink = None
+        # Errors associated to this element
+        self.errors, self.warnings = [], []
+        # the path allows to retrieve the location of the symbol
+        # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
+        self.path = []
+        # Directive for the renderer to ignore the action in a transition
+        # (used if the symbol was added by the parser)
+        self.no_render = False
+        # CREATE-specific data: just the name of the process
+        # (formal parameters are not supported yet)
+        self.instance_to_create : str = ''
+
+    def trace(self):
+        ''' Debug output for a CREATE symbol '''
+        return f'CREATE {self.inputString} ({self.line},{self.charPositionInLine})'
 
 
 class TaskAssign(Task):
@@ -627,7 +658,7 @@ class Transition:
     ''' AST Entry for a complete transition '''
     def __init__(self):
         ''' Initialize the transition attributes '''
-        # list of either Label, Output, Task, Decision
+        # list of either Label, Output, Task, Decision, or Create
         self.actions = []
         # terminator is of type Terminator (it is optional)
         self.terminator = None
@@ -965,6 +996,9 @@ class Procedure:
         # the path allows to retrieve the location of the symbol
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
+        # Dependencies: see explanations in class Process. There are stored
+        # temporarily here because it is the "context" class used while parsing
+        self.dependencies = {'math' : False, 'create': set(), 'writeln': False}
 
 
 class Process:
@@ -1041,7 +1075,7 @@ class Process:
 
         # Similar mapping for continuous signals
         self.cs_mapping = defaultdict(list)
-        
+
         # Similar mapping for CONNECT triggers
         self.connect_mapping = defaultdict(list)
 
@@ -1106,6 +1140,16 @@ class Process:
         # of state aggregations (Filled by helper)
         self.parallel_states = []
 
+        # Dependencies are collected by the parser to support optimizations
+        # of code generator backends. For example when a task is doing a math
+        # function call, this will imply the include/link with a math library
+        # The "create" entry is a list of process names that are created
+        # at runtime - needed for code generators to connect to the runtime
+        # function in charge of actually instantiating the process.
+        # Dpendencies are collected at process, procedure and substate levels
+        # and then aggregated here.
+        self.dependencies = {'math' : False, 'create': set(), 'writeln': False}
+
 
 class CompositeState(Process):
     '''
@@ -1151,7 +1195,7 @@ class StateAggregation(CompositeState):
 
     def trace(self):
         ''' Debug output for state aggregation '''
-        return u'STATE AGGREGATION {exp} ({l},{c})'.format(exp=self.statename,
+        return 'STATE AGGREGATION {exp} ({l},{c})'.format(exp=self.statename,
                 l=self.line, c=self.charPositionInLine)
 
 
