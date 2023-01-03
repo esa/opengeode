@@ -591,7 +591,7 @@ class Terminator:
 
     def trace(self):
         ''' Debug output for terminators '''
-        return u'{kind} {exp} ({l},{c}) at {x}, {y}'.format(
+        return '{kind} {exp} ({l},{c}) at {x}, {y}'.format(
                 exp=self.inputString,
                 kind=self.kind.upper(), l=self.line, c=self.charPositionInLine,
                 x=self.pos_x, y=self.pos_y)
@@ -650,7 +650,7 @@ class Floating_label(Label):
 
     def trace(self):
         ''' Debug output for a label (used by code generator) '''
-        return u'CONNECTION {label} ({l},{c})'.format(label=self.inputString,
+        return 'CONNECTION {label} ({l},{c})'.format(label=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
 
@@ -676,7 +676,7 @@ class Transition:
         data = [action.trace() for action in self.actions]
         if self.terminator:
             data.append(self.terminator.trace())
-        return u'\n'.join(data)
+        return '\n'.join(data)
 
 
 class Input:

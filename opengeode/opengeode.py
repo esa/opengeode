@@ -93,6 +93,7 @@ from .sdlSymbols import(Input,
                         Procedure,
                         ProcedureStart,
                         ProcedureStop,
+                        ProcessStop,
                         StateStart,
                         Connect,
                         Process,
@@ -147,7 +148,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '4.0.0'
+__version__ = '4.0.1'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -194,7 +195,7 @@ ACTIONS = {
     'block': [Process, ProcessType, Comment, TextSymbol],
     'process': [Start, State, Input, Connect, ContinuousSignal, Task, Decision,
                 DecisionAnswer, Output, ProcedureCall, Create, TextSymbol, Comment,
-                Label, Join, Procedure, Alternative],
+                Label, Join, Procedure, Alternative, ProcessStop],
     'procedure': [ProcedureStart, Task, Decision,
                   DecisionAnswer, Alternative, Output, Create, ProcedureCall,
                   TextSymbol, Comment, Label, Join, ProcedureStop],
@@ -1997,8 +1998,7 @@ class SDL_View(QGraphicsView):
                         else:
                             item.edit_text(self.mapToScene(evt.pos()))
                             return
-                    self.go_down(item.nested_scene,
-                                 name=u"{} {}".format(ctx, str(item)))
+                    self.go_down(item.nested_scene, name=f"{ctx} {str(item)}")
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))

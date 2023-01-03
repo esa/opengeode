@@ -313,7 +313,7 @@ end {process.name.lower()}_Lib;'''
             else:
                 context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
 
-        ctxt = (f'{LPREFIX} : aliased {ASN1SCC}{process.name.capitalize()}_Context :=\n'
+        ctxt = (f'Default_Context: constant {ASN1SCC}{process.name.capitalize()}_Context :=\n'
             '      (Init_Done => False,\n       ')
         initial_values = []
         # some parts of the context may have initial values
@@ -348,6 +348,7 @@ end {process.name.lower()}_Lib;'''
             ctxt += ",\n       ".join(initial_values) + ",\n       "
         ctxt += "others => <>);"
         context_decl.append(ctxt)
+        context_decl.append(f'{LPREFIX} : aliased {ASN1SCC}{process.name.title()}_Context := Default_Context;')
 
         # Add monitors, that are variables that must be set by an external
         # module. They are not part of the global state of the process, and
@@ -455,6 +456,7 @@ package body {process.name} is''']
         # Add the actual value of "self" which is the instance name
         if 'PID' in TYPES:
             generic_spec += f"   self : {ASN1SCC}PID;\n"
+            generic_spec += f"   with procedure Delete_Instance (pid : {ASN1SCC}PID);\n"
         ri_list = external_ri_list(process)
         if has_context_params:
             # Add context parameter to the process type generics, to make sure
@@ -899,7 +901,8 @@ package body {process.name}_RI is''']
         # be gathered to instantiate the package
         pkg_decl = (f"package {process.name}_Instance is new {process.instance_of_name}")
         if 'PID' in TYPES:
-            selfdef = f"self => {ASN1SCC}{process.name}"
+            selfdef = f"self => {ASN1SCC}{process.name},\n"
+            selfdef += f"      Delete_Instance => {process.name.title()}_RI.Delete_Instance"
         ri_list = [(f"RI{SEPARATOR}{sig['name']}", sig['name'])
                    for sig in process.output_signals]
         if has_cs:
@@ -910,16 +913,16 @@ package body {process.name}_RI is''']
         ri_list.extend([(f"reset_{timer}", f"reset_{timer}") for timer in process.timers])
         ri_inst = [f"{ri[0]} => {process.name.title()}_RI.{ri[1]}" for ri in ri_list]
         if ri_inst or has_context_params or 'PID' in TYPES:
-            pkg_decl += " ("
+            pkg_decl += "\n     ("
         if 'PID' in TYPES:
             pkg_decl += selfdef
         if ri_inst:
             if 'PID' in TYPES:
-                pkg_decl += ", "
-            pkg_decl += f'{", ".join(ri_inst)}'
+                pkg_decl += ",\n      "
+            pkg_decl += ",\n      ".join(ri_inst)
         if has_context_params:
             if ri_inst or 'PID' in TYPES:
-                pkg_decl += ", "
+                pkg_decl += ",\n      "
             # Add instance-value of the context parameters
             pkg_decl += f"{process.instance_of_name}_ctxt => {process.name}_ctxt"
         if ri_inst or has_context_params or 'PID' in TYPES:
@@ -3092,8 +3095,13 @@ def _transition(tr, **kwargs):
             elif tr.terminator.kind == 'join':
                 code.append(f'goto {tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
-                pass
-                # TODO
+                # TODO: * reset the context variable
+                if 'PID' in TYPES:
+                    # Instances can be deleted only from the code of the type
+                    # based on the "self" PID (but we don't check it here)
+                    code.append(f"Delete_Instance (Self);")
+                    code.append(f"{LPREFIX} := Default_Context;")
+                code.append("return;")
             elif tr.terminator.kind == 'return':
                 string = ''
                 aggregate = False

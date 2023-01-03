@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.1 (01/2023)**
+- Add support for the DELETE symbol (to delete a "dynamically" created instance)
+
 **4.0.0 (01/2023)**
 - Add support for the CREATE symbol
 

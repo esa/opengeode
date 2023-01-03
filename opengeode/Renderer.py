@@ -375,8 +375,10 @@ def _terminator(ast, scene, parent, states):
         symbol.nested_scene = ast.composite or ogAST.CompositeState()
     elif ast.kind == 'join':
         symbol = sdlSymbols.Join(parent, ast)
-    elif ast.kind in ('return', 'stop'):
+    elif ast.kind == 'return':
         symbol = sdlSymbols.ProcedureStop(parent, ast)
+    elif ast.kind == 'stop':
+        symbol = sdlSymbols.ProcessStop(parent, ast)
     else:
         raise TypeError('Unsupported terminator: ' + repr(ast))
     return symbol
