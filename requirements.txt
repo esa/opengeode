@@ -1,0 +1,10 @@
+# required dependencies
+pyside6
+pygraphviz
+
+# optional dependencies
+stringtemplate3
+singledispatch
+
+# development dependencies
+wheel

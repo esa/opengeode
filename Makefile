@@ -58,25 +58,24 @@ update:
 antlr3_python3_runtime_3.4/setup.py:  | dependencies
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
 	wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf -
-	cd antlr3_python3_runtime_3.4 ; python3 -m pip install --user --upgrade .
-
-pip-packages: antlr3_python3_runtime_3.4/setup.py | dependencies
-	# Note : these could be installed via setup.py or requirements.txt
-	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
-	python3 -m pip install --user --upgrade pyside6 pygraphviz stringtemplate3 singledispatch
 
 dependencies: ~/.local/bin/asn1scc
 	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect graphviz libgraphviz-dev
 
-opengeode/icons.py: opengeode.qrc pip-packages
-	PATH="${HOME}/.local/bin:${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py
+develop: antlr3_python3_runtime_3.4/setup.py | dependencies
+	python3 -m venv .venv --system-site-packages
+	. .venv/bin/activate && cd antlr3_python3_runtime_3.4 && python3 -m pip install --editable .
+	. .venv/bin/activate && pip install -r requirements.txt
+	. .venv/bin/activate && pyside6-rcc opengeode.qrc -o opengeode/icons.py
+	. .venv/bin/activate && python3 -m pip install --editable .
 
-install: opengeode/icons.py pip-packages
+install: develop
+	# Both packages must end up in the same environment to work
+	cd antlr3_python3_runtime_3.4 && python3 -m pip install --user --upgrade .
 	python3 -m pip install --user --upgrade .
 
 full-install: update
 	$(MAKE) dependencies
-	$(MAKE) pip-packages
 	$(MAKE) install
 
 publish: 
