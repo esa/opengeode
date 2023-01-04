@@ -76,6 +76,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtUiTools import *
 from PySide6 import QtSvg
 
+from . import version
 from .genericSymbols import Symbol, Comment, Cornergrabber, Connection, Channel
 from .sdlSymbols import(Input,
                         Output,
@@ -148,7 +149,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '4.0.1'
+__version__ = version.__version__
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
