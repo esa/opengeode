@@ -772,8 +772,11 @@ package body {process.name}_RI is''']
             taste_template.append('when others =>')
             taste_template.append('Execute_Transition (CS_Only);')
             if simu:
-                # In simulation mode, the unhandled input is signaled
-                taste_template.append('raise Lost_Input;')
+                if fake_name is False:
+                    # In simulation mode, the unhandled input is signaled
+                    # Not applicable to the transitions of synchronous calls
+                    # (using "fake_name")
+                    taste_template.append('raise Lost_Input;')
             taste_template.append('end case;')
         else:
             inst_call = f"{process.name}_Instance.{signame}"
