@@ -148,7 +148,7 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '4.0.1'
+__version__ = '4.0.2'
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -2867,6 +2867,10 @@ class OG_MainWindow(QMainWindow):
         item_types = self.datadict.topLevelItem(0)
         item_types.takeChildren() # remove old children
         for name, sort in sorted(ast.dataview.items()):
+            if not hasattr(sort, 'Line'):
+                # Not present in any file (e.g. INTEGER type that is added
+                # by the parser in case of a syntype of a native integer)
+                continue
             new_item = QTreeWidgetItem(item_types,
                                              [name.replace('-', '_'),
                                               'view'])

@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.2 (01/2023)**
+- It is possible to subtype (with syntype) native "integer" and "natural" types
+
 **4.0.1 (01/2023)**
 - Add support for the DELETE symbol (to delete a "dynamically" created instance)
 

@@ -59,7 +59,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE', 'INTEGER',
-              'CHARACTER', 'ASN1INT', 'CREATE'
+              'CHARACTER', 'ASN1INT', 'CREATE', 'NATURAL',
               'TASK', 'PROCESS', 'LABEL', 'JOIN', 'CONNECTION', 'CONNECT')]
 
 
@@ -991,8 +991,7 @@ class TextSymbol(HorizontalSymbol):
     default_size = 'any'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
-    blackbold = SDL_BLACKBOLD
-    redbold = SDL_REDBOLD
+    blackbold = SDL_BLACKBOLD + ['\\bNATURAL\\b', '\\bINTEGER\\b']
 
     # Minimum size for symbol
     min_size = (170, 140)
@@ -1016,6 +1015,9 @@ class TextSymbol(HorizontalSymbol):
         # Text is not centered in the box - change default alignment:
         self.textbox_alignment = Qt.AlignLeft | Qt.AlignTop
         self.parser = ogParser
+        self.redbold = SDL_REDBOLD.copy()
+        self.redbold.remove('\\bNATURAL\\b')
+        self.redbold.remove('\\bINTEGER\\b')
 
     def check_syntax(self, pr_text):
         ''' Redefinition of the check syntax function for the text symbol '''
