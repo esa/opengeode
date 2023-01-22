@@ -9,11 +9,13 @@ Usage:  python3 setup.py sdist bdist_wheel --> to create a tarball
 
 from setuptools import setup, find_packages
 
-import opengeode
+version = {}
+with open("opengeode/version.py") as fp:
+    exec(fp.read(), version)
 
 setup(
     name='opengeode',
-    version=opengeode.__version__,
+    version=version['__version__'],
     packages=find_packages(),
     author='Maxime Perrotin',
     author_email='maxime.perrotin@esa.int',
