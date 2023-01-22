@@ -3260,7 +3260,13 @@ def variables(root, ta_ast, context, monitor=False):
             sort = child.getChild(0).text
             # Find corresponding type in ASN.1 model
             try:
-                asn1_sort = sdl_to_asn1(sort)
+                if sort.lower() in ('integer', 'natural'):
+                    errors.append(
+                            error(
+                                root,
+                                'Only subtypes of integers with a range constraint are allowed (hint: create a syntype)'))
+                else:
+                    asn1_sort = sdl_to_asn1(sort)
             except TypeError as err:
                 errors.append(error(root, str(err)))
         elif child.type == lexer.RENAMES:
@@ -3952,15 +3958,34 @@ def syntype(root, ta_ast, context):
             else:
                 reftypename = typename
                 try:
-                    reftype = sdl_to_asn1(reftypename)
+                    # Support direct subtyping of native (unsigned) integers
+                    if reftypename.lower() == "integer":
+                        reftype = INTEGER
+                    elif reftypename.lower() == "natural":
+                        reftype = UNSIGNED
+                    else:
+                        reftype = sdl_to_asn1(reftypename)
                     if not is_numeric(reftype):
                         errors.append(error(root, f"{line}:{char} Syntypes must be numeric"))
                     # Retrieve the proper ref type spelling
                     for each in types().keys():
-                        if reftypename.replace('_', '-').lower() == each.lower():
+                        if reftypename.replace('_', '-').lower() == each.lower() \
+                           and reftypename.lower() not in ('integer', 'natural'):
+                            reftypename = each
                             break
-                    reftypename = each
+                    else:
+                        # Not found, it is a native type, add it to the dataview
+                        # to make it visible for dcl declarations
+                        dv = getattr(DV, 'types', {})
+                        if 'INTEGER' not in dv.keys():
+                            dv['INTEGER'] = type('INTEGER', (object,),
+                             {'type':NewInteger (INTEGER.Min, INTEGER.Max)})
+                        if 'NATURAL' not in dv.keys():
+                            dv['NATURAL'] = type('NATURAL', (object,),
+                             {'type': NewInteger (UNSIGNED.Min, UNSIGNED.Max)})
+                        reftypename = 'INTEGER'
                 except TypeError as err:
+                    # e.g. "Type xxx pot found in ASN.1 model"
                     errors.append(error(root, str(err)))
         elif child.type == lexer.CLOSED_RANGE:
             left, right = child.getChild(0), child.getChild(1)
@@ -3978,7 +4003,7 @@ def syntype(root, ta_ast, context):
             for c in child.getChildren():
                 if c.type == lexer.CONSTANT:
                     # The type checking here is done using INTEGER
-                    # and not reftep, otherwise it may be wrong because
+                    # and not reftype, otherwise it may be wrong because
                     # the operator is not taken into account... So if
                     # for instance the range of the reftype is 0..10
                     # and the expression is "<11" it should pass with no
@@ -4077,7 +4102,8 @@ def syntype(root, ta_ast, context):
         errors.append(error(root, "Could not determine a valid range of the syntype!"))
 
     refbasic = find_basic_type(reftype)
-    if int(refbasic.Min) > foundMin or int(refbasic.Max) < foundMax:
+    if hasattr(refbasic, "Min") and hasattr(refbasic, "Max") and \
+       (int(refbasic.Min) > foundMin or int(refbasic.Max) < foundMax):
         errors.append(error(root, f"{line}:{char} Range [{foundMin}, {foundMax}] exceeds the capacity of the parent type"))
 
     LOG.debug(f"{line}:{char} Found range: for {newtypename}: [{foundMin}, {foundMax}]")
