@@ -7,4 +7,4 @@
 #
 # later on we use: version['__version__']
 #
-__version__ = '4.0.1'
+__version__ = '4.0.2'

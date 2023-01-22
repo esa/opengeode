@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -19,12 +19,7 @@
 
 import logging
 
-try:
-    # python2
-    from singledispatch import singledispatch
-except ModuleNotFoundError:
-    # python3
-    from functools import singledispatch
+from functools import singledispatch
 
 from llvm import core as lc
 from llvm import ee as le

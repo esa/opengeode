@@ -30,7 +30,7 @@
 
 
 import logging
-from singledispatch import singledispatch
+from functools import singledispatch
 
 import ogAST
 import Helper
