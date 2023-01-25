@@ -9,9 +9,11 @@
      <file>icons/join.png</file>
      <file>icons/label.png</file>
      <file>icons/output.png</file>
+     <file>icons/create.png</file>
      <file>icons/procedurecall.png</file>
      <file>icons/procedurestart.png</file>
      <file>icons/procedurestop.png</file>
+     <file>icons/processstop.png</file>
      <file>icons/procedure.png</file>
      <file>icons/process.png</file>
      <file>icons/processtype.png</file>

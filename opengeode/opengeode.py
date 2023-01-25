@@ -76,6 +76,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtUiTools import *
 from PySide6 import QtSvg
 
+from . import version
 from .genericSymbols import Symbol, Comment, Cornergrabber, Connection, Channel
 from .sdlSymbols import(Input,
                         Output,
@@ -84,6 +85,7 @@ from .sdlSymbols import(Input,
                         Alternative,
                         Task,
                         ProcedureCall,
+                        Create,
                         TextSymbol,
                         State,
                         Start,
@@ -92,6 +94,7 @@ from .sdlSymbols import(Input,
                         Procedure,
                         ProcedureStart,
                         ProcedureStop,
+                        ProcessStop,
                         StateStart,
                         Connect,
                         Process,
@@ -146,7 +149,8 @@ except ImportError:
 
 
 __all__ = ['opengeode', 'SDL_Scene', 'SDL_View', 'parse']
-__version__ = '3.13.0'
+
+__version__ = version.__version__
 
 if hasattr(sys, 'frozen'):
     # Detect if we are running on Windows (py2exe-generated)
@@ -192,17 +196,17 @@ G_ERRORS = list()
 ACTIONS = {
     'block': [Process, ProcessType, Comment, TextSymbol],
     'process': [Start, State, Input, Connect, ContinuousSignal, Task, Decision,
-                DecisionAnswer, Output, ProcedureCall, TextSymbol, Comment,
-                Label, Join, Procedure, Alternative],
-    'procedure': [ProcedureStart, Task, Decision, Alternative,
-                  DecisionAnswer, Output, ProcedureCall, TextSymbol,
-                  Comment, Label, Join, ProcedureStop],
+                DecisionAnswer, Output, ProcedureCall, Create, TextSymbol, Comment,
+                Label, Join, Procedure, Alternative, ProcessStop],
+    'procedure': [ProcedureStart, Task, Decision,
+                  DecisionAnswer, Alternative, Output, Create, ProcedureCall,
+                  TextSymbol, Comment, Label, Join, ProcedureStop],
     'statechart': [],
     'state': [StateStart, State, Input, Connect, ContinuousSignal, Task,
-              Decision, DecisionAnswer, Output, ProcedureCall, TextSymbol,
+              Decision, DecisionAnswer, Output, Create, ProcedureCall, TextSymbol,
               Comment, Label, Join, ProcedureStop, Procedure, Alternative],
     'clipboard': [Start, State, Input, Connect, Task, Decision, DecisionAnswer,
-                  Output, ProcedureCall, TextSymbol, Comment, Label,
+                  Output, ProcedureCall, Create, TextSymbol, Comment, Label,
                   Join, Procedure, Process, StateStart, ProcedureStop,
                   ContinuousSignal, Alternative],
     'lander': [],
@@ -1996,8 +2000,7 @@ class SDL_View(QGraphicsView):
                         else:
                             item.edit_text(self.mapToScene(evt.pos()))
                             return
-                    self.go_down(item.nested_scene,
-                                 name=u"{} {}".format(ctx, str(item)))
+                    self.go_down(item.nested_scene, name=f"{ctx} {str(item)}")
                 else:
                     # Otherwise, double-click edits the item text
                     item.edit_text(self.mapToScene(evt.pos()))
@@ -2866,6 +2869,10 @@ class OG_MainWindow(QMainWindow):
         item_types = self.datadict.topLevelItem(0)
         item_types.takeChildren() # remove old children
         for name, sort in sorted(ast.dataview.items()):
+            if not hasattr(sort, 'Line'):
+                # Not present in any file (e.g. INTEGER type that is added
+                # by the parser in case of a syntype of a native integer)
+                continue
             new_item = QTreeWidgetItem(item_types,
                                              [name.replace('-', '_'),
                                               'view'])
@@ -3030,7 +3037,8 @@ class OG_MainWindow(QMainWindow):
             # sorted list of local variables (could add parent variables)
             for var in sorted(context.variables.keys()):
                 sort, _ = context.variables[var]
-                QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
+                if sort.kind == "ReferenceType":
+                    QTreeWidgetItem(dcl, [var, sort.ReferencedTypeName])
 
             for each in sorted(l.inputString for l in context.labels):
                 add_elem(labels, each)

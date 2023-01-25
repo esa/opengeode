@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -652,6 +652,8 @@ def check_call(name, params, context):
 
     # Special case for write/writeln functions
     if name.lower() in ('write', 'writeln'):
+        # Update the context dependency as helper for code generators
+        context.dependencies['writeln'] = True
         def check_one_param(p, name):
             p_ty = p.exprType
             if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty) or \
@@ -833,6 +835,10 @@ def check_call(name, params, context):
             # out parameters base must be a variable
             raise TypeError('Parameter "{}" does not qualify as an OUT parameter'
                 .format(expr.right.inputString))
+
+    # Update the context dependency as helper for code generators
+    if name in ('cos', 'sin', 'sqrt'):
+        context.dependencies['math'] = True
 
     # (4) Compute the type of the result
     param_btys = [find_basic_type(p.exprType) for p in params]
@@ -1720,7 +1726,11 @@ def fix_expression_types(expr, context):
                     raise
             expr.right.value[det] = check_expr.right
             # Set the type of "then" and "else" to the reference type:
-            expr.right.value[det].exprType = expr.left.exprType
+            # unless they are a loop index type (int32) because in that
+            # case a cast will be needed
+            kind = find_basic_type(expr.right.value[det].exprType).kind
+            if kind != "Integer32Type":
+                expr.right.value[det].exprType = expr.left.exprType
         # We must also set the type of the overall expression to the same
         expr.right.exprType = expr.left.exprType
 
@@ -2869,7 +2879,6 @@ def primary_index(root, context, pos):
                             # The code generator will use the raw value:
                             node.use_num_value = int(basic_enum.EnumValues[enumitem].IntValue)
         except Exception as err:
-            print(str(err))
             # no "indexed_by" attribute: ignore, it is not a "newtype"
             pass
 
@@ -3251,7 +3260,13 @@ def variables(root, ta_ast, context, monitor=False):
             sort = child.getChild(0).text
             # Find corresponding type in ASN.1 model
             try:
-                asn1_sort = sdl_to_asn1(sort)
+                if sort.lower() in ('integer', 'natural'):
+                    errors.append(
+                            error(
+                                root,
+                                'Only subtypes of integers with a range constraint are allowed (hint: create a syntype)'))
+                else:
+                    asn1_sort = sdl_to_asn1(sort)
             except TypeError as err:
                 errors.append(error(root, str(err)))
         elif child.type == lexer.RENAMES:
@@ -3943,15 +3958,34 @@ def syntype(root, ta_ast, context):
             else:
                 reftypename = typename
                 try:
-                    reftype = sdl_to_asn1(reftypename)
+                    # Support direct subtyping of native (unsigned) integers
+                    if reftypename.lower() == "integer":
+                        reftype = INTEGER
+                    elif reftypename.lower() == "natural":
+                        reftype = UNSIGNED
+                    else:
+                        reftype = sdl_to_asn1(reftypename)
                     if not is_numeric(reftype):
                         errors.append(error(root, f"{line}:{char} Syntypes must be numeric"))
                     # Retrieve the proper ref type spelling
                     for each in types().keys():
-                        if reftypename.replace('_', '-').lower() == each.lower():
+                        if reftypename.replace('_', '-').lower() == each.lower() \
+                           and reftypename.lower() not in ('integer', 'natural'):
+                            reftypename = each
                             break
-                    reftypename = each
+                    else:
+                        # Not found, it is a native type, add it to the dataview
+                        # to make it visible for dcl declarations
+                        dv = getattr(DV, 'types', {})
+                        if 'INTEGER' not in dv.keys():
+                            dv['INTEGER'] = type('INTEGER', (object,),
+                             {'type':NewInteger (INTEGER.Min, INTEGER.Max)})
+                        if 'NATURAL' not in dv.keys():
+                            dv['NATURAL'] = type('NATURAL', (object,),
+                             {'type': NewInteger (UNSIGNED.Min, UNSIGNED.Max)})
+                        reftypename = 'INTEGER'
                 except TypeError as err:
+                    # e.g. "Type xxx pot found in ASN.1 model"
                     errors.append(error(root, str(err)))
         elif child.type == lexer.CLOSED_RANGE:
             left, right = child.getChild(0), child.getChild(1)
@@ -3969,7 +4003,7 @@ def syntype(root, ta_ast, context):
             for c in child.getChildren():
                 if c.type == lexer.CONSTANT:
                     # The type checking here is done using INTEGER
-                    # and not reftep, otherwise it may be wrong because
+                    # and not reftype, otherwise it may be wrong because
                     # the operator is not taken into account... So if
                     # for instance the range of the reftype is 0..10
                     # and the expression is "<11" it should pass with no
@@ -4068,7 +4102,8 @@ def syntype(root, ta_ast, context):
         errors.append(error(root, "Could not determine a valid range of the syntype!"))
 
     refbasic = find_basic_type(reftype)
-    if int(refbasic.Min) > foundMin or int(refbasic.Max) < foundMax:
+    if hasattr(refbasic, "Min") and hasattr(refbasic, "Max") and \
+       (int(refbasic.Min) > foundMin or int(refbasic.Max) < foundMax):
         errors.append(error(root, f"{line}:{char} Range [{foundMin}, {foundMax}] exceeds the capacity of the parent type"))
 
     LOG.debug(f"{line}:{char} Found range: for {newtypename}: [{foundMin}, {foundMax}]")
@@ -4696,17 +4731,18 @@ def process_definition(root, parent=None, context=None):
     # when initially checking for errors. After the first load,
     # errors are associated to symbols directly, via the "symbolid"
     # that is a pointer to the already-created qt classes.
+    # We also check if this is a process type (needed to decide if
+    # we set or not the "self" variable)
     for child in root.getChildren():
         if child.type == lexer.ID:
             process.processName = child.text
             process.path = [f'PROCESS {process.processName}']
+        elif child.type == lexer.TYPE:
+            process.process_type = True
  
     # Create implicit "sender" identifier of type PID.
     if 'PID' in types().keys():
-        #asn1_sort = sdl_to_asn1('PID')
-        #def_value, _, _ = ground_expression('env', 'sender', asn1_sort, process)
-        #process.variables['sender'] = (asn1_sort, def_value)
-        parseSingleElement('content', 'dcl sender PID := env;', context=process)
+        parseSingleElement('content', 'dcl sender, offspring PID := env;', context=process)
 
     # first look for all text areas to find NEWTYPE, SYNTYPE and SYNONYM declarations
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
@@ -4796,7 +4832,10 @@ def process_definition(root, parent=None, context=None):
             # if the process name exists in the enumerated list of PIDs
             try:
                 PID_Values = [v.lower().replace('-', '_') for v in types()['PID'].type.EnumValues.keys()]
-                if process.processName.lower() in PID_Values:
+                if process.process_type:
+                    # Will be replaced by instance name in generated code
+                    self_pid = 'env'
+                elif process.processName.lower() in PID_Values:
                     self_pid = process.processName
                 elif 'env' in PID_Values:
                     self_pid = 'env'
@@ -4858,7 +4897,9 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.REFERENCED:
             process.referenced = True
         elif child.type == lexer.TYPE:
-            process.process_type = True
+            # Already set above
+            pass
+            #process.process_type = True
         elif child.type == lexer.TYPE_INSTANCE:
             # PROCESS Toto:ParentType;
             process.instance_of_name = child.children[0].text
@@ -4869,10 +4910,33 @@ def process_definition(root, parent=None, context=None):
                              sdl92Parser.tokenNamesMap[child.type] +
                             ' - line ' + str(child.getLine()),
                             [proc_x, proc_y], []])
+
+
     for proc, content in inner_proc:
         err, warn = procedure_post(proc, content, context=process)
         errors.extend(err)
         warnings.extend(warn)
+
+    def set_dependencies(dep_from):
+        ''' Update the dependencies structure '''
+        if dep_from['math']:
+            process.dependencies['math'] = True
+        if dep_from['writeln']:
+            process.dependencies['writeln'] = True
+        process.dependencies['create'].update(dep_from['create'])
+
+    def rec_set_dependencies(ast : ogAST.Process):
+        ''' Update the process dependencies by recursively parsing the AST
+        (nested states, procedures) '''
+        if ast is not process:
+            set_dependencies(ast.dependencies)
+        if not isinstance(ast, ogAST.Procedure):
+            # Procedures have no inner states or inner procedures
+            for inner in chain(ast.composite_states, ast.procedures):
+                rec_set_dependencies(inner)
+
+    rec_set_dependencies(process)
+
     # once all text areas have been parsed, we must parse the aliases
     # (e.g. dcl variable type renames field.foo.bar). this could not be done
     # before all regular DCL/Monitor variables were parsed.
@@ -6467,6 +6531,13 @@ def transition(root, parent, context):
             warnings.extend(warn)
             trans.actions.append(t)
             parent = t
+        elif child.type == lexer.CREATE:
+            c, err, warn = create_request(child, parent, context)
+            errors.extend(err)
+            warnings.extend(warn)
+            trans.actions.append(c)
+            parent = c
+            context.dependencies['create'].add(c.instance_to_create)
         elif child.type == lexer.OUTPUT:
             out_ast = ogAST.Output()
             out_ast.path = context.path
@@ -6542,8 +6613,9 @@ def transition(root, parent, context):
             warnings.extend(warn)
             trans.terminator = term
         else:
-            warnings.append('Unsupported symbol in transition, type: ' +
-                    str(child.type))
+            msg = "Unsupported symbol in transition"\
+                  f" (type {child.type}): {child.text}"
+            errors.append([msg, [0,  0], []])
     # At the end of the transition parsing, get the list of terminators
     # the transition contains by making a diff with the list at context
     # level (we counted the number of terminators before parsing the item)
@@ -6874,6 +6946,65 @@ def task(root, parent=None, context=None):
     for w in warnings:
         body.warnings.append(w[0])
     return body, errors, warnings
+
+
+def create_request(root, parent=None, context=None):
+    ''' Parse a CREATE symbol (just the name of the process to create) '''
+    errors = []
+    warnings = []
+    coord = False
+    comment, body = None, None
+    result = ogAST.Create()
+    result.path = context.path
+    if 'PID' not in types().keys():
+        errors.append("Cannot create instances without a defined PID type")
+        PID_Values = []
+    else:
+        PID_Values = types()['PID'].type.EnumValues.keys()
+    for child in root.getChildren():
+        if child.type == lexer.CIF:
+            # Get symbol coordinates
+            result.pos_x, result.pos_y, \
+            result.width, result.height = cif(child)
+            coord = True
+        elif child.type == lexer.SYMBOLID:
+            coord = True
+            result.pos_x = symbolid(child)
+        elif child.type == lexer.ID:
+            result.inputString = get_input_string(child)
+            result.line = child.getLine()
+            result.charPositionInLine = child.getCharPositionInLine()
+            result.instance_to_create = result.inputString
+        elif child.type == lexer.THIS:
+            ...
+        elif child.type == lexer.COMMENT:
+            result.comment, _, _ = end(child)
+        elif child.type == lexer.HYPERLINK:
+            result.hyperlink = child.getChild(0).toString()[1:-1]
+        else:
+            warnings.append('Unsupported child type in CREATE definition: ' +
+                    str(child.type))
+
+    for pid in PID_Values:
+        # check that there is a PID prefixed with the name given
+        # (prefixed only because instances named are followed by a number)
+        prefix = result.instance_to_create.lower().replace('_', '-') + "-"
+        if pid.lower().startswith(prefix):
+            break
+    else:
+        errors.append(f'Found no instance named "{result.instance_to_create}"')
+    # Report errors with symbol coordinates
+    if coord:
+        errors = [[e, [result.pos_x, result.pos_y], []] for e in errors]
+        warnings = [[w, [result.pos_x, result.pos_y], []] for w in warnings]
+    else:
+        errors = [[e, [0, 0], []] for e in errors]
+        warnings = [[w, [0, 0], []] for w in warnings]
+    for e in errors:
+        result.errors.append(e[0])
+    for w in warnings:
+        result.warnings.append(w[0])
+    return result, errors, warnings
 
 
 def label(root, parent, context=None):
@@ -7268,6 +7399,7 @@ def parseSingleElement(elem:str='', string:str='', context=None):
              'label',
              'task',
              'procedure_call',
+             'create_request',
              'end',
              'text_area',
              'content',

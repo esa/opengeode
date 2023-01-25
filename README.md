@@ -104,12 +104,13 @@ merged into the wiki by the wiki maintainers.
 Information and contact
 =======================
 
-For additional information please contact:
+For information please contact:
 maxime (dot) perrotin (at) esa (dot) int
 
-The LLVM backend was designed and implemented by Diego Barbera during the ESA
-Summer of Code 2014. This component is not maintained.
-Some parts implemented by Laurent Meyer (native SDL type support in the parser)
+Additional contributors:
+* Diego Barbera (ESA Summer of Code 2014 - LLVM backend)
+* Laurent Meyer
+* Marco Lattuada (C backend)
 
 The ASN.1 compiler (ASN1SCC) that OpenGEODE is based on was developed by George Mamais and Thanassis Tsiodras for the European Space Agency.
 
@@ -124,6 +125,34 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.2 (01/2023)**
+- It is possible to subtype (with syntype) native "integer" and "natural" types
+
+**4.0.1 (01/2023)**
+- Add support for the DELETE symbol (to delete a "dynamically" created instance)
+
+**4.0.0 (01/2023)**
+- Add support for the CREATE symbol
+
+**3.14.2 (12/2022)**
+- Ada backend: fix instantiation of parameterless output messages
+
+**3.14.1 (12/2022)**
+- Support synonym of SEQUENCE literal
+
+**3.14.0 (12/2022)**
+- the "self" constant was not set properly in instances of process type. Fixed (Ada backend)
+
+**3.13.3 (12/2022)**
+- Fix default values of type OCTET STRINGs when referencing an ASN.1 constant
+
+**3.13.2 (12/2022)**
+- Fix rendering issue with nextstate when using a VIA clause
+
+**3.13.1 (12/2022)**
+- Fix missing cast in Ada backend when using index loops
+- Fix support for IS5String in CHOICE elements (Ada backend bugfix)
+
 **3.13.0 (12/2022)**
 - Support arrays indexed by an enumerated type (when using the newtype construct)
 

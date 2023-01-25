@@ -183,10 +183,11 @@ def _state(ast, scene, states, terminators, parent=None):
     # INPUT children in the render_terminator function.
     for term in terminators:
         state_label = ast.via or ast.inputString
+        term_label = term.via or term.inputString
         if(term.kind == 'next_state' and
                 term.pos_x == ast.pos_x and
                 term.pos_y == ast.pos_y and
-                term.inputString == state_label):
+                term_label == state_label):
             raise TypeError('This state is a terminator')
     new_state = sdlSymbols.State(parent=None, ast=ast)
     if new_state not in scene.items():
@@ -306,6 +307,13 @@ def _procedure_call(ast, scene, parent, states):
     return sdlSymbols.ProcedureCall(parent, ast=ast)
 
 
+@render.register(ogAST.Create)
+def _create(ast, scene, parent, states):
+    ''' Create a CREATE symbol '''
+    _, _ = scene, states
+    return sdlSymbols.Create(parent, ast=ast)
+
+
 @render.register(ogAST.Decision)
 def _decision(ast, scene, parent, states):
     ''' Create a DECISION symbol and all its answers '''
@@ -367,8 +375,10 @@ def _terminator(ast, scene, parent, states):
         symbol.nested_scene = ast.composite or ogAST.CompositeState()
     elif ast.kind == 'join':
         symbol = sdlSymbols.Join(parent, ast)
-    elif ast.kind in ('return', 'stop'):
+    elif ast.kind == 'return':
         symbol = sdlSymbols.ProcedureStop(parent, ast)
+    elif ast.kind == 'stop':
+        symbol = sdlSymbols.ProcessStop(parent, ast)
     else:
         raise TypeError('Unsupported terminator: ' + repr(ast))
     return symbol

@@ -19,6 +19,7 @@
 
 __all__ = ['Input', 'Output', 'State', 'Task', 'ProcedureCall', 'Label',
            'Decision', 'DecisionAnswer', 'Join', 'Start', 'TextSymbol',
+           'Create', 'ProcessStop',
            'Procedure', 'ProcedureStart', 'ProcedureStop', 'ProcessType',
            'StateStart', 'Process', 'ContinuousSignal', 'Alternative']
 
@@ -53,11 +54,12 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'COMMENT', 'SIGNAL', 'SIGNALLIST', 'USE', 'RETURNS', 'ANY',
                 'EXPORTED', 'REFERENCED', 'MONITOR', 'RENAMES', "TO", 'SENDER',
                 'SUCCESSSTATES', 'ERRORSTATES', 'IGNORESTATES', 'SELF',
-                'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM')]
+                'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM',
+                'OFFSPRING')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE', 'INTEGER',
-              'CHARACTER', 'ASN1INT',
+              'CHARACTER', 'ASN1INT', 'CREATE', 'NATURAL',
               'TASK', 'PROCESS', 'LABEL', 'JOIN', 'CONNECTION', 'CONNECT')]
 
 
@@ -140,9 +142,10 @@ def variables_autocompletion(symbol, type_filter=None):
 class Input(HorizontalSymbol):
     ''' SDL INPUT Symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = ['Task', 'ProcedureCall', 'Output', 'Decision', 'Alternative',
+    _insertable_followers = ['Create', 'Task', 'ProcedureCall', 'Output',
+                             'Decision', 'Alternative',
                              'Input', 'Label', 'Connect', 'ContinuousSignal']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
 
     common_name = 'input_part'
     # Define reserved keywords for the syntax highlighter
@@ -255,9 +258,9 @@ class Connect(Input):
 class Output(VerticalSymbol):
     ''' SDL OUTPUT Symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = [
-            'Task', 'ProcedureCall', 'Output', 'Decision', 'Label', 'Alternative']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    _insertable_followers = ['Create', 'Task',
+            'ProcedureCall', 'Output', 'Decision', 'Label', 'Alternative']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
     common_name = 'output'
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -311,9 +314,9 @@ class Output(VerticalSymbol):
 class Decision(VerticalSymbol):
     ''' SDL DECISION Symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = ['DecisionAnswer', 'Task', 'ProcedureCall',
+    _insertable_followers = ['Create', 'DecisionAnswer', 'Task', 'ProcedureCall',
                              'Output', 'Decision', 'Label', 'Alternative']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
     common_name = 'decision'
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD + ['\\b{}\\b'.format(word)
@@ -466,9 +469,9 @@ class Alternative(Decision):
 # pylint: disable=R0904
 class DecisionAnswer(HorizontalSymbol):
     ''' If Decision is a "switch", DecisionAnswer is a "case" '''
-    _insertable_followers = ['DecisionAnswer', 'Task', 'ProcedureCall',
+    _insertable_followers = ['DecisionAnswer', 'Create', 'Task', 'ProcedureCall',
                         'Output', 'Decision', 'Label', 'Alternative']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
     common_name = 'alternative_part'
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -551,10 +554,10 @@ class Join(VerticalSymbol):
             ast.width = 35
             ast.height = 35
         super().__init__(parent,
-                                   text=ast.inputString,
-                                   x=ast.pos_x,
-                                   y=ast.pos_y,
-                                   hyperlink=ast.hyperlink)
+                         text=ast.inputString,
+                         x=ast.pos_x,
+                         y=ast.pos_y,
+                         hyperlink=ast.hyperlink)
         self.set_shape(ast.width, ast.height)
         self.setPen(QPen(Qt.blue))
         self.terminal_symbol = True
@@ -653,12 +656,70 @@ class ProcedureStop(Join):
             pass
 
 
+class ProcessStop(VerticalSymbol):
+    ''' Process STOP symbol - very similar to JOIN '''
+    # Define reserved keywords for the syntax highlighter
+    arrow_head = 'simple'
+    common_name = 'terminator_statement'
+    # Minimum size for symbol
+    min_size = (70, 35)
+    has_text_area = False
+
+    def __init__(self, parent=None, ast=None):
+        self.ast = ast
+        self.width, self.height = 0, 0
+        if not ast:
+            ast = ogAST.Terminator(defName='')
+            ast.pos_y = 0
+            ast.width = 35
+            ast.height = 35
+        super().__init__(parent,
+                         text='',
+                         x=ast.pos_x,
+                         y=ast.pos_y,
+                         hyperlink=ast.hyperlink)
+        self.set_shape(ast.width, ast.height)
+        pen = QPen(Qt.black)
+        pen.setWidth(2) # make it a bit bold
+        self.setPen(pen)
+        #self.setBrush(QBrush(QColor(255, 228, 213)))
+        # No hyperlink for STOP symbol because it has no text
+        self._no_hyperlink = True
+        self.parser = ogParser
+        if ast.comment:
+            Comment(parent=self, ast=ast.comment)
+        self.terminal_symbol = True
+
+    def resize_item(self, rect):
+        ''' Redefinition of the resize item (block is a square) '''
+        size = min(rect.width(), rect.height())
+        rect.setWidth(size)
+        rect.setHeight(size)
+        super().resize_item(rect)
+
+    def set_shape(self, width, height):
+        ''' Define the symbol shape '''
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.moveTo (7, 5)
+            path.lineTo(width-7, height-5)
+            path.moveTo(width-7, 5)
+            path.lineTo(7, height-5)
+            self.setPath(path)
+            super().set_shape(width, height)
+
+    def __str__(self):
+        ''' User cannot enter text in the STOP symbol '''
+        return 'STOP'
+
+
 # pylint: disable=R0904
 class Label(VerticalSymbol):
     ''' LABEL symbol '''
-    _insertable_followers = [
+    _insertable_followers = ['Create',
             'Task', 'ProcedureCall', 'Output', 'Decision', 'Label']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'Alternative']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop',
+                           'Alternative']
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -733,9 +794,9 @@ class Label(VerticalSymbol):
 class Task(VerticalSymbol):
     ''' TASK symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = [
+    _insertable_followers = ['Create',
             'Task', 'ProcedureCall', 'Output', 'Decision', 'Label', 'Alternative']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
     common_name = 'task'
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
@@ -801,9 +862,9 @@ class Task(VerticalSymbol):
 class ProcedureCall(VerticalSymbol):
     ''' PROCEDURE CALL symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = [
-            'Task', 'ProcedureCall', 'Output', 'Decision', 'Label', 'Alternative']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    _insertable_followers = ['Create', 'Task',
+            'ProcedureCall', 'Output', 'Decision', 'Label', 'Alternative']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
     common_name = 'procedure_call'
     # Define reserved keywords for the syntax highlighter
     blackbold = ['\\bWRITELN\\b', '\\bWRITE\\b', '\\bTO\\b',
@@ -873,6 +934,55 @@ class ProcedureCall(VerticalSymbol):
             return chain((proc.inputString for proc in CONTEXT.procedures),
                          ('set_timer', 'reset_timer', 'write', 'writeln'))
 
+# pylint: disable=R0904
+class Create(VerticalSymbol):
+    ''' CREATE symbol '''
+    _unique_followers = ['Comment']
+    _insertable_followers = [ 'Create', 'Task',
+            'ProcedureCall', 'Output', 'Decision', 'Label', 'Alternative']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
+    common_name = 'create_request'
+    # Define reserved keywords for the syntax highlighter
+    blackbold = SDL_BLACKBOLD
+    redbold = SDL_REDBOLD
+
+    # Minimum size for symbol
+    min_size = (70, 35)
+
+    def __init__(self, parent=None, ast=None):
+        ast = ast or ogAST.Create()
+        self.ast = ast
+        self.width, self.height = 0, 0
+        super().__init__(parent,
+                         text=ast.inputString,
+                         x=ast.pos_x or 0,
+                         y=ast.pos_y or 0,
+                         hyperlink=ast.hyperlink)
+        self.set_shape(ast.width, ast.height)
+        self.setBrush(QBrush(QColor(255, 255, 202)))
+        self.terminal_symbol = False
+        self.parser = ogParser
+        if ast.comment:
+            Comment(parent=self, ast=ast.comment)
+
+    def set_shape(self, width, height):
+        ''' Compute the polygon to fit in width, height '''
+        if width != self.width or height != self.height:
+            path = QPainterPath()
+            path.addRect(0, 0, width, height)
+            path.moveTo(0, 7)
+            path.lineTo(width, 7)
+            path.moveTo(0, height - 7)
+            path.lineTo(width, height - 7)
+            self.setPath(path)
+            super().set_shape(width, height)
+
+    @property
+    def completion_list(self):
+        ''' Set auto-completion list '''
+        # We should have a list of creatable processes...
+        return []
+
 
 # pylint: disable=R0904
 class TextSymbol(HorizontalSymbol):
@@ -881,8 +991,7 @@ class TextSymbol(HorizontalSymbol):
     default_size = 'any'
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
-    blackbold = SDL_BLACKBOLD
-    redbold = SDL_REDBOLD
+    blackbold = SDL_BLACKBOLD + ['\\bNATURAL\\b', '\\bINTEGER\\b']
 
     # Minimum size for symbol
     min_size = (170, 140)
@@ -906,6 +1015,9 @@ class TextSymbol(HorizontalSymbol):
         # Text is not centered in the box - change default alignment:
         self.textbox_alignment = Qt.AlignLeft | Qt.AlignTop
         self.parser = ogParser
+        self.redbold = SDL_REDBOLD.copy()
+        self.redbold.remove('\\bNATURAL\\b')
+        self.redbold.remove('\\bINTEGER\\b')
 
     def check_syntax(self, pr_text):
         ''' Redefinition of the check syntax function for the text symbol '''
@@ -1373,9 +1485,9 @@ class ProcessType(Procedure):
 class Start(HorizontalSymbol):
     ''' SDL START Symbol '''
     _unique_followers = ['Comment']
-    _insertable_followers = [
-            'Task', 'ProcedureCall', 'Output', 'Decision', 'Label', 'Alternative']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    _insertable_followers = ['Create', 'Task',
+            'ProcedureCall', 'Output', 'Decision', 'Label', 'Alternative']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
     # There cannot be more than one START symbol in a scene
     is_singleton = True
     common_name = 'start'
@@ -1459,9 +1571,10 @@ class StateStart(Start):
 class ContinuousSignal(HorizontalSymbol):
     ''' " Provided" part below a state - not a enabling condition '''
     _unique_followers = ['Comment']
-    _insertable_followers = ['Task', 'ProcedureCall', 'Output', 'Decision', 'Alternative',
+    _insertable_followers = ['Create', 'Task', 'ProcedureCall', 'Output',
+                             'Decision', 'Alternative',
                              'Input', 'Label', 'Connect', 'ContinuousSignal']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
     common_name = 'continuous_signal'
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD.copy()

@@ -266,11 +266,11 @@ def _decisionanswer(symbol, recursive=True, **kwargs):
     result = Indent()
     result.append(cif_coord('ANSWER', symbol))
     ans = str(symbol)
-    if ans.lower().strip() != u'else':
-        ans = u'({})'.format(ans)
+    if ans.lower().strip() != 'else':
+        ans = f'({ans})'
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    result.append(u'{}:'.format(ans))
+    result.append(f'{ans}:')
     if recursive:
         result.extend(recursive_aligned(symbol))
     return result
@@ -288,6 +288,16 @@ def _procedurestop(symbol, **kwargs):
     return common('return', symbol)
 
 
+@generate.register(sdlSymbols.ProcessStop)
+def _processstop(symbol, **kwargs):
+    ''' Process Stop symbol '''
+    result = Indent()
+    result.append(cif_coord('stop', symbol))
+    result.append('stop' + ';' if not symbol.comment else '')
+    if symbol.comment:
+        result.extend(generate(symbol.comment))
+    return result
+
 @generate.register(sdlSymbols.Task)
 def _task(symbol, **kwargs):
     ''' Task symbol '''
@@ -303,6 +313,19 @@ def _procedurecall(symbol, **kwargs):
         result.append(hyperlink(symbol))
     result.append('call {}{}'.format(str(symbol.text), ';'
                                       if not symbol.comment else ''))
+    if symbol.comment:
+        result.extend(generate(symbol.comment))
+    return result
+
+
+@generate.register(sdlSymbols.Create)
+def _procedurecall(symbol, **kwargs):
+    ''' CREATE symbol '''
+    result = Indent()
+    result.append(cif_coord('CREATE', symbol))
+    if symbol.text.hyperlink:
+        result.append(hyperlink(symbol))
+    result.append(f'create {str(symbol.text)}{";" if not symbol.comment else ""}')
     if symbol.comment:
         result.extend(generate(symbol.comment))
     return result

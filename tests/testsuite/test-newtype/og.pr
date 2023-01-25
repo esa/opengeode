@@ -17,9 +17,9 @@ system og;
             from env to og with dd;
             from og to env with we;
         connect c and r;
-        /* CIF PROCESS (226, 47), (150, 75) */
+        /* CIF PROCESS (226, 46), (150, 75) */
         process og;
-            /* CIF TEXT (402, 101), (379, 263) */
+            /* CIF TEXT (402, 101), (379, 398) */
             syntype toto = myInteger
               constants 5:some_constant,  60,=100, >100, <250 -- [5, 249]
             endsyntype;
@@ -37,6 +37,15 @@ system og;
             endsyntype;
             
             dcl titi bar_tabac  := 5;
+            
+            -- subtyping of native types:
+            syntype subinteger = integer
+             constants -5:255
+            endsyntype;
+            
+            syntype subunsigned = natural
+             constants 0:255
+            endsyntype;
             /* CIF ENDTEXT */
             /* CIF TEXT (122, 80), (249, 338) */
             newtype myArray
@@ -62,28 +71,33 @@ system og;
             
             dcl myseq Seq;
             /* CIF ENDTEXT */
-            /* CIF START (918, 216), (70, 35) */
+            /* CIF TEXT (234, 599), (201, 140) */
+            dcl something subinteger := 8;
+            dcl sth subunsigned := 5;
+            
+            /* CIF ENDTEXT */
+            /* CIF START (975, 216), (70, 35) */
             START;
-                /* CIF task (874, 271), (156, 35) */
+                /* CIF task (931, 271), (156, 35) */
                 task myseq.a := some_seq.a;
-                /* CIF task (896, 326), (113, 35) */
+                /* CIF task (953, 326), (113, 35) */
                 task someint := zero;
-                /* CIF task (864, 376), (177, 35) */
+                /* CIF task (921, 376), (177, 35) */
                 task someint := some_constant;
-                /* CIF decision (917, 431), (70, 50) */
+                /* CIF decision (974, 431), (70, 50) */
                 decision someint;
-                    /* CIF ANSWER (739, 501), (112, 23) */
+                    /* CIF ANSWER (786, 501), (112, 23) */
                     (some_constant):
-                    /* CIF ANSWER (857, 501), (81, 23) */
+                    /* CIF ANSWER (904, 501), (81, 23) */
                     (forty_two):
-                    /* CIF ANSWER (970, 501), (70, 23) */
+                    /* CIF ANSWER (1027, 501), (70, 23) */
                     (zero):
-                    /* CIF ANSWER (1060, 501), (70, 53) */
+                    /* CIF ANSWER (1117, 501), (70, 53) */
                     (1:41,
 43:65,
 67:255):
                 enddecision;
-                /* CIF NEXTSTATE (918, 570), (70, 35) */
+                /* CIF NEXTSTATE (975, 570), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (792, 231), (70, 35) */
             state wait;
