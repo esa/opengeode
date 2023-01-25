@@ -69,7 +69,7 @@ dependencies: ~/.local/bin/asn1scc
 	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect graphviz libgraphviz-dev
 
 opengeode/icons.py: opengeode.qrc pip-packages
-	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py
+	PATH="${HOME}/.local/bin:${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py
 
 install: opengeode/icons.py pip-packages
 	python3 -m pip install --user --upgrade .
