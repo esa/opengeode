@@ -2506,8 +2506,25 @@ def _null(primary, **kwargs):
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary, **kwargs):
     ''' Generate code for an empty SEQUENCE OF: {} '''
-    ada_string = '{}_Init'.format(type_name(primary.exprType))
-    return [], str(ada_string), []
+    ada_string = f'{type_name(primary.exprType)}_Init'
+    # The type may be a SEQUENCE with only optional fields and all these fields
+    # are absent. In that case the .exist field has to be set to false
+    basic = find_basic_type(primary.exprType)
+    if basic.kind == 'SequenceType' and len(basic.Children.keys()) > 0:
+        optional_fields = [field.lower().replace('-', '_')
+                          for field, val in basic.Children.items()
+                          if val.Optional == 'True']
+        ada_string = '(Exist => ('
+        first = True
+        for field in optional_fields:
+            if not first:
+                ada_string += ', '
+            ada_string += f'{field} => 0'
+            if first:
+                first = False
+        ada_string += '), others => <>)'
+
+    return [], ada_string, []
 
 
 @expression.register(ogAST.PrimStringLiteral)

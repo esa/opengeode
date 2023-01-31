@@ -55,7 +55,7 @@ SDL_BLACKBOLD = ['\\b{word}\\b'.format(word=word) for word in (
                 'EXPORTED', 'REFERENCED', 'MONITOR', 'RENAMES', "TO", 'SENDER',
                 'SUCCESSSTATES', 'ERRORSTATES', 'IGNORESTATES', 'SELF',
                 'NEWTYPE', 'ENDNEWTYPE', 'ARRAY', 'STRUCT', 'SYNONYM',
-                'OFFSPRING')]
+                'OFFSPRING', 'EXIST')]
 
 SDL_REDBOLD = ['\\b{word}\\b'.format(word=word) for word in (
               'INPUT', 'OUTPUT', 'STATE', 'DECISION', 'NEXTSTATE', 'INTEGER',

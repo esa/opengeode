@@ -1202,7 +1202,12 @@ def check_type_compatibility(primary, type_ref, context):
                                 + minR + ')')
         elif basic_type.kind == 'SequenceType':
             if len(basic_type.Children.keys()) > 0:
-                raise TypeError('SEQUENCE is not empty, wrong "{}" syntax')
+                # It can be that all fields are optional...
+                optional_fields = [field.lower().replace('-', '_')
+                                  for field, val in basic_type.Children.items()
+                                  if val.Optional == 'True']
+                if len(optional_fields) != len(basic_type.Children.keys()):
+                    raise TypeError('SEQUENCE is not empty, wrong "{}" syntax')
         else:
             raise TypeError('Not a type compatible with empty string syntax')
     elif isinstance(primary, ogAST.PrimSequenceOf) \
