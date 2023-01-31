@@ -125,6 +125,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.3 (01/2023)**
+- Better support for optional fields in sequences
+- Improve synonym parsing
+- Improve checks on ground expressions
+
 **4.0.2 (01/2023)**
 - It is possible to subtype (with syntype) native "integer" and "natural" types
 
