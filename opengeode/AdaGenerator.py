@@ -292,6 +292,9 @@ end {process.name.lower()}_Lib;'''
             if bkind in ('IntegerType', 'RealType', 'NullType',
                          'BooleanType', 'Integer32Type', 'IntegerU8Type'):
                 val = const.value
+                if isinstance(val, ogAST.PrimSelector):
+                    # synonym may reference a field of an ASN.1 constant
+                    _, val, _ = expression(const.value, readonly=1)
             else:
                 # complex value - must be a ground expression
                 _, val, _ = expression(const.value, readonly=1)

@@ -2039,6 +2039,7 @@ def ground_expression(root, var, asn1_sort, context):
     # Parse ground expressions and make all sorts of checks
     # These are used for variable and synonym values
     errors, warnings = [], []
+    ground_expression_check = False
     def_value, errors, warnings = expression(root, context)
 
     expr = ogAST.ExprAssign()
@@ -2057,11 +2058,14 @@ def ground_expression(root, var, asn1_sort, context):
         # it would mean it is not a ground expression. We must
         # search the "default value" expression recursively
         def rec_find_ref_to_variable(some_expr):
-            if isinstance(some_expr,
-                    (ogAST.PrimVariable,
-                     ogAST.PrimIndex,
-                     ogAST.PrimSelector)):
+            if isinstance(some_expr, (ogAST.PrimVariable, ogAST.PrimIndex)):
                 return some_expr.inputString
+            elif isinstance(some_expr, ogAST.PrimSelector):
+                # a.b.c => we must check if a is a constant
+                receiver = some_expr.value[0]
+                f = rec_find_ref_to_variable(receiver)
+                if f is not None:
+                    return f
             elif isinstance(some_expr, ogAST.PrimSequence):
                 for _, field_expr in some_expr.value.items():
                     f = rec_find_ref_to_variable(field_expr)
@@ -2080,13 +2084,17 @@ def ground_expression(root, var, asn1_sort, context):
                 f = rec_find_ref_to_variable(some_expr.expr)
                 if f is not None:
                     return f
+            elif isinstance(some_expr, ogAST.PrimConstant):
+                return None
             else:
                 return None
         faulty_field = rec_find_ref_to_variable(expr.right)
         if faulty_field is not None:
-            errors.append(f"Variable {var[-1]}:"
+            errors.append(f"Variable {var}:"
                     " default value is not a ground expression -"
                     f" remove reference to variable {faulty_field}")
+        else:
+            ground_expression_check = True
     except(AttributeError, TypeError, Warning) as err:
         #print (traceback.format_exc())
         errors.append('Types are incompatible in DCL assignment: '
@@ -2102,10 +2110,9 @@ def ground_expression(root, var, asn1_sort, context):
                                         ogAST.PrimStringLiteral)):
             def_value.exprType = asn1_sort
         def_value.expected_type = asn1_sort
-
-    if not def_value.is_raw and \
-            not isinstance(def_value, ogAST.PrimConstant):
-        errors.append(f'In variable declaration {var[-1]}: default'
+    ground_expression_check = ground_expression_check or def_value.is_raw
+    if not ground_expression_check:
+        errors.append(f'In variable declaration {var}: default'
                       ' value is not a valid ground expression')
     return def_value, errors, warnings
 
@@ -4229,7 +4236,13 @@ def synonym_definition(root, parent, context):
                 concrete_val = value.numeric_value
             elif is_numeric(value.exprType) or is_boolean(value.exprType):
                 # value.value is an array of one element
-                concrete_val, = value.value
+                try:
+                    concrete_val, = value.value
+                except:
+                    # If not, it is because this is a PrimSelector 
+                    concrete_val = value
+                    #errors.append("Synonmys can only refer to raw values")
+
             elif is_null(value.exprType):
                 concrete_val = '0'
             else:
@@ -6566,6 +6579,8 @@ def transition(root, parent, context):
             errors.extend(err)
             warnings.extend(warn)
             if not isinstance(alt.question, ogAST.PrimConstant):
+                # We don't parse fields of ASN.1 constants, so we cannot use
+                # the context parameters in an alternative.
                 errors.append(
                         ["Alternative must be an ASN.1 constant, nothing else",
                         [alt.pos_x, alt.pos_y], []])
