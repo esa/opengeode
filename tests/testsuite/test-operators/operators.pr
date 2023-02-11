@@ -1,56 +1,56 @@
-/* CIF PROCESS (163, 140), (146, 75) */
-PROCESS operators;
-    /* CIF TEXT (355, 21), (303, 152) */
-    DCL i Integer := 2;
-DCL f Real := 2.0;
-DCL b Boolean := true;
-DCL s CharString := 'HELLO';
-DCL e Enum_T := one;
-DCL fixSeqOf FixSeqof := {1, 2, 3};
-DCL varSeqOf varSeqOf := {1, 2, 3};
-DCL c Choice := i:2;
+/* CIF PROCESS (161, 140), (150, 75) */
+process operators;
+    /* CIF TEXT (355, 21), (227, 140) */
+    DCL i MyInteger := 2;
+    DCL f Real := 2.0;
+    DCL b Boolean := true;
+    DCL s CharString := 'HELLO';
+    DCL e Enum_T := one;
+    DCL fixSeqOf FixSeqof := {1, 2, 3};
+    DCL varSeqOf varSeqOf := {1, 2, 3};
+    DCL c Choice := i:2;
     /* CIF ENDTEXT */
     /* CIF START (163, 48), (100, 50) */
     START;
-        /* CIF NEXTSTATE (163, 113), (100, 50) */
+        /* CIF NEXTSTATE (178, 113), (70, 35) */
         NEXTSTATE Wait;
-    /* CIF STATE (163, 113), (100, 50) */
-    STATE Wait;
-        /* CIF INPUT (164, 183), (100, 50) */
-        INPUT run;
-            /* CIF PROCEDURECALL (104, 248), (221, 35) */
-            CALL assert(abs(-i) = i, 'abs(-i) = i');
-            /* CIF PROCEDURECALL (82, 298), (264, 35) */
-            CALL assert(abs(-f) = f, 'abs(-f) = f');
-            /* CIF PROCEDURECALL (68, 348), (293, 35) */
-            CALL assert(ceil(f + 0.5) = 3.0, 'ceil(f + 0.5) = 3.0');
-            /* CIF PROCEDURECALL (0, 398), (429, 35) */
-            CALL assert(round(cos(pi)) = -1.0, 'round(cos(pi)) = -1.0');
-            /* CIF PROCEDURECALL (102, 448), (224, 35) */
-            CALL assert(fix(f) = i, 'fix(f) = i');
-            /* CIF PROCEDURECALL (89, 498), (251, 35) */
-            CALL assert(float(i) = f, 'float(i) = f');
-            /* CIF PROCEDURECALL (72, 548), (284, 35) */
-            CALL assert(floor(f + 0.5) = f, 'floor(f + 0.5) = f');
-            /* CIF PROCEDURECALL (43, 598), (343, 35) */
-            CALL assert(length(fixSeqOf) = 3, 'length(fixSeqOf) = 3');
-            /* CIF PROCEDURECALL (39, 648), (350, 35) */
-            CALL assert(length(varSeqOf) = 3, 'length(varSeqOf) = 3');
-            /* CIF PROCEDURECALL (94, 698), (240, 35) */
-            CALL assert(num(e) = 12, 'num(e) = 12');
-            /* CIF PROCEDURECALL (76, 748), (276, 35) */
-            CALL assert(power(i, 3) = 8, 'power(i, 3) = 8');
-            /* CIF PROCEDURECALL (0, 798), (429, 35) */
-            CALL assert(round(sin(pi)) = 0.0, 'round(sin(pi)) = 0.0');
-            /* CIF PROCEDURECALL (75, 848), (278, 35) */
-            CALL assert(sqrt(16.0) = 4.0, 'sqrt(16.0) = 4.0');
-            /* CIF PROCEDURECALL (64, 898), (301, 35) */
-            CALL assert(trunc(f + 0.1) = f, 'trunc(f + 0.1) = f');
-            /* CIF PROCEDURECALL (114, 948), (200, 35) */
-            CALL writeln(i, f, b, s);
-            /* CIF PROCEDURECALL (114, 998), (200, 35) */
-            CALL write(i, f, b, s);
-            /* CIF NEXTSTATE (164, 1048), (100, 50) */
+    /* CIF state (178, 113), (70, 35) */
+    state Wait;
+        /* CIF input (179, 168), (70, 35) */
+        input run;
+            /* CIF PROCEDURECALL (121, 218), (184, 35) */
+            call assert(abs(-i) = i, 'abs(-i) = i');
+            /* CIF PROCEDURECALL (118, 268), (191, 35) */
+            call assert(abs(-f) = f, 'abs(-f) = f');
+            /* CIF PROCEDURECALL (78, 318), (271, 35) */
+            call assert(ceil(f + 0.5) = 3.0, 'ceil(f + 0.5) = 3.0');
+            /* CIF PROCEDURECALL (56, 368), (314, 35) */
+            call assert(round(cos(pi)) = -1.0, 'round(cos(pi)) = -1.0');
+            /* CIF PROCEDURECALL (128, 418), (170, 35) */
+            call assert(fix(f) = i, 'fix(f) = i');
+            /* CIF PROCEDURECALL (116, 468), (195, 35) */
+            call assert(float(i) = f, 'float(i) = f');
+            /* CIF PROCEDURECALL (82, 518), (262, 35) */
+            call assert(floor(f + 0.5) = f, 'floor(f + 0.5) = f');
+            /* CIF PROCEDURECALL (54, 568), (319, 35) */
+            call assert(length(fixSeqOf) = 3, 'length(fixSeqOf) = 3');
+            /* CIF PROCEDURECALL (50, 618), (326, 35) */
+            call assert(length(varSeqOf) = 3, 'length(varSeqOf) = 3');
+            /* CIF PROCEDURECALL (104, 668), (219, 35) */
+            call assert(num(e) = 12, 'num(e) = 12');
+            /* CIF PROCEDURECALL (90, 718), (246, 35) */
+            call assert(power(i, 3) = 8, 'power(i, 3) = 8');
+            /* CIF PROCEDURECALL (63, 768), (301, 35) */
+            call assert(round(sin(pi)) = 0.0, 'round(sin(pi)) = 0.0');
+            /* CIF PROCEDURECALL (85, 818), (256, 35) */
+            call assert(sqrt(16.0) = 4.0, 'sqrt(16.0) = 4.0');
+            /* CIF PROCEDURECALL (80, 868), (267, 35) */
+            call assert(trunc(f + 0.1) = f, 'trunc(f + 0.1) = f');
+            /* CIF PROCEDURECALL (156, 918), (115, 35) */
+            call writeln(i, f, b, s);
+            /* CIF PROCEDURECALL (162, 968), (103, 35) */
+            call write(i, f, b, s);
+            /* CIF NEXTSTATE (179, 1018), (70, 35) */
             NEXTSTATE Wait;
-    ENDSTATE;
-ENDPROCESS operators;
+    endstate;
+endprocess operators;
