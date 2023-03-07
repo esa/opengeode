@@ -16,7 +16,7 @@
     During the build of the AST this library makes a number of semantic
     checks on the SDL input model.
 
-    Copyright (c) 2012-2022 European Space Agency
+    Copyright (c) 2012-2023 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -1246,6 +1246,13 @@ def check_type_compatibility(primary, type_ref, context):
                            for field, val in basic_type.Children.items()
                            if val.Optional == 'True']
         user_fields = [field.lower() for field in primary.value.keys()]
+        type_fields = [field.lower().replace('-', '_')
+                       for field in basic_type.Children.keys()]
+        for field in user_fields:
+            # check that user did not specify fields that do not exist in ASN.1
+            if field not in type_fields:
+                raise TypeError(f'Field {field} does not exist in type "{type_name(type_ref)}"')
+
         for field, fd_data in basic_type.Children.items():
             ufield = field.replace('-', '_')
             if ufield.lower() not in optional_fields \

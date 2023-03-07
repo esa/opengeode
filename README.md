@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.3 (03/2023)**
+- Improve type checking of raw SEQUENCE expressions
+
 **4.0.3 (01/2023)**
 - Better support for optional fields in sequences
 - Improve synonym parsing
