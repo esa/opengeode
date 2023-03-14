@@ -125,7 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
-**4.0.3 (03/2023)**
+**4.0.5 (03/2023)**
+- Bugfix: alternative symbol could not follow labels
+
+**4.0.4 (03/2023)**
 - Improve type checking of raw SEQUENCE expressions
 
 **4.0.3 (01/2023)**

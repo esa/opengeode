@@ -717,9 +717,9 @@ class ProcessStop(VerticalSymbol):
 class Label(VerticalSymbol):
     ''' LABEL symbol '''
     _insertable_followers = ['Create',
-            'Task', 'ProcedureCall', 'Output', 'Decision', 'Label']
-    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop',
-                           'Alternative']
+            'Task', 'ProcedureCall', 'Output', 'Decision', 'Label',
+            'Alternative']
+    _terminal_followers = ['Join', 'State', 'ProcedureStop', 'ProcessStop']
     needs_parent = False
     # Define reserved keywords for the syntax highlighter
     blackbold = SDL_BLACKBOLD
