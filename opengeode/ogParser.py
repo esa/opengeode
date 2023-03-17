@@ -3755,7 +3755,9 @@ def procedure_post(proc, content, parent=None, context=None):
                 get_sender.no_render = True
                 if not e1:
                     # No error means the function is defined => insert the call
-                    proc.content.start.transition.actions.insert(0, get_sender)
+                    if hasattr(proc.content.start, 'transition') and \
+                            proc.content.start.transition is not None:
+                        proc.content.start.transition.actions.insert(0, get_sender)
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.FLOATING_LABEL:
