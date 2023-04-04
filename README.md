@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.6 (04/2023)**
+- Bugfix: type checking when mixing octet strings and integers
+
 **4.0.5 (03/2023)**
 - Bugfix: alternative symbol could not follow labels
 

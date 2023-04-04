@@ -1520,7 +1520,6 @@ def compare_types(type_a, type_b):   # type -> [warnings]
                 warnings.append(mismatch)
         elif mismatch:
             warnings.append(mismatch)
-        #print traceback.print_stack()
         return warnings
     elif is_string(type_a) and is_string(type_b):
         return warnings
@@ -1534,6 +1533,16 @@ def compare_types(type_a, type_b):   # type -> [warnings]
         return warnings
     elif is_integer(type_a) and type_b.kind == 'OctetStringType' \
             or is_integer(type_b) and type_a.kind == 'OctetStringType':
+        # Here we have an octet string and a number. This is usually
+        # a type mismatch (e.g. octStr // 5 is wrong, usser must use
+        # mkstring to convert the integer to an appendable string).
+        # However there is one exception, if the octet string is a
+        # raw string: 'FF'H + 1 is valid.
+        if (is_integer(type_a) and type_b.__name__ != 'PrStr') or \
+            (is_integer(type_b) and type_a.__name__ != 'PrStr'):
+            #traceback.print_stack()
+            #breakpoint()
+            raise TypeError(f'Try using mkstring')
         if mismatch:
             warnings.append(mismatch)
         return warnings
@@ -5952,12 +5961,23 @@ def alternative_part(root, parent, context):
             ans.charPositionInLine = child.getCharPositionInLine()
             # Report errors with symbol coordinates
             x, y = (ans.pos_x or 0, ans.pos_y or 0)
-            errors = [[e, [x, y], []] for e in errors]
-            warnings = [[w, [x, y], []] for w in warnings]
+            # there can be multiple answers (we are in a loop) so we must
+            # make sure that we don't process the same error/warnings
+            # multiple times when adding the coordinates
+            errs, warns = [], []
             for e in errors:
-                ans.errors.append(e[0])
+                if isinstance(e, str):
+                    errs.append([e, [x, y], []])
+                    ans.errors.append(e)
+                else:
+                    errs.append(e)
             for w in warnings:
-                ans.warnings.append(w[0])
+                if isinstance(w, str):
+                    warns.append([w, [x, y], []])
+                    ans.warnings.append(w)
+                else:
+                    warns.append(w)
+            errors, warnings = errs, warns
     return ans, errors, warnings
 
 def alternative(root, parent, context):
