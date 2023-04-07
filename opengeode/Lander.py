@@ -9,11 +9,7 @@
 
     Designed and implemented by Maxime Perrotin
 
-    This module is an easter egg.
-
-    Credits:
-    Rendering algorithm to transform graphviz b-splines to to Qt bezier curves
-    was developed by Steve Dodier-Lazaro (www.mupuf.org)
+    This module is an easter egg, inspired by an old DOS basic game (LANDER.BAS).
 
     Contact: maxime.perrotin@esa.int
 """
@@ -49,30 +45,33 @@ class Rocket(genericSymbols.Symbol, object):
     def __init__(self):
         ''' Initialization: compute the polygon shape '''
         super().__init__(parent=None)
-        self.set_shape(30, 60)
-        self.setBrush(QtGui.QBrush(QtGui.QColor(255, 255, 202)))
+        self.set_shape(30, 40)
+        self.setBrush(QBrush(QColor(255, 255, 255)))
         # Set the rotation origin point
         self.setTransformOriginPoint(self.boundingRect().center())
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
-        path = QtGui.QPainterPath()
+        path = QPainterPath()
         path.moveTo(width / 2, 0)
         path.lineTo(width / 3, height / 6)
         path.lineTo(width / 3, height - height / 6)
         path.lineTo(width - width / 3, height - height / 6)
         path.lineTo(width - width / 3, height / 6)
         path.lineTo(width / 2, 0)
+
+        # left booster
         path.moveTo(width / 3, height / 2)
-        path.lineTo(0, height / 2)
-        path.lineTo(0, height)
-        path.lineTo(width / 6, height - height / 6)
+        path.lineTo(width / 6, height / 2)
+        path.lineTo(width / 6, height)
+        path.lineTo(width / 4, height - height / 6)
         path.lineTo(width / 3, height)
         path.lineTo(width / 3, height - height / 6)
+        # right booster
         path.moveTo(width - width / 3, height / 2)
-        path.lineTo(width, height / 2)
-        path.lineTo(width, height)
-        path.lineTo(width - width / 6, height - height / 6)
+        path.lineTo(width-(width/6), height / 2)
+        path.lineTo(width-(width/6), height)
+        path.lineTo(width - width / 4, height - height / 6)
         path.lineTo(width - width / 3, height)
         path.lineTo(width - width / 3, height - height / 6)
         self.setPath(path)
@@ -84,6 +83,8 @@ class Rocket(genericSymbols.Symbol, object):
 
     def _set_rotation(self, value):
         ''' Qt Property that can be used in animations '''
+        if value == 360:
+            value = 0
         self.setRotation(value)
 
     angle = Property(float, _rotation, _set_rotation)
@@ -106,7 +107,7 @@ class Rocket(genericSymbols.Symbol, object):
         pass
 
 
-class Lander(object):
+class Lander:
     ''' Rocket Lander '''
     def __init__(self, scene):
         ''' Initialize the game '''
@@ -119,26 +120,66 @@ class Lander(object):
         self.screen_bottom = self.height - self.rocket.boundingRect().height()
         scene.addItem(self.rocket)
 
-        # Compute random land points
+        # Compute random land field
+        lp = 150
+        lx = [0] * lp
+        ly = [0] * lp
+        lax = [0] * lp
+        lay = [0] * lp
+        lx[0] = 0
+        ly[0] = 40
+        for i in range (1, lp):
+            lx[i] = i * self.width / lp
+
         random.seed()
-        p1 = QPointF(0.0, random.uniform(0.0, self.height))
-        p2 = QPointF(random.uniform(0.0, self.width / 4.0),
-                    random.uniform(0.0, self.height))
-        p3 = QPointF(random.uniform(p2.x(), 2 * self.width / 3.0), self.height)
-        p4 = QPointF(p3.x() + 40.0, self.height)
-        p5 = QPointF(self.width, random.uniform(0.0, self.height))
+        p1 = QPointF(0, 0)
         path = QPainterPath(p1)
-        slope = (p2.y() - p1.y()) / (p2.x() - p1.x())
-        sign = 3
-        for point in range(int((p2.x() - p1.x()) / 5)):
-            sign = -sign
-            x = p1.x() + point * 5
-            path.lineTo(x, slope * x + sign)
-        path.lineTo(p2)
-        path.lineTo(p3)
-        path.lineTo(p4)
-        path.lineTo(p5)
-        scene.addPath(path)
+        # Define coordinates of the landing area
+        #bot = self.width * random.uniform(0, 1)
+        bot = self.width * random.uniform(0, 1)
+        for i in range(1, lp):
+            # Determine the angle between the current x-coordinate and the landing field
+            angle = math.pi * (lx[i] - bot - 15) / (self.width * 1.5)
+            # Determine the y-coordinate based on the cosine of the angle
+            ly[i] = ly[0] + (self.height - ly[0]) * abs(math.cos(angle))
+            # Add some random noise to the y-coordinate to make the land contour look more realistic
+            ly[i] += math.sqrt(ly[i]) * (0.5 - random.uniform(0, 1))
+            # If the point falls within the landing field, set its y-coordinate to the height of the landing field
+            if bot < lx[i] < bot + 30:
+                ly[i] = self.height - 2
+            # Prevent overflow of the screen
+            if ly[i] > self.height - 2:
+                ly[i] = self.height - 2
+            # Draw a line segment connecting the current point to the previous point
+            path.lineTo(lx[i], ly[i])
+        path.lineTo(lx[i], self.height)
+        path.lineTo(0, self.height)
+        path.lineTo(0,0)
+        brush = QBrush(QColor(246, 241, 213))
+
+        # Define parameters used to control the physics
+        self.thrust = 10
+        self.tilt = 0  # used to index "ang" hich is the angle in degree
+        self.speed_x = 30
+        self.speed_y = 0
+        self.x = 0
+        self.y = 0
+        self.gravity = 10
+        self.fuel = 4000
+        # these are the possible angles (0 = vertical)
+        # the arrows allow to go from one to the next
+        self.ang = [0, 15, 30, 45, 60, 90, 180, 270, 285, 300, 315, 330, 345]
+        self.nang = len(self.ang)    # number of angles
+        scene.addPath(path, brush=brush)
+
+        # landing pad
+        brush = QBrush(QColor(228, 48, 32)) # red from Tintin's rocket
+        path=QPainterPath()
+        x1, y1 = bot, self.height - 15
+        x2, y2 = bot + 30, self.height
+        path.addRect(x1, y1, x2-x1, y2-y1)
+        scene.addPath(path, brush=brush)
+
 
         # Initialize the music
         try:
@@ -148,10 +189,10 @@ class Lander(object):
         except NameError:
             LOG.warning('Could not initialise phonon')
         # Initialize the animation for the translation of the rocket
-        self.animation = QPropertyAnimation(self.rocket, "position")
+        self.animation = QPropertyAnimation(self.rocket, b"position")
         self.rocket_position = None
         # Initialize the animation for the rotation of the rocket
-        self.rotation = QPropertyAnimation(self.rocket, "angle")
+        self.rotation = QPropertyAnimation(self.rocket, b"angle")
 
         # Catch the key events to add user interaction:
         self.scene.keyPressEvent = lambda x: self.key(x)
@@ -177,81 +218,71 @@ class Lander(object):
         # Discard keys if there is a running rotation animation
         if self.rotation.state() != QAbstractAnimation.Stopped:
             return
-        self.rotation.setDuration(500)
-        self.rotation.setStartValue(self.rocket.angle)
+        self.rotation.setDuration(200)
         self.rotation.setEasingCurve(QEasingCurve.Linear)
         if evt.key() == Qt.Key_Right:
-            self.rotation.setEndValue(self.rocket.angle + 30.0)
+            self.tilt = self.tilt + 1 if self.tilt < self.nang - 1 else 0
+            end_value = self.ang[self.tilt] if self.tilt != 0 else 360
+            self.rotation.setStartValue(self.rocket.angle)
+            self.rotation.setEndValue(end_value)
             self.rotation.start()
         elif evt.key() == Qt.Key_Left:
-            self.rotation.setEndValue(self.rocket.angle - 30.0)
+            if self.tilt == 0:
+                self.rocket.setRotation(360)
+                self.tilt = self.nang - 1
+            else:
+                self.tilt -= 1
+            end_value = self.ang[self.tilt]
+            self.rotation.setStartValue(self.rocket.angle)
+            self.rotation.setEndValue(end_value)
             self.rotation.start()
         elif evt.key() == Qt.Key_Up:
-            # Up key action depends on current speed and angle
-            self.animation.stop()
-            end_value = self.animation.endValue()
-            remaining_time = (self.animation.totalDuration() -
-                             self.animation.currentTime())
-            if 90 < abs(self.rocket.angle) < 270:
-                # If the rocket nose is towards Earth
-                nose = 'down'
-                delta_y = -(self.screen_bottom - self.rocket.y())
-                hypo = delta_y / math.cos(math.radians(self.rocket.angle))
-                delta_x = hypo * math.sin(math.radians(self.rocket.angle))
-            else:
-                nose = 'up'
-                delta_x = 70.0 * math.sin(math.radians(self.rocket.angle))
-                delta_y = 70.0 * math.cos(math.radians(-self.rocket.angle))
-            if(nose == 'up' and end_value.y() > self.rocket.y() and
-                    self.rocket.speed == 'high'):
-                # Delay impact time by 2 seconds if going down at high speed
-                self.animation.setDuration(remaining_time + 2000)
-                self.animation.setStartValue(self.rocket.pos())
-                self.animation.start()
-                return
-            elif end_value.y() > self.rocket.y() and (
-                    self.rocket.speed == 'low' or nose == 'down'):
-                end_value.setX(self.rocket.x() + delta_x)
-                end_value.setY(self.rocket.y() - delta_y)
-            else:
-                end_value.setX(end_value.x() + delta_x)
-                end_value.setY(end_value.y() - delta_y)
-            self.animation.setDuration(2000)
-            self.animation.setEasingCurve(QEasingCurve.InOutExpo)
-            self.animation.setStartValue(self.rocket.pos())
-            self.animation.setEndValue(end_value)
-            self.animation.start()
-
+            self.thrust = self.thrust + 1 if self.thrust < 19 else 19
         elif evt.key() == Qt.Key_Down:
-            # Down key has no effect
-            pass
+            # Reduce thrust
+            self.thrust = self.thrust - 1 if self.thrust > 0 else 0
         else:
             pass
 
     def play(self):
         ''' Run the game '''
-        self.rocket.setPos(0, 0)
+        self.rocket.setPos(self.x, self.y)
         try:
             self.music.play()
         except AttributeError:
             pass
-        self.animation.setDuration(20000)
+        self.animation.setDuration(200)
         self.animation.setStartValue(self.rocket.pos())
         # Store initial position - used to compute rocket speed
         self.rocket_position = self.rocket.pos()
-        self.animation.setEndValue(QPointF(350, self.screen_bottom))
+        self.update_control()   # compute next position
+        self.animation.setEndValue(QPointF(self.x, self.y))
         self.animation.setEasingCurve(QEasingCurve.InCirc)
         self.animation.start()
+
+    def update_control(self):
+        ''' Compute position and speed based on thrust and tilt '''
+        # Update control
+        self.speed_y += self.gravity - self.thrust * math.cos(math.pi * self.ang[self.tilt] / 180)
+        self.speed_x = 0.9 * self.speed_x + self.thrust * math.sin(math.pi * self.ang[self.tilt] / 180)
+        if self.speed_y < -10:
+            self.speed_y = -10
+        self.x += self.speed_x * 0.05
+        self.y += self.speed_y * 0.05
+        if self.y < 0:
+            self.y = 0
+        self.fuel = self.fuel - self.thrust
+        if self.fuel < 0:
+            self.fuel = 0
 
     def animation_finished(self):
         ''' When animation is finished, check if another one is needed '''
         if self.rocket.y() < self.screen_bottom:
-            end_value = self.animation.endValue()
-            end_value.setY(self.screen_bottom)
+            self.update_control()
+            self.animation.setEndValue(QPointF(self.x, self.y))
             self.animation.setStartValue(self.rocket.pos())
-            self.animation.setEndValue(end_value)
             self.animation.setEasingCurve(QEasingCurve.InCirc)
-            self.animation.setDuration(abs(self.rocket.y()) * 500)
+            self.animation.setDuration(200)
             self.animation.start()
         else:
             print('GAME OVER')

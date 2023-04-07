@@ -1777,7 +1777,7 @@ class SDL_View(QGraphicsView):
         elif event.matches(QKeySequence.New):
             self.new_diagram()
         elif (event.key() == Qt.Key_F12 and
-                event.modifiers() == Qt.ControlModifier and
+                #event.modifiers() == Qt.ControlModifier and
                 self.scene() != self.lander_scene):
             self.lander_scene.setSceneRect(0, 0, self.width(), self.height())
             if not self.lander:
