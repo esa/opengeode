@@ -23,11 +23,8 @@ from PySide6.QtWidgets import *
 from PySide6.QtUiTools import QUiLoader
 
 try:
-    from PySide import phonon
+    from PySide6.QtMultimedia import *
 except ImportError:
-    # In some distributions, phonon cannot be installed properly
-    # Discard - but sound will not work.
-    # alternative to be checked for pyside2
     pass
 
 from . import genericSymbols, icons
@@ -135,7 +132,6 @@ class Lander:
         p1 = QPointF(0, 0)
         path = QPainterPath(p1)
         # Define coordinates of the landing area
-        #bot = self.width * random.uniform(0, 1)
         bot = self.width * random.uniform(0, 1)
         for i in range(1, lp):
             # Determine the angle between the current x-coordinate and the landing field
@@ -156,6 +152,7 @@ class Lander:
         path.lineTo(0, self.height)
         path.lineTo(0,0)
         brush = QBrush(QColor(246, 241, 213))
+        self.landscape = scene.addPath(path, brush=brush)
 
         # Define parameters used to control the physics
         self.thrust = 10
@@ -170,7 +167,6 @@ class Lander:
         # the arrows allow to go from one to the next
         self.ang = [0, 15, 30, 45, 60, 90, 180, 270, 285, 300, 315, 330, 345]
         self.nang = len(self.ang)    # number of angles
-        scene.addPath(path, brush=brush)
 
         # landing pad
         brush = QBrush(QColor(228, 48, 32)) # red from Tintin's rocket
@@ -178,19 +174,18 @@ class Lander:
         x1, y1 = bot, self.height - 15
         x2, y2 = bot + 30, self.height
         path.addRect(x1, y1, x2-x1, y2-y1)
-        scene.addPath(path, brush=brush)
-
+        self.pad = scene.addPath(path, brush=brush)
 
         # Initialize the music
         try:
-            self.music = phonon.Phonon.createPlayer(
-                    phonon.Phonon.MusicCategory,
-                    phonon.Phonon.MediaSource(':/lander.mp3'))
+            self.music = QMediaPlayer()
+            audioOutput = QAudioOutput()
+            self.music.setAudioOutput(audioOutput)
+            self.music.setSource(QUrl.fromLocalFile('lander.mp3'))
         except NameError:
-            LOG.warning('Could not initialise phonon')
+            LOG.warning('Could not initialise QtMultimedia')
         # Initialize the animation for the translation of the rocket
         self.animation = QPropertyAnimation(self.rocket, b"position")
-        self.rocket_position = None
         # Initialize the animation for the rotation of the rocket
         self.rotation = QPropertyAnimation(self.rocket, b"angle")
 
@@ -203,15 +198,10 @@ class Lander:
         self.animation.finished.connect(self.animation_finished)
 
     def time_progress(self, time_value):
-        ''' Called when time changes - used to estimate rocket speed '''
+        ''' Called when time changes - not used '''
         # Call super function - it computes the new position
         super(QPropertyAnimation,
                 self.animation).updateCurrentTime(time_value)
-        if self.rocket.pos().y() - self.rocket_position.y() > 0.1:
-            self.rocket.speed = 'high'
-        else:
-            self.rocket.speed = 'low'
-        self.rocket_position = self.rocket.pos()
 
     def key(self, evt):
         ''' Handling of key press event '''
@@ -253,8 +243,6 @@ class Lander:
             pass
         self.animation.setDuration(200)
         self.animation.setStartValue(self.rocket.pos())
-        # Store initial position - used to compute rocket speed
-        self.rocket_position = self.rocket.pos()
         self.update_control()   # compute next position
         self.animation.setEndValue(QPointF(self.x, self.y))
         self.animation.setEasingCurve(QEasingCurve.InCirc)
@@ -277,6 +265,17 @@ class Lander:
 
     def animation_finished(self):
         ''' When animation is finished, check if another one is needed '''
+        for item in self.rocket.collidingItems():
+            if item == self.landscape:
+                print("CRASH - GAME OVER")
+                return
+            elif item == self.pad:
+                if self.speed_y < 100:
+                    print ("CONGRATULATIONS")
+                else:
+                    print ("TOO FAST ! GAME OVER")
+                    print (self.speed_y)
+                return
         if self.rocket.y() < self.screen_bottom:
             self.update_control()
             self.animation.setEndValue(QPointF(self.x, self.y))
