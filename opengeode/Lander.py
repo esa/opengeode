@@ -31,9 +31,52 @@ from . import genericSymbols, icons
 
 LOG = logging.getLogger(__name__)
 
+class Thrust(genericSymbols.Symbol):
+    ''' Thrust flame below the rocket '''
+    _unique_followers = []
+    _insertable_followers = []
+    _terminal_followers = []
+
+    def __init__(self, parent):
+        ''' Initialization: compute the polygon shape '''
+        super().__init__(parent=parent)
+        if not parent:
+            return
+        self.rocket = parent
+        self.set_shape(parent.width, 15)
+        self.setBrush(QBrush(QColor(Qt.red)))
+        self.setPen(Qt.NoPen)
+
+    def set_shape(self, width, height):
+        ''' Define the polygon shape from width and height '''
+        path = QPainterPath()
+        h1 = self.rocket.height
+        # below left booster
+        path.moveTo(width / 4, h1)
+        path.lineTo(width / 12, h1 + height)
+        path.lineTo(width / 3 + width / 12, h1 + height)
+        path.lineTo(width / 4, h1)
+
+        # below right booster
+        path.moveTo(width - width / 4, h1)
+        path.lineTo(width - width / 3 - width / 12, h1 + height)
+        path.lineTo(width - width / 12, h1 + height)
+        path.lineTo(width - width / 4, h1)
+
+        self.setPath(path)
+        super().set_shape(width, height)
+
+    def __str__(self):
+        ''' User-friendly information about the node '''
+        return('boost left')
+
+    def resize_item(self, _): pass
+    def mouse_move(self, event): pass
+    def mouse_release(self, _): pass
+
 
 # pylint: disable=R0904
-class Rocket(genericSymbols.Symbol, object):
+class Rocket(genericSymbols.Symbol):
     ''' An Opengeode rocket '''
     _unique_followers = []
     _insertable_followers = []
@@ -46,6 +89,8 @@ class Rocket(genericSymbols.Symbol, object):
         self.setBrush(QBrush(QColor(255, 255, 255)))
         # Set the rotation origin point
         self.setTransformOriginPoint(self.boundingRect().center())
+        self.boost = Thrust(self)
+        self.boost.hide()
 
     def set_shape(self, width, height):
         ''' Define the polygon shape from width and height '''
@@ -111,11 +156,12 @@ class Lander:
         self.scene = scene
         scene.scene_left.connect(self.quit_scene)
         self.rocket = Rocket()
+
+    def init_engine(self):
         self.width = self.scene.sceneRect().width()
         self.height = self.scene.sceneRect().height()
-
         self.screen_bottom = self.height - self.rocket.boundingRect().height()
-        scene.addItem(self.rocket)
+        self.scene.addItem(self.rocket)
 
         # Compute random land field
         lp = 150
@@ -152,7 +198,12 @@ class Lander:
         path.lineTo(0, self.height)
         path.lineTo(0,0)
         brush = QBrush(QColor(246, 241, 213))
-        self.landscape = scene.addPath(path, brush=brush)
+        try:
+            self.landscape.hide()
+        except:
+            # From a previous game (don't delete to avoid Pyside bugs)
+            pass
+        self.landscape = self.scene.addPath(path, brush=brush)
 
         # Define parameters used to control the physics
         self.thrust = 10
@@ -174,14 +225,19 @@ class Lander:
         x1, y1 = bot, self.height - 15
         x2, y2 = bot + 30, self.height
         path.addRect(x1, y1, x2-x1, y2-y1)
-        self.pad = scene.addPath(path, brush=brush)
+        try:
+            self.pad.hide()
+        except:
+            # From a previous game (don't delete to avoid Pyside bugs)
+            pass
+        self.pad = self.scene.addPath(path, brush=brush)
 
         # Initialize the music
         try:
             self.music = QMediaPlayer()
             audioOutput = QAudioOutput()
             self.music.setAudioOutput(audioOutput)
-            self.music.setSource(QUrl.fromLocalFile('lander.mp3'))
+            self.music.setSource(QUrl.fromLocalFile(':/lander.mp3'))
         except NameError:
             LOG.warning('Could not initialise QtMultimedia')
         # Initialize the animation for the translation of the rocket
@@ -236,6 +292,7 @@ class Lander:
 
     def play(self):
         ''' Run the game '''
+        self.init_engine()
         self.rocket.setPos(self.x, self.y)
         try:
             self.music.play()
@@ -266,6 +323,7 @@ class Lander:
     def animation_finished(self):
         ''' When animation is finished, check if another one is needed '''
         for item in self.rocket.collidingItems():
+            self.rocket.boost.hide()
             if item == self.landscape:
                 print("CRASH - GAME OVER")
                 return
@@ -277,6 +335,8 @@ class Lander:
                     print (self.speed_y)
                 return
         if self.rocket.y() < self.screen_bottom:
+            if self.thrust > 10:
+                self.rocket.boost.show()
             self.update_control()
             self.animation.setEndValue(QPointF(self.x, self.y))
             self.animation.setStartValue(self.rocket.pos())
@@ -288,6 +348,7 @@ class Lander:
 
     def quit_scene(self):
         ''' Redefinition of the quit_scene: Stop the game and the music '''
+        self.animation.stop()
         try:
             self.music.stop()
         except AttributeError:

@@ -1782,13 +1782,14 @@ class SDL_View(QGraphicsView):
             self.lander_scene.setSceneRect(0, 0, self.width(), self.height())
             if not self.lander:
                 self.lander = Lander.Lander(self.lander_scene)
-            horpos = self.horizontalScrollBar().value()
-            verpos = self.verticalScrollBar().value()
-            self.scene_stack.append((self.scene(), horpos, verpos))
-            self.scene().clear_focus()
-            self.setScene(self.lander_scene)
-            self.up_button.setEnabled(True)
-            self.set_toolbar()
+            self.go_down(self.lander_scene, name='lander game')
+            #horpos = self.horizontalScrollBar().value()
+            #verpos = self.verticalScrollBar().value()
+            #self.scene_stack.append((self.scene(), horpos, verpos))
+            #self.scene().clear_focus()
+            #self.setScene(self.lander_scene)
+            #self.up_button.setEnabled(True)
+            #self.set_toolbar()
             self.lander.play()
         super().keyPressEvent(event)
 
@@ -1950,7 +1951,7 @@ class SDL_View(QGraphicsView):
                 sdlSymbols.CONTEXT.processes.append(new_context)
                 sdlSymbols.CONTEXT = new_context
         else:
-            LOG.error("Please report BUG: miss support for " + subtype)
+            pass # e.g. lander
 
         horpos = self.horizontalScrollBar().value()
         verpos = self.verticalScrollBar().value()
