@@ -1083,12 +1083,15 @@ def fix_append_expression_type(expr, expected_type):
                 elem_bty = find_basic_type(elem.exprType)
                 if basic.kind == 'OctetStringType' and elem_bty.kind == 'SequenceOfType':
                     # Check if the element is a single chr() or octet string instance
-                    soElemType = find_basic_type(elem.exprType.type)
+                    soElemType = find_basic_type(elem_bty.type)
                     if soElemType.kind in ('IntegerU8Type', 'OctetStringType') \
                             and elem.exprType.Max =='1':
                        pass
                     else:
-                        raise TypeError ("Element of the array is incompatible with the expected type")
+                        if is_integer(elem_bty.type):
+                            raise TypeError("Cast the element using the chr() operator")
+                        else:
+                            raise TypeError("The type you try to append is not a valid string")
                 elif basic.kind == 'SequenceOfType' and elem_bty.kind != basic.kind:
                     # Expecting a sequence of but got an octet string
                     raise TypeError ("Use the mkstring operator to append to an array")
@@ -1534,14 +1537,13 @@ def compare_types(type_a, type_b):   # type -> [warnings]
     elif is_integer(type_a) and type_b.kind == 'OctetStringType' \
             or is_integer(type_b) and type_a.kind == 'OctetStringType':
         # Here we have an octet string and a number. This is usually
-        # a type mismatch (e.g. octStr // 5 is wrong, usser must use
+        # a type mismatch (e.g. octStr // 5 is wrong, user must use
         # mkstring to convert the integer to an appendable string).
         # However there is one exception, if the octet string is a
         # raw string: 'FF'H + 1 is valid.
         if (is_integer(type_a) and type_b.__name__ != 'PrStr') or \
             (is_integer(type_b) and type_a.__name__ != 'PrStr'):
             #traceback.print_stack()
-            #breakpoint()
             raise TypeError(f'Try using mkstring')
         if mismatch:
             warnings.append(mismatch)
@@ -2597,11 +2599,24 @@ def append_expression(root, context):
     expr, errors, warnings = binary_expression(root, context)
 
 
-    #  LOG.debug('append_expression:', expr.left.inputString, 'APPEND', expr.right.inputString)
+    LOG.debug('append_expression:'+ expr.left.inputString +  ' APPEND ' + expr.right.inputString)
     if not any(isinstance(each, ogAST.PrimConditional)
             for each in (expr.left, expr.right)):
         left  = find_basic_type(expr.left.exprType)
         right = find_basic_type(expr.right.exprType)
+        # Check that if one side is an octet string, the other is as well
+        # ..or if it is an mkstring SEQUENCE OF
+        if 'OctetStringType' in (right.kind, left.kind) and right.kind != left.kind:
+            # Find which one is not an octet string
+            notOctStr = right.kind != 'OctetSringType' and right or left
+            if notOctStr.__name__ == 'PrSO' and notOctStr.Min == notOctStr.Max == '1':
+                basic = find_basic_type(notOctStr.type)
+                if basic.kind != 'IntegerU8Type' or int(basic.Min) < 0 or int(basic.Max) > 255:
+                    errors.append(error(root,
+                        "Only a valid octet string can be appended to an octet string"))
+            else:
+                errors.append(error(root,
+                    "Only a valid octet string can be appended to an octet string"))
         try:
             warnings.extend(compare_types(left.type, right.type))
         except TypeError as err:
@@ -2609,6 +2624,10 @@ def append_expression(root, context):
         except AttributeError:
             # The above only applies to Sequence of, not strings
             # (strings do not have a .type attribute)
+#           try:
+#               warnings.extend(compare_types(left, right))
+#           except TypeError as err:
+#               errors.append(error(root, str(err)))
             pass
 
         try:

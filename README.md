@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.7 (04/2023)**
+- More type checking with the append operator
+
 **4.0.6 (04/2023)**
 - Bugfix: type checking when mixing octet strings and integers
 
