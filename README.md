@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.8 (04/2023)**
+- Fix regression (allow appending a raw text string to an octet string)
+
 **4.0.7 (04/2023)**
 - More type checking with the append operator
 

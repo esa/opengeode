@@ -2614,9 +2614,10 @@ def append_expression(root, context):
                 if basic.kind != 'IntegerU8Type' or int(basic.Min) < 0 or int(basic.Max) > 255:
                     errors.append(error(root,
                         "Only a valid octet string can be appended to an octet string"))
-            else:
+            elif not notOctStr.kind.endswith("StringType"):
+                # raw text strings can be appended to an octet string
                 errors.append(error(root,
-                    "Only a valid octet string can be appended to an octet string"))
+                    f"Only a valid octet string can be appended to an octet string (not a {notOctStr.kind})"))
         try:
             warnings.extend(compare_types(left.type, right.type))
         except TypeError as err:
