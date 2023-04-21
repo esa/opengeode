@@ -443,7 +443,7 @@ class SDL_Scene(QGraphicsScene):
         # search_item/search_pattern are used for search/replace function
         self.search_item = None   # generator yielding found items
         self.search_item_found = list()  # list of cursors with location of found text
-        self.search_pattern = None  
+        self.search_pattern = None
         self.current_found_item = None  # actual item found when searching text
         # Selection rectangle when user clicks on the scene and moves mouse
         self.select_rect = None
