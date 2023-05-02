@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.0.9 (05/2023)**
+- Allow exporting of local procedures (not PIs)
+
 **4.0.8 (04/2023)**
 - Fix regression (allow appending a raw text string to an octet string)
 

@@ -594,9 +594,18 @@ package body {process.name}_RI is''']
             if not proc.external and not generic:
                 # Export for TASTE as a synchronous PI
                 prefix = f'p{SEPARATOR}' if not proc.exported else ''
-                ads_template.append(
-                   f'pragma Export (C, {prefix}{proc.inputString},'
-                   f' "{process.name.lower()}_PI_{spelling}");')
+                # if procedure has a return type, i.e. if it's exported
+                # but not specified as a PI, don't add the _PI_
+                if proc.return_type is None:
+                    ads_template.append(
+                       f'pragma Export (C, {prefix}{proc.inputString},'
+                       f' "{process.name.lower()}_PI_{spelling}");')
+                else:
+                    # note, this is incomplete: all procedures declared
+                    # external in the user space should be there, TODO
+                    ads_template.append(
+                       f'pragma Export (C, {prefix}{proc.inputString},'
+                       f' "{spelling}");')
 
     # Generate the code for the process-level variable declarations
     taste_template.extend(process_level_decl)
@@ -3293,12 +3302,16 @@ def _inner_procedure(proc, **kwargs):
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
 
-        if proc.exported and proc.content.start is not None:
+        if proc.exported and proc.content.start is not None \
+                and proc.return_type is None:
             # Exported procedure end calling the corresponding transition
             # procedure that allows user to change state after RPC call
             # We need to update all the transitions of the procedure
             # (including floating labels) that contain a return statement
-            # andadd the call to the _Transition procedure before
+            # and add the call to the _Transition procedure before
+            # don't do anything if the procedure has a return type, this
+            # is the case if it is declared as exported inside the model
+            # in which case there is no _Transition procedure.
             trans_with_return = []
             for each in chain ([proc.content.start.transition],
                     (lab.transition for lab in proc.content.floating_labels)):
