@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2022 European Space Agency
+    Copyright (c) 2012-2023 European Space Agency & Maxime Perrotin
 
     Designed and implemented by Maxime Perrotin
 
@@ -576,7 +576,22 @@ package body {process.name}_RI is''']
     # Generate the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
-        proc_code, proc_local = generate(proc)
+        not_local = False
+        spelling = proc.inputString
+        # Exported procedures may be declared in the process (with
+        # the "referenced" keyword).
+        # We must take the proper spelling (case) from there, since
+        # the definition may have a different one.
+        for p_decl in process.procedures:
+            if p_decl.inputString.lower() == proc.inputString.lower() \
+                    and p_decl.referenced:
+                spelling = p_decl.inputString
+                # We found that the procedure declaration indicates that
+                # it is referenced. This means it is a sync PI, and not
+                # just a local exported procedure. This impacts the name
+                # of the exported symbol later on.
+                not_local = True
+        proc_code, proc_local = generate(proc, is_rpc=not_local)
         process_level_decl.extend(proc_local)
         inner_procedures_code.extend(proc_code)
         if proc.exported:
@@ -588,21 +603,25 @@ package body {process.name}_RI is''']
                 if p_decl.inputString.lower() == proc.inputString.lower() \
                         and p_decl.referenced:
                     spelling = p_decl.inputString
+                    # We found that the procedure declaration indicates that
+                    # it is referenced. This means it is a sync PI, and not
+                    # just a local exported procedure. This impacts the name
+                    # of the exported symbol later on.
+                    not_local = True
             # Exported procedures must be declared in the .ads
             pi_header = procedure_header(proc)
             ads_template.append(f'{pi_header};')
             if not proc.external and not generic:
                 # Export for TASTE as a synchronous PI
                 prefix = f'p{SEPARATOR}' if not proc.exported else ''
-                # if procedure has a return type, i.e. if it's exported
+                # If the procedure declaration was referenced, it's a
+                # remote PI. Add the relevant _PI_ for taste compatibility
                 # but not specified as a PI, don't add the _PI_
-                if proc.return_type is None:
+                if not_local:
                     ads_template.append(
                        f'pragma Export (C, {prefix}{proc.inputString},'
                        f' "{process.name.lower()}_PI_{spelling}");')
                 else:
-                    # note, this is incomplete: all procedures declared
-                    # external in the user space should be there, TODO
                     ads_template.append(
                        f'pragma Export (C, {prefix}{proc.inputString},'
                        f' "{spelling}");')
@@ -3233,7 +3252,7 @@ def procedure_header(proc):
 
 
 @generate.register(ogAST.Procedure)
-def _inner_procedure(proc, **kwargs):
+def _inner_procedure(proc, is_rpc=True, **kwargs):
     ''' Generate the code for a procedure - does not support states '''
     code = []
     local_decl = []
@@ -3302,16 +3321,14 @@ def _inner_procedure(proc, **kwargs):
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
 
-        if proc.exported and proc.content.start is not None \
-                and proc.return_type is None:
+        if proc.exported and proc.content.start is not None and is_rpc:
             # Exported procedure end calling the corresponding transition
             # procedure that allows user to change state after RPC call
             # We need to update all the transitions of the procedure
             # (including floating labels) that contain a return statement
             # and add the call to the _Transition procedure before
-            # don't do anything if the procedure has a return type, this
-            # is the case if it is declared as exported inside the model
-            # in which case there is no _Transition procedure.
+            # don't do anything if the procedure is not referenced in its
+            # declaration (not a RPC in that case, i.e. not a taste sync PI)
             trans_with_return = []
             for each in chain ([proc.content.start.transition],
                     (lab.transition for lab in proc.content.floating_labels)):

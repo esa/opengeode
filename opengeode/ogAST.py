@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2022 European Space Agency
+    Copyright (c) 2012-2023 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
