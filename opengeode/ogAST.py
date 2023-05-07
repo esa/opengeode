@@ -626,6 +626,9 @@ class Label:
         # (used if the symbol was added by the parser)
         self.no_render = False
 
+        # Optional partition name where the symbol is rendered
+        self.partition: str = "default"
+
     def trace(self):
         ''' Debug output for a label '''
         return u'LABEL {label} ({l},{c})'.format(label=self.inputString,
@@ -785,6 +788,9 @@ class Start:
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
 
+        # Optional partition name where the symbol is rendered
+        self.partition: str = "default"
+
     def trace(self):
         ''' Debug output for a START symbol '''
         return f'START {self.inputString}'
@@ -822,7 +828,7 @@ class Comment:
 
     def trace(self):
         ''' Debug output for a COMMENT symbol '''
-        return u'COMMENT {exp} ({l},{c})'.format(
+        return 'COMMENT {exp} ({l},{c})'.format(
                 exp=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
@@ -864,9 +870,12 @@ class State:
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
 
+        # Optional partition name where the symbol is rendered
+        self.partition: str = "default"
+
     def trace(self):
         ''' Debug output for a STATE symbol '''
-        return u'STATE {exp} ({l},{c}) at {x},{y}'.format(exp=self.inputString,
+        return 'STATE {exp} ({l},{c}) at {x},{y}'.format(exp=self.inputString,
                 l=self.line, c=self.charPositionInLine,
                 x=self.pos_x, y=self.pos_y)
 
@@ -907,6 +916,9 @@ class TextArea:
         # the path allows to retrieve the location of the symbol
         # in the hierarchy (PROCESS foo, PROCEDURE bar..). for Error handling.
         self.path = []
+
+        # Optional partition name where the symbol is rendered
+        self.partition: str = "default"
 
 
     def trace(self):
@@ -999,6 +1011,9 @@ class Procedure:
         # Dependencies: see explanations in class Process. There are stored
         # temporarily here because it is the "context" class used while parsing
         self.dependencies = {'math' : False, 'create': set(), 'writeln': False}
+
+        # Optional partition name where the symbol is rendered
+        self.partition: str = "default"
 
 
 class Process:
@@ -1149,6 +1164,9 @@ class Process:
         # Dpendencies are collected at process, procedure and substate levels
         # and then aggregated here.
         self.dependencies = {'math' : False, 'create': set(), 'writeln': False}
+
+        # Optional partition name
+        self.partition: str = "default"
 
 
 class CompositeState(Process):

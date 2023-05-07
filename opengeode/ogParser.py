@@ -3870,6 +3870,8 @@ def floating_label(root, parent, context):
             lab_x = lab.pos_x
         elif child.type == lexer.HYPERLINK:
             lab.hyperlink = child.getChild(0).text[1:-1]
+        elif child.type == lexer.HYPERLINK:
+            lab.hyperlink = child.getChild(0).toString()[1:-1]
         elif child.type == lexer.TRANSITION:
             trans, err, warn = transition(child, parent=lab, context=context)
             errors.extend(err)
@@ -4498,6 +4500,8 @@ def text_area(root, parent=None, context=None):
             ta.inputString = dedent(string).strip()
         elif child.type == lexer.HYPERLINK:
             ta.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.PARTITION:
+            ta.partition = child.getChild(0).toString()[1:-1]
         else:
             warnings.append('Unsupported construct in text area, type: ' +
                     str(child.type))
@@ -5451,6 +5455,8 @@ def state(root, parent, context):
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             state_def.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.PARTITION:
+            state_def.partition = child.getChild(0).toString()[1:-1]
         elif child.type == lexer.PROVIDED:
             # Continuous signal
             provided_part, err, warn = continuous_signal(child, state_def,
@@ -5705,6 +5711,8 @@ def start(root, parent=None, context=None):
             s.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             s.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.PARTITION:
+            s.partition = child.getChild(0).toString()[1:-1]
         else:
             warnings.append(['START unsupported child type: ' +
                     str(child.type), [s.pos_x, s.pos_y], []])
@@ -7092,8 +7100,8 @@ def label(root, parent, context=None):
             lab.inputString = get_input_string(child)
             lab.line = child.getLine()
             lab.charPositionInLine = child.getCharPositionInLine()
-        elif child.type == lexer.HYPERLINK:
-            lab.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.PARTITION:
+            lab.partition = child.getChild(0).toString()[1:-1]
         else:
             warnings.append(
                     'Unsupported child type in label definition: ' +

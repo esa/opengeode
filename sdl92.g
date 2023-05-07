@@ -89,6 +89,7 @@ tokens {
         PARAMNAMES;
         PARAMS;
         PAREN;
+        PARTITION;
         PFPAR;
         POINT;
         PRIMARY;
@@ -275,13 +276,14 @@ connection
 process_definition
         :       cif?
                 symbolid?
+                partition?
                 PROCESS t=TYPE? process_id
                 number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
                 (text_area | procedure | (composite_state_preamble) =>composite_state)*
                 processBody? ENDPROCESS? TYPE? process_id?
                 end?
-        ->      ^(PROCESS cif? symbolid? process_id number_of_instances? type_inst?
+        ->      ^(PROCESS cif? partition? symbolid? process_id number_of_instances? type_inst?
                 $t? REFERENCED? $a? pfpar? text_area* procedure*
                 composite_state* processBody?)
         ;
@@ -308,6 +310,7 @@ parameters_of_sort
 procedure
         :       cif?
                 symbolid?
+                partition?
                 EXPORTED? PROCEDURE procedure_id (e1=end | SEMI)
                 fpar?
                 res=procedure_result?
@@ -315,7 +318,7 @@ procedure
                 ((processBody? ENDPROCEDURE procedure_id?)
                  | EXTERNAL | REFERENCED)
                 e2=end
-        ->      ^(PROCEDURE cif? symbolid? procedure_id $e1? $e2? fpar? $res?
+        ->      ^(PROCEDURE cif? partition? symbolid? procedure_id $e1? $e2? fpar? $res?
                 text_area* procedure* processBody? EXTERNAL? EXPORTED? REFERENCED?)
         ;
 
@@ -347,9 +350,10 @@ formal_variable_param
 text_area
         :       cif
                 symbolid?
+                partition?
                 content?
                 cif_end_text
-        ->      ^(TEXTAREA cif symbolid? content? cif_end_text)
+        ->      ^(TEXTAREA cif partition? symbolid? content? cif_end_text)
         ;
 
 
@@ -517,9 +521,10 @@ start
         :       cif?
                 symbolid?
                 hyperlink?
+                partition?
                 START name=state_entry_point_name? end
                 transition?
-        ->      ^(START cif? hyperlink? symbolid? $name? end? transition?)
+        ->      ^(START cif? partition? hyperlink? symbolid? $name? end? transition?)
         ;
 
 
@@ -527,11 +532,12 @@ floating_label
         :       cif?
                 symbolid?
                 hyperlink?
+                partition?
                 CONNECTION connector_name ':'
                 transition?
                 cif_end_label?
                 ENDCONNECTION SEMI
-        ->      ^(FLOATING_LABEL cif? hyperlink? symbolid? connector_name transition?)
+        ->      ^(FLOATING_LABEL cif? partition? hyperlink? symbolid? connector_name transition?)
         ;
 
 // state is either a full state definition, or a state instance
@@ -545,10 +551,11 @@ state_definition
         :       cif?
                 symbolid?
                 hyperlink?
+                partition?
                 STATE statelist via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? hyperlink? symbolid? $e? statelist via? state_part*)
+        ->      ^(STATE cif? partition? hyperlink? symbolid? $e? statelist via? state_part*)
         ;
 
 
@@ -556,10 +563,11 @@ state_instance
         :       cif?
                 symbolid?
                 hyperlink?
+                partition?
                 STATE statename ':' type_inst via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? hyperlink? symbolid? $e? statename via? type_inst state_part*)
+        ->      ^(STATE cif? partition? hyperlink? symbolid? $e? statename via? type_inst state_part*)
         ;
 
 
@@ -1444,6 +1452,14 @@ hyperlink
         ->      ^(HYPERLINK STRING)
         ;
 
+
+partition
+        :       cif_decl KEEP SPECIFIC GEODE PARTITION STRING
+                cif_end
+        ->      ^(PARTITION STRING)
+        ;
+
+
 symbolid
         :       cif_decl '_id' ptr=INT cif_end
         ->      ^(SYMBOLID $ptr)
@@ -1626,6 +1642,7 @@ PARAMNAMES      :       P A R A M N A M E S;
 SPECIFIC        :       S P E C I F I C;
 GEODE           :       G E O D E;
 HYPERLINK       :       H Y P E R L I N K;
+PARTITION       :       P A R T I T I O N;
 MKSTRING        :       M K S T R I N G;
 ENDTEXT         :       E N D T E X T;
 RETURN          :       R E T U R N;

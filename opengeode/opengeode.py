@@ -7,7 +7,7 @@
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2022 Maxime Perrotin & European Space Agency
+    Copyright (c) 2012-2023 Maxime Perrotin & European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -68,6 +68,7 @@ from . import(undoCommands,  # NOQA
               TextInteraction)  # NOQA
 import pygraphviz  # NOQA
 from typing import List, Union, Dict, Set, Any, Tuple
+import types
 
 
 from PySide6.QtGui import *
@@ -110,7 +111,7 @@ from . import icons  # NOQA
 
 # Logging: ist of properly loaded modules that will use it
 LOG = logging.getLogger(__name__)
-MODULES = [
+MODULES : List[types.ModuleType] = [
     sdlSymbols,
     genericSymbols,
     ogAST,
@@ -128,12 +129,13 @@ MODULES = [
     TextInteraction,
     Connectors,
     CGenerator,
-] # type: List[module]
+]
 
 # Define custom UserRoles
 ANCHOR = Qt.UserRole + 1
 LINE_NUMBER = Qt.UserRole + 2
 PATH = Qt.UserRole + 3
+SCENE = Qt.UserRole + 4
 
 try:
     import LlvmGenerator
@@ -2709,6 +2711,7 @@ class OG_MainWindow(QMainWindow):
         self.datadict.setAlternatingRowColors(True)
         self.datadict.setColumnCount(3)
         self.datadict.itemClicked.connect(self.datadict_item_selected)
+        self.datadict.itemDoubleClicked.connect(self.datadict_item_doubleclick)
 
         # Set up the filter for data dictionary
         datadict_filter = self.findChild(QLineEdit, 'datadictFilter')
@@ -2725,6 +2728,8 @@ class OG_MainWindow(QMainWindow):
         QTreeWidgetItem(self.datadict, ["Variables"])
         QTreeWidgetItem(self.datadict, ["Timers"])
         QTreeWidgetItem(self.datadict, ["Procedures"])
+        part_item = QTreeWidgetItem(self.datadict, ["Partitions", 'add'])
+        part_item.setForeground(1, Qt.blue)  # "add" in blue
         self.view.update_datadict.connect(datadict_filter.clear)
         self.view.update_datadict.connect(self.update_datadict_window)
 
@@ -2788,17 +2793,38 @@ class OG_MainWindow(QMainWindow):
 
 
     @Slot(QTreeWidgetItem, int)
+    def datadict_item_doubleclick(self, item, column):
+        ''' Catch a double click in the datadict and if it is on a partition
+        name, allow to edit it '''
+        parent = item.parent()
+        if not parent:
+            return
+        index = self.datadict.indexOfTopLevelItem(parent)
+        if index != 9: # 9 = partitions
+            return
+        if column == 0:
+            item.setFlags(item.flags() | Qt.ItemIsEditable)
+        else:
+            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+
+
+
+    @Slot(QTreeWidgetItem, int)
     def datadict_item_selected(self, item, column):
         ''' Slot called when user clicks on an item of the data dictionary '''
         parent = item.parent()
-        if not parent:
-            # user clicked on a root item
+
+        if not parent and item.text(0) != 'Partitions':
+            # user clicked on a root item, only possible for Partitions
             return
 
-        index = self.datadict.indexOfTopLevelItem(parent)
-        root = {0: 'asn1 types', 1: 'asn1 constants', 2: 'input signals',
-                3: 'output signals', 4: 'states', 5: 'labels', 6: 'variables',
-                7: 'timers', 8: 'procedures'}[index]
+        if parent:
+            index = self.datadict.indexOfTopLevelItem(parent)
+            root = {0: 'asn1 types', 1: 'asn1 constants', 2: 'input signals',
+                    3: 'output signals', 4: 'states', 5: 'labels', 6: 'variables',
+                    7: 'timers', 8: 'procedures', 9: 'partitions'}[index]
+        else:
+            root = "add_partition"
 
         anchor = item.data(0, ANCHOR) # deprecated, use line number instead
         line_number = item.data(0, LINE_NUMBER)
@@ -2851,6 +2877,25 @@ class OG_MainWindow(QMainWindow):
             self.asn1_browser.setTextCursor(cursor)
         elif root == 'procedures' and column == 1 and path:
             _ = self.view.go_to_scene_path(path)
+        elif root == 'add_partition' and column == 1:
+            scene = self.view.scene()
+            if scene.context != 'process':
+                print("Partitions are allowed only at process level")
+                return
+            new_part = QTreeWidgetItem(item, ["new_partition", "open"])
+            new_part.setForeground(1, Qt.blue)
+            # We can't make the whole item editable here, because it is only
+            # the 1st column (name of the partition) that is editable, not
+            # the second one ("open"). We have to deal with that by catching
+            # the double click and make it editable at that moment.
+            #new_part.setFlags(new_part.flags() | Qt.ItemIsEditable)
+            new_scene = scene.create_subscene('process', parent=scene)
+            new_part.setData(0, SCENE, new_scene)
+        elif root == 'partitions' and column == 1:
+            # Open the selected partition (switch to the corresponding scene)
+            part_scene = item.data(0, SCENE)
+            if part_scene != self.view.scene():
+                self.view.go_down(part_scene, name="partition foo")
 
 
     @Slot(ogAST.AST)
@@ -2956,8 +3001,8 @@ class OG_MainWindow(QMainWindow):
         ''' Update the tree in the data dictionary based on the AST '''
         # currently the ast is a global in sdlSymbols.CONTEXT
         # it should be attached to the current scene instead TODO
-        (in_sig, out_sig, states, labels, dcl, timers, procedures) =\
-                [self.datadict.topLevelItem(i) for i in range(2, 9)]
+        (in_sig, out_sig, states, labels, dcl, timers, procedures, partitions) =\
+                [self.datadict.topLevelItem(i) for i in range(2, 10)]
         context = sdlSymbols.CONTEXT
         def change_state(item, state):
             ''' Disable (with state=True) or enable (state=False) one of the
