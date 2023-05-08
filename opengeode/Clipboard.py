@@ -220,7 +220,10 @@ def paste_floating_objects(scene):
         if start:
             start, = start
             LOG.debug('PASTE START')
-            for item in scene.visible_symb:
+            items = []
+            for part in scene.partitions.values():
+                items.extend(list(part.visible_symb))
+            for item in items:
                 if isinstance(item, sdlSymbols.Start):
                     raise TypeError('Only one START symbol is possible')
             new_item = Renderer.render(start, scene, states=states)

@@ -371,14 +371,20 @@ class Sdl_toolbar(QToolBar, object):
 
             # Check for singletons (e.g. START symbol)
             try:
-                for item in scene.visible_symb:
+                items = []
+                for part in scene.partitions.values():
+                    items.extend(list(part.visible_symb))
+                for item in items:
                     try:
                         if item.is_singleton:
                             self.actions[
                                     item.__class__.__name__].setEnabled(False)
                     except (AttributeError, KeyError) as error:
+                        #print("err1", str(error))
                         LOG.debug(str(error))
-            except AttributeError:
+            except AttributeError as err:
+                # print(" >>", str(err))
+                #traceback.print_stack()
                 pass
         else:
             # Only one selected item
@@ -458,6 +464,12 @@ class SDL_Scene(QGraphicsScene):
         self.semantic_errors = False
         # AST of the parsed scene (updated when the model is checked)
         self.ast = None
+        # Keep an up to date list of partitions {'name': SDL_Scene}
+        # in order to recurse into partition scenes to check/save the model
+        # this variable is updated in the "update_datadict_window" function
+        self.partitions = dict()
+        # keep a partition name, used for saving top-level symbols
+        self.partition_name : str = 'default'
 
     def close(self):
         ''' close function is needed by py.test-qt '''
@@ -854,7 +866,7 @@ class SDL_Scene(QGraphicsScene):
             msg_box.setDefaultButton(QMessageBox.Discard)
             view.toolbar.disable_all_actions()
             msg_box.exec()
-            view.toolbar.update_menu()
+            view.toolbar.update_menu(self)
         # There were syntax errors: force user to fix them
         # by returning True to the caller (TextInteraction), which
         # will keep focus
@@ -893,7 +905,8 @@ class SDL_Scene(QGraphicsScene):
                 for view in self.views():
                     view.find_symbols_and_update_errors()
 
-        for each in self.all_nested_scenes:
+        # check all nested scenes, including all partitions
+        for each in chain(self.all_nested_scenes, self.partitions.values()):
             if each not in ignore:
                 if not each.global_syntax_check():
                     res = False
@@ -1283,6 +1296,8 @@ class SDL_Scene(QGraphicsScene):
         subscene.parent_scene = parent
         subscene.context_change.connect(self.context_change.emit)
         subscene.word_under_cursor.connect(self.word_under_cursor.emit)
+        # to avoid segfaults
+        G_SYMBOLS.add(subscene)
         return subscene
 
 
@@ -1725,7 +1740,8 @@ class SDL_View(QGraphicsView):
                               else self.scene())
 
     is_model_clean = lambda self: not any(not sc.undo_stack.isClean() for sc in
-                 chain([self.top_scene()], self.top_scene().all_nested_scenes))
+                 chain([self.top_scene()], self.top_scene().all_nested_scenes,
+                       self.top_scene().partitions.values()))
 
     def change_cleanliness(self, idx):
         ''' When something changed on the scene, notify the view
@@ -2127,7 +2143,7 @@ class SDL_View(QGraphicsView):
 
         # Translate all scenes to avoid negative coordinates
         delta_x, delta_y = scene.translate_to_origin()
-        for each in chain([scene], scene.all_nested_scenes):
+        for each in chain([scene], scene.all_nested_scenes, scene.partitions.values()):
             dx, dy = each.translate_to_origin()
             if each == self.scene():
                 delta_x, delta_y = dx, dy
@@ -2177,7 +2193,7 @@ clean:
                 with open(pr_path + '/Makefile.{}'.format(prj_name), 'w') as f:
                     f.write(template_makefile)
                 self.scene().clear_focus()
-                for each in chain([scene], scene.all_nested_scenes):
+                for each in chain([scene], scene.all_nested_scenes, scene.partitions.values()):
                     each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
@@ -2353,6 +2369,7 @@ clean:
                 return "Incomplete check"
         except Exception as err:
             LOG.error("Oops, something went wrong with the semantic checks")
+            LOG.error(str(err))
             self.messages_window.addItem("Opengeode bug, PLEASE REPORT: "
                     + str(err))
             LOG.debug(str(traceback.format_exc()))
@@ -2879,11 +2896,12 @@ class OG_MainWindow(QMainWindow):
         elif root == 'procedures' and column == 1 and path:
             _ = self.view.go_to_scene_path(path)
         elif root == 'add_partition' and column == 1:
+            count = item.childCount()
             scene = self.view.scene()
             if scene.context != 'process':
-                print("Partitions are allowed only at process level")
+                LOG.info("Partitions are allowed only at process level")
                 return
-            new_part = QTreeWidgetItem(item, ["new_partition", "open"])
+            new_part = QTreeWidgetItem(item, [f"partition_{count}", "open"])
             new_part.setForeground(1, Qt.blue)
             # We can't make the whole item editable here, because it is only
             # the 1st column (name of the partition) that is editable, not
@@ -2891,7 +2909,10 @@ class OG_MainWindow(QMainWindow):
             # the double click and make it editable at that moment.
             #new_part.setFlags(new_part.flags() | Qt.ItemIsEditable)
             new_scene = scene.create_subscene('process', parent=scene)
+            new_scene.partitions = scene.partitions
             new_part.setData(0, SCENE, new_scene)
+            item.setExpanded(True)
+            self.datadict.resizeColumnToContents(0)
         elif root == 'partitions' and column == 1:
             # Open the selected partition (switch to the corresponding scene)
             scene = self.view.scene()
@@ -3030,16 +3051,29 @@ class OG_MainWindow(QMainWindow):
         add_elem = lambda root, elem: QTreeWidgetItem(root, [elem])
 
         scene = self.view.scene()
+        top_scene = self.view.top_scene()
 
         # check if the default partition is assigned to a process scene
         # already, and if not try to do it (if any such scene exists)
         default_part = partitions.child(0)
         default_part_scene = default_part.data(0, SCENE)
         if not default_part_scene:
-            top_scene = self.view.top_scene()
             for each in chain([top_scene], scene.all_nested_scenes):
                 if each.context == 'process':
                     default_part.setData(0, SCENE, each)
+                    break
+
+        # keep an up to date list of partition at the top-level scene
+        # and update the partition name in each scene
+        top_scene.partitions.clear()
+        for idx in range(partitions.childCount()):
+            part = partitions.child(idx)
+            part_name = part.text(0)
+            part_scene = part.data(0, SCENE)
+            top_scene.partitions[part_name] = part_scene
+            part_scene.partitions = top_scene.partitions
+            # Update the partition name for the scene
+            part_scene.partition_name = part_name
 
         if scene.context == 'block':
             for each in (in_sig, out_sig, states,
@@ -3140,7 +3174,7 @@ class OG_MainWindow(QMainWindow):
             else:
                 # apply globally to the whole model
                 scene = self.view.top_scene()
-                for each in chain([scene], scene.all_nested_scenes):
+                for each in chain([scene], scene.all_nested_scenes, scene.partitions.values()):
                     each.search(pattern, replace_with=new, cmd=cmd)
         except AttributeError as err:
             # Developer command allowing to dynamically reload a
@@ -3221,7 +3255,7 @@ class OG_MainWindow(QMainWindow):
             G_SYMBOLS.clear()
             # Also clear undo stack that may keep reference to items
             scene = self.view.top_scene()
-            for each in chain([scene], scene.all_nested_scenes):
+            for each in chain([scene], scene.all_nested_scenes, scene.partitions.values()):
                 each.undo_stack.clear()
             super().closeEvent(event)
 
@@ -3406,7 +3440,7 @@ def export(ast, options):
     scene.scene_refresh()
 
     scenes = [scene]
-    for each in set(scene.all_nested_scenes):
+    for each in set(chain(scene.all_nested_scenes, scene.partitions.values())):
         if any(each.visible_symb):
             scenes.append(each)
 
