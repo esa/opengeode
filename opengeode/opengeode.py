@@ -412,6 +412,7 @@ class SDL_Scene(QGraphicsScene):
     scene_left = Signal()
     context_change = Signal()
     word_under_cursor = Signal(str)
+    setup_partitions_in_datadict = Signal()
 
     def __init__(self, context='process', readonly=False):
         ''' Create a Scene for a given context:
@@ -739,6 +740,42 @@ class SDL_Scene(QGraphicsScene):
                     each.setTextInteractionFlags(Qt.NoTextInteraction)
 
         recursive_render(ast, self)
+
+        # We now need to create partition scenes and distribute symbols inside
+        partition_names = {}
+        for each in self.processes:
+            process_scene = each.nested_scene
+            if not process_scene:
+                continue
+            else:
+                break
+        for item in process_scene.start:
+            # first partition is the one with the start symbol
+            process_scene.partition_name = item.ast.partition
+            partition_names[item.ast.partition] = process_scene
+
+        for item in process_scene.floating_symb:
+            if isinstance(item, Start):
+                # already processed the start
+                continue
+            if not process_scene.partition_name:
+                # perhaps there was no start symbol in the model
+                process_scene.partition_name = item.ast.partition
+                partition_names[item.ast.partition] = process_scene
+            elif item.ast.partition != process_scene.partition_name:
+                if item.ast.partition not in partition_names.keys():
+                    # unmet name, create a new scene
+                    subscene = self.create_subscene('process', self)
+                    subscene.partition_name = item.ast.partition
+                    subscene.addItem(item)
+                    partition_names[item.ast.partition] = subscene
+                else:
+                    # scene already exist, just move the item into it
+                    partition_names[item.ast.partition].addItem(item)
+        # set the list of partitions at top-level scene, so that it will be
+        # picked up when the datadict is set up
+        self.partitions = partition_names
+        self.setup_partitions_in_datadict.emit()
 
 
     def refresh(self):
@@ -2601,6 +2638,7 @@ class OG_MainWindow(QMainWindow):
                     self.view.change_cleanliness(idx))
             scene.context_change.connect(self.update_datadict_window)
             scene.word_under_cursor.connect(self.select_in_datadict_window)
+            scene.setup_partitions_in_datadict.connect(self.setup_partitions)
 
     def start(self, options, splash, app):
         ''' Initializes all objects to start the application '''
@@ -3035,6 +3073,24 @@ class OG_MainWindow(QMainWindow):
                     parent.setHidden(False)
             else:
                 each.setHidden(True)
+
+    @Slot()
+    def setup_partitions(self):
+        ''' This is called once after parsing the model, to add the partition
+        names in the datadict window '''
+        scene = self.view.scene()
+        # scene.partitions.keys()
+        partitions = self.datadict.topLevelItem(9)
+        for idx in range(partitions.childCount()):
+            # Remove default partition
+            child = partitions.child(idx)
+            partitions.removeChild(child)
+        for name, part_scene in scene.partitions.items():
+            new_part = QTreeWidgetItem(partitions, [name, "open"])
+            new_part.setForeground(1, Qt.blue)
+            new_part.setData(0, SCENE, part_scene)
+        partitions.setExpanded(True)
+        self.datadict.resizeColumnToContents(0)
 
     def update_datadict_window(self):
         ''' Update the tree in the data dictionary based on the AST '''
