@@ -1320,7 +1320,7 @@ class SDL_Scene(QGraphicsScene):
         for view in self.views():
             view.view_refresh()
             view.ensureVisible(item)
-        
+
         # When item is placed, immediately set focus to input text
         item.edit_text()
         if item.has_text_area:
@@ -1330,7 +1330,6 @@ class SDL_Scene(QGraphicsScene):
             cursor.select(QTextCursor.Document)
             item.text.setTextCursor(cursor)
         return item
-
 
 
     def add_symbol(self, item_type):
@@ -2730,6 +2729,8 @@ class OG_MainWindow(QMainWindow):
         QTreeWidgetItem(self.datadict, ["Procedures"])
         part_item = QTreeWidgetItem(self.datadict, ["Partitions", 'add'])
         part_item.setForeground(1, Qt.blue)  # "add" in blue
+        default_part = QTreeWidgetItem(part_item, ["default", "open"])
+        default_part.setForeground(1, Qt.blue)
         self.view.update_datadict.connect(datadict_filter.clear)
         self.view.update_datadict.connect(self.update_datadict_window)
 
@@ -2893,9 +2894,17 @@ class OG_MainWindow(QMainWindow):
             new_part.setData(0, SCENE, new_scene)
         elif root == 'partitions' and column == 1:
             # Open the selected partition (switch to the corresponding scene)
+            scene = self.view.scene()
             part_scene = item.data(0, SCENE)
-            if part_scene != self.view.scene():
-                self.view.go_down(part_scene, name="partition foo")
+            if part_scene and part_scene != self.view.scene() and scene.context=='process':
+                # Can go to a partition only from a process scene
+                # go up first to avoid piling up in the scene stack
+                self.view.go_up()
+                # get the process name
+                for each in self.view.scene().processes:
+                    if not isinstance(each, ProcessType):
+                        process_name = str(each.text)
+                self.view.go_down(part_scene, name=f"process {process_name}")
 
 
     @Slot(ogAST.AST)
@@ -2961,6 +2970,8 @@ class OG_MainWindow(QMainWindow):
         # Expand the types tree to make sure the size of the colum is ok
         item_types.setExpanded(True)
         item_constants.setExpanded(True)
+        partitions = self.datadict.topLevelItem(9)
+        partitions.setExpanded(True)
         self.datadict.resizeColumnToContents(0)
 
     def select_in_datadict_window(self, str):
@@ -3018,11 +3029,23 @@ class OG_MainWindow(QMainWindow):
 
         add_elem = lambda root, elem: QTreeWidgetItem(root, [elem])
 
-        if self.view.scene().context == 'block':
+        scene = self.view.scene()
+
+        # check if the default partition is assigned to a process scene
+        # already, and if not try to do it (if any such scene exists)
+        default_part = partitions.child(0)
+        default_part_scene = default_part.data(0, SCENE)
+        if not default_part_scene:
+            top_scene = self.view.top_scene()
+            for each in chain([top_scene], scene.all_nested_scenes):
+                if each.context == 'process':
+                    default_part.setData(0, SCENE, each)
+
+        if scene.context == 'block':
             for each in (in_sig, out_sig, states,
                          labels, dcl, timers, procedures):
                 change_state(each, True)
-        elif self.view.scene().context == 'process':
+        elif scene.context == 'process':
             for each in (in_sig, out_sig, states,
                          labels, dcl, timers, procedures):
                 change_state(each, False)
@@ -3074,7 +3097,7 @@ class OG_MainWindow(QMainWindow):
                 item.setData(0, PATH, proc_ast.path)
                 item.setForeground(1, Qt.blue)
 
-        elif self.view.scene().context == 'procedure':
+        elif scene.context == 'procedure':
             for each in (in_sig, states):
                 change_state(each, True)
             for each in (dcl, timers, labels, out_sig):
