@@ -173,12 +173,25 @@ def hyperlink(symbol):
                                                          symbol.text.hyperlink)
 
 
+def partition(symbol):
+    scene = symbol.scene()
+    if scene:
+        part_name = scene.partition_name
+        return f"/* CIF Keep Specific Geode Partition '{part_name}' */"
+    else:
+        return ''
+
+
 def common(name, symbol):
     ''' PR string format that is shared by most symbols '''
     result = Indent()
     result.append(cif_coord(name, symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
+    if isinstance(symbol, sdlSymbols.State) and name != 'NEXTSTATE':
+        part = partition(symbol)
+        if part:
+            result.append(part)
     result.append('{} {}{}'.format(name, str(symbol.text), ';'
                                if not symbol.comment else ''))
     if symbol.comment:
@@ -351,9 +364,13 @@ def _procedurecall(symbol, **kwargs):
 def _textsymbol(symbol, **kwargs):
     ''' Text Area symbol '''
     result = Indent()
+    #if symbol.text.hyperlink:
+    # no hyperlink for text symbols (see sdl92.g)
+    #    result.append(hyperlink(symbol))
+    part = partition(symbol)
+    if part:
+        result.append(part)
     result.append(cif_coord('TEXT', symbol))
-    if symbol.text.hyperlink:
-        result.append(hyperlink(symbol))
     # Align nicely the text (parser will dedent it)
     for line in str(symbol.text).split('\n'):
         result.append(line)
@@ -368,6 +385,9 @@ def _label(symbol, recursive=True, **kwargs):
     result.append(cif_coord('label', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
+    part = partition(symbol)
+    if part:
+        result.append(part)
     if symbol.common_name == 'floating_label':
         result.append(f'connection {str(symbol)}:')
         if recursive:

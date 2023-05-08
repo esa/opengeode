@@ -302,6 +302,13 @@ class File_toolbar(QToolBar, object):
         self.up_button = self.addAction(self.style().standardIcon(
             QStyle.SP_ArrowUp), 'Go one level above')
         self.up_button.setEnabled(False)
+        # Left and right arrows to navigate between partitions
+        self.left_button = self.addAction(self.style().standardIcon(
+            QStyle.SP_ArrowLeft), 'Previous partition')
+        self.right_button = self.addAction(self.style().standardIcon(
+            QStyle.SP_ArrowRight), 'Next partition')
+        self.left_button.setEnabled(False)
+        self.right_button.setEnabled(False)
 
 
 class Sdl_toolbar(QToolBar, object):

@@ -276,14 +276,13 @@ connection
 process_definition
         :       cif?
                 symbolid?
-                partition?
                 PROCESS t=TYPE? process_id
                 number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
                 (text_area | procedure | (composite_state_preamble) =>composite_state)*
                 processBody? ENDPROCESS? TYPE? process_id?
                 end?
-        ->      ^(PROCESS cif? partition? symbolid? process_id number_of_instances? type_inst?
+        ->      ^(PROCESS cif? symbolid? process_id number_of_instances? type_inst?
                 $t? REFERENCED? $a? pfpar? text_area* procedure*
                 composite_state* processBody?)
         ;
@@ -348,9 +347,9 @@ formal_variable_param
 
 // text_area: TODO add operator description in content
 text_area
-        :       cif
+        :       partition?
+                cif
                 symbolid?
-                partition?
                 content?
                 cif_end_text
         ->      ^(TEXTAREA cif partition? symbolid? content? cif_end_text)
