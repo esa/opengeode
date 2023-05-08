@@ -2391,7 +2391,8 @@ def _append(expr, **kwargs):
 
     right_self_standing = False
     left_self_standing = isinstance(expr.left,
-            (ogAST.PrimVariable, ogAST.PrimConstant, ogAST.PrimSubstring, ogAST.PrimIndex))
+            (ogAST.PrimVariable, ogAST.PrimConstant,
+             ogAST.PrimSubstring, ogAST.PrimIndex, ogAST.PrimSelector))
 
     left = '{}{}'.format(left_str,
                          string_payload(expr.left, left_str)
@@ -2404,7 +2405,7 @@ def _append(expr, **kwargs):
         right_self_standing = True
     else:
         payload = ''
-    if isinstance (expr.right, (ogAST.PrimSubstring, ogAST.PrimIndex)):
+    if isinstance (expr.right, (ogAST.PrimSubstring, ogAST.PrimIndex, ogAST.PrimSelector)):
         right_self_standing = True
     right = f'{right_str}{payload}'
     try:
