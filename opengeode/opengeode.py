@@ -1758,8 +1758,8 @@ class SDL_View(QGraphicsView):
         self.orig_pos = None
         # mouse_pos is used to handle screen scrolling with middle mouse button
         self.mouse_pos = None
-        # Up button allows to move from one scene to another
-        self.up_button = None
+        # Arrow buttons allows to move from one scene to another
+        self.up_button, self.left_button, self.right_button = None, None, None
         # Toolbar with the icons of the SDL symbols
         self.toolbar = None
         # Scene stack (used for nested symbols)
@@ -1966,6 +1966,7 @@ class SDL_View(QGraphicsView):
                 lambda x: self.wrapping_window.setWindowModified(not x))
         self.scene().undo_stack.indexChanged.connect(lambda idx :
                     self.change_cleanliness(idx))
+        self.update_partition_arrows()
 
     def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
@@ -2020,7 +2021,9 @@ class SDL_View(QGraphicsView):
         self.scene_stack.append((self.scene(), horpos, verpos))
         self.scene().clear_focus()
         self.setScene(scene)
-        self.scene().name = name + '[*]'
+        if subtype == 'process':
+            name = f"{name}/{self.scene().partition_name}"
+        self.scene().name = f"{name} [*]"
         self.wrapping_window.setWindowTitle(self.scene().name)
         self.up_button.setEnabled(True)
         self.set_toolbar()
@@ -2031,6 +2034,43 @@ class SDL_View(QGraphicsView):
                 lambda x: self.wrapping_window.setWindowModified(not x))
         self.scene().undo_stack.indexChanged.connect(lambda idx :
                     self.change_cleanliness(idx))
+        self.update_partition_arrows()
+
+
+    def update_partition_arrows(self):
+        ''' Whenever there is a scene change, the left/right arrow buttons
+            need to be checked (enabled or disabled) depending on the list
+            of partitions '''
+        scene = self.scene()
+        if scene.context != 'process':
+            self.left_button.setEnabled(False)
+            self.right_button.setEnabled(False)
+            return
+        partitions = list(self.top_scene().partitions.keys())
+        idx = partitions.index(scene.partition_name)
+        self.left_button.setEnabled(idx > 0)
+        self.right_button.setEnabled(idx < len(partitions) - 1)
+        
+
+    def go_left(self):
+        ''' Left button goes to the previous available partition scene '''
+        partitions = list(self.top_scene().partitions.keys())
+        idx = partitions.index(self.scene().partition_name) - 1
+        processName = sdlSymbols.CONTEXT.processName
+        self.go_up()
+        self.go_down(self.top_scene().partitions[partitions[idx]],
+                     name=f'process {processName}')
+        
+
+    def go_right(self):
+        ''' Right button goes to the next available partition scene '''
+        partitions = list(self.top_scene().partitions.keys())
+        idx = partitions.index(self.scene().partition_name) + 1
+        processName = sdlSymbols.CONTEXT.processName
+        self.go_up()
+        self.go_down(self.top_scene().partitions[partitions[idx]],
+                     name=f'process {processName}')
+        
 
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
@@ -2563,6 +2603,12 @@ clean:
             self.scene().clear_focus()
             if not self.go_to_scene_path(path):
                 return
+            if self.scene().context == 'process' and symbol.scene() != self.scene():
+                # We need to go to the right partition
+                processName = sdlSymbols.CONTEXT.processName
+                self.go_up()
+                self.go_down(symbol.scene(), name=f'process {processName}')
+
             symbol.select()
             self.scene().highlight(symbol)
             self.ensureVisible(symbol)
@@ -2699,7 +2745,11 @@ class OG_MainWindow(QMainWindow):
         filebar.check_button.triggered.connect(self.view.check_model)
         filebar.save_button.triggered.connect(self.view.save_diagram)
         self.view.up_button = filebar.up_button
+        self.view.left_button = filebar.left_button
+        self.view.right_button = filebar.right_button
         filebar.up_button.triggered.connect(self.view.go_up)
+        filebar.left_button.triggered.connect(self.view.go_left)
+        filebar.right_button.triggered.connect(self.view.go_right)
         self.addToolBar(Qt.TopToolBarArea, filebar)
 
         # get the messages list window (to display errors and warnings)
@@ -2958,6 +3008,9 @@ class OG_MainWindow(QMainWindow):
             new_part.setData(0, SCENE, new_scene)
             item.setExpanded(True)
             self.datadict.resizeColumnToContents(0)
+            # update datadict to ensure that top_scene.partition is up to date
+            self.update_datadict_window()
+            self.view.update_partition_arrows()
         elif root == 'partitions' and column == 1:
             # Open the selected partition (switch to the corresponding scene)
             scene = self.view.scene()
