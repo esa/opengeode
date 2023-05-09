@@ -125,6 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.0 (05/2023)**
+- Support partitions
+- Bug fix with the append operator
+
 **4.0.9 (05/2023)**
 - Allow exporting of local procedures (not PIs)
 

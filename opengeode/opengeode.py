@@ -743,12 +743,14 @@ class SDL_Scene(QGraphicsScene):
 
         # We now need to create partition scenes and distribute symbols inside
         partition_names = {}
+        process_scene = self  # by default, if we are not in a block
         for each in self.processes:
             process_scene = each.nested_scene
             if not process_scene:
                 continue
             else:
                 break
+
         for item in process_scene.start:
             # first partition is the one with the start symbol
             process_scene.partition_name = item.ast.partition
@@ -919,11 +921,13 @@ class SDL_Scene(QGraphicsScene):
         #symbol.edit_text()
 
 
-    def global_syntax_check(self, ignore=set()):
+    def global_syntax_check(self, view, ignore=set()):
         ''' Parse each visible symbol in the current scene and its children
             and check syntax using the parser
             Use a mutable parameter to avoid recursion on already visited
             scenes
+            "view" is passed by the 1st caller because the function is
+            recursive, and nested scenes have no view
         '''
         res = True
         reset = not ignore
@@ -946,13 +950,12 @@ class SDL_Scene(QGraphicsScene):
                 split.append (f'in "{str(each)}"')
                 fmt = [[' '.join(split), [pos.x(), pos.y()], self.path]]
                 log_errors(self.messages_window, fmt, [], clearfirst=False)
-                for view in self.views():
-                    view.find_symbols_and_update_errors()
+                view.find_symbols_and_update_errors()
 
         # check all nested scenes, including all partitions
-        for each in chain(self.all_nested_scenes, self.partitions.values()):
+        for each in view.all_scenes():
             if each not in ignore:
-                if not each.global_syntax_check():
+                if not each.global_syntax_check(view=view):
                     res = False
         if reset:
             ignore.clear()
@@ -1784,8 +1787,14 @@ class SDL_View(QGraphicsView):
                               else self.scene())
 
     is_model_clean = lambda self: not any(not sc.undo_stack.isClean() for sc in
-                 chain([self.top_scene()], self.top_scene().all_nested_scenes,
-                       self.top_scene().partitions.values()))
+                                          self.all_scenes())
+
+    def all_scenes(self):
+        ''' recursively yields all scenes/partitions '''
+        for each in self.top_scene().partitions.values():
+            yield each
+            for nested in each.all_nested_scenes:
+                yield nested
 
     def change_cleanliness(self, idx):
         ''' When something changed on the scene, notify the view
@@ -2050,7 +2059,7 @@ class SDL_View(QGraphicsView):
         idx = partitions.index(scene.partition_name)
         self.left_button.setEnabled(idx > 0)
         self.right_button.setEnabled(idx < len(partitions) - 1)
-        
+
 
     def go_left(self):
         ''' Left button goes to the previous available partition scene '''
@@ -2060,7 +2069,7 @@ class SDL_View(QGraphicsView):
         self.go_up()
         self.go_down(self.top_scene().partitions[partitions[idx]],
                      name=f'process {processName}')
-        
+
 
     def go_right(self):
         ''' Right button goes to the next available partition scene '''
@@ -2070,7 +2079,7 @@ class SDL_View(QGraphicsView):
         self.go_up()
         self.go_down(self.top_scene().partitions[partitions[idx]],
                      name=f'process {processName}')
-        
+
 
     # pylint: disable=C0103
     def mouseDoubleClickEvent(self, evt):
@@ -2227,7 +2236,7 @@ class SDL_View(QGraphicsView):
 
         # Translate all scenes to avoid negative coordinates
         delta_x, delta_y = scene.translate_to_origin()
-        for each in chain([scene], scene.all_nested_scenes, scene.partitions.values()):
+        for each in self.all_scenes():
             dx, dy = each.translate_to_origin()
             if each == self.scene():
                 delta_x, delta_y = dx, dy
@@ -2274,10 +2283,10 @@ clean:
             pr_file.close()
             if not autosave:
                 # and generate a Makefile.project to build everything
-                with open(pr_path + '/Makefile.{}'.format(prj_name), 'w') as f:
+                with open(f"{pr_path}/Makefile.{prj_name}", 'w') as f:
                     f.write(template_makefile)
                 self.scene().clear_focus()
-                for each in chain([scene], scene.all_nested_scenes, scene.partitions.values()):
+                for each in self.all_scenes():
                     each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
@@ -2416,7 +2425,7 @@ clean:
 
         self.messages_window.clear()
         self.messages_window.addItem("Checking syntax")
-        if not scene.global_syntax_check():
+        if not scene.global_syntax_check(view=self):
             self.messages_window.addItem("Aborted. Fix syntax errors first")
             return "Syntax Errors"
         self.messages_window.addItem("No syntax errors")
@@ -3289,8 +3298,7 @@ class OG_MainWindow(QMainWindow):
                 self.view.scene().search(pattern, replace_with=new, cmd=cmd)
             else:
                 # apply globally to the whole model
-                scene = self.view.top_scene()
-                for each in chain([scene], scene.all_nested_scenes, scene.partitions.values()):
+                for each in self.view.all_scenes():
                     each.search(pattern, replace_with=new, cmd=cmd)
         except AttributeError as err:
             # Developer command allowing to dynamically reload a
@@ -3370,8 +3378,7 @@ class OG_MainWindow(QMainWindow):
             # due to pyside badly handling items that are not part of any scene
             G_SYMBOLS.clear()
             # Also clear undo stack that may keep reference to items
-            scene = self.view.top_scene()
-            for each in chain([scene], scene.all_nested_scenes, scene.partitions.values()):
+            for each in self.view.all_scenes():
                 each.undo_stack.clear()
             super().closeEvent(event)
 
@@ -3556,6 +3563,7 @@ def export(ast, options):
     scene.scene_refresh()
 
     scenes = [scene]
+    # CHECKME we possibly miss some recursion in the partition scenes
     for each in set(chain(scene.all_nested_scenes, scene.partitions.values())):
         if any(each.visible_symb):
             scenes.append(each)
