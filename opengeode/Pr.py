@@ -119,14 +119,22 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
         texts, procs, start, floating_labels, states, composite_states = \
                 [], [], [], [], [], dict()
 
-        for part in scene.partitions.values():
-            # this includes the current scene
-            texts.extend(part.texts)
-            procs.extend(part.procs)
-            start.extend(part.start)
-            floating_labels.extend(part.floating_labels)
-            states.extend(part.states)
-            composite_states.update(part.composite_states)
+        if scene.context == 'process':
+            for part in scene.partitions.values():
+                # this includes the current scene
+                texts.extend(part.texts)
+                procs.extend(part.procs)
+                start.extend(part.start)
+                floating_labels.extend(part.floating_labels)
+                states.extend(part.states)
+                composite_states.update(part.composite_states)
+        else:
+                texts = scene.texts
+                procs = scene.procs
+                start = scene.start
+                floating_labels = scene.floating_labels
+                states = scene.states
+                composite_states = scene.composite_states
 
         for each in chain(texts, procs, start):
             pr_data.extend(generate(each))
