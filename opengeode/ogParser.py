@@ -3608,6 +3608,8 @@ def procedure_pre(root, parent=None, context=None):
             proc.pos_x, proc.pos_y, proc.width, proc.height = cif(child)
         elif child.type == lexer.SYMBOLID:
             proc.pos_x = symbolid(child)
+        elif child.type == lexer.PARTITION:
+            proc.partition = child.getChild(0).toString()[1:-1]
         elif child.type == lexer.ID:
             proc.line = child.getLine()
             proc.charPositionInLine = child.getCharPositionInLine()
@@ -3872,13 +3874,16 @@ def floating_label(root, parent, context):
             lab.hyperlink = child.getChild(0).text[1:-1]
         elif child.type == lexer.HYPERLINK:
             lab.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.PARTITION:
+            lab.partition = child.getChild(0).toString()[1:-1]
         elif child.type == lexer.TRANSITION:
             trans, err, warn = transition(child, parent=lab, context=context)
             errors.extend(err)
             warnings.extend(warn)
             lab.transition = trans
         else:
-            msg = f'Unsupported construct in floating label: {str(child.type)}'
+            msg = (f'Unsupported construct in floating label: ' +
+                            sdl92Parser.tokenNamesMap[child.type])
             warnings.append([msg, [lab_x, lab_y], []])
             lab.warnings.append(msg)
     if not lab.transition:
@@ -7100,8 +7105,6 @@ def label(root, parent, context=None):
             lab.inputString = get_input_string(child)
             lab.line = child.getLine()
             lab.charPositionInLine = child.getCharPositionInLine()
-        elif child.type == lexer.PARTITION:
-            lab.partition = child.getChild(0).toString()[1:-1]
         else:
             warnings.append(
                     'Unsupported child type in label definition: ' +

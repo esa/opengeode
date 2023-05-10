@@ -196,7 +196,7 @@ def common(name, symbol):
     result.append(cif_coord(name, symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    if isinstance(symbol, sdlSymbols.State) and name != 'NEXTSTATE':
+    if isinstance(symbol, (sdlSymbols.State, sdlSymbols.Procedure)) and name != 'NEXTSTATE':
         part = partition(symbol)
         if part:
             result.append(part)
@@ -393,10 +393,10 @@ def _label(symbol, recursive=True, **kwargs):
     result.append(cif_coord('label', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
-    part = partition(symbol)
-    if part:
-        result.append(part)
     if symbol.common_name == 'floating_label':
+        part = partition(symbol)
+        if part:
+            result.append(part)
         result.append(f'connection {str(symbol)}:')
         if recursive:
             result.extend(recursive_aligned(symbol))

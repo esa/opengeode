@@ -387,10 +387,8 @@ class Sdl_toolbar(QToolBar, object):
                             self.actions[
                                     item.__class__.__name__].setEnabled(False)
                     except (AttributeError, KeyError) as error:
-                        #print("err1", str(error))
                         LOG.debug(str(error))
             except AttributeError as err:
-                # print(" >>", str(err))
                 #traceback.print_stack()
                 pass
         else:
@@ -1724,7 +1722,6 @@ class SDL_Scene(QGraphicsScene):
                 LOG.info('No more matches')
                 self.search(self.search_pattern)
             except AttributeError as err:
-                #print(str(err))
                 LOG.info('No search pattern. Use "/pattern"')
         elif (event.key() == Qt.Key_J and
                 event.modifiers() == Qt.ControlModifier):
@@ -2505,7 +2502,7 @@ clean:
                     symbol_id = int(coord[0])
                     err = line.text()
                     kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
-                    #LOG.info(f"id : {symbol_id} {line.text()}")
+                    LOG.debug(f"id : {symbol_id} {line.text()}")
                     # Retrieve the symbol from its id, put it in G_ERRORS
                     # and update its ast.path value and errors/warnings fields
                     # Cast the symbol id to retrieve the (existing) symbol
@@ -2517,18 +2514,6 @@ clean:
                         symbol.ast.warnings.append(err[8:])
                     G_ERRORS.append(symbol)
                     line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
-                # Find the scene containing the symbol
-#               scene = self.scene()
-#               if not self.go_to_scene_path(path):
-#                   continue
-#               pos = QPoint(*coord)
-#               symbol = self.scene().symbol_near(pos=pos, dist=1)
-#               if symbol is not None:
-#                   G_ERRORS.append(symbol)
-#                   line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
-#               else:
-#                   print("No symbol at coord", coord, "in scene", path)
-#       _ = self.go_to_scene_path(current_scene)
         for each in toBeRemoved:
             row = messages.row(each)
             messages.takeItem(row)

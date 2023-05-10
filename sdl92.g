@@ -317,7 +317,7 @@ procedure
                 ((processBody? ENDPROCEDURE procedure_id?)
                  | EXTERNAL | REFERENCED)
                 e2=end
-        ->      ^(PROCEDURE cif? partition? symbolid? procedure_id $e1? $e2? fpar? $res?
+        ->      ^(PROCEDURE cif? symbolid? partition? procedure_id $e1? $e2? fpar? $res?
                 text_area* procedure* processBody? EXTERNAL? EXPORTED? REFERENCED?)
         ;
 
@@ -352,7 +352,7 @@ text_area
                 symbolid?
                 content?
                 cif_end_text
-        ->      ^(TEXTAREA cif partition? symbolid? content? cif_end_text)
+        ->      ^(TEXTAREA cif symbolid?  partition? content? cif_end_text)
         ;
 
 
@@ -523,7 +523,7 @@ start
                 partition?
                 START name=state_entry_point_name? end
                 transition?
-        ->      ^(START cif? partition? hyperlink? symbolid? $name? end? transition?)
+        ->      ^(START cif? symbolid? partition? hyperlink? $name? end? transition?)
         ;
 
 
@@ -536,7 +536,7 @@ floating_label
                 transition?
                 cif_end_label?
                 ENDCONNECTION SEMI
-        ->      ^(FLOATING_LABEL cif? partition? hyperlink? symbolid? connector_name transition?)
+        ->      ^(FLOATING_LABEL cif? symbolid? partition? hyperlink? connector_name transition?)
         ;
 
 // state is either a full state definition, or a state instance
@@ -554,7 +554,7 @@ state_definition
                 STATE statelist via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? partition? hyperlink? symbolid? $e? statelist via? state_part*)
+        ->      ^(STATE cif? symbolid? hyperlink? partition? $e? statelist via? state_part*)
         ;
 
 
@@ -566,7 +566,7 @@ state_instance
                 STATE statename ':' type_inst via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? partition? hyperlink? symbolid? $e? statename via? type_inst state_part*)
+        ->      ^(STATE cif? symbolid?  partition? hyperlink? $e? statename via? type_inst state_part*)
         ;
 
 
@@ -704,7 +704,7 @@ connect_part
                 hyperlink?
                 CONNECT connect_list? end
                 transition?
-        ->      ^(CONNECT cif? hyperlink? symbolid? connect_list? end? transition?)
+        ->      ^(CONNECT cif? symbolid? hyperlink? connect_list? end? transition?)
         ;
 
 
@@ -722,7 +722,7 @@ spontaneous_transition
                 INPUT NONE end
                 enabling_condition?
                 transition
-        ->      ^(INPUT_NONE cif? hyperlink? symbolid? transition)
+        ->      ^(INPUT_NONE cif? symbolid? hyperlink? transition)
         ;
 
 
@@ -739,7 +739,7 @@ continuous_signal
                 PROVIDED expression e=end
                 (PRIORITY p=INT end)?
                 transition?
-        ->      ^(PROVIDED expression cif? hyperlink? symbolid? $p? $e? transition?)
+        ->      ^(PROVIDED expression cif? symbolid? hyperlink? $p? $e? transition?)
         ;
 
 
@@ -797,7 +797,7 @@ input_part
                 INPUT inputlist end
                 enabling_condition?
                 transition?
-        ->      ^(INPUT cif? hyperlink? symbolid? end?
+        ->      ^(INPUT cif? symbolid? hyperlink? end?
                 inputlist enabling_condition? transition?)
         ;
 
@@ -859,7 +859,7 @@ procedure_call
                 symbolid?
                 hyperlink?
                 CALL procedure_call_body end
-        ->      ^(PROCEDURE_CALL cif? hyperlink? symbolid? end? procedure_call_body)
+        ->      ^(PROCEDURE_CALL cif? symbolid? hyperlink? end? procedure_call_body)
         ;
 
 
@@ -909,7 +909,7 @@ alternative
                 answer_part?
                 alternative_part?
                 ENDALTERNATIVE f=end
-        ->      ^(ALTERNATIVE cif? hyperlink? symbolid? $e?
+        ->      ^(ALTERNATIVE cif? symbolid? hyperlink? $e?
                 alternative_question answer_part? alternative_part?)
         ;
 
@@ -935,7 +935,7 @@ decision
                 answer_part?
                 alternative_part?
                 ENDDECISION f=end
-        ->      ^(DECISION cif? hyperlink? symbolid? $e? question
+        ->      ^(DECISION cif? symbolid? hyperlink? $e? question
                 answer_part? alternative_part?)
         ;
 
@@ -945,7 +945,7 @@ answer_part
                 symbolid?
                 hyperlink?
                 L_PAREN answer R_PAREN ':' transition?
-        ->      ^(ANSWER cif? hyperlink? symbolid? answer transition?)
+        ->      ^(ANSWER cif? symbolid? hyperlink? answer transition?)
         ;
 
 
@@ -960,7 +960,7 @@ else_part
                 symbolid?
                 hyperlink?
                 ELSE ':' transition?
-        ->      ^(ELSE cif? hyperlink? symbolid? transition?)
+        ->      ^(ELSE cif? symbolid? hyperlink? transition?)
         ;
 
 
@@ -1007,7 +1007,7 @@ create_request
                 CREATE createbody
                 actual_parameters?
                 end
-        ->      ^(CREATE cif? hyperlink? symbolid? end? createbody actual_parameters?)
+        ->      ^(CREATE cif? symbolid? hyperlink? end? createbody actual_parameters?)
         ;
 
 
@@ -1022,7 +1022,7 @@ output
                 symbolid?
                 hyperlink?
                 OUTPUT outputbody end
-        ->      ^(OUTPUT cif? hyperlink? symbolid? end? outputbody)
+        ->      ^(OUTPUT cif? symbolid? hyperlink? end? outputbody)
         ;
 
 
@@ -1088,7 +1088,7 @@ task
                 symbolid?
                 hyperlink?
                 TASK task_body? end
-        ->      ^(TASK cif? hyperlink? symbolid? end? task_body?)
+        ->      ^(TASK cif? symbolid? hyperlink? end? task_body?)
         ;
 
 
@@ -1381,7 +1381,7 @@ terminator_statement
                 hyperlink?
                 terminator
                 end
-        ->      ^(TERMINATOR label? cif? hyperlink? symbolid? end? terminator)
+        ->      ^(TERMINATOR label? cif? symbolid? hyperlink? end? terminator)
         ;
 
 label
@@ -1431,7 +1431,7 @@ via     :       VIA state_entry_point_name
 
 end
         :   (cif? symbolid? hyperlink? COMMENT STRING)? SEMI+
-        -> ^(COMMENT cif? hyperlink? symbolid? STRING)?
+        -> ^(COMMENT cif? symbolid? hyperlink? STRING)?
         ;
 
 
