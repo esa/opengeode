@@ -817,7 +817,6 @@ class SDL_Scene(QGraphicsScene):
             symbol.set_text_alignment()
             # connect the signal that is emitted when text edit changes word
             symbol.word_under_cursor.connect(self.word_under_cursor.emit)
-        #for symbol in self.visible_symb:
         # Already called by try_resize for all editable texts
         #    symbol.update_connections()
 
@@ -993,6 +992,8 @@ class SDL_Scene(QGraphicsScene):
 
     def find_text(self, pattern):
         ''' Return all symbols with matching text '''
+        # note, this finds text only in the current scene, not in all
+        # partitions. 
         for item in (symbol for symbol in self.items()
                      if isinstance(symbol, EditableText)
                      and symbol.isVisible()):
@@ -2545,7 +2546,8 @@ clean:
         that the Up button is properly set when the scene is reached '''
         while self.up_button.isEnabled():
             self.go_up()
-
+        processName = ''
+        partitions = self.top_scene().partitions
         for each in path:
             try:
                 kind, name = each.split()
@@ -2562,24 +2564,27 @@ clean:
                 else:
                     LOG.error(f'Process {name} not found')
                     return False
+                processName = name
             elif kind.lower() == 'state':
-                for state in self.scene().states:
-                    if str(state).lower() == name:
-                        self.go_down(state.nested_scene,
-                                     name=f'state {name}')
-                        break
-                else:
-                    LOG.error(f'Composite state {name} not found')
-                    return False
+                # We have to look in all partitions
+                for part in partitions.values():
+                    for state in part.states:
+                        if str(state).lower() == name:
+                            self.go_down(state.nested_scene,
+                                         name=f'state {name}')
+                            return True
+                LOG.error(f'Composite state {name} not found')
+                return False
             elif kind.lower() == 'procedure':
-                for proc in self.scene().procedures:
-                    if str(proc).lower() == name:
-                        self.go_down(proc.nested_scene,
-                                     name=f'procedure {name}')
-                        break
-                else:
-                    LOG.error(f'Procedure {name} not found')
-                    return False
+                # We have to look in all partitions
+                for part in partitions.values():
+                    for proc in part.procedures:
+                        if str(proc).lower() == name:
+                            self.go_down(proc.nested_scene,
+                                         name=f'procedure {name}')
+                            return True
+                LOG.error(f'Procedure {name} not found')
+                return False
         return True
 
     def show_item(self, item):
@@ -2953,6 +2958,7 @@ class OG_MainWindow(QMainWindow):
             self.asn1_browser.moveCursor(QTextCursor.End) # move scrollbar
             self.asn1_browser.setTextCursor(cursor)
         elif root in ('states', 'labels') and column == 0:
+            # here we should look in all partitions, not only in one scene
             name = item.text(column)
             if self.view.scene().search_pattern != name:
                 self.view.scene().search(item.text(column))

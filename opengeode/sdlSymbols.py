@@ -1388,6 +1388,21 @@ class Procedure(Process):
         ''' Redefinition - no connection line to env '''
         super(Process, self).insert_symbol(parent, x, y)
 
+    def cam_group(self):
+        ''' CAM for procedures must include the children (comments)
+            contrary to the CAM for process from which this class inherits
+        '''
+        return (self.sceneBoundingRect() |
+                self.mapRectToScene(self.childrenBoundingRect()))
+
+# uncomment for debugging
+#   def set_valid_pos(self, pos):
+#       ''' Hook to trace who is messing up with positions '''
+#       if str(self)=='Print_Playground' and self.x() == 12.0 and pos.x()!=12.0:
+#           print(str(self), self.x(), 'moving to', pos.x())
+#           traceback.print_stack()
+#       super().set_valid_pos(pos)
+
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
         if width != self.width or height != self.height:

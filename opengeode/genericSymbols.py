@@ -802,6 +802,7 @@ class Comment(Symbol):
         self.common_name = 'end'
         self.parser = ogParser
 
+
     def __str__(self):
         return 'Comment'
 
@@ -825,7 +826,8 @@ class Comment(Symbol):
         except AttributeError:
             # if called before text is initialized
             pass
-        parent.cam(parent.position, parent.position)
+        # Do not call the parent cam: it messes up all coordinates
+        #parent.cam(parent.position, parent.position)
 
     def cam(self, old_pos, new_pos, ignore=None):
         ''' Comment is a top-level symbol - CAM would not apply properly
