@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.2 (05/2023)**
+- Maintenance relaase - text search work cross-partitions
+
 **4.1.1 (05/2023)**
 - Maintenance relaase - minor bugfixes (placement of comments, partitions)
 
