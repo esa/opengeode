@@ -992,11 +992,19 @@ class SDL_Scene(QGraphicsScene):
 
     def find_text(self, pattern):
         ''' Return all symbols with matching text '''
-        # note, this finds text only in the current scene, not in all
-        # partitions. 
-        for item in (symbol for symbol in self.items()
+        #  If the scene is a process, extend the search to all partitions
+        if self.context == 'process':
+            items = []
+            for part in self.partitions.values():
+                items.extend([symbol for symbol in part.items()
                      if isinstance(symbol, EditableText)
-                     and symbol.isVisible()):
+                     and symbol.isVisible()])
+        else:
+            items = (symbol for symbol in self.items()
+                     if isinstance(symbol, EditableText)
+                     and symbol.isVisible())
+
+        for item in items:
             try:
                 res = re.search(pattern, str(item), flags=re.IGNORECASE)
             except re.error:
@@ -1017,8 +1025,18 @@ class SDL_Scene(QGraphicsScene):
         if pattern.endswith('\\'):
             # Avoid buggy pattern ending with a single backslash
             pattern += '\\'
-        self.search_item = self.find_text(pattern)
-        self.search_pattern = pattern
+
+        search_item = self.find_text(pattern)
+        # We may switch scene during the search, so set the iterator to all
+        # partitions
+        if self.context == 'process':
+            for part in self.partitions.values():
+                part.search_item = search_item
+                part.search_pattern=pattern
+        else:
+            self.search_item = search_item
+            self.search_pattern = pattern
+
         if replace_with:
             with undoCommands.UndoMacro(self.undo_stack, 'Search and Replace'):
                 for item in self.search_item:
@@ -1040,30 +1058,50 @@ class SDL_Scene(QGraphicsScene):
             self.refresh()
         else:
             try:
-                if self.current_found_item is not None:
+                if self.context == 'process':
+                    # clean in all partitions
+                    for part in self.partitions.values():
+                        if part.current_found_item is not None:
+                            # Remove all selected text from previous search
+                            cursor = QTextCursor(part.current_found_item.document())
+                            cursor.clearSelection()
+                            part.current_found_item.setTextCursor(cursor)
+
+                elif self.current_found_item is not None:
                     # Remove all selected text from previous search
                     cursor = QTextCursor(self.current_found_item.document())
                     cursor.clearSelection()
                     self.current_found_item.setTextCursor(cursor)
-                self.current_found_item = next(self.search_item)
+
+                found_item = next(self.search_item)
+                # set things in the scene where the item was found
+                location = found_item.scene()
+                location.current_found_item = found_item
+                if location != self:   # different partition, jump to it
+                    for view in self.views():
+                        processName = sdlSymbols.CONTEXT.processName
+                        view.go_up()
+                        view.go_down(location, name=f'process {processName}')
+                        break
+
                 # Locate the word at the right place in the text
                 # in order to hightlight it
-                self.search_item_found = []
-                doc = self.current_found_item.document()
+                location.search_item_found = []
+                doc = location.current_found_item.document()
                 cursor = doc.find(pattern)
                 while not cursor.isNull():
                     # find all occurences of the pattern in the item
-                    self.search_item_found.append(cursor)
+                    location.search_item_found.append(cursor)
                     cursor = doc.find(pattern, cursor)
 
-                cursor = self.search_item_found.pop(0)
+                cursor = location.search_item_found.pop(0)
                 cursor.movePosition(QTextCursor.EndOfWord,
                                         QTextCursor.KeepAnchor)
-                self.current_found_item.setTextCursor(cursor)
+                location.current_found_item.setTextCursor(cursor)
 
-                parent = self.current_found_item.parentItem()
+                parent = location.current_found_item.parentItem()
                 parent.select()
-                self.highlight(parent)
+                location.highlight(parent)
                 parent.ensureVisible()
             except StopIteration:
                 LOG.info('Pattern not found')
@@ -1700,29 +1738,41 @@ class SDL_Scene(QGraphicsScene):
                     cursor = QTextCursor(self.current_found_item.document())
                     cursor.clearSelection()
                     self.current_found_item.setTextCursor(cursor)
+                location = self
                 if not self.search_item_found:
                     # Exhausted occurence in current item
-                    self.current_found_item = next(self.search_item)
+                    found_item = next(self.search_item)
+
+                    # set things in the scene where the item was found
+                    location = found_item.scene()
+                    location.current_found_item = found_item
+                    if location != self:   # different partition, jump to it
+                        for view in self.views():
+                            processName = sdlSymbols.CONTEXT.processName
+                            view.go_up()
+                            view.go_down(location, name=f'process {processName}')
+                            break
+
                     self.search_item_found = []
                     # highlight the word in the text
-                    doc = self.current_found_item.document()
+                    doc = location.current_found_item.document()
                     cursor = doc.find(self.search_pattern)
                     while not cursor.isNull():
-                        self.search_item_found.append(cursor)
+                        location.search_item_found.append(cursor)
                         cursor = doc.find(self.search_pattern, cursor)
-                cursor = self.search_item_found.pop(0)
+                cursor = location.search_item_found.pop(0)
                 cursor.movePosition(QTextCursor.EndOfWord,
                                     QTextCursor.KeepAnchor)
-                self.current_found_item.setTextCursor(cursor)
+                location.current_found_item.setTextCursor(cursor)
 
-                parent = self.current_found_item.parentItem()
+                parent = location.current_found_item.parentItem()
                 parent.select()
-                self.highlight(parent)
+                location.highlight(parent)
                 parent.ensureVisible()
             except StopIteration:
                 LOG.info('No more matches')
                 self.search(self.search_pattern)
-            except AttributeError as err:
+            except (AttributeError, TypeError) as err:
                 LOG.info('No search pattern. Use "/pattern"')
         elif (event.key() == Qt.Key_J and
                 event.modifiers() == Qt.ControlModifier):
@@ -2958,10 +3008,9 @@ class OG_MainWindow(QMainWindow):
             self.asn1_browser.moveCursor(QTextCursor.End) # move scrollbar
             self.asn1_browser.setTextCursor(cursor)
         elif root in ('states', 'labels') and column == 0:
-            # here we should look in all partitions, not only in one scene
             name = item.text(column)
             if self.view.scene().search_pattern != name:
-                self.view.scene().search(item.text(column))
+                self.view.scene().search(name)
                 self.view.setFocus()
             else:
                 # Already selected, show next match
