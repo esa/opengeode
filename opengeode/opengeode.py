@@ -3221,8 +3221,11 @@ class OG_MainWindow(QMainWindow):
         # check if the default partition is assigned to a process scene
         # already, and if not try to do it (if any such scene exists)
         default_part = partitions.child(0)
-        default_part_scene = default_part.data(0, SCENE)
-        if not default_part_scene:
+        if default_part:
+            default_part_scene = default_part.data(0, SCENE)
+        else:
+            default_part_scene = None
+        if default_part and not default_part_scene:
             for each in chain([top_scene], scene.all_nested_scenes):
                 if each.context == 'process':
                     default_part.setData(0, SCENE, each)
@@ -3235,10 +3238,11 @@ class OG_MainWindow(QMainWindow):
             part = partitions.child(idx)
             part_name = part.text(0)
             part_scene = part.data(0, SCENE)
-            top_scene.partitions[part_name] = part_scene
-            part_scene.partitions = top_scene.partitions
-            # Update the partition name for the scene
-            part_scene.partition_name = part_name
+            if part_scene:
+                top_scene.partitions[part_name] = part_scene
+                part_scene.partitions = top_scene.partitions
+                # Update the partition name for the scene
+                part_scene.partition_name = part_name
 
         if scene.context == 'block':
             for each in (in_sig, out_sig, states,
