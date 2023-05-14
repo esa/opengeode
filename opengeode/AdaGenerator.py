@@ -428,8 +428,7 @@ end {process.name.lower()}_Lib;'''
     try:
         asn1_modules = '\n'.join([f"with {dv.replace('-', '_')};\nuse {dv.replace('-', '_')};"
                                   for dv in process.asn1Modules])
-        if process.asn1Modules:
-            asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
+        asn1_modules += '\nwith adaasn1rtl;\nuse adaasn1rtl;'
     except TypeError:
         asn1_modules = '--  No ASN.1 data types are used in this model'
 
@@ -2221,20 +2220,16 @@ def _assign_expression(expr, **kwargs):
         right_str = str(expr.right.numeric_value)
         strings.append(f"{left_str} := {right_str};")
     elif basic_left.kind.startswith('Integer'):
-#       print '\nASSIGN:', expr.inputString,
-#       print "Left type = ",type_name(find_basic_type (expr.left.exprType)),
-#       print "- Right type = ",type_name(find_basic_type (expr.right.exprType))
 
-        # Make sure that integers are cast to 64 bits
+        # Make sure that integers are cast if needed
         # It is possible that left and right are of different types
         # (signed vs unsigned and/or 32 bits vs 64 bits).
         # The parser should have ensured that the ranges are compatible.
         # We can therefore safely cast to the left type
         basic_right = find_basic_type (expr.right.exprType)
         cast_left, cast_right = type_name(basic_left), type_name(basic_right)
-        #print (cast_left, cast_right, right_str)
         if cast_left != cast_right:
-            res = f'{cast_left} ({right_str})'
+            res = f'{type_name(expr.left.exprType)} ({right_str})'
         else:
             if hasattr (expr.right, "expected_type") \
                     and expr.right.expected_type is not None:

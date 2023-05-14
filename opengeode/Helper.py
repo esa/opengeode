@@ -37,6 +37,7 @@ from collections import defaultdict
 from functools import singledispatch
 
 from . import ogAST
+from . import ogParser
 
 LOG = logging.getLogger(__name__)
 DEFAULT_SEPARATOR='_0_'
@@ -689,14 +690,7 @@ def find_basic_type(TYPES, a_type):
     ''' Return the ASN.1 basic type of a_type.
     TYPES is process.dataview
     '''
-    basic_type = a_type
-    while basic_type.kind == 'ReferenceType':
-        # Find type with proper case in the data view
-        for typename in TYPES.keys():
-            if typename.lower() == basic_type.ReferencedTypeName.lower():
-                basic_type = TYPES[typename].type
-                break
-    return basic_type
+    return ogParser.find_basic_type(a_type, TYPES)
 
 
 def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPARATOR) -> None:

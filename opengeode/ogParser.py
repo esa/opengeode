@@ -4165,7 +4165,6 @@ def syntype(root, ta_ast, context):
 
     LOG.debug(f"{line}:{char} Found range: for {newtypename}: [{foundMin}, {foundMax}]")
 
-
     asnName = newtypename.replace('_', '-')
     newtype = type(asnName, (object,), {
         "Line": -1,
