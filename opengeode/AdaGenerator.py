@@ -1823,6 +1823,12 @@ def _prim_call(prim, **kwargs):
         # (was in GNAT, now in Ada 2020)
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
+        if not isinstance(exp, ogAST.PrimVariable):
+            # Enum_Rep only works on variables
+            tmp_id = f"tmp{exp.tmpVar}"
+            local_decl.append(f"{tmp_id} : {exp_typename};")
+            stmts.append(f"{tmp_id} := {param_str};")
+            param_str = tmp_id
         ada_string += f"{param_str}'Enum_Rep"
 
     elif ident == 'floor':

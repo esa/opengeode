@@ -2320,7 +2320,7 @@ class SDL_View(QGraphicsView):
         #  Template for the Makefile
         template_makefile = f'''all:
 \tmkdir -p code
-\tcd code && opengeode --toAda {first_pr} {other_pr}
+\tcd code && opengeode --toAda ../*.pr
 \tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada {firstAsn1File} {otherAsn}
 \tcd code && gnat make {prj_name}
 clean:

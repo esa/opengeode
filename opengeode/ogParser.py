@@ -743,7 +743,7 @@ def check_call(name, params, context):
             raise TypeError(name + ': type ' + sort_name + 'not found')
         # we could check if the range of the number is compatible with the
         # number of values...
-        return_type = types()[sort].type
+        return_type = new_ref_type(sort) #types()[sort].type
         return (return_type, warnings)
 
     elif name in ('to_selector', 'to_enum'):
@@ -768,12 +768,16 @@ def check_call(name, params, context):
             # if the sort is a subtype, it may not have a -selection suffix
             # and an exception may be raised. FIXME : check "present" operator
             # as the issue is already fixed there
-            return_type = types()[sort.title() + '-selection'].type
+            return_type = new_ref_type(f'{sort.title()}-selection')
+            #return_type = types()[sort.title() + '-selection'].type
+            base_sort = types()[sort.title() + '-selection'].type
         else:
-            return_type = types()[sort].type
-        if return_type.kind != 'EnumeratedType':
+            return_type = new_ref_type(sort)
+            #return_type = types()[sort].type
+            base_sort = types()[sort].type
+        if base_sort.kind != 'EnumeratedType':
             raise TypeError(name + ': Second parameter is incorrect')
-        return_type_keys = return_type.EnumValues.keys()
+        return_type_keys = base_sort.EnumValues.keys()
         variable_sort_keys = variable_sort.EnumValues.keys()
         if return_type_keys != variable_sort_keys:
             raise TypeError(name + ': Enumerated type are not equivalent')
@@ -941,7 +945,12 @@ def check_call(name, params, context):
         except AttributeError:
             # Native choice types don't have the kind field here
             pass
-        return (types()[sort_name.title() + "-selection"].type, warnings)
+        # we must return a referenced type, otherwise the present operator
+        # could not be used as the parameter of a function that needs to
+        # know the type of the parameter to cast or prefix it (e.g. to_enum)
+        selection_type = new_ref_type(f'{sort_name.title()}-selection')
+        return (selection_type, warnings)
+        #return (types()[sort_name.title() + "-selection"].type, warnings)
 
     # choice_to_int: returns an integer corresponding to either the currently
     # selected choice value (e.g. foo in CHOICE { foo INTEGER (..), ... } when
