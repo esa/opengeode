@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.4 (05/2023)**
+- Fix support for built-in operators (Val, To_Enum, etc) / Ada backend
+
 **4.1.3 (05/2023)**
 - Fix type signed/unsigned potential mismatches when using syntypes
 
