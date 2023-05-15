@@ -1725,6 +1725,11 @@ def _prim_call(prim, **kwargs):
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += f'To_{exp_typename}_Selection ({param_str}.Kind)'
+        # Finally we have to change the type name, because the
+        # function To_<type>_Selection function returns a type
+        # created by the Helper.generate_asn1_datamodel function
+        # and containing a prefix - not known by ogParser.
+        prim.exprType.ReferencedTypeName = f'{PROCESS_NAME}-{prim.exprType.ReferencedTypeName}'
 
     elif ident == 'choice_to_int':
         p1, p2 = params
@@ -1817,8 +1822,11 @@ def _prim_call(prim, **kwargs):
     elif ident == 'num':
         # User wants to get an enumerated corresponding integer value
         exp = params[0]
-        exp_typename = type_name(exp.exprType)
         param_stmts, param_str, local_var = expression(exp, readonly=1)
+        # the type of the parameter may have been altered in case of
+        # the 'present' operator, so it is read only after the expression
+        # has been processed.
+        exp_typename = type_name(exp.exprType)
         # 'Enum_Rep gives directly the universal integer of an enumerated
         # (was in GNAT, now in Ada 2020)
         stmts.extend(param_stmts)
