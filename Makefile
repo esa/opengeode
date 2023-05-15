@@ -48,22 +48,31 @@ compile-all:
 update:
 	git pull
 
-dependencies:
-	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect
-	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
-	python3 -m pip install --user --upgrade pyside6
-	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
-	cd /tmp ; wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf - ; cd antlr3_python3_runtime_3.4 ; python3 -m pip install --user --upgrade .
-	sudo apt install -y python3-pygraphviz
-	sudo apt install -y python3-stringtemplate3
-	sudo apt install -y python3-singledispatch
+
+~/.local/bin/asn1scc:
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
 	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.5.0.0/asn1scc-bin-4.5.0.0.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
-install:
-	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --user --upgrade .
+antlr3_python3_runtime_3.4/setup.py:  | dependencies
+	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
+	wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf -
+
+dependencies: ~/.local/bin/asn1scc
+	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect graphviz libgraphviz-dev
+
+develop: antlr3_python3_runtime_3.4/setup.py | dependencies
+	python3 -m venv .venv --system-site-packages
+	. .venv/bin/activate && cd antlr3_python3_runtime_3.4 && python3 -m pip install --editable .
+	. .venv/bin/activate && pip install -r requirements.txt
+	. .venv/bin/activate && pyside6-rcc opengeode.qrc -o opengeode/icons.py
+	. .venv/bin/activate && python3 -m pip install --editable .
+
+install: develop
+	# Both packages must end up in the same environment to work
+	cd antlr3_python3_runtime_3.4 && python3 -m pip install --user --upgrade .
+	python3 -m pip install --user --upgrade .
 
 full-install: update
 	$(MAKE) dependencies
