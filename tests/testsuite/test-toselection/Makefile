@@ -1,14 +1,14 @@
 include ../shared.mk
 
-ROOT_MODEL=spacecraft.pr
+ROOT_MODEL=*.pr
 
 all: test-ada test-llvm
 
 edit:
-	$(OPENGEODE) spacecraft.pr
+	$(OPENGEODE) *.pr
 
 test-parse:
-	$(OPENGEODE) spacecraft.pr --check
+	$(OPENGEODE) *.pr --check
 
 test-qgen-parse:
 	$(TESTQGEN_PARSE) $(ROOT_MODEL)
@@ -26,27 +26,27 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	$(OPENGEODE) spacecraft.pr --toAda
+	$(OPENGEODE) *.pr --toAda
 	$(ASN1SCC) -Ada  -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n spacecraft.ali
 
 test-c: 
-	$(OPENGEODE) spacecraft.pr --toC
+	$(OPENGEODE) *.pr --toC
 	$(ASN1SCC) -c  -typePrefix asn1Scc -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
 test-if:
-	sdl2if spacecraft.pr
+	sdl2if *.pr
 
 
 test-llvm:
-	$(OPENGEODE) spacecraft.pr --llvm -O$(O)
+	$(OPENGEODE) *.pr --llvm -O$(O)
 	$(LLC) *.ll
 	$(CC) -O$(O) -c *.s
 
 
 coverage:
-	coverage run -p $(OPENGEODE) spacecraft.pr --toAda
+	coverage run -p $(OPENGEODE) *.pr --toAda
 
 .PHONY: all edit test-parse test-ada test-llvm coverage
