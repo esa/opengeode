@@ -780,6 +780,10 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
     choice_selections = []
     # a newtype may reuse another newtype, so we must update the list:
     types_with_proper_case.extend(process.user_defined_types.keys())
+    # We also add the newly created types for choice selectors to the
+    # visible list of types. they are needed a return types for the
+    # To_<type>_Selection functions in backends
+    choice_selectors_newtypes = dict()
     for sortname, sortdef in process.user_defined_types.items():
         if sortdef.type.kind == "SequenceOfType":
             rangeMin = sortdef.type.Min
@@ -802,7 +806,9 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
             # by using the process name as prefix, to avoid any risk of
             # duplicate type definition in case it exists in another SDL
             # process of the system.
-            prefixed_name = f'{process.name}_{sortdef.ChoiceTypeName}_selection '
+            prefixed_name = f'{process.name}_{sortdef.ChoiceTypeName}_selection'
+            choice_selectors_newtypes[prefixed_name.replace('_', '-').title()] =\
+                    ogParser.new_ref_type(f'{sortdef.ChoiceTypeName}-selection'.title().replace('_', '-'))
             keys = []
             for idx, key in enumerate(sortdef.type.EnumValues.keys()):
                 # give an index to the enumerations to align with -selection
@@ -820,6 +826,15 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
     with open(process.name.lower() + '_datamodel.asn', 'w') as asn1_file:
         asn1_file.write('\n'.join(asn1_template))
 
+    # Add choice selectors to the system-visible types
+    for name, sort in choice_selectors_newtypes.items():
+        process.dataview[name] = type (name, (object,), {
+            'Line'               : -1,
+            'CharPositionInLine' : -1,
+            'AddedType'          : False,
+            'ChoiceTypeName'     : name,
+            'type'               : sort
+        })
 
 
 def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):

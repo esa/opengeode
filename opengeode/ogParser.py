@@ -571,10 +571,11 @@ def find_basic_type(a_type, pool=None):
     while basic_type.kind == 'ReferenceType':
         Min = getattr(basic_type, "Min", None)
         Max = getattr(basic_type, "Max", None)
+        name = basic_type.ReferencedTypeName.replace('_', '-').lower()
 
         # Find type with proper case in the data view
         for typename in pool.keys():
-            if typename.lower() == basic_type.ReferencedTypeName.lower():
+            if typename.lower() == name:
                 basic_type = pool[typename].type
                 if Min is not None and Max is not None \
                         and (is_numeric(basic_type, pool)
