@@ -1,0 +1,64 @@
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+T-Null-Record ::= SEQUENCE {}
+
+END
+
+
+TEST-SERVICE-2-ENUM-DATAVIEW DEFINITIONS ::=
+BEGIN
+
+   MyInteger ::= INTEGER (0 .. 10000)
+
+
+   UInt8 ::= INTEGER (0 .. 255)
+
+   UInt32 ::= INTEGER (0 .. 4000000000)
+
+   Register-Id ::= ENUMERATED {
+      reg1(300),
+      reg2(400)
+   }
+
+   Register ::= CHOICE {
+      reg1 UInt32,
+      reg2 UInt8
+   }
+
+
+END
+
+
+-- Dataview generated on-the-fly providing information on the system
+-- and made available to the user code.
+System-Dataview DEFINITIONS ::=
+BEGIN
+
+   -- Range of PID - type can be used to size arrays of PID type
+   PID-Range ::= INTEGER(0..2)
+
+   -- List of functions (instances) present in the system
+   PID ::= ENUMERATED {
+       egse,
+       
+       spacecraft,
+       
+       
+       env
+   }
+
+END
+

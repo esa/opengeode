@@ -1,0 +1,36 @@
+/* CIF PROCESS (250, 150), (150, 75) */
+process Spacecraft;
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (498, 350), (267, 140) */
+    -- Text area for declarations and comments
+    
+    dcl reg_param Register;
+    
+    dcl addr MyInteger;
+    
+    dcl reg_param_sel Register_selection;
+    dcl reg_param_e Register_Id;
+    /* CIF ENDTEXT */
+    /* CIF START (320, 10), (70, 35) */
+    START;
+        /* CIF NEXTSTATE (320, 60), (70, 35) */
+        NEXTSTATE Wait;
+    /* CIF state (927, 138), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state Wait;
+        /* CIF input (905, 193), (105, 35) */
+        input tc(reg_param);
+            /* CIF task (830, 248), (255, 35) */
+            task ' reg_param_sel := present(reg_param)';
+            /* CIF task (789, 303), (337, 35) */
+            task reg_param_e := to_enum(reg_param_sel, Register_Id);
+            /* CIF task (848, 358), (220, 35) */
+            task addr := num(present(reg_param));
+            /* CIF task (781, 408), (354, 35) */
+            task addr := num(to_enum(present(reg_param), Register_Id));
+            /* CIF output (921, 463), (74, 35) */
+            output tm(addr);
+            /* CIF NEXTSTATE (923, 518), (70, 35) */
+            NEXTSTATE Wait;
+    endstate;
+endprocess Spacecraft;
