@@ -945,6 +945,8 @@ class Procedure:
     def __init__(self):
         ''' Procedure AST default value '''
         self.inputString = ''
+        # keep track of the process name for the context
+        self.processName = ''
         self.line = None
         self.charPositionInLine = None
         # Set default coordinates and width/height

@@ -203,6 +203,7 @@ lineno = lambda : currentframe().f_back.f_lineno
 # as the ASN1SCC generated python AST
 USER_DEFINED_TYPES = dict()
 CHOICE_SELECTORS = dict()
+g_choice_selectors_ignore_list = list()
 
 
 def types():
@@ -575,7 +576,7 @@ def find_basic_type(a_type, pool=None):
 
         # Find type with proper case in the data view
         for typename in pool.keys():
-            if typename.lower() == name:
+            if typename.replace('_', '-').lower() == name:
                 basic_type = pool[typename].type
                 if Min is not None and Max is not None \
                         and (is_numeric(basic_type, pool)
@@ -589,8 +590,7 @@ def find_basic_type(a_type, pool=None):
                     basic_type = new_type
                 break
         else:
-            raise TypeError('Type "' + type_name(basic_type) +
-                            '" was not found in Dataview')
+            raise TypeError(f'Type "{name}" was not found in Dataview')
     return basic_type
 
 def find_type_name(a_type, pool=None) -> str:
@@ -751,12 +751,14 @@ def check_call(name, params, context):
         if len(params) != 2:
             raise TypeError(name + " takes 2 parameters: variable, type")
         variable, target_type = params
+        #breakpoint()
         variable_sort = find_basic_type(variable.exprType)
         if variable_sort.kind == 'UnknownType':
             raise TypeError(name + ': variable not found (parameter 1)')
         if variable_sort.kind != 'EnumeratedType':
             raise TypeError(name + ': First parameter is not an enumerated')
         sort_name = target_type.value[0]  #  raw string of the type to cast
+
         for sort in types().keys():
             if sort.lower().replace('-', '_') == \
                     sort_name.lower().replace('-', '_'):
@@ -949,7 +951,7 @@ def check_call(name, params, context):
         # we must return a referenced type, otherwise the present operator
         # could not be used as the parameter of a function that needs to
         # know the type of the parameter to cast or prefix it (e.g. to_enum)
-        selection_type = new_ref_type(f'{sort_name.title()}-selection')
+        selection_type = new_ref_type(f'{context.processName}-{sort_name.title()}-selection')
         return (selection_type, warnings)
         #return (types()[sort_name.title() + "-selection"].type, warnings)
 
@@ -1566,7 +1568,20 @@ def compare_types(type_a, type_b):   # type -> [warnings]
         ))
 
 def find_variable_type(var, context):
-    ''' Look for a variable name in the context and return its type '''
+    ''' Look for a variable name in the context and return its type
+    If the type is a choice selector (-selection), return the name
+    prefixed with the process name.
+    '''
+    def selector(sort):
+        ''' check if the type is defined in the CHOICE_SELECTORS
+        and return the type with the process name prefix if so '''
+        name = type_name(sort)
+        if name in CHOICE_SELECTORS.keys():
+            base_name = CHOICE_SELECTORS[name].ChoiceTypeName
+            for sortname, sortvalue in CHOICE_SELECTORS.items():
+                if sortvalue.ChoiceTypeName == base_name and sortvalue != CHOICE_SELECTORS[name]:
+                    return new_ref_type(sortname)
+        return sort
 
     # all DCL-variables
     all_visible_variables = dict(context.global_variables)
@@ -1578,7 +1593,7 @@ def find_variable_type(var, context):
     try:
         for variable in context.fpar:
             if variable['name'].lower() == var.lower():
-                return variable['type']
+                return selector(variable['type'])
     except AttributeError:
         # No FPAR section
         pass
@@ -1586,7 +1601,7 @@ def find_variable_type(var, context):
     for varname, (vartype, _) in all_visible_variables.items():
         # Case insensitive comparison with variables
         if var.lower() == varname.lower():
-            return vartype
+            return selector(vartype)
 
     for timer in chain(context.timers, context.global_timers):
         if var.lower() == timer.lower():
@@ -3437,6 +3452,7 @@ def composite_state(root, parent=None, context=None):
     errors, warnings = [], []
     # Create a list of all inherited data
     try:
+        comp.processName = context.processName
         comp.global_variables = dict(context.variables)
         comp.global_variables.update(context.global_variables)
         comp.global_monitors = dict(context.monitors)
@@ -3610,6 +3626,12 @@ def procedure_pre(root, parent=None, context=None):
     errors = []
     warnings = []
     proc = ogAST.Procedure()
+    # propagate the process name if available
+    try:
+        proc.processName = context.processName
+    except AttributeError:
+        # no processname if procedure is declared at system level
+        pass
     content = []
 
     for child in root.getChildren():
@@ -4813,13 +4835,34 @@ def process_definition(root, parent=None, context=None):
             process.path = [f'PROCESS {process.processName}']
         elif child.type == lexer.TYPE:
             process.process_type = True
+        elif child.type == lexer.TYPE_INSTANCE:
+            # PROCESS Toto:ParentType;
+            process.instance_of_name = child.children[0].text
  
     # Create implicit "sender" identifier of type PID.
     if 'PID' in types().keys():
         parseSingleElement('content', 'dcl sender, offspring PID := env;', context=process)
 
+    # The choice selectors were added by the Asn1scc module. We need to duplicate
+    # these types but with the process name as a prefix. This is needed to support
+    # the num() and to_enum() operators, that allow user to access the choice
+    # selectors as enumerated types.
+    addedTypes = dict()
+    for name, sort in CHOICE_SELECTORS.items():
+        if name in g_choice_selectors_ignore_list or process.instance_of_name is not None:
+            # the function may be called multiple times, so avoid duplicates
+            continue
+        prefixed_name = f'{process.processName.title()}-{name}'
+        g_choice_selectors_ignore_list.append(prefixed_name)
+        newsort = type(prefixed_name, (sort,), sort.__dict__.copy())
+        newsort.AddedType = "False"
+        addedTypes[prefixed_name] = newsort
+    CHOICE_SELECTORS.update(addedTypes)
+
     # first look for all text areas to find NEWTYPE, SYNTYPE and SYNONYM declarations
+    global USER_DEFINED_TYPES
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
+
     process.user_defined_types = USER_DEFINED_TYPES
     tas = (x for x in root.getChildren() if x.type == lexer.TEXTAREA)
     for child in tas:
@@ -4975,8 +5018,8 @@ def process_definition(root, parent=None, context=None):
             pass
             #process.process_type = True
         elif child.type == lexer.TYPE_INSTANCE:
-            # PROCESS Toto:ParentType;
-            process.instance_of_name = child.children[0].text
+            # Already set above
+            pass
         elif child.type == lexer.COMMENT:
             process.comment, _, _ = end(child)
         else:

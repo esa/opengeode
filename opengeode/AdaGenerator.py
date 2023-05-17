@@ -272,7 +272,7 @@ end {process.name.lower()}_Lib;'''
     # (in Helper.generate_asn1_datamodel), but we need conversion functions
     choice_selections = []
     for sortname, sortdef in process.user_defined_types.items():
-        if sortdef.type.kind == "EnumeratedType":
+        if sortdef.type.kind == "EnumeratedType" and sortdef.AddedType == "True":
             choiceTypeModule = process.mapping_sort_module[sortdef.ChoiceTypeName].replace('-', '_')
             sortAda = sortname.replace('-', '_')
             fromMod = f'{choiceTypeModule}.{ASN1SCC}{sortAda}'
@@ -1729,7 +1729,8 @@ def _prim_call(prim, **kwargs):
         # function To_<type>_Selection function returns a type
         # created by the Helper.generate_asn1_datamodel function
         # and containing a prefix - not known by ogParser.
-        prim.exprType.ReferencedTypeName = f'{PROCESS_NAME}-{prim.exprType.ReferencedTypeName}'
+        # No, this is now done properly in ogParser
+        #prim.exprType.ReferencedTypeName = f'{PROCESS_NAME}-{prim.exprType.ReferencedTypeName}'
 
     elif ident == 'choice_to_int':
         p1, p2 = params
@@ -1807,7 +1808,7 @@ def _prim_call(prim, **kwargs):
             ada_string += f"{sort_name}'Val ({ASN1SCC}{var_typename}'Pos ({var_str}))"
         elif ident == 'to_enum':
             sort_name_val = f'{ASN1SCC}{sortAda}'
-            sort_name = f'{PROCESS_NAME}_Datamodel.{ASN1SCC}{PROCESS_NAME}_{var_typename}'
+            sort_name = f'{PROCESS_NAME}_Datamodel.{ASN1SCC}{var_typename}'
             ada_string += f"{sort_name_val}'Val ({sort_name}'Pos ({var_str}))"
 
     elif ident == 'val':

@@ -263,7 +263,6 @@ def flatten(process, sep='_'):
 
         # If composite state has entry procedures, add the call
         if state.entry_procedure:
-            #print(state.mapping)
             for each in (trans for trans in state.mapping.values()
                          if isinstance(trans, int)):
                 call_entry = ogAST.ProcedureCall()
@@ -783,7 +782,6 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
     # We also add the newly created types for choice selectors to the
     # visible list of types. they are needed a return types for the
     # To_<type>_Selection functions in backends
-    choice_selectors_newtypes = dict()
     for sortname, sortdef in process.user_defined_types.items():
         if sortdef.type.kind == "SequenceOfType":
             rangeMin = sortdef.type.Min
@@ -799,7 +797,7 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
                     f'{sortname.replace("_", "-").capitalize()} ::= SEQUENCE '
                     f'(SIZE ({rangeMin} .. {rangeMax})) OF '
                     f'{refTypeCase.replace("_", "-")}')
-        elif sortdef.type.kind == "EnumeratedType":
+        elif sortdef.type.kind == "EnumeratedType" and sortdef.AddedType=="False":
             # At the moment, the only user-defined ENUMERATED types that are
             # supported are the ones generated for the CHOICE selectors
             # We can therefore safely rename them systematically here,
@@ -807,8 +805,6 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
             # duplicate type definition in case it exists in another SDL
             # process of the system.
             prefixed_name = f'{process.name}_{sortdef.ChoiceTypeName}_selection'
-            choice_selectors_newtypes[prefixed_name.replace('_', '-').title()] =\
-                    ogParser.new_ref_type(f'{sortdef.ChoiceTypeName}-selection'.title().replace('_', '-'))
             keys = []
             for idx, key in enumerate(sortdef.type.EnumValues.keys()):
                 # give an index to the enumerations to align with -selection
@@ -825,16 +821,6 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
     # Write the ASN.1 file
     with open(process.name.lower() + '_datamodel.asn', 'w') as asn1_file:
         asn1_file.write('\n'.join(asn1_template))
-
-    # Add choice selectors to the system-visible types
-    for name, sort in choice_selectors_newtypes.items():
-        process.dataview[name] = type (name, (object,), {
-            'Line'               : -1,
-            'CharPositionInLine' : -1,
-            'AddedType'          : False,
-            'ChoiceTypeName'     : name,
-            'type'               : sort
-        })
 
 
 def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):

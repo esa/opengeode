@@ -203,7 +203,7 @@ def create_choice_determinant_types(ast):
                 type(new_sort_name, (object,), {
                     "Line": each.Line,
                     "CharPositionInLine": each.CharPositionInLine,
-                    "AddedType" : "False",
+                    "AddedType" : "True",
                     "ChoiceTypeName" : each.__name__,
                     "type": type(new_sort_name + "_type", (object,), {
                         "Line" : each.Line,
