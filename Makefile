@@ -37,8 +37,8 @@ coverage:
 flake8:
 	@echo Generating flake8_report file
 	@cd opengeode && flake8 opengeode.py Pr.py sdlSymbols.py genericSymbols.py ogParser.py \
-	        AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py sdlHelp.py \
-	        undoCommands.py  Connectors.py Asn1scc.py Helper.py \
+	        AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py ogASTDumper.py \
+			sdlHelp.py undoCommands.py  Connectors.py Asn1scc.py Helper.py \
 	        Statechart.py TextInteraction.py > flake8_report
 
 compile-all:
