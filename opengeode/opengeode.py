@@ -57,6 +57,7 @@ from . import(undoCommands,  # NOQA
               AdaGenerator,
               ogParser,
               ogAST,
+              ogASTDumper,
               Renderer,
               Clipboard,
               Statechart,
@@ -115,6 +116,7 @@ MODULES : List[types.ModuleType] = [
     sdlSymbols,
     genericSymbols,
     ogAST,
+    ogASTDumper,
     ogParser,
     Lander,
     AdaGenerator,
@@ -3455,6 +3457,8 @@ def parse_args():
                         version=__version__)
     parser.add_argument('-g', '--debug', action='store_true', default=False,
             help='Display debug information')
+    parser.add_argument('--dumpAST', action='store_true', default=False,
+            help='Dump AST to the file')
     parser.add_argument('--simu', action='store_true', default=False,
             help='Generate additional code for the taste simulation mode')
     parser.add_argument('--stg', type=str, metavar='file',
@@ -3643,6 +3647,9 @@ def cli(options):
         LOG.error('Aborting due to parsing error')
         LOG.error(str(err))
         return 1
+
+    if options.dumpAST:
+        ogASTDumper.dump('ast.dump', ast)
 
     if len(ast.processes) != 1:
         LOG.error(f'Found {len(ast.processes)} process(es) instead of one')
