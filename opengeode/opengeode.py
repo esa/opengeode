@@ -3741,7 +3741,7 @@ def opengeode():
     LOG.debug('Starting OpenGEODE version ' + __version__)
     if any((options.check, options.toAda, options.png, options.pdf,
             options.svg, options.llvm, options.simu, options.stg,
-            options.toC)):
+            options.toC, options.dumpAST)):
         return cli(options)
     else:
         return gui(options)

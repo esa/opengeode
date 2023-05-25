@@ -2400,9 +2400,12 @@ def arithmetic_expression(root, context):
                 msg = f'Modulo: range [{minR} .. {maxR}] allows division by zero'
                 errors.append(error(root, msg))
             else:
-                possible_values = [minL % minR, minL % maxR, maxL % minR, maxL % maxR]
-                bounds["Min"] = min(possible_values)
-                bounds["Max"] = max(possible_values)
+                # no the following is wrong
+                #possible_values = [minL % minR, minL % maxR, maxL % minR, maxL % maxR]
+                #bounds["Min"] = min(possible_values)
+                #bounds["Max"] = max(possible_values)
+                bounds["Min"] = min([minL, minR - 1])
+                bounds["Max"] = min([maxL, maxR - 1])
         else:
             bounds = find_bounds(expr.op, minL, maxL, minR, maxR)
 

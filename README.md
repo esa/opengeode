@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.5 (05/2023)**
+- Fix computation of modulo operator range
+
 **4.1.4 (05/2023)**
 - Fix support for built-in operators (Val, To_Enum, etc) / Ada backend
 
