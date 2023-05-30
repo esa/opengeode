@@ -2404,8 +2404,16 @@ def arithmetic_expression(root, context):
                 #possible_values = [minL % minR, minL % maxR, maxL % minR, maxL % maxR]
                 #bounds["Min"] = min(possible_values)
                 #bounds["Max"] = max(possible_values)
-                bounds["Min"] = min([minL, minR - 1])
-                bounds["Max"] = min([maxL, maxR - 1])
+                if minL == maxL and minR == maxR:
+                    bounds["Min"] = bounds["Max"] = minL % minR
+                elif minL < 0 and minR > 0:
+                    # a bit tricky... but in minR is positive, result is always positive
+                    bounds["Min"] = 0
+                    # and e.g. -5 % 99 = 94 so  maxR + minL should be right
+                    bounds["Max"] = max([maxL, maxR + minL])
+                else:
+                    bounds["Min"] = min([minL, minR - 1])
+                    bounds["Max"] = min([maxL, maxR - 1])
         else:
             bounds = find_bounds(expr.op, minL, maxL, minR, maxR)
 

@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.6 (05/2023)**
+- Fix more issues with  computation of modulo operator range (negative numbers)
+
 **4.1.5 (05/2023)**
 - Fix computation of modulo operator range
 
