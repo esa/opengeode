@@ -288,7 +288,8 @@ end {process.name.lower()}_Lib;'''
 
         # First add SDL constants (synonyms) - they can be used in the context
         for const in process.DV.SDL_Constants.values():
-            bkind = find_basic_type (const.type).kind
+            bconst = find_basic_type(const.type)
+            bkind = bconst.kind
             if bkind in ('IntegerType', 'RealType', 'NullType',
                          'BooleanType', 'Integer32Type', 'IntegerU8Type'):
                 val = const.value
@@ -299,7 +300,7 @@ end {process.name.lower()}_Lib;'''
                 # complex value - must be a ground expression
                 _, val, _ = expression(const.value, readonly=1)
                 if bkind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
-                    val = array_content(const.value, val, bkind)
+                    val = array_content(const.value, val, bconst)
                 elif bkind == 'IA5StringType':
                     val = ia5string_raw(const.value)
                 elif bkind == 'NullType':

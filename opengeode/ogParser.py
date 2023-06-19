@@ -751,7 +751,6 @@ def check_call(name, params, context):
         if len(params) != 2:
             raise TypeError(name + " takes 2 parameters: variable, type")
         variable, target_type = params
-        #breakpoint()
         variable_sort = find_basic_type(variable.exprType)
         if variable_sort.kind == 'UnknownType':
             raise TypeError(name + ': variable not found (parameter 1)')
@@ -4308,11 +4307,11 @@ def synonym_definition(root, parent, context):
         if asn1_sort is not None:
             # Use the right type spelling
             sort = asn1_sort.ReferencedTypeName
-        return name, sort, ground
+        return name, sort, ground, asn1_sort
 
     for child in root.getChildren():
         if child.type == lexer.SYNONYM:
-            name, sort, value = parse_synonym(child)
+            name, sort, value, asn1_sort = parse_synonym(child)
 
         if name and sort and value:
             nameDash = name.replace('_', '-')
@@ -4324,7 +4323,7 @@ def synonym_definition(root, parent, context):
             # Same for booleans and enumerated. But complex types are kept as
             # expressions
             if isinstance(value, (ogAST.PrimOctetStringLiteral,
-                                  ogAST.PrimBitStringLiteral)):
+                                  ogAST.PrimBitStringLiteral)) and is_numeric(asn1_sort):
                 concrete_val = value.numeric_value
             elif is_numeric(value.exprType) or is_boolean(value.exprType):
                 # value.value is an array of one element
