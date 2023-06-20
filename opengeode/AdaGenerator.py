@@ -1305,7 +1305,8 @@ def _call_external_function(output, **kwargs):
     #code.extend(debug_trace())
 
     # Calling a procedure or RI usually needs a prefix (RI_.. or p_...)
-    # Exception is the _Transition procedures called after exported PIs (RPC)
+    # Exceptions are the _Transition procedures called after exported PIs (RPC)
+    # and the inner call of exported procedures
     need_prefix = True
 
     for out in output.output:
@@ -1357,8 +1358,16 @@ def _call_external_function(output, **kwargs):
         except ValueError:
             # Not an output, try if it is an external or inner procedure
             try:
-                proc, = [sig for sig in PROCEDURES
+                candidates = [sig for sig in PROCEDURES
                             if sig.inputString.lower() == signal_name.lower()]
+                if not candidates:
+                    raise ValueError
+                if len(candidates) == 2:
+                    # there are 2 results when the procedure is exported
+                    # (happens in the case of a call of an inner procedure
+                    # that is exported)
+                    need_prefix = False
+                proc = candidates[0]
                 if proc.external:
                     out_sig = proc
             except ValueError:
@@ -1453,7 +1462,9 @@ def _call_external_function(output, **kwargs):
             # inner procedure call without a RETURN statement
             # retrieve the procedure signature
             ident = proc.inputString
-            p, = [p for p in PROCEDURES if p.inputString.lower() == ident.lower()]
+            p, = [p for p in PROCEDURES
+                    if p.inputString.lower() == ident.lower()
+                    and not p.referenced]
 
             list_of_params = []
             for idx, param in enumerate(out.get('params', [])):
@@ -1473,15 +1484,24 @@ def _call_external_function(output, **kwargs):
                         p_id = str(param.numeric_value)
                     else:
                         p_id = array_content(param, p_id, basic_param)
+                    # Here at least we need a temporary variable, it's never
+                    # possible to send a raw string as a parameter
+                    tmp_string = f'tmp{param.tmpVar}'
+                    local_decl.append(f'{tmp_string} : {type_name(param_type)} := {p_id};')
+                    p_id = tmp_string
 
                 code.extend(p_code)
                 local_decl.extend(p_local)
                 # no need to use temporary variables, we are in pure Ada
                 list_of_params.append(p_id)
-            if list_of_params:
-                code.append(f'p{SEPARATOR}{proc.inputString}({", ".join(list_of_params)});')
+            if need_prefix:
+                full_name = f'p{SEPARATOR}{proc.inputString}'
             else:
-                code.append(f'p{SEPARATOR}{proc.inputString};')
+                full_name = proc.inputString
+            if list_of_params:
+                code.append(f'{full_name}({", ".join(list_of_params)});')
+            else:
+                code.append(f'{full_name};')
     return code, local_decl
 
 
@@ -1911,7 +1931,9 @@ def _prim_call(prim, **kwargs):
     else:
         # inner procedure call (with a RETURN statement)
         # retrieve the procedure signature
-        p, = [p for p in PROCEDURES if p.inputString.lower() == ident.lower()]
+        p, = [p for p in PROCEDURES
+                if p.inputString.lower() == ident.lower()
+                and not p.referenced]
 
         # for inner procedures we do not use a temporary variable because
         # we remain in Ada and therefore in parameters do not need to

@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.8 (06/2023)**
+- Fix generation of inner calls to exported procedures in Ada backend
+
 **4.1.7 (06/2023)**
 - Fix octet string synonym declaration using hex notation
 
