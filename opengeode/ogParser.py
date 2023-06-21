@@ -1473,6 +1473,12 @@ def compare_types(type_a, type_b):   # type -> [warnings]
             # We flag the fact that one type is a subtype of the other type
             # to avoid the signed/unsigned check to raise an error
             is_same_type = True
+    # there is another case where we can consider that the types are the same,
+    # in some mathematical operations like power, that can return either
+    # signed or unsigned value, according to what they are used with.
+    if any(sort.__name__ == 'Power' for sort in (type_a, type_b)):
+        is_same_type = True
+
     type_a = find_basic_type(type_a)
     type_b = find_basic_type(type_b)
 
@@ -2491,10 +2497,16 @@ def arithmetic_expression(root, context):
         # a forloop index with positive values (it is signed!)
         else:
             sign_mismatch = False
-            if (minL < 0) != (minR < 0):
+            # Test only integers, not reals!!
+            if is_integer(expr.left.exprType) and is_integer(expr.right.exprType) and (minL < 0) != (minR < 0):
                 sign_mismatch = \
                         (minL >= 0 and basic_left.kind  != 'Integer32Type')\
                      or (minR >= 0 and basic_right.kind != 'Integer32Type')
+                # Exception: if one side is a "power" expression, it does
+                # not need to match
+                if expr.left.exprType.__name__ == 'Power' or expr.right.exprType.__name__ == 'Power':
+                    sign_mismatch = False
+
             if sign_mismatch:
                 msg = '"' + expr.left.inputString + '" is ' + ("un"
                       if minL >= 0 else "") + 'signed while "' \
