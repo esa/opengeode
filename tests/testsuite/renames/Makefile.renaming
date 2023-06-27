@@ -1,0 +1,7 @@
+all:
+	mkdir -p code
+	cd code && opengeode --toAda ../*.pr
+	asn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada dv.asn code/renaming_datamodel.asn
+	cd code && gnat make renaming
+clean:
+	rm -rf code

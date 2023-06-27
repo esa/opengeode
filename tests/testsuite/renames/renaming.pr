@@ -1,0 +1,45 @@
+system renaming;
+/* CIF Keep Specific Geode Partition 'default' */
+/* CIF TEXT (424, 132), (171, 140) */
+use dv comment 'dv.asn';
+/* CIF ENDTEXT */
+block renaming;
+/* CIF PROCESS (210, 140), (150, 75) */
+process renaming;
+/* CIF Keep Specific Geode Partition 'default' */
+/* CIF TEXT (468, 79), (279, 140) */
+-- check the renames clause in two situations:
+-- when the field is in a SEQUENCE and when
+-- the field is in a CHOICE. This leads to two
+-- different patterns in the generated code.
+/* CIF ENDTEXT */
+/* CIF Keep Specific Geode Partition 'default' */
+/* CIF TEXT (103, 40), (170, 188) */
+dcl ch SomeChoice;
+
+dcl seq SomeSeq;
+
+dcl cOntent SomeInt
+   renames cH.a;
+
+dcl fielD SomeInt
+   renames seq.a;
+
+--dcl ch2 SomeChoice
+ --  renames ch;
+/* CIF ENDTEXT */
+/* CIF START (332, 98), (70, 35) */
+START;
+/* CIF task (319, 153), (94, 35) */
+task conTent := 5;
+/* CIF task (328, 208), (76, 35) */
+task fieLd := 5;
+/* CIF NEXTSTATE (332, 258), (70, 35) */
+NEXTSTATE Wait;
+/* CIF state (254, 354), (70, 35) */
+/* CIF Keep Specific Geode Partition 'default' */
+state wait;
+endstate;
+endprocess renaming;
+endblock;
+endsystem;

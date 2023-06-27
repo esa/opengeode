@@ -1,0 +1,14 @@
+DV DEFINITIONS ::=
+BEGIN
+
+SomeInt ::= INTEGER (0..25)
+
+SomeChoice ::= CHOICE {
+  a SomeInt
+}
+
+SomeSeq ::= SEQUENCE {
+  a SomeInt
+}
+
+END
