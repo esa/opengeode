@@ -27,6 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(MAKE) -f Makefile.renaming
+	cp test.ada code && cd code && gnat make test.ada && ./test | diff ../expected - || exit 1
 
 test-c: 
 	$(OPENGEODE) *.pr --toC
