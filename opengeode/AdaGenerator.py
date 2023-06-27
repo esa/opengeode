@@ -90,6 +90,7 @@ PROCESS_NAME = ""
 TYPES = None
 
 VARIABLES = {}
+ALIASES = {}
 MONITORS = {}
 LOCAL_VAR = {}
 # List of output signals and procedures
@@ -241,6 +242,8 @@ end {process.name.lower()}_Lib;'''
 
     #  Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
+    # Make the aliases visible
+    ALIASES.update(process.aliases)
 
     if not stop_condition:
         Helper.generate_asn1_datamodel(process)
@@ -1660,7 +1663,14 @@ def expression(expr, **kwargs):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim, **kwargs):
     ''' Single variable reference '''
-    var = find_var(prim.value[0])
+    # The variable name is prim.value[0]. In principle it should be a single
+    # name.. However if it was originally an alias, it may have been renamed
+    # to a string with field accesses. In that case we must take only the
+    # first element to get the actual variable name.
+    name = prim.value[0]
+    if '.' in name:
+        name = name.split('.')[0]
+    var = find_var(name)
     if (not var) or is_local(var):
         sep = ''
     else:

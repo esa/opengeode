@@ -26,6 +26,7 @@ LOG = logging.getLogger(__name__)
 __all__ = ['generate']
 
 VARIABLES = {}
+ALIASES = {}
 LOCAL_OUT_PARS = {}
 LOCAL_VAR = {}
 LOCAL_VARIABLE_TYPES = {}
@@ -602,6 +603,8 @@ LD_LIBRARY_PATH=. taste-gui -l
 
     #  Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
+    # Make the aliases visible
+    ALIASES.update(process.aliases)
 
     Helper.generate_asn1_datamodel(process)
 
@@ -1167,13 +1170,19 @@ def expression(expr):
 @expression.register(ogAST.PrimVariable)
 def _primary_variable(prim):
     ''' Single variable reference '''
-    var = find_var(prim.value[0])
-    if prim.value[0] in LOCAL_OUT_PARS:
-        string = u'(*{name})'.format(name=prim.value[0])
-    elif not var or is_local(var):
-        string = u'{name}'.format(name=prim.value[0])
+    name = prim.value[0]
+    if '.' in name:
+        name = name.split('.')[0]
+        _, qualified = ALIASES[prim.renamed_from]
+        _, string, _ = expression(qualified)
     else:
-        string = u'{lp}.{name}'.format(lp=LPREFIX, name=prim.value[0])
+        var = find_var(name)
+        if prim.value[0] in LOCAL_OUT_PARS:
+            string = u'(*{name})'.format(name=prim.value[0])
+        elif not var or is_local(var):
+            string = u'{name}'.format(name=prim.value[0])
+        else:
+            string = u'{lp}.{name}'.format(lp=LPREFIX, name=prim.value[0])
 
     return [], str(string.lower()), []
 

@@ -614,6 +614,12 @@ def _rename_path(ast, from_name, to_name):
     ''' Ultimate seek point for the renaming: primary path/variables '''
     if ast.value[0].lower() == from_name.lower():
         ast.value[0] = to_name
+        # Renaming a variable can be due to the use of an alias
+        # in that case we must keep track of the alias name because
+        # the renamging may lead to what actually should not be
+        # a PrimVariable but a PrimSelector.
+        # Keeping the original name allows backend to resolve this.
+        ast.renamed_from = from_name
 
 
 @rename_everything.register(ogAST.PrimCall)
