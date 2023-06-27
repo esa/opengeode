@@ -30,7 +30,7 @@ test-ada:
 
 test-c: 
 	$(OPENGEODE) *.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal *.asn
 	$(CC) -O$(O) -c *.c
 
 test-if:
