@@ -26,7 +26,7 @@ test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
 test-ada: 
-	$(MAKE) -f Makefile.renames
+	$(MAKE) -f Makefile.renaming
 
 test-c: 
 	$(OPENGEODE) *.pr --toC
