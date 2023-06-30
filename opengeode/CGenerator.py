@@ -1177,7 +1177,7 @@ def _primary_variable(prim):
         _, string, _ = expression(qualified)
     else:
         var = find_var(name)
-        if prim.value[0] in LOCAL_OUT_PARS:
+        if prim.value[0].lower() in (v.lower() for v in LOCAL_OUT_PARS.keys()):
             string = u'(*{name})'.format(name=prim.value[0])
         elif not var or is_local(var):
             string = u'{name}'.format(name=prim.value[0])
