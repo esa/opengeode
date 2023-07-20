@@ -42,8 +42,8 @@ expressions_ri.adb: expressions_ri.ada
 test-c: expressions.c test_c.o dataview-uniq.o
 	$(CC) expressions.c -c -o expressions.o
 	$(CC) test_c.o dataview-uniq.o expressions.o -lm -o test_c
-	./test_c
-
+	./test_c | diff expected_c -
+	
 test-if:
 	sdl2if expressions.pr system_structure.pr
 

@@ -1,0 +1,80 @@
+system Complexsdl;
+    /* CIF TEXT (552, 9), (291, 140) */
+    use Datamodel comment 'dataview-uniq.asn';
+    
+    signal impulse(MyInteger);
+    
+    signal response(MyInteger);
+    /* CIF ENDTEXT */
+    channel c
+        from env to Complexsdl with impulse;
+        from Complexsdl to env with response;
+    endchannel;
+    block Complexsdl;
+        signalroute r
+            from env to Complexsdl with impulse;
+            from Complexsdl to env with response;
+        connect c and r;
+        /* CIF PROCESS (250, 150), (150, 75) */
+        process Complexsdl;
+            /* CIF TEXT (1263, 53), (267, 140) */
+            -- Text area for declarations and comments
+            
+            DCL tmp MyInteger;
+            
+            /* CIF ENDTEXT */
+            /* CIF START (320, 21), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (320, 71), (70, 35) */
+                NEXTSTATE Wait;
+            /* CIF label (737, 573), (99, 35) */
+            connection Right_Action:
+                /* CIF output (740, 628), (92, 35) */
+                output response(1);
+                /* CIF NEXTSTATE (752, 683), (70, 35) */
+                NEXTSTATE Wait;
+            /* CIF End Label */
+            endconnection;
+            /* CIF label (472, 553), (85, 35) */
+            connection LeftAction:
+                /* CIF output (468, 608), (92, 35) */
+                output response(0);
+                /* CIF NEXTSTATE (480, 663), (70, 35) */
+                NEXTSTATE One;
+            /* CIF End Label */
+            endconnection;
+            /* CIF state (1013, 120), (70, 35) */
+            state One;
+                /* CIF input (997, 175), (101, 35) */
+                input impulse(tmp);
+                    /* CIF decision (1013, 230), (70, 50) */
+                    decision tmp = 1;
+                        /* CIF ANSWER (968, 300), (70, 23) */
+                        (true):
+                            /* CIF join (985, 343), (35, 35) */
+                            join Right_Action;
+                        /* CIF ANSWER (1058, 300), (70, 23) */
+                        (false):
+                            /* CIF join (1075, 343), (35, 35) */
+                            join LeftAction;
+                    enddecision;
+            endstate;
+            /* CIF state (590, 129), (70, 35) */
+            state Wait;
+                /* CIF input (574, 184), (101, 35) */
+                input impulse(tmp);
+                    /* CIF decision (590, 239), (70, 50) */
+                    decision tmp = 0;
+                        /* CIF ANSWER (545, 309), (70, 23) */
+                        (true):
+                            /* CIF join (563, 352), (35, 35) */
+                            join leftaction;
+                        /* CIF ANSWER (635, 309), (70, 23) */
+                        (false):
+                            /* CIF join (653, 352), (35, 35) */
+                            join right_action;
+                    enddecision;
+            endstate;
+        endprocess Complexsdl;
+    endblock;
+endsystem;

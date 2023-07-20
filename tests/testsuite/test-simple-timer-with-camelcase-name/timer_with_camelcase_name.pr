@@ -1,0 +1,56 @@
+system Complexsdl;
+    /* CIF TEXT (552, 9), (291, 140) */
+    use Datamodel comment 'dataview-uniq.asn';
+    
+    signal impulse(MyInteger);
+    
+    signal response(MyInteger);
+    /* CIF ENDTEXT */
+    channel c
+        from env to Complexsdl with impulse;
+        from Complexsdl to env with response;
+    endchannel;
+    block Complexsdl;
+        signalroute r
+            from env to Complexsdl with impulse;
+            from Complexsdl to env with response;
+        connect c and r;
+        /* CIF PROCESS (249, 150), (150, 75) */
+        process Complexsdl;
+            /* CIF TEXT (83, 378), (267, 140) */
+            -- Text area for declarations and comments
+            
+            dcl tmp MyInteger;
+            /* CIF ENDTEXT */
+            /* CIF TEXT (55, 161), (252, 140) */
+            -- Timers defined in the interface view
+            -- Use SET_TIMER (value, timer name)
+            -- and RESET_TIMER (timer name) in a
+            -- PROCEDURE CALL symbol to use them
+            timer myTimer;
+            /* CIF ENDTEXT */
+            /* CIF START (320, 21), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (320, 71), (70, 35) */
+                NEXTSTATE Wait;
+            /* CIF state (865, 141), (70, 35) */
+            state Wait;
+                /* CIF input (863, 196), (72, 35) */
+                input mytimer;
+                    /* CIF output (845, 251), (109, 35) */
+                    output response(tmp);
+                    /* CIF NEXTSTATE (865, 306), (70, 35) */
+                    NEXTSTATE Wait;
+            endstate;
+            /* CIF state (598, 129), (70, 35) */
+            state Wait;
+                /* CIF input (577, 184), (101, 35) */
+                input impulse(tmp);
+                    /* CIF PROCEDURECALL (539, 239), (178, 35) */
+                    call set_timer(1000, myTimer);
+                    /* CIF NEXTSTATE (593, 289), (70, 35) */
+                    NEXTSTATE Wait;
+            endstate;
+        endprocess Complexsdl;
+    endblock;
+endsystem;

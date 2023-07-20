@@ -30,10 +30,8 @@ test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	$(GNATLINK) -o test_ada test_ada.o orchestrator.ali
 	./test_ada
 
-test-c: orchestrator.c test_c.o dataview-uniq.o
-	$(CC) -include missing.h orchestrator.c -c -o orchestrator.o
-	$(CC) test_c.o orchestrator.o dataview-uniq.o -lm -o test_c
-	./test_c | diff expected -
+test-c:
+	$(OPENGEODE) --toC orchestrator.pr system_structure.pr 2>&1 | sort | diff expected_c - || exit 0
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr

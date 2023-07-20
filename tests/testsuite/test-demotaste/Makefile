@@ -31,7 +31,9 @@ test-ada:
 	gnat make -gnatd.E orchestrator
 
 test-c:
-	$(OPENGEODE) orchestrator.pr system_structure.pr --check && 
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
+	$(CC) -O$(O) -c *.c
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr

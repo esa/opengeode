@@ -17,12 +17,14 @@ logs/
 */*.o
 */*.gcno
 */*.c
+!*/test_c.c
 */*.h
 */*.cfg
 */*.idx
 */*.wrn
 */*.sh
 */*.gcda
+*/*.dump
 **/*.log
 **actual
 */*.xml

@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: flight.ali
 
 test-c: flight.c
-	$(CC) -include missing.h -c flight.c
+	$(CC) -c flight.c
 
 test-if:
 	sdl2if flight.pr system_structure.pr

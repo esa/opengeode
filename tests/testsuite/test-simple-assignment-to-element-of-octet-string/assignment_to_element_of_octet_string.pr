@@ -1,0 +1,50 @@
+system Complexsdl;
+    /* CIF TEXT (552, 9), (291, 140) */
+    use Datamodel comment 'dataview-uniq.asn';
+    
+    signal impulse(MyInteger);
+    
+    signal response(MyInteger);
+    /* CIF ENDTEXT */
+    channel c
+        from env to Complexsdl with impulse;
+        from Complexsdl to env with response;
+    endchannel;
+    block Complexsdl;
+        signalroute r
+            from env to Complexsdl with impulse;
+            from Complexsdl to env with response;
+        connect c and r;
+        /* CIF PROCESS (250, 150), (150, 75) */
+        process Complexsdl;
+            /* CIF TEXT (1209, 18), (267, 140) */
+            -- Text area for declarations and comments
+            
+            DCL tmp MyInteger;
+            DCL octfix MyOctetString;
+            DCL octvar MyVariableOctetString;
+            /* CIF ENDTEXT */
+            /* CIF START (320, 21), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (320, 71), (70, 35) */
+                NEXTSTATE Wait;
+            /* CIF state (598, 129), (70, 35) */
+            state Wait;
+                /* CIF input (578, 184), (101, 35) */
+                input impulse(tmp);
+                    /* CIF task (549, 239), (160, 53) */
+                    task for index in range(0, 2):
+octfix(index) := 2
+endfor;
+                    /* CIF task (455, 312), (348, 53) */
+                    task for index in range(0, 2):
+octfix(index) := (octfix(index) + length(octfix)) mod 255
+endfor;
+                    /* CIF output (574, 395), (109, 35) */
+                    output response(tmp);
+                    /* CIF NEXTSTATE (594, 445), (70, 35) */
+                    NEXTSTATE Wait;
+            endstate;
+        endprocess Complexsdl;
+    endblock;
+endsystem;

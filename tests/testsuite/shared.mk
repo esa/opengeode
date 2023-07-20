@@ -19,7 +19,8 @@ clean:
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
-	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86
+	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
+		   *.dump
 
 test-promela: FORCE
 	 sdl2promela --sdl *.pr -o og.pml
@@ -31,7 +32,7 @@ test-promela: FORCE
 
 %.c: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview-uniq.asn 
 
 %.if: %.pr FORCE
 	$(SDL2IF) $< ${STRUCT}

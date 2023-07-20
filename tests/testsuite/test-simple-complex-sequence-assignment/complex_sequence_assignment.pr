@@ -1,0 +1,46 @@
+system Complexsdl;
+    /* CIF TEXT (552, 9), (291, 140) */
+    use Datamodel comment 'dataview-uniq.asn';
+    
+    signal impulse(MyInteger);
+    
+    signal response(MyInteger);
+    /* CIF ENDTEXT */
+    channel c
+        from env to Complexsdl with impulse;
+        from Complexsdl to env with response;
+    endchannel;
+    block Complexsdl;
+        signalroute r
+            from env to Complexsdl with impulse;
+            from Complexsdl to env with response;
+        connect c and r;
+        /* CIF PROCESS (249, 150), (150, 75) */
+        process Complexsdl;
+            /* CIF TEXT (1202, 0), (267, 140) */
+            -- Text area for declarations and comments
+            
+            DCL tmp MyInteger;
+            dcl value4 MySequence;
+            dcl value1 MySequenceOf;
+            /* CIF ENDTEXT */
+            /* CIF START (320, 21), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (320, 71), (70, 35) */
+                NEXTSTATE Wait;
+            /* CIF state (598, 129), (70, 35) */
+            state Wait;
+                /* CIF input (578, 184), (101, 35) */
+                input impulse(tmp);
+                    /* CIF task (512, 239), (234, 35) */
+                    task value4 := { value 2, version small : 2 };
+                    /* CIF task (511, 294), (236, 35) */
+                    task value1 := { { value 1, version big : 4 } };
+                    /* CIF output (574, 344), (109, 35) */
+                    output response(tmp);
+                    /* CIF NEXTSTATE (594, 399), (70, 35) */
+                    NEXTSTATE Wait;
+            endstate;
+        endprocess Complexsdl;
+    endblock;
+endsystem;

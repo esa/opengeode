@@ -1,0 +1,60 @@
+system Complexsdl;
+    /* CIF TEXT (552, 9), (291, 140) */
+    use Datamodel comment 'dataview-uniq.asn';
+    
+    signal impulse(MyInteger);
+    
+    signal response(MyInteger);
+    /* CIF ENDTEXT */
+    channel c
+        from env to Complexsdl with impulse;
+        from Complexsdl to env with response;
+    endchannel;
+    block Complexsdl;
+        signalroute r
+            from env to Complexsdl with impulse;
+            from Complexsdl to env with response;
+        connect c and r;
+        /* CIF PROCESS (250, 150), (150, 75) */
+        process Complexsdl;
+            /* CIF TEXT (1202, 0), (267, 140) */
+            -- Text area for declarations and comments
+            
+            DCL tmp MyInteger;
+            DCL result MyInteger;
+            /* CIF ENDTEXT */
+            /* CIF START (320, 21), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (320, 71), (70, 35) */
+                NEXTSTATE Wait;
+            /* CIF state (598, 129), (70, 35) */
+            state Wait;
+                /* CIF input (581, 184), (101, 35) */
+                input impulse(tmp);
+                    /* CIF decision (597, 239), (70, 50) */
+                    decision any;
+                        /* CIF ANSWER (533, 309), (106, 23) */
+                        ('informal text'):
+                            /* CIF task (546, 352), (81, 35) */
+                            task result := 2;
+                        /* CIF ANSWER (657, 309), (77, 23) */
+                        (no_name):
+                            /* CIF task (655, 352), (81, 35) */
+                            task result := 3;
+                        /* CIF ANSWER (448, 309), (70, 23) */
+                        (0):
+                            /* CIF task (442, 352), (81, 35) */
+                            task result := 1;
+                        /* CIF ANSWER (754, 309), (70, 23) */
+                        else :
+                            /* CIF task (749, 352), (81, 35) */
+                            task result := 4;
+                    enddecision;
+                    /* CIF output (572, 403), (119, 35) */
+                    output response(result);
+                    /* CIF NEXTSTATE (597, 458), (70, 35) */
+                    NEXTSTATE Wait;
+            endstate;
+        endprocess Complexsdl;
+    endblock;
+endsystem;

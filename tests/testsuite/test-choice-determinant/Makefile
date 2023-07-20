@@ -34,9 +34,10 @@ test-ada:
 
 test-c: 
 	$(OPENGEODE) toto.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn 
-	$(CC) -O$(O) -c *.c
-
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview.asn 
+	$(CC) -O$(O) -o test_c *.c
+	./test_c | diff expected -
+	
 test-if:
 	sdl2if toto.pr
 

@@ -25,15 +25,12 @@ test-qgen-gt-c:
 test-parse:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --check || echo [OK]
 
-test-ada: 
-	$(OPENGEODE) orchestrator.pr system_structure.pr --check || echo [OK]
+test-ada: test-parse
 
-test-c:
-	$(OPENGEODE) orchestrator.pr system_structure.pr --check && 
+test-c: test-parse
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr
-
 
 test-llvm: orchestrator.o
 

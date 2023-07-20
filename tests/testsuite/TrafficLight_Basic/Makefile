@@ -39,7 +39,7 @@ test-ada:
 
 test-c: 
 	$(OPENGEODE) controller.pr system_structure.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview-uniq.asn 
 	$(CC) -O$(O) -c *.c
 
 test-if:

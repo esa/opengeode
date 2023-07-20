@@ -1,30 +1,32 @@
-SYSTEM og;
-    /* CIF TEXT (159, 221), (287, 188) */
+system og;
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (159, 221), (291, 140) */
     -- Text area for declarations and comments
-
-signal dd;
-
+    use Datamodel comment 'dataview-uniq.asn';
+    
+    signal dd;
     /* CIF ENDTEXT */
-    CHANNEL c
-        FROM ENV TO og WITH dd;
-    ENDCHANNEL;
-    BLOCK og;
-        SIGNALROUTE r
-            FROM ENV TO og WITH dd;
-        CONNECT c AND r;
+    channel c
+        from env to og with dd;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with dd;
+        connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
-        PROCESS og;
+        process og;
             /* CIF START (155, 216), (70, 35) */
             START;
                 /* CIF NEXTSTATE (155, 266), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (155, 266), (70, 35) */
-            STATE wait;
-                /* CIF INPUT (155, 321), (70, 35) */
-                INPUT dd;
+            /* CIF state (155, 266), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state wait;
+                /* CIF input (155, 321), (70, 35) */
+                input dd;
                     /* CIF NEXTSTATE (155, 371), (70, 35) */
                     NEXTSTATE -;
-            ENDSTATE;
-        ENDPROCESS og;
-    ENDBLOCK;
-ENDSYSTEM;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;

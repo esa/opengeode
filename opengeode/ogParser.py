@@ -7220,8 +7220,9 @@ def pr_file(root):
     # In case no ASN.1 files are parsed, the DV structure is pre-initialised
     # This to allow SDL types and constant injection in ASN1 ASTs
     DV = type("ASNParseTree", (object, ),
-              {"types": {}, "exportedVariables": {}, "asn1Modules": [],
-                  "exportedTypes": {}, "variables": {}, "SDL_Constants": {}})
+              {"asn1Files": [], "html": '', "importedModules": {}, 
+                "types": {}, "exportedVariables": {}, "asn1Modules": [],
+                "exportedTypes": {}, "variables": {}, "SDL_Constants": {}})
 
     # Re-order the children of the AST to make sure system and use clauses
     # are parsed before process definition - to get signal definitions
