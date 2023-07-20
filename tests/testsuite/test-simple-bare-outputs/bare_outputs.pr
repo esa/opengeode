@@ -1,0 +1,36 @@
+system bare_outputs;
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (467, 58), (291, 140) */
+    use Datamodel comment 'dataview-uniq.asn';
+    
+    signal signal_in;
+    signal signal_out;
+    /* CIF ENDTEXT */
+    channel c
+        from env to bare_outputs with signal_in;
+        from bare_outputs to env with signal_out;
+    endchannel;
+    block bare_outputs;
+        signalroute r
+            from env to bare_outputs with signal_in;
+            from bare_outputs to env with signal_out;
+        connect c and r;
+        /* CIF PROCESS (183, 88), (150, 75) */
+        process bare_outputs;
+            /* CIF START (204, 52), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (204, 107), (70, 35) */
+                NEXTSTATE state_1;
+            /* CIF state (123, 107), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state state_1;
+                /* CIF input (119, 162), (74, 35) */
+                input signal_in;
+                    /* CIF output (114, 217), (84, 35) */
+                    output signal_out;
+                    /* CIF NEXTSTATE (122, 267), (70, 35) */
+                    NEXTSTATE state_1;
+            endstate;
+        endprocess bare_outputs;
+    endblock;
+endsystem;

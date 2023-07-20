@@ -1,7 +1,7 @@
-int main() {
-    CInit();
-    runTransition(0);
+extern void CInitog();
+
+int main()
+{
+    CInitog();
     return 0;
 }
-
-

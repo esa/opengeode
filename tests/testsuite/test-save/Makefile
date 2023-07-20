@@ -33,7 +33,7 @@ test-ada:
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview.asn
 	$(CC) -O$(O) -c *.c
 
 test-if:
@@ -42,7 +42,7 @@ test-if:
 test-python:
 	$(OPENGEODE) og.pr --shared
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview.asn
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Llibog og
 	$(GNATMAKE) -c -fPIC -gnat2012 b~og.adb

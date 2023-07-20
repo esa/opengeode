@@ -1,0 +1,12 @@
+[ERROR] C backend does not support the "Decision ANY" statement
+[ERROR] C backend does not support the "Decision ANY" statement
+[ERROR] C generation failed
+[INFO] ASN.1 Parser: using cache folder None
+[INFO] ASN.1 Parser: using cache folder None
+[INFO] Checking ['decision_any.pr']
+[INFO] Dumping object to "ast.dump" file
+[INFO] Dumping object to "preprocessed_ast.dump" file
+[INFO] Generating C code
+[INFO] Generating C code for process Complexsdl
+[INFO] Parsing complete. Summary, found 1 warnings and 0 errors
+[WARNING] Use of "ANY" introduces non-determinism

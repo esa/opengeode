@@ -1,0 +1,63 @@
+CDRDEMO-DATAVIEW DEFINITIONS ::=
+BEGIN
+
+   Dummy ::= INTEGER(0..0)
+
+   DataItem ::= INTEGER(0..255)
+
+   ActuatorIndex ::= ENUMERATED {
+       actuator1,
+       actuator2
+   }
+
+   ActuatorCommand ::= ENUMERATED {
+       actuatorArm,
+       actuatorExecute,
+       actuatorStandby
+   }
+
+    ActuatorStatus ::= ENUMERATED {
+        actuatorArmed,
+        actuatorExecuting,
+        actuatorStandingBy
+    }
+
+    ActuatorConfiguration ::= SEQUENCE {
+       threshold1 DataItem,
+       threshold2 DataItem
+    }
+
+   SystemCommand ::= CHOICE
+   {
+       goToIdle Dummy,
+       goToOperational ActuatorConfiguration,
+       doReport Dummy
+   }
+
+    SystemTelemetry ::= SEQUENCE {
+        reading DataItem,
+        status1 ActuatorStatus,
+        status2 ActuatorStatus
+    }
+
+END
+
+
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+T-Null-Record ::= SEQUENCE {}
+
+END

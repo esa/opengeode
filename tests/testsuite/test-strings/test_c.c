@@ -1,6 +1,7 @@
+extern void CInitog();
+
 int main()
 {
-   CInit();
-   runTransition(0);
+   CInitog();
    return 0;
 }

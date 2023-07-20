@@ -1,0 +1,81 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+use Datamodel;
+
+system variable_init;
+   signal ping;
+   signal pong;
+
+   channel c
+      from env to Actuator with ping;
+      from Actuator to env with pong;
+   endchannel;
+
+   block Actuator;
+
+      signalroute r
+      from env to Actuator with ping;
+      from Actuator to env with pong;
+      connect c and r;
+
+      process Actuator;
+          state Nested;
+          substructure
+                  /* CIF TEXT (60, 270), (267, 140) */
+                  -- Text area for declarations and comments
+
+                  dcl z MyInteger := 3;
+                  /* CIF ENDTEXT */
+                  /* CIF START (351, 100), (70, 35) */
+                  START;
+                      /* CIF NEXTSTATE (351, 155), (70, 35) */
+                      NEXTSTATE A;
+                  /* CIF state (671, 167), (70, 35) */
+                  state B;
+                      /* CIF input (671, 222), (70, 35) */
+                      input ping;
+                          /* CIF output (671, 277), (70, 35) */
+                          output pong;
+                          /* CIF return (688, 332), (35, 35) */
+                          return ;
+                  endstate;
+                  /* CIF state (351, 155), (70, 35) */
+                  state A;
+                      /* CIF input (351, 210), (70, 35) */
+                      input ping;
+                          /* CIF output (351, 265), (70, 35) */
+                          output pong;
+                          /* CIF NEXTSTATE (351, 320), (70, 35) */
+                          NEXTSTATE B;
+                  endstate;
+          endsubstructure;
+          /* CIF TEXT (1337, 265), (267, 140) */
+          -- Text area for declarations and comments
+
+          dcl param MyInteger := 3;
+          dcl seq MySeq := { x 1, y 2};
+          /* CIF ENDTEXT */
+          /* CIF START (520, 216), (70, 35) */
+          START;
+              /* CIF NEXTSTATE (520, 266), (70, 35) */
+              NEXTSTATE Wait;
+          /* CIF state (1317, 501), (70, 35) */
+          state Nested;
+              /* CIF connect (1317, 556), (70, 35) */
+              connect ;
+                  /* CIF NEXTSTATE (1317, 611), (70, 35) */
+                  NEXTSTATE Wait;
+          endstate;
+          /* CIF state (1027, 290), (70, 35) */
+          state Wait;
+              /* CIF input (1027, 345), (70, 35) */
+              input ping;
+                  /* CIF output (1027, 400), (70, 35) */
+                  output pong;
+                  /* CIF NEXTSTATE (1027, 455), (70, 35) */
+                  NEXTSTATE Nested;
+          endstate;
+      endprocess Actuator;
+
+   endblock;
+
+endsystem;

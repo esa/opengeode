@@ -1,0 +1,51 @@
+system complexsdl;
+    /* CIF TEXT (552, 9), (291, 140) */
+    use Datamodel comment 'dataview-uniq.asn';
+    
+    signal impulse(MyInteger);
+    
+    signal response(MyInteger);
+    /* CIF ENDTEXT */
+    channel c
+        from env to complexsdl with impulse;
+        from complexsdl to env with response;
+    endchannel;
+    block complexsdl;
+        signalroute r
+            from env to complexsdl with impulse;
+            from complexsdl to env with response;
+        connect c and r;
+        /* CIF PROCESS (250, 150), (150, 75) */
+        process complexsdl;
+            /* CIF TEXT (1209, 18), (267, 140) */
+            -- Text area for declarations and comments
+            
+            DCL tmp MyInteger;
+            
+            timer frameTimer;
+            /* CIF ENDTEXT */
+            /* CIF START (320, 21), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (320, 71), (70, 35) */
+                NEXTSTATE Idle;
+            /* CIF state (598, 129), (70, 35) */
+            state Idle;
+                /* CIF input (577, 184), (101, 35) */
+                input impulse(tmp);
+                    /* CIF PROCEDURECALL (530, 239), (196, 35) */
+                    call set_timer(1000, frameTimer);
+                    /* CIF NEXTSTATE (593, 289), (70, 35) */
+                    NEXTSTATE Wait;
+            endstate;
+            /* CIF state (951, 156), (70, 35) */
+            state Wait;
+                /* CIF input (939, 211), (92, 35) */
+                input frameTimer;
+                    /* CIF output (931, 266), (109, 35) */
+                    output response(tmp);
+                    /* CIF NEXTSTATE (951, 321), (70, 35) */
+                    NEXTSTATE Idle;
+            endstate;
+        endprocess complexsdl;
+    endblock;
+endsystem;

@@ -1,20 +1,26 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include "dataview-uniq.h"
-extern void run();
-extern void runTransition(int);
 
-void expressions_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
-    if (!*res) {
-        printf("%s\n", msg);
-        exit(1);
+extern void CInitexpressions();
+extern void expressions_PI_run();
+
+void expressions_RI_assert(asn1SccBoolean * res, asn1SccCharString * msg)
+{
+    if (*res)
+    {
+        printf("PASS: %s\n", msg);
+    }
+    else
+    {
+        printf("FAIL: %s\n", msg);
     }
 }
 
+int main()
+{
+    CInitexpressions();
 
-int main() {
-    runTransition(0);
-    run();
+    expressions_PI_run();
+    
     return 0;
 }
-

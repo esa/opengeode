@@ -1,11 +1,21 @@
+#include <math.h>
+
+extern void CInitchallenge();
+
+extern void challenge_PI_run();
+extern void challenge_PI_go_off();
+
+void challenge_RI_pow(long long *a, long long *b, long long *res)
+{
+    *res = (long long)pow((double)*a, (double)*b);
+}
+
 int main()
 {
-//    CInit();
-    runTransition(0);
-    run();
-    go_off();
+    CInitchallenge();
+
+    challenge_PI_run();
+    challenge_PI_go_off();
     
     return 0;
 }
-
-

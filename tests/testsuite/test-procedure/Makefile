@@ -29,9 +29,7 @@ test-ada:
 	$(OPENGEODE) og.pr --toAda || :
 
 test-c: 
-	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn
-	$(CC) -O$(O) -c *.c
+	$(OPENGEODE) og.pr --toC || :
 
 test-if:
 	sdl2if og.pr

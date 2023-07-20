@@ -1,0 +1,134 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+use Datamodel;
+
+system Host;
+
+   /* CIF Keep Specific Geode PARAMNAMES x */
+   signal trigger (MyInteger);
+
+   /* CIF Keep Specific Geode PARAMNAMES x */
+   signal action (MyInteger);
+
+   channel c
+      from env to Host with trigger;
+      from Host to env with action;
+   endchannel;
+
+   block Host;
+
+      signalroute r
+      from env to Host with trigger;
+      from Host to env with action;
+      connect c and r;
+
+/* CIF PROCESS (250, 150), (150, 75) */
+process Host;
+    /* CIF TEXT (425, 0), (267, 140) */
+    DCL x MyInteger;
+    DCL a MyINteger;
+    DCL b MyInteger;
+    DCL y MyInteger;
+    DCL r MyInteger;
+    /* CIF ENDTEXT */
+    /* CIF procedure (815, 246), (91, 40) */
+    procedure multireturn;
+        /* CIF TEXT (77, 33), (177, 88) */
+        fpar 
+        in a MyInteger;
+        returns MyInteger;
+        
+        DCL r MyInteger;
+        /* CIF ENDTEXT */
+        /* CIF START (451, 134), (70, 35) */
+        START;
+            /* CIF decision (451, 189), (70, 50) */
+            decision a;
+                /* CIF ANSWER (406, 259), (70, 24) */
+                (> 10):
+                    /* CIF task (406, 303), (70, 35) */
+                    task r := a * 2;
+                    /* CIF return (424, 358), (35, 35) */
+                    return r;
+                /* CIF ANSWER (496, 259), (70, 24) */
+                (<= 10):
+                    /* CIF task (495, 303), (71, 35) */
+                    task r := a + 1;
+                    /* CIF return (514, 358), (35, 35) */
+                    return a * r;
+            enddecision;
+    endprocedure;
+    /* CIF procedure (805, 28), (88, 35) */
+    procedure proc;
+        /* CIF START (465, 59), (70, 35) */
+        START;
+            /* CIF task (463, 114), (73, 35) */
+            task y := a + b;
+            /* CIF return (482, 169), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (802, 85), (142, 35) */
+    procedure procWithArguments;
+        /* CIF TEXT (89, 39), (267, 140) */
+        fpar  in p1 MyInteger,
+                  in p2 MyInteger,
+                   out r MyInteger;
+        
+        returns MyInteger;
+        /* CIF ENDTEXT */
+        /* CIF START (469, 132), (70, 35) */
+        START;
+            /* CIF task (460, 187), (87, 35) */
+            task r := p1 + p2;
+            /* CIF return (486, 242), (35, 35) */
+            return r;
+    endprocedure;
+    /* CIF procedure (805, 144), (162, 35) */
+    procedure procWithLocalVariables;
+        /* CIF TEXT (396, 38), (267, 140) */
+        DCL l1 MyInteger;
+        DCL l2 MyInteger;
+        /* CIF ENDTEXT */
+        /* CIF START (114, 36), (70, 35) */
+        START;
+            /* CIF task (114, 91), (70, 35) */
+            task l1 := a;
+            /* CIF task (114, 146), (70, 35) */
+            task l2 := b;
+            /* CIF task (108, 201), (81, 35) */
+            task y := l1 + l2;
+            /* CIF return (131, 256), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (810, 196), (120, 35) */
+    procedure procWithOutput;
+        /* CIF START (167, 44), (70, 35) */
+        START;
+            /* CIF output (164, 99), (74, 35) */
+            output action(y);
+            /* CIF return (184, 154), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF START (320, 326), (70, 35) */
+    START;
+        /* CIF NEXTSTATE (320, 376), (70, 35) */
+        NEXTSTATE Wait;
+    /* CIF state (450, 326), (70, 35) */
+    state Wait;
+        /* CIF input (442, 381), (78, 35) */
+        input trigger(x);
+            /* CIF PROCEDURECALL (447, 436), (70, 35) */
+            call proc;
+            /* CIF task (368, 491), (227, 35) */
+            task r := call procWithArguments(1,b, y);
+            /* CIF PROCEDURECALL (381, 541), (201, 35) */
+            call procWithLocalVariables;
+            /* CIF PROCEDURECALL (421, 596), (120, 35) */
+            call procWithOutput;
+            /* CIF task (405, 651), (152, 35) */
+            task r := call multireturn(a);
+            /* CIF NEXTSTATE (447, 706), (70, 35) */
+            NEXTSTATE wait;
+    endstate;
+endprocess Host;
+   endblock;
+endsystem;

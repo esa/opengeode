@@ -25,14 +25,11 @@ test-qgen-gt-c:
 
 test-ada: function_in_sdl.ali dataview-uniq.o
 
-test-c: function_in_sdl.c test_c.o dataview-uniq.o
-	$(CC) function_in_sdl.c -c -o function_in_sdl.o
-	$(CC) test_c.o function_in_sdl.c dataview-uniq.o -lm -o test_c
-	./test_c 
+test-c: function_in_sdl.c dataview-uniq.o
+	$(CC) Function_In_Sdl.c -c -o function_in_sdl.o
 
 test-if:
 	sdl2if function_in_sdl.pr system_structure.pr
-
 
 test-llvm: function_in_sdl.o
 

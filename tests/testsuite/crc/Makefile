@@ -25,15 +25,15 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: 
+test-ada:
 	#make -f Makefile.og
 	$(OPENGEODE) ${ROOT_MODEL} --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make insdl
 
-test-c: 
+test-c:
 	$(OPENGEODE) insdl.pr system_structure.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview-uniq.asn 
 	$(CC) -O$(O) -c *.c
 
 test-if:

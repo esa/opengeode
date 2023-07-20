@@ -14,9 +14,13 @@
 """
 
 import logging
+from types import FunctionType, MethodType, BuiltinFunctionType
 from functools import singledispatch
 from types import GeneratorType
 from collections import defaultdict
+
+import antlr3
+from antlr3 import tree
 
 from .ogAST import *
 
@@ -69,6 +73,9 @@ def dump_obj(obj_name, obj_value, is_ignored, file, indent_level):
     elif obj_value_type in (dict, defaultdict):
         dump_dict_like_obj(obj_value, file, indent_level)
 
+    elif obj_value_type in (bytes, bytearray):
+        dump_bytes_like_obj(obj_value, file, indent_level)
+
     elif obj_value_type == type:
         dump_type_obj(obj_value, file, indent_level)
 
@@ -77,7 +84,13 @@ def dump_obj(obj_name, obj_value, is_ignored, file, indent_level):
 
     elif obj_value_type == GeneratorType:
         dump_generator_obj(obj_value, file, indent_level)
-        
+
+    elif obj_value_type == TypeError:
+        dump_built_in_obj(obj_value, file, indent_level)
+
+    elif obj_value_type == antlr3.tree.CommonTree:
+        file.write(', ignored]\n')
+
     else:
         dump_complex_obj(obj_value, file, indent_level)
 
@@ -135,6 +148,12 @@ def dump_dict_like_obj(obj, file, indent_level):
     file.write('%s}\n' % indent)
 
 
+def dump_bytes_like_obj(obj, file, indent_level):
+    file.write('] ')
+    file.write(str(obj))
+    file.write('\n')
+
+
 def dump_type_obj(obj, file, indent_level):
     if try_mark_obj_as_dumped(obj, file):
         file.write(']\n')
@@ -181,7 +200,6 @@ def dump_user_defined_obj(*args):
 @dump_user_defined_obj.register(Comment)
 @dump_user_defined_obj.register(State)
 @dump_user_defined_obj.register(TextArea)
-@dump_user_defined_obj.register(Procedure)
 def _dump_general_objs(obj, file, indent_level):
     for class_obj_property_name, class_obj_property_value in class_properties_generator(obj, file, indent_level):
         dump_obj(class_obj_property_name, class_obj_property_value, False, file, indent_level + 1)
@@ -200,6 +218,17 @@ def _dump_system(system, file, indent_level):
         is_ignored = False
 
         if class_obj_property_name == 'ast':
+            is_ignored = True
+
+        dump_obj(class_obj_property_name, class_obj_property_value, is_ignored, file, indent_level + 1)
+
+
+@dump_user_defined_obj.register(Procedure)
+def _dump_procedure(procedure, file, indent_level):
+    for class_obj_property_name, class_obj_property_value in class_properties_generator(procedure, file, indent_level):
+        is_ignored = False
+
+        if class_obj_property_name == 'procedures':
             is_ignored = True
 
         dump_obj(class_obj_property_name, class_obj_property_value, is_ignored, file, indent_level + 1)
@@ -252,18 +281,16 @@ def _dump_automaton(automaton, file, indent_level):
 def class_properties_generator(class_obj, file, indent_level):
     indent = generate_indent(indent_level)
 
-    file.write('%s[%s, address %s' % (indent, str(type(class_obj)), get_obj_address_str(class_obj)))
-
-    if not hasattr(class_obj, '__dict__'):
-        file.write(', ignored]\n')
-        return
-    else:
-        file.write(']\n')
-
+    file.write('%s[%s, address %s]\n' % (indent, str(type(class_obj)), get_obj_address_str(class_obj)))
     file.write('%s{\n' % indent)
 
-    for class_obj_property_name, class_obj_property_value in class_obj.__dict__.items():
+    for class_obj_property_name in dir(class_obj):
         if class_obj_property_name.startswith('__'):
+            continue
+
+        class_obj_property_value = getattr(class_obj, class_obj_property_name)
+
+        if isinstance(class_obj_property_value, (FunctionType, MethodType, BuiltinFunctionType)):
             continue
 
         yield (class_obj_property_name, class_obj_property_value)
@@ -297,7 +324,7 @@ def try_mark_obj_as_dumped(obj, file):
 
 
 def get_obj_address_str(obj):
-        return str(hex(id(obj)))
+    return str(hex(id(obj)))
 
 
 def generate_indent(indent_level):

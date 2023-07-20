@@ -1,22 +1,35 @@
 #include <signal.h>
+#include <unistd.h>
+#include <stdio.h>
 #include "dataview-uniq.h"
-void result_data(long long *val)
+
+extern void CInitmyfunction();
+
+extern void myfunction_PI_start_something(asn1SccT_Int32 *);
+extern void myfunction_PI_myTimer();
+
+volatile sig_atomic_t keep_going = 1;
+
+void myfunction_RI_result_data(long long *val)
 {
     printf("[C] result_data: %lld\n", *val);
 }
 
-volatile sig_atomic_t keep_going = 1;
+void myfunction_RI_SET_myTimer(asn1SccT_Int32 *val)
+{
+    printf("[C] SET MyTimer: %lld\n", *val);
+    alarm(((int)*val) / 1000);
+}
+
 void timer_expired()
 {
-    mytimer();
+    myfunction_PI_myTimer();
     keep_going = 0;
 }
 
-void SET_mytimer(asn1SccT_Int32 *val)
+void myfunction_RI_RESET_myTimer()
 {
-    printf("[C] SET MyTimer: %d\n", *val);
-    alarm(((int)*val) / 1000);
-
+    printf("RESET MyTimer\n");
 }
 
 int main()
@@ -25,10 +38,10 @@ int main()
     signal(SIGALRM, timer_expired);
 
     printf("[C Code] Running test\n");
-    CInit();
-    runTransition(0);
-    start_something(&test);
-    while (keep_going);    
+    CInitmyfunction();
+    myfunction_PI_start_something(&test);
+
+    while (keep_going);
     return 0;
 }
 

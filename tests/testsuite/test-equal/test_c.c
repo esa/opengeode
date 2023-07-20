@@ -1,10 +1,21 @@
 #include <stdio.h>
 #include "dataview-uniq.h"
 
-int main() {
+extern void CInitog();
+
+extern void og_PI_go(asn1SccMy_OctStr *);
+
+void og_RI_rezult(asn1SccMy_OctStr *val) 
+{
+    printf("[C] got something]\n");
+}
+
+int main()
+{
     asn1SccMy_OctStr toto;
-    CInit();
-    runTransition(0);
-    go(&toto);
+
+    CInitog();
+    og_PI_go(&toto);
+
     return 0;
 }

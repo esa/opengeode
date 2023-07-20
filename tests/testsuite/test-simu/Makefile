@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
-	#$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
+	#$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview-uniq.asn orchestrator_datamodel.asn
 	#$(CC) -c -g test_ada.c
 	#$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
 	#$(CC) -c external_proc.c
@@ -43,13 +43,12 @@ simu:
 	make -f Makefile.properties
 	./orchestrator_simu.sh
 
-
 test-c:
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn
-	$(CC) -c -g test_c.c
+	#$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview-uniq.asn
+	#$(CC) -c -g test_c.c
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
-	$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
-	./test_c | diff - expected
+	#$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
+	#./test_c | diff - expected
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr

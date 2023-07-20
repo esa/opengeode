@@ -25,14 +25,13 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: 
+test-ada:
 	./check_simulation.sh && rm -rf testsc_simu
 
 test-c: 
 	$(OPENGEODE) testsc.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview.asn
 	$(CC) -O$(O) -c *.c
-
 
 test-if:
 	sdl2if testsc.pr
@@ -41,7 +40,6 @@ test-llvm:
 	$(OPENGEODE) testsc.pr --llvm -O$(O)
 	$(LLC) *.ll
 	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) testsc.pr --toAda
