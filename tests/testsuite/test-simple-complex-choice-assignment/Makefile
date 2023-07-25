@@ -18,7 +18,7 @@ test-ada:
 
 test-c: 
 	$(OPENGEODE) --toC --dumpAST $(ROOT_MODEL)
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO -uPER -ACN complex_choice_assignment.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO  *.asn
 	$(CC) -O$(O) -c *.c
 
 coverage:

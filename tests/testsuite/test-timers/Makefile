@@ -39,7 +39,7 @@ simu:
 
 test-c:
 	$(OPENGEODE) test.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) -o test_c *.c
 	./test_c
 

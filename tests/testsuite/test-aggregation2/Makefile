@@ -36,7 +36,7 @@ test-if:
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview-uniq.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) -c *.c
 
 test-llvm:
@@ -47,7 +47,7 @@ test-llvm:
 test-python:
 	$(OPENGEODE) og.pr --shared
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview-uniq.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Llibog og
 	$(GNATMAKE) -c -fPIC -gnat2012 b~og.adb

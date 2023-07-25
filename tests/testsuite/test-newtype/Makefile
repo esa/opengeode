@@ -31,20 +31,18 @@ test-ada:
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make og
 
-test-c: 
+test-c:
 	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) -c *.c
 
 test-if:
 	sdl2if og.pr
 
-
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)
 	$(LLC) *.ll
 	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
