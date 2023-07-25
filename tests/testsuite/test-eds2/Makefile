@@ -33,18 +33,16 @@ test-ada:
 
 test-c: 
 	$(OPENGEODE) demodevicedsap.pr --toC
-	$(ASN1SCC) -c  -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) -c *.c
 
 test-if:
 	sdl2if demodevicedsap.pr system_structure.pr
 
-
 test-llvm:
 	$(OPENGEODE) demodevicedsap.pr --llvm -O$(O)
 	$(LLC) *.ll
 	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) demodevicedsap.pr --toAda

@@ -32,7 +32,7 @@ test-promela: FORCE
 
 %.c: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
 
 %.if: %.pr FORCE
 	$(SDL2IF) $< ${STRUCT}
@@ -43,7 +43,7 @@ test-promela: FORCE
 	$(GNATMAKE) -O$(O) -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.o: %.asn FORCE
-	$(ASN1SCC) -c -renamePolicy 3 -typePrefix asn1Scc -equal $<  
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO $<
 	$(CC) -O$(O) -c -g $*.c
 
 %.o: %.c FORCE

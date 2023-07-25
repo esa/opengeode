@@ -46,7 +46,7 @@ PROCEDURES = []
 STATES = []
 
 UNICODE_SEP = '___'
-LPREFIX = 'context'
+LPREFIX = 'ctxt'
 
 LEFT_TYPE = ''
 VAR_COUNTER = 0
@@ -121,12 +121,9 @@ def _process(process, simu=False, **kwargs):
 
     if simu:
         SHARED_LIB = True
-        LPREFIX = process_name + u'_ctxt'
-    else:
-        LPREFIX = process_name.lower() + u'_context'
     
     # Prepare the AST for code generation (flatten states, etc.)
-    _ = Helper.code_generation_preprocessing(process)
+    no_renames = Helper.code_generation_preprocessing(process)
 
     # Make the aliases visible
     ALIASES.update(process.aliases)
@@ -143,11 +140,12 @@ def _process(process, simu=False, **kwargs):
     STATES.extend(process.mapping.keys())
 
     beginning_of_include_guard_header_file_code, ending_of_include_guard_header_file_code = generate_header_file_include_guard(process)
-    states_code = generating_states(process)
-    context_code, init_function_code = generating_context_and_init_function(process)
+    sdl_constants_code = generate_sdl_constants(process)
+    aliases_code = processing_process_aliases(process, no_renames)
+    context_code = generating_context(process)
+    startup_header_file_code, startup_function_code = generating_startup_function(process, no_renames)
     run_transition_declaration_code = generating_run_transition_declaration(process)
     nested_states_code = generating_nested_states(process)
-    startup_header_file_code = generating_startup_declaration(process)
     dll_header_file_code, dll_declaration_code, dll_code = generating_dll_code(process, simu)
     inner_procedures_header_file_code, inner_procedures_declarations_code, inner_procedures_code = processing_inner_procedures(process)
     input_signals_header_file_code, input_signals_code = processing_input_signals(process, simu, minicv)
@@ -159,19 +157,20 @@ def _process(process, simu=False, **kwargs):
 
     continuous_signals_header_file_code, transition_code = processing_transitions_and_floating_labels(process)
     includes_code = generating_includes(process)
-    init_functions_code = generating_init_functions()
+    init_functions_for_structures_code = generating_init_functions_for_structures()
     generate_current_state_to_str_code = generating_current_state_to_str(process)
 
     generated_c_source_code = []
     generated_c_source_code.extend(includes_code)
-    generated_c_source_code.extend(init_functions_code)
     generated_c_source_code.extend(nested_states_code)
-    generated_c_source_code.extend(states_code)
+    generated_c_source_code.extend(sdl_constants_code)
+    generated_c_source_code.extend(aliases_code)
     generated_c_source_code.extend(context_code)
     generated_c_source_code.extend(run_transition_declaration_code)
     generated_c_source_code.extend(inner_procedures_declarations_code)
     generated_c_source_code.extend(dll_declaration_code)
-    generated_c_source_code.extend(init_function_code)
+    generated_c_source_code.extend(init_functions_for_structures_code)
+    generated_c_source_code.extend(startup_function_code)
     generated_c_source_code.extend(input_signals_code)
     generated_c_source_code.extend(output_signals_code)
     generated_c_source_code.extend(timers_code)
@@ -898,19 +897,20 @@ def _transition(tr, **kwargs):
                     stmts.append(u'trId = {next_state};'.format(next_state=next_state_id_str))
 
                     if tr.terminator.next_id == -1:
-                        stmts.append(u'{ctxt}.state = {nextState};'.format(ctxt=LPREFIX, nextState=tr.terminator.inputString.lower()))
+                        stmts.append(f'{LPREFIX}.state = {generate_state_name(tr.terminator.inputString)};')
                 else:
                     if any(next_id for next_id in tr.terminator.candidate_id.keys() if next_id != -1):
-                        stmts.append('switch ({}.state)'.format(LPREFIX))
+                        stmts.append(f'switch({LPREFIX}.state)')
                         stmts.append('{')
 
                         for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 for each in sta:
-                                    stmts.append(u'case {} :'.format(each))
-                                    stmts.append(u'{{' u'trId = {};'.format(nid))
-                                    stmts.append(u'break;')
-                                    stmts.append(u'}')
+                                    stmts.append(f'case {generate_state_name(each)}:')
+                                    stmts.append('{')
+                                    stmts.append(f'trId = {nid};')
+                                    stmts.append('break;')
+                                    stmts.append('}')
 
                         stmts.extend(['default:','{','trId = -1;','break;','}','}'])
                     else:
@@ -2030,16 +2030,21 @@ def _null(primary, **kwargs):
     return [], string, []
 
 
-@expression.register(ogAST.PrimEmptyString)
-def _empty_string(primary):
-    ''' Generate code for an empty SEQUENCE OF: {} '''
+def add_type_name_to_init_functions_generated(typename):
     global INIT_FUNCTIONS_GENERATED
     INIT_FUNCTIONS_GENERATED = True
 
-    typename = type_name(primary.exprType)
-
     if typename not in INIT_FUNCTIONS_TYPES:
         INIT_FUNCTIONS_TYPES.append(typename)
+
+
+@expression.register(ogAST.PrimEmptyString)
+def _empty_string(primary):
+    ''' Generate code for an empty SEQUENCE OF: {} '''
+
+    typename = type_name(primary.exprType)
+
+    add_type_name_to_init_functions_generated(typename)
 
     string = u'{}_Init()'.format(typename)
     return [], string, []
@@ -2174,7 +2179,11 @@ def _sequence(seq):
             fd_type = fd_data[1].type
 
             if fd_type.kind == 'ReferenceType':
-                value = u'{}_Init()'.format(type_name(fd_type))
+                typename = type_name(fd_type)
+
+                add_type_name_to_init_functions_generated(typename)
+
+                value = f'{typename}_Init()'
             elif fd_type.kind == 'BooleanType':
                 value = u'false'
             elif fd_type in ('IntegerType', 'RealType'):
@@ -2316,55 +2325,97 @@ def generate_header_file_include_guard(process):
     return beginning_of_include_guard_header_file_code, ending_of_include_guard_header_file_code
 
 
-def generating_states(process):
-    states_code = [u'//// States']
+def generate_sdl_constants(process):
+    sdl_constants_code = [u'//// SDL Constants']
 
-    states_code.append(u'typedef enum')
-    states_code.append(u'{')
+    # First add SDL constants (synonyms) - they can be used in the context
+    for sdl_constant in process.DV.SDL_Constants.values():
+        sdl_constant_basic_type = find_basic_type(sdl_constant.type)
 
-    states = [name for name in process.mapping.keys() if not name.endswith(u'START')]
+        if sdl_constant_basic_type.kind in ('IntegerType', 'RealType', 'NullType', 'BooleanType', 'Integer32Type', 'IntegerU8Type'):
+            val = sdl_constant.value
+            if isinstance(val, ogAST.PrimSelector):
+                # synonym may reference a field of an ASN.1 constant
+                _, val, _ = expression(sdl_constant.value)
+        else:
+            # complex value - must be a ground expression
+            _, val, _ = expression(sdl_constant.value)
+            if sdl_constant_basic_type.kind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
+                val = array_content(sdl_constant.value, val, sdl_constant_basic_type)
+            elif sdl_constant_basic_type.kind == 'NullType':
+                val = '0'
+            elif sdl_constant_basic_type.kind not in ("EnumeratedType", "SequenceType"):
+                # should have been detected by ogParser
+                raise TypeError(f'Constant "{sdl_constant.varName}" value is not a ground expression')
 
-    if states:
-        for state in states:
-            states_code.append(f'{state},')
-    else:
-        states_code.append(u'NO_STATES')
+        data_type = sdl_constant.type.ReferencedTypeName.replace('-', '_')
+        # Don't generate the "self" constant if the process is a process type
+        # as it is provided as a generic parameter during instantiation
+        if process.process_type and sdl_constant.varName == 'self' and 'PID' in TYPES:
+            pass
+        else:
+            sdl_constants_code.append(f"const asn1Scc{data_type} {sdl_constant.varName} = {val};")
 
-    states_code.append(u'} states_t;\n')
+    sdl_constants_code.append('\n')
 
-    return states_code
+    return sdl_constants_code
 
 
-def generating_context_and_init_function(process):
-    context_code = [u'//// Contex']
-    context_code.append(u'typedef struct')
-    context_code.append(u'{')
-    context_code.append(u'flag init_done;')
-    context_code.append(u'states_t state;\n')
+def processing_process_aliases(process, no_renames):
+    aliases_code = ['//// Aliases']
 
-    init_function_code = [u'//// Startup']
-    init_function_code.append(u'void CInit{}()'.format(process.processName))
-    init_function_code.append(u'{')
+    # Add aliases
+    for alias_name, (alias_sort, alias_expr) in process.aliases.items():
+        if alias_name in no_renames:
+            continue
 
-    processing_process_variables(process, init_function_code, context_code)
+        _, qualified, _ = expression(alias_expr)
 
-    context_code.append(u'} context_t;\n')
-    context_code.append(u'__attribute__ ((persistent)) context_t {ct} = {{0}};\n'.format(ct=LPREFIX))
+        #aliases_code.append(f'{type_name(alias_sort)} {alias_name};')
+        aliases_code.append(f'#define {alias_name} {qualified}')
+
+    aliases_code.append('\n')
+
+    return aliases_code
+
+
+def generating_context(process):
+    context_code = ['//// Contex']
+    context_code.append(f'__attribute__ ((persistent)) asn1Scc{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
+
+    return context_code
+
+
+def generating_startup_function(process, no_renames):
+    startup_header_file_code = [u'//// Startup']
+
+    generic = process.instance_of_name
+
+    if not generic:
+        startup_header_file_code.append(u'void {}_startup();'.format(process.processName.lower()))
+
+    startup_header_file_code.append(u'\n')
+
+    startup_function_code = ['//// Startup']
+    startup_function_code.append(f'void CInit{process.processName}()')
+    startup_function_code.append('{')
+
+    processing_process_variables(process, no_renames, startup_function_code)
 
     if process.transitions:
-        init_function_code.append(u'\n')
-        init_function_code.append(u'runTransition{}(0);'.format(process.processName))
+        startup_function_code.append('\n')
+        startup_function_code.append(f'runTransition{process.processName}(0);')
 
-    init_function_code.append(u'{ct}.init_done = true;'.format(ct=LPREFIX))
-    init_function_code.append(u'}\n')
+    startup_function_code.append(f'{LPREFIX}.init_done = true;')
+    startup_function_code.append('}\n')
 
-    init_function_code.append(u'// Required To Work With TASTE\'s Wrappers')
-    init_function_code.append(u'void {}_startup()'.format(process.processName.lower()))
-    init_function_code.append(u'{')
-    init_function_code.append(u'CInit{}();'.format(process.processName))
-    init_function_code.append(u'}\n')
+    startup_function_code.append('// Required To Work With TASTE\'s Wrappers')
+    startup_function_code.append(f'void {process.processName.lower()}_startup()')
+    startup_function_code.append('{')
+    startup_function_code.append(f'CInit{process.processName}();')
+    startup_function_code.append('}\n')
 
-    return context_code, init_function_code
+    return startup_header_file_code, startup_function_code
 
 
 def generating_run_transition_declaration(process):
@@ -2380,62 +2431,59 @@ def generating_nested_states(process):
     nested_states_code = [u'//// Nested States']
 
     for name, val in process.mapping.items():
-        if name.endswith(u'START') and name != u'START':
-            nested_states_code.append(u'#define {name} {val}'.format(name=name, val=str(val)))
+        if name.endswith('START') and name != 'START' and val:
+            nested_states_code.append(f'#define {name} {str(val)}')
 
     nested_states_code.append(u'\n')
 
     return nested_states_code
 
 
-def processing_process_variables(process, context_init_code, context_code):
+def processing_process_variables(process, no_renames, startup_function_code):
     for var_name, (var_type, init) in process.variables.items():
         LOG.debug(var_name)
+
+        if var_name not in no_renames:
+            content = (var_type, init)
+
+            if var_name in process.aliases.keys():
+                LOCAL_VARIABLES[var_name] = content
+            else:
+                VARIABLES[var_name] = content
+
+        if var_name in process.aliases.keys():
+            # aliases are not part of the context
+            continue
 
         if init:
             init_stmt, init_string, init_decl = expression(init)
             basic_type_of_var_type = find_basic_type(var_type)
 
             if basic_type_of_var_type.kind == 'IntegerType' and isinstance(init, (ogAST.PrimOctetStringLiteral, ogAST.PrimBitStringLiteral)):
-                context_init_code.append(u'{ct}.{field} = {init_val};'.format(ct=LPREFIX, field=var_name, init_val=init.numeric_value))
+                startup_function_code.append(u'{ct}.{field} = {init_val};'.format(ct=LPREFIX, field=var_name, init_val=init.numeric_value))
             elif basic_type_of_var_type.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType') and init.is_raw:
                 init_val = array_content(init, init_string, basic_type_of_var_type)
-                context_init_code.append(u'{ct}.{field} = ({type}) {init_val};'.format(ct=LPREFIX, field=var_name, type=type_name(var_type), init_val=init_val))
+                startup_function_code.append(u'{ct}.{field} = ({type}) {init_val};'.format(ct=LPREFIX, field=var_name, type=type_name(var_type), init_val=init_val))
             elif basic_type_of_var_type.kind == 'IA5StringType' and isinstance(init, ogAST.PrimStringLiteral):
                 init_val = array_content(init, init_string, basic_type_of_var_type)
                 
-                context_init_code.append(u'{')
-                context_init_code.append(u'{type} {field}_val = {init_val};'.format(type=type_name(var_type), field=var_name, init_val=init_val))
-                context_init_code.append(u'asn1SccUint {field}_memcpy;\n'.format(field=var_name))
-                context_init_code.append(u'{type}_Initialize({ct}.{field});'.format(ct=LPREFIX, type=type_name(var_type), field=var_name))
-                context_init_code.append(u'for({field}_memcpy = 0; {field}_memcpy < {len}; {field}_memcpy++)'.format(field=var_name, len=(len(init.value) - 2)))
-                context_init_code.append(u'{')
-                context_init_code.append(u'{ct}.{field}[{field}_memcpy] = {field}_val[{field}_memcpy];'.format(ct=LPREFIX, field=var_name))
-                context_init_code.append(u'}')
-                context_init_code.append(u'}')
+                startup_function_code.append(u'{')
+                startup_function_code.append(u'{type} {field}_val = {init_val};'.format(type=type_name(var_type), field=var_name, init_val=init_val))
+                startup_function_code.append(u'asn1SccUint {field}_memcpy;\n'.format(field=var_name))
+                startup_function_code.append(u'{type}_Initialize({ct}.{field});'.format(ct=LPREFIX, type=type_name(var_type), field=var_name))
+                startup_function_code.append(u'for({field}_memcpy = 0; {field}_memcpy < {len}; {field}_memcpy++)'.format(field=var_name, len=(len(init.value) - 2)))
+                startup_function_code.append(u'{')
+                startup_function_code.append(u'{ct}.{field}[{field}_memcpy] = {field}_val[{field}_memcpy];'.format(ct=LPREFIX, field=var_name))
+                startup_function_code.append(u'}')
+                startup_function_code.append(u'}')
             else:
                 if basic_type_of_var_type.kind == 'SequenceType':
                     init_string = u'({type}) {init}'.format(type=type_name(var_type), init=init_string)
 
-                context_init_code.append(u'{ct}.{field} = {init};'.format(ct=LPREFIX, field=var_name, init=init_string))
+                startup_function_code.append(u'{ct}.{field} = {init};'.format(ct=LPREFIX, field=var_name, init=init_string))
 
             assert not init_stmt, 'Initialization of ' + var_name + ' requires to add statement'
             assert not init_decl, 'Initialization of ' + var_name + ' requires to add declarations'
-
-        context_code.append(u'{tn} {vn};'.format(tn = type_name(var_type), vn = var_name))
-
-
-def generating_startup_declaration(process):
-    startup_header_file_code = [u'//// Startup']
-
-    generic = process.instance_of_name
-
-    if not generic:
-        startup_header_file_code.append(u'void {}_startup();'.format(process.processName.lower()))
-
-    startup_header_file_code.append(u'\n')
-
-    return startup_header_file_code
     
 
 def generating_dll_code(process, simu):
@@ -2451,7 +2499,7 @@ def generating_dll_code(process, simu):
 
         for state_name in process.mapping.keys():
             if not state_name.endswith(u'START') and  state_name != 'No_State':
-                dll_declaration_code.append(u'if({ctxt}.state == {sn}) return \"{sn}\\0\";'.format(ctxt=LPREFIX, sn=state_name))
+                dll_declaration_code.append(f'if({LPREFIX}.state == {generate_state_name(state_name)}) return \"{state_name}\\0\";')
 
         dll_declaration_code.append(u'return \"\\0\";')
         dll_declaration_code.append(u'}')
@@ -2464,7 +2512,7 @@ def generating_dll_code(process, simu):
 
         for state_name in process.mapping.keys():
             if not state_name.endswith(u'START') and  state_name != 'No_State':
-                dll_code.append(u'if(strcmp(new_state, \"{st}\") == 0) {ctxt}.state = {st};'.format(st=state_name, ctxt=LPREFIX))
+                dll_code.append(f'if(strcmp(new_state, \"{state_name}\") == 0) {LPREFIX}.state = {generate_state_name(state_name)};')
 
         dll_code.append(u'}')
         dll_code.append(u'')
@@ -2590,14 +2638,14 @@ def processing_input_signals(process, simu, minicv):
 
         input_signals_code.append(pi_header)
         input_signals_code.append(u'{')
-        input_signals_code.append(u'switch({ct}.state)'.format(ct=LPREFIX))
+        input_signals_code.append(f'switch({LPREFIX}.state)')
         input_signals_code.append(u'{')
 
         for state in process.mapping.keys():
             if state.endswith(u'START'):
                 continue
 
-            input_signals_code.append(u'case {st}:'.format(st=state))
+            input_signals_code.append(f'case {generate_state_name(state)}:')
             input_signals_code.append('{')
             input_def = process.input_mapping[signal['name']].get(state)
             # Check for nested states to call optional exit procedure
@@ -2780,28 +2828,29 @@ def generating_includes(process):
 
     for each in process.DV.asn1Files:
         hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
-        includes_code.append(u'#include "{}"'.format(hname.split(os.sep)[-1]))
+        includes_code.append(f'#include "{hname.split(os.sep)[-1]}"')
 
-    includes_code.append(u'#include \"{process_name}.h\"\n'.format(process_name=process.processName))
+    includes_code.append(f'#include \"{process.name.lower()}_datamodel.h\"')
+    includes_code.append(f'#include \"{process.processName}.h\"\n')
 
     return includes_code
     
 
-def generating_init_functions():
-    init_functions_code = [u'//// Initialize Functions For Structures']
+def generating_init_functions_for_structures():
+    init_functions_for_structures_code = [u'//// Initialize Functions For Structures']
 
     if INIT_FUNCTIONS_GENERATED == True:
         for init_function_type in INIT_FUNCTIONS_TYPES:
-            init_functions_code.append(u'{typename} {typename}_Init()'.format(typename=init_function_type))
-            init_functions_code.append(u'{')
-            init_functions_code.append(u'{typename} tmp;'.format(typename=init_function_type))
-            init_functions_code.append(u'{typename}_Initialize(&tmp);'.format(typename=init_function_type))
-            init_functions_code.append(u'return tmp;')
-            init_functions_code.append(u'}\n')
+            init_functions_for_structures_code.append(u'{typename} {typename}_Init()'.format(typename=init_function_type))
+            init_functions_for_structures_code.append(u'{')
+            init_functions_for_structures_code.append(u'{typename} tmp;'.format(typename=init_function_type))
+            init_functions_for_structures_code.append(u'{typename}_Initialize(&tmp);'.format(typename=init_function_type))
+            init_functions_for_structures_code.append(u'return tmp;')
+            init_functions_for_structures_code.append(u'}\n')
 
-    init_functions_code.append(u'\n')
+    init_functions_for_structures_code.append(u'\n')
 
-    return init_functions_code
+    return init_functions_for_structures_code
 
 
 def processing_transitions_and_floating_labels(process):
@@ -2913,7 +2962,7 @@ def processing_transitions_and_floating_labels(process):
             for each in substates:
                 if statename in each.cs_mapping and each.cs_mapping[statename]:
                     if first_of_aggreg:
-                        transition_code.append(f'if({LPREFIX}.state == {agg_name})')
+                        transition_code.append(f'if({LPREFIX}.state == {generate_state_name(agg_name)})')
                         transition_code.append('{')
                         first_of_aggreg = False
 
@@ -2948,7 +2997,7 @@ def processing_transitions_and_floating_labels(process):
             if cs_item:
                 need_final_endif = False
                 first = "else " if done else ""
-                transition_code.append(f'{first}if({LPREFIX}.state == {statename})')
+                transition_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
                 transition_code.append(u'{')
 
             # Change priority 0 (no priority set) to lowest priority
@@ -3222,6 +3271,10 @@ def find_var_in_timers(var):
     return None
 
 
+def generate_state_name(state):
+    return f'asn1Scc{PROCESS_NAME.capitalize()}_States_{state.lower()}'
+
+
 def find_state_in_states(state):
     ''' Return a state name from STATES, with proper case '''
 
@@ -3325,7 +3378,6 @@ def write_statement(param, newline):
             code.append(u'printf(\"{}\");'.format(param.printable_string))
         elif isinstance(param, ogAST.PrimStringLiteral):
             # adding/or not escaping for quote (") character
-
             raw_string = param.value[1:-1]
             new_string = ''
 
@@ -3345,7 +3397,19 @@ def write_statement(param, newline):
 
                 start_pos = quote_pos + 1
 
-            code.append(u'printf(\"{}\");'.format(new_string))
+            # looking for '\n' characters
+            start_pos = 0
+            while True:
+                new_line_pos = new_string.find('\n', start_pos)
+
+                if new_line_pos == -1:
+                    code.append(f'printf(\"{new_string[start_pos:]}\");')
+                    break
+                
+                code.append(f'printf(\"{new_string[start_pos:new_line_pos]}\");')
+                code.append(u'printf(\"\\n\");')
+                
+                start_pos = new_line_pos + 1
         else:
             code, string, local = expression(param)
 

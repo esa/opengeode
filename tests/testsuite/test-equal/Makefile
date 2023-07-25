@@ -31,13 +31,12 @@ test-ada: og.ali dataview-uniq.o | test_ada.o
 	./test_ada | diff expected -
 
 test-c: og.c test_c.o dataview-uniq.o
-	$(CC) -include missing.h og.c -c -o og.o
+	$(CC) og.c -c -o og.o
 	$(CC) test_c.o og.o dataview-uniq.o -lm -o test_c
 	./test_c | diff expected -
 
 test-if:
 	sdl2if og.pr system_structure.pr
-
 
 test-llvm: og.o dataview-uniq.o | test_llvm.o
 	$(CC) og.o dataview-uniq.o test_llvm.o -o test_llvm -lm
