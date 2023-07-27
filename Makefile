@@ -51,9 +51,9 @@ update:
 dependencies:
 	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
-	python3 -m pip install --break-system-packages --user --upgrade pyside6
+	python3 -m pip install --user --upgrade pyside6
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
-	cd /tmp ; wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf - ; cd antlr3_python3_runtime_3.4 ; python3 -m pip install --break-system-packages --user --upgrade .
+	cd /tmp ; wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf - ; cd antlr3_python3_runtime_3.4 ; python3 -m pip install --user --upgrade .
 	sudo apt install -y python3-pygraphviz
 	sudo apt install -y python3-stringtemplate3
 	sudo apt install -y python3-singledispatch
@@ -63,7 +63,7 @@ dependencies:
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
-	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --break-system-packages --upgrade .
+	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --upgrade .
 
 full-install: update
 	$(MAKE) dependencies

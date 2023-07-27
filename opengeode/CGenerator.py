@@ -1157,6 +1157,8 @@ def _prim_call(prim):
 
     else:
         procedure = find_procedure_by_name(function_name)
+        if not procedure:
+            print("ERROR:", function_name)
 
         ret_string = f"{UNICODE_SEP}{PROCESS_NAME.lower()}_{procedure.inputString} ("
         list_of_params = []
