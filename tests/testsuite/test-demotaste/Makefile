@@ -27,11 +27,13 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
-	asn1scc -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make -gnatd.E orchestrator
 
 test-c:
-	$(OPENGEODE) orchestrator.pr system_structure.pr --check && 
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(CC) -O$(O) -c *.c
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr

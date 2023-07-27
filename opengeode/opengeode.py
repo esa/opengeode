@@ -120,6 +120,7 @@ MODULES : List[types.ModuleType] = [
     ogParser,
     Lander,
     AdaGenerator,
+    CGenerator,
     undoCommands,
     Renderer,
     Clipboard,
@@ -3507,7 +3508,12 @@ def init_logging(options):
     # Set log level for all libraries
     LOG.setLevel(level)
     for each in MODULES:
-        each.LOG.addHandler(handler_console)
+        # Some modules may have their own handler
+        # (e.g. Asn1scc), in that case don't add one
+        if hasattr(each, "LOG") and each.LOG.hasHandlers():
+            pass
+        else:
+            each.LOG.addHandler(handler_console)
         each.LOG.setLevel(level)
 
 

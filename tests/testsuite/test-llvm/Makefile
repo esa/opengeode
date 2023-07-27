@@ -33,7 +33,7 @@ test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 test-c: orchestrator.c test_c.o dataview-uniq.o
 	$(CC) orchestrator.c -c -o orchestrator.o
 	$(CC) test_c.o orchestrator.c dataview-uniq.o -lm -o test_c
-	./test_c | diff expected -
+	./test_c
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr

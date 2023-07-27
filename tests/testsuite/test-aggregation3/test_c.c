@@ -1,22 +1,37 @@
 #include <math.h>
 #include <stdio.h>
+#include <stdbool.h>
 
-/* Provide code called by the Ada state machine as external procedure */
+extern void CInitchallenge();
+
+extern void challenge_PI_run();
+extern void challenge_PI_any_one();
+extern void challenge_PI_any_two();
+
 void challenge_RI_pow(long long *a, long long *b, long long *res)
 {
     *res = (long long)pow((double)*a, (double)*b);
 }
 
-int main()
+void challenge_check_queue(bool *res)
 {
-    CInit();
-    runTransition(0);
-    run();
-    run();
-    //printf("Internal state: %lld\n", l_result);
-    any_one();
-    run();
-    return 0;
+    *res = false;
 }
 
+int main()
+{
+    printf("Testing parallel states...\n");
+
+    CInitchallenge();
+
+    challenge_PI_run();
+    challenge_PI_run(); // should have no effect
+
+    challenge_PI_any_one();
+    challenge_PI_any_one(); // Complete action
+    challenge_PI_any_two();
+    challenge_PI_any_two(); // Complete action
+    
+    return 0;
+}
 

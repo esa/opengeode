@@ -1,0 +1,36 @@
+system ComplexAssignment;
+    /* CIF TEXT (144, 214), (519, 140) */
+    use datamodel comment 'complex_choice_assignment.asn';
+    
+    signal tc(SystemCommand);
+    /* CIF ENDTEXT */
+    channel c
+        from env to ComplexAssignment with tc;
+    endchannel;
+    block ComplexAssignment;
+        signalroute r
+            from env to ComplexAssignment with tc;
+        connect c and r;
+        /* CIF PROCESS (259, 87), (150, 75) */
+        process ComplexAssignment;
+            /* CIF TEXT (13, 57), (222, 140) */
+            DCL x dataItem;
+            DCL cmd SystemCommand;
+            /* CIF ENDTEXT */
+            /* CIF START (280, 58), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (280, 113), (70, 35) */
+                NEXTSTATE Idle;
+            /* CIF state (405, 68), (70, 35) */
+            state Idle;
+                /* CIF input (405, 123), (70, 35) */
+                input tc(cmd);
+                /* CIF task (48, 404), (331, 38) */
+                task x := cmd.gotoOperational.threshold2,
+                cmd := gotoOperational: {threshold1 x, threshold2 1};
+                /* CIF NEXTSTATE (405, 528), (70, 35) */
+                NEXTSTATE -;
+            endstate;
+        endprocess ComplexAssignment;
+    endblock;
+endsystem;

@@ -1,0 +1,11 @@
+[ERROR] C backend does not support the "Decision ANY" statement
+[ERROR] C backend does not support the "Decision ANY" statement
+[ERROR] C generation failed
+[INFO] ASN.1 Parser: using cache folder None
+[INFO] ASN.1 Parser: using cache folder None
+[INFO] Checking ['orchestrator.pr', 'system_structure.pr']
+[INFO] Generating C code
+[INFO] Generating C code for process orchestrator
+[INFO] Parsing complete. Summary, found 2 warnings and 0 errors
+[WARNING] Use of "ANY" introduces non-determinism
+[WARNING] Use of "ANY" introduces non-determinism

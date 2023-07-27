@@ -27,7 +27,6 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toAda
-	
 
 test-c: 
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toC
@@ -37,7 +36,6 @@ test-if:
 
 test-llvm:
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --llvm -O$(O)
-
 
 coverage:
 	coverage run -p $(OPENGEODE) DemoDeviceDSAP_fixed.pr --toAda

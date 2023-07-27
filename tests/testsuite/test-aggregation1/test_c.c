@@ -1,7 +1,10 @@
 #include <math.h>
-#include <stdio.h>
 
-/* Provide code called by the Ada state machine as external procedure */
+extern void CInitchallenge();
+
+extern void challenge_PI_run();
+extern void challenge_PI_any_one();
+
 void challenge_RI_pow(long long *a, long long *b, long long *res)
 {
     *res = (long long)pow((double)*a, (double)*b);
@@ -9,14 +12,15 @@ void challenge_RI_pow(long long *a, long long *b, long long *res)
 
 int main()
 {
-    CInit();
-    runTransition(0);
-    run();
-    run();
-    //printf("Internal state: %lld\n", l_result);
-    any_one();
-    run();
+    CInitchallenge();
+
+    challenge_PI_run();
+    challenge_PI_run();
+
+    challenge_PI_any_one();
+
+    challenge_PI_run();
+    
     return 0;
 }
-
 

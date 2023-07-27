@@ -25,7 +25,7 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: 
+test-ada:
 	cp og_ri.ada og_ri.adb
 	$(OPENGEODE) og.pr --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
@@ -33,20 +33,19 @@ test-ada:
 	gnat make -g -O0 check
 	./check | diff expected -
 
-test-c: 
+test-c:
 	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
-	$(CC) -O$(O) -c *.c
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(CC) -O$(O) -o test_c *.c
+	./test_c | diff expected -
 
 test-if:
 	sdl2if og.pr
-
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)
 	$(LLC) *.ll
 	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda

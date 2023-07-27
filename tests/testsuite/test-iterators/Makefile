@@ -45,7 +45,6 @@ simu: test-ada
 	cd build && make -f Makefile.properties && \
 	./orchestrator_simu.sh
 
-
 test-c:
 	echo 'No test for C'
 

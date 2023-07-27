@@ -32,17 +32,15 @@ test-ada: f1.ali
 
 test-c: f1.c test_c.o dataview-uniq.o
 	$(CC) f1.c -c -o f1.o
-	$(CC) test_c.o f1.c dataview-uniq.o -lm -o test_c
+	$(CC) test_c.o f1.o dataview-uniq.o -lm -o test_c
 	./test_c | diff expected -
 
 test-if:
 	sdl2if f1.pr system_structure.pr
 
-
 test-llvm: f1.o dataview-uniq.o | test_llvm.o
 	$(CC) f1.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm
-
 
 coverage:
 	coverage run -p $(OPENGEODE) f1.pr system_structure.pr --toAda

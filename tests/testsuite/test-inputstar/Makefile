@@ -35,7 +35,7 @@ test-ada: dataview-uniq.o | test_ada.o
 	./test_ada | diff expected -
 
 test-c: challenge.c test_c.o dataview-uniq.o
-	$(CC) -include missing.h challenge.c -c -o challenge.o
+	$(CC) challenge.c -c -o challenge.o
 	$(CC) test_c.o challenge.c dataview-uniq.o -lm -o test_c
 	./test_c | diff expected -
 

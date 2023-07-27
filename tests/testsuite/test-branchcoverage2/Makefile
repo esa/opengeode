@@ -31,6 +31,9 @@ test-qgen-gt-c:
 test-ada:
 	$(OPENGEODE) --toAda myfunction.pr system_structure.pr 2>&1 | sort | diff expected - || exit 0
 
+test-c:
+	$(OPENGEODE) --toC myfunction.pr system_structure.pr 2>&1 | sort | diff expected - || exit 0
+
 test-if:
 	sdl2if myfunction.pr system_structure.pr
 

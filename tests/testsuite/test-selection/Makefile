@@ -25,17 +25,16 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: 
+test-ada:
 	#make -f Makefile.og
 	$(OPENGEODE) og.pr --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make og
 
-test-c: 
+test-c:
 	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
 	$(CC) -O$(O) -c *.c
-
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)

@@ -34,7 +34,7 @@ test-ada:
 
 test-c: 
 	$(OPENGEODE) toto.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
 	$(CC) -O$(O) -c *.c
 
 test-if:

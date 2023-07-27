@@ -73,7 +73,7 @@ def main():
             result = each.result()
             errcode, stdout, stderr, path, rule = result
             name = path.replace("/", "")
-            print("(%3d / %3d) %40s: %s" %
+            print("(%3d / %3d) %50s: %s" %
                                (len(results)+1, len(paths),
                                 name, colorMe(errcode,
                                '[OK]' if errcode==0 else

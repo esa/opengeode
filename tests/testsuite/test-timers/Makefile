@@ -25,7 +25,7 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: 
+test-ada:
 	$(OPENGEODE) test.pr --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	cp toto_timer.adasource test_ri.ads
@@ -37,10 +37,11 @@ simu:
 	$(OPENGEODE) test.pr --shared
 	./test_simu.sh
 
-test-c: 
+test-c:
 	$(OPENGEODE) test.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -equal dataview.asn
-	$(CC) -O$(O) -c *.c
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(CC) -O$(O) -o test_c *.c
+	./test_c
 
 test-if:
 	sdl2if test.pr

@@ -84,22 +84,23 @@ def parse_asn1(*files, **options):
     project_cache = os.getenv ("PROJECT_CACHE")
     if project_cache is not None and not os.path.isdir(project_cache):
         try:
-            print(f"[INFO] Creating cache folder {project_cache}")
+            LOG.info(f"Creating cache folder {project_cache}")
             os.makedirs(project_cache)
         except OSError:
             raise TypeError (f'''The configured cache folder "{project_cache} " \
                 is not there and could not be created\n''')
 
-    LOG.info(f"ASN.1 Parser: using cache folder {project_cache}")
+    if project_cache is not None:
+        LOG.info(f"ASN.1 Parser: using cache folder {project_cache}")
     # make sure the same files are not parsed more than once if not modified
     filehash = hashlib.md5()
     file_list = sorted(list(*files))
     try:
         for each in file_list:
             filehash.update(open(each).read().encode('utf-8'))
-            # also hash the file path: it is used in the AST, so it is
-            # not enough to hash the content of the ASN.1 files, as two sets
-            # of input files may have the same hash
+            # also hash the file path: it is used in the AST (in the .py),
+            # so it is not enough to hash the content of the ASN.1 files,
+            # as two sets of input files may have the same hash
             filehash.update(each.encode('utf-8'))
     except IOError as err:
         raise TypeError (str(err))
@@ -110,6 +111,7 @@ def parse_asn1(*files, **options):
     out_html_name = new_hash + ".html"
 
     if new_hash in AST.keys():
+        LOG.info('Reusing ASN.1 model from cache')
         return AST[new_hash]
     elif project_cache is not None:
         outdir = project_cache
@@ -145,6 +147,7 @@ def parse_asn1(*files, **options):
 
     # call the ASN.1 compiler only if there is no existing cached file
     if project_cache is None or not os.path.exists(py_filepath):
+        LOG.info('No ASN.1 file in cache (or no cache folder)')
         stg = asn1scc_root + os.sep + 'python.stg'
 
         if pprint:
@@ -170,6 +173,8 @@ def parse_asn1(*files, **options):
         asn1scc.start(binary, args)
 
         _ = waitfor_qprocess(asn1scc, "ASN.1 Compiler")
+    else:
+        LOG.info('Reusing cached ASN.1 modules')
 
     ast = importlib.import_module(new_hash)
     AST[new_hash] = ast
