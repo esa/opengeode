@@ -731,6 +731,7 @@ def _inner_procedure(proc, **kwargs):
     LOCAL_VARIABLES.update(local_scope)
     LOCAL_OUT_VARIABLES.clear()
     LOCAL_OUT_VARIABLES.update(outer_params)
+    LOG.debug('Expanding procedure ' + proc.inputString + ': DONE')
 
     return code, local_decl
 
@@ -1180,6 +1181,7 @@ def _prim_call(prim):
 
         ret_string += ', '.join(list_of_params)
         ret_string += ')'
+    LOG.debug('Expanding call to ' + function_name + ': DONE')
 
     return ret_stmts, ret_string, ret_decls
 
@@ -1403,7 +1405,7 @@ def _equality(expr):
 
 @expression.register(ogAST.ExprAssign)
 def _assign_expression(expr):
-    LOG.debug(u'Expanding assignment')
+    LOG.debug('Expanding assignment: ' + expr.inputString)
 
     global LEFT_TYPE
     global VAR_COUNTER
@@ -1475,7 +1477,7 @@ def _assign_expression(expr):
             strings.append(u"{} = {};".format(left_string, right_string))
 
     stmts.extend(strings)
-    LOG.debug(u'Expanded assignment')
+    LOG.debug('Expanding assignment: ' + expr.inputString + ': DONE')
 
     return stmts, '', decls
 
@@ -3148,17 +3150,7 @@ def procedure_header(procedure):
 
 def find_basic_type(a_type):
     ''' Return the ASN.1 basic type of a_type '''
-
-    basic_type = a_type
-
-    while basic_type.kind == 'ReferenceType':
-        # Find type with proper case in the data view
-        for typename in TYPES.keys():
-            if typename.lower() == basic_type.ReferencedTypeName.lower():
-                basic_type = TYPES[typename].type
-                break
-
-    return basic_type
+    return Helper.find_basic_type(TYPES, a_type)
 
 
 def array_content(prim, values, asnty):
