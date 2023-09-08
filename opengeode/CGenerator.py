@@ -290,34 +290,34 @@ def _decision(dec, **kwargs):
                         if isinstance(constant, ogAST.PrimSequenceOf):
                             ans_str = array_content(constant, ans_str, question_basic_type)
                             VAR_COUNTER = VAR_COUNTER + 1
-                            decls.append(u'{ty} temp_equal_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
+                            decls.append(u'static {ty} temp_equal_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
                             stmts.insert(stmts_last_index, u'temp_equal_{var_counter} = {init};'.format(var_counter=VAR_COUNTER, init=ans_str))
                             stmts_last_index = stmts_last_index + 1
                             ans_str = u'&temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
                         elif isinstance(constant, ogAST.PrimStringLiteral):
                             ans_str = array_content(constant, ans_str, question_basic_type)
                             VAR_COUNTER = VAR_COUNTER + 1
-                            decls.append(u'{ty} temp_equal_{var_counter} = {init};'.format(ty=actual_type, var_counter=VAR_COUNTER, init=ans_str))
+                            decls.append('static {ty} temp_equal_{var_counter} = {init};'.format(ty=actual_type, var_counter=VAR_COUNTER, init=ans_str))
                             ans_str = u'temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
 
                             if question_basic_type.kind != 'IA5StringType':
                                 ans_str = '&' + ans_str
                         elif isinstance(constant, ogAST.PrimChoiceItem):
                             VAR_COUNTER = VAR_COUNTER + 1
-                            decls.append(u'{ty} temp_equal_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
+                            decls.append('static {ty} temp_equal_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
                             stmts.insert(stmts_last_index, u'temp_equal_{var_counter} = {init};'.format(var_counter=VAR_COUNTER, init=ans_str))
                             stmts_last_index = stmts_last_index + 1
-                            ans_str = u'&temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
+                            ans_str = '&temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
                         elif isinstance(constant, ogAST.ExprNot) and constant_basic_type_kind == 'SequenceOfType':
                             VAR_COUNTER = VAR_COUNTER + 1
-                            decls.append(u'{ty} temp_equal_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
-                            stmts.insert(stmts_last_index, u'temp_equal_{var_counter} = ({ty}) {init};'.format(ty=actual_type, var_counter=VAR_COUNTER, init=ans_str))
+                            decls.append('static {ty} temp_equal_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
+                            stmts.insert(stmts_last_index, 'temp_equal_{var_counter} = ({ty}) {init};'.format(ty=actual_type, var_counter=VAR_COUNTER, init=ans_str))
                             stmts_last_index = stmts_last_index + 1
-                            ans_str = u'&temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
+                            ans_str = '&temp_equal_{var_counter}'.format(var_counter=VAR_COUNTER)
                         else:
                             ans_str = '&' + ans_str
 
-                        exp = u'{actType}_Equal({question_pointer}tmp{idx}, {ans})'.format(actType=actual_type, question_pointer=question_pointer, idx=dec.tmpVar, ans=ans_str)
+                        exp = '{actType}_Equal({question_pointer}tmp{idx}, {ans})'.format(actType=actual_type, question_pointer=question_pointer, idx=dec.tmpVar, ans=ans_str)
 
                         if op == ogAST.ExprNeq:
                             exp = u'! {}'.format(exp)
@@ -1361,23 +1361,23 @@ def _equality(expr):
             
             if isinstance(expr.right, ogAST.PrimReal):
                 VAR_COUNTER = VAR_COUNTER + 1
-                decls.append(u'{ty} constant_{var_counter} = {cst};'.format(ty=actual_type, var_counter=VAR_COUNTER, cst=right_string))
-                right_string = u'&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
+                decls.append('static {ty} constant_{var_counter} = {cst};'.format(ty=actual_type, var_counter=VAR_COUNTER, cst=right_string))
+                right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
             elif isinstance(expr.right, ogAST.PrimStringLiteral):
                 VAR_COUNTER = VAR_COUNTER + 1
 
                 if lbty.kind == 'IA5StringType':
-                    decls.append(u'{ty} constant_{var_counter} = {{{values}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
-                    right_string = u'constant_{var_counter}'.format(var_counter=VAR_COUNTER)
+                    decls.append('static {ty} constant_{var_counter} = {{{values}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
+                    right_string = 'constant_{var_counter}'.format(var_counter=VAR_COUNTER)
                 else:
-                    decls.append(u'{ty} constant_{var_counter} = ({ty}) {{{size}, {{{values}}}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
-                    right_string = u'&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
+                    decls.append('static {ty} constant_{var_counter} = ({ty}) {{{size}, {{{values}}}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
+                    right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
             elif not (isinstance(expr.right, ogAST.PrimVariable)):
                 raise NotImplementedError(str(type(expr.right)) + ' in right part of comparison')
             else:
                 right_string = '&' + right_string
             
-            string = u'{sort}_Equal({left}, {right})'.format(sort=actual_type, left=left_string, right=right_string)
+            string = '{sort}_Equal({left}, {right})'.format(sort=actual_type, left=left_string, right=right_string)
         else:
             # Raw types on both left and right.... use simple operator
             if isinstance(expr.right, ogAST.PrimStringLiteral):
@@ -1391,11 +1391,11 @@ def _equality(expr):
                 else:
                     raise NotImplementedError('Type of {var} is unknown'.format(var=variable_name))
                 
-                decls.append(u'{ty} constant_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=left_type, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
+                decls.append('static {ty} constant_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=left_type, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
                 right_string = u'constant_{var_counter}'.format(var_counter=VAR_COUNTER)
-                string = u'{left_type}_Equal(&{ls}, &{rs})'.format(left_type=left_type, ls=left_string, rs=right_string)
+                string = '{left_type}_Equal(&{ls}, &{rs})'.format(left_type=left_type, ls=left_string, rs=right_string)
             else:
-                string = u"({left}) {op} ({right})".format(left=left_string, op=operand, right=right_string)
+                string = "({left}) {op} ({right})".format(left=left_string, op=operand, right=right_string)
 
         if isinstance(expr, ogAST.ExprNeq):
             string = u'! {}'.format(string)
@@ -1471,10 +1471,10 @@ def _assign_expression(expr):
     else:
         if isinstance(expr.right, ogAST.PrimSequence):
             VAR_COUNTER = VAR_COUNTER + 1
-            decls.append(u'{ty} constant_{var_counter} = {init};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, init=right_string))
-            stmts.append(u'{ls} = constant_{var_counter};'.format(ls=left_string, var_counter=VAR_COUNTER))
+            decls.append('static {ty} constant_{var_counter} = {init};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, init=right_string))
+            stmts.append('{ls} = constant_{var_counter};'.format(ls=left_string, var_counter=VAR_COUNTER))
         else:
-            strings.append(u"{} = {};".format(left_string, right_string))
+            strings.append("{} = {};".format(left_string, right_string))
 
     stmts.extend(strings)
     LOG.debug('Expanding assignment: ' + expr.inputString + ': DONE')
@@ -1714,7 +1714,7 @@ def _append(expr):
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
 
-        decls.append(u'{ty} constant_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
+        decls.append('static {ty} constant_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
 
         #First copy left part in the result
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
@@ -1758,7 +1758,7 @@ def _append(expr):
     elif isinstance(expr.left, ogAST.PrimSubstring) and isinstance(expr.right, ogAST.PrimSequenceOf):
         decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
-        decls.append(u'{ty} constant_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
+        decls.append('static {ty} constant_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
 
@@ -1841,8 +1841,8 @@ def _append(expr):
 
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=typename, var_counter=VAR_COUNTER))
-        decls.append(u'{ty} constant_left_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=typename, var_counter=VAR_COUNTER, size=lbty.Max, init=left_string))
-        decls.append(u'{ty} constant_right_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=typename, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
+        decls.append('static {ty} constant_left_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=typename, var_counter=VAR_COUNTER, size=lbty.Max, init=left_string))
+        decls.append('static {ty} constant_right_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=typename, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = typename
 
@@ -1865,8 +1865,8 @@ def _append(expr):
         typename = type_name(expr.expected_type)
 
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
-        decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=typename, var_counter=VAR_COUNTER))
-        decls.append(u'{ty} constant_right_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=typename, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
+        decls.append('static {ty} memcpy_temp_{var_counter};'.format(ty=typename, var_counter=VAR_COUNTER))
+        decls.append('static {ty} constant_right_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=typename, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = typename
 
@@ -1884,13 +1884,13 @@ def _append(expr):
 
         stmts.append(u'memcpy_temp_{var_counter}.nCount = {left}.nCount + constant_right_{var_counter}.nCount;'.format(var_counter=VAR_COUNTER, left=left_string))
 
-        string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
+        string = 'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     elif isinstance(expr.left, ogAST.PrimStringLiteral) and isinstance(expr.right, ogAST.PrimVariable):
         typename = type_name(expr.expected_type)
 
-        decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
-        decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=typename, var_counter=VAR_COUNTER))
-        decls.append(u'{ty} constant_left_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=typename, var_counter=VAR_COUNTER, size=lbty.Max, init=left_string))
+        decls.append('int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
+        decls.append('static {ty} memcpy_temp_{var_counter};'.format(ty=typename, var_counter=VAR_COUNTER))
+        decls.append('static {ty} constant_left_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=typename, var_counter=VAR_COUNTER, size=lbty.Max, init=left_string))
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = typename
 
@@ -2330,7 +2330,7 @@ def generate_header_file_include_guard(process):
 
 
 def generate_sdl_constants(process):
-    sdl_constants_code = [u'//// SDL Constants']
+    sdl_constants_code = ['//// SDL Constants']
 
     # First add SDL constants (synonyms) - they can be used in the context
     for sdl_constant in process.DV.SDL_Constants.values():
@@ -2358,7 +2358,7 @@ def generate_sdl_constants(process):
         if process.process_type and sdl_constant.varName == 'self' and 'PID' in TYPES:
             pass
         else:
-            sdl_constants_code.append(f"const asn1Scc{data_type} {sdl_constant.varName} = {val};")
+            sdl_constants_code.append(f"static const asn1Scc{data_type} {sdl_constant.varName} = {val};")
 
     sdl_constants_code.append('\n')
 
@@ -2385,7 +2385,8 @@ def processing_process_aliases(process, no_renames):
 
 def generating_context(process):
     context_code = ['//// Contex']
-    context_code.append(f'__attribute__ ((persistent)) asn1Scc{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
+    #context_code.append(f'__attribute__ ((persistent)) asn1Scc{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
+    context_code.append(f'static asn1Scc{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
 
     return context_code
 
