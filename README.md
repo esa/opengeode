@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.10 (09/2023)**
+- Various fixes in the C backend
+
 **4.1.9 (06/2023)**
 - Fix support of the renaming clause in C and Ada backends
 
