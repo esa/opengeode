@@ -1,5 +1,6 @@
 /* CIF PROCESS (161, 140), (150, 75) */
 process operators;
+    /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (355, 21), (227, 140) */
     DCL i MyInteger := 2;
     DCL f Real := 2.0;
@@ -15,42 +16,43 @@ process operators;
         /* CIF NEXTSTATE (178, 113), (70, 35) */
         NEXTSTATE Wait;
     /* CIF state (178, 113), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state Wait;
         /* CIF input (179, 168), (70, 35) */
         input run;
-            /* CIF PROCEDURECALL (121, 218), (184, 35) */
+            /* CIF PROCEDURECALL (121, 223), (184, 35) */
             call assert(abs(-i) = i, 'abs(-i) = i');
-            /* CIF PROCEDURECALL (118, 268), (191, 35) */
+            /* CIF PROCEDURECALL (118, 273), (191, 35) */
             call assert(abs(-f) = f, 'abs(-f) = f');
-            /* CIF PROCEDURECALL (78, 318), (271, 35) */
+            /* CIF PROCEDURECALL (78, 328), (271, 35) */
             call assert(ceil(f + 0.5) = 3.0, 'ceil(f + 0.5) = 3.0');
-            /* CIF PROCEDURECALL (56, 368), (314, 35) */
+            /* CIF PROCEDURECALL (56, 378), (314, 35) */
             call assert(round(cos(pi)) = -1.0, 'round(cos(pi)) = -1.0');
-            /* CIF PROCEDURECALL (128, 418), (170, 35) */
+            /* CIF PROCEDURECALL (128, 428), (170, 35) */
             call assert(fix(f) = i, 'fix(f) = i');
-            /* CIF PROCEDURECALL (116, 468), (195, 35) */
+            /* CIF PROCEDURECALL (116, 478), (195, 35) */
             call assert(float(i) = f, 'float(i) = f');
-            /* CIF PROCEDURECALL (82, 518), (262, 35) */
+            /* CIF PROCEDURECALL (82, 528), (262, 35) */
             call assert(floor(f + 0.5) = f, 'floor(f + 0.5) = f');
-            /* CIF PROCEDURECALL (54, 568), (319, 35) */
+            /* CIF PROCEDURECALL (54, 578), (319, 35) */
             call assert(length(fixSeqOf) = 3, 'length(fixSeqOf) = 3');
-            /* CIF PROCEDURECALL (50, 618), (326, 35) */
+            /* CIF PROCEDURECALL (50, 628), (326, 35) */
             call assert(length(varSeqOf) = 3, 'length(varSeqOf) = 3');
-            /* CIF PROCEDURECALL (104, 668), (219, 35) */
+            /* CIF PROCEDURECALL (104, 678), (219, 35) */
             call assert(num(e) = 12, 'num(e) = 12');
-            /* CIF PROCEDURECALL (90, 718), (246, 35) */
+            /* CIF PROCEDURECALL (90, 728), (246, 35) */
             call assert(power(i, 3) = 8, 'power(i, 3) = 8');
-            /* CIF PROCEDURECALL (63, 768), (301, 35) */
+            /* CIF PROCEDURECALL (63, 778), (301, 35) */
             call assert(round(sin(pi)) = 0.0, 'round(sin(pi)) = 0.0');
-            /* CIF PROCEDURECALL (85, 818), (256, 35) */
+            /* CIF PROCEDURECALL (85, 828), (256, 35) */
             call assert(sqrt(16.0) = 4.0, 'sqrt(16.0) = 4.0');
-            /* CIF PROCEDURECALL (80, 868), (267, 35) */
+            /* CIF PROCEDURECALL (80, 878), (267, 35) */
             call assert(trunc(f + 0.1) = f, 'trunc(f + 0.1) = f');
-            /* CIF PROCEDURECALL (156, 918), (115, 35) */
+            /* CIF PROCEDURECALL (156, 928), (115, 35) */
             call writeln(i, f, b, s);
-            /* CIF PROCEDURECALL (162, 968), (103, 35) */
+            /* CIF PROCEDURECALL (162, 978), (103, 35) */
             call write(i, f, b, s);
-            /* CIF NEXTSTATE (179, 1018), (70, 35) */
+            /* CIF NEXTSTATE (179, 1028), (70, 35) */
             NEXTSTATE Wait;
     endstate;
 endprocess operators;

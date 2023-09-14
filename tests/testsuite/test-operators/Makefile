@@ -31,8 +31,8 @@ test-ada: operators.ali dataview-uniq.o | test_ada.o
 	./test_ada | diff expected -
 
 test-c: operators.c test_c.o dataview-uniq.o
-	$(CC) operators.c -c -o operators.o
-	$(CC) test_c.o operators.o dataview-uniq.o -lm -o test_c
+	$(CC) -g operators.c -c -o operators.o
+	$(CC) -g test_c.o operators.o dataview-uniq.o -lm -o test_c
 	./test_c | diff expected_c -
 
 test-if:

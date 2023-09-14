@@ -44,9 +44,10 @@ simu:
 	./orchestrator_simu.sh
 
 test-c:
-	#$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	#$(CC) -c -g test_c.c
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
+	gcc -c *.c
 	#$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
 	#./test_c | diff - expected
 

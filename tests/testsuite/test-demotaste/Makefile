@@ -32,7 +32,7 @@ test-ada:
 
 test-c:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) -c *.c
 
 test-if:
