@@ -1,7 +1,7 @@
 TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
-T-Uint32 ::= INTEGER (0..100000000)
+T-UInt32 ::= INTEGER (0..100000000)
 
 TC-Type ::= SEQUENCE {
      apid INTEGER (0..100),
