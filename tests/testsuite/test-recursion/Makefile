@@ -31,13 +31,13 @@ test-ada: dataview-uniq.o test_ada.o
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 	$(GNATLINK) -o test_ada test_ada.o dataview-uniq.o og.ali
-	./test_ada
+	./test_ada | diff expected -
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
-	$(CC) -O$(O) -o test_c *.c
-	./test_c
+	$(CC) -O$(O) -o test_c og.c test_c.c og_datamodel.c dataview-uniq.c
+	./test_c | diff expected -
 
 test-if:
 	sdl2if og.pr
