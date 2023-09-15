@@ -767,12 +767,11 @@ def check_call(name, params, context):
         # check that the list of enumerants are identical. unfortunately we
         # cannot check the ordering, as it is an unordered dict
         if name == 'to_selector':
-            # if the sort is a subtype, it may not have a -selection suffix
+            # if the sort is a subtype, it may not have a -Selection suffix
             # and an exception may be raised. FIXME : check "present" operator
             # as the issue is already fixed there
-            return_type = new_ref_type(f'{sort.title()}-selection')
-            #return_type = types()[sort.title() + '-selection'].type
-            base_sort = types()[sort.title() + '-selection'].type
+            return_type = new_ref_type(f'{sort.title()}-Selection')
+            base_sort = types()[sort.title() + '-Selection'].type
         else:
             return_type = new_ref_type(sort)
             #return_type = types()[sort].type
@@ -936,7 +935,7 @@ def check_call(name, params, context):
         # When we get there, the parameter has been checked already and we
         # know it is a CHOICE type.
         # However it may be a subtype, and in the AST the choices are defined
-        # in the supertype, so we must find it and add the -selection suffix
+        # in the supertype, so we must find it and add the -Selection suffix
         # This suffix is added by the Asn1scc module.
         sort = p.exprType
         sort_name = type_name (sort)
@@ -950,9 +949,8 @@ def check_call(name, params, context):
         # we must return a referenced type, otherwise the present operator
         # could not be used as the parameter of a function that needs to
         # know the type of the parameter to cast or prefix it (e.g. to_enum)
-        selection_type = new_ref_type(f'{context.processName}-{sort_name.title()}-selection')
+        selection_type = new_ref_type(f'{context.processName}-{sort_name.title()}-Selection')
         return (selection_type, warnings)
-        #return (types()[sort_name.title() + "-selection"].type, warnings)
 
     # choice_to_int: returns an integer corresponding to either the currently
     # selected choice value (e.g. foo in CHOICE { foo INTEGER (..), ... } when
@@ -1574,7 +1572,7 @@ def compare_types(type_a, type_b):   # type -> [warnings]
 
 def find_variable_type(var, context):
     ''' Look for a variable name in the context and return its type
-    If the type is a choice selector (-selection), return the name
+    If the type is a choice selector (-Selection), return the name
     prefixed with the process name.
     '''
     def selector(sort):

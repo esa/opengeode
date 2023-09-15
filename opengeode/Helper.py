@@ -771,7 +771,7 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
             continue
         # If the type is a ends with _selection, i.e. it is an OG-created
         # CHOICE selector, then prefix the type with the process name
-        if sortname.endswith('-selection'):
+        if sortname.endswith('-Selection'):
             sortname = f'{process.name}-{sortname}'.title()
         context_elems.append(f'{var_name.lower()} {sortname}')
 
@@ -810,10 +810,10 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
             # by using the process name as prefix, to avoid any risk of
             # duplicate type definition in case it exists in another SDL
             # process of the system.
-            prefixed_name = f'{process.name}_{sortdef.ChoiceTypeName}_selection'
+            prefixed_name = f'{process.name}_{sortdef.ChoiceTypeName}_Selection'
             keys = []
             for idx, key in enumerate(sortdef.type.EnumValues.keys()):
-                # give an index to the enumerations to align with -selection
+                # give an index to the enumerations to align with -Selection
                 # types used in choice index
                 keys.append(f'{key}-present({idx+1})')
             asn1_template.append(

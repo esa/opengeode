@@ -1161,7 +1161,44 @@ def _prim_call(prim):
 
         shift_operator = '<<' if function_name == "shift_left" else '>>'
         ret_string = u'({} {} {})'.format(s1, shift_operator, s2)
-
+    elif function_name == 'exist':
+        # User wants to know if an optional field is present or not
+        selector = params[0]  # type PrimSelector
+        receiver = selector.value[0]
+        field    = selector.value[1]
+        # In C, case matters, so we must retrieve the field name in the type
+        fields   = find_basic_type(receiver.exprType).Children.keys()
+        for each in fields:
+            with_case = each.replace('-', '_')
+            if with_case.lower() == field.lower():
+                field = with_case
+                break
+        rec_stmt, rec_str, rec_decl = expression (receiver)
+        ret_stmts.extend(rec_stmt)
+        ret_decls.extend(rec_decl)
+        ret_string += f'({rec_str}.exist.{field} == 1)'
+    elif function_name in ('to_selector', 'to_enum'):
+        variable, target_type = params
+        var_typename = type_name (variable.exprType, False)
+        var_stmts, var_str, var_decl = expression (variable)
+        ret_stmts.extend(var_stmts)
+        ret_decls.extend(var_decl)
+        destSort = target_type.value[0]
+        sortC = destSort.replace('-', '_')
+        sort_name = f'asn1Scc{PROCESS_NAME.capitalize()}_{sortC.capitalize()}_Selection'
+        if function_name == 'to_selector':
+            ret_string += f"(({sort_name}){var_str})"
+        elif function_name == 'to_enum':
+            sort_name_val = f'asn1Scc{sortC}'
+            sort_name = f'asn1Scc{var_typename}'
+            ret_string += f"(({sort_name_val}){var_str})"
+    elif function_name == 'val':
+        variable, target_type = params
+        var_typename = type_name (variable.exprType)
+        var_stmts, var_str, var_decl = expression (variable)
+        ret_stmts.extend(var_stmts)
+        ret_decls.extend(var_decl)
+        ret_string += f"((int){var_str})"
     else:
         procedure = find_procedure_by_name(function_name)
         if not procedure:
