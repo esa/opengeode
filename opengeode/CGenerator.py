@@ -965,7 +965,7 @@ def _primary_variable(prim):
 
     prim_variable_raw_value = prim.value[0]
     out_string = ''
-    
+
     if '.' in prim_variable_raw_value:
         _, qualified = ALIASES[prim.renamed_from]
         _, string, _ = expression(qualified)
@@ -977,17 +977,18 @@ def _primary_variable(prim):
         variable = find_var_in_variables(prim_variable_raw_value)
 
         if local_out_variable:
-            out_string = u'(*{})'.format(local_out_variable)
+            out_string = f'(*{local_out_variable})'
         elif local_variable:
-            out_string = u'{}'.format(local_variable)
+            out_string = local_variable
         elif timer_variable:
-            out_string = u'{}'.format(timer_variable)
+            out_string = timer_variable
         elif variable:
-            out_string = u'{}.{}'.format(LPREFIX, variable)
+            out_string = f'{LPREFIX}.{variable}'
         else:
-            error = 'PrimVariable value ({}) is not supported'.format(prim_variable_raw_value)
+            out_string = prim.value[0]
+            error = 'PrimVariable value ({}) is not supported, code will probably not compile'.format(prim_variable_raw_value)
             LOG.error(error)
-            raise TypeError(error)
+            #raise TypeError(error)
 
     return [], out_string, []
 
@@ -1582,14 +1583,14 @@ def _not_expression(expr):
     bty_inner = find_basic_type(expr.expr.exprType)
     bty_outer = find_basic_type(expr.exprType)
 
-    if bty_outer.kind != 'BooleanType':
+    if bty_outer.kind != 'BooleanType' and not 'Integer' in bty_outer.kind:
         if bty_outer.Min == bty_outer.Max:
             size_expr = bty_outer.Max
         elif bty_inner.Min == bty_inner.Max:
             size_expr = '{}'.format(bty_inner.Min)
         else:
             size_expr = '{}.nCount'.format(expr_str)
-        
+
         if isinstance(expr.expr, ogAST.PrimSequenceOf):
             string = array_content(expr.expr, expr_str, bty_outer)
         elif isinstance(expr.expr, ogAST.PrimVariable):
@@ -1609,6 +1610,8 @@ def _not_expression(expr):
 
             stmts.append(u'}')
             string = (u'not_{var_counter}'.format(var_counter=VAR_COUNTER))
+        elif isinstance(expr.expr, ogAST.PrimCall):
+            string = f'!{expr_str}'
         else:
             raise NotImplementedError(u'Not of a ' + str(type(expr.expr)))
             string = u'{{{{! {expr_str} }}, {size_expr} }})'.format(expr_str=expr_str.replace(',',',!'), size_expr=size_expr)
@@ -1678,6 +1681,7 @@ def _append(expr):
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     elif isinstance(expr.left, ogAST.PrimSequenceOf) and isinstance(expr.right, ogAST.PrimSequenceOf):
+        # ?? I find this suspiciousm why would result be of size 2?
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
@@ -1706,6 +1710,28 @@ def _append(expr):
         stmts.append(u'memcpy_temp_{var_counter}.nCount += {right_size};'.format(var_counter=VAR_COUNTER, right_size=rbty.Max))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
+    elif isinstance(expr.left, ogAST.PrimSequenceOf) and isinstance(expr.right, ogAST.PrimVariable):
+        # e.g. in foo := { bar } // baz
+        # LEFT_TYPE is the type of the result of the append (here: type of foo)
+        decls.append(f'asn1SccUint memcpy_counter_{VAR_COUNTER} = 0;')
+        decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
+        #decls.append(f'{LEFT_TYPE} left_temp_{VAR_COUNTER};')
+
+        LOCAL_VARIABLE_TYPES[f'memcpy_temp_{VAR_COUNTER}'] = LEFT_TYPE
+
+        #First copy left part in the result
+        stmts.append(f'memcpy_temp_{VAR_COUNTER} = ({LEFT_TYPE}) {{{lbty.Max}, {{{left_string}}}}};')
+        #stmts.append(f'memcpy_temp_{VAR_COUNTER} = {left_string};')
+
+        #Then append the right part
+        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < {right_string}.nCount; memcpy_counter_{VAR_COUNTER}++)')
+        stmts.append('{')
+        stmts.append(f'memcpy_temp_{VAR_COUNTER}.arr[memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER}] = {right_string}.arr[memcpy_counter_{VAR_COUNTER}];')
+        stmts.append('}')
+        stmts.append(f'memcpy_temp_{VAR_COUNTER}.nCount += {right_string}.nCount;')
+
+        string = f'memcpy_temp_{VAR_COUNTER}'
+
     elif isinstance(expr.left, ogAST.PrimVariable) and isinstance(expr.right, ogAST.PrimVariable):
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
@@ -1771,7 +1797,8 @@ def _append(expr):
     elif isinstance(expr.left, ogAST.PrimSubstring) and isinstance(expr.right, ogAST.PrimSequenceOf):
         decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
-        decls.append('static {ty} constant_{var_counter} = {{{size}, {{{init}}}}};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, size=rbty.Max, init=right_string))
+        decls.append(f'static {LEFT_TYPE} constant_{VAR_COUNTER};')
+        stmts.append(f'constant_{VAR_COUNTER} = ({LEFT_TYPE}) {{{rbty.Max}, {{{right_string}}}}};')
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
 
@@ -1832,7 +1859,7 @@ def _append(expr):
             stmts.append(u'memcpy_temp_{var_counter}.nCount += 1;'.format(var_counter=VAR_COUNTER))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, ogAST.PrimVariable) and isinstance(expr.right, ogAST.PrimSubstring):
+    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.ExprAppend)) and isinstance(expr.right, ogAST.PrimSubstring):
         decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
 
@@ -1923,8 +1950,9 @@ def _append(expr):
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     else:
+        LOG.error("Append expression not supported in C backend: " + expr.inputString)
         raise NotImplementedError(str(type(expr.left)) + ' and ' + str(type(expr.right)))
-    
+
     stmts.append(u'}')
 
     return stmts, string, decls

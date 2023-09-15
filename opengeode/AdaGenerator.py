@@ -1282,7 +1282,6 @@ def write_statement(param, newline):
         code.append(f"Put ({cast}'Image ({string}));")
     elif type_kind == 'EnumeratedType':
         code, string, local = expression(param, readonly=1)
-        #code.append(f"Put ({type_name(param.exprType)}'Image ({string}));")
         # enumerated must be variable, so we can use 'Img
         lenOfPrefix = len(ASN1SCC) + 1
         code.append(f"Put ({string}'Img({lenOfPrefix} .. {string}'Img'Length));")
