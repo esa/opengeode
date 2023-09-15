@@ -1,5 +1,6 @@
 /* CIF PROCESS (250, 150), (150, 75) */
 process Cpu_6502;
+    /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (4533, 102), (344, 2018) */
     dcl cpu CPU;
     
@@ -208,674 +209,8 @@ process Cpu_6502;
        TXS Byte = '9A'H,   -- Transfer X to Stack Pointer
        TYA Byte = '98'H;   -- Transfer Y to Accumulator
     /* CIF ENDTEXT */
-    /* CIF procedure (5704, 197), (198, 35) */
-    procedure Determine_Addressing_Mode;
-        /* CIF TEXT (125, 371), (186, 140) */
-        fpar in instuction Byte;
-        
-        returns Addressing_Modes;
-        /* CIF ENDTEXT */
-        /* CIF TEXT (79, 83), (334, 233) */
-        -- Depending on the instruction, select
-        -- the proper addressing mode
-        
-        --We detemine the mode based on the opcode.
-        
-        -- Bits 2,3 and 4 of the opcode in most cases would
-        -- suffice to deduce the addressing mode. However
-        -- since there are exceptions, it would make the
-        -- model less readable if we start looking at
-        -- combinations of bits.
-        
-        -- In terms of performance a look-up table (map) would
-        -- be much faster, but also less readable (at least the 
-        -- initialization of the table).
-        -- To be considered for trade-off in a later version
-        /* CIF ENDTEXT */
-        /* CIF START (1211, 220), (70, 35) */
-        START;
-            /* CIF decision (1202, 275), (86, 50) */
-            decision instruction;
-                /* CIF ANSWER (646, 345), (83, 248) */
-                (ADC_ZPX,
-AND_ZPX,
-ASL_ZPX,
-CMP_ZPX,
-DEC_ZPX,
-EOR_ZPX,
-INC_ZPX,
-LDA_ZPX,
-LDY_ZPX,
-LSR_ZPX,
-ORA_ZPX,
-ROL_ZPX,
-ROR_ZPX,
-SBC_ZPX,
-STA_ZPX,
-STY_ZPX):
-                    /* CIF return (671, 608), (35, 35) */
-                    return zero_page_x;
-                /* CIF ANSWER (856, 345), (80, 128) */
-                (BCC_REL,
-BCS_REL,
-BEQ_REL,
-BMI_REL,
-BNE_REL,
-BPL_REL,
-BVC_REL,
-BVS_REL):
-                    /* CIF return (879, 488), (35, 35) */
-                    return relative;
-                /* CIF ANSWER (933, 345), (83, 353) */
-                (ADC_ABS,
-AND_ABS,
-ASL_ABS,
-BIT_ABS,
-CMP_ABS,
-CPX_ABS,
-CPY_ABS,
-DEC_ABS,
-EOR_ABS,
-INC_ABS,
-JMP_ABS,
-JSR_ABS,
-LDA_ABS,
-LDX_ABS,
-LDY_ABS,
-LSR_ABS,
-ORA_ABS,
-ROL_ABS,
-ROR_ABS,
-SBC_ABS,
-STA_ABS,
-STX_ABS,
-STY_ABS):
-                    /* CIF return (958, 729), (35, 35) */
-                    return absolute;
-                /* CIF ANSWER (1054, 345), (92, 233) */
-                (ADC_ABSX,
-AND_ABSX,
-ASL_ABSX,
-CMP_ABSX,
-DEC_ABSX,
-EOR_ABSX,
-INC_ABSX,
-LDA_ABSX,
-LDY_ABSX,
-LSR_ABSX,
-ORA_ABSX,
-ROL_ABSX,
-ROR_ABSX,
-SBC_ABSX,
-STA_ABSX):
-                    /* CIF return (1083, 609), (35, 35) */
-                    return absolute_x;
-                /* CIF ANSWER (1167, 345), (90, 143) */
-                (ADC_ABSY,
-AND_ABSY,
-CMP_ABSY,
-EOR_ABSY,
-LDA_ABSY,
-LDX_ABSY,
-ORA_ABSY,
-SBC_ABSY,
-STA_ABSY):
-                    /* CIF return (1195, 519), (35, 35) */
-                    return absolute_y;
-                /* CIF ANSWER (1251, 345), (77, 23) */
-                (JMP_IND):
-                    /* CIF return (1273, 388), (35, 35) */
-                    return indirect;
-                /* CIF ANSWER (1347, 345), (90, 128) */
-                (ADC_INDX,
-AND_INDX,
-CMP_INDX,
-EOR_INDX,
-LDA_INDX,
-ORA_INDX,
-SBC_INDX,
-STA_INDX):
-                    /* CIF return (1375, 504), (35, 35) */
-                    return indexed_indirect;
-                /* CIF ANSWER (576, 345), (74, 323) */
-                (ADC_ZP,
-AND_ZP,
-ASL_ZP,
-BIT_ZP,
-CMP_ZP,
-CPX_ZP,
-CPY_ZP,
-DEC_ZP,
-EOR_ZP,
-INC_ZP,
-LDA_ZP,
-LDX_ZP,
-LDY_ZP,
-LSR_ZP,
-ORA_ZP,
-ROL_ZP,
-ROR_ZP,
-SBC_ZP,
-STA_ZP,
-STX_ZP,
-STY_ZP):
-                    /* CIF return (596, 683), (35, 35) */
-                    return zero_page;
-                /* CIF ANSWER (742, 345), (78, 38) */
-                (LDX_ZPY,
-STX_ZPY):
-                    /* CIF return (764, 398), (35, 35) */
-                    return zero_page_y;
-                /* CIF ANSWER (1485, 345), (88, 128) */
-                (ADC_INDY,
-AND_INDY,
-CMP_INDY,
-EOR_INDY,
-LDA_INDY,
-ORA_INDY,
-SBC_INDY,
-STA_INDY):
-                    /* CIF return (1512, 488), (35, 35) */
-                    return indirect_indexed;
-                /* CIF ANSWER (1592, 345), (82, 218) */
-                (BRK,
-CLC, CLD,
-CLI, CLV,
-DEX, DEY,
-INX, INY,
-NOP,
-PHA, PHP,
-PLA, PLP,
-RTI, RTS,
-SEC, SED,
-SEI,
-TAX, TAY,
-TSX, TXA,
-TXS, TYA):
-                    /* CIF return (1616, 594), (35, 35) */
-                    return implicit;
-                /* CIF ANSWER (455, 345), (86, 173) */
-                (ADC_IMM,
-AND_IMM,
-CMP_IMM,
-CPX_IMM,
-CPY_IMM,
-EOR_IMM,
-LDA_IMM,
-LDX_IMM,
-LDY_IMM,
-ORA_IMM,
-SBC_IMM):
-                    /* CIF return (481, 549), (35, 35) */
-                    return immediate;
-                /* CIF ANSWER (1796, 345), (70, 23) */
-                ELSE:
-                    /* CIF PROCEDURECALL (1709, 388), (243, 38) */
-                    call writeln
-  ('Unsupported opcode: ', instruction);
-                    /* CIF return (1813, 446), (35, 35) */
-                    return implicit;
-            enddecision;
-    endprocedure;
-    /* CIF procedure (5929, 205), (143, 35) */
-    procedure Push_Byte_To_Stack;
-        /* CIF TEXT (122, 88), (176, 140) */
-        -- Place a byte on the Stack
-        -- and decrease the SP
-        
-        fpar in val Byte;
-        /* CIF ENDTEXT */
-        /* CIF START (506, 92), (70, 35) */
-        START;
-            /* CIF PROCEDURECALL (436, 147), (209, 53) */
-            call Store_Byte
-   (SP_BASE + cpu.stack_pointer,
-    val);
-            /* CIF task (464, 220), (153, 38) */
-            task cpu.stack_pointer :=
-   cpu.stack_pointer - 1;
-            /* CIF return (523, 278), (35, 35) */
-            return ;
-    endprocedure;
-    /* CIF procedure (6094, 210), (148, 35) */
-    procedure Push_Word_To_Stack;
-        /* CIF TEXT (122, 88), (181, 140) */
-        -- Place a word on the Stack
-        -- and decrease the SP by 2
-        
-        fpar in val Word;
-        /* CIF ENDTEXT */
-        /* CIF START (506, 92), (70, 35) */
-        START;
-            /* CIF PROCEDURECALL (436, 147), (209, 53) */
-            call Store_Word
-   (SP_BASE + cpu.stack_pointer,
-    val)
-            /* CIF comment (665, 155), (70, 35) */
-            comment '2 cycles';
-            /* CIF task (464, 220), (153, 38) */
-            task cpu.stack_pointer :=
-   cpu.stack_pointer - 2;
-            /* CIF return (523, 278), (35, 35) */
-            return ;
-    endprocedure;
-    /* CIF procedure (6095, 159), (93, 35) */
-    procedure Store_Word;
-        /* CIF TEXT (87, 61), (170, 140) */
-        fpar 
-           in index Word, 
-           in val Word;
-        /* CIF ENDTEXT */
-        /* CIF START (397, 93), (70, 35) */
-        START;
-            /* CIF PROCEDURECALL (351, 148), (160, 35) */
-            call Write_Word (index, val);
-            /* CIF task (366, 203), (130, 35) */
-            task cycles := cycles + 2;
-            /* CIF return (414, 258), (35, 35) */
-            return ;
-    endprocedure;
-    /* CIF procedure (6096, 114), (165, 35) */
-    procedure Read_Word_and_Inc_PC;
-        /* CIF TEXT (165, 119), (305, 140) */
-        -- Fetch the next byte in memory starting with the
-        -- Program Counter index.
-        
-        returns Word;
-        
-        dcl val Word;
-        /* CIF ENDTEXT */
-        /* CIF START (595, 121), (70, 35) */
-        START;
-            /* CIF PROCEDURECALL (545, 176), (169, 53) */
-            call Fetch_Word
-    (cpu.program_counter,
-     val);
-            /* CIF task (502, 244), (255, 38) */
-            task cpu.program_counter :=
-(cpu.program_counter + 2) mod 'FFFF'H;
-            /* CIF task (564, 297), (130, 35) */
-            task cycles := cycles + 2;
-            /* CIF return (612, 347), (35, 35) */
-            return val;
-    endprocedure;
-    /* CIF procedure (5909, 111), (160, 35) */
-    procedure Read_Byte_and_Inc_PC;
-        /* CIF TEXT (165, 119), (305, 140) */
-        -- Fetch the next byte in memory starting with the
-        -- Program Counter index.
-        
-        returns Byte;
-        
-        dcl val Byte;
-        /* CIF ENDTEXT */
-        /* CIF START (595, 121), (70, 35) */
-        START;
-            /* CIF PROCEDURECALL (545, 176), (169, 53) */
-            call Fetch_Byte
-    (cpu.program_counter,
-     val);
-            /* CIF task (502, 249), (255, 38) */
-            task cpu.program_counter :=
-(cpu.program_counter + 1) mod 'FFFF'H;
-            /* CIF task (564, 307), (130, 35) */
-            task cycles := cycles + 1;
-            /* CIF return (612, 362), (35, 35) */
-            return val;
-    endprocedure;
-    /* CIF procedure (5960, 60), (86, 35) */
-    procedure Read_Byte;
-        /* CIF TEXT (165, 119), (273, 140) */
-        -- Fetch a byte at a specific memory location
-        
-        fpar in location Word;
-        returns Byte;
-        
-        dcl val Byte;
-        /* CIF ENDTEXT */
-        /* CIF START (595, 121), (70, 35) */
-        START;
-            /* CIF PROCEDURECALL (584, 176), (90, 53) */
-            call Fetch_Byte
-    (location,
-     val);
-            /* CIF task (564, 249), (130, 35) */
-            task cycles := cycles + 1;
-            /* CIF return (612, 304), (35, 35) */
-            return val;
-    endprocedure;
-    /* CIF procedure (6144, 62), (91, 35) */
-    procedure Read_Word;
-        /* CIF TEXT (165, 119), (273, 140) */
-        -- Fetch a byte at a specific memory location
-        
-        fpar in location Word;
-        returns Word;
-        
-        dcl val Word;
-        /* CIF ENDTEXT */
-        /* CIF START (595, 121), (70, 35) */
-        START;
-            /* CIF PROCEDURECALL (582, 176), (94, 53) */
-            call Fetch_Word
-    (location,
-     val);
-            /* CIF task (564, 249), (130, 35) */
-            task cycles := cycles + 2;
-            /* CIF return (612, 304), (35, 35) */
-            return val;
-    endprocedure;
-    /* CIF procedure (5927, 156), (88, 35) */
-    procedure Store_Byte;
-        /* CIF TEXT (87, 61), (170, 140) */
-        fpar 
-           in index Word, 
-           in val Byte;
-        /* CIF ENDTEXT */
-        /* CIF START (397, 93), (70, 35) */
-        START;
-            /* CIF PROCEDURECALL (354, 148), (155, 35) */
-            call Write_Byte (index, val);
-            /* CIF task (366, 203), (130, 35) */
-            task cycles := cycles + 1;
-            /* CIF return (414, 258), (35, 35) */
-            return ;
-    endprocedure;
-    /* CIF procedure (5704, 337), (159, 35) */
-    procedure Push_Processor_Status;
-        /* CIF TEXT (0, 47), (305, 248) */
-        -- PHP : Push processor status flags on the stack
-        
-        -- Form a byte and set 7 bits using the status flags
-        --  (not sure in what order, but what counts is the 
-        --   consistency with the reverse opcode: PLP)
-        
-        dcl flags Byte;
-        
-        dcl cf, zf, id, dm, break, ovfl, neg Byte;
-        --  0  carry_flag                
-        --  1  zero_flag               
-        --  2  interrupt_disable 
-        --  3  decimal_mode        
-        --  4  break_command    
-        --  5  overflow_flag     
-        --  6  negative_flag
-        /* CIF ENDTEXT */
-        /* CIF START (576, 161), (70, 35) */
-        START;
-            /* CIF task (455, 216), (310, 113) */
-            task cf := if cpu.carry_flag then 1 else 0 fi,
-zf := if cpu.zero_flag then 2 else 0 fi,
-id := if cpu.interrupt_disable then 4 else 0 fi,
-dm := if cpu.decimal_mode then 8 else 0 fi,
-break := if cpu.break_command then 16 else 0 fi,
-ovfl := if cpu.overflow_flag then 32 else 0 fi,
-neg := if cpu.negative_flag then 64 else 0 fi;
-            /* CIF task (457, 349), (307, 38) */
-            task flags :=
-   flags or cf or zf or id or dm or brk or ovfl or neg;
-            /* CIF PROCEDURECALL (519, 407), (183, 35) */
-            call Push_Byte_To_Stack (flags);
-            /* CIF return (593, 457), (35, 35) */
-            return ;
-    endprocedure;
-    /* CIF procedure (5704, 396), (153, 35) */
-    procedure Pull_Processor_Status;
-        /* CIF TEXT (279, 93), (461, 233) */
-        -- PLP: Pull and 8 bits value from the stack and into the processor status flags
-        
-        
-        -- For the ordering: see PHP procedure
-        
-        dcl flags Byte;
-        
-        dcl cf, zf, id, dm, ovfl, neg Byte;
-        --  0  carry_flag                
-        --  1  zero_flag               
-        --  2  interrupt_disable 
-        --  3  decimal_mode        
-        --  4  break_command    
-        --  5  overflow_flag     
-        --  6  negative_flag
-        /* CIF ENDTEXT */
-        /* CIF START (868, 149), (70, 35) */
-        START;
-            /* CIF task (809, 204), (187, 38) */
-            task flags :=
-   call Pull_Byte_From_Stack;
-            /* CIF task (765, 262), (275, 113) */
-            task cpu.carry_flag := (flags and 1) = 1,
-cpu.zero_flag  := (flags and 2) = 2,
-cpu.interrupt_disable := (flags and 4) = 4,
-cpu.decimal_mode := (flags and 8) = 8,
-cpu.break_command := (flags and 16) = 16, 
-cpu.overflow_flag := (flags and 32) = 32,
-cpu.negative_flag := (flags and 64) = 64;
-            /* CIF return (885, 395), (35, 35) */
-            return ;
-    endprocedure;
-    /* CIF procedure (5929, 255), (153, 35) */
-    procedure Pull_Byte_From_Stack;
-        /* CIF TEXT (122, 88), (186, 140) */
-        -- Read a byte from the stack
-        
-        
-        returns Byte;
-        
-        dcl val Byte;
-        /* CIF ENDTEXT */
-        /* CIF START (619, 92), (70, 35) */
-        START;
-            /* CIF task (548, 147), (210, 38) */
-            task val := call Read_Byte
-   (SP_BASE + cpu.stack_pointer);
-            /* CIF task (575, 200), (157, 38) */
-            task cpu.stack_pointer :=
-   cpu.stack_pointer + 1;
-            /* CIF return (636, 258), (35, 35) */
-            return val;
-    endprocedure;
-    /* CIF procedure (6127, 257), (158, 35) */
-    procedure Pull_Word_From_Stack;
-        /* CIF TEXT (122, 88), (191, 140) */
-        -- Read a word from the stack
-        
-        
-        returns Word;
-        
-        dcl val Word;
-        /* CIF ENDTEXT */
-        /* CIF START (506, 92), (70, 35) */
-        START;
-            /* CIF task (435, 147), (210, 38) */
-            task val := call Read_Word
-   (SP_BASE + cpu.stack_pointer);
-            /* CIF task (462, 200), (157, 38) */
-            task cpu.stack_pointer :=
-   cpu.stack_pointer + 2;
-            /* CIF return (523, 258), (35, 35) */
-            return val;
-    endprocedure;
-    /* CIF procedure (5704, 243), (98, 35) */
-    procedure Get_Address
-    /* CIF comment (5842, 243), (70, 35) */
-    /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/addressing.html' */
-    comment 'Doc';
-        /* CIF TEXT (598, 45), (283, 173) */
-        -- The CPU has a number of addressing modes,
-        --  ie. means to retrieve an address where to
-        -- read a byte or a word in memory.
-        -- This is shared by all instructions.
-        fpar in mode Addressing_Modes;
-        
-        returns Word;
-        
-        dcl b, diff Byte;
-        dcl res  Word;
-        dcl sign Plus_Minus;
-        /* CIF ENDTEXT */
-        /* CIF START (1082, 209), (70, 35) */
-        START;
-            /* CIF decision (1082, 264), (70, 50) */
-            decision mode;
-                /* CIF ANSWER (61, 334), (86, 23) */
-                (immediate):
-                    /* CIF task (11, 375), (184, 35) */
-                    task res := cpu.program_counter;
-                    /* CIF task (14, 430), (179, 38) */
-                    task cpu.program_counter :=
-   cpu.program_counter + 1;
-                /* CIF ANSWER (262, 334), (84, 23) */
-                (zero_page):
-                    /* CIF task (208, 377), (193, 38) */
-                    task res :=
-   call Read_Byte_and_Inc_PC;
-                /* CIF ANSWER (464, 334), (97, 23) */
-                (zero_page_x):
-                    /* CIF task (416, 377), (193, 38) */
-                    task res :=
-   call Read_Byte_and_Inc_PC;
-                    /* CIF task (420, 435), (185, 35) */
-                    task res := (res + cpu.x) and 'FF'H;
-                /* CIF ANSWER (675, 334), (98, 23) */
-                (zero_page_y):
-                    /* CIF task (628, 377), (193, 38) */
-                    task res :=
-   call Read_Byte_and_Inc_PC;
-                    /* CIF task (632, 435), (185, 35) */
-                    task res := (res + cpu.y) and 'FF'H;
-                /* CIF ANSWER (896, 334), (74, 23) */
-                (absolute):
-                    /* CIF task (834, 377), (198, 38) */
-                    task res :=
-   call Read_Word_and_Inc_PC;
-                /* CIF ANSWER (1099, 334), (87, 23) */
-                (absolute_x):
-                    /* CIF task (1044, 377), (198, 38) */
-                    task res :=
-   call Read_Word_and_Inc_PC;
-                    /* CIF task (1082, 435), (121, 35) */
-                    task res := res + cpu.X;
-                /* CIF ANSWER (1309, 334), (88, 23) */
-                (absolute_y):
-                    /* CIF task (1254, 377), (198, 38) */
-                    task res :=
-   call Read_Word_and_Inc_PC;
-                    /* CIF task (1293, 435), (120, 35) */
-                    task res := res + cpu.Y;
-                /* CIF ANSWER (1677, 334), (70, 23) */
-                (indirect):
-                /* CIF ANSWER (1502, 334), (121, 23) */
-                (indexed_indirect):
-                    /* CIF task (1466, 377), (193, 38) */
-                    task res :=
-   call Read_Byte_and_Inc_PC;
-                    /* CIF task (1501, 435), (124, 35) */
-                    task res :=  res + cpu.X;
-                    /* CIF task (1486, 490), (154, 38) */
-                    task res :=
-   call Read_Word (res);
-                /* CIF ANSWER (1793, 334), (121, 23) */
-                (indirect_indexed):
-                    /* CIF task (1757, 377), (193, 38) */
-                    task res :=
-   call Read_Byte_and_Inc_PC;
-                    /* CIF task (1777, 435), (154, 38) */
-                    task res :=
-   call Read_Word (res);
-                    /* CIF task (1807, 493), (94, 38) */
-                    task res :=
-   res + cpu.Y;
-                /* CIF ANSWER (2023, 334), (95, 38) */
-                (implicit,
-accumulator):
-                    /* CIF PROCEDURECALL (1955, 392), (232, 38) */
-                    call writeln
-('ERROR - Wrong addressing mode')
-                    /* CIF comment (2217, 384), (182, 35) */
-                    comment 'Implicit: no address to read';
-                    /* CIF task (2036, 445), (70, 35) */
-                    task res := 0;
-                /* CIF ANSWER (2581, 334), (70, 23) */
-                (relative):
-                    /* CIF task (2519, 377), (193, 38) */
-                    task b :=
-   call Read_Byte_and_Inc_PC
-                    /* CIF comment (2725, 377), (116, 38) */
-                    comment 'Read a raw byte
-(unsigned)';
-                    /* CIF task (2512, 430), (206, 38) */
-                    task diff :=
-   call Get_Signed_Byte (b, sign);
-                    /* CIF decision (2581, 488), (70, 50) */
-                    decision sign;
-                        /* CIF ANSWER (2475, 558), (70, 23) */
-                        (plus):
-                            /* CIF task (2412, 601), (194, 38) */
-                            task res := 
-   cpu.program_counter + diff;
-                        /* CIF ANSWER (2681, 558), (70, 23) */
-                        (minus):
-                            /* CIF task (2620, 601), (191, 38) */
-                            task res := 
-   cpu.program_counter - diff;
-                    enddecision;
-            enddecision;
-            /* CIF return (1099, 670), (35, 35) */
-            return res;
-    endprocedure;
-    /* CIF procedure (5922, 368), (124, 35) */
-    procedure Get_Signed_Byte
-    /* CIF comment (6067, 368), (124, 35) */
-    comment 'Read signed byte';
-        /* CIF TEXT (42, 64), (372, 158) */
-        -- Converts an unsigned number (raw byte read from memory)
-        -- to a signed number using two's complement
-        
-        fpar
-            in raw_byte Byte,
-            in/out sign Plus_Minus;
-        
-        returns Word;
-        
-        dcl res Byte;
-        /* CIF ENDTEXT */
-        /* CIF START (602, 102), (70, 35) */
-        START;
-            /* CIF task (580, 157), (112, 35) */
-            task res := raw_byte;
-            /* CIF decision (587, 207), (99, 50) */
-            decision res and '80'H
-            /* CIF comment (706, 214), (124, 35) */
-            comment 'Sign of the result';
-                /* CIF ANSWER (538, 277), (70, 23) */
-                (> 0):
-                    /* CIF task (523, 320), (98, 35) */
-                    task sign := minus;
-                    /* CIF task (508, 375), (128, 35) */
-                    task res := (not res) + 1;
-                /* CIF ANSWER (660, 277), (70, 23) */
-                else:
-                    /* CIF task (651, 320), (88, 35) */
-                    task sign := plus;
-            enddecision;
-            /* CIF task (512, 426), (249, 113) */
-            task 'b0 := if (b and 1) > 0 then 1 else 0 fi,
-b1 := if (b and 2) > 0 then 2  else 0 fI,
-b2 := if (b and 4) > 0  then 4 else 0 fi,
-b3 := if (b and 8)  > 0 then 8 else 0 fi,
-b4 := if (b and 16) > 0 then 16 else 0 fi,
-b5 := if (b and 32) > 0 then 32 else 0 fi,
-b6 := if (b and 64) > 0 then 64 else 0 fi'
-            /* CIF comment (776, 446), (254, 68) */
-            comment 'Irrelevant, because we cannot return
-a signed number (it could not be used
-to subtract a value to an address, which
-is unsigned...';
-            /* CIF return (619, 559), (35, 35) */
-            return res;
-    endprocedure;
-    /* CIF procedure (5533, 532), (122, 35) */
+    /* CIF procedure (5532, 532), (122, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     procedure Next_Instruction;
         /* CIF START (7114, 152), (70, 35) */
         START;
@@ -889,7 +224,7 @@ is unsigned...';
    call Determine_Addressing_Mode (instruction);
             /* CIF decision (7085, 363), (127, 50) */
             decision addressing_mode;
-                /* CIF ANSWER (6976, 433), (95, 38) */
+                /* CIF ANSWER (6975, 433), (95, 38) */
                 (implicit,
 accumulator):
                 /* CIF ANSWER (7220, 433), (70, 23) */
@@ -900,7 +235,7 @@ accumulator):
             enddecision;
             /* CIF decision (7105, 525), (86, 50) */
             decision instruction;
-                /* CIF ANSWER (874, 595), (89, 128) */
+                /* CIF ANSWER (873, 595), (89, 128) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#LDA' */
                 (LDA_IMM,
 LDA_ZP,
@@ -910,19 +245,19 @@ LDA_ABSX,
 LDA_ABSY,
 LDA_INDX,
 LDA_INDY):
-                    /* CIF task (817, 743), (204, 38) */
+                    /* CIF task (816, 743), (204, 38) */
                     task cpu.accumulator :=
    call Read_Byte (sub_address);
-                    /* CIF task (718, 801), (402, 38) */
+                    /* CIF task (717, 801), (402, 38) */
                     task cpu.zero_flag := (cpu.accumulator  = '00'H),
 cpu.negative_flag := (cpu.accumulator  and '10000000'B) /= '00'H;
-                /* CIF ANSWER (61, 595), (74, 23) */
+                /* CIF ANSWER (60, 595), (74, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#JSR' */
                 (JSR_ABS):
-                    /* CIF PROCEDURECALL (6, 638), (184, 38) */
+                    /* CIF PROCEDURECALL (5, 638), (184, 38) */
                     call Push_Word_To_Stack
    (cpu.program_counter - 1);
-                    /* CIF task (17, 696), (163, 38) */
+                    /* CIF task (16, 696), (163, 38) */
                     task cpu.program_counter :=
     sub_address;
                 /* CIF ANSWER (1789, 595), (70, 23) */
@@ -931,30 +266,30 @@ cpu.negative_flag := (cpu.accumulator  and '10000000'B) /= '00'H;
                     /* CIF task (1727, 638), (192, 38) */
                     task cpu.program_counter :=
    call Pull_Word_From_Stack;
-                /* CIF ANSWER (445, 595), (84, 83) */
+                /* CIF ANSWER (444, 595), (84, 83) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#LDX' */
                 (LDX_IMM,
 LDX_ZP,
 LDX_ZPY,
 LDX_ABS,
 LDX_ABSY):
-                    /* CIF task (385, 698), (204, 38) */
+                    /* CIF task (384, 698), (204, 38) */
                     task cpu.X :=
    call Read_Byte (sub_address);
-                    /* CIF task (319, 751), (337, 38) */
+                    /* CIF task (318, 751), (337, 38) */
                     task cpu.zero_flag := (cpu.X  = '00'H),
 cpu.negative_flag := (cpu.X  and '10000000'B) /= '00'H;
-                /* CIF ANSWER (1307, 595), (84, 83) */
+                /* CIF ANSWER (1306, 595), (84, 83) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#LDY' */
                 (LDY_IMM,
 LDY_ZP,
 LDY_ZPX,
 LDY_ABS,
 LDY_ABSX):
-                    /* CIF task (1247, 698), (204, 38) */
+                    /* CIF task (1246, 698), (204, 38) */
                     task cpu.Y :=
    call Read_Byte (sub_address);
-                    /* CIF task (1182, 756), (335, 38) */
+                    /* CIF task (1181, 756), (335, 38) */
                     task cpu.zero_flag := (cpu.Y  = '00'H),
 cpu.negative_flag := (cpu.Y  and '10000000'B) /= '00'H;
                 /* CIF ANSWER (217, 595), (70, 23) */
@@ -976,7 +311,7 @@ cpu.negative_flag := (cpu.Y  and '10000000'B) /= '00'H;
                 (PLP):
                     /* CIF PROCEDURECALL (2126, 638), (153, 35) */
                     call Pull_Processor_Status;
-                /* CIF ANSWER (5283, 595), (90, 113) */
+                /* CIF ANSWER (5282, 595), (90, 113) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#ADC' */
                 (ADC_IMM,
 ADC_ZP,
@@ -985,29 +320,29 @@ ADC_ABSX,
 ADC_ABSY,
 ADC_INDX,
 ADC_INDY):
-                    /* CIF task (5226, 728), (204, 38) */
+                    /* CIF task (5225, 728), (204, 38) */
                     task operand :=
    call Read_Byte (sub_address);
-                    /* CIF label (5294, 786), (70, 35) */
+                    /* CIF label (5293, 786), (70, 35) */
                     ADC:
-                    /* CIF task (5177, 836), (302, 38) */
+                    /* CIF task (5176, 836), (302, 38) */
                     task neg_bit := 
     ((cpu.accumulator xor operand) and '80'H) = 0;
-                    /* CIF task (5210, 894), (236, 68) */
+                    /* CIF task (5209, 894), (236, 68) */
                     task sum :=
    cpu.accumulator
   + operand
   + (if cpu.carry_flag then 1 else 0 fi);
-                    /* CIF task (5219, 982), (218, 35) */
+                    /* CIF task (5218, 982), (218, 35) */
                     task cpu.accumulator := sum and 'FF'H;
-                    /* CIF task (5210, 1032), (236, 35) */
+                    /* CIF task (5209, 1032), (236, 35) */
                     task cpu.zero_flag := cpu.accumulator = 0;
-                    /* CIF task (5234, 1087), (189, 35) */
+                    /* CIF task (5233, 1087), (189, 35) */
                     task cpu.carry_flag := sum > 'FF'H;
-                    /* CIF task (5216, 1137), (224, 38) */
+                    /* CIF task (5215, 1137), (224, 38) */
                     task cpu.negative_flag :=
     (cpu.accumulator and '80'H) /= 0;
-                    /* CIF decision (5294, 1195), (70, 50) */
+                    /* CIF decision (5293, 1195), (70, 50) */
                     decision neg_bit;
                         /* CIF ANSWER (5080, 1265), (70, 23) */
                         (true):
@@ -1019,7 +354,7 @@ ADC_INDY):
                             /* CIF task (5335, 1308), (175, 35) */
                             task cpu.overflow_flag := false;
                     enddecision;
-                /* CIF ANSWER (4063, 595), (92, 128) */
+                /* CIF ANSWER (4062, 595), (92, 128) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#AND' */
                 (AND_IMM,
 AND_ZP,
@@ -1029,34 +364,34 @@ AND_ABSX,
 AND_ABSY,
 AND_INDX,
 AND_INDY):
-                    /* CIF task (3980, 743), (259, 38) */
+                    /* CIF task (3979, 743), (259, 38) */
                     task cpu.accumulator := cpu.accumulator and
    call Read_Byte (sub_address);
-                    /* CIF task (3908, 801), (402, 38) */
+                    /* CIF task (3907, 801), (402, 38) */
                     task cpu.zero_flag := (cpu.accumulator  = '00'H),
 cpu.negative_flag := (cpu.accumulator  and '10000000'B) /= '00'H;
-                /* CIF ANSWER (4452, 595), (83, 68) */
+                /* CIF ANSWER (4451, 595), (83, 68) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#ASL' */
                 (ASL_ZP,
 ASL_ZPX,
 ASL_ABS,
 ASL_ABSX):
-                    /* CIF task (4392, 683), (204, 38) */
+                    /* CIF task (4391, 683), (204, 38) */
                     task val :=
    call Read_Byte (sub_address);
-                    /* CIF task (4378, 741), (231, 35) */
+                    /* CIF task (4377, 741), (231, 35) */
                     task cpu.carry_flag := (val and '80'H) /= 0;
-                    /* CIF task (4416, 796), (156, 38) */
+                    /* CIF task (4415, 796), (156, 38) */
                     task val :=
    call Shift_Left (val, 1);
-                    /* CIF PROCEDURECALL (4396, 854), (196, 35) */
+                    /* CIF PROCEDURECALL (4395, 854), (196, 35) */
                     call Store_Byte (sub_address, val);
-                    /* CIF task (4367, 909), (253, 35) */
+                    /* CIF task (4366, 909), (253, 35) */
                     task cpu.negative_flag := (val and '80'H) /= 0;
-                /* CIF ANSWER (3707, 595), (75, 23) */
+                /* CIF ANSWER (3706, 595), (75, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BCC' */
                 (BCC_REL):
-                    /* CIF decision (3692, 638), (106, 50) */
+                    /* CIF decision (3691, 638), (106, 50) */
                     decision cpu.carry_flag;
                         /* CIF ANSWER (3620, 708), (70, 23) */
                         (true):
@@ -1066,10 +401,10 @@ ASL_ABSX):
                             task cpu.program_counter :=
    sub_address;
                     enddecision;
-                /* CIF ANSWER (3235, 595), (75, 23) */
+                /* CIF ANSWER (3234, 595), (75, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BCS' */
                 (BCS_REL):
-                    /* CIF decision (3220, 638), (106, 50) */
+                    /* CIF decision (3219, 638), (106, 50) */
                     decision cpu.carry_flag;
                         /* CIF ANSWER (3146, 708), (70, 23) */
                         (true):
@@ -1079,10 +414,10 @@ ASL_ABSX):
                         /* CIF ANSWER (3274, 708), (70, 23) */
                         (false):
                     enddecision;
-                /* CIF ANSWER (2971, 595), (77, 23) */
+                /* CIF ANSWER (2970, 595), (77, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BEQ' */
                 (BEQ_REL):
-                    /* CIF decision (2959, 638), (102, 50) */
+                    /* CIF decision (2958, 638), (102, 50) */
                     decision cpu.zero_flag;
                         /* CIF ANSWER (2881, 708), (70, 23) */
                         (true):
@@ -1092,26 +427,26 @@ ASL_ABSX):
                         /* CIF ANSWER (3009, 708), (70, 23) */
                         (false):
                     enddecision;
-                /* CIF ANSWER (6091, 595), (72, 38) */
+                /* CIF ANSWER (6090, 595), (72, 38) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BIT' */
                 (BIT_ZP,
 BIT_ABS):
-                    /* CIF task (6025, 653), (204, 38) */
+                    /* CIF task (6024, 653), (204, 38) */
                     task val :=
    call Read_Byte (sub_address);
-                    /* CIF task (6018, 711), (219, 38) */
+                    /* CIF task (6017, 711), (219, 38) */
                     task cpu.zero_flag :=
  (cpu.accumulator and val) = '00'H;
-                    /* CIF task (6038, 769), (178, 38) */
+                    /* CIF task (6037, 769), (178, 38) */
                     task cpu.overflow_flag :=
    (val and '01000000'B) > 0;
-                    /* CIF task (6057, 827), (141, 38) */
+                    /* CIF task (6056, 827), (141, 38) */
                     task cpu.negative_flag :=
    (val and '80'H) /= 0;
-                /* CIF ANSWER (2378, 595), (74, 23) */
+                /* CIF ANSWER (2377, 595), (74, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BMI' */
                 (BMI_REL):
-                    /* CIF decision (2352, 638), (127, 50) */
+                    /* CIF decision (2351, 638), (127, 50) */
                     decision cpu.negative_flag;
                         /* CIF ANSWER (2352, 708), (70, 23) */
                         (true):
@@ -1121,10 +456,10 @@ BIT_ABS):
                         /* CIF ANSWER (2479, 708), (70, 23) */
                         (false):
                     enddecision;
-                /* CIF ANSWER (2651, 595), (76, 23) */
+                /* CIF ANSWER (2650, 595), (76, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BNE' */
                 (BNE_REL):
-                    /* CIF decision (2638, 638), (102, 50) */
+                    /* CIF decision (2637, 638), (102, 50) */
                     decision cpu.zero_flag;
                         /* CIF ANSWER (2560, 708), (70, 23) */
                         (true):
@@ -1134,10 +469,10 @@ BIT_ABS):
                             task cpu.program_counter :=
    sub_address;
                     enddecision;
-                /* CIF ANSWER (4720, 595), (74, 23) */
+                /* CIF ANSWER (4719, 595), (74, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BPL' */
                 (BPL_REL):
-                    /* CIF decision (4694, 638), (127, 50) */
+                    /* CIF decision (4693, 638), (127, 50) */
                     decision cpu.negative_flag;
                         /* CIF ANSWER (4653, 708), (70, 23) */
                         (true):
@@ -1160,10 +495,10 @@ BIT_ABS):
    call Read_Word (IRQ_Location);
                     /* CIF task (5813, 809), (188, 35) */
                     task cpu.break_command := true;
-                /* CIF ANSWER (3422, 595), (76, 23) */
+                /* CIF ANSWER (3421, 595), (76, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BVC' */
                 (BVC_REL):
-                    /* CIF decision (3396, 638), (128, 50) */
+                    /* CIF decision (3395, 638), (128, 50) */
                     decision cpu.overflow_flag;
                         /* CIF ANSWER (3355, 708), (70, 23) */
                         (true):
@@ -1173,10 +508,10 @@ BIT_ABS):
                             task cpu.program_counter :=
    sub_address;
                     enddecision;
-                /* CIF ANSWER (5656, 595), (75, 23) */
+                /* CIF ANSWER (5655, 595), (75, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#BVS' */
                 (BVS_REL):
-                    /* CIF decision (5630, 638), (128, 50) */
+                    /* CIF decision (5629, 638), (128, 50) */
                     decision cpu.overflow_flag;
                         /* CIF ANSWER (5590, 708), (70, 23) */
                         (true):
@@ -1203,7 +538,7 @@ BIT_ABS):
                 (CLV):
                     /* CIF task (7135, 638), (175, 35) */
                     task cpu.overflow_flag := false;
-                /* CIF ANSWER (6967, 595), (92, 128) */
+                /* CIF ANSWER (6966, 595), (92, 128) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#CMP' */
                 (CMP_IMM,
 CMP_ZP,
@@ -1213,61 +548,61 @@ CMP_ABSX,
 CMP_ABSY,
 CMP_INDX,
 CMP_INDY):
-                    /* CIF task (6911, 743), (204, 38) */
+                    /* CIF task (6910, 743), (204, 38) */
                     task val := cpu.accumulator -
    call Read_Byte (sub_address);
-                    /* CIF task (6926, 801), (175, 35) */
+                    /* CIF task (6925, 801), (175, 35) */
                     task cpu.carry_flag := (val >= 0);
-                    /* CIF task (6931, 856), (164, 35) */
+                    /* CIF task (6930, 856), (164, 35) */
                     task cpu.zero_flag := (val = 0);
-                    /* CIF task (6943, 911), (141, 38) */
+                    /* CIF task (6942, 911), (141, 38) */
                     task cpu.negative_flag :=
    (val and '80'H) /= 0;
-                /* CIF ANSWER (7379, 595), (82, 53) */
+                /* CIF ANSWER (7378, 595), (82, 53) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#CPX' */
                 (CPX_IMM,
 CPX_ZP,
 CPX_ABS):
-                    /* CIF task (7318, 668), (204, 38) */
+                    /* CIF task (7317, 668), (204, 38) */
                     task val := cpu.X -
    call Read_Byte (sub_address);
-                    /* CIF task (7333, 726), (175, 35) */
+                    /* CIF task (7332, 726), (175, 35) */
                     task cpu.carry_flag := (val >= 0);
-                    /* CIF task (7338, 781), (164, 35) */
+                    /* CIF task (7337, 781), (164, 35) */
                     task cpu.zero_flag := (val = 0);
-                    /* CIF task (7350, 836), (141, 38) */
+                    /* CIF task (7349, 836), (141, 38) */
                     task cpu.negative_flag :=
    (val and '80'H) /= 0;
-                /* CIF ANSWER (7589, 595), (82, 53) */
+                /* CIF ANSWER (7588, 595), (82, 53) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#CPY' */
                 (CPY_IMM,
 CPY_ZP,
 CPY_ABS):
-                    /* CIF task (7528, 668), (204, 38) */
+                    /* CIF task (7527, 668), (204, 38) */
                     task val := cpu.X -
    call Read_Byte (sub_address);
-                    /* CIF task (7543, 726), (175, 35) */
+                    /* CIF task (7542, 726), (175, 35) */
                     task cpu.carry_flag := (val >= 0);
-                    /* CIF task (7548, 781), (164, 35) */
+                    /* CIF task (7547, 781), (164, 35) */
                     task cpu.zero_flag := (val = 0);
-                    /* CIF task (7560, 836), (141, 38) */
+                    /* CIF task (7559, 836), (141, 38) */
                     task cpu.negative_flag :=
    (val and '80'H) /= 0;
-                /* CIF ANSWER (7913, 595), (85, 68) */
+                /* CIF ANSWER (7912, 595), (85, 68) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#DEC' */
                 (DEC_ZP,
 DEC_ZPX,
 DEC_ABS,
 DEC_ABSX):
-                    /* CIF task (7845, 683), (221, 38) */
+                    /* CIF task (7844, 683), (221, 38) */
                     task val := 
    call Read_Byte (sub_address) - 1;
-                    /* CIF task (7874, 741), (164, 35) */
+                    /* CIF task (7873, 741), (164, 35) */
                     task cpu.zero_flag := (val = 0);
-                    /* CIF task (7885, 796), (141, 38) */
+                    /* CIF task (7884, 796), (141, 38) */
                     task cpu.negative_flag :=
    (val and '80'H) /= 0;
-                    /* CIF PROCEDURECALL (7858, 854), (196, 35) */
+                    /* CIF PROCEDURECALL (7857, 854), (196, 35) */
                     call Store_Byte (sub_address, val);
                 /* CIF ANSWER (9687, 595), (70, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#DEX' */
@@ -1291,7 +626,7 @@ DEC_ABSX):
                     /* CIF task (9071, 751), (155, 38) */
                     task cpu.negative_flag :=
    (cpu.Y and '80'H) /= 0;
-                /* CIF ANSWER (8235, 595), (90, 128) */
+                /* CIF ANSWER (8234, 595), (90, 128) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#EOR' */
                 (EOR_IMM,
 EOR_ZP,
@@ -1301,27 +636,27 @@ EOR_ABSX,
 EOR_ABSY,
 EOR_INDX,
 EOR_INDY):
-                    /* CIF task (8152, 743), (256, 38) */
+                    /* CIF task (8151, 743), (256, 38) */
                     task cpu.accumulator := cpu.accumulator xor
    call Read_Byte (sub_address);
-                    /* CIF task (8079, 801), (402, 38) */
+                    /* CIF task (8078, 801), (402, 38) */
                     task cpu.zero_flag := (cpu.accumulator  = '00'H),
 cpu.negative_flag := (cpu.accumulator  and '10000000'B) /= '00'H;
-                /* CIF ANSWER (8562, 595), (82, 68) */
+                /* CIF ANSWER (8561, 595), (82, 68) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#INC' */
                 (INC_ZP,
 INC_ZPX,
 INC_ABS,
 INC_ABSX):
-                    /* CIF task (8491, 683), (225, 38) */
+                    /* CIF task (8490, 683), (225, 38) */
                     task val := 
    call Read_Byte (sub_address) + 1;
-                    /* CIF task (8521, 741), (164, 35) */
+                    /* CIF task (8520, 741), (164, 35) */
                     task cpu.zero_flag := (val = 0);
-                    /* CIF task (8533, 796), (141, 38) */
+                    /* CIF task (8532, 796), (141, 38) */
                     task cpu.negative_flag :=
    (val and '80'H) /= 0;
-                    /* CIF PROCEDURECALL (8505, 854), (196, 35) */
+                    /* CIF PROCEDURECALL (8504, 854), (196, 35) */
                     call Store_Byte (sub_address, val);
                 /* CIF ANSWER (9496, 596), (70, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#INX' */
@@ -1345,11 +680,11 @@ INC_ABSX):
                     /* CIF task (9262, 751), (155, 38) */
                     task cpu.negative_flag :=
    (cpu.Y and '80'H) /= 0;
-                /* CIF ANSWER (8895, 595), (82, 38) */
+                /* CIF ANSWER (8894, 595), (82, 38) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#JMP' */
                 (JMP_ABS,
 JMP_IND):
-                    /* CIF task (8832, 653), (209, 38) */
+                    /* CIF task (8831, 653), (209, 38) */
                     task cpu.program_counter :=
    call Read_Word (sub_address);
                 /* CIF ANSWER (12788, 595), (70, 23) */
@@ -1361,23 +696,23 @@ JMP_IND):
                     /* CIF task (12621, 696), (402, 38) */
                     task cpu.zero_flag := (cpu.accumulator  = '00'H),
 cpu.negative_flag := (cpu.accumulator  and '10000000'B) /= '00'H;
-                /* CIF ANSWER (12051, 595), (86, 68) */
+                /* CIF ANSWER (12050, 595), (86, 68) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#ROL' */
                 (ROL_ZP,
 ROL_ZPX,
 ROL_ABS,
 ROL_ABSX):
-                    /* CIF task (11992, 683), (204, 38) */
+                    /* CIF task (11991, 683), (204, 38) */
                     task val :=
    call Read_Byte (sub_address);
-                    /* CIF task (12032, 741), (125, 35) */
+                    /* CIF task (12031, 741), (125, 35) */
                     task cf := val and '80'H
                     /* CIF comment (12071, 741), (71, 35) */
                     comment 'old bit 7';
-                    /* CIF task (12016, 796), (156, 38) */
+                    /* CIF task (12015, 796), (156, 38) */
                     task val :=
    call Shift_Left (val, 1);
-                    /* CIF decision (12041, 854), (106, 50) */
+                    /* CIF decision (12040, 854), (106, 50) */
                     decision cpu.carry_flag;
                         /* CIF ANSWER (11884, 924), (70, 23) */
                         (true):
@@ -1388,15 +723,15 @@ ROL_ABSX):
                             /* CIF task (12045, 967), (130, 35) */
                             task val := val and 'FE'H;
                     enddecision;
-                    /* CIF task (11984, 1020), (220, 35) */
+                    /* CIF task (11983, 1020), (220, 35) */
                     task cpu.carry_flag := (cf and '80'H) > 0;
-                    /* CIF task (11972, 1075), (245, 35) */
+                    /* CIF task (11971, 1075), (245, 35) */
                     task cpu.zero_flag := (cpu.accumulator = 0);
-                    /* CIF task (11968, 1130), (253, 35) */
+                    /* CIF task (11967, 1130), (253, 35) */
                     task cpu.negative_flag := (val and '80'H) /= 0;
-                    /* CIF PROCEDURECALL (11996, 1185), (196, 35) */
+                    /* CIF PROCEDURECALL (11995, 1185), (196, 35) */
                     call Store_Byte (sub_address, val);
-                /* CIF ANSWER (10187, 595), (92, 128) */
+                /* CIF ANSWER (10186, 595), (92, 128) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#ORA' */
                 (ORA_IMM,
 ORA_ZP,
@@ -1406,27 +741,27 @@ ORA_ABSX,
 ORA_ABSY,
 ORA_INDX,
 ORA_INDY):
-                    /* CIF task (10109, 743), (249, 38) */
+                    /* CIF task (10108, 743), (249, 38) */
                     task cpu.accumulator := cpu.accumulator or
    call Read_Byte (sub_address);
-                    /* CIF task (10032, 801), (402, 38) */
+                    /* CIF task (10031, 801), (402, 38) */
                     task cpu.zero_flag := (cpu.accumulator  = '00'H),
 cpu.negative_flag := (cpu.accumulator  and '10000000'B) /= '00'H;
-                /* CIF ANSWER (11236, 595), (87, 68) */
+                /* CIF ANSWER (11235, 595), (87, 68) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#ROR' */
                 (ROR_ZP,
 ROR_ZPX,
 ROR_ABS,
 ROR_ABSX):
-                    /* CIF task (11178, 683), (204, 38) */
+                    /* CIF task (11177, 683), (204, 38) */
                     task val :=
    call Read_Byte (sub_address);
-                    /* CIF task (11217, 736), (125, 35) */
+                    /* CIF task (11216, 736), (125, 35) */
                     task cf := val and '01'H;
-                    /* CIF task (11198, 791), (164, 38) */
+                    /* CIF task (11197, 791), (164, 38) */
                     task val :=
    call Shift_Right (val, 1);
-                    /* CIF decision (11227, 849), (106, 50) */
+                    /* CIF decision (11226, 849), (106, 50) */
                     decision cpu.carry_flag;
                         /* CIF ANSWER (10964, 919), (70, 23) */
                         (true):
@@ -1437,13 +772,13 @@ ROR_ABSX):
                             /* CIF task (11125, 962), (130, 35) */
                             task val := val and '7F'H;
                     enddecision;
-                    /* CIF task (11170, 1015), (220, 35) */
+                    /* CIF task (11169, 1015), (220, 35) */
                     task cpu.carry_flag := (cf and '01'H) > 0;
-                    /* CIF task (11157, 1070), (245, 35) */
+                    /* CIF task (11156, 1070), (245, 35) */
                     task cpu.zero_flag := (cpu.accumulator = 0);
-                    /* CIF task (11153, 1125), (253, 35) */
+                    /* CIF task (11152, 1125), (253, 35) */
                     task cpu.negative_flag := (val and '80'H) /= 0;
-                    /* CIF PROCEDURECALL (11182, 1175), (196, 35) */
+                    /* CIF PROCEDURECALL (11181, 1175), (196, 35) */
                     call Store_Byte (sub_address, val);
                 /* CIF ANSWER (12477, 595), (70, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#RTI' */
@@ -1453,7 +788,7 @@ ROR_ABSX):
                     /* CIF task (12415, 693), (192, 38) */
                     task cpu.program_counter :=
    call Pull_Word_From_Stack;
-                /* CIF ANSWER (10776, 595), (90, 128) */
+                /* CIF ANSWER (10775, 595), (90, 128) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#SBC' */
                 (SBC_IMM,
 SBC_ZP,
@@ -1463,10 +798,10 @@ SBC_ABSX,
 SBC_ABSY ,
 SBC_INDX,
 SBC_INDY):
-                    /* CIF task (10712, 743), (218, 38) */
+                    /* CIF task (10711, 743), (218, 38) */
                     task operand :=
 not call Read_Byte (sub_address);
-                    /* CIF join (10804, 801), (35, 35) */
+                    /* CIF join (10803, 801), (35, 35) */
                     join ADC;
                 /* CIF ANSWER (12292, 595), (70, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#SEC' */
@@ -1483,7 +818,7 @@ not call Read_Byte (sub_address);
                 (SEI):
                     /* CIF task (13189, 638), (192, 35) */
                     task cpu.interrupt_disable := true;
-                /* CIF ANSWER (13595, 595), (86, 113) */
+                /* CIF ANSWER (13594, 595), (86, 113) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#STA' */
                 (STA_ZP,
 STA_ZPX,
@@ -1492,25 +827,25 @@ STA_ABSX,
 STA_ABSY,
 STA_INDX,
 STA_INDY):
-                    /* CIF PROCEDURECALL (13570, 728), (136, 53) */
+                    /* CIF PROCEDURECALL (13569, 728), (136, 53) */
                     call Store_Byte
    (sub_address,
     cpu.accumulator);
-                /* CIF ANSWER (13752, 595), (77, 53) */
+                /* CIF ANSWER (13751, 595), (77, 53) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#STX' */
                 (STX_ZP,
 STX_ZPY,
 STX_ABS):
-                    /* CIF PROCEDURECALL (13735, 668), (112, 53) */
+                    /* CIF PROCEDURECALL (13734, 668), (112, 53) */
                     call Store_Byte
    (sub_address,
     cpu.X);
-                /* CIF ANSWER (13895, 595), (78, 53) */
+                /* CIF ANSWER (13894, 595), (78, 53) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#STY' */
                 (STY_ZP,
 STY_ZPX,
 STY_ABS):
-                    /* CIF PROCEDURECALL (13878, 668), (112, 53) */
+                    /* CIF PROCEDURECALL (13877, 668), (112, 53) */
                     call Store_Byte
    (sub_address,
     cpu.Y);
@@ -1560,57 +895,57 @@ cpu.negative_flag := (cpu.accumulator  and '10000000'B) /= '00'H;
                     /* CIF task (15972, 696), (402, 38) */
                     task cpu.zero_flag := (cpu.accumulator  = '00'H),
 cpu.negative_flag := (cpu.accumulator  and '10000000'B) /= '00'H;
-                /* CIF ANSWER (10526, 595), (83, 68) */
+                /* CIF ANSWER (10525, 595), (83, 68) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#LSR' */
                 (LSR_ZP,
 LSR_ZPX,
 LSR_ABS,
 LSR_ABSX):
-                    /* CIF task (10466, 683), (204, 38) */
+                    /* CIF task (10465, 683), (204, 38) */
                     task val :=
    call Read_Byte (sub_address);
-                    /* CIF task (10452, 741), (231, 35) */
+                    /* CIF task (10451, 741), (231, 35) */
                     task cpu.carry_flag := (val and '01'H) /= 0;
-                    /* CIF task (10490, 796), (156, 38) */
+                    /* CIF task (10489, 796), (156, 38) */
                     task val :=
    call Shift_Left (val, 1);
-                    /* CIF PROCEDURECALL (10470, 854), (196, 35) */
+                    /* CIF PROCEDURECALL (10469, 854), (196, 35) */
                     call Store_Byte (sub_address, val);
-                    /* CIF task (10441, 909), (253, 35) */
+                    /* CIF task (10440, 909), (253, 35) */
                     task cpu.negative_flag := (val and '80'H) /= 0;
-                    /* CIF task (10486, 964), (164, 35) */
+                    /* CIF task (10485, 964), (164, 35) */
                     task cpu.zero_flag := (val = 0);
-                /* CIF ANSWER (16544, 595), (76, 23) */
+                /* CIF ANSWER (16543, 595), (76, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#ASL' */
                 (ASL_ACC):
-                    /* CIF task (16427, 638), (311, 35) */
+                    /* CIF task (16426, 638), (311, 35) */
                     task cpu.carry_flag := (cpu.accumulator and '80'H) /= 0;
-                    /* CIF task (16464, 693), (236, 38) */
+                    /* CIF task (16463, 693), (236, 38) */
                     task cpu.accumulator :=
    call Shift_Left (cpu.accumulator, 1);
-                    /* CIF task (16416, 751), (333, 35) */
+                    /* CIF task (16415, 751), (333, 35) */
                     task cpu.negative_flag := (cpu.accumulator and '80'H) /= 0;
-                /* CIF ANSWER (17293, 595), (75, 23) */
+                /* CIF ANSWER (17292, 595), (75, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#LSR' */
                 (LSR_ACC):
-                    /* CIF task (17175, 638), (311, 35) */
+                    /* CIF task (17174, 638), (311, 35) */
                     task cpu.carry_flag := (cpu.accumulator and '01'H) /= 0;
-                    /* CIF task (17209, 693), (243, 38) */
+                    /* CIF task (17208, 693), (243, 38) */
                     task cpu.accumulator :=
    call Shift_Right (cpu.accumulator, 1);
-                    /* CIF task (17164, 751), (333, 35) */
+                    /* CIF task (17163, 751), (333, 35) */
                     task cpu.negative_flag := (cpu.accumulator and '80'H) /= 0;
-                    /* CIF task (17249, 806), (164, 35) */
+                    /* CIF task (17248, 806), (164, 35) */
                     task cpu.zero_flag := (val = 0);
-                /* CIF ANSWER (11587, 609), (79, 23) */
+                /* CIF ANSWER (11586, 609), (79, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#ROR' */
                 (ROR_ACC):
-                    /* CIF task (11524, 652), (205, 35) */
+                    /* CIF task (11523, 652), (205, 35) */
                     task cf := cpu.accumulator and '01'H;
-                    /* CIF task (11505, 702), (243, 38) */
+                    /* CIF task (11504, 702), (243, 38) */
                     task cpu.accumulator :=
    call Shift_Right (cpu.accumulator, 1);
-                    /* CIF decision (11574, 760), (106, 50) */
+                    /* CIF decision (11573, 760), (106, 50) */
                     decision cpu.carry_flag;
                         /* CIF ANSWER (11475, 830), (70, 23) */
                         (true):
@@ -1623,21 +958,21 @@ LSR_ABSX):
                             task cpu.accumulator :=
    cpu.accumulator and '7F'H;
                     enddecision;
-                    /* CIF task (11517, 927), (220, 35) */
+                    /* CIF task (11516, 927), (220, 35) */
                     task cpu.carry_flag := (cf and '01'H) > 0;
-                    /* CIF task (11504, 982), (245, 35) */
+                    /* CIF task (11503, 982), (245, 35) */
                     task cpu.zero_flag := (cpu.accumulator = 0);
-                    /* CIF task (11460, 1037), (333, 35) */
+                    /* CIF task (11459, 1037), (333, 35) */
                     task cpu.negative_flag := (cpu.accumulator and '80'H) /= 0;
-                /* CIF ANSWER (16937, 595), (78, 23) */
+                /* CIF ANSWER (16936, 595), (78, 23) */
                 /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/reference.html#ROL' */
                 (ROL_ACC):
-                    /* CIF task (16874, 638), (205, 35) */
+                    /* CIF task (16873, 638), (205, 35) */
                     task cf := cpu.accumulator and '80'H;
-                    /* CIF task (16858, 693), (236, 38) */
+                    /* CIF task (16857, 693), (236, 38) */
                     task cpu.accumulator :=
    call Shift_Left (cpu.accumulator, 1);
-                    /* CIF decision (16923, 751), (106, 50) */
+                    /* CIF decision (16922, 751), (106, 50) */
                     decision cpu.carry_flag;
                         /* CIF ANSWER (16811, 821), (70, 23) */
                         (true):
@@ -1650,11 +985,11 @@ LSR_ABSX):
                             task cpu.accumulator :=
    cpu.accumulator and 'FE'H;
                     enddecision;
-                    /* CIF task (16866, 918), (220, 35) */
+                    /* CIF task (16865, 918), (220, 35) */
                     task cpu.carry_flag := (cf and '80'H) > 0;
-                    /* CIF task (16854, 973), (245, 35) */
+                    /* CIF task (16853, 973), (245, 35) */
                     task cpu.zero_flag := (cpu.accumulator = 0);
-                    /* CIF task (16810, 1028), (333, 35) */
+                    /* CIF task (16809, 1028), (333, 35) */
                     task cpu.negative_flag := (cpu.accumulator and '80'H) /= 0;
                 /* CIF ANSWER (17596, 595), (70, 23) */
                 else:
@@ -1665,16 +1000,727 @@ LSR_ABSX):
             /* CIF return (7131, 1376), (35, 35) */
             return ;
     endprocedure;
+    /* CIF procedure (5921, 368), (124, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Get_Signed_Byte
+    /* CIF comment (6067, 368), (124, 35) */
+    comment 'Read signed byte';
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (42, 64), (372, 158) */
+        -- Converts an unsigned number (raw byte read from memory)
+        -- to a signed number using two's complement
+        
+        fpar
+            in raw_byte Byte,
+            in/out sign Plus_Minus;
+        
+        returns Word;
+        
+        dcl res Byte;
+        /* CIF ENDTEXT */
+        /* CIF START (602, 102), (70, 35) */
+        START;
+            /* CIF task (581, 157), (112, 35) */
+            task res := raw_byte;
+            /* CIF decision (587, 207), (99, 50) */
+            decision res and '80'H
+            /* CIF comment (706, 214), (124, 35) */
+            comment 'Sign of the result';
+                /* CIF ANSWER (538, 277), (70, 23) */
+                (> 0):
+                    /* CIF task (523, 320), (98, 35) */
+                    task sign := minus;
+                    /* CIF task (508, 375), (128, 35) */
+                    task res := (not res) + 1;
+                /* CIF ANSWER (660, 277), (70, 23) */
+                else:
+                    /* CIF task (651, 320), (88, 35) */
+                    task sign := plus;
+            enddecision;
+            /* CIF task (512, 426), (249, 113) */
+            task 'b0 := if (b and 1) > 0 then 1 else 0 fi,
+b1 := if (b and 2) > 0 then 2  else 0 fI,
+b2 := if (b and 4) > 0  then 4 else 0 fi,
+b3 := if (b and 8)  > 0 then 8 else 0 fi,
+b4 := if (b and 16) > 0 then 16 else 0 fi,
+b5 := if (b and 32) > 0 then 32 else 0 fi,
+b6 := if (b and 64) > 0 then 64 else 0 fi'
+            /* CIF comment (776, 446), (254, 68) */
+            comment 'Irrelevant, because we cannot return
+a signed number (it could not be used
+to subtract a value to an address, which
+is unsigned...';
+            /* CIF return (619, 559), (35, 35) */
+            return res;
+    endprocedure;
+    /* CIF procedure (5703, 243), (98, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Get_Address
+    /* CIF comment (5842, 243), (70, 35) */
+    /* CIF Keep Specific Geode HyperLink 'http://www.obelisk.me.uk/6502/addressing.html' */
+    comment 'Doc';
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (598, 45), (283, 173) */
+        -- The CPU has a number of addressing modes,
+        --  ie. means to retrieve an address where to
+        -- read a byte or a word in memory.
+        -- This is shared by all instructions.
+        fpar in mode Addressing_Modes;
+        
+        returns Word;
+        
+        dcl b, diff Byte;
+        dcl res  Word;
+        dcl sign Plus_Minus;
+        /* CIF ENDTEXT */
+        /* CIF START (1082, 209), (70, 35) */
+        START;
+            /* CIF decision (1082, 264), (70, 50) */
+            decision mode;
+                /* CIF ANSWER (61, 334), (85, 23) */
+                (immediate):
+                    /* CIF task (11, 375), (184, 35) */
+                    task res := cpu.program_counter;
+                    /* CIF task (14, 430), (179, 38) */
+                    task cpu.program_counter :=
+   cpu.program_counter + 1;
+                /* CIF ANSWER (261, 334), (84, 23) */
+                (zero_page):
+                    /* CIF task (207, 377), (193, 38) */
+                    task res :=
+   call Read_Byte_and_Inc_PC;
+                /* CIF ANSWER (463, 334), (97, 23) */
+                (zero_page_x):
+                    /* CIF task (415, 377), (193, 38) */
+                    task res :=
+   call Read_Byte_and_Inc_PC;
+                    /* CIF task (419, 435), (185, 35) */
+                    task res := (res + cpu.x) and 'FF'H;
+                /* CIF ANSWER (674, 334), (98, 23) */
+                (zero_page_y):
+                    /* CIF task (627, 377), (193, 38) */
+                    task res :=
+   call Read_Byte_and_Inc_PC;
+                    /* CIF task (631, 435), (185, 35) */
+                    task res := (res + cpu.y) and 'FF'H;
+                /* CIF ANSWER (895, 334), (74, 23) */
+                (absolute):
+                    /* CIF task (833, 377), (198, 38) */
+                    task res :=
+   call Read_Word_and_Inc_PC;
+                /* CIF ANSWER (1098, 334), (87, 23) */
+                (absolute_x):
+                    /* CIF task (1043, 377), (198, 38) */
+                    task res :=
+   call Read_Word_and_Inc_PC;
+                    /* CIF task (1081, 435), (121, 35) */
+                    task res := res + cpu.X;
+                /* CIF ANSWER (1308, 334), (88, 23) */
+                (absolute_y):
+                    /* CIF task (1253, 377), (198, 38) */
+                    task res :=
+   call Read_Word_and_Inc_PC;
+                    /* CIF task (1292, 435), (120, 35) */
+                    task res := res + cpu.Y;
+                /* CIF ANSWER (1677, 334), (70, 23) */
+                (indirect):
+                /* CIF ANSWER (1501, 334), (121, 23) */
+                (indexed_indirect):
+                    /* CIF task (1465, 377), (193, 38) */
+                    task res :=
+   call Read_Byte_and_Inc_PC;
+                    /* CIF task (1500, 435), (124, 35) */
+                    task res :=  res + cpu.X;
+                    /* CIF task (1485, 490), (154, 38) */
+                    task res :=
+   call Read_Word (res);
+                /* CIF ANSWER (1792, 334), (121, 23) */
+                (indirect_indexed):
+                    /* CIF task (1756, 377), (193, 38) */
+                    task res :=
+   call Read_Byte_and_Inc_PC;
+                    /* CIF task (1776, 435), (154, 38) */
+                    task res :=
+   call Read_Word (res);
+                    /* CIF task (1806, 493), (94, 38) */
+                    task res :=
+   res + cpu.Y;
+                /* CIF ANSWER (2022, 334), (95, 38) */
+                (implicit,
+accumulator):
+                    /* CIF PROCEDURECALL (1954, 392), (232, 38) */
+                    call writeln
+('ERROR - Wrong addressing mode')
+                    /* CIF comment (2217, 384), (182, 35) */
+                    comment 'Implicit: no address to read';
+                    /* CIF task (2035, 445), (70, 35) */
+                    task res := 0;
+                /* CIF ANSWER (2581, 334), (70, 23) */
+                (relative):
+                    /* CIF task (2519, 377), (193, 38) */
+                    task b :=
+   call Read_Byte_and_Inc_PC
+                    /* CIF comment (2725, 377), (116, 38) */
+                    comment 'Read a raw byte
+(unsigned)';
+                    /* CIF task (2512, 430), (206, 38) */
+                    task diff :=
+   call Get_Signed_Byte (b, sign);
+                    /* CIF decision (2581, 488), (70, 50) */
+                    decision sign;
+                        /* CIF ANSWER (2475, 558), (70, 23) */
+                        (plus):
+                            /* CIF task (2412, 601), (194, 38) */
+                            task res := 
+   cpu.program_counter + diff;
+                        /* CIF ANSWER (2681, 558), (70, 23) */
+                        (minus):
+                            /* CIF task (2620, 601), (191, 38) */
+                            task res := 
+   cpu.program_counter - diff;
+                    enddecision;
+            enddecision;
+            /* CIF return (1099, 670), (35, 35) */
+            return res;
+    endprocedure;
+    /* CIF procedure (6126, 257), (158, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Pull_Word_From_Stack;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (122, 88), (190, 140) */
+        -- Read a word from the stack
+        
+        
+        returns Word;
+        
+        dcl val Word;
+        /* CIF ENDTEXT */
+        /* CIF START (506, 92), (70, 35) */
+        START;
+            /* CIF task (435, 147), (210, 38) */
+            task val := call Read_Word
+   (SP_BASE + cpu.stack_pointer);
+            /* CIF task (462, 200), (157, 38) */
+            task cpu.stack_pointer :=
+   cpu.stack_pointer + 2;
+            /* CIF return (523, 258), (35, 35) */
+            return val;
+    endprocedure;
+    /* CIF procedure (5928, 255), (153, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Pull_Byte_From_Stack;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (122, 88), (186, 140) */
+        -- Read a byte from the stack
+        
+        
+        returns Byte;
+        
+        dcl val Byte;
+        /* CIF ENDTEXT */
+        /* CIF START (619, 92), (70, 35) */
+        START;
+            /* CIF task (548, 147), (210, 38) */
+            task val := call Read_Byte
+   (SP_BASE + cpu.stack_pointer);
+            /* CIF task (575, 200), (157, 38) */
+            task cpu.stack_pointer :=
+   cpu.stack_pointer + 1;
+            /* CIF return (636, 258), (35, 35) */
+            return val;
+    endprocedure;
+    /* CIF procedure (5703, 396), (153, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Pull_Processor_Status;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (279, 93), (461, 233) */
+        -- PLP: Pull and 8 bits value from the stack and into the processor status flags
+        
+        
+        -- For the ordering: see PHP procedure
+        
+        dcl flags Byte;
+        
+        dcl cf, zf, id, dm, ovfl, neg Byte;
+        --  0  carry_flag                
+        --  1  zero_flag               
+        --  2  interrupt_disable 
+        --  3  decimal_mode        
+        --  4  break_command    
+        --  5  overflow_flag     
+        --  6  negative_flag
+        /* CIF ENDTEXT */
+        /* CIF START (868, 149), (70, 35) */
+        START;
+            /* CIF task (809, 204), (187, 38) */
+            task flags :=
+   call Pull_Byte_From_Stack;
+            /* CIF task (765, 262), (275, 113) */
+            task cpu.carry_flag := (flags and 1) = 1,
+cpu.zero_flag  := (flags and 2) = 2,
+cpu.interrupt_disable := (flags and 4) = 4,
+cpu.decimal_mode := (flags and 8) = 8,
+cpu.break_command := (flags and 16) = 16, 
+cpu.overflow_flag := (flags and 32) = 32,
+cpu.negative_flag := (flags and 64) = 64;
+            /* CIF return (885, 395), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (5703, 337), (159, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Push_Processor_Status;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (0, 47), (305, 248) */
+        -- PHP : Push processor status flags on the stack
+        
+        -- Form a byte and set 7 bits using the status flags
+        --  (not sure in what order, but what counts is the 
+        --   consistency with the reverse opcode: PLP)
+        
+        dcl flags Byte;
+        
+        dcl cf, zf, id, dm, brkcmd, ovfl, neg Byte;
+        --  0  carry_flag                
+        --  1  zero_flag               
+        --  2  interrupt_disable 
+        --  3  decimal_mode        
+        --  4  break_command    
+        --  5  overflow_flag     
+        --  6  negative_flag
+        /* CIF ENDTEXT */
+        /* CIF START (576, 161), (70, 35) */
+        START;
+            /* CIF task (450, 216), (321, 113) */
+            task cf := if cpu.carry_flag then 1 else 0 fi,
+zf := if cpu.zero_flag then 2 else 0 fi,
+id := if cpu.interrupt_disable then 4 else 0 fi,
+dm := if cpu.decimal_mode then 8 else 0 fi,
+brkcmd := if cpu.break_command then 16 else 0 fi,
+ovfl := if cpu.overflow_flag then 32 else 0 fi,
+neg := if cpu.negative_flag then 64 else 0 fi;
+            /* CIF task (445, 349), (331, 38) */
+            task flags :=
+   flags or cf or zf or id or dm or brkcmd or ovfl or neg;
+            /* CIF PROCEDURECALL (519, 407), (183, 35) */
+            call Push_Byte_To_Stack (flags);
+            /* CIF return (593, 457), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (5926, 156), (88, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Store_Byte;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (87, 61), (170, 140) */
+        fpar 
+           in index Word, 
+           in val Byte;
+        /* CIF ENDTEXT */
+        /* CIF START (397, 93), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (354, 148), (155, 35) */
+            call Write_Byte (index, val);
+            /* CIF task (366, 203), (130, 35) */
+            task cycles := cycles + 1;
+            /* CIF return (414, 258), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (6143, 62), (91, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Read_Word;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (165, 119), (272, 140) */
+        -- Fetch a byte at a specific memory location
+        
+        fpar in location Word;
+        returns Word;
+        
+        dcl val Word;
+        /* CIF ENDTEXT */
+        /* CIF START (595, 121), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (582, 176), (94, 53) */
+            call Fetch_Word
+    (location,
+     val);
+            /* CIF task (564, 249), (130, 35) */
+            task cycles := cycles + 2;
+            /* CIF return (612, 304), (35, 35) */
+            return val;
+    endprocedure;
+    /* CIF procedure (5959, 60), (86, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Read_Byte;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (165, 119), (272, 140) */
+        -- Fetch a byte at a specific memory location
+        
+        fpar in location Word;
+        returns Byte;
+        
+        dcl val Byte;
+        /* CIF ENDTEXT */
+        /* CIF START (595, 121), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (584, 176), (90, 53) */
+            call Fetch_Byte
+    (location,
+     val);
+            /* CIF task (564, 249), (130, 35) */
+            task cycles := cycles + 1;
+            /* CIF return (612, 304), (35, 35) */
+            return val;
+    endprocedure;
+    /* CIF procedure (5908, 111), (160, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Read_Byte_and_Inc_PC;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (165, 119), (305, 140) */
+        -- Fetch the next byte in memory starting with the
+        -- Program Counter index.
+        
+        returns Byte;
+        
+        dcl val Byte;
+        /* CIF ENDTEXT */
+        /* CIF START (595, 121), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (545, 176), (168, 53) */
+            call Fetch_Byte
+    (cpu.program_counter,
+     val);
+            /* CIF task (502, 249), (255, 38) */
+            task cpu.program_counter :=
+(cpu.program_counter + 1) mod 'FFFF'H;
+            /* CIF task (564, 307), (130, 35) */
+            task cycles := cycles + 1;
+            /* CIF return (612, 362), (35, 35) */
+            return val;
+    endprocedure;
+    /* CIF procedure (6095, 114), (165, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Read_Word_and_Inc_PC;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (165, 119), (305, 140) */
+        -- Fetch the next byte in memory starting with the
+        -- Program Counter index.
+        
+        returns Word;
+        
+        dcl val Word;
+        /* CIF ENDTEXT */
+        /* CIF START (595, 121), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (545, 176), (168, 53) */
+            call Fetch_Word
+    (cpu.program_counter,
+     val);
+            /* CIF task (502, 244), (255, 38) */
+            task cpu.program_counter :=
+(cpu.program_counter + 2) mod 'FFFF'H;
+            /* CIF task (564, 297), (130, 35) */
+            task cycles := cycles + 2;
+            /* CIF return (612, 347), (35, 35) */
+            return val;
+    endprocedure;
+    /* CIF procedure (6094, 159), (93, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Store_Word;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (87, 61), (170, 140) */
+        fpar 
+           in index Word, 
+           in val Word;
+        /* CIF ENDTEXT */
+        /* CIF START (397, 93), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (351, 148), (160, 35) */
+            call Write_Word (index, val);
+            /* CIF task (366, 203), (130, 35) */
+            task cycles := cycles + 2;
+            /* CIF return (414, 258), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (6093, 210), (148, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Push_Word_To_Stack;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (122, 88), (181, 140) */
+        -- Place a word on the Stack
+        -- and decrease the SP by 2
+        
+        fpar in val Word;
+        /* CIF ENDTEXT */
+        /* CIF START (506, 92), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (436, 147), (209, 53) */
+            call Store_Word
+   (SP_BASE + cpu.stack_pointer,
+    val)
+            /* CIF comment (665, 155), (70, 35) */
+            comment '2 cycles';
+            /* CIF task (464, 220), (153, 38) */
+            task cpu.stack_pointer :=
+   cpu.stack_pointer - 2;
+            /* CIF return (523, 278), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (5928, 205), (143, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Push_Byte_To_Stack;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (122, 88), (176, 140) */
+        -- Place a byte on the Stack
+        -- and decrease the SP
+        
+        fpar in val Byte;
+        /* CIF ENDTEXT */
+        /* CIF START (506, 92), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (436, 147), (209, 53) */
+            call Store_Byte
+   (SP_BASE + cpu.stack_pointer,
+    val);
+            /* CIF task (464, 220), (153, 38) */
+            task cpu.stack_pointer :=
+   cpu.stack_pointer - 1;
+            /* CIF return (523, 278), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (5703, 197), (198, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure Determine_Addressing_Mode;
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (79, 83), (334, 233) */
+        -- Depending on the instruction, select
+        -- the proper addressing mode
+        
+        --We detemine the mode based on the opcode.
+        
+        -- Bits 2,3 and 4 of the opcode in most cases would
+        -- suffice to deduce the addressing mode. However
+        -- since there are exceptions, it would make the
+        -- model less readable if we start looking at
+        -- combinations of bits.
+        
+        -- In terms of performance a look-up table (map) would
+        -- be much faster, but also less readable (at least the 
+        -- initialization of the table).
+        -- To be considered for trade-off in a later version
+        /* CIF ENDTEXT */
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (125, 371), (186, 140) */
+        fpar in instuction Byte;
+        
+        returns Addressing_Modes;
+        /* CIF ENDTEXT */
+        /* CIF START (1211, 220), (70, 35) */
+        START;
+            /* CIF decision (1202, 275), (86, 50) */
+            decision instruction;
+                /* CIF ANSWER (645, 345), (83, 248) */
+                (ADC_ZPX,
+AND_ZPX,
+ASL_ZPX,
+CMP_ZPX,
+DEC_ZPX,
+EOR_ZPX,
+INC_ZPX,
+LDA_ZPX,
+LDY_ZPX,
+LSR_ZPX,
+ORA_ZPX,
+ROL_ZPX,
+ROR_ZPX,
+SBC_ZPX,
+STA_ZPX,
+STY_ZPX):
+                    /* CIF return (670, 608), (35, 35) */
+                    return zero_page_x;
+                /* CIF ANSWER (855, 345), (80, 128) */
+                (BCC_REL,
+BCS_REL,
+BEQ_REL,
+BMI_REL,
+BNE_REL,
+BPL_REL,
+BVC_REL,
+BVS_REL):
+                    /* CIF return (878, 488), (35, 35) */
+                    return relative;
+                /* CIF ANSWER (932, 345), (83, 353) */
+                (ADC_ABS,
+AND_ABS,
+ASL_ABS,
+BIT_ABS,
+CMP_ABS,
+CPX_ABS,
+CPY_ABS,
+DEC_ABS,
+EOR_ABS,
+INC_ABS,
+JMP_ABS,
+JSR_ABS,
+LDA_ABS,
+LDX_ABS,
+LDY_ABS,
+LSR_ABS,
+ORA_ABS,
+ROL_ABS,
+ROR_ABS,
+SBC_ABS,
+STA_ABS,
+STX_ABS,
+STY_ABS):
+                    /* CIF return (957, 729), (35, 35) */
+                    return absolute;
+                /* CIF ANSWER (1053, 345), (92, 233) */
+                (ADC_ABSX,
+AND_ABSX,
+ASL_ABSX,
+CMP_ABSX,
+DEC_ABSX,
+EOR_ABSX,
+INC_ABSX,
+LDA_ABSX,
+LDY_ABSX,
+LSR_ABSX,
+ORA_ABSX,
+ROL_ABSX,
+ROR_ABSX,
+SBC_ABSX,
+STA_ABSX):
+                    /* CIF return (1082, 609), (35, 35) */
+                    return absolute_x;
+                /* CIF ANSWER (1166, 345), (90, 143) */
+                (ADC_ABSY,
+AND_ABSY,
+CMP_ABSY,
+EOR_ABSY,
+LDA_ABSY,
+LDX_ABSY,
+ORA_ABSY,
+SBC_ABSY,
+STA_ABSY):
+                    /* CIF return (1194, 519), (35, 35) */
+                    return absolute_y;
+                /* CIF ANSWER (1250, 345), (77, 23) */
+                (JMP_IND):
+                    /* CIF return (1272, 388), (35, 35) */
+                    return indirect;
+                /* CIF ANSWER (1346, 345), (90, 128) */
+                (ADC_INDX,
+AND_INDX,
+CMP_INDX,
+EOR_INDX,
+LDA_INDX,
+ORA_INDX,
+SBC_INDX,
+STA_INDX):
+                    /* CIF return (1374, 504), (35, 35) */
+                    return indexed_indirect;
+                /* CIF ANSWER (575, 345), (74, 323) */
+                (ADC_ZP,
+AND_ZP,
+ASL_ZP,
+BIT_ZP,
+CMP_ZP,
+CPX_ZP,
+CPY_ZP,
+DEC_ZP,
+EOR_ZP,
+INC_ZP,
+LDA_ZP,
+LDX_ZP,
+LDY_ZP,
+LSR_ZP,
+ORA_ZP,
+ROL_ZP,
+ROR_ZP,
+SBC_ZP,
+STA_ZP,
+STX_ZP,
+STY_ZP):
+                    /* CIF return (595, 683), (35, 35) */
+                    return zero_page;
+                /* CIF ANSWER (741, 345), (78, 38) */
+                (LDX_ZPY,
+STX_ZPY):
+                    /* CIF return (763, 398), (35, 35) */
+                    return zero_page_y;
+                /* CIF ANSWER (1484, 345), (88, 128) */
+                (ADC_INDY,
+AND_INDY,
+CMP_INDY,
+EOR_INDY,
+LDA_INDY,
+ORA_INDY,
+SBC_INDY,
+STA_INDY):
+                    /* CIF return (1511, 488), (35, 35) */
+                    return indirect_indexed;
+                /* CIF ANSWER (1591, 345), (82, 218) */
+                (BRK,
+CLC, CLD,
+CLI, CLV,
+DEX, DEY,
+INX, INY,
+NOP,
+PHA, PHP,
+PLA, PLP,
+RTI, RTS,
+SEC, SED,
+SEI,
+TAX, TAY,
+TSX, TXA,
+TXS, TYA):
+                    /* CIF return (1615, 594), (35, 35) */
+                    return implicit;
+                /* CIF ANSWER (454, 345), (86, 173) */
+                (ADC_IMM,
+AND_IMM,
+CMP_IMM,
+CPX_IMM,
+CPY_IMM,
+EOR_IMM,
+LDA_IMM,
+LDX_IMM,
+LDY_IMM,
+ORA_IMM,
+SBC_IMM):
+                    /* CIF return (480, 549), (35, 35) */
+                    return immediate;
+                /* CIF ANSWER (1796, 345), (70, 23) */
+                ELSE:
+                    /* CIF PROCEDURECALL (1709, 388), (243, 38) */
+                    call writeln
+  ('Unsupported opcode: ', instruction);
+                    /* CIF return (1813, 446), (35, 35) */
+                    return implicit;
+            enddecision;
+    endprocedure;
     /* CIF START (5091, 59), (70, 35) */
     START;
         /* CIF NEXTSTATE (5091, 114), (70, 35) */
         /* CIF Keep Specific Geode HyperLink 'https://taste.tools' */
         NEXTSTATE OFF;
-    /* CIF state (5277, 188), (97, 35) */
+    /* CIF state (5545, 213), (71, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state Running;
+        /* CIF input (5520, 268), (122, 35) */
+        input Next_Instruction;
+            /* CIF PROCEDURECALL (5471, 323), (221, 35) */
+            call writeln('Instruction: ', instruction);
+            /* CIF output (5503, 378), (157, 35) */
+            output Processor_Status (cpu);
+            /* CIF NEXTSTATE (5547, 428), (70, 35) */
+            NEXTSTATE -;
+    endstate;
+    /* CIF state (5276, 188), (97, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state Off, Running;
-        /* CIF input (5283, 243), (87, 35) */
+        /* CIF input (5282, 243), (87, 35) */
         input Reset_CPU;
-            /* CIF task (5194, 298), (265, 218) */
+            /* CIF task (5193, 298), (265, 218) */
             task cpu := {
   program_counter  Read_Word ('FFFC'H),
   stack_pointer         'FF'H,
@@ -1689,20 +1735,9 @@ LSR_ABSX):
   overflow_flag          FALSE,
   negative_flag          FALSE
 };
-            /* CIF output (5248, 536), (157, 35) */
+            /* CIF output (5247, 536), (157, 35) */
             output Processor_Status (cpu);
-            /* CIF NEXTSTATE (5291, 586), (71, 35) */
+            /* CIF NEXTSTATE (5290, 586), (71, 35) */
             NEXTSTATE Running;
-    endstate;
-    /* CIF state (5546, 213), (71, 35) */
-    state Running;
-        /* CIF input (5521, 268), (122, 35) */
-        input Next_Instruction;
-            /* CIF PROCEDURECALL (5472, 323), (221, 35) */
-            call writeln('Instruction: ', instruction);
-            /* CIF output (5504, 378), (157, 35) */
-            output Processor_Status (cpu);
-            /* CIF NEXTSTATE (5548, 428), (70, 35) */
-            NEXTSTATE -;
     endstate;
 endprocess Cpu_6502;
