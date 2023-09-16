@@ -1,6 +1,6 @@
 1. num:  0 (should be 0)
-2. to_selector: FOO_PRESENT (should be FOO)
+2. to_selector: FOO (should be FOO)
 3. to_enum: FOO (should be FOO)
-4. to_selector:BAR_PRESENT (should be BAR)
+4. to_selector:BAR (should be BAR)
 5. to_enum: BAR (should be BAR)
 6. val: FOO (should be FOO)

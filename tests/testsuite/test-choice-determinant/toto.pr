@@ -39,14 +39,14 @@ system toto;
                 enddecision;
                 /* CIF decision (225, 308), (99, 50) */
                 decision present (val);
-                    /* CIF ANSWER (170, 378), (120, 23) */
+                    /* CIF ANSWER (169, 378), (120, 23) */
                     (choice_selectors):
                     /* CIF ANSWER (315, 378), (70, 23) */
                     else:
                 enddecision;
                 /* CIF decision (214, 417), (120, 50) */
                 decision choice_selectors;
-                    /* CIF ANSWER (226, 487), (96, 23) */
+                    /* CIF ANSWER (225, 487), (96, 23) */
                     (present(val)):
                     /* CIF ANSWER (346, 487), (70, 23) */
                     else:
@@ -61,8 +61,8 @@ system toto;
                 task choice_selectors := bar;
                 /* CIF task (125, 738), (299, 35) */
                 task choice_selectors := to_selector (det, MyChoice);
-                /* CIF PROCEDURECALL (68, 793), (413, 35) */
-                call writeln ('2. choice_selectors: ',choice_selectors, ' (should be FOO)');
+                /* CIF PROCEDURECALL (83, 793), (382, 35) */
+                call writeln ('2. to_selector: ',choice_selectors, ' (should be FOO)');
                 /* CIF task (235, 848), (79, 35) */
                 task det := bar;
                 /* CIF task (135, 898), (278, 35) */
@@ -73,8 +73,8 @@ system toto;
                 task det := bar;
                 /* CIF task (125, 1063), (299, 35) */
                 task choice_selectors := to_selector (det, MyChoice);
-                /* CIF PROCEDURECALL (68, 1118), (412, 35) */
-                call writeln ('4. choice_selectors:', choice_selectors, ' (should be BAR)');
+                /* CIF PROCEDURECALL (84, 1118), (381, 35) */
+                call writeln ('4. to_selector:', choice_selectors, ' (should be BAR)');
                 /* CIF task (235, 1173), (79, 35) */
                 task det := foo;
                 /* CIF task (135, 1228), (278, 35) */

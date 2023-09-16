@@ -28,15 +28,15 @@ test-qgen-gt-c:
 test-ada: 
 	mkdir -p src && cd src && $(OPENGEODE) ../toto.pr -g --toAda && \
 	cp ../test_toto.ada test_toto.adb && \
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal ../*.asn *.asn
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal ../dataview.asn *.asn
 	mkdir -p obj && cd obj && gnat make -O$(O) ../src/test_toto && \
 	./test_toto | diff ../expected -
 
 test-c: 
 	$(OPENGEODE) toto.pr --toC
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
-	$(CC) -O$(O) -o test_c *.c
-	./test_c | diff expected -
+	$(CC) -g -O$(O) -o test_c *.c
+	./test_c | diff expected_c -
 	
 test-if:
 	sdl2if toto.pr

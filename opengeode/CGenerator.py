@@ -1187,11 +1187,14 @@ def _prim_call(prim):
         sortC = destSort.replace('-', '_')
         sort_name = f'asn1Scc{PROCESS_NAME.capitalize()}_{sortC.capitalize()}_Selection'
         if function_name == 'to_selector':
-            ret_string += f"(({sort_name}){var_str})"
+            # add 1 because we are converting to a CHOICE selector, which has an
+            # additional field choice_NONE with value 0. so all values are shifted
+            ret_string += f"(({sort_name}){var_str} + 1)"
         elif function_name == 'to_enum':
+            # symetrically to to_selector, we must remove 1 to get the right value
             sort_name_val = f'asn1Scc{sortC}'
             sort_name = f'asn1Scc{var_typename}'
-            ret_string += f"(({sort_name_val}){var_str})"
+            ret_string += f"(({sort_name_val}){var_str} - 1)"
     elif function_name == 'val':
         variable, target_type = params
         var_typename = type_name (variable.exprType)
