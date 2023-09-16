@@ -1,5 +1,6 @@
 system toto;
-    /* CIF TEXT (810, 226), (304, 292) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (810, 226), (267, 140) */
     -- Text area for declarations and comments
     use dataview comment 'dataview.asn';
     
@@ -12,9 +13,10 @@ system toto;
         signalroute r
             from env to toto with hello;
         connect c and r;
-        /* CIF PROCESS (360, 132), (231, 231) */
+        /* CIF PROCESS (400, 132), (150, 75) */
         process toto;
-            /* CIF TEXT (693, 124), (394, 239) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (693, 124), (366, 140) */
             -- Model used to demonstrate how to work with enumerated
             -- and choice determinants
             
@@ -26,68 +28,69 @@ system toto;
             /* CIF ENDTEXT */
             /* CIF START (240, 89), (70, 35) */
             START;
-                /* CIF task (160, 144), (229, 35) */
+                /* CIF task (169, 144), (210, 35) */
                 task choice_selectors := present(val);
-                /* CIF decision (222, 199), (106, 50) */
+                /* CIF decision (225, 199), (99, 50) */
                 decision present (val);
-                    /* CIF ANSWER (195, 269), (70, 24) */
+                    /* CIF ANSWER (195, 269), (70, 23) */
                     (foo):
-                    /* CIF ANSWER (285, 269), (70, 24) */
+                    /* CIF ANSWER (285, 269), (70, 23) */
                     (bar):
                 enddecision;
-                /* CIF decision (222, 309), (106, 50) */
+                /* CIF decision (225, 308), (99, 50) */
                 decision present (val);
-                    /* CIF ANSWER (166, 379), (129, 24) */
+                    /* CIF ANSWER (170, 378), (120, 23) */
                     (choice_selectors):
-                    /* CIF ANSWER (315, 379), (70, 24) */
+                    /* CIF ANSWER (315, 378), (70, 23) */
                     else:
                 enddecision;
-                /* CIF decision (210, 419), (129, 50) */
+                /* CIF decision (214, 417), (120, 50) */
                 decision choice_selectors;
-                    /* CIF ANSWER (223, 489), (103, 24) */
+                    /* CIF ANSWER (226, 487), (96, 23) */
                     (present(val)):
-                    /* CIF ANSWER (346, 489), (70, 24) */
+                    /* CIF ANSWER (346, 487), (70, 23) */
                     else:
                 enddecision;
-                /* CIF task (233, 529), (83, 35) */
+                /* CIF task (235, 526), (79, 35) */
                 task det := foo;
-                /* CIF task (215, 581), (119, 35) */
+                /* CIF task (215, 578), (118, 35) */
                 task pos := num (det);
-                /* CIF PROCEDURECALL (137, 636), (276, 35) */
-                call writeln ('num(det) = ', pos, ' (should be 0)');
-                /* CIF task (189, 686), (171, 40) */
+                /* CIF PROCEDURECALL (150, 633), (249, 35) */
+                call writeln ('1. num: ', pos, ' (should be 0)');
+                /* CIF task (196, 683), (156, 35) */
                 task choice_selectors := bar;
-                /* CIF task (113, 746), (324, 40) */
+                /* CIF task (125, 738), (299, 35) */
                 task choice_selectors := to_selector (det, MyChoice);
-                /* CIF PROCEDURECALL (120, 806), (309, 35) */
-                call writeln (choice_selectors, ' (should be FOO)');
-                /* CIF task (233, 861), (83, 35) */
+                /* CIF PROCEDURECALL (68, 793), (413, 35) */
+                call writeln ('2. choice_selectors: ',choice_selectors, ' (should be FOO)');
+                /* CIF task (235, 848), (79, 35) */
                 task det := bar;
-                /* CIF task (124, 911), (302, 40) */
+                /* CIF task (135, 898), (278, 35) */
                 task det := to_enum (choice_selectors, MyEnum);
-                /* CIF PROCEDURECALL (120, 971), (309, 35) */
-                call writeln (det, ' (should be FOO)');
-                /* CIF task (233, 1026), (83, 35) */
+                /* CIF PROCEDURECALL (127, 953), (294, 35) */
+                call writeln ('3. to_enum: ', det, ' (should be FOO)');
+                /* CIF task (235, 1008), (79, 35) */
                 task det := bar;
-                /* CIF task (113, 1081), (324, 40) */
+                /* CIF task (125, 1063), (299, 35) */
                 task choice_selectors := to_selector (det, MyChoice);
-                /* CIF PROCEDURECALL (120, 1141), (309, 35) */
-                call writeln (choice_selectors, ' (should be BAR)');
-                /* CIF task (233, 1196), (83, 35) */
+                /* CIF PROCEDURECALL (68, 1118), (412, 35) */
+                call writeln ('4. choice_selectors:', choice_selectors, ' (should be BAR)');
+                /* CIF task (235, 1173), (79, 35) */
                 task det := foo;
-                /* CIF task (124, 1251), (302, 40) */
+                /* CIF task (135, 1228), (278, 35) */
                 task det := to_enum (choice_selectors, MyEnum);
-                /* CIF PROCEDURECALL (120, 1311), (309, 35) */
-                call writeln (det, ' (should be BAR)');
-                /* CIF task (193, 1366), (164, 35) */
+                /* CIF PROCEDURECALL (128, 1283), (292, 35) */
+                call writeln ('5. to_enum: ', det, ' (should be BAR)');
+                /* CIF task (198, 1338), (152, 35) */
                 task det := val (0, MyEnum)
-                /* CIF comment (377, 1366), (133, 35) */
+                /* CIF comment (371, 1338), (116, 35) */
                 comment 'convert 0 to foo';
-                /* CIF PROCEDURECALL (120, 1421), (309, 35) */
-                call writeln (det, ' (should be FOO)');
-                /* CIF NEXTSTATE (243, 1471), (64, 35) */
+                /* CIF PROCEDURECALL (147, 1393), (255, 35) */
+                call writeln ('6. val: ',det, ' (should be FOO)');
+                /* CIF NEXTSTATE (240, 1443), (70, 35) */
                 NEXTSTATE hop;
             /* CIF state (528, 360), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state hop;
             endstate;
         endprocess toto;
