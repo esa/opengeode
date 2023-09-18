@@ -45,7 +45,7 @@ OUT_SIGNALS = []
 PROCEDURES = []
 STATES = []
 
-UNICODE_SEP = '___'
+SEPARATOR = '_0_'
 LPREFIX = 'ctxt'
 
 LEFT_TYPE = ''
@@ -117,7 +117,7 @@ def _process(process, simu=False, **kwargs):
 
     if simu:
         SHARED_LIB = True
-    
+
     # Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
 
@@ -140,6 +140,7 @@ def _process(process, simu=False, **kwargs):
     aliases_code = processing_process_aliases(process, no_renames)
     context_code = generating_context(process)
     startup_header_file_code, startup_function_code = generating_startup_function(process, no_renames)
+    aggreg_start_proc_code = generating_aggregate_start_funtions(process)
     run_transition_declaration_code = generating_run_transition_declaration(process)
     nested_states_code = generating_nested_states(process)
     dll_header_file_code, dll_declaration_code, dll_code = generating_dll_code(process, simu)
@@ -162,6 +163,7 @@ def _process(process, simu=False, **kwargs):
     generated_c_source_code.extend(aliases_code)
     generated_c_source_code.extend(context_code)
     generated_c_source_code.extend(run_transition_declaration_code)
+    generated_c_source_code.extend(aggreg_start_proc_code)
     generated_c_source_code.extend(inner_procedures_declarations_code)
     generated_c_source_code.extend(dll_declaration_code)
     generated_c_source_code.extend(startup_function_code)
@@ -201,7 +203,8 @@ def _decision(dec, **kwargs):
     branch_to = kwargs['branch_to'] if 'branch_to' in kwargs else None
     exitcalls = kwargs['exitcalls'] if 'exitcalls' in kwargs else []
     sep       = kwargs['sep']       if 'sep'       in kwargs else 'if('
-    
+    last      = kwargs['last']      if 'last'      in kwargs else ''
+
     global VAR_COUNTER
     stmts, decls = [], []
 
@@ -220,7 +223,7 @@ def _decision(dec, **kwargs):
             return generate(dec.alternative)
         else:
             return stmts, decls
-        
+
     question_type = dec.question.exprType
     question_basic_type = find_basic_type(question_type)
     actual_type = type_name(question_type)
@@ -232,7 +235,7 @@ def _decision(dec, **kwargs):
             'RealType',
             'EnumeratedType',
             'ChoiceEnumeratedType')
-    
+
     # for ASN.1 types, declare a local variable
     # to hold the evaluation of the question
     if not basic:
@@ -340,8 +343,8 @@ def _decision(dec, **kwargs):
 
                     stmts.append(f'trId = {branch_to};')
 
-                stmts.append('}')
-                sep = 'else if('
+                #stmts.append('}')  not here
+                sep = '} else if('
             elif ans_kind == 'closed_range':
                 cl0_stmts, cl0_str, cl0_decl = expression(ans_content[0])
                 cl1_stmts, cl1_str, cl1_decl = expression(ans_content[1])
@@ -360,8 +363,8 @@ def _decision(dec, **kwargs):
 
                 stmts.extend(transition_stmts)
                 decls.extend(transition_decls)
-                stmts.append('}')
-                sep = 'else if('
+                # stmts.append('}')
+                sep = '} else if('
             elif ans_kind == 'informal_text':
                 continue
             elif ans_kind == 'else':
@@ -374,17 +377,22 @@ def _decision(dec, **kwargs):
                     else_stmts, else_decl = ['{',';','}'], []
 
                 decls.extend(else_decl)
-    
     try:
         if sep != 'if(':
             # If there is at least one 'if' branch
-            else_stmts.insert(0, 'else')
+            else_stmts.insert(0, '}')  # close the if part
+            else_stmts.insert(1, 'else')
             stmts.extend(else_stmts)
         else:
+            else_stmts.insert(0, '}')  # close the if part
             stmts.extend(else_stmts)
     except:
         pass
 
+    if sep != 'if(' and last:
+        # "last" is usually nothing but it can be changed by parameter
+        # e.g. if the decision is chained with other tests with "elsif"
+        stmts.append(last)
     return stmts, decls
 
 
@@ -576,9 +584,9 @@ def _call_external_function(output, **kwargs):
 
             if list_of_params:
                 params=', '.join(list_of_params)
-                stmts.append(f'{UNICODE_SEP}{PROCESS_NAME.lower()}_{proc.inputString}({params});')
+                stmts.append(f'{SEPARATOR}{PROCESS_NAME.lower()}_{proc.inputString}({params});')
             else:
-                stmts.append(f'{UNICODE_SEP}{PROCESS_NAME.lower()}_{proc.inputString}();')
+                stmts.append(f'{SEPARATOR}{PROCESS_NAME.lower()}_{proc.inputString}();')
 
     return stmts, decls
 
@@ -621,7 +629,7 @@ def _inner_procedure(proc, **kwargs):
         procedure_declaration = procedure_header(proc, noPrefix=True)
         local_decl.append(f'#undef {proc.inputString}')
         local_decl.append(f'{procedure_declaration};')
-        name = f'{UNICODE_SEP}{PROCESS_NAME.lower()}_{proc.inputString}'
+        name = f'{SEPARATOR}{PROCESS_NAME.lower()}_{proc.inputString}'
         local_decl.append(f'#define {name} {proc.inputString}')
 
     else:
@@ -885,7 +893,7 @@ def _transition(tr, **kwargs):
             empty_transition = False
             stmts.extend(traceability(tr.terminator))
             if tr.terminator.label:
-                stmts.append(f'{ns}:') #.format(label=tr.terminator.label.inputString))
+                stmts.append(f'{ns}:')
 
             next_state_id = find_state_in_states(tr.terminator.next_id)
             next_state_id_str = ''
@@ -897,7 +905,23 @@ def _transition(tr, **kwargs):
 
             if tr.terminator.kind == 'next_state':
                 history = ns in ('-', '-*')
-                if not history:
+                if tr.terminator.next_is_aggregation and not history:
+                    stmts.append(f'//  Entering state aggregation {tr.terminator.inputString}')
+                    # First change the state (to avoid looping in continuous signals since
+                    # they will be evaluated after the start transition ; if the state is
+                    # still the old state, there is a risk of infinite recursion)
+                    if not tr.terminator.substate:
+                        stmts.append(
+                          f'{LPREFIX}.state = {generate_state_name(tr.terminator.inputString)};')
+                    else:
+                        # We may be already in a substate
+                        stmts.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state ='
+                                        f' {generate_state_name(tr.terminator.inputString)};')
+                    # Call the START function of the state aggregation
+                    stmts.append(f'{tr.terminator.next_id}();')
+                    stmts.append('trId = -1;')
+
+                elif not history:
                     stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
 
                     if tr.terminator.next_id == -1:
@@ -1207,7 +1231,7 @@ def _prim_call(prim):
         if not procedure:
             print("ERROR:", function_name, ' NOT SUPPORTED')
 
-        ret_string = f"{UNICODE_SEP}{PROCESS_NAME.lower()}_{procedure.inputString} ("
+        ret_string = f"{SEPARATOR}{PROCESS_NAME.lower()}_{procedure.inputString} ("
         list_of_params = []
 
         for param_counter, param in enumerate(params):
@@ -2461,6 +2485,21 @@ def generating_context(process):
 
     return context_code
 
+def generating_aggregate_start_funtions(process):
+   aggreg_start_proc = ['//// State Aggregations Start functions']
+   # Declare start procedure for aggregate states
+   # should create one START per "via" clause, TODO later
+   for name, substates in process.aggregates.items():
+       proc_name = f'void {name}{SEPARATOR}START(void)'
+       aggreg_start_proc.extend([f'{proc_name}',
+                                 '{'])
+       aggreg_start_proc.extend(f'runTransition{process.processName} ({subname.statename}{SEPARATOR}START);'
+                                for subname in substates)
+       aggreg_start_proc.extend(['}',
+                                '\n'])
+
+   return aggreg_start_proc
+
 
 def generating_startup_function(process, no_renames):
     startup_header_file_code = [u'//// Startup']
@@ -2472,6 +2511,7 @@ def generating_startup_function(process, no_renames):
 
     startup_header_file_code.append(u'\n')
 
+    # Generate the code of the start transition (if process not empty)
     startup_function_code = ['//// Startup']
     startup_function_code.append(f'void CInit{process.processName}()')
     startup_function_code.append('{')
@@ -2725,7 +2765,7 @@ def processing_input_signals(process, simu, minicv):
             input_signals_code.append('{')
             input_def = process.input_mapping[signal['name']].get(state)
             # Check for nested states to call optional exit procedure
-            sep = UNICODE_SEP
+            sep = SEPARATOR
             state_tree = state.split(sep)
             context = process
             exitlist = []
@@ -2910,7 +2950,7 @@ def generating_includes(process):
     includes_code.append(f'#include \"{process.processName}.h\"\n')
 
     return includes_code
-    
+
 
 def processing_transitions_and_floating_labels(process):
     continuous_signals_header_file_code = [u'//// Continuous Signals']
@@ -3007,6 +3047,7 @@ def processing_transitions_and_floating_labels(process):
         # (reminder: state aggregations = parallel states)
         done = []
         sep = 'if('
+        last = ''
 
         # flag indicating there are CS in nested states but not at root
         need_final_endif = False
@@ -3026,8 +3067,8 @@ def processing_transitions_and_floating_labels(process):
                         first_of_aggreg = False
 
                     need_final_endif = True
-                    first = "else" if done else ""
-                    transition_code.append(f'if({LPREFIX}.{each.statename}{UNICODE_SEP}State == {statename})') # should be tested and fixed
+                    first = "} else" if done else ""
+                    transition_code.append(f'if({LPREFIX}.{each.statename}{SEPARATOR}state == {generate_state_name(statename)})')
                     transition_code.append('{')
 
                     # Change priority 0 (no priority set) to lowest priority
@@ -3039,9 +3080,11 @@ def processing_transitions_and_floating_labels(process):
                     for provided_clause in sorted(cs_item, key=lambda itm: itm.priority):
                         transition_code.append(f'// Priority {provided_clause.priority}')
                         trId = process.transitions.index(provided_clause.transition)
-                        code, loc = generate(provided_clause.trigger, branch_to=trId, sep=sep)
+                        code, loc = generate(provided_clause.trigger,
+                                            branch_to=trId,
+                                            sep=sep, last=last)
                         code.append('goto next_transition;')
-                        sep='else if('
+                        sep='} else if('
                         transition_code.extend(code)
 
                     done.append(statename)
@@ -3072,7 +3115,7 @@ def processing_transitions_and_floating_labels(process):
                 trId = process.transitions.index(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
-                state_tree = statename.split(UNICODE_SEP)
+                state_tree = statename.split(SEPARATOR)
                 context = process
                 exitlist, exitcalls = [], []
                 current = ''
@@ -3086,20 +3129,21 @@ def processing_transitions_and_floating_labels(process):
                                 exitlist.append(current)
 
                             context = comp
-                            current = current + UNICODE_SEP
+                            current = current + SEPARATOR
                             break
 
                 trans = process.transitions[trId]
                 for each in reversed (exitlist):
                     if trans and all(each.startswith(trans_st)
                             for trans_st in trans.possible_states):
-                        exitcalls.append(f"p{UNICODE_SEP}{each}{UNICODE_SEP}exit;") # should be tested and fixed
+                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit;") # should be tested and fixed
 
                 code, loc = generate(provided_clause.trigger, branch_to=trId, sep=sep, exitcalls=exitcalls)
                 sep='else if('
                 transition_code.extend(code)
 
             if cs_item:
+                transition_code.append('}') # inner if
                 transition_code.append('}') # current state
 
             sep = 'if('
@@ -3191,7 +3235,7 @@ def procedure_header(procedure, noPrefix=False):
     return_type = 'void' if not return_type else return_type
 
     external = 'extern ' if procedure.external else ''
-    separator = f'{UNICODE_SEP}{PROCESS_NAME.lower()}_' if not procedure.exported else ''
+    separator = f'{SEPARATOR}{PROCESS_NAME.lower()}_' if not procedure.exported else ''
 
     procedure_name = procedure.inputString if not procedure.exported and not procedure.external else procedure.inputString.lower()
 

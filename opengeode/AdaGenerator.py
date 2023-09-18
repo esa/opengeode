@@ -3135,7 +3135,7 @@ def _transition(tr, **kwargs):
                 code.append(f'<<{ns}>>')
             if tr.terminator.kind == 'next_state':
                 history = ns in ('-', '-*')
-                if tr.terminator.next_is_aggregation and not history: # XXX add to C generator
+                if tr.terminator.next_is_aggregation and not history:
                     code.append(f'-- Entering state aggregation {tr.terminator.inputString}')
                     # First change the state (to avoid looping in continuous signals since
                     # they will be evaluated after the start transition ; if the state is
