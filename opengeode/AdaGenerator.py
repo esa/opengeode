@@ -1088,16 +1088,19 @@ package body {process.name}_RI is''']
                         taste_template.append(
                                 f'if {LPREFIX}.State = {ASN1SCC}{agg_name} then')
                         first_of_aggreg = False
+
                     need_final_endif = True
                     first = "els" if done else ""
                     taste_template.append(
                             f'if {LPREFIX}.{each.statename}{SEPARATOR}State = '
                             f'{ASN1SCC}{statename} then')
+
                     # Change priority 0 (no priority set) to lowest priority
                     lowest_priority = max(item.priority for item in cs_item)
                     for each in cs_item:
                         if each.priority == 0:
                             each.priority = lowest_priority + 1
+
                     for provided_clause in sorted(cs_item,
                                                  key=lambda itm: itm.priority):
                         taste_template.append(f'--  Priority {provided_clause.priority}')
@@ -1109,6 +1112,7 @@ package body {process.name}_RI is''']
                         code.append('goto Next_Transition;')
                         sep='elsif '
                         taste_template.extend(code)
+
                     done.append(statename)
                     taste_template.append('end if;')  # inner if
                     taste_template.append('end if;')  # substate if
@@ -1129,6 +1133,7 @@ package body {process.name}_RI is''']
             for each in cs_item:
                 if each.priority == 0:
                     each.priority = lowest_priority + 1
+
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
                 taste_template.append(f'--  Priority: {provided_clause.priority}')
@@ -1139,8 +1144,10 @@ package body {process.name}_RI is''']
                 context = process
                 exitlist, exitcalls = [], []
                 current = ''
+
                 while state_tree:
                     current = current + state_tree.pop(0)
+
                     for comp in context.composite_states:
                         if current.lower() == comp.statename.lower():
                             if comp.exit_procedure:
@@ -1148,6 +1155,7 @@ package body {process.name}_RI is''']
                             context = comp
                             current = current + SEPARATOR
                             break
+
                 trans = process.transitions[trId]
                 for each in reversed (exitlist):
                     if trans and all(each.startswith(trans_st)
@@ -1159,9 +1167,11 @@ package body {process.name}_RI is''']
                                      exitcalls=exitcalls)
                 sep='elsif '
                 taste_template.extend(code)
+
             if cs_item:
                 taste_template.append('end if;') # inner if
                 taste_template.append('end if;') # current state
+
             sep = 'if '
 
         if need_final_endif:

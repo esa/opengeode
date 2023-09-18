@@ -203,7 +203,7 @@ def _decision(dec, **kwargs):
     branch_to = kwargs['branch_to'] if 'branch_to' in kwargs else None
     exitcalls = kwargs['exitcalls'] if 'exitcalls' in kwargs else []
     sep       = kwargs['sep']       if 'sep'       in kwargs else 'if('
-    last      = kwargs['last']      if 'last'      in kwargs else ''
+    last      = kwargs['last']      if 'last'      in kwargs else '} //last'
 
     global VAR_COUNTER
     stmts, decls = [], []
@@ -372,21 +372,22 @@ def _decision(dec, **kwargs):
                 if answer.transition:
                     else_stmts, else_decl = generate(answer.transition)
                     else_stmts.insert(0, '{')
-                    else_stmts.append('}')
+                    #else_stmts.append('} // 3')
                 else:
-                    else_stmts, else_decl = ['{',';','}'], []
+                    else_stmts, else_decl = ['{','// nothing done'], []
 
                 decls.extend(else_decl)
     try:
         if sep != 'if(':
             # If there is at least one 'if' branch
-            else_stmts.insert(0, '}')  # close the if part
+            else_stmts.insert(0, '} // 1')  # close the if part
             else_stmts.insert(1, 'else')
             stmts.extend(else_stmts)
         else:
-            else_stmts.insert(0, '}')  # close the if part
+            else_stmts.insert(0, '} // 2')  # close the if part
             stmts.extend(else_stmts)
     except:
+        # no else statement
         pass
 
     if sep != 'if(' and last:
@@ -2786,7 +2787,7 @@ def processing_input_signals(process, simu, minicv):
 
             for each in reversed(exitlist):
                 if trans and all(each.startswith(trans_st) for trans_st in trans.possible_states):
-                    input_signals_code.append(u'{sep}{ref}{sep}exit();'.format(ref=each, sep=sep))
+                    input_signals_code.append(f'{sep}{process.processName}_{each}{sep}exit();')
 
             if input_def:
                 for inp in input_def.parameters:
@@ -3093,12 +3094,14 @@ def processing_transitions_and_floating_labels(process):
                     sep = 'if('
                     break
 
+        count = 0
         for statename in process.cs_mapping.keys() - done:
             cs_item = process.cs_mapping[statename]
 
             if cs_item:
+                count += 1 
                 need_final_endif = False
-                first = "else " if done else ""
+                first = "} else " if done else ""
                 transition_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
                 transition_code.append(u'{')
 
@@ -3136,15 +3139,17 @@ def processing_transitions_and_floating_labels(process):
                 for each in reversed (exitlist):
                     if trans and all(each.startswith(trans_st)
                             for trans_st in trans.possible_states):
-                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit;") # should be tested and fixed
+                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit();") # should be tested and fixed
 
-                code, loc = generate(provided_clause.trigger, branch_to=trId, sep=sep, exitcalls=exitcalls)
-                sep='else if('
+                code, loc = generate(provided_clause.trigger,
+                                     branch_to=trId, sep=sep, last=last,
+                                     exitcalls=exitcalls)
+                sep='} else if('
                 transition_code.extend(code)
 
             if cs_item:
-                transition_code.append('}') # inner if
-                transition_code.append('}') # current state
+                transition_code.append('} // inner if') # inner if
+                transition_code.append('} // current state') # current state
 
             sep = 'if('
 
