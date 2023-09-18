@@ -926,7 +926,11 @@ def _transition(tr, **kwargs):
                     stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
 
                     if tr.terminator.next_id == -1:
-                        stmts.append(f'{LPREFIX}.state = {generate_state_name(tr.terminator.inputString)};')
+                        if not tr.terminator.substate:
+                            stmts.append(f'{LPREFIX}.state = {generate_state_name(tr.terminator.inputString)};')
+                        else:
+                            stmts.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state ='
+                                        f' {generate_state_name(tr.terminator.inputString)};')
                 else:
                     if ns != "-*" and any(next_id
                             for next_id in tr.terminator.candidate_id.keys()
@@ -955,6 +959,28 @@ def _transition(tr, **kwargs):
                 # TODO
             elif tr.terminator.kind == 'return':
                 return_string = ''
+                
+                aggregate = False
+                if tr.terminator.substate:
+                    aggregate = True
+                    # within a state aggregation, a return means that one
+                    # of the parallel states becomes disabled, but it does
+                    # not mean that the whole state aggregation can be
+                    # exited. We must set this substate to a "finished"
+                    # state until all the substates are returned. Then only
+                    # call the overall state aggregation exit procedures.
+                    stmts.append(
+                        f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state '
+                        f'= {generate_state_name("state")}{SEPARATOR}end;')
+                    cond = '{ctxt}.{sib}{sep}state == {state}{sep}end'
+                    conds = [cond.format(sib=sib,
+                                         ctxt=LPREFIX,
+                                         sep=SEPARATOR,
+                                         state=generate_state_name("state"))
+                            for sib in tr.terminator.siblings
+                            if sib.lower() != tr.terminator.substate.lower()]
+                    stmts.append(f'if({" && ".join(conds)})')
+                    stmts.append('{')
 
                 if tr.terminator.next_id == -1:
                     if tr.terminator.return_expr:
@@ -966,6 +992,12 @@ def _transition(tr, **kwargs):
                 else:
                     stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
                     stmts.append('goto continuous_signals;')
+                if aggregate:
+                    stmts.append('} else')
+                    stmts.append('{')
+                    stmts.append('trId = -1;')
+                    stmts.append('goto continuous_signals;')
+                    stmts.append('}')
 
     if empty_transition:
         stmts.append(';')

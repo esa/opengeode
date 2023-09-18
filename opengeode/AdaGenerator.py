@@ -3163,7 +3163,7 @@ def _transition(tr, **kwargs):
                 elif not history:
                     code.append(f'trId := {str(tr.terminator.next_id)};')
                     if tr.terminator.next_id == -1:
-                        if not tr.terminator.substate: # XXX add to C generator
+                        if not tr.terminator.substate:
                             code.append(f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
                         else:
                             code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State :='
@@ -3232,7 +3232,7 @@ def _transition(tr, **kwargs):
                     retexp = tr.terminator.return_expr
                     if retexp:
                         stmts, string, local = expression(retexp, readonly=1)
-
+                        # XXX add to C generator
                         # Check the return type in case of a procedure, in
                         # case it is a string - to format it properly
                         if isinstance(tr.terminator.context, ogAST.Procedure):
