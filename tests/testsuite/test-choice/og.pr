@@ -1,5 +1,6 @@
 system og;
-    /* CIF TEXT (159, 221), (290, 188) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (159, 221), (267, 140) */
     -- Text area for declarations and comments
     
     use dv comment 'dataview.asn';
@@ -18,7 +19,8 @@ system og;
         connect c and r;
         /* CIF PROCESS (225, 50), (150, 75) */
         process og;
-            /* CIF TEXT (70, 60), (337, 232) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (70, 60), (237, 218) */
             --  Test choice assignments and access
             
             dcl ch ChoiceWithEmptySeq;
@@ -36,49 +38,58 @@ system og;
             /* CIF ENDTEXT */
             /* CIF START (445, 228), (70, 35) */
             START;
-                /* CIF task (431, 278), (98, 35) */
+                /* CIF task (441, 278), (76, 35) */
                 task ch := b: {};
-                /* CIF task (437, 328), (85, 35) */
+                /* CIF task (445, 328), (70, 35) */
                 task eso := {};
-                /* CIF task (427, 378), (106, 35) */
+                /* CIF task (438, 378), (82, 35) */
                 task em := ch.b
-                /* CIF comment (549, 376), (177, 40) */
+                /* CIF comment (537, 376), (157, 38) */
                 comment 'This is ok, there should
 be no warning raised';
-                /* CIF task (416, 433), (127, 35) */
+                /* CIF PROCEDURECALL (424, 433), (111, 35) */
+                call writeln(em={})
+                /* CIF comment (555, 433), (115, 35) */
+                comment 'should be TRUE';
+                /* CIF task (420, 483), (118, 35) */
                 task ch:= d: {a  TRUE}
-                /* CIF comment (563, 433), (175, 40) */
+                /* CIF comment (558, 483), (167, 38) */
                 comment 'No error, but
 ch!d!a := TRUE would fail';
-                /* CIF task (309, 488), (341, 35) */
+                /* CIF task (324, 538), (310, 35) */
                 task param2 := three : (choice_to_int (param, 10) < 10);
-                /* CIF task (405, 543), (149, 35) */
+                /* CIF PROCEDURECALL (369, 593), (221, 35) */
+                call writeln(choice_to_int(param, 10))
+                /* CIF comment (610, 593), (90, 35) */
+                comment 'should be 5';
+                /* CIF PROCEDURECALL (402, 643), (155, 35) */
+                call writeln(param2.three)
+                /* CIF comment (577, 643), (115, 35) */
+                comment 'should be TRUE';
+                /* CIF task (405, 693), (149, 35) */
                 task sel := present(param);
-                /* CIF task (333, 598), (293, 35) */
+                /* CIF PROCEDURECALL (433, 748), (92, 35) */
+                call writeln(sel);
+                /* CIF task (343, 798), (272, 35) */
                 task det := To_Enum (sel, Param_Determinants);
-                /* CIF task (364, 653), (231, 35) */
+                /* CIF task (364, 853), (231, 35) */
                 task sel := To_Selector (det, Parameters);
-                /* CIF decision (421, 708), (116, 50) */
+                /* CIF decision (421, 908), (116, 50) */
                 decision present(param);
-                    /* CIF ANSWER (299, 778), (70, 24) */
+                    /* CIF ANSWER (299, 978), (70, 23) */
                     (one):
-                    /* CIF ANSWER (380, 778), (70, 24) */
+                    /* CIF ANSWER (380, 978), (70, 23) */
                     (two):
-                    /* CIF ANSWER (461, 778), (70, 24) */
+                    /* CIF ANSWER (461, 978), (70, 23) */
                     (three):
-                    /* CIF ANSWER (535, 778), (85, 24) */
+                    /* CIF ANSWER (534, 978), (85, 23) */
                     (four_ty_to):
                 enddecision;
-                /* CIF NEXTSTATE (445, 818), (70, 35) */
+                /* CIF NEXTSTATE (445, 1017), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF state (758, 233), (70, 35) */
+            /* CIF state (821, 211), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state wait;
-                /* CIF input (751, 288), (84, 35) */
-                input dd;
-                    /* CIF output (748, 338), (89, 35) */
-                    output we;
-                    /* CIF NEXTSTATE (758, 388), (70, 35) */
-                    NEXTSTATE wait;
             endstate;
         endprocess og;
     endblock;

@@ -1177,6 +1177,47 @@ def _prim_call(prim):
         ret_decls.extend(local_var)
         ret_string += ('{e}.kind'.format(e=param_str))
 
+    elif function_name == 'choice_to_int':
+        p1, p2 = params
+        sort = find_basic_type (p1.exprType)
+        assert (sort.kind == 'ChoiceType')  # normally checked by the parser
+        param_stmts, varstr, local_var = expression(p1)
+        ret_stmts.extend(param_stmts)
+        ret_decls.extend(local_var)
+        param_stmts, defaultstr, local_var = expression(p2)
+        ret_stmts.extend(param_stmts)
+        ret_decls.extend(local_var)
+        choices = []
+        need_default = False
+        # all choice elements must be either signed or unsigned
+        # a mix would result in inconsistencies
+        # therefore we have to cast to signed as if there is at least one
+        # signed element (with the risk of cutting very big values)
+        has_unsigned = False
+        has_signed   = False
+        for each in sort.Children.values():
+            child_sort = find_basic_type(each.type)
+            if child_sort.kind.startswith('Integer'):
+                if float(child_sort.Min) < 0.0:
+                    has_signed = True
+                else:
+                    has_unsigned = True
+        need_cast = has_signed and has_unsigned
+        for child_name, descr in sort.Children.items():
+            child_name_c = child_name.replace('-', '_')
+            child_id   = descr.EnumID
+            child_sort = find_basic_type(descr.type)
+            if not child_sort.kind.startswith('Integer'):
+                need_default = True
+                continue
+            set_value = f'{varstr}.u.{child_name_c}'
+            if need_cast and float(child_sort.Min) >= 0.0:
+                set_value = f'(asn1SccSint){set_value}'
+            choices.append(f'{varstr}.kind=={child_id}?{set_value}')
+        if need_default:
+            choices.append(defaultstr)
+        ret_string = ':'.join(choices)
+
     elif function_name == 'round':
         param_stmts, param_string, param_decls = expression(params[0])
         ret_stmts.extend(param_stmts)
@@ -1435,7 +1476,7 @@ def _equality(expr):
         if isinstance(expr.right, (ogAST.PrimBitStringLiteral, ogAST.PrimOctetStringLiteral)):
             right_string = str(expr.right.numeric_value)
 
-        string = u'({left} {op} {right})'.format(left=left_string, op=operand, right=right_string)
+        string = f'({left_string} {operand} {right_string})'
     else:
         if asn1_type in TYPES:
             if isinstance(expr.left, ogAST.PrimSelector):
@@ -1464,9 +1505,9 @@ def _equality(expr):
 
             if isinstance(expr.right, ogAST.PrimReal):
                 VAR_COUNTER = VAR_COUNTER + 1
-                decls.append('static {ty} constant_{var_counter} = {cst};'.format(ty=actual_type, var_counter=VAR_COUNTER, cst=right_string))
+                decls.append(f'static {actual_type} constant_{VAR_COUNTER} = {right_string};')
                 right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
-            elif isinstance(expr.right, ogAST.PrimStringLiteral):
+            elif isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                 VAR_COUNTER = VAR_COUNTER + 1
 
                 if lbty.kind == 'IA5StringType':
@@ -1474,6 +1515,9 @@ def _equality(expr):
                     right_string = 'constant_{var_counter}'.format(var_counter=VAR_COUNTER)
                 else:
                     decls.append('static {ty} constant_{var_counter} = ({ty}) {{{size}, {{{values}}}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
+                    right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
+            elif isinstance(expr.right, ogAST.PrimEmptyString):
+                    decls.append(f'static {actual_type} constant_{VAR_COUNTER} = {{}};')
                     right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
             elif not (isinstance(expr.right, ogAST.PrimVariable)):
                 raise NotImplementedError(str(type(expr.right)) + ' in right part of comparison')
@@ -3510,7 +3554,7 @@ def write_statement(param, newline):
         local.extend(lcl2)
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimOctetStringLiteral):
-            code.append(u'printf(\"{}\");'.format(param.printable_string))
+            code.append('printf(\"{}\");'.format(param.printable_string))
         elif isinstance(param, ogAST.PrimStringLiteral):
             # adding/or not escaping for quote (") character
             raw_string = param.value[1:-1]
@@ -3600,7 +3644,7 @@ def write_statement(param, newline):
         elif type_kind == 'BooleanType':
             code.append('printf({value} ? \"TRUE\" : \"FALSE\");'.format(value=string))
         elif type_kind == 'RealType':
-            code.append('printf({str} >= 0.0 ? \" %lf\" : \"%lf\", {str});'.format(str=string))
+            code.append(f'printf(\" %lf\", {string});')
     elif type_kind == 'EnumeratedType':
         code, string, local = expression(param)
         code.append(f'switch({string}) {{')
@@ -3623,9 +3667,9 @@ def generate_printf_call(int_basic_type, string):
     printf_call = 'printf('
 
     if int_min_value < 0:
-        printf_call += '{str} >= 0 ? \" %ld\" : \"%ld\"'.format(str=string)
+        printf_call += '\"%ld\"'
     else:
-        printf_call += '\" %lu\"'
+        printf_call += '\"%lu\"'
 
     printf_call += ', {str});'.format(str=string)
 

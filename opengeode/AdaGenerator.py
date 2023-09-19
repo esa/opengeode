@@ -1765,12 +1765,6 @@ def _prim_call(prim, **kwargs):
         stmts.extend(param_stmts)
         local_decl.extend(local_var)
         ada_string += f'To_{exp_typename}_Selection ({param_str}.Kind)'
-        # Finally we have to change the type name, because the
-        # function To_<type>_Selection function returns a type
-        # created by the Helper.generate_asn1_datamodel function
-        # and containing a prefix - not known by ogParser.
-        # No, this is now done properly in ogParser
-        #prim.exprType.ReferencedTypeName = f'{PROCESS_NAME}-{prim.exprType.ReferencedTypeName}'
 
     elif ident == 'choice_to_int':
         p1, p2 = params
