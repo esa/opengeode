@@ -1517,8 +1517,14 @@ def _equality(expr):
                     decls.append('static {ty} constant_{var_counter} = ({ty}) {{{size}, {{{values}}}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
                     right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
             elif isinstance(expr.right, ogAST.PrimEmptyString):
-                    decls.append(f'static {actual_type} constant_{VAR_COUNTER} = {{}};')
-                    right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
+                VAR_COUNTER = VAR_COUNTER + 1
+                decls.append(f'static {actual_type} constant_{VAR_COUNTER} = {{}};')
+                right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
+            elif isinstance(expr.right, (ogAST.PrimChoiceItem, ogAST.PrimSequence)):
+                VAR_COUNTER = VAR_COUNTER + 1
+                decls.append(f'static {actual_type} constant_{VAR_COUNTER};')
+                stmts.append(f'constant_{VAR_COUNTER} = ({actual_type}) {right_string};')
+                right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
             elif not (isinstance(expr.right, ogAST.PrimVariable)):
                 raise NotImplementedError(str(type(expr.right)) + ' in right part of comparison')
             else:

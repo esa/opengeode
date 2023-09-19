@@ -20,7 +20,7 @@ system og;
         /* CIF PROCESS (225, 50), (150, 75) */
         process og;
             /* CIF Keep Specific Geode Partition 'default' */
-            /* CIF TEXT (70, 60), (237, 218) */
+            /* CIF TEXT (70, 60), (237, 278) */
             --  Test choice assignments and access
             
             dcl ch ChoiceWithEmptySeq;
@@ -35,6 +35,10 @@ system og;
             
             dcl det Param_Determinants;
             dcl sel Parameters_selection;
+            
+            dcl foo Seq := {a b:{}, b {true}};
+            
+            dcl bar SeqOf := { true, false };
             /* CIF ENDTEXT */
             /* CIF START (445, 228), (70, 35) */
             START;
@@ -58,39 +62,51 @@ be no warning raised';
 ch!d!a := TRUE would fail';
                 /* CIF task (324, 538), (310, 35) */
                 task param2 := three : (choice_to_int (param, 10) < 10);
-                /* CIF PROCEDURECALL (369, 593), (221, 35) */
-                call writeln(choice_to_int(param, 10))
-                /* CIF comment (610, 593), (90, 35) */
-                comment 'should be 5';
-                /* CIF PROCEDURECALL (402, 643), (155, 35) */
-                call writeln(param2.three)
-                /* CIF comment (577, 643), (115, 35) */
+                /* CIF PROCEDURECALL (383, 593), (193, 35) */
+                call writeln(param2=three:TRUE)
+                /* CIF comment (596, 593), (115, 35) */
                 comment 'should be TRUE';
-                /* CIF task (405, 693), (149, 35) */
+                /* CIF PROCEDURECALL (383, 648), (192, 35) */
+                call writeln(foo={a b:{}, b {true}})
+                /* CIF comment (596, 648), (115, 35) */
+                comment 'should be TRUE';
+                /* CIF PROCEDURECALL (394, 703), (170, 35) */
+                call writeln(bar={true, false})
+                /* CIF comment (585, 703), (115, 35) */
+                comment 'should be TRUE';
+                /* CIF PROCEDURECALL (369, 753), (221, 35) */
+                call writeln(choice_to_int(param, 10))
+                /* CIF comment (610, 753), (90, 35) */
+                comment 'should be 5';
+                /* CIF PROCEDURECALL (402, 803), (155, 35) */
+                call writeln(param2.three)
+                /* CIF comment (577, 803), (115, 35) */
+                comment 'should be TRUE';
+                /* CIF task (405, 853), (149, 35) */
                 task sel := present(param);
-                /* CIF PROCEDURECALL (433, 748), (92, 35) */
+                /* CIF PROCEDURECALL (433, 908), (92, 35) */
                 call writeln(sel);
-                /* CIF task (343, 798), (272, 35) */
+                /* CIF task (343, 958), (272, 35) */
                 task det := To_Enum (sel, Param_Determinants);
-                /* CIF task (364, 853), (231, 35) */
+                /* CIF task (364, 1013), (231, 35) */
                 task sel := To_Selector (det, Parameters);
-                /* CIF decision (421, 908), (116, 50) */
+                /* CIF decision (421, 1068), (116, 50) */
                 decision present(param);
-                    /* CIF ANSWER (299, 978), (70, 23) */
+                    /* CIF ANSWER (299, 1138), (70, 23) */
                     (one):
-                    /* CIF ANSWER (380, 978), (70, 23) */
+                    /* CIF ANSWER (380, 1138), (70, 23) */
                     (two):
-                    /* CIF ANSWER (461, 978), (70, 23) */
+                    /* CIF ANSWER (461, 1138), (70, 23) */
                     (three):
-                    /* CIF ANSWER (533, 978), (85, 23) */
+                    /* CIF ANSWER (532, 1138), (85, 23) */
                     (four_ty_to):
                 enddecision;
-                /* CIF PROCEDURECALL (365, 1017), (228, 35) */
+                /* CIF PROCEDURECALL (365, 1177), (228, 35) */
                 call writeln(choice_to_int(param2, 10))
-                /* CIF comment (614, 1017), (268, 38) */
+                /* CIF comment (614, 1177), (268, 38) */
                 comment 'param2 is set to three, which is a boolean,
 so it should take the default value, i.e. 10';
-                /* CIF NEXTSTATE (445, 1067), (70, 35) */
+                /* CIF NEXTSTATE (445, 1227), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (821, 211), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */

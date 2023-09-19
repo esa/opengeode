@@ -15,6 +15,11 @@ ChoiceWithEmptySeq ::= CHOICE {
   d SEQUENCE { a BOOLEAN }
 }
 
+Seq ::= SEQUENCE {
+   a ChoiceWithEmptySeq,
+   b SeqOf
+}
+
 c1 EmptySeq ::= {}
 
 n1 NullType ::= NULL
