@@ -82,10 +82,15 @@ ch!d!a := TRUE would fail';
                     (two):
                     /* CIF ANSWER (461, 978), (70, 23) */
                     (three):
-                    /* CIF ANSWER (534, 978), (85, 23) */
+                    /* CIF ANSWER (533, 978), (85, 23) */
                     (four_ty_to):
                 enddecision;
-                /* CIF NEXTSTATE (445, 1017), (70, 35) */
+                /* CIF PROCEDURECALL (365, 1017), (228, 35) */
+                call writeln(choice_to_int(param2, 10))
+                /* CIF comment (614, 1017), (268, 38) */
+                comment 'param2 is set to three, which is a boolean,
+so it should take the default value, i.e. 10';
+                /* CIF NEXTSTATE (445, 1067), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (821, 211), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
