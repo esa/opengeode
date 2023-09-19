@@ -3673,9 +3673,9 @@ def generate_printf_call(int_basic_type, string):
     printf_call = 'printf('
 
     if int_min_value < 0:
-        printf_call += '\"%ld\"'
+        printf_call += '\" %ld\"'
     else:
-        printf_call += '\"%lu\"'
+        printf_call += '\" %lu\"'
 
     printf_call += ', {str});'.format(str=string)
 
