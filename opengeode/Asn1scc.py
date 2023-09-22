@@ -119,7 +119,7 @@ def parse_asn1(*files, **options):
         outdir = tempfile.mkdtemp()
 
     # to allow the import
-    sys.path.append(outdir)
+    sys.path.append(os.path.abspath(outdir))
 
     ast_version = options.get('ast_version', ASN1.UniqueEnumeratedNames)
     rename_policy = options.get('rename_policy', ASN1.NoRename)
@@ -175,7 +175,7 @@ def parse_asn1(*files, **options):
         _ = waitfor_qprocess(asn1scc, "ASN.1 Compiler")
     else:
         LOG.info('Reusing cached ASN.1 modules')
-
+    
     ast = importlib.import_module(new_hash)
     AST[new_hash] = ast
     if pprint:

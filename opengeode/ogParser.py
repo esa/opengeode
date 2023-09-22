@@ -240,6 +240,7 @@ def set_global_DV(asn1_filenames):
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
         LOG.debug(str(err))
+        raise
     except TypeError as err:
         LOG.debug(traceback.format_exc())
         raise TypeError('ASN.1 compiler failed - {}'.format(str(err)))

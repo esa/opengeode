@@ -1036,7 +1036,12 @@ package body {process.name}_RI is''']
         if code_labels:
             # Due to nested states (chained transitions) jump over label code
             # (NEXTSTATEs do not return from Execute_Transition)
-            taste_template.append('goto Continuous_Signals;')
+            if not MONITORS:
+                taste_template.append('goto Continuous_Signals;')
+            else:
+                # Observers only evaluate continuous signals once
+                # to avoid looping forever when remaining in the same state
+                taste_template.append('goto Next_Transition;')
 
         # Add the code for the floating labels
         taste_template.extend(code_labels)
@@ -3189,7 +3194,13 @@ def _transition(tr, **kwargs):
                                      'end case;'])
                     else:
                         code.append('trId := -1;')
-                code.append('goto Continuous_Signals;')
+                #code.append('goto Continuous_Signals;')
+                if not MONITORS:
+                    code.append('goto Continuous_Signals;')
+                else:
+                    # Observers only evaluate continuous signals once
+                    # to avoid looping forever when remaining in the same state
+                    code.append('goto Next_Transition; --  Until next observer step')
             elif tr.terminator.kind == 'join':
                 code.append(f'goto {tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
@@ -3245,11 +3256,23 @@ def _transition(tr, **kwargs):
                     code.append(f'return{" " + string if string else ""};')
                 else:
                     code.append(f'trId :=  {str(tr.terminator.next_id)};')
-                    code.append('goto Continuous_Signals;')
+                    #code.append('goto Continuous_Signals;')
+                    if not MONITORS:
+                        code.append('goto Continuous_Signals;')
+                    else:
+                        # Observers only evaluate continuous signals once
+                        # to avoid looping forever when remaining in the same state
+                        code.append('goto Next_Transition; --  Until next observer step')
                 if aggregate:
                     code.append('else')
                     code.append('trId := -1;')
-                    code.append('goto Continuous_Signals;')
+                    #code.append('goto Continuous_Signals;')
+                    if not MONITORS:
+                        code.append('goto Continuous_Signals;')
+                    else:
+                        # Observers only evaluate continuous signals once
+                        # to avoid looping forever when remaining in the same state
+                        code.append('goto Next_Transition; --  Until next observer step')
                     code.append('end if;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
