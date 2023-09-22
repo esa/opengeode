@@ -125,6 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.11 (09/2023)**
+- Major upgrade of the C backend - nearly feature complete (except type/instances and a few other features)
+- Fixes in the code generation for observers/model checking and interactive simulator
+
 **4.1.10 (09/2023)**
 - Various fixes in the C backend
 
