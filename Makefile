@@ -59,7 +59,7 @@ dependencies:
 	sudo apt install -y python3-singledispatch
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.5.0.0/asn1scc-bin-4.5.0.0.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
+	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.5.0.12/asn1scc-bin-4.5.0.12.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
