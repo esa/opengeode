@@ -31,8 +31,8 @@ test-ada: expressions.ali dataview-uniq.o | test_ada.o
 	./test_ada
 
 test-c: expressions.c test_c.o dataview-uniq.o
-	$(CC) expressions.c -c -o expressions.o
-	$(CC) test_c.o dataview-uniq.o expressions.o -lm -o test_c
+	$(CC) expressions.c -c asn1crt.c
+	$(CC) test_c.o dataview-uniq.o asn1crt.o expressions.o -lm -o test_c
 	./test_c
 
 test-if:

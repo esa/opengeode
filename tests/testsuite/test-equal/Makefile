@@ -31,8 +31,8 @@ test-ada: og.ali dataview-uniq.o | test_ada.o
 	./test_ada | diff expected -
 
 test-c: og.c test_c.o dataview-uniq.o
-	$(CC) og.c -c -o og.o
-	$(CC) test_c.o og.o dataview-uniq.o -lm -o test_c
+	$(CC) og.c -c asn1crt.c
+	$(CC) test_c.o og.o asn1crt.o dataview-uniq.o -lm -o test_c
 	./test_c | diff expected -
 
 test-if:

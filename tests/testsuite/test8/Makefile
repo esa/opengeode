@@ -34,8 +34,8 @@ test-ada: dataview-uniq.o | test_ada.o
 	./test_ada | diff expected -
 
 test-c: orchestrator.c test_c.o dataview-uniq.o
-	$(CC) orchestrator.c -c -o orchestrator.o
-	$(CC) test_c.o orchestrator.c dataview-uniq.o -lm -o test_c
+	$(CC) orchestrator.c asn1crt.c -c 
+	$(CC) test_c.o orchestrator.o asn1crt.o dataview-uniq.o -lm -o test_c
 	./test_c | diff expected_c -
 
 test-if:

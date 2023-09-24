@@ -40,8 +40,8 @@ expressions_ri.adb: expressions_ri.ada
 	cp expressions_ri.ada expressions_ri.adb
 
 test-c: expressions.c test_c.o dataview-uniq.o
-	$(CC) expressions.c -c -o expressions.o
-	$(CC) test_c.o dataview-uniq.o expressions.o -lm -o test_c
+	$(CC) expressions.c -c asn1crt.c
+	$(CC) test_c.o dataview-uniq.o asn1crt.o expressions.o -lm -o test_c
 	./test_c | diff expected_c -
 	
 test-if:
