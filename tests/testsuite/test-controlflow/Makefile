@@ -31,8 +31,8 @@ test-ada: controlflow.ali dataview-uniq.o | test_ada.o
 	./test_ada | diff expected -
 
 test-c: controlflow.c test_c.o dataview-uniq.o
-	$(CC) controlflow.c -c -o controlflow.o
-	$(CC) test_c.o controlflow.c -lm -o test_c
+	$(CC) -c asn1crt.c controlflow.c dataview-uniq.c
+	$(CC) test_c.o asn1crt.o controlflow.o dataview-uniq.o -lm -o test_c
 	./test_c | diff expected -
 
 test-if:
