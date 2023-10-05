@@ -1010,6 +1010,13 @@ package body {process.name}_RI is''']
         taste_template.extend(set(local_decl_transitions))
         taste_template.append('begin')
 
+        # Make sure initialization has happened before executing transitions
+        # other than the startup transition. It may be reset to False when an
+        # instance terminates with the stop symbol.
+        taste_template.append(f'if not {LPREFIX}.Init_Done and trId /= 0 then')
+        taste_template.append(f'return;')
+        taste_template.append(f'end if;')
+
         # Generate a loop that ends when a next state is reached
         # (there can be chained transition when entering a nested state)
         taste_template.append('while (trId /= -1) loop')
@@ -3204,12 +3211,14 @@ def _transition(tr, **kwargs):
             elif tr.terminator.kind == 'join':
                 code.append(f'goto {tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
-                # TODO: * reset the context variable
                 if 'PID' in TYPES:
                     # Instances can be deleted only from the code of the type
                     # based on the "self" PID (but we don't check it here)
                     code.append(f"Delete_Instance (Self);")
                     code.append(f"{LPREFIX} := Default_Context;")
+                    # Reset Init_Done, to avoid consuming cyclic messages with
+                    # the default state
+                    code.append(f"{LPREFIX}.Init_Done := False;")
                 code.append("return;")
             elif tr.terminator.kind == 'return':
                 string = ''
