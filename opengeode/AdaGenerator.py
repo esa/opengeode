@@ -450,7 +450,7 @@ package body {process.name} is''']
         # Add external interface for process creation (CREATE symbol) if needed
         for each in process.dependencies['create']:
             taste_template.extend([
-              f'function Create_{each.title()} return {ASN1SCC}PID',
+              f'function Create_{each.title()} (from: {ASN1SCC}PID) return {ASN1SCC}PID',
               f'   with Import, Convention => C, Link_Name => "{each.lower()}_create_instance";'
             ])
 
@@ -1666,7 +1666,7 @@ def _create_request(create, **kwargs):
     code.extend(traceability(create))
     if create.comment:
         code.extend(traceability(create.comment))
-    code.append (f"{LPREFIX}.Offspring := Create_{create.instance_to_create.title()};")
+    code.append (f"{LPREFIX}.Offspring := Create_{create.instance_to_create.title()} (Self);")
     return code, local_decl
 
 @singledispatch

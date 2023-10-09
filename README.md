@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.13 (09/2023)**
+- Fix for the support of the CREATE symbol (needed for the simulation)
+
 **4.1.12 (09/2023)**
 - Fix for the support of the CREATE symbol (Ada backend)
 
