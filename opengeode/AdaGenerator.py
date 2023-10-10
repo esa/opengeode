@@ -178,13 +178,13 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
         the "simu" option comes from the command line. When set, the backend
         will generate simulation-specific code that raise an exception when
         an input is recevied in a state where it is not expected (lost signal)
-        In that case, the tast simulator and model cehcker will catch it and
+        In that case, the taste simulator and model checker will catch it and
         replace the input event with an "unhandled input" event.
     '''
     # support generation of code of a process type
     if not instance:
         process.name = process.instance_of_name or process.processName
-        generic = process.instance_of_name  #  shortcut
+        generic = process.instance_of_name  #  shortcut (may be None)
         process_instance = process
         process = process.instance_of_ref or process
     else:
@@ -579,6 +579,8 @@ package body {process.name}_RI is''']
     # Generate the code of the procedures
     inner_procedures_code = []
     for proc in process.content.inner_procedures:
+        # note, instances have no inner procedures, so the declaration
+        # of the sync PIs for the instances has to be done later
         not_local = False
         spelling = proc.inputString
         # Exported procedures may be declared in the process (with
@@ -673,9 +675,12 @@ package body {process.name}_RI is''']
 
         # Check if there is an exported procedure with the name of the signal
         ignore_export = False
+        proc_to_declare = None
         for proc in process.procedures:
             if proc.inputString.lower() == signame.lower():
                 ignore_export = True
+                proc_to_declare = proc
+                break
 
         if ignore_export:
             # this signal corresponds to the transitions triggered after
@@ -685,25 +690,30 @@ package body {process.name}_RI is''']
 
         if signame == 'START':
             continue
-        pi_header = f'procedure {fake_name or signame}'
-        param_name = signal.get('param_name') or f'{signame}_param'
-        # Add (optional) PI parameter (only one is possible in TASTE PI)
-        if 'type' in signal:
-            typename = type_name(signal['type'])
-            pi_header += f'({param_name}: in out {typename})'
+        if ignore_export and instance:
+            pi_header = procedure_header(proc_to_declare)
+        else:
+            pi_header = f'procedure {fake_name or signame}'
+            param_name = signal.get('param_name') or f'{signame}_param'
+            # Add (optional) PI parameter (only one is possible in TASTE PI)
+            if 'type' in signal:
+                typename = type_name(signal['type'])
+                pi_header += f'({param_name}: in out {typename})'
 
         # Add declaration of the provided interface in the .ads file
         ads_template.append(f'--  Provided interface "{signame}"')
         ads_template.append(pi_header + ';')
 
-        if not generic and not ignore_export:
+        if (not generic and not ignore_export) or (ignore_export and instance):
             ads_template.append(
                     f'pragma Export(C, {signame},'
                     f' "{process.name.lower()}_PI_{signame}");')
 
         pi_header += ' is'
-        taste_template.append(pi_header)
-        taste_template.append('begin')
+        if not fake_name or instance or generic:
+            # No _Transition procedure in instances
+            taste_template.append(pi_header)
+            taste_template.append('begin')
 
         def execute_transition(state, dest=[]):
             ''' Generate the code that triggers the transition for the current
@@ -812,14 +822,21 @@ package body {process.name}_RI is''']
                     # (using "fake_name")
                     taste_template.append('raise Lost_Input;')
             taste_template.append('end case;')
-        else:
+        elif not fake_name or instance:
             inst_call = f"{process.name}_Instance.{signame}"
             if 'type' in signal:
                 inst_call += f" ({param_name})"
+            elif proc_to_declare and proc_to_declare.fpar:
+                params = [p['name'] for p in proc_to_declare.fpar]
+                strparams = ", ".join(params)
+                inst_call += f" ({strparams})"
             taste_template.append(f"{inst_call};")
-
-        taste_template.append(f'end {fake_name or signame};')
-        taste_template.append('\n')
+        if not fake_name or generic:
+            taste_template.append(f'end {fake_name or signame};')
+            taste_template.append('\n')
+        elif instance:
+            taste_template.append(f'end {signame};')
+            taste_template.append('\n')
 
     #  add call to startup function for instances
     if instance:

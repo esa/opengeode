@@ -5131,6 +5131,26 @@ def process_definition(root, parent=None, context=None):
                            f' missing CONNECT for exitpoint "{exitpt}"')
                     errors.append([msg, [each.pos_x, each.pos_y], []])
 
+    # Post-processing: check that all procedures declared as exported and
+    # referenced have a corresponding implementation in the model. If not,
+    # return an error. Later we can add a default one with the proper
+    # interface in a text box, and inform
+    # the user that the model has been modified and must be saved.
+    if not process.referenced and not process.instance_of_name:
+        needed_procedures = [proc.inputString.lower()
+                for proc in context.procedures
+                if proc.referenced and proc.exported]
+        for each in context.procedures:
+            if each.referenced and each.exported:
+                continue
+            elif each.inputString.lower() in needed_procedures:
+                # Flag procedure definition as exported
+                each.exported = True
+                needed_procedures.remove(each.inputString.lower())
+        for each in needed_procedures:
+            msg = f'Missing procedure definition: {each}'
+            errors.append([msg, [0, 0], []])
+
     for each in chain(errors, warnings):
         try:
             each[2].insert(0, 'PROCESS {}'.format(process.processName))

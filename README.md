@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.14 (10/2023)**
+- Report an error when a procedure is declared referenced and external but no definition is provided
+
 **4.1.13 (09/2023)**
 - Fix for the support of the CREATE symbol (needed for the simulation)
 
