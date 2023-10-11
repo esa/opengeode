@@ -710,10 +710,9 @@ package body {process.name}_RI is''']
                     f' "{process.name.lower()}_PI_{signame}");')
 
         pi_header += ' is'
-        if not fake_name or instance or generic:
-            # No _Transition procedure in instances
-            taste_template.append(pi_header)
-            taste_template.append('begin')
+        # No _Transition procedure in instances
+        taste_template.append(pi_header)
+        taste_template.append('begin')
 
         def execute_transition(state, dest=[]):
             ''' Generate the code that triggers the transition for the current
@@ -831,7 +830,7 @@ package body {process.name}_RI is''']
                 strparams = ", ".join(params)
                 inst_call += f" ({strparams})"
             taste_template.append(f"{inst_call};")
-        if not fake_name or generic:
+        if not instance:
             taste_template.append(f'end {fake_name or signame};')
             taste_template.append('\n')
         elif instance:
