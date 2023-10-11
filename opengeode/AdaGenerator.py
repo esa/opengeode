@@ -1431,6 +1431,7 @@ def _call_external_function(output, **kwargs):
                 _, dest_pid, _ = expression(dest_pid) 
             else:
                 dest_pid = f'{ASN1SCC}{dest_pid}'  # enumerated value
+            dest_pid = dest_pid.replace('-', '_')
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
