@@ -125,6 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.15 (10/2023)**
+- Added --edit flag to be used in combination with --toC/--toAda to generate
+  code together with the model and save build time
+
 **4.1.14 (10/2023)**
 - Report an error when a procedure is declared referenced and external but no definition is provided
 - Fix support for sync PI in function type/instance

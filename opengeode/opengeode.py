@@ -1833,6 +1833,9 @@ class SDL_View(QGraphicsView):
         # Flag indicating that something changed on the model since last time
         # user clicked on the Check Model button
         self.something_changed = True
+        # Command line flags are used by the save_diagram method. They are
+        # set at startup when the main window is read from the ui file
+        self.options = None
 
     top_scene = lambda self: (self.scene_stack[0][0] if self.scene_stack
                               else self.scene())
@@ -2264,8 +2267,8 @@ class SDL_View(QGraphicsView):
             return False
 
         # Generate the process context in ASN.1
-        # (not in autosave mode, as scene.ast has not been updated properly, this
-        #  is done by the call to check_model which has not been done)
+        # (not in autosave mode, as scene.ast has not been updated properly,
+        #  this is done by the call to check_model which has not been done)
         if not autosave and scene.ast is not None and len(scene.ast.processes) == 1:
             process, = scene.ast.processes
             process.name = process.processName
@@ -2295,7 +2298,16 @@ class SDL_View(QGraphicsView):
         pr_raw = Pr.parse_scene(scene, full_model=True
                                        if not self.readonly_pr else False)
 
-        # Read the processes name for the Makefile
+        if (not autosave
+               and scene.ast is not None
+               and len(scene.ast.processes) == 1
+               and (self.options.toAda or self.options.toC)):
+            # When --edit is combined with --toAda or --toC, generate the
+            # code at the same time as the model, to save build time in TASTE
+            process, = scene.ast.processes
+            generate(process, self.options)
+
+        # Read the process name for the Makefile
         for each in scene.processes:
             if not isinstance(each, ProcessType):
                 process_name = str(each.text)
@@ -2720,6 +2732,8 @@ class OG_MainWindow(QMainWindow):
         self.statechart_mdi = None
         self.current_window = None
         self.datadict = None
+        # Command line flags (set in the start method)
+        self.options = None
 
     def new_scene(self, readonly=False):
         ''' Create a new, clean SDL scene. This function is necessary because
@@ -2740,6 +2754,8 @@ class OG_MainWindow(QMainWindow):
 
     def start(self, options, splash, app):
         ''' Initializes all objects to start the application '''
+        # Keep track of command-line options
+        self.options = options
 
         file_name = options.files
         # widget wrapping the view. We have to maximize it
@@ -2750,6 +2766,8 @@ class OG_MainWindow(QMainWindow):
         self.view = self.findChild(SDL_View, 'graphicsView')
         self.view.wrapping_window = process_widget
         self.view.wrapping_window.setWindowTitle('block unnamed[*]')
+        # View needs the command line options because of the Save function
+        self.view.options = options
 
         # Create a default (block) scene for the view
         self.new_scene(options.readonly)
@@ -3452,12 +3470,25 @@ class FilterEvent(QObject):
 
 
 def parse_args():
-    ''' Parse command line arguments '''
+    ''' Parse command line arguments
+        By default in the absence of options the graphical editor will load
+        With some options like --toAda and --toC however only specific actions
+        will execute (CLI mode).
+        If --edit is used in combination with the code generation backends,
+        this forces both the editor to open and the code to be generated
+        (upon model saving). In combination with --taste, the code will
+        be generated in the "../code" folder. This is the taste default ;
+        there is currently no "--output" option to specify another folder, but
+        this could be added if needed.
+    '''
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--version', action='version',
                         version=__version__)
     parser.add_argument('-g', '--debug', action='store_true', default=False,
             help='Display debug information')
+    parser.add_argument('-e', '--edit', action='store_true', default=True,
+            help='Open the editor (can be combined with --toC/--toAda)')
     parser.add_argument('--dumpAST', action='store_true', default=False,
             help='Dump AST to the file')
     parser.add_argument('--simu', action='store_true', default=False,
@@ -3542,6 +3573,14 @@ def parse(files):
 
 def generate(process, options):
     ''' Generate code '''
+    cwd = '.'
+    if options.edit and options.taste_target:
+        # Generate the code in ../code for TASTE
+        cwd = os.getcwd()  # We should be in "src" folder
+        # Move a folder up, create the "code" folder is absent, then enter it
+        os.chdir (os.pardir)
+        os.makedirs("code" , exist_ok=True)
+        os.chdir("code")
     ret = 0
     if options.toAda or options.simu:
         LOG.info('Generating Ada code')
@@ -3578,6 +3617,8 @@ def generate(process, options):
     if options.stg:
         LOG.info('Using backend file {}'.format(options.stg))
         StgBackend.generate(process, simu=options.simu, stgfile=options.stg)
+    if options.edit and options.taste_target:
+        os.chdir(cwd)
     return ret
 
 
@@ -3745,9 +3786,14 @@ def opengeode():
     init_logging(options)
 
     LOG.debug('Starting OpenGEODE version ' + __version__)
+    if options.edit and any ((options.check, options.png, options.pdf,
+            options.svg, options.simu, options.stg, options.dumpAST)):
+        LOG.error("Invalid combination of options. --edit can only be "
+                  "used together with --toC and --toAda. Ignoring...")
+        return cli(options)
     if any((options.check, options.toAda, options.png, options.pdf,
             options.svg, options.llvm, options.simu, options.stg,
-            options.toC, options.dumpAST)):
+            options.toC, options.dumpAST)) and not options.edit:
         return cli(options)
     else:
         return gui(options)
