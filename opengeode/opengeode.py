@@ -3487,7 +3487,7 @@ def parse_args():
                         version=__version__)
     parser.add_argument('-g', '--debug', action='store_true', default=False,
             help='Display debug information')
-    parser.add_argument('-e', '--edit', action='store_true', default=True,
+    parser.add_argument('-e', '--edit', action='store_true', default=False,
             help='Open the editor (can be combined with --toC/--toAda)')
     parser.add_argument('--dumpAST', action='store_true', default=False,
             help='Dump AST to the file')
