@@ -49,17 +49,15 @@ update:
 	git pull
 
 dependencies:
-	sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
+	#sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
-	python3 -m pip install --user --upgrade pyside6
+	python3 -m pip install pyside6
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
-	cd /tmp ; wget -q -O - https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 | tar jxpvf - ; cd antlr3_python3_runtime_3.4 ; python3 -m pip install --user --upgrade .
-	sudo apt install -y python3-pygraphviz
-	sudo apt install -y python3-stringtemplate3
-	sudo apt install -y python3-singledispatch
+	python3 -m pip install https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 
+	python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	cd ~/.local ; wget -q -O - https://github.com/ttsiodras/asn1scc/releases/download/4.5.0.12/asn1scc-bin-4.5.0.12.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
+	cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.0.12/asn1scc-bin-4.5.0.12.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
