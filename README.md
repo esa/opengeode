@@ -87,7 +87,7 @@ Once you have the dependencies installed you can update the tool by running the 
 
 ```
 $ git pull
-$ make install    # alternatively:  pip3 install --user --upgrade opengeode
+$ make install    # alternatively:  python3 -m pip install opengeode
 ```
 
 OpenGEODE Website
@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.16 (11/2023)**
+- Updated setup.py for easier pip-based installation 
+
 **4.1.15 (10/2023)**
 - Added --edit flag to be used in combination with --toC/--toAda to generate
   code together with the model and save build time
