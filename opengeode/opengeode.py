@@ -67,7 +67,12 @@ from . import(undoCommands,  # NOQA
               CGenerator,
               Connectors,  # NOQA
               TextInteraction)  # NOQA
-import pygraphviz  # NOQA
+try:
+    import pygraphviz  # NOQA
+except ImportError:
+    # an error message is displayed in Statecharts.py
+    pass
+
 from typing import List, Union, Dict, Set, Any, Tuple
 import types
 

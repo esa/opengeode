@@ -22,7 +22,7 @@ setup(
     description='A free SDL editor for TASTE',
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
-    install_requires=['pyside6', 'pygraphviz'],
+    install_requires=['pyside6'],
     tests_require=['tabulate'],
     include_package_data=True,
     url='http://opengeode.net',
