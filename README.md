@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.17 (11/2023)**
+- (minor) Remove workaround that was added when calling the ASN.1 compiler on Windodws
+
 **4.1.16 (11/2023)**
 - Updated setup.py for easier pip-based installation 
 
