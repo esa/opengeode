@@ -136,10 +136,11 @@ def parse_asn1(*files, **options):
     binary = path_to_asn1scc
     asn1scc_root = os.path.abspath(os.path.dirname(binary))
 
-    if os.name == 'nt':
-        # On windows, remove the drive letter, workaround to ASN1SCC bug
-        outdir       = outdir[2:]
-        asn1scc_root = asn1scc_root[2:]
+#   if os.name == 'nt':
+#       # On windows, remove the drive letter, workaround to ASN1SCC bug
+#       EDIT: sshould not be needed anymore since separator is now "::" 
+#       outdir       = outdir[2:]
+#       asn1scc_root = asn1scc_root[2:]
 
     # The two possible files that can be generated with complete path:
     py_filepath   = outdir + os.sep + out_py_name
