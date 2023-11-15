@@ -54,6 +54,7 @@ from . import(undoCommands,  # NOQA
               genericSymbols,  # NOQA
               Asn1scc,  # NOQA
               sdlSymbols,
+              sdlHelp,
               AdaGenerator,
               ogParser,
               ogAST,
@@ -118,6 +119,7 @@ from . import icons  # NOQA
 # Logging: ist of properly loaded modules that will use it
 LOG = logging.getLogger(__name__)
 MODULES : List[types.ModuleType] = [
+    sdlHelp,
     sdlSymbols,
     genericSymbols,
     ogAST,
@@ -3105,12 +3107,7 @@ class OG_MainWindow(QMainWindow):
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
         # Update the dock widget with ASN.1 files content
-        try:
-            html_file = open(ast.DV.html, 'r')
-        except AttributeError:
-            LOG.debug('set_asn1_view: No ASN.1 file specified')
-            return
-        html_content = html_file.read()
+        html_content = ast.DV.html
         self.asn1_browser.setHtml(html_content)
         self.asn1_browser.setFont(QFont('UbuntuMono', 12))
 

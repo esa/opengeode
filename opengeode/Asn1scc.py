@@ -77,6 +77,7 @@ def parse_asn1(*files, **options):
         This function uses QProcess to launch the ASN.1 compiler because
         the subprocess module from Python has issues on the Windows platform
     '''
+    outdir = None
     if '-g' in sys.argv:
         os.environ["PROJECT_CACHE"] = './debug'
 
@@ -116,7 +117,9 @@ def parse_asn1(*files, **options):
     elif project_cache is not None:
         outdir = project_cache
     elif project_cache is None:
-        outdir = tempfile.mkdtemp()
+        # create a temp folder that will be deleted automatically after use
+        tmpoutdir = tempfile.TemporaryDirectory(prefix='OG_ASN1SCC_')
+        outdir = tmpoutdir.name
 
     # to allow the import
     sys.path.append(os.path.abspath(outdir))
@@ -135,12 +138,6 @@ def parse_asn1(*files, **options):
         raise TypeError('ASN.1 Compiler (asn1scc) not found in path')
     binary = path_to_asn1scc
     asn1scc_root = os.path.abspath(os.path.dirname(binary))
-
-#   if os.name == 'nt':
-#       # On windows, remove the drive letter, workaround to ASN1SCC bug
-#       EDIT: sshould not be needed anymore since separator is now "::" 
-#       outdir       = outdir[2:]
-#       asn1scc_root = asn1scc_root[2:]
 
     # The two possible files that can be generated with complete path:
     py_filepath   = outdir + os.sep + out_py_name
@@ -176,12 +173,14 @@ def parse_asn1(*files, **options):
         _ = waitfor_qprocess(asn1scc, "ASN.1 Compiler")
     else:
         LOG.info('Reusing cached ASN.1 modules')
-    
+
     ast = importlib.import_module(new_hash)
     AST[new_hash] = ast
     if pprint:
-        # add the path to the optionally-generated pretty-printed HTML file
-        ast.html = html_filepath
+        # add the (optionally-generated) pretty-printed HTML file
+        ast.html = open(html_filepath, 'r').read()
+    else:
+        ast.html = ''
     return ast
 
 def create_choice_determinant_types(ast):
@@ -303,7 +302,7 @@ def asn2dataModel(files, outdir=None, db=None):
         with open(concat_path + '.asn', 'wt') as merged_file:
             merged_file.write(merged.data().decode('utf-8'))
 
-        # 3) Run asn2dataModel for Python 
+        # 3) Run asn2dataModel for Python
         asn2dm_bin = spawn.find_executable('asn2dataModel')
         args = ['-toPython', '-o', tempdir, concat_path + '.asn']
         asn2dm = QProcess()

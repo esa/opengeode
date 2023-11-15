@@ -23,23 +23,31 @@ from PySide6.QtCore import *
 from . import icons
 
 import time
+import os
+import tempfile
+import logging
 
+LOG = logging.getLogger('sdlHelp')
 
 class OG_HelpEngine(QHelpEngine):
     def __init__(self):
         ''' Load the help file '''
         # QHelp does not work with Qt resources so we must first
-        # dump the files to disk...
+        # dump the files to disk.
+        # Use an OS-neutral way to create a temporary folder that
+        # will be automatically destroyed when application stops
+        self.outdir = tempfile.TemporaryDirectory(prefix='OG_TEMP_')
         for f in ('opengeode.qhc', 'opengeode.qch'):
             qrc = QFile(f':help/{f}')
             qrc.open(QIODevice.ReadOnly)
             content = qrc.readAll()
-            helpfile = f'/tmp/{f}'
+            helpfile = self.outdir.name + os.sep + f
+            LOG.debug (f'Creating help file: {helpfile}')
             with open(helpfile, 'wb') as tmpfile:
                 tmpfile.write(content.data())
-        super().__init__('/tmp/opengeode.qhc')
+        super().__init__(self.outdir.name + os.sep + 'opengeode.qhc')
         if not self.setupData():
-            print("QHelp error:", self.error())
+            LOG.error(f"QHelp error: + {str(self.error())}")
 
 class OG_HelpBrowser(QTextBrowser):
     def __init__(self, parent=None):

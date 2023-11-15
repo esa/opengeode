@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.19 (11/2023)**
+- Improve the management of temporary folders/files, and fix Windows support
+
 **4.1.17 (11/2023)**
 - (minor) Remove workaround that was added when calling the ASN.1 compiler on Windodws
 
