@@ -564,6 +564,7 @@ class Terminator:
         self.next_trans = None
         # List of State that can lead to this terminator
         # There can be several if terminator follows a floating label
+        # or a star state.
         # Note, this field is updated by the Helper.flatten function
         self.possible_states = []
         # optional composite state content (type CompositeState)

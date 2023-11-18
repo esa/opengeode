@@ -197,9 +197,11 @@ def flatten(process, sep='_'):
                 for comp in context.composite_states:
                     if each.lower() == comp.statename.lower():
                         if isinstance(comp, ogAST.StateAggregation):
+                            # parallel states
                             term.next_is_aggregation = True
                             term.candidate_id[each + sep + 'START'] = [each]
                         else:
+                            # nested states
                             term.candidate_id[each + sep + 'START'] = \
                                        [st for st in process.mapping.keys()
                                         if st.startswith(each)
