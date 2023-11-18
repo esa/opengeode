@@ -3602,6 +3602,7 @@ def composite_state(root, parent=None, context=None):
         errors.extend(err)
         warnings.extend(warn)
         comp.content.floating_labels.append(lab)
+        comp.labels.append(lab)
     for proc, content in inner_proc:
         # parse content of procedures - all scopes are set
         err, warn = procedure_post(proc, content, context=comp)
@@ -3849,6 +3850,7 @@ def procedure_post(proc, content, parent=None, context=None):
             errors.extend(err)
             warnings.extend(warn)
             proc.content.floating_labels.append(lab)
+            proc.labels.append(lab)
     for new_proc, content in inner_proc:
         # parse content of procedures
         err, warn = procedure_post(new_proc, content, context=proc)
@@ -5025,6 +5027,7 @@ def process_definition(root, parent=None, context=None):
             errors.extend(err)
             warnings.extend(warn)
             process.content.floating_labels.append(lab)
+            process.labels.append(lab)
         elif child.type in (lexer.COMPOSITE_STATE, lexer.STATE_AGGREGATION):
             comp, err, warn = composite_state(child,
                                               parent=None,
