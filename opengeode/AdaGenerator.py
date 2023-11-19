@@ -3197,10 +3197,13 @@ def _transition(tr, **kwargs):
                     # and "nextstate -*" to return to the previous state
                     # (parallel states only, not composite states at the moment
                     # as the previous state is not stored)
+                    # TODO update C backend
+                    code.append('--  Go back to the previous state')
                     if ns != "-*" and any(next_id
                            for next_id in tr.terminator.candidate_id.keys()
                            if next_id != -1):
                         code.append(f'case {LPREFIX}.State is')
+                        done = []
                         for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 if tr.terminator.next_is_aggregation:
@@ -3208,16 +3211,28 @@ def _transition(tr, **kwargs):
                                 else:
                                     statement = f'trId := {nid};'
                                 states_prefix = (f"{ASN1SCC}{s}" for s in sta)
+                                done.extend(s.split(SEPARATOR)[0] for s in sta)
                                 joined_states = " | ".join(states_prefix)
-                                code.extend(
-                                        [f'when {joined_states} =>',
-                                         statement])
-
-                        code.extend(['when others =>',
-                                        'trId := -1;',
-                                     'end case;'])
-                    else:
+                                if joined_states:
+                                    # There is a case where there is no state:
+                                    # if it is a nested state without any
+                                    # inner state (just a start stransition
+                                    # and ending with a return at the end). In
+                                    # that case it is not possible to be in
+                                    # this state when reaching the history
+                                    # nextstate.
+                                    code.extend(
+                                            [f'when {joined_states} =>',
+                                             statement])
+                        remaining = (s for s in tr.terminator.candidate_id[-1]
+                                     if s not in done)
+                        code.append(f'when others =>')
+                        if remaining:
+                            code.append('--  ' + " | ".join(remaining))
                         code.append('trId := -1;')
+                        code.append('end case;')
+                    else:
+                        code.append('trId := -1;  --  No change of state')
                 #code.append('goto Continuous_Signals;')
                 if not MONITORS:
                     code.append('goto Continuous_Signals;')

@@ -197,9 +197,11 @@ def flatten(process, sep='_'):
                 for comp in context.composite_states:
                     if each.lower() == comp.statename.lower():
                         if isinstance(comp, ogAST.StateAggregation):
+                            # parallel states
                             term.next_is_aggregation = True
                             term.candidate_id[each + sep + 'START'] = [each]
                         else:
+                            # nested states
                             term.candidate_id[each + sep + 'START'] = \
                                        [st for st in process.mapping.keys()
                                         if st.startswith(each)
@@ -270,7 +272,7 @@ def flatten(process, sep='_'):
                 entryproc = f'{prefix}entry'
                 call_entry.output = [{'outputName': entryproc,
                                      'params': [], 'tmpVars': []}]
-                
+
                 try:
                     process.transitions[each].actions.insert(0, call_entry)
                 except IndexError:
@@ -404,6 +406,16 @@ def flatten(process, sep='_'):
         update_composite_state(each, process)
         propagate_inputs(each, process)
         #del process.mapping[each.statename]
+
+    # If the terminator is a join (goto) we must propagate its possible state
+    # list to the terminators that follow the corresponding label.
+    for each in process.terminators:
+        if each.kind == 'join':
+            # find the corresponding label
+            for lab in process.labels:
+                if each.inputString.lower().strip() == lab.inputString.lower().strip():
+                    for t in lab.terminators:
+                        t.possible_states.extend(each.possible_states)
 
     # Update terminators at process level
     for each in process.terminators:

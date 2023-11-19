@@ -1,0 +1,157 @@
+system og;
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (159, 221), (267, 140) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    signal dd; signal foo;
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with dd,
+foo;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with dd,
+foo;
+        connect c and r;
+        /* CIF PROCESS (251, 59), (150, 75) */
+        process og;
+            state wait;
+            substructure
+                    /* CIF procedure (15, 7), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    procedure entry;
+                        /* CIF START (291, 152), (70, 35) */
+                        START;
+                            /* CIF PROCEDURECALL (254, 207), (142, 35) */
+                            call writeln('enter wait');
+                            /* CIF return (308, 262), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF START (260, 157), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (260, 212), (70, 35) */
+                        NEXTSTATE in_wait;
+                    /* CIF state (115, 108), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    state in_wait;
+                    endstate;
+            endsubstructure;
+            state go;
+            substructure
+                    /* CIF START (245, 254), (70, 35) */
+                    START;
+                        /* CIF PROCEDURECALL (184, 309), (190, 35) */
+                        call writeln('enter and leave go');
+                        /* CIF return (262, 364), (35, 35) */
+                        return ;
+            endsubstructure;
+            state run;
+            substructure
+                    /* CIF START (318, 129), (70, 35) */
+                    START;
+                        /* CIF PROCEDURECALL (255, 183), (195, 35) */
+                        call writeln('enter and leave run');
+                        /* CIF return (335, 238), (35, 35) */
+                        return ;
+            endsubstructure;
+            state went;
+            substructure
+                out (e2,e1);
+                    /* CIF START (210, 90), (70, 35) */
+                    START;
+                        /* CIF PROCEDURECALL (171, 145), (146, 35) */
+                        call writeln('enter gone');
+                        /* CIF NEXTSTATE (210, 195), (70, 35) */
+                        NEXTSTATE gone;
+                    /* CIF state (512, 90), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    state gone;
+                    endstate;
+                    /* CIF state (210, 195), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    state gone;
+                        /* CIF input (87, 250), (70, 35) */
+                        input dd;
+                            /* CIF PROCEDURECALL (43, 305), (156, 35) */
+                            call writeln('leave gone 1');
+                            /* CIF return (104, 355), (35, 35) */
+                            return e1;
+                        /* CIF input (255, 250), (70, 35) */
+                        input foo;
+                            /* CIF PROCEDURECALL (211, 305), (156, 35) */
+                            call writeln('leave gone 2');
+                            /* CIF return (272, 360), (35, 35) */
+                            return e2;
+                    endstate;
+            endsubstructure;
+            /* CIF START (159, 174), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (159, 229), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF label (721, 628), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            connection hello:
+                /* CIF NEXTSTATE (721, 683), (70, 35) */
+                NEXTSTATE -;
+            /* CIF End Label */
+            endconnection;
+            /* CIF state (511, 173), (99, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state *(wait, went);
+                /* CIF input (528, 228), (70, 35) */
+                input dd;
+                    /* CIF NEXTSTATE (528, 283), (70, 35) */
+                    NEXTSTATE -;
+            endstate;
+            /* CIF state (223, 520), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state run;
+                /* CIF connect (223, 575), (70, 35) */
+                connect ;
+                    /* CIF NEXTSTATE (223, 630), (70, 35) */
+                    NEXTSTATE went;
+            endstate;
+            /* CIF state (455, 488), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state go
+            /* CIF comment (545, 486), (94, 38) */
+            comment 'in theory:
+Infinite loop';
+                /* CIF connect (455, 543), (70, 35) */
+                connect ;
+                    /* CIF join (472, 598), (35, 35) */
+                    join hello;
+            endstate;
+            /* CIF state (278, 186), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state wait;
+                /* CIF input (278, 241), (70, 35) */
+                input dd;
+                    /* CIF label (278, 296), (70, 35) */
+                    blue:
+                    /* CIF PROCEDURECALL (220, 346), (184, 35) */
+                    call writeln('leave wait for run');
+                    /* CIF NEXTSTATE (278, 396), (70, 35) */
+                    NEXTSTATE run;
+            endstate;
+            /* CIF state (695, 395), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state went
+            /* CIF comment (785, 395), (111, 38) */
+            comment 'should not be
+an infinite loop';
+                /* CIF connect (650, 450), (70, 35) */
+                connect e1;
+                    /* CIF join (667, 505), (35, 35) */
+                    join hello;
+                /* CIF connect (740, 450), (70, 35) */
+                connect e2;
+                    /* CIF NEXTSTATE (740, 505), (70, 35) */
+                    NEXTSTATE go;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;
