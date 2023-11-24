@@ -2945,8 +2945,8 @@ def primary_index(root, context, pos):
         check_index = False
         node.requires_num = False
         try:
-            index_given_sort = type_name(params[0].exprType)
-            index_expected_sort = receiver_bty.indexed_by
+            index_given_sort = type_name(params[0].exprType).lower().replace('-', '_')
+            index_expected_sort = receiver_bty.indexed_by.lower().replace('-', '_')
             if index_given_sort == index_expected_sort:
                 check_index = True
                 # Add a flag in the AST for code generators to
