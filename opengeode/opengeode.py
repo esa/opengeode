@@ -2313,11 +2313,15 @@ class SDL_View(QGraphicsView):
             # code at the same time as the model, to save build time in TASTE
             process, = scene.ast.processes
             try:
+                cwd = os.getcwd()
                 generate(process, self.options)
             except Exception as e:
                 # Code generation failed (can be due to errors in the model)
                 # pr saving must continue anyway
-                LOG.info("Code generation failed" + str(e))
+                LOG.info("Code generation failed due to this error" + str(e))
+                # code generation changes folder. If exception happened,
+                # we must come back to the original directory
+                os.chdir(cwd)
 
         # Read the process name for the Makefile
         for each in scene.processes:
