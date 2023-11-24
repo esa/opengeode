@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.21 (11/2023)**
+- Critical Fix: saving error (when code generation backend raises an exception model could be lost!)
+
 **4.1.20 (11/2023)**
 - Fix code generation when combinining a history nextstate trying to go back
   to a nested state that contains no inner state (just a start transition ending

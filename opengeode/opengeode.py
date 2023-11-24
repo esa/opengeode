@@ -2312,7 +2312,12 @@ class SDL_View(QGraphicsView):
             # When --edit is combined with --toAda or --toC, generate the
             # code at the same time as the model, to save build time in TASTE
             process, = scene.ast.processes
-            generate(process, self.options)
+            try:
+                generate(process, self.options)
+            except Exception as e:
+                # Code generation failed (can be due to errors in the model)
+                # pr saving must continue anyway
+                LOG.info("Code generation failed" + str(e))
 
         # Read the process name for the Makefile
         for each in scene.processes:
