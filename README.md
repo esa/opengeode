@@ -125,8 +125,13 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.22 (11/2023)**
+- Fix export of the statechart into png from the GUI (worked only from command line before)
+- Fix navigation in nested states when using partitions
+
 **4.1.21 (11/2023)**
 - Critical Fix: saving error (when code generation backend raises an exception model could be lost!)
+- Fixed support for array newtypes indexed by an enumerated type
 
 **4.1.20 (11/2023)**
 - Fix code generation when combinining a history nextstate trying to go back

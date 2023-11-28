@@ -1250,6 +1250,12 @@ class SDL_Scene(QGraphicsScene):
 
     def export_branch_to_picture(self, symbol, filename, doc_format):
         ''' Save a symbol and its followers to a file '''
+        if self.context == 'statechart':
+            # We can't export just a branch in a statechart:
+            # export the whole diagram instead
+            self.export_img(filename=filename, doc_format=doc_format)
+            return
+
         temp_scene = SDL_Scene(context=self.context)
         temp_scene.messages_window = self.messages_window
         self.clearSelection()
@@ -1287,6 +1293,7 @@ class SDL_Scene(QGraphicsScene):
         self.clearSelection()
         self.clear_highlight()
         self.clear_focus()
+        background_brush = self.backgroundBrush()
         # Copy in a different scene to get the smallest rectangle
         # (except statecharts, they are already optimal)
         if self.context != "statechart":
@@ -1305,7 +1312,7 @@ class SDL_Scene(QGraphicsScene):
                 each.select(False)
             rect = other_scene.sceneRect()
         else:
-            # remove the background
+            # remove the background (it is saved for restoration)
             self.setBackgroundBrush(QBrush())
             self.scene_refresh()
             rect = self.sceneRect()
@@ -1342,6 +1349,9 @@ class SDL_Scene(QGraphicsScene):
             pass
         if painter.isActive():
             painter.end()
+
+        # restore the background brush (statecharts only)
+        self.setBackgroundBrush(background_brush)
 
 
     def clear_focus(self):
@@ -2378,7 +2388,11 @@ clean:
         ''' Save the current view as a PNG image '''
         filename = QFileDialog.getSaveFileName(
                 self, "Save picture", ".", "Image (*.png)")[0]
-        self.scene().export_img(filename, doc_format='png')
+        if self.statechart_view.hasFocus() and not self.hasFocus():
+            # check if the currently visible scene is the statechart
+            self.statechart_view.scene().export_img(filename, doc_format='png')
+        else:
+            self.scene().export_img(filename, doc_format='png')
 
     def load_file(self, files):
         ''' Parse a PR file and render it on the scene '''
@@ -2862,6 +2876,9 @@ class OG_MainWindow(QMainWindow):
         self.statechart_view = self.findChild(SDL_View, 'statechart_view')
         self.statechart_scene = SDL_Scene(context='statechart')
         self.statechart_view.setScene(self.statechart_scene)
+        # give access to the statechart view from the main SDL view, this is
+        # useful for rendering PNG from the menu item
+        self.view.statechart_view = self.statechart_view
 
         # Set up the dock area to display the ASN.1 Data model
         asn1_dock = self.findChild(QDockWidget, 'datatypes_dock')
