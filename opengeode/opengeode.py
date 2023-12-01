@@ -754,9 +754,7 @@ class SDL_Scene(QGraphicsScene):
         process_scene = self  # by default, if we are not in a block
         for each in self.processes:
             process_scene = each.nested_scene
-            if not process_scene:
-                continue
-            else:
+            if process_scene:
                 break
 
         for item in process_scene.start:
@@ -784,10 +782,9 @@ class SDL_Scene(QGraphicsScene):
                     partition_names[item.ast.partition].addItem(item)
         # It can be that no partition was created, if the model was empty
         # (nothing inside the process scene). In that case we must still
-        # create the default partition.
+        # set the default partition.
         if not partition_names:
-            subscene = self.create_subscene('process', self)
-            subscene.partition_name = 'default'
+            partition_names['default'] = process_scene
 
         # set the list of partitions at top-level scene, so that it will be
         # picked up when the datadict is set up
