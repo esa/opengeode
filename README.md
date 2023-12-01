@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.23 (12/2023)**
+- Fix interprocess copy-paste issue (could result in duplicate copies)
+
 **4.1.22 (11/2023)**
 - Fix export of the statechart into png from the GUI (worked only from command line before)
 - Fix navigation in nested states when using partitions

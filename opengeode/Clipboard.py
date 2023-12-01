@@ -137,12 +137,15 @@ def paste(parent, scene):
             # LOG.debug("PASTE: " + pr_text)
             ast, _, _, _, terminators = \
                 ogParser.parseSingleElement(common_name, pr_text)
+            # Clear the local clipboard, there can be only one element
+            COPY_PASTE.clear()
             COPY_PASTE.append(([ast], terminators))
             remove_after_paste = True
 
     CLIPBOARD.clear()
     if not parent:
         new_symbols = paste_floating_objects(scene)
+        print(new_symbols)
         for each in new_symbols:
             #  Make sure nested scenes are set properly
             each.double_click()
