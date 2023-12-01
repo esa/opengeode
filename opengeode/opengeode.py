@@ -782,9 +782,18 @@ class SDL_Scene(QGraphicsScene):
                 else:
                     # scene already exist, just move the item into it
                     partition_names[item.ast.partition].addItem(item)
+        # It can be that no partition was created, if the model was empty
+        # (nothing inside the process scene). In that case we must still
+        # create the default partition.
+        if not partition_names:
+            subscene = self.create_subscene('process', self)
+            subscene.partition_name = 'default'
+
         # set the list of partitions at top-level scene, so that it will be
         # picked up when the datadict is set up
+        
         self.partitions = partition_names
+        breakpoint()
         self.setup_partitions_in_datadict.emit()
 
 
@@ -2127,9 +2136,12 @@ class SDL_View(QGraphicsView):
             self.right_button.setEnabled(False)
             return
         partitions = list(self.top_scene().partitions.keys())
-        idx = partitions.index(scene.partition_name)
-        self.left_button.setEnabled(idx > 0)
-        self.right_button.setEnabled(idx < len(partitions) - 1)
+        try:
+            idx = partitions.index(scene.partition_name)
+            self.left_button.setEnabled(idx > 0)
+            self.right_button.setEnabled(idx < len(partitions) - 1)
+        except ValueError:
+            LOG.debug(f"Partition {scene.partition_name} does not exist")
 
 
     def go_left(self):
