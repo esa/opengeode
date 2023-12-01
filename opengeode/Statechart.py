@@ -808,7 +808,6 @@ def create_dot_graph(root_ast,
                     # JOIN - Find corresponding label
                     try:
                         corr_label, = [lab for lab in
-                                       root_ast.content.floating_labels +
                                        root_ast.labels if
                                        lab.inputString.lower() ==
                                        join.inputString.lower()]

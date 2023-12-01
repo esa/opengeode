@@ -754,9 +754,7 @@ class SDL_Scene(QGraphicsScene):
         process_scene = self  # by default, if we are not in a block
         for each in self.processes:
             process_scene = each.nested_scene
-            if not process_scene:
-                continue
-            else:
+            if process_scene:
                 break
 
         for item in process_scene.start:
@@ -782,8 +780,15 @@ class SDL_Scene(QGraphicsScene):
                 else:
                     # scene already exist, just move the item into it
                     partition_names[item.ast.partition].addItem(item)
+        # It can be that no partition was created, if the model was empty
+        # (nothing inside the process scene). In that case we must still
+        # set the default partition.
+        if not partition_names:
+            partition_names['default'] = process_scene
+
         # set the list of partitions at top-level scene, so that it will be
         # picked up when the datadict is set up
+
         self.partitions = partition_names
         self.setup_partitions_in_datadict.emit()
 
@@ -1250,6 +1255,12 @@ class SDL_Scene(QGraphicsScene):
 
     def export_branch_to_picture(self, symbol, filename, doc_format):
         ''' Save a symbol and its followers to a file '''
+        if self.context == 'statechart':
+            # We can't export just a branch in a statechart:
+            # export the whole diagram instead
+            self.export_img(filename=filename, doc_format=doc_format)
+            return
+
         temp_scene = SDL_Scene(context=self.context)
         temp_scene.messages_window = self.messages_window
         self.clearSelection()
@@ -1287,6 +1298,7 @@ class SDL_Scene(QGraphicsScene):
         self.clearSelection()
         self.clear_highlight()
         self.clear_focus()
+        background_brush = self.backgroundBrush()
         # Copy in a different scene to get the smallest rectangle
         # (except statecharts, they are already optimal)
         if self.context != "statechart":
@@ -1305,7 +1317,7 @@ class SDL_Scene(QGraphicsScene):
                 each.select(False)
             rect = other_scene.sceneRect()
         else:
-            # remove the background
+            # remove the background (it is saved for restoration)
             self.setBackgroundBrush(QBrush())
             self.scene_refresh()
             rect = self.sceneRect()
@@ -1342,6 +1354,9 @@ class SDL_Scene(QGraphicsScene):
             pass
         if painter.isActive():
             painter.end()
+
+        # restore the background brush (statecharts only)
+        self.setBackgroundBrush(background_brush)
 
 
     def clear_focus(self):
@@ -2117,9 +2132,12 @@ class SDL_View(QGraphicsView):
             self.right_button.setEnabled(False)
             return
         partitions = list(self.top_scene().partitions.keys())
-        idx = partitions.index(scene.partition_name)
-        self.left_button.setEnabled(idx > 0)
-        self.right_button.setEnabled(idx < len(partitions) - 1)
+        try:
+            idx = partitions.index(scene.partition_name)
+            self.left_button.setEnabled(idx > 0)
+            self.right_button.setEnabled(idx < len(partitions) - 1)
+        except ValueError:
+            LOG.debug(f"Partition {scene.partition_name} does not exist")
 
 
     def go_left(self):
@@ -2312,7 +2330,16 @@ class SDL_View(QGraphicsView):
             # When --edit is combined with --toAda or --toC, generate the
             # code at the same time as the model, to save build time in TASTE
             process, = scene.ast.processes
-            generate(process, self.options)
+            try:
+                cwd = os.getcwd()
+                generate(process, self.options)
+            except Exception as e:
+                # Code generation failed (can be due to errors in the model)
+                # pr saving must continue anyway
+                LOG.info("Code generation failed due to this error" + str(e))
+                # code generation changes folder. If exception happened,
+                # we must come back to the original directory
+                os.chdir(cwd)
 
         # Read the process name for the Makefile
         for each in scene.processes:
@@ -2369,7 +2396,11 @@ clean:
         ''' Save the current view as a PNG image '''
         filename = QFileDialog.getSaveFileName(
                 self, "Save picture", ".", "Image (*.png)")[0]
-        self.scene().export_img(filename, doc_format='png')
+        if self.statechart_view.hasFocus() and not self.hasFocus():
+            # check if the currently visible scene is the statechart
+            self.statechart_view.scene().export_img(filename, doc_format='png')
+        else:
+            self.scene().export_img(filename, doc_format='png')
 
     def load_file(self, files):
         ''' Parse a PR file and render it on the scene '''
@@ -2853,6 +2884,9 @@ class OG_MainWindow(QMainWindow):
         self.statechart_view = self.findChild(SDL_View, 'statechart_view')
         self.statechart_scene = SDL_Scene(context='statechart')
         self.statechart_view.setScene(self.statechart_scene)
+        # give access to the statechart view from the main SDL view, this is
+        # useful for rendering PNG from the menu item
+        self.view.statechart_view = self.statechart_view
 
         # Set up the dock area to display the ASN.1 Data model
         asn1_dock = self.findChild(QDockWidget, 'datatypes_dock')

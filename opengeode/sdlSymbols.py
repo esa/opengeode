@@ -1152,12 +1152,15 @@ class State(VerticalSymbol):
 
     def double_click(self):
         ''' Catch a double click - Set nested scene '''
-        for each, value in self.scene().composite_states.items():
-            if str(self).split()[0].lower() == str(each):
-                self.nested_scene = value
-                break
-        else:
-            self.nested_scene = None
+        # We have to look in all partitions, not only in the current scene
+        top_scene = self.scene().views()[0].top_scene()
+        partitions = top_scene.partitions
+        for part in partitions.values():
+            for each, value in part.composite_states.items():
+                if str(self).split()[0].lower() == str(each):
+                    self.nested_scene = value
+                    return
+        self.nested_scene = None
 
     @nested_scene.setter
     def nested_scene(self, value):

@@ -3610,6 +3610,7 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind == 'EnumeratedType':
         return ASN1SCC if use_prefix else ''
     else:
+        LOG.debug(str(traceback.format_exc()))
         raise NotImplementedError(f'Type name for {a_type.kind}')
 
 
