@@ -791,9 +791,8 @@ class SDL_Scene(QGraphicsScene):
 
         # set the list of partitions at top-level scene, so that it will be
         # picked up when the datadict is set up
-        
+
         self.partitions = partition_names
-        breakpoint()
         self.setup_partitions_in_datadict.emit()
 
 
