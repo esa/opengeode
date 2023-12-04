@@ -1402,12 +1402,25 @@ def _call_external_function(output, **kwargs):
                             if sig.inputString.lower() == signal_name.lower()]
                 if not candidates:
                     raise ValueError
-                if len(candidates) == 2:
+                if len(candidates) > 1:
                     # there are 2 results when the procedure is exported
                     # (happens in the case of a call of an inner procedure
                     # that is exported)
-                    need_prefix = False
-                proc = candidates[0]
+                    # there can be 3 if a procedure exists as PI and RI
+                    if not out.get('toDest'):
+                        need_prefix = False
+                        # find a candidate that is not marked as external
+                        for c in candidates:
+                            if not c.external:
+                                proc = c
+                    else:
+                        # if toDest is set, it has to be a RI call
+                        # find the candidate that is declared as external
+                        for c in candidates:
+                            if c.external:
+                                proc = c
+                else:
+                    proc = candidates[0]
                 if proc.external:
                     out_sig = proc
             except ValueError:
@@ -1503,9 +1516,9 @@ def _call_external_function(output, **kwargs):
             # inner procedure call without a RETURN statement
             # retrieve the procedure signature
             ident = proc.inputString
-            p, = [p for p in PROCEDURES
+            p = [p for p in PROCEDURES
                     if p.inputString.lower() == ident.lower()
-                    and not p.referenced]
+                    and not p.referenced][0]        
 
             list_of_params = []
             for idx, param in enumerate(out.get('params', [])):
