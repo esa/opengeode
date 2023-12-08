@@ -2962,7 +2962,7 @@ def primary_index(root, context, pos):
                 check_expr.right = params[0]
                 warns = fix_expression_types(check_expr, context)
                 params[0] = check_expr.right
-                index_given_sort = type_name(check_expr.right.exprType)
+                index_given_sort = type_name(check_expr.right.exprType).lower().replace('-', '_')
                 if index_given_sort == index_expected_sort:
                     check_index = True
                     basic_enum = find_basic_type(check_expr.right.exprType)
