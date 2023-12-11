@@ -125,6 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.24 (12/2023)**
+- Fix support for inequality operator in decisions (for bool and enumerated types)
+- Fix support for arrays indexed by enumerated
+
 **4.1.23 (12/2023)**
 - Fix interprocess copy-paste issue (could result in duplicate copies)
 
