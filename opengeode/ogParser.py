@@ -6246,10 +6246,20 @@ def decision(root, parent, context):
                             # Ref to a variable -> can't guarantee coverage
                             need_else = True
                             continue
-                        covered_ranges[ans].append(constant.inputString.lower())
+                        if op != ogAST.ExprNeq:
+                            covered_ranges[ans].append(constant.inputString.lower())
+                        else:
+                            # Not Equal: range must cover all values but the constant
+                            for enumval in q_basic.EnumValues.keys():
+                                if enumval.lower().replace('-', '_') != constant.inputString.lower():
+                                    covered_ranges[ans].append(enumval.lower().replace('-', '_'))
                         is_enum = True
                     elif q_basic.kind == 'BooleanType':
-                        covered_ranges[ans].append(constant.value[0])
+                        v = constant.value[0]
+                        if op != ogAST.ExprNeq:
+                            covered_ranges[ans].append(v)
+                        else:
+                            covered_ranges[ans].append("false" if v=="true" else "true")
                         is_bool = True
                         if not constant.is_raw:
                             need_else = True
