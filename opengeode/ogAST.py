@@ -1031,6 +1031,9 @@ class Process:
         self.instance_of_ref  = None
         # A process may be a process type (boolean)
         self.process_type = False
+        # Min an max number of instances (optional)
+        self.min_instances = 1
+        self.max_instances = 1
         # Process parent context (Block or AST if defined at root level)
         self.parent = None
         # A process can be referenced (externally defined)

@@ -5012,8 +5012,9 @@ def process_definition(root, parent=None, context=None):
             warnings.extend(warn)
             process.content.states.append(statedef)
         elif child.type == lexer.NUMBER_OF_INSTANCES:
-            # Number of instances - discarded (working on a single process)
-            pass
+            # Number of instances
+            process.min_instances, process.max_instances = \
+                    (int(x.text) for x in child.getChildren())
         elif child.type == lexer.PFPAR:
             # Process formal parameters
             params, err, warn = fpar(child)
