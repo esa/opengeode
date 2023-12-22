@@ -522,12 +522,13 @@ def check_syntax(node: antlr3.tree.CommonTree,
                 text = open(filename, 'r').readlines()
             else:
                 text = input_string.split('\n')
+            arrow = "\u221f"
             if isinstance(exc, antlr3.exceptions.MismatchedTokenException):
-                err_msg = f'{" "*(pos-1)}^__ Expected ' \
+                err_msg = f'{" "*(pos-1)}{arrow} Expected ' \
                           f'"{lexer.tokenNamesMap[exc.expecting]}", ' \
                           f'got "{token_str}"'
             else:
-                err_msg = f'{" "*(pos-1)}^__ Unexpected "{token_str}"'
+                err_msg = f'{" "*(pos-1)}{arrow} Unexpected "{token_str}"'
             if len(text) >= line:
                 syntax_error = f'{text[line-1]}\n{err_msg}'
             else:
