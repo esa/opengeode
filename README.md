@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.25 (12/2023)**
+- Give possitbility to ignore a syntax error while editing
+
 **4.1.24 (12/2023)**
 - Fix support for inequality operator in decisions (for bool and enumerated types)
 - Fix support for arrays indexed by enumerated
