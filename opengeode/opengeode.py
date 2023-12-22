@@ -897,8 +897,9 @@ class SDL_Scene(QGraphicsScene):
 
         if not errors:
             symbol.syntax_error = False
+            self.clear_highlight(symbol)
             return False
-
+        ret = True
         for view in self.views():
             errs = []
             for error in errors:
@@ -919,17 +920,22 @@ class SDL_Scene(QGraphicsScene):
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('OpenGEODE - Syntax Error')
             msg_box.setInformativeText('\n'.join(errs))
-            msg_box.setText("Syntax error!")
-            msg_box.setStandardButtons(QMessageBox.Discard)
-            msg_box.setDefaultButton(QMessageBox.Discard)
+            msg_box.setText("Syntax error! Keep editing?")
+            msg_box.setStandardButtons(QMessageBox.Ignore | QMessageBox.Yes)
+            msg_box.setDefaultButton(QMessageBox.Yes)
             view.toolbar.disable_all_actions()
-            msg_box.exec()
+            res = msg_box.exec()
+            if res == QMessageBox.Ignore:
+                ret = False
+                self.highlight(symbol, Qt.red)
+            else:
+                ret = True
             view.toolbar.update_menu(self)
         # There were syntax errors: force user to fix them
         # by returning True to the caller (TextInteraction), which
-        # will keep focus
+        # will keep focus unless user chose to ignore the error
         symbol.syntax_error = True
-        return True
+        return ret
         #symbol.edit_text()
 
 
@@ -983,14 +989,14 @@ class SDL_Scene(QGraphicsScene):
         self.context_change.emit()
 
 
-    def highlight(self, item):
+    def highlight(self, item, color=Qt.cyan):
         ''' Highlight a symbol '''
         if item in self.highlighted or not isinstance(item, Symbol):
             return
         bound = item.boundingRect()
         center = bound.center().x()
         gradient = QLinearGradient(center, 0, center, bound.height())
-        gradient.setColorAt(0, Qt.cyan)
+        gradient.setColorAt(0, color)
         gradient.setColorAt(1, Qt.white)
         self.highlighted[item] = item.brush()
         item.setBrush(QBrush(gradient))
