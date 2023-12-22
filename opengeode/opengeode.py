@@ -1744,8 +1744,8 @@ class SDL_Scene(QGraphicsScene):
             if not isinstance(self.focusItem(), EditableText):
                 try:
                     self.copy_selected_symbols()
-                except TypeError:
-                    LOG.error('Cannot copy')
+                except TypeError as err:
+                    LOG.error(f'Cannot copy (Error: {str(err)})')
         elif event.matches(QKeySequence.Cut):
             self.cut_selected_symbols()
         elif event.matches(QKeySequence.Paste):

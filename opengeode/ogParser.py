@@ -950,6 +950,12 @@ def check_call(name, params, context):
         # we must return a referenced type, otherwise the present operator
         # could not be used as the parameter of a function that needs to
         # know the type of the parameter to cast or prefix it (e.g. to_enum)
+        if context.processName is None:
+            # In a copy-paste action the process context may be missing
+            # but it is not important ; however we must raise an exception
+            # here rather than letting the error propagate with a "None"
+            # set for the context name.
+            raise TypeError ("Context is undefined")
         selection_type = new_ref_type(f'{context.processName}-{sort_name.title()}-Selection')
         return (selection_type, warnings)
 
@@ -2866,7 +2872,6 @@ def primary_call(root, context):
     warnings.extend(param_warnings)
 
     node.value = [name, {'procParams': params}]
-
     try:
         node.exprType, warns = check_call(nameLower, params, context)
         for w in warns:

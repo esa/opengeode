@@ -127,6 +127,7 @@ Changelog
 =========
 **4.1.25 (12/2023)**
 - Give possitbility to ignore a syntax error while editing
+- Fix copy-paste issue for procedure using the present operator on an fpar
 
 **4.1.24 (12/2023)**
 - Fix support for inequality operator in decisions (for bool and enumerated types)
