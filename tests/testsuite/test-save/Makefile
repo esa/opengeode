@@ -28,13 +28,12 @@ test-qgen-gt-c:
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
-	$(GNATMAKE) -O$(O) -c *.adb
-	$(GNATBIND) -n og.ali
+	gnat make test_ada.ada && ./test_ada | diff expected -
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
-	$(CC) -O$(O) -c *.c
+	$(CC) -O$(O) -o test_c *.c && ./test_c | diff expected -
 
 test-if:
 	sdl2if og.pr
