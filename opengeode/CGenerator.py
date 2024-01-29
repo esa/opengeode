@@ -2340,11 +2340,39 @@ def _conditional(cond):
 
     stmts.append('if ({if_str})'.format(if_str=if_str))
     stmts.append('{')
-    stmts.append('tmp{idx} = ({ty}) {then_str};'.format(ty=tmp_type, idx=cond.value['tmpVar'], then_str=then_str))
+    # the following has to check if the expression is an Append or a Substring and generate the proper code.
+    # see the Ada backend to complete.
+    if isinstance(cond.value['then'], ogAST.PrimSubstring):
+       # assign the substring elements to the temporary storage
+       stmts.extend([
+           f'for(int var_counter_{VAR_COUNTER} = 0; var_counter_{VAR_COUNTER} <= max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER}; var_counter_{VAR_COUNTER}++)',
+           '{',
+           f"tmp{cond.value['tmpVar']}.arr[var_counter_{VAR_COUNTER}] = {then_str}.arr[var_counter_{VAR_COUNTER} + min_range_{VAR_COUNTER}];", 
+           '}'
+           ])
+       rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
+       basic = find_basic_type(cond.exprType)
+       if basic.Min != basic.Max:
+           stmts.append(f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+    else:
+       stmts.append('tmp{idx} = ({ty}) {then_str};'.format(ty=tmp_type, idx=cond.value['tmpVar'], then_str=then_str))
     stmts.append('}')
     stmts.append('else')
     stmts.append('{')
-    stmts.append('tmp{idx} = ({ty}) {else_str};'.format(ty=tmp_type, idx=cond.value['tmpVar'], else_str=else_str))
+    if isinstance(cond.value['else'], ogAST.PrimSubstring):
+       # assign the substring elements to the temporary storage
+       stmts.extend([
+           f'for(int var_counter_{VAR_COUNTER} = 0; var_counter_{VAR_COUNTER} <= max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER}; var_counter_{VAR_COUNTER}++)',
+           '{',
+           f"tmp{cond.value['tmpVar']}.arr[var_counter_{VAR_COUNTER}] = {else_str}.arr[var_counter_{VAR_COUNTER} + min_range_{VAR_COUNTER}];",
+           '}'
+           ])
+       rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
+       basic = find_basic_type(cond.exprType)
+       if basic.Min != basic.Max:
+           stmts.append(f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+    else:
+        stmts.append('tmp{idx} = ({ty}) {else_str};'.format(ty=tmp_type, idx=cond.value['tmpVar'], else_str=else_str))
     stmts.append('}')
 
     string = u'tmp{idx}'.format(idx=cond.value['tmpVar'])
