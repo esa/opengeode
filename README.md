@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.26 (01/2024)**
+- Support substrings in ternary operator in the C backend (alignment with Ada)
+
 **4.1.25 (12/2023)**
 - Give possitbility to ignore a syntax error while editing
 - Fix copy-paste issue for procedure using the present operator on an fpar
