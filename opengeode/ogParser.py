@@ -298,6 +298,7 @@ def is_string(ty, pool=None) -> bool:
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty, pool).kind in (
         'StandardStringType',
+        'BitStringType',
         'OctetStringType',
         'StringType',
         'IA5StringType'
