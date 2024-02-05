@@ -3208,6 +3208,7 @@ def primary(root, context):
                 as_hex    = binascii.unhexlify(as_bytes)
                 prim.value = f"'{as_hex.hex()}'"
                 prim.numeric_value = as_number
+                prim.bit_array = [val for val in root.text[1:-2]]
                 prim.printable_string = root.text
                 prim.exprType = type('PrStr', (object,), {
                     'kind': 'BitStringType',

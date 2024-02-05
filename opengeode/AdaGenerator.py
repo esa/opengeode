@@ -2661,14 +2661,18 @@ def _string_literal(primary, **kwargs):
     # If user put a literal string to fill an Octet string,
     # then convert the string to an array of unsigned_8 integers
     # as expected by the Ada type corresponding to Octet String
-    if isinstance(primary, ogAST.PrimOctetStringLiteral):
+    if isinstance(primary, ogAST.PrimBitStringLiteral):
+        unsigned_8 = primary.bit_array
+    elif isinstance(primary, ogAST.PrimOctetStringLiteral):
         # Hex string used as input
         unsigned_8 = [str(x) for x in primary.hexstring]
     else:
+        # regular string literal: convert every character to a number
         unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
 
     ada_string = ', '.join(unsigned_8)
     return [], str(ada_string), []
+
 
 def ia5string_raw(prim: ogAST.PrimStringLiteral):
     ''' IA5 Strings are of type String in Ada but this is not directly
@@ -2678,6 +2682,7 @@ def ia5string_raw(prim: ogAST.PrimStringLiteral):
     with NULL character. To know the size, we can use adaasn1rtl.getStringSize
     '''
     return "('" + "', '".join(prim.value[1:-1]) + "', others => Standard.ASCII.NUL)"
+
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary, **kwargs):
@@ -3543,7 +3548,9 @@ def array_content(prim, values, asnty):
         if isinstance(prim, ogAST.PrimStringLiteral):
             # Quotes are kept in string literals
             length -= 2
-        if isinstance(prim, ogAST.PrimOctetStringLiteral):
+        if isinstance(prim, ogAST.PrimBitStringLiteral):
+            length=len(prim.bit_array)
+        elif isinstance(prim, ogAST.PrimOctetStringLiteral):
             length=len(prim.hexstring)
         # Reference type can vary -> there is a Length field
         rlen = f", Length => {length}"
