@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2023 European Space Agency & Maxime Perrotin
+    Copyright (c) 2012-2024 European Space Agency & Maxime Perrotin
 
     Designed and implemented by Maxime Perrotin
 
@@ -2030,6 +2030,10 @@ def _prim_index(prim, **kwargs):
 
     receiver = prim.value[0]
 
+    # If using an index of a BIT STRING, the Ada type used by asn1scc is BIT
+    # and not Boolean. BIT is a number (1 or 0). We must convert it to boolean
+    kind = find_basic_type(receiver.exprType).kind
+
     receiver_stms, ada_string, receiver_decl = expression(receiver,
                                                           readonly=ro)
     stmts.extend(receiver_stms)
@@ -2039,7 +2043,10 @@ def _prim_index(prim, **kwargs):
         idx = 1 + prim.use_num_value
         if not isinstance(receiver, ogAST.PrimSubstring):
             ada_string += '.Data'
-        ada_string = f"{ada_string} ({idx})"
+        ada_string = f"{ada_string}({idx})"
+        if kind == "BitStringType":
+            # convert BIT type to Boolean
+            ada_string = f"({ada_string} = 1)"
         return stmts, ada_string, local_decl
 
     index = prim.value[1]['index'][0]
@@ -2053,6 +2060,9 @@ def _prim_index(prim, **kwargs):
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'
     ada_string += f'({idx_string})'
+    if kind == "BitStringType":
+        # convert BIT type to Boolean
+        ada_string = f"({ada_string} = 1)"
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
 

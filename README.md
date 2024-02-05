@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.1.27 (02/2024)**
+- Support BIT STRING indexing properly in the Ada backend
+
 **4.1.26 (01/2024)**
 - Support substrings in ternary operator in the C backend (alignment with Ada)
 
