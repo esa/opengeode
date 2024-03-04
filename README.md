@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.2.0 (03/2024)**
+- Support named bit assignments in BIT STRING variables
+
 **4.1.27 (02/2024)**
 - Support BIT STRING indexing properly in the Ada backend
 
