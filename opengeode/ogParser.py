@@ -1249,6 +1249,7 @@ def check_type_compatibility(primary, type_ref, context):
                and type_ref.__name__ not in ('Apnd', 'SubStr'):
             primary.expected_type = type_ref
         return warnings
+
     elif isinstance(primary, ogAST.PrimSequenceOf) \
             and basic_type.kind == 'OctetStringType':
         # mkstring expressions are of of type SequenceOf, but they may be
@@ -1257,6 +1258,17 @@ def check_type_compatibility(primary, type_ref, context):
         for elem in primary.value:
             if elem.exprType != UINT8:
                 raise TypeError("Use only integers in range 0..255 to assign octet strings")
+        return warnings
+
+    elif isinstance(primary, ogAST.PrimSequenceOf) \
+            and basic_type.kind == 'BitStringType':
+        # a bit string can be assigned an SeqOf kind if the elements are
+        # using named bits declared in the model
+        # At this point the elements have been set as PrimVariable instances
+        named_bits = [n.lower().replace('-', '_') for n in basic_type.NamedBits.keys()]
+        for elem in primary.value:
+            if elem.inputString.lower() not in named_bits:
+                raise TypeError(f"This bit name is not defined : {elem.inputString}")
         return warnings
 
     elif isinstance(primary, ogAST.PrimSequence) \
@@ -1650,12 +1662,50 @@ def fix_enumerated_and_choice(expr_enum, context):
     return warnings
 
 
+def fix_named_bits(expr_bitstr, context):
+    ''' If left side of the expression is of bit string type,
+        check if right side is a sequence of primVariables, meaning that
+        user wants to set individual bits. In that case replace the right
+        expression with a "classical" bit assignment ('1101'B)
+    '''
+    warnings = []
+    basicl = find_basic_type(expr_bitstr.left.exprType)
+    basicr = find_basic_type(expr_bitstr.right.exprType)
+    if basicl.kind == 'BitStringType' and basicr.kind == 'SequenceOfType':
+        bits_to_be_set = []
+        named_bits = basicl.NamedBits  # dict {'bitName': bitNumber }
+        normalized = {bitname.lower().replace('-', '_'): bitnumber
+                for bitname, bitnumber in named_bits.items()}
+        for named_bit in expr_bitstr.right.value:
+            if named_bit.inputString.lower() not in normalized.keys():
+                # ignore error with bit names here, they are checked elsewhere
+                return warnings
+            # determine which bits are set
+            bits_to_be_set.append(normalized[named_bit.inputString.lower()])
+        bits_to_be_set.sort()
+        result_bit_array = []
+        for i in range(max(bits_to_be_set)+1):
+            result_bit_array.append(i in bits_to_be_set and '1' or '0')
+        prim = ogAST.PrimBitStringLiteral(primary=expr_bitstr.right,
+                                         debugLine=lineno())
+        prim.bit_array = result_bit_array
+        prim.printable_string = ''.join(result_bit_array)
+        prim.exprType = type ('PrStr', (object,), {
+            'kind': 'BitStringType',
+            'Min':str(len(result_bit_array)),
+            'Max':str(len(result_bit_array)),
+            'NumberOfBits': len(result_bit_array)
+        })
+        expr_bitstr.right = prim
+    return warnings
+
 def fix_expression_types(expr, context):
     ''' Check/ensure type consistency in binary expressions '''
     warnings = []
     for _ in range(2):
         # Check if a raw enumerated value is of a reference type
         warnings.extend(fix_enumerated_and_choice(expr, context))
+        warnings.extend(fix_named_bits(expr, context))
         expr.right, expr.left = expr.left, expr.right
 
     for side in (expr.right, expr.left):
@@ -1849,6 +1899,7 @@ def primary_variable(root, context):
         prim.exprType = find_variable_type(name, context)
     else:
         # We create a variable reference , but it may be a enumerated value,
+        # or a bit name (in BIT STRING)
         # it will be replaced later during type resolution
         prim = ogAST.PrimVariable(debugLine=lineno())
         prim.exprType = UNKNOWN_TYPE
@@ -3303,7 +3354,7 @@ def primary(root, context):
                 warnings.extend(warn)
         prim.exprType = UNKNOWN_TYPE
     elif root.type == lexer.SEQOF:
-        prim = ogAST.PrimSequenceOf()
+        prim = ogAST.PrimSequenceOf(debugLine=lineno())
         prim.value = []
         for elem in root.getChildren():
             prim_elem, prim_elem_errors, prim_elem_warnings = \
@@ -5950,7 +6001,7 @@ def outputbody(root, context):
                     if type_name(dest_type) != 'PID':
                         errors.append(f"PID or variable not found: {dest}")
                     else:
-                        prim = ogAST.PrimVariable()
+                        prim = ogAST.PrimVariable(debugLine=lineno())
                         prim.exprType = dest_type
                         prim.value = [dest]
                         prim.inputString = dest

@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2023 European Space Agency
+    Copyright (c) 2012-2024 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -176,6 +176,9 @@ class Primary(Expression):
                  primary=None, debugLine=-1):
         ''' Initialize common primary attributes '''
         self.debugLine = debugLine
+        #if debugLine==-1:
+        #    import traceback
+        #    print (traceback.print_stack())
         if primary:
             self.inputString = primary.inputString
             self.line = primary.line
