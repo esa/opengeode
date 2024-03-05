@@ -2026,6 +2026,9 @@ def _prim_call(prim, **kwargs):
 @expression.register(ogAST.PrimIndex)
 def _prim_index(prim, **kwargs):
     stmts, ada_string, local_decl = [], '', []
+    # readonly allows to check if we are assigning to or reading from the value
+    # it is especially useful here for BIT STRING elements due to the
+    # conversion from/to Boolean
     ro = kwargs.get("readonly", 0)
 
     receiver = prim.value[0]
@@ -2044,7 +2047,7 @@ def _prim_index(prim, **kwargs):
         if not isinstance(receiver, ogAST.PrimSubstring):
             ada_string += '.Data'
         ada_string = f"{ada_string}({idx})"
-        if kind == "BitStringType":
+        if kind == "BitStringType" and ro:
             # convert BIT type to Boolean
             ada_string = f"({ada_string} = 1)"
         return stmts, ada_string, local_decl
@@ -2060,7 +2063,7 @@ def _prim_index(prim, **kwargs):
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'
     ada_string += f'({idx_string})'
-    if kind == "BitStringType":
+    if kind == "BitStringType" and ro:
         # convert BIT type to Boolean
         ada_string = f"({ada_string} = 1)"
     stmts.extend(idx_stmts)
@@ -2346,6 +2349,14 @@ def _assign_expression(expr, **kwargs):
                 res = right_str
 
         strings.append(f"{left_str} := {res};")
+    elif isinstance(expr.left, ogAST.PrimIndex):
+        # check if it is an assignment of a single bit of a BIT STRING
+        # in that case if the right side is a boolean, it must be converted
+        # to 1 or 0 as expected by the BIT type from asn1scc
+        leftIsBitString = find_basic_type(expr.left.value[0].exprType).kind == 'BitStringType'
+        rightIsBoolean = find_basic_type(expr.right.exprType).kind == 'BooleanType'
+        if leftIsBitString and rightIsBoolean:
+            strings.append(f"{left_str} := (if {right_str} then 1 else 0);")
     else:
         strings.append(f"{left_str} := {right_str};")
     code.extend(left_stmts)

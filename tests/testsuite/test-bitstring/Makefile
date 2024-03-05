@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: 
 	$(OPENGEODE) *.pr --toAda
 	$(ASN1SCC) -Ada  -typePrefix asn1Scc -equal *.asn
-	gnat make test_ada.ada && ./test_ada
+	gnat make test_ada.ada && ./test_ada | diff expected -
 
 test-c: 
 	$(OPENGEODE) *.pr --toC
