@@ -76,6 +76,10 @@ pytest:
 	python3 -m pip  install --user --upgrade pytest pytest-qt
 	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; PYTEST_QT_API=PySide6 py.test
 
+help:
+	# Build the inline help by getting the content on the wiki and converting it to QtHelp format
+	cd help && ./SDL.sh
+
 clean:
 	@$(MAKE) -s -C tests/testsuite $@
 	@find . -name '*~' | xargs rm -f
@@ -86,4 +90,4 @@ clean:
 	@rm -rf opengeode/*.pyc dist build *.egg-info
 
 .PHONY: all test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
-	    benchmark-O3 flake8 coverage compile-all install publish clean
+	    benchmark-O3 flake8 coverage compile-all install publish clean help

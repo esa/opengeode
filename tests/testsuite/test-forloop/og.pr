@@ -1,49 +1,64 @@
-SYSTEM og;
-    /* CIF TEXT (159, 221), (287, 188) */
+system og;
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (159, 221), (267, 188) */
     -- Text area for declarations and comments
-
-use dv comment 'dataview-uniq.asn';
-
---use dv2 comment 'dataview2.asn';
-
-signal dd(myinteger);
-signal we(myinteger);
-
-procedure anExternalProc;
-fpar in/out a_param MyInteger;
-external;
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    --use dv2 comment 'dataview2.asn';
+    
+    signal dd(myinteger);
+    signal we(myinteger);
+    
+    procedure anExternalProc;
+    fpar in/out a_param MyInteger;
+    external;
     /* CIF ENDTEXT */
-    CHANNEL c
-        FROM ENV TO og WITH dd;
-        FROM og TO ENV WITH we;
-    ENDCHANNEL;
-    BLOCK og;
-        SIGNALROUTE r
-            FROM ENV TO og WITH dd;
-            FROM og TO ENV WITH we;
-        CONNECT c AND r;
+    channel c
+        from env to og with dd;
+        from og to env with we;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with dd;
+            from og to env with we;
+        connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
-        PROCESS og;
-            /* CIF TEXT (57, 58), (303, 140) */
+        process og;
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (57, 58), (284, 140) */
             -- Test the proper check of RANGE parameters
-
-dcl foo SeqOf;
-
-dcl a, b MyInteger;
-
-dcl c,d MyREAL;
+            
+            dcl foo SeqOf;
+            
+            dcl a, b MyInteger;
+            
+            dcl c,d MyREAL;
             /* CIF ENDTEXT */
             /* CIF START (184, 217), (70, 35) */
             START;
-                /* CIF TASK (86, 267), (266, 53) */
-                TASK for each in range (fix(1),fix(20.0) , 2):
+                /* CIF task (100, 267), (237, 53) */
+                task for each in range (fix(1),fix(20.0) , 2):
     call writeln(each);
 endfor;
-                /* CIF NEXTSTATE (184, 350), (70, 35) */
+                /* CIF task (139, 340), (159, 173) */
+                task for each in foo:
+    call writeln(each);
+    each := each + 1
+    task each := each + 1;
+    each := each + 1
+    output we (1);
+    decision each;
+       (>1) : output we(1);
+       else:
+    enddecision;
+endfor;
+                /* CIF NEXTSTATE (184, 543), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF STATE (419, 218), (70, 35) */
-            STATE wait;
-            ENDSTATE;
-        ENDPROCESS og;
-    ENDBLOCK;
-ENDSYSTEM;
+            /* CIF state (419, 218), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;
