@@ -57,7 +57,7 @@ dependencies:
 	python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.0.12/asn1scc-bin-4.5.0.12.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
+	cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.1.2/asn1scc-bin-4.5.1.2.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
