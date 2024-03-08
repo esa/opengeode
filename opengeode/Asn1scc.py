@@ -144,7 +144,8 @@ def parse_asn1(*files, **options):
     html_filepath = outdir + os.sep + out_html_name
 
     # call the ASN.1 compiler only if there is no existing cached file
-    if project_cache is None or not os.path.exists(py_filepath):
+    if project_cache is None or not os.path.exists(py_filepath) \
+            or not os.path.exists(html_filepath):
         LOG.info('No ASN.1 file in cache (or no cache folder)')
         stg = asn1scc_root + os.sep + 'python.stg'
 
