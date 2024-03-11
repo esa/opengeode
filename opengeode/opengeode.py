@@ -2379,6 +2379,11 @@ class SDL_View(QGraphicsView):
 \tcd code && opengeode --toAda ../*.pr
 \tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada {firstAsn1File} {otherAsn}
 \tcd code && gnat make {prj_name}
+c:
+\tmkdir -p code_c
+\tcd code_c && opengeode --toC ../*.pr
+\tasn1scc -fp AUTO -typePrefix asn1Scc -o code_c -equal -c {firstAsn1File} {otherAsn}
+\tcd code_c && gcc -c *.c
 clean:
 \trm -rf code'''
         pr_data = str('\n'.join(pr_raw))

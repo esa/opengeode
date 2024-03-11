@@ -4075,6 +4075,43 @@ def get_array_type(newtypename, root):
     return newtype
 
 
+def get_enumerated_type(newtypename, root):
+    ''' Returns the subtype associated to an NEWTYPE LITERALS construction '''
+    # children of root should be the list of enumerants
+    # root contains two sort names, the indexing one and the element
+    enumerants = dict()
+    idx = 0
+    for each in root.getChildren():
+        asAsn1 = each.text.lower().replace('_', '-')
+        enumerants[asAsn1] = type(each.text, (object,),
+                {"IntValue": idx, "Line": idx + 1, "CharPositionInLine" : 0,
+                    "EnumID": each.text })
+        idx += 1
+
+    typeSortLine = root.getChild(1).getLine()
+    typeSortChar = root.getChild(1).getCharPositionInLine()
+
+    # Constructing ASN.1 AST subtype
+    newtype = type(str(newtypename), (object,), {
+        "Line": -1,
+        "CharPositionInLine": typeSortChar,
+        "AddedType": "False",
+        # Add "User_Defined_Literals" for Helper.generate_asn1_datamodel
+        # so that it can differentiate these types from the _Selection types
+        "User_Defined_Literals" : True,
+        "type": type ("Enumerated_type", (object,), {
+            "Line": -1,
+            "CName": str(newtypename.replace('-', '_')),
+            "AdaName": str(newtypename.replace('-', '_')),
+            "CharPositionInLine": typeSortChar,
+            "kind": "EnumeratedType",
+            "EnumValues" : enumerants
+        })
+    })
+
+    return newtype
+
+
 def get_struct_children(root):
     ''' Returns the fields of a STRUCT as a dictionary '''
     children = {}
@@ -4334,6 +4371,13 @@ def newtype(root, ta_ast, context):
         #newType.Children = get_struct_children(root.getChild(1))
         #types()[str(newtypename)] = newType
         LOG.debug("Found new STRUCT type " + newtypename)
+    elif (root.getChild(1).type == lexer.LITERALS):
+        try:
+            newType = get_enumerated_type(newtypename, root.getChild(1))
+            USER_DEFINED_TYPES.update({str(newtypename): newType})
+        except TypeError as err:
+            errors.append(str(err))
+        LOG.debug("Found new ENUMERATED type " + newtypename)
     else:
         warnings.append(
                     'Unsupported type definition in newtype, type: ' +

@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.2.1 (03/2024)**
+- Introduce support of newtype literals (user-defined enumerated types) as per Z100 syntax
+
 **4.2.0 (03/2024)**
 - Support named bit assignments in BIT STRING variables
 
