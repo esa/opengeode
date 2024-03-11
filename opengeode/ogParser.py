@@ -736,8 +736,8 @@ def check_call(name, params, context):
             raise TypeError(name + " takes 2 parameters: number, type")
         variable, target_type = params
         variable_sort = find_basic_type(variable.exprType)
-        if variable_sort.kind != 'IntegerType':
-            raise TypeError(name + ': First parameter is not an number')
+        if not variable_sort.kind.startswith('Integer'):
+            raise TypeError(name + ': First parameter is not a number')
         sort_name = target_type.value[0]  #  raw string of the type to cast
         for sort in types().keys():
             if sort.lower().replace('-', '_') == \
@@ -1457,7 +1457,7 @@ def check_type_compatibility(primary, type_ref, context):
         refSort  = type_name(type_ref)
         if type_name(primary.exprType) != type_name(type_ref):
             raise TypeError(f'{prim} resolves to sort "{primSort}" while "{refSort} was expected')
-    elif primary.exprType != basic_type:
+    elif find_basic_type(primary.exprType) != basic_type:
         raise TypeError(f'{primary.inputString} does not match type {type_name(type_ref)}')
     return warnings
 
@@ -2426,11 +2426,13 @@ def arithmetic_expression(root, context):
         basic_right = find_basic_type(expr.right.exprType)
 
     try:
-        minL = float(basic_left.Min)
+        minL = minL_fromType = float(basic_left.Min)
         maxL = float(basic_left.Max)
-        minR = float(basic_right.Min)
+        minR = minR_fromType = float(basic_right.Min)
         maxR = float(basic_right.Max)
         # Constants defined in ASN.1 : take their value for the range
+        # (but we keep min_fromType as the type value is the one used
+        # for checking sign mismatch)
         if isinstance(expr.left, ogAST.PrimConstant):
             minL = maxL = get_asn1_constant_value(expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
@@ -2556,7 +2558,7 @@ def arithmetic_expression(root, context):
         else:
             sign_mismatch = False
             # Test only integers, not reals!!
-            if is_integer(expr.left.exprType) and is_integer(expr.right.exprType) and (minL < 0) != (minR < 0):
+            if is_integer(expr.left.exprType) and is_integer(expr.right.exprType) and (minL_fromType < 0) != (minR_fromType < 0):
                 sign_mismatch = \
                         (minL >= 0 and basic_left.kind  != 'Integer32Type')\
                      or (minR >= 0 and basic_right.kind != 'Integer32Type')
@@ -2574,9 +2576,9 @@ def arithmetic_expression(root, context):
                 bound_min = str(float(bounds['Min']))
                 # Must check that sign of resulting bound is still compatible
                 # with the sign of the two sides, and fix it in case
-                if (minL < 0 or minR < 0) and bounds['Min'] >= 0:
-                    bound_min = str(minL) if minL < 0 else str(minR)
-                elif (minL >= 0 and minR >=0) and bounds['Min'] < 0:
+                if (minL_fromType < 0 or minR_fromType < 0) and bounds['Min'] >= 0:
+                    bound_min = str(minL_fromType) if minL_fromType < 0 else str(minR_fromType)
+                elif (minL_fromType >= 0 and minR_fromType >=0) and bounds['Min'] < 0:
                     bound_min = "0"
 
                 bound_max = str(float(bounds['Max']))
@@ -2958,7 +2960,11 @@ def primary_index(root, context, pos):
     receiver, receiver_err, receiver_warn = \
                                 expression(root.children[0], context, pos)
 
-    receiver_bty = find_basic_type(receiver.exprType)
+    try:
+        receiver_bty = find_basic_type(receiver.exprType)
+    except TypeError as err:
+        errors.append(str(err))
+        return node, errors, warnings
 
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
@@ -4990,7 +4996,7 @@ def process_definition(root, parent=None, context=None):
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
 
     process.user_defined_types = USER_DEFINED_TYPES
-    tas = (x for x in root.getChildren() if x.type == lexer.TEXTAREA)
+    tas = list(x for x in root.getChildren() if x.type == lexer.TEXTAREA)
     for child in tas:
         content = (x for x in child.getChildren()
                    if x.type == lexer.TEXTAREA_CONTENT)
