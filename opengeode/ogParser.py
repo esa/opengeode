@@ -3027,13 +3027,17 @@ def primary_index(root, context, pos):
                 warns = fix_expression_types(check_expr, context)
                 params[0] = check_expr.right
                 index_given_sort = type_name(check_expr.right.exprType).lower().replace('-', '_')
+                # Setting requires_num here because Ada can still use the raw value
+                # to index the array (using Enum_Rep). It does not need to use the number...
+                # Keep the number retrieval here in case other backends need it.
+                node.requires_num = True
                 if index_given_sort == index_expected_sort:
                     check_index = True
                     basic_enum = find_basic_type(check_expr.right.exprType)
                     given_value = params[0].value[0] # index raw value
                     # retrive the numerical value
                     for enumitem in basic_enum.EnumValues.keys():
-                        if enumitem.lower() == given_value.lower():
+                        if enumitem.replace('-', '_').lower() == given_value.lower():
                             # The code generator will use the raw value:
                             node.use_num_value = int(basic_enum.EnumValues[enumitem].IntValue)
         except Exception as err:

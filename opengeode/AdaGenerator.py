@@ -2042,7 +2042,7 @@ def _prim_index(prim, **kwargs):
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    if prim.use_num_value != -1:
+    if prim.use_num_value != -1 and not prim.requires_num:
         idx = 1 + prim.use_num_value
         if not isinstance(receiver, ogAST.PrimSubstring):
             ada_string += '.Data'
@@ -2058,8 +2058,9 @@ def _prim_index(prim, **kwargs):
         idx_string = int(idx_string) + 1
     else:
         if prim.requires_num:
-            idx_string += "'Enum_Rep"
-        idx_string = f'1 + Integer ({idx_string})'
+            idx_string = f"1 + {idx_string}'Enum_Rep"
+        else:
+            idx_string = f'1 + Integer ({idx_string})'
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'
     ada_string += f'({idx_string})'
