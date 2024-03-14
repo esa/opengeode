@@ -2482,9 +2482,16 @@ def arithmetic_expression(root, context):
         else:
             bounds = find_bounds(expr.op, minL, maxL, minR, maxR)
 
-        if is_number(basic_right) or is_number(basic_left):
-            is_signed = (not is_number(basic_right))   and minR < 0.0 \
-                        or (not is_number(basic_left)) and minL < 0.0
+        # Detect either raw numbers or constants
+        right_is_number = is_number(basic_right) \
+                or isinstance(expr.right, ogAST.PrimConstant)
+
+        left_is_number = is_number(basic_left) \
+                or isinstance(expr.left, ogAST.PrimConstant)
+
+        if right_is_number or left_is_number:
+            is_signed = (not is_number(basic_right))   and minR_fromType < 0.0 \
+                        or (not is_number(basic_left)) and minL_fromType < 0.0
 
             # create a primary to replace the original expression
             # in case both sides are raw number (int or float)
@@ -2510,8 +2517,9 @@ def arithmetic_expression(root, context):
             bound_min = str(op(bounds['Min']))
             bound_max = str(op(bounds['Max']))
 
-            if is_number(basic_right) == is_number(basic_left) == True:
-                # two numbers: replace the expression with the computed result
+            if right_is_number == left_is_number  == True:
+                # two numbers or a number and a constant:
+                # replace the expression with the computed result
                 prim.value = [bound_min]
                 prim.exprType = type(sort, (object,), {
                    'kind': kind,
@@ -2527,7 +2535,7 @@ def arithmetic_expression(root, context):
             # we have to raise a warning to let the user know that the
             # operation may result in a negative number
             # example: x := x - 1 with range of x being [0 .. i]
-            elif is_number(basic_right) != is_number(basic_left):
+            elif right_is_number != left_is_number:
                 if is_signed and float(bound_min) >= 0:
                     bound_min = str(minR) \
                             if not is_number(basic_right) else str(minL)
