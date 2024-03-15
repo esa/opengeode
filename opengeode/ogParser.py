@@ -4106,8 +4106,8 @@ def get_enumerated_type(newtypename, root):
                     "EnumID": each.text })
         idx += 1
 
-    typeSortLine = root.getChild(1).getLine()
-    typeSortChar = root.getChild(1).getCharPositionInLine()
+    typeSortLine = root.getLine()
+    typeSortChar = root.getCharPositionInLine()
 
     # Constructing ASN.1 AST subtype
     newtype = type(str(newtypename), (object,), {
