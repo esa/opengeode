@@ -86,7 +86,7 @@ EmitEnumInternalContents(arrsItems) ::= <<
 >>
 
 // applicable to Integers, booleans, reals
-EmitPrimitiveType(sColor, sTasName, sTasNameC, sAsnKindName, sMinBytes, sMaxBytes, sMaxBitsExplained, sCommentLine, sAsn1Constraints, sMinBits, sMaxBits, arrsComments) ::= <<
+EmitPrimitiveType(sColor, sTasName, sTasNameC, sAsnKindName, sMinBytes, sMaxBytes, sMaxBitsExplained, sCommentLine, sAsn1Constraints, sMinBits, sMaxBits, arrsCommentsm, soUnit) ::= <<
 >>
 
 
@@ -94,20 +94,20 @@ EmitPrimitiveType(sColor, sTasName, sTasNameC, sAsnKindName, sMinBytes, sMaxByte
 EmitSequence(sColor, sTasName, sTasNameC, sMinBytes, sMaxBytes, sMaxBitsExplained, sCommentLine, arrsChildren, arrsComments) ::= <<
 >>
 
-EmmitSeqChild_RefType(sRefName, sRefNameC) ::= <<
+EmitSeqChild_RefType(sRefName, sRefNameC) ::= <<
 >>
 
 OddRow() ::= ""
 EvenRow() ::= ""
 
-EmmitSequenceChild(sCssClass, nIndex, sName, sComment, sOptionality, sType, sConstraint, sMin, sMax) ::= <<
+EmitSequenceChild(sCssClass, nIndex, sName, sComment, sOptionality, sType, sConstraint, sMin, sMax) ::= <<
 >>
 
 
-EmmitSequencePreambleSingleComment(nIndex, sOptChildName) ::= <<
+EmitSequencePreambleSingleComment(nIndex, sOptChildName) ::= <<
 >>
 
-EmmitSequencePreambleComment(arrsOptChildren) ::= <<
+EmitSequencePreambleComment(arrsOptChildren) ::= <<
 >>
 
 /* *** CHOICE ****/
@@ -115,13 +115,13 @@ EmitChoice(sColor, sTasName, sTasNameC, sMinBytes, sMaxBytes, sMaxBitsExplained,
 >>
 
 
-EmmitChoiceChild(sCssClass, nIndex, sName, sComment,  sType, sConstraint, sMin, sMax) ::= <<
+EmitChoiceChild(sCssClass, nIndex, sName, sComment,  sType, sConstraint, sMin, sMax) ::= <<
 >>
 
-EmmitChoiceIndexSingleComment(nIndex, sChildName) ::= <<
+EmitChoiceIndexSingleComment(nIndex, sChildName) ::= <<
 >>
 
-EmmitChoiceIndexComment(arrsOptChildren) ::= <<
+EmitChoiceIndexComment(arrsOptChildren) ::= <<
 >>
 
 /* *********** CHOICE END ********** */
@@ -132,12 +132,12 @@ EmitSizeable(sColor, sTasName, sTasNameC, sKind, sMinBytes, sMaxBytes, sMaxBitsE
 EmitRowWith3Dots() ::= <<
 >>
 
-EmmitTass(sTypeContent) ::= <<
+EmitTass(sTypeContent) ::= <<
 $sTypeContent$
 &nbsp;<br/>
 >>
 
-EmmitModule(sModName, arrsComments, arrsTases) ::= <<
+EmitModule(sModName, arrsComments, arrsTases) ::= <<
 <div style="width: 100%">
 <h2 >Module : $sModName$</h2>
 <font face="Courier" color="DimGray"><pre>
@@ -147,14 +147,14 @@ $arrsTases;separator="\n"$
 </div>
 >>
 
-EmmitFile(sAsnFileName, arrsModules) ::= <<
+EmitFile(sAsnFileName, arrsModules) ::= <<
 <div style="width: 100%">
 <h1 >Asn1 file : $sAsnFileName$</h1>
     $arrsModules;separator="\n"$
 </div>
 >>
 
-EmmitFilePart2(sFileName, sAsn1Content) ::= <<
+EmitFilePart2(sFileName, sAsn1Content) ::= <<
 <h1 >$sFileName$</h1>
 <div style="width: 100%; white-space:pre; font-size:medium">
 $sAsn1Content$
