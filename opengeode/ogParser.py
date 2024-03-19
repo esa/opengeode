@@ -4767,7 +4767,16 @@ def signalroute(root, parent=None, context=None):
         if child.type == lexer.ID:
             edge['name'] = child.text
         elif child.type == lexer.ROUTE:
-            edge['routes'].append(single_route(child))
+            route = single_route(child)
+            # Look if there is an existing route with the same source/dest
+            # (it is possible that the line "from source to dest with..."
+            # is duplicated.
+            for each in edge['routes']:
+                if each['source'] == route['source'] and each['dest'] == route['dest']:
+                    each['signals'].extend(route['signals'])
+                    break
+            else:
+                edge['routes'].append(route)
     return edge, [], []
 
 
