@@ -50,6 +50,7 @@ LPREFIX = 'ctxt'
 
 LEFT_TYPE = ''
 VAR_COUNTER = 0
+ASN1SCC = 'asn1Scc'
 
 # True if stdio.h has to be included
 STDIO_INCLUDE = False
@@ -484,7 +485,7 @@ def _call_external_function(output, **kwargs):
             if not SHARED_LIB:
                 # Use a temporary variable to store the timer value
                 tmp_id = 'tmp' + str(out['tmpVars'][0])
-                decls.append('asn1SccT_UInt32 {};'.format(tmp_id))
+                decls.append(f'{ASN1SCC}T_UInt32 {tmp_id};')
                 stmts.append('{tmp} = {val};'.format(tmp=tmp_id, val=t_val))
                 stmts.append("SET_{timer}(&{value});".format(timer=p_id, value=tmp_id))
             else:
@@ -795,7 +796,7 @@ def _task_forloop(task, **kwargs):
                 stmts.append('int ' + loop['var'] + ';')
             else:
                 stmts.append('asn1SccUint ' + loop['var'] + ';')
-                
+
             if loop['range']['start']:
                 start_stmts, start_str, start_local = expression(loop['range']['start'])
                 decls.extend(start_local)
@@ -1125,7 +1126,7 @@ def _prim_call(prim):
             error = '{} is not a SEQUENCE OF'.format(exp.inputString)
             LOG.error(error)
             raise TypeError(error)
-        
+
         param_stmts, param_str, local_var = expression(exp)
 
         ret_stmts.extend(param_stmts)
@@ -1283,15 +1284,15 @@ def _prim_call(prim):
         ret_decls.extend(var_decl)
         destSort = target_type.value[0]
         sortC = destSort.replace('-', '_')
-        sort_name = f'asn1Scc{PROCESS_NAME.capitalize()}_{sortC.capitalize()}_Selection'
+        sort_name = f'{ASN1SCC}{PROCESS_NAME.capitalize()}_{sortC.capitalize()}_Selection'
         if function_name == 'to_selector':
             # add 1 because we are converting to a CHOICE selector, which has an
             # additional field choice_NONE with value 0. so all values are shifted
             ret_string += f"(({sort_name}){var_str} + 1)"
         elif function_name == 'to_enum':
             # symetrically to to_selector, we must remove 1 to get the right value
-            sort_name_val = f'asn1Scc{sortC}'
-            sort_name = f'asn1Scc{var_typename}'
+            sort_name_val = f'{ASN1SCC}{sortC}'
+            sort_name = f'{ASN1SCC}{var_typename}'
             ret_string += f"(({sort_name_val}){var_str} - 1)"
     elif function_name == 'val':
         variable, target_type = params
@@ -1675,7 +1676,7 @@ def _bitwise_operators(expr):
         else:
             if not isinstance(expr.left, ogAST.PrimVariable):
                 raise NotImplementedError(str(type(expr.left)))
-            
+
             global VAR_COUNTER
             VAR_COUNTER = VAR_COUNTER + 1
 
@@ -1744,7 +1745,7 @@ def _not_expression(expr):
             global VAR_COUNTER
             VAR_COUNTER = VAR_COUNTER + 1
 
-            decls.append(u'asn1Scc{ty} not_{var_counter};'.format(ty=bty_outer.__name__[:-5].replace('-','_'), var_counter=VAR_COUNTER))
+            decls.append(u'{ASN1SCC}{ty} not_{var_counter};'.format(ASN1SCC=ASN1SCC, ty=bty_outer.__name__[:-5].replace('-','_'), var_counter=VAR_COUNTER))
             decls.append(u'asn1SccUint not_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
             stmts.append(u'{')
             stmts.append(u'for(not_counter_{var_counter} = 0; not_counter_{var_counter} < {size_expr}; not_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size_expr=size_expr))
@@ -1966,10 +1967,10 @@ def _append(expr):
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     elif isinstance(expr.left, ogAST.PrimSequenceOf) and isinstance(expr.right, ogAST.PrimSubstring):
         decls.append(f'asn1SccUint memcpy_counter_{VAR_COUNTER} = 0;')
-        
+
         # Result container
         decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
-        
+
         # Resulting string
         string = f'memcpy_temp_{VAR_COUNTER}'
 
@@ -2609,7 +2610,7 @@ def generate_sdl_constants(process):
         if process.process_type and sdl_constant.varName == 'self' and 'PID' in TYPES:
             pass
         else:
-            sdl_constants_code.append(f"static const asn1Scc{data_type} {sdl_constant.varName} = {val};")
+            sdl_constants_code.append(f"static const {ASN1SCC}{data_type} {sdl_constant.varName} = {val};")
 
     sdl_constants_code.append('\n')
 
@@ -2636,8 +2637,8 @@ def processing_process_aliases(process, no_renames):
 
 def generating_context(process):
     context_code = ['//// Context']
-    #context_code.append(f'__attribute__ ((persistent)) asn1Scc{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
-    context_code.append(f'static asn1Scc{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
+    #context_code.append(f'__attribute__ ((persistent)) {ASN1SCC}{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
+    context_code.append(f'static {ASN1SCC}{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
 
     return context_code
 
@@ -2738,7 +2739,7 @@ def processing_process_variables(process, no_renames, startup_function_code):
                 startup_function_code.append(u'{ct}.{field} = ({type}) {init_val};'.format(ct=LPREFIX, field=var_name, type=type_name(var_type), init_val=init_val))
             elif basic_type_of_var_type.kind == 'IA5StringType' and isinstance(init, ogAST.PrimStringLiteral):
                 init_val = array_content(init, init_string, basic_type_of_var_type)
-                
+
                 startup_function_code.append(u'{')
                 startup_function_code.append(u'{type} {field}_val = {init_val};'.format(type=type_name(var_type), field=var_name, init_val=init_val))
                 startup_function_code.append(u'asn1SccUint {field}_memcpy;\n'.format(field=var_name))
@@ -3066,8 +3067,8 @@ def processing_timers(process, simu, output_signals_code):
                 timers_code.append(u'}')
                 timers_code.append(u'')
         else:
-            timers_header_file_code.append('void {}_RI_SET_{}(const asn1SccT_UInt32 * val);'.format(process_name.lower(), timer))
-            timers_header_file_code.append('void {}_RI_RESET_{}();'.format(process_name.lower(), timer))
+            timers_header_file_code.append(f'void {process_name.lower()}_RI_SET_{timer}(const {ASN1SCC}T_UInt32 * val);')
+            timers_header_file_code.append(f'void {process_name.lower()}_RI_RESET_{timer}();')
 
             output_signals_code.append('#define SET_{timer} {pn}_RI_SET_{timer}'.format(timer=timer, pn=process_name.lower()))
             output_signals_code.append('#define RESET_{timer} {pn}_RI_RESET_{timer}'.format(timer=timer, pn=process_name.lower()))
@@ -3422,10 +3423,10 @@ def array_content(prim, values, asnty):
 
     if isinstance(prim, ogAST.PrimEmptyString):
         return values
-    
+
     elif asnty.kind == 'IA5StringType':
         return u'{{{values}}}'.format(values=values)
-    
+
     elif asnty.Min != asnty.Max:
         length = len(prim.value)
 
@@ -3436,15 +3437,15 @@ def array_content(prim, values, asnty):
             length -= 2
 
         return u'{{{length}, {{{values}}}}}'.format(length=length, values=values)
- 
+
     return u'{{{{{values}}}}}'.format(values=values)
-    
+
 
 def type_name(a_type, use_prefix=True):
     ''' Check the type kind and return an C usable type name '''
 
     if a_type.kind == 'ReferenceType':
-        return u'{}{}'.format('asn1Scc' if use_prefix else '', a_type.ReferencedTypeName.replace('-', '_'))
+        return u'{}{}'.format(ASN1SCC if use_prefix else '', a_type.ReferencedTypeName.replace('-', '_'))
     elif a_type.kind == 'BooleanType':
         return u'_Bool'
     elif a_type.kind.startswith('Integer'):
@@ -3458,7 +3459,7 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind == 'StateEnumeratedType':
         return u''
     elif a_type.kind == 'EnumeratedType':
-        return u'asn1Scc' if use_prefix else ''
+        return ASN1SCC if use_prefix else ''
     else:
         raise NotImplementedError('Type name for {}'.format(a_type.kind))
 
@@ -3530,7 +3531,7 @@ def find_var_in_timers(var):
 
 
 def generate_state_name(state):
-    return f'asn1Scc{PROCESS_NAME.capitalize()}_States_{state.lower()}'
+    return f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States_{state.lower()}'
 
 
 def find_state_in_states(state):
