@@ -934,16 +934,20 @@ package body {process.name}_RI is''']
                 ads_template.append(
                    f'procedure RESET_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) '
                    f'renames {process.name}_RI.Reset_{timer};')
+                ri_stub_ads.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env);')
+                ri_stub_adb.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) is null;')
+                ri_stub_ads.append(f'procedure RESET_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env);')
+                ri_stub_adb.append(f'procedure RESET_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) is null;')
             else:
                 ads_template.append(
                    f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) '
                    f'renames {process.name}_RI.Set_{timer};')
                 ads_template.append(
                    f'procedure RESET_{timer} renames {process.name}_RI.Reset_{timer};')
-            ri_stub_ads.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32);')
-            ri_stub_adb.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) is null;')
-            ri_stub_ads.append(f'procedure RESET_{timer};')
-            ri_stub_adb.append(f'procedure RESET_{timer} is null;')
+                ri_stub_ads.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32);')
+                ri_stub_adb.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) is null;')
+                ri_stub_ads.append(f'procedure RESET_{timer};')
+                ri_stub_adb.append(f'procedure RESET_{timer} is null;')
         else:
             # Generic functions get the SET and RESET from template
             pass
