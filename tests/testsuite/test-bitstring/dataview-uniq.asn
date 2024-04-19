@@ -1,0 +1,53 @@
+BS-DATAVIEW DEFINITIONS ::=
+BEGIN
+
+   BS ::= BIT STRING {bit0(0), bit3(3)} (SIZE (4))
+
+END
+
+
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+T-Null-Record ::= SEQUENCE {}
+
+T-Runtime-Error ::= CHOICE {
+   noerror T-UInt32, -- this shall be NULL, but DMT does not support NULL and SEDS does not support empty sequences
+   encodeerror T-Int32, -- the names shall be changed after fix in seds converter (space creator) will be merged
+   decodeerror T-Int32
+}
+
+END
+
+-- Dataview generated on-the-fly providing information on the system
+-- and made available to the user code.
+System-Dataview DEFINITIONS ::=
+BEGIN
+
+   -- Range of PID - type can be used to size arrays of PID type
+   PID-Range ::= INTEGER(0..2)
+
+   -- List of functions (instances) present in the system
+   PID ::= ENUMERATED {
+       testbs,
+       
+       user,
+       
+       
+       env
+   }
+
+END
+

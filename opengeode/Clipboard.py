@@ -145,7 +145,7 @@ def paste(parent, scene):
     CLIPBOARD.clear()
     if not parent:
         new_symbols = paste_floating_objects(scene)
-        print(new_symbols)
+        #print(new_symbols)
         for each in new_symbols:
             #  Make sure nested scenes are set properly
             each.double_click()

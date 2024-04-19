@@ -123,6 +123,7 @@ tokens {
         STOPIF;
         STRING;
         STRUCT;
+        LITERALS;
         SYNONYM;
         SYNONYM_LIST;
         SYNTYPE;
@@ -419,9 +420,10 @@ parent_sort
 
 
 newtype_definition
-        :       NEWTYPE type_name (array_definition|structure_definition)?
+        :       NEWTYPE type_name
+                (array_definition|structure_definition|enum_definition)?
                 ENDNEWTYPE type_name? end
-        ->      ^(NEWTYPE type_name array_definition* structure_definition*)
+        ->      ^(NEWTYPE type_name array_definition* structure_definition* enum_definition*)
         ;
 
 
@@ -435,6 +437,15 @@ array_definition
         ->      ^(ARRAY sort sort)
         ;
 
+/* Create a new enumerated type with the sdl syntax:
+   newtype SomeEnumerated
+      literals on, off
+   endnewtype;
+*/
+enum_definition
+        :       (LITERALS (enumerant (',' enumerant)* ))
+        ->      ^(LITERALS enumerant+)
+        ;
 
 structure_definition
         :       STRUCT field_list end
@@ -1601,6 +1612,7 @@ priority_signal_id
 signal_list_id  :       ID;
 timer_id        :       ID;
 field_name      :       ID | STATE;
+enumerant       :       ID;
 signal_route_id :       ID;
 channel_id      :       ID;
 route_id        :       ID;
@@ -1753,6 +1765,7 @@ ENDNEWTYPE      :       E N D N E W T Y P E;
 ARRAY           :       A R R A Y;
 CONSTANTS       :       C O N S T A N T S;
 STRUCT          :       S T R U C T;
+LITERALS        :       L I T E R A L S;
 SYNONYM         :       S Y N O N Y M;
 IMPORT          :       I M P O R T;
 VIEW            :       V I E W;

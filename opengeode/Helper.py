@@ -816,20 +816,30 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
                     f'(SIZE ({rangeMin} .. {rangeMax})) OF '
                     f'{refTypeCase.replace("_", "-")}')
         elif sortdef.type.kind == "EnumeratedType" and sortdef.AddedType=="False":
-            # At the moment, the only user-defined ENUMERATED types that are
-            # supported are the ones generated for the CHOICE selectors
-            # We can therefore safely rename them systematically here,
-            # by using the process name as prefix, to avoid any risk of
-            # duplicate type definition in case it exists in another SDL
-            # process of the system.
-            prefixed_name = f'{process.name}_{sortdef.ChoiceTypeName}_Selection'
-            keys = []
-            for idx, key in enumerate(sortdef.type.EnumValues.keys()):
-                # give an index to the enumerations to align with -Selection
-                # types used in choice index
-                keys.append(f'{key}-present({idx+1})')
-            asn1_template.append(
+            # There are two kinds of user-defined ENUMERATED types: 
+            # - the ones generated for the CHOICE selectors
+            #   We can rename them systematically here,
+            #   by using the process name as prefix, to avoid any risk of
+            #   duplicate type definition in case it exists in another SDL
+            #   process of the system.
+            # - the ones created using the NEWTYPE LITERALS construct
+            # the second one are detected here using the "User_Defined_Literals"
+            # attribute set by ogParser
+            if not hasattr(sortdef, "User_Defined_Literals"):
+                prefixed_name = f'{process.name}_{sortdef.ChoiceTypeName}_Selection'
+                keys = []
+                for idx, key in enumerate(sortdef.type.EnumValues.keys()):
+                    # give an index to the enumerations to align with -Selection
+                    # types used in choice index
+                    keys.append(f'{key}-present({idx+1})')
+                asn1_template.append(
                     f'{prefixed_name.replace("_", "-").title()} ::= ENUMERATED {{' + ", ".join(keys) + '}')
+            else:
+                # NEWTYPE LITERALS
+                keys = sortdef.type.EnumValues.keys()
+                asn1_template.append(
+                    f'{sortname.replace("_", "-").capitalize()} ::= ENUMERATED {{'
+                    + ", ".join(keys) + '}')
         elif sortdef.type.kind == 'ReferenceType':
             # this is a SYNTYPE
             asn1_template.append(

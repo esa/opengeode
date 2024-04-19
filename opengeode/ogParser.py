@@ -298,6 +298,7 @@ def is_string(ty, pool=None) -> bool:
     ''' Return true if a type is a String Type '''
     return find_basic_type(ty, pool).kind in (
         'StandardStringType',
+        'BitStringType',
         'OctetStringType',
         'StringType',
         'IA5StringType'
@@ -522,12 +523,13 @@ def check_syntax(node: antlr3.tree.CommonTree,
                 text = open(filename, 'r').readlines()
             else:
                 text = input_string.split('\n')
+            arrow = "\u221f"
             if isinstance(exc, antlr3.exceptions.MismatchedTokenException):
-                err_msg = f'{" "*(pos-1)}^__ Expected ' \
+                err_msg = f'{" "*(pos-1)}{arrow} Expected ' \
                           f'"{lexer.tokenNamesMap[exc.expecting]}", ' \
                           f'got "{token_str}"'
             else:
-                err_msg = f'{" "*(pos-1)}^__ Unexpected "{token_str}"'
+                err_msg = f'{" "*(pos-1)}{arrow} Unexpected "{token_str}"'
             if len(text) >= line:
                 syntax_error = f'{text[line-1]}\n{err_msg}'
             else:
@@ -734,8 +736,8 @@ def check_call(name, params, context):
             raise TypeError(name + " takes 2 parameters: number, type")
         variable, target_type = params
         variable_sort = find_basic_type(variable.exprType)
-        if variable_sort.kind != 'IntegerType':
-            raise TypeError(name + ': First parameter is not an number')
+        if not variable_sort.kind.startswith('Integer'):
+            raise TypeError(name + ': First parameter is not a number')
         sort_name = target_type.value[0]  #  raw string of the type to cast
         for sort in types().keys():
             if sort.lower().replace('-', '_') == \
@@ -950,6 +952,12 @@ def check_call(name, params, context):
         # we must return a referenced type, otherwise the present operator
         # could not be used as the parameter of a function that needs to
         # know the type of the parameter to cast or prefix it (e.g. to_enum)
+        if context.processName is None:
+            # In a copy-paste action the process context may be missing
+            # but it is not important ; however we must raise an exception
+            # here rather than letting the error propagate with a "None"
+            # set for the context name.
+            raise TypeError ("Context is undefined")
         selection_type = new_ref_type(f'{context.processName}-{sort_name.title()}-Selection')
         return (selection_type, warnings)
 
@@ -1241,6 +1249,7 @@ def check_type_compatibility(primary, type_ref, context):
                and type_ref.__name__ not in ('Apnd', 'SubStr'):
             primary.expected_type = type_ref
         return warnings
+
     elif isinstance(primary, ogAST.PrimSequenceOf) \
             and basic_type.kind == 'OctetStringType':
         # mkstring expressions are of of type SequenceOf, but they may be
@@ -1249,6 +1258,17 @@ def check_type_compatibility(primary, type_ref, context):
         for elem in primary.value:
             if elem.exprType != UINT8:
                 raise TypeError("Use only integers in range 0..255 to assign octet strings")
+        return warnings
+
+    elif isinstance(primary, ogAST.PrimSequenceOf) \
+            and basic_type.kind == 'BitStringType':
+        # a bit string can be assigned an SeqOf kind if the elements are
+        # using named bits declared in the model
+        # At this point the elements have been set as PrimVariable instances
+        named_bits = [n.lower().replace('-', '_') for n in basic_type.NamedBits.keys()]
+        for elem in primary.value:
+            if elem.inputString.lower() not in named_bits:
+                raise TypeError(f"This bit name is not defined : {elem.inputString}")
         return warnings
 
     elif isinstance(primary, ogAST.PrimSequence) \
@@ -1437,7 +1457,7 @@ def check_type_compatibility(primary, type_ref, context):
         refSort  = type_name(type_ref)
         if type_name(primary.exprType) != type_name(type_ref):
             raise TypeError(f'{prim} resolves to sort "{primSort}" while "{refSort} was expected')
-    elif primary.exprType != basic_type:
+    elif find_basic_type(primary.exprType) != basic_type:
         raise TypeError(f'{primary.inputString} does not match type {type_name(type_ref)}')
     return warnings
 
@@ -1642,12 +1662,50 @@ def fix_enumerated_and_choice(expr_enum, context):
     return warnings
 
 
+def fix_named_bits(expr_bitstr, context):
+    ''' If left side of the expression is of bit string type,
+        check if right side is a sequence of primVariables, meaning that
+        user wants to set individual bits. In that case replace the right
+        expression with a "classical" bit assignment ('1101'B)
+    '''
+    warnings = []
+    basicl = find_basic_type(expr_bitstr.left.exprType)
+    basicr = find_basic_type(expr_bitstr.right.exprType)
+    if basicl.kind == 'BitStringType' and basicr.kind == 'SequenceOfType':
+        bits_to_be_set = []
+        named_bits = basicl.NamedBits  # dict {'bitName': bitNumber }
+        normalized = {bitname.lower().replace('-', '_'): bitnumber
+                for bitname, bitnumber in named_bits.items()}
+        for named_bit in expr_bitstr.right.value:
+            if named_bit.inputString.lower() not in normalized.keys():
+                # ignore error with bit names here, they are checked elsewhere
+                return warnings
+            # determine which bits are set
+            bits_to_be_set.append(normalized[named_bit.inputString.lower()])
+        bits_to_be_set.sort()
+        result_bit_array = []
+        for i in range(max(bits_to_be_set)+1):
+            result_bit_array.append(i in bits_to_be_set and '1' or '0')
+        prim = ogAST.PrimBitStringLiteral(primary=expr_bitstr.right,
+                                         debugLine=lineno())
+        prim.bit_array = result_bit_array
+        prim.printable_string = ''.join(result_bit_array)
+        prim.exprType = type ('PrStr', (object,), {
+            'kind': 'BitStringType',
+            'Min':str(len(result_bit_array)),
+            'Max':str(len(result_bit_array)),
+            'NumberOfBits': len(result_bit_array)
+        })
+        expr_bitstr.right = prim
+    return warnings
+
 def fix_expression_types(expr, context):
     ''' Check/ensure type consistency in binary expressions '''
     warnings = []
     for _ in range(2):
         # Check if a raw enumerated value is of a reference type
         warnings.extend(fix_enumerated_and_choice(expr, context))
+        warnings.extend(fix_named_bits(expr, context))
         expr.right, expr.left = expr.left, expr.right
 
     for side in (expr.right, expr.left):
@@ -1841,6 +1899,7 @@ def primary_variable(root, context):
         prim.exprType = find_variable_type(name, context)
     else:
         # We create a variable reference , but it may be a enumerated value,
+        # or a bit name (in BIT STRING)
         # it will be replaced later during type resolution
         prim = ogAST.PrimVariable(debugLine=lineno())
         prim.exprType = UNKNOWN_TYPE
@@ -2367,11 +2426,13 @@ def arithmetic_expression(root, context):
         basic_right = find_basic_type(expr.right.exprType)
 
     try:
-        minL = float(basic_left.Min)
+        minL = minL_fromType = float(basic_left.Min)
         maxL = float(basic_left.Max)
-        minR = float(basic_right.Min)
+        minR = minR_fromType = float(basic_right.Min)
         maxR = float(basic_right.Max)
         # Constants defined in ASN.1 : take their value for the range
+        # (but we keep min_fromType as the type value is the one used
+        # for checking sign mismatch)
         if isinstance(expr.left, ogAST.PrimConstant):
             minL = maxL = get_asn1_constant_value(expr.left.constant_value)
         if isinstance(expr.right, ogAST.PrimConstant):
@@ -2421,9 +2482,16 @@ def arithmetic_expression(root, context):
         else:
             bounds = find_bounds(expr.op, minL, maxL, minR, maxR)
 
-        if is_number(basic_right) or is_number(basic_left):
-            is_signed = (not is_number(basic_right))   and minR < 0.0 \
-                        or (not is_number(basic_left)) and minL < 0.0
+        # Detect either raw numbers or constants
+        right_is_number = is_number(basic_right) \
+                or isinstance(expr.right, ogAST.PrimConstant)
+
+        left_is_number = is_number(basic_left) \
+                or isinstance(expr.left, ogAST.PrimConstant)
+
+        if right_is_number or left_is_number:
+            is_signed = (not is_number(basic_right))   and minR_fromType < 0.0 \
+                        or (not is_number(basic_left)) and minL_fromType < 0.0
 
             # create a primary to replace the original expression
             # in case both sides are raw number (int or float)
@@ -2449,8 +2517,9 @@ def arithmetic_expression(root, context):
             bound_min = str(op(bounds['Min']))
             bound_max = str(op(bounds['Max']))
 
-            if is_number(basic_right) == is_number(basic_left) == True:
-                # two numbers: replace the expression with the computed result
+            if right_is_number == left_is_number  == True:
+                # two numbers or a number and a constant:
+                # replace the expression with the computed result
                 prim.value = [bound_min]
                 prim.exprType = type(sort, (object,), {
                    'kind': kind,
@@ -2466,7 +2535,7 @@ def arithmetic_expression(root, context):
             # we have to raise a warning to let the user know that the
             # operation may result in a negative number
             # example: x := x - 1 with range of x being [0 .. i]
-            elif is_number(basic_right) != is_number(basic_left):
+            elif right_is_number != left_is_number:
                 if is_signed and float(bound_min) >= 0:
                     bound_min = str(minR) \
                             if not is_number(basic_right) else str(minL)
@@ -2497,7 +2566,7 @@ def arithmetic_expression(root, context):
         else:
             sign_mismatch = False
             # Test only integers, not reals!!
-            if is_integer(expr.left.exprType) and is_integer(expr.right.exprType) and (minL < 0) != (minR < 0):
+            if is_integer(expr.left.exprType) and is_integer(expr.right.exprType) and (minL_fromType < 0) != (minR_fromType < 0):
                 sign_mismatch = \
                         (minL >= 0 and basic_left.kind  != 'Integer32Type')\
                      or (minR >= 0 and basic_right.kind != 'Integer32Type')
@@ -2515,9 +2584,9 @@ def arithmetic_expression(root, context):
                 bound_min = str(float(bounds['Min']))
                 # Must check that sign of resulting bound is still compatible
                 # with the sign of the two sides, and fix it in case
-                if (minL < 0 or minR < 0) and bounds['Min'] >= 0:
-                    bound_min = str(minL) if minL < 0 else str(minR)
-                elif (minL >= 0 and minR >=0) and bounds['Min'] < 0:
+                if (minL_fromType < 0 or minR_fromType < 0) and bounds['Min'] >= 0:
+                    bound_min = str(minL_fromType) if minL_fromType < 0 else str(minR_fromType)
+                elif (minL_fromType >= 0 and minR_fromType >=0) and bounds['Min'] < 0:
                     bound_min = "0"
 
                 bound_max = str(float(bounds['Max']))
@@ -2866,7 +2935,6 @@ def primary_call(root, context):
     warnings.extend(param_warnings)
 
     node.value = [name, {'procParams': params}]
-
     try:
         node.exprType, warns = check_call(nameLower, params, context)
         for w in warns:
@@ -2900,7 +2968,11 @@ def primary_index(root, context, pos):
     receiver, receiver_err, receiver_warn = \
                                 expression(root.children[0], context, pos)
 
-    receiver_bty = find_basic_type(receiver.exprType)
+    try:
+        receiver_bty = find_basic_type(receiver.exprType)
+    except TypeError as err:
+        errors.append(str(err))
+        return node, errors, warnings
 
     errors.extend(receiver_err)
     warnings.extend(receiver_warn)
@@ -2962,14 +3034,18 @@ def primary_index(root, context, pos):
                 check_expr.right = params[0]
                 warns = fix_expression_types(check_expr, context)
                 params[0] = check_expr.right
-                index_given_sort = type_name(check_expr.right.exprType)
+                index_given_sort = type_name(check_expr.right.exprType).lower().replace('-', '_')
+                # Setting requires_num here because Ada can still use the raw value
+                # to index the array (using Enum_Rep). It does not need to use the number...
+                # Keep the number retrieval here in case other backends need it.
+                node.requires_num = True
                 if index_given_sort == index_expected_sort:
                     check_index = True
                     basic_enum = find_basic_type(check_expr.right.exprType)
                     given_value = params[0].value[0] # index raw value
                     # retrive the numerical value
                     for enumitem in basic_enum.EnumValues.keys():
-                        if enumitem.lower() == given_value.lower():
+                        if enumitem.replace('-', '_').lower() == given_value.lower():
                             # The code generator will use the raw value:
                             node.use_num_value = int(basic_enum.EnumValues[enumitem].IntValue)
         except Exception as err:
@@ -3201,6 +3277,7 @@ def primary(root, context):
                 as_hex    = binascii.unhexlify(as_bytes)
                 prim.value = f"'{as_hex.hex()}'"
                 prim.numeric_value = as_number
+                prim.bit_array = [val for val in root.text[1:-2]]
                 prim.printable_string = root.text
                 prim.exprType = type('PrStr', (object,), {
                     'kind': 'BitStringType',
@@ -3295,7 +3372,7 @@ def primary(root, context):
                 warnings.extend(warn)
         prim.exprType = UNKNOWN_TYPE
     elif root.type == lexer.SEQOF:
-        prim = ogAST.PrimSequenceOf()
+        prim = ogAST.PrimSequenceOf(debugLine=lineno())
         prim.value = []
         for elem in root.getChildren():
             prim_elem, prim_elem_errors, prim_elem_warnings = \
@@ -4016,6 +4093,43 @@ def get_array_type(newtypename, root):
     return newtype
 
 
+def get_enumerated_type(newtypename, root):
+    ''' Returns the subtype associated to an NEWTYPE LITERALS construction '''
+    # children of root should be the list of enumerants
+    # root contains two sort names, the indexing one and the element
+    enumerants = dict()
+    idx = 0
+    for each in root.getChildren():
+        asAsn1 = each.text.lower().replace('_', '-')
+        enumerants[asAsn1] = type(each.text, (object,),
+                {"IntValue": idx, "Line": idx + 1, "CharPositionInLine" : 0,
+                    "EnumID": each.text })
+        idx += 1
+
+    typeSortLine = root.getLine()
+    typeSortChar = root.getCharPositionInLine()
+
+    # Constructing ASN.1 AST subtype
+    newtype = type(str(newtypename), (object,), {
+        "Line": -1,
+        "CharPositionInLine": typeSortChar,
+        "AddedType": "False",
+        # Add "User_Defined_Literals" for Helper.generate_asn1_datamodel
+        # so that it can differentiate these types from the _Selection types
+        "User_Defined_Literals" : True,
+        "type": type ("Enumerated_type", (object,), {
+            "Line": -1,
+            "CName": str(newtypename.replace('-', '_')),
+            "AdaName": str(newtypename.replace('-', '_')),
+            "CharPositionInLine": typeSortChar,
+            "kind": "EnumeratedType",
+            "EnumValues" : enumerants
+        })
+    })
+
+    return newtype
+
+
 def get_struct_children(root):
     ''' Returns the fields of a STRUCT as a dictionary '''
     children = {}
@@ -4275,6 +4389,13 @@ def newtype(root, ta_ast, context):
         #newType.Children = get_struct_children(root.getChild(1))
         #types()[str(newtypename)] = newType
         LOG.debug("Found new STRUCT type " + newtypename)
+    elif (root.getChild(1).type == lexer.LITERALS):
+        try:
+            newType = get_enumerated_type(newtypename, root.getChild(1))
+            USER_DEFINED_TYPES.update({str(newtypename): newType})
+        except TypeError as err:
+            errors.append(str(err))
+        LOG.debug("Found new ENUMERATED type " + newtypename)
     else:
         warnings.append(
                     'Unsupported type definition in newtype, type: ' +
@@ -4646,7 +4767,16 @@ def signalroute(root, parent=None, context=None):
         if child.type == lexer.ID:
             edge['name'] = child.text
         elif child.type == lexer.ROUTE:
-            edge['routes'].append(single_route(child))
+            route = single_route(child)
+            # Look if there is an existing route with the same source/dest
+            # (it is possible that the line "from source to dest with..."
+            # is duplicated.
+            for each in edge['routes']:
+                if each['source'] == route['source'] and each['dest'] == route['dest']:
+                    each['signals'].extend(route['signals'])
+                    break
+            else:
+                edge['routes'].append(route)
     return edge, [], []
 
 
@@ -4887,7 +5017,7 @@ def process_definition(root, parent=None, context=None):
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
 
     process.user_defined_types = USER_DEFINED_TYPES
-    tas = (x for x in root.getChildren() if x.type == lexer.TEXTAREA)
+    tas = list(x for x in root.getChildren() if x.type == lexer.TEXTAREA)
     for child in tas:
         content = (x for x in child.getChildren()
                    if x.type == lexer.TEXTAREA_CONTENT)
@@ -5012,8 +5142,9 @@ def process_definition(root, parent=None, context=None):
             warnings.extend(warn)
             process.content.states.append(statedef)
         elif child.type == lexer.NUMBER_OF_INSTANCES:
-            # Number of instances - discarded (working on a single process)
-            pass
+            # Number of instances
+            process.min_instances, process.max_instances = \
+                    (int(x.text) for x in child.getChildren())
         elif child.type == lexer.PFPAR:
             # Process formal parameters
             params, err, warn = fpar(child)
@@ -5941,7 +6072,7 @@ def outputbody(root, context):
                     if type_name(dest_type) != 'PID':
                         errors.append(f"PID or variable not found: {dest}")
                     else:
-                        prim = ogAST.PrimVariable()
+                        prim = ogAST.PrimVariable(debugLine=lineno())
                         prim.exprType = dest_type
                         prim.value = [dest]
                         prim.inputString = dest
@@ -6246,10 +6377,20 @@ def decision(root, parent, context):
                             # Ref to a variable -> can't guarantee coverage
                             need_else = True
                             continue
-                        covered_ranges[ans].append(constant.inputString.lower())
+                        if op != ogAST.ExprNeq:
+                            covered_ranges[ans].append(constant.inputString.lower())
+                        else:
+                            # Not Equal: range must cover all values but the constant
+                            for enumval in q_basic.EnumValues.keys():
+                                if enumval.lower().replace('-', '_') != constant.inputString.lower():
+                                    covered_ranges[ans].append(enumval.lower().replace('-', '_'))
                         is_enum = True
                     elif q_basic.kind == 'BooleanType':
-                        covered_ranges[ans].append(constant.value[0])
+                        v = constant.value[0]
+                        if op != ogAST.ExprNeq:
+                            covered_ranges[ans].append(v)
+                        else:
+                            covered_ranges[ans].append("false" if v=="true" else "true")
                         is_bool = True
                         if not constant.is_raw:
                             need_else = True

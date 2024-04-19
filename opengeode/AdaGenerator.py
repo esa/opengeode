@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2023 European Space Agency & Maxime Perrotin
+    Copyright (c) 2012-2024 European Space Agency & Maxime Perrotin
 
     Designed and implemented by Maxime Perrotin
 
@@ -934,16 +934,20 @@ package body {process.name}_RI is''']
                 ads_template.append(
                    f'procedure RESET_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) '
                    f'renames {process.name}_RI.Reset_{timer};')
+                ri_stub_ads.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env);')
+                ri_stub_adb.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) is null;')
+                ri_stub_ads.append(f'procedure RESET_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env);')
+                ri_stub_adb.append(f'procedure RESET_{timer} (Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) is null;')
             else:
                 ads_template.append(
                    f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) '
                    f'renames {process.name}_RI.Set_{timer};')
                 ads_template.append(
                    f'procedure RESET_{timer} renames {process.name}_RI.Reset_{timer};')
-            ri_stub_ads.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32);')
-            ri_stub_adb.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) is null;')
-            ri_stub_ads.append(f'procedure RESET_{timer};')
-            ri_stub_adb.append(f'procedure RESET_{timer} is null;')
+                ri_stub_ads.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32);')
+                ri_stub_adb.append(f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32) is null;')
+                ri_stub_ads.append(f'procedure RESET_{timer};')
+                ri_stub_adb.append(f'procedure RESET_{timer} is null;')
         else:
             # Generic functions get the SET and RESET from template
             pass
@@ -1402,12 +1406,25 @@ def _call_external_function(output, **kwargs):
                             if sig.inputString.lower() == signal_name.lower()]
                 if not candidates:
                     raise ValueError
-                if len(candidates) == 2:
+                if len(candidates) > 1:
                     # there are 2 results when the procedure is exported
                     # (happens in the case of a call of an inner procedure
                     # that is exported)
-                    need_prefix = False
-                proc = candidates[0]
+                    # there can be 3 if a procedure exists as PI and RI
+                    if not out.get('toDest'):
+                        need_prefix = False
+                        # find a candidate that is not marked as external
+                        for c in candidates:
+                            if not c.external:
+                                proc = c
+                    else:
+                        # if toDest is set, it has to be a RI call
+                        # find the candidate that is declared as external
+                        for c in candidates:
+                            if c.external:
+                                proc = c
+                else:
+                    proc = candidates[0]
                 if proc.external:
                     out_sig = proc
             except ValueError:
@@ -1503,9 +1520,9 @@ def _call_external_function(output, **kwargs):
             # inner procedure call without a RETURN statement
             # retrieve the procedure signature
             ident = proc.inputString
-            p, = [p for p in PROCEDURES
+            p = [p for p in PROCEDURES
                     if p.inputString.lower() == ident.lower()
-                    and not p.referenced]
+                    and not p.referenced][0]        
 
             list_of_params = []
             for idx, param in enumerate(out.get('params', [])):
@@ -2013,20 +2030,30 @@ def _prim_call(prim, **kwargs):
 @expression.register(ogAST.PrimIndex)
 def _prim_index(prim, **kwargs):
     stmts, ada_string, local_decl = [], '', []
+    # readonly allows to check if we are assigning to or reading from the value
+    # it is especially useful here for BIT STRING elements due to the
+    # conversion from/to Boolean
     ro = kwargs.get("readonly", 0)
 
     receiver = prim.value[0]
+
+    # If using an index of a BIT STRING, the Ada type used by asn1scc is BIT
+    # and not Boolean. BIT is a number (1 or 0). We must convert it to boolean
+    kind = find_basic_type(receiver.exprType).kind
 
     receiver_stms, ada_string, receiver_decl = expression(receiver,
                                                           readonly=ro)
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    if prim.use_num_value != -1:
+    if prim.use_num_value != -1 and not prim.requires_num:
         idx = 1 + prim.use_num_value
         if not isinstance(receiver, ogAST.PrimSubstring):
             ada_string += '.Data'
-        ada_string = f"{ada_string} ({idx})"
+        ada_string = f"{ada_string}({idx})"
+        if kind == "BitStringType" and ro:
+            # convert BIT type to Boolean
+            ada_string = f"({ada_string} = 1)"
         return stmts, ada_string, local_decl
 
     index = prim.value[1]['index'][0]
@@ -2035,11 +2062,15 @@ def _prim_index(prim, **kwargs):
         idx_string = int(idx_string) + 1
     else:
         if prim.requires_num:
-            idx_string += "'Enum_Rep"
-        idx_string = f'1 + Integer ({idx_string})'
+            idx_string = f"1 + {idx_string}'Enum_Rep"
+        else:
+            idx_string = f'1 + Integer ({idx_string})'
     if not isinstance(receiver, ogAST.PrimSubstring):
         ada_string += '.Data'
     ada_string += f'({idx_string})'
+    if kind == "BitStringType" and ro:
+        # convert BIT type to Boolean
+        ada_string = f"({ada_string} = 1)"
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
 
@@ -2323,6 +2354,16 @@ def _assign_expression(expr, **kwargs):
                 res = right_str
 
         strings.append(f"{left_str} := {res};")
+    elif isinstance(expr.left, ogAST.PrimIndex):
+        # check if it is an assignment of a single bit of a BIT STRING
+        # in that case if the right side is a boolean, it must be converted
+        # to 1 or 0 as expected by the BIT type from asn1scc
+        leftIsBitString = find_basic_type(expr.left.value[0].exprType).kind == 'BitStringType'
+        rightIsBoolean = find_basic_type(expr.right.exprType).kind == 'BooleanType'
+        if leftIsBitString and rightIsBoolean:
+            strings.append(f"{left_str} := (if {right_str} then 1 else 0);")
+        else:
+            strings.append(f"{left_str} := {right_str};")
     else:
         strings.append(f"{left_str} := {right_str};")
     code.extend(left_stmts)
@@ -2638,14 +2679,18 @@ def _string_literal(primary, **kwargs):
     # If user put a literal string to fill an Octet string,
     # then convert the string to an array of unsigned_8 integers
     # as expected by the Ada type corresponding to Octet String
-    if isinstance(primary, ogAST.PrimOctetStringLiteral):
+    if isinstance(primary, ogAST.PrimBitStringLiteral):
+        unsigned_8 = primary.bit_array
+    elif isinstance(primary, ogAST.PrimOctetStringLiteral):
         # Hex string used as input
         unsigned_8 = [str(x) for x in primary.hexstring]
     else:
+        # regular string literal: convert every character to a number
         unsigned_8 = [str(ord(val)) for val in primary.value[1:-1]]
 
     ada_string = ', '.join(unsigned_8)
     return [], str(ada_string), []
+
 
 def ia5string_raw(prim: ogAST.PrimStringLiteral):
     ''' IA5 Strings are of type String in Ada but this is not directly
@@ -2655,6 +2700,7 @@ def ia5string_raw(prim: ogAST.PrimStringLiteral):
     with NULL character. To know the size, we can use adaasn1rtl.getStringSize
     '''
     return "('" + "', '".join(prim.value[1:-1]) + "', others => Standard.ASCII.NUL)"
+
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary, **kwargs):
@@ -3520,7 +3566,9 @@ def array_content(prim, values, asnty):
         if isinstance(prim, ogAST.PrimStringLiteral):
             # Quotes are kept in string literals
             length -= 2
-        if isinstance(prim, ogAST.PrimOctetStringLiteral):
+        if isinstance(prim, ogAST.PrimBitStringLiteral):
+            length=len(prim.bit_array)
+        elif isinstance(prim, ogAST.PrimOctetStringLiteral):
             length=len(prim.hexstring)
         # Reference type can vary -> there is a Length field
         rlen = f", Length => {length}"

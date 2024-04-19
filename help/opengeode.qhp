@@ -34,9 +34,22 @@
                 <section title="Choice" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#CHOICE_types"/>
                 <section title="Arrays" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SEQUENCE_OF_types_.28arrays.29"/>
                 <section title="Sequence" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SEQUENCE_types_.28records.29"/>
-                <section title="Strings" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#STRING_types"/>
+                <section title="Strings" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#STRING_types">
+                    <section title="IA5String" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#IA5String"/>
+                    <section title="OCTET STRING" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#OCTET_STRING"/>
+                    <section title="BIT STRING" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#BIT_STRING"/>
+                </section>
                 <section title="Timer" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#TIMER_types"/>
-                <section title="Custom types and synonyms" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SDL_User-defined_types"/>
+                <section title="Custom types and synonyms" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#SDL_User-defined_types">
+                    <section title="Custom arrays" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#Custom_arrays"/>
+                    <section title="Custom enumerated types" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#Custom_enumerated_types"/>
+                    <section title="Syntypes" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#Syntypes"/>
+                    <section title="Synonyms" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#Synonyms"/>
+                </section>
+                <section title="Other features" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#Other_features">
+                    <section title="FOR Loops" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#.22FOR.22_loops"/>
+                    <section title="Ternary operator" ref="Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.html#Ternary_operator"/>
+                </section>
             </section>
         </toc>
         <keywords>

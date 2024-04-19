@@ -57,7 +57,7 @@ dependencies:
 	python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.0.12/asn1scc-bin-4.5.0.12.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
+	cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.1.2/asn1scc-bin-4.5.1.2.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
 	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
@@ -76,6 +76,10 @@ pytest:
 	python3 -m pip  install --user --upgrade pytest pytest-qt
 	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; PYTEST_QT_API=PySide6 py.test
 
+help:
+	# Build the inline help by getting the content on the wiki and converting it to QtHelp format
+	cd help && ./SDL.sh
+
 clean:
 	@$(MAKE) -s -C tests/testsuite $@
 	@find . -name '*~' | xargs rm -f
@@ -86,4 +90,4 @@ clean:
 	@rm -rf opengeode/*.pyc dist build *.egg-info
 
 .PHONY: all test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
-	    benchmark-O3 flake8 coverage compile-all install publish clean
+	    benchmark-O3 flake8 coverage compile-all install publish clean help

@@ -21,7 +21,7 @@ SYSTEM og;
 
 		CONNECT c and r;
 
-		PROCESS og:og_type;
+		PROCESS og(1,5):og_type;
 
 	ENDBLOCK;
 

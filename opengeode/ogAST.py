@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2023 European Space Agency
+    Copyright (c) 2012-2024 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -176,6 +176,9 @@ class Primary(Expression):
                  primary=None, debugLine=-1):
         ''' Initialize common primary attributes '''
         self.debugLine = debugLine
+        #if debugLine==-1:
+        #    import traceback
+        #    print (traceback.print_stack())
         if primary:
             self.inputString = primary.inputString
             self.line = primary.line
@@ -1031,6 +1034,9 @@ class Process:
         self.instance_of_ref  = None
         # A process may be a process type (boolean)
         self.process_type = False
+        # Min an max number of instances (optional)
+        self.min_instances = 1
+        self.max_instances = 1
         # Process parent context (Block or AST if defined at root level)
         self.parent = None
         # A process can be referenced (externally defined)

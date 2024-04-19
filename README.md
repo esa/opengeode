@@ -125,6 +125,26 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.2.1 (03/2024)**
+- Introduce support of newtype literals (user-defined enumerated types) as per Z100 syntax
+
+**4.2.0 (03/2024)**
+- Support named bit assignments in BIT STRING variables
+
+**4.1.27 (02/2024)**
+- Support BIT STRING indexing properly in the Ada backend
+
+**4.1.26 (01/2024)**
+- Support substrings in ternary operator in the C backend (alignment with Ada)
+
+**4.1.25 (12/2023)**
+- Give possitbility to ignore a syntax error while editing
+- Fix copy-paste issue for procedure using the present operator on an fpar
+
+**4.1.24 (12/2023)**
+- Fix support for inequality operator in decisions (for bool and enumerated types)
+- Fix support for arrays indexed by enumerated
+
 **4.1.23 (12/2023)**
 - Fix interprocess copy-paste issue (could result in duplicate copies)
 
