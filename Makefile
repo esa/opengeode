@@ -57,8 +57,11 @@ dependencies:
 	python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.1.2/asn1scc-bin-4.5.1.2.tar.bz2 | tar jxpvf - ; cd bin ; ln -s ../asn1scc/* .
-	echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
+	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.1.2/asn1scc-bin-4.5.1.2.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
+	# install the requirement and review widget
+	@echo "[-] Building Requirements and Review (optional widget)"
+	python3 -c 'import PyTasteQtWidgets' || (git clone https://github.com/esa/TasteQtWidgets && cd TasteQtWidgets/pytastewidgets && python3 ./install.py > /dev/null || exit 1)
+	@echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
 	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --upgrade .
