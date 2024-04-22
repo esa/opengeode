@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.0 (04/2024)**
+- Introduce the requirements and review widgets
+
 **4.2.1 (03/2024)**
 - Introduce support of newtype literals (user-defined enumerated types) as per Z100 syntax
 

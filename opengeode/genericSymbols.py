@@ -58,6 +58,17 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 from PySide6.QtUiTools import QUiLoader
 
+try:
+    # Try to import the widgets for Requirements and Reviews
+    # it is an external dependency that has to be built locally
+    # If not available the application can still run...
+    from PyTasteQtWidgets import TasteQtWidgets as QtTaste
+    g_QtTaste = True
+    g_url = 'https://gitrepos.estec.esa.int/taste/demo'
+    g_token = ''
+except ImportError:
+    g_QtTaste = False
+
 from . import undoCommands, ogAST, ogParser
 from .Connectors import Connection, VerticalConnection, CommentConnection, \
                        RakeConnection, JoinConnection, Channel
@@ -65,6 +76,15 @@ from .Connectors import Connection, VerticalConnection, CommentConnection, \
 from .TextInteraction import EditableText
 
 LOG = logging.getLogger(__name__)
+
+@Slot (QUrl, str)
+def set_credentials(url, token):
+    ''' Slot called whenever user changed the credentials in a Requirements
+    or Review widget '''
+    global g_url, g_token
+    g_url = url
+    g_token = token
+    LOG.info('Updated credentials')
 
 
 # pylint: disable=R0904, R0902
@@ -145,6 +165,14 @@ class Symbol(QObject, QGraphicsPathItem):
         self.hyperlink_dialog = None
         self.hlink_field = None
         self.loadHyperlinkDialog()
+
+        # Data related to Requirements and RID managers (in contextual menu)
+        self.req_manager, self.rid_manager = None, None
+        self.req_model, self.rid_model = None, None
+        self.req_widget, self.rid_widget = None, None
+        if g_QtTaste is True:
+            self.initRequirementsPlugin()
+
         # hasParent compensates a Qt (or PySide) bug when calling parentItem()
         # on top-level items
         self.hasParent = False
@@ -467,6 +495,34 @@ class Symbol(QObject, QGraphicsPathItem):
         self.hyperlink_dialog.accepted.connect(self.hyperlinkChanged)
         self.hlink_field = self.hyperlink_dialog.findChild(QLineEdit, 'hlink')
 
+    def initRequirementsPlugin(self):
+        ''' Startup the requirement and RID dialogs '''
+        # First requirements...
+        self.req_manager = QtTaste.requirement.RequirementsManager()
+        self.req_model = QtTaste.requirement.RequirementsModelBase(self.req_manager)
+        self.req_widget = QtTaste.requirement.RequirementsWidget()
+        self.req_widget.setManager(self.req_manager)
+        self.req_widget.setModel(self.req_model)
+        self.req_widget.setUrl(g_url)
+        if g_token:
+            self.req_widget.setToken(g_token)
+        self.req_widget.setWindowTitle('Requirements')
+        self.req_widget.requirementsCredentialsChanged.connect(set_credentials)
+        self.req_widget.resize(640, 480)
+
+        # Then the same for the RIDs
+        self.rid_manager = QtTaste.reviews.ReviewsManager()
+        self.rid_model = QtTaste.reviews.ReviewsModelBase(self.rid_manager)
+        self.rid_widget = QtTaste.reviews.ReviewsWidget()
+        self.rid_widget.setManager(self.rid_manager)
+        self.rid_widget.setModel(self.rid_model)
+        self.rid_widget.setUrl(g_url)
+        if g_token:
+            self.rid_widget.setToken(g_token)
+        self.rid_widget.setWindowTitle('Model Review')
+        self.rid_widget.reviewsCredentialsChanged.connect(set_credentials)
+        self.rid_widget.resize(640, 480)
+
     def hyperlinkChanged(self):
         ''' Update hyperlink field '''
         if not self.text:
@@ -483,11 +539,15 @@ class Symbol(QObject, QGraphicsPathItem):
     def contextMenuEvent(self, event):
         ''' When user right-clicks: display context menu '''
         png_action = 'Export branch to PNG, SVG or PDF'
+        req_action = 'Requirements manager'
+        rid_action = 'Model review: create RID'
         hl_action = 'Hyperlink'
         my_menu = QMenu(png_action)
         if not hasattr(self, '_no_hyperlink'):
             my_menu.addAction(hl_action)
         my_menu.addAction(png_action)
+        my_menu.addAction(req_action)
+        my_menu.addAction(rid_action)
         action = my_menu.exec(event.screenPos())
         if action:
             if action.text() == png_action:
@@ -507,6 +567,22 @@ class Symbol(QObject, QGraphicsPathItem):
                             self.scene().views()[0], Qt.Dialog)
                     self.hlink_field.setText(self.text.hyperlink)
                     self.hyperlink_dialog.show()
+            elif action.text() == req_action:
+                # update credentials if they were changed in another
+                # instance of the widget
+                if self.req_widget.url() != g_url:
+                    self.req_widget.setUrl (g_url)
+                if self.req_widget.token() != g_token:
+                    self.req_widget.setToken(g_token)
+                self.req_widget.show()
+            elif action.text() == rid_action:
+                # update credentials if they were changed in another
+                # instance of the widget
+                if self.rid_widget.url() != g_url:
+                    self.rid_widget.setUrl (g_url)
+                if self.rid_widget.token() != g_token:
+                    self.rid_widget.setToken(g_token)
+                self.rid_widget.show()
 
     def childSymbols(self):
         ''' Return the list of child symbols, excluding text/connections '''
