@@ -7563,7 +7563,10 @@ def add_to_ast(ast, filename=None, string=None):
     except IOError as err:
         LOG.error('Parser initialization error: ' + str(err))
         raise
+    import time
+    start_time = time.time()
     tree_rule_return_scope = parser.pr_file()
+    LOG.debug(f'time spend in parser.pr_file(): {time.time() - start_time}')
     for each in parser.error_list:
         LOG.error(each)
     for each in lexer.sdl92Lexer.error_list:

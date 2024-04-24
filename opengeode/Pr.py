@@ -177,8 +177,7 @@ def cif_symbolid(symbol):
 
 def hyperlink(symbol):
     ''' PR string for the optional hyperlink associated to a symbol '''
-    return "/* CIF Keep Specific Geode HyperLink '{}' */".format(
-                                                         symbol.text.hyperlink)
+    return f"/* CIF Keep Specific Geode HyperLink '{symbol.text.hyperlink}' */"
 
 
 def partition(symbol):

@@ -103,8 +103,10 @@ tokens {
         RENAMES;
         INTERCEPT;
         //RESET;
+        REQ_ID;
         RETURN;
         RETURNS;
+        RID_ID;
         ROUTE;
         SAVE;
         SELECTOR;
@@ -532,9 +534,11 @@ start
                 symbolid?
                 hyperlink?
                 partition?
+                requirement*
+                rid*
                 START name=state_entry_point_name? end
                 transition?
-        ->      ^(START cif? symbolid? partition? hyperlink? $name? end? transition?)
+        ->      ^(START cif? symbolid? partition? hyperlink? requirement* $name? end? transition?)
         ;
 
 
@@ -543,11 +547,13 @@ floating_label
                 symbolid?
                 hyperlink?
                 partition?
+                requirement*
+                rid*
                 CONNECTION connector_name ':'
                 transition?
                 cif_end_label?
                 ENDCONNECTION SEMI
-        ->      ^(FLOATING_LABEL cif? symbolid? partition? hyperlink? connector_name transition?)
+        ->      ^(FLOATING_LABEL cif? symbolid? partition? hyperlink? requirement* rid* connector_name transition?)
         ;
 
 // state is either a full state definition, or a state instance
@@ -562,10 +568,12 @@ state_definition
                 symbolid?
                 hyperlink?
                 partition?
+                requirement*
+                rid*
                 STATE statelist via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? symbolid? hyperlink? partition? $e? statelist via? state_part*)
+        ->      ^(STATE cif? symbolid? hyperlink? partition? requirement* rid* $e? statelist via? state_part*)
         ;
 
 
@@ -574,10 +582,12 @@ state_instance
                 symbolid?
                 hyperlink?
                 partition?
+                requirement*
+                rid*
                 STATE statename ':' type_inst via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? symbolid?  partition? hyperlink? $e? statename via? type_inst state_part*)
+        ->      ^(STATE cif? symbolid?  partition? hyperlink? requirement* rid* $e? statename via? type_inst state_part*)
         ;
 
 
@@ -713,9 +723,11 @@ connect_part
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 CONNECT connect_list? end
                 transition?
-        ->      ^(CONNECT cif? symbolid? hyperlink? connect_list? end? transition?)
+        ->      ^(CONNECT cif? symbolid? hyperlink? requirement* rid* connect_list? end? transition?)
         ;
 
 
@@ -730,10 +742,12 @@ spontaneous_transition
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 INPUT NONE end
                 enabling_condition?
                 transition
-        ->      ^(INPUT_NONE cif? symbolid? hyperlink? transition)
+        ->      ^(INPUT_NONE cif? symbolid? hyperlink? requirement* rid* transition)
         ;
 
 
@@ -747,10 +761,12 @@ continuous_signal
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 PROVIDED expression e=end
                 (PRIORITY p=INT end)?
                 transition?
-        ->      ^(PROVIDED expression cif? symbolid? hyperlink? $p? $e? transition?)
+        ->      ^(PROVIDED expression cif? symbolid? hyperlink? requirement* rid* $p? $e? transition?)
         ;
 
 
@@ -805,10 +821,12 @@ input_part
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 INPUT inputlist end
                 enabling_condition?
                 transition?
-        ->      ^(INPUT cif? symbolid? hyperlink? end?
+        ->      ^(INPUT cif? symbolid? hyperlink? requirement* rid* end?
                 inputlist enabling_condition? transition?)
         ;
 
@@ -869,8 +887,10 @@ procedure_call
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 CALL procedure_call_body end
-        ->      ^(PROCEDURE_CALL cif? symbolid? hyperlink? end? procedure_call_body)
+        ->      ^(PROCEDURE_CALL cif? symbolid? hyperlink? requirement* rid* end? procedure_call_body)
         ;
 
 
@@ -916,11 +936,13 @@ alternative
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 ALTERNATIVE alternative_question e=end
                 answer_part?
                 alternative_part?
                 ENDALTERNATIVE f=end
-        ->      ^(ALTERNATIVE cif? symbolid? hyperlink? $e?
+        ->      ^(ALTERNATIVE cif? symbolid? hyperlink? requirement* rid* $e?
                 alternative_question answer_part? alternative_part?)
         ;
 
@@ -942,11 +964,13 @@ decision
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 DECISION question e=end
                 answer_part?
                 alternative_part?
                 ENDDECISION f=end
-        ->      ^(DECISION cif? symbolid? hyperlink? $e? question
+        ->      ^(DECISION cif? symbolid? hyperlink? requirement* rid* $e? question
                 answer_part? alternative_part?)
         ;
 
@@ -955,8 +979,10 @@ answer_part
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 L_PAREN answer R_PAREN ':' transition?
-        ->      ^(ANSWER cif? symbolid? hyperlink? answer transition?)
+        ->      ^(ANSWER cif? symbolid? hyperlink? requirement* rid* answer transition?)
         ;
 
 
@@ -970,8 +996,10 @@ else_part
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 ELSE ':' transition?
-        ->      ^(ELSE cif? symbolid? hyperlink? transition?)
+        ->      ^(ELSE cif? symbolid? hyperlink? requirement* rid* transition?)
         ;
 
 
@@ -1015,10 +1043,12 @@ create_request
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 CREATE createbody
                 actual_parameters?
                 end
-        ->      ^(CREATE cif? symbolid? hyperlink? end? createbody actual_parameters?)
+        ->      ^(CREATE cif? symbolid? hyperlink? requirement* rid* end? createbody actual_parameters?)
         ;
 
 
@@ -1032,8 +1062,10 @@ output
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 OUTPUT outputbody end
-        ->      ^(OUTPUT cif? symbolid? hyperlink? end? outputbody)
+        ->      ^(OUTPUT cif? symbolid? hyperlink? requirement* rid* end? outputbody)
         ;
 
 
@@ -1098,8 +1130,10 @@ task
         :       cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 TASK task_body? end
-        ->      ^(TASK cif? symbolid? hyperlink? end? task_body?)
+        ->      ^(TASK cif? symbolid? hyperlink? requirement* rid* end? task_body?)
         ;
 
 
@@ -1390,9 +1424,11 @@ terminator_statement
                 cif?
                 symbolid?
                 hyperlink?
+                requirement*
+                rid*
                 terminator
                 end
-        ->      ^(TERMINATOR label? cif? symbolid? hyperlink? end? terminator)
+        ->      ^(TERMINATOR label? cif? symbolid? hyperlink? requirement* rid* end? terminator)
         ;
 
 label
@@ -1460,6 +1496,24 @@ hyperlink
         :       cif_decl KEEP SPECIFIC GEODE HYPERLINK STRING
                 cif_end
         ->      ^(HYPERLINK STRING)
+        ;
+
+
+// It is possible to associate requirement IDs to any element of the model
+// using this CIF extension
+requirement
+        :       cif_decl KEEP SPECIFIC GEODE REQ_ID INT
+                cif_end
+        ->      ^(REQ_ID INT)
+        ;
+
+
+// It is possible to associate review IDs to any element of the model
+// using this CIF extension
+rid
+        :       cif_decl KEEP SPECIFIC GEODE RID_ID INT
+                cif_end
+        ->      ^(RID_ID INT)
         ;
 
 
@@ -1775,6 +1829,8 @@ UNHANDLED       :       U N H A N D L E D;
 ERRORSTATES     :       E R R O R S T A T E S;
 IGNORESTATES    :       I G N O R E S T A T E S;
 SUCCESSSTATES   :       S U C C E S S S T A T E S;
+REQ_ID          :       R E Q I D;
+RID_ID          :       R I D I D;
 
 
 STRING
