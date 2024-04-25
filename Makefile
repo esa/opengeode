@@ -48,6 +48,9 @@ compile-all:
 update:
 	git pull
 
+# Define the expected version of the QtTaste widget
+export QTASTE_VERSION=1.0.0
+
 dependencies:
 	#sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
@@ -60,7 +63,10 @@ dependencies:
 	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.1.2/asn1scc-bin-4.5.1.2.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
 	# install the requirement and review widget
 	@echo "[-] Building Requirements and Review (optional widget)"
-	QTASTE_VERSION=1.0.0 python3 -c "import sys, PyTasteQtWidgets as taste, os; sys.exit(taste.__version__!=os.environ['QTASTE_VERSION'])" || (git clone https://github.com/esa/TasteQtWidgets && cd TasteQtWidgets/pytastewidgets && python3 ./install.py > /dev/null || exit 1)
+	@python3 -c "import sys, PyTasteQtWidgets as taste, os; sys.exit(taste.__version__!=os.environ['QTASTE_VERSION'])" || \
+	       (rm -rf TasteQtWidgets && \
+	       git clone --depth 1 --branch ${QTASTE_VERSION} https://github.com/esa/TasteQtWidgets && \
+	       cd TasteQtWidgets/pytastewidgets && python3 ./install.py > /dev/null || exit 1)
 	@echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
