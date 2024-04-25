@@ -51,16 +51,16 @@ update:
 dependencies:
 	#sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
-	python3 -m pip install pyside6
+	python3 -c 'import PySide6' || python3 -m pip install pyside6
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
-	python3 -m pip install https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 
-	python3 -m pip install pygraphviz
+	python3 -c 'import antlr3' || python3 -m pip install https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 
+	python3 -c 'import pygraphviz' || python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
 	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.1.2/asn1scc-bin-4.5.1.2.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
 	# install the requirement and review widget
 	@echo "[-] Building Requirements and Review (optional widget)"
-	python3 -c 'import PyTasteQtWidgets' || (git clone https://github.com/esa/TasteQtWidgets && cd TasteQtWidgets/pytastewidgets && python3 ./install.py > /dev/null || exit 1)
+	QTASTE_VERSION=1.0.0 python3 -c "import sys, PyTasteQtWidgets as taste, os; sys.exit(taste.__version__!=os.environ['QTASTE_VERSION'])" || (git clone https://github.com/esa/TasteQtWidgets && cd TasteQtWidgets/pytastewidgets && python3 ./install.py > /dev/null || exit 1)
 	@echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install:
