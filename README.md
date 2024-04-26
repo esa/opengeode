@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.1 (04/2024)**
+- Major parsing speedup 
+
 **4.3.0 (04/2024)**
 - Introduce the requirements and review widgets
 - Fix help search engine
