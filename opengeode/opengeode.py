@@ -2928,6 +2928,8 @@ class OG_MainWindow(QMainWindow):
         searchSplitter.insertWidget(0, queryWidget)
         searchSplitter.insertWidget(1, resultWidget)
         tWidget.addTab(searchSplitter, "Search")
+        # Force the search engine indexing (otherwise it returns no results)
+        helpSearch.reindexDocumentation()
         def search_help():
             # for some reason the search widget does not search automatically
             helpSearch.search(queryWidget.searchInput())
