@@ -79,7 +79,7 @@ LOG = logging.getLogger(__name__)
 
 @Slot (QUrl, str)
 def set_credentials(url, token):
-    ''' Slot called whenever user changed the credentials in a Requirements
+    ''' Slot called whenever user changed the credentials in a Requirement
     or Review widget '''
     global g_url, g_token
     g_url = url
@@ -575,6 +575,12 @@ class Symbol(QObject, QGraphicsPathItem):
                 if self.req_widget.token() != g_token:
                     self.req_widget.setToken(g_token)
                 self.req_widget.show()
+                # Set the list of selected requirements, both from the AST and
+                # from the user-selection
+                ticked = self.req_model.selectedRequirements()
+                ticked.extend(self.ast.req_ids)
+                selected = set(ticked)
+                self.req_model.setSelectedRequirements(list(selected))
             elif action.text() == rid_action:
                 # update credentials if they were changed in another
                 # instance of the widget

@@ -101,6 +101,8 @@ tokens {
         QUESTION;
         RANGE;
         RENAMES;
+        REQ_SERVER;
+        RID_SERVER;
         INTERCEPT;
         //RESET;
         REQ_ID;
@@ -279,15 +281,20 @@ connection
 process_definition
         :       cif?
                 symbolid?
+                req_server?
+                rid_server?
+                requirement*
+                rid*
                 PROCESS t=TYPE? process_id
                 number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
                 (text_area | procedure | (composite_state_preamble) =>composite_state)*
                 processBody? ENDPROCESS? TYPE? process_id?
                 end?
-        ->      ^(PROCESS cif? symbolid? process_id number_of_instances? type_inst?
-                $t? REFERENCED? $a? pfpar? text_area* procedure*
-                composite_state* processBody?)
+        ->      ^(PROCESS cif? symbolid? req_server? rid_server? requirement*
+                  rid* process_id number_of_instances? type_inst?
+                  $t? REFERENCED? $a? pfpar? text_area* procedure*
+                  composite_state* processBody?)
         ;
 
 
@@ -312,6 +319,8 @@ parameters_of_sort
 procedure
         :       cif?
                 symbolid?
+                requirement*
+                rid*
                 partition?
                 EXPORTED? PROCEDURE procedure_id (e1=end | SEMI)
                 fpar?
@@ -320,7 +329,8 @@ procedure
                 ((processBody? ENDPROCEDURE procedure_id?)
                  | EXTERNAL | REFERENCED)
                 e2=end
-        ->      ^(PROCEDURE cif? symbolid? partition? procedure_id $e1? $e2? fpar? $res?
+        ->      ^(PROCEDURE cif? symbolid? partition? requirement* rid*
+                procedure_id $e1? $e2? fpar? $res?
                 text_area* procedure* processBody? EXTERNAL? EXPORTED? REFERENCED?)
         ;
 
@@ -350,12 +360,14 @@ formal_variable_param
 
 // text_area: TODO add operator description in content
 text_area
-        :       partition?
+        :       requirement*
+                rid*
+                partition?
                 cif
                 symbolid?
                 content?
                 cif_end_text
-        ->      ^(TEXTAREA cif symbolid?  partition? content? cif_end_text)
+        ->      ^(TEXTAREA cif symbolid? requirement* rid*  partition? content? cif_end_text)
         ;
 
 
@@ -533,9 +545,9 @@ start
         :       cif?
                 symbolid?
                 hyperlink?
-                partition?
                 requirement*
                 rid*
+                partition?
                 START name=state_entry_point_name? end
                 transition?
         ->      ^(START cif? symbolid? partition? hyperlink? requirement* $name? end? transition?)
@@ -546,9 +558,9 @@ floating_label
         :       cif?
                 symbolid?
                 hyperlink?
-                partition?
                 requirement*
                 rid*
+                partition?
                 CONNECTION connector_name ':'
                 transition?
                 cif_end_label?
@@ -567,9 +579,9 @@ state_definition
         :       cif?
                 symbolid?
                 hyperlink?
-                partition?
                 requirement*
                 rid*
+                partition?
                 STATE statelist via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
@@ -581,9 +593,9 @@ state_instance
         :       cif?
                 symbolid?
                 hyperlink?
-                partition?
                 requirement*
                 rid*
+                partition?
                 STATE statename ':' type_inst via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
@@ -1499,21 +1511,37 @@ hyperlink
         ;
 
 
+// Optional gitlab server to keep track of requirments
+req_server
+        :       cif_decl KEEP SPECIFIC GEODE REQ_SERVER STRING
+                cif_end
+        ->      ^(REQ_SERVER STRING)
+        ;
+
+
+// Optional gitlab server to keep track of model review items
+rid_server
+        :       cif_decl KEEP SPECIFIC GEODE RID_SERVER STRING
+                cif_end
+        ->      ^(RID_SERVER STRING)
+        ;
+
+
 // It is possible to associate requirement IDs to any element of the model
 // using this CIF extension
 requirement
-        :       cif_decl KEEP SPECIFIC GEODE REQ_ID INT
+        :       cif_decl KEEP SPECIFIC GEODE REQ_ID STRING
                 cif_end
-        ->      ^(REQ_ID INT)
+        ->      ^(REQ_ID STRING)
         ;
 
 
 // It is possible to associate review IDs to any element of the model
 // using this CIF extension
 rid
-        :       cif_decl KEEP SPECIFIC GEODE RID_ID INT
+        :       cif_decl KEEP SPECIFIC GEODE RID_ID STRING
                 cif_end
-        ->      ^(RID_ID INT)
+        ->      ^(RID_ID STRING)
         ;
 
 
@@ -1707,6 +1735,8 @@ PARAMNAMES      :       P A R A M N A M E S;
 SPECIFIC        :       S P E C I F I C;
 GEODE           :       G E O D E;
 HYPERLINK       :       H Y P E R L I N K;
+REQ_SERVER      :       R E Q S E R V E R;
+RID_SERVER      :       R I D S E R V E R;
 PARTITION       :       P A R T I T I O N;
 MKSTRING        :       M K S T R I N G;
 ENDTEXT         :       E N D T E X T;
