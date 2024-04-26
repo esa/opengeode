@@ -16,6 +16,7 @@ options {
     output=AST;
     ASTLabelType=CommonTree;
     backtrack=true;
+    memoize=true;
 }
 
 tokens {
@@ -181,11 +182,11 @@ system_definition
 
 
 use_clause
-        :       use_asn1?
+        :       cif*
                 USE package_name
                 ('/' def_selection_list )?
                 end
-        ->      ^(USE use_asn1? end? package_name def_selection_list?)
+        ->      ^(USE cif* end? package_name def_selection_list?)
         ;
 
 
@@ -212,11 +213,11 @@ entity_in_system
    e.g. SIGNAL open_door(typeA, typeB);
 */
 signal_declaration
-        :       paramnames?
+        :       cif_paramnames?
                 SIGNAL signal_id input_params?
                 (RENAMES (input_expression | output_expression))? // for observers
                 end
-        ->      ^(SIGNAL paramnames? signal_id input_params? ^(INTERCEPT input_expression? output_expression?))
+        ->      ^(SIGNAL cif_paramnames? signal_id input_params? ^(INTERCEPT input_expression? output_expression?))
         ;
 
 
@@ -279,20 +280,14 @@ connection
    Etc. The grammar is tolerant, semantic checks are done in the code.
 */
 process_definition
-        :       cif?
-                symbolid?
-                req_server?
-                rid_server?
-                requirement*
-                rid*
+        :       cif*
                 PROCESS t=TYPE? process_id
                 number_of_instances? (':' type_inst)? REFERENCED? a=end
                 pfpar?
                 (text_area | procedure | (composite_state_preamble) =>composite_state)*
                 processBody? ENDPROCESS? TYPE? process_id?
                 end?
-        ->      ^(PROCESS cif? symbolid? req_server? rid_server? requirement*
-                  rid* process_id number_of_instances? type_inst?
+        ->      ^(PROCESS cif* process_id number_of_instances? type_inst?
                   $t? REFERENCED? $a? pfpar? text_area* procedure*
                   composite_state* processBody?)
         ;
@@ -317,11 +312,7 @@ parameters_of_sort
 // 2021-03 Added EXPORTED and REFERENCED keywords
 // needed to declare a synchronous provided interface at system level
 procedure
-        :       cif?
-                symbolid?
-                requirement*
-                rid*
-                partition?
+        :       cif*
                 EXPORTED? PROCEDURE procedure_id (e1=end | SEMI)
                 fpar?
                 res=procedure_result?
@@ -329,8 +320,7 @@ procedure
                 ((processBody? ENDPROCEDURE procedure_id?)
                  | EXTERNAL | REFERENCED)
                 e2=end
-        ->      ^(PROCEDURE cif? symbolid? partition? requirement* rid*
-                procedure_id $e1? $e2? fpar? $res?
+        ->      ^(PROCEDURE cif* procedure_id $e1? $e2? fpar? $res?
                 text_area* procedure* processBody? EXTERNAL? EXPORTED? REFERENCED?)
         ;
 
@@ -360,14 +350,10 @@ formal_variable_param
 
 // text_area: TODO add operator description in content
 text_area
-        :       requirement*
-                rid*
-                partition?
-                cif
-                symbolid?
+        :       cif+
                 content?
                 cif_end_text
-        ->      ^(TEXTAREA cif symbolid? requirement* rid*  partition? content? cif_end_text)
+        ->      ^(TEXTAREA cif+ content? cif_end_text)
         ;
 
 
@@ -542,30 +528,20 @@ processBody
 
 
 start
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
-                partition?
+        :       cif*
                 START name=state_entry_point_name? end
                 transition?
-        ->      ^(START cif? symbolid? partition? hyperlink? requirement* $name? end? transition?)
+        ->      ^(START cif* $name? end? transition?)
         ;
 
 
 floating_label
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
-                partition?
+        :       cif*
                 CONNECTION connector_name ':'
                 transition?
                 cif_end_label?
                 ENDCONNECTION SEMI
-        ->      ^(FLOATING_LABEL cif? symbolid? partition? hyperlink? requirement* rid* connector_name transition?)
+        ->      ^(FLOATING_LABEL cif* connector_name transition?)
         ;
 
 // state is either a full state definition, or a state instance
@@ -576,30 +552,20 @@ state
 
 // the "via" part is needed to allow the graphical merge with a nextstate
 state_definition
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
-                partition?
+        :       cif*
                 STATE statelist via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? symbolid? hyperlink? partition? requirement* rid* $e? statelist via? state_part*)
+        ->      ^(STATE cif* $e? statelist via? state_part*)
         ;
 
 
 state_instance
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
-                partition?
+        :       cif*
                 STATE statename ':' type_inst via? (e=end | SEMI)
                 (state_part)*
                 ENDSTATE statename? f=end
-        ->      ^(STATE cif? symbolid?  partition? hyperlink? requirement* rid* $e? statename via? type_inst state_part*)
+        ->      ^(STATE cif* $e? statename via? type_inst state_part*)
         ;
 
 
@@ -732,14 +698,10 @@ state_part
 
 // connect part is used to connect nested state exit points to a transition
 connect_part
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 CONNECT connect_list? end
                 transition?
-        ->      ^(CONNECT cif? symbolid? hyperlink? requirement* rid* connect_list? end? transition?)
+        ->      ^(CONNECT cif* connect_list? end? transition?)
         ;
 
 
@@ -751,15 +713,11 @@ connect_list
 
 
 spontaneous_transition
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 INPUT NONE end
                 enabling_condition?
                 transition
-        ->      ^(INPUT_NONE cif? symbolid? hyperlink? requirement* rid* transition)
+        ->      ^(INPUT_NONE cif* transition)
         ;
 
 
@@ -770,15 +728,11 @@ enabling_condition
 
 
 continuous_signal
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 PROVIDED expression e=end
                 (PRIORITY p=INT end)?
                 transition?
-        ->      ^(PROVIDED expression cif? symbolid? hyperlink? requirement* rid* $p? $e? transition?)
+        ->      ^(PROVIDED expression cif* $p? $e? transition?)
         ;
 
 
@@ -830,15 +784,11 @@ priority_stimulus
 
 // this is only the "basic input part" from SDL92
 input_part
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 INPUT inputlist end
                 enabling_condition?
                 transition?
-        ->      ^(INPUT cif? symbolid? hyperlink? requirement* rid* end?
+        ->      ^(INPUT cif* end?
                 inputlist enabling_condition? transition?)
         ;
 
@@ -896,13 +846,9 @@ export
 
 /* Procedure call can be a local or remote call (including TO dest) */
 procedure_call
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 CALL procedure_call_body end
-        ->      ^(PROCEDURE_CALL cif? symbolid? hyperlink? requirement* rid* end? procedure_call_body)
+        ->      ^(PROCEDURE_CALL cif* end? procedure_call_body)
         ;
 
 
@@ -945,16 +891,12 @@ reset_statement
 
 /* Alternative (equivalent to #ifdef in C) */
 alternative
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 ALTERNATIVE alternative_question e=end
                 answer_part?
                 alternative_part?
                 ENDALTERNATIVE f=end
-        ->      ^(ALTERNATIVE cif? symbolid? hyperlink? requirement* rid* $e?
+        ->      ^(ALTERNATIVE cif* $e?
                 alternative_question answer_part? alternative_part?)
         ;
 
@@ -973,28 +915,20 @@ alternative_question
 
 
 decision
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 DECISION question e=end
                 answer_part?
                 alternative_part?
                 ENDDECISION f=end
-        ->      ^(DECISION cif? symbolid? hyperlink? requirement* rid* $e? question
+        ->      ^(DECISION cif* $e? question
                 answer_part? alternative_part?)
         ;
 
 
 answer_part
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 L_PAREN answer R_PAREN ':' transition?
-        ->      ^(ANSWER cif? symbolid? hyperlink? requirement* rid* answer transition?)
+        ->      ^(ANSWER cif* answer transition?)
         ;
 
 
@@ -1005,13 +939,9 @@ answer
 
 
 else_part
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 ELSE ':' transition?
-        ->      ^(ELSE cif? symbolid? hyperlink? requirement* rid* transition?)
+        ->      ^(ELSE cif* transition?)
         ;
 
 
@@ -1052,15 +982,11 @@ constant
 
 // Instance creation: opengeode does not support FPAR/actual_parameters yet
 create_request
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 CREATE createbody
                 actual_parameters?
                 end
-        ->      ^(CREATE cif? symbolid? hyperlink? requirement* rid* end? createbody actual_parameters?)
+        ->      ^(CREATE cif* end? createbody actual_parameters?)
         ;
 
 
@@ -1071,13 +997,9 @@ createbody
 
 
 output
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 OUTPUT outputbody end
-        ->      ^(OUTPUT cif? symbolid? hyperlink? requirement* rid* end? outputbody)
+        ->      ^(OUTPUT cif* end? outputbody)
         ;
 
 
@@ -1139,13 +1061,9 @@ actual_parameters
 
 
 task
-        :       cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+        :       cif*
                 TASK task_body? end
-        ->      ^(TASK cif? symbolid? hyperlink? requirement* rid* end? task_body?)
+        ->      ^(TASK cif* end? task_body?)
         ;
 
 
@@ -1433,19 +1351,15 @@ expression_list
 
 terminator_statement
         :       label?
-                cif?
-                symbolid?
-                hyperlink?
-                requirement*
-                rid*
+                cif*
                 terminator
                 end
-        ->      ^(TERMINATOR label? cif? symbolid? hyperlink? requirement* rid* end? terminator)
+        ->      ^(TERMINATOR label? cif* end? terminator)
         ;
 
 label
-        :       cif? symbolid? connector_name ':'
-        ->      ^(LABEL cif? symbolid? connector_name)
+        :       cif* connector_name ':'
+        ->      ^(LABEL cif* connector_name)
         ;
 
 
@@ -1489,96 +1403,64 @@ via     :       VIA state_entry_point_name
 
 
 end
-        :   (cif? symbolid? hyperlink? COMMENT STRING)? SEMI+
-        -> ^(COMMENT cif? symbolid? hyperlink? STRING)?
+        :   (cif* COMMENT STRING)? SEMI+
+        -> ^(COMMENT cif* STRING)?
         ;
 
 
 cif
-        :       (cif_decl symbolname
+        :       cif_decl! cif_content cif_end!
+        ;
+
+cif_content
+        :       KEEP! SPECIFIC! GEODE! cif_specific
+        |       cif_coordinates
+        |       cif_symbol_id
+        ;
+
+
+cif_coordinates
+        :       symbolname
                 L_PAREN x=signed COMMA y=signed R_PAREN
                 COMMA
                 L_PAREN width=INT COMMA height=INT R_PAREN
-                cif_end
-        ->      ^(CIF $x $y $width $height))
+        ->      ^(CIF $x $y $width $height)
         ;
 
-
-hyperlink
-        :       cif_decl KEEP SPECIFIC GEODE HYPERLINK STRING
-                cif_end
-        ->      ^(HYPERLINK STRING)
-        ;
-
-
-// Optional gitlab server to keep track of requirments
-req_server
-        :       cif_decl KEEP SPECIFIC GEODE REQ_SERVER STRING
-                cif_end
-        ->      ^(REQ_SERVER STRING)
-        ;
-
-
-// Optional gitlab server to keep track of model review items
-rid_server
-        :       cif_decl KEEP SPECIFIC GEODE RID_SERVER STRING
-                cif_end
-        ->      ^(RID_SERVER STRING)
-        ;
-
-
-// It is possible to associate requirement IDs to any element of the model
-// using this CIF extension
-requirement
-        :       cif_decl KEEP SPECIFIC GEODE REQ_ID STRING
-                cif_end
-        ->      ^(REQ_ID STRING)
-        ;
-
-
-// It is possible to associate review IDs to any element of the model
-// using this CIF extension
-rid
-        :       cif_decl KEEP SPECIFIC GEODE RID_ID STRING
-                cif_end
-        ->      ^(RID_ID STRING)
-        ;
-
-
-partition
-        :       cif_decl KEEP SPECIFIC GEODE PARTITION STRING
-                cif_end
-        ->      ^(PARTITION STRING)
-        ;
-
-
-symbolid
-        :       cif_decl '_id' ptr=INT cif_end
+cif_symbol_id
+        :       '_id' ptr=INT
         ->      ^(SYMBOLID $ptr)
         ;
 
-/* OpenGEODE specific: SDL does not allow specifying the name
+cif_paramnames
+        : cif_decl KEEP SPECIFIC GEODE
+          PARAMNAMES field_name+
+          cif_end
+        -> ^(PARAMNAMES field_name+)
+        ;
+
+/* OpenGEODE CIF extensions:
+   paramnames: SDL does not allow specifying the name
    of signal parameters, but it is needed to generate function signatures
    when generating code (in particular in Ada, where the name in the
    body must comply with the one of the source
    Extension is using CIF comment so it is invisible to other SDL parsers
    (This is valid SDL code - see ITU-T Z106)
-*/
-paramnames
-        :       cif_decl KEEP SPECIFIC GEODE PARAMNAMES field_name+ cif_end
-        ->      ^(PARAMNAMES field_name+)
-        ;
 
-
-/* OpenGEODE specific: Allow specifying the name of an ASN.1 file
+   asnfilename: Allow specifying the name of an ASN.1 file
    as a CIF extension linked to a USE clause.
    CIF Extensions are valid SDL constructs (ITU-T Z106)
 */
-use_asn1
-        :       cif_decl KEEP SPECIFIC GEODE ASNFILENAME STRING cif_end
-        ->      ^(ASN1 STRING)
+cif_specific
+        :       HYPERLINK STRING        -> ^(HYPERLINK STRING)
+        |       REQ_SERVER STRING       -> ^(REQ_SERVER STRING)
+        |       RID_SERVER STRING       -> ^(RID_SERVER STRING)
+        |       REQ_ID STRING           -> ^(REQ_ID STRING)
+        |       RID_ID STRING           -> ^(RID_ID STRING)
+        |       PARTITION STRING        -> ^(PARTITION STRING)
+        |       PARAMNAMES field_name+  -> ^(PARAMNAMES field_name+)
+        |       ASNFILENAME STRING      -> ^(ASN1 STRING)
         ;
-
 
 /* OpenGEODE specific: Boolean condition that can be used in simulators
 */
