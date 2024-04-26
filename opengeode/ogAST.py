@@ -353,6 +353,9 @@ class Decision:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # hint for backends needing a temporary variable to hold the question
         self.tmpVar = -1
         # Errors associated to this element
@@ -397,6 +400,9 @@ class Answer:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # Errors associated to this element
         self.errors, self.warnings = [], []
         # the path allows to retrieve the location of the symbol
@@ -423,6 +429,9 @@ class Task:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         self.elems = []
         # Errors associated to this element
         self.errors, self.warnings = [], []
@@ -453,6 +462,9 @@ class Create:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # Errors associated to this element
         self.errors, self.warnings = [], []
         # the path allows to retrieve the location of the symbol
@@ -505,6 +517,9 @@ class Output:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # Errors associated to this element
         self.errors, self.warnings = [], []
         # the path allows to retrieve the location of the symbol
@@ -550,6 +565,9 @@ class Terminator:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # optional Label instance (to be placed just before the terminator)
         self.label = None
         # Return expression
@@ -615,6 +633,9 @@ class Label:
         self.charPositionInLine = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # No comment for labels - keep to None
         self.comment = None
         # List of terminators following this label
@@ -712,6 +733,9 @@ class Input:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # list of terminators following the input symbol
         self.terminators = []
         # If this input is in fact a continuous signal, code generators will ignore it
@@ -784,6 +808,9 @@ class Start:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # list of terminators following the start symbol
         self.terminators = []
         # Errors associated to this element
@@ -824,6 +851,9 @@ class Comment:
         self.charPositionInLine = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # Errors associated to this element
         self.errors, self.warnings = [], []
         # the path allows to retrieve the location of the symbol
@@ -861,6 +891,9 @@ class State:
         self.comment = None
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # optional composite state content (type CompositeState)
         self.composite = None
         # via clause, used for entering nested state with an entry point
@@ -912,6 +945,9 @@ class TextArea:
         self.procedures = []
         # optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # List of Observer states defined in this text area (error/success/ignore states)
         # used for error reporting to get the right symbol coordinates
         self.observer_states : List [str] = []
@@ -959,6 +995,9 @@ class Procedure:
         self.height = 35
         # Optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # Local variables dictionary (see Process)
         self.variables = {}
         # MONITOR variables used in observers (same structure as DCL)
@@ -1064,6 +1103,9 @@ class Process:
         self.height = 75
         # Optional hyperlink
         self.hyperlink = None
+        # Optional set of requirements and RID ids for this item
+        self.req_ids = []
+        self.rid_ids = []
         # Optional comment
         self.comment = None
 

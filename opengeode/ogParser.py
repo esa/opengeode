@@ -47,7 +47,7 @@ from antlr3 import tree
 from . import sdl92Lexer as lexer
 from . import sdl92Parser
 
-from . import ogAST
+from . import ogAST, genericSymbols
 from .Asn1scc import parse_asn1, ASN1, create_choice_determinant_types
 
 LOG = logging.getLogger(__name__)
@@ -3741,6 +3741,10 @@ def procedure_pre(root, parent=None, context=None):
             proc.pos_x = symbolid(child)
         elif child.type == lexer.PARTITION:
             proc.partition = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            proc.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            proc.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == lexer.ID:
             proc.line = child.getLine()
             proc.charPositionInLine = child.getCharPositionInLine()
@@ -4004,8 +4008,10 @@ def floating_label(root, parent, context):
             lab_x = lab.pos_x
         elif child.type == lexer.HYPERLINK:
             lab.hyperlink = child.getChild(0).text[1:-1]
-        elif child.type == lexer.HYPERLINK:
-            lab.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            lab.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            lab.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == lexer.PARTITION:
             lab.partition = child.getChild(0).toString()[1:-1]
         elif child.type == lexer.TRANSITION:
@@ -4680,6 +4686,10 @@ def text_area(root, parent=None, context=None):
             ta.inputString = dedent(string).strip()
         elif child.type == lexer.HYPERLINK:
             ta.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            ta.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            ta.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == lexer.PARTITION:
             ta.partition = child.getChild(0).toString()[1:-1]
         else:
@@ -5177,6 +5187,12 @@ def process_definition(root, parent=None, context=None):
             pass
         elif child.type == lexer.COMMENT:
             process.comment, _, _ = end(child)
+        elif child.type == lexer.REQ_ID:
+            process.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            process.rid_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.REQ_SERVER:
+            genericSymbols.g_url = child.getChild(0).toString()[1:-1]
         else:
             warnings.append(['Unsupported process definition child: ' +
                              sdl92Parser.tokenNamesMap[child.type] +
@@ -5348,6 +5364,10 @@ def continuous_signal(root, parent, context):
             dec.comment = i.comment
         elif child.type == lexer.HYPERLINK:
             i.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            i.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            i.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == 0:
             # Syntax error caught by the parser, no need to report again
             pass
@@ -5552,6 +5572,10 @@ def input_part(root, parent, context):
             i.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             i.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            i.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            i.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == 0:
             # Syntax error caught by the parser, no need to report again
             pass
@@ -5687,6 +5711,10 @@ def state(root, parent, context):
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             state_def.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            state_def.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            state_def.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == lexer.PARTITION:
             state_def.partition = child.getChild(0).toString()[1:-1]
         elif child.type == lexer.PROVIDED:
@@ -5821,6 +5849,10 @@ def connect_part(root, parent, context):
             conn.transition = trans
         elif child.type == lexer.HYPERLINK:
             conn.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            conn.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            conn.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == lexer.COMMENT:
             conn.comment, _, _ = end(child)
         else:
@@ -5943,6 +5975,10 @@ def start(root, parent=None, context=None):
             s.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             s.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            s.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            s.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == lexer.PARTITION:
             s.partition = child.getChild(0).toString()[1:-1]
         else:
@@ -5970,6 +6006,10 @@ def end(root, parent=None, context=None):
             c.inputString = child.toString()[1:-1]
         elif child.type == lexer.HYPERLINK:
             c.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            c.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            c.rid_ids.append(child.getChild(0).toString()[1:-1])
     return c, [], []
 
 
@@ -6126,6 +6166,10 @@ def output(root, parent, out_ast=None, context=None):
             out_ast.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             out_ast.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            out_ast.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            out_ast.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == 0:
             pass
         else:
@@ -6209,6 +6253,10 @@ def alternative_part(root, parent, context):
             warnings.extend(warn)
         elif child.type == lexer.HYPERLINK:
             ans.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            ans.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            ans.rid_ids.append(child.getChild(0).toString()[1:-1])
         else:
             warnings.append('Unsupported answer type: ' +
                             sdl92Parser.tokenNamesMap[child.type])
@@ -6301,6 +6349,10 @@ def decision(root, parent, context):
             dec.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             dec.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            dec.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            dec.rid_ids.append(child.getChild(0).toString()[1:-1])
         elif child.type == lexer.ANSWER:
             ans, err, warn = alternative_part(child, parent, context)
             errors.extend(err)
@@ -6322,6 +6374,10 @@ def decision(root, parent, context):
                     warnings.extend(warn)
                 elif child.type == lexer.HYPERLINK:
                     ans.hyperlink = child.getChild(0).toString()[1:-1]
+                elif child.type == lexer.REQ_ID:
+                    ans.req_ids.append(child.getChild(0).toString()[1:-1])
+                elif child.type == lexer.RID_ID:
+                    ans.rid_ids.append(child.getChild(0).toString()[1:-1])
             ans.answers.append({'kind': 'else', 'content': None})
             dec.answers.append(ans)
             has_else = True
@@ -6784,6 +6840,10 @@ def terminator_statement(root, parent, context):
             t.comment, _, _ = end(term)
         elif term.type == lexer.HYPERLINK:
             t.hyperlink = term.getChild(0).toString()[1:-1]
+        elif term.type == lexer.REQ_ID:
+            t.req_ids.append(term.getChild(0).toString()[1:-1])
+        elif term.type == lexer.RID_ID:
+            t.rid_ids.append(term.getChild(0).toString()[1:-1])
         else:
             warnings.append('Unsupported terminator type: ' +
                     str(term.type))
@@ -7222,6 +7282,7 @@ def task(root, parent=None, context=None):
     warnings = []
     coord = False
     comment, body = None, None
+    req_ids, rid_ids, hyperlink = [], [], None
     for child in root.getChildren():
         if child.type == lexer.CIF:
             # Get symbol coordinates
@@ -7241,7 +7302,11 @@ def task(root, parent=None, context=None):
         elif child.type == lexer.COMMENT:
             comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
-            body.hyperlink = child.getChild(0).toString()[1:-1]
+            hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            rid_ids.append(child.getChild(0).toString()[1:-1])
         else:
             warnings.append('Unsupported child type in task definition: ' +
                     str(child.type))
@@ -7256,6 +7321,9 @@ def task(root, parent=None, context=None):
         warnings = [[w, [0, 0], []] for w in warnings]
     if body:
         body.comment = comment
+        body.hyperlink = hyperlink
+        body.req_ids = req_ids
+        body.rid_ids = rid_ids
     else:
         warnings.append(['TASK missing content', [pos_x or 0, pos_y or 0], []])
         body = ogAST.TaskAssign()
@@ -7300,6 +7368,10 @@ def create_request(root, parent=None, context=None):
             result.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
             result.hyperlink = child.getChild(0).toString()[1:-1]
+        elif child.type == lexer.REQ_ID:
+            result.req_ids.append(child.getChild(0).toString()[1:-1])
+        elif child.type == lexer.RID_ID:
+            result.rid_ids.append(child.getChild(0).toString()[1:-1])
         else:
             warnings.append('Unsupported child type in CREATE definition: ' +
                     str(child.type))

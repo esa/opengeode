@@ -180,6 +180,42 @@ def hyperlink(symbol):
     return f"/* CIF Keep Specific Geode HyperLink '{symbol.text.hyperlink}' */"
 
 
+def req_server(symbol):
+    ''' Gitlab server holding requirements '''
+    if genericSymbols.g_QtTaste:
+        url = genericSymbols.g_url
+        if type(url) != str:
+            url = url.toString()
+        return f"/* CIF Keep Specific Geode REQSERVER '{url}' */"
+    else:
+        return ''
+
+def req_ids(symbol):
+    ''' PR string for the optional requirement ids associated to a symbol '''
+    if symbol.req_model is None:
+        return []
+    # We have to check if some requirements are selected for the symbol
+    ticked = symbol.req_model.selectedRequirements()
+    ticked.extend(symbol.ast.req_ids)
+    selected=set(ticked)
+    result = []
+    for each in selected:
+        result.append(f"/* CIF Keep Specific Geode REQID '{each}' */")
+    return result
+
+
+def rid_ids(symbol):
+    ''' PR string for the optional requirement ids associated to a symbol '''
+    if symbol.rid_model is None:
+        return[]
+    # We have to check if some requirements are selected for the symbol
+    #selected = symbol.rid_model.selectedReviews()
+    result = []
+    #for each in selected:
+    #    result.append(f"/* CIF Keep Specific Geode RID '{each}' */")
+    return result
+
+
 def partition(symbol):
     scene = symbol.scene()
     if scene:
@@ -195,6 +231,8 @@ def common(name, symbol):
     result.append(cif_coord(name, symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     if isinstance(symbol, (sdlSymbols.State, sdlSymbols.Procedure)) and name != 'NEXTSTATE':
         part = partition(symbol)
         if part:
@@ -235,6 +273,8 @@ def _comment(symbol, **kwargs):
     result.append(cif_coord('comment', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     result.append("comment '" + str(symbol.text).replace("'", "\\'") + "';")
     return result
 
@@ -306,6 +346,8 @@ def _decisionanswer(symbol, recursive=True, **kwargs):
         ans = f'({ans})'
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     result.append(f'{ans}:')
     if recursive:
         result.extend(recursive_aligned(symbol))
@@ -347,6 +389,8 @@ def _procedurecall(symbol, **kwargs):
     result.append(cif_coord('PROCEDURECALL', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     result.append('call {}{}'.format(str(symbol.text), ';'
                                       if not symbol.comment else ''))
     if symbol.comment:
@@ -361,6 +405,8 @@ def _procedurecall(symbol, **kwargs):
     result.append(cif_coord('CREATE', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     result.append(f'create {str(symbol.text)}{";" if not symbol.comment else ""}')
     if symbol.comment:
         result.extend(generate(symbol.comment))
@@ -374,6 +420,8 @@ def _textsymbol(symbol, **kwargs):
     #if symbol.text.hyperlink:
     # no hyperlink for text symbols (see sdl92.g)
     #    result.append(hyperlink(symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     part = partition(symbol)
     if part:
         result.append(part)
@@ -392,6 +440,8 @@ def _label(symbol, recursive=True, **kwargs):
     result.append(cif_coord('label', symbol))
     if symbol.text.hyperlink:
         result.append(hyperlink(symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     if symbol.common_name == 'floating_label':
         part = partition(symbol)
         if part:
@@ -463,6 +513,9 @@ def _process(symbol, recursive=True, **kwargs):
     #result = common(name, symbol)
     result = Indent()
     result.append(cif_coord('PROCESS', symbol))
+    result.append(req_server(symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     result.append("{} {}{}".format(name, str(symbol.text), ";" if
         not symbol.comment else ""))
     if symbol.comment:
@@ -498,6 +551,8 @@ def _start(symbol, recursive=True, **kwargs):
     ''' START symbol or branch if recursive is set '''
     result = Indent()
     result.append(cif_coord('START', symbol))
+    result.extend(req_ids(symbol))
+    result.extend(rid_ids(symbol))
     result.append('START{via}{comment}'
                   .format(via=(' ' + str(symbol) + ' ')
                           if str(symbol).replace('START', '') else '',
