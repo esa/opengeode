@@ -1617,8 +1617,8 @@ PARAMNAMES      :       P A R A M N A M E S;
 SPECIFIC        :       S P E C I F I C;
 GEODE           :       G E O D E;
 HYPERLINK       :       H Y P E R L I N K;
-REQ_SERVER      :       R E Q S E R V E R;
-RID_SERVER      :       R I D S E R V E R;
+REQ_SERVER      :       '_' R E Q S E R V E R '_';
+RID_SERVER      :       '_' R I D S E R V E R '_';
 PARTITION       :       P A R T I T I O N;
 MKSTRING        :       M K S T R I N G;
 ENDTEXT         :       E N D T E X T;
@@ -1741,8 +1741,8 @@ UNHANDLED       :       U N H A N D L E D;
 ERRORSTATES     :       E R R O R S T A T E S;
 IGNORESTATES    :       I G N O R E S T A T E S;
 SUCCESSSTATES   :       S U C C E S S S T A T E S;
-REQ_ID          :       R E Q I D;
-RID_ID          :       R I D I D;
+REQ_ID          :       '_' R E Q I D '_';
+RID_ID          :       '_' R I D I D '_';
 
 
 STRING
