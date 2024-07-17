@@ -417,6 +417,10 @@ def _call_external_function(output, **kwargs):
 
     stmts = []
     decls = []
+    # need_prefix: indicate that we need a <functionName>_RI_ prefix to function calls
+    # which is the case for all calls (of RIs/external procedures) but not
+    # the case for the automatic call of the _transition() function
+    need_prefix = True
 
     # Add the traceability information
     stmts.extend(traceability(output))
@@ -538,7 +542,10 @@ def _call_external_function(output, **kwargs):
                     list_of_params.append("&{var}{shared}".format(var=p_id, shared=", sizeof({})".format(p_id) if is_out_sig else ""))
 
             # Call the <processName>_RI_<requiredInterfaceName> function
-            RIName = f"{PROCESS_NAME.lower()}_RI_{out['outputName']}"
+            if need_prefix:
+                RIName = f"{PROCESS_NAME.lower()}_RI_{out['outputName']}"
+            else:
+                RIName = out['outputName']
             if list_of_params:
                 params = ', '.join(list_of_params)
                 stmts.append(f'{RIName}({params});')
