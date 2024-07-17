@@ -2647,7 +2647,7 @@ def generating_startup_function(process, no_renames):
 
     # Generate the code of the start transition (if process not empty)
     startup_function_code = ['//// Startup']
-    startup_function_code.append(f'void CInit{process.processName}()')
+    startup_function_code.append(f'void CInit{process.processName.lower()}()')
     startup_function_code.append('{')
 
     processing_process_variables(process, no_renames, startup_function_code)
@@ -2662,7 +2662,7 @@ def generating_startup_function(process, no_renames):
     startup_function_code.append('// Required To Work With TASTE\'s Wrappers')
     startup_function_code.append(f'void {process.processName.lower()}_startup()')
     startup_function_code.append('{')
-    startup_function_code.append(f'CInit{process.processName}();')
+    startup_function_code.append(f'CInit{process.processName.lower()}();')
     startup_function_code.append('}\n')
 
     return startup_header_file_code, startup_function_code
