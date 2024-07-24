@@ -125,6 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.2 (07/2024)**
+- Fixes in C backend
+- Fixes for SVG/PNG/PDF export (CLI)
+
 **4.3.1 (04/2024)**
 - Major parsing speedup 
 
