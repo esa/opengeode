@@ -1837,7 +1837,7 @@ def _append(expr):
         stmts.append(u'memcpy_temp_{var_counter}.nCount = 2;'.format(var_counter=VAR_COUNTER))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, ogAST.PrimVariable) and isinstance(expr.right, ogAST.PrimSequenceOf):
+    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimSelector)) and isinstance(expr.right, ogAST.PrimSequenceOf):
         decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
         decls.append(u'{ty} right_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
@@ -1878,7 +1878,7 @@ def _append(expr):
 
         string = f'memcpy_temp_{VAR_COUNTER}'
 
-    elif isinstance(expr.left, ogAST.PrimVariable) and isinstance(expr.right, ogAST.PrimVariable):
+    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimSelector)) and isinstance(expr.right, ogAST.PrimVariable):
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
 
