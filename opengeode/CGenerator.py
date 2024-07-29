@@ -420,6 +420,7 @@ def _call_external_function(output, **kwargs):
     # need_prefix: indicate that we need a <functionName>_RI_ prefix to function calls
     # which is the case for all calls (of RIs/external procedures) but not
     # the case for the automatic call of the _transition() function
+    # and the inner call of exported procedures
     need_prefix = True
 
     # Add the traceability information
@@ -478,16 +479,44 @@ def _call_external_function(output, **kwargs):
         is_out_sig = False
 
         try:
-            out_sig, = [sig for sig in OUT_SIGNALS if sig['name'].lower() == signal_name.lower()]
+            out_sig, = [sig for sig in OUT_SIGNALS
+                    if sig['name'].lower() == signal_name.lower()]
             is_out_sig = False
         except ValueError:
             # Not an output, try if it is an external or inner procedure
-            proc = find_procedure_by_name(signal_name)
-
-            if proc:
+            try:
+                candidates = [sig for sig in PROCEDURES
+                            if sig.inputString.lower() == signal_name.lower()]
+                if not candidates:
+                    raise ValueError
+                if len(candidates) > 1:
+                    # there are 2 results when the procedure is exported
+                    # (happens in the case of a call of an inner procedure
+                    # that is exported)
+                    # there can be 3 if a procedure exists as PI and RI
+                    if not out.get('toDest'):
+                        need_prefix = False
+                        # find a candidate that is not marked as external
+                        for c in candidates:
+                            if not c.external:
+                                proc = c
+                    else:
+                        # if toDest is set, it has to be a RI call
+                        # find the candidate that is declared as external
+                        for c in candidates:
+                            if c.external:
+                                proc = c
+                else:
+                    proc = candidates[0]
                 if proc.external:
                     out_sig = proc
-            else:
+
+#           proc = find_procedure_by_name(signal_name)
+#
+#           if proc:
+#               if proc.external:
+#                   out_sig = proc
+            except ValueError:
                 # Last chance to find it: if it is an exported procedure,
                 # in that case an additional signal with _Transition suffix
                 # exists but is not visible in the model at this point
@@ -553,6 +582,8 @@ def _call_external_function(output, **kwargs):
                 stmts.append(f'{RIName}();')
         else:
             # inner procedure call
+            # TODO here some things are not aligned with Ada, several cases
+            # are missing...
             list_of_params = []
             param_counter = 0
 
@@ -562,17 +593,21 @@ def _call_external_function(output, **kwargs):
                 stmts.extend(param_stmts)
                 decls.extend(p_local)
                 # no need to use temporary variables
-                if proc.fpar[param_counter].get('direction') == 'out':
+                if proc.fpar[param_counter].get('direction') == 'out' or proc.exported:
                     p_id = '&' + p_id
 
                 list_of_params.append( p_id)
                 param_counter = param_counter + 1
 
+            if need_prefix:
+                full_name = f'{SEPARATOR}{PROCESS_NAME.lower()}_{proc.inputString}'
+            else:
+                full_name = f'{PROCESS_NAME.lower()}_PI_{proc.inputString}'
             if list_of_params:
                 params=', '.join(list_of_params)
-                stmts.append(f'{SEPARATOR}{PROCESS_NAME.lower()}_{proc.inputString}({params});')
+                stmts.append(f'{full_name}({params});')
             else:
-                stmts.append(f'{SEPARATOR}{PROCESS_NAME.lower()}_{proc.inputString}();')
+                stmts.append(f'{full_name}();')
 
     return stmts, decls
 
@@ -3388,7 +3423,7 @@ def find_var_in_variables(var):
 
         if variable_lower == var_lower:
             return variable_lower
-        
+
     return None
 
 
