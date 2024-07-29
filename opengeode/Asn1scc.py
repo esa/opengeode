@@ -4,11 +4,11 @@
 """
     Python API for the ASN1Scc compiler
 
-    Copyright (c) 2013-2019 European Space Agency
+    Copyright (c) 2013-2024 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
-    Based on the ASN.1 Space Certified Compiler from Neuropublic
+    Based on the ASN.1 Space Certified Compiler (ASN1SCC)
 
     Contact: maxime.perrotin@esa.int
 """
@@ -102,7 +102,16 @@ def parse_asn1(*files, **options):
             # also hash the file path: it is used in the AST (in the .py),
             # so it is not enough to hash the content of the ASN.1 files,
             # as two sets of input files may have the same hash
-            filehash.update(each.encode('utf-8'))
+            # EDIT: I am not sure why this would matter.. OK, the path to
+            # the ASN.1 file may be wrong in the .py file (DV.asn1Files)
+            # and the one referenced there may point to a file that does
+            # not exist anymore, in which case if could be a problem
+            # But this is replaced in the loaded module (see below)
+            # The following is done if --taste is not in the command line
+            # to ensure that if this was meant for other users of the
+            # Asn1scc module, there is no change of behaviour.
+            if "--taste" not in sys.argv:
+                filehash.update(each.encode('utf-8'))
     except IOError as err:
         raise TypeError (str(err))
     new_hash = filehash.hexdigest()
@@ -177,6 +186,9 @@ def parse_asn1(*files, **options):
 
     ast = importlib.import_module(new_hash)
     AST[new_hash] = ast
+    # In case the module was cached from asn1 files in other folders
+    # fix the AST with the files from this project.
+    ast.asn1Files = list(*files)
     if pprint:
         # add the (optionally-generated) pretty-printed HTML file
         ast.html = open(html_filepath, 'r').read()

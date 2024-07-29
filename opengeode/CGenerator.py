@@ -161,7 +161,7 @@ def _process(process, **kwargs):
     generated_c_source_code.extend(transition_code)
     generated_c_source_code.extend(generate_current_state_to_str_code)
 
-    with open(process_name + '.c', 'wb') as c_file:
+    with open(process_name.lower() + '.c', 'wb') as c_file:
         c_file.write(u'\n'.join(indent_c_code(generated_c_source_code)).encode('latin1'))
 
     generated_h_source_code = []
@@ -175,7 +175,7 @@ def _process(process, **kwargs):
     generated_h_source_code.extend(timers_header_file_code)
     generated_h_source_code.extend(ending_of_include_guard_header_file_code)
 
-    with open(process_name + '.h', 'wb') as h_file:
+    with open(process_name.lower() + '.h', 'wb') as h_file:
         h_file.write(u'\n'.join(indent_c_code(generated_h_source_code)).encode('latin1'))
 
 
@@ -2992,7 +2992,7 @@ def generating_includes(process):
         includes_code.append(f'#include "{hname.split(os.sep)[-1]}"')
 
     includes_code.append(f'#include \"{process.name.lower()}_datamodel.h\"')
-    includes_code.append(f'#include \"{process.processName}.h\"\n')
+    includes_code.append(f'#include \"{process.processName.lower()}.h\"\n')
 
     return includes_code
 
