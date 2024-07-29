@@ -1,4 +1,4 @@
-# $ANTLR 3.5.2 sdl92.g 2024-05-06 07:30:06
+# $ANTLR 3.5.2 sdl92.g 2024-07-25 11:38:06
 
 import sys
 from antlr3 import *
@@ -37173,8 +37173,8 @@ class sdl92Parser(Parser):
         )
 
     DFA48_special = DFA.unpack(
-        "\14\uffff\1\1\24\uffff\1\11\1\0\1\2\1\3\1\4\1\5\1\6\1\7\7\uffff"
-        "\1\10"
+        "\14\uffff\1\2\24\uffff\1\11\1\3\1\1\1\4\1\5\1\0\1\7\1\10\7\uffff"
+        "\1\6"
         )
 
 
@@ -37255,101 +37255,6 @@ class sdl92Parser(Parser):
             _s = s
 
             if s == 0: 
-                LA48_34 = input.LA(1)
-
-                 
-                index48_34 = input.index()
-                input.rewind()
-
-                s = -1
-                if (self.synpred62_sdl92()):
-                    s = 22
-
-                elif (True):
-                    s = 2
-
-                 
-                input.seek(index48_34)
-
-                if s >= 0:
-                    return s
-            elif s == 1: 
-                LA48_12 = input.LA(1)
-
-                 
-                index48_12 = input.index()
-                input.rewind()
-
-                s = -1
-                if (self.synpred62_sdl92()):
-                    s = 22
-
-                elif (True):
-                    s = 2
-
-                 
-                input.seek(index48_12)
-
-                if s >= 0:
-                    return s
-            elif s == 2: 
-                LA48_35 = input.LA(1)
-
-                 
-                index48_35 = input.index()
-                input.rewind()
-
-                s = -1
-                if (self.synpred62_sdl92()):
-                    s = 22
-
-                elif (True):
-                    s = 2
-
-                 
-                input.seek(index48_35)
-
-                if s >= 0:
-                    return s
-            elif s == 3: 
-                LA48_36 = input.LA(1)
-
-                 
-                index48_36 = input.index()
-                input.rewind()
-
-                s = -1
-                if (self.synpred62_sdl92()):
-                    s = 22
-
-                elif (True):
-                    s = 2
-
-                 
-                input.seek(index48_36)
-
-                if s >= 0:
-                    return s
-            elif s == 4: 
-                LA48_37 = input.LA(1)
-
-                 
-                index48_37 = input.index()
-                input.rewind()
-
-                s = -1
-                if (self.synpred62_sdl92()):
-                    s = 22
-
-                elif (True):
-                    s = 2
-
-                 
-                input.seek(index48_37)
-
-                if s >= 0:
-                    return s
-            elif s == 5: 
                 LA48_38 = input.LA(1)
 
                  
@@ -37368,7 +37273,121 @@ class sdl92Parser(Parser):
 
                 if s >= 0:
                     return s
+            elif s == 1: 
+                LA48_35 = input.LA(1)
+
+                 
+                index48_35 = input.index()
+                input.rewind()
+
+                s = -1
+                if (self.synpred62_sdl92()):
+                    s = 22
+
+                elif (True):
+                    s = 2
+
+                 
+                input.seek(index48_35)
+
+                if s >= 0:
+                    return s
+            elif s == 2: 
+                LA48_12 = input.LA(1)
+
+                 
+                index48_12 = input.index()
+                input.rewind()
+
+                s = -1
+                if (self.synpred62_sdl92()):
+                    s = 22
+
+                elif (True):
+                    s = 2
+
+                 
+                input.seek(index48_12)
+
+                if s >= 0:
+                    return s
+            elif s == 3: 
+                LA48_34 = input.LA(1)
+
+                 
+                index48_34 = input.index()
+                input.rewind()
+
+                s = -1
+                if (self.synpred62_sdl92()):
+                    s = 22
+
+                elif (True):
+                    s = 2
+
+                 
+                input.seek(index48_34)
+
+                if s >= 0:
+                    return s
+            elif s == 4: 
+                LA48_36 = input.LA(1)
+
+                 
+                index48_36 = input.index()
+                input.rewind()
+
+                s = -1
+                if (self.synpred62_sdl92()):
+                    s = 22
+
+                elif (True):
+                    s = 2
+
+                 
+                input.seek(index48_36)
+
+                if s >= 0:
+                    return s
+            elif s == 5: 
+                LA48_37 = input.LA(1)
+
+                 
+                index48_37 = input.index()
+                input.rewind()
+
+                s = -1
+                if (self.synpred62_sdl92()):
+                    s = 22
+
+                elif (True):
+                    s = 2
+
+                 
+                input.seek(index48_37)
+
+                if s >= 0:
+                    return s
             elif s == 6: 
+                LA48_48 = input.LA(1)
+
+                 
+                index48_48 = input.index()
+                input.rewind()
+
+                s = -1
+                if (self.synpred62_sdl92()):
+                    s = 22
+
+                elif (True):
+                    s = 2
+
+                 
+                input.seek(index48_48)
+
+                if s >= 0:
+                    return s
+            elif s == 7: 
                 LA48_39 = input.LA(1)
 
                  
@@ -37387,7 +37406,7 @@ class sdl92Parser(Parser):
 
                 if s >= 0:
                     return s
-            elif s == 7: 
+            elif s == 8: 
                 LA48_40 = input.LA(1)
 
                  
@@ -37403,25 +37422,6 @@ class sdl92Parser(Parser):
 
                  
                 input.seek(index48_40)
-
-                if s >= 0:
-                    return s
-            elif s == 8: 
-                LA48_48 = input.LA(1)
-
-                 
-                index48_48 = input.index()
-                input.rewind()
-
-                s = -1
-                if (self.synpred62_sdl92()):
-                    s = 22
-
-                elif (True):
-                    s = 2
-
-                 
-                input.seek(index48_48)
 
                 if s >= 0:
                     return s
