@@ -1452,13 +1452,22 @@ def _equality(expr):
 
     asn1_type = getattr(expr.left.exprType, 'ReferencedTypeName', None)
     actual_type = type_name(expr.left.exprType)
+
     lbty = find_basic_type(expr.left.exprType)
     rbty = find_basic_type(expr.right.exprType)
+
     operand = '==' if isinstance(expr, ogAST.ExprEq) else '!='
-    basic = lbty.kind in ('IntegerType', 'Integer32Type', 'BooleanType', 'EnumeratedType', 'ChoiceEnumeratedType')
+
+    basic = lbty.kind in ('IntegerType',
+                          'Integer32Type',
+                          'IntegerU8Type',
+                          'BooleanType',
+                          'EnumeratedType',
+                          'ChoiceEnumeratedType')
 
     if basic:
-        if isinstance(expr.right, (ogAST.PrimBitStringLiteral, ogAST.PrimOctetStringLiteral)):
+        if isinstance(expr.right, (ogAST.PrimBitStringLiteral,
+                                   ogAST.PrimOctetStringLiteral)):
             right_string = str(expr.right.numeric_value)
 
         string = f'({left_string} {operand} {right_string})'
@@ -1510,8 +1519,13 @@ def _equality(expr):
                 decls.append(f'static {actual_type} constant_{VAR_COUNTER};')
                 stmts.append(f'constant_{VAR_COUNTER} = ({actual_type}) {right_string};')
                 right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
+            elif isinstance(expr.right, ogAST.PrimCall):
+                VAR_COUNTER = VAR_COUNTER + 1
+                decls.append(f'static {actual_type} constant_{VAR_COUNTER};')
+                stmts.append(f'constant_{VAR_COUNTER} = ({actual_type}) {right_string};')
+                right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
             elif not (isinstance(expr.right, ogAST.PrimVariable)):
-                raise NotImplementedError(str(type(expr.right)) + ' in right part of comparison')
+                raise NotImplementedError(str(type(expr.right)) + f' in right part of comparison ({expr.inputString})')
             else:
                 right_string = '&' + right_string
 
