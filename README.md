@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.3 (09/2024)**
+- Fix navigation in nested states with more than one level of nesting
+
 **4.3.2 (07/2024)**
 - Fixes in C backend
 - Fixes for SVG/PNG/PDF export (CLI)
