@@ -83,6 +83,7 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtUiTools import *
 from PySide6 import QtSvg
+from PySide6.QtPrintSupport import QPrinter
 
 from . import version
 from .genericSymbols import Symbol, Comment, Cornergrabber, Connection, Channel
@@ -1342,8 +1343,8 @@ class SDL_Scene(QGraphicsScene):
         elif doc_format == 'pdf':
             device = QPrinter()
             device.setOutputFormat(QPrinter.PdfFormat)
-            device.setPaperSize(
-                    rect.size().toSize(), QPrinter.Point)
+            #device.setPaperSize(
+            #        rect.size().toSize(), QPrinter.Point)
             device.setFullPage(True)
             device.setOutputFileName(filename)
         else:

@@ -186,7 +186,7 @@ def req_server(symbol):
         url = genericSymbols.g_url
         if type(url) != str:
             url = url.toString()
-        return f"/* CIF Keep Specific Geode REQSERVER '{url}' */"
+        return f"/* CIF Keep Specific Geode _REQSERVER_ '{url}' */"
     else:
         return ''
 
@@ -200,7 +200,7 @@ def req_ids(symbol):
     selected=set(ticked)
     result = []
     for each in selected:
-        result.append(f"/* CIF Keep Specific Geode REQID '{each}' */")
+        result.append(f"/* CIF Keep Specific Geode _REQID_ '{each}' */")
     return result
 
 
@@ -212,7 +212,7 @@ def rid_ids(symbol):
     #selected = symbol.rid_model.selectedReviews()
     result = []
     #for each in selected:
-    #    result.append(f"/* CIF Keep Specific Geode RID '{each}' */")
+    #    result.append(f"/* CIF Keep Specific Geode _RIDID_ '{each}' */")
     return result
 
 

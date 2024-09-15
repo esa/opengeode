@@ -1152,8 +1152,21 @@ class State(VerticalSymbol):
 
     def double_click(self):
         ''' Catch a double click - Set nested scene '''
-        # We have to look in all partitions, not only in the current scene
-        top_scene = self.scene().views()[0].top_scene()
+        # We have to check first in the current scene as we may not be at
+        # partition level, in we are in a sub-sub-scene (more than one level
+        # of state nesting). Then if nothing is found, we have to look
+        # in the other partitions.
+        for each, value in self.scene().composite_states.items():
+            if str(self).split()[0].lower() == str(each):
+                self.nested_scene = value
+                return
+        # Nothing found in the current scene, check in all partitions
+        try:
+            top_scene = self.scene().views()[0].top_scene()
+        except IndexError:
+            # there may be no views, for instance if the tool is
+            # called with the CLI option to render PDF/PNG/SVG
+            top_scene = self.scene()
         partitions = top_scene.partitions
         for part in partitions.values():
             for each, value in part.composite_states.items():
