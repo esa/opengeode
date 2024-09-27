@@ -8,9 +8,10 @@
 
     Copyright (c) 2015-2020 Politecnico di Milano & ESA
     Copyright (c) 2020-2023 N7Space & ESA
+    Copyright (c) 2024 ESA
 
-    Designed and implemented by Marco Lattuada
-    Contact: marco.lattuada@polimi.it
+    Original design by Marco Lattuada
+    Now maintained by ESA
 """
 
 # -------------------------------------------------------------------
@@ -118,7 +119,7 @@ def _process(process, **kwargs):
         dump('preprocessed_ast.dump', process.parent.parent.ast)
 
     Helper.generate_asn1_datamodel(process)
-
+    
     VARIABLES.update(process.variables)
     MONITORS.update(process.monitors)
 
@@ -511,11 +512,6 @@ def _call_external_function(output, **kwargs):
                 if proc.external:
                     out_sig = proc
 
-#           proc = find_procedure_by_name(signal_name)
-#
-#           if proc:
-#               if proc.external:
-#                   out_sig = proc
             except ValueError:
                 # Last chance to find it: if it is an exported procedure,
                 # in that case an additional signal with _Transition suffix
@@ -2725,7 +2721,7 @@ def generating_startup_function(process, no_renames):
 
 
 def generating_run_transition_declaration(process):
-    run_transition_declaration_code = [u'//// runTransition Function Declaration']
+    run_transition_declaration_code = [f'#define CS_Only {len(process.transitions)}']
 
     if process.transitions:
         run_transition_declaration_code.append(u'void runTransition{}(int Id);\n'.format(process.processName))
@@ -2838,8 +2834,11 @@ def processing_inner_procedures(process):
 
 
 def processing_input_signals(process):
-    input_signals_header_file_code = [u'//// Input Signals\n']
-    input_signals_code = [u'//// Input Signals']
+    input_signals_header_file_code = ['//// Input Signals\n']
+    input_signals_code = ['//// Input Signals']
+    
+    reduced_statelist = {s for s in process.full_statelist
+            if s not in process.parallel_states}
 
     for signal in process.input_signals + [{'name': timer} for timer in process.timers]:
         signame = signal.get('name', 'START')
@@ -2871,65 +2870,118 @@ def processing_input_signals(process):
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
-            pi_header += u'({tn} * {pn})'.format(tn=typename, pn=param_name)
+            pi_header += '({tn} * {pn})'.format(tn=typename, pn=param_name)
         else:
-            pi_header += u'()'
+            pi_header += '()'
 
         # Add declaration of the provided interface in the .h file
-        input_signals_header_file_code.append(u'// Provided interface "' + signal['name'] + '"')
+        input_signals_header_file_code.append('// Provided interface "' + signal['name'] + '"')
         input_signals_header_file_code.append(pi_header + ';\n')
 
         input_signals_code.append(pi_header)
-        input_signals_code.append(u'{')
+        input_signals_code.append('{')
         input_signals_code.append(f'switch({LPREFIX}.state)')
-        input_signals_code.append(u'{')
+        input_signals_code.append('{')
 
-        for state in process.mapping.keys():
-            if state.endswith(u'START'):
-                continue
-
-            input_signals_code.append(f'case {generate_state_name(state)}:')
-            input_signals_code.append('{')
-            input_def = process.input_mapping[signal['name']].get(state)
-            # Check for nested states to call optional exit procedure
-            sep = SEPARATOR
-            state_tree = state.split(sep)
+        def execute_transition(state, dest=[]):
+            ''' Aligned with Ada
+                Generate the code that triggers the transition for the current
+                state/input combination '''
+            input_def = process.input_mapping[signame].get(state)
+            # Check for nested states to call optional exit procedures
+            # (we may exit from more than one state, the exit procedures must
+            #  be called in the right order)
+            state_tree = state.split(SEPARATOR)
             context = process
             exitlist = []
             current = ''
             trans = input_def and process.transitions[input_def.transition_id]
-
             while state_tree:
                 current = current + state_tree.pop(0)
-
                 for comp in context.composite_states:
                     if current.lower() == comp.statename.lower():
                         if comp.exit_procedure:
                             exitlist.append(current)
-
                         context = comp
-                        current = current + sep
+                        current = current + SEPARATOR
                         break
-
             for each in reversed(exitlist):
-                if trans and all(each.startswith(trans_st) for trans_st in trans.possible_states):
-                    input_signals_code.append(f'{sep}{process.processName}_{each}{sep}exit();')
+                # Here we add a call to the exit procedure of nested states
+                # when we exit the state due to a transition in the superstate
+                # not due to a return statement from within the substate
+                # this other case is handled in Helper.py when flattening
+                # the model.
+                # The exit here is added only for transitions triggered by an
+                # INPUT. The continuous signals are not processed here
+                if trans and all(each.startswith(trans_st)
+                                 for trans_st in trans.possible_states):
+                    dest.append(f'{SEPARATOR}{process.processName}_{each}{SEPARATOR}exit();')
 
             if input_def:
                 for inp in input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
-                    input_signals_code.append(f'{LPREFIX}.{inp} = *{param_name};')
-
+                    dest.append(f'{LPREFIX}.{inp} = *{param_name};')
                 # Execute the corresponding transition
                 if input_def.transition:
-                    input_signals_code.append('runTransition{pn}({idx});'.format(pn=process.processName, idx=input_def.transition_id))
+                    dest.append(f'runTransition{process.processName}({input_def.transition_id});')
+                    dest.append('break;')
+                    dest.append('}')
+                else:
+                    dest.append('break;')
+                    dest.append('}')
+                    return False
+            else:
+                dest.append('break;')
+                dest.append('}')
+                return False
+            return True
 
-            input_signals_code.append('break;')
-            input_signals_code.append('}')
+        def case_state(state):
+            ''' Aligned with Ada
+                Recursive function (in case of state aggregation) to generate
+                the code that calls the proper transition according
+                to the current state
+                The input name is in signame
+            '''
+            if state.endswith('START'):
+                return
+            statecase = [f'case {generate_state_name(state)}:', '{']
+            input_def = process.input_mapping[signal['name']].get(state)
+            if state in process.aggregates.keys():
+                input_signals_code.extend(statecase)
+                # State aggregation:
+                # - find which substate manages this input
+                # - add a switch case on the corresponding substate
+                input_signals_code.append('//  This is a state aggregation')
+                for sub in process.aggregates[state]:
+                    if [a for a in sub.mapping.keys()
+                            if a in process.input_mapping[signame].keys()]:
+                        input_signals_code.append(f'switch ({LPREFIX}.{sub.statename}{SEPARATOR}state)')
+                        input_signals_code.append('{')
+                        for par in sub.mapping.keys():
+                            case_state(par)
+                        input_signals_code.append('default:')
+                        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
+                        input_signals_code.append('}')
+                        break
+                else:
+                    # Input is not managed in the state aggregation
+                    if input_def:
+                        # check if it is managed one level above
+                        execute_transition(state, input_signals_code)
+                    else:
+                        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
+            else:
+                if execute_transition(state, statecase):
+                    input_signals_code.extend(statecase)
+
+        for each_state in reduced_statelist:
+            case_state(each_state)
 
         input_signals_code.append('default:')
         input_signals_code.append('{')
+        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
         input_signals_code.append('break;')
         input_signals_code.append('}')
         input_signals_code.append('}')
@@ -3089,9 +3141,9 @@ def processing_transitions_and_floating_labels(process):
         transition_code.append('{')
 
         for idx, val in enumerate(code_transitions):
-            transition_code.append(u'case {idx}:'.format(idx=idx))
+            transition_code.append('case {idx}:'.format(idx=idx))
             transition_code.append('{')
-            val = [u'{line}'.format(line=l) for l in val]
+            val = ['{line}'.format(line=l) for l in val]
 
             if val:
                 transition_code.extend(val)
@@ -3099,6 +3151,11 @@ def processing_transitions_and_floating_labels(process):
             transition_code.append('break;')
             transition_code.append('}')
 
+        transition_code.append('case CS_Only:')
+        transition_code.append('{')
+        transition_code.append('trId = -1;')
+        transition_code.append('goto continuous_signals;')
+        transition_code.append('}')
         transition_code.append('default:')
         transition_code.append('{')
         transition_code.append('break;')

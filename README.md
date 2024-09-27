@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.4 (10/2024)**
+- Fix support of continuous signals in C backend
+
 **4.3.3 (09/2024)**
 - Fix navigation in nested states with more than one level of nesting
 

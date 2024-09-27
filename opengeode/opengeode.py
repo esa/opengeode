@@ -2383,10 +2383,10 @@ class SDL_View(QGraphicsView):
 c:
 \tmkdir -p code_c
 \tcd code_c && opengeode --toC ../*.pr
-\tasn1scc -fp AUTO -typePrefix asn1Scc -o code_c -equal -c {firstAsn1File} {otherAsn}
+\tasn1scc -fp AUTO -ig -renamePolicy 3 -typePrefix asn1Scc -o code_c -equal -c {firstAsn1File} {otherAsn}
 \tcd code_c && gcc -c *.c
 clean:
-\trm -rf code'''
+\trm -rf code code_c'''
         pr_data = str('\n'.join(pr_raw))
         try:
             pr_file.write(pr_data.encode('utf-8'))
