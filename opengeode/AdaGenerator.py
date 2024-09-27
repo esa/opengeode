@@ -772,7 +772,6 @@ package body {process.name}_RI is''']
             '''
             if state.endswith('START'):
                 return
-            #taste_template.append(f'when {ASN1SCC}{state} =>')
             statecase = [f'when {ASN1SCC}{state} =>']
             input_def = process.input_mapping[signame].get(state)
             if state in process.aggregates.keys():
