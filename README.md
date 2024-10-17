@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.5 (10/2024)**
+- Fix support of requirement id in the Join symbol
+
 **4.3.4 (10/2024)**
 - Fix support of continuous signals in C backend
 
