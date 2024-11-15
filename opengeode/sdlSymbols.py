@@ -546,13 +546,13 @@ class Join(VerticalSymbol):
     min_size = (70, 35)
 
     def __init__(self, parent=None, ast=None):
-        self.ast = ast
         self.width, self.height = 0, 0
         if not ast:
             ast = ogAST.Terminator(defName='')
             ast.pos_y = 0
             ast.width = 35
             ast.height = 35
+        self.ast = ast
         super().__init__(parent,
                          text=ast.inputString,
                          x=ast.pos_x,
