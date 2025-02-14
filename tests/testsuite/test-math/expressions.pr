@@ -1,29 +1,36 @@
 /* CIF PROCESS (144, 159), (150, 75) */
-PROCESS expressions;
-    /* CIF TEXT (742, 143), (125, 58) */
-    DCL f Real;
-    /* CIF ENDTEXT */
-    /* CIF TEXT (64, 151), (444, 178) */
+/* CIF Keep Specific Geode _REQSERVER_ 'https://gitrepos.estec.esa.int/taste/demo' */
+process expressions;
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (64, 151), (332, 140) */
     -- Declare an external procedure that has a return type
--- Use this to get access to C libraries (eg. math lib)
--- without having to write manually external code
--- Just link your code with the SDL object.
-procedure log;
-fpar in par real;
-returns real
-external;
+    -- Use this to get access to C libraries (eg. math lib)
+    -- without having to write manually external code
+    -- Just link your code with the SDL object.
+    procedure log;
+    fpar in par real;
+    returns real
+    external;
+    /* CIF ENDTEXT */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (742, 143), (316, 140) */
+    DCL f Real;
+    dcl someInt MyInteger :=-9223372036854775807;
     /* CIF ENDTEXT */
     /* CIF START (625, 146), (70, 34) */
     START;
         /* CIF NEXTSTATE (625, 199), (70, 35) */
         NEXTSTATE wait;
-    /* CIF STATE (625, 199), (70, 35) */
-    STATE wait;
-        /* CIF INPUT (620, 255), (81, 38) */
-        INPUT run;
-            /* CIF TASK (588, 308), (144, 35) */
-            TASK f := log(f);
-            /* CIF NEXTSTATE (624, 358), (72, 38) */
+    /* CIF state (625, 199), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state wait;
+        /* CIF input (625, 255), (70, 35) */
+        input run;
+            /* CIF task (621, 305), (77, 35) */
+            task f := log(f);
+            /* CIF PROCEDURECALL (583, 360), (152, 35) */
+            call writeln(abs(someint));
+            /* CIF NEXTSTATE (625, 410), (70, 35) */
             NEXTSTATE Wait;
-    ENDSTATE;
-ENDPROCESS expressions;
+    endstate;
+endprocess expressions;

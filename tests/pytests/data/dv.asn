@@ -1,0 +1,5 @@
+DV DEFINITIONS ::=
+BEGIN
+   MyInteger ::= INTEGER (0..255)
+END
+

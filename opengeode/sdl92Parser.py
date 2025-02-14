@@ -1,4 +1,4 @@
-# $ANTLR 3.5.2 sdl92.g 2024-07-25 11:38:06
+# $ANTLR 3.5.2 sdl92.g 2024-12-16 09:42:15
 
 import sys
 from antlr3 import *
@@ -37173,8 +37173,8 @@ class sdl92Parser(Parser):
         )
 
     DFA48_special = DFA.unpack(
-        "\14\uffff\1\2\24\uffff\1\11\1\3\1\1\1\4\1\5\1\0\1\7\1\10\7\uffff"
-        "\1\6"
+        "\14\uffff\1\2\24\uffff\1\11\1\1\1\3\1\4\1\5\1\6\1\7\1\10\7\uffff"
+        "\1\0"
         )
 
 
@@ -37255,10 +37255,10 @@ class sdl92Parser(Parser):
             _s = s
 
             if s == 0: 
-                LA48_38 = input.LA(1)
+                LA48_48 = input.LA(1)
 
                  
-                index48_38 = input.index()
+                index48_48 = input.index()
                 input.rewind()
 
                 s = -1
@@ -37269,15 +37269,15 @@ class sdl92Parser(Parser):
                     s = 2
 
                  
-                input.seek(index48_38)
+                input.seek(index48_48)
 
                 if s >= 0:
                     return s
             elif s == 1: 
-                LA48_35 = input.LA(1)
+                LA48_34 = input.LA(1)
 
                  
-                index48_35 = input.index()
+                index48_34 = input.index()
                 input.rewind()
 
                 s = -1
@@ -37288,7 +37288,7 @@ class sdl92Parser(Parser):
                     s = 2
 
                  
-                input.seek(index48_35)
+                input.seek(index48_34)
 
                 if s >= 0:
                     return s
@@ -37312,10 +37312,10 @@ class sdl92Parser(Parser):
                 if s >= 0:
                     return s
             elif s == 3: 
-                LA48_34 = input.LA(1)
+                LA48_35 = input.LA(1)
 
                  
-                index48_34 = input.index()
+                index48_35 = input.index()
                 input.rewind()
 
                 s = -1
@@ -37326,7 +37326,7 @@ class sdl92Parser(Parser):
                     s = 2
 
                  
-                input.seek(index48_34)
+                input.seek(index48_35)
 
                 if s >= 0:
                     return s
@@ -37369,10 +37369,10 @@ class sdl92Parser(Parser):
                 if s >= 0:
                     return s
             elif s == 6: 
-                LA48_48 = input.LA(1)
+                LA48_38 = input.LA(1)
 
                  
-                index48_48 = input.index()
+                index48_38 = input.index()
                 input.rewind()
 
                 s = -1
@@ -37383,7 +37383,7 @@ class sdl92Parser(Parser):
                     s = 2
 
                  
-                input.seek(index48_48)
+                input.seek(index48_38)
 
                 if s >= 0:
                     return s

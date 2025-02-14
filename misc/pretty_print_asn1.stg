@@ -100,7 +100,7 @@ EmitSeqChild_RefType(sRefName, sRefNameC) ::= <<
 OddRow() ::= ""
 EvenRow() ::= ""
 
-EmitSequenceChild(sCssClass, nIndex, sName, sComment, sOptionality, sType, sConstraint, sMin, sMax) ::= <<
+EmitSequenceChild(sCssClass, nIndex, sName, sComment, sOptionality, sType, sConstraint, sMin, sMax, soUnit) ::= <<
 >>
 
 
@@ -115,7 +115,7 @@ EmitChoice(sColor, sTasName, sTasNameC, sMinBytes, sMaxBytes, sMaxBitsExplained,
 >>
 
 
-EmitChoiceChild(sCssClass, nIndex, sName, sComment,  sType, sConstraint, sMin, sMax) ::= <<
+EmitChoiceChild(sCssClass, nIndex, sName, sComment,  sType, sConstraint, sMin, sMax, soUnit) ::= <<
 >>
 
 EmitChoiceIndexSingleComment(nIndex, sChildName) ::= <<
@@ -154,10 +154,10 @@ EmitFile(sAsnFileName, arrsModules) ::= <<
 </div>
 >>
 
-EmitFilePart2(sFileName, sAsn1Content) ::= <<
+EmitFilePart2(sFileName, arrsAsn1Content) ::= <<
 <h1 >$sFileName$</h1>
 <div style="width: 100%; white-space:pre; font-size:medium">
-$sAsn1Content$
+$arrsAsn1Content$
 </div>
 >>
 

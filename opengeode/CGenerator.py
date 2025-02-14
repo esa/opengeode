@@ -1085,7 +1085,7 @@ def _prim_call(prim):
         if find_basic_type(params[0].exprType).kind == 'RealType':
             ret_string = 'fabs({})'.format(param_string)
         else:
-            ret_string = 'abs({})'.format(param_string)
+            ret_string = f'({param_string}) < 0 ? -({param_string}):({param_string})'
 
         ret_decls.extend(param_decls)
         MATH_INCLUDE = True

@@ -60,7 +60,7 @@ dependencies:
 	python3 -c 'import pygraphviz' || python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.2.0/asn1scc-bin-4.5.2.0.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
+	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.2.3/asn1scc-bin-4.5.2.3.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
 	# install the requirement and review widget
 	@echo "[-] Building Requirements and Review (optional widget)"
 	@python3 -c "import sys, PyTasteQtWidgets as taste, os; sys.exit(taste.__version__!=os.environ['QTASTE_VERSION'])" || \

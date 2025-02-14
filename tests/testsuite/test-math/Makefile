@@ -28,12 +28,12 @@ test-qgen-gt-c:
 test-ada: expressions.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n expressions.ali
 	$(GNATLINK) test_ada.o expressions.ali -lm -o test_ada
-	./test_ada
+	./test_ada | diff expected -
 
 test-c: expressions.c test_c.o dataview-uniq.o
 	$(CC) expressions.c -c asn1crt.c
 	$(CC) test_c.o dataview-uniq.o asn1crt.o expressions.o -lm -o test_c
-	./test_c
+	./test_c | diff expected -
 
 test-if:
 	sdl2if expressions.pr system_structure.pr
