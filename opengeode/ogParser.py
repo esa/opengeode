@@ -16,7 +16,7 @@
     During the build of the AST this library makes a number of semantic
     checks on the SDL input model.
 
-    Copyright (c) 2012-2023 European Space Agency
+    Copyright (c) 2012-2025 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -850,6 +850,21 @@ def check_call(name, params, context):
 
     # (4) Compute the type of the result
     param_btys = [find_basic_type(p.exprType) for p in params]
+    # The Min and Max values of each param can be different from those of the
+    # basic type, if the param is a PrimConstant (e.g. a synonym). We resolve
+    # it here
+    param_ranges = []
+    for idx, p in enumerate(params):
+        if not hasattr(param_btys[idx], "Min"):
+            Min, Max = None, None
+        elif isinstance(p, ogAST.PrimConstant):
+            Min = Max = get_asn1_constant_value (p.constant_value)
+        elif isinstance (p, (ogAST.PrimBitStringLiteral,
+                            ogAST.PrimOctetStringLiteral)):
+            Min = Max = p.numeric_value
+        else:
+            Min, Max = param_btys[idx].Min, param_btys[idx].Max
+        param_ranges.append([Min, Max])
     if name == 'abs':
         # The implementation of abs in *all* programming languages returns
         # a type that is the same as the type of the parameter. The returned
@@ -926,11 +941,14 @@ def check_call(name, params, context):
         }), warnings)
 
     elif name == 'power':
+        # When params are constants/synonyms, use the actual value
+        computed_min = str(pow(float(param_ranges[0][0]),
+                           float(param_ranges[1][0])))
+        computed_max = str(pow(float(param_ranges[0][1]),
+                           float(param_ranges[1][1])))
         return (type('Power', (param_btys[0],), {
-            'Min': str(pow(float(param_btys[0].Min),
-                           float(param_btys[1].Min))),
-            'Max': str(pow(float(param_btys[0].Max),
-                           float(param_btys[1].Max)))
+            'Min': computed_min,
+            'Max': computed_max
         }), warnings)
 
     elif name == 'present':
@@ -1021,8 +1039,12 @@ def check_range(typeref, type_to_check):
         else:
             min1, max1 = float(type_to_check.Min), float(type_to_check.Max)
         min2, max2 = float(typeref.Min), float(typeref.Max)
-        error   = min1 > max2 or max1 < min2
-        warning = min1 < min2 or max1 > max2
+        if min2 < 0:
+            # Only check signed types
+            error   = min1 > max2 or max1 < min2
+            warning = min1 < min2 or max1 > max2
+        else:
+            error = warning = False
         if min1 == max1:
             first_part = f'Expression value {min1}'
         else:
@@ -1032,6 +1054,8 @@ def check_range(typeref, type_to_check):
         # Warning is the case of a variable that is incremented. The resulting
         # range may be outside the ranger of the recipient, but it is not
         # always an error (if the user code contains a check)
+        # note that it is not a warning if the type is unsigned, as unsigned
+        # types are modular by nature (they never overflow).
         if warning:
             return f'{first_part} could be outside range ({min2}..{max2})'
         else:
