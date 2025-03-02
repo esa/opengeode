@@ -856,9 +856,13 @@ def check_call(name, params, context):
     param_ranges = []
     for idx, p in enumerate(params):
         if not hasattr(param_btys[idx], "Min"):
-            Min, Max = None, None
+            Min = Max = None
         elif isinstance(p, ogAST.PrimConstant):
-            Min = Max = get_asn1_constant_value (p.constant_value)
+            try:
+                Min = Max = get_asn1_constant_value (p.constant_value)
+            except ValueError:
+                # Non-numerical constants
+                Min = Max = None
         elif isinstance (p, (ogAST.PrimBitStringLiteral,
                             ogAST.PrimOctetStringLiteral)):
             Min = Max = p.numeric_value
