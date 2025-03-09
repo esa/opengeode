@@ -125,6 +125,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.8 (03/2025)**
+- Less warnings are emitted on range checks with unsigned types (they can't overflow by nature)
+- Improved support for bit and octet string literals
+- Improved power operator
+
 **4.3.7 (02/2025)**
 - C backend: fix support of the abs operator (use ternary instead). Add test case.
 
