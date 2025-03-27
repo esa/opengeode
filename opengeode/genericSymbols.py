@@ -58,16 +58,34 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 from PySide6.QtUiTools import QUiLoader
 
+# the .netrc is a user file storing credentials to access remote servers
+# its access has to be restricted to the current user. the gitlab tokens
+# can be stored inside to access the requirements and RID servers
+# for each repo, user can add something like:
+# machine <host name> login token password <actual token>
+try:
+    import netrc
+    g_servers = netrc.netrc().hosts
+except:
+    # Exceptions in case of file access error, etc.
+    g_servers = dict()
+
 try:
     # Try to import the widgets for Requirements and Reviews
     # it is an external dependency that has to be built locally
     # If not available the application can still run...
     from PyTasteQtWidgets import TasteQtWidgets as QtTaste
     g_QtTaste = True
-    g_url = 'https://gitrepos.estec.esa.int/taste/demo'
+    g_url = 'https://gitlab.esa.int/taste/demo'
     g_token = ''
+    # Try to find the token (password) in the .netrc file
+    if g_url in g_servers.keys():
+        g_token = g_servers[g_url][2]
 except ImportError:
     g_QtTaste = False
+except:
+    # ignore netrc-related errors
+    pass
 
 from . import undoCommands, ogAST, ogParser
 from .Connectors import Connection, VerticalConnection, CommentConnection, \
@@ -76,16 +94,6 @@ from .Connectors import Connection, VerticalConnection, CommentConnection, \
 from .TextInteraction import EditableText
 
 LOG = logging.getLogger(__name__)
-
-@Slot (QUrl, str)
-def set_credentials(url, token):
-    ''' Slot called whenever user changed the credentials in a Requirement
-    or Review widget '''
-    global g_url, g_token
-    g_url = url
-    g_token = token
-    LOG.info('Updated credentials')
-
 
 # pylint: disable=R0904, R0902
 class Symbol(QObject, QGraphicsPathItem):
@@ -495,6 +503,33 @@ class Symbol(QObject, QGraphicsPathItem):
         self.hyperlink_dialog.accepted.connect(self.hyperlinkChanged)
         self.hlink_field = self.hyperlink_dialog.findChild(QLineEdit, 'hlink')
 
+    @Slot (QUrl, str)
+    def set_credentials(self, url, token):
+        ''' Slot called whenever user changed the credentials in a Requirement
+        or Review widget (either url or token change at once, not both) '''
+        global g_url, g_token
+        LOG.info("credential change")
+        if g_url != url:
+            # URL was updated: look for a stored token
+            g_url = url
+            if g_url.url().strip() in g_servers.keys():
+                g_token = g_servers[g_url.url().strip()][2]
+                LOG.info("Found credentials in .netrc file")
+                # update the field
+                self.req_widget.setToken(g_token)
+            else:
+                LOG.info("No credentials found in .netrc file")
+                # user has to fill the token
+                g_token = ''
+                # reset the field
+                self.req_widget.setToken(" ")  # need at least a space
+        elif g_token != token:
+            # Token was updated, not the URL
+            g_token = token
+            LOG.info("New token set. Consider adding this line to your .netrc file:")
+            LOG.info(f"machine {g_url.url().strip()} login token password {g_token}")
+
+
     def initRequirementsPlugin(self):
         ''' Startup the requirement and RID dialogs '''
         # First requirements...
@@ -507,7 +542,7 @@ class Symbol(QObject, QGraphicsPathItem):
         if g_token:
             self.req_widget.setToken(g_token)
         self.req_widget.setWindowTitle('Requirements')
-        self.req_widget.requirementsCredentialsChanged.connect(set_credentials)
+        self.req_widget.requirementsCredentialsChanged.connect(self.set_credentials)
         self.req_widget.resize(640, 480)
 
         # Then the same for the RIDs
@@ -520,7 +555,7 @@ class Symbol(QObject, QGraphicsPathItem):
         if g_token:
             self.rid_widget.setToken(g_token)
         self.rid_widget.setWindowTitle('Model Review')
-        self.rid_widget.reviewsCredentialsChanged.connect(set_credentials)
+        self.rid_widget.reviewsCredentialsChanged.connect(self.set_credentials)
         self.rid_widget.resize(640, 480)
 
     def hyperlinkChanged(self):
@@ -584,6 +619,7 @@ class Symbol(QObject, QGraphicsPathItem):
             elif action.text() == rid_action:
                 # update credentials if they were changed in another
                 # instance of the widget
+                # todo = display only RIDs applicable to this symbol
                 if self.rid_widget.url() != g_url:
                     self.rid_widget.setUrl (g_url)
                 if self.rid_widget.token() != g_token:

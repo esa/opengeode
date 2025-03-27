@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.9 (03/2025)**
+- Use .netrc file to retrieve gitlab credentials
+
 **4.3.8 (03/2025)**
 - Less warnings are emitted on range checks with unsigned types (they can't overflow by nature)
 - Improved support for bit and octet string literals
