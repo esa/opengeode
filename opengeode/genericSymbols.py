@@ -41,7 +41,7 @@
     For a complete example, look at the "sdlSymbols.py" module, that
     provide symbol definitions that correspond to an SDL editor.
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2025 European Space Agency
 
     Designed and implemented by Maxime Perrotin for the TASTE project
 
@@ -620,11 +620,20 @@ class Symbol(QObject, QGraphicsPathItem):
                 # update credentials if they were changed in another
                 # instance of the widget
                 # todo = display only RIDs applicable to this symbol
+                # right now the filter below is not applicable because
+                # when user clicks on the Refresh button all RIds are re-
+                # loaded / displayed.
                 if self.rid_widget.url() != g_url:
                     self.rid_widget.setUrl (g_url)
                 if self.rid_widget.token() != g_token:
                     self.rid_widget.setToken(g_token)
                 self.rid_widget.show()
+                # the widget downloaded all reviews, we have to filter them
+                filtered_rids = []
+                for rid in self.rid_model.m_reviews:
+                    if rid.m_id in self.ast.rid_ids:
+                        filtered_rids.append(rid)
+                self.rid_model.setReviews(filtered_rids)
 
     def childSymbols(self):
         ''' Return the list of child symbols, excluding text/connections '''

@@ -208,11 +208,11 @@ def rid_ids(symbol):
     ''' PR string for the optional requirement ids associated to a symbol '''
     if symbol.rid_model is None:
         return[]
-    # We have to check if some requirements are selected for the symbol
-    #selected = symbol.rid_model.selectedReviews()
+    # Check if some RIDs apply to this symbol and save their IDs
+    rids = symbol.rid_model.m_reviews
     result = []
-    #for each in selected:
-    #    result.append(f"/* CIF Keep Specific Geode _RIDID_ '{each}' */")
+    for each in rids:
+        result.append(f"/* CIF Keep Specific Geode _RIDID_ '{each.m_id}' */")
     return result
 
 
