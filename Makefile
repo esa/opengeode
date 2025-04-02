@@ -49,7 +49,7 @@ update:
 	git pull
 
 # Define the expected version of the QtTaste widget
-export QTASTE_VERSION=1.2.3
+export QTASTE_VERSION=1.2.4
 
 dependencies:
 	#sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
