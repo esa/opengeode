@@ -530,6 +530,17 @@ class Symbol(QObject, QGraphicsPathItem):
             LOG.info(f"machine {g_url.url().strip()} login token password {g_token}")
 
 
+    @Slot(QtTaste.reviews.Review)
+    def add_RID(self, review):
+        ''' When user creates a RID, add it to the AST of the symbol, so that it
+        is not filtered out by the review widget '''
+        self.rid_model.addReviews([review])
+        self.ast.rid_ids.append(review.m_id)
+        self.rid_model.setAcceptableIds(self.ast.rid_ids)
+        self.rid_widget.setModel(self.rid_model)
+        LOG.info(f"Added RID ID {review.m_id}")
+
+
     def initRequirementsPlugin(self):
         ''' Startup the requirement and RID dialogs '''
         # First requirements...
@@ -547,15 +558,16 @@ class Symbol(QObject, QGraphicsPathItem):
 
         # Then the same for the RIDs
         self.rid_manager = QtTaste.reviews.ReviewsManager()
-        self.rid_model = QtTaste.reviews.ReviewsModelBase(self.rid_manager)
+        #self.rid_model = QtTaste.reviews.ReviewsModelBase(self.rid_manager)
+        self.rid_model = QtTaste.reviews.ComponentReviewsProxyModel(self.rid_manager)
         self.rid_widget = QtTaste.reviews.ReviewsWidget()
         self.rid_widget.setManager(self.rid_manager)
-        self.rid_widget.setModel(self.rid_model)
         self.rid_widget.setUrl(g_url)
         if g_token:
             self.rid_widget.setToken(g_token)
         self.rid_widget.setWindowTitle('Model Review')
         self.rid_widget.reviewsCredentialsChanged.connect(self.set_credentials)
+        self.rid_widget.reviewAdded.connect(self.add_RID)
         self.rid_widget.resize(640, 480)
 
     def hyperlinkChanged(self):
@@ -609,6 +621,11 @@ class Symbol(QObject, QGraphicsPathItem):
                     self.req_widget.setUrl (g_url)
                 if self.req_widget.token() != g_token:
                     self.req_widget.setToken(g_token)
+                # Fetch requirements if there are none on the list
+                # TODO check why this does not work
+                #if not self.req_model.m_requirements:
+                #    LOG.info("Fetching requirements")
+                #    self.req_manager.requestAllRequirements()
                 self.req_widget.show()
                 # Set the list of selected requirements, both from the AST and
                 # from the user-selection
@@ -619,7 +636,6 @@ class Symbol(QObject, QGraphicsPathItem):
             elif action.text() == rid_action:
                 # update credentials if they were changed in another
                 # instance of the widget
-                # todo = display only RIDs applicable to this symbol
                 # right now the filter below is not applicable because
                 # when user clicks on the Refresh button all RIds are re-
                 # loaded / displayed.
@@ -627,13 +643,15 @@ class Symbol(QObject, QGraphicsPathItem):
                     self.rid_widget.setUrl (g_url)
                 if self.rid_widget.token() != g_token:
                     self.rid_widget.setToken(g_token)
+                # fetch all RIDs if any RID is defined for this symbol
+                if self.ast.rid_ids:
+                    LOG.info("Fetching RIDs")
+                    self.rid_manager.requestAllReviews()
                 self.rid_widget.show()
                 # the widget downloaded all reviews, we have to filter them
-                filtered_rids = []
-                for rid in self.rid_model.m_reviews:
-                    if rid.m_id in self.ast.rid_ids:
-                        filtered_rids.append(rid)
-                self.rid_model.setReviews(filtered_rids)
+                filtered_rids = self.ast.rid_ids or ['']
+                self.rid_model.setAcceptableIds(filtered_rids)
+                self.rid_widget.setModel(self.rid_model)
 
     def childSymbols(self):
         ''' Return the list of child symbols, excluding text/connections '''

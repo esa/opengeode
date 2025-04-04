@@ -209,10 +209,10 @@ def rid_ids(symbol):
     if symbol.rid_model is None:
         return[]
     # Check if some RIDs apply to this symbol and save their IDs
-    rids = symbol.rid_model.m_reviews
+    rids = symbol.ast.rid_ids
     result = []
     for each in rids:
-        result.append(f"/* CIF Keep Specific Geode _RIDID_ '{each.m_id}' */")
+        result.append(f"/* CIF Keep Specific Geode _RIDID_ '{each}' */")
     return result
 
 

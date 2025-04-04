@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.10 (04/2025)**
+- Full support of RID management (model review)
+
 **4.3.9 (03/2025)**
 - Use .netrc file to retrieve gitlab credentials
 
