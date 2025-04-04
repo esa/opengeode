@@ -87,6 +87,11 @@ except:
     # ignore netrc-related errors
     pass
 
+# global updated when a RID is created or a Requirement tick has changed
+# Since there is no Undo action associated to this, this is the way to 
+# update the model cleanliness
+g_rids_or_reqs_clean = True
+
 from . import undoCommands, ogAST, ogParser
 from .Connectors import Connection, VerticalConnection, CommentConnection, \
                        RakeConnection, JoinConnection, Channel
@@ -507,7 +512,8 @@ class Symbol(QObject, QGraphicsPathItem):
     def set_credentials(self, url, token):
         ''' Slot called whenever user changed the credentials in a Requirement
         or Review widget (either url or token change at once, not both) '''
-        global g_url, g_token
+        global g_url, g_token, g_rids_or_reqs_clean
+        g_rids_or_reqs_clean = False
         LOG.info("credential change")
         if g_url != url:
             # URL was updated: look for a stored token
@@ -530,6 +536,14 @@ class Symbol(QObject, QGraphicsPathItem):
             LOG.info(f"machine {g_url.url().strip()} login token password {g_token}")
 
 
+    @Slot(str, bool)
+    def req_selected(self, req_id, checked):
+        ''' When a requirement is ticked or unticked, change the cleanliness of the model '''
+        LOG.info ("tick")
+        global g_rids_or_reqs_clean
+        g_rids_or_reqs_clean = False
+
+
     @Slot(QtTaste.reviews.Review)
     def add_RID(self, review):
         ''' When user creates a RID, add it to the AST of the symbol, so that it
@@ -539,6 +553,8 @@ class Symbol(QObject, QGraphicsPathItem):
         self.rid_model.setAcceptableIds(self.ast.rid_ids)
         self.rid_widget.setModel(self.rid_model)
         LOG.info(f"Added RID ID {review.m_id}")
+        global g_rids_or_reqs_clean
+        g_rids_or_reqs_clean = False
 
 
     def initRequirementsPlugin(self):
@@ -554,6 +570,7 @@ class Symbol(QObject, QGraphicsPathItem):
             self.req_widget.setToken(g_token)
         self.req_widget.setWindowTitle('Requirements')
         self.req_widget.requirementsCredentialsChanged.connect(self.set_credentials)
+        self.req_widget.requirementSelected.connect(self.req_selected)
         self.req_widget.resize(640, 480)
 
         # Then the same for the RIDs
@@ -622,10 +639,10 @@ class Symbol(QObject, QGraphicsPathItem):
                 if self.req_widget.token() != g_token:
                     self.req_widget.setToken(g_token)
                 # Fetch requirements if there are none on the list
-                # TODO check why this does not work
-                #if not self.req_model.m_requirements:
-                #    LOG.info("Fetching requirements")
-                #    self.req_manager.requestAllRequirements()
+                if not self.req_model.m_requirements:
+                    LOG.info("Fetching requirements")
+                    self.req_manager.setCredentials(g_url, g_token)
+                    self.req_manager.requestAllRequirements()
                 self.req_widget.show()
                 # Set the list of selected requirements, both from the AST and
                 # from the user-selection
@@ -646,6 +663,7 @@ class Symbol(QObject, QGraphicsPathItem):
                 # fetch all RIDs if any RID is defined for this symbol
                 if self.ast.rid_ids:
                     LOG.info("Fetching RIDs")
+                    self.rid_manager.setCredentials(g_url, g_token)
                     self.rid_manager.requestAllReviews()
                 self.rid_widget.show()
                 # the widget downloaded all reviews, we have to filter them

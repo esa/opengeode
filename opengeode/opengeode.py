@@ -1870,8 +1870,9 @@ class SDL_View(QGraphicsView):
     top_scene = lambda self: (self.scene_stack[0][0] if self.scene_stack
                               else self.scene())
 
-    is_model_clean = lambda self: not any(not sc.undo_stack.isClean() for sc in
-                                          self.all_scenes())
+    # Check both the stack and the RIDs/Requirement status
+    is_model_clean = lambda self: genericSymbols.g_rids_or_reqs_clean \
+            and not any(not sc.undo_stack.isClean() for sc in self.all_scenes())
 
     def all_scenes(self):
         ''' recursively yields all scenes/partitions '''
