@@ -793,10 +793,9 @@ class SDL_Scene(QGraphicsScene):
         self.partitions = partition_names
         self.setup_partitions_in_datadict.emit()
 
-
     def refresh(self):
         ''' Scene refresh - make sure it happens only once per cycle '''
-        #LOG.debug('scene refresh requested by '
+        # LOG.debug('scene refresh requested by '
         #          + str(traceback.extract_stack(limit=2)[-2][1:3]))
         if not self.refresh_requested:
             self.refresh_requested = True
@@ -805,10 +804,6 @@ class SDL_Scene(QGraphicsScene):
     def scene_refresh(self):
         ''' Refresh the symbols and connections in the scene '''
         self.refresh_requested = False
-        #LOG.debug('scene refresh done')
-#       for symbol in self.visible_symb:
-#           symbol.updateConnectionPointPosition()
-#           symbol.updateConnectionPoints()
         for symbol in self.editable_texts:
             # EditableText refreshing - design explanation:
             # The first one is tricky: at symbol initialization,
@@ -828,14 +823,12 @@ class SDL_Scene(QGraphicsScene):
             # This has the effect of re-computing the bounding rect
             # and fixing the width issue.
             symbol.setTextWidth(-1)
-            #symbol.set_textbox_position()
             symbol.try_resize()
             symbol.set_text_alignment()
             # connect the signal that is emitted when text edit changes word
             symbol.word_under_cursor.connect(self.word_under_cursor.emit)
         # Already called by try_resize for all editable texts
         #    symbol.update_connections()
-
 
     def set_cursor(self, follower):
         ''' Set the cursor shape depending on the selected menu item '''
@@ -849,7 +842,6 @@ class SDL_Scene(QGraphicsScene):
                 # if there are items not having allowed_followers
                 pass
 
-
     def reset_cursor(self):
         ''' Reset the default cursor of an item '''
         for item in self.items():
@@ -857,7 +849,6 @@ class SDL_Scene(QGraphicsScene):
                 item.setCursor(item.default_cursor)
             except AttributeError:
                 pass
-
 
     def translate_to_origin(self):
         '''
@@ -877,18 +868,15 @@ class SDL_Scene(QGraphicsScene):
             item.pos_y += delta_y
         return delta_x, delta_y
 
-
     def set_selection(self, toolbar):
         ''' When the selection has changed, update menu, etc '''
         toolbar.update_menu(self)
         for item in self.selected_symbols:
             item.grabber.display()
 
-
     def syntax_errors(self, symb):
         ''' Parse a symbol and return a list of syntax errors '''
         return symb.check_syntax('\n'.join(Pr.generate(symb, recursive=False)))
-
 
     def check_syntax(self, symbol) -> bool:
         ''' Check syntax of a symbol and display a pop-up in case of errors '''
@@ -938,8 +926,6 @@ class SDL_Scene(QGraphicsScene):
         # will keep focus unless user chose to ignore the error
         symbol.syntax_error = True
         return ret
-        #symbol.edit_text()
-
 
     def global_syntax_check(self, view, ignore=set()):
         ''' Parse each visible symbol in the current scene and its children
@@ -967,7 +953,7 @@ class SDL_Scene(QGraphicsScene):
                         line_nb = int(line_nb) - 1
                         split[1] = f'{line_nb}:{col}'
                 pos = each.scenePos()
-                split.append (f'in "{str(each)}"')
+                split.append(f'in "{str(each)}"')
                 fmt = [[' '.join(split), [pos.x(), pos.y()], self.path]]
                 log_errors(self.messages_window, fmt, [], clearfirst=False)
                 view.find_symbols_and_update_errors()
@@ -981,7 +967,6 @@ class SDL_Scene(QGraphicsScene):
             ignore.clear()
         return res
 
-
     def update_completion_list(self, symbol):
         ''' When text has changed on a symbol, update the data dictionary '''
         pr_text = '\n'.join(Pr.generate(symbol,
@@ -989,7 +974,6 @@ class SDL_Scene(QGraphicsScene):
                                         nextstate=False, cpy=True))
         symbol.update_completion_list(pr_text=pr_text)
         self.context_change.emit()
-
 
     def highlight(self, item, color=Qt.cyan):
         ''' Highlight a symbol '''
@@ -1011,7 +995,6 @@ class SDL_Scene(QGraphicsScene):
             for item, brush in self.highlighted.items():
                 item.setBrush(brush)
             self.highlighted = {}
-
 
     def find_text(self, pattern):
         ''' Return all symbols with matching text '''
@@ -1055,7 +1038,7 @@ class SDL_Scene(QGraphicsScene):
         if self.context == 'process':
             for part in self.partitions.values():
                 part.search_item = search_item
-                part.search_pattern=pattern
+                part.search_pattern = pattern
         else:
             self.search_item = search_item
             self.search_pattern = pattern
@@ -1129,7 +1112,6 @@ class SDL_Scene(QGraphicsScene):
             except StopIteration:
                 LOG.info('Pattern not found')
 
-
     def delete_selected_symbols(self):
         '''
             Remove selected symbols from the scene, with proper re-connections
@@ -1152,7 +1134,6 @@ class SDL_Scene(QGraphicsScene):
                 pass
         self.undo_stack.endMacro()
 
-
     def copy_selected_symbols(self):
         '''
             Create a copy of selected symbols to a buffer (in AST form)
@@ -1168,7 +1149,6 @@ class SDL_Scene(QGraphicsScene):
                 LOG.error(str(error_msg))
             raise
 
-
     def cut_selected_symbols(self):
         '''
             Create a copy of selected symbols, then delete them
@@ -1179,7 +1159,6 @@ class SDL_Scene(QGraphicsScene):
             LOG.error('Copy error - Cannot cut')
         else:
             self.delete_selected_symbols()
-
 
     def paste_symbols(self):
         '''
@@ -1225,9 +1204,8 @@ class SDL_Scene(QGraphicsScene):
                 self.refresh()
         self.selectionChanged.emit()
 
-
     def sdl_to_statechart(self, basic=True, view=None, ast=None):
-        ''' Create a graphviz representation of the SDL model 
+        ''' Create a graphviz representation of the SDL model
             Optionally take a QGraphicsView to use as parent for modals '''
         if ast is None:
             pr_raw = Pr.parse_scene(self)
@@ -1260,7 +1238,6 @@ class SDL_Scene(QGraphicsScene):
         return Statechart.create_dot_graph(process_ast, basic,
                                            scene=self, view=view)
 
-
     def export_branch_to_picture(self, symbol, filename, doc_format):
         ''' Save a symbol and its followers to a file '''
         if self.context == 'statechart':
@@ -1280,7 +1257,6 @@ class SDL_Scene(QGraphicsScene):
             temp_scene.export_img(filename, doc_format)
         except AttributeError:
             pass
-
 
     def export_img(self, filename=None, doc_format='png', split=False):
         ''' Save the scene as a PNG/SVG or PDF document
@@ -1343,8 +1319,6 @@ class SDL_Scene(QGraphicsScene):
         elif doc_format == 'pdf':
             device = QPrinter()
             device.setOutputFormat(QPrinter.PdfFormat)
-            #device.setPaperSize(
-            #        rect.size().toSize(), QPrinter.Point)
             device.setFullPage(True)
             device.setOutputFileName(filename)
         else:
@@ -1366,7 +1340,6 @@ class SDL_Scene(QGraphicsScene):
         # restore the background brush (statecharts only)
         self.setBackgroundBrush(background_brush)
 
-
     def clear_focus(self):
         ''' Clear focus from any item on the scene '''
         try:
@@ -1374,7 +1347,6 @@ class SDL_Scene(QGraphicsScene):
         except AttributeError:
             # if no focus item
             pass
-
 
     def symbol_near(self, pos, dist=5, selectable_only=True):
         ''' If any, returns symbol around pos '''
@@ -1385,7 +1357,6 @@ class SDL_Scene(QGraphicsScene):
                     QGraphicsItem.ItemIsSelectable)
                     or not selectable_only):
                 return item.parent if isinstance(item, Cornergrabber) else item
-
 
     def can_insert(self, pos, item_type):
         ''' Check if we can add an item type at a given position '''
@@ -1405,7 +1376,6 @@ class SDL_Scene(QGraphicsScene):
                                 ' symbol cannot be followed by ' +
                                 item_type.__name__)
 
-
     def create_subscene(self, context, parent=None):
         ''' Create a new SDL scene, e.g. for nested symbols '''
         subscene = SDL_Scene(context=context, readonly=self.readonly)
@@ -1416,7 +1386,6 @@ class SDL_Scene(QGraphicsScene):
         # to avoid segfaults
         G_SYMBOLS.add(subscene)
         return subscene
-
 
     def place_symbol(self, item_type, parent, pos=None, rect=None):
         ''' Draw a symbol on the scene '''
@@ -1462,7 +1431,6 @@ class SDL_Scene(QGraphicsScene):
             cursor.select(QTextCursor.Document)
             item.text.setTextCursor(cursor)
         return item
-
 
     def add_symbol(self, item_type):
         ''' Add a symbol, or postpone until a parent symbol is selected  '''
@@ -1614,7 +1582,7 @@ class SDL_Scene(QGraphicsScene):
 
         def add_symbol(sort, rect):
             size = rect if sort.default_size == "any" else None
-            symb = self.place_symbol(sort, parent=None, pos=rect.topLeft(),
+            _ = self.place_symbol(sort, parent=None, pos=rect.topLeft(),
                                      rect=size)
 
         def setup_action(sort):
@@ -1708,7 +1676,6 @@ class SDL_Scene(QGraphicsScene):
                 self.cancel()
 
         super().mouseReleaseEvent(event)
-
 
     # pylint: disable=C0103
     def keyPressEvent(self, event):
