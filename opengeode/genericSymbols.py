@@ -66,9 +66,10 @@ from PySide6.QtUiTools import QUiLoader
 try:
     import netrc
     g_servers = netrc.netrc().hosts
-except:
+except Exception as e:
     # Exceptions in case of file access error, etc.
     g_servers = dict()
+    print("[INFO] No credentials found in ~/.netrc - ", str(e))
 
 try:
     # Try to import the widgets for Requirements and Reviews
@@ -83,12 +84,12 @@ try:
         g_token = g_servers[g_url][2]
 except ImportError:
     g_QtTaste = False
-except:
+except Exception as e:
     # ignore netrc-related errors
-    pass
+    print("[INFO] Requirement and RID widget is not available: ", str(e))
 
 # global updated when a RID is created or a Requirement tick has changed
-# Since there is no Undo action associated to this, this is the way to 
+# Since there is no Undo action associated to this, this is the way to
 # update the model cleanliness
 g_rids_or_reqs_clean = True
 
@@ -99,6 +100,7 @@ from .Connectors import Connection, VerticalConnection, CommentConnection, \
 from .TextInteraction import EditableText
 
 LOG = logging.getLogger(__name__)
+
 
 # pylint: disable=R0904, R0902
 class Symbol(QObject, QGraphicsPathItem):
