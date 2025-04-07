@@ -539,7 +539,6 @@ class Symbol(QObject, QGraphicsPathItem):
     @Slot(str, bool)
     def req_selected(self, req_id, checked):
         ''' When a requirement is ticked or unticked, change the cleanliness of the model '''
-        LOG.info ("tick")
         global g_rids_or_reqs_clean
         g_rids_or_reqs_clean = False
 
