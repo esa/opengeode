@@ -41,7 +41,7 @@
     For a complete example, look at the "sdlSymbols.py" module, that
     provide symbol definitions that correspond to an SDL editor.
 
-    Copyright (c) 2012-2020 European Space Agency
+    Copyright (c) 2012-2025 European Space Agency
 
     Designed and implemented by Maxime Perrotin for the TASTE project
 
@@ -58,16 +58,40 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 from PySide6.QtUiTools import QUiLoader
 
+# the .netrc is a user file storing credentials to access remote servers
+# its access has to be restricted to the current user. the gitlab tokens
+# can be stored inside to access the requirements and RID servers
+# for each repo, user can add something like:
+# machine <host name> login token password <actual token>
+try:
+    import netrc
+    g_servers = netrc.netrc().hosts
+except Exception as e:
+    # Exceptions in case of file access error, etc.
+    g_servers = dict()
+    print("[INFO] No credentials found in ~/.netrc - ", str(e))
+
 try:
     # Try to import the widgets for Requirements and Reviews
     # it is an external dependency that has to be built locally
     # If not available the application can still run...
     from PyTasteQtWidgets import TasteQtWidgets as QtTaste
     g_QtTaste = True
-    g_url = 'https://gitrepos.estec.esa.int/taste/demo'
+    g_url = 'https://gitlab.esa.int/taste/demo'
     g_token = ''
+    # Try to find the token (password) in the .netrc file
+    if g_url in g_servers.keys():
+        g_token = g_servers[g_url][2]
 except ImportError:
     g_QtTaste = False
+except Exception as e:
+    # ignore netrc-related errors
+    print("[INFO] Requirement and RID widget is not available: ", str(e))
+
+# global updated when a RID is created or a Requirement tick has changed
+# Since there is no Undo action associated to this, this is the way to
+# update the model cleanliness
+g_rids_or_reqs_clean = True
 
 from . import undoCommands, ogAST, ogParser
 from .Connectors import Connection, VerticalConnection, CommentConnection, \
@@ -76,15 +100,6 @@ from .Connectors import Connection, VerticalConnection, CommentConnection, \
 from .TextInteraction import EditableText
 
 LOG = logging.getLogger(__name__)
-
-@Slot (QUrl, str)
-def set_credentials(url, token):
-    ''' Slot called whenever user changed the credentials in a Requirement
-    or Review widget '''
-    global g_url, g_token
-    g_url = url
-    g_token = token
-    LOG.info('Updated credentials')
 
 
 # pylint: disable=R0904, R0902
@@ -495,6 +510,54 @@ class Symbol(QObject, QGraphicsPathItem):
         self.hyperlink_dialog.accepted.connect(self.hyperlinkChanged)
         self.hlink_field = self.hyperlink_dialog.findChild(QLineEdit, 'hlink')
 
+    @Slot (QUrl, str)
+    def set_credentials(self, url, token):
+        ''' Slot called whenever user changed the credentials in a Requirement
+        or Review widget (either url or token change at once, not both) '''
+        global g_url, g_token, g_rids_or_reqs_clean
+        g_rids_or_reqs_clean = False
+        LOG.info("credential change")
+        if g_url != url:
+            # URL was updated: look for a stored token
+            g_url = url
+            if g_url.url().strip() in g_servers.keys():
+                g_token = g_servers[g_url.url().strip()][2]
+                LOG.info("Found credentials in .netrc file")
+                # update the field
+                self.req_widget.setToken(g_token)
+            else:
+                LOG.info("No credentials found in .netrc file")
+                # user has to fill the token
+                g_token = ''
+                # reset the field
+                self.req_widget.setToken(" ")  # need at least a space
+        elif g_token != token:
+            # Token was updated, not the URL
+            g_token = token
+            LOG.info("New token set. Consider adding this line to your .netrc file:")
+            LOG.info(f"machine {g_url.url().strip()} login token password {g_token}")
+
+
+    @Slot(str, bool)
+    def req_selected(self, req_id, checked):
+        ''' When a requirement is ticked or unticked, change the cleanliness of the model '''
+        global g_rids_or_reqs_clean
+        g_rids_or_reqs_clean = False
+
+
+    @Slot(QtTaste.reviews.Review)
+    def add_RID(self, review):
+        ''' When user creates a RID, add it to the AST of the symbol, so that it
+        is not filtered out by the review widget '''
+        self.rid_model.addReviews([review])
+        self.ast.rid_ids.append(review.m_id)
+        self.rid_model.setAcceptableIds(self.ast.rid_ids)
+        self.rid_widget.setModel(self.rid_model)
+        LOG.info(f"Added RID ID {review.m_id}")
+        global g_rids_or_reqs_clean
+        g_rids_or_reqs_clean = False
+
+
     def initRequirementsPlugin(self):
         ''' Startup the requirement and RID dialogs '''
         # First requirements...
@@ -507,20 +570,22 @@ class Symbol(QObject, QGraphicsPathItem):
         if g_token:
             self.req_widget.setToken(g_token)
         self.req_widget.setWindowTitle('Requirements')
-        self.req_widget.requirementsCredentialsChanged.connect(set_credentials)
+        self.req_widget.requirementsCredentialsChanged.connect(self.set_credentials)
+        self.req_widget.requirementSelected.connect(self.req_selected)
         self.req_widget.resize(640, 480)
 
         # Then the same for the RIDs
         self.rid_manager = QtTaste.reviews.ReviewsManager()
-        self.rid_model = QtTaste.reviews.ReviewsModelBase(self.rid_manager)
+        #self.rid_model = QtTaste.reviews.ReviewsModelBase(self.rid_manager)
+        self.rid_model = QtTaste.reviews.ComponentReviewsProxyModel(self.rid_manager)
         self.rid_widget = QtTaste.reviews.ReviewsWidget()
         self.rid_widget.setManager(self.rid_manager)
-        self.rid_widget.setModel(self.rid_model)
         self.rid_widget.setUrl(g_url)
         if g_token:
             self.rid_widget.setToken(g_token)
         self.rid_widget.setWindowTitle('Model Review')
-        self.rid_widget.reviewsCredentialsChanged.connect(set_credentials)
+        self.rid_widget.reviewsCredentialsChanged.connect(self.set_credentials)
+        self.rid_widget.reviewAdded.connect(self.add_RID)
         self.rid_widget.resize(640, 480)
 
     def hyperlinkChanged(self):
@@ -574,6 +639,11 @@ class Symbol(QObject, QGraphicsPathItem):
                     self.req_widget.setUrl (g_url)
                 if self.req_widget.token() != g_token:
                     self.req_widget.setToken(g_token)
+                # Fetch requirements if there are none on the list
+                if not self.req_model.m_requirements:
+                    LOG.info("Fetching requirements")
+                    self.req_manager.setCredentials(g_url, g_token)
+                    self.req_manager.requestAllRequirements()
                 self.req_widget.show()
                 # Set the list of selected requirements, both from the AST and
                 # from the user-selection
@@ -584,11 +654,23 @@ class Symbol(QObject, QGraphicsPathItem):
             elif action.text() == rid_action:
                 # update credentials if they were changed in another
                 # instance of the widget
+                # right now the filter below is not applicable because
+                # when user clicks on the Refresh button all RIds are re-
+                # loaded / displayed.
                 if self.rid_widget.url() != g_url:
                     self.rid_widget.setUrl (g_url)
                 if self.rid_widget.token() != g_token:
                     self.rid_widget.setToken(g_token)
+                # fetch all RIDs if any RID is defined for this symbol
+                if self.ast.rid_ids:
+                    LOG.info("Fetching RIDs")
+                    self.rid_manager.setCredentials(g_url, g_token)
+                    self.rid_manager.requestAllReviews()
                 self.rid_widget.show()
+                # the widget downloaded all reviews, we have to filter them
+                filtered_rids = self.ast.rid_ids or ['']
+                self.rid_model.setAcceptableIds(filtered_rids)
+                self.rid_widget.setModel(self.rid_model)
 
     def childSymbols(self):
         ''' Return the list of child symbols, excluding text/connections '''

@@ -49,18 +49,18 @@ update:
 	git pull
 
 # Define the expected version of the QtTaste widget
-export QTASTE_VERSION=1.2.3
+export QTASTE_VERSION=1.3.0
 
 dependencies:
 	#sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
 	python3 -c 'import PySide6' || python3 -m pip install pyside6
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
-	python3 -c 'import antlr3' || python3 -m pip install https://download.tuxfamily.org/taste/antlr3_python3_runtime_3.4.tar.bz2 
+	python3 -c 'import antlr3' || python3 -m pip install "https://gitlab.esa.int/api/v4/projects/taste%2Ftaste-setup/packages/generic/dependencies/1.0/antlr3_python3_runtime_3.4.tar.bz2"
 	python3 -c 'import pygraphviz' || python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.5.2.3/asn1scc-bin-4.5.2.3.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
+	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.6.0.1/asn1scc-bin-4.6.0.1.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
 	# install the requirement and review widget
 	@echo "[-] Building Requirements and Review (optional widget)"
 	@python3 -c "import sys, PyTasteQtWidgets as taste, os; sys.exit(taste.__version__!=os.environ['QTASTE_VERSION'])" || \
