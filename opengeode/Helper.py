@@ -22,7 +22,7 @@
         code_generation_preprocessing: to be called before generating code
         generate_asn1_datamodel: generate the _datamodel.asn file for a process
 
-    Copyright (c) 2012-2022 European Space Agency
+    Copyright (c) 2012-2025 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -30,6 +30,7 @@
 """
 
 import operator
+import re
 import logging
 from itertools import chain
 from collections import defaultdict
@@ -850,6 +851,129 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
     with open(process.name.lower() + '_datamodel.asn', 'w') as asn1_file:
         asn1_file.write('\n'.join(asn1_template))
 
+
+def add_labels_before_each_branch(
+        process,
+        also_decisions=False,
+        separator=DEFAULT_SEPARATOR):
+    ''' Compute a name for each branch and add a SDL label when they start.
+        This is useful to make more readable and traceable code (e.g. generate
+        a function called "state_foo_input_bar" to identify the transition,
+        instead of a random transition number.
+
+        set "also_decisions" input to True to generate a label also for each
+        answer of a decision. This allows easier collection of banch coverage
+        as each branch can then be generated as an individual function.
+
+        Call this function after flattening the model, and before moving
+        the inner labels as floating labels.
+    '''
+    # We have access to all kinds of transitions
+    #  - those following floating labels (no need to add a label there)
+    #  - those in process.transitions
+    #  - the one in (optional) process.content.start
+    #  - those in process.content.named_start
+    #
+    #  Since we have to build the name of the label based on the context, we
+    #  cannot use process.transitions directly. We need to parse the states
+    #  and follow inputs and continuous signals.
+    #  When a transition already only contains a Join terminator (and no
+    #  actions) there is no need to add a label before.
+    #
+    #  After finding transitions, we have to look inside for branches
+    #  in decision answers, if option is set ("also_decisions" input)
+
+    def need_label(transition: ogAST.Transition) -> bool:
+        ''' Check if a transition needs a label. It is not the case if
+            (1) it contains just a single Join terminator
+            (2) it already starts with a label
+        '''
+        if len(transition.actions) == 0 and transition.terminator is not None:
+            # empty transition, but there can be a JOIN terminator
+            return False if transition.terminator.kind == 'join' else True
+        if len(transition.actions) > 0 and isinstance(transition.actions[0], ogAST.Label):
+            # starts with a Label
+            return False
+        return True
+
+    def branches (transition):
+        ''' Find branches inside a transition (decision answers) '''
+        return []
+
+    if process.content.start:
+        if need_label(process.content.start.transition):
+            label = ogAST.Label()
+            label.inputString = "startup_transition"
+            process.content.start.transition.actions.insert(0, label)
+        for branch in branches(process.content.start.transition):
+            ...
+
+    for state_name, inputs in process.mapping.items():
+        # INPUTs
+        if isinstance(inputs, int):
+            continue
+        for each in inputs:
+            label_name = 'STATE_' + state_name + '_INPUT_'
+            input_name = each.inputString.split(',')[0].strip()
+            if input_name.startswith('*'):
+               input_name = 'STAR'
+            if each.transition is not None and need_label(each.transition):
+                label_name += input_name
+                label = ogAST.Label()
+                label.inputString = label_name
+                each.transition.actions.insert(0, label)
+                for branch in branches(each.transition):
+                    ...
+
+    for state_name, continuous in process.cs_mapping.items():
+        # Naming scheme for continuous signals is a bit more tricky
+        # as two of them can start with the same pattern (e.g. x<4 and x=4)
+        state_cs_labels = []
+        idx = 2
+        for each in continuous:
+            label_name = 'STATE_' + state_name + '_CONTINUOUS_'
+            cs_name = re.split(r'\W+', each.inputString)[0]
+            if each.transition is not None and need_label(each.transition):
+                if cs_name in state_cs_labels:
+                    # to prevent duplicates, add a suffix
+                    cs_name += f'_{idx}'
+                    idx += 1
+                state_cs_labels.append(cs_name)
+                label_name += cs_name
+                label = ogAST.Label()
+                label.inputString = label_name
+                each.transition.actions.insert(0, label)
+                for branch in branches(each.transition):
+                    ...
+
+    for state_name, connect_names in process.connect_mapping.items():
+        # CONNECT (when going out of a nested state)
+        for each in connect_names:
+            label_name = 'NESTED_STATE_' + state_name + '_EXIT'
+            connect_name = each.strip()
+            # we need to retrieve the composite state to find the transition
+            # associated with the connection.
+            trans = None
+            for composite in process.composite_states:
+                if composite.statename == state_name:
+                    for term in composite.terminators:
+                        if term.kind == 'return' \
+                                and term.inputString.strip().lower() == connect_name.strip().lower():
+                            trans = term.next_trans
+                            break
+            if connect_name:
+                # it is possible to specify an unnamed exit from nested states
+               label_name += '_'
+            if trans is not None and need_label(trans):
+                label_name += connect_name
+                label = ogAST.Label()
+                label.inputString = label_name
+                trans.actions.insert(0, label)
+                for branch in branches(trans):
+                    ...
+
+    # Remain the named START in nested states
+    # = TODO
 
 def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):
     ''' Do all sorts of preprocessing before invoking a code generator

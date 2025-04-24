@@ -613,6 +613,8 @@ class Terminator:
 
     def trace(self):
         ''' Debug output for terminators '''
+        if self.line is None:
+            return f'{self.kind.upper()} {self.inputString}'
         return '{kind} {exp} ({l},{c}) at {x}, {y}'.format(
                 exp=self.inputString,
                 kind=self.kind.upper(), l=self.line, c=self.charPositionInLine,
@@ -678,6 +680,9 @@ class Floating_label(Label):
 
     def trace(self):
         ''' Debug output for a label (used by code generator) '''
+        if self.line is None:
+            # There can be model transformations inserting a join and label
+            return f'CONNECTION {self.inputString}'
         return 'CONNECTION {label} ({l},{c})'.format(label=self.inputString,
                 l=self.line, c=self.charPositionInLine)
 
