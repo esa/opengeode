@@ -998,7 +998,6 @@ package body {process.name}_RI is''']
         ads_template.append(f'procedure Execute_Transition (Id : Integer);')
         ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
-
     # Insert labels before branches
     Helper.add_labels_before_each_branch(process)
 

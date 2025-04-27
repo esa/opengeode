@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    OpenGEODE - A tiny SDL Editor for TASTE
+    OpenGEODE - The TASTE SDL Editor
 
     This module provides helper functions typically used by backends:
 
@@ -21,6 +21,9 @@
         update_full_statelist(process): set field full_statelist in process AST
         code_generation_preprocessing: to be called before generating code
         generate_asn1_datamodel: generate the _datamodel.asn file for a process
+        add_labels_before_each_branch: insert a LABEL at the top of all
+                                       branches / transitions, allowing to
+                                       name them for better code traceability
 
     Copyright (c) 2012-2025 European Space Agency
 
@@ -41,14 +44,14 @@ from . import ogAST
 from . import ogParser
 
 LOG = logging.getLogger(__name__)
-DEFAULT_SEPARATOR='_0_'
+DEFAULT_SEPARATOR = '_0_'
 ASN1SCC = 'asn1Scc'
 
 __all__ = ['flatten', 'rename_everything', 'inner_labels_to_floating',
            'map_input_state', 'sorted_fields', 'state_aggregations',
            'parallel_states', 'statenames', 'rec_findstates',
-           'generate_asn1_datamodel',
-           'get_full_statelist', 'code_generation_preprocessing']
+           'generate_asn1_datamodel', 'add_labels_before_each_branch',
+           'update_full_statelist', 'code_generation_preprocessing']
 
 
 def statenames(context, sep=DEFAULT_SEPARATOR):
@@ -79,11 +82,12 @@ def state_aggregations(process):
     '''
     # { aggregate_name : [list of parallel states] }
     aggregates = defaultdict(list)
+
     def do_composite(comp, aggregate=''):
         ''' Recursively find all state aggregations in order to allow code
         generator backends to store the state of each parallel state '''
         pre = comp.statename if isinstance(comp, ogAST.StateAggregation) \
-                    else ''
+            else ''
         for each in comp.composite_states:
             do_composite(each, pre)
             if isinstance(each, ogAST.StateAggregation):
@@ -124,7 +128,7 @@ def parallel_states(aggregates):
     for name, comp in aggregates.items():
         for each in comp:
             parallel_states.extend(name for name in each.mapping.keys()
-                    if not name.endswith('START'))
+                                   if not name.endswith('START'))
     return parallel_states
 
 
@@ -140,7 +144,7 @@ def map_input_state(process):
                 # Start symbols have no list of inputs
                 for i in input_symbols:
                     if input_signal.lower() in (inp.lower() for
-                                               inp in i.inputlist):
+                                                inp in i.inputlist):
                         mapping[input_signal][state_name] = i
     return mapping
 
@@ -152,11 +156,12 @@ def update_full_statelist(process, SEPARATOR=DEFAULT_SEPARATOR) -> None:
     '''
 
     process.full_statelist = set(chain(process.aggregates.keys(),
-                               (name for name in process.mapping.keys()
-                                    if not name.endswith('START'))))
+                                 (name for name in process.mapping.keys()
+                                  if not name.endswith('START'))))
     if process.aggregates:
         # Parallel states in a state aggregation may terminate
         process.full_statelist.add(f'state{SEPARATOR}end')
+
 
 def inner_labels_to_floating(process):
     '''
@@ -187,11 +192,12 @@ def flatten(process, sep='_'):
     def update_terminator(context, term, process):
         '''Set next_id, identifying the next transition to run '''
         if term.inputString.lower() in (st.statename.lower()
-                                for st in context.composite_states):
+                                        for st in context.composite_states):
             if not term.via:
                 term.next_id = term.inputString.lower() + sep + 'START'
             else:
-                term.next_id = f'{term.inputString}{sep}{term.entrypoint}_START'
+                term.next_id =\
+                        f'{term.inputString}{sep}{term.entrypoint}_START'
         elif term.inputString.strip() in ('-', '-*'):
             for each in term.possible_states:
                 term.candidate_id[-1].append(each)
@@ -280,7 +286,7 @@ def flatten(process, sep='_'):
                     # This could happen if scene.ast was not up to date when
                     # calling this function. But then this case would need
                     # to be traced back, as it should not be possible.
-                    LOG.error ("Bug - Index error", each, len(process.transitions))
+                    LOG.error("Bug - Index error", each, len(process.transitions))
 
         # If composite state has exit procedure, add an call to this
         # procedure if the transition ends up exiting the state with
@@ -292,17 +298,17 @@ def flatten(process, sep='_'):
             trans_with_return = []
             for each in chain(state.transitions, (lab.transition for lab in
                                               state.content.floating_labels)):
-                def rec_transition(trans : ogAST.Transition):
+                def rec_transition(trans: ogAST.Transition):
                     if trans.terminator:
                         if trans.terminator.kind == 'return':
-                            trans_with_return.append (trans)
+                            trans_with_return.append(trans)
                     elif isinstance(trans.actions[-1], ogAST.Decision):
                         # There is no terminator, so the transition may finish
                         # with a DECISION, we must check it recursively
                         for answer in trans.actions[-1].answers:
-                            rec_transition (answer.transition)
+                            rec_transition(answer.transition)
 
-                rec_transition (each)
+                rec_transition(each)
 
             for trans in trans_with_return:
                 call_exit = ogAST.ProcedureCall()
@@ -316,9 +322,6 @@ def flatten(process, sep='_'):
             # Go recursively in inner composite states
             inner.statename = prefix + inner.statename
             update_composite_state(inner, process)
-            # Remove: recursion is already handled within propagate_inputs
-            #propagate_inputs(inner, process)
-            #del process.mapping[inner.statename]
         for each in state.terminators:
             # Give prefix to terminators
             if each.label:
@@ -406,7 +409,6 @@ def flatten(process, sep='_'):
     for each in process.composite_states:
         update_composite_state(each, process)
         propagate_inputs(each, process)
-        #del process.mapping[each.statename]
 
     # If the terminator is a join (goto) we must propagate its possible state
     # list to the terminators that follow the corresponding label.
@@ -433,10 +435,10 @@ def rename_everything(ast, from_name, to_name):
         in the scope of a composite state, so that they do not overwrite
         a variable with the same name declared at a higher scope.
     '''
-    LOG.debug ('rename_everything - ' + str(ast) + " - ")
+    LOG.debug('rename_everything - ' + str(ast) + " - ")
     try:
         LOG.debug(ast.inputString)
-    except:
+    except Exception:
         pass
 
     _, _, _ = ast, from_name, to_name
@@ -512,7 +514,7 @@ def _rename_answer(ast, from_name, to_name):
     ''' Rename elements in an answer branch '''
     for each in ast.answers:
         if each['kind'] in ('constant', 'open_range'):
-            _, constant = each['content'] # get the constant
+            _, constant = each['content']  # get the constant
             rename_everything(constant, from_name, to_name)
         elif each['kind'] == 'closed_range':
             left, right = each['content']
@@ -588,11 +590,13 @@ def _rename_prim_seq_of(ast, from_name, to_name):
     for each in ast.value:
         rename_everything(each, from_name, to_name)
 
+
 @rename_everything.register(ogAST.PrimSequence)
 def _rename_prim_seq(ast, from_name, to_name):
     ''' Values in the fields of a SEQUENCE '''
     for each in ast.value.values():
         rename_everything(each, from_name, to_name)
+
 
 @rename_everything.register(ogAST.PrimChoiceItem)
 def _rename_prim_choice_item(ast, from_name, to_name):
@@ -670,7 +674,7 @@ def find_labels(trans):
             # Create a floating label
             flab = ogAST.Floating_label(label=action)
             new_trans.actions = \
-                    trans.actions[slice(idx + 1, len(trans.actions))]
+                              trans.actions[slice(idx + 1, len(trans.actions))]
             new_trans.terminator = trans.terminator
             new_trans.terminators = trans.terminators
             flab.transition = new_trans
@@ -700,8 +704,8 @@ def sorted_fields(atype):
     if atype.kind not in ('SequenceType', 'ChoiceType'):
         raise TypeError('Not a SEQUENCE nor a CHOICE')
     tmp = ([k, val.Line, val.CharPositionInLine]
-             for k, val in atype.Children.items())
-    return (x[0] for x in sorted(tmp, key=operator.itemgetter(1,2)))
+           for k, val in atype.Children.items())
+    return (x[0] for x in sorted(tmp, key=operator.itemgetter(1, 2)))
 
 
 def find_basic_type(TYPES, a_type):
@@ -766,7 +770,7 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
         # Some systems may have no states - only a start transition
         context_elems.append(f'   state {process_asn1}-States')
 
-    context_elems.append ('init-done BOOLEAN')
+    context_elems.append('init-done BOOLEAN')
     # State aggregation: add list of substates
     for substates in process.aggregates.values():
         for each in substates:
@@ -795,7 +799,6 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
     asn1_template.append(asn1_context)
 
     # Add user-defined NEWTYPEs, SYNTYPEs and CHOICE selector types
-    choice_selections = []
     # a newtype may reuse another newtype, so we must update the list:
     types_with_proper_case.extend(process.user_defined_types.keys())
     # We also add the newly created types for choice selectors to the
@@ -805,7 +808,7 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
         if sortdef.type.kind == "SequenceOfType":
             rangeMin = sortdef.type.Min
             rangeMax = sortdef.type.Max
-            refType  = sortdef.type.type.ReferencedTypeName
+            refType = sortdef.type.type.ReferencedTypeName
             for refTypeCase in types_with_proper_case:
                 if refTypeCase.lower().replace('-', '_') == \
                         refType.lower().replace('-', '_'):
@@ -816,8 +819,8 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
                     f'{sortname.replace("_", "-").capitalize()} ::= SEQUENCE '
                     f'(SIZE ({rangeMin} .. {rangeMax})) OF '
                     f'{refTypeCase.replace("_", "-")}')
-        elif sortdef.type.kind == "EnumeratedType" and sortdef.AddedType=="False":
-            # There are two kinds of user-defined ENUMERATED types: 
+        elif sortdef.type.kind == "EnumeratedType" and sortdef.AddedType == "False":
+            # There are two kinds of user-defined ENUMERATED types:
             # - the ones generated for the CHOICE selectors
             #   We can rename them systematically here,
             #   by using the process name as prefix, to avoid any risk of
@@ -891,12 +894,13 @@ def add_labels_before_each_branch(
         if len(transition.actions) == 0 and transition.terminator is not None:
             # empty transition, but there can be a JOIN terminator
             return False if transition.terminator.kind == 'join' else True
-        if len(transition.actions) > 0 and isinstance(transition.actions[0], ogAST.Label):
+        if len(transition.actions) > 0 and isinstance(transition.actions[0],
+                                                      ogAST.Label):
             # starts with a Label
             return False
         return True
 
-    def branches (transition):
+    def branches(transition):
         ''' Find branches inside a transition (decision answers) '''
         return []
 
@@ -909,14 +913,14 @@ def add_labels_before_each_branch(
             ...
 
     for state_name, inputs in process.mapping.items():
-        # INPUTs
+        # Add a label just after the INPUT statements
         if isinstance(inputs, int):
             continue
         for each in inputs:
             label_name = 'STATE_' + state_name + '_INPUT_'
             input_name = each.inputString.split(',')[0].strip()
             if input_name.startswith('*'):
-               input_name = 'STAR'
+                input_name = 'STAR'
             if each.transition is not None and need_label(each.transition):
                 label_name += input_name
                 label = ogAST.Label()
@@ -928,6 +932,7 @@ def add_labels_before_each_branch(
     for state_name, continuous in process.cs_mapping.items():
         # Naming scheme for continuous signals is a bit more tricky
         # as two of them can start with the same pattern (e.g. x<4 and x=4)
+        # In that case, increment a number as suffix to avoid duplicate names
         state_cs_labels = []
         idx = 2
         for each in continuous:
@@ -958,12 +963,13 @@ def add_labels_before_each_branch(
                 if composite.statename == state_name:
                     for term in composite.terminators:
                         if term.kind == 'return' \
-                                and term.inputString.strip().lower() == connect_name.strip().lower():
+                            and term.inputString.strip().lower() \
+                                == connect_name.strip().lower():
                             trans = term.next_trans
                             break
             if connect_name:
                 # it is possible to specify an unnamed exit from nested states
-               label_name += '_'
+                label_name += '_'
             if trans is not None and need_label(trans):
                 label_name += connect_name
                 label = ogAST.Label()
@@ -972,8 +978,26 @@ def add_labels_before_each_branch(
                 for branch in branches(trans):
                     ...
 
-    # Remain the named START in nested states
-    # = TODO
+    # Recursively find named start transition and add the label
+    def rec_find_named_start(composite: ogAST.CompositeState, path: list):
+        for each in composite.composite_states:
+            path.append(each.statename)
+            rec_find_named_start(each, path)
+            path.pop()
+        for each in composite.content.named_start:
+            if each.transition is not None and need_label(each.transition):
+                label_name =\
+                       f'{path[-1].replace(separator, "_")}_{each.inputString}'
+                label = ogAST.Label()
+                label.inputString = label_name
+                each.transition.actions.insert(0, label)
+                for branch in branches(each.transition):
+                    ...
+
+    for composite in process.composite_states:
+        state_path = [composite.statename]
+        rec_find_named_start(composite, state_path)
+
 
 def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):
     ''' Do all sorts of preprocessing before invoking a code generator

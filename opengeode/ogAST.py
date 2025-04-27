@@ -3,7 +3,7 @@
 
 """
 
-    OpenGEODE - SDL Editor for TASTE
+    OpenGEODE - The TASTE SDL Editor for TASTE
 
     AST that can be used to write SDL backends (code generators, etc.)
     In all classes the 'inputString' field corresponds to the exact
@@ -27,7 +27,7 @@
 
     See AdaGenerator.py for an example of use.
 
-    Copyright (c) 2012-2024 European Space Agency
+    Copyright (c) 2012-2025 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -37,9 +37,10 @@
 import logging
 import operator
 from collections import defaultdict
+from typing import List
+
 LOG = logging.getLogger(__name__)
 
-from typing import List
 
 class Expression:
     ''' AST Entry for expressions - Always use subtype '''
@@ -774,6 +775,7 @@ class Connect(Input):
 
 class ContinuousSignal(Input):
     ''' AST Entry for the Continuous Signal '''
+
     def __init__(self):
         ''' Difference with Input: trigger is an expression '''
         super().__init__()
@@ -782,7 +784,7 @@ class ContinuousSignal(Input):
         # Priority (integer)
         self.priority = 0
         # Set if we are in an observer to render the symbol differently
-        self.observer : bool = False
+        self.observer: bool = False
         # instance of class Input when this CS is an alias of an input
         self.observer_input = None
         # artificial is set to True if this is an alias (for Renderer)
@@ -801,6 +803,7 @@ class ContinuousSignal(Input):
 
 class Start:
     ''' AST Entry for the START symbol '''
+
     def __init__(self):
         ''' Initialize the Start symbol attributes '''
         self.inputString = ''
@@ -844,6 +847,7 @@ class CompositeState_start(Start):
 
 class Comment:
     ''' AST Entry for COMMENT symbols '''
+
     def __init__(self):
         ''' Comment symbol '''
         # inputString is the comment value itself
@@ -874,6 +878,7 @@ class Comment:
 
 class State:
     ''' AST Entry for STATE symbols '''
+
     def __init__(self, defName=''):
         ''' Used only for rendering backends - not for code generation '''
         # inputString contains possibly several states (and asterisk)
@@ -924,6 +929,7 @@ class State:
 
 class TextArea:
     ''' AST Entry for text areas (containing declarations/comments) '''
+
     def __init__(self):
         ''' Text area (raw content for rendering only) '''
         self.inputString = '-- Text area for declarations and comments'
@@ -955,7 +961,7 @@ class TextArea:
         self.rid_ids = []
         # List of Observer states defined in this text area (error/success/ignore states)
         # used for error reporting to get the right symbol coordinates
-        self.observer_states : List [str] = []
+        self.observer_states: List[str] = []
         # Errors associated to this element
         self.errors, self.warnings = [], []
         # the path allows to retrieve the location of the symbol
@@ -965,7 +971,6 @@ class TextArea:
         # Optional partition name where the symbol is rendered
         self.partition: str = "default"
 
-
     def trace(self):
         ''' Debug output for a text area '''
         return u'TEXTAREA {exp} ({l},{c})'.format(exp=self.inputString,
@@ -974,6 +979,7 @@ class TextArea:
 
 class Automaton:
     ''' Elements contained in a process, procedure or composite state'''
+
     def __init__(self, parent=None):
         ''' AST grouping the elements that can be rendered graphically '''
         self.parent = parent
@@ -987,6 +993,7 @@ class Automaton:
 
 class Procedure:
     ''' Internal procedure definition '''
+
     def __init__(self):
         ''' Procedure AST default value '''
         self.inputString = ''
@@ -1019,19 +1026,14 @@ class Procedure:
         self.return_type = None
         # when procedure has a RETURN it can also contain a variable name
         self.return_var = None
-        # start, terminators, text areas, floating_labels (see Process)
-        #self.start = None
-        #self.states = []
+        # terminators
         self.terminators = []
-        #self.textAreas = []
         # Keep a list of labels and floating labels - useful for backends
         self.labels = []
-        #self.floating_labels = []
         # Inherited procedures and operators
         self.procedures = []
         self.operators = []
         # inner procedures and operators (see Process for format)
-        #self.inner_procedures = []
         self.inner_operators = []
         # mapping, transitions: see Process
         self.mapping = {}
@@ -1050,9 +1052,9 @@ class Procedure:
         # The "DECISION ANY" construct requires random number generators
         self.random_generator = set()
         # Procedure declared as EXPORTED
-        self.exported : bool = False
+        self.exported: bool = False
         # procedure declared as REFERENCED
-        self.referenced : bool = False
+        self.referenced: bool = False
         # Errors associated to this element
         self.errors, self.warnings = [], []
         # the path allows to retrieve the location of the symbol
@@ -1060,7 +1062,7 @@ class Procedure:
         self.path = []
         # Dependencies: see explanations in class Process. There are stored
         # temporarily here because it is the "context" class used while parsing
-        self.dependencies = {'math' : False, 'create': set(), 'writeln': False}
+        self.dependencies = {'math': False, 'create': set(), 'writeln': False}
 
         # Optional partition name where the symbol is rendered
         self.partition: str = "default"
@@ -1068,6 +1070,7 @@ class Procedure:
 
 class Process:
     ''' SDL Process entry point '''
+
     def __init__(self):
         ''' Process AST default values '''
         self.processName = None
@@ -1075,7 +1078,7 @@ class Process:
         self.filename = None
         # Optional type of this process instance (name = string, ref = Process)
         self.instance_of_name = None
-        self.instance_of_ref  = None
+        self.instance_of_ref = None
         # A process may be a process type (boolean)
         self.process_type = False
         # Min an max number of instances (optional)
@@ -1219,7 +1222,7 @@ class Process:
         # function in charge of actually instantiating the process.
         # Dpendencies are collected at process, procedure and substate levels
         # and then aggregated here.
-        self.dependencies = {'math' : False, 'create': set(), 'writeln': False}
+        self.dependencies = {'math': False, 'create': set(), 'writeln': False}
 
         # Optional partition name
         self.partition: str = "default"
@@ -1232,6 +1235,7 @@ class CompositeState(Process):
         - state exit points (with RETURN terminators)
         - entry and exit procedures
     '''
+
     def __init__(self):
         super().__init__()
         self.statename = ''
@@ -1260,6 +1264,7 @@ class StateAggregation(CompositeState):
             composite states (including sub-state aggregations)
         But no state machine definition
     '''
+
     def __init__(self):
         super().__init__()
         # List of partition connections:
