@@ -918,9 +918,12 @@ def add_labels_before_each_branch(
             continue
         for each in inputs:
             label_name = 'STATE_' + state_name + '_INPUT_'
-            input_name = each.inputString.split(',')[0].strip()
-            if input_name.startswith('*'):
+            # input_name = each.inputString.split(',')[0].strip()
+            if each.inputString.strip().startswith('*'):
+                # if input_name.startswith('*'):
                 input_name = 'STAR'
+            else:
+                input_name = re.split(r'\W+', each.inputString)[0]
             if each.transition is not None and need_label(each.transition):
                 label_name += input_name
                 label = ogAST.Label()

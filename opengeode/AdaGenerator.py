@@ -61,7 +61,7 @@
     this pattern is straightforward, once the generate function for each AST
     entry is properly implemented).
 
-    Copyright (c) 2012-2024 European Space Agency & Maxime Perrotin
+    Copyright (c) 2012-2025 European Space Agency & Maxime Perrotin
 
     Designed and implemented by Maxime Perrotin
 
@@ -72,7 +72,6 @@
 import logging
 import traceback
 import os
-import stat
 from itertools import chain, product
 from functools import singledispatch
 from typing import List, Tuple
@@ -117,7 +116,6 @@ def external_ri_list(process) -> List:
     Used for the formal parameters of generic packages when using process type
     '''
     result = []
-    #print process.fpar
     for signal in process.output_signals:
         param_name = signal.get('param_name') or f'{signal["name"]}_param'
         param_spec = ''
@@ -184,7 +182,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     # support generation of code of a process type
     if not instance:
         process.name = process.instance_of_name or process.processName
-        generic = process.instance_of_name  #  shortcut (may be None)
+        generic = process.instance_of_name  # shortcut (may be None)
         process_instance = process
         process = process.instance_of_ref or process
     else:
@@ -217,26 +215,12 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     has_context_params = any(mod.startswith("Context-")
             for mod in process.asn1Modules)
 
-    #  Create a .gpr to build the library for the simulator
-    lib_gpr = f'''project {process.name.lower()}_Lib is
-   for Languages use ("Ada");
-   for Library_Name use "{process.name.lower()}";
-   for Library_Interface use ("{process.name.lower()}", "adaasn1rtl", {", ".join(asn1_mods)});
-   for Object_Dir use "obj";
-   for Library_Dir use "lib";
-   for Library_Standalone use "encapsulated";
-   for Library_Kind use "dynamic";
-   for Source_Dirs use (".");
-end {process.name.lower()}_Lib;'''
-
     #  Create a .gpr to build the Ada generated code
     ada_gpr = f'''project {process.name.lower()}_Ada is
    for Languages use ("Ada");
       for Source_Dirs use (".") & External_As_List ("CODE_PATH", ":");
       for Object_Dir use "../obj";
    end {process.name.lower()}_Ada;'''
-
-    pr = process.name.lower()
 
     LOG.info(f'Generating Ada code for process {process.name}')
 
@@ -302,7 +286,7 @@ end {process.name.lower()}_Lib;'''
             else:
                 # complex value - must be a ground expression
                 _, val, _ = expression(const.value, readonly=1)
-                if bkind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
+                if bkind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
                     val = array_content(const.value, val, bconst)
                 elif bkind == 'IA5StringType':
                     val = ia5string_raw(const.value)
@@ -372,7 +356,6 @@ end {process.name.lower()}_Lib;'''
             context_decl.append(f"{alias_name} : {type_name(alias_sort)} "
                                 f"renames {qualified};")
 
-
         # The choice selections will allow to use the present operator
         # together with a variable of the -selection type
         context_decl.extend(choice_selections)
@@ -409,7 +392,7 @@ end {process.name.lower()}_Lib;'''
         Init_Done = f'{LPREFIX}.Init_Done := True;'
         rand_reset_decl = []
         for rand_g in process.random_generator:
-            rand_reset_decl.append(f'Rand_{rand_g}_Pkg.Reset (Gen_{rand_g});');
+            rand_reset_decl.append(f'Rand_{rand_g}_Pkg.Reset (Gen_{rand_g});')
 
         start_transition = [
                 'procedure Startup is',
@@ -501,7 +484,7 @@ package body {process.name} is''']
     for each in process.random_generator:
         rand_decl.extend([
             f'type Rand_{each}_ty is new Integer range 1 .. {each};',
-            f'package Rand_{each}_Pkg is new  Ada.Numerics.Discrete_Random'\
+            f'package Rand_{each}_Pkg is new  Ada.Numerics.Discrete_Random'
                     f' (Rand_{each}_ty);',
             f'Gen_{each} : Rand_{each}_Pkg.Generator;',
             f'Num_{each} : Rand_{each}_ty;'])
@@ -573,8 +556,7 @@ package body {process.name}_RI is''']
                             f' with Export, Convention => C,'
                             f' Link_Name => "{process.name.lower()}_startup";')
     else:  # function type
-        ads_template.append(f'procedure Startup;')
-
+        ads_template.append('procedure Startup;')
 
     # Generate the code of the procedures
     inner_procedures_code = []
@@ -866,8 +848,8 @@ package body {process.name}_RI is''']
                 param_spec = ''
         if not generic:
             ads_template.append('--  {}equired interface "{}"'
-                                .format("Paramless r" if not 'type' in signal
-                                    else "R", sig))
+                                .format("Paramless r" if 'type' not in signal
+                                         else "R", sig))
 
             if not instance:
                 ads_template.append(f'procedure RI{SEPARATOR}{sig}{param_spec} '
@@ -886,7 +868,7 @@ package body {process.name}_RI is''']
         params_spec = ""
         for param in proc.fpar:
             typename = type_name(param['type'])
-            name     = param['name']
+            name = param['name']
             if param['direction'] == 'in':
                 direct = 'in out'
             else:
@@ -925,7 +907,6 @@ package body {process.name}_RI is''']
         ads_template.append(f'--  Timer {timer} SET and RESET functions')
 
         if not generic:
-            procname = process.name.lower()
             if 'PID' in TYPES:
                 ads_template.append(
                    f'procedure SET_{timer} (Val : in out {ASN1SCC}T_UInt32; Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env) '
@@ -951,7 +932,6 @@ package body {process.name}_RI is''']
             # Generic functions get the SET and RESET from template
             pass
 
-
     if instance:
         # Instance of a process type, all the RIs (including timers) must
         # be gathered to instantiate the package
@@ -963,9 +943,9 @@ package body {process.name}_RI is''']
                    for sig in process.output_signals]
         if has_cs:
             ri_list.append(("Check_Queue", "Check_Queue"))
-        ri_list.extend ([(f"RI{SEPARATOR}{proc.inputString}", proc.inputString)
+        ri_list.extend([(f"RI{SEPARATOR}{proc.inputString}", proc.inputString)
                         for proc in process.procedures if proc.external])
-        ri_list.extend([(f"set_{timer}", f"set_{timer}")   for timer in process.timers])
+        ri_list.extend([(f"set_{timer}", f"set_{timer}") for timer in process.timers])
         ri_list.extend([(f"reset_{timer}", f"reset_{timer}") for timer in process.timers])
         ri_inst = [f"{ri[0]} => {process.name.title()}_RI.{ri[1]}" for ri in ri_list]
         if ri_inst or has_context_params or 'PID' in TYPES:
@@ -995,7 +975,7 @@ package body {process.name}_RI is''']
         ads_template.append(f'CS_Only : constant := {process.name}_Instance.CS_Only;')
 
     else:
-        ads_template.append(f'procedure Execute_Transition (Id : Integer);')
+        ads_template.append('procedure Execute_Transition (Id : Integer);')
         ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
     # Insert labels before branches
@@ -1034,8 +1014,8 @@ package body {process.name}_RI is''']
         # other than the startup transition. It may be reset to False when an
         # instance terminates with the stop symbol.
         taste_template.append(f'if not {LPREFIX}.Init_Done and trId /= 0 then')
-        taste_template.append(f'return;')
-        taste_template.append(f'end if;')
+        taste_template.append('return;')
+        taste_template.append('end if;')
 
         # Generate a loop that ends when a next state is reached
         # (there can be chained transition when entering a nested state)
@@ -1046,7 +1026,7 @@ package body {process.name}_RI is''']
 
         for idx, val in enumerate(code_transitions):
             taste_template.append('when {idx} =>'.format(idx=idx))
-            val = ['{line}'.format(line=l) for l in val]
+            val = ['{line}'.format(line=lineno) for lineno in val]
             if val:
                 taste_template.extend(val)
             else:
@@ -1096,8 +1076,6 @@ package body {process.name}_RI is''']
             taste_template.extend(['if Message_Pending or trId /= -1 then',
                                       'goto Next_Transition;',
                                    'end if;'])
-        #else:
-        #    taste_template.append('null;')
 
         # Process the continuous signals in state aggregations first
         # (reminder: state aggregations = parallel states)
@@ -1109,7 +1087,7 @@ package body {process.name}_RI is''']
         first_of_aggreg = True
         for cs, agg in product(process.cs_mapping.items(),
                                process.aggregates.items()):
-            (statename, cs_item)  = cs
+            (statename, cs_item) = cs
             (agg_name, substates) = agg
 
             if not cs_item:
@@ -1136,13 +1114,12 @@ package body {process.name}_RI is''']
                     for provided_clause in sorted(cs_item,
                                                  key=lambda itm: itm.priority):
                         taste_template.append(f'--  Priority {provided_clause.priority}')
-                        trId = process.transitions.index\
-                                            (provided_clause.transition)
+                        trId = process.transitions.index(provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
                                              branch_to=trId,
                                              sep=sep, last=last)
                         code.append('goto Next_Transition;')
-                        sep='elsif '
+                        sep = 'elsif '
                         taste_template.extend(code)
 
                     done.append(statename)
@@ -1189,7 +1166,7 @@ package body {process.name}_RI is''']
                             break
 
                 trans = process.transitions[trId]
-                for each in reversed (exitlist):
+                for each in reversed(exitlist):
                     if trans and all(each.startswith(trans_st)
                             for trans_st in trans.possible_states):
                         exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit;")
@@ -1197,12 +1174,12 @@ package body {process.name}_RI is''']
                 code, loc = generate(provided_clause.trigger,
                                      branch_to=trId, sep=sep, last=last,
                                      exitcalls=exitcalls)
-                sep='elsif '
+                sep = 'elsif '
                 taste_template.extend(code)
 
             if cs_item:
-                taste_template.append('end if;') # inner if
-                taste_template.append('end if;') # current state
+                taste_template.append('end if;')  # inner if
+                taste_template.append('end if;')  # current state
 
             sep = 'if '
 
@@ -1237,13 +1214,13 @@ package body {process.name}_RI is''']
 
     if not taste:
         with open(f"{process.name.lower()}_ri.ads", "wb") as ri_stub:
-            ri_stub.write ("\n".join(format_ada_code(ri_stub_ads)).encode('latin1'))
+            ri_stub.write("\n".join(format_ada_code(ri_stub_ads)).encode('latin1'))
         stub_adb = f'{process.name.lower()}_ri.adb'
         # don't overwrite adb as it may contain user code
         # also don't generate if there are no RI in the system
         if not os.path.exists(stub_adb) and len(ri_stub_adb) > 2:
             with open(stub_adb, "wb") as ri_stub:
-                ri_stub.write ("\n".join(format_ada_code(ri_stub_adb)).encode('latin1'))
+                ri_stub.write("\n".join(format_ada_code(ri_stub_adb)).encode('latin1'))
 
     with open(f"{process.name.lower()}_ada.gpr", "wb") as gprada:
         gprada.write(ada_gpr.encode('utf-8'))
@@ -1267,8 +1244,8 @@ def write_statement(param, newline):
     type_kind = basic_type.kind
     if isinstance(param, ogAST.ExprAppend):
         # Append: call Put_Line separately for each side of the expression
-        st1, _, lcl1 = write_statement(param.left,  newline = False)
-        st2, _, lcl2 = write_statement(param.right, newline = False)
+        st1, _, lcl1 = write_statement(param.left,  newline=False)
+        st2, _, lcl2 = write_statement(param.right, newline=False)
         code.extend(st1)
         code.extend(st2)
         local.extend(lcl1)
@@ -1296,19 +1273,14 @@ def write_statement(param, newline):
             code, string, local = expression(param, readonly=1)
             if type_kind == 'OctetStringType':
                 # Octet string -> convert to Ada string
-                last_it = ""
                 if isinstance(param, ogAST.PrimSubstring):
                     range_str = f"{string}'Range"
-                    iterator = f"i - {string}'First + 1"
                 elif basic_type.Min == basic_type.Max:
                     range_str = f"{string}.Data'Range"
                     string += ".Data"
-                    iterator = "i"
                 else:
                     range_str = f"1 .. {string}.Length"
                     string += ".Data"
-                    iterator = "i"
-                    last_it = f"({range_str})"
                 code.extend([f"for i in {range_str} loop",
                              f"Put (Character'Val({string}(i)));",
                              "end loop;"])
@@ -1346,7 +1318,7 @@ def _call_external_function(output, **kwargs):
 
     # Add the traceability information
     code.extend(traceability(output))
-    #code.extend(debug_trace())
+    # code.extend(debug_trace())
 
     # Calling a procedure or RI usually needs a prefix (RI_.. or p_...)
     # Exceptions are the _Transition procedures called after exported PIs (RPC)
@@ -1445,7 +1417,7 @@ def _call_external_function(output, **kwargs):
         if out_sig:
             dest_pid = out.get('toDest') or 'env'
             if isinstance(dest_pid, ogAST.PrimVariable):
-                _, dest_pid, _ = expression(dest_pid) 
+                _, dest_pid, _ = expression(dest_pid)
             else:
                 dest_pid = f'{ASN1SCC}{dest_pid}'  # enumerated value
             dest_pid = dest_pid.replace('-', '_')
@@ -1467,12 +1439,12 @@ def _call_external_function(output, **kwargs):
                 # (If needed, i.e. if argument is not a local variable)
                 if param_direction == 'in' \
                         and (not (isinstance(param, ogAST.PrimVariable)
-                        and p_id.startswith(LPREFIX)) # NO FIXME WITH CTXT
+                        and p_id.startswith(LPREFIX))  # NO FIXME WITH CTXT
                         or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = f'tmp{out["tmpVars"][idx]}'
-                    #local_decl.extend(debug_trace())
+                    # local_decl.extend(debug_trace())
                     local_decl.append(f'{tmp_id} : {typename};')
-                    basic_param = find_basic_type (param_type)
+                    basic_param = find_basic_type(param_type)
                     if basic_param.kind.startswith('Integer'):
                         p_id = f"{typename} ({p_id})"
                     if isinstance(param,
@@ -1490,7 +1462,6 @@ def _call_external_function(output, **kwargs):
                         # TODO: ogAST.PrimSubstring seem to be missing
                         # Check the template in def _conditional
                         app_len = append_size(param)
-                        #code.extend(debug_trace())
                         code.append(f'{tmp_id}.Data (1 .. {app_len}) := {p_id};')
                         if basic_param.Min != basic_param.Max:
                             # Append should only apply to this case, i.e.
@@ -1504,7 +1475,7 @@ def _call_external_function(output, **kwargs):
                     list_of_params.append(p_id)
             name = out["outputName"]
             if list_of_params:
-                params=', '.join(list_of_params)
+                params = ', '.join(list_of_params)
                 if dest_pid != f'{ASN1SCC}env' and 'PID' in TYPES:
                     code.append(f'RI{SEPARATOR}{name}({params}, Dest_PID => {dest_pid});')
                 else:
@@ -1522,13 +1493,13 @@ def _call_external_function(output, **kwargs):
             ident = proc.inputString
             p = [p for p in PROCEDURES
                     if p.inputString.lower() == ident.lower()
-                    and not p.referenced][0]        
+                    and not p.referenced][0]
 
             list_of_params = []
             for idx, param in enumerate(out.get('params', [])):
                 # Expected basic type of the parameter
                 param_type = p.fpar[idx]['type']
-                basic_param = find_basic_type (param_type)
+                basic_param = find_basic_type(param_type)
 
                 p_code, p_id, p_local = expression(param, readonly=1)
 
@@ -1621,7 +1592,6 @@ def _task_forloop(task, **kwargs):
             if loop['range']['step'] == 1:
                 start_str += ' .. '
 
-            basic = find_basic_type(loop['range']['stop'].exprType)
             stop_stmt, stop_str, stop_local = expression(loop['range']['stop'])
 
             if not is_numeric(stop_str):
@@ -1700,8 +1670,9 @@ def _create_request(create, **kwargs):
     code.extend(traceability(create))
     if create.comment:
         code.extend(traceability(create.comment))
-    code.append (f"{LPREFIX}.Offspring := Create_{create.instance_to_create.title()} (Self);")
+    code.append(f"{LPREFIX}.Offspring := Create_{create.instance_to_create.title()} (Self);")
     return code, local_decl
+
 
 @singledispatch
 def expression(expr, **kwargs):
@@ -1750,7 +1721,6 @@ def _prim_call(prim, **kwargs):
         unsigned = False
         if ident == 'fix':
             unsigned = float(find_basic_type(params[0].exprType).Min) >= 0
-
 
         param_stmts, param_str, local_var = expression(params[0], readonly=1)
         stmts.extend(param_stmts)
@@ -1828,7 +1798,7 @@ def _prim_call(prim, **kwargs):
 
     elif ident == 'choice_to_int':
         p1, p2 = params
-        sort = find_basic_type (p1.exprType)
+        sort = find_basic_type(p1.exprType)
         assert (sort.kind == 'ChoiceType')  # normally checked by the parser
         param_stmts, varstr, local_var = expression(p1, readonly=1)
         stmts.extend(param_stmts)
@@ -1884,15 +1854,15 @@ def _prim_call(prim, **kwargs):
         selector = params[0]  # type PrimSelector
         receiver = selector.value[0]
         field    = selector.value[1]
-        rec_stmt, rec_str, rec_decl = expression (receiver, readonly=1)
+        rec_stmt, rec_str, rec_decl = expression(receiver, readonly=1)
         stmts.extend(rec_stmt)
         local_decl.extend(rec_decl)
         ada_string += f'({rec_str}.exist.{field} = 1)'
 
     elif ident in ('to_selector', 'to_enum'):
         variable, target_type = params
-        var_typename = type_name (variable.exprType, False)
-        var_stmts, var_str, var_decl = expression (variable, readonly=1)
+        var_typename = type_name(variable.exprType, False)
+        var_stmts, var_str, var_decl = expression(variable, readonly=1)
         stmts.extend(var_stmts)
         local_decl.extend(var_decl)
         destSort = target_type.value[0]
@@ -1907,8 +1877,8 @@ def _prim_call(prim, **kwargs):
 
     elif ident == 'val':
         variable, target_type = params
-        var_typename = type_name (variable.exprType)
-        var_stmts, var_str, var_decl = expression (variable, readonly=1)
+        var_typename = type_name(variable.exprType)
+        var_stmts, var_str, var_decl = expression(variable, readonly=1)
         stmts.extend(var_stmts)
         local_decl.extend(var_decl)
         sort_name = ASN1SCC + target_type.value[0].replace('-', '_')
