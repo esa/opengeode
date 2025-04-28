@@ -383,7 +383,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
             process_level_decl.append(f'{proc_name};')
             aggreg_start_proc.extend([f'{proc_name} is',
                                       'begin'])
-            aggreg_start_proc.extend(f'Execute_Transition ({subname.statename}{SEPARATOR}START);'
+            aggreg_start_proc.extend(f'Execute_Cycle ({subname.statename}{SEPARATOR}START);'
                                      for subname in substates)
             aggreg_start_proc.extend([f'end {name}{SEPARATOR}START;',
                                      '\n'])
@@ -398,7 +398,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
                 'procedure Startup is',
                 'begin',
                 *rand_reset_decl,
-                'Execute_Transition (0);'
+                'Execute_Cycle (Startup_Transition);'
                 if process.transitions else 'null;',
                 Init_Done,
                 'end Startup;',
@@ -736,7 +736,7 @@ package body {process.name}_RI is''']
                     dest.append(f'{LPREFIX}.{inp} := {param_name};')
                 # Execute the corresponding transition
                 if input_def.transition:
-                    dest.append(f'Execute_Transition ({input_def.transition_id});')
+                    dest.append(f'Execute_Cycle ({input_def.transition_id});')
                 else:
                     return False
             else:
@@ -770,7 +770,7 @@ package body {process.name}_RI is''']
                         for par in sub.mapping.keys():
                             case_state(par)
                         taste_template.append('when others =>')
-                        taste_template.append('Execute_Transition (CS_Only);')
+                        taste_template.append('Execute_Cycle (Continuous_Signals);')
                         if simu:
                             # In simulation mode, the unhandled input is signaled
                             taste_template.append('raise Lost_Input;')
@@ -782,7 +782,7 @@ package body {process.name}_RI is''']
                         # check if it is managed one level above
                         execute_transition(state, taste_template)
                     else:
-                        taste_template.append('Execute_Transition (CS_Only);')
+                        taste_template.append('Execute_Cycle (Continuous_Signals);')
                         if simu:
                             # In simulation mode, the unhandled input is signaled
                             taste_template.append('raise Lost_Input;')
@@ -794,7 +794,7 @@ package body {process.name}_RI is''']
             for each_state in reduced_statelist:
                 case_state(each_state)
             taste_template.append('when others =>')
-            taste_template.append('Execute_Transition (CS_Only);')
+            taste_template.append('Execute_Cycle (Continuous_Signals);')
             if simu:
                 if fake_name is False:
                     # In simulation mode, the unhandled input is signaled
@@ -971,12 +971,12 @@ package body {process.name}_RI is''']
                f'Link_Name => "{process.name.lower()}_state";')
 
         # Expose Execute_Transition, needed by the simulator to execute continuous signals
-        ads_template.append(f'procedure Execute_Transition (Id : Integer) renames {process.name}_Instance.Execute_Transition;')
-        ads_template.append(f'CS_Only : constant := {process.name}_Instance.CS_Only;')
+        ads_template.append(f'procedure Execute_Cycle (Branch : Branches) renames {process.name}_Instance.Execute_Cycle;')
+        #ads_template.append(f'CS_Only : constant := {process.name}_Instance.CS_Only;')
 
     else:
-        ads_template.append('procedure Execute_Transition (Id : Integer);')
-        ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
+        ads_template.append('procedure Execute_Cycle (Branch : Branches);')
+        # ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
     # Insert labels before branches
     Helper.add_labels_before_each_branch(process)
@@ -992,17 +992,23 @@ package body {process.name}_RI is''']
         code_transitions.append(code_tr)
         local_decl_transitions.extend(tr_local_decl)
 
-    # Generate code for the floating labels
+    # All branches start with a label. We create in the .ads an enumerated
+    # type for all of them, and a function to execute its content, and
+    # returning the next branch to exectute.
+    all_labels = [lab.inputString for lab in process.content.floating_labels]
+    ads_template.append(f'type Branches is ({", ".join(all_labels)}, Continuous_Signals, Branch_End);')
+
+    # Generate code for the floating labels as individual functions
     code_labels = []
     for label in process.content.floating_labels:
-        code_label, label_decl = generate(label)
-        local_decl_transitions.extend(label_decl)
-        code_labels.extend(code_label)
+        ads_template.append(f'function Branch_{label.inputString} return Branches;')
+        code_label, _ = generate(label)
+        taste_template.extend(code_label)
 
     # Generate the code of the Execute_Transition  procedure, if needed
     if process.transitions and not instance:
-        taste_template.append('procedure Execute_Transition (Id : Integer) is')
-        taste_template.append('trId : Integer := Id;')
+        taste_template.append('procedure Execute_Cycle (Branch : Branches) is')
+        taste_template.append('Next_Branch : Branches := Branch;')
         if has_cs:
             taste_template.append('Message_Pending : Asn1Boolean := True;')
 
@@ -1019,25 +1025,34 @@ package body {process.name}_RI is''']
 
         # Generate a loop that ends when a next state is reached
         # (there can be chained transition when entering a nested state)
-        taste_template.append('while (trId /= -1) loop')
+        taste_template.append('while Next_Branch /= Branch_End loop')
 
         # Generate the switch-case on the transition id
-        taste_template.append('case trId is')
+        taste_template.append('case Next_Branch is')
 
-        for idx, val in enumerate(code_transitions):
-            taste_template.append('when {idx} =>'.format(idx=idx))
-            val = ['{line}'.format(line=lineno) for lineno in val]
-            if val:
-                taste_template.extend(val)
-            else:
-                taste_template.append('null;')
+        for label in all_labels:
+            taste_template.append(
+                    f'when {label} => Next_Branch := Branch_{label};')
 
-        taste_template.append('when CS_Only =>')
-        taste_template.append('trId := -1;')
-        taste_template.append('goto Continuous_Signals;')
+#       for idx, val in enumerate(code_transitions):
+#           # Code trannsition should only be a single goto
+#           taste_template.append('when {idx} =>'.format(idx=idx))
+#           val = ['{line}'.format(line=lineno) for lineno in val]
+#           if val:
+#               taste_template.extend(val)
+#           else:
+#               taste_template.append('null;')
 
-        taste_template.append('when others =>')
-        taste_template.append('null;')
+        taste_template.append(
+                'when Continuous_Signals => Next_Branch := Branch_Continuous_Signals;')
+        taste_template.append(
+                'when Branch_End => null;')
+        #taste_template.append('trId := -1;')
+#       taste_template.append('Execute_Cycle (Continuous_Signals);')
+        #taste_template.append('goto Continuous_Signals;')
+
+#       taste_template.append('when others =>')
+#       taste_template.append('null;')
 
         taste_template.append('end case;')
         if code_labels:
@@ -1053,7 +1068,10 @@ package body {process.name}_RI is''']
         # Add the code for the floating labels
         taste_template.extend(code_labels)
 
-        taste_template.append('<<Continuous_Signals>>')
+        # Generate the code to handle the continuous signals
+        cs_template = []
+        cs_template.append('function Branch_Continuous_Signals return Branches is')
+        cs_template.append('begin')
 
         # After completing active transition(s), check continuous signals:
         #     - Check current state(s)
@@ -1061,19 +1079,19 @@ package body {process.name}_RI is''']
         # XXX add to C backend
         if has_cs:
             if not MONITORS:
-                taste_template.append('--  Process continuous signals')
-                taste_template.append(f'if {LPREFIX}.Init_Done then')
-                taste_template.append("Check_Queue (Message_Pending);")
-                taste_template.append('end if;')
+                cs_template.append('--  Process continuous signals')
+                cs_template.append(f'if {LPREFIX}.Init_Done then')
+                cs_template.append("Check_Queue (Message_Pending);")
+                cs_template.append('end if;')
                 if not generic:  # not a function type
                     ads_template.append('procedure Check_Queue (Res : out Asn1Boolean)')
                     ads_template.append(f'with Import, Convention => C, '
                                         f'Link_Name => "{process.name.lower()}_check_queue";')
             else:
-                taste_template.append('--  Process observer transitions')
-                taste_template.append("Message_Pending := False;")
+                cs_template.append('--  Process observer transitions')
+                cs_template.append("Message_Pending := False;")
         if has_cs:
-            taste_template.extend(['if Message_Pending or trId /= -1 then',
+            cs_template.extend(['if Message_Pending or trId /= -1 then',
                                       'goto Next_Transition;',
                                    'end if;'])
 
@@ -1095,13 +1113,13 @@ package body {process.name}_RI is''']
             for each in substates:
                 if statename in each.cs_mapping and each.cs_mapping[statename]:
                     if first_of_aggreg:
-                        taste_template.append(
+                        cs_template.append(
                                 f'if {LPREFIX}.State = {ASN1SCC}{agg_name} then')
                         first_of_aggreg = False
 
                     need_final_endif = True
                     first = "els" if done else ""
-                    taste_template.append(
+                    cs_template.append(
                             f'if {LPREFIX}.{each.statename}{SEPARATOR}State = '
                             f'{ASN1SCC}{statename} then')
 
@@ -1113,18 +1131,18 @@ package body {process.name}_RI is''']
 
                     for provided_clause in sorted(cs_item,
                                                  key=lambda itm: itm.priority):
-                        taste_template.append(f'--  Priority {provided_clause.priority}')
+                        cs_template.append(f'--  Priority {provided_clause.priority}')
                         trId = process.transitions.index(provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
                                              branch_to=trId,
                                              sep=sep, last=last)
                         code.append('goto Next_Transition;')
                         sep = 'elsif '
-                        taste_template.extend(code)
+                        cs_template.extend(code)
 
                     done.append(statename)
-                    taste_template.append('end if;')  # inner if
-                    taste_template.append('end if;')  # substate if
+                    cs_template.append('end if;')  # inner if
+                    cs_template.append('end if;')  # substate if
                     sep = 'if '
                     break
 
@@ -1133,7 +1151,7 @@ package body {process.name}_RI is''']
             if cs_item:
                 need_final_endif = False
                 first = "els" if done else ""
-                taste_template.append(
+                cs_template.append(
                         f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
                         ' then')
             # Change priority 0 (no priority set) to lowest priority
@@ -1145,7 +1163,7 @@ package body {process.name}_RI is''']
 
             for provided_clause in sorted(cs_item,
                                           key=lambda itm: itm.priority):
-                taste_template.append(f'--  Priority: {provided_clause.priority}')
+                cs_template.append(f'--  Priority: {provided_clause.priority}')
                 trId = process.transitions.index(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
@@ -1175,24 +1193,26 @@ package body {process.name}_RI is''']
                                      branch_to=trId, sep=sep, last=last,
                                      exitcalls=exitcalls)
                 sep = 'elsif '
-                taste_template.extend(code)
+                cs_template.extend(code)
 
             if cs_item:
-                taste_template.append('end if;')  # inner if
-                taste_template.append('end if;')  # current state
+                cs_template.append('end if;')  # inner if
+                cs_template.append('end if;')  # current state
 
             sep = 'if '
 
         if need_final_endif:
-            taste_template.append('end if;')
+            cs_template.append('end if;')
+        cs_template.append('end Branch_Continuous_Signals;')
+        # done with the code of the continuous signals
 
         taste_template.append('<<Next_Transition>>')
         taste_template.append('end loop;')
-        taste_template.append('end Execute_Transition;')
+        taste_template.append('end Execute_Cycle;')
         taste_template.append('\n')
     elif not instance:
         # No transitions defined, but keep the interface for CS_Only calls
-        taste_template.append('procedure Execute_Transition (Id : Integer) is null;')
+        taste_template.append('procedure Execute_Cycle (Branch : Branches) is null;')
         taste_template.append('\n')
 
     # Add code of the package elaboration
@@ -3171,10 +3191,10 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
 
 @generate.register(ogAST.Label)
 def _label(lab, **kwargs):
-    ''' Transition following labels are generated in a separate section
-        for visibility reasons (see Ada scope)
+    ''' Label: call the corresponding function and get the next branch
+        to transition to afterwards.
     '''
-    return [f'goto {lab.inputString};'], []
+    return [f'Next_Branch := {lab.inputString};'], []
 
 
 @generate.register(ogAST.Transition)
@@ -3212,7 +3232,8 @@ def _transition(tr, **kwargs):
                                         f' {ASN1SCC}{tr.terminator.inputString};')
                     # Call the START function of the state aggregation
                     code.append(f'{tr.terminator.next_id};')
-                    code.append('trId := -1;')
+                    # code.append('trId := -1;')
+                    code.append('return Branch_End;')
                 elif not history:
                     code.append(f'trId := {str(tr.terminator.next_id)};')
                     if tr.terminator.next_id == -1:
@@ -3237,7 +3258,8 @@ def _transition(tr, **kwargs):
                         for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 if tr.terminator.next_is_aggregation:
-                                    statement = ns != '-*' and f'{nid};' or 'trId := -1;'
+                                    statement = ns != '-*' and f'{nid};' or 'return Branch_End;'
+                                    # statement = ns != '-*' and f'{nid};' or 'trId := -1;'
                                 else:
                                     statement = f'trId := {nid};'
                                 states_prefix = (f"{ASN1SCC}{s}" for s in sta)
@@ -3259,19 +3281,23 @@ def _transition(tr, **kwargs):
                         code.append(f'when others =>')
                         if remaining:
                             code.append('--  ' + " | ".join(remaining))
-                        code.append('trId := -1;')
+                        # code.append('trId := -1;')
+                        code.append('return Branch_End;')
                         code.append('end case;')
                     else:
-                        code.append('trId := -1;  --  No change of state')
+                        # code.append('trId := -1;  --  No change of state')
+                        code.append('return Branch_End;  --  No change of state')
                 #code.append('goto Continuous_Signals;')
                 if not MONITORS:
-                    code.append('goto Continuous_Signals;')
+                    # code.append('goto Continuous_Signals;')
+                    code.append('return Continuous_Signals;')
                 else:
                     # Observers only evaluate continuous signals once
                     # to avoid looping forever when remaining in the same state
                     code.append('goto Next_Transition; --  Until next observer step')
             elif tr.terminator.kind == 'join':
-                code.append(f'goto {tr.terminator.inputString};')
+                # code.append(f'goto {tr.terminator.inputString};')
+                code.append(f'return Branch_{tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
                 if 'PID' in TYPES:
                     # Instances can be deleted only from the code of the type
@@ -3329,17 +3355,20 @@ def _transition(tr, **kwargs):
                     code.append(f'trId :=  {str(tr.terminator.next_id)};')
                     #code.append('goto Continuous_Signals;')
                     if not MONITORS:
-                        code.append('goto Continuous_Signals;')
+                        # code.append('goto Continuous_Signals;')
+                        code.append('return Continuous_Signals;')
                     else:
                         # Observers only evaluate continuous signals once
                         # to avoid looping forever when remaining in the same state
                         code.append('goto Next_Transition; --  Until next observer step')
                 if aggregate:
                     code.append('else')
-                    code.append('trId := -1;')
+                    # code.append('trId := -1;')
+                    code.append('return Branch_End;')
                     #code.append('goto Continuous_Signals;')
                     if not MONITORS:
-                        code.append('goto Continuous_Signals;')
+                        # code.append('goto Continuous_Signals;')
+                        code.append('return Continuous_Signals;')
                     else:
                         # Observers only evaluate continuous signals once
                         # to avoid looping forever when remaining in the same state
@@ -3355,17 +3384,19 @@ def _transition(tr, **kwargs):
 def _floating_label(label, **kwargs):
     ''' Generate the code for a floating label (Ada label + transition) '''
     code = []
-    local_decl = []
     # Add the traceability information
     code.extend(traceability(label))
-    code.append(f'<<{label.inputString}>>')
+    code.append(f'function Branch_{label.inputString} return Branches is')
     if label.transition:
         code_trans, local_trans = generate(label.transition)
+        code.extend(local_trans)
+        code.append('begin')
         code.extend(code_trans)
-        local_decl.extend(local_trans)
     else:
-        code.append('return;')
-    return code, local_decl
+        code.extend(['return Branch_End;'])
+    code.append(f'end Branch_{label.inputString};')
+    code.append('')  # force newline
+    return code, []
 
 
 def procedure_header(proc):

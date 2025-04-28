@@ -981,7 +981,7 @@ def add_labels_before_each_branch(
                 for branch in branches(trans):
                     ...
 
-    # Recursively find named start transition and add the label
+    # Recursively find start and named start transition and add the label
     def rec_find_named_start(composite: ogAST.CompositeState, path: list):
         for each in composite.composite_states:
             path.append(each.statename)
@@ -990,12 +990,22 @@ def add_labels_before_each_branch(
         for each in composite.content.named_start:
             if each.transition is not None and need_label(each.transition):
                 label_name =\
-                       f'{path[-1].replace(separator, "_")}_{each.inputString}'
+                       f'{path[-1]}_{each.inputString}'
                 label = ogAST.Label()
                 label.inputString = label_name
                 each.transition.actions.insert(0, label)
                 for branch in branches(each.transition):
                     ...
+        if composite.content.start is not None\
+                and composite.content.start.transition is not None\
+                and need_label(composite.content.start.transition):
+            label_name =\
+                   f'{path[-1]}_START'
+            label = ogAST.Label()
+            label.inputString = label_name
+            composite.content.start.transition.actions.insert(0, label)
+            for branch in branches(composite.content.start.transition):
+                ...
 
     for composite in process.composite_states:
         state_path = [composite.statename]
