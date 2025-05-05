@@ -659,8 +659,7 @@ class Label:
 
     def trace(self):
         ''' Debug output for a label '''
-        return u'LABEL {label} ({l},{c})'.format(label=self.inputString,
-                l=self.line, c=self.charPositionInLine)
+        return f'LABEL {self.inputString} ({self.line},{self.charPositionInLine})'
 
 
 class Floating_label(Label):
@@ -735,6 +734,10 @@ class Input:
         self.inputlist = []
         # transition_id is an index of the process.transitions list
         self.transition_id = -1
+        # branch_label is created by Helper.add_labels_before_each_branch
+        # it is used by backend to determine which branch to execute instead
+        # of a transition id (check AdaGenerator)
+        self.branch_label = "Branch_End"
         # optional comment symbol
         self.comment = None
         # optional hyperlink

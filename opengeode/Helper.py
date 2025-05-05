@@ -673,6 +673,7 @@ def find_labels(trans):
             new_trans = ogAST.Transition()
             # Create a floating label
             flab = ogAST.Floating_label(label=action)
+            flab.path = action.path  # keep the path
             new_trans.actions = \
                               trans.actions[slice(idx + 1, len(trans.actions))]
             new_trans.terminator = trans.terminator
@@ -683,6 +684,7 @@ def find_labels(trans):
             trans.terminator = ogAST.Terminator()
             trans.terminator.inputString = action.inputString
             trans.terminator.kind = 'join'
+            trans.terminator.path = action.path
             # Recursively find labels in the new transition
             for flabel in find_labels(flab.transition):
                 yield flabel
@@ -905,10 +907,12 @@ def add_labels_before_each_branch(
         return []
 
     if process.content.start:
-        if need_label(process.content.start.transition):
-            label = ogAST.Label()
-            label.inputString = "startup_transition"
-            process.content.start.transition.actions.insert(0, label)
+        # We always add a label for the startup transition is the name
+        # is hardcoded in the Ada backend
+        #if need_label(process.content.start.transition):
+        label = ogAST.Label()
+        label.inputString = "startup_transition"
+        process.content.start.transition.actions.insert(0, label)
         for branch in branches(process.content.start.transition):
             ...
 
@@ -929,8 +933,14 @@ def add_labels_before_each_branch(
                 label = ogAST.Label()
                 label.inputString = label_name
                 each.transition.actions.insert(0, label)
+                each.branch_label = label_name
                 for branch in branches(each.transition):
                     ...
+            elif each.transition.actions and isinstance(each.transition.actions[0],
+                                                        ogAST.Label):
+                # if there is already a label, use it
+                each.branch_label = each.transition.actions[0].inputString
+
 
     for state_name, continuous in process.cs_mapping.items():
         # Naming scheme for continuous signals is a bit more tricky
@@ -990,7 +1000,7 @@ def add_labels_before_each_branch(
         for each in composite.content.named_start:
             if each.transition is not None and need_label(each.transition):
                 label_name =\
-                       f'{path[-1]}_{each.inputString}'
+                       f'{path[-1]}{separator}{each.inputString}'
                 label = ogAST.Label()
                 label.inputString = label_name
                 each.transition.actions.insert(0, label)
@@ -1000,7 +1010,7 @@ def add_labels_before_each_branch(
                 and composite.content.start.transition is not None\
                 and need_label(composite.content.start.transition):
             label_name =\
-                   f'{path[-1]}_START'
+                   f'{path[-1]}{separator}START'
             label = ogAST.Label()
             label.inputString = label_name
             composite.content.start.transition.actions.insert(0, label)

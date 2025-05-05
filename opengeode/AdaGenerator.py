@@ -166,6 +166,147 @@ def generate(*args, **kwargs) -> Tuple:
     raise TypeError('Incorrect, unsupported or missing data in model AST')
     return [], []
 
+def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
+    ''' Generate the code to handle the continuous signals '''
+    cs_template = [
+            '--  Process continuous signals',
+            'function Branch_Continuous_Signals return Branches is',
+            'Message_Pending : Asn1Boolean := True;',
+            'begin']
+
+    # After completing active transition(s), check continuous signals:
+    #     - Check current state(s)
+    #     - For each continuous signal generate code (test+transition)
+    # XXX add to C backend
+    if not MONITORS:
+        cs_template.extend([
+           f'if {LPREFIX}.Init_Done then',
+            "Check_Queue (Message_Pending);",
+            'end if;'])
+    else:
+        cs_template.extend(
+                ['--  Process observer transitions',
+                 "Message_Pending := False;"])
+
+    cs_template.extend(['if Message_Pending then',
+                              'return Branch_End;',
+                           'end if;'])
+
+    # Process the continuous signals in state aggregations first
+    # (reminder: state aggregations = parallel states)
+    done = []
+    sep = 'if '
+    last = ''
+    # flag indicating there are CS in nested states but not at root
+    need_final_endif = False
+    first_of_aggreg = True
+    for cs, agg in product(process.cs_mapping.items(),
+                           process.aggregates.items()):
+        (statename, cs_item) = cs
+        (agg_name, substates) = agg
+
+        if not cs_item:
+            continue
+        for each in substates:
+            if statename in each.cs_mapping and each.cs_mapping[statename]:
+                if first_of_aggreg:
+                    cs_template.append(
+                            f'if {LPREFIX}.State = {ASN1SCC}{agg_name} then')
+                    first_of_aggreg = False
+
+                need_final_endif = True
+                first = "els" if done else ""
+                cs_template.append(
+                        f'if {LPREFIX}.{each.statename}{SEPARATOR}State = '
+                        f'{ASN1SCC}{statename} then')
+
+                # Change priority 0 (no priority set) to lowest priority
+                lowest_priority = max(item.priority for item in cs_item)
+                for each in cs_item:
+                    if each.priority == 0:
+                        each.priority = lowest_priority + 1
+
+                for provided_clause in sorted(cs_item,
+                                             key=lambda itm: itm.priority):
+                    cs_template.append(f'--  Priority {provided_clause.priority}')
+                    trId = process.transitions.index(provided_clause.transition)
+                    code, loc = generate(provided_clause.trigger,
+                                         #branch_to=trId,
+                                         #branch_to=None,
+                                         sep=sep, last=last)
+                    code.append('-- goto Next_Transition; (??)')
+                    sep = 'elsif '
+                    cs_template.extend(code)
+
+                done.append(statename)
+                cs_template.append('end if;')  # inner if
+                cs_template.append('end if;')  # substate if
+                sep = 'if '
+                break
+
+    for statename in process.cs_mapping.keys() - done:
+        cs_item = process.cs_mapping[statename]
+        if cs_item:
+            need_final_endif = False
+            first = "els" if done else ""
+            cs_template.append(
+                    f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
+                    ' then')
+        # Change priority 0 (no priority set) to lowest priority
+        if cs_item:
+            lowest_priority = max(item.priority for item in cs_item)
+        for each in cs_item:
+            if each.priority == 0:
+                each.priority = lowest_priority + 1
+
+        for provided_clause in sorted(cs_item,
+                                      key=lambda itm: itm.priority):
+            cs_template.append(f'--  Priority: {provided_clause.priority}')
+            trId = process.transitions.index(provided_clause.transition)
+
+            # check if we are leaving a nested state with a CS
+            state_tree = statename.split(SEPARATOR)
+            context = process
+            exitlist, exitcalls = [], []
+            current = ''
+
+            while state_tree:
+                current = current + state_tree.pop(0)
+
+                for comp in context.composite_states:
+                    if current.lower() == comp.statename.lower():
+                        if comp.exit_procedure:
+                            exitlist.append(current)
+                        context = comp
+                        current = current + SEPARATOR
+                        break
+
+            trans = process.transitions[trId]
+            for each in reversed(exitlist):
+                if trans and all(each.startswith(trans_st)
+                        for trans_st in trans.possible_states):
+                    exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit;")
+
+            code, loc = generate(provided_clause.trigger,
+                                 #branch_to=trId, sep=sep, last=last,
+                                 branch_to=None, sep=sep, last=last,
+                                 exitcalls=exitcalls)
+            sep = 'elsif '
+            cs_template.extend(code)
+
+        if cs_item:
+            cs_template.append('end if;')  # inner if
+            cs_template.append('end if;')  # current state
+
+        sep = 'if '
+
+    if need_final_endif:
+        cs_template.append('end if;')
+    cs_template.extend(['return Branch_End;',
+                        'end Branch_Continuous_Signals;', '\n'])
+    # done with the code of the continuous signals
+    return cs_template
+
 
 # Processing of the AST
 @generate.register(ogAST.Process)
@@ -369,12 +510,12 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     start_transition = []
     # Continuous State transition id
     if not instance:
-        for name, val in process.mapping.items():
-            # Test val, in principle there is a value but if the code targets
-            # generation of properties, the model may have been cleaned up and
-            # in that case no value would be set..
-            if name.endswith('START') and name != 'START' and val:
-                process_level_decl.append(f'{name} : constant := {str(val)};')
+#       for name, val in process.mapping.items():
+#           # Test val, in principle there is a value but if the code targets
+#           # generation of properties, the model may have been cleaned up and
+#           # in that case no value would be set..
+#           if name.endswith('START') and name != 'START' and val:
+#               process_level_decl.append(f'{name} : constant := {str(val)};')
 
         # Declare start procedure for aggregate states XXX add in C generator
         # should create one START per "via" clause, TODO later
@@ -640,6 +781,13 @@ package body {process.name}_RI is''']
     # XXX to be added to C generator
     taste_template.extend(aggreg_start_proc)
 
+
+    # Insert labels before branches
+    Helper.add_labels_before_each_branch(process)
+
+    # Transform inner labels to floating labels
+    Helper.inner_labels_to_floating(process)
+
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
                         {'name': timer} for timer in process.timers]:
@@ -736,7 +884,8 @@ package body {process.name}_RI is''']
                     dest.append(f'{LPREFIX}.{inp} := {param_name};')
                 # Execute the corresponding transition
                 if input_def.transition:
-                    dest.append(f'Execute_Cycle ({input_def.transition_id});')
+                    # dest.append(f'Execute_Cycle ({input_def.transition_id});')
+                    dest.append(f'Execute_Cycle ({input_def.branch_label});')
                 else:
                     return False
             else:
@@ -817,6 +966,15 @@ package body {process.name}_RI is''']
         elif instance:
             taste_template.append(f'end {signame};')
             taste_template.append('\n')
+
+    # Add the function handling continuous signals
+    if has_cs:
+        cs_template = generate_code_for_continuous_signals(process, generic)
+        taste_template.extend(cs_template)
+        if not MONITORS and not generic:  # not a function type
+            ads_template.append('procedure Check_Queue (Res : out Asn1Boolean)')
+            ads_template.append(f'with Import, Convention => C, '
+                                f'Link_Name => "{process.name.lower()}_check_queue";')
 
     #  add call to startup function for instances
     if instance:
@@ -932,6 +1090,13 @@ package body {process.name}_RI is''']
             # Generic functions get the SET and RESET from template
             pass
 
+
+    # All branches start with a label. We create in the .ads an enumerated
+    # type for all of them, and a function to execute its content, and
+    # returning the next branch to exectute.
+    all_labels = [lab.inputString for lab in process.content.floating_labels]
+    ads_template.append(f'type Branches is ({", ".join(all_labels)}, Continuous_Signals, Branch_End);')
+
     if instance:
         # Instance of a process type, all the RIs (including timers) must
         # be gathered to instantiate the package
@@ -978,11 +1143,6 @@ package body {process.name}_RI is''']
         ads_template.append('procedure Execute_Cycle (Branch : Branches);')
         # ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
-    # Insert labels before branches
-    Helper.add_labels_before_each_branch(process)
-
-    # Transform inner labels to floating labels
-    Helper.inner_labels_to_floating(process)
 
     # Generate the code for all transitions
     code_transitions = []
@@ -992,25 +1152,18 @@ package body {process.name}_RI is''']
         code_transitions.append(code_tr)
         local_decl_transitions.extend(tr_local_decl)
 
-    # All branches start with a label. We create in the .ads an enumerated
-    # type for all of them, and a function to execute its content, and
-    # returning the next branch to exectute.
-    all_labels = [lab.inputString for lab in process.content.floating_labels]
-    ads_template.append(f'type Branches is ({", ".join(all_labels)}, Continuous_Signals, Branch_End);')
-
     # Generate code for the floating labels as individual functions
     code_labels = []
     for label in process.content.floating_labels:
-        ads_template.append(f'function Branch_{label.inputString} return Branches;')
+        ads_template.append(
+                f'function Branch_{label.inputString} return Branches;')
         code_label, _ = generate(label)
         taste_template.extend(code_label)
 
-    # Generate the code of the Execute_Transition  procedure, if needed
+    # Generate the code of the Execute_Cycle procedure, if needed
     if process.transitions and not instance:
         taste_template.append('procedure Execute_Cycle (Branch : Branches) is')
         taste_template.append('Next_Branch : Branches := Branch;')
-        if has_cs:
-            taste_template.append('Message_Pending : Asn1Boolean := True;')
 
         # Declare the local variables needed by the transitions in the template
         taste_template.extend(set(local_decl_transitions))
@@ -1019,7 +1172,7 @@ package body {process.name}_RI is''']
         # Make sure initialization has happened before executing transitions
         # other than the startup transition. It may be reset to False when an
         # instance terminates with the stop symbol.
-        taste_template.append(f'if not {LPREFIX}.Init_Done and trId /= 0 then')
+        taste_template.append(f'if not {LPREFIX}.Init_Done and Branch /= Startup_Transition then')
         taste_template.append('return;')
         taste_template.append('end if;')
 
@@ -1043,13 +1196,17 @@ package body {process.name}_RI is''']
 #           else:
 #               taste_template.append('null;')
 
-        taste_template.append(
+        if has_cs:
+            taste_template.append(
                 'when Continuous_Signals => Next_Branch := Branch_Continuous_Signals;')
+        else:
+            taste_template.append(
+                'when Continuous_Signals => Next_Branch := Branch_End;')
         taste_template.append(
                 'when Branch_End => null;')
-        #taste_template.append('trId := -1;')
+        # taste_template.append('trId := -1;')
 #       taste_template.append('Execute_Cycle (Continuous_Signals);')
-        #taste_template.append('goto Continuous_Signals;')
+        # taste_template.append('goto Continuous_Signals;')
 
 #       taste_template.append('when others =>')
 #       taste_template.append('null;')
@@ -1067,144 +1224,6 @@ package body {process.name}_RI is''']
 
         # Add the code for the floating labels
         taste_template.extend(code_labels)
-
-        # Generate the code to handle the continuous signals
-        cs_template = []
-        cs_template.append('function Branch_Continuous_Signals return Branches is')
-        cs_template.append('begin')
-
-        # After completing active transition(s), check continuous signals:
-        #     - Check current state(s)
-        #     - For each continuous signal generate code (test+transition)
-        # XXX add to C backend
-        if has_cs:
-            if not MONITORS:
-                cs_template.append('--  Process continuous signals')
-                cs_template.append(f'if {LPREFIX}.Init_Done then')
-                cs_template.append("Check_Queue (Message_Pending);")
-                cs_template.append('end if;')
-                if not generic:  # not a function type
-                    ads_template.append('procedure Check_Queue (Res : out Asn1Boolean)')
-                    ads_template.append(f'with Import, Convention => C, '
-                                        f'Link_Name => "{process.name.lower()}_check_queue";')
-            else:
-                cs_template.append('--  Process observer transitions')
-                cs_template.append("Message_Pending := False;")
-        if has_cs:
-            cs_template.extend(['if Message_Pending or trId /= -1 then',
-                                      'goto Next_Transition;',
-                                   'end if;'])
-
-        # Process the continuous signals in state aggregations first
-        # (reminder: state aggregations = parallel states)
-        done = []
-        sep = 'if '
-        last = ''
-        # flag indicating there are CS in nested states but not at root
-        need_final_endif = False
-        first_of_aggreg = True
-        for cs, agg in product(process.cs_mapping.items(),
-                               process.aggregates.items()):
-            (statename, cs_item) = cs
-            (agg_name, substates) = agg
-
-            if not cs_item:
-                continue
-            for each in substates:
-                if statename in each.cs_mapping and each.cs_mapping[statename]:
-                    if first_of_aggreg:
-                        cs_template.append(
-                                f'if {LPREFIX}.State = {ASN1SCC}{agg_name} then')
-                        first_of_aggreg = False
-
-                    need_final_endif = True
-                    first = "els" if done else ""
-                    cs_template.append(
-                            f'if {LPREFIX}.{each.statename}{SEPARATOR}State = '
-                            f'{ASN1SCC}{statename} then')
-
-                    # Change priority 0 (no priority set) to lowest priority
-                    lowest_priority = max(item.priority for item in cs_item)
-                    for each in cs_item:
-                        if each.priority == 0:
-                            each.priority = lowest_priority + 1
-
-                    for provided_clause in sorted(cs_item,
-                                                 key=lambda itm: itm.priority):
-                        cs_template.append(f'--  Priority {provided_clause.priority}')
-                        trId = process.transitions.index(provided_clause.transition)
-                        code, loc = generate(provided_clause.trigger,
-                                             branch_to=trId,
-                                             sep=sep, last=last)
-                        code.append('goto Next_Transition;')
-                        sep = 'elsif '
-                        cs_template.extend(code)
-
-                    done.append(statename)
-                    cs_template.append('end if;')  # inner if
-                    cs_template.append('end if;')  # substate if
-                    sep = 'if '
-                    break
-
-        for statename in process.cs_mapping.keys() - done:
-            cs_item = process.cs_mapping[statename]
-            if cs_item:
-                need_final_endif = False
-                first = "els" if done else ""
-                cs_template.append(
-                        f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
-                        ' then')
-            # Change priority 0 (no priority set) to lowest priority
-            if cs_item:
-                lowest_priority = max(item.priority for item in cs_item)
-            for each in cs_item:
-                if each.priority == 0:
-                    each.priority = lowest_priority + 1
-
-            for provided_clause in sorted(cs_item,
-                                          key=lambda itm: itm.priority):
-                cs_template.append(f'--  Priority: {provided_clause.priority}')
-                trId = process.transitions.index(provided_clause.transition)
-
-                # check if we are leaving a nested state with a CS
-                state_tree = statename.split(SEPARATOR)
-                context = process
-                exitlist, exitcalls = [], []
-                current = ''
-
-                while state_tree:
-                    current = current + state_tree.pop(0)
-
-                    for comp in context.composite_states:
-                        if current.lower() == comp.statename.lower():
-                            if comp.exit_procedure:
-                                exitlist.append(current)
-                            context = comp
-                            current = current + SEPARATOR
-                            break
-
-                trans = process.transitions[trId]
-                for each in reversed(exitlist):
-                    if trans and all(each.startswith(trans_st)
-                            for trans_st in trans.possible_states):
-                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit;")
-
-                code, loc = generate(provided_clause.trigger,
-                                     branch_to=trId, sep=sep, last=last,
-                                     exitcalls=exitcalls)
-                sep = 'elsif '
-                cs_template.extend(code)
-
-            if cs_item:
-                cs_template.append('end if;')  # inner if
-                cs_template.append('end if;')  # current state
-
-            sep = 'if '
-
-        if need_final_endif:
-            cs_template.append('end if;')
-        cs_template.append('end Branch_Continuous_Signals;')
-        # done with the code of the continuous signals
 
         taste_template.append('<<Next_Transition>>')
         taste_template.append('end loop;')
@@ -3070,7 +3089,7 @@ def _decision(dec, branch_to=None, sep='if ', last='end if;', exitcalls=[],
                 # procedures of the nested states we may be leaving
                 for exit in exitcalls:
                     code.append(exit);
-                code.append(f'trId := {branch_to};')
+                code.append(f'trId := {branch_to}; -- BRANCH_TO')
             continue
         if dec.kind == 'informal_text':
             break
@@ -3194,7 +3213,7 @@ def _label(lab, **kwargs):
     ''' Label: call the corresponding function and get the next branch
         to transition to afterwards.
     '''
-    return [f'Next_Branch := {lab.inputString};'], []
+    return [f'return {lab.inputString};'], []
 
 
 @generate.register(ogAST.Transition)
@@ -3233,15 +3252,18 @@ def _transition(tr, **kwargs):
                     # Call the START function of the state aggregation
                     code.append(f'{tr.terminator.next_id};')
                     # code.append('trId := -1;')
-                    code.append('return Branch_End;')
+                    code.append('return Continuous_Signals;')
                 elif not history:
-                    code.append(f'trId := {str(tr.terminator.next_id)};')
+                    # code.append(f'trId := {str(tr.terminator.next_id)};')
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate:
                             code.append(f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
                         else:
                             code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State :='
                                         f' {ASN1SCC}{tr.terminator.inputString};')
+                        code.append('return Continuous_Signals;')
+                    else:
+                        code.append(f'return {str(tr.terminator.next_id)};')
                 else:
                     # "nextstate -": switch case to re-run the entry transition
                     # in case of a composite state or state aggregation
@@ -3258,10 +3280,10 @@ def _transition(tr, **kwargs):
                         for nid, sta in tr.terminator.candidate_id.items():
                             if nid != -1:
                                 if tr.terminator.next_is_aggregation:
-                                    statement = ns != '-*' and f'{nid};' or 'return Branch_End;'
+                                    statement = ns != '-*' and f'{nid};' or 'return Continuous_Signals;'
                                     # statement = ns != '-*' and f'{nid};' or 'trId := -1;'
                                 else:
-                                    statement = f'trId := {nid};'
+                                    statement = f'return {nid};'
                                 states_prefix = (f"{ASN1SCC}{s}" for s in sta)
                                 done.extend(s.split(SEPARATOR)[0] for s in sta)
                                 joined_states = " | ".join(states_prefix)
@@ -3282,22 +3304,32 @@ def _transition(tr, **kwargs):
                         if remaining:
                             code.append('--  ' + " | ".join(remaining))
                         # code.append('trId := -1;')
-                        code.append('return Branch_End;')
+                        code.append('return Continuous_Signals;')
                         code.append('end case;')
                     else:
                         # code.append('trId := -1;  --  No change of state')
-                        code.append('return Branch_End;  --  No change of state')
-                #code.append('goto Continuous_Signals;')
-                if not MONITORS:
-                    # code.append('goto Continuous_Signals;')
-                    code.append('return Continuous_Signals;')
-                else:
-                    # Observers only evaluate continuous signals once
-                    # to avoid looping forever when remaining in the same state
-                    code.append('goto Next_Transition; --  Until next observer step')
+                        code.append('--  No change of state')
+                        #code.append('goto Continuous_Signals;')
+                        if not MONITORS:
+                            # code.append('goto Continuous_Signals;')
+                            code.append('return Continuous_Signals;')
+                            pass
+                        else:
+                            # Observers only evaluate continuous signals once
+                            # to avoid looping forever when remaining in the same state
+                            # code.append('goto Next_Transition; --  Until next observer step')
+                            code.append('return Branch_End; --  Until next observer step')
             elif tr.terminator.kind == 'join':
-                # code.append(f'goto {tr.terminator.inputString};')
-                code.append(f'return Branch_{tr.terminator.inputString};')
+                if tr.terminator.path:
+                    # check if we are in a procedure using the path
+                    # because in procedures, labels/goto are kept as such
+                    kind = tr.terminator.path[-1].split()[0]
+                else:
+                    kind = 'PROCESS'
+                if kind == 'PROCEDURE':
+                    code.append(f'goto {tr.terminator.inputString};')
+                else:
+                    code.append(f'return {tr.terminator.inputString}; -- Join in Process')
             elif tr.terminator.kind == 'stop':
                 if 'PID' in TYPES:
                     # Instances can be deleted only from the code of the type
@@ -3307,7 +3339,7 @@ def _transition(tr, **kwargs):
                     # Reset Init_Done, to avoid consuming cyclic messages with
                     # the default state
                     code.append(f"{LPREFIX}.Init_Done := False;")
-                code.append("return;")
+                code.append("return Continuous_Signals; -- Leaving state forever")
             elif tr.terminator.kind == 'return':
                 string = ''
                 aggregate = False
@@ -3350,29 +3382,57 @@ def _transition(tr, **kwargs):
 
                         code.extend(stmts)
                         local_decl.extend(local)
-                    code.append(f'return{" " + string if string else ""};')
+                    if not tr.possible_states and not string:
+                        # It can be a return from an inner procedure or
+                        # from a parallel state. In the first case, emit
+                        # "return", and in the second case emit a
+                        # "return Continuous_Signals"
+                        kind = tr.terminator.path[-1].split()[0] \
+                                if tr.terminator.path else 'PROCESS'
+                        if kind == 'PROCEDURE':
+                            code.append('return;  -- Exit from procedure')
+                        else:
+                            code.append('return Continuous_Signals;  -- Exit from aggregation')
+                    else:
+                        # if there is no string in a return from a state, it
+                        # may mean we miss a connection at model level...
+                        code.append(f'return{" " + string if string else " Continuous_Signals"};')
                 else:
-                    code.append(f'trId :=  {str(tr.terminator.next_id)};')
-                    #code.append('goto Continuous_Signals;')
+                    # next_id != -1, can be a return from an inner state
+                    #code.append(f'trId :=  {str(tr.terminator.next_id)};')
                     if not MONITORS:
-                        # code.append('goto Continuous_Signals;')
-                        code.append('return Continuous_Signals;')
+                        # We have to check recursively if the next transition
+                        # ends with a JOIN to find the next branch to exectute
+                        last_path = tr.terminator.path[-1].split()
+                        if last_path[0] == 'STATE':
+                            state_name = last_path[1]
+                            def find_a_label(trans):
+                                if not hasattr(trans, 'terminator'):
+                                    # Return in a parallel state
+                                    return "Continuous_Signals"
+                                if trans.terminator.kind == 'join':
+                                    return trans.terminator.inputString
+                                return find_a_label(trans.terminator.next_trans)
+
+                            ret_branch = find_a_label(tr.terminator.next_trans)
+                            code.append(f'return {ret_branch};')
+                        else:
+                            code.append('return Continuous_Signals; -- ?')
                     else:
                         # Observers only evaluate continuous signals once
                         # to avoid looping forever when remaining in the same state
-                        code.append('goto Next_Transition; --  Until next observer step')
+                        # code.append('goto Next_Transition; --  Until next observer step')
+                        code.append('return Branch_End;  -- Until next observer step')
                 if aggregate:
                     code.append('else')
                     # code.append('trId := -1;')
-                    code.append('return Branch_End;')
-                    #code.append('goto Continuous_Signals;')
                     if not MONITORS:
-                        # code.append('goto Continuous_Signals;')
                         code.append('return Continuous_Signals;')
                     else:
                         # Observers only evaluate continuous signals once
                         # to avoid looping forever when remaining in the same state
-                        code.append('goto Next_Transition; --  Until next observer step')
+                        #code.append('goto Next_Transition; --  Until next observer step')
+                        code.append('return Branch_End;  -- Until next observer step')
                     code.append('end if;')
     if empty_transition:
         # If transition does not have any statement, generate an Ada 'null;'
@@ -3385,17 +3445,32 @@ def _floating_label(label, **kwargs):
     ''' Generate the code for a floating label (Ada label + transition) '''
     code = []
     # Add the traceability information
+    if label.path:
+        kind = label.path[-1].split()[0]
+    else:
+        kind = 'PROCESS'
+
     code.extend(traceability(label))
-    code.append(f'function Branch_{label.inputString} return Branches is')
+    if kind == 'PROCEDURE':
+        code.append(f'<<{label.inputString}>>')
+    else:
+        code.append(f'function Branch_{label.inputString} return Branches is')
     if label.transition:
         code_trans, local_trans = generate(label.transition)
-        code.extend(local_trans)
+        if local_trans and kind == 'PROCEDURE':
+            code.append('declare')
+        code.extend(set(local_trans)) # set to avoid duplicate Math instantiations
         code.append('begin')
         code.extend(code_trans)
+        if kind == 'PROCEDURE':
+            code.append('end;')
+        else:
+            code.append(f'end Branch_{label.inputString};')
+            code.append('\n')  # force newline
     else:
-        code.extend(['return Branch_End;'])
-    code.append(f'end Branch_{label.inputString};')
-    code.append('')  # force newline
+        if kind != 'PROCEDURE':
+            code.append('(Continuous_Signals);')
+            code.append('\n')  # force newline
     return code, []
 
 
