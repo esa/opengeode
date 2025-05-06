@@ -1095,7 +1095,8 @@ package body {process.name}_RI is''']
     # type for all of them, and a function to execute its content, and
     # returning the next branch to exectute.
     all_labels = [lab.inputString for lab in process.content.floating_labels]
-    ads_template.append(f'type Branches is ({", ".join(all_labels)}, Continuous_Signals, Branch_End);')
+    if not instance:
+        ads_template.append(f'type Branches is ({", ".join(all_labels)}, Continuous_Signals, Branch_End);')
 
     if instance:
         # Instance of a process type, all the RIs (including timers) must
@@ -1136,7 +1137,7 @@ package body {process.name}_RI is''']
                f'Link_Name => "{process.name.lower()}_state";')
 
         # Expose Execute_Transition, needed by the simulator to execute continuous signals
-        ads_template.append(f'procedure Execute_Cycle (Branch : Branches) renames {process.name}_Instance.Execute_Cycle;')
+        ads_template.append(f'procedure Execute_Cycle (Branch : {process.name}_Instance.Branches) renames {process.name}_Instance.Execute_Cycle;')
         #ads_template.append(f'CS_Only : constant := {process.name}_Instance.CS_Only;')
 
     else:
