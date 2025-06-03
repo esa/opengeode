@@ -1778,8 +1778,8 @@ def _prim_call(prim, **kwargs):
             stmt, operands[idx], local = expression(param, readonly=1)
             stmts.extend(stmt)
             local_decl.extend(local)
-            if isinstance(param, (ogAST.PrimInteger)):
-                # do not cast to Natural ONLY it is a raw number
+            if isinstance(param, (ogAST.PrimInteger)) and idx == 1:
+                # do not cast to Natural ONLY if it is a raw number
                 # (constants have a type, that is not Natural)
                 need_cast = False
             if isinstance(param, (ogAST.PrimOctetStringLiteral,
@@ -1787,7 +1787,9 @@ def _prim_call(prim, **kwargs):
                 # Everytime a parameter can be a number, we need
                 # to check if it is provided as an hex or bit string
                 operands[idx] = str(param.numeric_value)
-                need_cast = False
+                if idx == 1:
+                    # Only the second param is subject to cast
+                    need_cast = False
         if need_cast:
             ada_string += f'{operands[0]} ** Natural({operands[1]})'
         else:

@@ -125,6 +125,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.3.12 (06/2025)**
+- Fix issue with exponential operator (in some corner cases the parameter cast to Natural was missing)
+
+**4.3.11 (06/2025)**
+- Fix issue with non-numeric ASN.1 constants
+
 **4.3.10 (04/2025)**
 - Full support of RID management (model review)
 
