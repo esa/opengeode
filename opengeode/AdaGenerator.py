@@ -524,7 +524,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
             process_level_decl.append(f'{proc_name};')
             aggreg_start_proc.extend([f'{proc_name} is',
                                       'begin'])
-            aggreg_start_proc.extend(f'Execute_Cycle ({subname.statename}{SEPARATOR}START);'
+            aggreg_start_proc.extend(f'Execute_Transition ({subname.statename}{SEPARATOR}START);'
                                      for subname in substates)
             aggreg_start_proc.extend([f'end {name}{SEPARATOR}START;',
                                      '\n'])
@@ -539,7 +539,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
                 'procedure Startup is',
                 'begin',
                 *rand_reset_decl,
-                'Execute_Cycle (Startup_Transition);'
+                'Execute_Transition (Startup_Transition);'
                 if process.transitions else 'null;',
                 Init_Done,
                 'end Startup;',
@@ -882,8 +882,8 @@ package body {process.name}_RI is''']
                     dest.append(f'{LPREFIX}.{inp} := {param_name};')
                 # Execute the corresponding transition
                 if input_def.transition:
-                    # dest.append(f'Execute_Cycle ({input_def.transition_id});')
-                    dest.append(f'Execute_Cycle ({input_def.branch_label});')
+                    # dest.append(f'Execute_Transition ({input_def.transition_id});')
+                    dest.append(f'Execute_Transition ({input_def.branch_label});')
                 else:
                     return False
             else:
@@ -917,7 +917,7 @@ package body {process.name}_RI is''']
                         for par in sub.mapping.keys():
                             case_state(par)
                         taste_template.append('when others =>')
-                        taste_template.append('Execute_Cycle (Continuous_Signals);')
+                        taste_template.append('Execute_Transition (Continuous_Signals);')
                         if simu:
                             # In simulation mode, the unhandled input is signaled
                             taste_template.append('raise Lost_Input;')
@@ -929,7 +929,7 @@ package body {process.name}_RI is''']
                         # check if it is managed one level above
                         execute_transition(state, taste_template)
                     else:
-                        taste_template.append('Execute_Cycle (Continuous_Signals);')
+                        taste_template.append('Execute_Transition (Continuous_Signals);')
                         if simu:
                             # In simulation mode, the unhandled input is signaled
                             taste_template.append('raise Lost_Input;')
@@ -941,7 +941,7 @@ package body {process.name}_RI is''']
             for each_state in reduced_statelist:
                 case_state(each_state)
             taste_template.append('when others =>')
-            taste_template.append('Execute_Cycle (Continuous_Signals);')
+            taste_template.append('Execute_Transition (Continuous_Signals);')
             if simu:
                 if fake_name is False:
                     # In simulation mode, the unhandled input is signaled
@@ -1135,11 +1135,11 @@ package body {process.name}_RI is''']
                f'Link_Name => "{process.name.lower()}_state";')
 
         # Expose Execute_Transition, needed by the simulator to execute continuous signals
-        ads_template.append(f'procedure Execute_Cycle (Branch : {process.name}_Instance.Branches) renames {process.name}_Instance.Execute_Cycle;')
+        ads_template.append(f'procedure Execute_Transition (Branch : {process.name}_Instance.Branches) renames {process.name}_Instance.Execute_Transition;')
         #ads_template.append(f'CS_Only : constant := {process.name}_Instance.CS_Only;')
 
     else:
-        ads_template.append('procedure Execute_Cycle (Branch : Branches);')
+        ads_template.append('procedure Execute_Transition (Branch : Branches);')
         # ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
 
@@ -1159,9 +1159,9 @@ package body {process.name}_RI is''']
         code_label, _ = generate(label)
         taste_template.extend(code_label)
 
-    # Generate the code of the Execute_Cycle procedure, if needed
+    # Generate the code of the Execute_Transition procedure, if needed
     if process.transitions and not instance:
-        taste_template.append('procedure Execute_Cycle (Branch : Branches) is')
+        taste_template.append('procedure Execute_Transition (Branch : Branches) is')
         taste_template.append('Next_Branch : Branches := Branch;')
 
         # Declare the local variables needed by the transitions in the template
@@ -1204,7 +1204,7 @@ package body {process.name}_RI is''']
         taste_template.append(
                 'when Branch_End => null;')
         # taste_template.append('trId := -1;')
-#       taste_template.append('Execute_Cycle (Continuous_Signals);')
+#       taste_template.append('Execute_Transition (Continuous_Signals);')
         # taste_template.append('goto Continuous_Signals;')
 
 #       taste_template.append('when others =>')
@@ -1226,11 +1226,11 @@ package body {process.name}_RI is''']
 
         taste_template.append('<<Next_Transition>>')
         taste_template.append('end loop;')
-        taste_template.append('end Execute_Cycle;')
+        taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
     elif not instance:
         # No transitions defined, but keep the interface for CS_Only calls
-        taste_template.append('procedure Execute_Cycle (Branch : Branches) is null;')
+        taste_template.append('procedure Execute_Transition (Branch : Branches) is null;')
         taste_template.append('\n')
 
     # Add code of the package elaboration
