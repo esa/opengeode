@@ -229,7 +229,7 @@ def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
                 for provided_clause in sorted(cs_item,
                                              key=lambda itm: itm.priority):
                     cs_template.append(f'--  Priority {provided_clause.priority}')
-                    trId = process.transitions.index(provided_clause.transition)
+                    #trId = process.transitions.index(provided_clause.transition)
                     code, loc = generate(provided_clause.trigger,
                                          #branch_to=trId,
                                          #branch_to=None,
@@ -262,7 +262,7 @@ def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
         for provided_clause in sorted(cs_item,
                                       key=lambda itm: itm.priority):
             cs_template.append(f'--  Priority: {provided_clause.priority}')
-            trId = process.transitions.index(provided_clause.transition)
+            #trId = process.transitions.index(provided_clause.transition)
 
             # check if we are leaving a nested state with a CS
             state_tree = statename.split(SEPARATOR)
@@ -281,7 +281,8 @@ def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
                         current = current + SEPARATOR
                         break
 
-            trans = process.transitions[trId]
+            #trans = process.transitions[trId]
+            trans = provided_clause.transition
             for each in reversed(exitlist):
                 if trans and all(each.startswith(trans_st)
                         for trans_st in trans.possible_states):
@@ -967,8 +968,9 @@ package body {process.name}_RI is''']
 
     # Add the function handling continuous signals
     if has_cs:
-        cs_template = generate_code_for_continuous_signals(process, generic)
-        taste_template.extend(cs_template)
+        if not instance:
+            cs_template = generate_code_for_continuous_signals(process, generic)
+            taste_template.extend(cs_template)
         if not MONITORS and not generic:  # not a function type
             ads_template.append('procedure Check_Queue (Res : out Asn1Boolean)')
             ads_template.append(f'with Import, Convention => C, '
@@ -3214,7 +3216,17 @@ def _label(lab, **kwargs):
     ''' Label: call the corresponding function and get the next branch
         to transition to afterwards.
     '''
-    return [f'return {lab.inputString};'], []
+    # Depending on the context, it may be a goto (in procedures)
+    # or a return (in the process, for the next branch)
+    try:
+        context = lab.path[-1]
+        is_procedure = 'PROCEDURE' in context
+    except Exception:
+        is_procedure = False
+    if not is_procedure:
+        return [f'return {lab.inputString}; -- Join to label'], []
+    else:
+        return [f'goto {lab.inputString}; -- Join to label in procedure'], []
 
 
 @generate.register(ogAST.Transition)
