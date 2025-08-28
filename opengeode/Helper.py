@@ -902,19 +902,54 @@ def add_labels_before_each_branch(
             return False
         return True
 
-    def branches(transition):
-        ''' Find branches inside a transition (decision answers) '''
-        return []
+    def branches(transition, path=[]):
+        ''' Find branches inside a transition (decision answers) and add label
+        (modify in place)
+        The path is a prefix identifying the current transition. It can be
+        the label name created below a state input for instance. It is then
+        completed with the location of the decision. This allows
+        to have unique label names even if there are several decisions with
+        the same name. As soon as a decision is reached, we augment the path.
+        '''
+        for each in transition.actions:
+            # Look for decisions
+            if isinstance(each, ogAST.Decision):
+                # keep the first word to prefix the decision label
+                label_prefix = 'DECISION_' + re.split(r'\W+',
+                                                      each.inputString)[0]
+                path.append(label_prefix)
+                # prevent duplicates in answer names by using a suffix in case
+                labels = []
+                idx = 2
+                for answer in each.answers:
+                    ans_prefix = '_ANSWER_' + re.split(r'\W+',
+                                                       answer.inputString)[0]
+                    if ans_prefix in labels:
+                        ans_prefix += f'_{idx}'
+                        idx += 1
+                    labels.append(ans_prefix)
+                    path.append(ans_prefix)
+                    if need_label(answer.transition):
+                        label_name = ''.join(path)
+                        label = ogAST.Label()
+                        label.inputString = label_name
+                        answer.transition.actions.insert(0, label)
+                        answer.branch_label = label_name
+                    # Go recursively
+                    branches(answer.transition, path)
+                    # Then remove the answer from the path, just keep the
+                    # decision in case there are more in the transition.
+                    path.pop()
 
     if process.content.start:
         # We always add a label for the startup transition is the name
         # is hardcoded in the Ada backend
         #if need_label(process.content.start.transition):
         label = ogAST.Label()
-        label.inputString = "startup_transition"
+        label.inputString = "Startup_Transition"
         process.content.start.transition.actions.insert(0, label)
-        for branch in branches(process.content.start.transition):
-            ...
+        if also_decisions:
+            branches(process.content.start.transition, [label.inputString])
 
     for state_name, inputs in process.mapping.items():
         # Add a label just after the INPUT statements
@@ -922,9 +957,7 @@ def add_labels_before_each_branch(
             continue
         for each in inputs:
             label_name = 'STATE_' + state_name + '_INPUT_'
-            # input_name = each.inputString.split(',')[0].strip()
             if each.inputString.strip().startswith('*'):
-                # if input_name.startswith('*'):
                 input_name = 'STAR'
             else:
                 input_name = re.split(r'\W+', each.inputString)[0]
@@ -934,12 +967,12 @@ def add_labels_before_each_branch(
                 label.inputString = label_name
                 each.transition.actions.insert(0, label)
                 each.branch_label = label_name
-                for branch in branches(each.transition):
-                    ...
             elif each.transition.actions and isinstance(each.transition.actions[0],
                                                         ogAST.Label):
                 # if there is already a label, use it
                 each.branch_label = each.transition.actions[0].inputString
+            if also_decisions and each.branch_label != 'Continuous_Signals':
+                branches(each.transition, [each.branch_label])
 
 
     for state_name, continuous in process.cs_mapping.items():
@@ -961,8 +994,9 @@ def add_labels_before_each_branch(
                 label = ogAST.Label()
                 label.inputString = label_name
                 each.transition.actions.insert(0, label)
-                for branch in branches(each.transition):
-                    ...
+                # Removed becuase the pattern is incorrect, to be fixed:
+                #for branch in branches(each.transition):
+                #    ...
 
     for state_name, connect_names in process.connect_mapping.items():
         # CONNECT (when going out of a nested state)
@@ -988,8 +1022,9 @@ def add_labels_before_each_branch(
                 label = ogAST.Label()
                 label.inputString = label_name
                 trans.actions.insert(0, label)
-                for branch in branches(trans):
-                    ...
+                # Removed becuase the pattern is incorrect, to be fixed:
+                # for branch in branches(trans):
+                #    ...
 
     # Recursively find start and named start transition and add the label
     def rec_find_named_start(composite: ogAST.CompositeState, path: list):
@@ -1004,8 +1039,9 @@ def add_labels_before_each_branch(
                 label = ogAST.Label()
                 label.inputString = label_name
                 each.transition.actions.insert(0, label)
-                for branch in branches(each.transition):
-                    ...
+                # Removed becuase the pattern is incorrect, to be fixed:
+                #for branch in branches(each.transition):
+                #    ...
         if composite.content.start is not None\
                 and composite.content.start.transition is not None\
                 and need_label(composite.content.start.transition):
@@ -1014,8 +1050,9 @@ def add_labels_before_each_branch(
             label = ogAST.Label()
             label.inputString = label_name
             composite.content.start.transition.actions.insert(0, label)
-            for branch in branches(composite.content.start.transition):
-                ...
+            # Removed becuase the pattern is incorrect, to be fixed:
+            #for branch in branches(composite.content.start.transition):
+            #    ...
 
     for composite in process.composite_states:
         state_path = [composite.statename]

@@ -397,6 +397,10 @@ class Answer:
         self.answers = []
         # transition is of type Transition
         self.transition : Transition = None
+        # branch_label can be created by Helper.add_labels_before_each_branch
+        # it is used by backend to determine which branch to execute instead
+        # of a transition id (check AdaGenerator)
+        self.branch_label = "Continuous_Signals"
         # optional comment symbol
         self.comment = None
         # optional hyperlink
@@ -737,7 +741,7 @@ class Input:
         # branch_label is created by Helper.add_labels_before_each_branch
         # it is used by backend to determine which branch to execute instead
         # of a transition id (check AdaGenerator)
-        self.branch_label = "Branch_End"
+        self.branch_label = "Continuous_Signals"
         # optional comment symbol
         self.comment = None
         # optional hyperlink

@@ -5730,9 +5730,10 @@ def state(root, parent, context):
             if inp.inputString.strip() == '*':
                 asterisk_input = inp
         elif child.type == lexer.CONNECT:
-            comp_states = (comp.statename for comp in context.composite_states)
+            comp_states = [comp.statename for comp in context.composite_states]
             if asterisk_state or len(state_def.statelist) != 1 \
-                    or state_def.statelist[0].lower() not in comp_states:
+                    or (state_def.statelist[0].lower() not in comp_states
+                        and state_def.instance_of.lower() not in comp_states):
                 sterr.append('State {} is not a composite state and cannot '
                              'be followed by a connect statement'
                              .format(state_def.statelist[0]))
@@ -5844,7 +5845,8 @@ def connect_part(root, parent, context):
     conn = ogAST.Connect()
     conn.path = context.path
     try:
-        statename = parent.statelist[0].lower()
+        # use the type name if this state is an instance
+        statename = parent.instance_of or parent.statelist[0].lower()
     except AttributeError:
         # Ignore missing parent/statelist to allow local syntax check
         statename = ''
@@ -5947,7 +5949,11 @@ def connect_part(root, parent, context):
                 errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
                 break
         else:
-            context.connect_mapping[statename].extend(conn.connect_list)
+            try:
+                context.connect_mapping[statename].extend(conn.connect_list)
+            except KeyError:
+                msg = f'CONNECT: State name {statename} not defined'
+                errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
 
     # Set list of terminators
     conn.terminators = list(context.terminators[terms:])
