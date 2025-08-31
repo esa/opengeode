@@ -5829,6 +5829,9 @@ def state(root, parent, context):
         for each in context.composite_states:
             if each.statename.lower() == state_def.statelist[0].lower():
                 state_def.composite = each
+            # If this is an instance of a state type, keep track of it
+            if each.statename.lower() == state_def.instance_of:
+                each.instances.add(state_def.statelist[0].lower())
     for each in sterr:
         errors.append([each, [st_x, st_y], []])
         state_def.errors.append(each)
@@ -5938,12 +5941,13 @@ def connect_part(root, parent, context):
                 terminators.extend(each)
         for each in terminators:
             # Set next transition, exact id to be found in postprocessing
-            each.next_trans = trans
-    # Find duplicate CONNECT statements
+            each.next_trans.append(trans)
+    # Find duplicate CONNECT statements (except for instances of state type)
     if statename:
         existing = context.connect_mapping.get(statename, [])
         for each in existing:
-            if each.lower() in (a.lower() for a in conn.connect_list):
+            if each.lower() in (a.lower() for a in conn.connect_list) and (
+                    statename.lower() != parent.instance_of):
                 msg = (f'CONNECT: trigger {each} already specified '
                         f'for state {statename}')
                 errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
@@ -6775,9 +6779,14 @@ def nextstate(root, context):
             else:
                 errors.append('"History" NEXTSTATE cannot have a "via" clause')
         elif child.type == lexer.TYPE_INSTANCE:
+            # nextstate hello:bar -> then instance_of will be "bar"
+            # as next_state_id has been set to "hello" already
             instance_of = child.getChild(0).text
+            # We also set via here to save the raw string, this is useful
+            # when rendering the diagram, as it respects the user syntax and
+            # allows to merge state and nextstate.
             via = get_input_string(root).replace(
-                                                'NEXTSTATE', '', 1).strip()
+                                            'NEXTSTATE', '', 1).strip()
         else:
             errors.append('NEXTSTATE undefined construct: ' +
                             sdl92Parser.tokenNamesMap[child.type])
@@ -6796,14 +6805,6 @@ def nextstate(root, context):
             elif entrypoint.lower() not in composite.state_entrypoints:
                 errors.append(
                         f'State {state_id} has no "{entrypoint}" entrypoint')
-            # The test below seems identical to the one just done
-#           for each in composite.content.named_start:
-#               if not entrypoint or \
-#                       each.inputString == entrypoint.lower() + '_START':
-#                   break
-#           else:
-#               errors.append(f'Entrypoint {entrypoint} in state'
-#                       f' {state_id} is declared but not defined')
     else: # not via and/or instance
         # check that if the nextstate is nested, it has a START symbol
         try:
@@ -6841,6 +6842,8 @@ def terminator_statement(root, parent, context):
             lab.terminators = [t]
         elif term.type == lexer.NEXTSTATE:
             t.kind = 'next_state'
+            # set the terminator next state name and possibly the corresponding
+            # state type if this is an instance ("nextstate hello:bar")
             t.inputString, t.via, t.entrypoint, t.instance_of, err = \
                     nextstate(term, context)
             if err:
@@ -6852,7 +6855,7 @@ def terminator_statement(root, parent, context):
             context.terminators.append(t)
             # post-processing: if nextatate is nested, add link to the content
             # (normally handled at state level, but if state is not defined
-            # standalone, the nextstate must hold the composite content)
+            # standalone, the next state must hold the composite content)
             if t.inputString not in ('-', '-*'):
                 for each in context.composite_states:
                     if each.statename.lower() == t.inputString.lower():

@@ -3251,6 +3251,7 @@ def _transition(tr, **kwargs):
             if tr.terminator.kind == 'next_state':
                 history = ns in ('-', '-*')
                 if tr.terminator.next_is_aggregation and not history:
+                    # aggregation = parallel states
                     code.append(f'-- Entering state aggregation {tr.terminator.inputString}')
                     # First change the state (to avoid looping in continuous signals since
                     # they will be evaluated after the start transition ; if the state is
@@ -3264,7 +3265,6 @@ def _transition(tr, **kwargs):
                                         f' {ASN1SCC}{tr.terminator.inputString};')
                     # Call the START function of the state aggregation
                     code.append(f'{tr.terminator.next_id};')
-                    # code.append('trId := -1;')
                     code.append('return Continuous_Signals;')
                 elif not history:
                     # code.append(f'trId := {str(tr.terminator.next_id)};')
@@ -3276,6 +3276,13 @@ def _transition(tr, **kwargs):
                                         f' {ASN1SCC}{tr.terminator.inputString};')
                         code.append('return Continuous_Signals;')
                     else:
+                        # single next state, set next branch, pre-computed
+                        if tr.terminator.instance_of:
+                            code.append(f'--  Instance {tr.terminator.inputString}'
+                                        f' of state {tr.terminator.instance_of}')
+                            code.append(
+                                    f'{LPREFIX}.State_Instance := '
+                                    f'{ASN1SCC}{tr.terminator.inputString};')
                         code.append(f'return {str(tr.terminator.next_id)};')
                 else:
                     # "nextstate -": switch case to re-run the entry transition
@@ -3316,7 +3323,6 @@ def _transition(tr, **kwargs):
                         code.append(f'when others =>')
                         if remaining:
                             code.append('--  ' + " | ".join(remaining))
-                        # code.append('trId := -1;')
                         code.append('return Continuous_Signals;')
                         code.append('end case;')
                     else:
@@ -3324,7 +3330,6 @@ def _transition(tr, **kwargs):
                         code.append('--  No change of state')
                         #code.append('goto Continuous_Signals;')
                         if not MONITORS:
-                            # code.append('goto Continuous_Signals;')
                             code.append('return Continuous_Signals;')
                             pass
                         else:
@@ -3425,10 +3430,24 @@ def _transition(tr, **kwargs):
                                     return "Continuous_Signals"
                                 if trans.terminator.kind == 'join':
                                     return trans.terminator.inputString
-                                return find_a_label(trans.terminator.next_trans)
+                                return find_a_label(trans.terminator.next_trans) # ?
 
-                            ret_branch = find_a_label(tr.terminator.next_trans)
-                            code.append(f'return {ret_branch};')
+                            # If there are multiple next_trans, it's because
+                            # we are exiting an instance of a state type.
+                            # We must therefore make a switch case to determine
+                            # Which transition to switch to based on the
+                            # instance name
+                            if len(tr.terminator.next_trans) == 1:
+                                ret_branch = find_a_label(tr.terminator.next_trans[0])
+                                code.append(f'return {ret_branch};')
+                            else:
+                                code.append(f"return (case {LPREFIX}.State_Instance is")
+                                for nt in tr.terminator.next_trans:
+                                    statename = nt.possible_states[0]
+                                    next_branch = find_a_label(nt)
+                                    code.append(f"when {ASN1SCC}{statename} => {next_branch},")
+                                code.append("when others => Continuous_Signals);")
+
                         else:
                             code.append('return Continuous_Signals; -- ?')
                     else:
@@ -3867,6 +3886,8 @@ def format_ada_code(stmts):
     for line in stmts[:-1]:
         elems = line.strip().split()
         if elems and elems[0].startswith(('when', 'end', 'elsif', 'else')):
+            # Decrement the line, but the "when" will be incremented anyway
+            # because of "last_was_is"
             indent = max(indent - 1, 0)
         if elems and elems[-1] == 'case;':  # Corresponds to end case;
             indent = max(indent - 1, 0)
@@ -3895,6 +3916,4 @@ def format_ada_code(stmts):
                 last_was_is = True
         if elems and elems[0] in ('begin', 'case', 'else', 'when'):
             indent += 1
-        #if indent > 0 and not elems:  # newline -> decrease indent
-        #    indent -= 1
     yield stmts[-1]

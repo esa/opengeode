@@ -587,7 +587,8 @@ class Terminator:
         # some transitions can be chained, when entering/leaving nested states
         self.next_id = -1
         # Pointer to the next transition, when using return/connect
-        self.next_trans = None
+        # it is a list because state types can have multiple instances
+        self.next_trans = []
         # List of State that can lead to this terminator
         # There can be several if terminator follows a floating label
         # or a star state.
@@ -1234,6 +1235,10 @@ class Process:
         # Optional partition name
         self.partition: str = "default"
 
+        # Flag indicating that there are instances of state types in the model
+        # (set by Helper.py)
+        self.has_instances : bool = False
+
 
 class CompositeState(Process):
     '''
@@ -1254,6 +1259,11 @@ class CompositeState(Process):
         # Body can contain text areas, procedures, composite states,
         # one nameless START, named START (one per entrypoint), states,
         # amd floating labels
+
+        # This state may be a state type. In that case keep a list of instances
+        # of this type (just the names). Useful to generate the datamodel.asn
+        # and for code generators to keep track of the current state.
+        self.instances = set()
 
     def trace(self):
         ''' Debug output for composite state '''

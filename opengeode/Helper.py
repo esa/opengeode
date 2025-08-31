@@ -162,6 +162,14 @@ def update_full_statelist(process, SEPARATOR=DEFAULT_SEPARATOR) -> None:
         # Parallel states in a state aggregation may terminate
         process.full_statelist.add(f'state{SEPARATOR}end')
 
+    for each in process.composite_states:
+        # Add instances of state type
+        process.full_statelist |= each.instances
+        if each.instances:
+            # Set a flag to indicate there are instances in the model, so
+            # that a variable will be added to the datamodel.asn file
+            process.has_instances = True
+
 
 def inner_labels_to_floating(process):
     '''
@@ -191,13 +199,14 @@ def flatten(process, sep='_'):
     '''
     def update_terminator(context, term, process):
         '''Set next_id, identifying the next transition to run '''
-        if term.inputString.lower() in (st.statename.lower()
-                                        for st in context.composite_states):
-            if not term.via:
-                term.next_id = term.inputString.lower() + sep + 'START'
+        nextStateName = term.instance_of or term.inputString
+        if nextStateName.lower() in (st.statename.lower()
+                                     for st in context.composite_states):
+            if term.instance_of or not term.via:
+                term.next_id = nextStateName.lower() + sep + 'START'
             else:
                 term.next_id =\
-                        f'{term.inputString}{sep}{term.entrypoint}_START'
+                        f'{nextStateName.lower()}{sep}{term.entrypoint}_START'
         elif term.inputString.strip() in ('-', '-*'):
             for each in term.possible_states:
                 term.candidate_id[-1].append(each)
@@ -243,7 +252,7 @@ def flatten(process, sep='_'):
         for each in state.terminators:
             if each.kind == 'return':
                 for idx, trans in enumerate(process.transitions):
-                    if trans == each.next_trans:
+                    if trans in each.next_trans:
                         each.next_id = idx
                         break
 
@@ -772,6 +781,11 @@ def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPAR
         # Some systems may have no states - only a start transition
         context_elems.append(f'   state {process_asn1}-States')
 
+    if process.has_instances:
+        # If there is at least one instance of a state type
+        # TODO to support instances in parallel states, there should be more
+        context_elems.append(f'state-instance {process_asn1}-States')
+
     context_elems.append('init-done BOOLEAN')
     # State aggregation: add list of substates
     for substates in process.aggregates.values():
@@ -1000,31 +1014,40 @@ def add_labels_before_each_branch(
 
     for state_name, connect_names in process.connect_mapping.items():
         # CONNECT (when going out of a nested state)
+        # in the case of instances of a state type there will be multiple
+        # transitions attached to a single return. Code generators will need
+        # to branch to the correct one depending on the current instance. But
+        # here we only set the branch names (which depend on the instance name)
         for each in connect_names:
             label_name = 'NESTED_STATE_' + state_name + '_EXIT'
             connect_name = each.strip()
-            # we need to retrieve the composite state to find the transition
+            # we need to retrieve the composite state to find the transitions
             # associated with the connection.
-            trans = None
+            transitions = []
             for composite in process.composite_states:
                 if composite.statename == state_name:
                     for term in composite.terminators:
                         if term.kind == 'return' \
                             and term.inputString.strip().lower() \
                                 == connect_name.strip().lower():
-                            trans = term.next_trans
+                            transitions = term.next_trans
                             break
             if connect_name:
                 # it is possible to specify an unnamed exit from nested states
                 label_name += '_'
-            if trans is not None and need_label(trans):
-                label_name += connect_name
-                label = ogAST.Label()
-                label.inputString = label_name
-                trans.actions.insert(0, label)
-                # Removed becuase the pattern is incorrect, to be fixed:
-                # for branch in branches(trans):
-                #    ...
+            fresh_label_name = label_name
+            for trans in transitions:
+                if trans is not None and need_label(trans):
+                    label_name = fresh_label_name + connect_name
+                    if len(transitions) > 1 and len(trans.possible_states) == 1:
+                        # instance of a state
+                        label_name += "_" + trans.possible_states[0]
+                    label = ogAST.Label()
+                    label.inputString = label_name
+                    trans.actions.insert(0, label)
+                    # Removed becuase the pattern is incorrect, to be fixed:
+                    # for branch in branches(trans):
+                    #    ...
 
     # Recursively find start and named start transition and add the label
     def rec_find_named_start(composite: ogAST.CompositeState, path: list):
