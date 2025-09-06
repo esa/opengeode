@@ -3578,6 +3578,7 @@ def composite_state(root, parent=None, context=None):
     ''' Parse a composite state (incl. state aggregation) definition '''
     if root.type == lexer.COMPOSITE_STATE:
         comp = ogAST.CompositeState()
+        comp.parent = context
     elif root.type == lexer.STATE_AGGREGATION:
         comp = ogAST.StateAggregation()
     errors, warnings = [], []
@@ -3744,7 +3745,7 @@ def composite_state(root, parent=None, context=None):
         ns = t.inputString.lower()
         if not ns in [s.lower() for s in comp.mapping.keys()] + ['-', '-*']:
             msg = f'In composite state {comp.statename}: missing definition'\
-                  f'of substate "{ns.upper()}"'
+                  f' of substate "{ns.upper()}"'
             errors.append([msg, [t.pos_x or 0, t.pos_y or 0], []])
             t.errors.append(msg)
     for each in chain(errors, warnings):
@@ -6794,17 +6795,20 @@ def nextstate(root, context):
     # Checks on the NEXTSTATE
     if via:  # instance and/or via clause
         state_id = instance_of or next_state_id
-        try:
-            composite, = (comp for comp in context.composite_states
-                          if comp.statename.lower() == state_id.lower())
-        except ValueError:
-            errors.append(f'State {state_id} is not a composite state')
-        else:
-            if entrypoint is None:
-                pass
-            elif entrypoint.lower() not in composite.state_entrypoints:
-                errors.append(
-                        f'State {state_id} has no "{entrypoint}" entrypoint')
+        # disabling all the section below because similar checks are also
+        # done elsewhere
+#      try:
+#          composite, = (comp for comp in context.composite_states
+#                        if comp.statename.lower() == state_id.lower())
+#      except ValueError:
+#          breakpoint()
+#          errors.append(f'State {state_id} is not a composite state')
+#      else:
+#          if entrypoint is None:
+#              pass
+#          elif entrypoint.lower() not in composite.state_entrypoints:
+#              errors.append(
+#                      f'State {state_id} has no "{entrypoint}" entrypoint')
     else: # not via and/or instance
         # check that if the nextstate is nested, it has a START symbol
         try:
