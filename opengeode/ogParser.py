@@ -3738,16 +3738,6 @@ def composite_state(root, parent=None, context=None):
                            f' missing CONNECT for exitpoint "{exitpt}"')
                     errors.append([msg, [each.pos_x, each.pos_y], []])
 
-    # Post-processing: check that all NEXTSTATEs have a corresponding STATE
-    for t in comp.terminators:
-        if t.kind != "next_state":
-            continue
-        ns = t.inputString.lower()
-        if not ns in [s.lower() for s in comp.mapping.keys()] + ['-', '-*']:
-            msg = f'In composite state {comp.statename}: missing definition'\
-                  f' of substate "{ns.upper()}"'
-            errors.append([msg, [t.pos_x or 0, t.pos_y or 0], []])
-            t.errors.append(msg)
     for each in chain(errors, warnings):
         each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
@@ -5010,6 +5000,48 @@ def system_definition(root, parent):
     return system, errors, warnings
 
 
+def rec_check_composite_state(comp):
+    '''
+        Once all composite states have been parsed we must make some checks:
+        - If the nextstate is a state instance (inst:type), check if the type
+          is defined, in any of the parent diagrams up to the process
+        - check that return and connect statements match
+    '''
+    errors, warnings = [], []
+
+    # Go recursive first:
+    for sub in comp.composite_states:
+        err, warn = rec_check_composite_state(sub)
+        errors.extend(err)
+        warnings.extend(warn)
+
+    # list upper level diagrams, to look for state type definitions
+    contexts = [comp]
+    current = comp
+    while isinstance(current, ogAST.CompositeState):
+        current = current.parent
+        contexts.insert(0, current)
+    # 1) check that all NEXTSTATEs have a corresponding STATE, and if it is
+    #    an instance, look for the corresponding type.
+    for t in (term for term in comp.terminators if term.kind == 'next_state'):
+        keys = []
+        if t.instance_of:
+            for ctxt in contexts:
+                keys.extend(list(ctxt.mapping.keys()))
+        else:
+            keys = list(comp.mapping.keys())
+        ns = t.instance_of or t.inputString
+        ns = ns.lower()
+        if not ns in [s.lower() for s in keys] + ['-', '-*']:
+            msg = f'In composite state {comp.statename}: missing definition'\
+                  f' of substate "{ns.upper()}"'
+            errors.append([msg, [t.pos_x or 0, t.pos_y or 0], []])
+            t.errors.append(msg)
+    for each in chain(errors, warnings):
+        each[2].insert(0, 'STATE {}'.format(comp.statename))
+    return errors, warnings
+
+
 def process_definition(root, parent=None, context=None):
     ''' Process definition analysis '''
     errors, warnings, perr, pwarn = [], [], [], []
@@ -5233,6 +5265,11 @@ def process_definition(root, parent=None, context=None):
                             ' - line ' + str(child.getLine()),
                             [proc_x, proc_y], []])
 
+    # Check composite states
+    for comp in process.composite_states:
+        err, warn = rec_check_composite_state(comp)
+        errors.extend(err)
+        warnings.extend(warn)
 
     for proc, content in inner_proc:
         err, warn = procedure_post(proc, content, context=process)
@@ -5731,17 +5768,21 @@ def state(root, parent, context):
             if inp.inputString.strip() == '*':
                 asterisk_input = inp
         elif child.type == lexer.CONNECT:
+            conn_part, err, warn = connect_part(child, state_def, context)
+            state_def.connects.append(conn_part)
             comp_states = [comp.statename for comp in context.composite_states]
+            # I think the following test is not relevant, as there are other
+            # tests verifying the connect/return matches. XXX
             if asterisk_state or len(state_def.statelist) != 1 \
                     or (state_def.statelist[0].lower() not in comp_states
                         and state_def.instance_of.lower() not in comp_states):
                 sterr.append('State {} is not a composite state and cannot '
                              'be followed by a connect statement'
                              .format(state_def.statelist[0]))
-            conn_part, err, warn = connect_part(child, state_def, context)
-            state_def.connects.append(conn_part)
-            warnings.extend(warn)
-            errors.extend(err)
+            else:
+                # Add errors from the connect
+                warnings.extend(warn)
+                errors.extend(err)
         elif child.type == lexer.COMMENT:
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
@@ -6795,20 +6836,6 @@ def nextstate(root, context):
     # Checks on the NEXTSTATE
     if via:  # instance and/or via clause
         state_id = instance_of or next_state_id
-        # disabling all the section below because similar checks are also
-        # done elsewhere
-#      try:
-#          composite, = (comp for comp in context.composite_states
-#                        if comp.statename.lower() == state_id.lower())
-#      except ValueError:
-#          breakpoint()
-#          errors.append(f'State {state_id} is not a composite state')
-#      else:
-#          if entrypoint is None:
-#              pass
-#          elif entrypoint.lower() not in composite.state_entrypoints:
-#              errors.append(
-#                      f'State {state_id} has no "{entrypoint}" entrypoint')
     else: # not via and/or instance
         # check that if the nextstate is nested, it has a START symbol
         try:
