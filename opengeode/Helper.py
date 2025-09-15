@@ -170,6 +170,12 @@ def update_full_statelist(process, SEPARATOR=DEFAULT_SEPARATOR) -> None:
             # that a variable will be added to the datamodel.asn file
             process.has_instances = True
 
+        # In the composite state itself, look for instances of state types
+        # that may be defined at higher level
+        for term in each.terminators:
+            if term.instance_of:
+                process.full_statelist.add(term.inputString)
+
 
 def inner_labels_to_floating(process):
     '''

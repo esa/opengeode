@@ -5771,14 +5771,17 @@ def state(root, parent, context):
             conn_part, err, warn = connect_part(child, state_def, context)
             state_def.connects.append(conn_part)
             comp_states = [comp.statename for comp in context.composite_states]
-            # I think the following test is not relevant, as there are other
-            # tests verifying the connect/return matches. XXX
             if asterisk_state or len(state_def.statelist) != 1 \
                     or (state_def.statelist[0].lower() not in comp_states
                         and state_def.instance_of.lower() not in comp_states):
-                sterr.append('State {} is not a composite state and cannot '
-                             'be followed by a connect statement'
-                             .format(state_def.statelist[0]))
+                # At this point return an error only if this is not an instance
+                # of a state type. XXX but if there are errors in the connect
+                # part, they must not be ignored after the verification of the
+                # state.
+                if not state_def.instance_of:
+                    sterr.append('State {} is not a composite state and cannot'
+                                 ' be followed by a connect statement'
+                                 .format(state_def.statelist[0]))
             else:
                 # Add errors from the connect
                 warnings.extend(warn)
