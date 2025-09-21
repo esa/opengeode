@@ -5039,6 +5039,27 @@ def rec_check_composite_state(comp):
             t.errors.append(msg)
     for each in chain(errors, warnings):
         each[2].insert(0, 'STATE {}'.format(comp.statename))
+
+    # for each state instance inside the composite state, find the corresponding
+    # state type definition (can be in a context above), and then for each
+    # connect part, check and resolve the terminator transitions
+    for state_def in comp.content.states:
+        if not state_def.instance_of:
+            continue
+        # Find the state definition
+        nested = None
+        for ctxt in contexts:
+            for each in ctxt.composite_states:
+                if each.statename.lower() == state_def.instance_of.lower():
+                    nested = each
+        if not nested:
+            # Create a dummy state to but errors will be raised as sate was not
+            # found.
+            nested = ogAST.CompositeState()
+        for conn in state_def.connects:
+            # check each connection and update the transitions in terminators
+            errs = check_and_resolve_connect_part(conn, nested)
+            errors.extend(errs)
     return errors, warnings
 
 
@@ -5886,6 +5907,57 @@ def state(root, parent, context):
     return state_def, errors, warnings
 
 
+def check_and_resolve_connect_part(
+                       conn: ogAST.Connect,
+                       nested: ogAST.CompositeState) -> list:
+    ''' Make checks in CONNECT transitions (below a nested state)
+        and update in place with resolved connections
+        Inputs/outputs
+            * connect part (modified in place)
+            * nested (terminators modified)
+        Returns a list of errors
+    '''
+    errors = []
+    for exitp in conn.connect_list:
+        if exitp != '' and not exitp in nested.state_exitpoints:
+            # Here also can happen if it is a state instance and the state
+            # type has not been parsed yet
+            msg = f'Exit point {exitp} not defined in state {nested.statename.lower()}'
+            errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
+            conn.errors.append(msg)
+        def check_terminators(comp):
+            terminators = [term for term in comp.terminators
+                           if term.kind == 'return'
+                           and term.inputString.lower() == exitp]
+            if not terminators:
+                msg = f'No {exitp} return statement in nested state {comp.statename.lower()}'
+                errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
+                conn.errors.append(msg)
+            return terminators
+
+        if not isinstance(nested, ogAST.StateAggregation):
+            # Not a parallel state, just a normal nested state
+            terminators = check_terminators(nested)
+        else:
+            # State aggregation: we must check that all parallel states
+            # contain indeed a return statement of the given name
+            def siblings(aggregate):
+                for comp in aggregate.composite_states:
+                    if not isinstance(comp, ogAST.StateAggregation):
+                        yield comp
+                    else:
+                        for each in siblings(comp()):
+                            yield each
+            all_terms = map(check_terminators, siblings(nested))
+            terminators = []
+            for each in all_terms:
+                terminators.extend(each)
+        for each in terminators:
+            # Set next transition, exact id to be found in postprocessing
+            each.next_trans.append(conn.transition)
+    return errors
+
+
 def connect_part(root, parent, context):
     ''' Connection of a nested state exit point with a transition
         Very similar to INPUT '''
@@ -5908,6 +5980,9 @@ def connect_part(root, parent, context):
                    if comp.statename.lower() == statename.lower())
     except ValueError:
         # Ignore unexisting state - to allow local syntax check
+        # but also here if we are inside a nested state and the CONNECT
+        # is below a state instance, at this point the definition of the
+        # corresponding state type may not have been parsed yet.
         nested = ogAST.CompositeState()
 
     for child in root.getChildren():
@@ -5917,6 +5992,7 @@ def connect_part(root, parent, context):
         elif child.type == lexer.SYMBOLID:
             conn.pos_x = symbolid(child)
         elif child.type == lexer.ID:
+            # name of the connection point
             id_token.append(child)
             conn.connect_list.append(child.toString().lower())
         elif child.type == lexer.ASTERISK:
@@ -5953,40 +6029,14 @@ def connect_part(root, parent, context):
         conn.inputString = token_stream(id_token[0]).toString(
                                         id_token[0].getTokenStartIndex(),
                                         id_token[-1].getTokenStopIndex())
-    for exitp in conn.connect_list:
-        if exitp != '' and not exitp in nested.state_exitpoints:
-            msg = f'Exit point {exitp} not defined in state {statename}'
-            errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
-            conn.errors.append(msg)
-        def check_terminators(comp):
-            terminators = [term for term in comp.terminators
-                           if term.kind == 'return'
-                           and term.inputString.lower() == exitp]
-            if not terminators:
-                msg = f'No {exitp} return statement in nested state {comp.statename.lower()}'
-                errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
-                conn.errors.append(msg)
-            return terminators
 
-        if not isinstance(nested, ogAST.StateAggregation):
-            terminators = check_terminators(nested)
-        else:
-            # State aggregation: we must check that all parallel states
-            # contain indeed a return statement of the given name
-            def siblings(aggregate):
-                for comp in aggregate.composite_states:
-                    if not isinstance(comp, ogAST.StateAggregation):
-                        yield comp
-                    else:
-                        for each in siblings(comp()):
-                            yield each
-            all_terms = map(check_terminators, siblings(nested))
-            terminators = []
-            for each in all_terms:
-                terminators.extend(each)
-        for each in terminators:
-            # Set next transition, exact id to be found in postprocessing
-            each.next_trans.append(trans)
+    # Make some checks and update the terminators transitions in the nested
+    # state, Works only if the nested state has already been parsed, which
+    # is not the case if we are parsing a connection below an instance of
+    # a state type inside a nested state.
+    errs = check_and_resolve_connect_part(conn, nested)
+    errors.extend(errs)
+
     # Find duplicate CONNECT statements (except for instances of state type)
     if statename:
         existing = context.connect_mapping.get(statename, [])

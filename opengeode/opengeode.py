@@ -3572,7 +3572,7 @@ def parse(files):
     if not files:
         raise IOError('No input .pr files')
     cwd = os.getcwd()
-    LOG.info('Checking ' + str(files))
+    LOG.info('Checking ' + ", ".join(files))
     # move to the directory of the .pr files (needed for ASN.1 parsing)
     path = os.path.dirname(files[0])
     files = [os.path.abspath(each) for each in files]
