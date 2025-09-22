@@ -5843,8 +5843,6 @@ def state(root, parent, context):
                 for each in existing:
                    if ''.join(each.inputString.lower().split()) == \
                            ''.join(provided_part.inputString.lower().split()):
-                #if provided_part in \
-                #        context.cs_mapping.get(statename.lower(), []):
                       sterr.append('Continuous signal is defined more than once '
                                   'below state "{}"'.format(statename.lower()))
                 else:
@@ -5874,10 +5872,13 @@ def state(root, parent, context):
         remaining_inputs = set(input_signals) - explicit_inputs
         asterisk_input.inputlist = list(remaining_inputs)
     # post-processing: check for duplicate inputs
-    if not state_def.instance_of:
-        statelist = state_def.statelist
-    else:
-        statelist = [state_def.instance_of]
+    statelist = state_def.statelist
+    # Use the instance name, not the state type name
+    # as otherwise duplicates on the state type name would be raised
+    #   if not state_def.instance_of:
+    #       statelist = state_def.statelist
+    #   else:
+    #       statelist = [state_def.instance_of]
     for statename in statelist:
         inputs = context.mapping.get(statename.lower(), [])
         dupl = set()
@@ -6048,8 +6049,9 @@ def connect_part(root, parent, context):
     # state, Works only if the nested state has already been parsed, which
     # is not the case if we are parsing a connection below an instance of
     # a state type inside a nested state.
-    errs = check_and_resolve_connect_part(conn, nested)
-    errors.extend(errs)
+    # removed, this is done after the full model is parsed, and recursively
+    #errs = check_and_resolve_connect_part(conn, nested)
+    #errors.extend(errs)
 
     # Find duplicate CONNECT statements (except for instances of state type)
     if statename:
