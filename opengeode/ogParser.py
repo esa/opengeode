@@ -5006,6 +5006,8 @@ def rec_check_composite_state(comp):
         - If the nextstate is a state instance (inst:type), check if the type
           is defined, in any of the parent diagrams up to the process
         - check that return and connect statements match
+
+        This is also done on the first level (process)
     '''
     errors, warnings = [], []
 
@@ -5043,6 +5045,7 @@ def rec_check_composite_state(comp):
     # for each state instance inside the composite state, find the corresponding
     # state type definition (can be in a context above), and then for each
     # connect part, check and resolve the terminator transitions
+    # also check that no connects are missing below the nested state
     for state_def in comp.content.states:
         if not state_def.instance_of:
             continue
@@ -5055,11 +5058,20 @@ def rec_check_composite_state(comp):
         if not nested:
             # Create a dummy state to but errors will be raised as sate was not
             # found.
-            nested = ogAST.CompositeState()
+            ested = ogAST.CompositeState()
         for conn in state_def.connects:
             # check each connection and update the transitions in terminators
             errs = check_and_resolve_connect_part(conn, nested)
             errors.extend(errs)
+        # check that all returns are present below a state instance
+        connects = set(c for each in state_def.connects for c in each.connect_list)
+        missing = nested.state_exitpoints - connects
+        str_missing = ", ".join(missing)
+        if missing:
+            msg = f'Below state instance {state_def.inputString}: missing connection(s) '\
+                  f' "{str_missing}"'
+            errors.append([msg, [state_def.pos_x or 0, state_def.pos_y or 0], []])
+            state_def.errors.append(msg)
     return errors, warnings
 
 
@@ -5287,10 +5299,9 @@ def process_definition(root, parent=None, context=None):
                             [proc_x, proc_y], []])
 
     # Check composite states
-    for comp in process.composite_states:
-        err, warn = rec_check_composite_state(comp)
-        errors.extend(err)
-        warnings.extend(warn)
+    err, warn = rec_check_composite_state(process)
+    errors.extend(err)
+    warnings.extend(warn)
 
     for proc, content in inner_proc:
         err, warn = procedure_post(proc, content, context=process)
@@ -5803,6 +5814,9 @@ def state(root, parent, context):
                     sterr.append('State {} is not a composite state and cannot'
                                  ' be followed by a connect statement'
                                  .format(state_def.statelist[0]))
+                else:
+                    # Remove the errors that were found in the connect part
+                    conn_part.errors = []
             else:
                 # Add errors from the connect
                 warnings.extend(warn)

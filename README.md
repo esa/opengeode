@@ -125,6 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.4.0 (09/2025)**
+- Refactoring of the Ada code generator to allow better traceability
+- Instroduce support for STATE TYPE
+
 **4.3.12 (06/2025)**
 - Fix issue with exponential operator (in some corner cases the parameter cast to Natural was missing)
 
