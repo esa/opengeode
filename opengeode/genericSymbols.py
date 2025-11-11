@@ -647,7 +647,7 @@ class Symbol(QObject, QGraphicsPathItem):
                 if not self.req_model.m_requirements:
                     LOG.info("Fetching requirements")
                     self.req_manager.setCredentials(g_url, g_token)
-                    self.req_manager.requestAllRequirements()
+                    self.req_manager.requestAllRequirements("")
                 self.req_widget.show()
                 # Set the list of selected requirements, both from the AST and
                 # from the user-selection
