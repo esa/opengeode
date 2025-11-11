@@ -6464,6 +6464,7 @@ def decision(root, parent, context):
             dec.pos_x = symbolid(child)
             dec_x = dec.pos_x
         elif child.type == lexer.QUESTION:
+            # Standard formal decisions
             dec.kind = 'question'
             dec.question, qerr, qwarn = expression(child.getChild(0), context)
             dec.inputString = get_input_string(child.getChild(0))
@@ -6484,6 +6485,7 @@ def decision(root, parent, context):
             dec.line = dec.question.line
             dec.charPositionInLine = dec.question.charPositionInLine
         elif child.type == lexer.INFORMAL_TEXT:
+            # In that case dec.question remains None
             dec.kind = 'informal_text'
             dec.inputString = get_input_string(child)
             dec.informalText = child.getChild(0).toString()[1:-1]
@@ -6815,6 +6817,9 @@ def decision(root, parent, context):
             else:
                 txt = f"range {low} .. {high}"
             qerr.append(f'Decision "{dec.inputString}": No answer to cover {txt}')
+
+    elif has_else and dec.kind in ('informal_text', 'any'):
+        qwarn.append(f'Informal decision "{dec.inputString}": ELSE branch is meaningless')
 
     elif has_else and is_numeric(dec.question.exprType) and not q_ranges:
         # (3) Check that ELSE branch is reachable
